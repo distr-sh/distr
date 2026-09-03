@@ -2,6 +2,7 @@
 title: Helm Chart
 slug: helm-chart
 description: 'Understanding Helm charts, their role in Kubernetes package management, and how they simplify the process of deploying, managing, and scaling applications'
+lastUpdated: 2026-07-23
 ---
 
 ## What is a Helm Chart? Definition and explanation
@@ -9,12 +10,14 @@ description: 'Understanding Helm charts, their role in Kubernetes package manage
 ### Helm Chart Definition
 
 :::note
-A Helm chart is a collection of files that define, configure, and install a Kubernetes application. It consists of a set of templates, values, and other resources that are used to create the necessary Kubernetes resources for an application. Helm charts are used to package, distribute, and manage applications within Kubernetes clusters.
+A Helm chart is a collection of files that define, configure, and install a [Kubernetes](/glossary/kubernetes/) application. It consists of a set of templates, values, and other resources that are used to create the necessary Kubernetes resources for an application. Helm charts are used to package, distribute, and manage applications within Kubernetes clusters.
 :::
+
+[Helm](https://helm.sh/) is the de facto package manager for Kubernetes, and charts are its package format. Instead of applying dozens of raw YAML manifests by hand, you install a chart with a single `helm install` command and customize it through values.
 
 ## What is a Helm Chart used for?
 
-A Helm chart is used for packaging, configuring, and deploying applications on Kubernetes, providing a structured format that contains all the necessary resources, dependencies, and configuration files. It simplifies application setup, upgrades, and maintenance by enabling consistent deployments across different environments.
+A Helm chart packages everything an application needs to run on Kubernetes: resource definitions, dependencies, and configuration defaults. Because the same chart can be installed with different values per environment, it keeps deployments consistent across development, staging, and production, and makes upgrades and rollbacks repeatable.
 
 ### Example Helm Chart structure
 
@@ -35,7 +38,20 @@ mychart/
 
 ### Key Components of a Helm Chart
 
-- **Templates**: Define the Kubernetes resources needed (like Deployments, Services, etc.) using Go templating. This enables customization of properties like replica count, container images, and resource limits by inserting specific values during installation.
+- **Templates**: Define the Kubernetes resources needed (like Deployments, Services, etc.) using [Go templating](https://helm.sh/docs/chart_template_guide/). This enables customization of properties like replica count, container images, and resource limits by inserting specific values during installation.
 - **Values**: `values.yaml` holds default settings for your application. This central file allows for easy customization of templates, and you can override these defaults for different environments.
 - **Chart.yaml**: The metadata file, listing the chart's name, version, description, and any dependencies, which supports versioning and compatibility management.
-- **values.schema.json**: An optional schema file that validates the structure and types of values used, ensuring configuration consistency.
+- **values.schema.json**: An optional schema file that validates the structure and types of the values users provide.
+
+## How are Helm Charts distributed?
+
+Charts are published to chart repositories or, since Helm 3.8, to any [OCI-compliant container registry](/glossary/oci-container-artifact-registry/):
+
+```shell
+helm push mychart-1.0.0.tgz oci://registry.example.com/charts
+helm install myrelease oci://registry.example.com/charts/mychart --version 1.0.0
+```
+
+Storing charts next to container images in the same registry simplifies distribution, especially for vendors shipping applications to [self-hosted](/glossary/self-hosted-software/) or [air-gapped](/glossary/air-gapped-meaning/) customer environments, where both the chart and its images have to be delivered together.
+
+One thing chart authors shipping to customers learn quickly: a chart that works on your cluster may fail on a customer's older or restricted Kubernetes version. See our guide on [building a Kubernetes compatibility matrix for your Helm chart](/blog/kubernetes-compatibility-matrix/).

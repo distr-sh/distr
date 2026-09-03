@@ -1,0 +1,142 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
+import {faCheck, faPen} from '@fortawesome/free-solid-svg-icons';
+import {AutofocusDirective} from '../directives/autofocus.directive';
+import {AutotrimDirective} from '../directives/autotrim.directive';
+
+export type InlineEditSize = 'sm' | 'lg';
+export type InlineEditDisplayTag = 'span' | 'h3';
+
+@Component({
+  selector: 'app-inline-edit',
+  changeDetection: ChangeDetectionStrategy.Eager,
+  imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, AutofocusDirective],
+  template: `
+    @if (editing()) {
+      <form class="flex" [formGroup]="form" (ngSubmit)="submit()" (focusout)="onFocusOut($event)">
+        <input
+          formControlName="value"
+          autotrim
+          autofocus
+          type="text"
+          [placeholder]="placeholder()"
+          (keydown.escape)="cancel()"
+          class="distr-input rounded-none rounded-s-lg field-sizing-content"
+          [class]="size() === 'lg' ? 'min-w-48 max-w-md' : 'min-w-32 max-w-xs'" />
+        <button
+          type="submit"
+          [disabled]="loading() || saveDisabled()"
+          (pointerdown)="$event.preventDefault()"
+          class="distr-btn-primary text-white rounded-none rounded-e-lg disabled:opacity-60 disabled:cursor-not-allowed"
+          [class]="size() === 'lg' ? 'px-4' : 'px-3'">
+          <fa-icon [icon]="faCheck" />
+        </button>
+      </form>
+    } @else {
+      <span class="inline-flex items-center">
+        @if (value()) {
+          @if (tag() === 'h3') {
+            <h3 [class]="textClass()" [title]="value()">{{ value() }}</h3>
+          } @else {
+            <span [class]="textClass()" [title]="value()">{{ value() }}</span>
+          }
+        } @else if (emptyLabel()) {
+          <span class="text-gray-500">{{ emptyLabel() }}</span>
+        }
+        @if (editable()) {
+          <button type="button" aria-label="Edit" (click)="enable()" class="text-gray-900 dark:text-gray-400 ms-2">
+            <fa-icon [icon]="faPen" />
+          </button>
+        }
+      </span>
+    }
+  `,
+})
+export class InlineEditComponent {
+  private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  readonly value = input.required<string>();
+  readonly placeholder = input('');
+  readonly editable = input(true);
+  readonly required = input(true);
+  readonly loading = input(false);
+  readonly textClass = input('');
+  readonly emptyLabel = input('');
+  readonly size = input<InlineEditSize>('sm');
+  readonly tag = input<InlineEditDisplayTag>('span');
+
+  readonly save = output<string>();
+
+  protected readonly editing = signal(false);
+  protected readonly form = new FormGroup({
+    value: new FormControl('', {nonNullable: true}),
+  });
+  private readonly currentValue = toSignal(this.form.controls.value.valueChanges, {initialValue: ''});
+  protected readonly saveDisabled = computed(() => {
+    const trimmed = this.currentValue().trim();
+    if (this.required() && trimmed === '') {
+      return true;
+    }
+    return trimmed === this.value();
+  });
+
+  protected readonly faCheck = faCheck;
+  protected readonly faPen = faPen;
+
+  constructor() {
+    effect(() => {
+      this.form.controls.value.setValidators(this.required() ? [Validators.required] : []);
+      this.form.controls.value.updateValueAndValidity({emitEvent: false});
+    });
+    // Exit edit mode when the bound value changes externally (e.g. navigating to another
+    // entity on the same route, or a successful save) so a pending edit can never be saved
+    // against the wrong entity.
+    effect(() => {
+      this.value();
+      this.editing.set(false);
+    });
+  }
+
+  protected enable() {
+    this.form.reset({value: this.value()});
+    this.editing.set(true);
+  }
+
+  protected cancel() {
+    this.editing.set(false);
+  }
+
+  // Exit edit mode when focus leaves the component entirely. Focus moving to the submit button
+  // (via keyboard tab or touch) stays within the host, so the pending edit is not discarded
+  // before it can be saved.
+  protected onFocusOut(event: FocusEvent) {
+    const nextTarget = event.relatedTarget as Node | null;
+    if (!nextTarget || !this.elementRef.nativeElement.contains(nextTarget)) {
+      this.cancel();
+    }
+  }
+
+  protected submit() {
+    this.form.markAllAsTouched();
+    if (this.form.invalid) {
+      return;
+    }
+    if (this.saveDisabled()) {
+      this.editing.set(false);
+      return;
+    }
+    this.save.emit(this.currentValue().trim());
+  }
+}

@@ -1,169 +1,198 @@
-<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
-    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
-      <div
-        class="p-4 flex flex-wrap items-end gap-4 border-b border-gray-200 dark:border-gray-600"
-        [formGroup]="filterForm">
+<app-page>
+  <div class="distr-table-panel">
+    <div
+      class="p-4 flex flex-wrap items-start gap-4 border-b border-gray-200 dark:border-gray-600"
+      [formGroup]="filterForm">
+      <div>
+        <label for="pulls-from" class="distr-label-sm mb-1">From</label>
+        <input
+          type="date"
+          id="pulls-from"
+          formControlName="from"
+          [max]="filterForm.controls.to.value || today"
+          class="distr-input distr-input-sm w-auto min-w-32 dark:[color-scheme:dark]" />
+      </div>
+      <div>
+        <label for="pulls-to" class="distr-label-sm mb-1">To</label>
+        <input
+          type="date"
+          id="pulls-to"
+          formControlName="to"
+          [min]="filterForm.controls.from.value || ''"
+          [max]="today"
+          class="distr-input distr-input-sm w-auto min-w-32 dark:[color-scheme:dark]" />
+      </div>
+      @if (filterOptions(); as options) {
         <div>
-          <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">From</label>
-          <input
-            type="date"
-            formControlName="from"
-            [max]="filterForm.controls.to.value || today"
-            class="min-w-32 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 dark:[color-scheme:dark]" />
+          <label for="pulls-customer" class="distr-label-sm mb-1">Customer</label>
+          <select
+            id="pulls-customer"
+            formControlName="customerOrganizationId"
+            class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
+            <option value="">All</option>
+            @for (opt of options.customerOrganizations; track opt.id) {
+              <option [value]="opt.id">{{ opt.name }}</option>
+            }
+          </select>
         </div>
         <div>
-          <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">To</label>
-          <input
-            type="date"
-            formControlName="to"
-            [min]="filterForm.controls.from.value || ''"
-            [max]="today"
-            class="min-w-32 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 dark:[color-scheme:dark]" />
+          <label for="pulls-user" class="distr-label-sm mb-1">User</label>
+          <select
+            id="pulls-user"
+            formControlName="userAccountId"
+            class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
+            <option value="">All</option>
+            @for (opt of options.userAccounts; track opt.id) {
+              <option [value]="opt.id">{{ opt.name }}</option>
+            }
+          </select>
         </div>
-        @if (filterOptions(); as options) {
+        <div>
+          <label for="pulls-deployment" class="distr-label-sm mb-1">Deployment</label>
+          <select
+            id="pulls-deployment"
+            formControlName="deploymentTargetId"
+            class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
+            <option value="">All</option>
+            @for (opt of options.deploymentTargets; track opt.id) {
+              <option [value]="opt.id">{{ opt.name }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label for="pulls-address" class="distr-label-sm mb-1">Address</label>
+          <select
+            id="pulls-address"
+            formControlName="remoteAddress"
+            class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
+            <option value="">All</option>
+            @for (addr of options.remoteAddresses; track addr) {
+              <option [value]="addr">{{ addr }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label for="pulls-artifact" class="distr-label-sm mb-1">Artifact</label>
+          <select
+            id="pulls-artifact"
+            formControlName="artifactId"
+            class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
+            <option value="">All</option>
+            @for (opt of options.artifacts; track opt.id) {
+              <option [value]="opt.id">{{ opt.name }}</option>
+            }
+          </select>
+        </div>
+        @if (filterForm.controls.artifactId.value) {
           <div>
-            <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">Customer</label>
+            <label for="pulls-version" class="distr-label-sm mb-1">Version</label>
             <select
-              formControlName="customerOrganizationId"
-              class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+              id="pulls-version"
+              formControlName="artifactVersionId"
+              class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
               <option value="">All</option>
-              @for (opt of options.customerOrganizations; track opt.id) {
-                <option [value]="opt.id">{{ opt.name }}</option>
+              @for (opt of versionOptions(); track opt.id) {
+                <option [value]="opt.id">{{ formatVersionName(opt.name) }}</option>
               }
             </select>
           </div>
-          <div>
-            <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">User</label>
-            <select
-              formControlName="userAccountId"
-              class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
-              <option value="">All</option>
-              @for (opt of options.userAccounts; track opt.id) {
-                <option [value]="opt.id">{{ opt.name }}</option>
-              }
-            </select>
-          </div>
-          <div>
-            <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">Address</label>
-            <select
-              formControlName="remoteAddress"
-              class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
-              <option value="">All</option>
-              @for (addr of options.remoteAddresses; track addr) {
-                <option [value]="addr">{{ addr }}</option>
-              }
-            </select>
-          </div>
-          <div>
-            <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">Artifact</label>
-            <select
-              formControlName="artifactId"
-              class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
-              <option value="">All</option>
-              @for (opt of options.artifacts; track opt.id) {
-                <option [value]="opt.id">{{ opt.name }}</option>
-              }
-            </select>
-          </div>
-          @if (filterForm.controls.artifactId.value) {
-            <div>
-              <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">Version</label>
-              <select
-                formControlName="artifactVersionId"
-                class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
-                <option value="">All</option>
-                @for (opt of versionOptions(); track opt.id) {
-                  <option [value]="opt.id">{{ formatVersionName(opt.name) }}</option>
-                }
-              </select>
-            </div>
-          }
         }
-        <div class="ml-auto flex items-center gap-2 self-center">
-          <button
-            type="button"
-            (click)="resetFilters()"
-            class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-            <fa-icon [icon]="faFilterCircleXmark" class="mr-2 text-gray-500 dark:text-gray-400" />
-            Reset
-          </button>
-          <button
-            type="button"
-            (click)="exportCsv()"
-            [disabled]="isExporting()"
-            class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary disabled:opacity-50 disabled:cursor-not-allowed">
-            <fa-icon [icon]="faDownload" class="mr-2 text-gray-500 dark:text-gray-400" />
+      }
+      <div class="ml-auto flex items-center gap-2 self-end">
+        <button
+          type="button"
+          title="Reset"
+          (click)="resetFilters()"
+          class="p-2 leading-none flex items-center text-xs font-medium text-center distr-btn-secondary">
+          <fa-icon [icon]="faFilterCircleXmark" class="2xl:mr-2 text-gray-500 dark:text-gray-400" />
+          <span class="hidden 2xl:inline">Reset</span>
+        </button>
+        <button
+          type="button"
+          [title]="isExporting() ? 'Exporting…' : 'Export CSV'"
+          (click)="exportCsv()"
+          [disabled]="isExporting()"
+          class="p-2 leading-none flex items-center text-xs font-medium text-center distr-btn-secondary disabled:opacity-50 disabled:cursor-not-allowed">
+          <fa-icon [icon]="faDownload" class="2xl:mr-2 text-gray-500 dark:text-gray-400" />
+          <span class="hidden 2xl:inline">
             @if (isExporting()) {
-              Exporting...
+              Exporting…
             } @else {
               Export CSV
             }
-          </button>
-        </div>
+          </span>
+        </button>
       </div>
-      <div class="overflow-x-auto">
-        <table class="distr-table">
-          <thead class="distr-table-head">
-            <tr>
-              <th scope="col" class="p-4">Date</th>
-              <th scope="col" class="p-4">Customer</th>
-              <th scope="col" class="p-4">User</th>
-              <th scope="col" class="p-4">Address</th>
-              <th scope="col" class="p-4">Artifact</th>
-              <th scope="col" class="p-4">Version</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (pull of pulls(); track pull.createdAt) {
-              <tr class="distr-table-row">
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  {{ pull.createdAt | date: 'short' }}
-                </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  @if (pull.customerOrganizationName) {
-                    {{ pull.customerOrganizationName }}
-                  } @else {
-                    <span class="text-gray-500 dark:text-gray-400">-</span>
-                  }
-                </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  @if (pull.userAccountName || pull.userAccountEmail) {
-                    {{ pull.userAccountName ?? pull.userAccountEmail }}
-                  } @else {
-                    <span class="text-gray-500 dark:text-gray-400">-</span>
-                  }
-                </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  @if (pull.remoteAddress) {
-                    {{ pull.remoteAddress }}
-                  } @else {
-                    <span class="text-gray-500 dark:text-gray-400">unknown</span>
-                  }
-                </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  {{ pull.artifact.name }}
-                </td>
-                <td
-                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white"
-                  [title]="pull.artifactVersion.name">
-                  {{ formatVersionName(pull.artifactVersion.name) }}
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-      @if (hasMore()) {
-        <div class="flex justify-center px-2 py-4">
-          <button
-            type="button"
-            class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary"
-            (click)="showMore()">
-            Show more
-          </button>
-        </div>
-      }
     </div>
+    <div class="overflow-x-auto">
+      <table class="distr-table">
+        <thead class="distr-table-head">
+          <tr>
+            <th scope="col" class="p-4">Date</th>
+            <th scope="col" class="p-4">Customer</th>
+            <th scope="col" class="p-4">User</th>
+            <th scope="col" class="p-4">Deployment</th>
+            <th scope="col" class="p-4">Address</th>
+            <th scope="col" class="p-4">Artifact</th>
+            <th scope="col" class="p-4">Version</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (pull of pulls(); track pull.createdAt) {
+            <tr class="distr-table-row">
+              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                {{ pull.createdAt | date: 'short' }}
+              </td>
+              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                @if (pull.customerOrganizationName) {
+                  {{ pull.customerOrganizationName }}
+                } @else {
+                  <span class="text-gray-500 dark:text-gray-400">-</span>
+                }
+              </td>
+              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                @if (pull.userAccountName || pull.userAccountEmail) {
+                  {{ pull.userAccountName ?? pull.userAccountEmail }}
+                } @else {
+                  <span class="text-gray-500 dark:text-gray-400">-</span>
+                }
+              </td>
+              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                @if (pull.deploymentTargetName) {
+                  {{ pull.deploymentTargetName }}
+                } @else {
+                  <span class="text-gray-500 dark:text-gray-400">-</span>
+                }
+              </td>
+              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                @if (pull.remoteAddress) {
+                  {{ pull.remoteAddress }}
+                } @else {
+                  <span class="text-gray-500 dark:text-gray-400">unknown</span>
+                }
+              </td>
+              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                {{ pull.artifact.name }}
+              </td>
+              <td
+                class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+                [title]="pull.artifactVersion.name">
+                {{ formatVersionName(pull.artifactVersion.name) }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (hasMore()) {
+      <div class="flex justify-center px-2 py-4">
+        <button
+          type="button"
+          class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary"
+          (click)="showMore()">
+          Show more
+        </button>
+      </div>
+    }
   </div>
-</section>
+</app-page>

@@ -1,0 +1,64 @@
+---
+import {Icon} from 'astro-icon/components';
+
+const highlights = [
+  {
+    icon: 'calendar-clock',
+    title: 'September 11, 2026',
+    text: '24-hour reporting duties for actively exploited vulnerabilities start, including for products already on the market.',
+  },
+  {
+    icon: 'shield-check',
+    title: 'Secure update distribution',
+    text: 'The CRA requires an authenticated update channel for every customer, including on-prem and air-gapped environments.',
+  },
+  {
+    icon: 'book-open',
+    title: 'Guides for vendors',
+    text: 'Scope, deadlines, open source, monitoring, and tooling, written for software vendors with self-hosted customers.',
+  },
+];
+---
+
+<section
+  class="py-8 md:py-16 lg:py-24 bg-gradient-to-br from-accent-400 to-accent-600 dark:from-accent-600 dark:to-accent-950">
+  <div class="container mx-auto px-4 max-w-5xl">
+    <div class="text-center mb-10 text-white">
+      <p
+        class="text-sm font-semibold uppercase tracking-wide text-white opacity-90 mb-3">
+        EU Cyber Resilience Act
+      </p>
+      <h2 class="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4">
+        Ship self-hosted software? The CRA applies to you.
+      </h2>
+      <p class="text-base md:text-lg text-white opacity-90 max-w-3xl mx-auto">
+        The EU Cyber Resilience Act puts security obligations on every vendor
+        that places software on the EU market. Our content hub covers who is in
+        scope, the deadlines, and how to get security updates to customers you
+        don't operate for.
+      </p>
+    </div>
+
+    <div class="grid gap-6 md:grid-cols-3 mb-10">
+      {
+        highlights.map(h => (
+          <a
+            href="/cyber-resilience-act/"
+            class="block p-6 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 hover:border-white/40 transition-colors no-underline text-white">
+            <Icon name={`lucide:${h.icon}`} class="w-8 h-8 mb-4" />
+            <h3 class="text-lg font-semibold text-white mb-2">{h.title}</h3>
+            <p class="text-sm text-white opacity-90">{h.text}</p>
+          </a>
+        ))
+      }
+    </div>
+
+    <div class="text-center">
+      <a
+        href="/cyber-resilience-act/"
+        class="inline-block no-underline text-base px-6 py-3 text-center font-medium rounded-lg transition-colors text-white bg-accent-700 hover:bg-accent-800 border-2 border-accent-700 dark:bg-accent-600 dark:hover:bg-accent-700 dark:border-accent-600 shadow-sm">
+        Explore the Cyber Resilience Act hub
+      </a>
+    </div>
+  </div>
+</section>

@@ -1,8 +1,8 @@
 ---
 title: '5 Ways Vendors Can Succeed Without Access to Customer Environments'
-description: Software vendors don't have it easy, especially when trying to serve their self-managed customers, here are 5 tips that are sure to help.
+description: Software vendors don't have it easy, especially when trying to serve their self-hosted customers, here are 5 tips that are sure to help.
 publishDate: 2025-01-02
-lastUpdated: 2026-04-17
+lastUpdated: 2026-07-23
 slug: '5-ways-to-succeed-without-access-to-customer-environments'
 authors:
   - name: 'Jake Page'
@@ -17,7 +17,7 @@ authors:
     gitHub: https://github.com/pmig
 image: '/src/assets/blog/2025-01-02-5-ways-to-succeed/hero.jpg'
 tags:
-  - self-managed
+  - self-hosted
   - Software Vendor
   - Software Distribution Platform
 ---
@@ -32,9 +32,9 @@ The takeaway isn't that you should obsess over every customer. It's that you nee
 
 Here are five ways to succeed without direct access to your customer's environments.
 
-## 1. Build software that is "self-managed ready"
+## 1. Build software that is "self-hosted ready"
 
-![self-managed ready software](../../assets/blog/2025-01-02-5-ways-to-succeed/self-managed-ready.jpg)
+![self-hosted ready software](../../assets/blog/2025-01-02-5-ways-to-succeed/self-managed-ready.jpg)
 
 Your software needs to be built, from the start, for someone else to run. End customers shouldn't need deep knowledge of how your product works. They get a set of installation steps and those steps work. Beyond day-one installation, the product has to update cleanly, roll back safely, and meet modern standards for performance, reliability, and compliance. Here's what goes into that.
 
@@ -65,7 +65,7 @@ Portability pays off because applications rarely stay put. Adopt 12-Factor App p
 
 ### SBOM (Software Bill of Materials)
 
-Security matters in every environment, and especially in [self-managed](/glossary/self-managed-software/) ones. Generate an [SBOM](/glossary/sbom-software-bill-of-materials/) as part of your CI/CD pipeline to:
+Security matters in every environment, and especially in [self-hosted](/glossary/self-hosted-software/) ones. Generate an [SBOM](/glossary/sbom-software-bill-of-materials/) as part of your CI/CD pipeline to:
 
 - Document dependencies and licensing for compliance.
 - Flag vulnerabilities through automated [CVE](/glossary/cve-common-vulnerabilities-and-exposures/) scans.
@@ -96,7 +96,7 @@ To give customers that level of confidence, vendors have to test systematically 
 
 ![Licensing](../../assets/blog/2025-01-02-5-ways-to-succeed/licensing.jpg)
 
-[Licensing](/glossary/software-license-management/) is how vendors control access and define the feature set of the software they sell. For a complete walk-through, see our [software license management](/glossary/software-license-management/) glossary entry. A good licensing system codifies software contracts and integrates cleanly with the application, usually via a license server at startup or runtime. For self-managed deployments, the catch is that vendors have no direct access to the customer environment. The licensing system has to be built-in, unobtrusive, and targeted.
+[Licensing](/glossary/software-license-management/) is how vendors control access and define the feature set of the software they sell. For a complete walk-through, see our [software license management](/glossary/software-license-management/) glossary entry. A good licensing system codifies software contracts and integrates cleanly with the application, usually via a license server at startup or runtime. For self-hosted deployments, the catch is that vendors have no direct access to the customer environment. The licensing system has to be built-in, unobtrusive, and targeted.
 
 ### Two primary approaches to licensing
 
@@ -107,12 +107,12 @@ To give customers that level of confidence, vendors have to test systematically 
 
 The right licensing mechanism goes beyond access control. It surfaces usage data vendors can actually act on: adoption patterns, expansion opportunities, overages visible before renewal.
 
-- **For vendors.** Licensing dashboards seem optional when you have three self-managed customers. They become essential fast as the base grows. Track contract expirations, monitor enabled features, and spot potential infractions.
+- **For vendors.** Licensing dashboards seem optional when you have three self-hosted customers. They become essential fast as the base grows. Track contract expirations, monitor enabled features, and spot potential infractions.
 - **For end customers.** Usage reports let customers see their own utilization, avoid contract violations, and plan ahead. That transparency builds trust and smooths renewals.
 
 ## 4. Provide unified installers and self-service updates
 
-Parents who lay out clothes and pack backpacks the night before know a truth that applies equally to software distribution: you simplify the morning by removing decisions. For vendors serving self-managed customers, the same logic applies. Two of the biggest decision points, installation and updates, need to be stripped down to something predictable and boring.
+Parents who lay out clothes and pack backpacks the night before know a truth that applies equally to software distribution: you simplify the morning by removing decisions. For vendors serving self-hosted customers, the same logic applies. Two of the biggest decision points, installation and updates, need to be stripped down to something predictable and boring.
 
 What "boring" looks like depends on how you've architected your software. There's always some bespoke logic involved. The goal is making installation and updates reliable, repeatable, and hard to get wrong. Unified installers and lightweight agents are the main tools for that.
 
@@ -160,8 +160,8 @@ There are plenty of other ways to improve communication. The fundamental require
 
 ## Wrapping up
 
-There's no single framework that fits every self-managed customer. The dance between vendor and end customer has to be tailored to the specifics of your software and the constraints of the customers you serve.
+There's no single framework that fits every self-hosted customer. The dance between vendor and end customer has to be tailored to the specifics of your software and the constraints of the customers you serve.
 
-It starts with building software with [self-managed readiness](/glossary/self-managed-software/) in mind. Lifting and shifting a SaaS offering into a self-managed environment almost never works. A solid foundation is portable software, tested across realistic environments, with security, compliance, installation infrastructure, and updates built in from the start.
+It starts with building software with [self-hosted readiness](/glossary/self-hosted-software/) in mind. Lifting and shifting a SaaS offering into a self-hosted environment almost never works. A solid foundation is portable software, tested across realistic environments, with security, compliance, installation infrastructure, and updates built in from the start.
 
-When that foundation is there, whether you build the surrounding processes in-house or use a software delivery management software like [Distr](/), serving self-managed customers becomes manageable and can open doors to new deployment models that grow the business.
+When that foundation is there, whether you build the surrounding processes in-house or use a software delivery management software like [Distr](/), serving self-hosted customers becomes manageable and can open doors to new deployment models that grow the business.

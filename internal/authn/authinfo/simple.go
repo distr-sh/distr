@@ -12,8 +12,10 @@ type SimpleAuthInfo struct {
 	organizationID         *uuid.UUID
 	customerOrganizationID *uuid.UUID
 	partnerOrganizationID  *uuid.UUID
+	deploymentTargetID     *uuid.UUID
 	emailVerified          bool
 	tokenScope             authjwt.TokenScope
+	organizationScoped     bool
 	userRole               *types.UserRole
 	isSuperAdmin           bool
 	rawToken               any
@@ -28,11 +30,17 @@ func (i *SimpleAuthInfo) CurrentCustomerOrgID() *uuid.UUID { return i.customerOr
 // CurrentPartnerOrgID implements AuthInfo.
 func (i *SimpleAuthInfo) CurrentPartnerOrgID() *uuid.UUID { return i.partnerOrganizationID }
 
+// CurrentDeploymentTargetID implements AuthInfo.
+func (i *SimpleAuthInfo) CurrentDeploymentTargetID() *uuid.UUID { return i.deploymentTargetID }
+
 // CurrentUserEmailVerified implements AuthInfo.
 func (i *SimpleAuthInfo) CurrentUserEmailVerified() bool { return i.emailVerified }
 
 // TokenScope implements AuthInfo.
 func (i *SimpleAuthInfo) TokenScope() authjwt.TokenScope { return i.tokenScope }
+
+// OrganizationScoped implements AuthInfo.
+func (i *SimpleAuthInfo) OrganizationScoped() bool { return i.organizationScoped }
 
 // CurrentUserID implements AuthInfo.
 func (i *SimpleAuthInfo) CurrentUserID() uuid.UUID { return i.userID }

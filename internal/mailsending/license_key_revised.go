@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/custommail"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/go-mailx/mailx"
@@ -19,8 +20,12 @@ func SendLicenseKeyRevisedCustomer(
 	revision types.LicenseKeyRevision,
 	token string,
 ) error {
-	mailer := internalctx.GetMailer(ctx)
 	log := internalctx.GetLogger(ctx)
+
+	mailer, err := custommail.MailerForOrganization(ctx, licenseKey.OrganizationID)
+	if err != nil {
+		return err
+	}
 
 	payloadFormatted, err := formatPayload(revision.Payload)
 	if err != nil {
@@ -48,8 +53,12 @@ func SendLicenseKeyRevisedVendor(
 	revision types.LicenseKeyRevision,
 	customerOrgName string,
 ) error {
-	mailer := internalctx.GetMailer(ctx)
 	log := internalctx.GetLogger(ctx)
+
+	mailer, err := custommail.MailerForOrganization(ctx, licenseKey.OrganizationID)
+	if err != nil {
+		return err
+	}
 
 	payloadFormatted, err := formatPayload(revision.Payload)
 	if err != nil {

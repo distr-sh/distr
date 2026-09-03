@@ -1,0 +1,517 @@
+@if (visible()) {
+  <div class="space-y-8">
+    <div class="space-y-4">
+      <h2 class="text-xl font-bold dark:text-white">
+        @if (oidcProvidersEnabled()) {
+          Custom Domains &amp; Identity Provider
+        } @else {
+          Custom Domains
+        }
+      </h2>
+      <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+        @if (customerScoped() && viewerIsCustomer()) {
+          Let your users additionally sign in with their own identity provider via OIDC (OpenID Connect). A provider
+          only works on your own portal domain.
+        } @else if (customerScoped()) {
+          Let this customer's users additonally sign in with their own identity provider via OIDC (OpenID Connect). A
+          provider only works on the customer's own portal domain.
+        } @else {
+          Let your team and your customers additionally sign in with your own identity provider via OIDC (OpenID
+          Connect). Each domain has its own providers. The ones on your
+          <span class="lowercase">{{ appDomainLabel() }}</span>
+          apply to your team, the ones on your customer portal domain to all of your customers. Customers can add their
+          own.
+        }
+        A custom domain has to exist first.
+      </p>
+
+      @if (oidcProvidersEnabled() && viewerIsVendor() && !configurable()) {
+        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+          Set an organization slug on the General tab first. It is part of every login and callback URL.
+        </p>
+      }
+    </div>
+
+    @if (showBusinessOidcBanner()) {
+      <div
+        class="px-3 py-2 text-xs rounded-lg border border-primary-200 bg-primary-50 text-primary-800 dark:border-primary-800 dark:bg-gray-800 dark:text-primary-300 flex items-center justify-between gap-2">
+        <span>
+          Unlock custom identity providers with the
+          <a routerLink="/subscription" class="font-semibold underline">Distr Business plan</a>.
+        </span>
+        <button
+          type="button"
+          title="Dismiss"
+          (click)="dismissBusinessOidcBanner()"
+          class="shrink-0 p-1 leading-none rounded-lg hover:bg-primary-100 dark:hover:bg-gray-700">
+          <fa-icon [icon]="faXmark" />
+          <span class="sr-only">Dismiss</span>
+        </button>
+      </div>
+    }
+
+    @if (!customerScoped()) {
+      <section class="space-y-4">
+        <h3 class="text-lg font-bold dark:text-white">
+          @if (partnerManagementEnabled()) {
+            Vendor &amp; Partner Portal
+          } @else {
+            Vendor Portal
+          }
+        </h3>
+        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+          @if (partnerManagementEnabled()) {
+            The domain your own team and your partners use for the Distr web UI and API.
+          } @else {
+            The domain your own team uses for the Distr web UI and API.
+          }
+        </p>
+
+        @if (customDomainsConfigured()) {
+          <app-domain-field
+            fieldId="appDomain"
+            [label]="appDomainLabel()"
+            placeholder="deploy.your-company.com"
+            invalidHint="Must be a valid hostname without scheme, e.g. deploy.your-company.com"
+            [removeAriaLabel]="'Remove ' + appDomainLabel()"
+            [domain]="appDomain()"
+            [cnameTarget]="cnameTarget()"
+            [saving]="savingDomain()"
+            [verifying]="checkingDomainIds().has(appDomain()?.id ?? '')"
+            (save)="saveDomain($event, 'app')"
+            (remove)="removeDomain(appDomain())"
+            (recheck)="verifyDomain(appDomain()!)">
+            The domain for the Distr web UI and API.
+          </app-domain-field>
+        }
+
+        @if (oidcProvidersEnabled()) {
+          <h4 class="text-base font-semibold text-gray-900 dark:text-white mt-8">Identity Providers</h4>
+          <ng-container [ngTemplateOutlet]="providerSection" [ngTemplateOutletContext]="{$implicit: appDomain()}" />
+        }
+      </section>
+    }
+
+    <section class="space-y-4">
+      @if (!customerScoped()) {
+        <h3 class="text-lg font-bold dark:text-white">Customer Portal</h3>
+        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+          One domain that all of your customers sign in on by default. Without it they keep using your
+          <span class="lowercase">{{ appDomainLabel() }}</span> or the default Distr host. Add it below first. Providers
+          on it apply to every customer, including the ones you create later.
+        </p>
+        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+          Customers can override this with their own domain and providers on their
+          <a routerLink="/customers" class="font-semibold underline">settings page</a>.
+        </p>
+      }
+
+      @if (customDomainsConfigured()) {
+        <app-domain-field
+          fieldId="customerPortalDomain"
+          label="Customer Portal domain"
+          placeholder="<slug>-portal.yourcompany.com"
+          invalidHint="Must be a valid hostname without scheme, e.g. <slug>-portal.yourcompany.com"
+          removeAriaLabel="Remove portal domain"
+          [optionalCheckboxLabel]="customerPortalCheckboxLabel()"
+          [domain]="customerPortalDomain()"
+          [cnameTarget]="cnameTarget()"
+          [saving]="savingDomain()"
+          [verifying]="checkingDomainIds().has(customerPortalDomain()?.id ?? '')"
+          (save)="saveDomain($event, 'customer_portal')"
+          (remove)="removeDomain(customerPortalDomain())"
+          (recheck)="verifyDomain(customerPortalDomain()!)">
+          @if (customerScoped()) {
+            The domain this customer's users sign in on. Links in invitations, password resets and notification mails
+            use it. Without it they sign in on the vendor's domain.
+          } @else {
+            The domain all of your customers sign in on. Links in invitations, password resets and notification mails
+            use it instead of your <span class="lowercase">{{ appDomainLabel() }}</span
+            >.
+          }
+        </app-domain-field>
+      }
+
+      @if (oidcProvidersEnabled()) {
+        <h4 class="text-base font-semibold text-gray-900 dark:text-white mt-8">Identity Providers</h4>
+        <ng-container
+          [ngTemplateOutlet]="providerSection"
+          [ngTemplateOutletContext]="{$implicit: customerPortalDomain()}" />
+      }
+    </section>
+
+    @if (!customerScoped() && customDomainsConfigured()) {
+      <section class="space-y-4">
+        <h3 class="text-lg font-bold dark:text-white">Registry</h3>
+        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+          You only need this if the artifact registry should have its own hostname. The hostname is part of the OCI
+          artifact name.
+        </p>
+        <app-domain-field
+          fieldId="registryDomain"
+          label="Registry domain"
+          placeholder="registry.your-company.com"
+          invalidHint="Must be a valid hostname without scheme, e.g. registry.your-company.com"
+          removeAriaLabel="Remove registry domain"
+          optionalCheckboxLabel="Use a separate registry domain"
+          [domain]="registryDomain()"
+          [cnameTarget]="cnameTarget()"
+          [saving]="savingDomain()"
+          [verifying]="checkingDomainIds().has(registryDomain()?.id ?? '')"
+          (save)="saveDomain($event, 'registry')"
+          (remove)="removeDomain(registryDomain())"
+          (recheck)="verifyDomain(registryDomain()!)" />
+      </section>
+    }
+  </div>
+}
+
+<ng-template #providerSection let-domain>
+  <div class="space-y-4">
+    <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
+      <table class="distr-table">
+        <thead class="distr-table-head border-t-0">
+          <tr>
+            <th scope="col" class="ps-4 py-3 w-px">Enabled</th>
+            <th scope="col" class="px-4 py-3">Provider</th>
+            <th scope="col" class="px-4 py-3">Callback URL</th>
+            <th scope="col" class="px-4 py-3"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (configuration of configurationsFor(domain); track configuration.id) {
+            <tr class="distr-table-row">
+              <td class="ps-4 py-3">
+                <label class="inline-flex items-center cursor-pointer align-middle">
+                  <input
+                    #enabledToggle
+                    type="checkbox"
+                    class="sr-only peer"
+                    aria-label="Enabled"
+                    [disabled]="toggling() === configuration.id"
+                    [checked]="configuration.enabled"
+                    (change)="toggleEnabled(configuration, enabledToggle)" />
+                  <div class="distr-toggle peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                </label>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <span
+                    class="font-medium whitespace-nowrap"
+                    [class]="
+                      configuration.enabled ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'
+                    ">
+                    {{ configuration.name }}
+                  </span>
+                  @if (configuration.spInitiated) {
+                    <span
+                      class="text-xs font-medium px-2 py-0.5 rounded-sm bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300">
+                      Automatic
+                    </span>
+                  }
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <code
+                    class="font-mono text-xs text-gray-500 dark:text-gray-400 truncate max-w-64"
+                    [title]="configuration.callbackUrl">
+                    {{ configuration.callbackUrl }}
+                  </code>
+                  <app-clip [clip]="configuration.callbackUrl" />
+                </div>
+              </td>
+              <td class="px-4 py-3 flex gap-2 justify-end">
+                <button
+                  type="button"
+                  (click)="test(configuration)"
+                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                  <fa-icon [icon]="faPlug" class="mr-2 text-gray-500 dark:text-gray-400" />
+                  Test
+                </button>
+                <button
+                  type="button"
+                  (click)="showDialog(domain, configuration)"
+                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                  <fa-icon [icon]="faPen" class="mr-2 text-gray-500 dark:text-gray-400" />
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  aria-label="Delete"
+                  (click)="remove(configuration)"
+                  class="py-2 px-3 distr-btn-danger">
+                  <fa-icon [icon]="faTrash" class="h-4 w-4" />
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr class="border-t border-gray-200 dark:border-gray-600">
+              <td
+                colspan="4"
+                class="px-4 py-6 font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap text-center">
+                No identity provider configured
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="space-y-2">
+      <button
+        type="button"
+        [disabled]="!domain || !configurable()"
+        (click)="showDialog(domain)"
+        class="py-2 px-4 flex items-center text-sm font-medium text-center distr-btn-secondary disabled:opacity-60 disabled:cursor-not-allowed">
+        <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
+        Add identity provider
+      </button>
+      @if (!domain) {
+        <p class="text-xs font-normal text-yellow-700 dark:text-yellow-300">
+          Identity providers only work on custom domains. Configure and verify one first.
+        </p>
+      } @else if (viewerIsVendor() && !configurable()) {
+        <p class="text-xs font-normal text-yellow-700 dark:text-yellow-300">
+          An organization slug is required. Set one on the
+          <a routerLink="/settings/organization/general" class="font-semibold underline">General tab</a> first.
+        </p>
+      }
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #formDialog>
+  <div
+    class="p-4 w-4xl max-w-full mt-12 max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900"
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top">
+    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+        {{ editing() ? 'Edit identity provider' : 'Add identity provider' }}
+      </h2>
+      <button
+        type="button"
+        (click)="closeDialog()"
+        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+        <fa-icon [icon]="faXmark" />
+        <span class="sr-only">Close modal</span>
+      </button>
+    </div>
+
+    <div class="p-4 md:p-5">
+      <form [formGroup]="form" (ngSubmit)="save()" class="flex flex-col space-y-5">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label for="oidcName" class="distr-label">Display name <span class="text-red-500">*</span></label>
+            <input
+              type="text"
+              id="oidcName"
+              formControlName="name"
+              autotrim
+              placeholder="Acme SSO"
+              class="distr-input" />
+            <p class="text-xs font-normal text-gray-500 dark:text-gray-400">Shown on the login button.</p>
+          </div>
+
+          <div class="space-y-2">
+            <label for="oidcIssuer" class="distr-label">Issuer URL <span class="text-red-500">*</span></label>
+            <input
+              type="text"
+              id="oidcIssuer"
+              formControlName="issuer"
+              autotrim
+              placeholder="https://login.microsoftonline.com/<tenant-id>/v2.0"
+              class="distr-input" />
+            <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+              The provider has to serve an OpenID configuration here. Distr checks and normalizes it when you save.
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <span class="distr-label">Callback URL</span>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="font-mono text-sm text-gray-900 dark:text-white break-all">
+              <span>{{ callbackUrlPrefix() }}</span>
+              @if (editingSlug()) {
+                <input
+                  type="text"
+                  id="oidcSlug"
+                  formControlName="slug"
+                  autotrim
+                  aria-label="Slug"
+                  placeholder="acme-sso"
+                  [attr.size]="slugValue().length || 8"
+                  class="distr-input inline w-auto px-1 py-0 font-mono text-sm" />
+              } @else {
+                <span class="font-semibold">{{ slugValue() || 'acme-sso' }}</span>
+              }
+              <span>/callback</span>
+            </span>
+            @if (!editingSlug()) {
+              <button
+                type="button"
+                title="Edit slug"
+                (click)="editSlug()"
+                class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white">
+                <fa-icon [icon]="faPen" />
+                <span class="sr-only">Edit slug</span>
+              </button>
+            }
+            @if (callbackUrl(); as url) {
+              <app-clip [clip]="url" />
+            }
+          </div>
+          @if (form.controls.slug.invalid && form.controls.slug.touched) {
+            <p class="text-xs font-normal text-red-600 dark:text-red-500">
+              The slug must consist of lowercase letters and digits, separated by
+              <code class="font-mono">-</code>, <code class="font-mono">_</code> or <code class="font-mono">.</code>, at
+              most 64 characters.
+            </p>
+          } @else {
+            <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+              Register this as a redirect URI with your provider. The slug follows the display name and is unique on
+              this domain. Edit it with the pencil if you need another one.
+            </p>
+          }
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label for="oidc-application-id" class="distr-label">Client ID <span class="text-red-500">*</span></label>
+            <input
+              type="text"
+              id="oidc-application-id"
+              name="oidc-application-id"
+              formControlName="clientId"
+              autotrim
+              autocomplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-bwignore
+              class="distr-input" />
+          </div>
+
+          <div class="space-y-2">
+            <label for="oidc-application-key" class="distr-label">
+              Client secret
+              @if (!editing()) {
+                <span class="text-red-500">*</span>
+              }
+            </label>
+            <input
+              type="text"
+              id="oidc-application-key"
+              name="oidc-application-key"
+              formControlName="clientSecret"
+              autotrim
+              autocomplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-bwignore
+              class="distr-input" />
+            @if (editing()) {
+              <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+                {{
+                  editing()?.clientSecretSet ? 'A secret is stored. Leave empty to keep it.' : 'No secret stored yet.'
+                }}
+              </p>
+            } @else if (form.controls.clientSecret.hasError('required') && form.controls.clientSecret.touched) {
+              <p class="text-xs font-normal text-red-600 dark:text-red-500">
+                Your provider issues this secret together with the client ID.
+              </p>
+            }
+          </div>
+        </div>
+
+        @if (provisioningAvailable()) {
+          <div class="space-y-2">
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                id="oidcCreateUnknownUsers"
+                formControlName="createUnknownUsers"
+                class="distr-checkbox" />
+              <label for="oidcCreateUnknownUsers" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                Create accounts on first sign-in
+              </label>
+            </div>
+            <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+              @if (customerScoped()) {
+                Everyone this provider authenticates joins this customer organization, up to its user limit.
+              } @else {
+                Everyone your provider authenticates joins your own team, never a customer organization, up to your
+                billed user seats.
+              }
+              Seats are never added automatically, so sign-in fails until an administrator raises the limit. Name the
+              allowed email domains below.
+            </p>
+          </div>
+        } @else {
+          <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+            Distr cannot create accounts on the shared customer portal domain, because the provider does not say which
+            customer a new user belongs to. Invite them, or give the customer its own portal domain.
+          </p>
+        }
+
+        @if (createUnknownUsers()) {
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label for="oidcAllowedEmailDomains" class="distr-label">
+                Allowed email domains <span class="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="oidcAllowedEmailDomains"
+                formControlName="allowedEmailDomains"
+                autotrim
+                placeholder="your-company.com"
+                class="distr-input" />
+              @if (form.hasError('emailDomainsRequired') && form.controls.allowedEmailDomains.touched) {
+                <p class="text-xs font-normal text-red-600 dark:text-red-500">
+                  Name the domains you own before letting your provider create accounts.
+                </p>
+              } @else {
+                <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+                  Space separated. Distr only creates accounts for addresses in these domains.
+                </p>
+              }
+            </div>
+
+            <div class="space-y-2">
+              <label for="oidcDefaultUserRole" class="distr-label">Role for new users</label>
+              <select id="oidcDefaultUserRole" formControlName="defaultUserRole" class="distr-input">
+                <option value="read_only">Read only</option>
+                <option value="read_write">Read &amp; write</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+        }
+
+        <div class="space-y-2">
+          <div class="flex items-center">
+            <input type="checkbox" id="oidcSpInitiated" formControlName="spInitiated" class="distr-checkbox" />
+            <label for="oidcSpInitiated" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+              Sign in with this provider automatically
+            </label>
+          </div>
+          <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+            Usually not recommended. The login page on this domain then redirects here without asking, so nobody sees
+            the login form. Only one provider per domain can do this.
+            <code class="font-mono">/login?manual=1</code> still shows the form, which is how anyone with a password
+            gets in while the provider is unavailable.
+          </p>
+        </div>
+
+        <button
+          type="submit"
+          [disabled]="saving() || form.invalid"
+          class="self-end distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
+          {{ editing() ? 'Save' : 'Create' }}
+        </button>
+      </form>
+    </div>
+  </div>
+</ng-template>

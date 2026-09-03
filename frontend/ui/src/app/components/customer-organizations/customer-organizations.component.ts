@@ -1,24 +1,31 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe, DecimalPipe} from '@angular/common';
-import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  signal,
+  TemplateRef,
+  viewChild,
+} from '@angular/core';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {CustomerOrganization, CustomerOrganizationFeature, CustomerOrganizationWithUsage} from '@distr-sh/distr-sdk';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {
-  faBuildingUser,
+  faAddressBook,
   faChevronDown,
   faCircleExclamation,
   faEdit,
-  faMagnifyingGlass,
   faPlus,
   faTrash,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, filter, firstValueFrom, map, of, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
-import {SecureImagePipe} from '../../../util/secureImage';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ArtifactEntitlementsService} from '../../services/artifact-entitlements.service';
 import {AuthService} from '../../services/auth.service';
@@ -29,7 +36,11 @@ import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {PartnerOrganizationsService} from '../../services/partner-organizations.service';
 import {ToastService} from '../../services/toast.service';
+import {AvatarComponent} from '../avatar.component';
+import {InlineEditComponent} from '../inline-edit.component';
+import {PageComponent} from '../page.component';
 import {QuotaLimitComponent} from '../quota-limit.component';
+import {SearchBarComponent} from '../search-bar.component';
 
 @Component({
   templateUrl: './customer-organizations.component.html',
@@ -38,18 +49,20 @@ import {QuotaLimitComponent} from '../quota-limit.component';
     ReactiveFormsModule,
     FontAwesomeModule,
     DatePipe,
-    SecureImagePipe,
     AsyncPipe,
     DecimalPipe,
     RouterLink,
     QuotaLimitComponent,
     OverlayModule,
+    InlineEditComponent,
+    AvatarComponent,
+    PageComponent,
+    SearchBarComponent,
   ],
 })
 export class CustomerOrganizationsComponent {
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faPlus = faPlus;
-  protected readonly faBuildingUser = faBuildingUser;
+  protected readonly faAddressBook = faAddressBook;
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
   protected readonly faCircleExclamation = faCircleExclamation;
@@ -62,6 +75,7 @@ export class CustomerOrganizationsComponent {
   private readonly imageUploadService = inject(ImageUploadService);
   private readonly overlay = inject(OverlayService);
   private readonly fb = inject(FormBuilder).nonNullable;
+  private readonly destroyRef = inject(DestroyRef);
   private readonly organizationService = inject(OrganizationService);
   private readonly artifactEntitlementsService = inject(ArtifactEntitlementsService);
   private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
@@ -100,18 +114,26 @@ export class CustomerOrganizationsComponent {
   private readonly createCustomerDialog = viewChild.required<TemplateRef<unknown>>('createCustomerDialog');
   private modalRef?: DialogRef;
   protected readonly createForm = this.fb.group({
-    id: this.fb.control(''),
     name: this.fb.control('', [Validators.required]),
-    imageId: this.fb.control(''),
   });
   protected createFormLoading = false;
+  protected readonly savingCustomerId = signal<string | undefined>(undefined);
 
-  protected readonly allCustomerFeatures: readonly CustomerOrganizationFeature[] = [
+  private readonly allCustomerFeaturesList: readonly CustomerOrganizationFeature[] = [
     'deployment_targets',
     'alerts',
     'artifacts',
     'support_bundles',
+    'oidc_providers',
   ];
+
+  // A customer can only bring its own identity provider while the vendor's own plan includes the
+  // machinery, so the checkbox is hidden rather than shown as a grantable feature that the API refuses.
+  protected readonly allCustomerFeatures = computed(() =>
+    this.allCustomerFeaturesList.filter(
+      (feature) => feature !== 'oidc_providers' || this.featureFlags.isCustomOidcProvidersEnabled()
+    )
+  );
 
   protected readonly openCustomerFeaturesDropdownId = signal<string | void>(undefined);
   protected readonly openCustomerFeaturesDropdownCustomer = computed(() => {
@@ -137,12 +159,6 @@ export class CustomerOrganizationsComponent {
     this.modalRef = this.overlay.showModal(this.createCustomerDialog());
   }
 
-  protected showUpdateDialog(value: CustomerOrganization) {
-    this.closeCreateDialog();
-    this.createForm.patchValue(value);
-    this.modalRef = this.overlay.showModal(this.createCustomerDialog());
-  }
-
   protected closeCreateDialog(reset: boolean = true): void {
     this.modalRef?.close();
 
@@ -160,25 +176,38 @@ export class CustomerOrganizationsComponent {
 
     this.createFormLoading = true;
 
-    const request = {
-      name: this.createForm.value.name!,
-      imageId: this.createForm.value.imageId || undefined,
-    };
-
     try {
-      if (this.createForm.value.id) {
-        await firstValueFrom(
-          this.customerOrganizationsService.updateCustomerOrganization(this.createForm.value.id, request)
-        );
-      } else {
-        await firstValueFrom(this.customerOrganizationsService.createCustomerOrganization(request));
-      }
+      await firstValueFrom(
+        this.customerOrganizationsService.createCustomerOrganization({
+          name: this.createForm.value.name!,
+        })
+      );
 
       this.closeCreateDialog();
       this.refresh$.next();
     } finally {
       this.createFormLoading = false;
     }
+  }
+
+  protected updateCustomerName(customer: CustomerOrganization, name: string): void {
+    this.savingCustomerId.set(customer.id);
+    this.customerOrganizationsService
+      .updateCustomerOrganization(customer.id, {...customer, name})
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.toast.success('Customer has been updated');
+          this.refresh$.next();
+        },
+        error: (e) => {
+          const msg = getFormDisplayedError(e);
+          if (msg) {
+            this.toast.error(msg);
+          }
+        },
+      })
+      .add(() => this.savingCustomerId.set(undefined));
   }
 
   protected async uploadImage(value: CustomerOrganization): Promise<void> {
@@ -239,6 +268,8 @@ export class CustomerOrganizationsComponent {
         return 'Alerts';
       case 'support_bundles':
         return 'Support Bundles';
+      case 'oidc_providers':
+        return 'Identity Provider';
       default:
         return feature;
     }

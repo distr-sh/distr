@@ -23,13 +23,43 @@ Distr supports four OIDC providers out of the box: **Google**, **GitHub**, **Mic
 Each provider can be enabled independently through environment variables.
 When enabled, the corresponding sign-in button appears on both the login and sign-up pages.
 
+<Aside type="caution" title="Custom domains">
+  Providers configured this way belong to the instance, not to a single
+  organization, so they are only offered on the instance's own host. On a
+  [custom domain](/docs/platform/branding/#custom-domains) that an organization
+  set up itself, the sign-in buttons are hidden and the auth routes are
+  rejected. Users sign in there with email and password, or with a [custom
+  identity provider](/docs/platform/custom-identity-provider/) the organization
+  configured itself. Domains configured for an organization by an instance
+  operator before self-service custom domains existed are exempt and keep
+  offering the instance providers.
+</Aside>
+
+## Connected accounts
+
+The first time a user signs in with a provider, Distr stores the identity that the provider reports for them (the issuer and the `sub` claim, or the numeric user ID in the case of GitHub) and connects it to their user account. Every later sign-in is matched on that identity rather than on the email address, so the account stays the same when the email changes at the provider.
+
+The email address of the Distr account is authoritative and is **never** overwritten with the one from the provider. A user who changes their address in Distr keeps it, and still signs in with the same provider account. The email reported by the provider is only kept alongside the connection so it can be shown in the settings.
+
+Users see their connected identities under **User Settings → Connected identities**, where they can also disconnect one. Disconnecting is refused when it is the only remaining way to sign in — that is, when the account has no password and no other connected account. Signing in with the provider again reconnects it.
+
+A user can connect several providers by signing in with each of them, as long as they all report the same email address on first sign-in.
+
+<Aside type="note">
+  Accounts that existed before connected accounts were introduced are matched by
+  email address on their next OIDC sign-in, and the connection is created at
+  that point. This email fallback also applies to accounts created by an invite.
+</Aside>
+
 ## Automatic sign-up
 
-When a user signs in through an OIDC provider for the first time and no account with that email exists yet, Distr will create the account automatically:
+When a user starts the flow from the **sign-up** page and no account with that email exists yet, Distr will create the account automatically:
 
 - A default organization named after the user's email is created, with the new user as **Admin**.
 - No password is set on the account. The user can only sign in via configured OIDC providers until they add a password through the standard password reset flow.
 - The email address is marked as verified, since it was authenticated by a trusted identity provider.
+
+Starting the same flow from the **login** page never creates an account. If no account with the email address reported by the provider exists, the sign-in is refused and the user is sent back to the login page with a message telling them to ask for an invitation.
 
 If you don't want OIDC sign-in to create a new organization for the user, invite them to your existing organization first. The invite creates a user row tied to your organization, so when they later sign in via OIDC, Distr finds the existing account and skips the new-organization step.
 
@@ -99,14 +129,14 @@ Create an app registration in the [Microsoft Entra admin center](https://entra.m
 
 Any OIDC-compliant identity provider can be configured with the generic options. The issuer must expose a `/.well-known/openid-configuration` discovery document.
 
-| Variable                     | Required | Default | Description                                                                         |
-| ---------------------------- | -------- | ------- | ----------------------------------------------------------------------------------- |
-| `OIDC_GENERIC_ENABLED`       | yes      | (none)  | Set to `true` to enable the generic provider.                                       |
-| `OIDC_GENERIC_ISSUER`        | yes      | (none)  | Issuer URL, e.g. `https://auth.example.com/`.                                       |
-| `OIDC_GENERIC_CLIENT_ID`     | yes      | (none)  | Client ID issued by the provider.                                                   |
-| `OIDC_GENERIC_CLIENT_SECRET` | yes      | (none)  | Client secret issued by the provider.                                               |
-| `OIDC_GENERIC_SCOPES`        | yes      | (none)  | Comma-separated scopes to request. Typically `openid,email,profile`.                |
-| `OIDC_GENERIC_PKCE_ENABLED`  | no       | `false` | Enable PKCE (`S256`). Recommended for public clients and providers that support it. |
+| Variable                     | Required | Default | Description                                                                                      |
+| ---------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------ |
+| `OIDC_GENERIC_ENABLED`       | yes      | (none)  | Set to `true` to enable the generic provider.                                                    |
+| `OIDC_GENERIC_ISSUER`        | yes      | (none)  | Issuer URL, e.g. `https://auth.example.com/`.                                                    |
+| `OIDC_GENERIC_CLIENT_ID`     | yes      | (none)  | Client ID issued by the provider.                                                                |
+| `OIDC_GENERIC_CLIENT_SECRET` | yes      | (none)  | Client secret issued by the provider.                                                            |
+| `OIDC_GENERIC_SCOPES`        | yes      | (none)  | Comma- or space-separated scopes to request, e.g. `email,profile`. `openid` is always requested. |
+| `OIDC_GENERIC_PKCE_ENABLED`  | no       | `false` | Enable PKCE (`S256`). Recommended for public clients and providers that support it.              |
 
 Callback URL: `{DISTR_HOST}/api/v1/auth/oidc/generic/callback`
 

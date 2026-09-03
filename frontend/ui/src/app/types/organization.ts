@@ -1,6 +1,5 @@
 import {BaseModel, Named, UserRole} from '@distr-sh/distr-sdk';
-import dayjs from 'dayjs';
-import {SubscriptionType} from './subscription';
+import {isExpiredSubscription, SubscriptionType} from './subscription';
 
 export type Feature =
   | 'licensing'
@@ -8,12 +7,18 @@ export type Feature =
   | 'artifact_version_mutable'
   | 'vendor_billing'
   | 'deployment_logs_after'
-  | 'partner_management';
+  | 'partner_management'
+  | 'custom_domains'
+  | 'custom_emails'
+  | 'custom_oidc_providers';
 
 export interface SubscriptionLimits {
   maxCustomerOrganizations: number;
   maxUsersPerCustomerOrganization: number;
   maxDeploymentsPerCustomerOrganization: number;
+  // Reported for display purposes only, this limit is not enforced.
+  maxRegistryStorageBytes: number;
+  logQueryWindowSeconds: number;
 }
 
 export interface CreateUpdateOrganizationRequest {
@@ -30,9 +35,6 @@ export interface Organization extends BaseModel, Named {
   name: string;
   slug?: string;
   features: Feature[];
-  appDomain?: string;
-  registryDomain?: string;
-  emailFromAddress?: string;
   subscriptionType: SubscriptionType;
   subscriptionLimits: SubscriptionLimits;
   subscriptionEndsAt?: string;
@@ -56,5 +58,5 @@ export interface OrganizationWithUserRole extends Organization {
 }
 
 export function isSubscriptionExpired(org: Organization): boolean {
-  return org.subscriptionType !== 'community' && dayjs(org.subscriptionEndsAt).isBefore();
+  return isExpiredSubscription(org.subscriptionType, org.subscriptionEndsAt);
 }

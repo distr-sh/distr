@@ -14,8 +14,8 @@
         <p>We received a request to update your email address from {{ .UserAccount.Email }} to this one.</p>
 
         <p>
-          <a href="{{ .Host }}/verify?jwt={{ .Token | QueryEscape }}">Click this link</a> to verify that this is your
-          email address.
+          Please verify that this is your email address at
+          <a href="{{ .Host }}/verify?jwt={{ .Token | QueryEscape }}">{{ .Host }}</a>.
         </p>
 
         <p>Alternatively, you can copy and paste the following URL into your browser:</p>

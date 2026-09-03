@@ -29,7 +29,7 @@ The team was looking for:
 
 ## Solution
 
-Basedash chose Distr to run their self-hosted distribution. Distr supports every deployment use case out of the box, from fully-managed agent-based deployments where you can push updates directly into customer infrastructure to teams who pull images from the registry themselves. It works for self-hosted customers at every level. Most importantly, it gives Basedash one central place for all their self-managed customers. Distr is the "dedicated space" their team and customers use every day.
+Basedash chose Distr to run their self-hosted distribution. Distr supports every deployment use case out of the box, from fully-managed agent-based deployments where you can push updates directly into customer infrastructure to teams who pull images from the registry themselves. It works for self-hosted customers at every level. Most importantly, it gives Basedash one central place for all their self-hosted customers. Distr is the "dedicated space" their team and customers use every day.
 
 **How they use it:**
 

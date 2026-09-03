@@ -1,7 +1,7 @@
 import {HttpClient} from '@angular/common/http';
-import {Injectable, inject} from '@angular/core';
+import {inject, Injectable} from '@angular/core';
 import {OrganizationBranding} from '@distr-sh/distr-sdk';
-import {Observable, of, tap} from 'rxjs';
+import {BehaviorSubject, Observable, of, tap} from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -10,26 +10,25 @@ export class OrganizationBrandingService {
   private readonly httpClient = inject(HttpClient);
 
   private readonly organizationBrandingUrl = '/api/v1/organization/branding';
-  private cache?: OrganizationBranding;
+  // Holds the current branding so consumers (e.g. the navbar) update reactively when it is (re)loaded or saved.
+  private readonly brandingSubject = new BehaviorSubject<OrganizationBranding | undefined>(undefined);
+
+  /** Emits the current organization branding and every subsequent change (load or save). */
+  readonly branding$ = this.brandingSubject.asObservable();
 
   get(): Observable<OrganizationBranding> {
-    if (this.cache) {
-      return of(this.cache);
+    const cached = this.brandingSubject.value;
+    if (cached) {
+      return of(cached);
     }
     return this.httpClient
       .get<OrganizationBranding>(this.organizationBrandingUrl)
-      .pipe(tap((branding) => (this.cache = branding)));
+      .pipe(tap((branding) => this.brandingSubject.next(branding)));
   }
 
-  create(organizationBranding: FormData): Observable<OrganizationBranding> {
-    return this.httpClient
-      .post<OrganizationBranding>(this.organizationBrandingUrl, organizationBranding)
-      .pipe(tap((obj) => (this.cache = obj)));
-  }
-
-  update(organizationBranding: FormData): Observable<OrganizationBranding> {
+  upsert(organizationBranding: OrganizationBranding): Observable<OrganizationBranding> {
     return this.httpClient
       .put<OrganizationBranding>(this.organizationBrandingUrl, organizationBranding)
-      .pipe(tap((obj) => (this.cache = obj)));
+      .pipe(tap((obj) => this.brandingSubject.next(obj)));
   }
 }

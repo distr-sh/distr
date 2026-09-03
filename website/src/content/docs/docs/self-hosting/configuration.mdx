@@ -26,12 +26,34 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 | `DATABASE_URL`                     | yes      | —         | PostgreSQL connection string (e.g. `postgres://user:pass@host:5432/distr`).                     |
 | `DATABASE_MAX_CONNS`               | no       | —         | Overrides the maximum number of connections in the pgx pool.                                    |
 | `JWT_SECRET`                       | yes      | —         | Base64-encoded secret used to sign JWTs. Generate with `openssl rand -base64 32`.               |
-| `DISTR_HOST`                       | yes      | —         | Base URL of your Distr instance. Used for links, callbacks and email content.                   |
+| `DISTR_HOST`                       | yes      | —         | Base URL of your Distr instance. Its scheme is used for every link, callback URL and email.     |
 | `DISTR_ENV`                        | no       | —         | Path to a dotenv file to load on startup (a matching `.secret` file is also loaded if present). |
-| `REGISTRATION`                     | no       | `enabled` | Sign-up mode: `enabled`, `hidden` or `disabled`.                                                |
+| `REGISTRATION`                     | no       | `enabled` | Sign-up mode, see below: `enabled`, `hidden` or `disabled`.                                     |
 | `USER_EMAIL_VERIFICATION_REQUIRED` | no       | `true`    | Whether new users must verify their email address before signing in.                            |
 | `SERVER_SHUTDOWN_DELAY_DURATION`   | no       | —         | Delay between receiving a shutdown signal and stopping the server (useful for rolling deploys). |
 | `ENABLE_QUERY_LOGGING`             | no       | `false`   | Logs all database queries. Intended for debugging only.                                         |
+| `MAINTENANCE_MODE`                 | no       | `false`   | Answers every API and registry request with 503, see below. The frontend keeps being served.    |
+
+### Sign-up modes
+
+`REGISTRATION` accepts three values:
+
+- `enabled`: the login page links to the registration page and anyone can sign up.
+- `hidden`: the link is removed from the login page, but the registration page stays reachable at `/register` and
+  sign-ups still succeed. Use it when you want to hand out the registration URL yourself instead of offering it to
+  every visitor.
+- `disabled`: sign-up is rejected, both on `/register` and for OIDC logins with an unknown email address. Existing
+  users can still sign in, and new users can still be added through an invitation.
+
+### Maintenance mode
+
+`MAINTENANCE_MODE=true` announces planned downtime instead of stopping the instance. The Hub keeps serving the
+frontend, but answers every API request — including the ones from agents — and every request to the OCI registry with
+`503 Service Unavailable`, so that nothing reaches the database while you work on it. The frontend picks that up and
+shows a maintenance page that reconnects on its own once the instance is back.
+
+The Kubernetes probes target `/`, which keeps being served, so the pod stays in its service, while `/ready` reports
+`503` for the whole maintenance window.
 
 ## Tokens & Sessions
 
@@ -40,6 +62,24 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 | `INVITE_TOKEN_VALID_DURATION`    | no       | `24h`   | How long user invite links remain valid.                          |
 | `RESET_TOKEN_VALID_DURATION`     | no       | `1h`    | How long password reset links remain valid.                       |
 | `AGENT_TOKEN_MAX_VALID_DURATION` | no       | `24h`   | Maximum validity of an agent access token before it is refreshed. |
+
+## Bot Protection
+
+Registrations can optionally be protected with a [Cloudflare Turnstile](https://www.cloudflare.com/products/turnstile/)
+widget, which blocks automated sign-ups without asking users to solve a puzzle. It is disabled unless **both**
+variables below are set: the site key renders the widget in the browser and the secret verifies its token on the
+server, so a half-configured widget could only ever reject valid registrations. Distr logs a warning and stays
+unprotected when just one of them is present.
+
+Create a widget in the Cloudflare dashboard under **Turnstile**, add the hostname of your instance to it and copy
+both keys. Turnstile does not require your instance to be proxied through Cloudflare. Because a widget only accepts
+challenges from its configured hostnames, registrations made through an organization's custom app domain do not show
+the widget and are not verified; they remain subject to the rate limits of the authentication endpoints.
+
+| Variable             | Required                | Default | Description                                                                        |
+| -------------------- | ----------------------- | ------- | ---------------------------------------------------------------------------------- |
+| `TURNSTILE_SITE_KEY` | if `TURNSTILE_SECRET`   | —       | Public site key of the Turnstile widget, rendered on the registration form.        |
+| `TURNSTILE_SECRET`   | if `TURNSTILE_SITE_KEY` | —       | Secret key used to verify tokens with Cloudflare's siteverify API. Keep it secret. |
 
 ## Agents
 
@@ -89,60 +129,106 @@ See [Registry Configuration](/docs/registry/configuration/) for a feature overvi
 | `REGISTRY_UPSTREAM_SYNC_CRON`              | no                  | —       | Cron schedule for syncing tags from upstream registries (pull-through cache).      |
 | `REGISTRY_UPSTREAM_SYNC_TIMEOUT`           | no                  | `10m`   | Timeout for a single upstream sync run.                                            |
 
+## Custom Domains
+
+Custom domain self-service lets vendor organizations serve Distr under their own domains.
+It requires an edge proxy with on-demand TLS (e.g. Caddy, included in the Helm chart) in front of the Hub.
+The feature is only offered in the UI when `CUSTOM_DOMAIN_TARGET` is set.
+
+A domain is only used for links, mails, agent manifests and registry URLs once a CNAME check has
+found it to point at the CNAME target; until then the organization keeps the default host. The check runs
+when a domain is registered, can be triggered from the organization settings, and needs to be
+[scheduled](/docs/self-hosting/maintenance#custom-domain-verification) so that domains recover on
+their own once a record is fixed. Serving requests on a domain does not depend on the check.
+
+| Variable                                   | Required | Default | Description                                                                                                                      |
+| ------------------------------------------ | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `CUSTOM_DOMAIN_TARGET`                     | no       | —       | Hostname customers point every custom domain's CNAME record at (e.g. `whitelabel.distr.sh`). Enables custom domain self-service. |
+| `CUSTOM_DOMAIN_VERIFICATION_CRON`          | no       | —       | Cron schedule of the built-in domain verification job. If unset, no verification is scheduled in the Hub.                        |
+| `CUSTOM_DOMAIN_VERIFICATION_TIMEOUT`       | no       | `4m`    | Timeout for a single verification run. Must be greater than `0`.                                                                 |
+| `CUSTOM_DOMAIN_VERIFICATION_REFRESH_AFTER` | no       | `12h`   | How long a verified domain is left alone before it is checked again. Failing domains are checked on every run.                   |
+| `INTERNAL_SERVER_ADDR`                     | no       | `:8085` | Listen address of the internal server exposing the Caddy on-demand TLS ask endpoint. Never expose it outside the cluster.        |
+
+## Support Bundles
+
+| Variable                            | Required | Default   | Description                                                                                                                                          |
+| ----------------------------------- | -------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SUPPORT_BUNDLE_RESOURCE_MAX_BYTES` | no       | `1048576` | Maximum size of a single resource collected by the support bundle collect script, e.g. the logs of one container or the output of one script.        |
+| `SUPPORT_BUNDLE_LOG_TAIL_LINES`     | no       | `1000`    | Number of container log lines collected per container. The most recent lines are kept, and `SUPPORT_BUNDLE_RESOURCE_MAX_BYTES` still applies on top. |
+| `SUPPORT_BUNDLE_SCRIPT_TIMEOUT`     | no       | `1m`      | How long a single custom script may run on the customer's host before the collect script stops it. Must be greater than `0`.                         |
+
+## Log Processing (Loki)
+
+Deployment and deployment target log records are stored in [Grafana Loki](https://grafana.com/oss/loki/).
+All shipped deployment methods (Docker Compose and the Helm chart) include a preconfigured
+Loki instance with a time-based retention of 30 days. Log retention is managed entirely by
+the Loki configuration (`limits_config.retention_period`).
+
+| Variable                   | Required | Default | Description                                                                                       |
+| -------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------- |
+| `LOKI_URL`                 | yes      | —       | Base URL of the Loki instance, e.g. `http://loki:3100`.                                           |
+| `LOKI_BEARER_TOKEN`        | no       | —       | Bearer token for authenticating against Loki.                                                     |
+| `LOKI_BASIC_AUTH_USERNAME` | no       | —       | Username for basic authentication against Loki. Ignored when `LOKI_BEARER_TOKEN` is set.          |
+| `LOKI_BASIC_AUTH_PASSWORD` | no       | —       | Password for basic authentication against Loki. Only used when `LOKI_BASIC_AUTH_USERNAME` is set. |
+| `LOKI_REQUEST_TIMEOUT`     | no       | `30s`   | Timeout for a single Loki HTTP request.                                                           |
+
 ## Scheduled Jobs & Retention
 
 These control the built-in job scheduler and retention limits.
 See [Maintenance Jobs](/docs/self-hosting/maintenance/) for details and Kubernetes CronJob alternatives.
-If a `*_CRON` variable is unset, the corresponding job is not scheduled. A `*_TIMEOUT` of `0` means no timeout.
+If a `*_CRON` variable is unset, the corresponding job is not scheduled. For the timeout variables listed below,
+`0` means no timeout.
 
-| Variable                                       | Required | Default | Description                                                                 |
-| ---------------------------------------------- | -------- | ------- | --------------------------------------------------------------------------- |
-| `STATUS_ENTRIES_MAX_AGE`                       | no       | —       | Max age of deployment revision status entries before cleanup removes them.  |
-| `METRICS_ENTRIES_MAX_AGE`                      | no       | —       | Max age of deployment target metrics entries before cleanup removes them.   |
-| `LOG_RECORD_ENTRIES_MAX_COUNT`                 | no       | —       | Max number of log entries to keep per deployment/target before pruning.     |
-| `CLEANUP_DEPLOYMENT_REVISION_STATUS_CRON`      | no       | —       | Cron schedule for pruning deployment revision status entries.               |
-| `CLEANUP_DEPLOYMENT_REVISION_STATUS_TIMEOUT`   | no       | `0`     | Timeout for the revision status cleanup run.                                |
-| `CLEANUP_DEPLOYMENT_TARGET_METRICS_CRON`       | no       | —       | Cron schedule for pruning deployment target metrics.                        |
-| `CLEANUP_DEPLOYMENT_TARGET_METRICS_TIMEOUT`    | no       | `0`     | Timeout for the metrics cleanup run.                                        |
-| `CLEANUP_DEPLOYMENT_LOG_RECORD_CRON`           | no       | —       | Cron schedule for pruning deployment log entries.                           |
-| `CLEANUP_DEPLOYMENT_LOG_RECORD_TIMEOUT`        | no       | `0`     | Timeout for the deployment log cleanup run.                                 |
-| `CLEANUP_DEPLOYMENT_TARGET_LOG_RECORD_CRON`    | no       | —       | Cron schedule for pruning deployment target log entries.                    |
-| `CLEANUP_DEPLOYMENT_TARGET_LOG_RECORD_TIMEOUT` | no       | `0`     | Timeout for the deployment target log cleanup run.                          |
-| `CLEANUP_OIDC_STATE_CRON`                      | no       | —       | Cron schedule for pruning expired OIDC state entries.                       |
-| `CLEANUP_OIDC_STATE_CRON_TIMEOUT`              | no       | `0`     | Timeout for the OIDC state cleanup run.                                     |
-| `CLEANUP_ARTIFACT_BLOB_CRON`                   | no       | —       | Cron schedule for pruning unreferenced registry blobs from S3.              |
-| `CLEANUP_ARTIFACT_BLOB_TIMEOUT`                | no       | `0`     | Timeout for the artifact blob cleanup run.                                  |
-| `CLEANUP_ARTIFACT_BLOB_MIN_AGE`                | no       | `24h`   | Minimum age of an unreferenced blob before it is eligible for deletion.     |
-| `CLEANUP_ORGANIZATION_CRON`                    | no       | —       | Cron schedule for permanently deleting soft-deleted organizations.          |
-| `CLEANUP_ORGANIZATION_TIMEOUT`                 | no       | `0`     | Timeout for the organization cleanup run.                                   |
-| `CLEANUP_ORGANIZATION_MIN_AGE`                 | no       | `720h`  | Retention period before a soft-deleted organization is permanently deleted. |
-| `DEPLOYMENT_STATUS_NOTIFICATION_CRON`          | no       | —       | Cron schedule for sending deployment status notification emails.            |
-| `DEPLOYMENT_STATUS_NOTIFICATION_TIMEOUT`       | no       | `0`     | Timeout for the deployment status notification run.                         |
+| Variable                                     | Required | Default | Description                                                                 |
+| -------------------------------------------- | -------- | ------- | --------------------------------------------------------------------------- |
+| `STATUS_ENTRIES_MAX_AGE`                     | no       | —       | Max age of deployment revision status entries before cleanup removes them.  |
+| `METRICS_ENTRIES_MAX_AGE`                    | no       | —       | Max age of deployment target metrics entries before cleanup removes them.   |
+| `CLEANUP_DEPLOYMENT_REVISION_STATUS_CRON`    | no       | —       | Cron schedule for pruning deployment revision status entries.               |
+| `CLEANUP_DEPLOYMENT_REVISION_STATUS_TIMEOUT` | no       | `0`     | Timeout for the revision status cleanup run.                                |
+| `CLEANUP_DEPLOYMENT_TARGET_METRICS_CRON`     | no       | —       | Cron schedule for pruning deployment target metrics.                        |
+| `CLEANUP_DEPLOYMENT_TARGET_METRICS_TIMEOUT`  | no       | `0`     | Timeout for the metrics cleanup run.                                        |
+| `CLEANUP_OIDC_STATE_CRON`                    | no       | —       | Cron schedule for pruning expired OIDC state entries.                       |
+| `CLEANUP_OIDC_STATE_CRON_TIMEOUT`            | no       | `0`     | Timeout for the OIDC state cleanup run.                                     |
+| `CLEANUP_ARTIFACT_BLOB_CRON`                 | no       | —       | Cron schedule for pruning unreferenced registry blobs from S3.              |
+| `CLEANUP_ARTIFACT_BLOB_TIMEOUT`              | no       | `0`     | Timeout for the artifact blob cleanup run.                                  |
+| `CLEANUP_ARTIFACT_BLOB_MIN_AGE`              | no       | `24h`   | Minimum age of an unreferenced blob before it is eligible for deletion.     |
+| `CLEANUP_ORGANIZATION_CRON`                  | no       | —       | Cron schedule for permanently deleting soft-deleted organizations.          |
+| `CLEANUP_ORGANIZATION_TIMEOUT`               | no       | `0`     | Timeout for the organization cleanup run.                                   |
+| `CLEANUP_ORGANIZATION_MIN_AGE`               | no       | `720h`  | Retention period before a soft-deleted organization is permanently deleted. |
+| `DEPLOYMENT_STATUS_NOTIFICATION_CRON`        | no       | —       | Cron schedule for sending deployment status notification emails.            |
+| `DEPLOYMENT_STATUS_NOTIFICATION_TIMEOUT`     | no       | `0`     | Timeout for the deployment status notification run.                         |
 
 ## OIDC Authentication
 
 Each provider is enabled independently and its credentials are only required when it is enabled.
 See [OIDC Authentication](/docs/self-hosting/oidc/) for setup instructions and callback URLs.
 
-| Variable                                        | Required           | Default | Description                                                                       |
-| ----------------------------------------------- | ------------------ | ------- | --------------------------------------------------------------------------------- |
-| `OIDC_GITHUB_ENABLED`                           | no                 | `false` | Enables GitHub sign-in.                                                           |
-| `OIDC_GITHUB_CLIENT_ID`                         | if GitHub enabled  | —       | GitHub OAuth App client ID.                                                       |
-| `OIDC_GITHUB_CLIENT_SECRET`                     | if GitHub enabled  | —       | GitHub OAuth App client secret.                                                   |
-| `OIDC_GOOGLE_ENABLED`                           | no                 | `false` | Enables Google sign-in.                                                           |
-| `OIDC_GOOGLE_CLIENT_ID`                         | if Google enabled  | —       | Google OAuth 2.0 client ID.                                                       |
-| `OIDC_GOOGLE_CLIENT_SECRET`                     | if Google enabled  | —       | Google OAuth 2.0 client secret.                                                   |
-| `OIDC_MICROSOFT_ENABLED`                        | no                 | `false` | Enables Microsoft (Entra ID) sign-in.                                             |
-| `OIDC_MICROSOFT_CLIENT_ID`                      | if MS enabled      | —       | Entra ID application (client) ID.                                                 |
-| `OIDC_MICROSOFT_CLIENT_SECRET`                  | if MS enabled      | —       | Entra ID client secret.                                                           |
-| `OIDC_MICROSOFT_TENANT_ID`                      | if MS enabled      | —       | Directory (tenant) ID, or `common`/`organizations`/`consumers`.                   |
-| `OIDC_GENERIC_ENABLED`                          | no                 | `false` | Enables a generic OIDC provider.                                                  |
-| `OIDC_GENERIC_CLIENT_ID`                        | if generic enabled | —       | Client ID issued by the provider.                                                 |
-| `OIDC_GENERIC_CLIENT_SECRET`                    | if generic enabled | —       | Client secret issued by the provider.                                             |
-| `OIDC_GENERIC_ISSUER`                           | if generic enabled | —       | Issuer URL exposing `/.well-known/openid-configuration`.                          |
-| `OIDC_GENERIC_SCOPES`                           | if generic enabled | —       | Comma- or space-separated scopes (e.g. `openid,email,profile`).                   |
-| `OIDC_GENERIC_PKCE_ENABLED`                     | no                 | `false` | Enables PKCE (`S256`) for the generic provider.                                   |
-| `WELLKNOWN_MICROSOFT_IDENTITY_ASSOCIATION_JSON` | no                 | —       | Base64-encoded JSON served at `/.well-known/microsoft-identity-association.json`. |
+| Variable                                        | Required           | Default | Description                                                                        |
+| ----------------------------------------------- | ------------------ | ------- | ---------------------------------------------------------------------------------- |
+| `OIDC_GITHUB_ENABLED`                           | no                 | `false` | Enables GitHub sign-in.                                                            |
+| `OIDC_GITHUB_CLIENT_ID`                         | if GitHub enabled  | —       | GitHub OAuth App client ID.                                                        |
+| `OIDC_GITHUB_CLIENT_SECRET`                     | if GitHub enabled  | —       | GitHub OAuth App client secret.                                                    |
+| `OIDC_GOOGLE_ENABLED`                           | no                 | `false` | Enables Google sign-in.                                                            |
+| `OIDC_GOOGLE_CLIENT_ID`                         | if Google enabled  | —       | Google OAuth 2.0 client ID.                                                        |
+| `OIDC_GOOGLE_CLIENT_SECRET`                     | if Google enabled  | —       | Google OAuth 2.0 client secret.                                                    |
+| `OIDC_MICROSOFT_ENABLED`                        | no                 | `false` | Enables Microsoft (Entra ID) sign-in.                                              |
+| `OIDC_MICROSOFT_CLIENT_ID`                      | if MS enabled      | —       | Entra ID application (client) ID.                                                  |
+| `OIDC_MICROSOFT_CLIENT_SECRET`                  | if MS enabled      | —       | Entra ID client secret.                                                            |
+| `OIDC_MICROSOFT_TENANT_ID`                      | if MS enabled      | —       | Directory (tenant) ID, or `common`/`organizations`/`consumers`.                    |
+| `OIDC_GENERIC_ENABLED`                          | no                 | `false` | Enables a generic OIDC provider.                                                   |
+| `OIDC_GENERIC_CLIENT_ID`                        | if generic enabled | —       | Client ID issued by the provider.                                                  |
+| `OIDC_GENERIC_CLIENT_SECRET`                    | if generic enabled | —       | Client secret issued by the provider.                                              |
+| `OIDC_GENERIC_ISSUER`                           | if generic enabled | —       | Issuer URL exposing `/.well-known/openid-configuration`.                           |
+| `OIDC_GENERIC_SCOPES`                           | if generic enabled | —       | Comma- or space-separated scopes (e.g. `email,profile`); `openid` is always added. |
+| `OIDC_GENERIC_PKCE_ENABLED`                     | no                 | `false` | Enables PKCE (`S256`) for the generic provider.                                    |
+| `WELLKNOWN_MICROSOFT_IDENTITY_ASSOCIATION_JSON` | no                 | —       | Base64-encoded JSON served at `/.well-known/microsoft-identity-association.json`.  |
+
+Vendor organizations on the Business plan can additionally configure their own providers in the UI, which requires no
+instance configuration. Those issuer URLs are entered by organization administrators and fetched by the Hub, so they
+must be `https` and must not resolve to a private network address. Both restrictions are lifted when `DISTR_HOST` is an
+`http` URL, so that an instance running locally can be developed against an identity provider next to it. An operator
+whose identity provider only exists inside their own network configures it as the instance-wide generic provider above
+instead.
 
 ## Observability
 
@@ -190,7 +276,7 @@ Options relevant to Distr Pro and hosted billing.
 
 | Variable                                   | Required | Default | Description                                                   |
 | ------------------------------------------ | -------- | ------- | ------------------------------------------------------------- |
-| `LICENSE_KEY`                              | no       | —       | Distr Pro license key enabling enterprise features.           |
+| `LICENSE_KEY`                              | no       | —       | Distr license key unlocking the plan it was issued for.       |
 | `LICENSE_KEY_PRIVATE_KEY`                  | no       | —       | PEM-encoded private key used to sign customer license keys.   |
 | `STRIPE_API_KEY`                           | no       | —       | Stripe API key for billing integration.                       |
 | `STRIPE_WEBHOOK_SECRET`                    | no       | —       | Secret used to verify incoming Stripe webhooks.               |

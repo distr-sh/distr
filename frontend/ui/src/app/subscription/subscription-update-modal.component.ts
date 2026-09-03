@@ -1,14 +1,17 @@
 import {CurrencyPipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, inject, input, output} from '@angular/core';
+import {Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {WEBSITE_URL} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
 import {SubscriptionService} from '../services/subscription.service';
 import {ToastService} from '../services/toast.service';
-import {SubscriptionInfo, SubscriptionPeriod} from '../types/subscription';
+import {SubscriptionInfo, SubscriptionPeriod, SubscriptionType} from '../types/subscription';
 
 export interface PendingSubscriptionUpdate {
+  // Set when the update also switches the subscription to a different plan
+  subscriptionType?: SubscriptionType;
   userAccountQuantity: number;
   customerOrganizationQuantity: number;
   newPrice: number;
@@ -29,6 +32,7 @@ export class SubscriptionUpdateModalComponent {
 
   private readonly subscriptionService = inject(SubscriptionService);
   private readonly toast = inject(ToastService);
+  private readonly router = inject(Router);
 
   protected editFormLoading = false;
 
@@ -42,14 +46,23 @@ export class SubscriptionUpdateModalComponent {
 
     try {
       const body = {
+        subscriptionType: pending.subscriptionType,
         subscriptionUserAccountQuantity: pending.userAccountQuantity,
         subscriptionCustomerOrganizationQuantity: pending.customerOrganizationQuantity,
       };
 
       const updatedInfo = await this.subscriptionService.updateSubscription(body);
-      this.toast.success('Subscription updated successfully');
       this.confirmed.emit(updatedInfo);
-      setTimeout(() => location.reload(), 1000);
+      if (pending.subscriptionType) {
+        // Plan switches are only applied once Stripe confirms them via webhook,
+        // so redirect to the callback page which waits for the confirmation.
+        await this.router.navigate(['/subscription/callback'], {
+          queryParams: {pendingPlan: pending.subscriptionType},
+        });
+      } else {
+        this.toast.success('Subscription updated successfully');
+        setTimeout(() => location.reload(), 1000);
+      }
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {

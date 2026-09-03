@@ -1,15 +1,21 @@
 package mailtemplates
 
 import (
+	"context"
 	"embed"
+	"encoding/base64"
+	"fmt"
 	"html/template"
 	"io/fs"
 	"net/url"
 	"path"
 
 	"github.com/distr-sh/distr/internal/customdomains"
+	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
+	"github.com/google/uuid"
 )
 
 var (
@@ -52,9 +58,24 @@ func parse(fsys fs.FS, patterns ...string) (*template.Template, error) {
 	return t, nil
 }
 
+// BrandingLogoDataURL loads the branding logo file and returns it as a base64 data URL, so it can be
+// embedded directly into e-mails (the file endpoint requires authentication and can not be linked to).
+func BrandingLogoDataURL(ctx context.Context, branding *types.OrganizationBranding) *string {
+	if branding == nil || branding.LogoImageID == nil {
+		return nil
+	}
+	file, err := db.GetFileWithID(ctx, *branding.LogoImageID)
+	if err != nil {
+		return nil
+	}
+	return util.PtrTo(fmt.Sprintf("data:%s;base64,%s", file.ContentType, base64.StdEncoding.EncodeToString(file.Data)))
+}
+
 func InviteUser(
+	ctx context.Context,
 	userAccount types.UserAccount,
 	organization types.OrganizationWithBranding,
+	customerOrgID *uuid.UUID,
 	invitingUser types.UserAccount,
 	targetOrgName string,
 	inviteURL string,
@@ -65,14 +86,18 @@ func InviteUser(
 			"Organization":  organization,
 			"InvitingUser":  invitingUser,
 			"TargetOrgName": targetOrgName,
-			"Host":          customdomains.AppDomainOrDefault(organization.Organization),
-			"InviteURL":     inviteURL,
+			"Host": customdomains.CustomerPortalDomainOrDefault(
+				ctx, organization.ID, customerOrgID, organization.Branding),
+			"InviteURL":   inviteURL,
+			"LogoDataUrl": BrandingLogoDataURL(ctx, organization.Branding),
 		}
 }
 
 func VerifyEmail(
+	ctx context.Context,
 	userAccount types.UserAccount,
 	org types.OrganizationWithBranding,
+	customerOrgID *uuid.UUID,
 	token string,
 	greetWithOrgName bool,
 ) (*template.Template, any) {
@@ -85,38 +110,66 @@ func VerifyEmail(
 		"UserAccount":  userAccount,
 		"Organization": org,
 		"Signature":    signature,
-		"Host":         customdomains.AppDomainOrDefault(org.Organization),
+		"Host":         customdomains.CustomerPortalDomainOrDefault(ctx, org.ID, customerOrgID, org.Branding),
 		"Token":        token,
+		"LogoDataUrl":  BrandingLogoDataURL(ctx, org.Branding),
 	}
 }
 
 func PasswordReset(
+	ctx context.Context,
 	userAccount types.UserAccount,
 	organization *types.OrganizationWithBranding,
+	customerOrgID *uuid.UUID,
 	token string,
 ) (*template.Template, any) {
 	host := env.Host()
+	var branding *types.OrganizationBranding
 	if organization != nil {
-		host = customdomains.AppDomainOrDefault(organization.Organization)
+		host = customdomains.CustomerPortalDomainOrDefault(
+			ctx, organization.ID, customerOrgID, organization.Branding)
+		branding = organization.Branding
 	}
 	return templates.Lookup("password-reset.html"), map[string]any{
 		"UserAccount":  userAccount,
 		"Organization": organization,
 		"Host":         host,
 		"Token":        token,
+		"LogoDataUrl":  BrandingLogoDataURL(ctx, branding),
 	}
 }
 
 func UpdateEmail(
+	ctx context.Context,
 	userAccount types.UserAccount,
 	org types.OrganizationWithBranding,
+	customerOrgID *uuid.UUID,
 	token string,
 ) (*template.Template, any) {
 	return templates.Lookup("update-email.html"), map[string]any{
 		"UserAccount":  userAccount,
 		"Organization": org,
-		"Host":         customdomains.AppDomainOrDefault(org.Organization),
+		"Host":         customdomains.CustomerPortalDomainOrDefault(ctx, org.ID, customerOrgID, org.Branding),
 		"Token":        token,
+		"LogoDataUrl":  BrandingLogoDataURL(ctx, org.Branding),
+	}
+}
+
+func CustomEmailTest(
+	ctx context.Context,
+	userAccount types.UserAccount,
+	org types.OrganizationWithBranding,
+	config types.CustomEmailConfiguration,
+) (*template.Template, any) {
+	return templates.Lookup("custom-email-test.html"), map[string]any{
+		"UserAccount":   userAccount,
+		"Organization":  org,
+		"Configuration": config,
+		// Distr reports the result of the test to the admin, so the organization name must not be
+		// used as the signature here.
+		"Signature":   "Distr",
+		"Host":        customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding),
+		"LogoDataUrl": BrandingLogoDataURL(ctx, org.Branding),
 	}
 }
 

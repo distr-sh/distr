@@ -1,13 +1,10 @@
 package types
 
 import (
-	"encoding/base64"
-	"fmt"
 	"slices"
 	"time"
 
 	"github.com/distr-sh/distr/internal/limit"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 )
 
@@ -17,9 +14,6 @@ type Organization struct {
 	Name                                string             `db:"name" json:"name"`
 	Slug                                *string            `db:"slug" json:"slug"`
 	Features                            []Feature          `db:"features" json:"features"`
-	AppDomain                           *string            `db:"app_domain" json:"appDomain"`
-	RegistryDomain                      *string            `db:"registry_domain" json:"registryDomain"`
-	EmailFromAddress                    *string            `db:"email_from_address" json:"emailFromAddress"`
 	SubscriptionType                    SubscriptionType   `db:"subscription_type" json:"subscriptionType"`
 	SubscriptionPeriod                  SubscriptionPeriod `db:"subscription_period" json:"subscriptionPeriod"`
 	SubscriptionEndsAt                  time.Time          `db:"subscription_ends_at" json:"subscriptionEndsAt"`
@@ -58,6 +52,33 @@ func (org *Organization) SetFeature(feature Feature, enabled bool) {
 	}
 }
 
+// SubscriptionPlan is everything an organization's subscription is made of, whatever grants it:
+// a Stripe subscription, the license key of a self-hosted instance, or the defaults of a new
+// organization.
+type SubscriptionPlan struct {
+	Type                    SubscriptionType
+	Period                  SubscriptionPeriod
+	EndsAt                  time.Time
+	CustomerOrganizationQty limit.Limit
+	UserAccountQty          limit.Limit
+}
+
+func (plan SubscriptionPlan) Features() []Feature {
+	return FeaturesForSubscriptionType(plan.Type)
+}
+
+// ApplyPlan puts the organization on the given plan. The features of the plan are added but none
+// are ever removed, so a feature granted outside of a plan survives, and so does a feature of a
+// plan the organization is no longer on.
+func (org *Organization) ApplyPlan(plan SubscriptionPlan) {
+	org.SubscriptionType = plan.Type
+	org.SubscriptionPeriod = plan.Period
+	org.SubscriptionEndsAt = plan.EndsAt
+	org.SubscriptionCustomerOrganizationQty = plan.CustomerOrganizationQty
+	org.SubscriptionUserAccountQty = plan.UserAccountQty
+	org.AddFeatures(plan.Features()...)
+}
+
 func (org *Organization) HasActiveSubscription() bool {
 	return org.SubscriptionType == SubscriptionTypeCommunity || org.SubscriptionEndsAt.After(time.Now())
 }
@@ -89,19 +110,10 @@ type OrganizationBranding struct {
 	UpdatedByUserAccountID *uuid.UUID `db:"updated_by_user_account_id" json:"-"`
 	Title                  *string    `db:"title" json:"title"`
 	Description            *string    `db:"description" json:"description"`
-	Logo                   []byte     `db:"logo" json:"logo"`
-	LogoFileName           *string    `db:"logo_file_name" json:"logoFileName"`
-	LogoContentType        *string    `db:"logo_content_type" json:"logoContentType"`
-}
-
-func (b *OrganizationBranding) LogoDataUrl() *string {
-	if b.Logo != nil && b.LogoContentType != nil {
-		return util.PtrTo(fmt.Sprintf(
-			"data:%s;base64,%s",
-			*b.LogoContentType,
-			base64.StdEncoding.EncodeToString(b.Logo),
-		))
-	} else {
-		return nil
-	}
+	LogoImageID            *uuid.UUID `db:"logo_image_id" json:"logoImageId"`
+	AppDomain              *string    `db:"app_domain" json:"appDomain"`
+	RegistryDomain         *string    `db:"registry_domain" json:"registryDomain"`
+	EmailFromAddress       *string    `db:"email_from_address" json:"emailFromAddress"`
+	PageTitle              *string    `db:"page_title" json:"pageTitle"`
+	FaviconImageID         *uuid.UUID `db:"favicon_image_id" json:"faviconImageId"`
 }

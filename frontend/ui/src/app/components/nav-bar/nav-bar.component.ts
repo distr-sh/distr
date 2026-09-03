@@ -1,16 +1,7 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
 import {HttpErrorResponse} from '@angular/common/http';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  input,
-  OnInit,
-  TemplateRef,
-  viewChild,
-} from '@angular/core';
+import {Component, computed, inject, input, OnInit, signal, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
@@ -32,7 +23,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import {catchError, EMPTY, lastValueFrom, map, of} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
-import {organizationKind, OrganizationKindPipe} from '../../../util/organization-kind';
+import {MembershipLabelPipe, organizationKind} from '../../../util/organization-kind';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {UserRoleLabelPipe} from '../../../util/user-role';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
@@ -45,25 +36,37 @@ import {SidebarService} from '../../services/sidebar.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
 import {Organization} from '../../types/organization';
+import {subscriptionRank} from '../../types/subscription';
 import {ColorSchemeSwitcherComponent} from '../color-scheme-switcher/color-scheme-switcher.component';
+import {SearchBarComponent} from '../search-bar.component';
+import {SubscriptionBadgeComponent} from '../subscription-badge.component';
 import {NavBarSubscriptionBannerComponent} from './nav-bar-subscription-banner/nav-bar-subscription-banner.component';
+
+// above this many switchable organizations the dropdown gets a search field
+const ORGANIZATION_SEARCH_THRESHOLD = 4;
 
 @Component({
   selector: 'app-nav-bar',
   templateUrl: './nav-bar.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  host: {
+    '(document:keydown.control.k)': 'onSwitcherShortcut($event)',
+    '(document:keydown.meta.k)': 'onSwitcherShortcut($event)',
+    '(document:keydown.escape)': 'organizationsOpened.set(false)',
+  },
   imports: [
     ColorSchemeSwitcherComponent,
     NavBarSubscriptionBannerComponent,
     OverlayModule,
     FaIconComponent,
     RouterLink,
+    SearchBarComponent,
     SecureImagePipe,
+    SubscriptionBadgeComponent,
     AsyncPipe,
     AutotrimDirective,
     ReactiveFormsModule,
     UserRoleLabelPipe,
-    OrganizationKindPipe,
+    MembershipLabelPipe,
   ],
 })
 export class NavBarComponent implements OnInit {
@@ -95,22 +98,48 @@ export class NavBarComponent implements OnInit {
   protected readonly allOrgs = toSignal(this.ctx.getAvailableOrganizations(), {initialValue: []});
   protected readonly availableOrgs = computed(() => {
     const current = this.currentOrg();
-    return this.allOrgs().filter((org) => org.id !== current?.id);
+    return this.allOrgs()
+      .filter((org) => org.id !== current?.id)
+      .sort(
+        (a, b) =>
+          subscriptionRank(a.subscriptionType, a.subscriptionEndsAt) -
+            subscriptionRank(b.subscriptionType, b.subscriptionEndsAt) || a.name.localeCompare(b.name)
+      );
   });
   protected readonly currentOrg = toSignal(this.ctx.getOrganization());
   protected readonly isVendorSomewhere = computed(() =>
     this.allOrgs().some((org) => organizationKind(org) === 'vendor')
   );
+  protected readonly canCreateOrganization = toSignal(this.ctx.canCreateOrganization(), {initialValue: false});
   protected readonly isDifferentOrganizationKind = computed(
     () => this.allOrgs().reduce((kinds, org) => kinds.add(organizationKind(org)), new Set<string>()).size > 1
   );
   protected readonly isTrial = computed(() => this.currentOrg()?.subscriptionType === 'trial');
   protected readonly isSubscriptionExpired = this.organizationService.isSubscriptionExpired;
 
-  userOpened = false;
-  organizationsOpened = false;
-  logoUrl = '/distr-logo.svg';
-  customerSubtitle = 'Customer Portal';
+  protected readonly userOpened = signal(false);
+  protected readonly organizationsOpened = signal(false);
+  protected readonly isOrganizationSwitcherVisible = computed(
+    () => this.isVendorSomewhere() || this.availableOrgs().length > 0
+  );
+  protected readonly switcherShortcut = navigator.userAgent.includes('Mac') ? '⌘K' : 'Ctrl+K';
+
+  protected readonly organizationSearch = new FormControl<string>('', {nonNullable: true});
+  private readonly organizationSearchTerm = toSignal(this.organizationSearch.valueChanges, {initialValue: ''});
+  protected readonly isOrganizationSearchVisible = computed(
+    () => this.availableOrgs().length > ORGANIZATION_SEARCH_THRESHOLD
+  );
+  protected readonly matchingOrgs = computed(() => {
+    const term = this.organizationSearchTerm().trim().toLowerCase();
+    const orgs = this.availableOrgs();
+    return term ? orgs.filter((org) => org.name.toLowerCase().includes(term)) : orgs;
+  });
+
+  // Derived from the branding service's reactive stream so the navbar updates live when the logo/title is saved.
+  private readonly branding = toSignal(this.organizationBranding.branding$);
+  protected readonly logoUrl = computed(() => this.branding()?.logoImageId ?? '/distr-logo.svg');
+  protected readonly hasCustomLogo = computed(() => !!this.branding()?.logoImageId);
+  protected readonly customerSubtitle = computed(() => this.branding()?.title || 'Customer Portal');
 
   protected readonly faBarsStaggered = faBarsStaggered;
   protected readonly tutorial = toSignal(this.route.queryParams.pipe(map((params) => params['tutorial'])));
@@ -125,34 +154,33 @@ export class NavBarComponent implements OnInit {
   });
 
   public async ngOnInit() {
+    // Trigger the initial load; the template updates reactively via the branding service's stream.
     try {
-      await this.initBranding();
+      await lastValueFrom(this.organizationBranding.get());
     } catch (e) {
-      console.error(e);
-    }
-  }
-
-  private async initBranding() {
-    if (this.auth.isCustomer()) {
-      try {
-        const branding = await lastValueFrom(this.organizationBranding.get());
-        if (branding.logo) {
-          this.logoUrl = `data:${branding.logoContentType};base64,${branding.logo}`;
-        }
-        if (branding.title) {
-          this.customerSubtitle = branding.title;
-        }
-      } catch (e) {
-        const msg = getFormDisplayedError(e);
-        if (msg && e instanceof HttpErrorResponse && e.status !== 404) {
-          this.toast.error(msg);
-        }
+      const msg = getFormDisplayedError(e);
+      if (msg && e instanceof HttpErrorResponse && e.status !== 404) {
+        this.toast.error(msg);
       }
     }
   }
 
+  protected toggleOrganizations() {
+    this.organizationSearch.setValue('');
+    this.organizationsOpened.update((opened) => !opened);
+  }
+
+  protected onSwitcherShortcut(event: Event) {
+    if (!this.isOrganizationSwitcherVisible() || this.modalRef) {
+      return;
+    }
+    // Ctrl+K and Cmd+K are the browsers' own shortcuts for their search and address bars
+    event.preventDefault();
+    this.toggleOrganizations();
+  }
+
   async switchContext(org: Organization, targetPath = '/') {
-    this.organizationsOpened = false;
+    this.organizationsOpened.set(false);
     try {
       const switched = await lastValueFrom(this.auth.switchContext(org));
       if (switched) {
@@ -168,10 +196,9 @@ export class NavBarComponent implements OnInit {
 
   showCreateOrgModal(): void {
     this.closeCreateOrgModal();
+    this.organizationsOpened.set(false);
     this.modalRef = this.overlay.showModal(this.createOrgModal());
-    this.modalRef.addOnClosedHook((_) => {
-      this.organizationsOpened = false;
-    });
+    this.modalRef.result().subscribe(() => (this.modalRef = undefined));
   }
 
   closeCreateOrgModal() {

@@ -55,7 +55,7 @@
                           <!-- Vendor Logo -->
                           @if (vendorBranding$ | async; as branding) {
                             <img
-                              [src]="getVendorLogoUrl(branding)"
+                              [src]="(getVendorLogoUrl(branding) | secureImage | async) ?? '/distr-logo.svg'"
                               [alt]="org.name"
                               class="w-12 h-12 mb-2 rounded-lg" />
                           }
@@ -105,7 +105,7 @@
                         } @else {
                           <div
                             class="w-12 h-12 mb-2 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                            <fa-icon [icon]="faBuildingUser" class="text-xl text-gray-400 dark:text-gray-500" />
+                            <fa-icon [icon]="faAddressBook" class="text-xl text-gray-400 dark:text-gray-500" />
                           </div>
                         }
 
@@ -270,6 +270,46 @@
                       Enable container image cleanup
                     </label>
                   </div>
+
+                  <div class="flex items-center">
+                    <input
+                      id="custom-docker-endpoint"
+                      type="checkbox"
+                      [formControl]="deploymentTargetForm.controls.customDockerEndpoint"
+                      class="distr-checkbox" />
+                    <label
+                      for="custom-docker-endpoint"
+                      class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                      Use a custom Docker endpoint
+                    </label>
+                  </div>
+
+                  @if (deploymentTargetForm.controls.dockerEndpoint.enabled) {
+                    <div>
+                      <label for="docker-endpoint" class="distr-label mb-2"> Docker Endpoint </label>
+                      <input
+                        [formControl]="deploymentTargetForm.controls.dockerEndpoint"
+                        type="text"
+                        id="docker-endpoint"
+                        class="distr-input"
+                        placeholder="unix:///var/run/docker.sock"
+                        required
+                        autotrim
+                        autocomplete="off" />
+                      <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        The Docker socket on the host that the agent should use. Defaults to
+                        <code>unix:///var/run/docker.sock</code>.
+                      </div>
+                      @if (
+                        deploymentTargetForm.controls.dockerEndpoint.invalid &&
+                        deploymentTargetForm.controls.dockerEndpoint.touched
+                      ) {
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-500">
+                          Field is required and must be a unix socket URI.
+                        </p>
+                      }
+                    </div>
+                  }
                 }
 
                 <!-- Kubernetes-specific Settings -->
@@ -419,6 +459,26 @@
                   <label for="logs-enabled" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
                     Enable log collection
                   </label>
+                </div>
+
+                <!-- Automatic Agent Updates (all deployment types) -->
+                <div>
+                  <div class="flex items-center">
+                    <input
+                      id="automatic-updates-enabled"
+                      type="checkbox"
+                      [formControl]="deploymentTargetForm.controls.automaticUpdatesEnabled"
+                      class="distr-checkbox" />
+                    <label
+                      for="automatic-updates-enabled"
+                      class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                      Enable automatic agent updates
+                    </label>
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    When enabled, the agent is updated to the latest version as soon as one becomes available. Updating
+                    the agent does not restart or update the deployed application.
+                  </p>
                 </div>
               </div>
             </div>

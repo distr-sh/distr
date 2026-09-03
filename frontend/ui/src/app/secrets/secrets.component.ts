@@ -15,17 +15,11 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {
-  faCircleExclamation,
-  faMagnifyingGlass,
-  faPen,
-  faPlus,
-  faTrash,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
+import {faCircleExclamation, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {ClipComponent} from '../components/clip.component';
+import {SearchBarComponent} from '../components/search-bar.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
@@ -36,7 +30,7 @@ import {Secret} from '../types/secret';
 
 @Component({
   selector: 'app-secrets',
-  imports: [FaIconComponent, ReactiveFormsModule, DatePipe, AutotrimDirective, ClipComponent],
+  imports: [FaIconComponent, ReactiveFormsModule, DatePipe, AutotrimDirective, ClipComponent, SearchBarComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './secrets.component.html',
 })
@@ -55,7 +49,6 @@ export class SecretsComponent {
     () => this.routeParams()?.['customerOrganizationId'] as string | undefined
   );
 
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faXmark = faXmark;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;

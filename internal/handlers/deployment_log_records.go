@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -13,19 +12,40 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
-	"github.com/distr-sh/distr/internal/handlerutil"
+	"github.com/distr-sh/distr/internal/limit"
+	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"go.uber.org/zap"
 )
+
+const latestRevisionsForActiveResources = 5
 
 func getDeploymentLogsResourcesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		deployment := internalctx.GetDeployment(ctx)
-		if active, archived, err := db.GetDeploymentLogRecordResources(ctx, deployment.ID); err != nil {
+		authInfo := auth.Authentication.Require(ctx)
+		org := authInfo.CurrentOrg()
+
+		revisionIDs, err := db.GetLatestDeploymentRevisionIDs(ctx, deployment.ID, latestRevisionsForActiveResources)
+		if err != nil {
+			internalctx.GetLogger(ctx).Error("failed to get deployment revisions", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		logStore := logstore.FromContext(ctx)
+		active, archived, err := logStore.GetDeploymentLogRecordResources(ctx, org.ID, logstore.DeploymentLogResourcesQuery{
+			DeploymentID:      deployment.ID,
+			LatestRevisionIDs: revisionIDs,
+			Start:             subscription.GetLogQueryWindowStart(org.SubscriptionType),
+		})
+		if err != nil {
 			internalctx.GetLogger(ctx).Error("failed to get log records", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -50,43 +70,59 @@ func exportDeploymentLogsHandler() http.HandlerFunc {
 
 		authInfo := auth.Authentication.Require(ctx)
 		org := authInfo.CurrentOrg()
-		limit := int(subscription.GetLogExportRowsLimit(org.SubscriptionType))
+
+		queryRange, err := parseLogQueryRange(r, org.SubscriptionType)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
 		filename := fmt.Sprintf("%s_%s.log", time.Now().Format("2006-01-02"), strings.Join(resources, "_"))
 
-		SetFileDownloadHeaders(w, filename)
-
 		var secrets []types.SecretWithUpdatedBy
 		if dt, err := db.GetDeploymentTargetForDeploymentID(ctx, deployment.ID); err != nil {
-			internalctx.GetLogger(ctx).Error("failed to get deployment target", zap.Error(err))
+			log.Error("failed to get deployment target", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		} else if secrets, err = db.GetSecretsForDeploymentTarget(ctx, dt.DeploymentTarget); err != nil {
-			internalctx.GetLogger(ctx).Error("failed to get secrets", zap.Error(err))
+			log.Error("failed to get secrets", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
 		replacer := secretReplacer(secrets)
+		export := newExportWriter(w, log, filename)
 
-		err := db.GetDeploymentLogRecordsForExport(
-			ctx, deployment.ID, resources, limit,
-			func(record types.DeploymentLogRecord) error {
-				_, err := fmt.Fprintf(w, "[%s] [%s] %s\n",
-					record.Timestamp.Format(time.RFC3339),
-					record.Severity,
-					replacer.Replace(record.Body))
-				return err
-			},
-		)
-		if err != nil {
-			log.Error("failed to export log records", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			// Note: If headers were already sent, we can't send error response
+		if queryRange.IsEmpty() {
+			export.finish()
 			return
 		}
+
+		logStore := logstore.FromContext(ctx)
+		records := logStore.QueryDeploymentLogRecords(ctx, org.ID, logstore.DeploymentLogQuery{
+			DeploymentID: deployment.ID,
+			Resources:    resources,
+			Start:        queryRange.Start,
+			End:          queryRange.End,
+			Filter:       queryRange.Filter,
+			Limit:        subscription.MaxLogExportRows,
+			Direction:    types.OrderDirectionDesc,
+		})
+		for record, err := range records {
+			if err != nil {
+				export.fail(ctx, "failed to export log records", err)
+				return
+			}
+			if err := export.writeLine("[%s] [%s] %s\n",
+				record.Timestamp.Format(time.RFC3339),
+				record.Severity,
+				replacer.Replace(record.Body)); err != nil {
+				return
+			}
+		}
+		export.finish()
 	}
 }
 
@@ -99,31 +135,25 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 			http.Error(w, "query parameter resource is required", http.StatusBadRequest)
 			return
 		}
-		limit, err := QueryParam(r, "limit", strconv.Atoi, Max(100))
-		if errors.Is(err, ErrParamNotDefined) {
-			limit = 25
-		} else if err != nil {
+		limitParam, err := parseTimeseriesLimit(r)
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
-		}
-		before, err := QueryParam(r, "before", ParseTimeFunc(time.RFC3339Nano))
-		if err != nil && !errors.Is(err, ErrParamNotDefined) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		after, err := QueryParam(r, "after", ParseTimeFunc(time.RFC3339Nano))
-		if err != nil && !errors.Is(err, ErrParamNotDefined) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		filter := r.FormValue("filter")
-		if filter != "" {
-			if err := handlerutil.ValidateFilterRegex(filter); err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
 		}
 		order := types.OrderDirection(r.FormValue("order"))
+
+		authInfo := auth.Authentication.Require(ctx)
+		org := authInfo.CurrentOrg()
+		queryRange, err := parseLogQueryRange(r, org.SubscriptionType)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		direction := types.EffectiveOrderDirection(order, queryRange.StartExplicit)
+		if queryRange.IsEmpty() {
+			RespondJSON(w, []api.DeploymentLogRecord{})
+			return
+		}
 
 		var secrets []types.SecretWithUpdatedBy
 		if dt, err := db.GetDeploymentTargetForDeploymentID(ctx, deployment.ID); err != nil {
@@ -138,9 +168,16 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 			return
 		}
 
-		if records, err := db.GetDeploymentLogRecords(
-			ctx, deployment.ID, resources, limit, before, after, filter, order,
-		); err != nil {
+		logStore := logstore.FromContext(ctx)
+		if records, err := util.SeqCollect(logStore.QueryDeploymentLogRecords(ctx, org.ID, logstore.DeploymentLogQuery{
+			DeploymentID: deployment.ID,
+			Resources:    resources,
+			Start:        queryRange.Start,
+			End:          queryRange.End,
+			Filter:       queryRange.Filter,
+			Limit:        limit.Limit(limitParam),
+			Direction:    direction,
+		})); err != nil {
 			if errors.Is(err, apierrors.ErrBadRequest) {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return

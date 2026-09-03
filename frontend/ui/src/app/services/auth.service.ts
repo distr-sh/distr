@@ -3,7 +3,7 @@ import {inject, Injectable} from '@angular/core';
 import {LoginResponse, TokenResponse, UserRole} from '@distr-sh/distr-sdk';
 import dayjs from 'dayjs';
 import {jwtDecode} from 'jwt-decode';
-import {catchError, map, Observable, of, shareReplay, tap, throwError} from 'rxjs';
+import {map, Observable, of, tap, throwError} from 'rxjs';
 import {Organization} from '../types/organization';
 
 const tokenStorageKey = 'cloud_token';
@@ -12,11 +12,15 @@ const authBaseUrl = '/api/v1/auth';
 
 export interface JWTClaims {
   sub: string;
-  org: string;
+  // Special tokens (password reset, invite, verification) are not scoped to an organization.
+  org?: string;
   c_org?: string;
   p_org?: string;
   email: string;
-  password_reset: boolean;
+  // Purpose a special token was minted for; absent on regular login tokens.
+  scope?: 'password_reset' | 'invite';
+  // The custom OIDC configuration that authenticated the session; absent on every other login.
+  oidc?: string;
   email_verified: boolean;
   name: string;
   exp: string;
@@ -26,17 +30,13 @@ export interface JWTClaims {
   [claim: string]: unknown;
 }
 
-export interface LoginConfig {
-  registrationEnabled?: boolean;
-  oidcGithubEnabled?: boolean;
-  oidcGoogleEnabled?: boolean;
-  oidcMicrosoftEnabled?: boolean;
-  oidcGenericEnabled?: boolean;
-}
-
 @Injectable({providedIn: 'root'})
 export class AuthService {
   private readonly httpClient = inject(HttpClient);
+
+  // Decoding a JWT costs a base64 decode and a JSON.parse, and the role and context checks below are called
+  // from templates, so they can run thousands of times per change detection pass on a page with many rows.
+  private decodeCache?: {token: string; claims: JWTClaims};
 
   private get token(): string | null {
     return localStorage.getItem(tokenStorageKey);
@@ -72,7 +72,7 @@ export class AuthService {
 
   public isVendor(): boolean {
     const claims = this.getClaims();
-    return claims?.c_org === undefined && claims?.p_org === undefined;
+    return claims?.org !== undefined && claims.c_org === undefined && claims.p_org === undefined;
   }
 
   public isCustomer(): boolean {
@@ -91,7 +91,30 @@ export class AuthService {
     return this.getClaims()?.is_super_admin === true;
   }
 
-  public login(email: string, password: string, mfaCode?: string): Observable<{requiresMfa: boolean}> {
+  /**
+   * Whether the session was authenticated by an organization's own identity provider. Such a session stays inside
+   * that organization and cannot change the account's sign-in methods, because the provider is controlled by the
+   * organization rather than by the account's owner. The server enforces both; this only keeps the UI from
+   * offering actions that would be rejected.
+   */
+  public isCustomOidcSession(): boolean {
+    return this.getClaims()?.oidc !== undefined;
+  }
+
+  /**
+   * Whether the current credential is a regular session. Login tokens always carry an organization, whereas the
+   * special tokens of the password reset, invite and email verification flows do not. Those are not sessions and
+   * are rejected by every organization-scoped endpoint, so they must not be used to request one.
+   */
+  public isLoggedIn(): boolean {
+    return this.getClaims()?.org !== undefined;
+  }
+
+  public login(
+    email: string,
+    password: string,
+    mfaCode?: string
+  ): Observable<{requiresMfa: boolean; redirectUrl?: string}> {
     return this.httpClient.post<LoginResponse>(`${authBaseUrl}/login`, {email, password, mfaCode}).pipe(
       tap((r) => {
         if (!r.requiresMfa) {
@@ -99,7 +122,7 @@ export class AuthService {
           this.actionToken = null;
         }
       }),
-      map((r) => ({requiresMfa: r.requiresMfa}))
+      map((r) => (r.requiresMfa ? {requiresMfa: true} : {requiresMfa: false, redirectUrl: r.redirectUrl}))
     );
   }
 
@@ -126,16 +149,12 @@ export class AuthService {
     );
   }
 
-  public readonly loginConfig$ = this.httpClient.get<LoginConfig>(`${authBaseUrl}/login/config`).pipe(
-    catchError(() => of({} as LoginConfig)),
-    shareReplay(1)
-  );
-
   public register(
     email: string,
     name: string | null | undefined,
     organizationName: string | null | undefined,
-    password: string
+    password: string,
+    turnstileToken?: string
   ): Observable<void> {
     let body: any = {email, password};
     if (name) {
@@ -143,6 +162,9 @@ export class AuthService {
     }
     if (organizationName) {
       body = {...body, organizationName};
+    }
+    if (turnstileToken) {
+      body = {...body, turnstileToken};
     }
     return this.httpClient.post<TokenResponse>(`${authBaseUrl}/register`, body).pipe(
       tap((r) => this.loginWithToken(r.token)),
@@ -156,24 +178,28 @@ export class AuthService {
   }
 
   public getTokenAndClaims(): {token: string | null; claims: JWTClaims | undefined} {
-    const actionToken = this.actionToken;
-    if (actionToken !== null) {
-      try {
-        return {token: actionToken, claims: jwtDecode(actionToken)};
-      } catch (e) {
-        console.error(e);
-      }
-    } else {
-      const token = this.token;
-      if (token !== null) {
-        try {
-          return {token, claims: jwtDecode(token)};
-        } catch (e) {
-          console.error(e);
-        }
+    const token = this.actionToken ?? this.token;
+    if (token !== null) {
+      const claims = this.decodeClaims(token);
+      if (claims !== undefined) {
+        return {token, claims};
       }
     }
     return {token: null, claims: undefined};
+  }
+
+  private decodeClaims(token: string): JWTClaims | undefined {
+    if (this.decodeCache?.token === token) {
+      return this.decodeCache.claims;
+    }
+    try {
+      const claims = jwtDecode<JWTClaims>(token);
+      this.decodeCache = {token, claims};
+      return claims;
+    } catch (e) {
+      console.error(e);
+      return undefined;
+    }
   }
 
   public requestEmailVerification(): Observable<void> {
@@ -219,7 +245,7 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
         return next(req.clone({headers: req.headers.set('Authorization', `Bearer ${token}`)})).pipe(
           tap({
             error: (e) => {
-              if (e instanceof HttpErrorResponse && e.status == 401) {
+              if (e instanceof HttpErrorResponse && e.status == 401 && !isUnrelatedToActionFlow(auth, req)) {
                 auth.logout();
                 removeJwtQueryParamAndRefresh(claims?.email);
               }
@@ -239,8 +265,33 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
   }
 };
 
+// Pages on which the user is setting up their credentials with a special token instead of a session.
+export const actionFlowPaths = ['/reset', '/join', '/verify'];
+
+/** The page of the credential-setup flow the given organization-less token was minted for. */
+export function actionFlowPath(claims: JWTClaims): string {
+  switch (claims.scope) {
+    case 'password_reset':
+      return '/reset';
+    case 'invite':
+      return '/join';
+    default:
+      return '/verify';
+  }
+}
+
+/**
+ * Whether a rejected request should be ignored because it has nothing to do with the flow the user is in. The
+ * special tokens of these pages carry no organization and are only accepted by the endpoints of their own flow,
+ * so a 401 from anywhere else says nothing about the validity of the link the user followed and must not send
+ * them to the "link expired" page.
+ */
+function isUnrelatedToActionFlow(auth: AuthService, req: HttpRequest<unknown>): boolean {
+  return !auth.isLoggedIn() && !req.url.startsWith(authBaseUrl) && actionFlowPaths.includes(location.pathname);
+}
+
 function authenticatedRoute(req: HttpRequest<unknown>): boolean {
-  if (req.url.startsWith('/ready')) {
+  if (req.url.startsWith('/ready') || req.url.startsWith('/api/public/')) {
     return false;
   }
 

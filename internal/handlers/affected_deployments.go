@@ -9,7 +9,6 @@ import (
 	"slices"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/deploymentvalues"
 	"github.com/distr-sh/distr/internal/types"
@@ -199,9 +198,11 @@ func findReferencingDeployments(
 	return referencing, nil
 }
 
-func triggerAffectedDeployments(ctx context.Context, affected []api.AffectedDeployment) error {
-	createdByUserID := auth.Authentication.Require(ctx).CurrentUserID()
-
+func triggerAffectedDeployments(
+	ctx context.Context,
+	affected []api.AffectedDeployment,
+	createdByUserID *uuid.UUID,
+) error {
 	byTarget := make(map[uuid.UUID][]api.AffectedDeployment)
 	for _, ad := range affected {
 		byTarget[ad.DeploymentTargetID] = append(byTarget[ad.DeploymentTargetID], ad)
@@ -230,7 +231,7 @@ func triggerAffectedDeployments(ctx context.Context, affected []api.AffectedDepl
 					affectedDeployment.DeploymentID, affectedDeployment.DeploymentTargetID)
 			}
 			request := deploymentRequestFromLatestRevision(target.Deployments[index])
-			request.CreatedByUserAccountID = &createdByUserID
+			request.CreatedByUserAccountID = createdByUserID
 			if err := setDeploymentRequestValuesHash(&request, secrets, licenseKeys); err != nil {
 				return err
 			}

@@ -1,0 +1,107 @@
+/* Styles for the /cyber-resilience-act/ pages only.
+   Imported by src/pages/cyber-resilience-act/index.astro and [...slug].astro. */
+
+/* Guide typography on top of Starlight's sl-markdown-content */
+.guide-content h2 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+}
+
+.guide-content h3 {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.guide-content p {
+  line-height: 1.75;
+}
+
+.guide-content a:not([class]) {
+  color: var(--sl-color-text-accent);
+  text-decoration: none;
+}
+
+.guide-content a:not([class]):hover {
+  text-decoration: underline;
+}
+
+/* Tables: match pricing dark surfaces (gray palette variables;
+   Starlight gray tokens and prose-invert wash out in dark mode) */
+.guide-content table {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+  background-color: var(--color-white);
+}
+
+.guide-content th {
+  background-color: var(--color-gray-100);
+  font-weight: 600;
+  text-align: left;
+}
+
+.guide-content th,
+.guide-content td {
+  border: 1px solid var(--color-gray-200);
+  padding: 0.625rem 0.875rem;
+  vertical-align: top;
+}
+
+.guide-content tbody tr:nth-child(even) {
+  background-color: var(--color-gray-50, var(--color-gray-100));
+}
+
+:root[data-theme='dark'] .guide-content table {
+  background-color: var(--color-gray-900);
+}
+
+:root[data-theme='dark'] .guide-content th {
+  background-color: var(--color-gray-950, var(--color-gray-900));
+}
+
+:root[data-theme='dark'] .guide-content th,
+:root[data-theme='dark'] .guide-content td {
+  border-color: var(--color-gray-700);
+}
+
+:root[data-theme='dark'] .guide-content tbody tr:nth-child(even) {
+  background-color: var(--color-gray-800);
+}
+
+/* Mermaid diagrams render with light node fills, so give them a light
+   card in both modes instead of floating white boxes on dark background.
+   rehype-mermaid (inline-svg strategy) assigns ids starting with "mermaid",
+   which keeps other inline SVGs unaffected. */
+.guide-content svg[id^='mermaid'] {
+  max-width: 100%;
+  height: auto;
+  margin: 2rem auto;
+  display: block;
+  background: var(--color-white);
+  border: 1px solid var(--sl-color-gray-5, var(--color-gray-200));
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  box-sizing: border-box;
+}
+
+/* rehype-mermaid measures text with different font metrics than the
+   browser renders, which clips node labels. Letting the foreignObject
+   overflow and tightening the label line-height fixes the clipping. */
+.guide-content svg[id^='mermaid'] foreignObject {
+  overflow: visible;
+}
+
+.guide-content svg[id^='mermaid'] .nodeLabel,
+.guide-content svg[id^='mermaid'] .edgeLabel {
+  line-height: 1.15;
+}

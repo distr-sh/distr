@@ -1,135 +1,114 @@
-<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
-    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
-      <div
-        class="flex flex-col md:flex-row items-stretch md:items-center md:space-x-3 space-y-3 md:space-y-0 justify-between m-4 dark:border-gray-700">
-        <div class="w-full md:w-1/2">
-          <form class="flex items-center" [formGroup]="filterForm">
-            <label for="simple-search" class="sr-only">Search</label>
-            <div class="relative w-full">
-              <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400" />
-              </div>
-              <input
-                type="text"
-                id="simple-search"
-                placeholder="Filter alert configurations"
-                [formControl]="filterForm.controls.search"
-                autotrim
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
-            </div>
-          </form>
-        </div>
-        <div
-          class="w-full md:w-auto flex flex-col md:flex-row items-stretch md:items-center justify-end gap-4 shrink-0 grow">
+<app-page>
+  <div class="distr-table-panel">
+    <div class="distr-toolbar p-4">
+      <app-search-bar [control]="filterForm.controls.search" placeholder="Filter alert configurations" />
+      <div class="distr-toolbar-actions">
+        <button
+          type="button"
+          routerLink="/notifications/history"
+          class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+          <fa-icon [icon]="faHistory" class="text-gray-500 dark:text-gray-400 mr-2" />
+          Notification History
+        </button>
+        @if (auth.hasAnyRole('read_write', 'admin')) {
           <button
             type="button"
-            routerLink="/notifications/history"
-            class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-            <fa-icon [icon]="faHistory" class="text-gray-500 dark:text-gray-400 mr-2" />
-            Notification History
+            (click)="showDrawer()"
+            class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+            Create Alert Configuration
           </button>
-          @if (auth.hasAnyRole('read_write', 'admin')) {
-            <button
-              type="button"
-              (click)="showDrawer()"
-              class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
-              <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
-              Create Alert Configuration
-            </button>
-          }
-        </div>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="distr-table">
-          <thead class="distr-table-head">
-            <tr>
-              <th scope="col" class="p-4">Name</th>
-              <th scope="col" class="p-4">Enabled</th>
-              <th scope="col" class="p-4">Created at</th>
-              <th scope="col" class="p-4">Triggers</th>
-              <th scope="col" class="p-4">Deployment Targets</th>
-              <th scope="col" class="p-4">Users</th>
-              <th scope="col" class="p-4"></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (config of filteredConfigs(); track config.id) {
-              <tr class="distr-table-row">
-                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ config.name }}</td>
-                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap align-middle">
-                  <label class="inline-flex items-center cursor-pointer my-1">
-                    <input
-                      type="checkbox"
-                      class="sr-only peer"
-                      aria-label="Enabled"
-                      [disabled]="!auth.hasAnyRole('read_write', 'admin')"
-                      [checked]="config.enabled"
-                      (change)="toggleConfigEnabled(config)" />
-                    <div
-                      class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
-                  </label>
-                </td>
-                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                  {{ config.createdAt | date }}
-                </td>
-                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                  {{ getTriggersCount(config) }} enabled
-                </td>
-                <td
-                  class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
-                  [title]="getNames(config.deploymentTargets)">
-                  @for (dt of config.deploymentTargets; track dt.id; let last = $last) {
-                    <ng-container>{{ dt.name }}</ng-container>
-                    @if (!last) {
-                      <ng-container>, </ng-container>
-                    }
-                  }
-                </td>
-                <td
-                  class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
-                  [title]="getNames(config.userAccounts)">
-                  @for (user of config.userAccounts; track user.id; let last = $last) {
-                    <ng-container>{{ user.name || user.email }}</ng-container>
-                    @if (!last) {
-                      <ng-container>, </ng-container>
-                    }
-                  }
-                </td>
-                <td class="px-4 py-3 flex gap-2 justify-end">
-                  @if (auth.hasAnyRole('read_write', 'admin')) {
-                    <button
-                      type="button"
-                      (click)="showDrawer(config)"
-                      class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                      <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Delete"
-                      (click)="deleteConfig(config)"
-                      class="py-2 px-3 distr-btn-danger">
-                      <fa-icon [icon]="faTrash" class="h-4 w-4" />
-                    </button>
-                  }
-                </td>
-              </tr>
-            } @empty {
-              <tr class="border-t border-gray-200 dark:border-gray-600">
-                <td
-                  colspan="5"
-                  class="px-4 py-3 font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap text-center">
-                  No configurations found
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+        }
       </div>
     </div>
+    <div class="overflow-x-auto">
+      <table class="distr-table">
+        <thead class="distr-table-head">
+          <tr>
+            <th scope="col" class="p-4">Name</th>
+            <th scope="col" class="p-4">Enabled</th>
+            <th scope="col" class="p-4">Created at</th>
+            <th scope="col" class="p-4">Triggers</th>
+            <th scope="col" class="p-4">Deployment Targets</th>
+            <th scope="col" class="p-4">Users</th>
+            <th scope="col" class="p-4"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (config of filteredConfigs(); track config.id) {
+            <tr class="distr-table-row">
+              <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ config.name }}</td>
+              <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap align-middle">
+                <label class="inline-flex items-center cursor-pointer my-1">
+                  <input
+                    type="checkbox"
+                    class="sr-only peer"
+                    aria-label="Enabled"
+                    [disabled]="!auth.hasAnyRole('read_write', 'admin')"
+                    [checked]="config.enabled"
+                    (change)="toggleConfigEnabled(config)" />
+                  <div class="distr-toggle peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                </label>
+              </td>
+              <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+                {{ config.createdAt | date }}
+              </td>
+              <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+                {{ getTriggersCount(config) }} enabled
+              </td>
+              <td
+                class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
+                [title]="getNames(config.deploymentTargets)">
+                @for (dt of config.deploymentTargets; track dt.id; let last = $last) {
+                  <ng-container>{{ dt.name }}</ng-container>
+                  @if (!last) {
+                    <ng-container>, </ng-container>
+                  }
+                }
+              </td>
+              <td
+                class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
+                [title]="getNames(config.userAccounts)">
+                @for (user of config.userAccounts; track user.id; let last = $last) {
+                  <ng-container>{{ user.name || user.email }}</ng-container>
+                  @if (!last) {
+                    <ng-container>, </ng-container>
+                  }
+                }
+              </td>
+              <td class="px-4 py-3 flex gap-2 justify-end">
+                @if (auth.hasAnyRole('read_write', 'admin')) {
+                  <button
+                    type="button"
+                    (click)="showDrawer(config)"
+                    class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                    <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Delete"
+                    (click)="deleteConfig(config)"
+                    class="py-2 px-3 distr-btn-danger">
+                    <fa-icon [icon]="faTrash" class="h-4 w-4" />
+                  </button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr class="border-t border-gray-200 dark:border-gray-600">
+              <td
+                colspan="5"
+                class="px-4 py-3 font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap text-center">
+                No configurations found
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
-</section>
+</app-page>
 
 <ng-template #editConfigDrawer>
   <div
@@ -176,8 +155,7 @@
 
         <label class="flex items-center cursor-pointer">
           <input type="checkbox" class="sr-only peer" formControlName="enabled" />
-          <div
-            class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+          <div class="distr-toggle"></div>
           <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enabled</span>
         </label>
 
@@ -186,16 +164,14 @@
           <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-3">
             <label class="inline-flex items-center cursor-pointer">
               <input type="checkbox" class="sr-only peer" formControlName="statusTriggerEnabled" />
-              <div
-                class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+              <div class="distr-toggle"></div>
               <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Deployment status changes</span>
             </label>
 
             <div class="space-y-1">
               <label class="flex items-center cursor-pointer">
                 <input type="checkbox" class="sr-only peer" formControlName="cpuTriggerEnabled" />
-                <div
-                  class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+                <div class="distr-toggle"></div>
                 <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">CPU usage threshold</span>
               </label>
               @if (editConfigForm.controls.cpuTriggerThresholdPercent.enabled) {
@@ -207,7 +183,7 @@
                     min="1"
                     max="100"
                     placeholder="e.g. 80"
-                    class="rounded-none rounded-s-lg bg-gray-50 border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 block min-w-0 w-20 text-sm p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                    class="distr-input rounded-none rounded-s-lg min-w-0 w-20" />
                   <span
                     class="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border border-e-0 border-gray-300 rounded-e-md dark:bg-gray-600 dark:text-gray-400 dark:border-gray-600"
                     >%
@@ -225,8 +201,7 @@
             <div class="space-y-1">
               <label class="flex items-center cursor-pointer">
                 <input type="checkbox" class="sr-only peer" formControlName="memoryTriggerEnabled" />
-                <div
-                  class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+                <div class="distr-toggle"></div>
                 <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Memory usage threshold</span>
               </label>
               @if (editConfigForm.controls.memoryTriggerThresholdPercent.enabled) {
@@ -238,7 +213,7 @@
                     min="1"
                     max="100"
                     placeholder="e.g. 80"
-                    class="rounded-none rounded-s-lg bg-gray-50 border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 block min-w-0 w-20 text-sm p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                    class="distr-input rounded-none rounded-s-lg min-w-0 w-20" />
                   <span
                     class="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border border-e-0 border-gray-300 rounded-e-md dark:bg-gray-600 dark:text-gray-400 dark:border-gray-600"
                     >%
@@ -256,8 +231,7 @@
             <div class="space-y-1">
               <label class="flex items-center cursor-pointer">
                 <input type="checkbox" class="sr-only peer" formControlName="diskTriggerEnabled" />
-                <div
-                  class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+                <div class="distr-toggle"></div>
                 <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Disk usage threshold</span>
               </label>
               @if (editConfigForm.controls.diskTriggerThresholdPercent.enabled) {
@@ -269,7 +243,7 @@
                     min="1"
                     max="100"
                     placeholder="e.g. 80"
-                    class="rounded-none rounded-s-lg bg-gray-50 border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 block min-w-0 w-20 text-sm p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                    class="distr-input rounded-none rounded-s-lg min-w-0 w-20" />
                   <span
                     class="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border border-e-0 border-gray-300 rounded-e-md dark:bg-gray-600 dark:text-gray-400 dark:border-gray-600"
                     >%

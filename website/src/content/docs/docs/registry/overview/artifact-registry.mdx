@@ -19,7 +19,7 @@ import dashboardArtifactViewLight from '~/assets/docs/registry/overview/dashboar
 import dashboardArtifactViewDark from '~/assets/docs/registry/overview/dashboard-artifact-view-dark.png';
 
 The Distr Artifact Registry is a built-in, [OCI-compliant](/glossary/oci-container-artifact-registry/) registry designed for AI and software companies
-to distribute Docker images and [Helm Charts](/glossary/helm-chart/), [SBOMs](/glossary/sbom-software-bill-of-materials/) and other OCI artifacts to [self-managed](/glossary/self-managed-software/) and [BYOC](/glossary/byoc-definition/) environments.
+to distribute Docker images and [Helm Charts](/glossary/helm-chart/), [SBOMs](/glossary/sbom-software-bill-of-materials/) and other OCI artifacts to [self-managed](/glossary/self-hosted-software/) and [BYOC](/glossary/byoc-definition/) environments.
 It also includes tag-based access and licensing controls.
 The registry also provides detailed download analytics that let you monitor which versions of your software are being used by each customer.
 
@@ -41,7 +41,7 @@ Use it to publish versioned artifacts, enforce entitlement rules, and track cons
 
 ### Core capabilities
 
-- **Multi-artifact support**: Distribute Docker Images, Helm Charts, Terraform Modules, and any OCI-compliant artifact
+- **Multi-artifact support**: Distribute Docker Images, Helm Charts, Terraform Modules, [Zarf packages](/docs/integrations/zarf/), and any OCI-compliant artifact
 - **Software supply chain security**: Store SBOMs and signatures for image verification
 - **Visibility**: Get insights into which customers are using which artifacts and versions
 - **Open standards**: Built on the OCI specification and compatible with existing tooling (Docker, ORAS, Helm, etc.)
@@ -91,8 +91,12 @@ The artifact details page gives you a complete view of all tags associated with 
 />
 
 <Aside type="note">
-  The Distr artifact registry only supports immutable tags. This means that once
-  a tag is pushed to the registry it can't be associated with another digest.
+  By default, the Distr artifact registry uses immutable tags. This means that
+  once a tag is pushed to the registry it can't be associated with another
+  digest. We believe immutable tags are a safer and more secure default, as they
+  guarantee that a given tag always refers to the exact same content. If you
+  need to overwrite existing tags, mutable tags can be enabled on the
+  organization settings page ("Artifact versions are mutable").
 </Aside>
 
 ## Global Dashboard Artifact View
@@ -117,8 +121,9 @@ You can delete individual tags from an artifact through the API and UI. However,
 
 Tag deletion succeeds when all of these conditions are met:
 
-- The tag exists and is not referenced in any [artifact entitlement](/docs/platform/artifact-entitlements/)
-- If the underlying manifest digest is referenced in entitlements, other non-SHA tags must exist for that digest
+- The tag exists, and at least one other tag remains for the artifact
+- No [artifact entitlement](/docs/platform/artifact-entitlements/) grants all versions of the artifact
+- If an entitlement grants exactly the version the tag points at, another tag must point at that version as well
 
 <Aside type="tip">
   The system distinguishes between regular tags (like `v1.0.0`, `latest`) and
@@ -126,6 +131,20 @@ Tag deletion succeeds when all of these conditions are met:
   always checked by the underlying digest, it is possible to untag a licensed
   version, if multiple tags point to it.
 </Aside>
+
+#### What Deleting a Tag Removes
+
+Deleting a tag also deletes the version the tag pointed at, so that its blobs can be reclaimed. For a
+multi-arch image, this extends to the per-architecture manifests the index referenced. A version is only
+deleted when nothing references it any more, that is when no other tag points at it and no other version
+references it (a per-architecture manifest shared with another index is kept).
+
+An entitlement that grants a version deleted this way loses that version, and keeps every other artifact
+and version it grants.
+
+Once a version is deleted, it can no longer be pulled by its digest. The blobs themselves are removed
+by the [blob cleanup job](/docs/self-hosting/maintenance/#database-cleanup-jobs), which a self-hosted
+instance has to schedule.
 
 #### Example: Tag Deletion Scenarios
 
@@ -163,7 +182,7 @@ tags and historical download data.
 
 #### When Artifact Deletion is Allowed
 
-Artifacts can be deleted when they are not referenced in any active licenses.
+Artifacts can be deleted when they are not referenced in any entitlement, including an expired one.
 
 <Aside type="caution">
   Deleting an artifact is a cascade operation that automatically removes all

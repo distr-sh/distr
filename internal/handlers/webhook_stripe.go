@@ -15,7 +15,6 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
-	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
@@ -139,44 +138,42 @@ func handleStripeSubscription(ctx context.Context, sub stripe.Subscription) erro
 		org.StripeSubscriptionID = &sub.ID
 		org.StripeCustomerID = &sub.Customer.ID
 
+		var plan types.SubscriptionPlan
+
 		if sub.Status == stripe.SubscriptionStatusCanceled {
-			org.SubscriptionEndsAt = time.Now()
+			plan.EndsAt = time.Now()
 		} else if currentPeriodEnd, err := billing.GetCurrentPeriodEnd(sub); err != nil {
 			return fmt.Errorf("%w: %w", apierrors.ErrBadRequest, err)
 		} else {
-			org.SubscriptionEndsAt = *currentPeriodEnd
+			plan.EndsAt = *currentPeriodEnd
 		}
 
 		if subscriptionType, err := billing.GetSubscriptionType(sub); err != nil {
 			return fmt.Errorf("%w: %w", apierrors.ErrBadRequest, err)
 		} else {
-			org.SubscriptionType = *subscriptionType
+			plan.Type = *subscriptionType
 		}
 
 		if qty, err := billing.GetCustomerOrganizationQty(sub); err != nil {
 			log.Warn("could not get customer organization quantity", zap.Error(err))
-			org.SubscriptionCustomerOrganizationQty = 0
+			plan.CustomerOrganizationQty = 0
 		} else {
-			org.SubscriptionCustomerOrganizationQty = qty
+			plan.CustomerOrganizationQty = qty
 		}
 
 		if qty, err := billing.GetUserAccountQty(sub); err != nil {
 			return fmt.Errorf("%w: %w", apierrors.ErrBadRequest, err)
 		} else {
-			org.SubscriptionUserAccountQty = qty
+			plan.UserAccountQty = qty
 		}
 
 		if subscriptionPeriod, err := billing.GetSubscriptionPeriod(sub); err != nil {
 			return fmt.Errorf("%w: %w", apierrors.ErrBadRequest, err)
 		} else {
-			org.SubscriptionPeriod = subscriptionPeriod
+			plan.Period = subscriptionPeriod
 		}
 
-		if org.SubscriptionType == types.SubscriptionTypeStarter {
-			org.RemoveFeatures(subscription.ProFeatures...)
-		} else {
-			org.AddFeatures(subscription.ProFeatures...)
-		}
+		org.ApplyPlan(plan)
 
 		log.Info("updated organization subscription",
 			zap.Stringer("organizationId", org.ID),
@@ -185,16 +182,6 @@ func handleStripeSubscription(ctx context.Context, sub stripe.Subscription) erro
 			zap.Int64("userAccountQty", org.SubscriptionUserAccountQty.Value()),
 			zap.Int64("customerOrganizationQty", org.SubscriptionCustomerOrganizationQty.Value()))
 
-		if err := db.UpdateOrganization(ctx, org); err != nil {
-			return err
-		}
-
-		if org.SubscriptionType == types.SubscriptionTypeStarter {
-			if err := subscription.ReconcileStarterFeaturesForOrganizationID(ctx, orgID); err != nil {
-				return err
-			}
-		}
-
-		return nil
+		return db.UpdateOrganization(ctx, org)
 	})
 }

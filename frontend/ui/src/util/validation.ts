@@ -6,6 +6,14 @@ export const HELM_RELEASE_NAME_REGEX = /^[a-z0-9]([-a-z0-9]*)?[a-z0-9]$/;
 export const HELM_RELEASE_NAME_MAX_LENGTH = 53;
 
 /**
+ * RFC-1123 hostname: dot-separated labels of alphanumerics and hyphens (not at the start or end of
+ * a label), at least two labels. Case-insensitive because hostnames are entered as typed and
+ * lower-cased on save. Mirrors `internal/validation/hostname.go`.
+ */
+export const HOSTNAME_REGEX = /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i;
+export const HOSTNAME_MAX_LENGTH = 253;
+
+/**
  * Pattern for a valid time.Duration from the Golang standard library
  *
  * @see https://pkg.go.dev/time#ParseDuration
@@ -41,6 +49,13 @@ export const DURATION_REGEX =
  */
 export const RESOURCE_QUANTITY_REGEX =
   /^(\d+|\d+\.\d+|\d+\.|\.\d+)(m|k|M|G|T|P|E|Ki|Mi|Gi|Ti|Pi|Ei|((e|E)(\d+|\d+\.\d+|\d+\.|\.\d+)))?$/;
+
+/**
+ * A Docker endpoint URI pointing at a unix socket, e.g. `unix:///var/run/docker.sock`. Only unix
+ * sockets are supported because the socket is mounted into the agent container, and the path is
+ * rendered into Compose's short `SOURCE:TARGET` volume syntax, so it must not contain a colon.
+ */
+export const DOCKER_ENDPOINT_REGEX = /^unix:\/\/\/[^:\s]+$/;
 
 export function jsonObjectValidator(control: AbstractControl): ValidationErrors | null {
   try {

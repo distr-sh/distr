@@ -9,13 +9,13 @@ import (
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/license"
 	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"go.uber.org/zap"
 )
 
 const (
@@ -25,9 +25,6 @@ const (
 		o.name,
 		o.slug,
 		o.features,
-		o.app_domain,
-		o.registry_domain,
-		o.email_from_address,
 		o.subscription_type,
 		o.subscription_period,
 		o.subscription_ends_at,
@@ -51,24 +48,59 @@ const (
 )
 
 func CreateOrganization(ctx context.Context, org *types.Organization) error {
-	if buildconfig.IsCommunityEdition() {
-		org.SubscriptionType = types.SubscriptionTypeCommunity
-		org.Features = []types.Feature{}
-	} else {
-		org.SubscriptionType = types.SubscriptionTypeTrial
-		org.Features = []types.Feature{types.FeatureLicensing}
+	// Defaults matching the database column defaults for a fresh organization.
+	plan := types.SubscriptionPlan{
+		Period:                  types.SubscriptionPeriodMonthly,
+		EndsAt:                  time.Now().AddDate(0, 1, 0),
+		CustomerOrganizationQty: limit.Unlimited,
+		UserAccountQty:          limit.Unlimited,
 	}
+	org.Features = []types.Feature{}
+
+	if buildconfig.IsCommunityEdition() {
+		plan.Type = types.SubscriptionTypeCommunity
+	} else if licenseData := license.GetLicenseData(); licenseData.EnforceLimitsOnStartup {
+		// Reconciliation puts every organization on the plan of the license key, so a new
+		// organization must start on it too.
+		plan = licenseData.Plan()
+	} else {
+		plan.Type = types.SubscriptionTypeTrial
+	}
+
+	org.ApplyPlan(plan)
 
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		`INSERT INTO Organization AS o (name, slug, subscription_type, features)
-		VALUES (@name, @slug, @subscription_type, @features)
+		`INSERT INTO Organization AS o (
+			name,
+			slug,
+			subscription_type,
+			features,
+			subscription_period,
+			subscription_ends_at,
+			subscription_customer_organization_quantity,
+			subscription_user_account_quantity
+		)
+		VALUES (
+			@name,
+			@slug,
+			@subscription_type,
+			@features,
+			@subscription_period,
+			@subscription_ends_at,
+			@subscription_customer_organization_quantity,
+			@subscription_user_account_quantity
+		)
 		RETURNING `+organizationOutputExpr,
 		pgx.NamedArgs{
-			"name":              org.Name,
-			"slug":              org.Slug,
-			"subscription_type": org.SubscriptionType,
-			"features":          org.Features,
+			"name":                 org.Name,
+			"slug":                 org.Slug,
+			"subscription_type":    org.SubscriptionType,
+			"features":             org.Features,
+			"subscription_period":  org.SubscriptionPeriod,
+			"subscription_ends_at": org.SubscriptionEndsAt.UTC(),
+			"subscription_customer_organization_quantity": org.SubscriptionCustomerOrganizationQty,
+			"subscription_user_account_quantity":          org.SubscriptionUserAccountQty,
 		},
 	)
 	if err != nil {
@@ -155,12 +187,15 @@ func UpdateOrganizationSubscriptionType(ctx context.Context, subscriptionType ty
 		pgx.NamedArgs{"subscription_type": subscriptionType},
 	)
 	if err != nil {
-		return fmt.Errorf("could no update Organization: %w", err)
+		return fmt.Errorf("could not update Organization: %w", err)
 	}
 	return nil
 }
 
-func UpdateOrganizationFeaturesWithSubscriptionType(
+// RemoveOrganizationFeaturesWithSubscriptionType removes the given features from all
+// organizations with one of the given subscription types. Features that are not passed in are
+// left untouched, so features granted outside of a subscription plan survive.
+func RemoveOrganizationFeaturesWithSubscriptionType(
 	ctx context.Context,
 	subscriptionType []types.SubscriptionType,
 	features []types.Feature,
@@ -169,22 +204,24 @@ func UpdateOrganizationFeaturesWithSubscriptionType(
 	_, err := db.Exec(
 		ctx,
 		`UPDATE Organization
-		SET features = @features
-		WHERE subscription_type = ANY(@subscription_type)`,
+		SET features = array(
+			SELECT unnest(features)
+			EXCEPT
+			SELECT unnest(@features::feature[])
+		)
+		WHERE subscription_type = ANY(@subscription_type)
+			AND features && @features::feature[]`,
 		pgx.NamedArgs{"subscription_type": subscriptionType, "features": features},
 	)
 	if err != nil {
-		return fmt.Errorf("could no update Organization: %w", err)
+		return fmt.Errorf("could not update Organization: %w", err)
 	}
 	return nil
 }
 
-func UpdateOrganizationEnterpriseLimits(
-	ctx context.Context,
-	maxCustomerOrgs, maxUserAccounts limit.Limit,
-	subscriptionPeriod types.SubscriptionPeriod,
-	subscriptionEndsAt time.Time,
-) error {
+// ApplyPlanToAllOrganizations is the bulk equivalent of [types.Organization.ApplyPlan]: it puts
+// every organization on the given plan and adds its features without removing any other.
+func ApplyPlanToAllOrganizations(ctx context.Context, plan types.SubscriptionPlan) error {
 	db := internalctx.GetDb(ctx)
 	_, err := db.Exec(
 		ctx,
@@ -193,13 +230,16 @@ func UpdateOrganizationEnterpriseLimits(
 			subscription_user_account_quantity = @max_user_accounts,
 			subscription_period = @subscription_period,
 			subscription_ends_at = @subscription_ends_at,
-			subscription_type = @subscription_type`,
+			subscription_type = @subscription_type,
+			features = array(SELECT DISTINCT unnest FROM unnest(features || @features::feature[]))
+		WHERE deleted_at IS NULL`,
 		pgx.NamedArgs{
-			"max_customer_orgs":    maxCustomerOrgs,
-			"max_user_accounts":    maxUserAccounts,
-			"subscription_period":  subscriptionPeriod,
-			"subscription_ends_at": subscriptionEndsAt.UTC(),
-			"subscription_type":    types.SubscriptionTypeEnterprise,
+			"max_customer_orgs":    plan.CustomerOrganizationQty,
+			"max_user_accounts":    plan.UserAccountQty,
+			"subscription_period":  plan.Period,
+			"subscription_ends_at": plan.EndsAt.UTC(),
+			"subscription_type":    plan.Type,
+			"features":             plan.Features(),
 		},
 	)
 	if err != nil {
@@ -255,27 +295,6 @@ func GetAllOrganizationsForSuperAdmin(ctx context.Context) ([]types.Organization
 	} else {
 		return result, nil
 	}
-}
-
-func EnsureOrganizationFeatures(ctx context.Context, features []types.Feature) (int64, error) {
-	db := internalctx.GetDb(ctx)
-	query := `UPDATE Organization
-		SET features = array(SELECT DISTINCT unnest FROM unnest(features || @features::feature[]))
-		WHERE NOT (features @> @features::feature[])
-		AND deleted_at IS NULL`
-	internalctx.GetLogger(ctx).Debug("executing EnsureOrganizationFeatures",
-		zap.String("query", query),
-		zap.Any("features", features),
-	)
-	result, err := db.Exec(
-		ctx,
-		query,
-		pgx.NamedArgs{"features": features},
-	)
-	if err != nil {
-		return 0, fmt.Errorf("could not ensure organization features: %w", err)
-	}
-	return result.RowsAffected(), nil
 }
 
 func CountAllOrganizations(ctx context.Context) (res int64, err error) {

@@ -24,6 +24,12 @@
 
 ---
 
+### automaticUpdatesEnabled?
+
+> `optional` **automaticUpdatesEnabled?**: `boolean`
+
+---
+
 ### createdAt?
 
 > `optional` **createdAt?**: `string`
@@ -55,6 +61,12 @@
 ### deployments
 
 > **deployments**: [`DeploymentWithLatestRevision`](DeploymentWithLatestRevision.md)[]
+
+---
+
+### dockerEndpoint?
+
+> `optional` **dockerEndpoint?**: `string`
 
 ---
 

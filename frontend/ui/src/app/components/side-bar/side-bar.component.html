@@ -9,7 +9,7 @@
     aria-label="Sidebar">
     <div class="h-full flex flex-col px-3 py-2 gap-2 overflow-y-auto bg-white dark:bg-gray-800">
       <ul class="space-y-1 font-medium flex-1" *appRequireVendor>
-        @if (auth.hasAnyRole('admin') && hasNoSubscription()) {
+        @if (auth.hasAnyRole('admin') && !hasSubscription()) {
           <li>
             <a
               (click)="sidebar.hide()"
@@ -78,8 +78,8 @@
                   <span class="">Deployments</span>
                 </a>
               </li>
-              @if (isNotificationsFeatureEnabled()) {
-                <li>
+              <li>
+                @if (isNotificationsFeatureEnabled()) {
                   <a
                     (click)="sidebar.hide()"
                     routerLinkActive="bg-gray-100 dark:bg-gray-700"
@@ -87,8 +87,30 @@
                     class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                     <span class="">Alerts</span>
                   </a>
-                </li>
-              }
+                } @else {
+                  <a
+                    class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group cursor-pointer"
+                    title="Upgrade to Pro to enable alerts"
+                    (click)="toggle(notificationsOverlayOpen)"
+                    cdkOverlayOrigin
+                    #alertsTooltipTrigger="cdkOverlayOrigin">
+                    <span class="flex-1 text-left rtl:text-right whitespace-nowrap">Alerts</span>
+                    <app-plan-badge plan="pro" class="ml-2 me-2" />
+                    <ng-template
+                      cdkConnectedOverlay
+                      [cdkConnectedOverlayHasBackdrop]="true"
+                      (backdropClick)="toggle(notificationsOverlayOpen)"
+                      [cdkConnectedOverlayOrigin]="alertsTooltipTrigger"
+                      [cdkConnectedOverlayBackdropClass]="'transparent'"
+                      [cdkConnectedOverlayPositions]="[
+                        {originX: 'end', overlayX: 'start', originY: 'center', overlayY: 'center'},
+                      ]"
+                      [cdkConnectedOverlayOpen]="notificationsOverlayOpen()">
+                      <ng-container *ngTemplateOutlet="proFeatureOverlayContent" />
+                    </ng-template>
+                  </a>
+                }
+              </li>
             </ul>
           }
         </li>
@@ -158,10 +180,7 @@
                 size="lg"
                 class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Licenses</span>
-              <span
-                class="ml-2 bg-gray-300 text-gray-900 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-gray-500 dark:text-gray-100"
-                >Pro</span
-              >
+              <app-plan-badge plan="pro" class="ml-2 me-2" />
               <ng-template
                 cdkConnectedOverlay
                 [cdkConnectedOverlayHasBackdrop]="true"
@@ -250,11 +269,8 @@
                 [icon]="faLifeRing"
                 size="lg"
                 class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-              <span class="ms-3">Support Bundles</span>
-              <span
-                class="ml-2 bg-gray-300 text-gray-900 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300"
-                >Pro</span
-              >
+              <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Support Bundles</span>
+              <app-plan-badge plan="pro" class="ml-2 me-2" />
               <ng-template
                 cdkConnectedOverlay
                 [cdkConnectedOverlayHasBackdrop]="true"
@@ -595,6 +611,21 @@
           </li>
         }
 
+        @if (auth.hasRole('admin') && hasCustomerOrganizationFeature('oidc_providers')) {
+          <li>
+            <a
+              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+              routerLinkActive="bg-gray-100 dark:bg-gray-700"
+              routerLink="/settings/customer">
+              <fa-icon
+                [icon]="faGear"
+                size="lg"
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+              <span class="ms-3">Settings</span>
+            </a>
+          </li>
+        }
+
         @for (link of customerOrgLinks(); track link.id; let i = $index) {
           @if (i === 0) {
             <hr class="border-gray-200 dark:border-gray-600 my-4" />
@@ -615,7 +646,7 @@
         }
       </ul>
 
-      @if (!auth.isSuperAdmin() && hasNoSubscription() && feedbackAlert) {
+      @if (!auth.isSuperAdmin() && !hasSubscription() && feedbackAlert) {
         <div id="alert-update" class="p-4 bg-gray-50 rounded-lg dark:bg-gray-700" role="alert" *appRequireVendor>
           <div class="flex justify-between items-center mb-3">
             <span
@@ -624,33 +655,33 @@
             >
             <button
               type="button"
-              class="inline-flex p-1 w-6 h-6 text-gray-500 bg-gray-50 rounded-lg focus:ring-2 focus:ring-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+              class="inline-flex items-center justify-center p-1 w-6 h-6 text-gray-500 bg-gray-50 rounded-lg focus:ring-2 focus:ring-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
               aria-label="Close"
               (click)="feedbackAlert = false">
-              <span class="sr-only">Feedback</span>
-              <svg
-                aria-hidden="true"
-                class="w-4 h-4"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-                xmlns="http://www.w3.org/2000/svg">
-                <path
-                  fill-rule="evenodd"
-                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                  clip-rule="evenodd"></path>
-              </svg>
+              <fa-icon [icon]="faXmark" class="w-4 h-4" />
             </button>
           </div>
           <div class="mb-3 text-sm text-gray-700 dark:text-gray-300">
-            We just launched Distr v2, any feedback helps us building a better product.
+            We just released Distr v3, any feedback helps us building a better product.
           </div>
-          <a
-            href="https://cal.glasskube.com/team/founder/30min"
-            target="_blank"
-            class="inline-flex items-center text-sm font-medium text-gray-600 dark:text-gray-500 hover:underline">
-            Contact us
-            <fa-icon [icon]="faArrowRightLong" class="ml-2" />
-          </a>
+          <div class="flex flex-col gap-2">
+            <a
+              [href]="websiteUrl + '/blog/distr-v3-release/'"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center text-sm font-medium text-gray-600 dark:text-gray-500 hover:underline">
+              Read the announcement
+              <fa-icon [icon]="faArrowRightLong" class="ml-2" />
+            </a>
+            <a
+              href="https://cal.glasskube.com/team/founder/30min"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center text-sm font-medium text-gray-600 dark:text-gray-500 hover:underline">
+              Book a call
+              <fa-icon [icon]="faArrowRightLong" class="ml-2" />
+            </a>
+          </div>
         </div>
       }
 
@@ -669,26 +700,5 @@
 }
 
 <ng-template #proFeatureOverlayContent>
-  <div
-    role="tooltip"
-    class="p-3 text-sm font-medium text-gray-900 bg-white border border-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-w-64">
-    <div class="mb-1">
-      This feature is available to organizations with a
-      <span
-        class="bg-gray-300 text-gray-900 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-gray-500 dark:text-gray-100">
-        Pro</span
-      >
-      subscription.
-    </div>
-    To request access,
-    <a
-      [href]="githubUrl + '/discussions'"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="text-gray-600 dark:text-gray-400 hover:underline"
-      >get help</a
-    >
-    in our community forum or email us at
-    <a href="mailto:support@distr.sh" class="text-gray-600 dark:text-gray-400 hover:underline">support&#64;distr.sh</a>.
-  </div>
+  <app-plan-feature-hint plan="pro" />
 </ng-template>

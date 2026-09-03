@@ -119,7 +119,7 @@ func (bc *BufferedCollector) appendBuffer(record api.DeploymentTargetLogRecord) 
 		if err := bc.syncNoLock(); err != nil {
 			// Do not return an error, because a failure to sync at this point does not indicate a write error.
 			// Print an error to stderr, we can not use the zap logger here (zap does this too internally).
-			fmt.Fprintf(os.Stderr, "%v sync error: %v\n", time.Now(), err)
+			fmt.Fprintf(os.Stderr, "%v sync error: %v\n", time.Now().Format(time.RFC3339), err)
 		}
 	}
 	return nil
@@ -131,6 +131,14 @@ func (bc *BufferedCollector) syncNoLock() error {
 	}
 	if len(bc.buf) > 0 {
 		if err := bc.Delegate.ExportDeploymentTargetLogs(bc.buf...); err != nil {
+			if errors.Is(err, ErrRecordsRejected) {
+				// The server permanently rejected these records. Drop them so newer logs
+				// keep flowing; retrying would fail forever and wedge the buffer.
+				// We cannot use the zap logger here (this collector is a zap sink).
+				fmt.Fprintf(os.Stderr, "%v dropping log records rejected by the server: %v\n", time.Now().Format(time.RFC3339), err)
+				bc.resetBuffer()
+				return nil
+			}
 			return err
 		}
 		bc.resetBuffer()

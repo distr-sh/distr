@@ -15,7 +15,11 @@ export class DeploymentTargetLogsService {
     });
   }
 
-  public export(deploymentTargetId: string): Observable<Blob> {
-    return this.httpClient.get(`/api/v1/deployment-targets/${deploymentTargetId}/logs/export`, {responseType: 'blob'});
+  public export(deploymentTargetId: string, options?: TimeseriesOptions): Observable<Blob> {
+    const params = {...timeseriesOptionsAsParams(options)};
+    return this.httpClient.get(`/api/v1/deployment-targets/${deploymentTargetId}/logs/export`, {
+      params,
+      responseType: 'blob',
+    });
   }
 }

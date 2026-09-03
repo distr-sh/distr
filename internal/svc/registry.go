@@ -14,6 +14,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/jobs"
+	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/migrations"
 	"github.com/distr-sh/distr/internal/oidc"
 	distrprometheus "github.com/distr-sh/distr/internal/prometheus"
@@ -31,6 +32,7 @@ import (
 
 type Registry struct {
 	dbPool            *pgxpool.Pool
+	dbReadonlyPool    *pgxpool.Pool
 	logger            *zap.Logger
 	mailer            *mailx.Mailer
 	execDbMigrations  bool
@@ -41,6 +43,7 @@ type Registry struct {
 	promRegistry      *prometheus.Registry
 	promCollector     *distrprometheus.DistrCollector
 	s3Client          *s3.Client
+	logStore          logstore.LogStore
 }
 
 func New(ctx context.Context, options ...RegistryOption) (*Registry, error) {
@@ -94,8 +97,26 @@ func newRegistry(ctx context.Context, reg *Registry) (*Registry, error) {
 		reg.dbPool = db
 	}
 
+	if dbReadonly, err := reg.createDBReadonlyPool(ctx); err != nil {
+		return nil, err
+	} else {
+		reg.dbReadonlyPool = dbReadonly
+	}
+
 	if env.RegistryEnabled() {
 		reg.s3Client = newS3Client(ctx)
+	}
+
+	if logStore, err := logstore.NewLokiStore(logstore.LokiConfig{
+		URL:               env.LokiURL(),
+		BearerToken:       env.LokiBearerToken(),
+		BasicAuthUsername: env.LokiBasicAuthUsername(),
+		BasicAuthPassword: env.LokiBasicAuthPassword(),
+		RequestTimeout:    env.LokiRequestTimeout(),
+	}); err != nil {
+		return nil, err
+	} else {
+		reg.logStore = logStore
 	}
 
 	if scheduler, err := reg.createJobsScheduler(); err != nil {
@@ -125,6 +146,9 @@ func (r *Registry) Shutdown(ctx context.Context) error {
 	}
 
 	r.logger.Warn("shutting down database connections")
+	if r.dbReadonlyPool != nil {
+		r.dbReadonlyPool.Close()
+	}
 	r.dbPool.Close()
 
 	if err := r.tracers.Shutdown(ctx); err != nil {
@@ -154,11 +178,17 @@ func (r *Registry) GetRouter() http.Handler {
 	return routing.NewRouter(
 		r.GetLogger(),
 		r.GetDbPool(),
+		r.GetDbReadonlyPool(),
 		r.GetMailer(),
 		r.GetTracers(),
 		r.GetOIDCer(),
 		r.GetPrometheusCollector(),
+		r.GetLogStore(),
 	)
+}
+
+func (r *Registry) GetLogStore() logstore.LogStore {
+	return r.logStore
 }
 
 func (r *Registry) GetArtifactsRouter() http.Handler {
@@ -207,6 +237,21 @@ func (r *Registry) GetArtifactsServer() server.Server {
 func (r *Registry) GetMetricsServer() server.Server {
 	if env.MetricsEnabled() {
 		return server.NewServer(r.GetMetricsRouter(), r.logger.With(zap.String("server", "metrics")))
+	} else {
+		return server.NewNoop()
+	}
+}
+
+// GetInternalServer returns the HTTP server for cluster-internal endpoints, which must never
+// be exposed outside the cluster. Not to be confused with routing.InternalRouter, which serves
+// the /internal routes of the main server. Its only route so far is the Caddy on-demand TLS ask
+// endpoint, so it is a Noop unless the custom domain feature is configured.
+func (r *Registry) GetInternalServer() server.Server {
+	if env.CustomDomainsConfigured() {
+		return server.NewServer(
+			routing.CaddyAskRouter(r.logger.With(zap.String("server", "internal")), r.GetDbPool()),
+			r.logger.With(zap.String("server", "internal")),
+		)
 	} else {
 		return server.NewNoop()
 	}

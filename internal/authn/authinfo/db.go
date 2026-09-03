@@ -14,7 +14,7 @@ import (
 type DbAuthInfo struct {
 	AuthInfo
 	user *types.UserAccount
-	org  *types.Organization
+	org  *types.OrganizationWithBranding
 }
 
 func (a DbAuthInfo) CurrentUser() *types.UserAccount {
@@ -22,6 +22,13 @@ func (a DbAuthInfo) CurrentUser() *types.UserAccount {
 }
 
 func (a DbAuthInfo) CurrentOrg() *types.Organization {
+	if a.org == nil {
+		return nil
+	}
+	return &a.org.Organization
+}
+
+func (a DbAuthInfo) CurrentOrgWithBranding() *types.OrganizationWithBranding {
 	return a.org
 }
 
@@ -36,7 +43,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 				} else if err != nil {
 					return nil, err
 				}
-				org, err := db.GetOrganizationByID(ctx, *a.CurrentOrgID())
+				org, err := db.GetOrganizationWithBranding(ctx, *a.CurrentOrgID())
 				if errors.Is(err, apierrors.ErrNotFound) {
 					return nil, authn.ErrBadAuthentication
 				} else if err != nil {
@@ -50,6 +57,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 						customerOrganizationID: nil,
 						emailVerified:          a.CurrentUserEmailVerified(),
 						tokenScope:             a.TokenScope(),
+						organizationScoped:     a.OrganizationScoped(),
 						userRole:               nil, // Super admins don't have a role
 						isSuperAdmin:           true,
 						rawToken:               a.Token(),
@@ -84,6 +92,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 							partnerOrganizationID:  u.PartnerOrganizationID,
 							emailVerified:          a.CurrentUserEmailVerified(),
 							tokenScope:             a.TokenScope(),
+							organizationScoped:     a.OrganizationScoped(),
 							userRole:               a.CurrentUserRole(),
 							isSuperAdmin:           false,
 							rawToken:               a.Token(),
@@ -110,10 +119,17 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 
 type agentDBAuthInfo struct {
 	AuthInfo
-	org *types.Organization
+	org *types.OrganizationWithBranding
 }
 
 func (a agentDBAuthInfo) CurrentOrg() *types.Organization {
+	if a.org == nil {
+		return nil
+	}
+	return &a.org.Organization
+}
+
+func (a agentDBAuthInfo) CurrentOrgWithBranding() *types.OrganizationWithBranding {
 	return a.org
 }
 
@@ -125,9 +141,11 @@ func AgentDbAuthenticator() authn.Authenticator[AgentAuthInfo, AuthInfoWithOrgan
 		} else if err != nil {
 			return nil, err
 		}
+		deploymentTargetID := a.CurrentDeploymentTargetID()
 		info := &SimpleAuthInfo{
-			organizationID: &org.ID,
-			rawToken:       a.Token(),
+			organizationID:     &org.ID,
+			deploymentTargetID: &deploymentTargetID,
+			rawToken:           a.Token(),
 		}
 		if customer != nil {
 			info.customerOrganizationID = &customer.ID

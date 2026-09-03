@@ -13,15 +13,18 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authjwt"
 	internalctx "github.com/distr-sh/distr/internal/context"
-	"github.com/distr-sh/distr/internal/customdomains"
+	"github.com/distr-sh/distr/internal/custommail"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mailsending"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/security"
+	"github.com/distr-sh/distr/internal/subscription"
+	"github.com/distr-sh/distr/internal/turnstile"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/userauth"
+	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httprate"
@@ -35,17 +38,15 @@ import (
 
 func AuthRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupHidden(true))
-	r.Use(httprate.Limit(
+	r.Use(httprate.LimitBy(
 		10,
 		1*time.Minute,
-		httprate.WithKeyFuncs(func(r *http.Request) (string, error) {
+		httprate.JoinKeys(func(r *http.Request) (string, error) {
 			return chimiddleware.GetClientIP(r.Context()), nil
 		}, httprate.KeyByEndpoint),
 	))
-	r.Route("/login", func(r chiopenapi.Router) {
-		r.Post("/", authLoginHandler)
-		r.Get("/config", authLoginConfigHandler())
-	})
+	// The login methods available on a host are part of the host-resolved GET /api/public/v1/portal response.
+	r.Post("/login", authLoginHandler)
 	r.Route("/oidc", AuthOIDCRouter)
 	r.Post("/register", authRegisterHandler)
 	r.Post("/reset", authResetPasswordHandler)
@@ -54,6 +55,7 @@ func AuthRouter(r chiopenapi.Router) {
 		middleware.SetSentryUserFromUserAuth,
 		middleware.RequireEmailVerified,
 		middleware.RequireOrgAndRole,
+		middleware.BlockCrossOrganizationAction,
 	).Post("/switch-context", authSwitchContextHandler())
 	r.Group(func(r chiopenapi.Router) {
 		r.Use(auth.Authentication.Middleware, middleware.SetSentryUserFromUserAuth)
@@ -69,10 +71,10 @@ func AuthRouter(r chiopenapi.Router) {
 			Post("/reset/confirm", authResetConfirmHandler)
 
 		r.Route("/verify", func(r chiopenapi.Router) {
-			requestVerificationMailRateLimitPerUser := httprate.Limit(
+			requestVerificationMailRateLimitPerUser := httprate.LimitBy(
 				3,
 				10*time.Minute,
-				httprate.WithKeyFuncs(middleware.RateLimitUserIDKey),
+				middleware.RateLimitUserIDKey,
 			)
 			r.With(
 				requestVerificationMailRateLimitPerUser,
@@ -102,7 +104,8 @@ func authVerifyRequestHandler(w http.ResponseWriter, r *http.Request) {
 	userAccount := auth.CurrentUser()
 	if userAccount.EmailVerifiedAt != nil {
 		w.WriteHeader(http.StatusNoContent)
-	} else if err := mailsending.SendUserVerificationMail(ctx, *userAccount, *auth.CurrentOrg(), true); err != nil {
+	} else if err := mailsending.SendUserVerificationMail(
+		ctx, *userAccount, *auth.CurrentOrg(), auth.CurrentCustomerOrgID(), true); err != nil {
 		log.Error("failed to send verification mail", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -186,6 +189,9 @@ func setPasswordAndLogin(w http.ResponseWriter, r *http.Request, password string
 	if err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.Error(w, "could not update user", http.StatusBadRequest)
+		} else if errors.Is(err, subscription.ErrGlobalOrganizationLimitReached) {
+			log.Warn("could not set password, global organization limit reached")
+			http.Error(w, subscription.GlobalOrganizationLimitReachedMessage, http.StatusBadRequest)
 		} else {
 			log.Error("failed to set password", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -201,7 +207,8 @@ func setPasswordAndLogin(w http.ResponseWriter, r *http.Request, password string
 		if org, err := userauth.PrimaryOrganization(ctx, *user); err != nil {
 			log.Warn("could not resolve organization for verification mail", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
-		} else if err := mailsending.SendUserVerificationMail(ctx, *user, org.Organization, true); err != nil {
+		} else if err := mailsending.SendUserVerificationMail(
+			ctx, *user, org.Organization, org.CustomerOrganizationID, true); err != nil {
 			log.Warn("could not send verification mail", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 		}
@@ -277,7 +284,7 @@ func authSwitchContextHandler() func(writer http.ResponseWriter, request *http.R
 			log.Error("context switch failed", zap.Error(err))
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		} else if _, tokenString, err := authjwt.GenerateDefaultToken(user.AsUserAccount(), types.OrganizationWithUserRole{
-			Organization:           *org,
+			Organization:           org.Organization,
 			UserRole:               user.UserRole,
 			CustomerOrganizationID: user.CustomerOrganizationID,
 			PartnerOrganizationID:  user.PartnerOrganizationID,
@@ -363,33 +370,20 @@ func authLoginHandler(w http.ResponseWriter, r *http.Request) {
 		} else if err = db.UpdateUserAccountLastLoggedIn(ctx, user.ID); err != nil {
 			return err
 		} else {
-			RespondJSON(w, api.AuthLoginResponse{Token: tokenString})
+			RespondJSON(w, api.AuthLoginResponse{
+				Token:       tokenString,
+				RedirectURL: loginAppDomainRedirect(ctx, r, *user, tokenString),
+			})
 			return nil
 		}
 	})
-	if err != nil {
+	if errors.Is(err, subscription.ErrGlobalOrganizationLimitReached) {
+		log.Warn("user login rejected, global organization limit reached")
+		http.Error(w, subscription.GlobalOrganizationLimitReachedMessage, http.StatusBadRequest)
+	} else if err != nil {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		log.Warn("user login failed", zap.Error(err))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	}
-}
-
-func authLoginConfigHandler() http.HandlerFunc {
-	resp := struct {
-		RegistrationEnabled  bool `json:"registrationEnabled"`
-		OIDCGithubEnabled    bool `json:"oidcGithubEnabled"`
-		OIDCGoogleEnabled    bool `json:"oidcGoogleEnabled"`
-		OIDCMicrosoftEnabled bool `json:"oidcMicrosoftEnabled"`
-		OIDCGenericEnabled   bool `json:"oidcGenericEnabled"`
-	}{
-		RegistrationEnabled:  env.Registration() == env.RegistrationEnabled,
-		OIDCGithubEnabled:    env.OIDCGithubEnabled(),
-		OIDCGoogleEnabled:    env.OIDCGoogleEnabled(),
-		OIDCMicrosoftEnabled: env.OIDCMicrosoftEnabled(),
-		OIDCGenericEnabled:   env.OIDCGenericEnabled(),
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		RespondJSON(w, resp)
 	}
 }
 
@@ -402,10 +396,22 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if host, err := resolvePortalHost(ctx, validation.NormalizeHostname(r.Host)); err != nil {
+		log.Error("could not resolve host for registration", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, "registration is not available on this domain", http.StatusForbidden)
+		return
+	} else if !host.instanceAuthAllowed() {
+		http.Error(w, "registration is not available on this domain", http.StatusForbidden)
+		return
+	}
+
 	if request, err := JsonBody[api.AuthRegistrationRequest](w, r); err != nil {
 		return
 	} else if err := request.Validate(); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	} else if !verifyRegistrationChallenge(w, r, request.TurnstileToken) {
 		return
 	} else {
 		userAccount := types.UserAccount{
@@ -419,13 +425,21 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		var token string
 
 		if err := db.RunTx(ctx, func(ctx context.Context) error {
-			if err := security.HashPassword(&userAccount); err != nil {
+			if reached, err := subscription.IsGlobalOrganizationLimitReached(ctx); err != nil {
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return err
+			} else if reached {
+				http.Error(w, subscription.GlobalOrganizationLimitReachedMessage, http.StatusBadRequest)
+				return subscription.ErrGlobalOrganizationLimitReached
+			} else if err := security.HashPassword(&userAccount); err != nil {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return err
 			} else if err = db.CreateUserAccountWithOrganization(ctx, &userAccount, &org); err != nil {
 				if errors.Is(err, apierrors.ErrAlreadyExists) {
-					w.WriteHeader(http.StatusBadRequest)
+					http.Error(w, "an account with this email address already exists, please log in instead",
+						http.StatusBadRequest)
 				} else {
 					sentry.GetHubFromContext(ctx).CaptureException(err)
 					w.WriteHeader(http.StatusInternalServerError)
@@ -446,7 +460,7 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		// so they need the verification mail. When it is disabled they are logged in directly and the mail would
 		// be pointless.
 		if env.UserEmailVerificationRequired() {
-			if err := mailsending.SendUserVerificationMail(ctx, userAccount, org, false); err != nil {
+			if err := mailsending.SendUserVerificationMail(ctx, userAccount, org, nil, false); err != nil {
 				log.Warn("could not send verification mail", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 			}
@@ -456,10 +470,34 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func verifyRegistrationChallenge(w http.ResponseWriter, r *http.Request, token string) bool {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+
+	// Resolution is best-effort in the same way as in the portal endpoint: a failed lookup leaves the default
+	// host, which is the one that requires a challenge.
+	host, err := resolvePortalHost(ctx, validation.NormalizeHostname(r.Host))
+	if err != nil {
+		log.Warn("failed to resolve host for challenge verification", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+	}
+	if host.turnstileSiteKey() == nil {
+		return true
+	}
+
+	if err := turnstile.Verify(ctx, token, chimiddleware.GetClientIP(ctx)); err != nil {
+		log.Info("turnstile verification failed", zap.Error(err))
+		// The frontend shows the message of a 4xx response as-is, so it has to be one a user can act on.
+		http.Error(w, "could not verify that you are human, please reload the page and try again",
+			http.StatusForbidden)
+		return false
+	}
+	return true
+}
+
 func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
-	mailer := internalctx.GetMailer(ctx)
 	if request, err := JsonBody[api.AuthResetPasswordRequest](w, r); err != nil {
 		return
 	} else if err := request.Validate(); err != nil {
@@ -484,11 +522,14 @@ func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "something went wrong", http.StatusInternalServerError)
 	} else {
 		var organization *types.OrganizationWithBranding
+		var customerOrgID *uuid.UUID
+		mailer := internalctx.GetMailer(ctx)
 		mailOpts := []mailx.MailOpt{
 			mailx.To(user.Email),
 			mailx.Subject("Password reset"),
 		}
 		if len(orgs) > 0 {
+			customerOrgID = orgs[0].CustomerOrganizationID
 			if result, err := db.GetOrganizationWithBranding(ctx, orgs[0].ID); err != nil {
 				err = fmt.Errorf("failed to get org with branding: %w", err)
 				sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -498,13 +539,25 @@ func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 				organization = result
 			}
 
-			if from, err := customdomains.EmailFromAddressParsedOrDefault(organization.Organization); err == nil {
+			// The mail is sent through the organization of the user's first membership: the reset
+			// request is unauthenticated, so there is no current organization to resolve.
+			if result, err := custommail.MailerForOrganization(ctx, organization.ID); err != nil {
+				log.Error("could not send reset mail", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, "something went wrong", http.StatusInternalServerError)
+				return
+			} else {
+				mailer = result
+			}
+
+			if from, err := custommail.FromAddressOrDefault(ctx, organization.ID, organization.Branding); err == nil {
 				mailOpts = append(mailOpts, mailx.From(*from))
 			} else {
 				log.Warn("error parsing custom from address", zap.Error(err))
 			}
 		}
-		mailOpts = append(mailOpts, mailx.HtmlBodyTemplate(mailtemplates.PasswordReset(*user, organization, token)))
+		mailOpts = append(mailOpts,
+			mailx.HtmlBodyTemplate(mailtemplates.PasswordReset(ctx, *user, organization, customerOrgID, token)))
 		if err := mailer.Send(ctx, mailOpts...); err != nil {
 			log.Warn("could not send reset mail", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)

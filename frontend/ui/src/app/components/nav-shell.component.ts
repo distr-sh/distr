@@ -16,7 +16,10 @@ import {SideBarComponent} from './side-bar/side-bar.component';
     <app-side-bar
       [isSubscriptionBannerVisible]="isSubscriptionBannerVisible()"
       [isSidebarVisible]="isSidebarVisible()" />
-    <div [class.sm:ml-64]="isSidebarVisible()">
+    <div
+      [class.sm:ml-64]="isSidebarVisible()"
+      [class.pt-16]="!isSubscriptionBannerVisible()"
+      [class.pt-33]="isSubscriptionBannerVisible()">
       <router-outlet />
     </div>
   `,

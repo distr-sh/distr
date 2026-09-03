@@ -2,10 +2,10 @@ package mapping
 
 import (
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/logstore"
 )
 
-func DeploymentTargetLogRecordToAPI(record types.DeploymentTargetLogRecord) api.DeploymentTargetLogRecord {
+func DeploymentTargetLogRecordToAPI(record logstore.DeploymentTargetLogRecord) api.DeploymentTargetLogRecord {
 	return api.DeploymentTargetLogRecord{
 		ID:        record.ID,
 		Timestamp: record.Timestamp,

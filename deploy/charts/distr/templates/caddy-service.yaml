@@ -1,0 +1,33 @@
+{{- if .Values.caddy.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "distr.fullname" . }}-caddy
+  labels:
+    {{- include "distr.labels" . | nindent 4 }}
+    app.kubernetes.io/component: caddy
+  {{- with .Values.caddy.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.caddy.service.type }}
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: 443
+      targetPort: https
+      protocol: TCP
+      name: https
+    # HTTP/3. The load balancer has to serve TCP and UDP on the same port, which an AWS NLB does as a
+    # TCP_UDP listener; see the annotations in the values file.
+    - port: 443
+      targetPort: https-quic
+      protocol: UDP
+      name: https-quic
+  selector:
+    {{- include "distr.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: caddy
+{{- end }}

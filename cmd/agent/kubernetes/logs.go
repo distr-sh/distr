@@ -74,8 +74,6 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 		return
 	}
 
-	collector := deploymentlogs.NewCollector(agentClient, logger)
-
 	for _, d := range existingDeployments {
 		logger := logger.With(zap.Any("deploymentId", d.ID))
 		sinceTime, err := lw.GetLastLogsTimestamp(ctx, namespace, d)
@@ -92,6 +90,11 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 			resources = FromUnstructuredSlice(resUnstr)
 		}
 
+		// A dedicated collector per deployment keeps each deployment's records in their own
+		// batch, so the watermark below is only advanced once that deployment's logs have been
+		// flushed (or permanently rejected). On a transient flush failure the records are kept
+		// and re-collected next cycle instead of being dropped after the watermark already moved.
+		collector := deploymentlogs.NewCollector(agentClient, logger)
 		deploymentCollector := collector.For(d)
 		now := time.Now()
 		var toplevelErr error
@@ -176,15 +179,23 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 			}
 		}
 
-		if toplevelErr == nil {
-			if err := lw.UpdateLastLogsTimestamp(ctx, namespace, d, now); err != nil {
-				logger.Warn("could not update last logs timestamp for deployment", zap.Error(err))
-			}
+		if toplevelErr != nil {
+			// Collection failed: do not flush a partial batch or advance the watermark, so the
+			// records are re-collected from the same point next cycle.
+			continue
 		}
-	}
 
-	if err := collector.Flush(ctx); err != nil {
-		logger.Warn("error exporting logs", zap.Error(err))
+		if err := collector.Flush(ctx); err != nil {
+			// A transient export failure: leave the watermark untouched so these records are
+			// retried next cycle. A permanent rejection (HTTP 400) is dropped inside the
+			// collector (which logs it and returns nil), so the watermark still advances.
+			logger.Warn("error exporting logs, retrying next cycle", zap.Error(err))
+			continue
+		}
+
+		if err := lw.UpdateLastLogsTimestamp(ctx, namespace, d, now); err != nil {
+			logger.Warn("could not update last logs timestamp for deployment", zap.Error(err))
+		}
 	}
 }
 

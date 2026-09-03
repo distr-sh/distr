@@ -1,0 +1,12 @@
+<div class="flex items-center h-16 mb-6 text-4xl font-semibold text-gray-900 dark:text-white">
+  @if (showCustomLogo()) {
+    <img class="h-full border-none" [src]="logoUrl()" alt="Logo" />
+  } @else {
+    <img class="h-full mr-4 border-none" src="distr-logo.svg" alt="Distr Logo" />
+    @if (showWebsiteLink()) {
+      <a [href]="websiteUrl" target="_blank" rel="noopener">Distr</a>
+    } @else {
+      <span>Distr</span>
+    }
+  }
+</div>

@@ -1,5 +1,6 @@
 import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
+import {PortalLogoComponent} from '../components/portal-logo/portal-logo.component';
 import {AuthService} from '../services/auth.service';
 import {ToastService} from '../services/toast.service';
 
@@ -7,7 +8,7 @@ import {ToastService} from '../services/toast.service';
   selector: 'app-verify',
   templateUrl: './verify.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [],
+  imports: [PortalLogoComponent],
 })
 export class VerifyComponent {
   private readonly toast = inject(ToastService);

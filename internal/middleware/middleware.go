@@ -15,6 +15,7 @@ import (
 	"github.com/distr-sh/distr/internal/authn/authinfo"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/prometheus"
 	"github.com/distr-sh/distr/internal/types"
@@ -25,7 +26,7 @@ import (
 	"github.com/go-mailx/mailx"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/lestrrat-go/jwx/v3/jwt"
+	"github.com/lestrrat-go/jwx/v4/jwt"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
@@ -33,20 +34,45 @@ import (
 
 func ContextInjectorMiddleware(
 	db *pgxpool.Pool,
+	dbReadonly *pgxpool.Pool,
 	mailer *mailx.Mailer,
 	oidcer *oidc.OIDCer,
 	prometheusCollector *prometheus.DistrCollector,
+	logStore logstore.LogStore,
 ) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 			ctx = internalctx.WithDb(ctx, db)
+			if dbReadonly != nil {
+				ctx = internalctx.WithReadonlyDB(ctx, dbReadonly)
+			}
 			ctx = internalctx.WithMailer(ctx, mailer)
 			ctx = internalctx.WithPrometheusCollector(ctx, prometheusCollector)
 			ctx = internalctx.WithOIDCer(ctx, oidcer)
+			if logStore != nil {
+				ctx = logstore.NewContext(ctx, logStore)
+			}
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+// UseReadonlyDB swaps the request's active db to the read-only database for the wrapped handlers.
+// It is a noop when no read-only database is configured (the primary keeps being used).
+//
+// It must only be applied to routes that perform exclusively read-only queries and that are not part
+// of an update-and-refetch loop in the frontend, since the read-only database may lag behind the
+// primary. Place it after authentication/authorization middleware so those lookups keep using the
+// primary.
+func UseReadonlyDB(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		if readonlyDB := internalctx.GetReadonlyDB(ctx); readonlyDB != nil {
+			ctx = internalctx.WithDb(ctx, readonlyDB)
+		}
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
 
 func LoggerCtxMiddleware(logger *zap.Logger) func(next http.Handler) http.Handler {
@@ -107,7 +133,10 @@ var (
 	RequireAdmin            = RequireAnyUserRole(types.UserRoleAdmin)
 )
 
-func RequireAnySubscriptionType(types ...types.SubscriptionType) func(http.Handler) http.Handler {
+// ForbidSubscriptionTypes blocks the given subscription types. Gating is expressed as a
+// denylist of the lower plans instead of an allowlist of the higher ones, so a newly
+// introduced plan has access by default.
+func ForbidSubscriptionTypes(forbidden ...types.SubscriptionType) func(http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -115,13 +144,13 @@ func RequireAnySubscriptionType(types ...types.SubscriptionType) func(http.Handl
 				http.Error(w, err.Error(), http.StatusForbidden)
 			} else if auth.CurrentOrg() == nil {
 				http.Error(w, "inadequate access token", http.StatusForbidden)
-			} else if !slices.Contains(types, auth.CurrentOrg().SubscriptionType) {
-				typesStr := make([]string, 0, len(types))
-				for _, t := range types {
+			} else if slices.Contains(forbidden, auth.CurrentOrg().SubscriptionType) {
+				typesStr := make([]string, 0, len(forbidden))
+				for _, t := range forbidden {
 					typesStr = append(typesStr, string(t))
 				}
 				http.Error(w, fmt.Sprintf(
-					"this operation can only be performed on an organization with one of the following subscription types: %v",
+					"this operation can not be performed on an organization with one of the following subscription types: %v",
 					strings.Join(typesStr, ", "),
 				), http.StatusForbidden)
 			} else {
@@ -132,11 +161,7 @@ func RequireAnySubscriptionType(types ...types.SubscriptionType) func(http.Handl
 	}
 }
 
-var ProFeature = RequireAnySubscriptionType(
-	types.SubscriptionTypePro,
-	types.SubscriptionTypeTrial,
-	types.SubscriptionTypeEnterprise,
-)
+var ProFeature = ForbidSubscriptionTypes(types.NonProSubscriptionTypes...)
 
 func RequireVendor(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
@@ -252,6 +277,42 @@ func RequireTokenScope(scope authjwt.TokenScope) func(http.Handler) http.Handler
 	)
 }
 
+// BlockCrossOrganizationAction rejects an action that would leave the organization the credential is
+// confined to, for the credentials described by authinfo.AuthInfo.OrganizationScoped.
+func BlockCrossOrganizationAction(handler http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		if auth.Authentication.Require(r.Context()).OrganizationScoped() {
+			http.Error(w,
+				"you are signed in with a credential that belongs to a single organization and can "+
+					"therefore only act within that organization",
+				http.StatusForbidden)
+			return
+		}
+		handler.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
+
+// CredentialChangeBlockedMessage is the response of BlockCredentialChange, exported for the endpoints that
+// reject only part of their request body and therefore cannot apply the middleware.
+const CredentialChangeBlockedMessage = "your sign-in methods cannot be changed from this session. " +
+	"Request a password reset to receive a link to your email address that lets you change them"
+
+// BlockCredentialChange rejects a change to the account's sign-in methods for the credentials described by
+// authinfo.AuthInfo.OrganizationScoped, which are not proof that the account's owner is present. Without
+// it, such a credential could set a password or move the email address to an inbox somebody else controls,
+// and thereby produce an unrestricted session of the same account.
+func BlockCredentialChange(handler http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		if auth.Authentication.Require(r.Context()).OrganizationScoped() {
+			http.Error(w, CredentialChangeBlockedMessage, http.StatusForbidden)
+			return
+		}
+		handler.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
+
 // RequireEmailVerified rejects requests with 403 when USER_EMAIL_VERIFICATION_REQUIRED is
 // enabled and the authenticated user's DB record has no EmailVerifiedAt. It must run after
 // auth.Authentication.Middleware so the DB-loaded user is available in the context; if
@@ -325,7 +386,23 @@ var (
 	LicensingFeatureFlagEnabledMiddleware = FeatureFlagMiddleware(types.FeatureLicensing)
 	VendorBillingFeatureMiddleware        = FeatureFlagMiddleware(types.FeatureVendorBilling)
 	PartnerManagementFeatureMiddleware    = FeatureFlagMiddleware(types.FeaturePartnerManagement)
+	CustomDomainsFeatureMiddleware        = FeatureFlagMiddleware(types.FeatureCustomDomains)
+	CustomEmailsFeatureMiddleware         = FeatureFlagMiddleware(types.FeatureCustomEmails)
+	CustomOidcProvidersFeatureMiddleware  = FeatureFlagMiddleware(types.FeatureCustomOidcProviders)
 )
+
+// RequireCustomDomainsConfigured rejects requests unless the instance itself is set up for custom
+// domain self-service. Without a CNAME target there is no proxy obtaining certificates for custom
+// domains, so a registered domain would never be served.
+func RequireCustomDomainsConfigured(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !env.CustomDomainsConfigured() {
+			http.Error(w, "custom domains are not configured on this instance", http.StatusForbidden)
+			return
+		}
+		handler.ServeHTTP(w, r)
+	})
+}
 
 func SetRequestPattern(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

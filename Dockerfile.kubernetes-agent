@@ -1,4 +1,4 @@
-FROM golang:1.26.4-alpine3.24 AS builder
+FROM golang:1.27.1-alpine3.24 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 ARG VERSION
@@ -19,7 +19,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} \
   -ldflags="-s -w -X github.com/distr-sh/distr/internal/buildconfig.version=${VERSION:-snapshot} -X github.com/distr-sh/distr/internal/buildconfig.commit=${COMMIT}" \
   ./cmd/agent/kubernetes/
 
-FROM gcr.io/distroless/static-debian12:nonroot@sha256:d093aa3e30dbadd3efe1310db061a14da60299baff8450a17fe0ccc514a16639
+FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
 WORKDIR /
 COPY --from=builder /workspace/agent .
 USER 65532:65532

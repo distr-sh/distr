@@ -29,7 +29,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: deploy/charts
       - name: Setup helm
@@ -42,14 +42,14 @@ jobs:
           helm package deploy/charts/distr
       - name: Login to GitHub Container Registry (tag or manual only)
         if: ${{ startsWith(github.ref, 'refs/tags/') || inputs.publish }}
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Login to Distr Registry (tag or manual only)
         if: ${{ startsWith(github.ref, 'refs/tags/') || inputs.publish }}
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: registry.distr.sh
           username: ${{ github.actor }}

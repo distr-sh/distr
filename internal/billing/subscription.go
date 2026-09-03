@@ -25,10 +25,10 @@ func GetSubscriptionType(subscription stripe.Subscription) (*types.SubscriptionT
 				} else if *result != types.SubscriptionTypePro {
 					return nil, fmt.Errorf("multiple subscription types found")
 				}
-			} else if slices.Contains(StarterPriceKeys, item.Price.LookupKey) {
+			} else if slices.Contains(BusinessPriceKeys, item.Price.LookupKey) {
 				if result == nil {
-					result = util.PtrTo(types.SubscriptionTypeStarter)
-				} else if *result != types.SubscriptionTypeStarter {
+					result = util.PtrTo(types.SubscriptionTypeBusiness)
+				} else if *result != types.SubscriptionTypeBusiness {
 					return nil, fmt.Errorf("multiple subscription types found")
 				}
 			}
@@ -153,7 +153,11 @@ type SubscriptionUpdateParams struct {
 	SubscriptionID          string
 	CustomerOrganizationQty int64
 	UserAccountQty          int64
-	ReturnURL               string
+	// SubscriptionType optionally switches the subscription to a different plan by
+	// replacing the current price items with the target plan's prices (keeping the
+	// current billing period). Stripe applies its default proration.
+	SubscriptionType *types.SubscriptionType
+	ReturnURL        string
 }
 
 func UpdateSubscription(ctx context.Context, params SubscriptionUpdateParams) (*stripe.Subscription, error) {
@@ -185,22 +189,56 @@ func UpdateSubscription(ctx context.Context, params SubscriptionUpdateParams) (*
 		return nil, fmt.Errorf("could not find price IDs in subscription")
 	}
 
-	// Update the subscription with new quantities
+	var items []*stripe.SubscriptionItemsParams
+	if params.SubscriptionType != nil {
+		// Plan switch: remove the current items and add the target plan's prices,
+		// keeping the current billing period.
+		period, err := GetSubscriptionPeriod(*sub)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get subscription period: %w", err)
+		}
+		prices, err := GetStripePrices(ctx, *params.SubscriptionType, period)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get stripe prices: %w", err)
+		}
+		items = []*stripe.SubscriptionItemsParams{
+			{
+				ID:      new(customerItemID),
+				Deleted: new(true),
+			},
+			{
+				ID:      new(userItemID),
+				Deleted: new(true),
+			},
+			{
+				Price:    new(prices.CustomerPriceID),
+				Quantity: new(params.CustomerOrganizationQty),
+			},
+			{
+				Price:    new(prices.UserPriceID),
+				Quantity: new(params.UserAccountQty),
+			},
+		}
+	} else {
+		// Quantity-only update on the existing items
+		items = []*stripe.SubscriptionItemsParams{
+			{
+				ID:       new(customerItemID),
+				Price:    new(customerPriceID),
+				Quantity: new(params.CustomerOrganizationQty),
+			},
+			{
+				ID:       new(userItemID),
+				Price:    new(userPriceID),
+				Quantity: new(params.UserAccountQty),
+			},
+		}
+	}
+
 	// Stripe will automatically prorate the charges
 	updateParams := &stripe.SubscriptionParams{
 		Params: stripe.Params{Context: ctx},
-		Items: []*stripe.SubscriptionItemsParams{
-			{
-				ID:       util.PtrTo(customerItemID),
-				Price:    util.PtrTo(customerPriceID),
-				Quantity: util.PtrTo(params.CustomerOrganizationQty),
-			},
-			{
-				ID:       util.PtrTo(userItemID),
-				Price:    util.PtrTo(userPriceID),
-				Quantity: util.PtrTo(params.UserAccountQty),
-			},
-		},
+		Items:  items,
 	}
 
 	updatedSub, err := subscription.Update(params.SubscriptionID, updateParams)

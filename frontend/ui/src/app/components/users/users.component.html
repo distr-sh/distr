@@ -1,25 +1,6 @@
-<!-- Start block -->
-<div
-  class="flex flex-col md:flex-row items-stretch md:items-center md:space-x-3 space-y-3 md:space-y-0 justify-between m-4 dark:border-gray-700">
-  <div class="w-full md:w-1/2">
-    <form class="flex items-center" [formGroup]="filterForm">
-      <label for="simple-search" class="sr-only">Search</label>
-      <div class="relative w-full">
-        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-          <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400" />
-        </div>
-        <input
-          type="text"
-          id="simple-search"
-          placeholder="Filter users"
-          [formControl]="filterForm.controls.search"
-          autotrim
-          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
-      </div>
-    </form>
-  </div>
-  <div
-    class="w-full md:w-auto flex flex-col md:flex-row items-stretch md:items-center justify-end gap-4 flex-shrink-0 flex-grow">
+<div class="distr-toolbar p-4">
+  <app-search-bar [control]="filterForm.controls.search" placeholder="Filter users" />
+  <div class="distr-toolbar-actions">
     <app-quota-limit [usage]="effectiveUsage()" [limit]="limit()" label="seats" #quota />
     @if ((auth.isVendor() && auth.hasRole('read_write')) || auth.hasRole('admin')) {
       <button
@@ -53,52 +34,19 @@
       @for (user of users$ | async; track user.id) {
         <tr class="distr-table-row">
           <td class="pl-4">
-            @if (user.imageUrl) {
-              <img
-                (click)="uploadImage(user)"
-                class="w-8 h-8 rounded-full cursor-pointer"
-                [attr.src]="user.imageUrl | secureImage | async"
-                alt="" />
-            } @else {
-              <div class="shrink-0 text-gray-900 dark:text-gray-400">
-                <fa-icon (click)="uploadImage(user)" [icon]="faUserCircle" size="xl" class="text-xl cursor-pointer" />
-              </div>
-            }
+            <button type="button" (click)="uploadImage(user)" aria-label="Upload user avatar" class="cursor-pointer">
+              <app-avatar [image]="user.imageUrl" [name]="user.name" [icon]="faUser" class="size-8 rounded-full" />
+            </button>
           </td>
           <td
             class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-32 lg:max-w-64 xl:max-w-128 overflow-hidden text-ellipsis">
-            @if (editNameUserId() === user.id) {
-              <form [formGroup]="editNameForm" class="flex" (ngSubmit)="submitEditUserNameForm()">
-                <input
-                  type="text"
-                  id="user-name"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm w-32 rounded-s-lg focus:ring-blue-500 focus:border-blue-500 block px-2 py-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  placeholder="Enter a name&hellip;"
-                  formControlName="name" />
-                <button
-                  type="submit"
-                  [disabled]="editNameFormLoading()"
-                  class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-e-lg text-sm px-3 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
-                  <fa-icon [icon]="faCheck" />
-                </button>
-              </form>
-            } @else {
-              @if (user.name) {
-                {{ user.name }}
-              } @else {
-                <span class="text-gray-500">&ndash;</span>
-              }
-
-              @if (auth.hasRole('admin') || (auth.isVendor() && auth.hasRole('read_write'))) {
-                <button
-                  type="button"
-                  aria-label="Edit User Name"
-                  (click)="editUserName(user)"
-                  class="text-gray-900 dark:text-gray-400 ms-1">
-                  <fa-icon [icon]="faPen" />
-                </button>
-              }
-            }
+            <app-inline-edit
+              [value]="user.name ?? ''"
+              [editable]="auth.hasRole('admin') || (auth.isVendor() && auth.hasRole('read_write'))"
+              placeholder="Enter a name&hellip;"
+              emptyLabel="&ndash;"
+              [loading]="savingUserId() === user.id"
+              (save)="updateUserName(user, $event)" />
           </td>
           <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
             {{ user.email }}
@@ -113,7 +61,7 @@
                   <app-user-role-select
                     ariaLabel="User role"
                     formControlName="userRole"
-                    selectClass="bg-gray-50 border border-gray-300 text-gray-900 text-sm w-32 rounded-s-lg focus:ring-blue-500 focus:border-blue-500 block px-2 py-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                    selectClass="distr-input rounded-none rounded-s-lg w-32 px-2 py-2" />
                   <button
                     type="submit"
                     [disabled]="editRoleFormLoading()"
@@ -198,8 +146,8 @@
                     formControlName="name"
                     autotrim
                     autocomplete="off"
-                    placeholder="Michael Scott"
-                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                    appPlaceholder="name"
+                    class="distr-input" />
                 </div>
 
                 <div class="space-y-2">
@@ -210,8 +158,8 @@
                     formControlName="email"
                     autotrim
                     autocomplete="off"
-                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    placeholder="firstname.lastname@company.com"
+                    class="distr-input"
+                    appPlaceholder="email"
                     required />
                   @if (inviteForm.controls.email.invalid && inviteForm.controls.email.touched) {
                     <div class="text-sm text-red-600">
@@ -226,10 +174,7 @@
                 @if (isProSubscription()) {
                   <div class="space-y-2">
                     <label for="userRole" class="distr-label"> User role <span class="text-red-500">*</span> </label>
-                    <app-user-role-select
-                      id="userRole"
-                      formControlName="userRole"
-                      selectClass="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                    <app-user-role-select id="userRole" formControlName="userRole" selectClass="distr-input" />
 
                     @if (inviteForm.controls.userRole.invalid && inviteForm.controls.userRole.touched) {
                       <div class="text-sm text-red-600">This field is required</div>

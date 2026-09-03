@@ -10,6 +10,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/supportbundle"
 	"github.com/distr-sh/distr/internal/types"
@@ -60,7 +61,7 @@ func getCollectScriptHandler() http.HandlerFunc {
 
 		bundleSecret := r.URL.Query().Get("bundleSecret")
 
-		org, err := db.GetOrganizationByID(ctx, bundle.OrganizationID)
+		org, err := db.GetOrganizationWithBranding(ctx, bundle.OrganizationID)
 		if err != nil {
 			log.Error("failed to get organization", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -68,7 +69,7 @@ func getCollectScriptHandler() http.HandlerFunc {
 			return
 		}
 
-		baseURL := customdomains.AppDomainOrDefault(*org)
+		baseURL := customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding)
 
 		envVars, err := db.GetSupportBundleConfigurationEnvVars(ctx, bundle.OrganizationID)
 		if err != nil {
@@ -78,7 +79,24 @@ func getCollectScriptHandler() http.HandlerFunc {
 			return
 		}
 
-		script, err := supportbundle.GenerateCollectScript(baseURL, bundle.ID, bundleSecret, envVars)
+		scripts, err := db.GetEnabledSupportBundleConfigurationScripts(ctx, bundle.OrganizationID)
+		if err != nil {
+			log.Error("failed to get support bundle config scripts", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		script, err := supportbundle.GenerateCollectScript(supportbundle.CollectScriptParams{
+			BaseURL:          baseURL,
+			BundleID:         bundle.ID,
+			BundleSecret:     bundleSecret,
+			EnvVars:          envVars,
+			Scripts:          scripts,
+			LogTailLines:     env.SupportBundleLogTailLines(),
+			ResourceMaxBytes: env.SupportBundleResourceMaxBytes(),
+			ScriptTimeout:    env.SupportBundleScriptTimeout(),
+		})
 		if err != nil {
 			log.Error("failed to generate collect script", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -104,7 +122,7 @@ func uploadSupportBundleResourceHandler() http.HandlerFunc {
 			return
 		}
 
-		r.Body = http.MaxBytesReader(w, r.Body, 1<<20) // 1 MiB
+		// The request body size is limited by the requestSize middleware on the route.
 		if err := r.ParseMultipartForm(1 << 20); err != nil {
 			http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
 			return

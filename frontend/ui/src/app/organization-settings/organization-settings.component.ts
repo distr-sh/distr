@@ -1,126 +1,98 @@
-import {ChangeDetectionStrategy, Component, inject, OnInit, signal, TemplateRef, viewChild} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
-import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
-import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faFloppyDisk, faLightbulb} from '@fortawesome/free-solid-svg-icons';
-import {firstValueFrom, startWith} from 'rxjs';
-import {getFormDisplayedError} from '../../util/errors';
-import {slugMaxLength, slugPattern} from '../../util/slug';
-import {DeleteOrganizationComponent} from '../components/delete-organization/delete-organization.component';
-import {AutotrimDirective} from '../directives/autotrim.directive';
+import {CdkConnectedOverlay} from '@angular/cdk/overlay';
+import {ChangeDetectionStrategy, Component, computed, inject, signal} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {ActivatedRoute, NavigationEnd, Router, RouterOutlet} from '@angular/router';
+import {filter} from 'rxjs';
+import {PageComponent} from '../components/page.component';
+import {PlanBadgeComponent} from '../components/plan-badge.component';
+import {PlanFeatureHintComponent} from '../components/plan-feature-hint.component';
+import {TabBarComponent, TabItem} from '../components/tab-bar.component';
 import {AuthService} from '../services/auth.service';
-import {OrganizationService} from '../services/organization.service';
-import {OverlayService} from '../services/overlay.service';
-import {ToastService} from '../services/toast.service';
-import {Organization} from '../types/organization';
+import {FeatureFlagService} from '../services/feature-flag.service';
+
+const organizationSettingsTabs = ['general', 'identity-provider', 'email'] as const;
+const defaultTab: OrganizationSettingsTab = 'general';
+
+type OrganizationSettingsTab = (typeof organizationSettingsTabs)[number];
 
 @Component({
   selector: 'app-organization-settings',
   templateUrl: './organization-settings.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [FaIconComponent, ReactiveFormsModule, AutotrimDirective, DeleteOrganizationComponent],
+  imports: [
+    CdkConnectedOverlay,
+    TabBarComponent,
+    PlanBadgeComponent,
+    PlanFeatureHintComponent,
+    RouterOutlet,
+    PageComponent,
+  ],
 })
-export class OrganizationSettingsComponent implements OnInit {
-  protected readonly faFloppyDisk = faFloppyDisk;
-  protected readonly faLightbulb = faLightbulb;
+export class OrganizationSettingsComponent {
+  private readonly featureFlags = inject(FeatureFlagService);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
-  private readonly organizationService = inject(OrganizationService);
-  private readonly toast = inject(ToastService);
-  private readonly fb = inject(FormBuilder).nonNullable;
-  private readonly overlayService = inject(OverlayService);
-  protected readonly auth = inject(AuthService);
+  private readonly vendorAdmin = computed(() => this.auth.isVendor() && this.auth.hasRole('admin'));
 
-  private readonly preflightConfirmTemplate = viewChild.required<TemplateRef<unknown>>('preflightConfirmTemplate');
-
-  private organization?: Organization;
-
-  protected readonly form = this.fb.group({
-    name: this.fb.control('', [Validators.required]),
-    slug: this.fb.control('', [Validators.pattern(slugPattern), Validators.maxLength(slugMaxLength)]),
-    appDomain: this.fb.control<string | undefined>({value: undefined, disabled: true}),
-    registryDomain: this.fb.control<string | undefined>({value: undefined, disabled: true}),
-    emailFromAddress: this.fb.control<string | undefined>({value: undefined, disabled: true}),
-    preConnectScript: this.fb.control<string | undefined>(undefined),
-    postConnectScript: this.fb.control<string | undefined>(undefined),
-    connectScriptIsSudo: this.fb.control<boolean>(false),
-    artifactVersionMutable: this.fb.control<boolean>(false),
-    prePostScriptsEnabled: this.fb.control<boolean>(false),
-  });
-  formLoading = signal(false);
-
-  protected readonly isPrePostScriptEnabled = toSignal(
-    this.form.controls.prePostScriptsEnabled.valueChanges.pipe(
-      startWith(this.form.controls.prePostScriptsEnabled.value)
-    ),
-    {initialValue: false}
+  protected readonly customEmailVisible = computed(
+    () => this.vendorAdmin() && this.featureFlags.isCustomEmailsEnabled()
   );
 
-  async ngOnInit() {
-    try {
-      this.organization = await firstValueFrom(this.organizationService.get());
-      if (this.organization.slug) {
-        this.form.controls.slug.addValidators([Validators.required]);
-      }
-      this.form.patchValue({
-        ...this.organization,
-        artifactVersionMutable: this.organization.features?.includes('artifact_version_mutable') ?? false,
-        prePostScriptsEnabled: this.organization.features?.includes('pre_post_scripts') ?? false,
+  // The tab now holds the custom domains as well, which are gated on their own feature. Both are
+  // granted by the same plan, so either one is enough to make the tab worth opening.
+  protected readonly customOidcVisible = computed(
+    () =>
+      this.vendorAdmin() &&
+      (this.featureFlags.isCustomOidcProvidersEnabled() || this.featureFlags.isCustomDomainsEnabled())
+  );
+
+  // Drops the identity provider mention once domains are enabled without it, so the tab does not
+  // advertise a capability the organization does not have.
+  protected readonly identityProviderTabLabel = computed(() =>
+    this.featureFlags.isCustomDomainsEnabled() && !this.featureFlags.isCustomOidcProvidersEnabled()
+      ? 'Custom Domains'
+      : 'Custom Domains & Identity Provider'
+  );
+
+  protected readonly tabs = computed<TabItem<OrganizationSettingsTab>[]>(() => {
+    const tabs: TabItem<OrganizationSettingsTab>[] = [{id: 'general', label: 'General'}];
+    if (this.vendorAdmin()) {
+      // Without the feature the tab is shown as disabled rather than hidden, so that admins can
+      // see that the feature exists and which plan it needs.
+      tabs.push({
+        id: 'identity-provider',
+        label: this.identityProviderTabLabel(),
+        disabled: !this.customOidcVisible(),
       });
-    } catch (e) {
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
-      }
+      tabs.push({id: 'email', label: 'Email Sending Provider', disabled: !this.customEmailVisible()});
+    }
+    return tabs;
+  });
+
+  protected readonly activeTab = signal(this.tabFromRoute());
+  protected readonly planHintTab = signal<OrganizationSettingsTab | null>(null);
+
+  constructor() {
+    this.router.events
+      .pipe(
+        filter((event) => event instanceof NavigationEnd),
+        takeUntilDestroyed()
+      )
+      .subscribe(() => this.activeTab.set(this.tabFromRoute()));
+  }
+
+  protected onTabClick(tab: TabItem<OrganizationSettingsTab>) {
+    if (tab.disabled) {
+      this.planHintTab.update((open) => (open === tab.id ? null : tab.id));
+    } else {
+      this.router.navigate([tab.id], {relativeTo: this.route});
     }
   }
 
-  async save() {
-    this.form.markAllAsTouched();
-    if (this.form.valid) {
-      const wasPrePostScriptsEnabled = this.organization?.features?.includes('pre_post_scripts') ?? false;
-      const isNowPrePostScriptsEnabled = this.form.value.prePostScriptsEnabled ?? false;
-
-      if (!wasPrePostScriptsEnabled && isNowPrePostScriptsEnabled) {
-        const confirmed = await firstValueFrom(
-          this.overlayService.confirm({
-            customTemplate: this.preflightConfirmTemplate(),
-            message: {
-              message: '',
-              alert: {
-                type: 'warning',
-                message: 'Existing agents are not affected. New agent connect commands will use the new format.',
-              },
-            },
-          })
-        );
-        if (!confirmed) {
-          return;
-        }
-      }
-
-      this.formLoading.set(true);
-      try {
-        this.organization = await firstValueFrom(
-          this.organizationService.update({
-            ...this.organization!,
-            name: this.form.value.name?.trim()!,
-            slug: this.form.value.slug?.trim(),
-            preConnectScript: this.form.value.preConnectScript?.trim(),
-            postConnectScript: this.form.value.postConnectScript?.trim(),
-            connectScriptIsSudo: this.form.value.connectScriptIsSudo ?? false,
-            artifactVersionMutable: this.form.value.artifactVersionMutable ?? false,
-            prePostScriptsEnabled: this.form.value.prePostScriptsEnabled ?? false,
-          })
-        );
-        this.toast.success('Settings saved successfully');
-      } catch (e) {
-        const msg = getFormDisplayedError(e);
-        if (msg) {
-          this.toast.error(msg);
-        }
-      } finally {
-        this.formLoading.set(false);
-      }
-    }
+  private tabFromRoute(): OrganizationSettingsTab {
+    const path = this.route.snapshot.firstChild?.routeConfig?.path;
+    return organizationSettingsTabs.find((tab) => tab === path) ?? defaultTab;
   }
 }

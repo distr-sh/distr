@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/distr-sh/distr/internal/envparse"
 	"github.com/distr-sh/distr/internal/envutil"
 	"github.com/distr-sh/distr/internal/util"
@@ -16,86 +15,99 @@ import (
 )
 
 var (
-	databaseUrl                             string
-	databaseMaxConns                        *int
-	jwtSecret                               []byte
-	host                                    string
-	registryHost                            string
-	mailerConfig                            MailerConfig
-	inviteTokenValidDuration                time.Duration
-	resetTokenValidDuration                 time.Duration
-	agentTokenMaxValidDuration              time.Duration
-	agentInterval                           time.Duration
-	statusEntriesMaxAge                     *time.Duration
-	metricsEntriesMaxAge                    *time.Duration
-	logRecordEntriesMaxCount                *int
-	sentryDSN                               string
-	sentryDebug                             bool
-	sentryEnvironment                       string
-	otelAgentSampler                        *SamplerConfig
-	otelRegistrySampler                     *SamplerConfig
-	otelExporterSentryEnabled               bool
-	otelExporterOtlpEnabled                 bool
-	enableQueryLogging                      bool
-	agentDockerConfig                       []byte
-	frontendSentryDSN                       *string
-	frontendSentryTraceSampleRate           *float64
-	frontendPosthogToken                    *string
-	frontendPosthogAPIHost                  *string
-	frontendPosthogUIHost                   *string
-	userEmailVerificationRequired           bool
-	serverShutdownDelayDuration             *time.Duration
-	registration                            RegistrationMode
-	registryEnabled                         bool
-	registryS3Config                        S3Config
-	registryScratchDir                      *string
-	artifactTagsDefaultLimitPerOrg          int
-	registryUpstreamSyncCron                *string
-	registryUpstreamSyncTimeout             time.Duration
-	cleanupDeploymentRevisionStatusCron     *string
-	cleanupDeploymentRevisionStatusTimeout  time.Duration
-	cleanupDeploymentTargetMetricsCron      *string
-	cleanupDeploymentTargetMetricsTimeout   time.Duration
-	cleanupDeploymentLogRecordCron          *string
-	cleanupDeploymentLogRecordTimeout       time.Duration
-	cleanupDeploymentTargetLogRecordCron    *string
-	cleanupDeploymentTargetLogRecordTimeout time.Duration
-	cleanupOIDCStateCron                    *string
-	cleanupOIDCStateCronTimeout             time.Duration
-	cleanupArtifactBlobCron                 *string
-	cleanupArtifactBlobTimeout              time.Duration
-	cleanupArtifactBlobMinAge               time.Duration
-	cleanupOrganizationCron                 *string
-	cleanupOrganizationTimeout              time.Duration
-	cleanupOrganizationMinAge               time.Duration
-	deploymentStatusNotificationCron        *string
-	deploymentStatusNotificationTimeout     time.Duration
-	notificationEmailHourlyQuota            int
-	oidcGithubEnabled                       bool
-	oidcGithubClientID                      *string
-	oidcGithubClientSecret                  *string
-	oidcGoogleEnabled                       bool
-	oidcGoogleClientID                      *string
-	oidcGoogleClientSecret                  *string
-	oidcMicrosoftEnabled                    bool
-	oidcMicrosoftClientID                   *string
-	oidcMicrosoftClientSecret               *string
-	oidcMicrosoftTenantID                   *string
-	oidcGenericEnabled                      bool
-	oidcGenericClientID                     *string
-	oidcGenericClientSecret                 *string
-	oidcGenericIssuer                       *string
-	oidcGenericScopes                       *string
-	oidcGenericPKCEEnabled                  bool
-	wellKnownMicrosoftIdentityAssociation   []byte
-	stripeWebhookSecret                     *string
-	stripeWebhookVersionMismatchBehavior    StripeWebhookVersionMismatchBehaviorType
-	stripeAPIKey                            *string
-	licenseKeyPrivateKeyPEM                 []byte
-	licenseKey                              string
-	metricsEnabled                          bool
-	metricsAddr                             string
-	metricsBearerToken                      *string
+	databaseUrl                            string
+	databaseMaxConns                       *int
+	databaseReadonlyUrl                    *string
+	databaseReadonlyMaxConns               *int
+	jwtSecret                              []byte
+	host                                   string
+	registryHost                           string
+	mailerConfig                           MailerConfig
+	inviteTokenValidDuration               time.Duration
+	resetTokenValidDuration                time.Duration
+	agentTokenMaxValidDuration             time.Duration
+	agentInterval                          time.Duration
+	statusEntriesMaxAge                    *time.Duration
+	metricsEntriesMaxAge                   *time.Duration
+	sentryDSN                              string
+	sentryDebug                            bool
+	sentryEnvironment                      string
+	otelAgentSampler                       *SamplerConfig
+	otelRegistrySampler                    *SamplerConfig
+	otelExporterSentryEnabled              bool
+	otelExporterOtlpEnabled                bool
+	enableQueryLogging                     bool
+	agentDockerConfig                      []byte
+	frontendSentryDSN                      *string
+	frontendSentryTraceSampleRate          *float64
+	frontendPosthogToken                   *string
+	frontendPosthogAPIHost                 *string
+	frontendPosthogUIHost                  *string
+	userEmailVerificationRequired          bool
+	serverShutdownDelayDuration            *time.Duration
+	registration                           RegistrationMode
+	turnstileSiteKey                       *string
+	turnstileSecret                        *string
+	registryEnabled                        bool
+	registryS3Config                       S3Config
+	registryScratchDir                     *string
+	artifactTagsDefaultLimitPerOrg         int
+	registryUpstreamSyncCron               *string
+	registryUpstreamSyncTimeout            time.Duration
+	cleanupDeploymentRevisionStatusCron    *string
+	cleanupDeploymentRevisionStatusTimeout time.Duration
+	cleanupDeploymentTargetMetricsCron     *string
+	cleanupDeploymentTargetMetricsTimeout  time.Duration
+	cleanupOIDCStateCron                   *string
+	cleanupOIDCStateCronTimeout            time.Duration
+	cleanupArtifactBlobCron                *string
+	cleanupArtifactBlobTimeout             time.Duration
+	cleanupArtifactBlobMinAge              time.Duration
+	cleanupOrganizationCron                *string
+	cleanupOrganizationTimeout             time.Duration
+	cleanupOrganizationMinAge              time.Duration
+	deploymentStatusNotificationCron       *string
+	deploymentStatusNotificationTimeout    time.Duration
+	notificationEmailHourlyQuota           int
+	oidcGithubEnabled                      bool
+	oidcGithubClientID                     *string
+	oidcGithubClientSecret                 *string
+	oidcGoogleEnabled                      bool
+	oidcGoogleClientID                     *string
+	oidcGoogleClientSecret                 *string
+	oidcMicrosoftEnabled                   bool
+	oidcMicrosoftClientID                  *string
+	oidcMicrosoftClientSecret              *string
+	oidcMicrosoftTenantID                  *string
+	oidcGenericEnabled                     bool
+	oidcGenericClientID                    *string
+	oidcGenericClientSecret                *string
+	oidcGenericIssuer                      *string
+	oidcGenericScopes                      *string
+	oidcGenericPKCEEnabled                 bool
+	wellKnownMicrosoftIdentityAssociation  []byte
+	stripeWebhookSecret                    *string
+	stripeWebhookVersionMismatchBehavior   StripeWebhookVersionMismatchBehaviorType
+	stripeAPIKey                           *string
+	licenseKeyPrivateKeyPEM                []byte
+	licenseKey                             string
+	metricsEnabled                         bool
+	metricsAddr                            string
+	metricsBearerToken                     *string
+	supportBundleLogTailLines              int
+	supportBundleResourceMaxBytes          int
+	supportBundleScriptTimeout             time.Duration
+	lokiURL                                string
+	lokiBearerToken                        *string
+	lokiBasicAuthUsername                  *string
+	lokiBasicAuthPassword                  *string
+	lokiRequestTimeout                     time.Duration
+	customDomainTarget                     *string
+	customDomainVerificationCron           *string
+	customDomainVerificationTimeout        time.Duration
+	customDomainVerificationRefreshAfter   time.Duration
+	internalServerAddr                     string
+	maintenanceMode                        bool
 )
 
 func Initialize() {
@@ -112,18 +124,29 @@ func Initialize() {
 
 	databaseUrl = envutil.RequireEnv("DATABASE_URL")
 	databaseMaxConns = envutil.GetEnvParsedOrNil("DATABASE_MAX_CONNS", strconv.Atoi)
+	databaseReadonlyUrl = envutil.GetEnvOrNil("DATABASE_READONLY_URL")
+	databaseReadonlyMaxConns = envutil.GetEnvParsedOrNil("DATABASE_READONLY_MAX_CONNS", strconv.Atoi)
 	jwtSecret = envutil.RequireEnvParsed("JWT_SECRET", base64.StdEncoding.DecodeString)
 	host = envutil.RequireEnv("DISTR_HOST")
 	agentInterval = envutil.GetEnvParsedOrDefault("AGENT_INTERVAL", envparse.PositiveDuration, 5*time.Second)
 	statusEntriesMaxAge = envutil.GetEnvParsedOrNil("STATUS_ENTRIES_MAX_AGE", envparse.PositiveDuration)
 	metricsEntriesMaxAge = envutil.GetEnvParsedOrNil("METRICS_ENTRIES_MAX_AGE", envparse.PositiveDuration)
-	logRecordEntriesMaxCount = envutil.GetEnvParsedOrNil("LOG_RECORD_ENTRIES_MAX_COUNT", envparse.NonNegativeNumber)
 	enableQueryLogging = envutil.GetEnvParsedOrDefault("ENABLE_QUERY_LOGGING", strconv.ParseBool, false)
 	userEmailVerificationRequired = envutil.GetEnvParsedOrDefault(
 		"USER_EMAIL_VERIFICATION_REQUIRED", strconv.ParseBool, true,
 	)
 	serverShutdownDelayDuration = envutil.GetEnvParsedOrNil("SERVER_SHUTDOWN_DELAY_DURATION", envparse.PositiveDuration)
 	registration = envutil.GetEnvParsedOrDefault("REGISTRATION", parseRegistrationMode, RegistrationEnabled)
+	// Turnstile needs the site key in the browser and the secret on the server, so a half-configured widget
+	// can only ever fail: either the form has no widget to solve, or its token cannot be verified.
+	if siteKey, secret := envutil.GetEnv("TURNSTILE_SITE_KEY"), envutil.GetEnv("TURNSTILE_SECRET"); siteKey != "" &&
+		secret != "" {
+		turnstileSiteKey = &siteKey
+		turnstileSecret = &secret
+	} else if siteKey != "" || secret != "" {
+		fmt.Fprintln(os.Stderr,
+			"WARNING: TURNSTILE_SITE_KEY and TURNSTILE_SECRET must both be set, Turnstile has been disabled")
+	}
 	inviteTokenValidDuration = envutil.GetEnvParsedOrDefault(
 		"INVITE_TOKEN_VALID_DURATION", envparse.PositiveDuration, 24*time.Hour,
 	)
@@ -209,12 +232,6 @@ func Initialize() {
 	cleanupDeploymentTargetMetricsCron = envutil.GetEnvOrNil("CLEANUP_DEPLOYMENT_TARGET_METRICS_CRON")
 	cleanupDeploymentTargetMetricsTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_DEPLOYMENT_TARGET_METRICS_TIMEOUT",
 		envparse.PositiveDuration, 0)
-	cleanupDeploymentLogRecordCron = envutil.GetEnvOrNil("CLEANUP_DEPLOYMENT_LOG_RECORD_CRON")
-	cleanupDeploymentLogRecordTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_DEPLOYMENT_LOG_RECORD_TIMEOUT",
-		envparse.PositiveDuration, 0)
-	cleanupDeploymentTargetLogRecordCron = envutil.GetEnvOrNil("CLEANUP_DEPLOYMENT_TARGET_LOG_RECORD_CRON")
-	cleanupDeploymentTargetLogRecordTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_DEPLOYMENT_TARGET_LOG_RECORD_TIMEOUT",
-		envparse.PositiveDuration, 0)
 	cleanupOIDCStateCron = envutil.GetEnvOrNil("CLEANUP_OIDC_STATE_CRON")
 	cleanupOIDCStateCronTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_OIDC_STATE_CRON_TIMEOUT",
 		envparse.PositiveDuration, 0)
@@ -277,6 +294,31 @@ func Initialize() {
 	metricsEnabled = envutil.GetEnvParsedOrDefault("METRICS_ENABLED", strconv.ParseBool, false)
 	metricsAddr = envutil.GetEnvOrDefault("METRICS_ADDR", ":3000", envutil.GetEnvOpts{})
 	metricsBearerToken = envutil.GetEnvOrNil("METRICS_BEARER_TOKEN")
+	supportBundleLogTailLines = envutil.GetEnvParsedOrDefault(
+		"SUPPORT_BUNDLE_LOG_TAIL_LINES", envparse.PositiveNumber, 1000,
+	)
+	supportBundleResourceMaxBytes = envutil.GetEnvParsedOrDefault(
+		"SUPPORT_BUNDLE_RESOURCE_MAX_BYTES", envparse.PositiveNumber, 1024*1024,
+	)
+	supportBundleScriptTimeout = envutil.GetEnvParsedOrDefault(
+		"SUPPORT_BUNDLE_SCRIPT_TIMEOUT", envparse.PositiveDuration, time.Minute,
+	)
+
+	lokiURL = envutil.RequireEnv("LOKI_URL")
+	lokiBearerToken = envutil.GetEnvOrNil("LOKI_BEARER_TOKEN")
+	lokiBasicAuthUsername = envutil.GetEnvOrNil("LOKI_BASIC_AUTH_USERNAME")
+	lokiBasicAuthPassword = envutil.GetEnvOrNil("LOKI_BASIC_AUTH_PASSWORD")
+	lokiRequestTimeout = envutil.GetEnvParsedOrDefault("LOKI_REQUEST_TIMEOUT", envparse.PositiveDuration, 30*time.Second)
+
+	customDomainTarget = envutil.GetEnvOrNil("CUSTOM_DOMAIN_TARGET")
+	customDomainVerificationCron = envutil.GetEnvOrNil("CUSTOM_DOMAIN_VERIFICATION_CRON")
+	customDomainVerificationTimeout = envutil.GetEnvParsedOrDefault("CUSTOM_DOMAIN_VERIFICATION_TIMEOUT",
+		envparse.PositiveDuration, 4*time.Minute)
+	customDomainVerificationRefreshAfter = envutil.GetEnvParsedOrDefault("CUSTOM_DOMAIN_VERIFICATION_REFRESH_AFTER",
+		envparse.PositiveDuration, 12*time.Hour)
+	internalServerAddr = envutil.GetEnvOrDefault("INTERNAL_SERVER_ADDR", ":8085", envutil.GetEnvOpts{})
+
+	maintenanceMode = envutil.GetEnvParsedOrDefault("MAINTENANCE_MODE", strconv.ParseBool, false)
 }
 
 func DatabaseUrl() string {
@@ -291,11 +333,34 @@ func DatabaseMaxConns() *int {
 	return databaseMaxConns
 }
 
+// DatabaseReadonlyUrl returns the connection string for an optional read-only database (e.g. a replica).
+//
+// When set, expensive read-only queries (logs, analytics, dashboards, metrics, status) are
+// routed to this database instead of the primary. When nil, those queries use the primary.
+func DatabaseReadonlyUrl() *string {
+	return databaseReadonlyUrl
+}
+
+// DatabaseReadonlyMaxConns allows to override the MaxConns parameter of the read-only pgx pool config.
+func DatabaseReadonlyMaxConns() *int {
+	return databaseReadonlyMaxConns
+}
+
 func JWTSecret() []byte {
 	return jwtSecret
 }
 
 func Host() string { return host }
+
+// HostScheme is the scheme this instance is reached with, taken from DISTR_HOST. It is https unless
+// DISTR_HOST explicitly says http, and is the scheme of every URL this instance builds for a host
+// other than the one of the current request, e.g. an organization's custom domain.
+func HostScheme() URLScheme {
+	if strings.HasPrefix(strings.ToLower(host), string(SchemeHTTP)+"://") {
+		return SchemeHTTP
+	}
+	return SchemeHTTPS
+}
 
 func RegistryHost() string { return registryHost }
 
@@ -343,10 +408,6 @@ func MetricsEntriesMaxAge() *time.Duration {
 	return metricsEntriesMaxAge
 }
 
-func LogRecordEntriesMaxCount() *int {
-	return logRecordEntriesMaxCount
-}
-
 func AgentDockerConfig() []byte {
 	return agentDockerConfig
 }
@@ -381,6 +442,14 @@ func ServerShutdownDelayDuration() *time.Duration {
 
 func Registration() RegistrationMode {
 	return registration
+}
+
+func TurnstileSiteKey() *string {
+	return turnstileSiteKey
+}
+
+func TurnstileSecret() *string {
+	return turnstileSecret
 }
 
 func RegistryEnabled() bool {
@@ -437,22 +506,6 @@ func CleanupDeploymentTargetMetricsCron() *string {
 
 func CleanupDeploymentTargetMetricsTimeout() time.Duration {
 	return cleanupDeploymentTargetMetricsTimeout
-}
-
-func CleanupDeploymentLogRecordCron() *string {
-	return cleanupDeploymentLogRecordCron
-}
-
-func CleanupDeploymentLogRecordTimeout() time.Duration {
-	return cleanupDeploymentLogRecordTimeout
-}
-
-func CleanupDeploymentTargetLogRecordCron() *string {
-	return cleanupDeploymentTargetLogRecordCron
-}
-
-func CleanupDeploymentTargetLogRecordTimeout() time.Duration {
-	return cleanupDeploymentTargetLogRecordTimeout
 }
 
 func DeploymentStatusNotificationCron() *string {
@@ -546,22 +599,7 @@ func OIDCGenericClientID() *string     { return oidcGenericClientID }
 func OIDCGenericClientSecret() *string { return oidcGenericClientSecret }
 func OIDCGenericIssuer() *string       { return oidcGenericIssuer }
 func OIDCGenericPKCEEnabled() bool     { return oidcGenericPKCEEnabled }
-
-// OIDCGenericScopes returns scopes as a string array
-// expecting user input as "foo bar baz" or "foo,bar,baz"
-func OIDCGenericScopes() []string {
-	scopes := []string{
-		oidc.ScopeOpenID,
-	}
-	if oidcGenericScopes != nil {
-		if strings.Contains(*oidcGenericScopes, ",") {
-			scopes = append(scopes, strings.Split(*oidcGenericScopes, ",")...)
-		} else if strings.Contains(*oidcGenericScopes, " ") {
-			scopes = append(scopes, strings.Split(*oidcGenericScopes, " ")...)
-		}
-	}
-	return scopes
-}
+func OIDCGenericScopes() *string       { return oidcGenericScopes }
 
 func WellKnownMicrosoftIdentityAssociation() []byte {
 	return wellKnownMicrosoftIdentityAssociation
@@ -597,4 +635,82 @@ func MetricsAddr() string {
 
 func MetricsBearerToken() *string {
 	return metricsBearerToken
+}
+
+// SupportBundleLogTailLines is the number of container log lines (per container) collected by the
+// support bundle collect script.
+func SupportBundleLogTailLines() int {
+	return supportBundleLogTailLines
+}
+
+// SupportBundleResourceMaxBytes is the maximum size of a single resource collected by the
+// support bundle collect script.
+func SupportBundleResourceMaxBytes() int {
+	return supportBundleResourceMaxBytes
+}
+
+// SupportBundleScriptTimeout is how long a single custom script may run on the customer's host
+// before the collect script kills it. Rounded up to whole seconds when rendered.
+func SupportBundleScriptTimeout() time.Duration {
+	return supportBundleScriptTimeout
+}
+
+// LokiURL is the base URL of the Loki instance storing deployment and deployment
+// target log records, e.g. "http://loki:3100".
+func LokiURL() string {
+	return lokiURL
+}
+
+func LokiBearerToken() *string {
+	return lokiBearerToken
+}
+
+func LokiBasicAuthUsername() *string {
+	return lokiBasicAuthUsername
+}
+
+func LokiBasicAuthPassword() *string {
+	return lokiBasicAuthPassword
+}
+
+func LokiRequestTimeout() time.Duration {
+	return lokiRequestTimeout
+}
+
+// CustomDomainTarget is the DNS name (pointing at the Caddy LoadBalancer) that vendors CNAME
+// every custom domain to, e.g. "whitelabel.distr.sh". One target serves all domain types: Caddy
+// routes registry traffic to the registry by its mandatory /v2/ path prefix, not by hostname.
+func CustomDomainTarget() *string {
+	return customDomainTarget
+}
+
+// CustomDomainsConfigured reports whether the self-service custom domain feature is
+// configured on this instance. The internal caddy-ask server is only started when it is.
+func CustomDomainsConfigured() bool {
+	return customDomainTarget != nil
+}
+
+func CustomDomainVerificationCron() *string {
+	return customDomainVerificationCron
+}
+
+func CustomDomainVerificationTimeout() time.Duration {
+	return customDomainVerificationTimeout
+}
+
+func CustomDomainVerificationRefreshAfter() time.Duration {
+	return customDomainVerificationRefreshAfter
+}
+
+// InternalServerAddr is the listen address of the internal HTTP server, which currently
+// serves only the Caddy on-demand TLS ask endpoint. It must never be exposed outside the
+// cluster.
+func InternalServerAddr() string {
+	return internalServerAddr
+}
+
+// MaintenanceMode reports whether this instance is down for maintenance. It keeps serving the
+// frontend, but answers every API request with 503 instead of letting it reach the database.
+func MaintenanceMode() bool {
+	return maintenanceMode
 }

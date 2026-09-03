@@ -60,6 +60,18 @@ Once open, use the breadcrumb dropdowns to switch between deployment targets and
 
 The log viewer auto-refreshes every 10 seconds. Use the **From** and **To** fields to view a specific time window, or the **Filter** field to search with plain text or a regular expression. You can pin any log entry by clicking the thumbtack icon on hover. The row stays sticky while you scroll, making it easy to compare entries.
 
+<Aside type="note" title="Log availability">
+  Logs are available for the last **24 hours** on the Community plan, for the
+  last **30 days** on the Business plan, and for the last **7 days** on all
+  other plans.
+</Aside>
+
+### Exporting Logs
+
+**Export all** downloads the currently selected view as a plain text file. The export uses the same selection as the table on screen, so the **From**, **To** and **Filter** fields all apply to it.
+
+A single export contains at most **1,000,000 lines**. When the limit is reached, the download ends with a note that the export was truncated. Since the export starts at the newest line, an export without a time range keeps the most recent lines and drops the oldest ones. Set **From** and **To** to a narrower window to get the lines you are actually looking for, and add a **Filter** to cut the export down further, for example to a specific error message or request ID.
+
 ### Agent Logs
 
 Agent logs show the raw output from the Distr agent process itself: connection events, deployment reconciliation cycles, errors, and status reports. These logs belong to the deployment target, not to any individual deployment, and are always available without any setup.

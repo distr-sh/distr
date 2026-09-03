@@ -1,0 +1,2 @@
+-- Enum values cannot be removed without recreating the type, and both types are referenced by
+-- columns whose data would have to be rewritten. The added values are harmless when unused.

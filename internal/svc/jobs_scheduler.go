@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/distr-sh/distr/internal/cleanup"
+	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/jobs"
 	"github.com/distr-sh/distr/internal/notification"
@@ -48,34 +49,6 @@ func (r *Registry) createJobsScheduler() (*jobs.Scheduler, error) {
 		}
 	}
 
-	if cron := env.CleanupDeploymentTargetLogRecordCron(); cron != nil {
-		err = scheduler.RegisterCronJob(
-			*cron,
-			jobs.NewJob(
-				"DeploymentTargetLogRecordCleanup",
-				cleanup.RunDeploymentTargetLogRecordCleanup,
-				env.CleanupDeploymentTargetLogRecordTimeout(),
-			),
-		)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if cron := env.CleanupDeploymentLogRecordCron(); cron != nil {
-		err = scheduler.RegisterCronJob(
-			*cron,
-			jobs.NewJob(
-				"DeploymentLogRecordCleanup",
-				cleanup.RunDeploymentLogRecordCleanup,
-				env.CleanupDeploymentLogRecordTimeout(),
-			),
-		)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	if cron := env.CleanupOIDCStateCron(); cron != nil {
 		err = scheduler.RegisterCronJob(
 			*cron,
@@ -113,6 +86,20 @@ func (r *Registry) createJobsScheduler() (*jobs.Scheduler, error) {
 				"DeploymentStatusNotification",
 				notification.RunDeploymentStatusNotifications,
 				env.DeploymentStatusNotificationTimeout(),
+			),
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if cron := env.CustomDomainVerificationCron(); cron != nil {
+		err = scheduler.RegisterCronJob(
+			*cron,
+			jobs.NewJob(
+				"CustomDomainVerification",
+				customdomains.RunCustomDomainVerification,
+				env.CustomDomainVerificationTimeout(),
 			),
 		)
 		if err != nil {

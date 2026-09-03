@@ -1,41 +1,16 @@
-@theme {
-  --spacing-108: 27rem;
-  --spacing-128: 32rem;
-  --spacing-144: 36rem;
-  --spacing-160: 40rem;
-  --spacing-180: 45rem;
-  --spacing-200: 50rem;
-  --spacing-256: 64rem;
-
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
-  --color-primary-950: #172554;
-
-  --font-sans: 'Inter', 'system-ui', 'sans-serif';
-  --font-display: 'Poppins', 'Inter', 'system-ui', 'sans-serif';
-  --font-mono: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-
-  --breakpoint-3xl: 112rem;
-  --breakpoint-4xl: 128rem;
-  --breakpoint-5xl: 144rem;
-}
-
-@custom-variant dark (&:where(.dark, .dark *));
-
-@plugin 'flowbite/plugin';
-
 @layer base {
   button:not(:disabled),
   [role='button']:not(:disabled) {
     cursor: pointer;
+  }
+
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-gray-400) transparent;
+  }
+
+  html:has(body.dark) {
+    scrollbar-color: var(--color-gray-600) transparent;
   }
 }
 
@@ -52,20 +27,88 @@
     @apply block text-sm font-medium text-gray-900 dark:text-white;
   }
 
+  // the label of a field in a compact filter row, above a `distr-input distr-input-sm`
+  .distr-label-sm {
+    @apply block text-xs font-medium text-gray-700 dark:text-gray-400;
+  }
+
+  // the track of a toggle switch, following a `<input type="checkbox" class="sr-only peer">`
+  .distr-toggle {
+    @apply relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600;
+  }
+
   .distr-input {
-    @apply bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500;
+    @apply bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+
+  // for a `distr-input` on a surface that is `dark:bg-gray-700` itself, where the default fill would
+  // be the same color as the surface in dark mode. Must stay below `.distr-input` to override it.
+  .distr-input-raised {
+    @apply dark:bg-gray-600 dark:border-gray-500;
+  }
+
+  // a `distr-input` in a compact filter row, next to a button of the same height
+  .distr-input-sm {
+    @apply p-2 text-xs leading-none;
   }
 
   .distr-btn-primary {
-    @apply bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800;
+    @apply text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800;
   }
 
   .distr-btn-secondary {
-    @apply text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700;
+    @apply text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed;
   }
 
   .distr-btn-danger {
     @apply text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900;
+  }
+
+  .distr-btn-danger-solid {
+    @apply text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800;
+  }
+
+  .distr-plan-badge {
+    @apply bg-gray-200 text-gray-600 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-gray-500 dark:text-gray-100;
+  }
+
+  // the Flowbite badge shape, with the colors of the state it shows applied by the caller
+  .distr-status-badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-sm text-xs font-medium;
+  }
+  // the white surface of a page. `distr-panel` is padded for prose and forms, `distr-table-panel`
+  // is flush so that a table or list can span its full width.
+  // No `overflow-hidden` here, unlike `distr-table-panel`: a padded panel has nothing to clip at its
+  // rounded corners, and clipping would break `position: sticky` for its children.
+  .distr-panel {
+    @apply relative p-6 bg-white rounded-lg shadow-md sm:p-10 dark:bg-gray-800;
+  }
+
+  .distr-table-panel {
+    @apply relative overflow-hidden bg-white rounded-lg shadow-md dark:bg-gray-800;
+  }
+
+  .distr-card-grid {
+    @apply grid items-stretch grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4 4xl:grid-cols-5 5xl:grid-cols-6;
+  }
+
+  // for cards whose content is too wide for the columns of `distr-card-grid`
+  .distr-card-grid-wide {
+    @apply grid items-stretch grid-cols-1 gap-4 2xl:grid-cols-2;
+  }
+
+  .distr-card {
+    @apply flex flex-col h-full overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 dark:bg-gray-800;
+  }
+
+  // the row above a table or card grid that holds `app-search-bar` and the page actions. Inside a
+  // `distr-table-panel` add `p-4`, above a `distr-card-grid` add `mb-4`.
+  .distr-toolbar {
+    @apply flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3;
+  }
+
+  .distr-toolbar-actions {
+    @apply w-full md:w-auto flex flex-col md:flex-row items-stretch md:items-center justify-end gap-3 shrink-0;
   }
 
   .distr-table {

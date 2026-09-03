@@ -5,21 +5,19 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"regexp"
 	"time"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
-	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
-	"github.com/distr-sh/distr/internal/license"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
+	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -36,7 +34,7 @@ func OrganizationRouter(r chiopenapi.Router) {
 		With(option.Response(http.StatusOK, api.OrganizationResponse{}))
 
 	r.With(middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
-		r.Post("/", createOrganization).
+		r.With(middleware.BlockCrossOrganizationAction).Post("/", createOrganization).
 			With(option.Description("Create a new organization")).
 			With(option.Request(api.CreateUpdateOrganizationRequest{})).
 			With(option.Response(http.StatusOK, types.OrganizationWithUserRole{}))
@@ -139,31 +137,22 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if limit := license.GetLicenseData().MaxOrganizations; !limit.IsUnlimited() {
-		if count, err := db.CountAllOrganizations(ctx); err != nil {
-			log.Error("could not get organization count", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		} else if limit.IsReached(count) {
-			http.Error(w, "global organization limit has been reached", http.StatusBadRequest)
-			return
-		}
+	if reached, err := subscription.IsGlobalOrganizationLimitReached(ctx); err != nil {
+		log.Error("could not check global organization limit", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	} else if reached {
+		http.Error(w, subscription.GlobalOrganizationLimitReachedMessage, http.StatusBadRequest)
+		return
 	}
 
 	organization := types.Organization{
 		Name:                body.Name,
 		Slug:                body.Slug,
-		SubscriptionType:    types.SubscriptionTypeTrial,
-		Features:            subscription.ProFeatures,
 		PreConnectScript:    body.PreConnectScript,
 		PostConnectScript:   body.PostConnectScript,
 		ConnectScriptIsSudo: body.ConnectScriptIsSudo,
-	}
-
-	if buildconfig.IsCommunityEdition() {
-		organization.SubscriptionType = types.SubscriptionTypeCommunity
-		organization.Features = []types.Feature{}
 	}
 
 	if err := db.RunTx(ctx, func(ctx context.Context) error {
@@ -198,13 +187,8 @@ func validateOrganizationRequest(w http.ResponseWriter, organization api.CreateU
 		return false
 	}
 	if organization.Slug != nil {
-		slugPattern := "^[a-z0-9]+((\\.|_|__|-+)[a-z0-9]+)*$"
-		slugMaxLength := 64
-		if matched, _ := regexp.MatchString(slugPattern, *organization.Slug); !matched {
-			http.Error(w, "Slug is invalid", http.StatusBadRequest)
-			return false
-		} else if len(*organization.Slug) > slugMaxLength {
-			http.Error(w, "Slug too long (max 64 chars)", http.StatusBadRequest)
+		if err := validation.ValidateSlug(*organization.Slug); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return false
 		}
 	}

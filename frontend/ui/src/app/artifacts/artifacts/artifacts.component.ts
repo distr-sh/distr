@@ -5,26 +5,19 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {
-  faBox,
-  faLightbulb,
-  faMagnifyingGlass,
-  faPlus,
-  faTrash,
-  faUserCircle,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
+import {faBox, faLightbulb, faPlus, faTrash, faUserCircle, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, lastValueFrom, map, startWith} from 'rxjs';
-import {fromPromise} from 'rxjs/internal/observable/innerFrom';
-import {getRemoteEnvironment} from '../../../env/remote';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
+import {PageComponent} from '../../components/page.component';
+import {SearchBarComponent} from '../../components/search-bar.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {RequireCustomerDirective, RequireVendorDirective} from '../../directives/required-role.directive';
 import {ArtifactsService, ArtifactUpstreamAuth, UpstreamAuthType} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
+import {ContextService} from '../../services/context.service';
 import {CustomerOrganizationsCache} from '../../services/customer-organizations.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
@@ -47,6 +40,8 @@ import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent} from '.
     SecureImagePipe,
     OverlayModule,
     SpinnerComponent,
+    PageComponent,
+    SearchBarComponent,
   ],
   templateUrl: './artifacts.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -59,7 +54,6 @@ export class ArtifactsComponent {
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder).nonNullable;
 
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faBox = faBox;
   protected readonly faTrash = faTrash;
   protected readonly faPlus = faPlus;
@@ -93,14 +87,12 @@ export class ArtifactsComponent {
   );
 
   private readonly organizationService = inject(OrganizationService);
+  private readonly contextService = inject(ContextService);
   protected readonly registrySlug$ = this.organizationService.get().pipe(map((org) => org.slug));
-  protected readonly registryHost$ = combineLatest([
-    fromPromise(getRemoteEnvironment()),
-    this.organizationService.get(),
-  ]).pipe(map(([env, org]) => org.registryDomain ?? env.registryHost));
+  protected readonly registryHost$ = this.contextService.getRegistryHost();
 
   protected readonly auth = inject(AuthService);
-  protected readonly hasNoSubscription = this.organizationService.hasNoSubscription;
+  protected readonly hasSubscription = this.organizationService.hasSubscription;
 
   constructor() {
     this.createForm.controls.upstreamAuthType.valueChanges

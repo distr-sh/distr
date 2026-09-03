@@ -7,7 +7,6 @@ import starlight from '@astrojs/starlight';
 import tailwindcss from '@tailwindcss/vite';
 import icon from 'astro-icon';
 import {defineConfig, fontProviders} from 'astro/config';
-import serviceWorker from 'astrojs-service-worker';
 import rehypeExternalLinks from 'rehype-external-links';
 import rehypeMermaid from 'rehype-mermaid';
 import starlightLinksValidator from 'starlight-links-validator';
@@ -16,6 +15,9 @@ import starlightSidebarTopics from 'starlight-sidebar-topics';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://distr.sh',
+  prefetch: {
+    prefetchAll: true,
+  },
   fonts: [
     {
       name: 'Inter',
@@ -51,7 +53,6 @@ export default defineConfig({
         return !excludedSlugs.some(slug => slug === pathname);
       },
     }),
-    serviceWorker(),
     starlight({
       title: 'Distr',
       customCss: ['./src/styles/global.css'],
@@ -246,6 +247,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   ],
                 },
                 {
+                  label: 'Air-Gapped Packaging',
+                  items: [
+                    {
+                      label: 'Air-Gapped Deployments with Zarf',
+                      link: '/docs/integrations/zarf/',
+                    },
+                  ],
+                },
+                {
                   label: 'API & SDK',
                   items: [
                     {label: 'Distr API', link: '/docs/integrations/api/'},
@@ -286,6 +296,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             '/pricing/',
             '/blog/**',
             '/glossary/**',
+            '/cyber-resilience-act{,/**}',
             '/get-started/',
             '/onboarding/',
             'mailto:**',
@@ -362,6 +373,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/guides/onboarding-a-new-customer/': '/docs/platform/rbac/',
     '/docs/guides/onboarding-a-docker-app/': '/docs/agents/application/',
     '/docs/guides/onboarding-a-helm-app/': '/docs/agents/application/',
+    '/docs/guides/distr-on-macos/': '/docs/agents/distr-on-macos/',
 
     // Integration redirects
     '/docs/integrations/mcp/': '/docs/integrations/',
@@ -371,5 +383,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
     // Legacy blog redirects (content superseded by /compare/ pages)
     '/blog/distr-vs-replicated/': '/compare/replicated/',
+
+    // CRA hub: early slug renamed guide → introduction
+    '/cyber-resilience-act/guide/': '/cyber-resilience-act/introduction/',
+
+    // Renamed / superseded blog posts
+    '/blog/self-managed-vs-cloud-vs-byoc/': '/blog/self-hosted-spectrum/',
+    '/blog/self-hosted-vs-saas-vs-byoc/': '/blog/self-hosted-spectrum/',
+
+    // Glossary redirects
+    '/glossary/self-managed-software/': '/glossary/self-hosted-software/',
   },
 });

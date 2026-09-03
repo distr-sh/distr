@@ -1,16 +1,17 @@
 [settings]
 env_shell_expand = false
+task.output = "prefix"
 
 [tools]
 node = "26"
-go = "1.26.4"
-golangci-lint = "2.12.2"
+go = "1.27.1"
+golangci-lint = "2.13.2"
 helm-docs = "1.14.2"
-watchexec = "2.5.1"
-pnpm = "11.9.0"
-stripe = "1.43.2"
-"go:github.com/go-delve/delve/cmd/dlv" = "1.27.0"
-git-lfs = "3.7.1"
+watchexec = "2.7.0"
+pnpm = "11.25.0"
+stripe = "1.50.6"
+"go:github.com/go-delve/delve/cmd/dlv" = "1.27.1"
+git-lfs = "3.8.0"
 
 [env]
 _.source = ['hack/current-commit.sh']
@@ -21,37 +22,43 @@ CGO_ENABLED = "0"
 [vars]
 ldflags = "-s -w -X github.com/distr-sh/distr/internal/buildconfig.version=$VERSION -X github.com/distr-sh/distr/internal/buildconfig.commit=$COMMIT"
 
-[tasks.sdk-deps]
-run = 'pnpm install'
-dir = "sdk/js"
-sources = ["sdk/js/package.json", "sdk/js/pnpm-lock.yaml"]
-
-[tasks.frontend-deps]
-run = 'pnpm install'
-depends = ["build:sdk"]
-sources = ["package.json", "pnpm-lock.yaml", "sdk/js/src/**/*"]
-
 [tasks.go-tidy]
 run = 'go mod tidy'
 
 [tasks."build:sdk"]
 run = ['pnpm run build', 'pnpm run docs']
 dir = "sdk/js"
-depends = ["sdk-deps"]
-sources = ["sdk/js/node_modules/**/*", "sdk/js/src/**/*"]
+sources = [
+  "sdk/js/src/**/*",
+  "sdk/js/package.json",
+]
 
 [tasks."build:frontend:dev"]
 run = 'pnpm build:dev'
-depends = ["frontend-deps"]
-sources = ["node_modules/**/*", "frontend/ui/**/*"]
+depends = ["build:sdk"]
+sources = [
+  "frontend/ui/**/*",
+  "!frontend/ui/src/data/*.json",
+  "package.json",
+]
 
 [tasks."build:frontend:community"]
 run = 'pnpm build:community'
-depends = ["frontend-deps"]
+depends = ["build:sdk"]
+sources = [
+  "frontend/ui/**/*",
+  "!frontend/ui/src/data/*.json",
+  "package.json",
+]
 
 [tasks."build:frontend:enterprise"]
 run = 'pnpm build:enterprise'
-depends = ["frontend-deps"]
+depends = ["build:sdk"]
+sources = [
+  "frontend/ui/**/*",
+  "!frontend/ui/src/data/*.json",
+  "package.json",
+]
 
 [tasks."build:hub:community"]
 run = 'go build -ldflags="{{vars.ldflags}} -X github.com/distr-sh/distr/internal/buildconfig.edition=community" -o dist/distr ./cmd/hub'
@@ -60,6 +67,17 @@ depends = ["go-tidy", "build:frontend:community"]
 [tasks."build:hub:enterprise"]
 run = 'go build -ldflags="{{vars.ldflags}} -X github.com/distr-sh/distr/internal/buildconfig.edition=enterprise" -o dist/distr ./cmd/hub'
 depends = ["go-tidy", "build:frontend:enterprise"]
+
+[tasks."build:website"]
+run = 'pnpm build'
+dir = "website"
+sources = [
+  "website/src/**/*",
+  "website/public/**/*",
+  "website/astro.config.mjs",
+  "website/package.json",
+  "CHANGELOG.md",
+]
 
 [tasks."build:agent:docker"]
 run = 'go build -ldflags="{{vars.ldflags}}" -o dist/docker-agent ./cmd/agent/docker'
@@ -79,25 +97,57 @@ run = 'pnpm lint'
 [tasks."lint:migrations"]
 run = 'hack/validate-migrations.sh'
 
-[tasks.lint]
+[tasks."lint:website"]
+run = 'pnpm lint'
+dir = "website"
+
+[tasks."lint:app"]
 run = { tasks = ["lint:go", "lint:frontend", "lint:migrations"] }
+description = 'Lint hub and agents, without the website'
+
+[tasks.lint]
+run = { tasks = ["lint:app", "lint:website"] }
 
 [tasks."test:go"]
 run = 'go test ./...'
 depends = ["go-tidy"]
 description = 'Run all Go tests'
 
+[tasks."test:frontend"]
+run = 'pnpm test'
+depends = ["build:sdk"]
+description = 'Run all frontend tests'
+
 [tasks.test]
-run = { tasks = ["test:go"] }
+run = { tasks = ["test:go", "test:frontend"] }
 
 [tasks."format:go"]
 run = 'golangci-lint run --fix'
 
+[tasks."build:helm-docs"]
+run = 'helm-docs --chart-search-root deploy/charts'
+sources = [
+  "deploy/charts/distr/Chart.yaml",
+  "deploy/charts/distr/values.yaml",
+  "deploy/charts/distr/README.md.gotmpl",
+]
+outputs = ["deploy/charts/distr/README.md"]
+
 [tasks."format:frontend"]
-run = 'pnpm format'
+run = ['pnpm dedupe', 'pnpm format']
+depends = ["build:helm-docs"]
+
+[tasks."format:website"]
+run = ['pnpm dedupe', 'pnpm format']
+dir = "website"
+description = 'Format the website. Also deletes unused images'
+
+[tasks."format:app"]
+run = { tasks = ["format:go", "format:frontend"] }
+description = 'Format hub and agents, without the website'
 
 [tasks.format]
-run = { tasks = ["format:go", "format:frontend"] }
+run = { tasks = ["format:app", "format:website"] }
 
 [tasks."run:hub:serve"]
 run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/hub/ serve'

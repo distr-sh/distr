@@ -2,6 +2,7 @@
 title: Software Bill of Materials (SBOMs)
 slug: sbom-software-bill-of-materials
 description: 'Discover what SBOMs are, their importance, and their role in software security supply chains.'
+lastUpdated: 2026-07-23
 ---
 
 ## What is an SBOM?
@@ -26,20 +27,21 @@ The diagram above illustrates how an SBOM provides a comprehensive inventory of 
 
 ## Why do SBOMs Matter?
 
-SBOMs are essential for several reasons:
+The clearest illustration is the [Log4Shell](https://en.wikipedia.org/wiki/Log4Shell) vulnerability in 2021. Organizations with SBOMs could search their inventories and know within hours which applications contained the vulnerable Log4j library. Organizations without them spent weeks manually auditing software.
 
-- **Security:** They help identify vulnerabilities by providing a clear view of all components and dependencies, allowing for quick action when new threats are discovered.
-- **Compliance:** Many regulations and standards require transparency in software components, and SBOMs help meet these requirements.
-- **Risk Management:** By understanding what components are in use, organizations can better assess and manage risks associated with third-party software.
-- **Incident Response:** In the event of a security incident, SBOMs provide a detailed inventory that can speed up response and recovery efforts.
-- **Supply Chain Transparency:** They enhance visibility into the software supply chain, ensuring that all components are accounted for and verified.
+Beyond incident response, SBOMs matter for:
+
+- **Security.** A clear view of all components and dependencies lets you act quickly when a new vulnerability in any of them is disclosed.
+- **Compliance.** Regulators increasingly require component transparency. In the US, [Executive Order 14028](https://www.cisa.gov/sbom) pushed SBOM requirements for software sold to the federal government. In the EU, the [Cyber Resilience Act](https://digital-strategy.ec.europa.eu/en/policies/cyber-resilience-act) requires manufacturers of products with digital elements to maintain SBOMs.
+- **Risk management.** Knowing what components are in use makes it possible to assess the risk of third-party software before adopting it.
+- **License audits.** SBOMs record license information for each component, which matters when open source licenses impose obligations on distribution.
 
 ## Where are SBOMs stored and how are they used?
 
 SBOMs are typically stored in:
 
 - **Version Control Systems:** Integrated with source code repositories to ensure they are updated alongside the software.
-- **Artifact Repositories:** Can be directly embedded in an OCI compliant image.
+- **Artifact Repositories:** Can be attached to an image in an [OCI-compliant registry](/glossary/oci-container-artifact-registry/) and distributed alongside it.
 
 By maintaining SBOMs in these locations, organizations ensure they are readily accessible for security assessments, audits, and compliance checks.
 
@@ -47,20 +49,20 @@ By maintaining SBOMs in these locations, organizations ensure they are readily a
 
 Three widely adopted SBOM formats include:
 
-- **SPDX (Software Package Data Exchange):** An ISO standard maintained by the Linux Foundation
-- **CycloneDX:** A lightweight format focused on security, maintained by OWASP
-- **SWID (Software Identification Tags):** An ISO standard for software identification and management
+- **[SPDX (Software Package Data Exchange)](https://spdx.dev/):** An ISO standard maintained by the Linux Foundation
+- **[CycloneDX](https://cyclonedx.org/):** A lightweight format focused on security, maintained by OWASP
+- **[SWID (Software Identification Tags)](https://csrc.nist.gov/projects/Software-Identification-SWID):** An ISO standard for software identification and management
 
 ## How to generate an SBOM
 
 SBOMs can be generated using various tools and methods. Here are some commonly used tools:
 
-- **Syft:** A popular tool for generating SBOMs from container images and filesystems. It supports various formats like SPDX, CycloneDX, and its own format.
-- **The SBOM Tool:** Developed by Microsoft, this tool is highly scalable and enterprise-ready. It generates SBOMs in SPDX format and supports various package managers.
-- **CycloneDX Generator (cdxgen):** The official OWASP SBOM tool, supporting a wide range of programming languages. It outputs SBOMs in CycloneDX format.
-- **SPDX SBOM Generator:** Supports multiple package managers and outputs SBOMs in SPDX format.
-- **Tern:** Generates SBOMs from container images and Dockerfiles, focusing on license information and dependency tracking.
-- **Distr:** Once the feature is enabled, SBOMs are automatically generated upon pushing an artifact to the registry.
+- **[Syft](https://github.com/anchore/syft):** A popular tool for generating SBOMs from container images and filesystems. It supports various formats like SPDX, CycloneDX, and its own format.
+- **[Trivy](https://github.com/aquasecurity/trivy):** A security scanner that also generates SBOMs from container images, filesystems, and repositories in SPDX and CycloneDX formats.
+- **[The SBOM Tool](https://github.com/microsoft/sbom-tool):** Developed by Microsoft, generates SBOMs in SPDX format and supports various package managers.
+- **[CycloneDX Generator (cdxgen)](https://github.com/CycloneDX/cdxgen):** The official OWASP SBOM tool, supporting a wide range of programming languages. It outputs SBOMs in CycloneDX format.
+- **[SPDX SBOM Generator](https://github.com/opensbom-generator/spdx-sbom-generator):** Supports multiple package managers and outputs SBOMs in SPDX format.
+- **[Distr](/docs/registry/):** Once the feature is enabled, SBOMs are automatically generated upon pushing an artifact to the registry.
 
 Here are some examples of how to generate SBOMs using these tools:
 
@@ -75,12 +77,11 @@ mvn org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom
 npm install -g @spdx/spdx-sbom-generator
 spdx-sbom-generator -p ./
 
-# Push a sample image to Distr registry using ORAS and automatically generate an SBOM
+# Push a sample image to the Distr registry using ORAS (https://oras.land/)
+# and automatically generate an SBOM
 oras push registry.distr.sh/my-organization/my-application:1.0.0 \
     ./sample-image.tar:application/vnd.oci.image.layer.v1.tar
 ```
-
-These tools provide flexibility and support for various formats and environments, making it easier to integrate SBOM generation into your development workflow.
 
 ## Best Practices for Implementing SBOMs
 
@@ -89,11 +90,11 @@ To maximize the effectiveness of SBOMs:
 - Automate SBOM generation in your CI/CD pipeline.
 - Keep SBOMs updated with each release.
 - Securely store SBOMs while ensuring accessibility for security teams.
-- Integrate SBOMs into vulnerability management processes.
+- Integrate SBOMs into your [vulnerability management](/glossary/vulnerability-scanning/) processes.
 - Include both direct and transitive dependencies.
 - Use automated tools to validate SBOM completeness.
 
-By following these practices and using tools like ORAS to manage SBOMs in OCI-compliant registries, organizations can strengthen their software supply chain security and keep thorough documentation of their software components.
+An SBOM that sits unused in a repository does not improve security. The value comes from wiring it into vulnerability management, so that when the next Log4Shell happens, you can answer "are we affected?" in minutes.
 
 ## Key Terms Recap
 

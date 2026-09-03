@@ -19,12 +19,12 @@ import (
 func Get(
 	ctx context.Context,
 	deploymentTarget types.DeploymentTargetFull,
-	org types.Organization,
+	org types.OrganizationWithBranding,
 	secret *string,
 ) (io.Reader, error) {
 	if tmpl, err := getTemplate(deploymentTarget); err != nil {
 		return nil, err
-	} else if data, err := getTemplateData(deploymentTarget, org, secret); err != nil {
+	} else if data, err := getTemplateData(ctx, deploymentTarget, org, secret); err != nil {
 		return nil, err
 	} else {
 		var buf bytes.Buffer
@@ -33,21 +33,23 @@ func Get(
 }
 
 func getTemplateData(
+	ctx context.Context,
 	deploymentTarget types.DeploymentTargetFull,
-	org types.Organization,
+	org types.OrganizationWithBranding,
 	secret *string,
 ) (map[string]any, error) {
 	var (
-		loginEndpoint     string
-		manifestEndpoint  string
-		resourcesEndpoint string
-		statusEndpoint    string
-		metricsEndpoint   string
-		logsEndpoint      string
-		agentLogsEndpoint string
+		loginEndpoint             string
+		manifestEndpoint          string
+		resourcesEndpoint         string
+		statusEndpoint            string
+		metricsEndpoint           string
+		deploymentMetricsEndpoint string
+		logsEndpoint              string
+		agentLogsEndpoint         string
 	)
 
-	if u, err := url.Parse(customdomains.AppDomainOrDefault(org)); err != nil {
+	if u, err := url.Parse(customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding)); err != nil {
 		return nil, err
 	} else {
 		u = u.JoinPath("api/v1/agent")
@@ -56,29 +58,32 @@ func getTemplateData(
 		resourcesEndpoint = u.JoinPath("resources").String()
 		statusEndpoint = u.JoinPath("status").String()
 		metricsEndpoint = u.JoinPath("metrics").String()
+		deploymentMetricsEndpoint = u.JoinPath("deployments").String()
 		logsEndpoint = u.JoinPath("logs").String()
 		agentLogsEndpoint = u.JoinPath("deployment-target-logs").String()
 	}
 
 	result := map[string]any{
-		"agentDockerConfig": base64.StdEncoding.EncodeToString(env.AgentDockerConfig()),
-		"agentInterval":     env.AgentInterval(),
-		"agentVersion":      deploymentTarget.AgentVersion.Name,
-		"agentVersionId":    deploymentTarget.AgentVersion.ID,
-		"autohealAll":       deploymentTarget.AutohealEnabled,
-		"loginEndpoint":     loginEndpoint,
-		"manifestEndpoint":  manifestEndpoint,
-		"metricsEndpoint":   metricsEndpoint,
-		"registryEnabled":   env.RegistryEnabled(),
-		"registryHost":      customdomains.RegistryDomainOrDefault(org),
-		"registryPlainHttp": buildconfig.IsDevelopment(),
-		"resourcesEndpoint": resourcesEndpoint,
-		"statusEndpoint":    statusEndpoint,
-		"targetId":          deploymentTarget.ID,
-		"targetSecret":      secret,
-		"logsEndpoint":      logsEndpoint,
-		"agentLogsEndpoint": agentLogsEndpoint,
-		"metricsEnabled":    deploymentTarget.MetricsEnabled,
+		"agentDockerConfig":         base64.StdEncoding.EncodeToString(env.AgentDockerConfig()),
+		"agentInterval":             env.AgentInterval(),
+		"agentVersion":              deploymentTarget.AgentVersion.Name,
+		"agentVersionId":            deploymentTarget.AgentVersion.ID,
+		"autohealAll":               deploymentTarget.AutohealEnabled,
+		"loginEndpoint":             loginEndpoint,
+		"manifestEndpoint":          manifestEndpoint,
+		"metricsEndpoint":           metricsEndpoint,
+		"deploymentMetricsEndpoint": deploymentMetricsEndpoint,
+		"registryEnabled":           env.RegistryEnabled(),
+		"registryHost":              customdomains.RegistryDomainOrDefault(ctx, org.ID, org.Branding),
+		"registryPlainHttp":         buildconfig.IsDevelopment(),
+		"resourcesEndpoint":         resourcesEndpoint,
+		"statusEndpoint":            statusEndpoint,
+		"targetId":                  deploymentTarget.ID,
+		"targetSecret":              secret,
+		"logsEndpoint":              logsEndpoint,
+		"agentLogsEndpoint":         agentLogsEndpoint,
+		"metricsEnabled":            deploymentTarget.MetricsEnabled,
+		"dockerSocketPath":          deploymentTarget.DockerSocketPath(),
 	}
 	if deploymentTarget.Namespace != nil {
 		result["targetNamespace"] = *deploymentTarget.Namespace

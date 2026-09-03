@@ -88,6 +88,6 @@ export const products: Product[] = [
     description:
       'Enterprise - Distribute your application with air-gapped bundles into the most isolated environments',
     value: 'server-off',
-    href: '/docs/use-cases/air-gapped-deployments/',
+    href: '/docs/integrations/zarf/',
   },
 ];

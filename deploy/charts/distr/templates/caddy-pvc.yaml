@@ -1,0 +1,22 @@
+{{- if and .Values.caddy.enabled .Values.caddy.persistence.enabled (not .Values.caddy.persistence.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "distr.fullname" . }}-caddy
+  labels:
+    {{- include "distr.labels" . | nindent 4 }}
+    app.kubernetes.io/component: caddy
+  annotations:
+    {{- /* Certificates outlive the release: reissuing one for every custom domain after a
+    reinstall can run into the ACME provider's rate limits. */}}
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    {{- toYaml .Values.caddy.persistence.accessModes | nindent 4 }}
+  {{- with .Values.caddy.persistence.storageClassName }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.caddy.persistence.size | quote }}
+{{- end }}

@@ -51,13 +51,15 @@ Read more about Distr and its core concepts at https://distr.sh/docs/core-concep
 
 ```mermaid
 architecture-beta
-    group ctrl(cloud)[Distr Saas or Your Cloud]
+    group ctrl(cloud)[Distr Cloud or Your Cloud]
     service hub(server)[Distr Hub] in ctrl
     service db(database)[PostgreSQL] in ctrl
+    service loki(database)[Loki Log Storage] in ctrl
     service oci(database)[Distr OCI Registry] in ctrl
     service s3(disk)[Object Storage] in ctrl
     oci:R -- L:hub
     db:T -- B:hub
+    loki:L -- R:hub
     oci:B -- T:s3
 
     junction customerjunction

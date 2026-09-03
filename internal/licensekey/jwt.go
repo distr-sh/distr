@@ -10,14 +10,19 @@ import (
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
-	"github.com/lestrrat-go/jwx/v3/jwa"
-	"github.com/lestrrat-go/jwx/v3/jwk"
-	"github.com/lestrrat-go/jwx/v3/jwt"
+	"github.com/lestrrat-go/jwx/v4/jwa"
+	"github.com/lestrrat-go/jwx/v4/jwk"
+	"github.com/lestrrat-go/jwx/v4/jwt"
 )
+
+// OrganizationIDClaimName is the JWT claim under which the organization ID a license key
+// was issued for is encoded. It matches the claim the license package validates against.
+const OrganizationIDClaimName = "org"
 
 var registeredClaims = map[string]struct{}{
 	jwt.ExpirationKey: {}, jwt.NotBeforeKey: {}, jwt.IssuerKey: {},
 	jwt.SubjectKey: {}, jwt.AudienceKey: {}, jwt.IssuedAtKey: {},
+	OrganizationIDClaimName: {},
 }
 
 var ErrNoSigningKey = errors.New("no license key signing key configured")
@@ -27,7 +32,7 @@ var signingKey = sync.OnceValues(func() (jwk.Key, error) {
 	if pemBytes == nil {
 		return nil, ErrNoSigningKey
 	}
-	return jwk.ParseKey(pemBytes, jwk.WithPEM(true))
+	return jwk.ParseKey(pemBytes, jwk.WithX509(true))
 })
 
 func PublicKey() (jwk.Key, error) {
@@ -43,11 +48,12 @@ func IsSigningKeyConfigured() bool {
 }
 
 type LicenseKeyData struct {
-	LicenseKeyID uuid.UUID
-	IssuedAt     time.Time
-	ExpiresAt    time.Time
-	NotBefore    time.Time
-	Payload      json.RawMessage
+	LicenseKeyID   uuid.UUID
+	OrganizationID uuid.UUID
+	IssuedAt       time.Time
+	ExpiresAt      time.Time
+	NotBefore      time.Time
+	Payload        json.RawMessage
 }
 
 func FromLicenseKey(lk types.LicenseKey) LicenseKeyData {
@@ -62,21 +68,23 @@ func FromLicenseKey(lk types.LicenseKey) LicenseKeyData {
 		notBefore = *lk.NotBefore
 	}
 	return LicenseKeyData{
-		LicenseKeyID: lk.ID,
-		IssuedAt:     issuedAt,
-		ExpiresAt:    expiresAt,
-		NotBefore:    notBefore,
-		Payload:      lk.Payload,
+		LicenseKeyID:   lk.ID,
+		OrganizationID: lk.OrganizationID,
+		IssuedAt:       issuedAt,
+		ExpiresAt:      expiresAt,
+		NotBefore:      notBefore,
+		Payload:        lk.Payload,
 	}
 }
 
 func FromLicenseKeyAndRevision(lk types.LicenseKey, r types.LicenseKeyRevision) LicenseKeyData {
 	return LicenseKeyData{
-		LicenseKeyID: lk.ID,
-		IssuedAt:     r.CreatedAt,
-		ExpiresAt:    r.ExpiresAt,
-		NotBefore:    r.NotBefore,
-		Payload:      r.Payload,
+		LicenseKeyID:   lk.ID,
+		OrganizationID: lk.OrganizationID,
+		IssuedAt:       r.CreatedAt,
+		ExpiresAt:      r.ExpiresAt,
+		NotBefore:      r.NotBefore,
+		Payload:        r.Payload,
 	}
 }
 
@@ -104,6 +112,10 @@ func generateToken(key jwk.Key, src LicenseKeyData, issuer string) (string, erro
 		IssuedAt(src.IssuedAt).
 		NotBefore(src.NotBefore).
 		Expiration(src.ExpiresAt)
+
+	if src.OrganizationID != uuid.Nil {
+		builder = builder.Claim(OrganizationIDClaimName, src.OrganizationID.String())
+	}
 
 	for k, v := range customClaims {
 		builder = builder.Claim(k, v)

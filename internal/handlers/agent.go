@@ -23,6 +23,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/deploymentvalues"
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/notification"
@@ -39,13 +40,15 @@ import (
 )
 
 func AgentRouter(r chiopenapi.Router) {
-	rateLimitPerDeploymentTargetID := httprate.Limit(
+	rateLimitPerDeploymentTargetID := httprate.LimitBy(
 		500,
 		1*time.Minute,
-		httprate.WithKeyFuncs(middleware.RateLimitCurrentDeploymentTargetIdKeyFunc),
+		middleware.RateLimitCurrentDeploymentTargetIdKeyFunc,
 	)
 
-	r.With(queryAuthDeploymentTargetCtxMiddleware).Group(func(r chiopenapi.Router) {
+	// pre-connect and connect only read (org + deployment target) to render the agent manifest. The
+	// query-auth middleware runs first on the primary, then reads are served from the read-only db.
+	r.With(queryAuthDeploymentTargetCtxMiddleware, middleware.UseReadonlyDB).Group(func(r chiopenapi.Router) {
 		r.WithOptions(option.GroupTags("Agents"))
 
 		type AgentConnectRequest struct {
@@ -72,11 +75,14 @@ func AgentRouter(r chiopenapi.Router) {
 			agentAuthDeploymentTargetCtxMiddleware,
 			rateLimitPerDeploymentTargetID,
 		).Group(func(r chiopenapi.Router) {
-			// agent routes, authenticated via token
-			r.Get("/manifest", agentManifestHandler())
-			r.Get("/resources", agentResourcesHandler)
+			// agent routes, authenticated via token.
+			// manifest and resources are read-only and served from the read-only db. The auth
+			// middleware above (which may write the reported agent version) stays on the primary.
+			r.With(middleware.UseReadonlyDB).Get("/manifest", agentManifestHandler())
+			r.With(middleware.UseReadonlyDB).Get("/resources", agentResourcesHandler)
 			r.Post("/status", agentPostStatusHandler)
 			r.Post("/metrics", agentPostMetricsHander)
+			r.Post("/deployments/{deploymentId}/metrics", agentPostDeploymentMetricsHandler)
 			r.Put("/logs", agentPutDeploymentLogsHandler())
 			r.Put("/deployment-target-logs", agentPutDeploymentTargetLogsHandler())
 		})
@@ -89,7 +95,7 @@ func connectHandler() http.HandlerFunc {
 		log := internalctx.GetLogger(ctx)
 		deploymentTarget := internalctx.GetDeploymentTarget(ctx)
 
-		org, err := db.GetOrganizationByID(ctx, deploymentTarget.OrganizationID)
+		org, err := db.GetOrganizationWithBranding(ctx, deploymentTarget.OrganizationID)
 		if err != nil {
 			log.Error("could not get organization for deployment target", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -118,7 +124,7 @@ func preConnectHandler() http.HandlerFunc {
 		log := internalctx.GetLogger(ctx)
 		deploymentTarget := internalctx.GetDeploymentTarget(ctx)
 
-		org, err := db.GetOrganizationByID(ctx, deploymentTarget.OrganizationID)
+		org, err := db.GetOrganizationWithBranding(ctx, deploymentTarget.OrganizationID)
 		if err != nil {
 			log.Error("could not get organization for deployment target", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -127,7 +133,7 @@ func preConnectHandler() http.HandlerFunc {
 		}
 
 		secret := r.URL.Query().Get("targetSecret")
-		script, err := agentconnect.GenerateConnectScript(deploymentTarget.ID, *org, secret)
+		script, err := agentconnect.GenerateConnectScript(ctx, deploymentTarget.ID, *org, secret)
 		if err != nil {
 			log.Error("could not generate connect script", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -211,8 +217,9 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			agentDeployment := api.AgentDeployment{
-				ID:                 deployment.ID,
-				RevisionID:         deployment.DeploymentRevisionID,
+				ID:         deployment.ID,
+				RevisionID: deployment.DeploymentRevisionID,
+				//nolint:staticcheck // deprecated field kept for agents that don't read AgentResource.DeploymentLogsEnabled yet
 				LogsEnabled:        deploymentTarget.DeploymentLogsEnabled,
 				ForceRestart:       deployment.ForceRestart,
 				IgnoreRevisionSkew: deployment.IgnoreRevisionSkew,
@@ -321,20 +328,32 @@ func agentPutDeploymentLogsHandler() http.HandlerFunc {
 
 		records = sanitizeLogRecords(records)
 
-		if err := db.ValidateDeploymentLogRecords(ctx, auth.CurrentDeploymentTargetID(), records); err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
-				http.Error(w, fmt.Sprintf("bad request: %v", err), http.StatusBadRequest)
-			} else {
-				log.Error("error saving deployment log records", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			}
+		// Drop records referencing unknown deployment/revision tuples instead of rejecting the
+		// whole batch: the agent buffers records for many deployments together, so a single
+		// stale reference must not discard the other deployments' valid logs.
+		if valid, err := db.FilterValidDeploymentLogRecords(ctx, auth.CurrentDeploymentTargetID(), records); err != nil {
+			log.Error("error filtering valid deployment log records", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
+		} else {
+			if len(valid) < len(records) {
+				log.Warn("dropping deployment log records referencing unknown deployment revisions",
+					zap.Int("dropped", len(records)-len(valid)), zap.Int("total", len(records)))
+			}
+			records = valid
 		}
 
-		if err := db.SaveDeploymentLogRecords(ctx, records); errors.Is(err, apierrors.ErrBadRequest) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else if err != nil {
+		logStore := logstore.FromContext(ctx)
+		if err := logStore.SaveDeploymentLogRecords(ctx, auth.CurrentOrgID(), records); err != nil {
+			if errors.Is(err, apierrors.ErrBadRequest) {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if errors.Is(err, logstore.ErrRateLimitExceeded) {
+				http.Error(w, err.Error(), http.StatusTooManyRequests)
+				return
+			}
 			log.Error("error saving deployment log records", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -366,9 +385,16 @@ func agentPutDeploymentTargetLogsHandler() http.HandlerFunc {
 			return
 		}
 
-		if err := db.SaveDeploymentTargetLogRecords(ctx, deploymentTarget.ID, records); err != nil {
+		logStore := logstore.FromContext(ctx)
+		if err := logStore.SaveDeploymentTargetLogRecords(
+			ctx, deploymentTarget.OrganizationID, deploymentTarget.ID, records,
+		); err != nil {
 			if errors.Is(err, apierrors.ErrBadRequest) {
 				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if errors.Is(err, logstore.ErrRateLimitExceeded) {
+				http.Error(w, err.Error(), http.StatusTooManyRequests)
 				return
 			}
 
@@ -518,6 +544,42 @@ func agentPostMetricsHander(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func agentPostDeploymentMetricsHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+
+	deploymentID, err := uuid.Parse(r.PathValue("deploymentId"))
+	if err != nil {
+		http.Error(w, "deploymentId is not a valid UUID", http.StatusBadRequest)
+		return
+	}
+
+	dt := internalctx.GetDeploymentTarget(ctx)
+	if !slices.ContainsFunc(
+		dt.Deployments,
+		func(d types.DeploymentWithLatestRevision) bool { return d.ID == deploymentID },
+	) {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	body, err := JsonBody[api.AgentDeploymentResourceMetricsRequest](w, r)
+	if err != nil {
+		return
+	}
+
+	metrics := mapping.DeploymentResourceMetricsRequestToInternal(deploymentID, body)
+
+	if err := db.CreateDeploymentMetrics(ctx, &metrics); err != nil {
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		log.Error("failed to create deployment metrics", zap.Error(err), zap.Any("metrics", body))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func queryAuthDeploymentTargetCtxMiddleware(next http.Handler) http.Handler {
 	limiter := httprate.NewRateLimiter(5, time.Minute)
 
@@ -554,7 +616,7 @@ func agentManifestHandler() http.HandlerFunc {
 		ctx := r.Context()
 		deploymentTarget := internalctx.GetDeploymentTarget(ctx)
 		log := internalctx.GetLogger(ctx).With(zap.String("deploymentTargetId", deploymentTarget.ID.String()))
-		if org, err := db.GetOrganizationByID(ctx, deploymentTarget.OrganizationID); err != nil {
+		if org, err := db.GetOrganizationWithBranding(ctx, deploymentTarget.OrganizationID); err != nil {
 			log.Error("could not get org for deployment target", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)

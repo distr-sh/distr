@@ -23,11 +23,12 @@ import {
 } from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faDocker} from '@fortawesome/free-brands-svg-icons';
-import {faBuildingUser, faCheckCircle, faDharmachakra, faShip, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faAddressBook, faCheckCircle, faDharmachakra, faShip, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, distinctUntilChanged, firstValueFrom, map, of, switchMap, take} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {
+  DOCKER_ENDPOINT_REGEX,
   KUBERNETES_RESOURCE_MAX_LENGTH,
   KUBERNETES_RESOURCE_NAME_REGEX,
   RESOURCE_QUANTITY_REGEX,
@@ -67,7 +68,7 @@ export class DeploymentWizardComponent implements OnInit {
   protected readonly faShip = faShip;
   protected readonly faDocker = faDocker;
   protected readonly faDharmachakra = faDharmachakra;
-  protected readonly faBuildingUser = faBuildingUser;
+  protected readonly faAddressBook = faAddressBook;
   protected readonly faCheckCircle = faCheckCircle;
 
   private readonly toast = inject(ToastService);
@@ -109,6 +110,12 @@ export class DeploymentWizardComponent implements OnInit {
     clusterScope: new FormControl<boolean>(true, {nonNullable: true}),
     imageCleanupEnabled: new FormControl<boolean>(true, {nonNullable: true}),
     deploymentLogsEnabled: new FormControl<boolean>(true, {nonNullable: true}),
+    automaticUpdatesEnabled: new FormControl<boolean>(true, {nonNullable: true}),
+    customDockerEndpoint: new FormControl<boolean>(false, {nonNullable: true}),
+    dockerEndpoint: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.pattern(DOCKER_ENDPOINT_REGEX)],
+    }),
     customResources: new FormControl<boolean>(false, {nonNullable: true}),
     resources: new FormGroup({
       cpuRequest: new FormControl<string>('100m', {
@@ -221,11 +228,8 @@ export class DeploymentWizardComponent implements OnInit {
     return adjustedIndex === 3;
   });
 
-  protected getVendorLogoUrl(branding: {logo?: string; logoContentType?: string} | null): string {
-    if (branding?.logo && branding?.logoContentType) {
-      return `data:${branding.logoContentType};base64,${branding.logo}`;
-    }
-    return '/distr-logo.svg';
+  protected getVendorLogoUrl(branding: {logoImageId?: string} | null): string {
+    return branding?.logoImageId ?? '/distr-logo.svg';
   }
 
   private loading = false;
@@ -289,6 +293,16 @@ export class DeploymentWizardComponent implements OnInit {
           this.deploymentTargetForm.controls.resources.disable();
         }
       });
+
+    this.deploymentTargetForm.controls.customDockerEndpoint.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => {
+        if (value) {
+          this.deploymentTargetForm.controls.dockerEndpoint.enable();
+        } else {
+          this.deploymentTargetForm.controls.dockerEndpoint.disable();
+        }
+      });
   }
 
   private updateConfigurationFormControls(type: DeploymentType | undefined) {
@@ -304,6 +318,8 @@ export class DeploymentWizardComponent implements OnInit {
       } else {
         this.deploymentTargetForm.controls.resources.disable();
       }
+      this.deploymentTargetForm.controls.customDockerEndpoint.disable();
+      this.deploymentTargetForm.controls.dockerEndpoint.disable();
     } else if (type === 'docker') {
       this.deploymentTargetForm.controls.autohealEnabled.enable();
       this.deploymentTargetForm.controls.namespace.disable();
@@ -312,6 +328,12 @@ export class DeploymentWizardComponent implements OnInit {
       this.deploymentTargetForm.controls.imageCleanupEnabled.enable();
       this.deploymentTargetForm.controls.customResources.disable();
       this.deploymentTargetForm.controls.resources.disable();
+      this.deploymentTargetForm.controls.customDockerEndpoint.enable();
+      if (this.deploymentTargetForm.controls.customDockerEndpoint.value) {
+        this.deploymentTargetForm.controls.dockerEndpoint.enable();
+      } else {
+        this.deploymentTargetForm.controls.dockerEndpoint.disable();
+      }
     }
   }
 
@@ -411,6 +433,7 @@ export class DeploymentWizardComponent implements OnInit {
             metricsEnabled: this.deploymentTargetForm.value.scope !== 'namespace',
             imageCleanupEnabled: app.type === 'docker' && this.deploymentTargetForm.controls.imageCleanupEnabled.value,
             deploymentLogsEnabled: this.deploymentTargetForm.controls.deploymentLogsEnabled.value,
+            automaticUpdatesEnabled: this.deploymentTargetForm.controls.automaticUpdatesEnabled.value,
             autohealEnabled: app.type === 'docker' ? (this.deploymentTargetForm.value.autohealEnabled ?? true) : false,
             customerOrganization: customerOrgId ? ({id: customerOrgId} as CustomerOrganization) : undefined,
             resources: this.deploymentTargetForm.value.customResources
@@ -420,6 +443,9 @@ export class DeploymentWizardComponent implements OnInit {
                   cpuRequest: this.deploymentTargetForm.value.resources?.cpuRequest!,
                   memoryRequest: this.deploymentTargetForm.value.resources?.memoryRequest!,
                 }
+              : undefined,
+            dockerEndpoint: this.deploymentTargetForm.value.customDockerEndpoint
+              ? this.deploymentTargetForm.value.dockerEndpoint
               : undefined,
           })
         )) as DeploymentTarget;

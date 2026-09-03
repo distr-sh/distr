@@ -9,44 +9,8 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/license"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
-
-func ensureProFeatures(ctx context.Context) error {
-	log := internalctx.GetLogger(ctx)
-	log.Info("ensuring pro features for all organizations")
-	updated, err := db.EnsureOrganizationFeatures(ctx, ProFeatures)
-	if err != nil {
-		return err
-	}
-	log.Info("ensured pro features for organizations", zap.Int64("updated_count", updated))
-	return nil
-}
-
-func ReconcileStarterFeaturesForOrganizationID(ctx context.Context, orgID uuid.UUID) error {
-	log := internalctx.GetLogger(ctx)
-	log.Info("reconciling starter features for organization", zap.String("organization_id", orgID.String()))
-	return db.RunTx(ctx, func(ctx context.Context) error {
-		if err := db.UpdateAllUserAccountOrganizationAssignmentsWithOrganizationID(
-			ctx,
-			orgID,
-			types.UserRoleAdmin,
-		); err != nil {
-			return err
-		} else if err := db.UpdateDeploymentUnsetEntitlementIDWithOrganizationID(ctx, orgID); err != nil {
-			return err
-		} else if _, err := db.DeleteApplicationEntitlementsWithOrganizationID(ctx, orgID); err != nil {
-			return err
-		} else if _, err := db.DeleteArtifactEntitlementsWithOrganizationID(ctx, orgID); err != nil {
-			return err
-		} else if _, err := db.DeleteAlertConfigurationsWithOrganizationID(ctx, orgID); err != nil {
-			return err
-		} else {
-			return nil
-		}
-	})
-}
 
 func ReconcileEditionFeatures(ctx context.Context) error {
 	log := internalctx.GetLogger(ctx)
@@ -82,32 +46,25 @@ func ReconcileEditionFeatures(ctx context.Context) error {
 			types.NonProSubscriptionTypes,
 		); err != nil {
 			return err
-		} else if err := db.UpdateOrganizationFeaturesWithSubscriptionType(
+		} else if err := db.RemoveOrganizationFeaturesWithSubscriptionType(
 			ctx,
 			types.NonProSubscriptionTypes,
-			[]types.Feature{},
+			types.PlanManagedFeatures,
 		); err != nil {
 			return err
 		}
 
 		if licenseData.EnforceLimitsOnStartup {
-			log.Info("updating enterprise edition limits",
-				zap.Any("max_customers", licenseData.MaxCustomersPerOrganization),
-				zap.Any("max_users", licenseData.MaxUsersPerOrganization),
-				zap.String("subscription_period", string(licenseData.Period)),
-				zap.Time("subscription_ends_at", licenseData.ExpirationDate),
+			plan := licenseData.Plan()
+			log.Info("applying the licensed plan to all organizations",
+				zap.String("subscription_type", string(plan.Type)),
+				zap.Any("features", plan.Features()),
+				zap.Any("max_customers", plan.CustomerOrganizationQty),
+				zap.Any("max_users", plan.UserAccountQty),
+				zap.String("subscription_period", string(plan.Period)),
+				zap.Time("subscription_ends_at", plan.EndsAt),
 			)
-			if err := db.UpdateOrganizationEnterpriseLimits(
-				ctx,
-				licenseData.MaxCustomersPerOrganization,
-				licenseData.MaxUsersPerOrganization,
-				licenseData.Period,
-				licenseData.ExpirationDate,
-			); err != nil {
-				return err
-			}
-
-			if err := ensureProFeatures(ctx); err != nil {
+			if err := db.ApplyPlanToAllOrganizations(ctx, plan); err != nil {
 				return err
 			}
 

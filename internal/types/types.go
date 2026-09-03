@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/distr-sh/distr/internal/util"
@@ -86,28 +87,32 @@ func EffectiveOrderDirection(order OrderDirection, hasAfter bool) OrderDirection
 
 type SubscriptionType string
 
+// IsPro reports whether the subscription type includes the paid feature set.
+// Gating is expressed by excluding NonProSubscriptionTypes rather than by listing the
+// paid types, so a newly introduced plan is treated as paid without having to be added
+// to every check.
 func (st SubscriptionType) IsPro() bool {
-	return st == SubscriptionTypeTrial || st == SubscriptionTypePro || st == SubscriptionTypeEnterprise
+	return !slices.Contains(NonProSubscriptionTypes, st)
 }
 
 const (
 	SubscriptionTypeCommunity  SubscriptionType = "community"
-	SubscriptionTypeStarter    SubscriptionType = "starter"
 	SubscriptionTypePro        SubscriptionType = "pro"
+	SubscriptionTypeBusiness   SubscriptionType = "business"
 	SubscriptionTypeEnterprise SubscriptionType = "enterprise"
 	SubscriptionTypeTrial      SubscriptionType = "trial"
 )
 
+// NonProSubscriptionTypes are the subscription types without access to paid features.
 var NonProSubscriptionTypes = []SubscriptionType{
 	SubscriptionTypeCommunity,
-	SubscriptionTypeStarter,
 }
 
 func AllSubscriptionTypes() []SubscriptionType {
 	return []SubscriptionType{
 		SubscriptionTypeCommunity,
-		SubscriptionTypeStarter,
 		SubscriptionTypePro,
+		SubscriptionTypeBusiness,
 		SubscriptionTypeEnterprise,
 		SubscriptionTypeTrial,
 	}
@@ -122,7 +127,52 @@ const (
 	FeatureVendorBilling          Feature = "vendor_billing"
 	FeatureDeploymentLogsAfter    Feature = "deployment_logs_after"
 	FeaturePartnerManagement      Feature = "partner_management"
+	FeatureCustomDomains          Feature = "custom_domains"
+	FeatureCustomEmails           Feature = "custom_emails"
+	FeatureCustomOidcProviders    Feature = "custom_oidc_providers"
 )
+
+// ProFeatures is the set of features granted to organizations with a paid (pro) subscription.
+var ProFeatures = []Feature{
+	FeatureLicensing,
+}
+
+// FeaturesForSubscriptionType returns the features granted by a subscription type.
+// Subscription reconciliation only ever adds these features, it never removes any:
+// manually granted features (e.g. vendor_billing) must survive plan changes, and
+// organizations without a paid plan have their PlanManagedFeatures revoked by
+// ReconcileEditionFeatures instead.
+func FeaturesForSubscriptionType(st SubscriptionType) []Feature {
+	if !st.IsPro() {
+		return []Feature{}
+	}
+	features := slices.Clone(ProFeatures)
+	if st == SubscriptionTypeBusiness {
+		features = append(features,
+			FeaturePartnerManagement, FeatureCustomDomains, FeatureCustomEmails, FeatureCustomOidcProviders)
+	}
+	return features
+}
+
+// PlanManagedFeatures are all features that a subscription plan can grant, and therefore the
+// only ones that may be revoked when an organization has no paid plan. Every other feature is
+// granted out of band — vendor_billing by staff, pre_post_scripts and artifact_version_mutable
+// by an organization admin in the settings — and must survive plan changes and edition
+// reconciliation. It is derived from FeaturesForSubscriptionType so a feature added to a plan
+// cannot be forgotten here.
+var PlanManagedFeatures = planManagedFeatures()
+
+func planManagedFeatures() []Feature {
+	var features []Feature
+	for _, st := range AllSubscriptionTypes() {
+		for _, feature := range FeaturesForSubscriptionType(st) {
+			if !slices.Contains(features, feature) {
+				features = append(features, feature)
+			}
+		}
+	}
+	return features
+}
 
 type DeploymentStatusType string
 
@@ -225,6 +275,7 @@ const (
 	TutorialBranding      Tutorial  = "branding"
 	TutorialAgents        Tutorial  = "agents"
 	TutorialRegistry      Tutorial  = "registry"
+	TutorialUsers         Tutorial  = "users"
 	FileScopePlatform     FileScope = "platform"
 	FileScopeOrganization FileScope = "organization"
 

@@ -1,18 +1,29 @@
 import {ChangeDetectionStrategy, Component, inject, OnInit, signal} from '@angular/core';
-import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {distinctUntilChanged, filter, lastValueFrom, map, take} from 'rxjs';
-import {WEBSITE_URL} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
 import {OidcButtonsComponent} from '../components/oidc-buttons.component';
+import {PortalLogoComponent} from '../components/portal-logo/portal-logo.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {PlaceholderDirective} from '../directives/placeholder.directive';
 import {AuthService} from '../services/auth.service';
+import {PortalBrandingService} from '../services/portal-branding.service';
+import {PortalService} from '../services/portal.service';
 import {ToastService} from '../services/toast.service';
+import {PortalLoginConfig} from '../types/portal';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, AutotrimDirective, OidcButtonsComponent],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    AutotrimDirective,
+    PlaceholderDirective,
+    OidcButtonsComponent,
+    PortalLogoComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './login.component.html',
 })
@@ -21,9 +32,8 @@ export class LoginComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly toast = inject(ToastService);
+  private readonly portalBranding = inject(PortalBrandingService);
   private readonly fb = inject(FormBuilder).nonNullable;
-
-  protected readonly websiteUrl = WEBSITE_URL;
 
   protected readonly emailPasswordForm = this.fb.group({
     email: this.fb.control('', [Validators.required, Validators.email]),
@@ -43,7 +53,8 @@ export class LoginComponent implements OnInit {
   protected readonly loading = signal(false);
   protected readonly errorMessage = signal<string | undefined>(undefined);
 
-  readonly loginConfig = toSignal(this.auth.loginConfig$);
+  private readonly portalService = inject(PortalService);
+  readonly loginConfig = this.portalService.loginConfig;
   readonly isJWTLogin = signal(false);
 
   constructor() {
@@ -64,6 +75,10 @@ export class LoginComponent implements OnInit {
         take(1)
       )
       .subscribe(() => this.toast.success('Account activated successfully. You can now log in!'));
+
+    this.portalService.portal$
+      .pipe(take(1), takeUntilDestroyed())
+      .subscribe(({loginConfig}) => this.redirectToSingleSignOn(loginConfig));
   }
 
   public ngOnInit(): void {
@@ -76,10 +91,36 @@ export class LoginComponent implements OnInit {
         this.toast.success('You have been logged out because your session has expired.');
         break;
       case 'oidc-failed':
-        this.toast.error('Login with this provider failed unexpectedly.');
+        this.toast.error(
+          'Login with this provider failed. Please try again, or contact your administrator if the problem persists.'
+        );
+        break;
+      case 'oidc-expired':
+        this.toast.error('Your login attempt took too long or was already used. Please try again.');
         break;
       case 'oidc-registration-disabled':
         this.toast.error('Sign-up is disabled on this instance. Please contact your administrator.');
+        break;
+      case 'oidc-unavailable':
+        this.toast.error('This login method is not available on this domain. Please contact your administrator.');
+        break;
+      case 'oidc-no-account':
+        this.toast.error('You do not have an account in this organization. Please contact your administrator.');
+        break;
+      case 'oidc-unknown-user':
+        this.toast.error('There is no account for this email address. Please note that you must be invited to log in.');
+        break;
+      case 'oidc-user-limit':
+        this.toast.error(
+          'This organization has no user seats left, so no account could be created. ' +
+            'Please contact your administrator.'
+        );
+        break;
+      case 'oidc-org-limit':
+        this.toast.error(
+          'This instance has reached its organization limit, so no account could be created. ' +
+            'Please contact your administrator.'
+        );
         break;
     }
 
@@ -88,6 +129,20 @@ export class LoginComponent implements OnInit {
       this.isJWTLogin.set(true);
       this.auth.loginWithToken(jwt);
       window.location.href = '/';
+      return;
+    }
+  }
+
+  private redirectToSingleSignOn(loginConfig: PortalLoginConfig): void {
+    const params = this.route.snapshot.queryParamMap;
+    // Read from the query params rather than isJWTLogin, which ngOnInit may set only after the portal
+    // response arrived. Redirecting then would throw away a token handed over by the login forwarding.
+    if (params.has('jwt') || params.has('manual') || params.has('reason')) {
+      return;
+    }
+    const spInitiated = loginConfig.oidcProviders.filter((provider) => provider.spInitiated);
+    if (spInitiated.length === 1) {
+      window.location.href = spInitiated[0].loginPath;
     }
   }
 
@@ -115,10 +170,17 @@ export class LoginComponent implements OnInit {
       const response = await lastValueFrom(this.auth.login(email, password, mfaCode));
       if (response.requiresMfa) {
         this.mfaRequired.set(true);
-      } else if (this.auth.isCustomer()) {
-        await this.router.navigate(['/home']);
+      } else if (response.redirectUrl && !this.route.snapshot.queryParamMap.has('stay')) {
+        window.location.href = response.redirectUrl;
       } else {
-        await this.router.navigate(['/dashboard'], {queryParams: {from: 'login'}});
+        // Re-apply branding now that the user is authenticated, since this SPA navigation does not
+        // reload the app and re-run the bootstrap initializer.
+        this.portalBranding.apply();
+        if (this.auth.isCustomer()) {
+          await this.router.navigate(['/home']);
+        } else {
+          await this.router.navigate(['/dashboard'], {queryParams: {from: 'login'}});
+        }
       }
     } catch (e) {
       this.errorMessage.set(getFormDisplayedError(e));

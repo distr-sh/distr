@@ -24,9 +24,10 @@ import {
   faLightbulb,
   faPalette,
   faUsers,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import {map, of, switchMap} from 'rxjs';
-import {GITHUB_URL} from '../../../constants';
+import {WEBSITE_URL} from '../../../constants';
 import {buildConfig} from '../../../data';
 import {environment} from '../../../env/env';
 import {
@@ -40,6 +41,8 @@ import {FeatureFlagService} from '../../services/feature-flag.service';
 import {OrganizationService} from '../../services/organization.service';
 import {SidebarService} from '../../services/sidebar.service';
 import {TutorialsService} from '../../services/tutorials.service';
+import {PlanBadgeComponent} from '../plan-badge.component';
+import {PlanFeatureHintComponent} from '../plan-feature-hint.component';
 
 @Component({
   selector: 'app-side-bar',
@@ -56,6 +59,8 @@ import {TutorialsService} from '../../services/tutorials.service';
     RequireVendorDirective,
     RequireCustomerDirective,
     RequirePartnerDirective,
+    PlanBadgeComponent,
+    PlanFeatureHintComponent,
   ],
 })
 export class SideBarComponent {
@@ -69,7 +74,7 @@ export class SideBarComponent {
 
   protected readonly buildConfig = buildConfig;
   protected readonly edition = environment.edition;
-  protected readonly githubUrl = GITHUB_URL;
+  protected readonly websiteUrl = WEBSITE_URL;
 
   protected readonly faDashboard = faDashboard;
   protected readonly faBoxesStacked = faBoxesStacked;
@@ -89,6 +94,7 @@ export class SideBarComponent {
   protected readonly faAsterisk = faAsterisk;
   protected readonly faLifeRing = faLifeRing;
   protected readonly faHandHoldingDollar = faHandHoldingDollar;
+  protected readonly faXmark = faXmark;
   protected feedbackAlert = true;
   protected readonly agentsSubMenuOpen = signal(true);
   protected readonly registrySubMenuOpen = signal(true);
@@ -99,8 +105,8 @@ export class SideBarComponent {
   protected readonly isAllTutorialsStarted =
     this.auth.isVendor() && this.auth.hasAnyRole('admin')
       ? toSignal(
-          toObservable(this.organizationService.hasNoSubscription).pipe(
-            switchMap((hasNoSub) => (hasNoSub ? this.tutorialsService.allStarted$ : of(true)))
+          toObservable(this.organizationService.hasSubscription).pipe(
+            switchMap((hasSub) => (hasSub ? of(true) : this.tutorialsService.allStarted$))
           ),
           {initialValue: true}
         )
@@ -114,7 +120,7 @@ export class SideBarComponent {
   public readonly isSubscriptionBannerVisible = input<boolean>();
   public readonly isSidebarVisible = input<boolean>();
 
-  protected readonly hasNoSubscription = this.organizationService.hasNoSubscription;
+  protected readonly hasSubscription = this.organizationService.hasSubscription;
 
   protected readonly customerOrgFeatures = toSignal(
     this.contextService.getCustomerOrganization().pipe(

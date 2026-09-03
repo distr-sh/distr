@@ -1,0 +1,73 @@
+# Helm values for trying self-service custom domains on a local minikube cluster. Everything runs
+# in-cluster, including PostgreSQL and RustFS, so this is a local test setup and not a starting
+# point for a production installation.
+#
+#   helm upgrade --install distr oci://ghcr.io/distr-sh/charts/distr -n distr --create-namespace \
+#     -f deploy/minikube/custom-domains-values.yaml
+#
+# The distr-caddy Service stays pending without "minikube tunnel" (needs root), so reach it
+# through its node ports instead, e.g. for a domain registered as "app.test.local":
+#
+#   PORT=$(kubectl -n distr get svc distr-caddy -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}')
+#   curl -k --resolve app.test.local:$PORT:$(minikube ip) https://app.test.local:$PORT/
+#
+# The ask endpoint, on-demand issuance and path routing behave exactly like in production. Only the
+# certificates differ: they come from Caddy's internal CA, because a local cluster has no publicly
+# resolvable domain to pass an ACME challenge for. Use curl -k, or --cacert with the Caddy root
+# from /data/caddy/pki.
+#
+# The CNAME check cannot pass here either, for the same reason, so links, mails and agent manifests
+# keep pointing at DISTR_HOST no matter which domains are registered.
+
+replicaCount: 1
+
+image:
+  # Custom domains are not part of the community edition, which puts every organization on the
+  # community subscription type on startup and strips the feature.
+  repository: ghcr.io/distr-sh/distr
+
+hub:
+  # Helm replaces the whole list rather than merging it, so this repeats the defaults it needs.
+  env:
+    - name: DISTR_HOST
+      value: http://distr.local
+    - name: JWT_SECRET
+      value: 'WQrGMYx4tZdGwKlt0RTrhMzfQ+j1wr6z7oRWfmGlETk='
+    - name: USER_EMAIL_VERIFICATION_REQUIRED
+      value: 'false'
+    - name: REGISTRY_ENABLED
+      value: 'true'
+    - name: REGISTRY_HOST
+      value: pkg.distr.local
+    - name: REGISTRY_S3_BUCKET
+      value: distr
+    - name: REGISTRY_S3_CREATE_BUCKET
+      value: 'true'
+    - name: REGISTRY_S3_REGION
+      value: local
+    - name: REGISTRY_S3_ENDPOINT
+      value: http://distr-rustfs-svc:9000
+    - name: REGISTRY_S3_ACCESS_KEY_ID
+      value: distr
+    - name: REGISTRY_S3_SECRET_ACCESS_KEY
+      value: distr123
+    - name: REGISTRY_S3_USE_PATH_STYLE
+      value: 'true'
+    - name: REGISTRY_S3_ALLOW_REDIRECT
+      value: 'false'
+    - name: LOKI_URL
+      value: http://distr-loki:3100
+    - name: CUSTOM_DOMAIN_TARGET
+      value: whitelabel.distr.local
+
+caddy:
+  enabled: true
+  issuer: internal
+
+postgresql:
+  enabled: true
+  auth:
+    password: distr123
+
+rustfs:
+  enabled: true

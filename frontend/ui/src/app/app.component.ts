@@ -12,7 +12,6 @@ import {OverlayService} from './services/overlay.service';
 
 @Component({
   selector: 'app-root',
-  standalone: true,
   imports: [RouterOutlet, FontAwesomeModule, ToastContainerComponent],
   providers: [OverlayService, ImageUploadService],
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -40,7 +39,9 @@ export class AppComponent implements OnInit {
         const email = jwtClaims.email;
         Sentry.setUser({email});
         posthog.setPersonProperties({email});
-        posthog.group('organization', jwtClaims.org);
+        if (jwtClaims.org) {
+          posthog.group('organization', jwtClaims.org);
+        }
       }
       posthog.capture('$pageview');
     });

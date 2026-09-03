@@ -1,212 +1,31 @@
-<ng-template #preflightConfirmTemplate>
-  <p class="text-base leading-relaxed text-gray-500 dark:text-gray-200">
-    Enabling pre-flight checks changes how Docker agents are installed. All customers will receive a shell script
-    instead of a plain docker compose command. The install command will change from
-    <code class="px-1 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-600 text-sm font-mono"
-      >curl ... | docker compose -f - up -d</code
-    >
-    to
-    <code class="px-1 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-600 text-sm font-mono">curl ... | sh</code>, which
-    wraps docker compose with pre- and post-connect scripts.
-  </p>
-</ng-template>
+<app-page variant="narrow">
+  <div class="distr-panel">
+    <h1 class="mb-6 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white">
+      Organization Settings
+    </h1>
 
-<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-  <div class="mx-auto max-w-screen-lg px-4">
-    <div class="bg-white dark:bg-gray-800 relative shadow-md rounded-lg overflow-hidden p-10 mb-20">
-      <h1
-        class="pb-4 mb-4 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white border-b border-gray-200 dark:border-gray-700">
-        Organization Settings
-      </h1>
+    <app-tab-bar [tabs]="tabs()" [(active)]="activeTab" (tabClick)="onTabClick($event)">
+      <ng-template #tabSuffix let-tab let-origin="origin">
+        @if (tab.disabled) {
+          <app-plan-badge plan="business" class="ml-2" />
+          <ng-template
+            cdkConnectedOverlay
+            [cdkConnectedOverlayOrigin]="origin"
+            [cdkConnectedOverlayOpen]="planHintTab() === tab.id"
+            [cdkConnectedOverlayHasBackdrop]="true"
+            [cdkConnectedOverlayBackdropClass]="'transparent'"
+            (backdropClick)="planHintTab.set(null)"
+            [cdkConnectedOverlayPositions]="[
+              {originX: 'center', overlayX: 'center', originY: 'bottom', overlayY: 'top'},
+            ]">
+            <app-plan-feature-hint plan="business" />
+          </ng-template>
+        }
+      </ng-template>
+    </app-tab-bar>
 
-      <form [formGroup]="form" (ngSubmit)="save()">
-        <div class="grid gap-4 mt-6">
-          <div class="space-y-4">
-            <h2 class="text-xl font-bold dark:text-white">General</h2>
-            <div>
-              <label for="name" class="distr-label mb-2">Name *</label>
-              <input
-                formControlName="name"
-                autotrim
-                type="text"
-                name="name"
-                id="name"
-                class="distr-input"
-                placeholder="Name"
-                required />
-              <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
-                The name will be used in invitation mails.
-              </p>
-              @if (form.controls.name.invalid && form.controls.name.touched) {
-                <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
-              }
-            </div>
-          </div>
-
-          <div class="space-y-4">
-            <h2 class="text-xl font-bold dark:text-white">Artifact registry</h2>
-            <div>
-              <label for="slug" class="distr-label mb-2">Slug</label>
-              <input
-                formControlName="slug"
-                autotrim
-                type="text"
-                name="slug"
-                id="slug"
-                class="distr-input"
-                placeholder="slug" />
-              <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
-                The slug will used as part of the url for artifact registry. It must start with a lower case letter or
-                digit and consist only of lowercase letters, digits, as well as the following special characters: “.”,
-                “_”, “__”, “-”.
-              </p>
-              @if (form.controls.slug.invalid && form.controls.slug.touched) {
-                <p class="mt-1 text-sm text-red-600 dark:text-red-500">Slug must be url safe.</p>
-              }
-            </div>
-
-            <div>
-              <input
-                formControlName="artifactVersionMutable"
-                id="artifactVersionMutable"
-                type="checkbox"
-                class="distr-checkbox" />
-              <label for="artifactVersionMutable" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                Artifact versions are mutable
-              </label>
-            </div>
-          </div>
-
-          <div class="space-y-4">
-            <h2 class="text-xl font-bold dark:text-white">Agents</h2>
-            <div>
-              <input
-                formControlName="prePostScriptsEnabled"
-                id="prePostScriptsEnabled"
-                type="checkbox"
-                class="distr-checkbox" />
-              <label for="prePostScriptsEnabled" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                Enable Pre- and Post-Connect Scripts (Pre-Flight Checks)
-              </label>
-              <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
-                When enabled, Docker agent install commands will use a shell script that wraps docker compose, allowing
-                pre- and post-connect scripts to run during agent setup.
-              </p>
-            </div>
-          </div>
-
-          @if (isPrePostScriptEnabled()) {
-            <div class="space-y-4">
-              <h2 class="text-xl font-bold dark:text-white">Pre-/post-connect scripts</h2>
-              <div>
-                <label for="preConnectScript" class="distr-label flex-grow mb-2">Pre-connect script</label>
-                <div
-                  class="mb-4 w-full bg-gray-100 rounded-lg border border-gray-200 dark:bg-gray-600 dark:border-gray-600">
-                  <div class="py-2 px-4 bg-gray-50 rounded-b-lg dark:bg-gray-700">
-                    <textarea
-                      formControlName="preConnectScript"
-                      id="preConnectScript"
-                      rows="8"
-                      class="block px-0 w-full text-sm text-gray-800 bg-gray-50 border-0 dark:bg-gray-700 focus:ring-0 dark:text-white dark:placeholder-gray-400"></textarea>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label for="postConnectScript" class="distr-label flex-grow mb-2">Post-connect script</label>
-                <div
-                  class="mb-4 w-full bg-gray-100 rounded-lg border border-gray-200 dark:bg-gray-600 dark:border-gray-600">
-                  <div class="py-2 px-4 bg-gray-50 rounded-b-lg dark:bg-gray-700">
-                    <textarea
-                      formControlName="postConnectScript"
-                      id="postConnectScript"
-                      rows="8"
-                      class="block px-0 w-full text-sm text-gray-800 bg-gray-50 border-0 dark:bg-gray-700 focus:ring-0 dark:text-white dark:placeholder-gray-400"></textarea>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <div class="flex items-center">
-                  <input
-                    formControlName="connectScriptIsSudo"
-                    id="connectScriptIsSudo"
-                    type="checkbox"
-                    class="distr-checkbox" />
-                  <label for="connectScriptIsSudo" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                    Script should be run with sudo
-                  </label>
-                </div>
-              </div>
-            </div>
-          }
-
-          <div class="space-y-4">
-            <h2 class="text-xl font-bold dark:text-white">Custom Domains</h2>
-            <div
-              class="flex items-center p-2 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400"
-              role="alert">
-              <fa-icon [icon]="faLightbulb" class="me-2" />
-              <span class="sr-only">Info</span>
-              Please contact Distr support if you are interested in configuration of the settings below.
-            </div>
-            <div>
-              <label for="appDomain" class="distr-label mb-2"> Custom app domain </label>
-              <input
-                type="text"
-                id="appDomain"
-                formControlName="appDomain"
-                class="distr-input disabled:opacity-60"
-                placeholder="not configured" />
-              <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
-                This is where users and customers in your organization are able to access the Distr web application.
-              </p>
-            </div>
-            <div>
-              <label for="registryDomain" class="distr-label mb-2"> Custom registry domain </label>
-              <input
-                type="text"
-                id="registryDomain"
-                formControlName="registryDomain"
-                class="distr-input disabled:opacity-60"
-                placeholder="not configured" />
-              <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
-                This is where users and customers in your organization are able to access the Distr artifact registry.
-              </p>
-            </div>
-            <div>
-              <label for="emailFromAddress" class="distr-label mb-2"> Custom e-mail sender address </label>
-              <input
-                type="text"
-                id="emailFromAddress"
-                formControlName="emailFromAddress"
-                class="distr-input disabled:opacity-60"
-                placeholder="not configured" />
-              <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
-                This is the address used by Distr to send transactional e-mails to users and customers in your
-                organization.
-              </p>
-            </div>
-          </div>
-
-          @if (!auth.isSuperAdmin()) {
-            <div class="flex justify-center w-full space-x-4 mt-8 sm:mt-0">
-              <button
-                type="submit"
-                [disabled]="formLoading() || form.invalid"
-                class="text-white w-full inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
-                <fa-icon [icon]="faFloppyDisk" size="lg" class="h-4 w-4 mr-2 -ml-0.5 mb-1" />
-                Save
-              </button>
-            </div>
-          }
-        </div>
-      </form>
-
-      @if (!auth.isSuperAdmin()) {
-        <h2 class="text-xl font-bold dark:text-white mt-8 mb-2">Danger Zone</h2>
-        <app-delete-organization />
-      }
+    <div role="tabpanel" class="pt-6" [id]="'tabpanel-' + activeTab()" [attr.aria-labelledby]="'tab-' + activeTab()">
+      <router-outlet />
     </div>
   </div>
-</section>
+</app-page>

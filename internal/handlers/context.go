@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/distr-sh/distr/api"
+	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
@@ -116,14 +119,24 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// The registry host is best-effort: without branding it still resolves custom domains
+	// and falls back to the instance default.
+	branding, err := db.GetOrganizationBranding(ctx, orgID)
+	if err != nil && !errors.Is(err, apierrors.ErrNotFound) {
+		log.Warn("failed to get organization branding", zap.Error(err))
+	}
+	registryHost := customdomains.RegistryDomainOrDefault(ctx, orgID, branding)
+
 	RespondJSON(w, api.ContextResponse{
 		User: mapping.UserAccountToAPI(
 			auth.CurrentUser().AsUserAccountWithRole(*userRole, customerOrgID, auth.CurrentPartnerOrgID(), joinDate),
 		),
-		Organization:         mapping.OrganizationToAPI(*auth.CurrentOrg(), billableUserCount, customerOrgCount),
-		CustomerOrganization: customerOrg,
-		PartnerOrganization:  partnerOrg,
-		SidebarLinks:         sidebarLinks,
-		AvailableContexts:    orgs,
+		Organization:          mapping.OrganizationToAPI(*auth.CurrentOrg(), billableUserCount, customerOrgCount),
+		CustomerOrganization:  customerOrg,
+		PartnerOrganization:   partnerOrg,
+		SidebarLinks:          sidebarLinks,
+		AvailableContexts:     visibleOrganizations(auth, orgs),
+		RegistryHost:          registryHost,
+		CanCreateOrganization: !auth.OrganizationScoped(),
 	})
 }

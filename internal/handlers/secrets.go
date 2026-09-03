@@ -207,7 +207,7 @@ func updateSecretHandler() http.HandlerFunc {
 			if err != nil {
 				return err
 			}
-			return triggerAffectedDeployments(ctx, affected)
+			return triggerAffectedDeployments(ctx, affected, new(auth.CurrentUserID()))
 		})
 		if err != nil {
 			internalctx.GetLogger(ctx).Error("failed to update secret", zap.Error(err))

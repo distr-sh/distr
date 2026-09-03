@@ -1,10 +1,10 @@
 import {ChangeDetectionStrategy, Component} from '@angular/core';
+import {PageComponent} from '../components/page.component';
 import {ApplicationsComponent} from './applications.component';
 
 @Component({
   selector: 'app-applications-page',
-  standalone: true,
-  imports: [ApplicationsComponent],
+  imports: [ApplicationsComponent, PageComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './applications-page.component.html',
 })

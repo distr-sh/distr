@@ -25,8 +25,11 @@ func FromAuthKey(ctx context.Context, token authkey.Key) (AuthInfo, error) {
 			emailVerified:          at.UserAccount.EmailVerifiedAt != nil,
 			organizationID:         &at.OrganizationID,
 			customerOrganizationID: at.CustomerOrganizationID,
-			userRole:               &role,
-			rawToken:               token,
+			// An access token is created for one organization and is not proof that its owner is
+			// present, so it must not reach beyond the session it was created from.
+			organizationScoped: true,
+			userRole:           &role,
+			rawToken:           token,
 		}, nil
 	}
 }

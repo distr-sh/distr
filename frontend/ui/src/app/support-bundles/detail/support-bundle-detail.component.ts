@@ -10,16 +10,19 @@ import {
   faChevronDown,
   faChevronRight,
   faComment,
+  faDownload,
   faPaperPlane,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
+import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
+import {AvatarComponent} from '../../components/avatar.component';
 import {ClipComponent} from '../../components/clip.component';
-import {UserAvatarComponent} from '../../components/user-avatar.component';
+import {PageComponent} from '../../components/page.component';
 import {AuthService} from '../../services/auth.service';
 import {OverlayService} from '../../services/overlay.service';
-import {SupportBundlesService} from '../../services/support-bundles.service';
+import {SupportBundlesService, supportBundleZipFileName} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
 import {SupportBundleDetail, SupportBundleStatus} from '../../types/support-bundle';
 
@@ -27,7 +30,16 @@ import {SupportBundleDetail, SupportBundleStatus} from '../../types/support-bund
   selector: 'app-support-bundle-detail',
   templateUrl: './support-bundle-detail.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [DatePipe, NgClass, ReactiveFormsModule, RouterLink, FaIconComponent, ClipComponent, UserAvatarComponent],
+  imports: [
+    DatePipe,
+    NgClass,
+    ReactiveFormsModule,
+    RouterLink,
+    FaIconComponent,
+    ClipComponent,
+    AvatarComponent,
+    PageComponent,
+  ],
 })
 export class SupportBundleDetailComponent {
   private readonly route = inject(ActivatedRoute);
@@ -41,6 +53,7 @@ export class SupportBundleDetailComponent {
   protected readonly faChevronRight = faChevronRight;
   protected readonly faCheck = faCheck;
   protected readonly faComment = faComment;
+  protected readonly faDownload = faDownload;
   protected readonly faPaperPlane = faPaperPlane;
   protected readonly faXmark = faXmark;
 
@@ -48,6 +61,7 @@ export class SupportBundleDetailComponent {
   protected readonly expandedResources = signal(new Set<string>());
   protected readonly updatingStatus = signal(false);
   protected readonly submittingComment = signal(false);
+  protected readonly downloading = signal(false);
 
   protected readonly commentForm = new FormGroup({
     content: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
@@ -114,6 +128,25 @@ export class SupportBundleDetailComponent {
   }
 
   protected readonly backRoute = this.auth.isCustomer() ? '/support' : '/support-bundles';
+
+  protected async downloadResources(): Promise<void> {
+    const bundle = this.bundle();
+    if (!bundle || this.downloading()) {
+      return;
+    }
+    this.downloading.set(true);
+    try {
+      const blob = await firstValueFrom(this.supportBundlesService.downloadResources(bundle.id));
+      downloadBlob(blob, supportBundleZipFileName(bundle));
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    } finally {
+      this.downloading.set(false);
+    }
+  }
 
   protected async markAsResolved(): Promise<void> {
     const bundle = this.bundle();

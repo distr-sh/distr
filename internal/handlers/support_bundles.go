@@ -1,10 +1,14 @@
 package handlers
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -38,6 +42,35 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 				With(option.Request(api.CreateUpdateSupportBundleConfigurationRequest{})).
 				With(option.Response(http.StatusOK, []api.SupportBundleConfigurationEnvVar{}))
 		})
+
+		r.Route("/scripts", func(r chiopenapi.Router) {
+			r.Get("/", getSupportBundleConfigurationScriptsHandler()).
+				With(option.Description("List support bundle custom scripts")).
+				With(option.Response(http.StatusOK, []api.SupportBundleConfigurationScript{}))
+
+			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
+				type ScriptIDRequest struct {
+					ScriptID uuid.UUID `path:"scriptId"`
+				}
+
+				r.Post("/", createSupportBundleConfigurationScriptHandler()).
+					With(option.Description("Create a support bundle custom script")).
+					With(option.Request(api.CreateUpdateSupportBundleConfigurationScriptRequest{})).
+					With(option.Response(http.StatusOK, api.SupportBundleConfigurationScript{}))
+
+				r.Put("/{scriptId}", updateSupportBundleConfigurationScriptHandler()).
+					With(option.Description("Update a support bundle custom script")).
+					With(option.Request(struct {
+						ScriptIDRequest
+						api.CreateUpdateSupportBundleConfigurationScriptRequest
+					}{})).
+					With(option.Response(http.StatusOK, api.SupportBundleConfigurationScript{}))
+
+				r.Delete("/{scriptId}", deleteSupportBundleConfigurationScriptHandler()).
+					With(option.Description("Delete a support bundle custom script")).
+					With(option.Request(ScriptIDRequest{}))
+			})
+		})
 	})
 
 	r.With(middleware.RequireOrgAndRole).Group(func(r chiopenapi.Router) {
@@ -60,6 +93,11 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 				With(option.Description("Get support bundle detail")).
 				With(option.Request(BundleIDRequest{})).
 				With(option.Response(http.StatusOK, api.SupportBundleDetail{}))
+
+			r.Get("/download", downloadSupportBundleResourcesHandler()).
+				With(option.Description("Download all support bundle resources as a zip archive")).
+				With(option.Request(BundleIDRequest{})).
+				With(option.Response(http.StatusOK, nil, option.ContentType("application/zip")))
 
 			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 				Patch("/status", updateSupportBundleStatusHandler()).
@@ -143,6 +181,110 @@ func createOrUpdateSupportBundleConfigurationHandler() http.HandlerFunc {
 	}
 }
 
+func getSupportBundleConfigurationScriptsHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		log := internalctx.GetLogger(ctx)
+		a := auth.Authentication.Require(ctx)
+
+		scripts, err := db.GetSupportBundleConfigurationScripts(ctx, *a.CurrentOrgID())
+		if err != nil {
+			log.Error("failed to get support bundle config scripts", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		RespondJSON(w, mapping.List(scripts, mapping.SupportBundleConfigurationScriptToAPI))
+	}
+}
+
+func createSupportBundleConfigurationScriptHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		a := auth.Authentication.Require(ctx)
+
+		request, err := JsonBody[api.CreateUpdateSupportBundleConfigurationScriptRequest](w, r)
+		if err != nil {
+			return
+		} else if err := request.Validate(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		script := mapping.SupportBundleConfigurationScriptToInternal(request, *a.CurrentOrgID())
+		if err := db.CreateSupportBundleConfigurationScript(ctx, &script); err != nil {
+			respondSupportBundleConfigurationScriptError(w, r, err)
+			return
+		}
+
+		RespondJSON(w, mapping.SupportBundleConfigurationScriptToAPI(script))
+	}
+}
+
+func updateSupportBundleConfigurationScriptHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		scriptID, err := uuid.Parse(r.PathValue("scriptId"))
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+
+		ctx := r.Context()
+		a := auth.Authentication.Require(ctx)
+
+		request, err := JsonBody[api.CreateUpdateSupportBundleConfigurationScriptRequest](w, r)
+		if err != nil {
+			return
+		} else if err := request.Validate(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		script := mapping.SupportBundleConfigurationScriptToInternal(request, *a.CurrentOrgID())
+		script.ID = scriptID
+		if err := db.UpdateSupportBundleConfigurationScript(ctx, &script); err != nil {
+			respondSupportBundleConfigurationScriptError(w, r, err)
+			return
+		}
+
+		RespondJSON(w, mapping.SupportBundleConfigurationScriptToAPI(script))
+	}
+}
+
+func deleteSupportBundleConfigurationScriptHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		scriptID, err := uuid.Parse(r.PathValue("scriptId"))
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+
+		ctx := r.Context()
+		a := auth.Authentication.Require(ctx)
+
+		if err := db.DeleteSupportBundleConfigurationScript(ctx, scriptID, *a.CurrentOrgID()); err != nil {
+			respondSupportBundleConfigurationScriptError(w, r, err)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func respondSupportBundleConfigurationScriptError(w http.ResponseWriter, r *http.Request, err error) {
+	ctx := r.Context()
+	if errors.Is(err, apierrors.ErrNotFound) {
+		http.NotFound(w, r)
+	} else if errors.Is(err, apierrors.ErrConflict) {
+		http.Error(w, "a script with this name already exists", http.StatusConflict)
+	} else {
+		internalctx.GetLogger(ctx).Error("failed to save support bundle config script", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 // Bundle handlers
 
 func getSupportBundlesHandler() http.HandlerFunc {
@@ -192,7 +334,7 @@ func createSupportBundleHandler() http.HandlerFunc {
 			return
 		}
 
-		org, err := db.GetOrganizationByID(ctx, *a.CurrentOrgID())
+		org, err := db.GetOrganizationWithBranding(ctx, *a.CurrentOrgID())
 		if err != nil {
 			log.Error("failed to get organization", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -200,7 +342,7 @@ func createSupportBundleHandler() http.HandlerFunc {
 			return
 		}
 
-		baseURL := customdomains.AppDomainOrDefault(*org)
+		baseURL := customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding)
 
 		expiresAt := time.Now().UTC().Add(24 * time.Hour)
 		bundle := types.SupportBundle{
@@ -301,14 +443,14 @@ func getSupportBundleDetailHandler() http.HandlerFunc {
 			Comments:      mapping.List(comments, mapping.SupportBundleCommentToAPI),
 		}
 		if bundle.Status == types.SupportBundleStatusInitialized && bundle.BundleSecretExpiresAt != nil {
-			org, err := db.GetOrganizationByID(ctx, bundle.OrganizationID)
+			org, err := db.GetOrganizationWithBranding(ctx, bundle.OrganizationID)
 			if err != nil {
 				log.Error("failed to get organization", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			baseURL := customdomains.AppDomainOrDefault(*org)
+			baseURL := customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding)
 			cmd := fmt.Sprintf(
 				"curl -fsSL '%s/api/v1/support-bundle-collect/%s/collect-script?bundleSecret=%s' | sh",
 				baseURL, bundle.ID.String(), bundle.BundleSecret,
@@ -317,6 +459,119 @@ func getSupportBundleDetailHandler() http.HandlerFunc {
 		}
 		RespondJSON(w, detail)
 	}
+}
+
+func downloadSupportBundleResourcesHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		bundle := requireSupportBundle(w, r)
+		if bundle == nil {
+			return
+		}
+
+		ctx := r.Context()
+		log := internalctx.GetLogger(ctx)
+
+		resources, err := db.GetSupportBundleResources(ctx, bundle.ID)
+		if err != nil {
+			log.Error("failed to get support bundle resources", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var buffer bytes.Buffer
+		if err := writeSupportBundleZip(&buffer, resources); err != nil {
+			log.Error("failed to build zip archive", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		filename := supportBundleZipFileName(bundle)
+		w.Header().Set("Content-Type", "application/zip")
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+		if _, err := w.Write(buffer.Bytes()); err != nil {
+			log.Warn("failed to write zip archive", zap.Error(err))
+		}
+	}
+}
+
+func writeSupportBundleZip(w io.Writer, resources []types.SupportBundleResource) (err error) {
+	zipWriter := zip.NewWriter(w)
+	defer func() {
+		if closeErr := zipWriter.Close(); err == nil {
+			err = closeErr
+		}
+	}()
+
+	usedNames := make(map[string]struct{})
+	for _, resource := range resources {
+		name := supportBundleZipEntryName(resource.Name, resource.ID.String())
+		entryName := name + ".txt"
+		for count := 2; ; count++ {
+			if _, exists := usedNames[entryName]; !exists {
+				break
+			}
+			entryName = fmt.Sprintf("%s-%d.txt", name, count)
+		}
+		usedNames[entryName] = struct{}{}
+		entry, err := zipWriter.CreateHeader(&zip.FileHeader{
+			Name:     entryName,
+			Method:   zip.Deflate,
+			Modified: resource.CreatedAt,
+		})
+		if err != nil {
+			return err
+		}
+		if _, err := entry.Write([]byte(resource.Content)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func supportBundleZipEntryName(name, fallback string) string {
+	var b strings.Builder
+	for _, r := range name {
+		if b.Len() >= 128 {
+			break
+		}
+		if r == '/' || r == '\\' {
+			r = '-'
+		}
+		b.WriteRune(r)
+	}
+	name = strings.TrimSpace(b.String())
+	if name == "" {
+		return fallback
+	}
+	return name
+}
+
+func supportBundleZipFileName(bundle *types.SupportBundleWithDetails) string {
+	parts := []string{"distr-support-bundle"}
+	if customer := zipFileNamePart(bundle.CustomerOrganizationName); customer != "" {
+		parts = append(parts, customer)
+	}
+	if title := zipFileNamePart(bundle.Title); title != "" {
+		parts = append(parts, title)
+	}
+	parts = append(parts, bundle.ID.String()[:8])
+	return strings.Join(parts, "-") + ".zip"
+}
+
+// zipFileNamePart reduces a string to lowercase letters only, capped at 16 characters.
+func zipFileNamePart(s string) string {
+	var b strings.Builder
+	for _, r := range strings.ToLower(s) {
+		if r >= 'a' && r <= 'z' {
+			b.WriteRune(r)
+			if b.Len() >= 16 {
+				break
+			}
+		}
+	}
+	return b.String()
 }
 
 func updateSupportBundleStatusHandler() http.HandlerFunc {

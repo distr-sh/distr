@@ -12,6 +12,12 @@
 
 ## Properties
 
+### appDomain?
+
+> `optional` **appDomain?**: `string`
+
+---
+
 ### createdAt?
 
 > `optional` **createdAt?**: `string`
@@ -28,6 +34,18 @@
 
 ---
 
+### emailFromAddress?
+
+> `optional` **emailFromAddress?**: `string`
+
+---
+
+### faviconImageId?
+
+> `optional` **faviconImageId?**: `string`
+
+---
+
 ### id?
 
 > `optional` **id?**: `string`
@@ -38,21 +56,21 @@
 
 ---
 
-### logo?
+### logoImageId?
 
-> `optional` **logo?**: `string`
-
----
-
-### logoContentType?
-
-> `optional` **logoContentType?**: `string`
+> `optional` **logoImageId?**: `string`
 
 ---
 
-### logoFileName?
+### pageTitle?
 
-> `optional` **logoFileName?**: `string`
+> `optional` **pageTitle?**: `string`
+
+---
+
+### registryDomain?
+
+> `optional` **registryDomain?**: `string`
 
 ---
 

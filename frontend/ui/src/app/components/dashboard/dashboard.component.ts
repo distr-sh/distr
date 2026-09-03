@@ -16,6 +16,7 @@ import {SupportBundlesService} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
 import {SupportBundleDashboardCardComponent} from '../../support-bundles/dashboard-card/support-bundle-dashboard-card.component';
 import {SupportBundle} from '../../types/support-bundle';
+import {PageComponent} from '../page.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -24,6 +25,7 @@ import {SupportBundle} from '../../types/support-bundle';
     DeploymentTargetDashboardCardComponent,
     FaIconComponent,
     SupportBundleDashboardCardComponent,
+    PageComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './dashboard.component.html',

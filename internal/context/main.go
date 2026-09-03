@@ -1,3 +1,11 @@
+// Package context provides accessors for request-scoped values.
+//
+// Do not add new context functions here. Following idiomatic Go, context accessors for
+// a type should live in the package that defines the type (see e.g. logstore.NewContext
+// and logstore.FromContext), which also avoids import cycles between this package and
+// the value's package.
+//
+// TODO: Move the existing accessors into the packages that define their types.
 package context
 
 import (
@@ -30,6 +38,7 @@ const (
 	ctxKeyLicenseKey
 	ctxKeyPrometheusCollector
 	ctxKeyS3Client
+	ctxKeyReadonlyDb
 )
 
 func GetDb(ctx context.Context) queryable.Queryable {
@@ -45,6 +54,19 @@ func GetDb(ctx context.Context) queryable.Queryable {
 func WithDb(ctx context.Context, db queryable.Queryable) context.Context {
 	ctx = context.WithValue(ctx, ctxKeyDb, db)
 	return ctx
+}
+
+// GetReadonlyDB returns the read-only queryable from the context, or nil when no read-only
+// database is configured. Callers should fall back to the primary db in that case.
+func GetReadonlyDB(ctx context.Context) queryable.Queryable {
+	if db, ok := ctx.Value(ctxKeyReadonlyDb).(queryable.Queryable); ok {
+		return db
+	}
+	return nil
+}
+
+func WithReadonlyDB(ctx context.Context, db queryable.Queryable) context.Context {
+	return context.WithValue(ctx, ctxKeyReadonlyDb, db)
 }
 
 func GetLogger(ctx context.Context) *zap.Logger {

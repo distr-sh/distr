@@ -18,15 +18,13 @@ BUNDLE_SECRET="{{.Token}}"
 _tmpdir=$(mktemp -d)
 trap 'rm -rf "$_tmpdir"' EXIT
 
-upload_resource() {
+upload_resource_file() {
   _name="$1"
-  _content="$2"
-  _tmpfile="${_tmpdir}/upload_content.tmp"
+  _file="$2"
   _errfile="${_tmpdir}/upload_err.tmp"
-  printf '%s' "$_content" > "$_tmpfile"
   if ! curl -fsSL -X POST \
     -F "name=${_name}" \
-    -F "content=@${_tmpfile}" \
+    -F "content=@${_file}" \
     "${BASE_URL}/resources?bundleSecret=${BUNDLE_SECRET}" > /dev/null 2>"$_errfile"; then
     _err=$(cat "$_errfile" 2>/dev/null)
     if [ -n "$_err" ]; then
@@ -35,9 +33,28 @@ upload_resource() {
       echo "    Warning: failed to upload ${_name}"
     fi
   fi
-  rm -f "$_tmpfile" "$_errfile"
+  rm -f "$_errfile"
 }
 
+upload_resource() {
+  _tmpfile="${_tmpdir}/upload_content.tmp"
+  printf '%s' "$2" > "$_tmpfile"
+  upload_resource_file "$1" "$_tmpfile"
+  rm -f "$_tmpfile"
+}
+{{if .Scripts}}
+# Run a custom script with the interpreter named in its shebang, falling back to sh. The
+# interpreter and the timeout prefix are deliberately unquoted so that "#!/usr/bin/env bash" splits
+# into command and argument. Executing the file directly instead would fail when the temp dir is
+# mounted noexec.
+run_custom_script() {
+  _interp=$(sed -n '1s/^#![[:space:]]*//p' "$1" | tr -d '\r')
+  if [ -z "$_interp" ] || ! command -v "${_interp%% *}" > /dev/null 2>&1; then
+    _interp=sh
+  fi
+  $SCRIPT_TIMEOUT $_interp "$1"
+}
+{{end}}
 # Parse a comma-separated list of numbers and validate each is in range 1..max.
 # Outputs a validated comma set like ",1,3," for use with grep.
 parse_exclude_input() {
@@ -80,6 +97,40 @@ echo "=== Distr Support Bundle Collector ==="
 echo "Bundle ID: ${BUNDLE_ID}"
 echo ""
 
+# Docker is the only part of this script that needs elevated privileges: the
+# daemon socket is usually owned by root:docker. If the docker CLI is installed
+# but we cannot reach the daemon because of a permission error (and we are not
+# already root), collecting container data would be silently skipped. Exit early
+# with a copy-pasteable command to re-run the collector with sudo instead.
+if command -v docker >/dev/null 2>&1 && [ "$(id -u 2>/dev/null)" != "0" ]; then
+  DOCKER_ERR=$(docker ps 2>&1 >/dev/null)
+  if echo "$DOCKER_ERR" | grep -qi "permission denied"; then
+    echo "Error: accessing the Docker daemon requires elevated privileges." >&2
+    echo "Please re-run the collector with sudo:" >&2
+    echo "" >&2
+    echo "  curl -fsSL '${BASE_URL}/collect-script?bundleSecret=${BUNDLE_SECRET}' | sudo sh" >&2
+    echo "" >&2
+    exit 1
+  fi
+fi
+
+# Probe the Docker daemon once, up front. Whether the daemon is reachable is
+# critical diagnostic information (it may be installed but not running), so the
+# status is always included with the system information below. The container
+# list is captured here and reused for the log/env collection further down.
+DOCKER_STATUS="Docker CLI not found in PATH"
+CONTAINERS=""
+if command -v docker >/dev/null 2>&1; then
+  if CONTAINERS=$(docker ps -a --format "{{`{{.ID}}`}}	{{`{{.Names}}`}}	{{`{{.Status}}`}}	{{`{{.Image}}`}}" 2>/dev/null); then
+    DOCKER_STATUS="daemon reachable
+$(docker version 2>&1 || true)"
+  else
+    CONTAINERS=""
+    DOCKER_STATUS="daemon unavailable
+$(docker version 2>&1 || true)"
+  fi
+fi
+
 # Collect system information
 echo "Collecting system information..."
 SYSTEM_INFO="whoami: $(whoami 2>/dev/null || echo 'unknown')
@@ -87,10 +138,15 @@ uname: $(uname -a 2>/dev/null || echo 'unknown')
 hostname: $(hostname 2>/dev/null || echo 'unknown')
 date: $(date 2>/dev/null || echo 'unknown')
 uptime: $(uptime 2>/dev/null || echo 'unknown')
+
 df:
 $(df -h 2>/dev/null || echo 'unavailable')
+
 memory:
-$(free -h 2>/dev/null || echo 'unavailable')"
+$(free -h 2>/dev/null || echo 'unavailable')
+
+docker:
+$DOCKER_STATUS"
 
 echo ""
 echo "System information to upload:"
@@ -110,15 +166,15 @@ case "$SYSINFO_CONFIRM" in
     ;;
 esac
 
-# Detect Docker containers and build included container list
+# Detect Docker containers and build included container list (reusing the list
+# captured during the Docker probe above)
 echo ""
 echo "Detecting Docker containers..."
-CONTAINERS=$(docker ps -a --format "{{`{{.ID}}`}}	{{`{{.Names}}`}}	{{`{{.Status}}`}}	{{`{{.Image}}`}}" 2>/dev/null || true)
 
 CONTAINER_COUNT=0
 INCLUDED_CONTAINERS=""
 if [ -z "$CONTAINERS" ]; then
-  echo "  No Docker containers found (docker may not be available)"
+  echo "  No Docker containers found (see Docker status in system information)"
 else
   echo ""
   echo "Available containers:"
@@ -206,7 +262,7 @@ if [ "$ENV_GROUP_COUNT" -gt 0 ]; then
   while [ "$_g" -le "$ENV_GROUP_COUNT" ]; do
     _gname=$(cat "${_tmpdir}/envgroup_${_g}.name")
     printf "  [%d] %s\n" "$_g" "$_gname"
-    while IFS= read -r _line; do
+    while IFS= read -r _line || [ -n "$_line" ]; do
       printf "      %s\n" "$_line"
     done < "${_tmpdir}/envgroup_${_g}.txt"
     echo ""
@@ -239,19 +295,168 @@ fi
 if [ -n "$INCLUDED_CONTAINERS" ]; then
   echo ""
   echo "Collecting and uploading container logs..."
+  _lograw="${_tmpdir}/container_logs.raw"
+  _logout="${_tmpdir}/container_logs.out"
   while IFS="$(printf '\t')" read -r CID CNAME; do
     [ -z "$CID" ] && continue
-    CONTAINER_LOGS=$(docker logs --tail 1000 "$CID" 2>&1 || true)
-    if [ -n "$CONTAINER_LOGS" ]; then
-      upload_resource "${CNAME}-container-logs" "$CONTAINER_LOGS"
-      echo "  Uploaded logs for $CNAME (last 1000 lines)"
+    docker logs --tail {{.LogTail}} "$CID" > "$_lograw" 2>&1 || true
+    if [ -s "$_lograw" ]; then
+      # Logs are cut off at the front, unlike script output: the most recent lines matter most.
+      if [ "$(wc -c < "$_lograw")" -gt {{.ResourceMaxBytes}} ]; then
+        printf '%s\n' "--- distr: earlier output truncated at {{.ResourceMaxBytes}} bytes ---" > "$_logout"
+        tail -c {{.ResourceMaxBytes}} "$_lograw" >> "$_logout"
+        _lognote=" (truncated to {{.ResourceMaxBytes}} bytes)"
+      else
+        cat "$_lograw" > "$_logout"
+        _lognote=""
+      fi
+      upload_resource_file "${CNAME}-container-logs" "$_logout"
+      echo "  Uploaded logs for $CNAME${_lognote}"
     else
       echo "  No logs available for $CNAME"
     fi
+    rm -f "$_lograw" "$_logout"
   done <<EOF_INCLUDED
 $INCLUDED_CONTAINERS
 EOF_INCLUDED
 fi
+
+{{- if .Scripts}}
+
+# Run the custom scripts configured by the vendor and collect their output. Their names,
+# descriptions and bodies are embedded base64-encoded so that nothing in them can terminate the
+# heredoc above, which would make the rest of this file run as the outer script.
+echo ""
+echo "Preparing custom scripts..."
+SCRIPT_COUNT=0
+SCRIPT_TIMEOUT=""
+if ! command -v base64 > /dev/null 2>&1; then
+  echo "  Warning: base64 is not available, skipping custom scripts"
+else
+  mkdir -p "${_tmpdir}/scripts"
+{{- if .ScriptTimeoutSeconds}}
+  # timeout is in coreutils and busybox, but not on every host (macOS ships without it).
+  if command -v timeout > /dev/null 2>&1; then
+    SCRIPT_TIMEOUT="timeout -k 5 {{.ScriptTimeoutSeconds}}"
+  else
+    echo "  Warning: timeout is not available, scripts run without a time limit"
+  fi
+{{- end}}
+{{- range .Scripts}}
+  SCRIPT_COUNT=$((SCRIPT_COUNT + 1))
+  printf '%s' '{{.NameBase64}}' | base64 -d > "${_tmpdir}/scripts/${SCRIPT_COUNT}.name"
+  printf '%s' '{{.DescriptionBase64}}' | base64 -d > "${_tmpdir}/scripts/${SCRIPT_COUNT}.desc"
+  printf '%s' '{{.ContentBase64}}' | base64 -d > "${_tmpdir}/scripts/${SCRIPT_COUNT}.sh"
+{{- end}}
+fi
+
+if [ "$SCRIPT_COUNT" -gt 0 ]; then
+  echo ""
+  echo "Your vendor provided the following scripts to run on this host:"
+  echo "---"
+  _s=1
+  while [ "$_s" -le "$SCRIPT_COUNT" ]; do
+    printf "  [%d] %s\n" "$_s" "$(cat "${_tmpdir}/scripts/${_s}.name")"
+    _sdesc=$(cat "${_tmpdir}/scripts/${_s}.desc")
+    if [ -n "$_sdesc" ]; then
+      printf "      %s\n" "$_sdesc"
+    fi
+    echo ""
+    while IFS= read -r _line || [ -n "$_line" ]; do
+      printf "      %s\n" "$_line"
+    done < "${_tmpdir}/scripts/${_s}.sh"
+    echo ""
+    _s=$((_s + 1))
+  done
+
+  echo "Enter script numbers to EXCLUDE from running (comma-separated), or press Enter to run all:"
+  read -r SCRIPT_EXCLUDE_INPUT
+  SCRIPT_EXCLUDE_SET=$(parse_exclude_input "$SCRIPT_EXCLUDE_INPUT" "$SCRIPT_COUNT")
+
+  echo ""
+  SCRIPT_OUTPUT_COUNT=0
+  _s=1
+  while [ "$_s" -le "$SCRIPT_COUNT" ]; do
+    _sname=$(cat "${_tmpdir}/scripts/${_s}.name")
+    _sbase="${_tmpdir}/scripts/${_s}"
+    if [ -n "$SCRIPT_EXCLUDE_SET" ] && echo "$SCRIPT_EXCLUDE_SET" | grep -q ",$_s,"; then
+      echo "  Skipping ${_sname}"
+    else
+      echo "  Running ${_sname}..."
+      # Custom scripts must not consume the stdin the collector reads its prompts from.
+      run_custom_script "${_sbase}.sh" > "${_sbase}.raw" 2> "${_sbase}.err" < /dev/null
+      _scode=$?
+      head -c {{.ResourceMaxBytes}} "${_sbase}.raw" > "${_sbase}.out"
+      # stdout and stderr share the per-resource budget, so one script cannot contribute twice the cap.
+      _sbudget=$(({{.ResourceMaxBytes}} - $(wc -c < "${_sbase}.out")))
+      if [ "$(wc -c < "${_sbase}.raw")" -gt {{.ResourceMaxBytes}} ]; then
+        printf '\n--- distr: output truncated at %s bytes ---\n' "{{.ResourceMaxBytes}}" >> "${_sbase}.out"
+      fi
+      # coreutils reports a timeout as 124, and as 128+n when the script had to be signalled.
+      if [ -n "$SCRIPT_TIMEOUT" ] && { [ "$_scode" -eq 124 ] || [ "$_scode" -eq 137 ] || [ "$_scode" -eq 143 ]; }; then
+        printf '\n--- distr: script timed out after %ss ---\n' \
+          "{{.ScriptTimeoutSeconds}}" >> "${_sbase}.out"
+      elif [ "$_scode" -ne 0 ]; then
+        printf '\n--- distr: script exited with code %s ---\n' "$_scode" >> "${_sbase}.out"
+      fi
+      if [ -s "${_sbase}.err" ]; then
+        printf '\n--- distr: stderr ---\n' >> "${_sbase}.out"
+        if [ "$_sbudget" -gt 0 ]; then
+          head -c "$_sbudget" "${_sbase}.err" >> "${_sbase}.out"
+        fi
+        if [ "$(wc -c < "${_sbase}.err")" -gt "$_sbudget" ]; then
+          printf '\n--- distr: stderr truncated at %s bytes of total output ---\n' \
+            "{{.ResourceMaxBytes}}" >> "${_sbase}.out"
+        fi
+      fi
+      SCRIPT_OUTPUT_COUNT=$((SCRIPT_OUTPUT_COUNT + 1))
+    fi
+    _s=$((_s + 1))
+  done
+
+  if [ "$SCRIPT_OUTPUT_COUNT" -gt 0 ]; then
+    echo ""
+    echo "Script output to upload:"
+    echo "---"
+    _s=1
+    while [ "$_s" -le "$SCRIPT_COUNT" ]; do
+      _sbase="${_tmpdir}/scripts/${_s}"
+      if [ -f "${_sbase}.out" ]; then
+        printf "  %s\n" "$(cat "${_sbase}.name")"
+        _slines=$(wc -l < "${_sbase}.out")
+        head -n 30 "${_sbase}.out" | while IFS= read -r _line || [ -n "$_line" ]; do
+          printf "      %s\n" "$_line"
+        done
+        if [ "$_slines" -gt 30 ]; then
+          printf "      ... (%s more lines)\n" "$((_slines - 30))"
+        fi
+        echo ""
+      fi
+      _s=$((_s + 1))
+    done
+
+    printf "Upload script output? [Y/n]: "
+    read -r SCRIPT_CONFIRM
+    case "$SCRIPT_CONFIRM" in
+      [nN]*)
+        echo "  Skipping script output upload"
+        ;;
+      *)
+        _s=1
+        while [ "$_s" -le "$SCRIPT_COUNT" ]; do
+          _sbase="${_tmpdir}/scripts/${_s}"
+          if [ -f "${_sbase}.out" ]; then
+            _sname=$(cat "${_sbase}.name")
+            upload_resource_file "$_sname" "${_sbase}.out"
+            echo "  Uploaded output of ${_sname}"
+          fi
+          _s=$((_s + 1))
+        done
+        ;;
+    esac
+  fi
+fi
+{{- end}}
 
 # Finalize support bundle
 echo ""

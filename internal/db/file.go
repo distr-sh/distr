@@ -15,14 +15,14 @@ import (
 )
 
 const (
-	fileOutputExpr = "f.id, f.organization_id, f.created_at, f.content_type, f.data, f.file_name, f.file_size"
+	fileOutputExpr = "f.id, f.organization_id, f.created_at, f.content_type, f.data, f.file_name, f.file_size, f.public"
 )
 
 func CreateFile(ctx context.Context, organizationID *uuid.UUID, file *types.File) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		"INSERT INTO File AS f (organization_id, content_type, data, file_name, file_size) "+
-			"VALUES (@organization_id, @content_type, @data, @file_name, @file_size) "+
+		"INSERT INTO File AS f (organization_id, content_type, data, file_name, file_size, public) "+
+			"VALUES (@organization_id, @content_type, @data, @file_name, @file_size, @public) "+
 			"RETURNING "+fileOutputExpr,
 		pgx.NamedArgs{
 			"organization_id": organizationID,
@@ -30,6 +30,7 @@ func CreateFile(ctx context.Context, organizationID *uuid.UUID, file *types.File
 			"data":            file.Data,
 			"file_name":       file.FileName,
 			"file_size":       file.FileSize,
+			"public":          file.Public,
 		},
 	)
 	if err != nil {
@@ -58,6 +59,26 @@ func GetFileWithID(ctx context.Context, id uuid.UUID) (*types.File, error) {
 		}
 	} else {
 		return &file, nil
+	}
+}
+
+// GetFileMetadataWithID loads only the ownership and visibility of a file, avoiding the data blob.
+func GetFileMetadataWithID(ctx context.Context, id uuid.UUID) (*types.FileMetadata, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		"SELECT f.organization_id, f.content_type, f.public FROM File f WHERE f.id = @id",
+		pgx.NamedArgs{"id": id},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query file metadata: %w", err)
+	} else if metadata, err := pgx.CollectExactlyOneRow[types.FileMetadata](rows, pgx.RowToStructByName); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apierrors.ErrNotFound
+		} else {
+			return nil, fmt.Errorf("could not map file metadata: %w", err)
+		}
+	} else {
+		return &metadata, nil
 	}
 }
 

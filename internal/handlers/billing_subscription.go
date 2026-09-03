@@ -40,12 +40,7 @@ func CreateSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 
-	var body struct {
-		SubscriptionType        types.SubscriptionType   `json:"subscriptionType"`
-		SubscriptionPeriod      types.SubscriptionPeriod `json:"subscriptionPeriod"`
-		CustomerOrganizationQty int64                    `json:"subscriptionCustomerOrganizationQuantity"`
-		UserAccountQty          int64                    `json:"subscriptionUserAccountQuantity"`
-	}
+	var body api.CreateSubscriptionRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		log.Debug("bad json payload", zap.Error(err))
@@ -112,14 +107,24 @@ func UpdateSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var body struct {
-		CustomerOrganizationQty int64 `json:"subscriptionCustomerOrganizationQuantity"`
-		UserAccountQty          int64 `json:"subscriptionUserAccountQuantity"`
-	}
+	var body api.UpdateSubscriptionRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		log.Debug("bad json payload", zap.Error(err))
 		http.Error(w, "bad json payload", http.StatusBadRequest)
+		return
+	}
+
+	// Requesting the current type is a no-op quantity update
+	if body.SubscriptionType != nil && *body.SubscriptionType == org.SubscriptionType {
+		body.SubscriptionType = nil
+	}
+
+	// Plan switching is currently limited to the pro → business upgrade
+	if body.SubscriptionType != nil &&
+		(org.SubscriptionType != types.SubscriptionTypePro ||
+			*body.SubscriptionType != types.SubscriptionTypeBusiness) {
+		http.Error(w, "only upgrading from the pro to the business plan is supported", http.StatusBadRequest)
 		return
 	}
 
@@ -142,8 +147,14 @@ func UpdateSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
+		// Quantities are validated against the target plan when switching plans
+		targetSubscriptionType := org.SubscriptionType
+		if body.SubscriptionType != nil {
+			targetSubscriptionType = *body.SubscriptionType
+		}
+
 		if err := validateSubscriptionQuantities(
-			org.SubscriptionType,
+			targetSubscriptionType,
 			body.CustomerOrganizationQty,
 			body.UserAccountQty,
 			usage,
@@ -156,6 +167,7 @@ func UpdateSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 			SubscriptionID:          *org.StripeSubscriptionID,
 			CustomerOrganizationQty: body.CustomerOrganizationQty,
 			UserAccountQty:          body.UserAccountQty,
+			SubscriptionType:        body.SubscriptionType,
 			ReturnURL:               fmt.Sprintf("%v/subscription", handlerutil.GetRequestSchemeAndHost(r)),
 		})
 		if err != nil {
@@ -193,6 +205,11 @@ func UpdateSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "failed to get user account quantity", http.StatusInternalServerError)
 			return err
 		}
+
+		// The subscription type and plan-managed features are intentionally NOT updated here.
+		// They are only applied once Stripe confirms the change via the
+		// customer.subscription.updated webhook, which derives the type from the
+		// subscription items (requiring all items to belong to a single plan).
 
 		org.SubscriptionCustomerOrganizationQty = customerOrgQty
 		org.SubscriptionUserAccountQty = userAccountQty
@@ -342,20 +359,19 @@ func buildSubscriptionInfo(ctx context.Context, org *types.Organization) (*api.S
 	}
 
 	info := &api.SubscriptionInfo{
-		SubscriptionType:                       org.SubscriptionType,
-		SubscriptionEndsAt:                     org.SubscriptionEndsAt,
-		SubscriptionPeriod:                     org.SubscriptionPeriod,
-		SubscriptionCustomerOrganizationQty:    org.SubscriptionCustomerOrganizationQty.Value(),
-		SubscriptionUserAccountQty:             org.SubscriptionUserAccountQty.Value(),
-		CurrentUserAccountCount:                usage.userAccountCount,
-		CurrentCustomerOrganizationCount:       usage.customerOrganizationCount,
-		CurrentMaxUsersPerCustomer:             usage.maxUsersPerCustomer,
-		CurrentMaxDeploymentTargetsPerCustomer: usage.maxDeploymentTargetsPerCustomer,
-		HasApplicationEntitlements:             hasApplicationEntitlements,
-		HasArtifactEntitlements:                hasArtifactEntitlements,
-		HasNonAdminRoles:                       hasNonAdminRoles,
-		HasAlertConfigurations:                 hasAlertConfigurations,
-		Limits:                                 map[types.SubscriptionType]api.SubscriptionLimits{},
+		SubscriptionType:                    org.SubscriptionType,
+		SubscriptionEndsAt:                  org.SubscriptionEndsAt,
+		SubscriptionPeriod:                  org.SubscriptionPeriod,
+		SubscriptionCustomerOrganizationQty: org.SubscriptionCustomerOrganizationQty.Value(),
+		SubscriptionUserAccountQty:          org.SubscriptionUserAccountQty.Value(),
+		CurrentUserAccountCount:             usage.userAccountCount,
+		CurrentCustomerOrganizationCount:    usage.customerOrganizationCount,
+		CurrentRegistryStorageBytes:         usage.registryStorageBytes,
+		HasApplicationEntitlements:          hasApplicationEntitlements,
+		HasArtifactEntitlements:             hasArtifactEntitlements,
+		HasNonAdminRoles:                    hasNonAdminRoles,
+		HasAlertConfigurations:              hasAlertConfigurations,
+		Limits:                              map[types.SubscriptionType]api.SubscriptionLimits{},
 	}
 
 	for _, st := range types.AllSubscriptionTypes() {
@@ -373,6 +389,7 @@ type currentUsageCounts struct {
 	maxDeploymentTargetsPerCustomer int64
 	applicationEntitlementCount     int64
 	artifactEntitlementCount        int64
+	registryStorageBytes            int64
 }
 
 // getCurrentUsageCounts retrieves the current usage counts for the given organization
@@ -405,6 +422,11 @@ func getCurrentUsageCounts(ctx context.Context, orgID uuid.UUID) (*currentUsageC
 		return nil, fmt.Errorf("failed to count internal deployment targets: %w", err)
 	}
 
+	registryStorageBytes, err := db.GetRegistryStorageUsage(ctx, orgID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get registry storage usage: %w", err)
+	}
+
 	// Find the maximum user count and deployment target count across all customer organizations
 	var maxUsersPerCustomer int64
 	for _, customerOrg := range customerOrgs {
@@ -423,6 +445,7 @@ func getCurrentUsageCounts(ctx context.Context, orgID uuid.UUID) (*currentUsageC
 		maxDeploymentTargetsPerCustomer: maxDeploymentTargetsPerCustomer,
 		applicationEntitlementCount:     int64(len(appEntitlements)),
 		artifactEntitlementCount:        int64(len(artifactEntitlements)),
+		registryStorageBytes:            registryStorageBytes,
 	}, nil
 }
 

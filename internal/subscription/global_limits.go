@@ -2,6 +2,7 @@ package subscription
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/license"
@@ -11,92 +12,147 @@ import (
 
 const (
 	MaxCustomersPerOrganizationCommunity             = limit.Unlimited
-	MaxCustomersPerOrganizationStarter   limit.Limit = 3
 	MaxCustomersPerOrganizationPro       limit.Limit = 100
+	MaxCustomersPerOrganizationBusiness              = limit.Unlimited
 	MaxCustomersPerOrganizationTrial                 = limit.Unlimited
 
 	MaxUsersPerCustomerOrganizationCommunity limit.Limit = 1
-	MaxUsersPerCustomerOrganizationStarter   limit.Limit = 1
-	MaxUsersPerCustomerOrganizationPro       limit.Limit = 10
-	MaxUsersPerCustomerOrganizationTrial     limit.Limit = limit.Unlimited
+	MaxUsersPerCustomerOrganizationPro                   = limit.Unlimited
+	MaxUsersPerCustomerOrganizationBusiness              = limit.Unlimited
+	MaxUsersPerCustomerOrganizationTrial                 = limit.Unlimited
 
 	MaxDeploymentTargetsPerCustomerOrganizationCommunity limit.Limit = 1
-	MaxDeploymentTargetsPerCustomerOrganizationStarter   limit.Limit = 1
 	MaxDeploymentTargetsPerCustomerOrganizationPro       limit.Limit = 8
-	MaxDeploymentTargetsPerCustomerOrganizationTrial                 = limit.Unlimited
+	MaxDeploymentTargetsPerCustomerOrganizationBusiness  limit.Limit = 8
+	MaxDeploymentTargetsPerCustomerOrganizationTrial     limit.Limit = 8
 
-	MaxLogExportRowsCommunity limit.Limit = 100
-	MaxLogExportRowsStarter   limit.Limit = 100
-	MaxLogExportRowsPro       limit.Limit = 10_000
-	MaxLogExportRowsTrial     limit.Limit = 10_000
+	// The registry storage limits are informational: they are reported to the frontend so the
+	// subscription page can show usage against the plan allowance, but they are not enforced.
+	MaxRegistryStorageBytesCommunity             = limit.Unlimited
+	MaxRegistryStorageBytesPro       limit.Limit = 1 << 40
+	MaxRegistryStorageBytesBusiness  limit.Limit = 5 << 40
+	MaxRegistryStorageBytesTrial                 = limit.Unlimited
+
+	// MaxLogExportRows is a hard cap on the number of lines a single log export may
+	// produce, so very large exports cannot exhaust hub or client resources. It applies
+	// to all subscription types.
+	MaxLogExportRows limit.Limit = 1_000_000
+
+	// MaxArtifactPullExportRows caps the artifact pull CSV export. Unlike log exports, the
+	// rows are collected in memory before writing, so the cap is much lower.
+	MaxArtifactPullExportRows limit.Limit = 10_000
+
+	LogQueryWindowCommunity = 24 * time.Hour
+	LogQueryWindowBusiness  = 30 * 24 * time.Hour
+	LogQueryWindowDefault   = 7 * 24 * time.Hour
 )
 
+// licenseLimitsApply reports whether the limits of the license key define the limits of an
+// organization with the given subscription type. A license key that enforces its limits defines
+// them for every organization, since reconciliation puts them all on the plan that key grants.
+// A key that does not enforce them, as on the hosted instance where plans are managed through
+// Stripe, only defines them for the enterprise plan, whose limits are negotiated rather than
+// listed among the constants above.
+func licenseLimitsApply(st types.SubscriptionType, licenseData license.LicenseData) bool {
+	return licenseData.EnforceLimitsOnStartup || st == types.SubscriptionTypeEnterprise
+}
+
 func GetCustomersPerOrganizationLimit(st types.SubscriptionType) limit.Limit {
+	if licenseData := license.GetLicenseData(); licenseLimitsApply(st, licenseData) {
+		return licenseData.MaxCustomersPerOrganization
+	}
 	switch st {
 	case types.SubscriptionTypeCommunity:
 		return MaxCustomersPerOrganizationCommunity
 	case types.SubscriptionTypeTrial:
 		return MaxCustomersPerOrganizationTrial
-	case types.SubscriptionTypeStarter:
-		return MaxCustomersPerOrganizationStarter
 	case types.SubscriptionTypePro:
 		return MaxCustomersPerOrganizationPro
-	case types.SubscriptionTypeEnterprise:
-		return license.GetLicenseData().MaxCustomersPerOrganization
+	case types.SubscriptionTypeBusiness:
+		return MaxCustomersPerOrganizationBusiness
 	default:
 		panic(fmt.Sprintf("invalid subscription type: %v", st))
 	}
 }
 
 func GetUsersPerCustomerOrganizationLimit(st types.SubscriptionType) limit.Limit {
+	if licenseData := license.GetLicenseData(); licenseLimitsApply(st, licenseData) {
+		return licenseData.MaxUsersPerCustomerOrganization
+	}
 	switch st {
 	case types.SubscriptionTypeCommunity:
 		return MaxUsersPerCustomerOrganizationCommunity
 	case types.SubscriptionTypeTrial:
 		return MaxUsersPerCustomerOrganizationTrial
-	case types.SubscriptionTypeStarter:
-		return MaxUsersPerCustomerOrganizationStarter
 	case types.SubscriptionTypePro:
 		return MaxUsersPerCustomerOrganizationPro
-	case types.SubscriptionTypeEnterprise:
-		return license.GetLicenseData().MaxUsersPerCustomerOrganization
+	case types.SubscriptionTypeBusiness:
+		return MaxUsersPerCustomerOrganizationBusiness
 	default:
 		panic(fmt.Sprintf("invalid subscription type: %v", st))
 	}
 }
 
 func GetDeploymentTargetsPerCustomerOrganizationLimit(st types.SubscriptionType) limit.Limit {
+	if licenseData := license.GetLicenseData(); licenseLimitsApply(st, licenseData) {
+		return licenseData.MaxDeploymentTargetsPerCustomerOrganization
+	}
 	switch st {
 	case types.SubscriptionTypeCommunity:
 		return MaxDeploymentTargetsPerCustomerOrganizationCommunity
 	case types.SubscriptionTypeTrial:
 		return MaxDeploymentTargetsPerCustomerOrganizationTrial
-	case types.SubscriptionTypeStarter:
-		return MaxDeploymentTargetsPerCustomerOrganizationStarter
 	case types.SubscriptionTypePro:
 		return MaxDeploymentTargetsPerCustomerOrganizationPro
-	case types.SubscriptionTypeEnterprise:
-		return license.GetLicenseData().MaxDeploymentTargetsPerCustomerOrganization
+	case types.SubscriptionTypeBusiness:
+		return MaxDeploymentTargetsPerCustomerOrganizationBusiness
 	default:
 		panic(fmt.Sprintf("invalid subscription type: %v", st))
 	}
 }
 
-func GetLogExportRowsLimit(st types.SubscriptionType) limit.Limit {
+func GetRegistryStorageLimit(st types.SubscriptionType) limit.Limit {
+	if licenseData := license.GetLicenseData(); licenseLimitsApply(st, licenseData) {
+		return licenseData.MaxRegistryStorageBytes
+	}
 	switch st {
 	case types.SubscriptionTypeCommunity:
-		return MaxLogExportRowsCommunity
+		return MaxRegistryStorageBytesCommunity
 	case types.SubscriptionTypeTrial:
-		return MaxLogExportRowsTrial
-	case types.SubscriptionTypeStarter:
-		return MaxLogExportRowsStarter
+		return MaxRegistryStorageBytesTrial
 	case types.SubscriptionTypePro:
-		return MaxLogExportRowsPro
-	case types.SubscriptionTypeEnterprise:
-		return license.GetLicenseData().MaxLogExportRows
+		return MaxRegistryStorageBytesPro
+	case types.SubscriptionTypeBusiness:
+		return MaxRegistryStorageBytesBusiness
 	default:
 		panic(fmt.Sprintf("invalid subscription type: %v", st))
 	}
+}
+
+// GetLogQueryWindow returns how far back log read queries may reach.
+// The business subscription type extends it up to the full Loki retention period (30 days).
+func GetLogQueryWindow(st types.SubscriptionType) time.Duration {
+	switch st {
+	case types.SubscriptionTypeCommunity:
+		return LogQueryWindowCommunity
+	case types.SubscriptionTypeBusiness:
+		return LogQueryWindowBusiness
+	default:
+		return LogQueryWindowDefault
+	}
+}
+
+// LogQueryWindowTimezoneSlack is the extra period accepted for explicitly requested
+// log query start timestamps, on top of the exact subscription window. The frontend
+// limits the range picker to 00:00 local time of the first day inside the window,
+// whose UTC instant is unknown to the server but always within 24 hours before the
+// exact window boundary. It must not be applied to default (unset) query starts.
+const LogQueryWindowTimezoneSlack = 24 * time.Hour
+
+// GetLogQueryWindowStart returns the default start for log read queries,
+// i.e. the start of the exact subscription window.
+func GetLogQueryWindowStart(st types.SubscriptionType) time.Time {
+	return time.Now().Add(-GetLogQueryWindow(st))
 }
 
 func GetSubscriptionLimits(st types.SubscriptionType) api.SubscriptionLimits {
@@ -104,5 +160,7 @@ func GetSubscriptionLimits(st types.SubscriptionType) api.SubscriptionLimits {
 		MaxCustomerOrganizations:        GetCustomersPerOrganizationLimit(st).Value(),
 		MaxUsersPerCustomerOrganization: GetUsersPerCustomerOrganizationLimit(st).Value(),
 		MaxDeploymentsPerCustomerOrg:    GetDeploymentTargetsPerCustomerOrganizationLimit(st).Value(),
+		MaxRegistryStorageBytes:         GetRegistryStorageLimit(st).Value(),
+		LogQueryWindowSeconds:           int64(GetLogQueryWindow(st) / time.Second),
 	}
 }

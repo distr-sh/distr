@@ -68,8 +68,14 @@ For status indicators, log collection, and metrics, see [Logs & Metrics](/docs/a
 Each deployment target card has a **⋮** (vertical ellipsis) menu in its top-right corner:
 
 - **Edit**: rename the target or change its configuration
-- **Update Agent**: apply a pending agent version update (only shown when an update is available)
+- **Update Agent**: apply a pending agent version update (only shown when an update is available). See [Agent Updates](#agent-updates) for details.
 - **Notes**: add internal notes visible to your team
 - **Agent Logs**: open the agent log viewer. See [Logs & Metrics](/docs/agents/logs-and-metrics/#agent-logs) for details.
 - **Reconnect**: generate a new connection command (only shown when the agent has connected at least once). See [Reconnect](/docs/agents/logs-and-metrics/#reconnect) for details.
 - **Delete**: remove the deployment target
+
+### Agent Updates
+
+Every deployment target runs a specific agent version, and each Distr Hub ships the agent version that matches it. When a target is on an older version, the **Update Agent** action assigns it the version of the Hub. The agent notices the change the next time it polls the Hub and updates itself. Updating an agent does not restart the deployed application.
+
+Agents can also update themselves without any interaction. When **automatic agent updates** are enabled for a target, the Hub assigns it the current agent version on every start, so upgrading the Hub updates those agents along with it. The option can be set per target when creating a deployment, in the target settings, and in the **Update Agent** dialog. It is enabled by default for new deployment targets and disabled for targets that existed before the option was introduced.

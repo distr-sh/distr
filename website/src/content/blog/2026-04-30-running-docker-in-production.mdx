@@ -2,7 +2,7 @@
 title: 'Should I Run Plain Docker Compose in Production in 2026?'
 description: 'Yes, plain Docker Compose can still run production workloads in 2026, but only if you close the operational gaps it leaves: cleanup, healing, image pinning, socket security, and updates.'
 publishDate: 2026-04-30
-lastUpdated: 2026-04-30
+lastUpdated: 2026-07-23
 slug: 'running-docker-in-production'
 authors:
   - name: 'Philip Miglinci'
@@ -23,7 +23,7 @@ tags:
 import {Aside} from '@astrojs/starlight/components';
 import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
 
-I am Philip, an engineer working at Distr, which helps software and AI companies distribute their applications to self-managed environments.
+I am Philip, an engineer working at Distr, which helps software and AI companies distribute their applications to self-hosted environments.
 Our Open Source Software Distribution platform is available on GitHub ([`github.com/distr-sh/distr`](https://github.com/distr-sh/distr)) and orchestrates both Docker Compose and Docker Swarm deployments on customer hosts every day.
 
 Most of the production incidents I have seen on Docker Compose hosts come from the same handful of quirks: an old container that should have been removed, a disk that filled up overnight, a health check that detected a problem and then did nothing about it, a `:latest` tag that pointed somewhere new, or a socket mount nobody thought twice about. None of these are bugs in Docker. They are deliberate trade-offs in a tool that started as internal tooling at dotCloud, a PaaS company that wrapped LXC to fix "it works on my machine," and is now running the back end of a lot of real businesses. This post collects the recurring ones, with the commands and the operational answer for each.
@@ -192,7 +192,7 @@ The Distr Docker agent does mount the socket. It has to, in order to orchestrate
 
 ## Updating Docker Compose Deployments Across Customer Hosts
 
-`docker compose pull && docker compose up -d` is a fine command if you are SSH'd into the host. At customer scale (dozens of self-managed environments behind firewalls, each with its own change-control process), that manual process doesn't scale. Docker has no built-in mechanism to push a new manifest to a running host from somewhere else. Docker Hub webhooks can trigger a CI rebuild when an image is pushed, but they do not reach into a customer's network and tell their `docker compose` to pull.
+`docker compose pull && docker compose up -d` is a fine command if you are SSH'd into the host. At customer scale (dozens of self-hosted environments behind firewalls, each with its own change-control process), that manual process doesn't scale. Docker has no built-in mechanism to push a new manifest to a running host from somewhere else. Docker Hub webhooks can trigger a CI rebuild when an image is pushed, but they do not reach into a customer's network and tell their `docker compose` to pull.
 
 The usual workarounds and what they cost:
 
@@ -236,4 +236,4 @@ Yes, plain Docker Compose still runs a lot of real production workloads in 2026,
 - Updates need an agent of some kind. Watchtower is fine for one host; not for a fleet.
 - When Compose stops being enough, Kubernetes is usually the right next step. Swarm is a narrower fit and worth picking eyes-open.
 
-If you ship software to self-managed customers and you would rather not rebuild this list yourself, the Distr Docker agent handles all of the above on the customer side. The [Docker agent documentation](/docs/agents/docker-agent) walks through the install, the socket model, the autoheal and image-cleanup defaults, and how the agent self-updates. The repository is on [GitHub](https://github.com/distr-sh/distr).
+If you ship software to self-hosted customers and you would rather not rebuild this list yourself, the Distr Docker agent handles all of the above on the customer side. The [Docker agent documentation](/docs/agents/docker-agent) walks through the install, the socket model, the autoheal and image-cleanup defaults, and how the agent self-updates. The repository is on [GitHub](https://github.com/distr-sh/distr).

@@ -7,6 +7,8 @@ sidebar:
 ---
 
 While the easiest way to use Distr is to use our [hosted offering](/onboarding/), self-hosting is also an option.
+The free and open source Community Edition is the perfect option to try Distr locally on your own machine.
+
 Distr comes as a statically compiled Go binary, packaged as a container image and has minimal dependencies:
 
 - A PostgreSQL database
@@ -24,7 +26,9 @@ We are using [semantic versioning](https://semver.org/) for the releases of Dist
 
 See the [changelog](/changelog/) for a list of all releases and the changes they include.
 
-## Enterprise Support
+## Self-Hosting a Paid Plan
 
-We also offer enterprise support for self-hosting Distr Pro in your own environment.
-If you are interested, make sure [to get in touch](/contact/).
+The guides in this section describe the Community Edition.
+
+Every plan can also be self-hosted, with the same feature set as on Distr Cloud (see [Choosing a Plan](/docs/subscription/)).
+A license key unlocks your plan in your own environment, so [get in touch](/contact/) if you are interested.

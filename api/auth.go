@@ -12,8 +12,9 @@ type AuthLoginRequest struct {
 }
 
 type AuthLoginResponse struct {
-	Token       string `json:"token,omitempty"`
-	RequiresMFA bool   `json:"requiresMfa"`
+	Token       string  `json:"token,omitempty"`
+	RequiresMFA bool    `json:"requiresMfa"`
+	RedirectURL *string `json:"redirectUrl,omitempty"`
 }
 
 type AuthRegistrationRequest struct {
@@ -21,6 +22,7 @@ type AuthRegistrationRequest struct {
 	OrganizationName string `json:"organizationName"`
 	Email            string `json:"email"`
 	Password         string `json:"password"`
+	TurnstileToken   string `json:"turnstileToken,omitempty"`
 }
 
 func (r *AuthRegistrationRequest) Validate() error {

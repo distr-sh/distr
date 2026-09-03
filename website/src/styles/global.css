@@ -20,7 +20,7 @@
   --font-sans: var(--font-inter), 'system-ui', 'sans-serif';
   --font-display:
     var(--font-poppins), var(--font-inter), 'system-ui', 'sans-serif';
-  --font-mono: 'monospace';
+  --font-mono: monospace;
 
   /* Distr.sh color palette - Accent colors */
   --color-accent-200: #92d1fe;
@@ -52,6 +52,16 @@
   h2,
   h3 {
     font-family: var(--font-display);
+  }
+
+  /* Show the header logo slightly larger than the Starlight default
+     (nav height minus 2 * nav padding) and closer to the title */
+  .site-title {
+    gap: 0.5rem;
+  }
+
+  .site-title img {
+    height: 2.25rem;
   }
 
   .distr-content {

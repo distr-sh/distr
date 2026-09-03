@@ -397,6 +397,28 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 	}
 }
 
+// GetLatestDeploymentRevisionIDs returns the IDs of the most recently created revisions
+// of the given deployment, newest first.
+func GetLatestDeploymentRevisionIDs(ctx context.Context, deploymentID uuid.UUID, limit int) ([]uuid.UUID, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT id FROM DeploymentRevision
+		WHERE deployment_id = @deploymentId
+		ORDER BY created_at DESC
+		LIMIT @limit`,
+		pgx.NamedArgs{"deploymentId": deploymentID, "limit": limit},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query DeploymentRevision: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
+	if err != nil {
+		return nil, fmt.Errorf("could not collect DeploymentRevision: %w", err)
+	}
+	return result, nil
+}
+
 func GetDeploymentRevisions(
 	ctx context.Context,
 	deploymentID uuid.UUID,

@@ -80,17 +80,20 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 				}{})).
 				With(option.Response(http.StatusOK, api.DeploymentTargetNotes{}))
 		})
-		r.Get("/logs", getDeploymentTargetLogRecordsHandler()).
-			With(option.Description("Get logs for this deployment target")).
-			With(option.Request(struct {
-				DeploymentTargetTimeseriesRequest
-				Filter *string `query:"filter"`
-			}{})).
-			With(option.Response(http.StatusOK, []api.DeploymentTargetLogRecord{}))
-		r.Get("/logs/export", exportDeploymentTargetLogRecordsHandler()).
-			With(option.Description("Get logs for this deployment target")).
-			With(option.Request(DeploymentTargetIDRequest{})).
-			With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
+		// These are read-only, agent-pushed logs that are safe to serve from the read-only db.
+		r.With(middleware.UseReadonlyDB).Group(func(r chiopenapi.Router) {
+			r.Get("/logs", getDeploymentTargetLogRecordsHandler()).
+				With(option.Description("Get logs for this deployment target")).
+				With(option.Request(DeploymentTargetTimeseriesRequest{})).
+				With(option.Response(http.StatusOK, []api.DeploymentTargetLogRecord{}))
+			r.Get("/logs/export", exportDeploymentTargetLogRecordsHandler()).
+				With(option.Description("Export logs for this deployment target")).
+				With(option.Request(struct {
+					DeploymentTargetIDRequest
+					TimeseriesRangeRequest
+				}{})).
+				With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
+		})
 	})
 }
 
@@ -207,6 +210,16 @@ func updateDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 
 	if dt.AgentVersion.ID != uuid.Nil {
 		dt.AgentVersionID = &dt.AgentVersion.ID
+	} else if dt.AutomaticUpdatesEnabled {
+		// Without this, enabling automatic updates would only take effect on the next hub restart.
+		agentVersion, err := db.GetCurrentAgentVersion(ctx)
+		if err != nil {
+			log.Warn("could not get current agent version", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		dt.AgentVersionID = &agentVersion.ID
 	}
 
 	existing := internalctx.GetDeploymentTarget(ctx)
@@ -215,6 +228,11 @@ func updateDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 	} else if dt.ID != existing.ID {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, "wrong id")
+		return
+	}
+
+	if err := types.ValidateDockerEndpoint(dt.DockerEndpoint, existing.Type); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -277,8 +295,8 @@ func createAccessForDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org := auth.CurrentOrg()
-	connectUrl, err := agentconnect.BuildConnectURL(deploymentTarget.ID, *org, targetSecret)
+	org := auth.CurrentOrgWithBranding()
+	connectUrl, err := agentconnect.BuildConnectURL(ctx, deploymentTarget.ID, *org, targetSecret)
 	if err != nil {
 		log.Error("could not create connecturl", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -287,6 +305,7 @@ func createAccessForDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	connectCommand, err := agentconnect.GenerateConnectCommand(
+		ctx,
 		deploymentTarget.DeploymentTarget,
 		*org,
 		targetSecret,

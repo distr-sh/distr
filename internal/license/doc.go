@@ -11,16 +11,38 @@ A compatible Distr license key can be generated using the following JSON as a te
 		"ld": {
 			"enf": true,
 			"p": "monthly",
+			"t": "enterprise",
 			"mo": 123,
 			"mou": 123,
 			"moc": 123,
 			"mcu": 123,
 			"mcd": 123,
-			"mlr": 123
+			"mrs": 123
 		}
 	}
 
+The "t" claim is the subscription type the instance is licensed for and accepts any of
+[types.AllSubscriptionTypes]. It defaults to enterprise, which is the plan every license key
+granted before the claim was introduced. When "enf" is true, every organization is set to that
+subscription type, is granted its features and uses the limits from the license key rather than
+the ones listed for the plan on Distr Cloud.
+
 After error-free initialization, a [LicenseData] object can be obtained via [GetLicenseData].
 If no public key is set at compile time, [GetLicenseData] always returns the default values for all limits.
+
+# Organization scoping
+
+A build can additionally be restricted to license keys that were issued for a specific Distr
+organization. This is controlled by two variables that are injected at compile time via -ldflags
+(similar to the internal/buildconfig variables):
+
+	-X github.com/distr-sh/distr/internal/license.organizationID=<organization uuid>
+	-X github.com/distr-sh/distr/internal/license.organizationScopeCutoff=<yyyy-mm-dd date>
+
+When organizationID is set, [Initialize] additionally verifies that the license key carries a
+matching organization ID claim (see licensekey.OrganizationIDClaimName). To stay backwards
+compatible with license keys minted before organization scoping was introduced, this check only
+applies to license keys whose "issued at" claim is newer than organizationScopeCutoff. When
+organizationID is empty, organization scoping is disabled.
 */
 package license

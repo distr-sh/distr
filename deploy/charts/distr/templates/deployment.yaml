@@ -1,3 +1,10 @@
+{{- /* Checked here rather than in caddy-deployment.yaml so it also reaches installations that
+terminate custom domains with their own proxy instead of the chart's Caddy. */}}
+{{- range .Values.hub.env }}
+{{- if or (eq .name "CUSTOM_DOMAIN_APP_CNAME_TARGET") (eq .name "CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET") }}
+{{- fail "CUSTOM_DOMAIN_APP_CNAME_TARGET and CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET have been replaced by a single CUSTOM_DOMAIN_TARGET: one proxy serves every custom domain, registry traffic included, so there was never a second target to point at" }}
+{{- end }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -7,6 +14,10 @@ metadata:
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  {{- with .Values.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
   {{- end }}
   selector:
     matchLabels:
@@ -19,6 +30,7 @@ spec:
       {{- end }}
       labels:
         {{- include "distr.labels" . | nindent 8 }}
+        app.kubernetes.io/component: hub
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -28,9 +40,18 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "distr.serviceAccountName" . }}
-      {{- with .Values.podSecurityContext }}
+      {{- /* The hub image runs as UID/GID 65532. Default fsGroup so the scratch
+             ephemeral volume, provisioned root-owned by the CSI driver, is writable. */}}
+      {{- $podSecurityContext := deepCopy (.Values.podSecurityContext | default dict) }}
+      {{- if .Values.hub.scratch.enabled }}
+      {{- $podSecurityContext = merge $podSecurityContext (dict "fsGroup" 65532) }}
+      {{- end }}
+      {{- with $podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ . }}
       {{- end }}
       containers:
         - name: hub
@@ -50,6 +71,15 @@ spec:
             - name: metrics
               containerPort: {{ .Values.service.metricsPort }}
               protocol: TCP
+            {{- if .Values.caddy.enabled }}
+            - name: caddy-ask
+              containerPort: {{ .Values.caddy.askServerPort }}
+              protocol: TCP
+            {{- end }}
+          {{- with .Values.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- with .Values.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
@@ -62,9 +92,15 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.volumeMounts }}
+          {{- if or .Values.volumeMounts .Values.hub.scratch.enabled }}
           volumeMounts:
+            {{- with .Values.volumeMounts }}
             {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- if .Values.hub.scratch.enabled }}
+            - name: scratch
+              mountPath: {{ .Values.hub.scratch.mountPath | quote }}
+            {{- end }}
           {{- end }}
           {{- with .Values.hub.envFrom }}
           envFrom:
@@ -72,9 +108,38 @@ spec:
           {{- end }}
           env:
             {{- include "distr.hubEnv" . | nindent 12 }}
-      {{- with .Values.volumes }}
+            {{- if .Values.hub.scratch.enabled }}
+            - name: REGISTRY_SCRATCH_DIR
+              value: {{ .Values.hub.scratch.mountPath | quote }}
+            {{- end }}
+            {{- if .Values.caddy.enabled }}
+            {{- /* Derived from caddy.askServerPort so the hub, the Caddyfile and the caddy-ask
+                   Service cannot drift apart. */}}
+            - name: INTERNAL_SERVER_ADDR
+              value: ":{{ .Values.caddy.askServerPort }}"
+            {{- end }}
+      {{- if or .Values.volumes .Values.hub.scratch.enabled }}
       volumes:
+        {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if .Values.hub.scratch.enabled }}
+        - name: scratch
+          ephemeral:
+            volumeClaimTemplate:
+              metadata:
+                labels:
+                  {{- include "distr.labels" . | nindent 18 }}
+              spec:
+                accessModes:
+                  {{- toYaml .Values.hub.scratch.accessModes | nindent 18 }}
+                {{- with .Values.hub.scratch.storageClassName }}
+                storageClassName: {{ . | quote }}
+                {{- end }}
+                resources:
+                  requests:
+                    storage: {{ .Values.hub.scratch.size | quote }}
+        {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

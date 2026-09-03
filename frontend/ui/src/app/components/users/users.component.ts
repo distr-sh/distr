@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   input,
   output,
@@ -10,7 +11,7 @@ import {
   TemplateRef,
   viewChild,
 } from '@angular/core';
-import {toObservable, toSignal} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {UserAccountWithRole, UserRole} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -19,20 +20,19 @@ import {
   faCheck,
   faCircleExclamation,
   faClipboard,
-  faMagnifyingGlass,
   faPen,
   faPlus,
   faRepeat,
   faTrash,
-  faUserCircle,
+  faUser,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import {catchError, filter, firstValueFrom, NEVER, switchMap, tap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
-import {SecureImagePipe} from '../../../util/secureImage';
 import {UserRoleLabelPipe} from '../../../util/user-role';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
+import {PlaceholderDirective} from '../../directives/placeholder.directive';
 import {RequireVendorDirective} from '../../directives/required-role.directive';
 import {AuthService} from '../../services/auth.service';
 import {ImageUploadService} from '../../services/image-upload.service';
@@ -40,7 +40,11 @@ import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
+import {isProSubscription} from '../../types/subscription';
+import {AvatarComponent} from '../avatar.component';
+import {InlineEditComponent} from '../inline-edit.component';
 import {QuotaLimitComponent} from '../quota-limit.component';
+import {SearchBarComponent} from '../search-bar.component';
 import {UserRoleSelectComponent} from '../user-role-select.component';
 
 @Component({
@@ -52,10 +56,13 @@ import {UserRoleSelectComponent} from '../user-role-select.component';
     ReactiveFormsModule,
     RequireVendorDirective,
     AutotrimDirective,
-    SecureImagePipe,
+    PlaceholderDirective,
+    AvatarComponent,
     QuotaLimitComponent,
     UserRoleSelectComponent,
     UserRoleLabelPipe,
+    InlineEditComponent,
+    SearchBarComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './users.component.html',
@@ -68,6 +75,7 @@ export class UsersComponent {
 
   private readonly toast = inject(ToastService);
   private readonly usersService = inject(UsersService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly organizationService = inject(OrganizationService);
   private readonly overlay = inject(OverlayService);
   private readonly imageUploadService = inject(ImageUploadService);
@@ -78,12 +86,11 @@ export class UsersComponent {
   protected readonly faCheck = faCheck;
   protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faClipboard = faClipboard;
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faPen = faPen;
   protected readonly faPlus = faPlus;
   protected readonly faRepeat = faRepeat;
   protected readonly faTrash = faTrash;
-  protected readonly faUserCircle = faUserCircle;
+  protected readonly faUser = faUser;
   protected readonly faXmark = faXmark;
 
   protected readonly filterForm = this.fb.group({
@@ -129,16 +136,7 @@ export class UsersComponent {
     return org.currentBillableUserAccountCount;
   });
 
-  protected readonly isProSubscription = computed(() => {
-    const subscriptionType = this.organization()?.subscriptionType;
-    return subscriptionType && ['trial', 'pro', 'enterprise'].includes(subscriptionType);
-  });
-
-  protected readonly editNameUserId = signal<string | null>(null);
-  protected readonly editNameFormLoading = signal(false);
-  protected readonly editNameForm = this.fb.group({
-    name: this.fb.control(''),
-  });
+  protected readonly isProSubscription = computed(() => isProSubscription(this.organization()?.subscriptionType));
 
   protected readonly editRoleUserId = signal<string | null>(null);
   protected readonly editRoleFormLoading = signal(false);
@@ -151,41 +149,23 @@ export class UsersComponent {
     this.modalRef = this.overlay.showModal(this.inviteUserDialog());
   }
 
-  protected editUserName(user: UserAccountWithRole): void {
-    if (!user.id) {
-      return;
-    }
-    this.editNameFormLoading.set(false);
-    this.editNameUserId.set(user.id);
-    this.editRoleUserId.set(null);
-    this.editNameForm.reset(user);
-  }
+  protected readonly savingUserId = signal<string | undefined>(undefined);
 
-  protected async submitEditUserNameForm(): Promise<void> {
-    this.editNameForm.markAllAsTouched();
-
-    const userId = this.editNameUserId();
-    const name = this.editNameForm.value.name;
-    if (!userId || !name) {
-      return;
-    }
-
-    if (this.editNameForm.valid) {
-      this.editNameFormLoading.set(true);
-      try {
-        await firstValueFrom(this.usersService.patchUserAccount(userId, {name}));
-        this.editNameUserId.set(null);
-        this.editNameForm.reset();
-        this.toast.success('User has been updated');
-      } catch (e) {
-        const msg = getFormDisplayedError(e);
-        if (msg) {
-          this.toast.error(msg);
-        }
-      } finally {
-        this.editNameFormLoading.set(false);
-      }
-    }
+  protected updateUserName(user: UserAccountWithRole, name: string): void {
+    this.savingUserId.set(user.id);
+    this.usersService
+      .patchUserAccount(user.id!, {name})
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.toast.success('User has been updated'),
+        error: (e) => {
+          const msg = getFormDisplayedError(e);
+          if (msg) {
+            this.toast.error(msg);
+          }
+        },
+      })
+      .add(() => this.savingUserId.set(undefined));
   }
 
   protected editUserRole(user: UserAccountWithRole): void {
@@ -194,7 +174,6 @@ export class UsersComponent {
     }
     this.editRoleFormLoading.set(false);
     this.editRoleUserId.set(user.id);
-    this.editNameUserId.set(null);
     this.editRoleForm.reset(user);
   }
 

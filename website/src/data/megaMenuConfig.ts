@@ -29,7 +29,7 @@ export const megaMenuConfigs: Record<MegaMenuType, MegaMenuConfig> = {
   },
   resources: {
     items: resourcesMenu,
-    columns: 3,
-    itemWidth: '140px',
+    columns: 2,
+    itemWidth: '160px',
   },
 };

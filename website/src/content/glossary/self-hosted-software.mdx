@@ -1,0 +1,61 @@
+---
+title: Self-Hosted Software
+slug: self-hosted-software
+description: 'Understanding the self-hosted (self-managed) software deployment model, and how vendors support self-hosted customers with a distribution platform'
+term: Self-Hosted Software
+alternateNames:
+  - Self-Hosted
+  - Self-Managed Software
+  - Self-Managed
+shortDefinition: "Self-hosted software is software that runs inside the customer's trust boundary: their cloud account, data center, or isolated network, instead of in a vendor multi-tenant SaaS. Who operates it still varies, from vendor-managed BYOC to fully customer-operated and air-gapped deployments."
+lastUpdated: 2026-08-20
+faq:
+  - question: What does self-hosted mean?
+    answer: "Self-hosted means the product runs in an environment the customer controls (their cloud account, data center, or isolated network), not in the vendor's multi-tenant SaaS. Operation can sit with the vendor (BYOC), be shared, or sit fully with the customer."
+  - question: Is self-hosted the same as self-managed?
+    answer: 'Often used interchangeably in marketing. Strictly, self-hosted is about where the software runs (customer trust boundary). Self-managed usually means the customer also operates it. BYOC is self-hosted without being fully self-managed.'
+  - question: What is the difference between self-hosted and on-premises?
+    answer: "On-premises is a common label for customer-controlled environments (data center or their cloud). Self-hosted is the umbrella: anything in the customer's trust boundary, including BYOC and air-gapped. See the self-hosted spectrum for the full map."
+  - question: What is the difference between self-hosted and SaaS?
+    answer: "With multi-tenant SaaS, the vendor hosts and operates the software in its own infrastructure. With self-hosted software, the product runs inside the customer's trust boundary. Who operates it still varies along the self-hosted spectrum."
+  - question: Why do organizations choose self-hosted software?
+    answer: 'Data sovereignty and compliance requirements, security policies (including air-gapped networks), deep customization and integration needs, and sometimes cost control. Regulated industries like finance, government, and healthcare are typical adopters.'
+  - question: How do software vendors support self-hosted customers?
+    answer: 'With a software distribution platform (such as Distr) that provides a registry for versioned artifacts, deployment agents for installs and updates, offline-capable license enforcement, health monitoring, and a customer self-service portal.'
+---
+
+## What is Self-Hosted Software?
+
+### Self-Hosted Software Definition
+
+:::note
+Self-hosted means the product runs inside the **customer's trust boundary**: their cloud account, [on-premises](/glossary/on-premises-definition/) data center or isolated network, instead of in a vendor [multi-tenant SaaS](/glossary/saas-definition/). That boundary is what matters. Who operates the software still varies, from vendor-managed [BYOC](/glossary/byoc-definition/) to fully customer-operated and [air-gapped](/glossary/air-gapped-meaning/) setups. For the full map from BYOC to air-gapped, read [The self-hosted spectrum](/blog/self-hosted-spectrum/).
+:::
+
+### How Does Self-Hosted Software Work?
+
+In a **customer-operated** self-hosted deployment, customers typically purchase a [license](/glossary/software-license-management/), then download and install the software onto their own servers or cloud environment. They handle infrastructure tasks such as server setup, storage, networking and security, plus updates, monitoring, backups and troubleshooting. That path demands more internal expertise. Other points on the spectrum look different: in [BYOC](/glossary/byoc-definition/), the vendor still operates the app in the customer's cloud; in [air-gapped](/glossary/air-gapped-meaning/), there is no vendor access at all.
+
+### Why Choose Self-Hosted Software?
+
+Self-hosted deployment is often chosen by organizations that require control over where the product runs and where data lives, particularly in industries with stringent data sovereignty, security, and compliance requirements, such as finance, government, and healthcare. It is also preferred when buyers need deep customization or integration with systems that will not leave their environment.
+
+How much operational burden the customer takes on depends on where they sit on the spectrum. [The self-hosted spectrum](/blog/self-hosted-spectrum/) walks through BYOC, customer-controlled middle ground and air-gapped.
+
+## Self-Hosted vs Self-Managed
+
+The two terms are often used interchangeably in marketing. "Self-hosted" is common in open source and developer communities (Nextcloud, Home Assistant, and similar). Commercial vendors often brand their non-SaaS edition "self-managed" (GitLab Self-Managed is the best-known example).
+
+Where people draw a distinction: "self-hosted" emphasizes **where** the software runs (the customer's trust boundary), while "self-managed" emphasizes **who** operates it (the customer's team handles updates, backups, and maintenance). They often go together, but not always. [BYOC](/glossary/byoc-definition/) is the main counterexample: hosted in the customer's cloud, still operated by the vendor.
+
+## How Vendors Support Self-Hosted Software with a Distribution Platform
+
+Offering a self-hosted edition doesn't mean handing customers a tarball and wishing them luck. The vendors that succeed with self-hosted treat it as a product surface of its own, and a [software distribution platform](/glossary/software-distribution-platform/) like [Distr](/docs/) provides the infrastructure for that:
+
+- **Artifact distribution.** A vendor-controlled [container registry](/glossary/oci-container-artifact-registry/) serves Docker images, [Helm charts](/glossary/helm-chart/), and other artifacts, with per-customer access controls so each customer only sees the versions they are entitled to.
+- **Guided installation and updates.** Optional deployment agents (Docker Compose and Helm) install the software in the customer's environment and roll out updates when the customer approves them, which reduces version fragmentation.
+- **Offline license enforcement.** Signed [license keys](/glossary/software-license-management/) and [entitlements](/glossary/software-entitlement/) work without a connection back to the vendor, so seat limits, feature gates, and expiry hold up even in [air-gapped](/glossary/air-gapped-meaning/) environments.
+- **Health monitoring and diagnostics.** With customer consent, agents report deployment status, metrics, and logs, so support teams can troubleshoot without direct access to the customer's infrastructure.
+- **Customer self-service portal.** Customers download releases, generate registry credentials, and manage their deployments through a white-labeled portal instead of email threads with support.
+
+The result: vendors can offer a self-hosted edition with an operational profile close to SaaS, while customers keep the control that made them choose self-hosted in the first place.

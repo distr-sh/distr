@@ -1,6 +1,7 @@
 package routing
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/frontend"
 	"github.com/distr-sh/distr/internal/handlers"
+	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/prometheus"
@@ -60,10 +62,12 @@ Read more about Distr and our use cases at https://distr.sh/docs/
 func NewRouter(
 	logger *zap.Logger,
 	db *pgxpool.Pool,
+	dbReadonly *pgxpool.Pool,
 	mailer *mailx.Mailer,
 	tracers *tracers.Tracers,
 	oidcer *oidc.OIDCer,
 	prometheusCollector *prometheus.DistrCollector,
+	logStore logstore.LogStore,
 ) http.Handler {
 	baseRouter := chi.NewRouter()
 	baseRouter.Use(
@@ -94,7 +98,7 @@ func NewRouter(
 			Layout:      "responsive",
 		}),
 	)
-	openapiRouter.Route("/api", ApiRouter(logger, db, mailer, tracers, oidcer, prometheusCollector))
+	openapiRouter.Route("/api", ApiRouter(logger, db, dbReadonly, mailer, tracers, oidcer, prometheusCollector, logStore))
 
 	baseRouter.Mount("/internal", InternalRouter())
 	baseRouter.Mount("/status", StatusRouter())
@@ -108,12 +112,15 @@ func NewRouter(
 func ApiRouter(
 	logger *zap.Logger,
 	db *pgxpool.Pool,
+	dbReadonly *pgxpool.Pool,
 	mailer *mailx.Mailer,
 	tracers *tracers.Tracers,
 	oidcer *oidc.OIDCer,
 	prometheusCollector *prometheus.DistrCollector,
+	logStore logstore.LogStore,
 ) func(r chiopenapi.Router) {
 	requestSize1MiB := chimiddleware.RequestSize(1024 * 1024)
+	requestSize10MiB := chimiddleware.RequestSize(10 * 1024 * 1024)
 	requestSize50MiB := chimiddleware.RequestSize(50 * 1024 * 1024)
 
 	return func(r chiopenapi.Router) {
@@ -124,7 +131,8 @@ func ApiRouter(
 			middleware.Sentry,
 			middleware.LoggerCtxMiddleware(logger),
 			middleware.LoggingMiddleware,
-			middleware.ContextInjectorMiddleware(db, mailer, oidcer, prometheusCollector),
+			middleware.MaintenanceMode,
+			middleware.ContextInjectorMiddleware(db, dbReadonly, mailer, oidcer, prometheusCollector, logStore),
 		)
 
 		r.Route("/public/v1", PublicRouter(tracers))
@@ -153,9 +161,9 @@ func ApiRouter(
 						auth.Authentication.Middleware,
 						middleware.SetSentryUserFromUserAuth,
 						middleware.RequireEmailVerified,
-						httprate.Limit(30, 1*time.Second, httprate.WithKeyFuncs(middleware.RateLimitUserIDKey)),
-						httprate.Limit(300, 1*time.Minute, httprate.WithKeyFuncs(middleware.RateLimitUserIDKey)),
-						httprate.Limit(2000, 1*time.Hour, httprate.WithKeyFuncs(middleware.RateLimitUserIDKey)),
+						httprate.LimitBy(30, 1*time.Second, middleware.RateLimitUserIDKey),
+						httprate.LimitBy(300, 1*time.Minute, middleware.RateLimitUserIDKey),
+						httprate.LimitBy(2000, 1*time.Hour, middleware.RateLimitUserIDKey),
 
 						// TODO (low-prio) in the future, additionally check token audience and require it to be "api"/"user",
 						// such that agents cant access anything here (they also can't now, because their tokens will not
@@ -165,20 +173,27 @@ func ApiRouter(
 					r.Route("/application-entitlements", handlers.ApplicationEntitlementsRouter)
 					r.Route("/applications", handlers.ApplicationsRouter)
 					r.Route("/artifact-entitlements", handlers.ArtifactEntitlementsRouter)
-					r.Route("/artifact-pulls", handlers.ArtifactPullsRouter)
+					r.With(middleware.UseReadonlyDB).Route("/artifact-pulls", handlers.ArtifactPullsRouter)
 					r.Route("/artifacts", handlers.ArtifactsRouter)
 					r.Route("/billing", handlers.BillingRouter)
 					r.Route("/context", handlers.ContextRouter)
 					r.Route("/customer-organizations", handlers.CustomerOrganizationsRouter)
+					r.With(middleware.CustomDomainsFeatureMiddleware).
+						Route("/custom-domains", handlers.CustomDomainsRouter)
+					r.With(middleware.CustomEmailsFeatureMiddleware).
+						Route("/custom-email", handlers.CustomEmailsRouter)
+					r.With(middleware.CustomOidcProvidersFeatureMiddleware).
+						Route("/custom-oidc", handlers.CustomOIDCConfigurationsRouter)
 					r.With(middleware.PartnerManagementFeatureMiddleware).
 						Route("/partner-organizations", handlers.PartnerOrganizationsRouter)
-					r.Route("/dashboard", handlers.DashboardRouter)
+					r.With(middleware.UseReadonlyDB).Route("/dashboard", handlers.DashboardRouter)
 					r.Route("/alert-configurations", handlers.AlertConfigurationsRouter)
-					r.Route("/deployment-target-metrics", handlers.DeploymentTargetMetricsRouter)
+					r.With(middleware.UseReadonlyDB).
+						Route("/deployment-target-metrics", handlers.DeploymentTargetMetricsRouter)
 					r.Route("/deployment-targets", handlers.DeploymentTargetsRouter)
 					r.Route("/deployments", handlers.DeploymentsRouter)
 					r.Route("/files", handlers.FileRouter)
-					r.Route("/notification-records", handlers.NotificationRecordsRouter)
+					r.With(middleware.UseReadonlyDB).Route("/notification-records", handlers.NotificationRecordsRouter)
 					r.Route("/organization", handlers.OrganizationRouter)
 					r.Route("/organizations", handlers.OrganizationsRouter)
 					r.Route("/secrets", handlers.SecretsRouter)
@@ -205,7 +220,9 @@ func ApiRouter(
 				r.Group(func(r chiopenapi.Router) {
 					r.Use(
 						middleware.OTEL(tracers.Default()),
-						requestSize1MiB,
+						// Collected resources (up to SUPPORT_BUNDLE_RESOURCE_MAX_BYTES each) can be
+						// sizeable, so allow a larger request body than the default.
+						requestSize10MiB,
 					)
 					r.Route("/support-bundle-collect", handlers.SupportBundleScriptRouter)
 				})
@@ -217,6 +234,21 @@ func ApiRouter(
 func InternalRouter() http.Handler {
 	router := chi.NewRouter()
 	router.Route("/", handlers.InternalRouter)
+	return router
+}
+
+// CaddyAskRouter serves the Caddy on-demand TLS ask endpoint on the internal HTTP server
+// (see env.InternalServerAddr()), which must never be exposed outside the cluster.
+func CaddyAskRouter(logger *zap.Logger, db *pgxpool.Pool) http.Handler {
+	router := chi.NewRouter()
+	router.Use(
+		chimiddleware.Recoverer,
+		chimiddleware.RequestID,
+		middleware.Sentry,
+		middleware.LoggerCtxMiddleware(logger),
+		middleware.ContextInjectorMiddleware(db, nil, nil, nil, nil, nil),
+	)
+	router.Get("/internal/webhook/tls/ask", handlers.TLSAskHandler())
 	return router
 }
 
@@ -232,18 +264,27 @@ func StatusRouter() http.Handler {
 func ReadyRouter(db *pgxpool.Pool) http.Handler {
 	router := chi.NewRouter()
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		var result int
-		err := db.QueryRow(r.Context(), "SELECT 1").Scan(&result)
-		if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		if !isReady(r.Context(), db) {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`{"ready":false}`))
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"ready":true}`))
 	})
 	return router
+}
+
+// isReady reports whether requests can be served. In maintenance mode the instance is never ready,
+// because the frontend probes this endpoint to decide whether to show its maintenance page. The
+// Kubernetes probes target "/" instead, so a maintenance window does not take the pod out of its
+// service and the frontend keeps being served.
+func isReady(ctx context.Context, db *pgxpool.Pool) bool {
+	if env.MaintenanceMode() {
+		return false
+	}
+	var result int
+	return db.QueryRow(ctx, "SELECT 1").Scan(&result) == nil
 }
 
 func PublicRouter(tracers *tracers.Tracers) func(r chiopenapi.Router) {
@@ -251,6 +292,8 @@ func PublicRouter(tracers *tracers.Tracers) func(r chiopenapi.Router) {
 		r.Use(middleware.OTEL(tracers.Default()))
 
 		r.Route("/license-keys", handlers.PublicLicenseKeysRouter)
+		r.Route("/files", handlers.PublicFileRouter)
+		r.Route("/portal", handlers.PublicPortalRouter)
 	}
 }
 

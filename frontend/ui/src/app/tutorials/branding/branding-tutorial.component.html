@@ -1,292 +1,237 @@
-<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-  <div class="mx-auto max-w-screen-lg px-4">
-    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
-      <div class="overflow-x-auto">
-        <app-tutorial-stepper #stepper class="mx-auto max-w-5xl space-y-6 lg:space-y-8">
-          <cdk-step label="Welcome" [stepControl]="welcomeFormGroup">
-            <div class="px-20 py-8 w-full">
-              <h3 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
-                Basic Branding for your Customer Portal
-              </h3>
+<app-page variant="narrow">
+  <div class="distr-table-panel">
+    <div class="overflow-x-auto">
+      <app-tutorial-stepper #stepper class="mx-auto max-w-5xl space-y-6 lg:space-y-8">
+        <cdk-step label="Welcome" [stepControl]="welcomeFormGroup">
+          <div class="px-20 py-8 w-full">
+            <h3 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
+              Basic Branding for your Customer Portal
+            </h3>
 
-              <div class="text-gray-900 dark:text-white mb-12">
-                <p>
-                  Before we can use the customer portal, we need to set it up. This tutorial will guide you through the
-                  process of setting up your Customer Portal and inviting a customer.
-                </p>
-                <p class="mt-8">
-                  You can find additional resources on this topic in our
-                  <a
-                    [href]="websiteUrl + '/docs/product/customer-portal/'"
-                    class="text-primary-600 underline"
-                    target="_blank"
-                    >docs</a
-                  >.
-                </p>
-              </div>
+            <div class="text-gray-900 dark:text-white mb-12">
+              <p>
+                Before we can use the customer portal, we need to set it up. This tutorial will guide you through the
+                process of setting up your Customer Portal and inviting a customer.
+              </p>
+              <p class="mt-8">
+                You can find additional resources on this topic in our
+                <a [href]="customerPortalDocsUrl" class="text-primary-600 underline" target="_blank">docs</a>.
+              </p>
+            </div>
+
+            <div class="gap-4 sm:flex sm:items-center sm:justify-between">
+              <button
+                (click)="navigateToOverviewPage()"
+                type="button"
+                class="distr-btn-secondary flex-1 sm:flex-none inline-flex items-center justify-center w-full sm:w-auto px-5 py-2.5 text-sm font-medium">
+                Exit Tutorial
+              </button>
+              <button
+                (click)="continueFromWelcome()"
+                [disabled]="loading()"
+                type="button"
+                class="distr-btn-primary text-white flex w-full sm:w-auto items-center justify-center">
+                Let's Go
+                <fa-icon class="ml-2" [icon]="faArrowRight" />
+              </button>
+            </div>
+          </div>
+        </cdk-step>
+        <cdk-step label="Branding Options" [stepControl]="brandingFormGroup">
+          <div class="px-8 py-10 w-full">
+            <form [formGroup]="brandingFormGroup" (ngSubmit)="continueFromBranding()">
+              <ol
+                class="ml-4 relative text-gray-900 dark:text-white mb-12 border-s border-gray-200 dark:border-gray-700">
+                <li class="ms-8">
+                  <span
+                    class="absolute flex items-center justify-center size-8 bg-gray-100 dark:bg-gray-700 rounded-full -start-4 ring-4 ring-white dark:ring-gray-800">
+                    <fa-icon [icon]="faLightbulb" />
+                  </span>
+                  <h3 class="text-lg font-medium leading-tight">Branding Options</h3>
+                  <p class="text-sm mt-2">
+                    Imagine you are one of your customers, getting started with self hosting your application: What
+                    would you like to see in your Customer Portal?
+                  </p>
+                  <p class="text-sm mt-2">
+                    Upload your logo and favicon, choose how the portal is named, write a short welcome page and set the
+                    browser tab title. All of this is optional and can be changed later on the
+                    <a [href]="brandingDocsUrl" class="text-primary-600 underline" target="_blank">Branding page</a>,
+                    which also shows your custom domains.
+                  </p>
+
+                  <app-branding-form
+                    class="block mt-8"
+                    [showCustomDomains]="false"
+                    [defaultDescription]="defaultBrandingDescription" />
+                </li>
+              </ol>
 
               <div class="gap-4 sm:flex sm:items-center sm:justify-between">
                 <button
-                  (click)="navigateToOverviewPage()"
-                  class="flex-1 sm:flex-none items-center justify-center w-full rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 sm:w-auto">
-                  Exit Tutorial
+                  cdkStepperPrevious
+                  type="button"
+                  class="distr-btn-secondary flex-1 sm:flex-none inline-flex items-center justify-center w-full sm:w-auto px-5 py-2.5 text-sm font-medium">
+                  Back
                 </button>
                 <button
-                  (click)="continueFromWelcome()"
                   type="submit"
-                  class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
-                  Let's Go
+                  [disabled]="loading()"
+                  class="distr-btn-primary text-white flex w-full sm:w-auto items-center justify-center">
+                  Save and Continue
                   <fa-icon class="ml-2" [icon]="faArrowRight" />
                 </button>
               </div>
-            </div>
-          </cdk-step>
-          <cdk-step label="Branding Options" [stepControl]="brandingFormGroup">
-            <div class="p-8 w-full">
-              <form [formGroup]="brandingFormGroup" (ngSubmit)="continueFromBranding()">
-                <ol
-                  class="ml-4 relative text-gray-900 dark:text-white mb-12 border-s border-gray-200 dark:border-gray-700">
-                  <li class="mb-10 ms-8">
-                    <span
-                      class="absolute flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full -start-4 ring-4 ring-white dark:ring-gray-900 dark:bg-gray-700">
-                      <fa-icon [icon]="faLightbulb" />
-                    </span>
-                    <h3 class="text-lg font-medium leading-tight">Branding Options</h3>
-                    <p class="text-sm mt-2">
-                      Imagine you are one of your customers, getting started with self hosting your application: What
-                      would you like to see in your Customer Portal?
-                    </p>
-                  </li>
-                  <li class="mb-10 ms-8">
-                    <span class="absolute flex items-center justify-center -start-2 mt-0.75">
-                      <input
-                        id="titleDone"
-                        type="checkbox"
-                        [formControl]="brandingFormGroup.controls.titleDone"
-                        class="distr-checkbox" />
-                    </span>
-                    <label for="titleDone" class="text-lg font-medium leading-tight">Set Customer Portal Title</label>
-                    <p class="mt-1 text-sm">The title will be shown in the header next to the logo.</p>
-                    <div class="mt-2">
-                      <input
-                        [formControl]="brandingFormGroup.controls.title"
-                        autotrim
-                        type="text"
-                        name="title"
-                        id="title"
-                        class="distr-input" />
-                      @if (brandingFormGroup.controls.title.touched && brandingFormGroup.controls.title.errors) {
-                        <div class="mt-2 text-sm text-red-500">Please enter this field.</div>
-                      }
-                    </div>
-                  </li>
-                  <li class="mb-10 ms-8">
-                    <span class="absolute flex items-center justify-center -start-2 mt-0.75">
-                      <input
-                        id="descriptionDone"
-                        type="checkbox"
-                        [formControl]="brandingFormGroup.controls.descriptionDone"
-                        class="distr-checkbox" />
-                    </span>
-                    <label for="descriptionDone" class="text-lg font-medium leading-tight"
-                      >Write a short Welcome Page</label
-                    >
-                    <p class="mt-1 text-sm">
-                      This will be shown as the home page for your customers. Markdown is supported.
-                    </p>
-                    <div class="mt-2">
-                      <textarea
-                        [formControl]="brandingFormGroup.controls.description"
-                        type="text"
-                        rows="8"
-                        name="description"
-                        id="description"
-                        class="distr-input">
-                      </textarea>
-                      @if (
-                        brandingFormGroup.controls.description.touched && brandingFormGroup.controls.description.errors
-                      ) {
-                        <div class="mt-2 text-sm text-red-500">Please enter this field.</div>
-                      }
-                    </div>
-                  </li>
-                </ol>
+            </form>
+          </div>
+        </cdk-step>
+        <cdk-step label="Invite Customer" [stepControl]="inviteFormGroup">
+          <div class="p-8 w-full">
+            <form [formGroup]="inviteFormGroup" (ngSubmit)="completeAndExit()">
+              <ol
+                class="ml-4 relative text-gray-900 dark:text-white mb-12 border-s border-gray-200 dark:border-gray-700">
+                <li class="mb-10 ms-8">
+                  <span
+                    class="absolute flex items-center justify-center size-8 bg-gray-100 dark:bg-gray-700 rounded-full -start-4 ring-4 ring-white dark:ring-gray-800">
+                    <fa-icon [icon]="faLightbulb" />
+                  </span>
+                  <h3 class="text-lg font-medium leading-tight">Invite Customer</h3>
+                  <p class="text-sm mt-2">
+                    In this step you will invite a new customer and then log in to the Distr Customer Portal.
+                  </p>
+                </li>
 
-                <div class="gap-4 sm:flex sm:items-center sm:justify-between">
-                  <button
-                    cdkStepperPrevious
-                    class="flex-1 sm:flex-none items-center justify-center w-full rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 sm:w-auto">
-                    Back
-                  </button>
-                  <button
-                    type="submit"
-                    [disabled]="loading()"
-                    class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
-                    @if (brandingFormGroup.dirty) {
-                      Update Branding and Continue
-                    } @else {
-                      Continue
+                <li class="mb-10 ms-8">
+                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                    <input
+                      id="customerOrgDone"
+                      type="checkbox"
+                      [formControl]="inviteFormGroup.controls.customerCreateDone"
+                      class="distr-checkbox" />
+                  </span>
+                  <label for="inviteDone" class="text-lg font-medium leading-tight">Create a customer</label>
+                  <p class="mt-1 text-sm">
+                    A customer is a group of users inside your organization who have access to a shared set of
+                    deployments and cannot create applications or artifacts.
+                  </p>
+                  <div class="mt-2 flex">
+                    <input
+                      [formControl]="inviteFormGroup.controls.customerName"
+                      autotrim
+                      type="text"
+                      name="customerName"
+                      id="customerName"
+                      class="distr-input min-w-0 md:w-108" />
+                    @if (inviteFormGroup.controls.customerName.dirty) {
+                      <button
+                        type="button"
+                        [disabled]="loading()"
+                        (click)="createCustomerOrganization()"
+                        class="distr-btn-primary text-white ml-4 flex items-center justify-center sm:w-auto">
+                        Create
+                      </button>
                     }
-                    <fa-icon class="ml-2" [icon]="faArrowRight" />
-                  </button>
-                </div>
-              </form>
-            </div>
-          </cdk-step>
-          <cdk-step label="Invite Customer" [stepControl]="inviteFormGroup">
-            <div class="p-8 w-full">
-              <form [formGroup]="inviteFormGroup" (ngSubmit)="completeAndExit()">
-                <ol
-                  class="ml-4 relative text-gray-900 dark:text-white mb-12 border-s border-gray-200 dark:border-gray-700">
-                  <li class="mb-10 ms-8">
-                    <span
-                      class="absolute flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full -start-4 ring-4 ring-white dark:ring-gray-900 dark:bg-gray-700">
-                      <fa-icon [icon]="faLightbulb" />
-                    </span>
-                    <h3 class="text-lg font-medium leading-tight">Invite Customer</h3>
-                    <p class="text-sm mt-2">
-                      In this step you will invite a new customer and then log in to the Distr Customer Portal.
-                    </p>
-                  </li>
+                  </div>
+                  @if (inviteFormGroup.controls.customerName.touched && inviteFormGroup.controls.customerName.errors) {
+                    <div class="mt-2 text-sm text-red-500">Please enter name for your customer.</div>
+                  }
+                </li>
 
-                  <li class="mb-10 ms-8">
-                    <span class="absolute flex items-center justify-center -start-2 mt-0.75">
-                      <input
-                        id="customerOrgDone"
-                        type="checkbox"
-                        [formControl]="inviteFormGroup.controls.customerCreateDone"
-                        class="distr-checkbox" />
-                    </span>
-                    <label for="inviteDone" class="text-lg font-medium leading-tight">Create a customer</label>
-                    <p class="mt-1 text-sm">
-                      A customer is a group of users inside your organization who have access to a shared set of
-                      deployments and cannot create applications or artifacts.
-                    </p>
-                    <div class="mt-2 flex">
-                      <input
-                        [formControl]="inviteFormGroup.controls.customerName"
-                        autotrim
-                        type="email"
-                        name="customerName"
-                        id="customerName"
-                        class="md:w-108 bg-gray-50 border border-gray-300 text-sm text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
-                      @if (inviteFormGroup.controls.customerName.dirty) {
-                        <button
-                          type="button"
-                          [disabled]="loading()"
-                          (click)="createCustomerOrganization()"
-                          class="ml-4 flex items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
-                          Create
-                        </button>
-                      }
-                    </div>
-                    @if (
-                      inviteFormGroup.controls.customerName.touched && inviteFormGroup.controls.customerName.errors
-                    ) {
-                      <div class="mt-2 text-sm text-red-500">Please enter name for your customer.</div>
+                <li class="mb-10 ms-8">
+                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                    <input
+                      id="inviteDone"
+                      type="checkbox"
+                      [formControl]="inviteFormGroup.controls.inviteDone"
+                      class="distr-checkbox" />
+                  </span>
+                  <label for="inviteDone" class="text-lg font-medium leading-tight"
+                    >Send the customer invite mail (to yourself)</label
+                  >
+                  <p class="mt-1 text-sm">For the purpose of this tutorial, make sure to send this mail to yourself.</p>
+                  <p class="mt-1 text-sm">
+                    You can either choose another one of your email addresses, but a lot of providers also support
+                    addresses in the form of username+customer&commat;provider.tld, i.e. you might be able to use
+                    {{ emailUsername }}+customer&commat;{{ emailDomain }} and receive it in the same mailbox.
+                  </p>
+                  <div class="mt-2 flex">
+                    <input
+                      [formControl]="inviteFormGroup.controls.customerEmail"
+                      autotrim
+                      type="email"
+                      name="customerEmail"
+                      id="customerEmail"
+                      class="distr-input min-w-0 md:w-108" />
+                    @if (inviteFormGroup.controls.customerEmail.dirty) {
+                      <button
+                        type="button"
+                        [disabled]="loading()"
+                        (click)="sendInviteMail()"
+                        class="distr-btn-primary text-white ml-4 flex items-center justify-center sm:w-auto">
+                        Send Invite Mail
+                      </button>
                     }
-                  </li>
+                  </div>
+                  @if (
+                    inviteFormGroup.controls.customerEmail.touched && inviteFormGroup.controls.customerEmail.errors
+                  ) {
+                    <div class="mt-2 text-sm text-red-500">Please enter a valid email address.</div>
+                  }
+                </li>
 
-                  <li class="mb-10 ms-8">
-                    <span class="absolute flex items-center justify-center -start-2 mt-0.75">
-                      <input
-                        id="inviteDone"
-                        type="checkbox"
-                        [formControl]="inviteFormGroup.controls.inviteDone"
-                        class="distr-checkbox" />
-                    </span>
-                    <label for="inviteDone" class="text-lg font-medium leading-tight"
-                      >Send the customer invite mail (to yourself)</label
-                    >
-                    <p class="mt-1 text-sm">
-                      For the purpose of this tutorial, make sure to send this mail to yourself.
-                    </p>
-                    <p class="mt-1 text-sm">
-                      You can either choose another one of your email addresses, but a lot of providers also support
-                      addresses in the form of username+customer&commat;provider.tld, i.e. you might be able to use
-                      {{ emailUsername }}+customer&commat;{{ emailDomain }} and receive it in the same mailbox.
-                    </p>
-                    <div class="mt-2 flex">
-                      <input
-                        [formControl]="inviteFormGroup.controls.customerEmail"
-                        autotrim
-                        type="email"
-                        name="customerEmail"
-                        id="customerEmail"
-                        class="md:w-108 bg-gray-50 border border-gray-300 text-sm text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
-                      @if (inviteFormGroup.controls.customerEmail.dirty) {
-                        <button
-                          type="button"
-                          [disabled]="loading()"
-                          (click)="sendInviteMail()"
-                          class="ml-4 flex items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
-                          Send Invite Mail
-                        </button>
-                      }
-                    </div>
-                    @if (
-                      inviteFormGroup.controls.customerEmail.touched && inviteFormGroup.controls.customerEmail.errors
-                    ) {
-                      <div class="mt-2 text-sm text-red-500">Please enter a valid email address.</div>
-                    }
-                  </li>
+                <li class="mb-10 ms-8">
+                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                    <input
+                      id="customerConfirmed"
+                      type="checkbox"
+                      [formControl]="inviteFormGroup.controls.customerConfirmed"
+                      class="distr-checkbox" />
+                  </span>
+                  <label for="customerConfirmed" class="text-lg font-medium leading-tight"
+                    >Open the Customer Portal in a different browser</label
+                  >
+                  <p class="mt-1 text-sm">
+                    From the previously sent email invite, open the invite link
+                    <b>in a different browser or in a private window</b>
+                  </p>
+                  <p class="mt-1 text-sm">Please note: You are now mimicking to be a customer.</p>
+                  <p class="mt-1 text-sm">
+                    In the customer portal, you should see the logo, portal name and welcome page you just configured.
+                  </p>
+                  <p class="mt-1 text-sm">When done, mark this checkbox and complete the tutorial.</p>
+                  @if (
+                    inviteFormGroup.controls.inviteDone &&
+                    inviteFormGroup.controls.customerConfirmed.touched &&
+                    inviteFormGroup.controls.customerConfirmed.invalid
+                  ) {
+                    <div class="mt-2 text-sm text-red-500">Please mark this as checked when you are done with it.</div>
+                  }
+                  <div class="mt-2 flex"></div>
+                </li>
+              </ol>
 
-                  <li class="mb-10 ms-8">
-                    <span class="absolute flex items-center justify-center -start-2 mt-0.75">
-                      <input
-                        id="customerConfirmed"
-                        type="checkbox"
-                        [formControl]="inviteFormGroup.controls.customerConfirmed"
-                        class="distr-checkbox" />
-                    </span>
-                    <label for="customerConfirmed" class="text-lg font-medium leading-tight"
-                      >Open the Customer Portal in a different browser</label
-                    >
-                    <p class="mt-1 text-sm">
-                      From the previously sent email invite, open the invite link
-                      <b>in a different browser or in a private window</b>
-                    </p>
-                    <p class="mt-1 text-sm">Please note: You are now mimicking to be a customer.</p>
-                    <p class="mt-1 text-sm">
-                      In the customer portal, you should see the previously chosen title and welcome page.
-                    </p>
-                    <p class="mt-1 text-sm">When done, mark this checkbox and complete the tutorial.</p>
-                    @if (
-                      inviteFormGroup.controls.inviteDone &&
-                      inviteFormGroup.controls.customerConfirmed.touched &&
-                      inviteFormGroup.controls.customerConfirmed.invalid
-                    ) {
-                      <div class="mt-2 text-sm text-red-500">
-                        Please mark this as checked when you are done with it.
-                      </div>
-                    }
-                    <div class="mt-2 flex"></div>
-                  </li>
-                </ol>
-
-                <div class="gap-4 sm:flex sm:items-center sm:justify-between">
-                  <button
-                    cdkStepperPrevious
-                    class="flex-1 sm:flex-none items-center justify-center w-full rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 sm:w-auto">
-                    Back
-                  </button>
-                  <button
-                    [disabled]="loading()"
-                    type="submit"
-                    class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
-                    <fa-icon class="mr-2" [icon]="faCheck" />
-                    @if (progress?.completedAt) {
-                      Done
-                    } @else {
-                      Complete Tutorial
-                    }
-                  </button>
-                </div>
-              </form>
-            </div>
-          </cdk-step>
-        </app-tutorial-stepper>
-      </div>
+              <div class="gap-4 sm:flex sm:items-center sm:justify-between">
+                <button
+                  cdkStepperPrevious
+                  type="button"
+                  class="distr-btn-secondary flex-1 sm:flex-none inline-flex items-center justify-center w-full sm:w-auto px-5 py-2.5 text-sm font-medium">
+                  Back
+                </button>
+                <button
+                  [disabled]="loading()"
+                  type="submit"
+                  class="distr-btn-primary text-white flex w-full sm:w-auto items-center justify-center">
+                  <fa-icon class="mr-2" [icon]="faCheck" />
+                  @if (progress?.completedAt) {
+                    Done
+                  } @else {
+                    Complete Tutorial
+                  }
+                </button>
+              </div>
+            </form>
+          </div>
+        </cdk-step>
+      </app-tutorial-stepper>
     </div>
   </div>
-</section>
+</app-page>

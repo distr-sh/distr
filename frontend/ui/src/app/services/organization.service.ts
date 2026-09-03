@@ -8,6 +8,7 @@ import {
   Organization,
   OrganizationWithUserRole,
 } from '../types/organization';
+import {isPayingSubscription} from '../types/subscription';
 import {ContextService} from './context.service';
 
 @Injectable({
@@ -24,18 +25,9 @@ export class OrganizationService {
     this.contextService.getOrganization()
   ).pipe(shareReplay(1));
 
-  public readonly hasNoSubscription = toSignal(
-    this.organization$.pipe(
-      map(
-        (org) =>
-          !(
-            org.subscriptionType === 'starter' ||
-            org.subscriptionType === 'pro' ||
-            org.subscriptionType === 'enterprise'
-          )
-      )
-    ),
-    {initialValue: false}
+  public readonly hasSubscription = toSignal(
+    this.organization$.pipe(map((org) => isPayingSubscription(org.subscriptionType))),
+    {initialValue: true}
   );
 
   public readonly isSubscriptionExpired = toSignal(this.organization$.pipe(map(isSubscriptionExpired)), {

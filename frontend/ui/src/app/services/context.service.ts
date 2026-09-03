@@ -12,6 +12,8 @@ interface ContextResponse {
   partnerOrganization?: PartnerOrganization;
   sidebarLinks?: SidebarLink[];
   availableContexts?: OrganizationWithUserRole[];
+  registryHost?: string;
+  canCreateOrganization: boolean;
 }
 
 /**
@@ -62,6 +64,15 @@ export class ContextService {
 
   public getSidebarLinks(): Observable<SidebarLink[]> {
     return this.cache.pipe(map((ctx) => ctx.sidebarLinks ?? []));
+  }
+
+  /** The effective registry host of the organization, considering custom domains and legacy branding domains. */
+  public getRegistryHost(): Observable<string | undefined> {
+    return this.cache.pipe(map((ctx) => ctx.registryHost));
+  }
+
+  public canCreateOrganization(): Observable<boolean> {
+    return this.cache.pipe(map((ctx) => ctx.canCreateOrganization));
   }
 
   public reload() {

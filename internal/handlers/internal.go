@@ -23,6 +23,7 @@ func getFrontendEnvironmentHandler() http.HandlerFunc {
 		PosthogAPIHost        *string  `json:"posthogApiHost,omitempty"`
 		PosthogUIHost         *string  `json:"posthogUiHost,omitempty"`
 		RegistryHost          string   `json:"registryHost"`
+		CustomDomainTarget    *string  `json:"customDomainTarget,omitempty"`
 	}{
 		SentryDSN:             env.FrontendSentryDSN(),
 		SentryEnvironment:     env.SentryEnvironment(),
@@ -31,6 +32,7 @@ func getFrontendEnvironmentHandler() http.HandlerFunc {
 		PosthogAPIHost:        env.FrontendPosthogAPIHost(),
 		PosthogUIHost:         env.FrontendPosthogUIHost(),
 		RegistryHost:          env.RegistryHost(),
+		CustomDomainTarget:    env.CustomDomainTarget(),
 	}))
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

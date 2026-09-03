@@ -1,0 +1,236 @@
+---
+import {getCollection, render} from 'astro:content';
+import {marked} from 'marked';
+import Layout from '~/layouts/StarlightLayout.astro';
+import SignUpCta from '~/components/cta/standalone/SignUpCta.astro';
+import TestimonialsSection from '~/components/home/TestimonialsSection.astro';
+import FAQ from '~/components/common/FAQ.astro';
+import type {CraGuideConfig} from '~/content.config';
+import type {StarlightPageProps} from '@astrojs/starlight/components/StarlightPage.astro';
+import '~/styles/cra.css';
+
+export async function getStaticPaths() {
+  const guides = await getCollection('cra');
+  return guides.map(guide => ({
+    params: {slug: guide.data.slug},
+    props: {guide},
+  }));
+}
+
+const {guide} = Astro.props;
+const {Content} = await render(guide);
+const {title, description, slug, publishDate, lastUpdated, faq} =
+  guide.data as CraGuideConfig;
+
+// Previous and next guide, based on the hub order.
+const allGuides = (await getCollection('cra')).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+const guideIndex = allGuides.findIndex(g => g.data.slug === slug);
+const previousGuide = guideIndex > 0 ? allGuides[guideIndex - 1] : undefined;
+const nextGuide =
+  guideIndex < allGuides.length - 1 ? allGuides[guideIndex + 1] : undefined;
+
+const faqRendered =
+  faq?.map(({question, answer}) => ({
+    question,
+    answer: marked.parseInline(answer) as string,
+  })) ?? [];
+
+const canonicalUrl = new URL(
+  `/cyber-resilience-act/${slug}/`,
+  Astro.site,
+).toString();
+const hubUrl = new URL('/cyber-resilience-act/', Astro.site).toString();
+const ldJson = (obj: unknown) => JSON.stringify(obj).replace(/</g, '\\u003c');
+
+const head: StarlightPageProps['frontmatter']['head'] = [
+  {
+    tag: 'script',
+    attrs: {type: 'application/ld+json'},
+    content: ldJson({
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: title,
+      description,
+      url: canonicalUrl,
+      datePublished: publishDate.toISOString().split('T')[0],
+      dateModified: lastUpdated.toISOString().split('T')[0],
+      isPartOf: {
+        '@type': 'WebPage',
+        name: 'Cyber Resilience Act Compliance for Software Vendors',
+        url: hubUrl,
+      },
+      author: {
+        '@type': 'Organization',
+        name: 'Distr',
+        url: 'https://distr.sh',
+      },
+    }),
+  },
+  {
+    tag: 'script',
+    attrs: {type: 'application/ld+json'},
+    content: ldJson({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Cyber Resilience Act',
+          item: hubUrl,
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: title,
+          item: canonicalUrl,
+        },
+      ],
+    }),
+  },
+];
+
+const formatDate = (date: Date) =>
+  new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(date));
+---
+
+<Layout title={title} description={description} head={head}>
+  <section class="py-8 sm:py-12 mx-auto">
+    <article class="max-w-3xl mx-auto px-6 sm:px-8">
+      <!-- Back to hub button -->
+      <div class="mb-8 text-center">
+        <a
+          href="/cyber-resilience-act/"
+          class="inline-flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors no-underline">
+          <svg
+            class="w-4 h-4 mr-1"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M15 19l-7-7 7-7"></path></svg
+          >
+          Cyber Resilience Act
+        </a>
+      </div>
+
+      <header class="mb-12 text-center">
+        <!-- Title -->
+        <h1
+          class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 dark:text-white mb-3 leading-tight">
+          {title}
+        </h1>
+
+        <!-- Description -->
+        <p
+          class="text-lg sm:text-xl text-gray-600 dark:text-gray-400 sm:mb-16 mb-8 leading-relaxed max-w-3xl mx-auto mt-8">
+          {description}
+        </p>
+
+        <!-- Meta information row -->
+        <div
+          class="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm text-gray-600 dark:text-gray-400 pb-8 border-b border-gray-200 dark:border-gray-800 max-w-3xl mx-auto">
+          <span class="flex items-center gap-1">
+            <svg
+              class="w-4 h-4 mr-1"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              ><path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg
+            >
+            Last verified: {formatDate(lastUpdated)}
+          </span>
+          <time
+            datetime={publishDate.toISOString()}
+            class="mt-2 sm:mt-0 self-start">
+            {formatDate(publishDate)}
+          </time>
+        </div>
+      </header>
+
+      <!-- Article content: Starlight's sl-markdown-content typography
+           (headings, tables, lists) for consistency with the docs. -->
+      <div class="sl-markdown-content guide-content">
+        <Content />
+      </div>
+
+      <footer
+        class="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800 text-center">
+        <a
+          href="/cyber-resilience-act/"
+          class="inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 no-underline">
+          <svg
+            class="w-4 h-4 mr-1"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M15 19l-7-7 7-7"></path></svg
+          >
+          All Cyber Resilience Act guides
+        </a>
+      </footer>
+    </article>
+  </section>
+
+  {/* Previous / next guide */}
+  <section class="py-8">
+    <div class="max-w-3xl mx-auto px-6 sm:px-8">
+      <div class="grid gap-4 sm:grid-cols-2">
+        {
+          previousGuide ? (
+            <a
+              href={`/cyber-resilience-act/${previousGuide.data.slug}/`}
+              class="group block p-5 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 transition-all duration-200 hover:shadow-lg no-underline">
+              <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Previous
+              </span>
+              <span class="mt-1 block font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                {previousGuide.data.title}
+              </span>
+            </a>
+          ) : (
+            <div />
+          )
+        }
+        {
+          nextGuide && (
+            <a
+              href={`/cyber-resilience-act/${nextGuide.data.slug}/`}
+              class="group block p-5 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 transition-all duration-200 hover:shadow-lg no-underline sm:text-right sm:col-start-2">
+              <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Next
+              </span>
+              <span class="mt-1 block font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                {nextGuide.data.title}
+              </span>
+            </a>
+          )
+        }
+      </div>
+    </div>
+  </section>
+  {
+    faqRendered.length > 0 && (
+      <FAQ faqs={faqRendered} bgClass="bg-gray-50 dark:bg-gray-800" />
+    )
+  }
+  <SignUpCta bgClass="bg-[var(--sl-color-bg)]" />
+  <TestimonialsSection />
+</Layout>

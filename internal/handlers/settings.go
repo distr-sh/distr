@@ -9,6 +9,7 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authjwt"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/custommail"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/middleware"
@@ -32,20 +33,41 @@ func SettingsRouter(r chiopenapi.Router) {
 			With(option.Request(api.UpdateUserAccountRequest{})).
 			With(option.Response(http.StatusOK, types.UserAccount{}))
 
-		r.Post("/email", userSettingsUpdateEmailHandler()).
+		r.With(middleware.BlockCredentialChange).
+			Post("/email", userSettingsUpdateEmailHandler()).
 			With(option.Description("Update current user email address")).
 			With(option.Request(api.UpdateUserAccountEmailRequest{})).
 			With(option.Response(http.StatusAccepted, nil))
+
+		r.Route("/oidc-identities", func(r chiopenapi.Router) {
+			type OIDCIdentityIDRequest struct {
+				OIDCIdentityID uuid.UUID `path:"oidcIdentityId"`
+			}
+
+			r.Get("/", getOIDCIdentitiesHandler).
+				With(option.Description("List the identity provider accounts connected to the current user")).
+				With(option.Response(http.StatusOK, []api.UserAccountOIDCIdentity{}))
+
+			r.With(middleware.BlockCredentialChange).
+				Delete("/{oidcIdentityId}", deleteOIDCIdentityHandler).
+				With(option.Description("Disconnect an identity provider account from the current user")).
+				With(option.Request(OIDCIdentityIDRequest{}))
+		})
 	})
 
 	r.Route("/mfa", func(r chiopenapi.Router) {
 		r.WithOptions(option.GroupTags("Security"))
 
-		r.Post("/setup", mfaSetupHandler).
+		// Enrollment is gated because it needs no password and would hand whoever performs it a second
+		// factor the account's owner does not have. Disabling MFA and regenerating the recovery codes
+		// verify the password, which is proof of ownership on its own.
+		r.With(middleware.BlockCredentialChange).
+			Post("/setup", mfaSetupHandler).
 			With(option.Description("Setup a new TOTP secret for the current user. MFA must still be enabled afterwards")).
 			With(option.Response(http.StatusOK, api.SetupMFAResponse{}))
 
-		r.Post("/enable", mfaEnableHandler).
+		r.With(middleware.BlockCredentialChange).
+			Post("/enable", mfaEnableHandler).
 			With(option.Description("Enable MFA for the current user and receive recovery codes")).
 			With(option.Request(api.EnableMFARequest{})).
 			With(option.Response(http.StatusOK, api.EnableMFAResponse{}))
@@ -105,6 +127,12 @@ func userSettingsUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Only the password is a credential change; the name and the image stay available to every session.
+	if body.Password != nil && auth.OrganizationScoped() {
+		http.Error(w, middleware.CredentialChangeBlockedMessage, http.StatusForbidden)
+		return
+	}
+
 	user := auth.CurrentUser()
 	isUpdateNeeded := false
 
@@ -148,7 +176,6 @@ func userSettingsUpdateHandler(w http.ResponseWriter, r *http.Request) {
 func userSettingsUpdateEmailHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		mailer := internalctx.GetMailer(ctx)
 		log := internalctx.GetLogger(ctx)
 		auth := auth.Authentication.Require(ctx)
 		user := auth.CurrentUser()
@@ -189,19 +216,19 @@ func userSettingsUpdateEmailHandler() http.HandlerFunc {
 		}
 		user.Email = oldEmail
 
-		branding, err := db.GetOrganizationBranding(ctx, *auth.CurrentOrgID())
-		if err != nil && !errors.Is(err, apierrors.ErrNotFound) {
-			log.Error("failed to get organization branding", zap.Error(err))
+		mailer, err := custommail.MailerForOrganization(ctx, *auth.CurrentOrgID())
+		if err != nil {
+			log.Error("failed to resolve mailer for email change", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		owb := types.OrganizationWithBranding{Organization: *auth.CurrentOrg(), Branding: branding}
+		owb := *auth.CurrentOrgWithBranding()
 		if err := mailer.Send(ctx,
 			mailx.To(body.Email),
 			mailx.Subject("[Action required] Distr E-Mail address change"),
-			mailx.HtmlBodyTemplate(mailtemplates.UpdateEmail(*user, owb, token)),
+			mailx.HtmlBodyTemplate(mailtemplates.UpdateEmail(ctx, *user, owb, auth.CurrentCustomerOrgID(), token)),
 		); err != nil {
 			log.Error("failed to send email verification", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)

@@ -6,16 +6,18 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"slices"
 	"sync"
 	"time"
 
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/licensekey"
 	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/go-viper/mapstructure/v2"
-	"github.com/lestrrat-go/jwx/v3/jwa"
-	"github.com/lestrrat-go/jwx/v3/jwk"
-	"github.com/lestrrat-go/jwx/v3/jwt"
+	"github.com/lestrrat-go/jwx/v4/jwa"
+	"github.com/lestrrat-go/jwx/v4/jwk"
+	"github.com/lestrrat-go/jwx/v4/jwt"
 )
 
 var (
@@ -39,11 +41,35 @@ var (
 			return nil, err
 		}
 
-		return jwk.ParseKey(rawPubKey, jwk.WithPEM(true))
+		return jwk.ParseKey(rawPubKey, jwk.WithX509(true))
 	})
 )
 
 const licenseDataClaimName = "ld"
+
+var (
+	// organizationID, when set at build time via -ldflags, restricts this build to license
+	// keys that were issued for the given Distr organization. When empty, organization
+	// scoping is disabled and any otherwise valid license key is accepted.
+	organizationID string
+
+	// organizationScopeCutoff, when set at build time via -ldflags, is a yyyy-mm-dd date.
+	// Only license keys with an "issued at" claim newer than this date are validated
+	// against organizationID; keys issued at or before it are exempt for backwards
+	// compatibility with license keys minted before organization scoping was introduced.
+	organizationScopeCutoff string
+)
+
+var cachedOrgScopeCutoff = sync.OnceValues(func() (time.Time, error) {
+	if organizationScopeCutoff == "" {
+		return time.Time{}, nil
+	}
+	t, err := time.Parse(time.DateOnly, organizationScopeCutoff)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid organization scope cutoff %q: %w", organizationScopeCutoff, err)
+	}
+	return t, nil
+})
 
 // LicenseData is the parsed private claims from the license key JWT.
 type LicenseData struct {
@@ -52,15 +78,28 @@ type LicenseData struct {
 	// Global limits
 	MaxOrganizations limit.Limit              `mapstructure:"mo"`
 	Period           types.SubscriptionPeriod `mapstructure:"p"`
+	SubscriptionType types.SubscriptionType   `mapstructure:"t"`
 
-	// Limits for organizations with subscription type Enterprise
+	// Limits of every organization on an instance that enforces the limits of its license key
 	MaxUsersPerOrganization                     limit.Limit `mapstructure:"mou"`
 	MaxCustomersPerOrganization                 limit.Limit `mapstructure:"moc"`
 	MaxUsersPerCustomerOrganization             limit.Limit `mapstructure:"mcu"`
 	MaxDeploymentTargetsPerCustomerOrganization limit.Limit `mapstructure:"mcd"`
-	MaxLogExportRows                            limit.Limit `mapstructure:"mlr"`
+	MaxRegistryStorageBytes                     limit.Limit `mapstructure:"mrs"`
 
 	ExpirationDate time.Time
+}
+
+// Plan is the subscription every organization of the instance is on when the license key
+// enforces its limits.
+func (ld LicenseData) Plan() types.SubscriptionPlan {
+	return types.SubscriptionPlan{
+		Type:                    ld.SubscriptionType,
+		Period:                  ld.Period,
+		EndsAt:                  ld.ExpirationDate,
+		CustomerOrganizationQty: ld.MaxCustomersPerOrganization,
+		UserAccountQty:          ld.MaxUsersPerOrganization,
+	}
 }
 
 var (
@@ -68,12 +107,13 @@ var (
 	defaultLicenseData = LicenseData{
 		EnforceLimitsOnStartup:                      false,
 		Period:                                      types.SubscriptionPeriodYearly,
+		SubscriptionType:                            types.SubscriptionTypeEnterprise,
 		MaxOrganizations:                            limit.Unlimited,
 		MaxUsersPerOrganization:                     limit.Unlimited,
 		MaxCustomersPerOrganization:                 limit.Unlimited,
 		MaxUsersPerCustomerOrganization:             limit.Unlimited,
 		MaxDeploymentTargetsPerCustomerOrganization: limit.Unlimited,
-		MaxLogExportRows:                            1_000_000,
+		MaxRegistryStorageBytes:                     limit.Unlimited,
 	}
 )
 
@@ -111,14 +151,27 @@ func parseAndValidate(pubKeySrc func() (jwk.Key, error), licenseKey string) (*Li
 		return nil, fmt.Errorf("invalid license key: %w", err)
 	}
 
-	var licenseDataMap map[string]any
-	if err := token.Get(licenseDataClaimName, &licenseDataMap); err != nil {
+	cutoff, err := cachedOrgScopeCutoff()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := validateOrganizationScope(token, organizationID, cutoff); err != nil {
+		return nil, err
+	}
+
+	licenseDataMap, err := jwt.Get[map[string]any](token, licenseDataClaimName)
+	if err != nil {
 		return nil, fmt.Errorf("invalid license key: %w", err)
 	}
 
 	licenseData := defaultLicenseData
 	if err := mapstructure.Decode(licenseDataMap, &licenseData); err != nil {
 		return nil, fmt.Errorf("invalid license key: %w", err)
+	}
+
+	if !slices.Contains(types.AllSubscriptionTypes(), licenseData.SubscriptionType) {
+		return nil, fmt.Errorf("invalid license key: unknown subscription type %q", licenseData.SubscriptionType)
 	}
 
 	if exp, ok := token.Expiration(); !ok {
@@ -128,4 +181,27 @@ func parseAndValidate(pubKeySrc func() (jwk.Key, error), licenseKey string) (*Li
 	}
 
 	return &licenseData, nil
+}
+
+// validateOrganizationScope ensures the license key was issued for the organization this build
+// is licensed to. It is a noop when no organization ID was configured at build time or when the
+// license key was issued at or before the configured cutoff (i.e. before organization scoping
+// was introduced).
+func validateOrganizationScope(token jwt.Token, expectedOrgID string, cutoff time.Time) error {
+	if expectedOrgID == "" {
+		return nil
+	}
+
+	issuedAt, ok := token.IssuedAt()
+	if !ok || !issuedAt.After(cutoff) {
+		return nil
+	}
+
+	if orgID, err := jwt.Get[string](token, licensekey.OrganizationIDClaimName); err != nil {
+		return fmt.Errorf("invalid license key: missing organization ID claim")
+	} else if orgID != expectedOrgID {
+		return fmt.Errorf("invalid license key: organization ID mismatch")
+	}
+
+	return nil
 }
