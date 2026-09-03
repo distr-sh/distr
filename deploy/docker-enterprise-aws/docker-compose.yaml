@@ -8,7 +8,7 @@ x-logging: &default-logging
 
 # This stack runs the hub against an externally managed database and S3 compatible
 # object storage, both configured through .env. If you want a self-contained stack
-# that brings its own postgres and object storage, use deploy/docker-enterprise-all-in-one.
+# that brings its own postgres and object storage, use deploy/docker.
 services:
   # Caddy terminates TLS and automatically obtains/renews certificates for the
   # distr app and registry hostnames via ACME. It only joins the "proxy" network
@@ -82,7 +82,10 @@ services:
   # It runs in monolithic (single-binary) mode and persists chunks + TSDB index in
   # the LOKI_S3_BUCKET bucket of the external object storage, which has to exist
   # before the stack is started.
-  # Loki only joins the private "internal" network and is not reachable from outside.
+  # Loki is not reachable from outside, since it publishes no port. It needs the
+  # "egress" network in addition to "internal": a container attached only to an
+  # internal network has no default route, which leaves Docker's embedded resolver
+  # unable to forward queries and makes the bucket hostname unresolvable.
   loki:
     image: 'grafana/loki:3.7.7'
     command: ['-config.file=/etc/loki/distr-config.yaml']
@@ -93,6 +96,7 @@ services:
       - 'loki:/loki'
     networks:
       - internal
+      - egress
     restart: always
     logging: *default-logging
 
@@ -128,12 +132,12 @@ configs:
 
       storage_config:
         aws:
-          endpoint: ${REGISTRY_S3_ENDPOINT}
-          region: ${REGISTRY_S3_REGION}
-          access_key_id: ${REGISTRY_S3_ACCESS_KEY_ID}
-          secret_access_key: ${REGISTRY_S3_SECRET_ACCESS_KEY}
+          endpoint: ${LOKI_S3_ENDPOINT}
+          region: ${LOKI_S3_REGION}
+          access_key_id: ${LOKI_S3_ACCESS_KEY_ID}
+          secret_access_key: ${LOKI_S3_SECRET_ACCESS_KEY}
           bucketnames: ${LOKI_S3_BUCKET}
-          s3forcepathstyle: ${REGISTRY_S3_USE_PATH_STYLE}
+          s3forcepathstyle: ${LOKI_S3_USE_PATH_STYLE}
 
       compactor:
         retention_enabled: true
@@ -161,6 +165,9 @@ networks:
   # Private network for the hub and loki. caddy is intentionally not attached here.
   internal:
     internal: true
+  # Outbound-only network that gives loki a route to the object storage. The hub
+  # reaches it through "proxy" instead.
+  egress:
 
 volumes:
   loki:
