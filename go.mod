@@ -50,7 +50,7 @@ require (
 	github.com/samber/slog-zap/v2 v2.7.0
 	github.com/shirou/gopsutil/v4 v4.26.8
 	github.com/spf13/cobra v1.10.2
-	github.com/stripe/stripe-go/v86 v86.4.0
+	github.com/stripe/stripe-go/v86 v86.4.1
 	go.opentelemetry.io/collector/component v1.65.0
 	go.opentelemetry.io/collector/confmap v1.65.0
 	go.opentelemetry.io/collector/consumer v1.65.0
