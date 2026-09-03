@@ -93,8 +93,8 @@ CREATE INDEX idx_advisory_event_user_account_id
 -- security advisories today and will cover vulnerability scan logs later.
 ALTER TYPE FEATURE ADD VALUE IF NOT EXISTS 'vulnerabilities';
 
--- Enterprise organizations are reconciled on startup, Business ones only once their Stripe
--- subscription next changes, which is why they are granted the feature here.
+-- The plans that grant the feature, matching FeaturesForSubscriptionType. Without this they
+-- would only receive it once their subscription is reconciled the next time.
 UPDATE Organization
   SET features = array_append(features, 'vulnerabilities')
-  WHERE subscription_type = 'business' AND NOT 'vulnerabilities' = any(features);
+  WHERE subscription_type IN ('business', 'enterprise') AND NOT 'vulnerabilities' = any(features);
