@@ -147,6 +147,10 @@ export class CustomerOrganizationsComponent {
       ? this.partnerOrganizationsService.getPartnerOrganizations()
       : of([])
   );
+  // The key is optional because the lookup key is a customer's optional partnerOrganizationId.
+  protected readonly partnerNamesById = computed(
+    () => new Map<string | undefined, string>((this.partnerOrganizations() ?? []).map((p) => [p.id, p.name]))
+  );
 
   private readonly partnerAssignDialog = viewChild.required<TemplateRef<unknown>>('partnerAssignDialog');
   private partnerAssignModalRef?: DialogRef;
@@ -317,13 +321,6 @@ export class CustomerOrganizationsComponent {
 
   protected hideCustomerFeaturesDropdown(): void {
     this.openCustomerFeaturesDropdownId.set(undefined);
-  }
-
-  protected getPartnerName(partnerId: string | undefined): string | undefined {
-    if (!partnerId) {
-      return undefined;
-    }
-    return this.partnerOrganizations()?.find((p) => p.id === partnerId)?.name;
   }
 
   protected showPartnerAssignDialog(customer: CustomerOrganization) {

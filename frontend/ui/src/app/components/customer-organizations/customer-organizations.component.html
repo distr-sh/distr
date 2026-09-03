@@ -111,7 +111,7 @@
               </td>
               @if (auth.isVendor() && featureFlags.isPartnerManagementEnabled()) {
                 <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  @if (getPartnerName(customer.partnerOrganizationId); as name) {
+                  @if (partnerNamesById().get(customer.partnerOrganizationId); as name) {
                     {{ name }}
                   } @else {
                     <span class="text-gray-500">–</span>

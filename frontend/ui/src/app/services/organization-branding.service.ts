@@ -1,7 +1,7 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {OrganizationBranding} from '@distr-sh/distr-sdk';
-import {BehaviorSubject, Observable, of, tap} from 'rxjs';
+import {BehaviorSubject, catchError, Observable, of, shareReplay, tap, throwError} from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -16,14 +16,29 @@ export class OrganizationBrandingService {
   /** Emits the current organization branding and every subsequent change (load or save). */
   readonly branding$ = this.brandingSubject.asObservable();
 
+  private inFlight?: Observable<OrganizationBranding>;
+
   get(): Observable<OrganizationBranding> {
     const cached = this.brandingSubject.value;
     if (cached) {
       return of(cached);
     }
-    return this.httpClient
-      .get<OrganizationBranding>(this.organizationBrandingUrl)
-      .pipe(tap((branding) => this.brandingSubject.next(branding)));
+    // Callers on the same page (the navbar and the page it renders) subscribe before the first response arrives,
+    // so the request itself has to be shared and not just its result.
+    if (!this.inFlight) {
+      this.inFlight = this.httpClient.get<OrganizationBranding>(this.organizationBrandingUrl).pipe(
+        tap((branding) => {
+          this.inFlight = undefined;
+          this.brandingSubject.next(branding);
+        }),
+        catchError((err) => {
+          this.inFlight = undefined;
+          return throwError(() => err);
+        }),
+        shareReplay({bufferSize: 1, refCount: false})
+      );
+    }
+    return this.inFlight;
   }
 
   upsert(organizationBranding: OrganizationBranding): Observable<OrganizationBranding> {
