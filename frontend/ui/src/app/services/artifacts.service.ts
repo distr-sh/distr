@@ -16,21 +16,6 @@ export interface ArtifactUser {
   avatarUrl: string;
 }
 
-export interface VulnerabilitySeverity {
-  type: 'CVSS_V2' | 'CVSS_V3' | 'CVSS_V4';
-  score: string;
-}
-
-/**
- * From https://ossf.github.io/osv-schema/
- *
- * Severity calculator: https://www.first.org/cvss/calculator/4.0
- */
-export interface Vulnerability {
-  id: string;
-  severity: VulnerabilitySeverity[];
-}
-
 export interface BaseArtifact {
   id: string;
   name: string;
@@ -60,12 +45,9 @@ export interface Artifact extends BaseArtifact, HasDownloads {
 export interface TaggedArtifactVersion extends HasDownloads {
   id: string;
   digest: string;
-  sbom?: string;
   createdAt: string;
   size: number;
   tags: {name: string; downloads: HasDownloads}[];
-  vulnerabilities: Vulnerability[];
-  lastScannedAt?: string;
   imageUrl?: string;
   inferredType: 'generic' | 'container-image' | 'helm-chart' | 'signature';
 }

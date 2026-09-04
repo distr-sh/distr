@@ -42,6 +42,42 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 ---
 
+### createAdvisory()
+
+> **createAdvisory**(`request`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+#### Parameters
+
+##### request
+
+[`CreateUpdateAdvisoryRequest`](../interfaces/CreateUpdateAdvisoryRequest.md)
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+---
+
+### createAdvisoryComment()
+
+> **createAdvisoryComment**(`advisoryId`, `request`): `Promise`\<[`AdvisoryEvent`](../interfaces/AdvisoryEvent.md)\>
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+##### request
+
+[`CreateAdvisoryCommentRequest`](../interfaces/CreateAdvisoryCommentRequest.md)
+
+#### Returns
+
+`Promise`\<[`AdvisoryEvent`](../interfaces/AdvisoryEvent.md)\>
+
+---
+
 ### createApplication()
 
 > **createApplication**(`application`): `Promise`\<[`Application`](../interfaces/Application.md)\>
@@ -114,6 +150,66 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 ---
 
+### getAdvisories()
+
+> **getAdvisories**(`filter?`): `Promise`\<[`Advisory`](../interfaces/Advisory.md)[]\>
+
+#### Parameters
+
+##### filter?
+
+[`AdvisoryFilter`](../interfaces/AdvisoryFilter.md) = `{}`
+
+#### Returns
+
+`Promise`\<[`Advisory`](../interfaces/Advisory.md)[]\>
+
+---
+
+### getAdvisory()
+
+> **getAdvisory**(`advisoryId`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+---
+
+### getAdvisoryImpact()
+
+> **getAdvisoryImpact**(`advisoryId`): `Promise`\<[`AdvisoryImpact`](../interfaces/AdvisoryImpact.md)\>
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+#### Returns
+
+`Promise`\<[`AdvisoryImpact`](../interfaces/AdvisoryImpact.md)\>
+
+---
+
+### getAdvisoryTags()
+
+> **getAdvisoryTags**(): `Promise`\<`string`[]\>
+
+Spans undisclosed advisories and is therefore available to the vendor organization only.
+
+#### Returns
+
+`Promise`\<`string`[]\>
+
+---
+
 ### getApplication()
 
 > **getApplication**(`applicationId`): `Promise`\<[`Application`](../interfaces/Application.md)\>
@@ -183,6 +279,46 @@ The low-level Distr API client. Each method represents on API endpoint.
 #### Returns
 
 `Promise`\<[`DeploymentTarget`](../interfaces/DeploymentTarget.md)[]\>
+
+---
+
+### patchAdvisory()
+
+> **patchAdvisory**(`advisoryId`, `request`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+##### request
+
+[`PatchAdvisoryRequest`](../interfaces/PatchAdvisoryRequest.md)
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+---
+
+### updateAdvisory()
+
+> **updateAdvisory**(`advisoryId`, `request`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+##### request
+
+[`CreateUpdateAdvisoryRequest`](../interfaces/CreateUpdateAdvisoryRequest.md)
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
 
 ---
 

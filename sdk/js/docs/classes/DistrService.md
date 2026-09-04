@@ -40,6 +40,44 @@ Strategy for determining the latest version of an application (default: 'semver'
 
 ## Methods
 
+### commentOnAdvisory()
+
+> **commentOnAdvisory**(`advisoryId`, `content`): `Promise`\<[`AdvisoryEvent`](../interfaces/AdvisoryEvent.md)\>
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+##### content
+
+`string`
+
+#### Returns
+
+`Promise`\<[`AdvisoryEvent`](../interfaces/AdvisoryEvent.md)\>
+
+---
+
+### createAdvisory()
+
+> **createAdvisory**(`request`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+Without an explicit status the advisory starts in `triage`.
+
+#### Parameters
+
+##### request
+
+[`CreateUpdateAdvisoryRequest`](../interfaces/CreateUpdateAdvisoryRequest.md)
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+---
+
 ### createDeployment()
 
 > **createDeployment**(`params`): `Promise`\<[`CreateDeploymentResult`](../type-aliases/CreateDeploymentResult.md)\>
@@ -161,6 +199,61 @@ Creates a new application version for the given Kubernetes application using a H
 
 ---
 
+### getAdvisories()
+
+> **getAdvisories**(`filter?`): `Promise`\<[`Advisory`](../interfaces/Advisory.md)[]\>
+
+Customers and partners only ever receive published and resolved advisories that mark an
+affected version, and a customer only those affecting a version they deployed or are
+entitled to.
+
+#### Parameters
+
+##### filter?
+
+[`AdvisoryFilter`](../interfaces/AdvisoryFilter.md) = `{}`
+
+#### Returns
+
+`Promise`\<[`Advisory`](../interfaces/Advisory.md)[]\>
+
+---
+
+### getAdvisory()
+
+> **getAdvisory**(`advisoryId`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+---
+
+### getAdvisoryImpact()
+
+> **getAdvisoryImpact**(`advisoryId`): `Promise`\<[`AdvisoryImpact`](../interfaces/AdvisoryImpact.md)\>
+
+Returns who deployed or pulled an affected version: every customer for a vendor, their own
+customers for a partner and only their own deployments and pulls for a customer.
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+#### Returns
+
+`Promise`\<[`AdvisoryImpact`](../interfaces/AdvisoryImpact.md)\>
+
+---
+
 ### getLatestVersion()
 
 > **getLatestVersion**(`appId`): `Promise`\<[`ApplicationVersion`](../interfaces/ApplicationVersion.md) \| `undefined`\>
@@ -218,6 +311,68 @@ Returns results for all deployments on the target. Each result contains versions
 #### Returns
 
 `Promise`\<[`IsOutdatedResult`](../type-aliases/IsOutdatedResult.md)\>
+
+---
+
+### setAdvisorySeverity()
+
+> **setAdvisorySeverity**(`advisoryId`, `severity`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+##### severity
+
+[`AdvisorySeverity`](../type-aliases/AdvisorySeverity.md)
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+---
+
+### setAdvisoryStatus()
+
+> **setAdvisoryStatus**(`advisoryId`, `status`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+`published` and `resolved` make the advisory visible to the customers it affects.
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+##### status
+
+[`AdvisoryStatus`](../type-aliases/AdvisoryStatus.md)
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+---
+
+### updateAdvisory()
+
+> **updateAdvisory**(`advisoryId`, `request`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+##### request
+
+[`CreateUpdateAdvisoryRequest`](../interfaces/CreateUpdateAdvisoryRequest.md)
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
 
 ---
 

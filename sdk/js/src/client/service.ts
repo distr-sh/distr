@@ -1,8 +1,16 @@
 import semver from 'semver/preload';
 import {
+  Advisory,
+  AdvisoryDetail,
+  AdvisoryEvent,
+  AdvisoryFilter,
+  AdvisoryImpact,
+  AdvisorySeverity,
+  AdvisoryStatus,
   Application,
   ApplicationVersion,
   ApplicationVersionResource,
+  CreateUpdateAdvisoryRequest,
   DeploymentRequest,
   DeploymentTarget,
   DeploymentTargetAccessResponse,
@@ -414,5 +422,48 @@ export class DistrService {
         }
       });
     return {app, newerVersions};
+  }
+
+  /**
+   * Customers and partners only ever receive published and resolved advisories that mark an
+   * affected version, and a customer only those affecting a version they deployed or are
+   * entitled to.
+   */
+  public async getAdvisories(filter: AdvisoryFilter = {}): Promise<Advisory[]> {
+    return this.client.getAdvisories(filter);
+  }
+
+  public async getAdvisory(advisoryId: string): Promise<AdvisoryDetail> {
+    return this.client.getAdvisory(advisoryId);
+  }
+
+  /**
+   * Returns who deployed or pulled an affected version: every customer for a vendor, their own
+   * customers for a partner and only their own deployments and pulls for a customer.
+   */
+  public async getAdvisoryImpact(advisoryId: string): Promise<AdvisoryImpact> {
+    return this.client.getAdvisoryImpact(advisoryId);
+  }
+
+  /** Without an explicit status the advisory starts in `triage`. */
+  public async createAdvisory(request: CreateUpdateAdvisoryRequest): Promise<AdvisoryDetail> {
+    return this.client.createAdvisory(request);
+  }
+
+  public async updateAdvisory(advisoryId: string, request: CreateUpdateAdvisoryRequest): Promise<AdvisoryDetail> {
+    return this.client.updateAdvisory(advisoryId, request);
+  }
+
+  /** `published` and `resolved` make the advisory visible to the customers it affects. */
+  public async setAdvisoryStatus(advisoryId: string, status: AdvisoryStatus): Promise<AdvisoryDetail> {
+    return this.client.patchAdvisory(advisoryId, {status});
+  }
+
+  public async setAdvisorySeverity(advisoryId: string, severity: AdvisorySeverity): Promise<AdvisoryDetail> {
+    return this.client.patchAdvisory(advisoryId, {severity});
+  }
+
+  public async commentOnAdvisory(advisoryId: string, content: string): Promise<AdvisoryEvent> {
+    return this.client.createAdvisoryComment(advisoryId, {content});
   }
 }

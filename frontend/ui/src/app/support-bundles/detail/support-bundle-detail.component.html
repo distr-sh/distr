@@ -11,9 +11,7 @@
           <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
             {{ bundle.title || 'Support Bundle ' + shortId(bundle.id) }}
           </h1>
-          <span
-            class="ml-3 text-xs font-medium px-2.5 py-0.5 rounded-full capitalize"
-            [ngClass]="statusClass(bundle.status)">
+          <span class="ml-3 distr-status-badge capitalize" [ngClass]="statusBadgeClass(bundle.status)">
             {{ bundle.status }}
           </span>
         </div>
@@ -123,55 +121,13 @@
       }
     </div>
 
-    <div class="distr-panel">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        <fa-icon [icon]="faComment" class="mr-2 text-gray-500 dark:text-gray-400" />
-        Comments ({{ bundle.comments.length }})
-      </h2>
-
-      @if (bundle.comments.length === 0) {
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">No comments yet.</p>
-      } @else {
-        <div class="space-y-4 mb-6">
-          @for (comment of bundle.comments; track comment.id) {
-            <div class="flex gap-3">
-              <app-avatar [image]="comment.userImageUrl" [name]="comment.userName" class="size-8 rounded-full" />
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="text-sm font-medium text-gray-900 dark:text-white">{{ comment.userName }}</span>
-                  <span class="text-xs text-gray-500 dark:text-gray-500">{{ comment.createdAt | date: 'medium' }}</span>
-                </div>
-                <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ comment.content }}</p>
-              </div>
-            </div>
-          }
-        </div>
-      }
-
-      <!-- New comment form -->
-      @if (auth.hasAnyRole('read_write', 'admin')) {
-        <form
-          [formGroup]="commentForm"
-          (ngSubmit)="submitComment()"
-          class="border-t border-gray-200 dark:border-gray-700 pt-4">
-          <div class="flex gap-3">
-            <textarea
-              formControlName="content"
-              rows="3"
-              placeholder="Write a comment..."
-              class="flex-1 distr-input"></textarea>
-          </div>
-          <div class="flex justify-end mt-3">
-            <button
-              type="submit"
-              [disabled]="submittingComment()"
-              class="inline-flex items-center py-2 px-4 text-sm font-medium text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 rounded-lg dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
-              <fa-icon [icon]="faPaperPlane" class="mr-2" />
-              Submit
-            </button>
-          </div>
-        </form>
-      }
-    </div>
+    <app-activity-timeline
+      [entries]="timelineEntries()"
+      heading="Comments ({{ bundle.comments.length }})"
+      [icon]="faComment"
+      emptyText="No comments yet."
+      [canComment]="auth.hasAnyRole('read_write', 'admin')"
+      [submitting]="submittingComment()"
+      (commentSubmitted)="submitComment($event)" />
   }
 </app-page>

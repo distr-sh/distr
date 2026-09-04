@@ -74,9 +74,7 @@
                     <td class="px-4 py-3">{{ bundle.customerOrganizationName }}</td>
                   }
                   <td class="px-4 py-3">
-                    <span
-                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
-                      [ngClass]="statusBadgeClass(bundle.status)">
+                    <span class="distr-status-badge capitalize" [ngClass]="statusBadgeClass(bundle.status)">
                       {{ bundle.status }}
                     </span>
                   </td>

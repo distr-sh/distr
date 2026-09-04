@@ -70,6 +70,7 @@ Key internal packages:
 - `internal/middleware/`: HTTP middleware (logging, auth, Sentry, etc.)
 - `internal/svc/`: Business logic services
 - `internal/mapping/`: Mapping logic for data transformations between DTOs and domain models
+- `internal/advisory/`: Storage-independent security advisory rules, most importantly the customer visibility predicate
 - `api/`: All request structs used by HTTP handlers should be in the api package and not in the handler package
 
 ### Frontend Architecture (Angular)
@@ -100,6 +101,7 @@ The database schema is managed through SQL migrations in `internal/migrations/sq
 - `applications`: Artifact collections
 - `licensekey`: License keys that vendors can generate for its customers
 - `application_entitlements` & `artifact_entitlements`: Access entitlements for applications and artifacts
+- `advisory`: Security advisories a vendor tracks and discloses, with link tables for tags, references, affected/fixed versions, and an append-only event timeline
 
 This database stores timestamps as `TIMESTAMP` (without time zone), not `TIMESTAMPTZ`.
 
@@ -169,6 +171,8 @@ The website is a separate pnpm project with its own Prettier config; the root co
 - Use reactive forms for all form handling
 - Use as little `undefined` types as possible, always use the actual type
 - Don't use any svg path icons, always look for a matching icon in the icon library used. These icons should always be the same in the import, the component and template e.g. `faServer` and not `serverIcon`.
+  This applies to CSS too: never hand-write an inline SVG or an `url("data:image/svg+xml,...")` background, not even to restyle a browser or Flowbite default.
+- Before inventing a new pattern for a shared control, look at how the same control is already used elsewhere and reuse that. The indeterminate "select all" checkbox, for example, needs nothing beyond `distr-checkbox`; the sizing and centering of the dash is already handled there.
 - Use [Angular Signals](https://angular.dev/guide/signals) for inputs, child views and everywhere where the current Angular version supports signals.
   If you find usages of non signal usages for inputs, child views etc. change them to signals in the files you would edit anyway.
 - Don't use any responsive design classes in modals. They should always be optimized for the none mobile use case.
@@ -186,10 +190,12 @@ The website is a separate pnpm project with its own Prettier config; the root co
   </ng-container>
   ```
 
-- Reuse the shared global `distr-*` component classes defined in `frontend/ui/src/styles/theme.scss` (e.g. `distr-input`, `distr-checkbox`, `distr-radio`, `distr-label`) instead of repeating their Tailwind utility chains inline, and add a new one there when an element's styling is repeated across the app. Append only element-specific extra utilities when needed (e.g. `class="distr-checkbox indeterminate:bg-[length:65%_65%]"`). Express a state that Tailwind has a variant for through that variant in the shared class (`disabled:`, `read-only:`) rather than through a utility at the call site, so every instance behaves the same. A variant class such as `distr-input-raised` has to be defined below the class it overrides, since both live in `@layer components` where source order decides.
+- Reuse the shared global `distr-*` component classes defined in `frontend/ui/src/styles/theme.scss` (e.g. `distr-input`, `distr-checkbox`, `distr-radio`, `distr-label`) instead of repeating their Tailwind utility chains inline, and add a new one there when an element's styling is repeated across the app. Append only element-specific extra utilities when needed (e.g. a `distr-checkbox` with `indeterminate:bg-[length:65%_65%]`). Express a state that Tailwind has a variant for through that variant in the shared class (`disabled:`, `read-only:`) rather than through a utility at the call site, so every instance behaves the same. A variant class such as `distr-input-raised` has to be defined below the class it overrides, since both live in `@layer components` where source order decides. Keep in mind that Tailwind scans this file too, so any class name written here is emitted into the stylesheet: prefer describing a class to pasting a full `class="..."` attribute.
 - Styling that a component always needs, no matter where it is used, belongs on the component itself via `host: {class: '…'}` (e.g. `app-search-bar`, `app-editor`), not repeated on every tag in the templates of its callers. Leave only what varies per call site in the template.
 - Styling used by a single component belongs to that component's `component-name.component.scss`, not to `theme.scss`. Tailwind compiles every component stylesheet on its own, so `@apply` there needs `@reference '<path>/styles/tailwind.css'` (the Tailwind entry point, which holds the `@theme` tokens and the `dark` variant) as the first line of the file. Without it the build fails with `Cannot apply unknown utility class`. Keep that entry point plain CSS, since `@reference` cannot read Sass. Prefer the `.scss` file over an inline `styles` block: Tailwind scans `.ts` files for class names, so utilities that appear only inside an inline `@apply` are also emitted into the global stylesheet, where nothing uses them.
 - Never build a map of Tailwind utility chains in the component class to pick a variant at runtime; put the variants into the stylesheet.
+- Every badge uses one of the shared badge classes: `distr-status-badge` for anything that shows a state, with the colors of that state (including a `border-*`) supplied by a color helper next to the feature, `distr-tag-badge` for a free-form label such as a tag, and `distr-deployment-type-badge` or `distr-artifact-tag` for those two specific labels. They all share the bordered, slightly rounded shape, so do not write a new pill inline.
+- When a state a badge shows can also be set, use `app-badge-select` rather than a row of buttons or a separate `<select>`, so that the value and the control changing it are the same element. It emits the picked value instead of writing it, so the caller sends the request and passes back what the server returned.
 
 ### Database Access
 
@@ -291,6 +297,7 @@ Do not write a comment that:
 - Restates the code or the name below it, including doc comments on self-explanatory types, fields, functions and env getters. A getter named after the value it returns needs no comment saying that it returns that value.
 - Explains the change you are making, why it is correct, or what was there before. That belongs in the commit message or the pull request description, not in the code.
 - Narrates a step of an obvious sequence (`// send the request`, `// parse the response`).
+- Explains a styling or layout choice in a template, or a language detail a reader of that language already knows.
 - Repeats what the documentation, a rule in this file, or a linked ticket already says.
 
 Do write a comment when it records something a reader cannot see:

@@ -59,6 +59,9 @@ func (reg *Registry) createDBPoolFor(ctx context.Context, url string, maxConns *
 		return nil, err
 	}
 	config.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+		// Every custom type used as a query parameter or scanned into a Go value needs a codec
+		// here, otherwise pgx cannot encode it for the OID the server deduced. An array type is
+		// resolved through its element type, so the `_`-prefixed names must follow theirs.
 		typeNames := []string{
 			"DEPLOYMENT_TYPE",
 			"USER_ROLE",
@@ -78,6 +81,12 @@ func (reg *Registry) createDBPoolFor(ctx context.Context, url string, maxConns *
 			"_OIDC_PROVIDER",
 			"OIDC_FLOW",
 			"_OIDC_FLOW",
+			"ADVISORY_STATUS",
+			"_ADVISORY_STATUS",
+			"ADVISORY_SEVERITY",
+			"_ADVISORY_SEVERITY",
+			"ADVISORY_VERSION_RELATION",
+			"ADVISORY_EVENT_TYPE",
 		}
 		for _, typeName := range typeNames {
 			if pgType, err := conn.LoadType(ctx, typeName); err != nil {

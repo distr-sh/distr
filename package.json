@@ -47,7 +47,6 @@
     "@fortawesome/free-regular-svg-icons": "^7.3.1",
     "@fortawesome/free-solid-svg-icons": "^7.3.1",
     "@lezer/highlight": "^1.2.3",
-    "@pandatix/js-cvss": "^0.4.4",
     "@sentry/angular": "^10.68.0",
     "@sentry/browser": "^10.68.0",
     "dayjs": "^1.11.21",

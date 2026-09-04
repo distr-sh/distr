@@ -1,7 +1,6 @@
 import {DatePipe, NgClass} from '@angular/common';
-import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, signal, viewChild} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
@@ -11,35 +10,29 @@ import {
   faChevronRight,
   faComment,
   faDownload,
-  faPaperPlane,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
-import {AvatarComponent} from '../../components/avatar.component';
+import {
+  ActivityTimelineComponent,
+  ActivityTimelineEntry,
+} from '../../components/activity-timeline/activity-timeline.component';
 import {ClipComponent} from '../../components/clip.component';
 import {PageComponent} from '../../components/page.component';
 import {AuthService} from '../../services/auth.service';
 import {OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService, supportBundleZipFileName} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
-import {SupportBundleDetail, SupportBundleStatus} from '../../types/support-bundle';
+import {SupportBundleDetail} from '../../types/support-bundle';
+import {supportBundleStatusBadgeClass} from '../support-bundle-display';
 
 @Component({
   selector: 'app-support-bundle-detail',
   templateUrl: './support-bundle-detail.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [
-    DatePipe,
-    NgClass,
-    ReactiveFormsModule,
-    RouterLink,
-    FaIconComponent,
-    ClipComponent,
-    AvatarComponent,
-    PageComponent,
-  ],
+  imports: [DatePipe, NgClass, RouterLink, FaIconComponent, ClipComponent, ActivityTimelineComponent, PageComponent],
 })
 export class SupportBundleDetailComponent {
   private readonly route = inject(ActivatedRoute);
@@ -54,8 +47,10 @@ export class SupportBundleDetailComponent {
   protected readonly faCheck = faCheck;
   protected readonly faComment = faComment;
   protected readonly faDownload = faDownload;
-  protected readonly faPaperPlane = faPaperPlane;
   protected readonly faXmark = faXmark;
+  protected readonly statusBadgeClass = supportBundleStatusBadgeClass;
+
+  private readonly timeline = viewChild(ActivityTimelineComponent);
 
   protected readonly bundle = signal<SupportBundleDetail | undefined>(undefined);
   protected readonly expandedResources = signal(new Set<string>());
@@ -63,9 +58,16 @@ export class SupportBundleDetailComponent {
   protected readonly submittingComment = signal(false);
   protected readonly downloading = signal(false);
 
-  protected readonly commentForm = new FormGroup({
-    content: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
-  });
+  protected readonly timelineEntries = computed<ActivityTimelineEntry[]>(() =>
+    (this.bundle()?.comments ?? []).map((comment) => ({
+      id: comment.id,
+      createdAt: comment.createdAt,
+      userName: comment.userName,
+      userImageUrl: comment.userImageUrl,
+      action: 'commented',
+      body: comment.content,
+    }))
+  );
 
   private readonly refresh$ = new Subject<void>();
 
@@ -106,21 +108,6 @@ export class SupportBundleDetailComponent {
 
   protected isResourceExpanded(resourceId: string): boolean {
     return this.expandedResources().has(resourceId);
-  }
-
-  protected statusClass(status: SupportBundleStatus): string {
-    switch (status) {
-      case 'initialized':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-      case 'created':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-      case 'resolved':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-      case 'canceled':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
-      default:
-        return '';
-    }
   }
 
   protected shortId(id: string): string {
@@ -200,23 +187,15 @@ export class SupportBundleDetailComponent {
     }
   }
 
-  protected async submitComment(): Promise<void> {
-    this.commentForm.markAllAsTouched();
-    if (!this.commentForm.valid) {
-      return;
-    }
+  protected async submitComment(content: string): Promise<void> {
     const bundle = this.bundle();
     if (!bundle) {
       return;
     }
     this.submittingComment.set(true);
     try {
-      await firstValueFrom(
-        this.supportBundlesService.createComment(bundle.id, {
-          content: this.commentForm.controls.content.value,
-        })
-      );
-      this.commentForm.reset();
+      await firstValueFrom(this.supportBundlesService.createComment(bundle.id, {content}));
+      this.timeline()?.reset();
       this.refresh$.next();
     } catch (e) {
       const msg = getFormDisplayedError(e);
