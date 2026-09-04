@@ -6,7 +6,53 @@ x-logging: &default-logging
     max-size: '10m'
     max-file: '3'
 
+# Self-contained community edition stack for a single public VM. It brings its own
+# postgres and object storage, and caddy terminates TLS for the app and registry
+# hostnames configured in .env. For a paid plan, use deploy/docker/enterprise.
 services:
+  # Caddy terminates TLS and automatically obtains/renews certificates for the
+  # distr app and registry hostnames via ACME. It only joins the "proxy" network
+  # and therefore has no route to postgres or the storage (rustfs) service.
+  caddy:
+    image: 'caddy:2.11.4-alpine'
+    depends_on:
+      - hub
+    environment:
+      DISTR_APP_HOSTNAME: ${DISTR_APP_HOSTNAME}
+      DISTR_REGISTRY_HOSTNAME: ${DISTR_REGISTRY_HOSTNAME}
+      CADDY_ACME_EMAIL: ${CADDY_ACME_EMAIL}
+    # The Caddyfile is written inline on startup instead of being mounted, because
+    # the distr agent does not support mounting files via volumes. The hostnames and
+    # ACME email remain Caddy env placeholders ({$VAR}) that are resolved at runtime.
+    entrypoint:
+      - sh
+      - -c
+      - |
+        cat > /etc/caddy/Caddyfile <<'EOF'
+        {
+        	email {$$CADDY_ACME_EMAIL}
+        }
+
+        {$$DISTR_APP_HOSTNAME} {
+        	reverse_proxy hub:8080
+        }
+
+        {$$DISTR_REGISTRY_HOSTNAME} {
+        	reverse_proxy hub:8585
+        }
+        EOF
+        exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+    volumes:
+      - 'caddy_data:/data'
+      - 'caddy_config:/config'
+    ports:
+      - '80:80'
+      - '443:443'
+    networks:
+      - proxy
+    restart: always
+    logging: *default-logging
+
   postgres:
     image: 'postgres:18.6-alpine3.23'
     environment:
@@ -15,6 +61,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - 'postgres:/var/lib/postgresql/'
+    networks:
+      - internal
     restart: always
     logging: *default-logging
     healthcheck:
@@ -36,16 +84,21 @@ services:
         condition: service_started
     # The hub runs as a nonroot user (UID 65532), but a freshly created named volume
     # is owned by root, so this init container fixes ownership of the scratch volume
-    # before the hub starts. It requires Docker Compose >= 5.3.0, see
-    # https://distr.sh/docs/self-hosting/docker/ for a one-shot service alternative.
+    # before the hub starts. It requires Docker Compose >= 5.3.0.
     pre_start:
       - image: 'busybox:1.38.0'
         command: ['chown', '65532:65532', '/scratch']
     env_file:
       - .env
-    ports:
-      - '8080:8080'
-      - '8585:8585'
+    # No ports are exposed on the host. The hub is only reachable through the
+    # caddy reverse proxy on the "proxy" network.
+    networks:
+      - proxy
+      - internal
+    # The scratch volume backs REGISTRY_SCRATCH_DIR, where the OCI registry buffers
+    # request bodies to temp files instead of holding them in memory.
+    volumes:
+      - 'scratch:/scratch'
     restart: always
     logging: *default-logging
 
@@ -59,6 +112,8 @@ services:
     environment:
       RUSTFS_ACCESS_KEY: ${REGISTRY_S3_ACCESS_KEY_ID}
       RUSTFS_SECRET_KEY: ${REGISTRY_S3_SECRET_ACCESS_KEY}
+    networks:
+      - internal
     restart: always
     logging: *default-logging
     healthcheck:
@@ -73,8 +128,8 @@ services:
   # Loki stores deployment and deployment target log records (30 days retention).
   # It runs in monolithic (single-binary) mode and persists chunks + TSDB index in the
   # "loki" bucket of the storage (rustfs) service. The bucket is created by a pre_start
-  # init container, which requires Docker Compose >= 5.3.0. If you cannot upgrade yet,
-  # see https://distr.sh/docs/self-hosting/docker/ for a one-shot service alternative.
+  # init container, which requires Docker Compose >= 5.3.0.
+  # Loki only joins the private "internal" network and is not reachable from outside.
   loki:
     image: 'grafana/loki:3.7.7'
     command: ['-config.file=/etc/loki/distr-config.yaml']
@@ -83,6 +138,8 @@ services:
         target: /etc/loki/distr-config.yaml
     volumes:
       - 'loki:/loki'
+    networks:
+      - internal
     depends_on:
       storage:
         condition: service_healthy
@@ -157,8 +214,18 @@ configs:
         ingestion_rate_mb: 16
         ingestion_burst_size_mb: 32
 
+networks:
+  # Public-facing network shared by caddy and the hub only.
+  proxy:
+  # Private network for the hub and its backing services (database, storage).
+  # caddy is intentionally not attached here.
+  internal:
+    internal: true
+
 volumes:
   postgres:
   rustfs:
   loki:
+  caddy_data:
+  caddy_config:
   scratch:

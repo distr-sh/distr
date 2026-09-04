@@ -6,13 +6,14 @@ x-logging: &default-logging
     max-size: '10m'
     max-file: '3'
 
-# This stack runs the hub against an externally managed database and S3 compatible
-# object storage, both configured through .env. If you want a self-contained stack
-# that brings its own postgres and object storage, use deploy/docker.
+# Self-contained enterprise edition stack for a single public VM: deploy/docker/community
+# with the enterprise image, which unlocks the plan its LICENSE_KEY was issued for. It
+# brings its own postgres and object storage, which is what the enterprise-aws and
+# enterprise-gcp stacks replace with managed services.
 services:
   # Caddy terminates TLS and automatically obtains/renews certificates for the
   # distr app and registry hostnames via ACME. It only joins the "proxy" network
-  # and therefore has no route to the loki service.
+  # and therefore has no route to postgres or the storage (rustfs) service.
   caddy:
     image: 'caddy:2.11.4-alpine'
     depends_on:
@@ -43,7 +44,8 @@ services:
         EOF
         exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
     volumes:
-      - 'caddy:/data'
+      - 'caddy_data:/data'
+      - 'caddy_config:/config'
     ports:
       - '80:80'
       - '443:443'
@@ -52,15 +54,38 @@ services:
     restart: always
     logging: *default-logging
 
+  postgres:
+    image: 'postgres:18.6-alpine3.23'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - 'postgres:/var/lib/postgresql/'
+    networks:
+      - internal
+    restart: always
+    logging: *default-logging
+    healthcheck:
+      test: pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+      start_interval: 1s
+      interval: 5s
+      retries: 6
+      start_period: 30s
+
   hub:
-    image: registry.distr.sh/enterprise/distr-ee:3.4.1 # x-release-please-version
+    image: registry.distr.sh/enterprise/distr-ee:3.4.2 # x-release-please-version
     depends_on:
+      postgres:
+        condition: service_healthy
+      # Remove when using an external S3 provider
+      storage:
+        condition: service_healthy
       loki:
         condition: service_started
     # The hub runs as a nonroot user (UID 65532), but a freshly created named volume
     # is owned by root, so this init container fixes ownership of the scratch volume
-    # before the hub starts. It requires Docker Compose >= 5.3.0, see
-    # https://distr.sh/docs/self-hosting/docker/ for a one-shot service alternative.
+    # before the hub starts. It requires Docker Compose >= 5.3.0.
     pre_start:
       - image: 'busybox:1.38.0'
         command: ['chown', '65532:65532', '/scratch']
@@ -78,14 +103,34 @@ services:
     restart: always
     logging: *default-logging
 
+  # The OCI registry of distr can use any S3 compatible storage to store OCI images.
+  # If you don't want to use the OCI registry (REGISTRY_ENABLED=false) or want to use an external S3 provider,
+  # you don't need to run the storage service.
+  storage:
+    image: 'rustfs/rustfs:1.0.0-beta.8'
+    volumes:
+      - 'rustfs:/data/'
+    environment:
+      RUSTFS_ACCESS_KEY: ${REGISTRY_S3_ACCESS_KEY_ID}
+      RUSTFS_SECRET_KEY: ${REGISTRY_S3_SECRET_ACCESS_KEY}
+    networks:
+      - internal
+    restart: always
+    logging: *default-logging
+    healthcheck:
+      # Production strict TLS example (SAN/FQDN aligned, no `-k`):
+      # curl -f --cacert /opt/tls/ca.crt --resolve rustfs-a.example.com:9000:127.0.0.1 https://rustfs-a.example.com:9000/health
+      test: ['CMD', 'sh', '-c', 'curl -f http://127.0.0.1:9000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   # Loki stores deployment and deployment target log records (30 days retention).
-  # It runs in monolithic (single-binary) mode and persists chunks + TSDB index in
-  # the LOKI_S3_BUCKET bucket of the external object storage, which has to exist
-  # before the stack is started.
-  # Loki is not reachable from outside, since it publishes no port. It needs the
-  # "egress" network in addition to "internal": a container attached only to an
-  # internal network has no default route, which leaves Docker's embedded resolver
-  # unable to forward queries and makes the bucket hostname unresolvable.
+  # It runs in monolithic (single-binary) mode and persists chunks + TSDB index in the
+  # "loki" bucket of the storage (rustfs) service. The bucket is created by a pre_start
+  # init container, which requires Docker Compose >= 5.3.0.
+  # Loki only joins the private "internal" network and is not reachable from outside.
   loki:
     image: 'grafana/loki:3.7.7'
     command: ['-config.file=/etc/loki/distr-config.yaml']
@@ -96,7 +141,18 @@ services:
       - 'loki:/loki'
     networks:
       - internal
-      - egress
+    depends_on:
+      storage:
+        condition: service_healthy
+    pre_start:
+      - image: 'rclone/rclone:1.74.4'
+        environment:
+          RCLONE_CONFIG_STORAGE_TYPE: s3
+          RCLONE_CONFIG_STORAGE_PROVIDER: Other
+          RCLONE_CONFIG_STORAGE_ENDPOINT: 'http://storage:9000'
+          RCLONE_CONFIG_STORAGE_ACCESS_KEY_ID: '${REGISTRY_S3_ACCESS_KEY_ID}'
+          RCLONE_CONFIG_STORAGE_SECRET_ACCESS_KEY: '${REGISTRY_S3_SECRET_ACCESS_KEY}'
+        command: ['mkdir', 'storage:loki']
     restart: always
     logging: *default-logging
 
@@ -132,12 +188,12 @@ configs:
 
       storage_config:
         aws:
-          endpoint: ${LOKI_S3_ENDPOINT}
-          region: ${LOKI_S3_REGION}
-          access_key_id: ${LOKI_S3_ACCESS_KEY_ID}
-          secret_access_key: ${LOKI_S3_SECRET_ACCESS_KEY}
-          bucketnames: ${LOKI_S3_BUCKET}
-          s3forcepathstyle: ${LOKI_S3_USE_PATH_STYLE}
+          endpoint: http://storage:9000
+          region: local
+          access_key_id: ${REGISTRY_S3_ACCESS_KEY_ID}
+          secret_access_key: ${REGISTRY_S3_SECRET_ACCESS_KEY}
+          bucketnames: loki
+          s3forcepathstyle: true
 
       compactor:
         retention_enabled: true
@@ -162,14 +218,15 @@ configs:
 networks:
   # Public-facing network shared by caddy and the hub only.
   proxy:
-  # Private network for the hub and loki. caddy is intentionally not attached here.
+  # Private network for the hub and its backing services (database, storage).
+  # caddy is intentionally not attached here.
   internal:
     internal: true
-  # Outbound-only network that gives loki a route to the object storage. The hub
-  # reaches it through "proxy" instead.
-  egress:
 
 volumes:
+  postgres:
+  rustfs:
   loki:
-  caddy:
+  caddy_data:
+  caddy_config:
   scratch:

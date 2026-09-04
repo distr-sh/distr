@@ -1,6 +1,6 @@
 ---
 title: System Requirements
-description: Distr is written in Go and highly resource efficient. Learn about the required software and recommended resources for self-hosting the Hub, the registry, and the all-in-one Docker Compose setup.
+description: Distr is written in Go and highly resource efficient. Learn about the recommended resources for self-hosting the Hub, the registry and the log processing backend, and what to plan for in production.
 sidebar:
   label: System Requirements
   order: 1
@@ -10,17 +10,11 @@ Distr is written in [Go](https://go.dev/) and highly resource efficient.
 Our hosted offering serves thousands of requests every second with just two app servers at **30 MB / 50m CPU** each and a PostgreSQL database at **1 GB / 200m CPU** (excluding read replicas).
 This means you can run a self-hosted Distr instance comfortably on modest hardware.
 
+This page covers how much hardware to plan for. The software each deployment method needs is listed with the method itself, on the [Docker Compose](/docs/self-hosting/docker/) and [Kubernetes](/docs/self-hosting/kubernetes/) pages.
+
 :::tip
 CPU values on this page use the Kubernetes notation of CPU millicores (`m`), where `1000m` equals one full CPU core. So `50m` means 5% of a single core and `200m` means 20% of a single core.
 :::
-
-## Required software
-
-To run the all-in-one [Docker Compose](/docs/self-hosting/docker/) setup you need:
-
-- **Docker Engine** ≥ v29
-- **Docker Compose** ≥ v5.3 (the `docker compose` plugin; the log processing setup uses `pre_start` lifecycle hooks introduced in v5.3.0)
-- **curl** (to download the deployment manifest)
 
 ## Average resource consumption
 

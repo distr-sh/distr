@@ -12,7 +12,8 @@ The free and open source Community Edition is the perfect option to try Distr lo
 Distr comes as a statically compiled Go binary, packaged as a container image and has minimal dependencies:
 
 - A PostgreSQL database
-- An S3 compatible object storage (only if you want to use the Distr artifacts registry)
+- Loki for log processing
+- Two S3 compatible object storage buckets for registry blobs and log chunks
 
 Before you get started, review the [System Requirements](/docs/self-hosting/system-requirements/) to make sure your environment is sized correctly.
 
@@ -32,3 +33,8 @@ The guides in this section describe the Community Edition.
 
 Every plan can also be self-hosted, with the same feature set as on Distr Cloud (see [Choosing a Plan](/docs/subscription/)).
 A license key unlocks your plan in your own environment, so [get in touch](/contact/) if you are interested.
+
+The reference setups for a paid plan on [AWS](/docs/self-hosting/docker/#distr-on-aws) and
+[GCP](/docs/self-hosting/docker/#distr-on-gcp) run the Hub against a managed database and object storage,
+either with [Docker Compose](/docs/self-hosting/docker/#running-in-production) or the
+[Helm chart](/docs/self-hosting/kubernetes/#running-in-production).

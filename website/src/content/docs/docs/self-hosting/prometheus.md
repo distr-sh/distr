@@ -21,7 +21,7 @@ The metrics endpoint is configured via environment variables:
 ### Docker Compose
 
 An example configuration can be found in
-[`github.com/distr-sh/distr/deploy/docker`](https://github.com/distr-sh/distr/blob/main/deploy/docker/.env):
+[`github.com/distr-sh/distr/deploy/docker/quickstart`](https://github.com/distr-sh/distr/blob/main/deploy/docker/quickstart/.env):
 
 ```dotenv
 METRICS_ENABLED=true

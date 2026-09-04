@@ -8,7 +8,7 @@ x-logging: &default-logging
 
 # This stack runs the hub against an externally managed database and S3 compatible
 # object storage, both configured through .env. If you want a self-contained stack
-# that brings its own postgres and object storage, use deploy/docker.
+# that brings its own postgres and object storage, use deploy/docker/enterprise.
 services:
   # Caddy terminates TLS and automatically obtains/renews certificates for the
   # distr app and registry hostnames via ACME. It only joins the "proxy" network
@@ -53,14 +53,13 @@ services:
     logging: *default-logging
 
   hub:
-    image: registry.distr.sh/enterprise/distr-ee:3.4.1 # x-release-please-version
+    image: registry.distr.sh/enterprise/distr-ee:3.4.2 # x-release-please-version
     depends_on:
       loki:
         condition: service_started
     # The hub runs as a nonroot user (UID 65532), but a freshly created named volume
     # is owned by root, so this init container fixes ownership of the scratch volume
-    # before the hub starts. It requires Docker Compose >= 5.3.0, see
-    # https://distr.sh/docs/self-hosting/docker/ for a one-shot service alternative.
+    # before the hub starts. It requires Docker Compose >= 5.3.0.
     pre_start:
       - image: 'busybox:1.38.0'
         command: ['chown', '65532:65532', '/scratch']
@@ -124,19 +123,24 @@ configs:
         configs:
           - from: "2024-01-01"
             store: tsdb
-            object_store: gcs
+            object_store: s3
             schema: v13
             index:
               prefix: index_
               period: 24h
 
       storage_config:
-        gcs:
-          bucket_name: ${LOKI_GCS_BUCKET_NAME}
+        aws:
+          endpoint: ${LOKI_S3_ENDPOINT}
+          region: ${LOKI_S3_REGION}
+          access_key_id: ${LOKI_S3_ACCESS_KEY_ID}
+          secret_access_key: ${LOKI_S3_SECRET_ACCESS_KEY}
+          bucketnames: ${LOKI_S3_BUCKET}
+          s3forcepathstyle: ${LOKI_S3_USE_PATH_STYLE}
 
       compactor:
         retention_enabled: true
-        delete_request_store: gcs
+        delete_request_store: s3
         working_directory: /loki/compactor
 
       limits_config:

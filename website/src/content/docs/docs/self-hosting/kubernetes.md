@@ -1,13 +1,17 @@
 ---
 title: Kubernetes
-description: Deploy Distr in your Kubernetes cluster using our Helm chart with built-in PostgreSQL and RustFS storage.
+description: Deploy Distr in your Kubernetes cluster with our Helm chart, from a local test install with bundled PostgreSQL and RustFS to production values for EKS on AWS and GKE on GCP.
 sidebar:
   label: Kubernetes
   order: 3
 ---
 
 Distr is available as a [Helm chart](/glossary/helm-chart/) distributed via ghcr.io.
-To install Distr in [Kubernetes](/glossary/kubernetes/), simply run:
+Every setting mentioned on this page is documented in the chart's reference [values.yaml](https://artifacthub.io/packages/helm/distr/distr?modal=values).
+
+## Trying it out locally
+
+To install Distr in [Kubernetes](/glossary/kubernetes/) with its dependencies bundled, run:
 
 ```shell
 helm upgrade --install --wait --namespace distr --create-namespace \
@@ -15,8 +19,239 @@ helm upgrade --install --wait --namespace distr --create-namespace \
   --set postgresql.enabled=true --set rustfs.enabled=true
 ```
 
-For a quick testing setup, you don't have to modify the values. However, if you intend to use distr in production, please revisit all available configuration values and adapt them accordingly.
-You can find them in the reference [values.yaml](https://artifacthub.io/packages/helm/distr/distr?modal=values) file.
+This deploys the Hub together with PostgreSQL, the RustFS object storage and Loki, so you don't have to modify any values to get a working instance.
+Both bundled dependencies keep their data in a single `ReadWriteOnce` volume each and use the default credentials from the values file, which makes them fine for a test cluster and unsuitable for production.
+
+For a local cluster with custom domains enabled, see
+[`github.com/distr-sh/distr/deploy/minikube`](https://github.com/distr-sh/distr/blob/main/deploy/minikube/custom-domains-values.yaml).
+
+## Running in production
+
+For production, disable the bundled dependencies and point the chart at managed services instead.
+This part is the same on every cloud:
+
+- Leave `postgresql.enabled` at `false` and set `externalDatabase.existingSecret` to a secret holding the connection URI. The alternative, `externalDatabase.uri`, puts the URI into the release values in plain text.
+- Use external object storage for both the registry (`REGISTRY_S3_*` in `hub.env`) and Loki (`loki.loki.storage`). Create both buckets up front, set `REGISTRY_S3_CREATE_BUCKET` to `false`, and drop the `create-loki-bucket` init container with `loki.singleBinary.initContainers: []`, which only exists to provision a bucket in the in-cluster RustFS.
+- Put `JWT_SECRET`, the license key and the object storage credentials in a `secretKeyRef` or in `hub.envFrom`, not in your `hub.env` values.
+- Enable a scratch volume with `hub.scratch.enabled`, so the registry buffers layer uploads on disk instead of in memory.
+- Add an Ingress for the two hostnames the chart serves, the app and the registry. Registry pushes have no size limit, so raise or disable the request body limit of your ingress controller on the registry host.
+
+The rest of the defaults are already shaped for production: two Hub replicas with a `PodDisruptionBudget`, and the [maintenance jobs](/docs/self-hosting/maintenance/) as `CronJob`s under `cronJobs` instead of in-process cron, which is what you want as soon as more than one replica runs.
+Set `resources` and consider `autoscaling` based on the [System Requirements](/docs/self-hosting/system-requirements/).
+
+### Distr Enterprise
+
+The chart defaults to the Community Edition image (`ghcr.io/distr-sh/distr-ce`), which is free and needs no license.
+Paid plans run the Enterprise image, available as `ghcr.io/distr-sh/distr-ee` and from our own registry as `registry.distr.sh/enterprise/distr-ee`.
+Both need the credentials you received from us, so create a pull secret and reference it in `imagePullSecrets`.
+
+
+:::tip[Let Distr manage your own instance]
+The smoothest way to run a paid plan is to deploy the chart with Distr itself, through a [Kubernetes agent](/docs/agents/kubernetes-agent/) in the target cluster.
+The agent then handles the rollout of new Hub versions and injects the license key for you: put `value: '{{ index .LicenseKeys "Distr" }}'` on the `LICENSE_KEY` entry of your Helm values and it is resolved at deploy time from the [license key](/docs/platform/license-keys/) named `Distr`, so the token is never stored in the release.
+:::
+
+```yaml
+image:
+  repository: ghcr.io/distr-sh/distr-ee
+
+imagePullSecrets:
+  - name: distr-registry
+
+hub:
+  env:
+    - name: LICENSE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: distr-license
+          key: licenseKey
+    # ... the rest of your environment
+```
+
+Keep in mind that Helm replaces the `hub.env` list rather than merging it, so every variable you need has to be in the same list.
+
+### Distr on AWS
+
+Run the Hub on EKS, the database on RDS for PostgreSQL and both buckets on S3 in the region of the cluster.
+The buckets need the same setup as for the [Docker Compose stack](/docs/self-hosting/docker/#distr-on-aws): private, public access blocked, versioning off so blob cleanup can reclaim storage, and a lifecycle rule that aborts incomplete multipart uploads.
+
+For access, use IRSA rather than static keys. Annotate the Hub's service account with a role that carries the S3 policy and leave the access keys unset, so the AWS SDK picks up the web identity credentials by itself.
+Loki needs the same on its own service account.
+
+```yaml
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/distr-hub
+
+hub:
+  env:
+    - name: DISTR_HOST
+      value: https://distr.example.com
+    - name: REGISTRY_ENABLED
+      value: 'true'
+    - name: REGISTRY_HOST
+      value: pkg.example.com
+    - name: REGISTRY_S3_BUCKET
+      value: example-distr-registry
+    - name: REGISTRY_S3_REGION
+      value: us-east-2
+    - name: REGISTRY_S3_CREATE_BUCKET
+      value: 'false'
+    - name: REGISTRY_S3_USE_PATH_STYLE
+      value: 'false'
+    - name: REGISTRY_S3_ALLOW_REDIRECT
+      value: 'true'
+    - name: LOKI_URL
+      value: http://distr-loki:3100
+    - name: JWT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: distr-secrets
+          key: jwtSecret
+  scratch:
+    enabled: true
+    size: 50Gi
+    storageClassName: gp3
+
+postgresql:
+  enabled: false
+rustfs:
+  enabled: false
+
+externalDatabase:
+  existingSecret: distr-database
+  existingSecretUriKey: uri
+
+loki:
+  serviceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/distr-loki
+  loki:
+    storage:
+      type: s3
+      bucketNames:
+        chunks: example-distr-logs
+        ruler: example-distr-logs
+        admin: example-distr-logs
+      s3:
+        region: us-east-2
+        endpoint: null
+        accessKeyId: null
+        secretAccessKey: null
+        s3ForcePathStyle: false
+  singleBinary:
+    initContainers: []
+
+ingress:
+  enabled: true
+  className: alb
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-2:123456789012:certificate/abc123
+  hosts:
+    - host: distr.example.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+          port:
+            name: http
+    - host: pkg.example.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+          port:
+            name: artifacts
+```
+
+The `null` values in `loki.loki.storage.s3` delete the RustFS endpoint and credentials the chart ships as defaults, which is what makes Loki fall back to the credentials of its service account.
+An Application Load Balancer applies no request body limit, so registry pushes work without further configuration.
+The [`REGISTRY_S3_ALLOW_REDIRECT`](/docs/self-hosting/configuration/#oci-registry) setting above also offloads layer downloads to pre-signed S3 URLs.
+
+If you prefer static credentials over IRSA, drop the service account annotations and provide `REGISTRY_S3_ACCESS_KEY_ID` / `REGISTRY_S3_SECRET_ACCESS_KEY` from a secret, along with `accessKeyId` and `secretAccessKey` under `loki.loki.storage.s3`.
+
+### Distr on GCP
+
+Run the Hub on GKE, the database on Cloud SQL for PostgreSQL with a private IP in the cluster's VPC, and both buckets on Cloud Storage in the region of the cluster.
+As in the Compose stack, the two buckets are reached in different ways: the registry uses the S3 interoperability API with an HMAC key, while Loki uses the native GCS API and authenticates through Workload Identity.
+So bind a Google service account with `roles/storage.objectAdmin` on the logs bucket to Loki's Kubernetes service account, and keep the HMAC key of a service account with access to the registry bucket in a secret.
+
+```yaml
+hub:
+  env:
+    - name: DISTR_HOST
+      value: https://distr.example.com
+    - name: REGISTRY_ENABLED
+      value: 'true'
+    - name: REGISTRY_HOST
+      value: pkg.example.com
+    - name: REGISTRY_S3_BUCKET
+      value: example-distr-registry
+    - name: REGISTRY_S3_REGION
+      value: europe-west3
+    - name: REGISTRY_S3_ENDPOINT
+      value: https://storage.googleapis.com
+    - name: REGISTRY_S3_CREATE_BUCKET
+      value: 'false'
+    - name: REGISTRY_S3_USE_PATH_STYLE
+      value: 'true'
+    # The three settings the GCS interoperability API needs
+    - name: REGISTRY_S3_REQUEST_CHECKSUM_CALCULATION
+      value: 'true'
+    - name: REGISTRY_S3_RESPONSE_CHECKSUM_VALIDATION
+      value: 'true'
+    - name: REGISTRY_RESIGN_FOR_GCP
+      value: 'true'
+    - name: REGISTRY_S3_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: distr-secrets
+          key: hmacAccessKeyId
+    - name: REGISTRY_S3_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: distr-secrets
+          key: hmacSecretAccessKey
+    - name: LOKI_URL
+      value: http://distr-loki:3100
+    - name: JWT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: distr-secrets
+          key: jwtSecret
+  scratch:
+    enabled: true
+    size: 50Gi
+    storageClassName: premium-rwo
+
+postgresql:
+  enabled: false
+rustfs:
+  enabled: false
+
+externalDatabase:
+  existingSecret: distr-database
+  existingSecretUriKey: uri
+
+loki:
+  serviceAccount:
+    annotations:
+      iam.gke.io/gcp-service-account: distr-loki@example-project.iam.gserviceaccount.com
+  loki:
+    storage:
+      type: gcs
+      bucketNames:
+        chunks: example-distr-logs
+        ruler: example-distr-logs
+        admin: example-distr-logs
+  singleBinary:
+    initContainers: []
+```
+
+For ingress, we recommend an ingress controller you configure yourself, such as ingress-nginx with `proxy-body-size: "0"`.
+GKE's built-in GCE ingress applies a 30 second backend response timeout, which is short enough to break the upload of a single large layer.
+Raising it takes a `BackendConfig` annotation on the Service, and this chart does not render one.
 
 ## Custom domains
 
@@ -65,16 +300,3 @@ give all of them the same storage in one of two ways:
   plugins.
 
 The chart refuses to render a `caddy.replicaCount` above 1 without either of them.
-
-To try custom domains on a local cluster, where no certificate authority can validate an ACME
-challenge for a domain that does not resolve publicly, see
-[`github.com/distr-sh/distr/deploy/minikube`](https://github.com/distr-sh/distr/blob/main/deploy/minikube/custom-domains-values.yaml).
-It runs everything in-cluster, including PostgreSQL and RustFS, and is meant for local testing only.
-
-## Log processing (Loki)
-
-The chart includes a bundled [Grafana Loki](https://grafana.com/oss/loki/) instance (enabled by default) that stores deployment and deployment target logs with a 30-day retention.
-Loki is preconfigured to persist its data in the in-cluster RustFS object storage, so enabling RustFS (as the quick start above does with `--set rustfs.enabled=true`) makes it work out of the box.
-
-If you use an external S3-compatible object storage instead of the bundled RustFS, point `loki.loki.storage.s3` (and the bucket-provisioning init container under `loki.singleBinary.initContainers`) at it.
-To use an externally managed Loki instance, set `loki.enabled=false` and configure `LOKI_URL` (and optionally `LOKI_BEARER_TOKEN` or `LOKI_BASIC_AUTH_*`) in `hub.env`.

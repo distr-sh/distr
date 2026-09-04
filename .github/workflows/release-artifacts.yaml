@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    name: Upload deploy-docker.tar.bz2
+    name: Upload deploy-quickstart.tar
     timeout-minutes: 5
     runs-on: ubuntu-latest
     permissions:
@@ -18,8 +18,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Create Archive
-        run: tar -caf deploy-docker.tar.bz2 -C deploy/docker/ .
+        run: tar -caf deploy-quickstart.tar -C deploy/docker/quickstart/ .
       - name: Upload Archive
-        run: gh release upload ${{ github.ref_name }} deploy-docker.tar.bz2
+        run: gh release upload ${{ github.ref_name }} deploy-quickstart.tar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
