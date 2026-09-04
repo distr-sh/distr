@@ -1,0 +1,173 @@
+name: distr
+
+x-logging: &default-logging
+  driver: 'json-file'
+  options:
+    max-size: '10m'
+    max-file: '3'
+
+# This stack runs the hub against an externally managed database and S3 compatible
+# object storage, both configured through .env. If you want a self-contained stack
+# that brings its own postgres and object storage, use deploy/docker/enterprise.
+services:
+  # Caddy terminates TLS and automatically obtains/renews certificates for the
+  # distr app and registry hostnames via ACME. It only joins the "proxy" network
+  # and therefore has no route to the loki service.
+  caddy:
+    image: 'caddy:2.11.4-alpine'
+    depends_on:
+      - hub
+    environment:
+      DISTR_APP_HOSTNAME: ${DISTR_APP_HOSTNAME}
+      DISTR_REGISTRY_HOSTNAME: ${DISTR_REGISTRY_HOSTNAME}
+      CADDY_ACME_EMAIL: ${CADDY_ACME_EMAIL}
+    # The Caddyfile is written inline on startup instead of being mounted, because
+    # the distr agent does not support mounting files via volumes. The hostnames and
+    # ACME email remain Caddy env placeholders ({$VAR}) that are resolved at runtime.
+    entrypoint:
+      - sh
+      - -c
+      - |
+        cat > /etc/caddy/Caddyfile <<'EOF'
+        {
+        	email {$$CADDY_ACME_EMAIL}
+        }
+
+        {$$DISTR_APP_HOSTNAME} {
+        	reverse_proxy hub:8080
+        }
+
+        {$$DISTR_REGISTRY_HOSTNAME} {
+        	reverse_proxy hub:8585
+        }
+        EOF
+        exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+    volumes:
+      - 'caddy:/data'
+    ports:
+      - '80:80'
+      - '443:443'
+    networks:
+      - proxy
+    restart: always
+    logging: *default-logging
+
+  hub:
+    image: registry.distr.sh/enterprise/distr-ee:3.4.2 # x-release-please-version
+    depends_on:
+      loki:
+        condition: service_started
+    # The hub runs as a nonroot user (UID 65532), but a freshly created named volume
+    # is owned by root, so this init container fixes ownership of the scratch volume
+    # before the hub starts. It requires Docker Compose >= 5.3.0.
+    pre_start:
+      - image: 'busybox:1.38.0'
+        command: ['chown', '65532:65532', '/scratch']
+    env_file:
+      - .env
+    # No ports are exposed on the host. The hub is only reachable through the
+    # caddy reverse proxy on the "proxy" network.
+    networks:
+      - proxy
+      - internal
+    # The scratch volume backs REGISTRY_SCRATCH_DIR, where the OCI registry buffers
+    # request bodies to temp files instead of holding them in memory.
+    volumes:
+      - 'scratch:/scratch'
+    restart: always
+    logging: *default-logging
+
+  # Loki stores deployment and deployment target log records (30 days retention).
+  # It runs in monolithic (single-binary) mode and persists chunks + TSDB index in
+  # the LOKI_S3_BUCKET bucket of the external object storage, which has to exist
+  # before the stack is started.
+  # Loki needs the "egress" network in addition to "internal": a container attached only to an
+  # internal network has no default route, which leaves Docker's embedded resolver
+  # unable to forward queries and makes the bucket hostname unresolvable.
+  loki:
+    image: 'grafana/loki:3.7.7'
+    command: ['-config.file=/etc/loki/distr-config.yaml']
+    configs:
+      - source: loki-config
+        target: /etc/loki/distr-config.yaml
+    volumes:
+      - 'loki:/loki'
+    networks:
+      - internal
+      - egress
+    restart: always
+    logging: *default-logging
+
+configs:
+  loki-config:
+    content: |
+      auth_enabled: true
+
+      server:
+        http_listen_port: 3100
+        # A single query result page (max_entries_limit_per_query entries) can exceed
+        # the 4 MB gRPC default, which makes the internal querier->frontend handoff
+        # fail and the query hang until it times out.
+        grpc_server_max_recv_msg_size: 67108864
+        grpc_server_max_send_msg_size: 67108864
+
+      common:
+        path_prefix: /loki
+        replication_factor: 1
+        ring:
+          kvstore:
+            store: inmemory
+
+      schema_config:
+        configs:
+          - from: "2024-01-01"
+            store: tsdb
+            object_store: s3
+            schema: v13
+            index:
+              prefix: index_
+              period: 24h
+
+      storage_config:
+        aws:
+          endpoint: ${LOKI_S3_ENDPOINT}
+          region: ${LOKI_S3_REGION}
+          access_key_id: ${LOKI_S3_ACCESS_KEY_ID}
+          secret_access_key: ${LOKI_S3_SECRET_ACCESS_KEY}
+          bucketnames: ${LOKI_S3_BUCKET}
+          s3forcepathstyle: ${LOKI_S3_USE_PATH_STYLE}
+
+      compactor:
+        retention_enabled: true
+        delete_request_store: s3
+        working_directory: /loki/compactor
+
+      limits_config:
+        retention_period: 720h
+        increment_duplicate_timestamp: true
+        allow_structured_metadata: true
+        max_global_streams_per_user: 25000
+        # Truncate oversized log lines instead of rejecting the whole push.
+        max_line_size_truncate: true
+        # Accept backfilled logs up to the retention period so an agent that was
+        # offline can still push its backlog.
+        reject_old_samples_max_age: 720h
+        # Raised moderately from Loki's 4/6 MB defaults to give an organization with
+        # several chatty agents more headroom before pushes are throttled.
+        ingestion_rate_mb: 16
+        ingestion_burst_size_mb: 32
+
+networks:
+  # Public-facing network shared by caddy and the hub only.
+  proxy:
+  # Private network for the hub and loki. caddy is intentionally not attached here.
+  internal:
+    internal: true
+  # Outbound-only network that gives loki a route to the object storage. The hub
+  # reaches it through "proxy" instead.
+  egress:
+
+volumes:
+  loki:
+  caddy:
+  scratch:

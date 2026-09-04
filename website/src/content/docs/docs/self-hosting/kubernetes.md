@@ -1,13 +1,28 @@
 ---
 title: Kubernetes
-description: Deploy Distr in your Kubernetes cluster using our Helm chart with built-in PostgreSQL and RustFS storage.
+description: Deploy Distr in your Kubernetes cluster with our Helm chart, from a local test install with bundled PostgreSQL and RustFS to production values for EKS on AWS and GKE on GCP.
 sidebar:
   label: Kubernetes
   order: 3
 ---
 
 Distr is available as a [Helm chart](/glossary/helm-chart/) distributed via ghcr.io.
-To install Distr in [Kubernetes](/glossary/kubernetes/), simply run:
+Every setting mentioned on this page is documented in the chart's reference [values.yaml](https://artifacthub.io/packages/helm/distr/distr?modal=values).
+
+Complete values files for the setups below live under [`deploy/charts/distr/examples`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples), one per folder, and match the [Docker Compose examples](/docs/self-hosting/docker/) of the same name.
+Every one of them deploys the Hub and [Loki](/docs/self-hosting/configuration/#log-processing-loki) for log processing, and they differ in the edition they run and in what they bring along:
+
+| Example                                                                                                     | Edition    | Includes                                                   | Intended for                                                                  |
+| ----------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| [`quickstart`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples/quickstart)         | Community  | PostgreSQL, RustFS object storage                          | Trying Distr out on a local [minikube cluster](https://minikube.sigs.k8s.io/) |
+| [`community`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples/community)           | Community  | PostgreSQL, RustFS, Ingress with cert-manager              | Community production on a generic cluster                                     |
+| [`enterprise`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples/enterprise)         | Enterprise | PostgreSQL, RustFS, Ingress with cert-manager              | Enterprise production on a generic cluster                                    |
+| [`enterprise-aws`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples/enterprise-aws) | Enterprise | ALB Ingress (database and S3 are external)                 | Stateless enterprise production on EKS                                        |
+| [`enterprise-gcp`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples/enterprise-gcp) | Enterprise | Ingress with cert-manager (Cloud SQL and GCS are external) | Stateless enterprise production on GKE                                        |
+
+## Trying it out locally
+
+To install Distr in [Kubernetes](/glossary/kubernetes/) with its dependencies bundled, run:
 
 ```shell
 helm upgrade --install --wait --namespace distr --create-namespace \
@@ -15,13 +30,93 @@ helm upgrade --install --wait --namespace distr --create-namespace \
   --set postgresql.enabled=true --set rustfs.enabled=true
 ```
 
-For a quick testing setup, you don't have to modify the values. However, if you intend to use distr in production, please revisit all available configuration values and adapt them accordingly.
-You can find them in the reference [values.yaml](https://artifacthub.io/packages/helm/distr/distr?modal=values) file.
+This deploys the Hub together with PostgreSQL, the RustFS object storage and Loki, so you don't have to modify any values to get a working instance.
+Both bundled dependencies keep their data in a single `ReadWriteOnce` volume each and use the default credentials from the values file, which makes them fine for a test cluster and unsuitable for production.
+The same install as a values file is [`examples/quickstart/values.yaml`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/quickstart/values.yaml).
 
-## Custom domains
+For a local cluster with custom domains enabled, see
+[`examples/quickstart/custom-domains-values.yaml`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/quickstart/custom-domains-values.yaml).
 
-Vendor organizations on the Business plan can serve the Distr app and the container registry under
-their own domains. Serving those domains requires a proxy in front of the Hub that obtains a
+## Running in production
+
+For production, disable the bundled dependencies and point the chart at managed services instead.
+This part is the same on every cloud:
+
+- Leave `postgresql.enabled` at `false` and set `externalDatabase.existingSecret` to a secret holding the connection URI. The alternative, `externalDatabase.uri`, puts the URI into the release values in plain text.
+- Use external object storage for both the registry (`REGISTRY_S3_*` in `hub.env`) and Loki (`loki.loki.storage`). Create both buckets up front, set `REGISTRY_S3_CREATE_BUCKET` to `false` and drop the `create-loki-bucket` init container with `loki.singleBinary.initContainers: []`, which only exists to provision a bucket in the in-cluster RustFS.
+- Put `JWT_SECRET`, the license key and the object storage credentials in a `secretKeyRef` or in `hub.envFrom`, not in your `hub.env` values.
+- Enable a scratch volume with `hub.scratch.enabled`, so the registry buffers layer uploads on disk instead of in memory.
+- Add an Ingress for the two hostnames the chart serves, the app and the registry. Registry pushes have no size limit, so raise or disable the request body limit of your ingress controller on the registry host.
+
+The rest of the defaults are already shaped for production: two Hub replicas with a `PodDisruptionBudget`, and the [maintenance jobs](/docs/self-hosting/maintenance/) as `CronJob`s under `cronJobs` instead of in-process cron, which is what you want as soon as more than one replica runs.
+Set `resources` and consider `autoscaling` based on the [System Requirements](/docs/self-hosting/system-requirements/).
+
+Without managed services next door, the [`community`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/community/values.yaml) and [`enterprise`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/enterprise/values.yaml) examples keep PostgreSQL and RustFS in the cluster and put an Ingress with a cert-manager certificate in front, which is the trade-off the self-contained Compose examples make as well.
+
+### Distr Enterprise
+
+The chart defaults to the Community Edition image (`ghcr.io/distr-sh/distr-ce`), which is free and needs no license.
+Paid plans run the Enterprise image `registry.distr.sh/enterprise/distr-ee`.
+It comes from our own registry, so create a pull secret from the credentials you received from us and reference it in `imagePullSecrets`.
+
+:::tip[Let Distr manage your own instance]
+The smoothest way to run a paid plan is to deploy the chart with Distr itself, through a [Kubernetes agent](/docs/agents/kubernetes-agent/) in the target cluster.
+The agent then handles the rollout of new Hub versions and injects the license key for you: put `value: '{{ index .LicenseKeys "Distr" }}'` on the `LICENSE_KEY` entry of your Helm values and it is resolved at deploy time from the [license key](/docs/platform/license-keys/) named `Distr`, so the token is never stored in the release.
+:::
+
+```yaml
+image:
+  repository: registry.distr.sh/enterprise/distr-ee
+
+imagePullSecrets:
+  - name: distr-registry
+
+hub:
+  env:
+    - name: LICENSE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: distr-license
+          key: licenseKey
+    # ... the rest of your environment
+```
+
+Keep in mind that Helm replaces the `hub.env` list rather than merging it, so every variable you need has to be in the same list.
+
+### Distr Enterprise on AWS
+
+Run the Hub on EKS, the database on RDS for PostgreSQL and both buckets on S3 in the region of the cluster.
+The buckets need the same setup as for the [Docker Compose example](/docs/self-hosting/docker/#distr-enterprise-on-aws): private, public access blocked, versioning off so blob cleanup can reclaim storage and a lifecycle rule that aborts incomplete multipart uploads.
+
+For access, use IRSA rather than static keys. Annotate the Hub's service account with a role that carries the S3 policy and leave the access keys unset, so the AWS SDK picks up the web identity credentials by itself.
+Loki needs the same on its own service account.
+
+The values file for all of it is [`examples/enterprise-aws/values.yaml`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/enterprise-aws/values.yaml), which also carries the Enterprise image and the secrets it expects.
+
+The `null` values it sets under `loki.loki.storage.s3` delete the RustFS endpoint and credentials the chart ships as defaults, which is what makes Loki fall back to the credentials of its service account.
+An Application Load Balancer applies no request body limit, so registry pushes work without further configuration, and [`REGISTRY_S3_ALLOW_REDIRECT`](/docs/self-hosting/configuration/#oci-registry) stays enabled so that layer downloads are offloaded to pre-signed S3 URLs.
+
+If you prefer static credentials over IRSA, drop the service account annotations and provide `REGISTRY_S3_ACCESS_KEY_ID` / `REGISTRY_S3_SECRET_ACCESS_KEY` from a secret, along with `accessKeyId` and `secretAccessKey` under `loki.loki.storage.s3`.
+
+### Distr Enterprise on GCP
+
+Run the Hub on GKE, the database on Cloud SQL for PostgreSQL with a private IP in the cluster's VPC and both buckets on Cloud Storage in the region of the cluster.
+As in the Compose example, the two buckets are reached in different ways: the registry uses the S3 interoperability API with an HMAC key, while Loki uses the native GCS API and authenticates through Workload Identity.
+So bind a Google service account with `roles/storage.objectAdmin` on the logs bucket to Loki's Kubernetes service account, and keep the HMAC key of a service account with access to the registry bucket in a secret.
+
+The values file for all of it is [`examples/enterprise-gcp/values.yaml`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/enterprise-gcp/values.yaml), which also carries the Enterprise image and the secrets it expects.
+
+Loki picks the object store client per schema period and for delete requests by name, so `schemaConfig` and `compactor` in that file name `gcs` as well.
+The chart's defaults name `s3`, which would leave Loki looking for an S3 client that the release does not configure.
+
+For ingress, we recommend a controller you run yourself, such as Traefik, which applies no request body limit of its own.
+GKE's built-in GCE ingress applies a 30 second backend response timeout, which is short enough to break the upload of a single large layer.
+Raising it takes a `BackendConfig` annotation on the Service, and this chart does not render one.
+
+## Per customer custom domains and OIDC
+
+Vendor organizations on the Business plan can serve the Distr app under a separate customer portal domain per customer, each with its own OIDC provider.
+Serving those domains requires a proxy in front of Distr that obtains a
 certificate for every domain a vendor registers, so the chart ships an optional
 [Caddy](https://caddyserver.com/) deployment with
 [on-demand TLS](https://caddyserver.com/docs/automatic-https#on-demand-tls):
@@ -53,7 +148,7 @@ domain.
 
 The default is a single replica, because Caddy instances form a cluster only when they use the same
 storage. Sharing storage is what lets them coordinate issuance, share certificates and solve each
-other's ACME challenges — and the last part is not optional behind a load balancer, which routes the
+other's ACME challenges. The last part is not optional behind a load balancer, which routes the
 certificate authority's validation request to an arbitrary replica. To run more than one replica,
 give all of them the same storage in one of two ways:
 
@@ -65,16 +160,3 @@ give all of them the same storage in one of two ways:
   plugins.
 
 The chart refuses to render a `caddy.replicaCount` above 1 without either of them.
-
-To try custom domains on a local cluster, where no certificate authority can validate an ACME
-challenge for a domain that does not resolve publicly, see
-[`github.com/distr-sh/distr/deploy/minikube`](https://github.com/distr-sh/distr/blob/main/deploy/minikube/custom-domains-values.yaml).
-It runs everything in-cluster, including PostgreSQL and RustFS, and is meant for local testing only.
-
-## Log processing (Loki)
-
-The chart includes a bundled [Grafana Loki](https://grafana.com/oss/loki/) instance (enabled by default) that stores deployment and deployment target logs with a 30-day retention.
-Loki is preconfigured to persist its data in the in-cluster RustFS object storage, so enabling RustFS (as the quick start above does with `--set rustfs.enabled=true`) makes it work out of the box.
-
-If you use an external S3-compatible object storage instead of the bundled RustFS, point `loki.loki.storage.s3` (and the bucket-provisioning init container under `loki.singleBinary.initContainers`) at it.
-To use an externally managed Loki instance, set `loki.enabled=false` and configure `LOKI_URL` (and optionally `LOKI_BEARER_TOKEN` or `LOKI_BASIC_AUTH_*`) in `hub.env`.

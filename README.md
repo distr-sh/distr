@@ -86,13 +86,13 @@ join our [community forum](https://github.com/distr-sh/distr/discussions).
 ### Docker
 
 The Distr Hub is distributed as a Docker image via ghcr.io.
-Check out [`deploy/docker`](deploy/docker) for our example deployment using Docker Compose.
+Check out [`deploy/docker/quickstart`](deploy/docker/quickstart) for our example deployment using Docker Compose.
 To get started quickly, do the following:
 
 ```shell
-mkdir distr && cd distr && curl -fsSL https://github.com/distr-sh/distr/releases/latest/download/deploy-docker.tar.bz2 | tar -jx
+mkdir distr && cd distr && curl -fsSL https://github.com/distr-sh/distr/releases/latest/download/deploy-quickstart.tar | tar -x
 # make necessary changes to the .env file
-docker-compose up -d
+docker compose up -d
 ```
 
 ### Kubernetes

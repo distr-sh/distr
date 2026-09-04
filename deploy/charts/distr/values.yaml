@@ -21,7 +21,7 @@ strategy: {}
 
 image:
   # -- Hub [image](https://kubernetes.io/docs/concepts/containers/images/) repository. The community
-  # edition is the default; the enterprise edition is `ghcr.io/distr-sh/distr`.
+  # edition is the default; the enterprise edition is `registry.distr.sh/enterprise/distr-ee`.
   repository: ghcr.io/distr-sh/distr-ce
   # -- Hub image pull policy.
   pullPolicy: IfNotPresent
@@ -116,7 +116,7 @@ hub:
     # Generally, implicit TLS is required if your SMTP port is 465.
     # - name: MAILER_SMTP_IMPLICIT_TLS
     #   value: 'true'
-    # User Registration Mode – can be one of "enabled" (default), "hidden", "disabled"
+    # User Registration Mode, one of "enabled" (default), "hidden", "disabled"
     # - name: REGISTRATION
     #   value: enabled
     # Protect registrations with a Cloudflare Turnstile widget. Both variables must be set to enable it.
@@ -143,7 +143,7 @@ hub:
     #   value: '24h'
     # - name: CLEANUP_ORGANIZATION_MIN_AGE
     #   value: '720h'  # 30 days (default)
-    # OIDC providers – see https://distr.sh/docs/self-hosting/oidc/
+    # OIDC providers, see https://distr.sh/docs/self-hosting/configuration/#oidc-authentication
     # - name: OIDC_GITHUB_ENABLED
     #   value: 'true'
     # - name: OIDC_GITHUB_CLIENT_ID # required if OIDC_GITHUB_ENABLED
@@ -251,8 +251,9 @@ ingress:
   # -- Ingress class name, e.g. `nginx`.
   className: ''
   # -- Annotations of the Ingress. Registry pushes have no size limit, so raise or disable the body
-  # size limit of your Ingress controller on the registry host: ingress-nginx, for example, rejects
-  # anything above 1 MB unless `nginx.ingress.kubernetes.io/proxy-body-size` says otherwise.
+  # size limit of your Ingress controller on the registry host. Traefik applies none, while
+  # ingress-nginx rejects anything above 1 MB unless `nginx.ingress.kubernetes.io/proxy-body-size`
+  # says otherwise.
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"

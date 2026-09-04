@@ -3,7 +3,7 @@
 # point for a production installation.
 #
 #   helm upgrade --install distr oci://ghcr.io/distr-sh/charts/distr -n distr --create-namespace \
-#     -f deploy/minikube/custom-domains-values.yaml
+#     -f deploy/charts/distr/examples/quickstart/custom-domains-values.yaml
 #
 # The distr-caddy Service stays pending without "minikube tunnel" (needs root), so reach it
 # through its node ports instead, e.g. for a domain registered as "app.test.local":
@@ -23,8 +23,9 @@ replicaCount: 1
 
 image:
   # Custom domains are not part of the community edition, which puts every organization on the
-  # community subscription type on startup and strips the feature.
-  repository: ghcr.io/distr-sh/distr
+  # community subscription type on startup and strips the feature. Pulling the enterprise image
+  # needs the credentials you received from us, as an imagePullSecrets entry.
+  repository: registry.distr.sh/enterprise/distr-ee
 
 hub:
   # Helm replaces the whole list rather than merging it, so this repeats the defaults it needs.
@@ -59,6 +60,10 @@ hub:
       value: http://distr-loki:3100
     - name: CUSTOM_DOMAIN_TARGET
       value: whitelabel.distr.local
+  # Buffers registry layer uploads on disk instead of in memory. Caddy streams pushes on a custom
+  # domain to the hub without a size limit, so this keeps a large layer out of its memory.
+  scratch:
+    enabled: true
 
 caddy:
   enabled: true

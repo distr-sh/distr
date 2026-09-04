@@ -1,0 +1,149 @@
+# Self-contained enterprise edition install on any cluster, the counterpart of
+# deploy/docker/enterprise: the community example with the enterprise image, which unlocks the plan
+# its LICENSE_KEY was issued for. The chart brings its own PostgreSQL and RustFS object storage,
+# which is what the enterprise-aws and enterprise-gcp examples replace with managed services.
+#
+# Create these before installing:
+#   - a pull secret "distr-registry" for the enterprise image, from the credentials you received
+#     from us: kubectl create secret docker-registry distr-registry --docker-server=registry.distr.sh ...
+#   - a secret "distr-license" with the key licenseKey
+#   - a secret "distr-secrets" with the key jwtSecret (openssl rand -base64 32)
+#   - DNS records for both hostnames pointing at your ingress controller
+#
+#   helm upgrade --install distr oci://ghcr.io/distr-sh/charts/distr -n distr --create-namespace \
+#     -f deploy/charts/distr/examples/enterprise/values.yaml
+
+image:
+  repository: registry.distr.sh/enterprise/distr-ee
+
+imagePullSecrets:
+  - name: distr-registry
+
+hub:
+  # Helm replaces the whole list rather than merging it, so every variable the hub needs has to be
+  # in this one.
+  env:
+    # When this release is deployed by a Distr agent, use the template reference of the license key
+    # instead of a secret, and the agent resolves it at deploy time:
+    #   value: '{{ index .LicenseKeys "Distr" }}'
+    - name: LICENSE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: distr-license
+          key: licenseKey
+    - name: DISTR_HOST
+      value: https://distr.example.com
+    - name: JWT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: distr-secrets
+          key: jwtSecret
+    - name: REGISTRY_ENABLED
+      value: 'true'
+    - name: REGISTRY_HOST
+      value: pkg.example.com
+    - name: REGISTRY_S3_BUCKET
+      value: distr
+    - name: REGISTRY_S3_CREATE_BUCKET
+      value: 'true'
+    - name: REGISTRY_S3_REGION
+      value: local
+    - name: REGISTRY_S3_ENDPOINT
+      value: http://distr-rustfs-svc:9000
+    - name: REGISTRY_S3_ACCESS_KEY_ID
+      value: distr
+    # Same credentials as rustfs.secret.rustfs below.
+    - name: REGISTRY_S3_SECRET_ACCESS_KEY
+      value: CHANGE_ME
+    - name: REGISTRY_S3_USE_PATH_STYLE
+      value: 'true'
+    # Clients cannot reach the in-cluster object storage, so layer downloads are served by the hub.
+    - name: REGISTRY_S3_ALLOW_REDIRECT
+      value: 'false'
+    - name: LOKI_URL
+      value: http://distr-loki:3100
+    - name: MAILER_TYPE
+      value: smtp
+    - name: MAILER_FROM_ADDRESS
+      value: Distr <noreply@example.com>
+    - name: MAILER_SMTP_HOST
+      value: smtp.example.com
+    - name: MAILER_SMTP_PORT
+      value: '587'
+    # Uncomment for an SMTP server that authenticates, and add the two keys to distr-secrets.
+    # - name: MAILER_SMTP_USERNAME
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: distr-secrets
+    #       key: smtpUsername
+    # - name: MAILER_SMTP_PASSWORD
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: distr-secrets
+    #       key: smtpPassword
+  scratch:
+    enabled: true
+    size: 50Gi
+
+postgresql:
+  enabled: true
+  auth:
+    # An empty password is generated randomly on every upgrade, which the hub cannot survive.
+    password: CHANGE_ME
+
+rustfs:
+  enabled: true
+  secret:
+    rustfs:
+      access_key: distr
+      # Changing this means changing it in hub.env, in loki.loki.storage.s3 and in the
+      # create-loki-bucket init container as well, all of which authenticate against this storage.
+      secret_key: CHANGE_ME
+
+loki:
+  loki:
+    storage:
+      s3:
+        secretAccessKey: CHANGE_ME
+  singleBinary:
+    initContainers:
+      - name: create-loki-bucket
+        image: rclone/rclone:1.75.0
+        command: [rclone, mkdir, 'storage:loki']
+        env:
+          - name: RCLONE_CONFIG_STORAGE_TYPE
+            value: s3
+          - name: RCLONE_CONFIG_STORAGE_PROVIDER
+            value: Other
+          - name: RCLONE_CONFIG_STORAGE_ENDPOINT
+            value: http://distr-rustfs-svc:9000
+          - name: RCLONE_CONFIG_STORAGE_ACCESS_KEY_ID
+            value: distr
+          - name: RCLONE_CONFIG_STORAGE_SECRET_ACCESS_KEY
+            value: CHANGE_ME
+
+ingress:
+  enabled: true
+  className: traefik
+  # Traefik applies no request body limit, so registry pushes work without further
+  # configuration. A controller that does apply one needs it raised on the registry host.
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+  hosts:
+    - host: distr.example.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+          port:
+            name: http
+    - host: pkg.example.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+          port:
+            name: artifacts
+  tls:
+    - secretName: distr-tls
+      hosts:
+        - distr.example.com
+        - pkg.example.com

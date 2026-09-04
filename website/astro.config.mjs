@@ -300,6 +300,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             '/get-started/',
             '/onboarding/',
             'mailto:**',
+            // The validator treats a localhost URL as a link into this site.
+            'http://localhost:**',
           ],
         }),
       ],
@@ -380,6 +382,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
     // Self-hosting redirects
     '/docs/self-hosting/getting-started/': '/docs/self-hosting/',
+    '/docs/self-hosting/oidc/':
+      '/docs/self-hosting/configuration/#oidc-authentication',
 
     // Legacy blog redirects (content superseded by /compare/ pages)
     '/blog/distr-vs-replicated/': '/compare/replicated/',

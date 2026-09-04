@@ -4,7 +4,7 @@ description: Complete reference of all environment variables used to configure a
 slug: docs/self-hosting/configuration
 sidebar:
   label: Configuration Reference
-  order: 7
+  order: 4
 ---
 
 import {Aside} from '@astrojs/starlight/components';
@@ -48,7 +48,7 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 ### Maintenance mode
 
 `MAINTENANCE_MODE=true` announces planned downtime instead of stopping the instance. The Hub keeps serving the
-frontend, but answers every API request — including the ones from agents — and every request to the OCI registry with
+frontend, but answers every API request, including the ones from agents, and every request to the OCI registry with
 `503 Service Unavailable`, so that nothing reaches the database while you work on it. The frontend picks that up and
 shows a maintenance page that reconnects on its own once the instance is back.
 
@@ -137,7 +137,7 @@ The feature is only offered in the UI when `CUSTOM_DOMAIN_TARGET` is set.
 
 A domain is only used for links, mails, agent manifests and registry URLs once a CNAME check has
 found it to point at the CNAME target; until then the organization keeps the default host. The check runs
-when a domain is registered, can be triggered from the organization settings, and needs to be
+when a domain is registered, can be triggered from the organization settings and needs to be
 [scheduled](/docs/self-hosting/maintenance#custom-domain-verification) so that domains recover on
 their own once a record is fixed. Serving requests on a domain does not depend on the check.
 
@@ -201,7 +201,6 @@ If a `*_CRON` variable is unset, the corresponding job is not scheduled. For the
 ## OIDC Authentication
 
 Each provider is enabled independently and its credentials are only required when it is enabled.
-See [OIDC Authentication](/docs/self-hosting/oidc/) for setup instructions and callback URLs.
 
 | Variable                                        | Required           | Default | Description                                                                        |
 | ----------------------------------------------- | ------------------ | ------- | ---------------------------------------------------------------------------------- |
@@ -223,7 +222,27 @@ See [OIDC Authentication](/docs/self-hosting/oidc/) for setup instructions and c
 | `OIDC_GENERIC_PKCE_ENABLED`                     | no                 | `false` | Enables PKCE (`S256`) for the generic provider.                                    |
 | `WELLKNOWN_MICROSOFT_IDENTITY_ASSOCIATION_JSON` | no                 | —       | Base64-encoded JSON served at `/.well-known/microsoft-identity-association.json`.  |
 
-Vendor organizations on the Business plan can additionally configure their own providers in the UI, which requires no
+Every provider needs a callback URL registered at the identity provider. It is built from `DISTR_HOST` and must match
+exactly, including the scheme:
+
+| Provider             | Callback URL                                       | Where to register it                                                                                                                     |
+| -------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Google               | `{DISTR_HOST}/api/v1/auth/oidc/google/callback`    | [Google Cloud Console](https://console.cloud.google.com/apis/credentials), as an authorized redirect URI of a **Web application** client |
+| GitHub               | `{DISTR_HOST}/api/v1/auth/oidc/github/callback`    | [GitHub OAuth Apps](https://github.com/settings/developers), as the **Authorization callback URL**                                       |
+| Microsoft (Entra ID) | `{DISTR_HOST}/api/v1/auth/oidc/microsoft/callback` | [Microsoft Entra admin center](https://entra.microsoft.com/), as a **Web** redirect URI of an app registration                           |
+| Generic              | `{DISTR_HOST}/api/v1/auth/oidc/generic/callback`   | at your provider, which must expose a `/.well-known/openid-configuration` document                                                       |
+
+With GitHub, only the primary and verified email address is accepted, so a user whose primary address is unverified
+there cannot sign in.
+
+The first sign-in connects the identity the provider reports (its issuer and the `sub` claim, or the numeric user ID
+for GitHub) to the Distr account, and every later sign-in is matched on that identity rather than on the email address,
+so the account survives an email change at the provider. Users see and disconnect their connections under **User
+Settings → Connected identities**. A sign-in started on the sign-up page creates an account and an organization for an
+unknown email address; invite the user beforehand to place them in an existing organization instead, or set
+`REGISTRATION=disabled` (see [Sign-up modes](#sign-up-modes)) to reject unknown addresses.
+
+Vendor organizations on the Business plan can also configure their own providers in the UI, which requires no
 instance configuration. Those issuer URLs are entered by organization administrators and fetched by the Hub, so they
 must be `https` and must not resolve to a private network address. Both restrictions are lifted when `DISTR_HOST` is an
 `http` URL, so that an instance running locally can be developed against an identity provider next to it. An operator

@@ -1,0 +1,134 @@
+# Distr Enterprise on AWS, the counterpart of deploy/docker/enterprise-aws: the hub on EKS, the
+# database on RDS for PostgreSQL and both buckets on S3 in the region of the cluster. Nothing is
+# stored in the cluster, so the release can be replaced at any time.
+#
+# The hub and Loki reach their buckets through IRSA rather than static keys, which is why no access
+# keys appear below: the AWS SDK picks up the web identity credentials of the annotated service
+# accounts by itself.
+#
+# Create these before installing:
+#   - a pull secret "distr-registry" for the enterprise image, from the credentials you received
+#     from us: kubectl create secret docker-registry distr-registry --docker-server=registry.distr.sh ...
+#   - a secret "distr-license" with the key licenseKey
+#   - a secret "distr-secrets" with the key jwtSecret (openssl rand -base64 32)
+#   - a secret "distr-database" with the key uri, holding the RDS connection URI
+#   - the two buckets, private, with versioning off and a lifecycle rule that aborts incomplete
+#     multipart uploads
+#   - one IAM role per service account with S3 access to them
+#
+#   helm upgrade --install distr oci://ghcr.io/distr-sh/charts/distr -n distr --create-namespace \
+#     -f deploy/charts/distr/examples/enterprise-aws/values.yaml
+
+image:
+  repository: registry.distr.sh/enterprise/distr-ee
+
+imagePullSecrets:
+  - name: distr-registry
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/distr-hub
+
+hub:
+  # Helm replaces the whole list rather than merging it, so every variable the hub needs has to be
+  # in this one.
+  env:
+    # When this release is deployed by a Distr agent, use the template reference of the license key
+    # instead of a secret, and the agent resolves it at deploy time:
+    #   value: '{{ index .LicenseKeys "Distr" }}'
+    - name: LICENSE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: distr-license
+          key: licenseKey
+    - name: DISTR_HOST
+      value: https://distr.example.com
+    - name: JWT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: distr-secrets
+          key: jwtSecret
+    - name: REGISTRY_ENABLED
+      value: 'true'
+    - name: REGISTRY_HOST
+      value: pkg.example.com
+    - name: REGISTRY_S3_BUCKET
+      value: example-distr-registry
+    # The regional endpoint follows from the region, so REGISTRY_S3_ENDPOINT stays unset.
+    - name: REGISTRY_S3_REGION
+      value: us-east-2
+    - name: REGISTRY_S3_CREATE_BUCKET
+      value: 'false'
+    - name: REGISTRY_S3_USE_PATH_STYLE
+      value: 'false'
+    # Answers layer downloads with a redirect to a pre-signed S3 URL, which keeps pull bandwidth
+    # off the hub. Turn it off if your clients cannot reach S3 directly.
+    - name: REGISTRY_S3_ALLOW_REDIRECT
+      value: 'true'
+    - name: LOKI_URL
+      value: http://distr-loki:3100
+    - name: MAILER_TYPE
+      # "ses" uses the AWS SDK for SES directly, with the credentials of the service account above.
+      value: ses
+    - name: MAILER_FROM_ADDRESS
+      value: Distr <noreply@example.com>
+  scratch:
+    enabled: true
+    size: 50Gi
+    storageClassName: gp3
+
+postgresql:
+  enabled: false
+rustfs:
+  enabled: false
+
+externalDatabase:
+  existingSecret: distr-database
+  existingSecretUriKey: uri
+
+loki:
+  serviceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/distr-loki
+  loki:
+    storage:
+      type: s3
+      bucketNames:
+        chunks: example-distr-logs
+        ruler: example-distr-logs
+        admin: example-distr-logs
+      s3:
+        region: us-east-2
+        # Deletes the RustFS endpoint and credentials the chart ships as defaults, which is what
+        # makes Loki fall back to the credentials of its service account.
+        endpoint: null
+        accessKeyId: null
+        secretAccessKey: null
+        s3ForcePathStyle: false
+  # The default init container only exists to provision a bucket in the in-cluster RustFS.
+  singleBinary:
+    initContainers: []
+
+ingress:
+  enabled: true
+  className: alb
+  # An Application Load Balancer applies no request body limit, so registry pushes work without
+  # further configuration.
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-2:123456789012:certificate/abc123
+  hosts:
+    - host: distr.example.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+          port:
+            name: http
+    - host: pkg.example.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+          port:
+            name: artifacts

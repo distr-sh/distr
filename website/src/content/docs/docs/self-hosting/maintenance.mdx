@@ -1,17 +1,17 @@
 ---
 title: Maintenance Jobs
-description: Configure automated cleanup jobs to prune metrics, logs, registry blobs, and deleted organizations from your Distr database and storage.
+description: Configure automated cleanup jobs to prune metrics, logs, registry blobs and deleted organizations from your Distr database and storage.
 slug: docs/self-hosting/maintenance
 sidebar:
   label: Maintenance Jobs
-  order: 6
+  order: 5
 ---
 
 import {Aside} from '@astrojs/starlight/components';
 
 ## Database Cleanup Jobs
 
-Distr includes built-in CLI tasks for database and storage pruning to prevent unbounded growth of resources such as metrics, logs, and status entries.
+Distr includes built-in CLI tasks for database and storage pruning to prevent unbounded growth of resources such as metrics, logs and status entries.
 
 The cleanup routine can be executed manually. One or more targets can be specified in a single invocation.
 
@@ -39,7 +39,7 @@ If you only have one instance of Distr running (e.g., using Docker Compose), you
 The internal scheduling can be configured via environment variables.
 
 An example configuration file can be found on
-[`github.com/distr-sh/distr/deploy/docker`](https://github.com/distr-sh/distr/blob/main/deploy/docker/.env):
+[`github.com/distr-sh/distr/deploy/docker/quickstart`](https://github.com/distr-sh/distr/blob/main/deploy/docker/quickstart/.env):
 
 ```dotenv
 # Cron interval for cleaning deployment revision statuses older than STATUS_ENTRIES_MAX_AGE

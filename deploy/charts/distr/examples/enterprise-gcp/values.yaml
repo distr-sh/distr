@@ -1,0 +1,176 @@
+# Distr Enterprise on GCP, the counterpart of deploy/docker/enterprise-gcp: the hub on GKE, the
+# database on Cloud SQL for PostgreSQL with a private IP in the cluster's VPC and both buckets on
+# Cloud Storage in the region of the cluster. Nothing is stored in the cluster, so the release can
+# be replaced at any time.
+#
+# The two buckets are reached in different ways: the OCI registry speaks S3, so it uses the S3
+# interoperability API with an HMAC key, while Loki uses the native GCS API and authenticates
+# through Workload Identity.
+#
+# Create these before installing:
+#   - a pull secret "distr-registry" for the enterprise image, from the credentials you received
+#     from us: kubectl create secret docker-registry distr-registry --docker-server=registry.distr.sh ...
+#   - a secret "distr-license" with the key licenseKey
+#   - a secret "distr-secrets" with the keys jwtSecret (openssl rand -base64 32),
+#     hmacAccessKeyId and hmacSecretAccessKey
+#   - a secret "distr-database" with the key uri, holding the Cloud SQL connection URI
+#   - the two buckets, with uniform bucket-level access and public access prevention, in a single
+#     region, and a lifecycle rule on the registry bucket that aborts incomplete multipart uploads
+#   - a Google service account with roles/storage.objectAdmin on the logs bucket, bound to Loki's
+#     Kubernetes service account
+#
+#   helm upgrade --install distr oci://ghcr.io/distr-sh/charts/distr -n distr --create-namespace \
+#     -f deploy/charts/distr/examples/enterprise-gcp/values.yaml
+
+image:
+  repository: registry.distr.sh/enterprise/distr-ee
+
+imagePullSecrets:
+  - name: distr-registry
+
+hub:
+  # Helm replaces the whole list rather than merging it, so every variable the hub needs has to be
+  # in this one.
+  env:
+    # When this release is deployed by a Distr agent, use the template reference of the license key
+    # instead of a secret, and the agent resolves it at deploy time:
+    #   value: '{{ index .LicenseKeys "Distr" }}'
+    - name: LICENSE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: distr-license
+          key: licenseKey
+    - name: DISTR_HOST
+      value: https://distr.example.com
+    - name: JWT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: distr-secrets
+          key: jwtSecret
+    - name: REGISTRY_ENABLED
+      value: 'true'
+    - name: REGISTRY_HOST
+      value: pkg.example.com
+    - name: REGISTRY_S3_BUCKET
+      value: example-distr-registry
+    - name: REGISTRY_S3_REGION
+      value: europe-west3
+    - name: REGISTRY_S3_ENDPOINT
+      value: https://storage.googleapis.com
+    - name: REGISTRY_S3_CREATE_BUCKET
+      value: 'false'
+    - name: REGISTRY_S3_USE_PATH_STYLE
+      value: 'true'
+    # Redirects layer downloads to a pre-signed URL of the interoperability API, which stays
+    # signable only because of REGISTRY_RESIGN_FOR_GCP below.
+    - name: REGISTRY_S3_ALLOW_REDIRECT
+      value: 'true'
+    # The three settings the GCS interoperability API needs.
+    - name: REGISTRY_S3_REQUEST_CHECKSUM_CALCULATION
+      value: 'true'
+    - name: REGISTRY_S3_RESPONSE_CHECKSUM_VALIDATION
+      value: 'true'
+    - name: REGISTRY_RESIGN_FOR_GCP
+      value: 'true'
+    - name: REGISTRY_S3_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: distr-secrets
+          key: hmacAccessKeyId
+    - name: REGISTRY_S3_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: distr-secrets
+          key: hmacSecretAccessKey
+    - name: LOKI_URL
+      value: http://distr-loki:3100
+    - name: MAILER_TYPE
+      value: smtp
+    - name: MAILER_FROM_ADDRESS
+      value: Distr <noreply@example.com>
+    - name: MAILER_SMTP_HOST
+      value: smtp.example.com
+    - name: MAILER_SMTP_PORT
+      value: '587'
+    # Uncomment for an SMTP server that authenticates, and add the two keys to distr-secrets.
+    # - name: MAILER_SMTP_USERNAME
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: distr-secrets
+    #       key: smtpUsername
+    # - name: MAILER_SMTP_PASSWORD
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: distr-secrets
+    #       key: smtpPassword
+  scratch:
+    enabled: true
+    size: 50Gi
+    storageClassName: premium-rwo
+
+postgresql:
+  enabled: false
+rustfs:
+  enabled: false
+
+externalDatabase:
+  existingSecret: distr-database
+  existingSecretUriKey: uri
+
+loki:
+  serviceAccount:
+    annotations:
+      iam.gke.io/gcp-service-account: distr-loki@example-project.iam.gserviceaccount.com
+  loki:
+    storage:
+      type: gcs
+      bucketNames:
+        chunks: example-distr-logs
+        ruler: example-distr-logs
+        admin: example-distr-logs
+    # Loki picks the object store client per schema period and for delete requests by name, so
+    # both have to name gcs as well. The chart defaults say s3, which would leave Loki looking for
+    # an S3 client that this release does not configure.
+    schemaConfig:
+      configs:
+        - from: '2024-01-01'
+          store: tsdb
+          object_store: gcs
+          schema: v13
+          index:
+            prefix: index_
+            period: 24h
+    compactor:
+      delete_request_store: gcs
+  # The default init container only exists to provision a bucket in the in-cluster RustFS.
+  singleBinary:
+    initContainers: []
+
+# GKE's built-in GCE ingress applies a 30 second backend response timeout, which is short enough to
+# break the upload of a single large layer, and raising it takes a BackendConfig annotation on the
+# Service that this chart does not render. An ingress controller you configure yourself avoids that.
+ingress:
+  enabled: true
+  className: traefik
+  # Traefik applies no request body limit, so registry pushes work without further
+  # configuration. A controller that does apply one needs it raised on the registry host.
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+  hosts:
+    - host: distr.example.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+          port:
+            name: http
+    - host: pkg.example.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+          port:
+            name: artifacts
+  tls:
+    - secretName: distr-tls
+      hosts:
+        - distr.example.com
+        - pkg.example.com
