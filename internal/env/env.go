@@ -107,6 +107,7 @@ var (
 	customDomainVerificationTimeout        time.Duration
 	customDomainVerificationRefreshAfter   time.Duration
 	internalServerAddr                     string
+	maintenanceMode                        bool
 )
 
 func Initialize() {
@@ -316,6 +317,8 @@ func Initialize() {
 	customDomainVerificationRefreshAfter = envutil.GetEnvParsedOrDefault("CUSTOM_DOMAIN_VERIFICATION_REFRESH_AFTER",
 		envparse.PositiveDuration, 12*time.Hour)
 	internalServerAddr = envutil.GetEnvOrDefault("INTERNAL_SERVER_ADDR", ":8085", envutil.GetEnvOpts{})
+
+	maintenanceMode = envutil.GetEnvParsedOrDefault("MAINTENANCE_MODE", strconv.ParseBool, false)
 }
 
 func DatabaseUrl() string {
@@ -704,4 +707,10 @@ func CustomDomainVerificationRefreshAfter() time.Duration {
 // cluster.
 func InternalServerAddr() string {
 	return internalServerAddr
+}
+
+// MaintenanceMode reports whether this instance is down for maintenance. It keeps serving the
+// frontend, but answers every API request with 503 instead of letting it reach the database.
+func MaintenanceMode() bool {
+	return maintenanceMode
 }

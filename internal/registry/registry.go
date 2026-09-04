@@ -162,6 +162,7 @@ func NewDefault(
 			middleware.Sentry,
 			middleware.LoggerCtxMiddleware(logger),
 			middleware.LoggingMiddleware,
+			middleware.MaintenanceMode,
 			// The OCI registry always uses the primary db: container clients rely on read-after-write
 			// consistency (push then pull/HEAD, multi-arch, signing), which a lagging replica would break.
 			middleware.ContextInjectorMiddleware(pool, nil, mailer, nil, nil, nil),

@@ -1,6 +1,5 @@
 import {BaseModel, Named, UserRole} from '@distr-sh/distr-sdk';
-import dayjs from 'dayjs';
-import {SubscriptionType} from './subscription';
+import {isExpiredSubscription, SubscriptionType} from './subscription';
 
 export type Feature =
   | 'licensing'
@@ -60,5 +59,5 @@ export interface OrganizationWithUserRole extends Organization {
 }
 
 export function isSubscriptionExpired(org: Organization): boolean {
-  return org.subscriptionType !== 'community' && dayjs(org.subscriptionEndsAt).isBefore();
+  return isExpiredSubscription(org.subscriptionType, org.subscriptionEndsAt);
 }

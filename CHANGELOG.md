@@ -1,5 +1,58 @@
 # Changelog
 
+## [3.4.2](https://github.com/distr-sh/distr/compare/3.4.1...3.4.2) (2026-09-04)
+
+
+### Bug Fixes
+
+* invalid SQL in artifacts query ([#3155](https://github.com/distr-sh/distr/issues/3155)) ([85525b4](https://github.com/distr-sh/distr/commit/85525b460675958385ba3b67c3f599abf2fce376))
+
+
+### Other
+
+* **registry:** improve large image upload for gcs backed registry ([#3159](https://github.com/distr-sh/distr/issues/3159)) ([0715b33](https://github.com/distr-sh/distr/commit/0715b3390d8d8b46cdbca79d229ddea47305b90a))
+
+## [3.4.1](https://github.com/distr-sh/distr/compare/3.4.0...3.4.1) (2026-09-03)
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([#3104](https://github.com/distr-sh/distr/issues/3104)) ([de26500](https://github.com/distr-sh/distr/commit/de2650089293012083ff888998bcf04fbf4ef9a0))
+* **deps:** update module github.com/coreos/go-oidc/v3 to v3.21.0 ([#3141](https://github.com/distr-sh/distr/issues/3141)) ([9e5f1dd](https://github.com/distr-sh/distr/commit/9e5f1dd1334ac898172363c785970465098298cf))
+* **deps:** update module github.com/getsentry/sentry-go/otel/otlp to v0.49.0 ([#3119](https://github.com/distr-sh/distr/issues/3119)) ([2804b7c](https://github.com/distr-sh/distr/commit/2804b7cb0d86f598e6c136e56d6c52f484ea85ff))
+* **deps:** update module github.com/onsi/gomega to v1.43.0 ([#3121](https://github.com/distr-sh/distr/issues/3121)) ([9a8bf4b](https://github.com/distr-sh/distr/commit/9a8bf4b7b272d9584fe403251f3de18aab305867))
+* **deps:** update module github.com/shirou/gopsutil/v4 to v4.26.8 ([#3127](https://github.com/distr-sh/distr/issues/3127)) ([633b03b](https://github.com/distr-sh/distr/commit/633b03b708277c375a33b8629f2adcc04270778c))
+* **deps:** update module github.com/stripe/stripe-go/v86 to v86.4.0 ([#3122](https://github.com/distr-sh/distr/issues/3122)) ([538f354](https://github.com/distr-sh/distr/commit/538f35481aabc0c950fd8ccb26b2a195cd48b693))
+* **deps:** update module github.com/stripe/stripe-go/v86 to v86.4.1 ([#3136](https://github.com/distr-sh/distr/issues/3136)) ([58705f0](https://github.com/distr-sh/distr/commit/58705f0f2ecb1ee70769b1ad7ba3395b6c9328a9))
+* **deps:** update module go.opentelemetry.io/collector/component to v1.66.0 ([#3142](https://github.com/distr-sh/distr/issues/3142)) ([e3cfb96](https://github.com/distr-sh/distr/commit/e3cfb96d519ec62ef7ebdca5491ccc24606f3efe))
+* **deps:** update module go.opentelemetry.io/collector/confmap to v1.66.0 ([#3143](https://github.com/distr-sh/distr/issues/3143)) ([a93e0e6](https://github.com/distr-sh/distr/commit/a93e0e6c06df0a865954112b6b4f1e145eaadae6))
+* **deps:** update module go.opentelemetry.io/collector/receiver to v1.66.0 ([#3147](https://github.com/distr-sh/distr/issues/3147)) ([e1fd3a4](https://github.com/distr-sh/distr/commit/e1fd3a47628143821c824a6889951a3ce39c1ef2))
+* **deps:** update website dependencies ([#3085](https://github.com/distr-sh/distr/issues/3085)) ([92be55d](https://github.com/distr-sh/distr/commit/92be55d2caaf1f16112030b0abab66cb471191b0))
+
+
+### Other
+
+* **backend:** add deleting orphaned artifact versions ([#3114](https://github.com/distr-sh/distr/issues/3114)) ([916898e](https://github.com/distr-sh/distr/commit/916898ea7c8f6248de9483f427bd498a5f9c479e))
+* **backend:** add maintenance mode ([#3123](https://github.com/distr-sh/distr/issues/3123)) ([5bd9097](https://github.com/distr-sh/distr/commit/5bd9097e7fd90ab4bf4080c3f97712d2816fe3cc))
+* **deps:** update aws-actions/configure-aws-credentials action to v6.2.4 ([#3125](https://github.com/distr-sh/distr/issues/3125)) ([d36a466](https://github.com/distr-sh/distr/commit/d36a4664ebc17d9c834bc3f338ff3a9191d006a9))
+* **deps:** update codemirror ([#3124](https://github.com/distr-sh/distr/issues/3124)) ([9426769](https://github.com/distr-sh/distr/commit/94267697b882270aaf9505701bc02f96e9b667ce))
+* **deps:** update dependency @angular/cdk to v22.1.5 ([#3146](https://github.com/distr-sh/distr/issues/3146)) ([0698c44](https://github.com/distr-sh/distr/commit/0698c443ad0c6fe2b9c47de8bf6afa0536a549fa))
+* **deps:** update dependency @codemirror/legacy-modes to v6.5.4 ([#3133](https://github.com/distr-sh/distr/issues/3133)) ([474a389](https://github.com/distr-sh/distr/commit/474a389a2081fb05f3bf5c4f5f22472b9cab21fb))
+* **deps:** update dependency @sentry/cli to v3.7.0 ([#3137](https://github.com/distr-sh/distr/issues/3137)) ([edd906d](https://github.com/distr-sh/distr/commit/edd906d7520c24387456a8a6e9e1e82c2e45f7da))
+* **deps:** update dependency go to v1.27.1 ([#3131](https://github.com/distr-sh/distr/issues/3131)) ([0a8da6f](https://github.com/distr-sh/distr/commit/0a8da6f54fac58bfee30a9568a1a4e9094db5e97))
+* **deps:** update dependency posthog-js to v1.424.1 ([#3138](https://github.com/distr-sh/distr/issues/3138)) ([2c2bd08](https://github.com/distr-sh/distr/commit/2c2bd0868868bb78ea290b3a007e6885e6719a8f))
+* **deps:** update helm release rustfs to v1.0.0-rc.5 ([#3134](https://github.com/distr-sh/distr/issues/3134)) ([98ff725](https://github.com/distr-sh/distr/commit/98ff725315ef937ae1435d29ac11eee8ac54a296))
+* **deps:** update pnpm to v11.25.0 ([#3118](https://github.com/distr-sh/distr/issues/3118)) ([6700b03](https://github.com/distr-sh/distr/commit/6700b03ea5b35d40a8c42b3b8bb06f52995269f0))
+* **deps:** update sentry-javascript monorepo to v10.73.0 ([#3139](https://github.com/distr-sh/distr/issues/3139)) ([bfdfb2c](https://github.com/distr-sh/distr/commit/bfdfb2cde6c48eebdf68a0cfa3b574d0416403a5))
+* don't register new users on the login page ([#3130](https://github.com/distr-sh/distr/issues/3130)) ([497e167](https://github.com/distr-sh/distr/commit/497e167ad66af4d42b0bc93324663a43b7d60dc0))
+* **frontend:** introduce org filter and badges ([#3128](https://github.com/distr-sh/distr/issues/3128)) ([8bcc021](https://github.com/distr-sh/distr/commit/8bcc021da709a2bbe38fa6ef959ab17fa1f6abd7))
+
+
+### Performance
+
+* **frontend:** cache secure images ([#3145](https://github.com/distr-sh/distr/issues/3145)) ([dcf4343](https://github.com/distr-sh/distr/commit/dcf43438609629049c6ac01298fa1c9c7a8b7d70))
+* **frontend:** optimize artifact details page and add pagination ([#3129](https://github.com/distr-sh/distr/issues/3129)) ([29b572d](https://github.com/distr-sh/distr/commit/29b572df9c7231a206f2188e866dbc5590d67c68))
+
 ## [3.4.0](https://github.com/distr-sh/distr/compare/3.3.1...3.4.0) (2026-09-01)
 
 
