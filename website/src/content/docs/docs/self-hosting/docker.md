@@ -95,7 +95,7 @@ Create the two buckets in the region of the VM:
 - On plain S3, add a lifecycle rule that aborts incomplete multipart uploads after a day. The registry uploads large layers as multipart uploads, and an interrupted push leaves parts behind that you keep paying for.
 
 Buckets created in Lightsail come with their own access keys, listed under Permissions on the bucket, so there is no IAM user or bucket policy to manage.
-Copy one key pair per bucket into the matching `REGISTRY_S3_*` and `LOKI_S3_*` variables and leave `REGISTRY_S3_ENDPOINT` and `LOKI_S3_ENDPOINT` empty, since the regional endpoint follows from `REGISTRY_S3_REGION` and `LOKI_S3_REGION`.
+Copy one key pair per bucket into the matching `REGISTRY_S3_*` and `LOKI_S3_*` variables. Neither of them needs an endpoint, since the regional one follows from `REGISTRY_S3_REGION` and `LOKI_S3_REGION`. Do not add `REGISTRY_S3_ENDPOINT` back with an empty value, which the Hub reads as a custom endpoint and the AWS SDK then rejects.
 If you do set one, use the plain regional endpoint (`https://s3.us-east-2.amazonaws.com`) without the bucket in it.
 
 The relevant part of `deploy/docker/enterprise-aws/.env` then looks like this:
@@ -115,7 +115,6 @@ REGISTRY_ENABLED=true
 REGISTRY_HOST="${DISTR_REGISTRY_HOSTNAME}"
 REGISTRY_S3_BUCKET="example-distr-registry"
 REGISTRY_S3_REGION="us-east-2"
-REGISTRY_S3_ENDPOINT=""
 REGISTRY_S3_ACCESS_KEY_ID="AKIA..."
 REGISTRY_S3_SECRET_ACCESS_KEY="..."
 REGISTRY_S3_USE_PATH_STYLE=false
