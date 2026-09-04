@@ -56,8 +56,8 @@ Without managed services next door, the [`community`](https://github.com/distr-s
 ### Distr Enterprise
 
 The chart defaults to the Community Edition image (`ghcr.io/distr-sh/distr-ce`), which is free and needs no license.
-Paid plans run the Enterprise image, available as `ghcr.io/distr-sh/distr-ee` and from our own registry as `registry.distr.sh/enterprise/distr-ee`.
-Both need the credentials you received from us, so create a pull secret and reference it in `imagePullSecrets`.
+Paid plans run the Enterprise image `registry.distr.sh/enterprise/distr-ee`.
+It comes from our own registry, so create a pull secret from the credentials you received from us and reference it in `imagePullSecrets`.
 
 :::tip[Let Distr manage your own instance]
 The smoothest way to run a paid plan is to deploy the chart with Distr itself, through a [Kubernetes agent](/docs/agents/kubernetes-agent/) in the target cluster.
@@ -66,7 +66,7 @@ The agent then handles the rollout of new Hub versions and injects the license k
 
 ```yaml
 image:
-  repository: ghcr.io/distr-sh/distr-ee
+  repository: registry.distr.sh/enterprise/distr-ee
 
 imagePullSecrets:
   - name: distr-registry

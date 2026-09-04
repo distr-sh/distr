@@ -8,7 +8,7 @@
 #
 # Create these before installing:
 #   - a pull secret "distr-registry" for the enterprise image, from the credentials you received
-#     from us: kubectl create secret docker-registry distr-registry --docker-server=ghcr.io ...
+#     from us: kubectl create secret docker-registry distr-registry --docker-server=registry.distr.sh ...
 #   - a secret "distr-license" with the key licenseKey
 #   - a secret "distr-secrets" with the key jwtSecret (openssl rand -base64 32)
 #   - a secret "distr-database" with the key uri, holding the RDS connection URI
@@ -20,8 +20,7 @@
 #     -f deploy/charts/distr/examples/enterprise-aws/values.yaml
 
 image:
-  # Also available as registry.distr.sh/enterprise/distr-ee.
-  repository: ghcr.io/distr-sh/distr-ee
+  repository: registry.distr.sh/enterprise/distr-ee
 
 imagePullSecrets:
   - name: distr-registry

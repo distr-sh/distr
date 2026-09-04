@@ -25,7 +25,7 @@ image:
   # Custom domains are not part of the community edition, which puts every organization on the
   # community subscription type on startup and strips the feature. Pulling the enterprise image
   # needs the credentials you received from us, as an imagePullSecrets entry.
-  repository: ghcr.io/distr-sh/distr-ee
+  repository: registry.distr.sh/enterprise/distr-ee
 
 hub:
   # Helm replaces the whole list rather than merging it, so this repeats the defaults it needs.

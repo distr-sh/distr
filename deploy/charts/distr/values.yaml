@@ -21,7 +21,7 @@ strategy: {}
 
 image:
   # -- Hub [image](https://kubernetes.io/docs/concepts/containers/images/) repository. The community
-  # edition is the default; the enterprise edition is `ghcr.io/distr-sh/distr-ee`.
+  # edition is the default; the enterprise edition is `registry.distr.sh/enterprise/distr-ee`.
   repository: ghcr.io/distr-sh/distr-ce
   # -- Hub image pull policy.
   pullPolicy: IfNotPresent
