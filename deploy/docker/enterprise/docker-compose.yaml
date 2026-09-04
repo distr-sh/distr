@@ -44,8 +44,7 @@ services:
         EOF
         exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
     volumes:
-      - 'caddy_data:/data'
-      - 'caddy_config:/config'
+      - 'caddy:/data'
     ports:
       - '80:80'
       - '443:443'
@@ -225,6 +224,5 @@ volumes:
   postgres:
   rustfs:
   loki:
-  caddy_data:
-  caddy_config:
+  caddy:
   scratch:
