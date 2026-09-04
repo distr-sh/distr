@@ -143,7 +143,7 @@ hub:
     #   value: '24h'
     # - name: CLEANUP_ORGANIZATION_MIN_AGE
     #   value: '720h'  # 30 days (default)
-    # OIDC providers – see https://distr.sh/docs/self-hosting/oidc/
+    # OIDC providers – see https://distr.sh/docs/self-hosting/configuration/#oidc-authentication
     # - name: OIDC_GITHUB_ENABLED
     #   value: 'true'
     # - name: OIDC_GITHUB_CLIENT_ID # required if OIDC_GITHUB_ENABLED

@@ -13,7 +13,7 @@ Every shipped stack prepares the scratch volume and the log storage bucket with 
 All five Compose stacks under [`deploy/docker`](https://github.com/distr-sh/distr/tree/main/deploy/docker) run the Hub and [Loki](/docs/self-hosting/configuration/#log-processing-loki) for log processing.
 They differ in the edition they run and in what they bring along:
 
-| Stack                                                                                        | Edition    | Also runs                                       | Intended for                           |
+| Example                                                                                      | Edition    | Includes                                        | Intended for                           |
 | -------------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------- | -------------------------------------- |
 | [`quickstart`](https://github.com/distr-sh/distr/tree/main/deploy/docker/quickstart)         | Community  | PostgreSQL, RustFS object storage               | Trying Distr out locally               |
 | [`community`](https://github.com/distr-sh/distr/tree/main/deploy/docker/community)           | Community  | PostgreSQL, RustFS, Caddy with ACME             | Community production on a generic VM   |
@@ -38,7 +38,7 @@ Once you are happy with your configuration, simply start the Hub using Docker Co
 docker compose up -d
 ```
 
-Open [localhost:8080](http://localhost:8080) to access Distr.
+Open `http://localhost:8080` to access Distr.
 
 ## Running in production
 

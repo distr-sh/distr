@@ -101,6 +101,17 @@
   "customManagers": [
     {
       "customType": "regex",
+      "description": "Images of docker compose lifecycle hooks, which the docker-compose manager does not extract because it only reads services.<name>.image",
+      "managerFilePatterns": [
+        "deploy/docker/*/docker-compose.yaml"
+      ],
+      "matchStrings": [
+        "-[ \\t]+image:[ \\t]*'?(?<depName>[^:'\\s]+):(?<currentValue>[^'\\s@]+)'?"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": [
         "internal/handlers/tutorials.go",
         "frontend/ui/src/app/tutorials/registry/registry-tutorial.component.ts",

@@ -1,0 +1,57 @@
+# Helm values for trying Distr out on a local cluster. Everything runs in-cluster, including
+# PostgreSQL and RustFS, and nothing is exposed outside the cluster, so this is a test setup and
+# not a starting point for a production installation. Both bundled dependencies keep their data on
+# a single ReadWriteOnce volume each.
+#
+#   helm upgrade --install distr oci://ghcr.io/distr-sh/charts/distr -n distr --create-namespace \
+#     -f deploy/charts/distr/examples/quickstart/values.yaml
+#
+# Then reach the app on http://localhost:8080:
+#
+#   kubectl -n distr port-forward svc/distr 8080:8080
+#
+# For a local cluster with self-service custom domains, see custom-domains-values.yaml next to
+# this file.
+
+replicaCount: 1
+
+hub:
+  # Helm replaces the whole list rather than merging it, so every variable the hub needs has to be
+  # in this one.
+  env:
+    - name: DISTR_HOST
+      value: http://localhost:8080
+    - name: JWT_SECRET
+      value: 'WQrGMYx4tZdGwKlt0RTrhMzfQ+j1wr6z7oRWfmGlETk='
+    - name: USER_EMAIL_VERIFICATION_REQUIRED
+      value: 'false'
+    - name: REGISTRY_ENABLED
+      value: 'true'
+    - name: REGISTRY_HOST
+      value: pkg.distr.local
+    - name: REGISTRY_S3_BUCKET
+      value: distr
+    - name: REGISTRY_S3_CREATE_BUCKET
+      value: 'true'
+    - name: REGISTRY_S3_REGION
+      value: local
+    - name: REGISTRY_S3_ENDPOINT
+      value: http://distr-rustfs-svc:9000
+    - name: REGISTRY_S3_ACCESS_KEY_ID
+      value: distr
+    - name: REGISTRY_S3_SECRET_ACCESS_KEY
+      value: distr123
+    - name: REGISTRY_S3_USE_PATH_STYLE
+      value: 'true'
+    - name: REGISTRY_S3_ALLOW_REDIRECT
+      value: 'false'
+    - name: LOKI_URL
+      value: http://distr-loki:3100
+
+postgresql:
+  enabled: true
+  auth:
+    password: distr123
+
+rustfs:
+  enabled: true
