@@ -274,7 +274,7 @@ func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerO
 						FROM ArtifactVersionPart avp
 							JOIN ArtifactVersion av1 ON av1.manifest_blob_digest = avp.artifact_blob_digest
 						WHERE avp.artifact_version_id = av.id
-					)
+					) AS referrer_types
 				) AS referrer_artifact_types
 			FROM ArtifactVersion av
 			LEFT JOIN LATERAL (
