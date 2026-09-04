@@ -61,6 +61,12 @@ var replaceAcceptEncodingHeader = middleware.FinalizeMiddlewareFunc("ReplaceAcce
 
 func resignForGCP(o *s3.Options) {
 	o.APIOptions = append(o.APIOptions, func(stack *middleware.Stack) error {
+		// A presign client has no Signing middleware, the presigner replaces it, and a presigned
+		// URL does not sign Accept-Encoding in the first place. Without this the insert below
+		// fails and every presigned request errors out instead of being signed.
+		if _, ok := stack.Finalize.Get("Signing"); !ok {
+			return nil
+		}
 		if err := stack.Finalize.Insert(dropAcceptEncodingHeader, "Signing", middleware.Before); err != nil {
 			return err
 		}
