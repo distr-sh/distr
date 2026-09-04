@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.4.2](https://github.com/distr-sh/distr/compare/3.4.1...3.4.2) (2026-09-04)
+
+
+### Bug Fixes
+
+* invalid SQL in artifacts query ([#3155](https://github.com/distr-sh/distr/issues/3155)) ([85525b4](https://github.com/distr-sh/distr/commit/85525b460675958385ba3b67c3f599abf2fce376))
+
+
+### Other
+
+* **registry:** improve large image upload for gcs backed registry ([#3159](https://github.com/distr-sh/distr/issues/3159)) ([0715b33](https://github.com/distr-sh/distr/commit/0715b3390d8d8b46cdbca79d229ddea47305b90a))
+
 ## [3.4.1](https://github.com/distr-sh/distr/compare/3.4.0...3.4.1) (2026-09-03)
 
 
