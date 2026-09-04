@@ -30,6 +30,7 @@ type blobHandler struct {
 	s3Client        *s3.Client
 	s3PresignClient *s3.PresignClient
 	allowRedirect   bool
+	resignForGCP    bool
 	bucket          string
 }
 
@@ -52,6 +53,7 @@ func NewBlobHandler(ctx context.Context, s3Client *s3.Client) (blob.BlobHandler,
 	h := blobHandler{
 		s3Client:      s3Client,
 		allowRedirect: s3Config.AllowRedirect,
+		resignForGCP:  s3Config.ResignForGCP,
 		bucket:        s3Config.Bucket,
 	}
 
@@ -410,15 +412,22 @@ func (handler *blobHandler) CompleteSession(ctx context.Context, repo, id string
 		}
 
 		finalKey := digest.String()
-		if err := handler.copyObject(ctx, uploadKey, finalKey); err != nil {
-			return err
-		}
+		copyErr := handler.copyObject(ctx, uploadKey, finalKey)
 
-		_, err := handler.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		// The temporary object is no longer useful after the multipart upload has
+		// been completed. Clean it up even when the final copy fails; otherwise
+		// failed sessions leave non-digest-shaped chunks behind indefinitely.
+		_, deleteErr := handler.s3Client.DeleteObject(context.WithoutCancel(ctx), &s3.DeleteObjectInput{
 			Bucket: &handler.bucket,
 			Key:    &uploadKey,
 		})
-		return err
+		if deleteErr != nil {
+			internalctx.GetLogger(ctx).Warn("failed to remove completed upload chunk", zap.Error(deleteErr))
+		}
+		if copyErr != nil {
+			return copyErr
+		}
+		return deleteErr
 	}
 }
 
@@ -442,6 +451,13 @@ func (handler *blobHandler) copyObject(ctx context.Context, srcKey, dstKey strin
 			CopySource: &copySource,
 		})
 		return err
+	}
+
+	// GCS implements the S3 multipart upload API, but not multipart copy
+	// (UploadPartCopy/x-amz-copy-source-range). Stream each source range through
+	// the registry and upload it as a normal multipart part instead.
+	if handler.resignForGCP {
+		return handler.copyObjectViaUpload(ctx, srcKey, dstKey, objectSize)
 	}
 
 	upload, err := handler.s3Client.CreateMultipartUpload(ctx, &s3.CreateMultipartUploadInput{
@@ -483,6 +499,77 @@ func (handler *blobHandler) copyObject(ctx context.Context, srcKey, dstKey strin
 			return err
 		}
 		completedParts[i] = s3types.CompletedPart{PartNumber: &partNumber, ETag: result.CopyPartResult.ETag}
+	}
+
+	if _, err = handler.s3Client.CompleteMultipartUpload(ctx, &s3.CompleteMultipartUploadInput{
+		Bucket:          &handler.bucket,
+		Key:             &dstKey,
+		UploadId:        upload.UploadId,
+		MultipartUpload: &s3types.CompletedMultipartUpload{Parts: completedParts},
+	}); err != nil {
+		abort()
+		return err
+	}
+	return nil
+}
+
+// copyObjectViaUpload copies a large object by downloading source ranges and
+// uploading them as destination multipart parts. This is required for GCS,
+// whose S3-compatible API does not implement UploadPartCopy.
+func (handler *blobHandler) copyObjectViaUpload(ctx context.Context, srcKey, dstKey string, objectSize int64) error {
+	upload, err := handler.s3Client.CreateMultipartUpload(ctx, &s3.CreateMultipartUploadInput{
+		Bucket: &handler.bucket,
+		Key:    &dstKey,
+	})
+	if err != nil {
+		return err
+	}
+
+	abort := func() {
+		_, _ = handler.s3Client.AbortMultipartUpload(context.WithoutCancel(ctx), &s3.AbortMultipartUploadInput{
+			Bucket:   &handler.bucket,
+			Key:      &dstKey,
+			UploadId: upload.UploadId,
+		})
+	}
+
+	numParts := (objectSize + maxS3PartSize - 1) / maxS3PartSize
+	completedParts := make([]s3types.CompletedPart, numParts)
+	for i := range numParts {
+		partNumber := int32(i + 1)
+		rangeStart := i * maxS3PartSize
+		rangeEnd := min(rangeStart+maxS3PartSize, objectSize) - 1
+		objectRange := fmt.Sprintf("bytes=%d-%d", rangeStart, rangeEnd)
+
+		result, err := handler.s3Client.GetObject(ctx, &s3.GetObjectInput{
+			Bucket: &handler.bucket,
+			Key:    &srcKey,
+			Range:  &objectRange,
+		})
+		if err != nil {
+			abort()
+			return err
+		}
+
+		partSize := rangeEnd - rangeStart + 1
+		part, uploadErr := handler.s3Client.UploadPart(ctx, &s3.UploadPartInput{
+			Bucket:        &handler.bucket,
+			Key:           &dstKey,
+			UploadId:      upload.UploadId,
+			PartNumber:    &partNumber,
+			Body:          result.Body,
+			ContentLength: &partSize,
+		})
+		closeErr := result.Body.Close()
+		if uploadErr != nil {
+			abort()
+			return uploadErr
+		}
+		if closeErr != nil {
+			abort()
+			return closeErr
+		}
+		completedParts[i] = s3types.CompletedPart{PartNumber: &partNumber, ETag: part.ETag}
 	}
 
 	if _, err = handler.s3Client.CompleteMultipartUpload(ctx, &s3.CompleteMultipartUploadInput{
