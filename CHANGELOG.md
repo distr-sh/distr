@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.4.3](https://github.com/distr-sh/distr/compare/3.4.2...3.4.3) (2026-09-04)
+
+
+### Other
+
+* **deps:** update helm/kind-action action to v1.15.0 ([#3150](https://github.com/distr-sh/distr/issues/3150)) ([63ed001](https://github.com/distr-sh/distr/commit/63ed00198f3f1c3affb2fca42c57c3a979a5d355))
+* improve distr self-hosting setup and documentation ([#2744](https://github.com/distr-sh/distr/issues/2744)) ([9dca4bf](https://github.com/distr-sh/distr/commit/9dca4bf7f7c247c870b48b9281e413e08c664940))
+
 ## [3.4.2](https://github.com/distr-sh/distr/compare/3.4.1...3.4.2) (2026-09-04)
 
 
