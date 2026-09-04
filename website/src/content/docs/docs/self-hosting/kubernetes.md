@@ -70,7 +70,7 @@ hub:
 
 Keep in mind that Helm replaces the `hub.env` list rather than merging it, so every variable you need has to be in the same list.
 
-### Distr on AWS
+### Distr Enterpriseon AWS
 
 Run the Hub on EKS, the database on RDS for PostgreSQL and both buckets on S3 in the region of the cluster.
 The buckets need the same setup as for the [Docker Compose stack](/docs/self-hosting/docker/#distr-on-aws): private, public access blocked, versioning off so blob cleanup can reclaim storage, and a lifecycle rule that aborts incomplete multipart uploads.
@@ -171,7 +171,7 @@ The [`REGISTRY_S3_ALLOW_REDIRECT`](/docs/self-hosting/configuration/#oci-registr
 
 If you prefer static credentials over IRSA, drop the service account annotations and provide `REGISTRY_S3_ACCESS_KEY_ID` / `REGISTRY_S3_SECRET_ACCESS_KEY` from a secret, along with `accessKeyId` and `secretAccessKey` under `loki.loki.storage.s3`.
 
-### Distr on GCP
+### Distr Enterprise on GCP
 
 Run the Hub on GKE, the database on Cloud SQL for PostgreSQL with a private IP in the cluster's VPC, and both buckets on Cloud Storage in the region of the cluster.
 As in the Compose stack, the two buckets are reached in different ways: the registry uses the S3 interoperability API with an HMAC key, while Loki uses the native GCS API and authenticates through Workload Identity.
