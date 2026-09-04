@@ -92,7 +92,7 @@ To get started quickly, do the following:
 ```shell
 mkdir distr && cd distr && curl -fsSL https://github.com/distr-sh/distr/releases/latest/download/deploy-quickstart.tar | tar -x
 # make necessary changes to the .env file
-docker-compose up -d
+docker compose up -d
 ```
 
 ### Kubernetes

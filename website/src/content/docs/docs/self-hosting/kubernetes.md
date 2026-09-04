@@ -91,196 +91,25 @@ The buckets need the same setup as for the [Docker Compose example](/docs/self-h
 For access, use IRSA rather than static keys. Annotate the Hub's service account with a role that carries the S3 policy and leave the access keys unset, so the AWS SDK picks up the web identity credentials by itself.
 Loki needs the same on its own service account.
 
-The full values file, including the Enterprise image and the secrets it expects, is [`examples/enterprise-aws/values.yaml`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/enterprise-aws/values.yaml):
+The values file for all of it is [`examples/enterprise-aws/values.yaml`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/enterprise-aws/values.yaml), which also carries the Enterprise image and the secrets it expects.
 
-```yaml
-serviceAccount:
-  annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/distr-hub
-
-hub:
-  env:
-    - name: DISTR_HOST
-      value: https://distr.example.com
-    - name: REGISTRY_ENABLED
-      value: 'true'
-    - name: REGISTRY_HOST
-      value: pkg.example.com
-    - name: REGISTRY_S3_BUCKET
-      value: example-distr-registry
-    - name: REGISTRY_S3_REGION
-      value: us-east-2
-    - name: REGISTRY_S3_CREATE_BUCKET
-      value: 'false'
-    - name: REGISTRY_S3_USE_PATH_STYLE
-      value: 'false'
-    - name: REGISTRY_S3_ALLOW_REDIRECT
-      value: 'true'
-    - name: LOKI_URL
-      value: http://distr-loki:3100
-    - name: JWT_SECRET
-      valueFrom:
-        secretKeyRef:
-          name: distr-secrets
-          key: jwtSecret
-  scratch:
-    enabled: true
-    size: 50Gi
-    storageClassName: gp3
-
-postgresql:
-  enabled: false
-rustfs:
-  enabled: false
-
-externalDatabase:
-  existingSecret: distr-database
-  existingSecretUriKey: uri
-
-loki:
-  serviceAccount:
-    annotations:
-      eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/distr-loki
-  loki:
-    storage:
-      type: s3
-      bucketNames:
-        chunks: example-distr-logs
-        ruler: example-distr-logs
-        admin: example-distr-logs
-      s3:
-        region: us-east-2
-        endpoint: null
-        accessKeyId: null
-        secretAccessKey: null
-        s3ForcePathStyle: false
-  singleBinary:
-    initContainers: []
-
-ingress:
-  enabled: true
-  className: alb
-  annotations:
-    alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-2:123456789012:certificate/abc123
-  hosts:
-    - host: distr.example.com
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-          port:
-            name: http
-    - host: pkg.example.com
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-          port:
-            name: artifacts
-```
-
-The `null` values in `loki.loki.storage.s3` delete the RustFS endpoint and credentials the chart ships as defaults, which is what makes Loki fall back to the credentials of its service account.
-An Application Load Balancer applies no request body limit, so registry pushes work without further configuration.
-The [`REGISTRY_S3_ALLOW_REDIRECT`](/docs/self-hosting/configuration/#oci-registry) setting above also offloads layer downloads to pre-signed S3 URLs.
+The `null` values it sets under `loki.loki.storage.s3` delete the RustFS endpoint and credentials the chart ships as defaults, which is what makes Loki fall back to the credentials of its service account.
+An Application Load Balancer applies no request body limit, so registry pushes work without further configuration, and [`REGISTRY_S3_ALLOW_REDIRECT`](/docs/self-hosting/configuration/#oci-registry) stays enabled so that layer downloads are offloaded to pre-signed S3 URLs.
 
 If you prefer static credentials over IRSA, drop the service account annotations and provide `REGISTRY_S3_ACCESS_KEY_ID` / `REGISTRY_S3_SECRET_ACCESS_KEY` from a secret, along with `accessKeyId` and `secretAccessKey` under `loki.loki.storage.s3`.
 
 ### Distr Enterprise on GCP
 
-Run the Hub on GKE, the database on Cloud SQL for PostgreSQL with a private IP in the cluster's VPC, and both buckets on Cloud Storage in the region of the cluster.
+Run the Hub on GKE, the database on Cloud SQL for PostgreSQL with a private IP in the cluster's VPC and both buckets on Cloud Storage in the region of the cluster.
 As in the Compose example, the two buckets are reached in different ways: the registry uses the S3 interoperability API with an HMAC key, while Loki uses the native GCS API and authenticates through Workload Identity.
 So bind a Google service account with `roles/storage.objectAdmin` on the logs bucket to Loki's Kubernetes service account, and keep the HMAC key of a service account with access to the registry bucket in a secret.
 
-The full values file, including the Enterprise image and the secrets it expects, is [`examples/enterprise-gcp/values.yaml`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/enterprise-gcp/values.yaml):
+The values file for all of it is [`examples/enterprise-gcp/values.yaml`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/enterprise-gcp/values.yaml), which also carries the Enterprise image and the secrets it expects.
 
-```yaml
-hub:
-  env:
-    - name: DISTR_HOST
-      value: https://distr.example.com
-    - name: REGISTRY_ENABLED
-      value: 'true'
-    - name: REGISTRY_HOST
-      value: pkg.example.com
-    - name: REGISTRY_S3_BUCKET
-      value: example-distr-registry
-    - name: REGISTRY_S3_REGION
-      value: europe-west3
-    - name: REGISTRY_S3_ENDPOINT
-      value: https://storage.googleapis.com
-    - name: REGISTRY_S3_CREATE_BUCKET
-      value: 'false'
-    - name: REGISTRY_S3_USE_PATH_STYLE
-      value: 'true'
-    # The three settings the GCS interoperability API needs
-    - name: REGISTRY_S3_REQUEST_CHECKSUM_CALCULATION
-      value: 'true'
-    - name: REGISTRY_S3_RESPONSE_CHECKSUM_VALIDATION
-      value: 'true'
-    - name: REGISTRY_RESIGN_FOR_GCP
-      value: 'true'
-    - name: REGISTRY_S3_ACCESS_KEY_ID
-      valueFrom:
-        secretKeyRef:
-          name: distr-secrets
-          key: hmacAccessKeyId
-    - name: REGISTRY_S3_SECRET_ACCESS_KEY
-      valueFrom:
-        secretKeyRef:
-          name: distr-secrets
-          key: hmacSecretAccessKey
-    - name: LOKI_URL
-      value: http://distr-loki:3100
-    - name: JWT_SECRET
-      valueFrom:
-        secretKeyRef:
-          name: distr-secrets
-          key: jwtSecret
-  scratch:
-    enabled: true
-    size: 50Gi
-    storageClassName: premium-rwo
-
-postgresql:
-  enabled: false
-rustfs:
-  enabled: false
-
-externalDatabase:
-  existingSecret: distr-database
-  existingSecretUriKey: uri
-
-loki:
-  serviceAccount:
-    annotations:
-      iam.gke.io/gcp-service-account: distr-loki@example-project.iam.gserviceaccount.com
-  loki:
-    storage:
-      type: gcs
-      bucketNames:
-        chunks: example-distr-logs
-        ruler: example-distr-logs
-        admin: example-distr-logs
-    schemaConfig:
-      configs:
-        - from: '2024-01-01'
-          store: tsdb
-          object_store: gcs
-          schema: v13
-          index:
-            prefix: index_
-            period: 24h
-    compactor:
-      delete_request_store: gcs
-  singleBinary:
-    initContainers: []
-```
-
-Loki picks the object store client per schema period and for delete requests by name, so `schemaConfig` and `compactor` have to name `gcs` as well.
+Loki picks the object store client per schema period and for delete requests by name, so `schemaConfig` and `compactor` in that file name `gcs` as well.
 The chart's defaults name `s3`, which would leave Loki looking for an S3 client that the release does not configure.
 
-For ingress, we recommend an ingress controller you configure yourself, such as ingress-nginx with `proxy-body-size: "0"`.
+For ingress, we recommend a controller you run yourself, such as Traefik, which applies no request body limit of its own.
 GKE's built-in GCE ingress applies a 30 second backend response timeout, which is short enough to break the upload of a single large layer.
 Raising it takes a `BackendConfig` annotation on the Service, and this chart does not render one.
 

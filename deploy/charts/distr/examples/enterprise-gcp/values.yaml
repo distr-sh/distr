@@ -1,5 +1,5 @@
 # Distr Enterprise on GCP, the counterpart of deploy/docker/enterprise-gcp: the hub on GKE, the
-# database on Cloud SQL for PostgreSQL with a private IP in the cluster's VPC, and both buckets on
+# database on Cloud SQL for PostgreSQL with a private IP in the cluster's VPC and both buckets on
 # Cloud Storage in the region of the cluster. Nothing is stored in the cluster, so the release can
 # be replaced at any time.
 #
@@ -61,6 +61,10 @@ hub:
       value: 'false'
     - name: REGISTRY_S3_USE_PATH_STYLE
       value: 'true'
+    # Redirects layer downloads to a pre-signed URL of the interoperability API, which stays
+    # signable only because of REGISTRY_RESIGN_FOR_GCP below.
+    - name: REGISTRY_S3_ALLOW_REDIRECT
+      value: 'true'
     # The three settings the GCS interoperability API needs.
     - name: REGISTRY_S3_REQUEST_CHECKSUM_CALCULATION
       value: 'true'
@@ -88,16 +92,17 @@ hub:
       value: smtp.example.com
     - name: MAILER_SMTP_PORT
       value: '587'
-    - name: MAILER_SMTP_USERNAME
-      valueFrom:
-        secretKeyRef:
-          name: distr-secrets
-          key: smtpUsername
-    - name: MAILER_SMTP_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: distr-secrets
-          key: smtpPassword
+    # Uncomment for an SMTP server that authenticates, and add the two keys to distr-secrets.
+    # - name: MAILER_SMTP_USERNAME
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: distr-secrets
+    #       key: smtpUsername
+    # - name: MAILER_SMTP_PASSWORD
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: distr-secrets
+    #       key: smtpPassword
   scratch:
     enabled: true
     size: 50Gi
@@ -146,11 +151,11 @@ loki:
 # Service that this chart does not render. An ingress controller you configure yourself avoids that.
 ingress:
   enabled: true
-  className: nginx
+  className: traefik
+  # Traefik applies no request body limit, so registry pushes work without further
+  # configuration. A controller that does apply one needs it raised on the registry host.
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
-    # Registry pushes have no size limit, and ingress-nginx rejects anything above 1 MB by default.
-    nginx.ingress.kubernetes.io/proxy-body-size: '0'
   hosts:
     - host: distr.example.com
       paths:

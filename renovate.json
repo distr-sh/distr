@@ -101,12 +101,14 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Images of docker compose lifecycle hooks, which the docker-compose manager does not extract because it only reads services.<name>.image",
+      "description": "Images of the pre_start and post_start lifecycle hooks. Renovate's docker-compose manager (https://docs.renovatebot.com/modules/manager/docker-compose/) extracts services.<name>.image only, so hook images are missed upstream. Drop this manager once it handles them. The first matchString bounds the hook block by indentation, since RE2 has no backreference for the indentation of the hook key itself.",
       "managerFilePatterns": [
         "deploy/docker/*/docker-compose.yaml"
       ],
+      "matchStringsStrategy": "recursive",
       "matchStrings": [
-        "-[ \\t]+image:[ \\t]*'?(?<depName>[^:'\\s]+):(?<currentValue>[^'\\s@]+)'?"
+        "(?:pre_start|post_start):[ \\t]*\\n(?:[ \\t]{6,}[^\\n]*\\n)+",
+        "image:[ \\t]*'?(?<depName>[^:'\\s]+):(?<currentValue>[^'\\s@]+)'?"
       ],
       "datasourceTemplate": "docker"
     },

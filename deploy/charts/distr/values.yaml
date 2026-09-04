@@ -251,8 +251,9 @@ ingress:
   # -- Ingress class name, e.g. `nginx`.
   className: ''
   # -- Annotations of the Ingress. Registry pushes have no size limit, so raise or disable the body
-  # size limit of your Ingress controller on the registry host: ingress-nginx, for example, rejects
-  # anything above 1 MB unless `nginx.ingress.kubernetes.io/proxy-body-size` says otherwise.
+  # size limit of your Ingress controller on the registry host. Traefik applies none, while
+  # ingress-nginx rejects anything above 1 MB unless `nginx.ingress.kubernetes.io/proxy-body-size`
+  # says otherwise.
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"

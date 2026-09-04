@@ -70,16 +70,17 @@ hub:
       value: smtp.example.com
     - name: MAILER_SMTP_PORT
       value: '587'
-    - name: MAILER_SMTP_USERNAME
-      valueFrom:
-        secretKeyRef:
-          name: distr-secrets
-          key: smtpUsername
-    - name: MAILER_SMTP_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: distr-secrets
-          key: smtpPassword
+    # Uncomment for an SMTP server that authenticates, and add the two keys to distr-secrets.
+    # - name: MAILER_SMTP_USERNAME
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: distr-secrets
+    #       key: smtpUsername
+    # - name: MAILER_SMTP_PASSWORD
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: distr-secrets
+    #       key: smtpPassword
   scratch:
     enabled: true
     size: 50Gi
@@ -123,11 +124,11 @@ loki:
 
 ingress:
   enabled: true
-  className: nginx
+  className: traefik
+  # Traefik applies no request body limit, so registry pushes work without further
+  # configuration. A controller that does apply one needs it raised on the registry host.
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
-    # Registry pushes have no size limit, and ingress-nginx rejects anything above 1 MB by default.
-    nginx.ingress.kubernetes.io/proxy-body-size: '0'
   hosts:
     - host: distr.example.com
       paths:
