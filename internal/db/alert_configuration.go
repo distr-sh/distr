@@ -12,8 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	alertConfigurationOutputExpr = `
+var alertConfigurationOutputExpr = `
 	c.id,
 	c.created_at,
 	c.organization_id,
@@ -59,7 +58,6 @@ const (
 		)
 	) AS deployment_targets
 	`
-)
 
 func GetAlertConfigurationsForAllOrganizations(ctx context.Context) ([]types.AlertConfiguration, error) {
 	db := internalctx.GetDb(ctx)

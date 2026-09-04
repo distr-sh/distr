@@ -177,6 +177,36 @@ cronJobs:
   keeps falling back to your instance host until someone does.
 </Aside>
 
+## Database Encryption
+
+Distr encrypts the [sensitive columns of its database](/docs/self-hosting/configuration#database-encryption).
+Values written before you upgraded to a version that does so are still in plaintext, and after a key
+rotation some values are still encrypted with the previous key. This job moves both to the active key:
+
+```shell
+distr maintenance encrypt-database --timeout 60m
+```
+
+It is safe to run while Distr is serving traffic, it can be interrupted and resumed, and it is a no-op
+once everything is on the active key. Until then, Distr logs a warning on every start naming the
+columns that are left.
+
+For single instance deployments you can instead have it run during startup:
+
+```dotenv
+DATABASE_ENCRYPTION_MIGRATE_ON_BOOT=true
+```
+
+For high-availability deployments, use a CronJob instead, as our Helm Chart does:
+
+```yaml
+cronJobs:
+  - name: database-encryption
+    labels:
+      distr.sh/job: database-encryption
+    args: [maintenance, encrypt-database, --timeout, 60m]
+```
+
 ## Removed features
 
 ### Deployment & Deployment Target Log Cleanup (removed in v3.0.0)

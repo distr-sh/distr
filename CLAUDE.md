@@ -212,6 +212,29 @@ Model a closed set of values as a Postgres enum type, not as a `TEXT` column wit
 
 When you add a Postgres enum type, register it (and its array type, prefixed with `_`) in the `AfterConnect` type list in `internal/svc/db_pool.go`, e.g. `CUSTOM_DOMAIN_TYPE` and `_CUSTOM_DOMAIN_TYPE`. Without it pgx cannot encode Go values into the enum's OID. Cast query parameters to the enum type, never to `TEXT`: `unnest(@domainTypes::CUSTOM_DOMAIN_TYPE[])`, since Postgres does not implicitly coerce `text` to an enum. Pass the Go string type itself (`[]types.DomainType`), not `[]string`.
 
+#### Encrypted Columns
+
+Sensitive columns are stored encrypted (`internal/dbcrypto`). A value lives in a `BYTEA` column named
+`<column>_enc` and never in the plaintext `<column>`, which only still exists so that rows written before
+migration 129 stay readable until `distr maintenance encrypt-database` has moved them over. Rules for these
+columns:
+
+- Type the field in `internal/types` as `dbcrypto.String`, `*dbcrypto.String` or `dbcrypto.Bytes`, never as
+  `string` or `[]byte`. Both types refuse to be written as a query parameter, so a plaintext write cannot
+  compile away unnoticed.
+- Read through `dbcrypto.TextValue`/`BytesValue` (no alias, for an output expression that is scanned by
+  position or embedded in a row constructor) or `TextColumn`/`BytesColumn` (aliased, for a scan by name).
+  An output expression that is reused inside `(...)` must use the unaliased form, since `AS` is a syntax
+  error there. Use `dbcrypto.IsSetValue` for the boolean an API exposes in place of the secret itself.
+- Write only the `_enc` column, from `value.Encrypt()` or `dbcrypto.EncryptString(ptr)`, and set the
+  plaintext column to `NULL` in the same statement. An output expression that is a `const` becomes a `var`.
+- Register every new encrypted column in `db.EncryptedColumns`, or the migration and the startup warning
+  will silently skip it.
+- A column that a query looks up by value cannot be encrypted, because every write uses a fresh nonce.
+  Narrow the row down by its id and compare in Go with `subtle.ConstantTimeCompare` (see
+  `db.GetSupportBundleByBundleSecret`). Only where there is no id — the access token — use
+  `Keyring.HMAC`/`HMACAll` into a `_hmac` column, and only for a credential that is never read back.
+
 #### Read-only Database
 
 An optional read-only database (e.g. a replica) can be configured via `DATABASE_READONLY_URL` (and `DATABASE_READONLY_MAX_CONNS`). When unset, no read-only pool is created and everything uses the primary. When set, it is injected into the request context by `ContextInjectorMiddleware` via `WithReadonlyDB` (the primary is always injected via `WithDb`).

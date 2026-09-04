@@ -8,12 +8,14 @@ import (
 )
 
 type AccessToken struct {
-	ID             uuid.UUID   `db:"id"`
-	CreatedAt      time.Time   `db:"created_at"`
-	ExpiresAt      *time.Time  `db:"expires_at"`
-	LastUsedAt     *time.Time  `db:"last_used_at"`
-	Label          *string     `db:"label"`
-	Key            authkey.Key `db:"key"`
+	ID         uuid.UUID  `db:"id"`
+	CreatedAt  time.Time  `db:"created_at"`
+	ExpiresAt  *time.Time `db:"expires_at"`
+	LastUsedAt *time.Time `db:"last_used_at"`
+	Label      *string    `db:"label"`
+	// Only a keyed hash of the key is stored, so it is never read back: it is set when the token is
+	// generated and returned to the user once, by the handler that created it.
+	Key            authkey.Key `db:"-"`
 	UserAccountID  uuid.UUID   `db:"user_account_id"`
 	OrganizationID uuid.UUID   `db:"organization_id"`
 	UserRole       *UserRole   `db:"token_user_role"`

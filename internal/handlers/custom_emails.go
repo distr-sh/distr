@@ -11,6 +11,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/custommail"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
@@ -169,7 +170,7 @@ func customEmailConfigurationFromRequest(
 		SMTPImplicitTLS: settings.SMTPImplicitTLS,
 	}
 	if settings.SMTPPassword != nil {
-		config.SMTPPassword = *settings.SMTPPassword
+		config.SMTPPassword = dbcrypto.String(*settings.SMTPPassword)
 		return config, nil
 	}
 	stored, err := db.GetCustomEmailConfiguration(ctx, orgID)

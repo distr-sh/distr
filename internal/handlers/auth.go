@@ -337,7 +337,7 @@ func authLoginHandler(w http.ResponseWriter, r *http.Request) {
 				return nil
 			}
 
-			valid := totp.Validate(*request.MFACode, *user.MFASecret)
+			valid := totp.Validate(*request.MFACode, string(*user.MFASecret))
 
 			if !valid {
 				normalized := security.NormalizeRecoveryCode(*request.MFACode)

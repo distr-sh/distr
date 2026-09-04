@@ -7,6 +7,7 @@ import (
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -14,7 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-const secretOutputExpr = `
+var secretOutputExpr = `
 	s.id,
 	s.created_at,
 	s.updated_at,
@@ -22,9 +23,9 @@ const secretOutputExpr = `
 	s.organization_id,
 	s.customer_organization_id,
 	s.key,
-	s.value`
+	` + dbcrypto.TextColumn("s", "value")
 
-const secretWithUpdatedByOutputExpr = secretOutputExpr + `,
+var secretWithUpdatedByOutputExpr = secretOutputExpr + `,
 	CASE WHEN u.id IS NULL
 		THEN NULL
 		ELSE (` + userAccountOutputExpr + `)
@@ -183,14 +184,19 @@ func CreateSecret(
 	organizationID uuid.UUID,
 	customerOrganizationID *uuid.UUID,
 	updatedByUserAccountID uuid.UUID,
-	key, value string,
+	key string,
+	value dbcrypto.String,
 ) (*types.SecretWithUpdatedBy, error) {
+	valueEnc, err := value.Encrypt()
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt secret value: %w", err)
+	}
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
 		`WITH inserted AS (
-			INSERT INTO Secret (key, value, organization_id, customer_organization_id, updated_by_useraccount_id)
-			VALUES (@key, @value, @organization_id, @customer_organization_id, @updated_by_useraccount_id)
+			INSERT INTO Secret (key, value_enc, organization_id, customer_organization_id, updated_by_useraccount_id)
+			VALUES (@key, @value_enc, @organization_id, @customer_organization_id, @updated_by_useraccount_id)
 			RETURNING *
 		)
 		SELECT `+secretWithUpdatedByOutputExpr+` FROM inserted s
@@ -202,7 +208,7 @@ func CreateSecret(
 			"organization_id":           organizationID,
 			"customer_organization_id":  customerOrganizationID,
 			"updated_by_useraccount_id": updatedByUserAccountID,
-			"value":                     value,
+			"value_enc":                 valueEnc,
 		},
 	)
 	if err != nil {
@@ -210,8 +216,7 @@ func CreateSecret(
 	}
 
 	if secret, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.SecretWithUpdatedBy]); err != nil {
-		var pgerr *pgconn.PgError
-		if errors.As(err, &pgerr) && pgerr.Code == pgerrcode.UniqueViolation {
+		if pgerr, ok := errors.AsType[*pgconn.PgError](err); ok && pgerr.Code == pgerrcode.UniqueViolation {
 			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
 		}
 		return nil, fmt.Errorf("failed to collect Secret: %w", err)
@@ -224,8 +229,12 @@ func UpdateSecret(ctx context.Context,
 	id uuid.UUID,
 	customerOrganizationID *uuid.UUID,
 	updatedByUserAccountID uuid.UUID,
-	value string,
+	value dbcrypto.String,
 ) (*types.SecretWithUpdatedBy, error) {
+	valueEnc, err := value.Encrypt()
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt secret value: %w", err)
+	}
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
@@ -233,7 +242,8 @@ func UpdateSecret(ctx context.Context,
 			UPDATE Secret SET
 				updated_by_useraccount_id = @updated_by_useraccount_id,
 				updated_at = NOW(),
-				value = @value
+				value = NULL,
+				value_enc = @value_enc
 			WHERE id = @id
 				AND (@is_vendor OR customer_organization_id = @customer_organization_id)
 			RETURNING *
@@ -246,7 +256,7 @@ func UpdateSecret(ctx context.Context,
 			"customer_organization_id":  customerOrganizationID,
 			"is_vendor":                 customerOrganizationID == nil,
 			"updated_by_useraccount_id": updatedByUserAccountID,
-			"value":                     value,
+			"value_enc":                 valueEnc,
 		},
 	)
 	if err != nil {

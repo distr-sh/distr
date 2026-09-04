@@ -21,18 +21,20 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 
 ## General
 
-| Variable                           | Required | Default   | Description                                                                                     |
-| ---------------------------------- | -------- | --------- | ----------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                     | yes      | —         | PostgreSQL connection string (e.g. `postgres://user:pass@host:5432/distr`).                     |
-| `DATABASE_MAX_CONNS`               | no       | —         | Overrides the maximum number of connections in the pgx pool.                                    |
-| `JWT_SECRET`                       | yes      | —         | Base64-encoded secret used to sign JWTs. Generate with `openssl rand -base64 32`.               |
-| `DISTR_HOST`                       | yes      | —         | Base URL of your Distr instance. Its scheme is used for every link, callback URL and email.     |
-| `DISTR_ENV`                        | no       | —         | Path to a dotenv file to load on startup (a matching `.secret` file is also loaded if present). |
-| `REGISTRATION`                     | no       | `enabled` | Sign-up mode, see below: `enabled`, `hidden` or `disabled`.                                     |
-| `USER_EMAIL_VERIFICATION_REQUIRED` | no       | `true`    | Whether new users must verify their email address before signing in.                            |
-| `SERVER_SHUTDOWN_DELAY_DURATION`   | no       | —         | Delay between receiving a shutdown signal and stopping the server (useful for rolling deploys). |
-| `ENABLE_QUERY_LOGGING`             | no       | `false`   | Logs all database queries. Intended for debugging only.                                         |
-| `MAINTENANCE_MODE`                 | no       | `false`   | Answers every API and registry request with 503, see below. The frontend keeps being served.    |
+| Variable                              | Required | Default   | Description                                                                                     |
+| ------------------------------------- | -------- | --------- | ----------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                        | yes      | —         | PostgreSQL connection string (e.g. `postgres://user:pass@host:5432/distr`).                     |
+| `DATABASE_MAX_CONNS`                  | no       | —         | Overrides the maximum number of connections in the pgx pool.                                    |
+| `JWT_SECRET`                          | yes      | —         | Base64-encoded secret used to sign JWTs. Generate with `openssl rand -base64 32`.               |
+| `DATABASE_ENCRYPTION_KEY`             | yes      | —         | Base64-encoded key that sensitive database columns are encrypted with, see below.               |
+| `DATABASE_ENCRYPTION_MIGRATE_ON_BOOT` | no       | `false`   | Encrypt values that are still stored in plaintext during startup, see below.                    |
+| `DISTR_HOST`                          | yes      | —         | Base URL of your Distr instance. Its scheme is used for every link, callback URL and email.     |
+| `DISTR_ENV`                           | no       | —         | Path to a dotenv file to load on startup (a matching `.secret` file is also loaded if present). |
+| `REGISTRATION`                        | no       | `enabled` | Sign-up mode, see below: `enabled`, `hidden` or `disabled`.                                     |
+| `USER_EMAIL_VERIFICATION_REQUIRED`    | no       | `true`    | Whether new users must verify their email address before signing in.                            |
+| `SERVER_SHUTDOWN_DELAY_DURATION`      | no       | —         | Delay between receiving a shutdown signal and stopping the server (useful for rolling deploys). |
+| `ENABLE_QUERY_LOGGING`                | no       | `false`   | Logs all database queries. Intended for debugging only.                                         |
+| `MAINTENANCE_MODE`                    | no       | `false`   | Answers every API and registry request with 503, see below. The frontend keeps being served.    |
 
 ### Sign-up modes
 
@@ -54,6 +56,46 @@ shows a maintenance page that reconnects on its own once the instance is back.
 
 The Kubernetes probes target `/`, which keeps being served, so the pod stays in its service, while `/ready` reports
 `503` for the whole maintenance window.
+
+### Database encryption
+
+The Hub encrypts the sensitive columns of its database with AES-256-GCM before writing them: secret values, OIDC
+client secrets, SMTP passwords, pull-through registry credentials, deployment value and env files, support bundle
+resources, MFA secrets, Stripe webhook secrets and entitlement registry passwords. Personal access tokens are stored
+as a keyed hash instead, since they are only ever looked up and never read back.
+
+`DATABASE_ENCRYPTION_KEY` is required and the Hub refuses to start without it. Generate one with
+`openssl rand -base64 32`. **Back it up separately from the database:** a dump is worthless without the key, and so is
+your data if you lose it.
+
+Encryption is transparent — nothing else in your configuration changes — but the values that were written before you
+upgraded to a version with encryption are still in plaintext. Move them over in one of two ways:
+
+- run `distr maintenance encrypt-database` once, either from a shell in the Hub container or through the
+  `database-encryption` CronJob that the Helm chart ships, or
+- set `DATABASE_ENCRYPTION_MIGRATE_ON_BOOT=true` and restart the Hub, which does the same during startup.
+
+Either way it is safe to run while the Hub is serving traffic, and it can be interrupted and resumed. Until it has
+finished, the Hub logs a warning on every start listing the columns that are still unencrypted.
+
+#### Rotating the key
+
+`DATABASE_ENCRYPTION_KEY` also accepts a comma-separated list of `<id>:<key>` entries, where the id is a number
+between 0 and 255 and the first entry is the key that new writes are encrypted with. Every stored value records the id
+of the key it was encrypted with, so the other entries are what keeps older values readable.
+
+To rotate, put the new key first and keep the old one:
+
+```sh
+DATABASE_ENCRYPTION_KEY="1:<new key>,0:<old key>"
+```
+
+Then run `distr maintenance encrypt-database`, which re-encrypts every value that still uses the old key. Once it
+reports nothing left to do, drop the old entry and keep only `1:<new key>`.
+
+Personal access tokens are the exception: they are hashed rather than encrypted, so they cannot be moved to a new key.
+They keep working for as long as the key they were created under stays in the list, and have to be reissued to retire
+it.
 
 ## Tokens & Sessions
 

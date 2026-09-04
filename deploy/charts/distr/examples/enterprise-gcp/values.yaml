@@ -11,8 +11,8 @@
 #   - a pull secret "distr-registry" for the enterprise image, from the credentials you received
 #     from us: kubectl create secret docker-registry distr-registry --docker-server=registry.distr.sh ...
 #   - a secret "distr-license" with the key licenseKey
-#   - a secret "distr-secrets" with the keys jwtSecret (openssl rand -base64 32),
-#     hmacAccessKeyId and hmacSecretAccessKey
+#   - a secret "distr-secrets" with the keys jwtSecret and databaseEncryptionKey (each
+#     openssl rand -base64 32), hmacAccessKeyId and hmacSecretAccessKey
 #   - a secret "distr-database" with the key uri, holding the Cloud SQL connection URI
 #   - the two buckets, with uniform bucket-level access and public access prevention, in a single
 #     region, and a lifecycle rule on the registry bucket that aborts incomplete multipart uploads
@@ -47,6 +47,13 @@ hub:
         secretKeyRef:
           name: distr-secrets
           key: jwtSecret
+    # Encrypts the sensitive columns of the database. Back this key up separately from the
+    # database: a dump is worthless without it, and so is your data if you lose it.
+    - name: DATABASE_ENCRYPTION_KEY
+      valueFrom:
+        secretKeyRef:
+          name: distr-secrets
+          key: databaseEncryptionKey
     - name: REGISTRY_ENABLED
       value: 'true'
     - name: REGISTRY_HOST

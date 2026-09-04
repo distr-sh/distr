@@ -10,6 +10,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/supportbundle"
@@ -150,7 +151,7 @@ func uploadSupportBundleResourceHandler() http.HandlerFunc {
 		resource := types.SupportBundleResource{
 			SupportBundleID: bundle.ID,
 			Name:            name,
-			Content:         string(contentBytes),
+			Content:         dbcrypto.String(contentBytes),
 		}
 		if err := db.CreateSupportBundleResource(ctx, &resource); err != nil {
 			log.Error("failed to create support bundle resource", zap.Error(err))

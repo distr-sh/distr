@@ -4,26 +4,27 @@ import (
 	"slices"
 	"time"
 
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 )
 
 type UserAccount struct {
-	ID                     uuid.UUID  `db:"id" json:"id"`
-	CreatedAt              time.Time  `db:"created_at" json:"createdAt"`
-	Email                  string     `db:"email" json:"email"`
-	EmailVerifiedAt        *time.Time `db:"email_verified_at" json:"-"`
-	EmailVerified          bool       `db:"email_verified" json:"emailVerified"`
-	PasswordHash           []byte     `db:"password_hash" json:"-"`
-	PasswordSalt           []byte     `db:"password_salt" json:"-"`
-	Name                   string     `db:"name" json:"name,omitempty"`
-	ImageID                *uuid.UUID `db:"image_id" json:"-"`
-	LastUsedOrganizationID *uuid.UUID `db:"last_used_organization_id" json:"-"`
-	MFASecret              *string    `db:"mfa_secret" json:"-"`
-	MFAEnabled             bool       `db:"mfa_enabled" json:"mfaEnabled"`
-	MFAEnabledAt           *time.Time `db:"mfa_enabled_at" json:"-"`
-	IsSuperAdmin           bool       `db:"is_super_admin" json:"-"`
-	Password               string     `db:"-" json:"-"`
+	ID                     uuid.UUID        `db:"id" json:"id"`
+	CreatedAt              time.Time        `db:"created_at" json:"createdAt"`
+	Email                  string           `db:"email" json:"email"`
+	EmailVerifiedAt        *time.Time       `db:"email_verified_at" json:"-"`
+	EmailVerified          bool             `db:"email_verified" json:"emailVerified"`
+	PasswordHash           []byte           `db:"password_hash" json:"-"`
+	PasswordSalt           []byte           `db:"password_salt" json:"-"`
+	Name                   string           `db:"name" json:"name,omitempty"`
+	ImageID                *uuid.UUID       `db:"image_id" json:"-"`
+	LastUsedOrganizationID *uuid.UUID       `db:"last_used_organization_id" json:"-"`
+	MFASecret              *dbcrypto.String `db:"mfa_secret" json:"-"`
+	MFAEnabled             bool             `db:"mfa_enabled" json:"mfaEnabled"`
+	MFAEnabledAt           *time.Time       `db:"mfa_enabled_at" json:"-"`
+	IsSuperAdmin           bool             `db:"is_super_admin" json:"-"`
+	Password               string           `db:"-" json:"-"`
 
 	// Remember to update AsUserAccountWithRole when adding fields!
 }
@@ -59,20 +60,20 @@ func (u *UserAccount) AsUserAccountWithRole(
 type UserAccountWithUserRole struct {
 	// copy+pasted from UserAccount because pgx does not like embedded structs
 
-	ID                     uuid.UUID  `db:"id" json:"id"`
-	CreatedAt              time.Time  `db:"created_at" json:"createdAt"`
-	Email                  string     `db:"email" json:"email"`
-	EmailVerifiedAt        *time.Time `db:"email_verified_at" json:"-"`
-	EmailVerified          bool       `db:"email_verified" json:"emailVerified"`
-	PasswordHash           []byte     `db:"password_hash" json:"-"`
-	PasswordSalt           []byte     `db:"password_salt" json:"-"`
-	Name                   string     `db:"name" json:"name,omitempty"`
-	ImageID                *uuid.UUID `db:"image_id" json:"imageId,omitempty"`
-	LastUsedOrganizationID *uuid.UUID `db:"last_used_organization_id" json:"-"`
-	MFASecret              *string    `db:"mfa_secret" json:"-"`
-	MFAEnabled             bool       `db:"mfa_enabled" json:"mfaEnabled"`
-	MFAEnabledAt           *time.Time `db:"mfa_enabled_at" json:"-"`
-	IsSuperAdmin           bool       `db:"is_super_admin" json:"-"`
+	ID                     uuid.UUID        `db:"id" json:"id"`
+	CreatedAt              time.Time        `db:"created_at" json:"createdAt"`
+	Email                  string           `db:"email" json:"email"`
+	EmailVerifiedAt        *time.Time       `db:"email_verified_at" json:"-"`
+	EmailVerified          bool             `db:"email_verified" json:"emailVerified"`
+	PasswordHash           []byte           `db:"password_hash" json:"-"`
+	PasswordSalt           []byte           `db:"password_salt" json:"-"`
+	Name                   string           `db:"name" json:"name,omitempty"`
+	ImageID                *uuid.UUID       `db:"image_id" json:"imageId,omitempty"`
+	LastUsedOrganizationID *uuid.UUID       `db:"last_used_organization_id" json:"-"`
+	MFASecret              *dbcrypto.String `db:"mfa_secret" json:"-"`
+	MFAEnabled             bool             `db:"mfa_enabled" json:"mfaEnabled"`
+	MFAEnabledAt           *time.Time       `db:"mfa_enabled_at" json:"-"`
+	IsSuperAdmin           bool             `db:"is_super_admin" json:"-"`
 
 	// not copy+pasted
 

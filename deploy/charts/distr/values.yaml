@@ -96,6 +96,18 @@ hub:
       #   secretKeyRef:
       #     name: ""
       #     key: ""
+    # The base64 encoded key that sensitive database columns are encrypted with.
+    # Can be generated with `openssl rand -base64 32`. Losing it makes every encrypted value
+    # unreadable, so back it up separately from the database.
+    # To rotate, prepend the new key with a higher id and keep the old one until the
+    # dbEncryption CronJob below has re-encrypted every row: "1:<new key>,0:<old key>"
+    - name: DATABASE_ENCRYPTION_KEY
+      value: 8fVQ3nZ5kL0xR7cWtYbA1sJmEuHpDgNiO2vXqTzKcRo=
+      # We recommend reading the encryption key from a secretKeyRef
+      # valueFrom:
+      #   secretKeyRef:
+      #     name: ""
+      #     key: ""
     - name: MAILER_FROM_ADDRESS
       value: My Distr <noreply@distr.local>
     - name: MAILER_TYPE
@@ -406,6 +418,14 @@ cronJobs:
     labels:
       distr.sh/job: registry-upstream-sync
     args: [maintenance, sync-artifacts-upstream, --timeout, 10m]
+  # Moves sensitive values that are still stored in plaintext into their encrypted columns. It has
+  # something to do after an upgrade from a version that predates column encryption, and after a
+  # rotation of DATABASE_ENCRYPTION_KEY; at all other times it is a no-op. The alternative is to run
+  # `distr maintenance encrypt-database` once by hand and remove this entry.
+  - name: database-encryption
+    labels:
+      distr.sh/job: database-encryption
+    args: [maintenance, encrypt-database, --timeout, 60m]
 
 # Plain Caddy deployment for automated custom domain configuration: vendors bring their
 # own domain via a CNAME record pointing at this Caddy's LoadBalancer. Caddy issues

@@ -34,6 +34,8 @@ hub:
       value: http://distr.local
     - name: JWT_SECRET
       value: 'WQrGMYx4tZdGwKlt0RTrhMzfQ+j1wr6z7oRWfmGlETk='
+    - name: DATABASE_ENCRYPTION_KEY
+      value: '8fVQ3nZ5kL0xR7cWtYbA1sJmEuHpDgNiO2vXqTzKcRo='
     - name: USER_EMAIL_VERIFICATION_REQUIRED
       value: 'false'
     - name: REGISTRY_ENABLED

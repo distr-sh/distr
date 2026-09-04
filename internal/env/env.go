@@ -19,6 +19,8 @@ var (
 	databaseMaxConns                       *int
 	databaseReadonlyUrl                    *string
 	databaseReadonlyMaxConns               *int
+	databaseEncryptionKey                  string
+	databaseEncryptionMigrateOnBoot        bool
 	jwtSecret                              []byte
 	host                                   string
 	registryHost                           string
@@ -126,6 +128,10 @@ func Initialize() {
 	databaseMaxConns = envutil.GetEnvParsedOrNil("DATABASE_MAX_CONNS", strconv.Atoi)
 	databaseReadonlyUrl = envutil.GetEnvOrNil("DATABASE_READONLY_URL")
 	databaseReadonlyMaxConns = envutil.GetEnvParsedOrNil("DATABASE_READONLY_MAX_CONNS", strconv.Atoi)
+	databaseEncryptionKey = envutil.RequireEnv("DATABASE_ENCRYPTION_KEY")
+	databaseEncryptionMigrateOnBoot = envutil.GetEnvParsedOrDefault(
+		"DATABASE_ENCRYPTION_MIGRATE_ON_BOOT", strconv.ParseBool, false,
+	)
 	jwtSecret = envutil.RequireEnvParsed("JWT_SECRET", base64.StdEncoding.DecodeString)
 	host = envutil.RequireEnv("DISTR_HOST")
 	agentInterval = envutil.GetEnvParsedOrDefault("AGENT_INTERVAL", envparse.PositiveDuration, 5*time.Second)
@@ -344,6 +350,18 @@ func DatabaseReadonlyUrl() *string {
 // DatabaseReadonlyMaxConns allows to override the MaxConns parameter of the read-only pgx pool config.
 func DatabaseReadonlyMaxConns() *int {
 	return databaseReadonlyMaxConns
+}
+
+// DatabaseEncryptionKey returns the raw DATABASE_ENCRYPTION_KEY value. Use dbcrypto.Keys instead,
+// which parses it into a keyring; this getter exists so that env does not have to import dbcrypto.
+func DatabaseEncryptionKey() string {
+	return databaseEncryptionKey
+}
+
+// DatabaseEncryptionMigrateOnBoot makes the server encrypt every value that is still stored in
+// plaintext during startup, which is the alternative to running `distr maintenance encrypt-database`.
+func DatabaseEncryptionMigrateOnBoot() bool {
+	return databaseEncryptionMigrateOnBoot
 }
 
 func JWTSecret() []byte {

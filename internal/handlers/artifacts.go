@@ -11,6 +11,7 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/registry/upstream"
@@ -110,8 +111,8 @@ func createArtifactHandler() http.HandlerFunc {
 			}
 
 			artifact.UpstreamAuthType = &body.UpstreamAuth.Type
-			artifact.UpstreamUsername = body.UpstreamAuth.Username
-			artifact.UpstreamPassword = body.UpstreamAuth.Password
+			artifact.UpstreamUsername = dbcrypto.StringPtr(body.UpstreamAuth.Username)
+			artifact.UpstreamPassword = dbcrypto.StringPtr(body.UpstreamAuth.Password)
 		}
 		if err := upstream.ValidateUpstreamCredentials(ctx, artifact); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -318,8 +319,8 @@ func patchArtifactUpstreamHandler(w http.ResponseWriter, r *http.Request) {
 		params.UpdateAuth = true
 		if body.Auth.Value != nil {
 			params.AuthType = &body.Auth.Value.Type
-			params.Username = body.Auth.Value.Username
-			params.Password = body.Auth.Value.Password
+			params.Username = dbcrypto.StringPtr(body.Auth.Value.Username)
+			params.Password = dbcrypto.StringPtr(body.Auth.Value.Password)
 		}
 	}
 

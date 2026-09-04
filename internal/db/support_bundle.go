@@ -2,11 +2,13 @@ package db
 
 import (
 	"context"
+	"crypto/subtle"
 	"errors"
 	"fmt"
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -207,7 +209,7 @@ func DeleteSupportBundleConfigurationScript(ctx context.Context, id, orgID uuid.
 
 // Bundles
 
-const supportBundleWithDetailsOutputExpr = `
+var supportBundleWithDetailsOutputExpr = `
 	sb.id,
 	sb.created_at,
 	sb.organization_id,
@@ -216,7 +218,7 @@ const supportBundleWithDetailsOutputExpr = `
 	sb.title,
 	sb.description,
 	sb.status,
-	sb.bundle_secret,
+	` + dbcrypto.TextColumn("sb", "bundle_secret") + `,
 	sb.bundle_secret_expires_at,
 	sb.status_changed_by_user_account_id,
 	sb.status_changed_at,
@@ -291,6 +293,9 @@ func GetSupportBundleByID(ctx context.Context, id, orgID uuid.UUID) (*types.Supp
 	return &result, nil
 }
 
+// GetSupportBundleByBundleSecret matches the secret in Go rather than in the WHERE clause, because
+// the stored secret is encrypted with a fresh nonce per write and therefore never equal to a second
+// encryption of the same value. The row is narrowed down by its id first, which the caller has.
 func GetSupportBundleByBundleSecret(
 	ctx context.Context, id uuid.UUID, bundleSecret string,
 ) (*types.SupportBundle, error) {
@@ -299,13 +304,12 @@ func GetSupportBundleByBundleSecret(
 		ctx,
 		`SELECT id, created_at, organization_id, customer_organization_id,
 			created_by_user_account_id, title, description, status,
-			bundle_secret, bundle_secret_expires_at,
+			`+dbcrypto.TextColumn("sb", "bundle_secret")+`, bundle_secret_expires_at,
 			status_changed_by_user_account_id, status_changed_at
-		FROM SupportBundle
+		FROM SupportBundle sb
 		WHERE id = @id
-			AND bundle_secret = @bundleSecret
 			AND bundle_secret_expires_at > now()`,
-		pgx.NamedArgs{"id": id, "bundleSecret": bundleSecret},
+		pgx.NamedArgs{"id": id},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not query support bundle: %w", err)
@@ -317,21 +321,28 @@ func GetSupportBundleByBundleSecret(
 		}
 		return nil, fmt.Errorf("could not get support bundle: %w", err)
 	}
+	if subtle.ConstantTimeCompare([]byte(result.BundleSecret), []byte(bundleSecret)) != 1 {
+		return nil, apierrors.ErrNotFound
+	}
 	return &result, nil
 }
 
 func CreateSupportBundle(ctx context.Context, bundle *types.SupportBundle) error {
+	bundleSecretEnc, err := bundle.BundleSecret.Encrypt()
+	if err != nil {
+		return fmt.Errorf("could not encrypt support bundle secret: %w", err)
+	}
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`INSERT INTO SupportBundle
+		`INSERT INTO SupportBundle AS sb
 			(organization_id, customer_organization_id, created_by_user_account_id,
-			title, description, bundle_secret, bundle_secret_expires_at)
+			title, description, bundle_secret_enc, bundle_secret_expires_at)
 		VALUES (@orgId, @customerOrgId, @userId, @title, @description,
-			@bundleSecret, @bundleSecretExpiresAt)
+			@bundleSecretEnc, @bundleSecretExpiresAt)
 		RETURNING id, created_at, organization_id, customer_organization_id,
 			created_by_user_account_id, title, description, status,
-			bundle_secret, bundle_secret_expires_at,
+			`+dbcrypto.TextColumn("sb", "bundle_secret")+`, bundle_secret_expires_at,
 			status_changed_by_user_account_id, status_changed_at`,
 		pgx.NamedArgs{
 			"orgId":                 bundle.OrganizationID,
@@ -339,7 +350,7 @@ func CreateSupportBundle(ctx context.Context, bundle *types.SupportBundle) error
 			"userId":                bundle.CreatedByUserAccountID,
 			"title":                 bundle.Title,
 			"description":           bundle.Description,
-			"bundleSecret":          bundle.BundleSecret,
+			"bundleSecretEnc":       bundleSecretEnc,
 			"bundleSecretExpiresAt": bundle.BundleSecretExpiresAt,
 		},
 	)
@@ -399,8 +410,8 @@ func GetSupportBundleResources(ctx context.Context, bundleID uuid.UUID) ([]types
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`SELECT id, created_at, support_bundle_id, name, content
-		FROM SupportBundleResource
+		`SELECT id, created_at, support_bundle_id, name, `+dbcrypto.TextColumn("r", "content")+`
+		FROM SupportBundleResource r
 		WHERE support_bundle_id = @bundleId
 		ORDER BY created_at`,
 		pgx.NamedArgs{"bundleId": bundleID},
@@ -416,16 +427,20 @@ func GetSupportBundleResources(ctx context.Context, bundleID uuid.UUID) ([]types
 }
 
 func CreateSupportBundleResource(ctx context.Context, resource *types.SupportBundleResource) error {
+	contentEnc, err := resource.Content.Encrypt()
+	if err != nil {
+		return fmt.Errorf("could not encrypt support bundle resource: %w", err)
+	}
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`INSERT INTO SupportBundleResource (support_bundle_id, name, content)
-		VALUES (@bundleId, @name, @content)
-		RETURNING id, created_at, support_bundle_id, name, content`,
+		`INSERT INTO SupportBundleResource AS r (support_bundle_id, name, content_enc)
+		VALUES (@bundleId, @name, @contentEnc)
+		RETURNING id, created_at, support_bundle_id, name, `+dbcrypto.TextColumn("r", "content"),
 		pgx.NamedArgs{
-			"bundleId": resource.SupportBundleID,
-			"name":     resource.Name,
-			"content":  resource.Content,
+			"bundleId":   resource.SupportBundleID,
+			"name":       resource.Name,
+			"contentEnc": contentEnc,
 		},
 	)
 	if err != nil {

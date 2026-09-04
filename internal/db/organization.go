@@ -9,6 +9,7 @@ import (
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/license"
 	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
@@ -18,7 +19,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-const (
+var (
 	organizationOutputExpr = `
 		o.id,
 		o.created_at,
@@ -35,8 +36,8 @@ const (
 		o.pre_connect_script,
 		o.post_connect_script,
 		o.connect_script_is_sudo,
-		o.stripe_webhook_secret,
-		(o.stripe_webhook_secret IS NOT NULL)
+		` + dbcrypto.TextValue("o", "stripe_webhook_secret") + `,
+		` + dbcrypto.IsSetValue("o", "stripe_webhook_secret") + `
 	`
 	organizationWithUserRoleOutputExpr = organizationOutputExpr + `,
 		j.user_role,
@@ -125,6 +126,10 @@ func CreateOrganization(ctx context.Context, org *types.Organization) error {
 }
 
 func UpdateOrganization(ctx context.Context, org *types.Organization) error {
+	stripeWebhookSecretEnc, err := dbcrypto.EncryptString(org.StripeWebhookSecret)
+	if err != nil {
+		return fmt.Errorf("could not encrypt Stripe webhook secret: %w", err)
+	}
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		`UPDATE Organization AS o
@@ -142,7 +147,8 @@ func UpdateOrganization(ctx context.Context, org *types.Organization) error {
 			pre_connect_script = @pre_connect_script,
 			post_connect_script = @post_connect_script,
 			connect_script_is_sudo = @connect_script_is_sudo,
-			stripe_webhook_secret = @stripe_webhook_secret
+			stripe_webhook_secret = NULL,
+			stripe_webhook_secret_enc = @stripe_webhook_secret_enc
 		WHERE id = @id
 		RETURNING `+organizationOutputExpr,
 		pgx.NamedArgs{
@@ -160,7 +166,7 @@ func UpdateOrganization(ctx context.Context, org *types.Organization) error {
 			"pre_connect_script":                          org.PreConnectScript,
 			"post_connect_script":                         org.PostConnectScript,
 			"connect_script_is_sudo":                      org.ConnectScriptIsSudo,
-			"stripe_webhook_secret":                       org.StripeWebhookSecret,
+			"stripe_webhook_secret_enc":                   stripeWebhookSecretEnc,
 		},
 	)
 	if err != nil {
@@ -371,11 +377,15 @@ func GetOrganizationWithBranding(ctx context.Context, orgID uuid.UUID) (*types.O
 	}
 }
 
-func SetOrganizationStripeWebhookSecret(ctx context.Context, orgID uuid.UUID, secret *string) error {
+func SetOrganizationStripeWebhookSecret(ctx context.Context, orgID uuid.UUID, secret *dbcrypto.String) error {
+	secretEnc, err := dbcrypto.EncryptString(secret)
+	if err != nil {
+		return fmt.Errorf("could not encrypt Stripe webhook secret: %w", err)
+	}
 	db := internalctx.GetDb(ctx)
-	_, err := db.Exec(ctx,
-		`UPDATE Organization SET stripe_webhook_secret = @secret WHERE id = @id`,
-		pgx.NamedArgs{"id": orgID, "secret": secret},
+	_, err = db.Exec(ctx,
+		`UPDATE Organization SET stripe_webhook_secret = NULL, stripe_webhook_secret_enc = @secretEnc WHERE id = @id`,
+		pgx.NamedArgs{"id": orgID, "secretEnc": secretEnc},
 	)
 	if err != nil {
 		return fmt.Errorf("could not update Organization stripe webhook secret: %w", err)

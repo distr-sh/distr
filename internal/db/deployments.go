@@ -12,6 +12,7 @@ import (
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -111,8 +112,8 @@ func GetDeploymentsForDeploymentTarget(
 		ctx,
 		`SELECT`+deploymentOutputExpr+`,
 				dr.application_version_id AS application_version_id,
-				dr.values_yaml AS values_yaml,
-				dr.env_file_data AS env_file_data,
+				`+dbcrypto.BytesColumn("dr", "values_yaml")+`,
+				`+dbcrypto.BytesColumn("dr", "env_file_data")+`,
 				dr.values_hash AS values_hash,
 				dr.id AS deployment_revision_id,
 				dr.created_at AS deployment_revision_created_at,
@@ -315,12 +316,20 @@ func DeleteDeploymentWithID(ctx context.Context, id uuid.UUID) error {
 }
 
 func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentRequest) (*types.DeploymentRevision, error) {
+	valuesYamlEnc, err := dbcrypto.Bytes(request.ValuesYaml).Encrypt()
+	if err != nil {
+		return nil, fmt.Errorf("could not encrypt deployment values: %w", err)
+	}
+	envFileDataEnc, err := dbcrypto.Bytes(request.EnvFileData).Encrypt()
+	if err != nil {
+		return nil, fmt.Errorf("could not encrypt deployment env file: %w", err)
+	}
 	db := internalctx.GetDb(ctx)
 	args := pgx.NamedArgs{
 		"deploymentId":           request.DeploymentID,
 		"applicationVersionId":   request.ApplicationVersionID,
-		"valuesYaml":             request.ValuesYaml,
-		"envFileData":            request.EnvFileData,
+		"valuesYamlEnc":          valuesYamlEnc,
+		"envFileDataEnc":         envFileDataEnc,
 		"valuesHash":             request.ValuesHash,
 		"forceRestart":           request.ForceRestart,
 		"ignoreRevisionSkew":     request.IgnoreRevisionSkew,
@@ -342,8 +351,8 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 		`INSERT INTO DeploymentRevision AS dr (
 			deployment_id,
 			application_version_id,
-			values_yaml,
-			env_file_data,
+			values_yaml_enc,
+			env_file_data_enc,
 			values_hash,
 			force_restart,
 			ignore_revision_skew,
@@ -356,8 +365,8 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 		) VALUES (
 		 	@deploymentId,
 			@applicationVersionId,
-			@valuesYaml,
-			@envFileData,
+			@valuesYamlEnc,
+			@envFileDataEnc,
 			@valuesHash,
 			@forceRestart,
 			@ignoreRevisionSkew,
@@ -433,8 +442,8 @@ func GetDeploymentRevisions(
 				av.name AS application_version_name,
 				d.release_name AS release_name,
 				d.docker_type AS docker_type,
-				dr.values_yaml AS values_yaml,
-				dr.env_file_data AS env_file_data,
+				`+dbcrypto.BytesColumn("dr", "values_yaml")+`,
+				`+dbcrypto.BytesColumn("dr", "env_file_data")+`,
 				dr.force_restart AS force_restart,
 				dr.ignore_revision_skew AS ignore_revision_skew,
 				CASE WHEN dr.helm_options_timeout IS NOT NULL THEN (

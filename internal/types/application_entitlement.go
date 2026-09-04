@@ -3,20 +3,21 @@ package types
 import (
 	"time"
 
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/google/uuid"
 )
 
 type ApplicationEntitlementBase struct {
-	ID                     uuid.UUID  `db:"id" json:"id"`
-	CreatedAt              time.Time  `db:"created_at" json:"createdAt"`
-	Name                   string     `db:"name" json:"name"`
-	ExpiresAt              *time.Time `db:"expires_at" json:"expiresAt,omitempty"`
-	ApplicationID          uuid.UUID  `db:"application_id" json:"applicationId"`
-	OrganizationID         uuid.UUID  `db:"organization_id" json:"-"`
-	CustomerOrganizationID *uuid.UUID `db:"customer_organization_id" json:"customerOrganizationId,omitempty"`
-	RegistryURL            *string    `db:"registry_url" json:"registryUrl,omitempty"`
-	RegistryUsername       *string    `db:"registry_username" json:"registryUsername,omitempty"`
-	RegistryPassword       *string    `db:"registry_password" json:"registryPassword,omitempty"`
+	ID                     uuid.UUID        `db:"id" json:"id"`
+	CreatedAt              time.Time        `db:"created_at" json:"createdAt"`
+	Name                   string           `db:"name" json:"name"`
+	ExpiresAt              *time.Time       `db:"expires_at" json:"expiresAt,omitempty"`
+	ApplicationID          uuid.UUID        `db:"application_id" json:"applicationId"`
+	OrganizationID         uuid.UUID        `db:"organization_id" json:"-"`
+	CustomerOrganizationID *uuid.UUID       `db:"customer_organization_id" json:"customerOrganizationId,omitempty"`
+	RegistryURL            *string          `db:"registry_url" json:"registryUrl,omitempty"`
+	RegistryUsername       *string          `db:"registry_username" json:"registryUsername,omitempty"`
+	RegistryPassword       *dbcrypto.String `db:"registry_password" json:"registryPassword,omitempty"`
 }
 
 type ApplicationEntitlementWithVersions struct {

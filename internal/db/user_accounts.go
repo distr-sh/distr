@@ -7,6 +7,7 @@ import (
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -14,7 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-const (
+var (
 	userAccountOutputExpr = `
 		u.id,
 		u.created_at,
@@ -26,7 +27,7 @@ const (
 		u.name,
 		u.image_id,
 		u.last_used_organization_id,
-		u.mfa_secret,
+		` + dbcrypto.TextValue("u", "mfa_secret") + `,
 		u.mfa_enabled,
 		u.mfa_enabled_at,
 		u.is_super_admin`
@@ -595,11 +596,15 @@ func ExistsUserAccountWithEmail(ctx context.Context, email string) (bool, error)
 	return exists, nil
 }
 
-func UpdateUserAccountMFASecret(ctx context.Context, userID uuid.UUID, secret string) error {
+func UpdateUserAccountMFASecret(ctx context.Context, userID uuid.UUID, secret dbcrypto.String) error {
+	secretEnc, err := secret.Encrypt()
+	if err != nil {
+		return fmt.Errorf("could not encrypt MFA secret: %w", err)
+	}
 	db := internalctx.GetDb(ctx)
 	cmd, err := db.Exec(ctx,
-		`UPDATE UserAccount SET mfa_secret = @secret WHERE id = @id`,
-		pgx.NamedArgs{"secret": secret, "id": userID},
+		`UPDATE UserAccount SET mfa_secret = NULL, mfa_secret_enc = @secretEnc WHERE id = @id`,
+		pgx.NamedArgs{"secretEnc": secretEnc, "id": userID},
 	)
 	if err != nil {
 		return fmt.Errorf("could not update MFA secret: %w", err)
@@ -626,7 +631,9 @@ func EnableUserAccountMFA(ctx context.Context, userID uuid.UUID) error {
 func DisableUserAccountMFA(ctx context.Context, userID uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	cmd, err := db.Exec(ctx,
-		`UPDATE UserAccount SET mfa_enabled = false, mfa_secret = NULL, mfa_enabled_at = NULL WHERE id = @id`,
+		`UPDATE UserAccount
+			SET mfa_enabled = false, mfa_secret = NULL, mfa_secret_enc = NULL, mfa_enabled_at = NULL
+			WHERE id = @id`,
 		pgx.NamedArgs{"id": userID},
 	)
 	if err != nil {

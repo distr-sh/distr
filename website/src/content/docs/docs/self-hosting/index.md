@@ -22,9 +22,10 @@ Check out our [Docker Compose](/docs/self-hosting/docker/) or [Kubernetes](/docs
 ## Configuration
 
 Whichever way you deploy it, the Hub is configured entirely through environment variables, in the `.env` file next to
-the Compose file or under `hub.env` in the Helm values. Only `DATABASE_URL`, `JWT_SECRET`, `DISTR_HOST` and `LOKI_URL`
-are needed to start it. Everything else either has a default or belongs to a feature you turn on, such as the OCI
-registry, OIDC sign-in, outgoing mail, custom domains or the maintenance jobs.
+the Compose file or under `hub.env` in the Helm values. Only `DATABASE_URL`, `JWT_SECRET`,
+`DATABASE_ENCRYPTION_KEY`, `DISTR_HOST` and `LOKI_URL` are needed to start it. Everything else either has a default or
+belongs to a feature you turn on, such as the OCI registry, OIDC sign-in, outgoing mail, custom domains or the
+maintenance jobs.
 
 The [Configuration Reference](/docs/self-hosting/configuration/) lists every variable, grouped by area, and is the
 place to look up what a setting does and when it is required.

@@ -7,6 +7,7 @@ import (
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -14,10 +15,11 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-const (
+var (
 	applicationEntitlementOutputExpr = `
 		al.id, al.created_at, al.name, al.expires_at, al.application_id, al.organization_id,
-		al.customer_organization_id, al.registry_url, al.registry_username, al.registry_password
+		al.customer_organization_id, al.registry_url, al.registry_username,
+		` + dbcrypto.TextColumn("al", "registry_password") + `
 	`
 	applicationEntitlementWithVersionsOutputExpr = applicationEntitlementOutputExpr + `,
 		coalesce((
@@ -41,15 +43,19 @@ const (
 )
 
 func CreateApplicationEntitlement(ctx context.Context, entitlement *types.ApplicationEntitlementBase) error {
+	registryPasswordEnc, err := dbcrypto.EncryptString(entitlement.RegistryPassword)
+	if err != nil {
+		return fmt.Errorf("could not encrypt registry password: %w", err)
+	}
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
 		`INSERT INTO ApplicationEntitlement AS al (
 			name, expires_at, application_id, organization_id, customer_organization_id, registry_url, registry_username,
-			registry_password
+			registry_password_enc
 		) VALUES (
 			@name, @expiresAt, @applicationId, @organizationId, @customerOrganizationId, @registryUrl, @registryUsername,
-			@registryPassword
+			@registryPasswordEnc
 		) RETURNING`+applicationEntitlementOutputExpr,
 		pgx.NamedArgs{
 			"name":                   entitlement.Name,
@@ -59,15 +65,14 @@ func CreateApplicationEntitlement(ctx context.Context, entitlement *types.Applic
 			"customerOrganizationId": entitlement.CustomerOrganizationID,
 			"registryUrl":            entitlement.RegistryURL,
 			"registryUsername":       entitlement.RegistryUsername,
-			"registryPassword":       entitlement.RegistryPassword,
+			"registryPasswordEnc":    registryPasswordEnc,
 		},
 	)
 	if err != nil {
 		return fmt.Errorf("could not insert ApplicationEntitlement: %w", err)
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ApplicationEntitlementBase]); err != nil {
-		var pgError *pgconn.PgError
-		if errors.As(err, &pgError) && pgError.Code == pgerrcode.UniqueViolation {
+		if pgError, ok := errors.AsType[*pgconn.PgError](err); ok && pgError.Code == pgerrcode.UniqueViolation {
 			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
 		}
 		return err
@@ -78,6 +83,10 @@ func CreateApplicationEntitlement(ctx context.Context, entitlement *types.Applic
 }
 
 func UpdateApplicationEntitlement(ctx context.Context, entitlement *types.ApplicationEntitlementBase) error {
+	registryPasswordEnc, err := dbcrypto.EncryptString(entitlement.RegistryPassword)
+	if err != nil {
+		return fmt.Errorf("could not encrypt registry password: %w", err)
+	}
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
@@ -87,7 +96,8 @@ func UpdateApplicationEntitlement(ctx context.Context, entitlement *types.Applic
             customer_organization_id = @customerOrganizationId,
             registry_url = @registryUrl,
             registry_username = @registryUsername,
-            registry_password = @registryPassword
+            registry_password = NULL,
+            registry_password_enc = @registryPasswordEnc
 		 WHERE al.id = @id RETURNING`+applicationEntitlementOutputExpr,
 		pgx.NamedArgs{
 			"id":                     entitlement.ID,
@@ -96,15 +106,14 @@ func UpdateApplicationEntitlement(ctx context.Context, entitlement *types.Applic
 			"customerOrganizationId": entitlement.CustomerOrganizationID,
 			"registryUrl":            entitlement.RegistryURL,
 			"registryUsername":       entitlement.RegistryUsername,
-			"registryPassword":       entitlement.RegistryPassword,
+			"registryPasswordEnc":    registryPasswordEnc,
 		},
 	)
 	if err != nil {
 		return fmt.Errorf("could not insert ApplicationEntitlement: %w", err)
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ApplicationEntitlementBase]); err != nil {
-		var pgError *pgconn.PgError
-		if errors.As(err, &pgError) && pgError.Code == pgerrcode.UniqueViolation {
+		if pgError, ok := errors.AsType[*pgconn.PgError](err); ok && pgError.Code == pgerrcode.UniqueViolation {
 			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
 		}
 		return err
