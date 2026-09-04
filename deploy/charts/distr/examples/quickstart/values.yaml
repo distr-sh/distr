@@ -47,6 +47,10 @@ hub:
       value: 'false'
     - name: LOKI_URL
       value: http://distr-loki:3100
+  # Buffers registry layer uploads on disk instead of in memory. It provisions an ephemeral
+  # volume, so the cluster needs a default storage class.
+  scratch:
+    enabled: true
 
 postgresql:
   enabled: true

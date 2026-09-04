@@ -43,7 +43,7 @@ For production, disable the bundled dependencies and point the chart at managed 
 This part is the same on every cloud:
 
 - Leave `postgresql.enabled` at `false` and set `externalDatabase.existingSecret` to a secret holding the connection URI. The alternative, `externalDatabase.uri`, puts the URI into the release values in plain text.
-- Use external object storage for both the registry (`REGISTRY_S3_*` in `hub.env`) and Loki (`loki.loki.storage`). Create both buckets up front, set `REGISTRY_S3_CREATE_BUCKET` to `false`, and drop the `create-loki-bucket` init container with `loki.singleBinary.initContainers: []`, which only exists to provision a bucket in the in-cluster RustFS.
+- Use external object storage for both the registry (`REGISTRY_S3_*` in `hub.env`) and Loki (`loki.loki.storage`). Create both buckets up front, set `REGISTRY_S3_CREATE_BUCKET` to `false` and drop the `create-loki-bucket` init container with `loki.singleBinary.initContainers: []`, which only exists to provision a bucket in the in-cluster RustFS.
 - Put `JWT_SECRET`, the license key and the object storage credentials in a `secretKeyRef` or in `hub.envFrom`, not in your `hub.env` values.
 - Enable a scratch volume with `hub.scratch.enabled`, so the registry buffers layer uploads on disk instead of in memory.
 - Add an Ingress for the two hostnames the chart serves, the app and the registry. Registry pushes have no size limit, so raise or disable the request body limit of your ingress controller on the registry host.
@@ -52,7 +52,6 @@ The rest of the defaults are already shaped for production: two Hub replicas wit
 Set `resources` and consider `autoscaling` based on the [System Requirements](/docs/self-hosting/system-requirements/).
 
 Without managed services next door, the [`community`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/community/values.yaml) and [`enterprise`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/enterprise/values.yaml) examples keep PostgreSQL and RustFS in the cluster and put an Ingress with a cert-manager certificate in front, which is the trade-off the self-contained Compose examples make as well.
-Each of them keeps its data on a single `ReadWriteOnce` volume.
 
 ### Distr Enterprise
 
@@ -87,7 +86,7 @@ Keep in mind that Helm replaces the `hub.env` list rather than merging it, so ev
 ### Distr Enterprise on AWS
 
 Run the Hub on EKS, the database on RDS for PostgreSQL and both buckets on S3 in the region of the cluster.
-The buckets need the same setup as for the [Docker Compose example](/docs/self-hosting/docker/#distr-enterprise-on-aws): private, public access blocked, versioning off so blob cleanup can reclaim storage, and a lifecycle rule that aborts incomplete multipart uploads.
+The buckets need the same setup as for the [Docker Compose example](/docs/self-hosting/docker/#distr-enterprise-on-aws): private, public access blocked, versioning off so blob cleanup can reclaim storage and a lifecycle rule that aborts incomplete multipart uploads.
 
 For access, use IRSA rather than static keys. Annotate the Hub's service account with a role that carries the S3 policy and leave the access keys unset, so the AWS SDK picks up the web identity credentials by itself.
 Loki needs the same on its own service account.
@@ -285,10 +284,9 @@ For ingress, we recommend an ingress controller you configure yourself, such as 
 GKE's built-in GCE ingress applies a 30 second backend response timeout, which is short enough to break the upload of a single large layer.
 Raising it takes a `BackendConfig` annotation on the Service, and this chart does not render one.
 
-## Custom domains
+## Per customer custom domains and OIDC
 
-Vendor organizations on the Business plan can serve the Distr app and the container registry under
-their different domains for different customers.
+Vendor organizations on the Business plan can serve the Distr app under a separate customer portal domain per customer, each with its own OIDC provider.
 Serving those domains requires a proxy in front of Distr that obtains a
 certificate for every domain a vendor registers, so the chart ships an optional
 [Caddy](https://caddyserver.com/) deployment with
@@ -321,7 +319,7 @@ domain.
 
 The default is a single replica, because Caddy instances form a cluster only when they use the same
 storage. Sharing storage is what lets them coordinate issuance, share certificates and solve each
-other's ACME challenges — and the last part is not optional behind a load balancer, which routes the
+other's ACME challenges. The last part is not optional behind a load balancer, which routes the
 certificate authority's validation request to an arbitrary replica. To run more than one replica,
 give all of them the same storage in one of two ways:
 

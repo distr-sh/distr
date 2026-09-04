@@ -7,19 +7,18 @@ sidebar:
 ---
 
 The easiest way to host your own Distr Hub is Docker Compose.
-You need a working installation of Docker and the Docker Compose plugin, version 5.3.0 or later.
-Every shipped stack prepares the scratch volume and the log storage bucket with `pre_start` lifecycle hooks, which is what needs that version.
+You need Docker Engine 29 or later and the Docker Compose plugin 5.3 or later.
 
 All five Compose stacks under [`deploy/docker`](https://github.com/distr-sh/distr/tree/main/deploy/docker) run the Hub and [Loki](/docs/self-hosting/configuration/#log-processing-loki) for log processing.
 They differ in the edition they run and in what they bring along:
 
-| Example                                                                                      | Edition    | Includes                                        | Intended for                           |
-| -------------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------- | -------------------------------------- |
-| [`quickstart`](https://github.com/distr-sh/distr/tree/main/deploy/docker/quickstart)         | Community  | PostgreSQL, RustFS object storage               | Trying Distr out locally               |
-| [`community`](https://github.com/distr-sh/distr/tree/main/deploy/docker/community)           | Community  | PostgreSQL, RustFS, Caddy with ACME             | Community production on a generic VM   |
-| [`enterprise`](https://github.com/distr-sh/distr/tree/main/deploy/docker/enterprise)         | Enterprise | PostgreSQL, RustFS, Caddy with ACME             | Enterprise production on a generic VM  |
-| [`enterprise-aws`](https://github.com/distr-sh/distr/tree/main/deploy/docker/enterprise-aws) | Enterprise | Caddy with ACME (database and S3 are external)  | Stateless enterprise production on AWS |
-| [`enterprise-gcp`](https://github.com/distr-sh/distr/tree/main/deploy/docker/enterprise-gcp) | Enterprise | Caddy with ACME (database and GCS are external) | Stateless enterprise production on GCP |
+| Example                                                                                      | Edition    | Includes                                         | Intended for                           |
+| -------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------ | -------------------------------------- |
+| [`quickstart`](https://github.com/distr-sh/distr/tree/main/deploy/docker/quickstart)         | Community  | PostgreSQL, RustFS object storage                | Trying Distr out locally               |
+| [`community`](https://github.com/distr-sh/distr/tree/main/deploy/docker/community)           | Community  | PostgreSQL, RustFS, Caddy with https             | Community production on a generic VM   |
+| [`enterprise`](https://github.com/distr-sh/distr/tree/main/deploy/docker/enterprise)         | Enterprise | PostgreSQL, RustFS, Caddy with https             | Enterprise production on a generic VM  |
+| [`enterprise-aws`](https://github.com/distr-sh/distr/tree/main/deploy/docker/enterprise-aws) | Enterprise | Caddy with https (database and S3 are external)  | Stateless enterprise production on AWS |
+| [`enterprise-gcp`](https://github.com/distr-sh/distr/tree/main/deploy/docker/enterprise-gcp) | Enterprise | Caddy with https (database and GCS are external) | Stateless enterprise production on GCP |
 
 ## Trying it out locally
 
@@ -38,7 +37,7 @@ Once you are happy with your configuration, simply start the Hub using Docker Co
 docker compose up -d
 ```
 
-Open `http://localhost:8080` to access Distr.
+Open [`http://localhost:8080`](http://localhost:8080) to access Distr.
 
 ## Running in production
 
@@ -48,11 +47,11 @@ All of their configuration lives in the `.env` file next to the Compose file.
 
 Whichever cloud you use, you need the same pieces:
 
-- A VM with at least 2 CPUs and 4 GB RAM, Docker Engine 29 or later and the Compose plugin 5.3 or later (see [System Requirements](/docs/self-hosting/system-requirements/)).
+- A VM with at least 2 CPUs and 4 GB RAM (see [System Requirements](/docs/self-hosting/system-requirements/)).
 - Two public hostnames, one for the app and one for the registry, both pointing at the VM. Caddy obtains and renews their certificates via ACME, so TCP `80` and `443` have to be reachable from the internet.
 - A managed PostgreSQL instance the VM can reach over a private network, with TLS enforced. We test against PostgreSQL 18 with 2 CPUs and 2 GB RAM.
-- Two buckets (`distr-registry`, `distr-loki`)
-- A scratch volume for the registry, so it buffers layer uploads on disk instead of in memory. Every shipped stack declares one and points `REGISTRY_SCRATCH_DIR` at it. It is a named volume on the VM's disk, so give the VM room for the layers you expect to be pushed at the same time.
+- Two buckets, one for the registry blobs and one for Loki's log chunks.
+- Disk space for the scratch volume, where the registry buffers layer uploads instead of holding them in memory. Every stack mounts one into the Hub, so give the VM room for the layers you expect to be pushed at the same time.
 - A `JWT_SECRET` from `openssl rand -base64 32`, and a `LICENSE_KEY` if you run a paid plan.
 
 On a single VM, keep running the [maintenance jobs](/docs/self-hosting/maintenance/) inside the Hub process through the `*_CRON` variables in `.env`.
@@ -72,13 +71,13 @@ The agent then handles the rollout of new Distr versions, configures registry cr
 ### Distr Enterprise on AWS
 
 We recommend [Amazon Lightsail](https://aws.amazon.com/lightsail/) for the VM.
-For a fixed monthly price you get the instance, a static IP, a DNS zone, a firewall and automatic snapshots, which covers what a single-node Hub needs:
+It bundles the instance, a static IP, a DNS zone, a firewall and optional daily snapshots at a fixed monthly price:
 
 1. Create a Linux instance with a plan that has at least 2 vCPUs and 4 GB RAM, and install Docker with the Compose plugin.
 2. Attach a static IP and point both hostnames (app and registry) at it, either in a Lightsail DNS zone or at your registrar.
 3. Open TCP `80` and `443` in the instance firewall.
 
-A Lightsail managed database is the simplest option for the database. It sits in the same Lightsail VPC as the instance, is not publicly reachable unless you ask for it, and takes daily backups.
+A Lightsail managed database is the simplest choice. It sits in the same Lightsail VPC as the instance, is not publicly reachable unless you ask for it and takes daily backups.
 Pick RDS for PostgreSQL when you need Multi-AZ failover, larger instance classes or a read replica, which the Hub can use via `DATABASE_READONLY_URL`.
 RDS instances run in the region's default VPC, so a Lightsail instance only reaches them once you enable VPC peering under Account → Advanced in the Lightsail console.
 
@@ -89,15 +88,15 @@ psql "postgres://dbmasteruser:<password>@ls-abc123.abcdefg.us-east-2.rds.amazona
   -c 'CREATE DATABASE distr'
 ```
 
-Create two buckets in the same region as the VM, one for the registry blobs and one for Loki's log chunks:
+Create the two buckets in the region of the VM:
 
 - Keep them private. Distr always reaches the buckets with credentials, and pull traffic that is offloaded to the object storage uses short-lived pre-signed URLs.
 - Leave object versioning off. The [artifact blob cleanup job](/docs/self-hosting/maintenance/) reclaims storage by deleting unreferenced blobs, and versioning would keep them around as noncurrent versions.
 - On plain S3, add a lifecycle rule that aborts incomplete multipart uploads after a day. The registry uploads large layers as multipart uploads, and an interrupted push leaves parts behind that you keep paying for.
-- Leave `REGISTRY_S3_ENDPOINT` and `LOKI_S3_ENDPOINT` empty on AWS, since the regional endpoint follows from `REGISTRY_S3_REGION` and `LOKI_S3_REGION`. If you do set one, use the plain regional endpoint (`https://s3.us-east-2.amazonaws.com`) without the bucket in it.
 
 Buckets created in Lightsail come with their own access keys, listed under Permissions on the bucket, so there is no IAM user or bucket policy to manage.
-Copy one key pair per bucket into the matching `REGISTRY_S3_*` and `LOKI_S3_*` variables.
+Copy one key pair per bucket into the matching `REGISTRY_S3_*` and `LOKI_S3_*` variables and leave `REGISTRY_S3_ENDPOINT` and `LOKI_S3_ENDPOINT` empty, since the regional endpoint follows from `REGISTRY_S3_REGION` and `LOKI_S3_REGION`.
+If you do set one, use the plain regional endpoint (`https://s3.us-east-2.amazonaws.com`) without the bucket in it.
 
 The relevant part of `deploy/docker/enterprise-aws/.env` then looks like this:
 
@@ -142,14 +141,14 @@ Attach a dedicated service account to the instance and grant it `roles/storage.o
 
 For the database, use Cloud SQL for PostgreSQL with a private IP in the same VPC as the instance, plus automated backups and point-in-time recovery.
 
-The stack talks to Google Cloud Storage in two different ways, which is what decides how each bucket has to be set up:
+The stack talks to Google Cloud Storage in two different ways, one per bucket:
 
 - The registry bucket goes through the S3 interoperability (XML) API, because the OCI registry speaks S3. Create an HMAC key for the service account under Cloud Storage → Settings → Interoperability, use it as `REGISTRY_S3_ACCESS_KEY_ID` and `REGISTRY_S3_SECRET_ACCESS_KEY`, and point `REGISTRY_S3_ENDPOINT` at `https://storage.googleapis.com` with path-style addressing. The interoperability API also needs the three compatibility settings the shipped `.env` contains (`REGISTRY_S3_REQUEST_CHECKSUM_CALCULATION`, `REGISTRY_S3_RESPONSE_CHECKSUM_VALIDATION` and `REGISTRY_RESIGN_FOR_GCP`).
 - The logs bucket goes through the native GCS API, so Loki only needs its name in `LOKI_GCS_BUCKET_NAME`.
 
-Note that the Compose stack passes no storage credentials to Loki at all.
+The Compose stack passes no storage credentials to Loki.
 Loki falls back to Google's application default credentials, which on Compute Engine are the credentials of the service account attached to the instance, fetched from the metadata server (see Loki's [storage configuration](https://grafana.com/docs/loki/latest/configure/storage/)).
-So whatever you grant that service account is what Loki can do with the logs bucket, and a VM without one leaves it unable to write a single chunk.
+Whatever you grant that service account is therefore what Loki can do with the logs bucket, and on an instance without one it cannot write any chunks.
 
 Create both buckets with uniform bucket-level access and public access prevention, in a single region rather than multi-region, and add a lifecycle rule on the registry bucket that aborts incomplete multipart uploads.
 

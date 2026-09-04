@@ -60,6 +60,10 @@ hub:
       value: http://distr-loki:3100
     - name: CUSTOM_DOMAIN_TARGET
       value: whitelabel.distr.local
+  # Buffers registry layer uploads on disk instead of in memory. Caddy streams pushes on a custom
+  # domain to the hub without a size limit, so this keeps a large layer out of its memory.
+  scratch:
+    enabled: true
 
 caddy:
   enabled: true

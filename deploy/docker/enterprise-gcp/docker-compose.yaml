@@ -79,10 +79,8 @@ services:
 
   # Loki stores deployment and deployment target log records (30 days retention).
   # It runs in monolithic (single-binary) mode and persists chunks + TSDB index in
-  # the LOKI_S3_BUCKET bucket of the external object storage, which has to exist
-  # before the stack is started.
-  # Loki is not reachable from outside, since it publishes no port. It needs the
-  # "egress" network in addition to "internal": a container attached only to an
+  # the LOKI_GCS_BUCKET_NAME bucket, which has to exist before the stack is started.
+  # Loki needs the "egress" network in addition to "internal": a container attached only to an
   # internal network has no default route, which leaves Docker's embedded resolver
   # unable to forward queries and makes the bucket hostname unresolvable.
   loki:

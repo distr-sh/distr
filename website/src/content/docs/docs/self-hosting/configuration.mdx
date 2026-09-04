@@ -48,7 +48,7 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 ### Maintenance mode
 
 `MAINTENANCE_MODE=true` announces planned downtime instead of stopping the instance. The Hub keeps serving the
-frontend, but answers every API request — including the ones from agents — and every request to the OCI registry with
+frontend, but answers every API request, including the ones from agents, and every request to the OCI registry with
 `503 Service Unavailable`, so that nothing reaches the database while you work on it. The frontend picks that up and
 shows a maintenance page that reconnects on its own once the instance is back.
 
@@ -137,7 +137,7 @@ The feature is only offered in the UI when `CUSTOM_DOMAIN_TARGET` is set.
 
 A domain is only used for links, mails, agent manifests and registry URLs once a CNAME check has
 found it to point at the CNAME target; until then the organization keeps the default host. The check runs
-when a domain is registered, can be triggered from the organization settings, and needs to be
+when a domain is registered, can be triggered from the organization settings and needs to be
 [scheduled](/docs/self-hosting/maintenance#custom-domain-verification) so that domains recover on
 their own once a record is fixed. Serving requests on a domain does not depend on the check.
 
@@ -242,7 +242,7 @@ Settings → Connected identities**. A sign-in started on the sign-up page creat
 unknown email address; invite the user beforehand to place them in an existing organization instead, or set
 `REGISTRATION=disabled` (see [Sign-up modes](#sign-up-modes)) to reject unknown addresses.
 
-Vendor organizations on the Business plan can additionally configure their own providers in the UI, which requires no
+Vendor organizations on the Business plan can also configure their own providers in the UI, which requires no
 instance configuration. Those issuer URLs are entered by organization administrators and fetched by the Hub, so they
 must be `https` and must not resolve to a private network address. Both restrictions are lifted when `DISTR_HOST` is an
 `http` URL, so that an instance running locally can be developed against an identity provider next to it. An operator

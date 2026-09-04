@@ -117,8 +117,6 @@ services:
     restart: always
     logging: *default-logging
     healthcheck:
-      # Production strict TLS example (SAN/FQDN aligned, no `-k`):
-      # curl -f --cacert /opt/tls/ca.crt --resolve rustfs-a.example.com:9000:127.0.0.1 https://rustfs-a.example.com:9000/health
       test: ['CMD', 'sh', '-c', 'curl -f http://127.0.0.1:9000/health']
       interval: 30s
       timeout: 10s
