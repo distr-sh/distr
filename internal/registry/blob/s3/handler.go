@@ -10,6 +10,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/smithy-go"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/registry/blob"
@@ -30,7 +31,6 @@ type blobHandler struct {
 	s3Client        *s3.Client
 	s3PresignClient *s3.PresignClient
 	allowRedirect   bool
-	resignForGCP    bool
 	bucket          string
 }
 
@@ -53,7 +53,6 @@ func NewBlobHandler(ctx context.Context, s3Client *s3.Client) (blob.BlobHandler,
 	h := blobHandler{
 		s3Client:      s3Client,
 		allowRedirect: s3Config.AllowRedirect,
-		resignForGCP:  s3Config.ResignForGCP,
 		bucket:        s3Config.Bucket,
 	}
 
@@ -414,25 +413,22 @@ func (handler *blobHandler) CompleteSession(ctx context.Context, repo, id string
 		finalKey := digest.String()
 		copyErr := handler.copyObject(ctx, uploadKey, finalKey)
 
-		// The temporary object is no longer useful after the multipart upload has
-		// been completed. Clean it up even when the final copy fails; otherwise
-		// failed sessions leave non-digest-shaped chunks behind indefinitely.
-		_, deleteErr := handler.s3Client.DeleteObject(context.WithoutCancel(ctx), &s3.DeleteObjectInput{
+		// ArtifactBlob cleanup only deletes digest-shaped keys, so a chunk left behind here is
+		// never collected, not even when the copy above failed.
+		if _, err := handler.s3Client.DeleteObject(context.WithoutCancel(ctx), &s3.DeleteObjectInput{
 			Bucket: &handler.bucket,
 			Key:    &uploadKey,
-		})
-		if deleteErr != nil {
-			internalctx.GetLogger(ctx).Warn("failed to remove completed upload chunk", zap.Error(deleteErr))
+		}); err != nil {
+			internalctx.GetLogger(ctx).Warn("failed to remove completed upload chunk", zap.Error(err))
 		}
-		if copyErr != nil {
-			return copyErr
-		}
-		return deleteErr
+
+		return copyErr
 	}
 }
 
 // copyObject copies srcKey to dstKey within the same bucket. For objects larger than the 5 GB CopyObject limit,
-// it falls back to a multipart copy using UploadPartCopy.
+// it falls back to a multipart copy using UploadPartCopy, and for backends that do not implement that operation
+// to copyObjectWithoutPartCopy.
 func (handler *blobHandler) copyObject(ctx context.Context, srcKey, dstKey string) error {
 	head, err := handler.s3Client.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket: &handler.bucket,
@@ -442,22 +438,15 @@ func (handler *blobHandler) copyObject(ctx context.Context, srcKey, dstKey strin
 		return err
 	}
 	objectSize := *head.ContentLength
+	copySource := handler.bucket + "/" + srcKey
 
 	if objectSize <= maxS3PartSize {
-		copySource := handler.bucket + "/" + srcKey
 		_, err = handler.s3Client.CopyObject(ctx, &s3.CopyObjectInput{
 			Bucket:     &handler.bucket,
 			Key:        &dstKey,
 			CopySource: &copySource,
 		})
 		return err
-	}
-
-	// GCS implements the S3 multipart upload API, but not multipart copy
-	// (UploadPartCopy/x-amz-copy-source-range). Stream each source range through
-	// the registry and upload it as a normal multipart part instead.
-	if handler.resignForGCP {
-		return handler.copyObjectViaUpload(ctx, srcKey, dstKey, objectSize)
 	}
 
 	upload, err := handler.s3Client.CreateMultipartUpload(ctx, &s3.CreateMultipartUploadInput{
@@ -478,7 +467,6 @@ func (handler *blobHandler) copyObject(ctx context.Context, srcKey, dstKey strin
 
 	numParts := (objectSize + maxS3PartSize - 1) / maxS3PartSize
 	completedParts := make([]s3types.CompletedPart, numParts)
-	copySource := handler.bucket + "/" + srcKey
 
 	for i := range numParts {
 		partNumber := int32(i + 1)
@@ -496,6 +484,11 @@ func (handler *blobHandler) copyObject(ctx context.Context, srcKey, dstKey strin
 		})
 		if err != nil {
 			abort()
+			// GCS implements the multipart upload API but not UploadPartCopy: it documents
+			// x-amz-copy-source-range as not applicable and answers NotImplemented.
+			if apiErr, ok := errors.AsType[smithy.APIError](err); ok && apiErr.ErrorCode() == "NotImplemented" {
+				return handler.copyObjectWithoutPartCopy(ctx, srcKey, dstKey, objectSize)
+			}
 			return err
 		}
 		completedParts[i] = s3types.CompletedPart{PartNumber: &partNumber, ETag: result.CopyPartResult.ETag}
@@ -513,9 +506,32 @@ func (handler *blobHandler) copyObject(ctx context.Context, srcKey, dstKey strin
 	return nil
 }
 
-// copyObjectViaUpload copies a large object by downloading source ranges and
-// uploading them as destination multipart parts. This is required for GCS,
-// whose S3-compatible API does not implement UploadPartCopy.
+// copyObjectWithoutPartCopy copies an object that exceeds the CopyObject limit on a backend that does not
+// implement UploadPartCopy. The 5 GB limit is an S3 restriction that does not necessarily apply elsewhere, so
+// a single request is tried first: on GCS a copy within one bucket is a server-side rewrite, which is orders of
+// magnitude cheaper than moving the whole blob through the registry.
+func (handler *blobHandler) copyObjectWithoutPartCopy(
+	ctx context.Context,
+	srcKey, dstKey string,
+	objectSize int64,
+) error {
+	copySource := handler.bucket + "/" + srcKey
+	if _, err := handler.s3Client.CopyObject(ctx, &s3.CopyObjectInput{
+		Bucket:     &handler.bucket,
+		Key:        &dstKey,
+		CopySource: &copySource,
+	}); err == nil {
+		return nil
+	} else {
+		internalctx.GetLogger(ctx).Info("copying large blob in a single request failed, streaming it instead",
+			zap.Int64("objectSize", objectSize), zap.Error(err))
+	}
+
+	return handler.copyObjectViaUpload(ctx, srcKey, dstKey, objectSize)
+}
+
+// copyObjectViaUpload copies an object by downloading it range by range and uploading each range as a
+// destination multipart part, so that no range is buffered in memory.
 func (handler *blobHandler) copyObjectViaUpload(ctx context.Context, srcKey, dstKey string, objectSize int64) error {
 	upload, err := handler.s3Client.CreateMultipartUpload(ctx, &s3.CreateMultipartUploadInput{
 		Bucket: &handler.bucket,
@@ -533,12 +549,23 @@ func (handler *blobHandler) copyObjectViaUpload(ctx context.Context, srcKey, dst
 		})
 	}
 
-	numParts := (objectSize + maxS3PartSize - 1) / maxS3PartSize
+	// A GetObject body is not seekable, so the SDK cannot rewind it to retry a part. Keep the parts
+	// small enough that losing one to a transient error does not discard much of the transfer. As
+	// in uploadParts, the final part absorbs the remainder so that no other part can end up below
+	// the 5 MiB minimum part size.
+	numParts := max(int64(1), objectSize/splitPartSize)
 	completedParts := make([]s3types.CompletedPart, numParts)
+
+	internalctx.GetLogger(ctx).Info("streaming large blob to its final location",
+		zap.Int64("objectSize", objectSize), zap.Int64("parts", numParts))
+
 	for i := range numParts {
 		partNumber := int32(i + 1)
-		rangeStart := i * maxS3PartSize
-		rangeEnd := min(rangeStart+maxS3PartSize, objectSize) - 1
+		rangeStart := i * splitPartSize
+		rangeEnd := rangeStart + splitPartSize - 1
+		if i == numParts-1 {
+			rangeEnd = objectSize - 1
+		}
 		objectRange := fmt.Sprintf("bytes=%d-%d", rangeStart, rangeEnd)
 
 		result, err := handler.s3Client.GetObject(ctx, &s3.GetObjectInput{
