@@ -9,16 +9,16 @@ sidebar:
 Distr is available as a [Helm chart](/glossary/helm-chart/) distributed via ghcr.io.
 Every setting mentioned on this page is documented in the chart's reference [values.yaml](https://artifacthub.io/packages/helm/distr/distr?modal=values).
 
-Complete values files for the setups below live under [`deploy/charts/distr/examples`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples), one per folder, and match the [Docker Compose stacks](/docs/self-hosting/docker/) of the same name.
+Complete values files for the setups below live under [`deploy/charts/distr/examples`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples), one per folder, and match the [Docker Compose examples](/docs/self-hosting/docker/) of the same name.
 Every one of them deploys the Hub and [Loki](/docs/self-hosting/configuration/#log-processing-loki) for log processing, and they differ in the edition they run and in what they bring along:
 
-| Example                                                                                                     | Edition    | Includes                                               | Intended for                               |
-| ----------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------- | ------------------------------------------ |
-| [`quickstart`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples/quickstart)         | Community  | PostgreSQL, RustFS object storage                          | Trying Distr out on a local [minikube cluster](https://minikube.sigs.k8s.io/)        |
-| [`community`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples/community)           | Community  | PostgreSQL, RustFS, Ingress with cert-manager              | Community production on a generic cluster  |
-| [`enterprise`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples/enterprise)         | Enterprise | PostgreSQL, RustFS, Ingress with cert-manager              | Enterprise production on a generic cluster |
-| [`enterprise-aws`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples/enterprise-aws) | Enterprise | ALB Ingress (database and S3 are external)                 | Stateless enterprise production on EKS     |
-| [`enterprise-gcp`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples/enterprise-gcp) | Enterprise | Ingress with cert-manager (Cloud SQL and GCS are external) | Stateless enterprise production on GKE     |
+| Example                                                                                                     | Edition    | Includes                                                   | Intended for                                                                  |
+| ----------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| [`quickstart`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples/quickstart)         | Community  | PostgreSQL, RustFS object storage                          | Trying Distr out on a local [minikube cluster](https://minikube.sigs.k8s.io/) |
+| [`community`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples/community)           | Community  | PostgreSQL, RustFS, Ingress with cert-manager              | Community production on a generic cluster                                     |
+| [`enterprise`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples/enterprise)         | Enterprise | PostgreSQL, RustFS, Ingress with cert-manager              | Enterprise production on a generic cluster                                    |
+| [`enterprise-aws`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples/enterprise-aws) | Enterprise | ALB Ingress (database and S3 are external)                 | Stateless enterprise production on EKS                                        |
+| [`enterprise-gcp`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples/enterprise-gcp) | Enterprise | Ingress with cert-manager (Cloud SQL and GCS are external) | Stateless enterprise production on GKE                                        |
 
 ## Trying it out locally
 
@@ -51,7 +51,7 @@ This part is the same on every cloud:
 The rest of the defaults are already shaped for production: two Hub replicas with a `PodDisruptionBudget`, and the [maintenance jobs](/docs/self-hosting/maintenance/) as `CronJob`s under `cronJobs` instead of in-process cron, which is what you want as soon as more than one replica runs.
 Set `resources` and consider `autoscaling` based on the [System Requirements](/docs/self-hosting/system-requirements/).
 
-Without managed services next door, the [`community`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/community/values.yaml) and [`enterprise`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/enterprise/values.yaml) examples keep PostgreSQL and RustFS in the cluster and put an Ingress with a cert-manager certificate in front, which is the trade-off the self-contained Compose stacks make as well.
+Without managed services next door, the [`community`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/community/values.yaml) and [`enterprise`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/enterprise/values.yaml) examples keep PostgreSQL and RustFS in the cluster and put an Ingress with a cert-manager certificate in front, which is the trade-off the self-contained Compose examples make as well.
 Each of them keeps its data on a single `ReadWriteOnce` volume.
 
 ### Distr Enterprise
@@ -87,7 +87,7 @@ Keep in mind that Helm replaces the `hub.env` list rather than merging it, so ev
 ### Distr Enterprise on AWS
 
 Run the Hub on EKS, the database on RDS for PostgreSQL and both buckets on S3 in the region of the cluster.
-The buckets need the same setup as for the [Docker Compose stack](/docs/self-hosting/docker/#distr-enterprise-on-aws): private, public access blocked, versioning off so blob cleanup can reclaim storage, and a lifecycle rule that aborts incomplete multipart uploads.
+The buckets need the same setup as for the [Docker Compose example](/docs/self-hosting/docker/#distr-enterprise-on-aws): private, public access blocked, versioning off so blob cleanup can reclaim storage, and a lifecycle rule that aborts incomplete multipart uploads.
 
 For access, use IRSA rather than static keys. Annotate the Hub's service account with a role that carries the S3 policy and leave the access keys unset, so the AWS SDK picks up the web identity credentials by itself.
 Loki needs the same on its own service account.
@@ -190,7 +190,7 @@ If you prefer static credentials over IRSA, drop the service account annotations
 ### Distr Enterprise on GCP
 
 Run the Hub on GKE, the database on Cloud SQL for PostgreSQL with a private IP in the cluster's VPC, and both buckets on Cloud Storage in the region of the cluster.
-As in the Compose stack, the two buckets are reached in different ways: the registry uses the S3 interoperability API with an HMAC key, while Loki uses the native GCS API and authenticates through Workload Identity.
+As in the Compose example, the two buckets are reached in different ways: the registry uses the S3 interoperability API with an HMAC key, while Loki uses the native GCS API and authenticates through Workload Identity.
 So bind a Google service account with `roles/storage.objectAdmin` on the logs bucket to Loki's Kubernetes service account, and keep the HMAC key of a service account with access to the registry bucket in a secret.
 
 The full values file, including the Enterprise image and the secrets it expects, is [`examples/enterprise-gcp/values.yaml`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/enterprise-gcp/values.yaml):
@@ -288,7 +288,8 @@ Raising it takes a `BackendConfig` annotation on the Service, and this chart doe
 ## Custom domains
 
 Vendor organizations on the Business plan can serve the Distr app and the container registry under
-their own domains. Serving those domains requires a proxy in front of the Hub that obtains a
+their different domains for different customers.
+Serving those domains requires a proxy in front of Distr that obtains a
 certificate for every domain a vendor registers, so the chart ships an optional
 [Caddy](https://caddyserver.com/) deployment with
 [on-demand TLS](https://caddyserver.com/docs/automatic-https#on-demand-tls):
