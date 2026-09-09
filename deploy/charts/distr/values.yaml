@@ -108,6 +108,14 @@ hub:
       #   secretKeyRef:
       #     name: ""
       #     key: ""
+    # Both secrets above can instead hold a "kms:<base64 ciphertext>" value that is unwrapped with
+    # AWS KMS or GCP Cloud KMS during startup, so that no key material is stored in the cluster. See
+    # https://distr.sh/docs/self-hosting/key-management/
+    # Name the key of exactly one service, which is also what selects it:
+    # - name: KMS_AWS_KEY_ID
+    #   value: 'arn:aws:kms:eu-central-1:123456789012:key/00000000-0000-0000-0000-000000000000'
+    # - name: KMS_GCP_KEY_NAME
+    #   value: 'projects/my-project/locations/europe-west3/keyRings/distr/cryptoKeys/distr-master'
     - name: MAILER_FROM_ADDRESS
       value: My Distr <noreply@distr.local>
     - name: MAILER_TYPE

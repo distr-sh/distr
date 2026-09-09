@@ -1,6 +1,7 @@
 package env
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -10,9 +11,14 @@ import (
 
 	"github.com/distr-sh/distr/internal/envparse"
 	"github.com/distr-sh/distr/internal/envutil"
+	"github.com/distr-sh/distr/internal/kms"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/joho/godotenv"
 )
+
+// kmsResolveTimeout bounds the requests to the key management service, which happen before
+// anything of this process runs that could cancel them.
+const kmsResolveTimeout = 30 * time.Second
 
 var (
 	databaseUrl                            string
@@ -128,11 +134,25 @@ func Initialize() {
 	databaseMaxConns = envutil.GetEnvParsedOrNil("DATABASE_MAX_CONNS", strconv.Atoi)
 	databaseReadonlyUrl = envutil.GetEnvOrNil("DATABASE_READONLY_URL")
 	databaseReadonlyMaxConns = envutil.GetEnvParsedOrNil("DATABASE_READONLY_MAX_CONNS", strconv.Atoi)
-	databaseEncryptionKey = envutil.RequireEnv("DATABASE_ENCRYPTION_KEY")
+
+	ctx, cancel := context.WithTimeout(context.Background(), kmsResolveTimeout)
+	defer cancel()
+	resolver := util.Require(kms.New(ctx, kms.Config{
+		AWS: kms.AWSConfig{
+			KeyID:    envutil.GetEnv("KMS_AWS_KEY_ID"),
+			Region:   envutil.GetEnvOrNil("KMS_AWS_REGION"),
+			Endpoint: envutil.GetEnvOrNil("KMS_AWS_ENDPOINT"),
+		},
+		GCP: kms.GCPConfig{KeyName: envutil.GetEnv("KMS_GCP_KEY_NAME")},
+	}))
+	defer func() { _ = resolver.Close() }()
+
+	databaseEncryptionKey = requireEnvResolved(ctx, resolver, "DATABASE_ENCRYPTION_KEY")
 	databaseEncryptionMigrateOnBoot = envutil.GetEnvParsedOrDefault(
 		"DATABASE_ENCRYPTION_MIGRATE_ON_BOOT", strconv.ParseBool, false,
 	)
-	jwtSecret = envutil.RequireEnvParsed("JWT_SECRET", base64.StdEncoding.DecodeString)
+	jwtSecret = util.Require(envutil.ParseValue("JWT_SECRET",
+		requireEnvResolved(ctx, resolver, "JWT_SECRET"), base64.StdEncoding.DecodeString))
 	host = envutil.RequireEnv("DISTR_HOST")
 	agentInterval = envutil.GetEnvParsedOrDefault("AGENT_INTERVAL", envparse.PositiveDuration, 5*time.Second)
 	statusEntriesMaxAge = envutil.GetEnvParsedOrNil("STATUS_ENTRIES_MAX_AGE", envparse.PositiveDuration)
@@ -325,6 +345,12 @@ func Initialize() {
 	internalServerAddr = envutil.GetEnvOrDefault("INTERNAL_SERVER_ADDR", ":8085", envutil.GetEnvOpts{})
 
 	maintenanceMode = envutil.GetEnvParsedOrDefault("MAINTENANCE_MODE", strconv.ParseBool, false)
+}
+
+// requireEnvResolved reads a required variable whose value may be wrapped with a key management
+// service instead of being the secret itself.
+func requireEnvResolved(ctx context.Context, resolver *kms.Resolver, key string) string {
+	return util.Require(resolver.Resolve(ctx, key, envutil.RequireEnv(key)))
 }
 
 func DatabaseUrl() string {

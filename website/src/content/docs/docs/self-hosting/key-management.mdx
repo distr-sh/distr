@@ -1,0 +1,97 @@
+---
+title: Key Management Service
+description: Store the Distr Hub's database encryption key and JWT secret as a ciphertext of AWS KMS or GCP Cloud KMS, so that no key material is kept in your configuration.
+sidebar:
+  label: Key Management Service
+  order: 5
+---
+
+import {Aside} from '@astrojs/starlight/components';
+
+By default `JWT_SECRET` and `DATABASE_ENCRYPTION_KEY` hold the key material itself. Both also accept a ciphertext
+that the Hub unwraps with AWS KMS or GCP Cloud KMS while it starts, so the key material appears in neither your
+configuration nor a Kubernetes Secret. Reading it becomes an API call that your cloud logs and that you can revoke
+without touching the instance.
+
+Which service is used follows from the key you name, since there is one key per service:
+
+| Variable           | Required | Default | Description                                                                                                               |
+| ------------------ | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `KMS_AWS_KEY_ID`   | for AWS  | —       | Key ARN, key id or `alias/<name>` of the AWS KMS key. Setting it selects AWS KMS.                                         |
+| `KMS_AWS_REGION`   | no       | —       | Region of that key. Defaults to the region of `KMS_AWS_KEY_ID` when it is an ARN, then to the AWS SDK's own resolution.   |
+| `KMS_AWS_ENDPOINT` | no       | —       | Overrides the AWS KMS endpoint. Intended for testing against a local stand-in.                                            |
+| `KMS_GCP_KEY_NAME` | for GCP  | —       | Full resource name of the Cloud KMS key (`projects/…/locations/…/keyRings/…/cryptoKeys/…`). Setting it selects Cloud KMS. |
+
+Naming no key at all means every value is used as it is, and naming two keys is rejected rather than resolved by
+precedence, so that a key left behind by a migration between two clouds cannot decide which one your instance talks
+to.
+
+A wrapped value is the `kms:` prefix followed by the base64 ciphertext:
+
+```sh
+KMS_AWS_KEY_ID=alias/distr
+DATABASE_ENCRYPTION_KEY=kms:AQICAHhwPRWvSKbxYYqVjZ9…
+```
+
+The prefix is what tells the two apart, so a value without it keeps being used as it is and you can wrap one of the
+two variables and leave the other. If the service is unreachable, or a ciphertext cannot be opened, the Hub refuses
+to start rather than run without the value.
+
+## Wrapping a value
+
+What you wrap is the exact string you would otherwise put into the variable. A keyring of several keys is therefore
+one ciphertext, and [rotating it](/docs/self-hosting/configuration#rotating-the-key) works exactly as it does for an
+unwrapped key.
+
+Every ciphertext is bound to the variable it is read for through the encryption context `distr=<variable>`. You have
+to pass it when you wrap the value, otherwise the Hub cannot open it. It is what keeps a ciphertext made for
+`JWT_SECRET` from being used as `DATABASE_ENCRYPTION_KEY`, and on AWS it can also be required by the key policy.
+
+With AWS KMS, the output is base64 already and goes behind `kms:` as it is:
+
+```sh
+printf '0:%s' "$(openssl rand -base64 32)" > key.txt
+aws kms encrypt \
+  --key-id alias/distr \
+  --plaintext fileb://key.txt \
+  --encryption-context distr=DATABASE_ENCRYPTION_KEY \
+  --output text --query CiphertextBlob
+rm key.txt
+```
+
+With GCP Cloud KMS, `gcloud` writes raw bytes, hence the pipe:
+
+```sh
+printf '0:%s' "$(openssl rand -base64 32)" > key.txt
+printf 'distr=DATABASE_ENCRYPTION_KEY' > context.txt
+gcloud kms encrypt \
+  --location=europe-west3 --keyring=distr --key=distr-master \
+  --plaintext-file=key.txt \
+  --additional-authenticated-data-file=context.txt \
+  --ciphertext-file=- | base64 -w0
+rm key.txt context.txt
+```
+
+Both commands read the key from a file rather than from an argument, so that it does not end up in your shell
+history. For `JWT_SECRET`, wrap the output of `openssl rand -base64 32` on its own, without the `0:` of a keyring
+entry, and use `distr=JWT_SECRET` as the encryption context.
+
+## Permissions
+
+The Hub only ever decrypts; wrapping a value is a one-time action you perform yourself, so its credentials do not
+need permission to encrypt.
+
+- **AWS**: `kms:Decrypt` on the key. You can restrict it to Distr by requiring the encryption context in the key
+  policy, e.g. `"kms:EncryptionContext:distr": "DATABASE_ENCRYPTION_KEY"`. Credentials come from the default chain,
+  so IRSA or an instance profile need no further configuration.
+- **GCP**: `roles/cloudkms.cryptoKeyDecrypter` on the key. Credentials come from Application Default Credentials, so
+  Workload Identity needs no further configuration and a service account key file is passed through
+  `GOOGLE_APPLICATION_CREDENTIALS`.
+
+<Aside type="caution">
+  The key management service now holds what your data depends on. Losing the KMS
+  key is losing the [database encryption
+  key](/docs/self-hosting/configuration#database-encryption), and every value it
+  protects with it. Provider-side automatic key rotation is safe, because every
+  ciphertext records the key version it was made with.
+</Aside>

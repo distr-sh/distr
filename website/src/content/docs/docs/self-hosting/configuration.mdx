@@ -67,6 +67,10 @@ resources, MFA secrets, Stripe webhook secrets and entitlement registry credenti
 `openssl rand -base64 32`. **Back it up separately from the database:** a dump is worthless without the key, and so is
 your data if you lose it.
 
+Instead of the key itself, the variable can also hold a ciphertext that the Hub unwraps with AWS KMS or GCP Cloud KMS
+while it starts, so that no key material is kept in your configuration — see
+[Key Management Service](/docs/self-hosting/key-management/).
+
 Encryption is transparent — nothing else in your configuration changes — but the values that were written before you
 upgraded to a version with encryption are still in plaintext. Move them over in one of two ways:
 
@@ -103,6 +107,19 @@ their reads of those values fail until the rollout finishes:
    values are written changes, but every replica can read the new one.
 2. roll out `DATABASE_ENCRYPTION_KEY="1:<new key>,0:<old key>"` to make the new key active.
 3. run `distr maintenance encrypt-database` and drop the old entry as above.
+
+## Key Management Service
+
+Unwraps `JWT_SECRET` and `DATABASE_ENCRYPTION_KEY` with AWS KMS or GCP Cloud KMS during startup, so that no key
+material is kept in your configuration.
+See [Key Management Service](/docs/self-hosting/key-management/) for details.
+
+| Variable           | Required | Default | Description                                                                                                               |
+| ------------------ | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `KMS_AWS_KEY_ID`   | for AWS  | —       | Key ARN, key id or `alias/<name>` of the AWS KMS key. Setting it selects AWS KMS.                                         |
+| `KMS_AWS_REGION`   | no       | —       | Region of that key. Defaults to the region of `KMS_AWS_KEY_ID` when it is an ARN, then to the AWS SDK's own resolution.   |
+| `KMS_AWS_ENDPOINT` | no       | —       | Overrides the AWS KMS endpoint. Intended for testing against a local stand-in.                                            |
+| `KMS_GCP_KEY_NAME` | for GCP  | —       | Full resource name of the Cloud KMS key (`projects/…/locations/…/keyRings/…/cryptoKeys/…`). Setting it selects Cloud KMS. |
 
 ## Tokens & Sessions
 
