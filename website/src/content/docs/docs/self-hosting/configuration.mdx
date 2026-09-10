@@ -59,8 +59,8 @@ The Kubernetes probes target `/`, which keeps being served, so the pod stays in 
 
 ## Key Management Service
 
-Unwraps `JWT_SECRET` and `DATABASE_ENCRYPTION_KEY` with AWS KMS or GCP Cloud KMS during startup, so that no key
-material is kept in your configuration.
+Unwraps `JWT_SECRET`, `DATABASE_ENCRYPTION_KEY` and `LICENSE_KEY_PRIVATE_KEY` with AWS KMS or GCP Cloud KMS during
+startup, so that no key material is kept in your configuration.
 See [Security & Encryption](/docs/self-hosting/security#key-management-service) for details.
 
 | Variable           | Required | Default | Description                                                                                                               |
@@ -308,10 +308,10 @@ These values are injected into the compiled frontend at runtime.
 
 Options relevant to Distr Pro and hosted billing.
 
-| Variable                                   | Required | Default | Description                                                   |
-| ------------------------------------------ | -------- | ------- | ------------------------------------------------------------- |
-| `LICENSE_KEY`                              | no       | —       | Distr license key unlocking the plan it was issued for.       |
-| `LICENSE_KEY_PRIVATE_KEY`                  | no       | —       | PEM-encoded private key used to sign customer license keys.   |
-| `STRIPE_API_KEY`                           | no       | —       | Stripe API key for billing integration.                       |
-| `STRIPE_WEBHOOK_SECRET`                    | no       | —       | Secret used to verify incoming Stripe webhooks.               |
-| `STRIPE_WEBHOOK_VERSION_MISMATCH_BEHAVIOR` | no       | `error` | Behavior on Stripe API version mismatch: `error` or `ignore`. |
+| Variable                                   | Required | Default | Description                                                                                                                               |
+| ------------------------------------------ | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `LICENSE_KEY`                              | no       | —       | Distr license key unlocking the plan it was issued for.                                                                                   |
+| `LICENSE_KEY_PRIVATE_KEY`                  | no       | —       | PEM-encoded private key used to sign customer license keys, see [Security & Encryption](/docs/self-hosting/security#license-signing-key). |
+| `STRIPE_API_KEY`                           | no       | —       | Stripe API key for billing integration.                                                                                                   |
+| `STRIPE_WEBHOOK_SECRET`                    | no       | —       | Secret used to verify incoming Stripe webhooks.                                                                                           |
+| `STRIPE_WEBHOOK_VERSION_MISMATCH_BEHAVIOR` | no       | `error` | Behavior on Stripe API version mismatch: `error` or `ignore`.                                                                             |

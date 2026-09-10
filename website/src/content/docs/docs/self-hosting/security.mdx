@@ -8,10 +8,11 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 
-A Distr Hub holds two pieces of key material: the key its sensitive database columns are encrypted with, and the
-secret its tokens are signed with. This page describes what each of them protects, what rotating it entails, and how to
-keep either out of your configuration by storing it as the ciphertext of a key management service. Both are set as
-environment variables, listed in the [configuration reference](/docs/self-hosting/configuration).
+A Distr Hub holds key material of its own: the key its sensitive database columns are encrypted with, the secret its
+tokens are signed with, and, if you issue license keys to your customers, the key those are signed with. This page
+describes what each of them protects, what rotating it entails, and how to keep any of them out of your configuration
+by storing it as the ciphertext of a key management service. All three are set as environment variables, listed in the
+[configuration reference](/docs/self-hosting/configuration).
 
 ## Database Encryption
 
@@ -81,11 +82,24 @@ are signed out and have to sign in again, and invite and password reset links th
 working. Agents recover on their own, because what their manifest carries is the access key of their deployment target,
 which they exchange for a new token.
 
+## License Signing Key
+
+`LICENSE_KEY_PRIVATE_KEY` is the PEM-encoded private key that signs the [license keys](/docs/platform/license-keys)
+you issue to your customers, and it is only needed if you issue any. Your instance serves the matching public key, so
+that the software you distribute can [verify a license key](/docs/platform/license-keys#verifying-tokens-in-your-application)
+on its own.
+
+Treat it like a release signing key rather than a credential. Anyone holding it can mint license keys your own software
+accepts, and there is nobody to revoke it at, which is why it is worth keeping out of your configuration for the same
+reason as the two above. Wrapping it also turns the multi-line PEM into a single-line value. Replacing the key
+invalidates every license key you have issued so far, since they no longer verify against the new public key, so plan a
+rotation as a reissue of all of them.
+
 ## Key Management Service
 
-By default `JWT_SECRET` and `DATABASE_ENCRYPTION_KEY` hold the key material itself. Both also accept a ciphertext
-that the Hub unwraps with a configured key management service during boot, so the key material appears in neither your
-configuration nor a Kubernetes Secret. Reading it becomes an API call that your cloud logs and that you can revoke
+By default `JWT_SECRET`, `DATABASE_ENCRYPTION_KEY` and `LICENSE_KEY_PRIVATE_KEY` hold the key material itself. All
+three also accept a ciphertext that the Hub unwraps with a configured key management service during boot, so the key
+material appears in neither your configuration nor a Kubernetes Secret. Reading it becomes an API call that your cloud logs and that you can revoke
 without touching the instance. Currently, the following KMS providers are supported:
 
 - AWS Key Management Service (KMS)

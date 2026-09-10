@@ -100,7 +100,7 @@ hub:
     # Can be generated with `openssl rand -base64 32`. Losing it makes every encrypted value
     # unreadable, so back it up separately from the database.
     # Rotating it takes two rollouts with more than one replica, see
-    # https://distr.sh/docs/self-hosting/configuration/#rotating-the-key
+    # https://distr.sh/docs/self-hosting/security/#rotating-the-key
     - name: DATABASE_ENCRYPTION_KEY
       value: 8fVQ3nZ5kL0xR7cWtYbA1sJmEuHpDgNiO2vXqTzKcRo=
       # We recommend reading the encryption key from a secretKeyRef
@@ -108,8 +108,9 @@ hub:
       #   secretKeyRef:
       #     name: ""
       #     key: ""
-    # Both secrets above can instead hold a "kms:<base64 ciphertext>" value that is unwrapped with
-    # AWS KMS or GCP Cloud KMS during startup, so that no key material is stored in the cluster. See
+    # Both secrets above, and LICENSE_KEY_PRIVATE_KEY, can instead hold a "kms:<base64 ciphertext>"
+    # value that is unwrapped with AWS KMS or GCP Cloud KMS during startup, so that no key material
+    # is stored in the cluster. See
     # https://distr.sh/docs/self-hosting/security/
     # Name the key of exactly one service, which is also what selects it:
     # - name: KMS_AWS_KEY_ID

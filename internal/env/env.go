@@ -312,7 +312,7 @@ func Initialize() {
 	)
 	stripeAPIKey = envutil.GetEnvOrNil("STRIPE_API_KEY")
 
-	if pem := envutil.GetEnvOrNil("LICENSE_KEY_PRIVATE_KEY"); pem != nil {
+	if pem := getEnvResolvedOrNil(ctx, resolver, "LICENSE_KEY_PRIVATE_KEY"); pem != nil {
 		licenseKeyPrivateKeyPEM = []byte(*pem)
 	}
 
@@ -351,6 +351,15 @@ func Initialize() {
 // service instead of being the secret itself.
 func requireEnvResolved(ctx context.Context, resolver *kms.Resolver, key string) string {
 	return util.Require(resolver.Resolve(ctx, key, envutil.RequireEnv(key)))
+}
+
+// getEnvResolvedOrNil is [requireEnvResolved] for an optional variable.
+func getEnvResolvedOrNil(ctx context.Context, resolver *kms.Resolver, key string) *string {
+	value := envutil.GetEnvOrNil(key)
+	if value == nil {
+		return nil
+	}
+	return new(util.Require(resolver.Resolve(ctx, key, *value)))
 }
 
 func DatabaseUrl() string {
