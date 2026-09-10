@@ -59,8 +59,8 @@ The Kubernetes probes target `/`, which keeps being served, so the pod stays in 
 
 ## Key Management Service
 
-Unwraps `JWT_SECRET`, `DATABASE_ENCRYPTION_KEY` and `LICENSE_KEY_PRIVATE_KEY` with AWS KMS or GCP Cloud KMS during
-startup, so that no key material is kept in your configuration.
+Distr unwraps `JWT_SECRET`, `DATABASE_ENCRYPTION_KEY` and `LICENSE_KEY_PRIVATE_KEY` with AWS KMS or GCP Cloud KMS
+during startup, so that no key material is kept in your configuration.
 See [Security & Encryption](/docs/self-hosting/security#key-management-service) for details.
 
 | Variable           | Required | Default | Description                                                                                                               |
