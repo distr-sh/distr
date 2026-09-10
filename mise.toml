@@ -149,26 +149,22 @@ description = 'Format hub and agents, without the website'
 [tasks.format]
 run = { tasks = ["format:app", "format:website"] }
 
-[tasks."run:hub:serve"]
-run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/hub/ serve'
-description = 'Only starts the hub, it will not serve the frontend on that port. Protip: "mise watch run:hub:serve -r"'
-depends = ["go-tidy"]
-sources = ["api/**/*.go", "cmd/**/*.go", "internal/**/*.go"]
-
-
-[tasks."run:all:serve"]
-alias = "serve"
-run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/hub/ serve'
-description = 'Builds the frontend and starts the hub server incl. serving the frontend. Protip: auto-reload with "mise watch serve -r"'
+[tasks.distr]
+run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/hub/'
+description = """
+Run the hub with arbitrary arguments: "mise run distr arg1 arg2...".
+Try "mise run distr help" to explore the available commands.
+Protip: "mise watch -r distr serve" to auto-reload on code changes.
+"""
 depends = ["go-tidy", "build:frontend:dev"]
+# sources are what "mise watch" reacts to. The empty outputs keep mise from
+# skipping the task as up-to-date when they have not changed since the last run.
 sources = ["api/**/*.go", "cmd/**/*.go", "internal/**/*.go"]
+outputs = []
 
-[tasks."run:hub:db-migrate"]
-run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/hub/ migrate'
-description = 'Migrate the database to the latest schema version. Protip: `mise run:hub:db-migrate -- --to xx` to migrate to a specific version'
-
-[tasks."run:hub:db-purge"]
-run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/hub/ migrate --down'
+[tasks.serve]
+run = {tasks = ["distr serve"]}
+description = "Shorthand for 'mise run distr serve'"
 
 [tasks."run:agent:docker"]
 run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/agent/docker/ run'
