@@ -37,16 +37,16 @@
                   <div
                     animate.enter="animate-flip-in-top"
                     animate.leave="animate-flip-out-top"
-                    class="origin-top z-10 w-full max-w-80 bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700">
-                    <ul class="py-2 text-sm text-gray-700 dark:text-gray-200">
+                    class="distr-dropdown-panel w-full max-w-80">
+                    <ul>
                       @for (sibling of siblings(); track sibling.id) {
-                        <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                        <li>
                           <a
-                            class="px-4 flex items-stretch overflow-hidden text-ellipsis whitespace-nowrap"
+                            class="distr-dropdown-item"
                             [routerLink]="['/', 'settings', 'access-tokens', sibling.id]"
                             [title]="sibling.name"
                             (click)="breadcrumbDropdown.set(false)">
-                            {{ sibling.name }}
+                            <span class="truncate">{{ sibling.name }}</span>
                           </a>
                         </li>
                       }
