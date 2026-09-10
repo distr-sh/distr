@@ -145,7 +145,7 @@
                     </li>
                     @if (visibleResources().length > 1) {
                       <li class="w-full border-t border-gray-100 dark:border-gray-600">
-                        <div class="flex items-center px-4">
+                        <div class="flex items-center px-2">
                           <input
                             id="resource-check-all"
                             type="checkbox"
@@ -167,7 +167,7 @@
                     }
                     @for (r of availableResources()?.active; track r) {
                       <li class="w-full border-t border-gray-100 dark:border-gray-600">
-                        <div class="flex items-center px-4">
+                        <div class="flex items-center px-2">
                           <input
                             [id]="'resource-' + r"
                             type="checkbox"
@@ -197,7 +197,7 @@
                       @if (showArchivedResources()) {
                         @for (r of availableResources()?.archived; track r) {
                           <li class="w-full border-t border-gray-100 dark:border-gray-600">
-                            <div class="flex items-center ps-3">
+                            <div class="flex items-center px-2">
                               <input
                                 [id]="'resource-archived-' + r"
                                 type="checkbox"
