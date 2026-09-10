@@ -96,7 +96,7 @@ The database schema is managed through SQL migrations in `internal/migrations/sq
 - `organizations`: Multi-tenant organizations
 - `deployments`: Application deployments
 - `deployment_targets`: Customer environments (agents)
-- `deploymentmetrics` & `deploymentresourcemetrics`: Per-deployment resource usage reports (one parent row per agent push, one child row per container with CPU millicores and memory bytes, plus nullable limits)
+- `deploymentmetrics` & `deploymentresourcemetrics`: Per-deployment resource usage reports (one parent row per agent push, one child row per container with CPU millicores and memory bytes, plus nullable limits and log file size)
 - `artifacts`: Software artifacts (Docker images, Helm charts)
 - `applications`: Artifact collections
 - `licensekey`: License keys that vendors can generate for its customers
@@ -342,6 +342,7 @@ Only write a test that could fail for a real reason. Every test is code that has
 - Do not write a test whose assertion is trivially true because the dependency it needs is not configured in tests.
 - Do test behavior that is hard to get right and expensive to get wrong: wire formats sent to third parties, fail-closed security behavior, parsing, permission and subscription gating, and non-trivial query or business logic.
 - Prefer a few focused tests over an exhaustive matrix of near-duplicates.
+- The agent `main` packages under `cmd/agent/` cannot hold tests. They build their clients in package-level variables through `util.Require`, which panics before any test runs unless the agent's environment variables are set, and package variables are initialized before `TestMain` can set them. When logic in there is worth testing, extract the part that does not need the Docker or Kubernetes client into a package under `internal/` and test it there.
 
 ## General rules
 

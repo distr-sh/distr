@@ -82,6 +82,10 @@
           {{ diskUsage | percent: '1.1-1' }} of {{ disk.bytesTotal | bytes: '1.0-0' }}
         </div>
       }
+      @let agentLogBytes = metrics().agentLogBytes;
+      @if (agentLogBytes !== undefined) {
+        <div class="text-gray-300 dark:text-gray-400">Agent logs: {{ agentLogBytes | bytes: '1.0-1' }}</div>
+      }
     </div>
   </div>
 </ng-template>

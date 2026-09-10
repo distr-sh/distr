@@ -141,6 +141,22 @@ The Docker agent also collects **disk metrics** for device-backed filesystems on
 
 Disk metrics are reported per device, not per mount point; multiple mount points for the same block device are deduplicated into a single metric. Read-only and virtual filesystems (such as SquashFS mounts) are excluded. You can configure [alerts](/docs/agents/alerts/#resource-usage-thresholds) to notify you when disk usage exceeds a threshold.
 
+### Log Storage
+
+The Docker agent also reports how much disk space container logs occupy, so you can tell which container is filling up a device. Rotated log files are included in the number.
+
+- **Per container**: shown in the **Logs** column next to CPU and memory for every container of a deployment.
+- **For the agent itself**: shown as **Agent logs** in the metrics tooltip of the deployment target, covering the agent and its autoheal sidecar.
+
+Nothing is reported for a container whose [logging driver](https://docs.docker.com/engine/logging/configure/) does not write files, such as `journald` or `syslog`, because those logs are not stored on the container's behalf. Since log sizes are collected together with CPU and memory, only running containers are counted.
+
+<Aside type="tip" title="Capping log growth">
+  The default `json-file` driver keeps growing until the disk is full. Set
+  [`max-size` and
+  `max-file`](https://docs.docker.com/engine/logging/drivers/json-file/) on your
+  services to bound it.
+</Aside>
+
 <Aside type="note" title="Kubernetes Requirements">
   Kubernetes metrics require
   [`metrics-server`](https://github.com/kubernetes-sigs/metrics-server) to be

@@ -15,6 +15,7 @@ type DeploymentTargetMetrics struct {
 	MemoryUsage         float64                      `json:"memoryUsage"`
 	AgentCPUUsageMillis *int64                       `json:"agentCpuUsageMillis,omitempty"`
 	AgentMemoryBytes    *int64                       `json:"agentMemoryBytes,omitempty"`
+	AgentLogBytes       *int64                       `json:"agentLogBytes,omitempty"`
 	DiskMetrics         []DeploymentTargetDiskMetric `json:"diskMetrics,omitempty"`
 }
 
@@ -38,6 +39,9 @@ type DeploymentResourceMetric struct {
 	// CPULimitMillis and MemoryLimitBytes are nil when the container has no limit configured.
 	CPULimitMillis   *int64 `json:"cpuLimitMillis,omitempty"`
 	MemoryLimitBytes *int64 `json:"memoryLimitBytes,omitempty"`
+	// LogBytes is the size of the container's log files on disk. It is nil when the container
+	// uses a log driver that does not write files (e.g. journald), and always nil in kubernetes.
+	LogBytes *int64 `json:"logBytes,omitempty"`
 }
 
 type DeploymentTargetDiskMetric struct {
