@@ -24,17 +24,14 @@ const COLUMN_OVERRIDES = new Map([
 ]);
 
 // Logs, telemetry and transient state. Excluded by default because they hold by far the most rows
-// while nothing in the product depends on their history. The two log record tables predate the move
-// of log storage to Loki and only hold what an instance recorded before it; the telemetry tables are
-// repopulated by the agents once they reconnect.
+// while nothing in the product depends on their history; the telemetry tables are repopulated by
+// the agents once they reconnect.
 const DEFAULT_EXCLUDED = new Map([
   ['artifactversionpull', 'artifact pull audit log'],
-  ['deploymentlogrecord', 'deployment logs recorded before Loki'],
   ['deploymentmetrics', 'deployment resource telemetry'],
   ['deploymentresourcemetrics', 'deployment resource telemetry'],
   ['deploymentrevisionstatus', 'deployment status history'],
   ['deploymenttargetdiskmetrics', 'agent disk telemetry'],
-  ['deploymenttargetlogrecord', 'agent logs recorded before Loki'],
   ['deploymenttargetmetrics', 'agent telemetry'],
   ['notificationrecord', 'sent alert history'],
   ['oidcstate', 'transient OIDC login state'],
