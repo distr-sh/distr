@@ -11,7 +11,7 @@ import (
 )
 
 // Prefix marks a value as a base64 ciphertext rather than a literal. It cannot collide with one:
-// a keyring entry is "<numeric id>:<base64 key>" and a base64 secret holds no colon at all.
+// base64 holds no colon, and a keyring spec only ever puts a numeric key id in front of one.
 const Prefix = "kms:"
 
 // contextKey is part of what an operator passes to their cloud CLI to wrap a value, so changing it
