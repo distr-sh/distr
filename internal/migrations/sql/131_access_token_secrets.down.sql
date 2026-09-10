@@ -1,0 +1,11 @@
+ALTER TABLE AccessToken
+  DROP CONSTRAINT AccessToken_secret_1_complete,
+  DROP CONSTRAINT AccessToken_secret_2_complete,
+  DROP COLUMN secret_1_salt,
+  DROP COLUMN secret_1_hash,
+  DROP COLUMN secret_1_created_at,
+  DROP COLUMN secret_1_last_used_at,
+  DROP COLUMN secret_2_salt,
+  DROP COLUMN secret_2_hash,
+  DROP COLUMN secret_2_created_at,
+  DROP COLUMN secret_2_last_used_at;

@@ -1,21 +1,19 @@
 <app-page>
   <div class="distr-table-panel">
     <div class="distr-toolbar p-4">
-      <div class="distr-toolbar-actions ml-auto">
+      <app-search-bar [control]="filterForm.controls.search" placeholder="Filter tokens" />
+      <div class="distr-toolbar-actions">
         <button
           (click)="openDrawer(manageApplicationDrawer)"
           type="button"
           id="createTokenButton"
-          class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+          class="distr-btn-secondary w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium">
           <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
           Create token
         </button>
       </div>
     </div>
 
-    @if (createdToken; as t) {
-      <app-created-access-token class="block mx-4 mb-4" [tokenKey]="t.key" />
-    }
     <div class="overflow-x-auto">
       <table class="distr-table">
         <thead class="distr-table-head">
@@ -24,45 +22,72 @@
             <th scope="col" class="p-4">Role</th>
             <th scope="col" class="p-4">Creation Date</th>
             <th scope="col" class="p-4">Expires</th>
-            <th scope="col" class="p-4">Last Used</th>
+            <th scope="col" class="p-4">Last used</th>
+            <th scope="col" class="p-4">Secrets</th>
             <th scope="col" class="p-4"></th>
           </tr>
         </thead>
         <tbody>
-          @for (token of accessTokens$ | async; track token.id) {
+          @for (row of filteredRows(); track row.token.id) {
             <tr class="distr-table-row">
-              <td class="px-4 py-3">{{ token.label }}</td>
-              <td class="px-4 py-3">
-                @if (token.userRole; as r) {
+              <td
+                class="px-4 py-3 font-medium text-gray-900 dark:text-white max-w-48 xl:max-w-64 2xl:max-w-96 truncate"
+                [title]="row.token.label">
+                {{ row.token.label }}
+              </td>
+              <td class="px-4 py-3 truncate">
+                @if (row.token.userRole; as r) {
                   {{ r | userRoleLabel }}
                 } @else {
-                  <span class="text-gray-400 italic">{{ currentUserRole() | userRoleLabel }} (inherited)</span>
+                  <span class="text-gray-400 italic">{{ currentUserRole() | userRoleLabel }}</span>
                 }
               </td>
-              <td class="px-4 py-3">{{ token.createdAt | date: 'medium' }}</td>
-              <td class="px-4 py-3">
-                @if (token.expiresAt; as d) {
-                  {{ d | date }}
-                  @if (isExpired(token)) {
-                    (expired)
+              <td class="px-4 py-3" [title]="row.token.createdAt | date: 'medium'">
+                {{ row.token.createdAt | date: 'shortDate' }}
+              </td>
+              <td class="px-4 py-3 truncate">
+                @if (row.token.expiresAt; as d) {
+                  {{ d | date: 'shortDate' }}
+                  @if (row.expired) {
+                    <span class="ml-1 text-red-600 dark:text-red-500">
+                      <fa-icon [icon]="faTriangleExclamation" />
+                      expired
+                    </span>
                   }
                 } @else {
                   never
                 }
               </td>
-              <td class="px-4 py-3">
-                @if (token.lastUsedAt; as d) {
+              <td class="px-4 py-3 truncate">
+                @if (row.token.lastUsedAt; as d) {
                   {{ d | relativeDate }}
                 } @else {
                   never
                 }
               </td>
+              <td class="px-4 py-3 truncate">
+                @if (row.legacy) {
+                  <span
+                    class="distr-status-badge bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-700">
+                    <fa-icon [icon]="faTriangleExclamation" />
+                    No secret
+                  </span>
+                } @else {
+                  {{ row.secrets.length }}
+                }
+              </td>
               <td
                 class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
+                <a
+                  [routerLink]="['/', 'settings', 'access-tokens', row.token.id]"
+                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                  <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
+                  Details / Edit
+                </a>
                 <button
                   type="button"
                   aria-label="Delete"
-                  (click)="deleteAccessToken(token)"
+                  (click)="deleteAccessToken(row)"
                   class="py-2 px-3 distr-btn-danger">
                   <fa-icon [icon]="faTrash" class="h-4 w-4" />
                 </button>
@@ -128,7 +153,7 @@
         <div class="flex justify-center w-full pb-4 space-x-4 sm:mt-0">
           <button
             type="submit"
-            [disabled]="editFormLoading"
+            [disabled]="editFormLoading()"
             class="text-white w-full inline-flex items-center justify-center distr-btn-primary">
             <fa-icon [icon]="faPlus" class="me-2" />
             Create

@@ -158,6 +158,7 @@ The website is a separate pnpm project with its own Prettier config; the root co
 - Do not use `util.PtrTo`. Use `new(value)` to obtain a `*T` from a typed value (e.g. `new(types.UserRoleReadOnly)`).
 - Use `errors.AsType[E](err)` instead of `errors.As(err, &target)` wherever the target type is known at the call site, since it needs no pre-declared variable: `if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation`. `errors.As` remains correct where the target is an interface a caller passes in.
 - The body of a 4xx response is displayed verbatim in the frontend forms (`getFormDisplayedError`), so write those messages for the end user and put anything only a developer can use into the log instead.
+- Hash a credential that is verified on every request, such as an access token secret, with the salted HMAC helpers in `internal/authkey` and compare it in constant time. The argon2id hashing in `internal/security` is for values a human chose (passwords) or that are long-lived shared secrets (deployment target keys); for a credential that is CSPRNG output there is no dictionary to search, so key stretching buys nothing and only makes every request slower. Never give a type that can hold such a credential a `MarshalJSON`, and never carry one past the verification that needs it (an `authinfo` keeps the key, not the secret).
 
 ### Frontend Code
 
@@ -173,6 +174,7 @@ The website is a separate pnpm project with its own Prettier config; the root co
 - Don't use any svg path icons, always look for a matching icon in the icon library used. These icons should always be the same in the import, the component and template e.g. `faServer` and not `serverIcon`.
   This applies to CSS too: never hand-write an inline SVG or an `url("data:image/svg+xml,...")` background, not even to restyle a browser or Flowbite default.
 - Before inventing a new pattern for a shared control, look at how the same control is already used elsewhere and reuse that. The indeterminate "select all" checkbox, for example, needs nothing beyond `distr-checkbox`; the sizing and centering of the dash is already handled there.
+- A page that lists rows filters them with `app-search-bar` in its `distr-toolbar`, bound to a form control whose value a `computed` filters the rows by. A detail page opened from such a list starts with the breadcrumb whose last segment is a dropdown listing the sibling entities (`vendor-license-detail-page`, `application-detail`), and shows the entity's id through `app-uuid`. Do not write a different filter input, breadcrumb or id display for a new page.
 - Use [Angular Signals](https://angular.dev/guide/signals) for inputs, child views and everywhere where the current Angular version supports signals.
   If you find usages of non signal usages for inputs, child views etc. change them to signals in the files you would edit anyway.
 - Don't use any responsive design classes in modals. They should always be optimized for the none mobile use case.
@@ -238,6 +240,7 @@ The scope is what an authorization check reads to decide who the value belongs t
 - What a value is bound to is part of the stored format. Renaming a table or a column, or changing what a column is scoped to, invalidates every value in it until `maintenance encrypt-database` has rewritten them.
 - Call `dbcrypto.Init(env.DatabaseEncryptionKey())` in the `PreRun` of every command that touches an encrypted column, and never make `dbcrypto` read `env` itself.
 - Do not encrypt a column that a query looks up by value. Narrow the row down by its id and compare in Go with `subtle.ConstantTimeCompare` (see `db.GetSupportBundleByBundleSecret`).
+- Only encrypt a value the application has to hand back out. A verifier it merely compares against stays a salted hash in a plaintext column, like `UserAccount.password_hash`, `DeploymentTarget.access_key_hash` and the access token secret hashes: a hash cannot be replayed, so a dump gains nothing from it. Encrypting one of them also does not stop someone who can write the database from installing a credential of their own, since every other verifier is still open to that. Making them keyed instead (`crypto.Keyring.HMAC`) is therefore a decision for all verifiers at once, and one to weigh against the fact that a digest cannot be re-keyed the way `maintenance encrypt-database` re-keys a ciphertext.
 
 #### Read-only Database
 

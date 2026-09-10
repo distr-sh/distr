@@ -1,16 +1,15 @@
-import {ChangeDetectionStrategy, Component, input} from '@angular/core';
+import {Component, input} from '@angular/core';
 import {ClipComponent} from './clip.component';
 
 @Component({
   selector: 'app-created-access-token',
   imports: [ClipComponent],
-  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div
       class="p-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-transparent dark:text-green-400 dark:border dark:border-green-400"
       role="alert">
       <p>
-        Your Personal Access Token:
+        Your Personal Access Token:<br />
         <code class="select-all" data-ph-mask-text="true">{{ tokenKey() }}</code>
         <app-clip class="mx-2" [clip]="tokenKey()" />
       </p>

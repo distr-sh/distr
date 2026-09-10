@@ -12,6 +12,7 @@
 ## Interfaces
 
 - [AccessToken](interfaces/AccessToken.md)
+- [AccessTokenSecret](interfaces/AccessTokenSecret.md)
 - [AccessTokenWithKey](interfaces/AccessTokenWithKey.md)
 - [Advisory](interfaces/Advisory.md)
 - [AdvisoryApplicationVersion](interfaces/AdvisoryApplicationVersion.md)
@@ -55,6 +56,7 @@
 - [OrganizationBranding](interfaces/OrganizationBranding.md)
 - [PartnerOrganization](interfaces/PartnerOrganization.md)
 - [PartnerOrganizationWithUsage](interfaces/PartnerOrganizationWithUsage.md)
+- [PatchAccessTokenRequest](interfaces/PatchAccessTokenRequest.md)
 - [PatchAdvisoryRequest](interfaces/PatchAdvisoryRequest.md)
 - [PatchApplicationRequest](interfaces/PatchApplicationRequest.md)
 - [SidebarLink](interfaces/SidebarLink.md)
@@ -71,6 +73,7 @@
 
 ## Type Aliases
 
+- [AccessTokenSecretSlot](type-aliases/AccessTokenSecretSlot.md)
 - [AdvisoryEventType](type-aliases/AdvisoryEventType.md)
 - [AdvisoryImpactState](type-aliases/AdvisoryImpactState.md)
 - [AdvisorySeverity](type-aliases/AdvisorySeverity.md)

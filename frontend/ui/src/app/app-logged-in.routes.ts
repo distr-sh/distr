@@ -3,6 +3,7 @@ import {CanActivateFn, Router, Routes} from '@angular/router';
 import {UserRole} from '@distr-sh/distr-sdk';
 import {firstValueFrom, map} from 'rxjs';
 import {getRemoteEnvironment} from '../env/remote';
+import {AccessTokenDetailComponent} from './access-tokens/access-token-detail.component';
 import {AccessTokensComponent} from './access-tokens/access-tokens.component';
 import {AdvisoryDetailComponent} from './advisories/advisory-detail.component';
 import {AdvisoryListComponent} from './advisories/advisory-list.component';
@@ -390,7 +391,17 @@ export const routes: Routes = [
           },
           {
             path: 'access-tokens',
-            component: AccessTokensComponent,
+            children: [
+              {
+                path: '',
+                pathMatch: 'full',
+                component: AccessTokensComponent,
+              },
+              {
+                path: ':accessTokenId',
+                component: AccessTokenDetailComponent,
+              },
+            ],
           },
         ],
       },

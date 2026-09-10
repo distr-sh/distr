@@ -89,7 +89,7 @@ func NewRouter(
 			option.SecurityAPIKey("Authorization", openapi.SecuritySchemeAPIKeyInHeader),
 			option.SecurityDescription(
 				"Provide a PAT using the Authorization header and adding the AccessToken prefix.\n\n"+
-					"Example: `Authorization: AccessToken distr-xxxxxx`",
+					"Example: `Authorization: AccessToken distr-xxxxxx_yyyyyy`",
 			),
 		),
 		option.WithStoplightElements(config.StoplightElements{
