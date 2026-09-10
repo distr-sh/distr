@@ -60,11 +60,13 @@ type SupportBundleWithDetails struct {
 }
 
 type SupportBundleResource struct {
-	ID              uuid.UUID       `db:"id"`
-	CreatedAt       time.Time       `db:"created_at"`
-	SupportBundleID uuid.UUID       `db:"support_bundle_id"`
-	Name            string          `db:"name"`
-	Content         dbcrypto.String `db:"content"`
+	ID              uuid.UUID `db:"id"`
+	CreatedAt       time.Time `db:"created_at"`
+	SupportBundleID uuid.UUID `db:"support_bundle_id"`
+	Name            string    `db:"name"`
+	// The content is a file the collect script gathered verbatim, and is served back as a download
+	// and rendered in a <pre>, so it must not be trimmed if it ever reaches a JSON request body.
+	Content dbcrypto.String `db:"content" trim:"-"`
 }
 
 type SupportBundleComment struct {

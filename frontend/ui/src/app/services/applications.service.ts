@@ -6,8 +6,8 @@ import {
   ApplicationVersionResource,
   PatchApplicationRequest,
 } from '@distr-sh/distr-sdk';
-import {catchError, Observable, of, Subject, switchMap, tap, throwError} from 'rxjs';
-import {DefaultReactiveList, ReactiveList} from './cache';
+import {catchError, firstValueFrom, Observable, of, tap, throwError} from 'rxjs';
+import {DefaultReactiveList} from './cache';
 import {CrudService} from './interfaces';
 
 @Injectable({
@@ -17,25 +17,16 @@ export class ApplicationsService implements CrudService<Application> {
   private readonly httpClient = inject(HttpClient);
 
   private readonly applicationsUrl = '/api/v1/applications';
-  private readonly cache: ReactiveList<Application>;
-  private readonly refresh$ = new Subject<void>();
-
-  constructor() {
-    this.cache = new DefaultReactiveList(this.httpClient.get<Application[]>(this.applicationsUrl));
-    this.refresh$
-      .pipe(
-        switchMap(() => this.httpClient.get<Application[]>(this.applicationsUrl)),
-        tap((apps) => this.cache.reset(apps))
-      )
-      .subscribe();
-  }
+  private readonly cache = new DefaultReactiveList(this.httpClient.get<Application[]>(this.applicationsUrl));
 
   list(): Observable<Application[]> {
     return this.cache.get();
   }
 
-  refresh() {
-    this.refresh$.next();
+  refresh(): Promise<Application[]> {
+    return firstValueFrom(
+      this.httpClient.get<Application[]>(this.applicationsUrl).pipe(tap((apps) => this.cache.reset(apps)))
+    );
   }
 
   create(application: Application): Observable<Application> {

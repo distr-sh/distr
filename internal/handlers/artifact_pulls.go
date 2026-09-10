@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -115,7 +116,7 @@ func parseArtifactPullFilters(w http.ResponseWriter, r *http.Request) (types.Art
 		filter.UserAccountID = &id
 	}
 
-	if addr := r.FormValue("remoteAddress"); addr != "" {
+	if addr := strings.TrimSpace(r.FormValue("remoteAddress")); addr != "" {
 		filter.RemoteAddress = &addr
 	}
 

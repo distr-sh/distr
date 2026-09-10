@@ -11,7 +11,7 @@ import {ArtifactEntitlementsComponent} from './artifact-entitlements/artifact-en
 import {LicenseKeysComponent} from './license-keys/license-keys.component';
 
 @Component({
-  selector: 'app-customer-license-detail',
+  selector: 'app-vendor-license-detail-page',
   imports: [
     FontAwesomeModule,
     OverlayModule,
@@ -22,9 +22,9 @@ import {LicenseKeysComponent} from './license-keys/license-keys.component';
     PageComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
-  templateUrl: './customer-license-detail.component.html',
+  templateUrl: './vendor-license-detail-page.component.html',
 })
-export class CustomerLicenseDetailComponent {
+export class VendorLicenseDetailPageComponent {
   protected readonly faBoxesStacked = faBoxesStacked;
   protected readonly faChevronDown = faChevronDown;
 

@@ -2,6 +2,7 @@ import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {OrganizationBranding} from '@distr-sh/distr-sdk';
 import {BehaviorSubject, Observable, of, tap} from 'rxjs';
+import {skipTrim} from './trim.interceptor';
 
 @Injectable({
   providedIn: 'root',
@@ -28,7 +29,9 @@ export class OrganizationBrandingService {
 
   upsert(organizationBranding: OrganizationBranding): Observable<OrganizationBranding> {
     return this.httpClient
-      .put<OrganizationBranding>(this.organizationBrandingUrl, organizationBranding)
+      .put<OrganizationBranding>(this.organizationBrandingUrl, organizationBranding, {
+        context: skipTrim('description'),
+      })
       .pipe(tap((obj) => this.brandingSubject.next(obj)));
   }
 }

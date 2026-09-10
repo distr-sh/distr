@@ -24,9 +24,9 @@ import {VendorUsersComponent} from './components/users/vendors/vendor-users.comp
 import {CustomerSettingsComponent} from './customer-settings/customer-settings.component';
 import {DeploymentTargetDetailComponent} from './deployments/deployment-target-details/deployment-target-detail.component';
 import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
-import {CustomerLicenseDetailComponent} from './licenses/customer-license-detail.component';
-import {LicenseKeysComponent} from './licenses/license-keys/license-keys.component';
+import {CustomerLicenseDetailPageComponent} from './licenses/customer-license-detail-page.component';
 import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
+import {VendorLicenseDetailPageComponent} from './licenses/vendor-license-detail-page.component';
 import {NotificationRecordsComponent} from './notification-records/notification-records.component';
 import {OrganizationBrandingComponent} from './organization-branding/organization-branding.component';
 import {CustomEmailComponent} from './organization-settings/custom-email.component';
@@ -284,7 +284,7 @@ export const routes: Routes = [
       },
       {
         path: 'license-keys',
-        component: LicenseKeysComponent,
+        component: CustomerLicenseDetailPageComponent,
         canActivate: [requireCustomer, licensingEnabledGuard()],
       },
       {
@@ -321,7 +321,7 @@ export const routes: Routes = [
           },
           {
             path: ':customerOrganizationId',
-            component: CustomerLicenseDetailComponent,
+            component: VendorLicenseDetailPageComponent,
           },
         ],
       },

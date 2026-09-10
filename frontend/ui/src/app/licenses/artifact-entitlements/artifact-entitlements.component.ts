@@ -8,7 +8,6 @@ import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observabl
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
-import {PageComponent} from '../../components/page.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
 import {ArtifactEntitlementsService} from '../../services/artifact-entitlements.service';
 import {ArtifactsService} from '../../services/artifacts.service';
@@ -27,7 +26,6 @@ import {EditArtifactEntitlementComponent} from './edit-artifact-entitlement.comp
     FaIconComponent,
     DatePipe,
     EditArtifactEntitlementComponent,
-    PageComponent,
     SearchBarComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,

@@ -25,7 +25,6 @@ package registry
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -33,6 +32,7 @@ import (
 
 	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/middleware"
@@ -169,7 +169,7 @@ func NewDefault(
 			auth.ArtifactsAuthentication.Middleware,
 			auth.ArtifactsAuthentication.ValidatorMiddleware(func(value authinfo.AuthInfoWithOrganization) error {
 				if value.CurrentOrg() == nil {
-					return errors.New("org is required")
+					return fmt.Errorf("%w: org is required", authn.ErrBadAuthentication)
 				}
 				return nil
 			}),

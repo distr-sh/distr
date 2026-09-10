@@ -17,15 +17,17 @@ type SecretWithoutValue struct {
 }
 
 type CreateSecretRequest struct {
-	Key                    string     `json:"key"`
-	Value                  string     `json:"value"`
+	Key string `json:"key"`
+	// A secret value is stored and injected verbatim, so its surrounding whitespace is significant:
+	// a certificate or private key ends in a newline.
+	Value                  string     `json:"value" trim:"-"`
 	CustomerOrganizationID *uuid.UUID `json:"customerOrganizationId,omitempty"`
 }
 
 type UpdateSecretRequest struct {
 	ID      uuid.UUID `path:"secretId"`
 	Confirm bool      `query:"confirm"`
-	Value   string    `json:"value"`
+	Value   string    `json:"value" trim:"-"`
 }
 
 type DeleteSecretRequest struct {

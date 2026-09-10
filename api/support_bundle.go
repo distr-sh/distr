@@ -25,17 +25,15 @@ type CreateUpdateSupportBundleConfigurationRequest struct {
 
 func (r *CreateUpdateSupportBundleConfigurationRequest) Validate() error {
 	seen := make(map[string]struct{}, len(r.EnvVars))
-	for i, ev := range r.EnvVars {
-		name := strings.TrimSpace(ev.Name)
-		if name == "" {
+	for _, ev := range r.EnvVars {
+		if ev.Name == "" {
 			return validation.NewValidationFailedError("environment variable name must not be empty")
 		}
-		if !envVarNamePattern.MatchString(name) {
+		if !envVarNamePattern.MatchString(ev.Name) {
 			return validation.NewValidationFailedError(
 				fmt.Sprintf("invalid environment variable name: %v (must match [A-Za-z_][A-Za-z0-9_]*)", ev.Name))
 		}
-		r.EnvVars[i].Name = name
-		key := strings.ToLower(name)
+		key := strings.ToLower(ev.Name)
 		if _, exists := seen[key]; exists {
 			return validation.NewValidationFailedError(
 				fmt.Sprintf("duplicate environment variable name: %v", ev.Name))
@@ -70,7 +68,6 @@ type CreateUpdateSupportBundleConfigurationScriptRequest struct {
 }
 
 func (r *CreateUpdateSupportBundleConfigurationScriptRequest) Validate() error {
-	r.Name = strings.TrimSpace(r.Name)
 	if r.Name == "" {
 		return validation.NewValidationFailedError("script name must not be empty")
 	}
@@ -83,19 +80,15 @@ func (r *CreateUpdateSupportBundleConfigurationScriptRequest) Validate() error {
 			"script name must start with a letter or digit and may only contain letters, digits, " +
 				"spaces, dots, dashes and underscores")
 	}
-	if description := r.Description; description != nil {
-		trimmed := strings.TrimSpace(*description)
-		if trimmed == "" {
+	if r.Description != nil {
+		if *r.Description == "" {
 			r.Description = nil
-		} else {
-			if len(trimmed) > maxScriptDescriptionLength {
-				return validation.NewValidationFailedError(
-					fmt.Sprintf("script description must not be longer than %v characters", maxScriptDescriptionLength))
-			}
-			r.Description = &trimmed
+		} else if len(*r.Description) > maxScriptDescriptionLength {
+			return validation.NewValidationFailedError(
+				fmt.Sprintf("script description must not be longer than %v characters", maxScriptDescriptionLength))
 		}
 	}
-	if strings.TrimSpace(r.Content) == "" {
+	if r.Content == "" {
 		return validation.NewValidationFailedError("script content must not be empty")
 	}
 	if len(r.Content) > maxScriptContentBytes {

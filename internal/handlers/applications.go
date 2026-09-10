@@ -17,6 +17,7 @@ import (
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
+	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -353,10 +354,11 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 	body := r.FormValue("applicationversion")
 	var applicationVersion types.ApplicationVersion
 	if err := json.NewDecoder(strings.NewReader(body)).Decode(&applicationVersion); err != nil {
-		log.Error("failed to deocde version", zap.Error(err))
+		log.Error("failed to decode version", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	validation.TrimStrings(&applicationVersion)
 
 	application := internalctx.GetApplication(ctx)
 	applicationVersion.ApplicationID = application.ID

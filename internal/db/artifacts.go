@@ -628,6 +628,30 @@ func CheckEntitlementForArtifact(
 	return nil
 }
 
+func ArtifactBlobBelongsToOrg(ctx context.Context, orgID uuid.UUID, blobDigest string) (bool, error) {
+	db := internalctx.GetDb(ctx)
+	var belongs bool
+	err := db.QueryRow(ctx, `
+		SELECT EXISTS(
+			SELECT 1
+			FROM ArtifactVersionPart avp
+			JOIN ArtifactVersion av ON av.id = avp.artifact_version_id
+			JOIN Artifact a ON a.id = av.artifact_id
+			WHERE a.organization_id = @orgId AND avp.artifact_blob_digest = @blobDigest
+		) OR EXISTS(
+			SELECT 1
+			FROM ArtifactVersion av
+			JOIN Artifact a ON a.id = av.artifact_id
+			WHERE a.organization_id = @orgId AND av.manifest_blob_digest = @blobDigest
+		)`,
+		pgx.NamedArgs{"orgId": orgID, "blobDigest": blobDigest},
+	).Scan(&belongs)
+	if err != nil {
+		return false, fmt.Errorf("could not check blob ownership: %w", err)
+	}
+	return belongs, nil
+}
+
 func CheckEntitlementForArtifactBlob(ctx context.Context, digest string,
 	customerOrganizationID uuid.UUID,
 	orgID uuid.UUID,

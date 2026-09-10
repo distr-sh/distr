@@ -10,6 +10,7 @@ import {
   CreateUpdateAdvisoryRequest,
   PatchAdvisoryRequest,
 } from '@distr-sh/distr-sdk';
+import {skipTrim} from './trim.interceptor';
 
 const baseUrl = '/api/v1/advisories';
 
@@ -44,11 +45,11 @@ export class AdvisoriesService {
   }
 
   public create(request: CreateUpdateAdvisoryRequest) {
-    return this.httpClient.post<AdvisoryDetail>(baseUrl, request);
+    return this.httpClient.post<AdvisoryDetail>(baseUrl, request, {context: skipTrim('description')});
   }
 
   public update(id: string, request: CreateUpdateAdvisoryRequest) {
-    return this.httpClient.put<AdvisoryDetail>(`${baseUrl}/${id}`, request);
+    return this.httpClient.put<AdvisoryDetail>(`${baseUrl}/${id}`, request, {context: skipTrim('description')});
   }
 
   public patch(id: string, request: PatchAdvisoryRequest) {

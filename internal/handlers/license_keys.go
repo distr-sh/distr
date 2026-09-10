@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -108,7 +107,7 @@ func createLicenseKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if strings.TrimSpace(body.Name) == "" {
+	if body.Name == "" {
 		http.Error(w, "name is required", http.StatusBadRequest)
 		return
 	}

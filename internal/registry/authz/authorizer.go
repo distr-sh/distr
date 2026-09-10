@@ -137,13 +137,20 @@ func (a *authorizer) AuthorizeReference(ctx context.Context, nameStr string, ref
 func (a *authorizer) AuthorizeBlob(ctx context.Context, digest digest.Digest, action Action) error {
 	auth := auth.ArtifactsAuthentication.Require(ctx)
 
+	// For writes we skip ownership checks: the push may (re)associate this digest with the org, even if it already exists.
 	if action == ActionWrite {
-		if err := authorizeWrite(auth); err != nil {
-			return err
-		}
+		return authorizeWrite(auth)
 	}
 
-	if auth.CurrentCustomerOrgID() != nil && auth.CurrentOrg().HasFeature(types.FeatureLicensing) {
+	org := auth.CurrentOrg()
+
+	if belongs, err := db.ArtifactBlobBelongsToOrg(ctx, org.ID, digest.String()); err != nil {
+		return err
+	} else if !belongs {
+		return apierrors.ErrNotFound
+	}
+
+	if auth.CurrentCustomerOrgID() != nil && org.HasFeature(types.FeatureLicensing) {
 		err := db.CheckEntitlementForArtifactBlob(ctx, digest.String(), *auth.CurrentCustomerOrgID(), *auth.CurrentOrgID())
 		if errors.Is(err, apierrors.ErrForbidden) {
 			return NewErrAccessDenied("entitlement required")

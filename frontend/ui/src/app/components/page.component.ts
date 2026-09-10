@@ -11,7 +11,7 @@ const maxWidths: Record<PageVariant, string> = {
 @Component({
   selector: 'app-page',
   template: `
-    <section class="py-3 sm:py-5 antialiased">
+    <section class="pt-3 pb-32 sm:pt-5 sm:pb-40 antialiased">
       <div class="mx-auto w-full px-4 lg:px-12" [class]="maxWidth()">
         <ng-content />
       </div>

@@ -99,10 +99,10 @@ export class GeneralSettingsComponent implements OnInit {
         this.organization = await firstValueFrom(
           this.organizationService.update({
             ...this.organization!,
-            name: this.form.value.name?.trim()!,
-            slug: this.form.value.slug?.trim(),
-            preConnectScript: this.form.value.preConnectScript?.trim(),
-            postConnectScript: this.form.value.postConnectScript?.trim(),
+            name: this.form.value.name!,
+            slug: this.form.value.slug,
+            preConnectScript: this.form.value.preConnectScript,
+            postConnectScript: this.form.value.postConnectScript,
             connectScriptIsSudo: this.form.value.connectScriptIsSudo ?? false,
             artifactVersionMutable: this.form.value.artifactVersionMutable ?? false,
             prePostScriptsEnabled: this.form.value.prePostScriptsEnabled ?? false,

@@ -9,7 +9,7 @@ import (
 type DeploymentTargetLogRecordRequest struct {
 	Timestamp time.Time `json:"timestamp"`
 	Severity  string    `json:"severity"`
-	Body      string    `json:"body"`
+	Body      string    `json:"body" trim:"-"`
 }
 
 type DeploymentTargetLogRecord struct {

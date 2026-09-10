@@ -13,6 +13,7 @@ import (
 	"github.com/distr-sh/distr/internal/contenttype"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/handlerutil"
+	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	"go.uber.org/zap"
 )
@@ -82,6 +83,8 @@ func JsonBody[T any](w http.ResponseWriter, r *http.Request) (T, error) {
 	err := json.NewDecoder(r.Body).Decode(&t)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+	} else {
+		validation.TrimStrings(&t)
 	}
 	return t, err
 }

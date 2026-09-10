@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -420,7 +419,7 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 			Password: request.Password,
 		}
 		org := types.Organization{
-			Name: strings.TrimSpace(request.OrganizationName),
+			Name: request.OrganizationName,
 		}
 		var token string
 

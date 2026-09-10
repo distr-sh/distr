@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
@@ -94,7 +93,7 @@ func createArtifactHandler() http.HandlerFunc {
 			http.Error(w, "name is required", http.StatusBadRequest)
 			return
 		}
-		if body.UpstreamURL != nil && strings.TrimSpace(*body.UpstreamURL) == "" {
+		if body.UpstreamURL != nil && *body.UpstreamURL == "" {
 			http.Error(w, "upstreamUrl must not be empty", http.StatusBadRequest)
 			return
 		}

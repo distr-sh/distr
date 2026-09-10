@@ -68,7 +68,7 @@ func createApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 	}
 	entitlement.OrganizationID = *auth.CurrentOrgID()
 
-	if strings.TrimSpace(entitlement.Name) == "" {
+	if entitlement.Name == "" {
 		http.Error(w, "name is required", http.StatusBadRequest)
 		return
 	}
@@ -135,7 +135,7 @@ func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 	}
 	entitlement.OrganizationID = *auth.CurrentOrgID()
 
-	if strings.TrimSpace(entitlement.Name) == "" {
+	if entitlement.Name == "" {
 		http.Error(w, "name is required", http.StatusBadRequest)
 		return
 	}

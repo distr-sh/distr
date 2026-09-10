@@ -1,17 +1,8 @@
-ALTER TYPE FEATURE RENAME TO FEATURE_OLD;
-
-CREATE TYPE FEATURE AS ENUM ('licensing');
-
-UPDATE Organization SET features = array_remove(features, 'pre_post_scripts') WHERE 'pre_post_scripts' = ANY(features);
-
-ALTER TABLE Organization ALTER COLUMN features DROP DEFAULT; -- otherwise the following wouldnt work:
-ALTER TABLE Organization
-  ALTER COLUMN features TYPE FEATURE[]
-    USING (features::text[]::FEATURE[]);
-ALTER TABLE Organization
-  ALTER COLUMN features SET DEFAULT ARRAY[]::FEATURE[];
-
-DROP TYPE FEATURE_OLD;
+-- ALTER TYPE FEATURE DROP VALUE is not supported by postgres, and recreating the type would fail
+-- for every value a later migration added that an organization still holds. The value is harmless
+-- when unused.
+UPDATE Organization SET features = array_remove(features, 'pre_post_scripts')
+WHERE 'pre_post_scripts' = ANY(features);
 
 ALTER TABLE Organization
   DROP COLUMN pre_connect_script,

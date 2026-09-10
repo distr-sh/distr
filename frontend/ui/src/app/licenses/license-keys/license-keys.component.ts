@@ -11,7 +11,6 @@ import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {ClipComponent} from '../../components/clip.component';
-import {PageComponent} from '../../components/page.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
 import {UuidComponent} from '../../components/uuid';
 import {AuthService} from '../../services/auth.service';
@@ -36,7 +35,6 @@ import {ViewLicenseKeyModalComponent} from './view-license-key-modal.component';
     ViewLicenseKeyModalComponent,
     UuidComponent,
     ClipComponent,
-    PageComponent,
     SearchBarComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,

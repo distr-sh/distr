@@ -1,8 +1,8 @@
 import {HttpClient} from '@angular/common/http';
-import {Injectable, inject} from '@angular/core';
-import {Observable, Subject, switchMap, tap} from 'rxjs';
+import {inject, Injectable} from '@angular/core';
+import {firstValueFrom, Observable, tap} from 'rxjs';
 import {ApplicationEntitlement} from '../types/application-entitlement';
-import {DefaultReactiveList, ReactiveList} from './cache';
+import {DefaultReactiveList} from './cache';
 import {CrudService} from './interfaces';
 
 @Injectable({
@@ -12,18 +12,7 @@ export class ApplicationEntitlementsService implements CrudService<ApplicationEn
   private readonly httpClient = inject(HttpClient);
 
   private readonly entitlementsUrl = '/api/v1/application-entitlements';
-  private readonly cache: ReactiveList<ApplicationEntitlement>;
-  private readonly refresh$ = new Subject<void>();
-
-  constructor() {
-    this.cache = new DefaultReactiveList(this.httpClient.get<ApplicationEntitlement[]>(this.entitlementsUrl));
-    this.refresh$
-      .pipe(
-        switchMap(() => this.httpClient.get<ApplicationEntitlement[]>(this.entitlementsUrl)),
-        tap((entitlements) => this.cache.reset(entitlements))
-      )
-      .subscribe();
-  }
+  private readonly cache = new DefaultReactiveList(this.httpClient.get<ApplicationEntitlement[]>(this.entitlementsUrl));
 
   list(applicationId?: string): Observable<ApplicationEntitlement[]> {
     if (applicationId) {
@@ -33,8 +22,12 @@ export class ApplicationEntitlementsService implements CrudService<ApplicationEn
     }
   }
 
-  refresh() {
-    this.refresh$.next();
+  refresh(): Promise<ApplicationEntitlement[]> {
+    return firstValueFrom(
+      this.httpClient
+        .get<ApplicationEntitlement[]>(this.entitlementsUrl)
+        .pipe(tap((entitlements) => this.cache.reset(entitlements)))
+    );
   }
 
   create(entitlement: ApplicationEntitlement): Observable<ApplicationEntitlement> {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
@@ -129,7 +130,8 @@ func uploadSupportBundleResourceHandler() http.HandlerFunc {
 			return
 		}
 
-		name := r.FormValue("name")
+		// A multipart form value does not go through JsonBody, so it is not trimmed generically.
+		name := strings.TrimSpace(r.FormValue("name"))
 		if name == "" {
 			http.Error(w, "name is required", http.StatusBadRequest)
 			return

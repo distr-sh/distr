@@ -108,6 +108,8 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 				return regErrDenied(err.Error())
 			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
 				return regErrNameInvalid
+			} else if errors.Is(err, apierrors.ErrNotFound) {
+				return regErrBlobUnknown
 			}
 			return regErrInternal(err)
 		}
@@ -119,6 +121,8 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 					return regErrDenied(err.Error())
 				} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
 					return regErrNameInvalid
+				} else if errors.Is(err, apierrors.ErrNotFound) {
+					return regErrBlobUnknown
 				}
 				return regErrInternal(err)
 			}
