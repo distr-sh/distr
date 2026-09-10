@@ -3,12 +3,18 @@ import {DatePipe} from '@angular/common';
 import {Component, computed, effect, ElementRef, inject, signal, viewChild} from '@angular/core';
 import {rxResource, takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
-import {ActivatedRoute, Router, RouterLink} from '@angular/router';
-import {AccessTokenSecretSlot, AccessTokenWithKey, PatchAccessTokenRequest, UserRole} from '@distr-sh/distr-sdk';
+import {ActivatedRoute, RouterLink} from '@angular/router';
+import {
+  AccessToken,
+  AccessTokenSecretSlot,
+  AccessTokenWithKey,
+  PatchAccessTokenRequest,
+  UserRole,
+} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faChevronDown, faKey, faPlus, faTrash, faTriangleExclamation} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {firstValueFrom} from 'rxjs';
+import {catchError, firstValueFrom, Observable, of, switchMap, tap} from 'rxjs';
 import {isExpired, RelativeDatePipe} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {USER_ROLE_LABELS} from '../../util/user-role';
@@ -20,6 +26,7 @@ import {PageComponent} from '../components/page.component';
 import {UserRoleSelectComponent} from '../components/user-role-select.component';
 import {AccessTokensService} from '../services/access-tokens.service';
 import {AuthService} from '../services/auth.service';
+import {CreatedAccessTokenStore} from '../services/created-access-token.service';
 import {OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 import {accessTokenName} from './access-token-name';
@@ -53,6 +60,7 @@ export class AccessTokenDetailComponent {
   private readonly auth = inject(AuthService);
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
+  private readonly createdTokens = inject(CreatedAccessTokenStore);
   private readonly routeParams = toSignal(inject(ActivatedRoute).params);
 
   private readonly accessTokens = rxResource({stream: () => this.accessTokensService.list()});
@@ -84,11 +92,7 @@ export class AccessTokenDetailComponent {
     const role = this.currentUserRole();
     return role ? `Inherit (${USER_ROLE_LABELS[role]})` : 'Inherit from my role';
   });
-  // A token that was just created is handed over by the navigation that opened this page, since the
-  // server never returns it again. Reloading the page drops it, which is the intended behavior.
-  protected readonly createdToken = signal<AccessTokenWithKey | null>(
-    (inject(Router).getCurrentNavigation()?.extras.state?.['createdToken'] as AccessTokenWithKey) ?? null
-  );
+  protected readonly createdToken = signal<AccessTokenWithKey | null>(null);
   protected readonly savingLabel = signal(false);
 
   protected readonly settingsForm = new FormGroup({
@@ -97,6 +101,12 @@ export class AccessTokenDetailComponent {
   });
 
   constructor() {
+    // The router reuses this component for a sibling token, so the token a create handed over
+    // belongs to the id that was current when it was stored and to no other.
+    effect(() => {
+      const id = this.tokenId();
+      this.createdToken.set(id ? this.createdTokens.take(id) : null);
+    });
     // Filling the form from the loaded token must not emit, or the value that just arrived from
     // the server would immediately be sent back to it. It also has to be patchValue: a token
     // without an explicit role has none to supply, which setValue rejects.
@@ -110,12 +120,21 @@ export class AccessTokenDetailComponent {
         {emitEvent: false}
       );
     });
-    this.settingsForm.valueChanges.pipe(takeUntilDestroyed()).subscribe(({userRole, expiresAt}) => {
-      this.patch({
-        userRole: userRole ?? null,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
-      });
-    });
+    this.settingsForm.valueChanges
+      .pipe(
+        // Every change sends both settings, so an older request that finishes last would put the
+        // value it was started with back. switchMap drops it in favor of the newer one.
+        switchMap(({userRole, expiresAt}) =>
+          this.patch({
+            userRole: userRole ?? null,
+            // The picker works in local dates, and new Date() would read one as UTC midnight,
+            // which moves the day for everyone west of it.
+            expiresAt: expiresAt ? dayjs(expiresAt).toDate() : null,
+          })
+        ),
+        takeUntilDestroyed()
+      )
+      .subscribe();
   }
 
   protected readonly dropdownTriggerButton = viewChild.required<ElementRef<HTMLElement>>('dropdownTriggerButton');
@@ -132,22 +151,27 @@ export class AccessTokenDetailComponent {
   public async saveLabel(label: string) {
     this.savingLabel.set(true);
     try {
-      await this.patch({label});
+      await firstValueFrom(this.patch({label}));
     } finally {
       this.savingLabel.set(false);
     }
   }
 
-  private async patch(request: PatchAccessTokenRequest) {
-    try {
-      await firstValueFrom(this.accessTokensService.patch(this.tokenId()!, request));
-      this.toast.success('token updated');
-    } catch (e) {
-      this.showError(e);
-    }
-    // Reload either way, so that a rejected change is replaced by what the server still has
-    // instead of staying on screen.
-    this.accessTokens.reload();
+  private patch(request: PatchAccessTokenRequest): Observable<AccessToken | null> {
+    return this.accessTokensService.patch(this.tokenId()!, request).pipe(
+      catchError((e) => {
+        this.showError(e);
+        return of(null);
+      }),
+      tap((updated) => {
+        if (updated) {
+          this.toast.success('token updated');
+        }
+        // Reload either way, so that a rejected change is replaced by what the server still has
+        // instead of staying on screen.
+        this.accessTokens.reload();
+      })
+    );
   }
 
   public async createSecret() {
@@ -174,6 +198,8 @@ export class AccessTokenDetailComponent {
     if (await firstValueFrom(this.overlay.confirm(confirmation))) {
       try {
         await firstValueFrom(this.accessTokensService.deleteSecret(this.tokenId()!, slot));
+        // The token on screen may be the one this secret belonged to, and it no longer works.
+        this.createdToken.set(null);
         this.accessTokens.reload();
       } catch (e) {
         this.showError(e);

@@ -19,6 +19,7 @@ import {UserRoleSelectComponent} from '../components/user-role-select.component'
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AccessTokensService} from '../services/access-tokens.service';
 import {AuthService} from '../services/auth.service';
+import {CreatedAccessTokenStore} from '../services/created-access-token.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 import {accessTokenName} from './access-token-name';
@@ -67,6 +68,7 @@ export class AccessTokensComponent {
   private readonly toast = inject(ToastService);
   private readonly overlay = inject(OverlayService);
   private readonly router = inject(Router);
+  private readonly createdTokens = inject(CreatedAccessTokenStore);
 
   private readonly accessTokens = rxResource({stream: () => this.accessTokensService.list()});
 
@@ -129,7 +131,9 @@ export class AccessTokensComponent {
       request.label = this.editForm.value.label;
     }
     if (this.editForm.value.expiresAt) {
-      request.expiresAt = new Date(this.editForm.value.expiresAt);
+      // The picker works in local dates, and new Date() would read one as UTC midnight, which
+      // moves the day for everyone west of it.
+      request.expiresAt = dayjs(this.editForm.value.expiresAt).toDate();
     }
     if (this.editForm.value.userRole) {
       request.userRole = this.editForm.value.userRole;
@@ -138,8 +142,9 @@ export class AccessTokensComponent {
       const created = await firstValueFrom(this.accessTokensService.create(request));
       this.toast.success('token created');
       this.hideDrawer();
-      // The new token travels in the navigation because the server never returns it again.
-      await this.router.navigate(['/', 'settings', 'access-tokens', created.id], {state: {createdToken: created}});
+      // The new token is handed over out of band because the server never returns it again.
+      this.createdTokens.put(created);
+      await this.router.navigate(['/', 'settings', 'access-tokens', created.id]);
     } finally {
       this.editFormLoading.set(false);
     }

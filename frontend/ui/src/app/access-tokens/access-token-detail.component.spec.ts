@@ -1,11 +1,12 @@
 import {provideHttpClient} from '@angular/common/http';
 import {HttpTestingController, provideHttpClientTesting} from '@angular/common/http/testing';
 import {TestBed} from '@angular/core/testing';
-import {NavigationBehaviorOptions, provideRouter, Router} from '@angular/router';
+import {provideRouter, Router} from '@angular/router';
 import {RouterTestingHarness} from '@angular/router/testing';
-import {AccessToken} from '@distr-sh/distr-sdk';
+import {AccessToken, AccessTokenWithKey} from '@distr-sh/distr-sdk';
 import {of} from 'rxjs';
 import {AuthService} from '../services/auth.service';
+import {CreatedAccessTokenStore} from '../services/created-access-token.service';
 import {OverlayService} from '../services/overlay.service';
 import {AccessTokenDetailComponent} from './access-token-detail.component';
 
@@ -17,10 +18,19 @@ const legacyToken: AccessToken = {
   secrets: [],
 };
 
+const sibling: AccessToken = {
+  ...legacyToken,
+  id: '22222222-2222-2222-2222-222222222222',
+  label: 'sibling',
+};
+
+const created: AccessTokenWithKey = {...legacyToken, key: 'distr-2LTMfjV5xU8sJfF1M0hIm8_secret'};
+
 describe('AccessTokenDetailComponent', () => {
   let httpTesting: HttpTestingController;
+  let harness: RouterTestingHarness;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
@@ -31,26 +41,40 @@ describe('AccessTokenDetailComponent', () => {
       ],
     });
     httpTesting = TestBed.inject(HttpTestingController);
+    harness = await RouterTestingHarness.create();
   });
 
   afterEach(() => httpTesting.verify());
 
-  async function open(token: AccessToken, extras?: NavigationBehaviorOptions) {
-    const harness = await RouterTestingHarness.create();
-    await TestBed.inject(Router).navigateByUrl(`/settings/access-tokens/${token.id}`, extras);
+  function rendered() {
     harness.detectChanges();
-    httpTesting.expectOne('/api/v1/settings/tokens').flush([token]);
+    return harness.routeNativeElement?.textContent ?? '';
+  }
+
+  async function open(token: AccessToken) {
+    await TestBed.inject(Router).navigateByUrl(`/settings/access-tokens/${token.id}`);
+    harness.detectChanges();
+    httpTesting.expectOne('/api/v1/settings/tokens').flush([legacyToken, sibling]);
     await harness.fixture.whenStable();
-    harness.detectChanges();
-    return harness.routeNativeElement!.textContent ?? '';
+    return rendered();
   }
 
   it('opens a token that has neither secrets nor an explicit role', async () => {
     expect(await open(legacyToken)).toContain('Secure token');
   });
 
-  it('shows the token a create navigation handed over', async () => {
-    const state = {createdToken: {...legacyToken, key: 'distr-2LTMfjV5xU8sJfF1M0hIm8_secret'}};
-    expect(await open(legacyToken, {state})).toContain(state.createdToken.key);
+  it('shows the token a create handed over', async () => {
+    TestBed.inject(CreatedAccessTokenStore).put(created);
+    expect(await open(legacyToken)).toContain(created.key);
+  });
+
+  it('does not carry the token over to a sibling', async () => {
+    TestBed.inject(CreatedAccessTokenStore).put(created);
+    await open(legacyToken);
+
+    await TestBed.inject(Router).navigateByUrl(`/settings/access-tokens/${sibling.id}`);
+    await harness.fixture.whenStable();
+
+    expect(rendered()).not.toContain(created.key);
   });
 });
