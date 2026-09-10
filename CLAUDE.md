@@ -222,7 +222,6 @@ Only write a test that could fail for a real reason. Every test is code that has
 - Update `website/src/content/docs/docs/self-hosting/configuration.mdx` in the same change whenever you add, remove or change an environment variable in `internal/env/env.go`, including its default, whether it is required, and the values it accepts.
 - Use the GitHub CLI (`gh`) rather than the web interface to fetch data from GitHub.
 - Write shell for anything from a one-off command to a checked-in script (like `hack/validate-migrations.sh`), and Node once a task outgrows shell (like `hack/agent-changelog.mjs`). Avoid Python and never use Perl (e.g. `perl -pi -e`). Edit files directly rather than piping them through a stream editor.
-- Commit the conflict resolutions of a merge or rebase before continuing, or at least ask the user to, so that unrelated changes do not end up in that commit.
 
 ## Code Review Instructions
 
