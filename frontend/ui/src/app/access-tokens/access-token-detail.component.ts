@@ -198,6 +198,7 @@ export class AccessTokenDetailComponent {
     if (await firstValueFrom(this.overlay.confirm(confirmation))) {
       try {
         await firstValueFrom(this.accessTokensService.deleteSecret(this.tokenId()!, slot));
+        this.toast.success('secret deleted');
         // The token on screen may be the one this secret belonged to, and it no longer works.
         this.createdToken.set(null);
         this.accessTokens.reload();

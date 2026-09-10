@@ -159,7 +159,11 @@
         </div>
 
         @if (createdToken(); as created) {
-          <app-created-access-token class="block mx-4 mb-4" [tokenKey]="created.key" />
+          <app-created-access-token
+            class="block mx-4 mb-4"
+            [tokenKey]="created.key"
+            [dismissible]="true"
+            (dismissed)="createdToken.set(null)" />
         }
 
         @if (legacy()) {
