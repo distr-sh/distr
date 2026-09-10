@@ -82,17 +82,15 @@
         [cdkConnectedOverlayOrigin]="dropdownTrigger"
         [cdkConnectedOverlayPositions]="[{originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top'}]"
         [cdkConnectedOverlayOpen]="showDeploymentTargetDropdown()">
-        <div
-          animate.enter="animate-flip-in-top"
-          animate.leave="animate-flip-out-top"
-          class="origin-top my-2 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600">
-          <ul class="py-1" role="none">
+        <div animate.enter="animate-flip-in-top" animate.leave="animate-flip-out-top" class="distr-dropdown-panel my-2">
+          <ul role="none">
             @if (deploymentTarget().id; as id) {
               <li>
-                <div class="px-4 py-2">
+                <div class="px-2 py-1.5">
                   <app-uuid [uuid]="id" [small]="true" />
                 </div>
               </li>
+              <li class="distr-dropdown-divider"></li>
             }
             @if (auth.hasAnyRole('read_write', 'admin')) {
               <li>
@@ -100,8 +98,8 @@
                   type="button"
                   (click)="showDeploymentTargetDropdown.set(false); openEditDrawer()"
                   aria-controls="manage-deployment-target-drawer"
-                  class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white">
-                  <fa-icon [icon]="faGear" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
+                  class="distr-dropdown-item">
+                  <fa-icon [icon]="faGear" class="w-4 text-gray-500 dark:text-gray-400" />
                   Settings
                 </button>
               </li>
@@ -111,15 +109,15 @@
                   <button
                     type="button"
                     (click)="showDeploymentTargetDropdown.set(false); updateDeploymentTargetAgent()"
-                    class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white">
-                    <fa-icon [icon]="faRotate" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
+                    class="distr-dropdown-item">
+                    <fa-icon [icon]="faRotate" class="w-4 text-gray-500 dark:text-gray-400" />
                     Update Agent
                   </button>
                 </li>
               } @else if (agentUpdatePending()) {
                 <li>
-                  <span class="text-start block w-full px-4 py-2 text-sm text-gray-500 dark:text-gray-400 select-none">
-                    <fa-icon [icon]="faRotate" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
+                  <span class="distr-dropdown-item pointer-events-none text-gray-500 dark:text-gray-400 select-none">
+                    <fa-icon [icon]="faRotate" class="w-4" />
                     Update pending&hellip;
                   </span>
                 </li>
@@ -131,29 +129,26 @@
                 type="button"
                 (click)="showDeploymentTargetDropdown.set(false); openNotesDrawer()"
                 aria-controls="manage-deployment-target-drawer"
-                class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white">
-                <fa-icon [icon]="faComment" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
+                class="distr-dropdown-item">
+                <fa-icon [icon]="faComment" class="w-4 text-gray-500 dark:text-gray-400" />
                 Notes
               </button>
             </li>
 
             <li>
-              <a
-                class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
-                [routerLink]="[deploymentTarget().id]">
-                <fa-icon [icon]="faBinoculars" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
+              <a class="distr-dropdown-item" [routerLink]="[deploymentTarget().id]">
+                <fa-icon [icon]="faBinoculars" class="w-4 text-gray-500 dark:text-gray-400" />
                 Agent Logs
               </a>
             </li>
 
             @if (auth.hasAnyRole('read_write', 'admin')) {
-              <li
-                class="text-yellow-400 hover:bg-yellow-500 hover:text-white dark:text-yellow-300 dark:hover:text-white dark:hover:bg-yellow-400">
+              <li>
                 <button
                   type="button"
                   (click)="showDeploymentTargetDropdown.set(false); openInstructionsModal()"
-                  class="text-start block w-full px-4 py-2 text-sm">
-                  <fa-icon [icon]="faLink" class="h-5 w-5 mr-2 -ml-0.5" />
+                  class="distr-dropdown-item distr-dropdown-item-warning">
+                  <fa-icon [icon]="faLink" class="w-4" />
                   Reconnect
                 </button>
               </li>
@@ -166,8 +161,8 @@
                   [disabled]="hasDeployments"
                   [title]="hasDeployments ? 'Undeploy applications first' : ''"
                   (click)="showDeploymentTargetDropdown.set(false); deleteDeploymentTarget()"
-                  class="text-start block w-full px-4 py-2 text-sm text-red-700 enabled:hover:text-white enabled:hover:bg-red-800 dark:text-red-500 dark:enabled:hover:text-white dark:enabled:hover:bg-red-600 disabled:opacity-60 disabled:cursor-not-allowed">
-                  <fa-icon [icon]="faTrash" class="inline-block w-4 mr-2" />
+                  class="distr-dropdown-item distr-dropdown-item-danger">
+                  <fa-icon [icon]="faTrash" class="w-4" />
                   Delete
                 </button>
                 <ng-template #deleteConfirmModal>
@@ -275,29 +270,25 @@
                       <div
                         animate.enter="animate-flip-in-top"
                         animate.leave="animate-flip-out-top"
-                        class="origin-top my-2 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600">
-                        <ul class="py-1" role="none">
+                        class="distr-dropdown-panel my-2">
+                        <ul role="none">
                           <li>
                             <button
                               type="button"
-                              class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                              class="distr-dropdown-item"
                               (click)="showDeploymentDropdownForId.set(undefined); openRevisionsDrawer(deployment)">
-                              <fa-icon
-                                [icon]="faClockRotateLeft"
-                                class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
+                              <fa-icon [icon]="faClockRotateLeft" class="w-4 text-gray-500 dark:text-gray-400" />
                               Deployment history
                             </button>
                           </li>
                           <li>
                             <button
                               type="button"
-                              class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                              class="distr-dropdown-item"
                               (click)="
                                 showDeploymentDropdownForId.set(undefined); showResourceMetricsModal(deployment)
                               ">
-                              <fa-icon
-                                [icon]="faGauge"
-                                class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
+                              <fa-icon [icon]="faGauge" class="w-4 text-gray-500 dark:text-gray-400" />
                               Resource metrics
                             </button>
                           </li>
@@ -305,11 +296,9 @@
                             <li>
                               <button
                                 type="button"
-                                class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                                class="distr-dropdown-item"
                                 (click)="showDeploymentDropdownForId.set(undefined); showLogsEnabledMovedAlert()">
-                                <fa-icon
-                                  [icon]="faFileLines"
-                                  class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
+                                <fa-icon [icon]="faFileLines" class="w-4 text-gray-500 dark:text-gray-400" />
                                 @if (deploymentTarget().deploymentLogsEnabled) {
                                   Disable log collection
                                 } @else {
@@ -317,11 +306,10 @@
                                 }
                               </button>
                             </li>
-                            <li
-                              class="text-yellow-400 hover:bg-yellow-500 hover:text-white dark:text-yellow-300 dark:hover:text-white dark:hover:bg-yellow-400">
+                            <li>
                               <button
                                 type="button"
-                                class="text-start block w-full px-4 py-2 text-sm"
+                                class="distr-dropdown-item distr-dropdown-item-warning"
                                 (click)="forceRestart(deployment); showDeploymentDropdownForId.set(undefined)"
                                 [title]="
                                   isForceRestartSupported()
@@ -329,7 +317,7 @@
                                     : 'Agent must have version 1.12.0 or greater. Please update this agent.'
                                 "
                                 [disabled]="!isForceRestartSupported()">
-                                <fa-icon [icon]="faPowerOff" class="inline-block w-4 mr-2" />
+                                <fa-icon [icon]="faPowerOff" class="w-4" />
                                 Force restart workloads
                               </button>
                             </li>
@@ -341,14 +329,14 @@
                                   showDeploymentDropdownForId.set(undefined);
                                   deleteDeployment(deployment, undeployConfirmTemplate)
                                 "
-                                class="text-start block w-full px-4 py-2 text-sm text-red-700 enabled:hover:text-white enabled:hover:bg-red-800 dark:text-red-500 dark:enabled:hover:text-white dark:enabled:hover:bg-red-600 disabled:opacity-60 disabled:cursor-not-allowed"
+                                class="distr-dropdown-item distr-dropdown-item-danger"
                                 [title]="
                                   isUndeploySupported()
                                     ? ''
                                     : 'Agent must have version 1.3.0 or greater. Please update this agent.'
                                 "
                                 [disabled]="!isUndeploySupported()">
-                                <fa-icon [icon]="faTriangleExclamation" class="inline-block w-4 mr-2" />
+                                <fa-icon [icon]="faTriangleExclamation" class="w-4" />
                                 Undeploy
                               </button>
                               <ng-template #undeployConfirmTemplate>
