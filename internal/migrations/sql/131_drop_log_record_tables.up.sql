@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS DeploymentLogRecord CASCADE;
+DROP TABLE IF EXISTS DeploymentTargetLogRecord CASCADE;
