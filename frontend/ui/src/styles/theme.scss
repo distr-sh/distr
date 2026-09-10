@@ -101,6 +101,31 @@
   .distr-tag-badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-sm text-xs font-medium bg-gray-100 text-gray-800 border border-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500;
   }
+
+  // the overlay panel of a dropdown menu, wrapping a `<ul>` of `distr-dropdown-item`s
+  .distr-dropdown-panel {
+    @apply z-10 p-2 origin-top bg-white rounded-lg shadow-md dark:bg-gray-700;
+  }
+
+  // an entry of a `distr-dropdown-panel`, on a `<button>` or an `<a>`. `:enabled` never matches an
+  // anchor, so the hover has to be suppressed through `not-disabled:` rather than `enabled:`.
+  .distr-dropdown-item {
+    @apply w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-start text-sm text-gray-700 dark:text-gray-200 not-disabled:hover:bg-gray-100 dark:not-disabled:hover:bg-gray-600 dark:not-disabled:hover:text-white disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+
+  // Both variants must stay below `.distr-dropdown-item` to override its hover.
+  .distr-dropdown-item-danger {
+    @apply text-red-700 dark:text-red-500 not-disabled:hover:bg-red-800 not-disabled:hover:text-white dark:not-disabled:hover:bg-red-600;
+  }
+
+  .distr-dropdown-item-warning {
+    @apply text-yellow-500 dark:text-yellow-300 not-disabled:hover:bg-yellow-500 not-disabled:hover:text-white dark:not-disabled:hover:bg-yellow-400;
+  }
+
+  .distr-dropdown-divider {
+    @apply my-1 border-t border-gray-200 dark:border-gray-600;
+  }
+
   // the white surface of a page. `distr-panel` is padded for prose and forms, `distr-table-panel`
   // is flush so that a table or list can span its full width.
   // No `overflow-hidden` here, unlike `distr-table-panel`: a padded panel has nothing to clip at its
