@@ -37,8 +37,8 @@ func MailerForConfiguration(config types.CustomEmailConfiguration) (*mailx.Maile
 	adapter, err := smtp.New(smtp.Config{
 		Host:        config.SMTPHost,
 		Port:        config.SMTPPort,
-		Username:    config.SMTPUsername,
-		Password:    config.SMTPPassword,
+		Username:    string(config.SMTPUsername),
+		Password:    string(config.SMTPPassword),
 		ImplicitTLS: config.SMTPImplicitTLS,
 		TLSPolicy:   smtp.TLSOpportunistic,
 	})

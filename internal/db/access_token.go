@@ -13,17 +13,16 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-const (
-	accessTokenOutputExpr = `
+const accessTokenOutputExpr = `
 	tok.id, tok.created_at, tok.expires_at, tok.last_used_at, tok.label, tok.key,
 	tok.user_account_id, tok.organization_id, tok.user_role AS token_user_role
 `
-	accessTokenWithUserAccountOutputExpr = accessTokenOutputExpr + `,
+
+var accessTokenWithUserAccountOutputExpr = accessTokenOutputExpr + `,
 	(` + userAccountOutputExpr + `) AS user_account,
 	oua.user_role,
 	oua.customer_organization_id
 `
-)
 
 func CreateAccessToken(ctx context.Context, token *types.AccessToken) error {
 	db := internalctx.GetDb(ctx)

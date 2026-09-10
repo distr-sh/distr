@@ -12,6 +12,7 @@ import (
 	"github.com/containers/image/v5/manifest"
 	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
@@ -21,11 +22,25 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	artifactOutputExpr = ` a.id, a.created_at, a.organization_id, a.name, a.image_id, ` +
-		`a.upstream_url, a.last_synced_at, a.last_sync_error, ` +
-		`a.upstream_auth_type, a.upstream_username, a.upstream_password `
+var (
+	artifactOutputExpr = artifactOutputExprWith(EncryptedColumn.Output)
+	// artifactRowOutputExpr is artifactOutputExpr for a row constructor, where the alias that a scan
+	// by name needs is a syntax error.
+	artifactRowOutputExpr = artifactOutputExprWith(EncryptedColumn.Value)
+)
 
+func artifactOutputExprWith(upstreamCredential func(EncryptedColumn, string) string) string {
+	return ` a.id, a.created_at, a.organization_id, a.name, a.image_id, ` +
+		`a.upstream_url, a.last_synced_at, a.last_sync_error, a.upstream_auth_type, ` +
+		upstreamCredential(artifactUpstreamUsername, "a") + `, ` +
+		upstreamCredential(artifactUpstreamPassword, "a") + ` `
+}
+
+var artifactWithDownloadsOutputExpr = artifactOutputExpr +
+	", o.slug AS organization_slug," +
+	artifactDownloadsOutExpr
+
+const (
 	artifactDownloadsOutExpr = `
 		count(DISTINCT avpl.id) AS downloads_total,
 		count(DISTINCT avpl.useraccount_id) FILTER (WHERE avpl.customer_organization_id IS NULL)
@@ -51,10 +66,6 @@ const (
 				WHERE oua.user_account_id = avpl.useraccount_id
 					AND oua.customer_organization_id = @customerOrganizationId
 			))) `
-
-	artifactWithDownloadsOutputExpr = artifactOutputExpr +
-		", o.slug AS organization_slug," +
-		artifactDownloadsOutExpr
 
 	artifactVersionOutputExpr = `
 		v.id,
@@ -412,28 +423,36 @@ func GetOrCreateArtifact(ctx context.Context, orgID uuid.UUID, artifactName stri
 }
 
 func CreateArtifact(ctx context.Context, artifact *types.Artifact) error {
+	upstreamUsernameEnc, err := artifactUpstreamUsername.EncryptPtr(artifact.UpstreamUsername, artifact.OrganizationID)
+	if err != nil {
+		return fmt.Errorf("could not encrypt upstream username: %w", err)
+	}
+	upstreamPasswordEnc, err := artifactUpstreamPassword.EncryptPtr(artifact.UpstreamPassword, artifact.OrganizationID)
+	if err != nil {
+		return fmt.Errorf("could not encrypt upstream password: %w", err)
+	}
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`INSERT INTO Artifact AS a (name, organization_id, upstream_url, upstream_auth_type, upstream_username,
-			upstream_password)
-		VALUES (@name, @organizationId, @upstreamUrl, @upstreamAuthType, @upstreamUsername, @upstreamPassword)
+		`INSERT INTO Artifact AS a (name, organization_id, upstream_url, upstream_auth_type, upstream_username_enc,
+			upstream_password_enc)
+		VALUES (@name, @organizationId, @upstreamUrl, @upstreamAuthType, @upstreamUsernameEnc,
+			@upstreamPasswordEnc)
 		RETURNING `+artifactOutputExpr,
 		pgx.NamedArgs{
-			"name":             artifact.Name,
-			"organizationId":   artifact.OrganizationID,
-			"upstreamUrl":      artifact.UpstreamURL,
-			"upstreamAuthType": artifact.UpstreamAuthType,
-			"upstreamUsername": artifact.UpstreamUsername,
-			"upstreamPassword": artifact.UpstreamPassword,
+			"name":                artifact.Name,
+			"organizationId":      artifact.OrganizationID,
+			"upstreamUrl":         artifact.UpstreamURL,
+			"upstreamAuthType":    artifact.UpstreamAuthType,
+			"upstreamUsernameEnc": upstreamUsernameEnc,
+			"upstreamPasswordEnc": upstreamPasswordEnc,
 		},
 	)
 	if err != nil {
 		return fmt.Errorf("could not insert Artifact: %w", err)
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.Artifact]); err != nil {
-		var pgError *pgconn.PgError
-		if errors.As(err, &pgError) && pgError.Code == pgerrcode.UniqueViolation {
+		if pgError, ok := errors.AsType[*pgconn.PgError](err); ok && pgError.Code == pgerrcode.UniqueViolation {
 			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
 		}
 		return err
@@ -469,33 +488,50 @@ type UpdateArtifactUpstreamParams struct {
 	UpstreamURL *string
 	UpdateAuth  bool
 	AuthType    *types.UpstreamAuthType
-	Username    *string
-	Password    *string
+	Username    *dbcrypto.String
+	Password    *dbcrypto.String
 }
 
-func UpdateArtifactUpstream(ctx context.Context, artifactID uuid.UUID, p UpdateArtifactUpstreamParams) error {
+// UpdateArtifactUpstream requires the organization of the stored row to still hold: the new
+// credentials are sealed for it and could not be opened in a row moved to another one meanwhile.
+func UpdateArtifactUpstream(
+	ctx context.Context,
+	artifactID, organizationID uuid.UUID,
+	p UpdateArtifactUpstreamParams,
+) error {
 	if !p.UpdateURL && !p.UpdateAuth {
 		return nil
 	}
 	db := internalctx.GetDb(ctx)
 	var setClauses []string
-	args := pgx.NamedArgs{"id": artifactID}
+	args := pgx.NamedArgs{"id": artifactID, "organizationId": organizationID}
 	if p.UpdateURL {
 		setClauses = append(setClauses, "upstream_url = @upstreamUrl")
 		args["upstreamUrl"] = p.UpstreamURL
 	}
 	if p.UpdateAuth {
+		usernameEnc, err := artifactUpstreamUsername.EncryptPtr(p.Username, organizationID)
+		if err != nil {
+			return fmt.Errorf("could not encrypt upstream username: %w", err)
+		}
+		passwordEnc, err := artifactUpstreamPassword.EncryptPtr(p.Password, organizationID)
+		if err != nil {
+			return fmt.Errorf("could not encrypt upstream password: %w", err)
+		}
 		setClauses = append(setClauses,
 			"upstream_auth_type = @authType",
-			"upstream_username = @username",
-			"upstream_password = @password",
+			"upstream_username = NULL",
+			"upstream_username_enc = @usernameEnc",
+			"upstream_password = NULL",
+			"upstream_password_enc = @passwordEnc",
 		)
 		args["authType"] = p.AuthType
-		args["username"] = p.Username
-		args["password"] = p.Password
+		args["usernameEnc"] = usernameEnc
+		args["passwordEnc"] = passwordEnc
 	}
 	_, err := db.Exec(ctx,
-		`UPDATE Artifact SET `+strings.Join(setClauses, ", ")+` WHERE id = @id`,
+		`UPDATE Artifact SET `+strings.Join(setClauses, ", ")+
+			` WHERE id = @id AND organization_id = @organizationId`,
 		args,
 	)
 	if err != nil {
@@ -1083,7 +1119,7 @@ func GetArtifactVersionPulls(
 			CASE WHEN u.id IS NOT NULL THEN (` + userAccountOutputExpr + `) ELSE NULL END,
 			CASE WHEN co.id IS NOT NULL THEN (` + customerOrganizationOutputExpr + `) ELSE NULL END,
 			CASE WHEN dt.id IS NOT NULL THEN (dt.id, dt.name) ELSE NULL END,
-			(` + artifactOutputExpr + `),
+			(` + artifactRowOutputExpr + `),
 			(` + artifactVersionOutputExpr + `)
 		FROM ArtifactVersionPull p
 			LEFT JOIN UserAccount u ON u.id = p.useraccount_id

@@ -96,6 +96,18 @@ hub:
       #   secretKeyRef:
       #     name: ""
       #     key: ""
+    # The base64 encoded key that sensitive database columns are encrypted with.
+    # Can be generated with `openssl rand -base64 32`. Losing it makes every encrypted value
+    # unreadable, so back it up separately from the database.
+    # Rotating it takes two rollouts with more than one replica, see
+    # https://distr.sh/docs/self-hosting/configuration/#rotating-the-key
+    - name: DATABASE_ENCRYPTION_KEY
+      value: 8fVQ3nZ5kL0xR7cWtYbA1sJmEuHpDgNiO2vXqTzKcRo=
+      # We recommend reading the encryption key from a secretKeyRef
+      # valueFrom:
+      #   secretKeyRef:
+      #     name: ""
+      #     key: ""
     - name: MAILER_FROM_ADDRESS
       value: My Distr <noreply@distr.local>
     - name: MAILER_TYPE

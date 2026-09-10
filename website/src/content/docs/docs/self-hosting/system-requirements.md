@@ -76,5 +76,5 @@ For production use, we recommend the following:
 - Run PostgreSQL and the object storage as managed services, so you can scale, upgrade and operate them independently of the Hub.
 - Run several Hub replicas behind a load balancer so the control plane stays available during upgrades and node failures. Our [Helm chart](/docs/self-hosting/kubernetes/) does this via `replicaCount` and `autoscaling`.
 - Trigger the [maintenance jobs](/docs/self-hosting/maintenance/) from outside the Hub instead of using its built-in scheduler, since every replica would otherwise run every job. The Helm chart ships them as Kubernetes `CronJob`s under `cronJobs`.
-- Back up the database and the object storage regularly and test your restore procedure. They hold all state there is.
-- Keep the database credentials, `JWT_SECRET` and the object storage keys in a secret manager, such as a Kubernetes `Secret`, Vault or your cloud provider's secret store, rather than in plain-text environment files.
+- Back up the database and the object storage regularly and test your restore procedure. They hold all state there is. Back up `DATABASE_ENCRYPTION_KEY` alongside them but stored separately, since a database backup cannot be restored into a working instance without it.
+- Keep the database credentials, `JWT_SECRET`, `DATABASE_ENCRYPTION_KEY` and the object storage keys in a secret manager, such as a Kubernetes `Secret`, Vault or your cloud provider's secret store, rather than in plain-text environment files.

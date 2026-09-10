@@ -3,6 +3,7 @@ package deploymentvalues
 import (
 	"testing"
 
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/types"
 	. "github.com/onsi/gomega"
 )
@@ -84,5 +85,5 @@ func TestRenderAndHashEnvFileEscapesSecretNewlines(t *testing.T) {
 }
 
 func testSecret(key, value string) types.SecretWithUpdatedBy {
-	return types.SecretWithUpdatedBy{Secret: types.Secret{Key: key, Value: value}}
+	return types.SecretWithUpdatedBy{Secret: types.Secret{Key: key, Value: dbcrypto.String(value)}}
 }

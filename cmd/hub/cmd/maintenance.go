@@ -10,6 +10,8 @@ import (
 	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/customdomains"
+	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/dbencryption"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/registry/upstream"
 	"github.com/distr-sh/distr/internal/svc"
@@ -27,6 +29,8 @@ func NewMaintenanceCommand() *cobra.Command {
 	}
 	cmd.AddCommand(NewSyncArtifactsUpstreamCommand())
 	cmd.AddCommand(NewVerifyCustomDomainsCommand())
+	cmd.AddCommand(NewEncryptDatabaseCommand())
+	cmd.AddCommand(NewDecryptDatabaseCommand())
 	return cmd
 }
 
@@ -36,10 +40,13 @@ func newMaintenanceTaskCommand(
 ) *cobra.Command {
 	var timeout time.Duration
 	cmd := &cobra.Command{
-		Use:    use,
-		Short:  short,
-		Args:   cobra.NoArgs,
-		PreRun: func(cmd *cobra.Command, args []string) { env.Initialize() },
+		Use:   use,
+		Short: short,
+		Args:  cobra.NoArgs,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			env.Initialize()
+			util.Must(dbcrypto.Init(env.DatabaseEncryptionKey()))
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := runMaintenanceTask(cmd.Context(), use, timeout, run); err != nil {
 				os.Exit(1)
@@ -63,6 +70,22 @@ func NewVerifyCustomDomainsCommand() *cobra.Command {
 		"verify-custom-domains",
 		"check the CNAME records of custom domains",
 		customdomains.RunCustomDomainVerification,
+	)
+}
+
+func NewEncryptDatabaseCommand() *cobra.Command {
+	return newMaintenanceTaskCommand(
+		"encrypt-database",
+		"encrypt sensitive values that are still stored in plaintext",
+		dbencryption.RunEncrypt,
+	)
+}
+
+func NewDecryptDatabaseCommand() *cobra.Command {
+	return newMaintenanceTaskCommand(
+		"decrypt-database",
+		"store every encrypted value in plaintext again, to migrate the database down",
+		dbencryption.RunDecrypt,
 	)
 }
 

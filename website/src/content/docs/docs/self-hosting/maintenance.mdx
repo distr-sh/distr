@@ -177,6 +177,57 @@ cronJobs:
   keeps falling back to your instance host until someone does.
 </Aside>
 
+## Database Encryption
+
+Distr encrypts the [sensitive columns of its database](/docs/self-hosting/configuration#database-encryption).
+Values written before you upgraded to a version that does so are still in plaintext, and after a key
+rotation some values are still encrypted with the previous key. This command moves both to the active key:
+
+```shell
+distr maintenance encrypt-database --timeout 60m
+```
+
+Unlike the jobs above this is not recurring work, so do not schedule it. There are exactly two
+occasions on which it has anything to do — the upgrade to a version that encrypts, and a rotation of
+`DATABASE_ENCRYPTION_KEY` — and both are things you do deliberately. Run it once afterwards. Nothing
+in Distr writes a plaintext value, so once it reports that there is nothing left, that stays true.
+
+It is safe to run while Distr is serving traffic, it can be interrupted and resumed, and it is a no-op
+once everything is on the active key. Until then, Distr logs a warning on every start naming the
+columns that are left.
+
+<Aside type="caution">
+  If you run more than one replica, wait until the upgrade to a version that
+  encrypts has rolled out completely before you run this. The command clears
+  each plaintext column as it encrypts it, and a replica still running the
+  previous version reads that column instead of the encrypted one, so it would
+  see those values as empty until it is replaced. Once the migration is done no
+  value is left in plaintext, so this cannot happen again. A key rotation never
+  produces an empty value, since it only ever rewrites the encrypted column, but
+  it has a rollout order of its own, see [Rotating the
+  key](/docs/self-hosting/configuration#rotating-the-key).
+</Aside>
+
+On Kubernetes, run it in a Hub pod, which already has the database URL and the encryption key in its
+environment:
+
+```shell
+kubectl exec deploy/distr -- /distr maintenance encrypt-database --timeout 60m
+```
+
+The command dies with the pod if it is replaced while running, and a long run can outlive the
+`kubectl exec` connection. Neither loses work: every batch is committed on its own, so run it again
+and it continues where it stopped.
+
+For single instance deployments you can instead have it run during startup:
+
+```dotenv
+DATABASE_ENCRYPTION_MIGRATE_ON_BOOT=true
+```
+
+Leave this off if you run more than one replica, for the reason above: the first replica of the new
+version would start encrypting while replicas of the previous one are still serving.
+
 ## Removed features
 
 ### Deployment & Deployment Target Log Cleanup (removed in v3.0.0)

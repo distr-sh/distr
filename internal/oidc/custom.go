@@ -34,7 +34,7 @@ func ProviderForConfiguration(
 		verifier: discovered.Provider.Verifier(&oidc.Config{ClientID: configuration.ClientID}),
 		oauth2Config: oauth2.Config{
 			ClientID:     configuration.ClientID,
-			ClientSecret: configuration.ClientSecret,
+			ClientSecret: string(configuration.ClientSecret),
 			RedirectURL:  redirectURL,
 			Endpoint:     discovered.Provider.Endpoint(),
 			Scopes:       configuration.Scopes,

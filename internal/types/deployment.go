@@ -3,6 +3,7 @@ package types
 import (
 	"time"
 
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/google/uuid"
 )
 
@@ -27,8 +28,8 @@ type DeploymentWithLatestRevision struct {
 	ApplicationVersionName  string                    `db:"application_version_name" json:"applicationVersionName"`
 	ApplicationLinkTemplate string                    `db:"application_link_template" json:"-"`
 	ApplicationLink         string                    `db:"-" json:"applicationLink"`
-	ValuesYaml              []byte                    `db:"values_yaml" json:"valuesYaml,omitempty"`
-	EnvFileData             []byte                    `db:"env_file_data" json:"envFileData,omitempty"`
+	ValuesYaml              dbcrypto.Bytes            `db:"values_yaml" json:"valuesYaml,omitempty"`
+	EnvFileData             dbcrypto.Bytes            `db:"env_file_data" json:"envFileData,omitempty"`
 	ValuesHash              []byte                    `db:"values_hash" json:"-"`
 	LatestStatus            *DeploymentRevisionStatus `db:"latest_status" json:"latestStatus,omitempty"`
 	ForceRestart            bool                      `db:"force_restart" json:"forceRestart"`

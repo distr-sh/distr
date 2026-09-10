@@ -61,7 +61,7 @@ func vendorStripeWebhookHandler() http.HandlerFunc {
 			return
 		}
 
-		event, err := webhook.ConstructEvent(payload, req.Header.Get("Stripe-Signature"), *org.StripeWebhookSecret)
+		event, err := webhook.ConstructEvent(payload, req.Header.Get("Stripe-Signature"), string(*org.StripeWebhookSecret))
 		if err != nil {
 			log.Warn("vendor webhook signature verification failed", zap.Error(err))
 			w.WriteHeader(http.StatusBadRequest)

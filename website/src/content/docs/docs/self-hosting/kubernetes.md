@@ -44,7 +44,7 @@ This part is the same on every cloud:
 
 - Leave `postgresql.enabled` at `false` and set `externalDatabase.existingSecret` to a secret holding the connection URI. The alternative, `externalDatabase.uri`, puts the URI into the release values in plain text.
 - Use external object storage for both the registry (`REGISTRY_S3_*` in `hub.env`) and Loki (`loki.loki.storage`). Create both buckets up front, set `REGISTRY_S3_CREATE_BUCKET` to `false` and drop the `create-loki-bucket` init container with `loki.singleBinary.initContainers: []`, which only exists to provision a bucket in the in-cluster RustFS.
-- Put `JWT_SECRET`, the license key and the object storage credentials in a `secretKeyRef` or in `hub.envFrom`, not in your `hub.env` values.
+- Put `JWT_SECRET`, `DATABASE_ENCRYPTION_KEY`, the license key and the object storage credentials in a `secretKeyRef` or in `hub.envFrom`, not in your `hub.env` values.
 - Enable a scratch volume with `hub.scratch.enabled`, so the registry buffers layer uploads on disk instead of in memory.
 - Add an Ingress for the two hostnames the chart serves, the app and the registry. Registry pushes have no size limit, so raise or disable the request body limit of your ingress controller on the registry host.
 

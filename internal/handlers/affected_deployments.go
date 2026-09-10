@@ -10,13 +10,14 @@ import (
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/deploymentvalues"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 )
 
 func updateSecretValuePatchFunc(
-	secretKey string, newValue string,
+	secretKey string, newValue dbcrypto.String,
 ) func([]types.SecretWithUpdatedBy) []types.SecretWithUpdatedBy {
 	return func(secrets []types.SecretWithUpdatedBy) []types.SecretWithUpdatedBy {
 		patched := slices.Clone(secrets)
@@ -34,7 +35,7 @@ func findAffectedDeploymentsBySecret(
 	ctx context.Context,
 	orgID uuid.UUID,
 	secretKey string,
-	newValue string,
+	newValue dbcrypto.String,
 	customerOrgID *uuid.UUID,
 ) ([]api.AffectedDeployment, error) {
 	return findAffectedDeployments(ctx, orgID, customerOrgID, updateSecretValuePatchFunc(secretKey, newValue), nil)

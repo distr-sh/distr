@@ -197,6 +197,7 @@ jobs:
         env:
           LICENSE_KEY_PRIVATE_KEY: ${{ steps.ephemeral-key.outputs.private-key }}
           DATABASE_URL: postgres://placeholder
+          DATABASE_ENCRYPTION_KEY: iQyACEaOrUAE0x6nffYgT3eHddyHMG1cClBNYhbDyD0=
           JWT_SECRET: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
           DISTR_HOST: http://placeholder
           LOKI_URL: http://placeholder
@@ -210,6 +211,7 @@ jobs:
           psql $DATABASE_URL -c "select version > 0, dirty from schema_migrations" --csv -t | grep "t,f"
         env:
           DATABASE_URL: postgres://test-user:test-password@localhost:5432/distr
+          DATABASE_ENCRYPTION_KEY: iQyACEaOrUAE0x6nffYgT3eHddyHMG1cClBNYhbDyD0=
           JWT_SECRET: H4V7z6mEpe8/k5H/KyogT/iATJhNpEIUMd5cHF6mqF8=
           DISTR_HOST: http://localhost:8080
           LOKI_URL: http://localhost:3100
@@ -224,6 +226,7 @@ jobs:
           dist/distr-amd64 migrate --down
         env:
           DATABASE_URL: postgres://test-user:test-password@localhost:5432/distr
+          DATABASE_ENCRYPTION_KEY: iQyACEaOrUAE0x6nffYgT3eHddyHMG1cClBNYhbDyD0=
           JWT_SECRET: H4V7z6mEpe8/k5H/KyogT/iATJhNpEIUMd5cHF6mqF8=
           DISTR_HOST: http://localhost:8080
           LOKI_URL: http://localhost:3100

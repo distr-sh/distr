@@ -3,6 +3,7 @@ package types
 import (
 	"time"
 
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/google/uuid"
 )
 
@@ -40,7 +41,7 @@ type SupportBundle struct {
 	Title                        string              `db:"title"`
 	Description                  *string             `db:"description"`
 	Status                       SupportBundleStatus `db:"status"`
-	BundleSecret                 string              `db:"bundle_secret"`
+	BundleSecret                 dbcrypto.String     `db:"bundle_secret"`
 	BundleSecretExpiresAt        *time.Time          `db:"bundle_secret_expires_at"`
 	StatusChangedByUserAccountID *uuid.UUID          `db:"status_changed_by_user_account_id"`
 	StatusChangedAt              *time.Time          `db:"status_changed_at"`
@@ -65,7 +66,7 @@ type SupportBundleResource struct {
 	Name            string    `db:"name"`
 	// The content is a file the collect script gathered verbatim, and is served back as a download
 	// and rendered in a <pre>, so it must not be trimmed if it ever reaches a JSON request body.
-	Content string `db:"content" trim:"-"`
+	Content dbcrypto.String `db:"content" trim:"-"`
 }
 
 type SupportBundleComment struct {

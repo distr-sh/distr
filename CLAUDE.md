@@ -221,6 +221,24 @@ Model a closed set of values as a Postgres enum type, not as a `TEXT` column wit
 
 When you add a Postgres enum type, register it (and its array type, prefixed with `_`) in the `AfterConnect` type list in `internal/svc/db_pool.go`, e.g. `CUSTOM_DOMAIN_TYPE` and `_CUSTOM_DOMAIN_TYPE`. Without it pgx cannot encode Go values into the enum's OID. Cast query parameters to the enum type, never to `TEXT`: `unnest(@domainTypes::CUSTOM_DOMAIN_TYPE[])`, since Postgres does not implicitly coerce `text` to an enum. Pass the Go string type itself (`[]types.DomainType`), not `[]string`.
 
+#### Encrypted Columns
+
+A sensitive column is stored encrypted (`internal/dbcrypto`) in a `BYTEA` column named `<column>_enc`, next to the plaintext `<column>` that rows written before the encryption migration still use.
+
+Every encrypted value is bound to the column it is stored in and to the scope of its row: both are authenticated with the ciphertext, so a value copied into another column, or a row whose scope is rewritten, no longer decrypts. Without that, anyone able to write to the database can move a ciphertext into a column whose plaintext the application hands out, or claim a row for themselves, and read it back without the key.
+
+The scope is what an authorization check reads to decide who the value belongs to, not what identifies the row. Those come apart for exactly the attacker this defends against: the columns an authorization check reads are stored in the clear next to the ciphertext, so binding a value to its row id leaves that attacker free to hand the row to themselves by rewriting its owner.
+
+- Declare every encrypted column once in `internal/db/encryption.go`, as a package-level variable that `EncryptedColumns` also lists, and reference that variable from the queries that read and write it. Naming a column as a loose string at a call site is what lets a read and a write disagree about what a value is bound to, which fails at runtime rather than at compile time. A column that is missing from `EncryptedColumns` is silently skipped by the migration, by the rollback (`maintenance decrypt-database`) and by the startup warning.
+- Type the field in `internal/types` as `dbcrypto.String`, `*dbcrypto.String` or `dbcrypto.Bytes`, never as `string` or `[]byte`.
+- Read through `column.Output(alias)`, or `column.Value(alias)` where a column alias is not allowed, and use `column.IsSetValue(alias)` for the boolean an API exposes in place of the secret itself.
+- Write only the `_enc` column, from `column.Encrypt`, `EncryptPtr` or `EncryptBytes`, and set the plaintext column to `NULL` in the same statement.
+- Declare the scope as every column of the same row that an authorization check reads, most specific first, e.g. `encrypted("Secret", "value", "customer_organization_id", "organization_id")`. `Organization` and `UserAccount` are scoped to their own `id` because that id is the organization and the user such a check reads. A `NULL` scope reads as the nil UUID on both sides, so pass `dbcrypto.ScopeOf` for a nullable one; a real row never carries that value, so the two cannot collide.
+- A statement that writes a scope column has to write the encrypted columns of that row in the same statement, and one that does not has to require the scope it sealed for in its `WHERE`, so that a row moved to another owner in between fails the update instead of being left with a value nobody can open. That is why `UpdateSecret` and `UpdateArtifactUpstream` take the organization of the stored row.
+- What a value is bound to is part of the stored format. Renaming a table or a column, or changing what a column is scoped to, invalidates every value in it until `maintenance encrypt-database` has rewritten them.
+- Call `dbcrypto.Init(env.DatabaseEncryptionKey())` in the `PreRun` of every command that touches an encrypted column, and never make `dbcrypto` read `env` itself.
+- Do not encrypt a column that a query looks up by value. Narrow the row down by its id and compare in Go with `subtle.ConstantTimeCompare` (see `db.GetSupportBundleByBundleSecret`).
+
 #### Read-only Database
 
 An optional read-only database (e.g. a replica) can be configured via `DATABASE_READONLY_URL` (and `DATABASE_READONLY_MAX_CONNS`). When unset, no read-only pool is created and everything uses the primary. When set, it is injected into the request context by `ContextInjectorMiddleware` via `WithReadonlyDB` (the primary is always injected via `WithDb`).
@@ -250,6 +268,8 @@ _, err := db.CopyFrom(
 ### Scheduled Jobs
 
 A job has to be runnable from outside the hub process, because a high-availability installation would otherwise run it once per replica. Register it in `internal/svc/jobs_scheduler.go` behind its own `*_CRON` env var that defaults to unscheduled, give it a subcommand (`cleanup` for pruning, `maintenance` for everything else), and add a `cronJobs` entry to `deploy/charts/distr/values.yaml` that calls it. Never make behaviour outside the job itself depend on whether its cron is scheduled: in the chart it never is, since the CronJob runs it.
+
+This applies to recurring work. A one-time migration such as `maintenance encrypt-database` gets the subcommand and nothing else: no `*_CRON` env var, no `cronJobs` entry and no Helm hook. Its work appears only when an operator upgrades or changes the configuration, so a schedule polls for an event that a human causes, and every run that finds nothing still pays for the scan that proves it. Document the command instead and let the hub say on startup that there is work left.
 
 ### Subscription Gating
 

@@ -13,6 +13,7 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
@@ -58,7 +59,7 @@ func mfaSetupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := db.UpdateUserAccountMFASecret(ctx, userID, key.Secret()); err != nil {
+	if err := db.UpdateUserAccountMFASecret(ctx, userID, dbcrypto.String(key.Secret())); err != nil {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		log.Error("failed to save MFA secret", zap.Error(err))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -122,7 +123,7 @@ func mfaEnableHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	valid := totp.Validate(request.Code, *user.MFASecret)
+	valid := totp.Validate(request.Code, string(*user.MFASecret))
 	if !valid {
 		http.Error(w, "invalid code", http.StatusBadRequest)
 		return

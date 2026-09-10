@@ -233,8 +233,8 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 				} else if entitlement.RegistryURL != nil {
 					agentDeployment.RegistryAuth = map[string]api.AgentRegistryAuth{
 						*entitlement.RegistryURL: {
-							Username: *entitlement.RegistryUsername,
-							Password: *entitlement.RegistryPassword,
+							Username: string(*entitlement.RegistryUsername),
+							Password: string(*entitlement.RegistryPassword),
 						},
 					}
 				}

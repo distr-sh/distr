@@ -210,7 +210,7 @@ func secretReplacer(secrets []types.SecretWithUpdatedBy) *strings.Replacer {
 		if secret.Value == "" {
 			continue
 		}
-		pairs = append(pairs, secret.Value, "********")
+		pairs = append(pairs, string(secret.Value), "********")
 	}
 	if len(pairs) == 0 {
 		return strings.NewReplacer()

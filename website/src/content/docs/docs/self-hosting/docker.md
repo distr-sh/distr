@@ -29,7 +29,7 @@ mkdir distr && cd distr && curl -fsSL https://github.com/distr-sh/distr/releases
 ```
 
 This command creates a new directory called `distr` containing two files: `docker-compose.yaml` and `.env`.
-For a basic setup, you don't have to modify `docker-compose.yaml`, but please open `.env` in your favorite text editor and change the values of `POSTGRES_PASSWORD` and `JWT_SECRET`.
+For a basic setup, you don't have to modify `docker-compose.yaml`, but please open `.env` in your favorite text editor and change the values of `POSTGRES_PASSWORD`, `JWT_SECRET` and `DATABASE_ENCRYPTION_KEY`.
 Feel free to also change the value of `DISTR_HOST`, if you intend to make your instance publicly available.
 Once you are happy with your configuration, simply start the Hub using Docker Compose:
 
@@ -52,7 +52,7 @@ Whichever cloud you use, you need the same pieces:
 - A managed PostgreSQL instance the VM can reach over a private network, with TLS enforced. We test against PostgreSQL 18 with 2 CPUs and 2 GB RAM.
 - Two buckets, one for the registry blobs and one for Loki's log chunks.
 - Disk space for the scratch volume, where the registry buffers layer uploads instead of holding them in memory. Every stack mounts one into the Hub, so give the VM room for the layers you expect to be pushed at the same time.
-- A `JWT_SECRET` from `openssl rand -base64 32`, and a `LICENSE_KEY` if you run a paid plan.
+- A `JWT_SECRET` and a `DATABASE_ENCRYPTION_KEY`, each from `openssl rand -base64 32`, and a `LICENSE_KEY` if you run a paid plan. Back the encryption key up somewhere other than the database, since it is what makes the encrypted columns readable.
 
 On a single VM, keep running the [maintenance jobs](/docs/self-hosting/maintenance/) inside the Hub process through the `*_CRON` variables in `.env`.
 Switch them off and trigger the `cleanup` and `maintenance` subcommands from outside only once you run more than one Hub replica, since every replica would otherwise run every job.
@@ -108,6 +108,7 @@ DISTR_REGISTRY_HOSTNAME="pkg.example.com"
 CADDY_ACME_EMAIL="ops@example.com"
 DISTR_HOST="https://${DISTR_APP_HOSTNAME}"
 JWT_SECRET="Zm9vYmFyYmF6..."
+DATABASE_ENCRYPTION_KEY="cXV1eGNvcmdl..."
 
 DATABASE_URL="postgres://distr:<password>@distr-db.abc123.us-east-2.rds.amazonaws.com:5432/distr?sslmode=require"
 
@@ -161,6 +162,7 @@ DISTR_REGISTRY_HOSTNAME="pkg.example.com"
 CADDY_ACME_EMAIL="ops@example.com"
 DISTR_HOST="https://${DISTR_APP_HOSTNAME}"
 JWT_SECRET="Zm9vYmFyYmF6..."
+DATABASE_ENCRYPTION_KEY="cXV1eGNvcmdl..."
 
 DATABASE_URL="postgres://distr:<password>@10.42.0.3:5432/distr?sslmode=require"
 

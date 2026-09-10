@@ -6,7 +6,8 @@
 # the enterprise-aws and enterprise-gcp examples replace with managed services.
 #
 # Create these before installing:
-#   - a secret "distr-secrets" with the key jwtSecret (openssl rand -base64 32)
+#   - a secret "distr-secrets" with the keys jwtSecret and databaseEncryptionKey,
+#     each generated with "openssl rand -base64 32"
 #   - DNS records for both hostnames pointing at your ingress controller
 #
 #   helm upgrade --install distr oci://ghcr.io/distr-sh/charts/distr -n distr --create-namespace \
@@ -23,6 +24,13 @@ hub:
         secretKeyRef:
           name: distr-secrets
           key: jwtSecret
+    # Encrypts the sensitive columns of the database. Back this key up separately from the
+    # database: a dump is worthless without it, and so is your data if you lose it.
+    - name: DATABASE_ENCRYPTION_KEY
+      valueFrom:
+        secretKeyRef:
+          name: distr-secrets
+          key: databaseEncryptionKey
     - name: REGISTRY_ENABLED
       value: 'true'
     - name: REGISTRY_HOST

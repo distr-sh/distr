@@ -14,7 +14,7 @@
 
 <!-- x-release-please-start-version -->
 
-![Version: 3.5.1](https://img.shields.io/badge/Version-3.4.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.4.2](https://img.shields.io/badge/AppVersion-3.4.2-informational?style=flat-square)
+![Version: 3.5.1](https://img.shields.io/badge/Version-3.5.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.5.1](https://img.shields.io/badge/AppVersion-3.5.1-informational?style=flat-square)
 <!-- x-release-please-end -->
 
 Ship self-hosted software
@@ -47,8 +47,8 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | Repository                                  | Name       | Version    |
 | ------------------------------------------- | ---------- | ---------- |
 | https://charts.rustfs.com                   | rustfs     | 1.0.0-rc.5 |
-| oci://ghcr.io/grafana-community/helm-charts | loki       | 18.11.7    |
-| oci://registry-1.docker.io/bitnamicharts    | postgresql | 18.8.13    |
+| oci://ghcr.io/grafana-community/helm-charts | loki       | 18.12.1    |
+| oci://registry-1.docker.io/bitnamicharts    | postgresql | 18.8.17    |
 
 ## Values
 

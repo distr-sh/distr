@@ -10,6 +10,7 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/oidc"
@@ -104,7 +105,7 @@ func createCustomOIDCConfigurationHandler(w http.ResponseWriter, r *http.Request
 	configuration := types.CustomOIDCConfiguration{
 		OrganizationID:         orgID,
 		UpdatedByUserAccountID: new(auth.CurrentUserID()),
-		ClientSecret:           *request.ClientSecret,
+		ClientSecret:           dbcrypto.String(*request.ClientSecret),
 	}
 	mapping.CustomOIDCConfigurationToInternal(request, &configuration)
 
@@ -157,7 +158,7 @@ func updateCustomOIDCConfigurationHandler(w http.ResponseWriter, r *http.Request
 	configuration := *existing
 	configuration.UpdatedByUserAccountID = new(auth.CurrentUserID())
 	if request.ClientSecret != nil {
-		configuration.ClientSecret = *request.ClientSecret
+		configuration.ClientSecret = dbcrypto.String(*request.ClientSecret)
 	}
 	mapping.CustomOIDCConfigurationToInternal(request, &configuration)
 
