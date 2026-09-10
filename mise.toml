@@ -153,6 +153,10 @@ run = { tasks = ["format:app", "format:website"] }
 run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/hub/'
 description = """
 Run the hub with arbitrary arguments: "mise run distr arg1 arg2...".
+Examples:
+  - "mise run distr serve"
+  - "mise run distr migrate --to ..."
+  - "mise run distr maintenance encrypt-database"
 Try "mise run distr help" to explore the available commands.
 Protip: "mise watch -r distr serve" to auto-reload on code changes.
 """
