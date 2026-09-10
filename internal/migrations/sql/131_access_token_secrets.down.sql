@@ -1,3 +1,6 @@
+DELETE FROM AccessToken
+WHERE secret_1_hash IS NOT NULL OR secret_2_hash IS NOT NULL;
+
 ALTER TABLE AccessToken
   DROP CONSTRAINT AccessToken_secret_1_complete,
   DROP CONSTRAINT AccessToken_secret_2_complete,
