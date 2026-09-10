@@ -33,7 +33,7 @@ mise run lint                  # :app, :go, :frontend, :migrations, :website for
 mise run format                # everything; :app, :go, :frontend, :website for parts
 ```
 
-Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the frontend in `.prettierrc.mjs`; `format:website` also deletes unreferenced images.
+Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the frontend in `.prettierrc.mjs`; `mise run format:website` also deletes unreferenced images.
 
 ## Go Code
 
@@ -99,6 +99,8 @@ err := db.BeginFunc(ctx, func(tx pgx.Tx) error {
     return nil
 })
 ```
+
+### Batch Inserts
 
 Insert multiple rows with `pgx.CopyFrom` and `pgx.CopyFromSlice`, never with `INSERT` in a loop.
 
