@@ -4,7 +4,7 @@ description: Configure automated cleanup jobs to prune metrics, logs, registry b
 slug: docs/self-hosting/maintenance
 sidebar:
   label: Maintenance Jobs
-  order: 5
+  order: 6
 ---
 
 import {Aside} from '@astrojs/starlight/components';
@@ -179,7 +179,7 @@ cronJobs:
 
 ## Database Encryption
 
-Distr encrypts the [sensitive columns of its database](/docs/self-hosting/configuration#database-encryption).
+Distr encrypts the [sensitive columns of its database](/docs/self-hosting/security#database-encryption).
 Values written before you upgraded to a version that does so are still in plaintext, and after a key
 rotation some values are still encrypted with the previous key. This command moves both to the active key:
 
@@ -205,7 +205,7 @@ columns that are left.
   value is left in plaintext, so this cannot happen again. A key rotation never
   produces an empty value, since it only ever rewrites the encrypted column, but
   it has a rollout order of its own, see [Rotating the
-  key](/docs/self-hosting/configuration#rotating-the-key).
+  key](/docs/self-hosting/security#rotating-the-key).
 </Aside>
 
 On Kubernetes, run it in a Hub pod, which already has the database URL and the encryption key in its

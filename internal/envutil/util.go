@@ -35,10 +35,20 @@ func GetEnvOrDefault(key, defaultValue string, opts GetEnvOpts) string {
 	return defaultValue
 }
 
+// ParseValue parses a value already read from the environment, for a caller that has to transform
+// it first, and reports a malformed one like every other function here.
+func ParseValue[T any](key, value string, parseFunc func(string) (T, error)) (T, error) {
+	parsed, err := parseFunc(value)
+	if err != nil {
+		return parsed, fmt.Errorf("malformed environment variable %v: %v", key, err)
+	}
+	return parsed, nil
+}
+
 func GetEnvParsedOrNilErr[T any](key string, parseFunc func(string) (T, error)) (*T, error) {
 	if value, ok := os.LookupEnv(key); ok {
-		if parsed, err := parseFunc(value); err != nil {
-			return nil, fmt.Errorf("malformed environment variable %v: %v", key, err)
+		if parsed, err := ParseValue(key, value, parseFunc); err != nil {
+			return nil, err
 		} else {
 			return &parsed, nil
 		}
@@ -52,11 +62,7 @@ func GetEnvParsedOrNil[T any](key string, parseFunc func(string) (T, error)) *T 
 
 func GetEnvParsedOrDefaultErr[T any](key string, parseFunc func(string) (T, error), defaultValue T) (T, error) {
 	if value, ok := os.LookupEnv(key); ok {
-		if parsed, err := parseFunc(value); err != nil {
-			return parsed, fmt.Errorf("malformed environment variable %v: %v", key, err)
-		} else {
-			return parsed, nil
-		}
+		return ParseValue(key, value, parseFunc)
 	}
 	return defaultValue, nil
 }
@@ -80,10 +86,8 @@ func RequireEnvParsedErr[T any](key string, parseFunc func(string) (T, error)) (
 	if value, err := RequireEnvErr(key); err != nil {
 		var empty T
 		return empty, err
-	} else if parsed, err := parseFunc(value); err != nil {
-		return parsed, fmt.Errorf("malformed environment variable %v: %v", key, err)
 	} else {
-		return parsed, nil
+		return ParseValue(key, value, parseFunc)
 	}
 }
 
