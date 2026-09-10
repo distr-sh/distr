@@ -22,7 +22,7 @@ resources, MFA secrets, Stripe webhook secrets and entitlement registry credenti
 `DATABASE_ENCRYPTION_KEY` is required and Distr refuses to start without it. Generate one with
 `openssl rand -base64 32`.
 
-<Aside type="danger" title="Back up the key separately from the database">
+<Aside type="danger" title="Back up your encryption key or cipher text">
   A database dump is worthless without the encryption key, and so is your data
   if you lose it. Keep the key somewhere that will not go down or get deleted
   together with the database.
@@ -115,8 +115,11 @@ DATABASE_ENCRYPTION_KEY=kms:AQICAHhwPRWvSKbxYYqVjZ9…
 ```
 
 A value without a `kms:` prefix is used as it is and you can wrap one variable while leaving the others in plaintext.
-If the service is unreachable or a ciphertext cannot be opened, Distr refuses to start rather than run without the
-value.
+
+Distr calls the service once for every wrapped value while it starts and keeps the plaintext in memory afterwards.
+Requests it serves later never wait for your cloud, and an outage of the service only stops instances that are
+starting up. Each call has 30 seconds to come back, and if the service is unreachable or a ciphertext cannot be
+opened, Distr refuses to start rather than run without the value.
 
 ### Wrapping a value
 
@@ -130,7 +133,25 @@ being used as another, and on AWS the key policy can require it.
 Write the value into `plaintext.txt` with `printf '%s' '<value>' > plaintext.txt` and delete it once you have the
 ciphertext, along with `context.txt` on GCP.
 
-With AWS KMS, the output is base64 already and goes behind `kms:` as it is:
+Both commands below read the plaintext from a file rather than from an argument, so that it does not end up in your
+shell history. Unwrapped, the plaintext is what the variable expects: a [keyring entry](#rotating-the-key) for
+`DATABASE_ENCRYPTION_KEY`, the base64 secret on its own for `JWT_SECRET` and the PEM block for
+`LICENSE_KEY_PRIVATE_KEY`.
+
+Distr only ever decrypts; wrapping a value is a one-time action you perform yourself, so its credentials do not need
+permission to encrypt.
+
+### AWS KMS
+
+<Aside type="note" title="The AWS KMS key has to be symmetric">
+  Create it with key type "Symmetric" and key usage "Encrypt and decrypt", which
+  is what `aws kms create-key` does by default (`--key-spec SYMMETRIC_DEFAULT
+  --key-usage ENCRYPT_DECRYPT`). An asymmetric or HMAC key does not work, since
+  only a symmetric key takes the encryption context the command below passes.
+  Name the key in `KMS_AWS_KEY_ID`, as a key ARN, a key id or `alias/<name>`.
+</Aside>
+
+The output is base64 already and goes behind `kms:` as it is:
 
 ```sh
 aws kms encrypt \
@@ -140,7 +161,22 @@ aws kms encrypt \
   --output text --query CiphertextBlob
 ```
 
-With GCP Cloud KMS, `gcloud` writes raw bytes, hence the pipe:
+Distr needs `kms:Decrypt` on the key. You can restrict it to Distr by requiring the encryption context in the key
+policy, e.g. `"kms:EncryptionContext:distr": "DATABASE_ENCRYPTION_KEY"`. Credentials come from the default chain, so
+IRSA or an instance profile need no further configuration.
+
+### GCP Cloud KMS
+
+<Aside type="note" title="The Cloud KMS key has to be symmetric">
+  Create it with purpose "Symmetric encrypt/decrypt", which is `--purpose
+  encryption` in `gcloud kms keys create`, see [Create encryption keys with
+  Cloud KMS](https://docs.cloud.google.com/kms/docs/create-encryption-keys). No
+  other purpose takes the additional authenticated data that carries the
+  encryption context. Name the key in `KMS_GCP_KEY_NAME`, as the full resource
+  name `projects/…/locations/…/keyRings/…/cryptoKeys/…`.
+</Aside>
+
+`gcloud` writes raw bytes, hence the pipe:
 
 ```sh
 printf 'distr=DATABASE_ENCRYPTION_KEY' > context.txt
@@ -151,22 +187,10 @@ gcloud kms encrypt \
   --ciphertext-file=- | base64 -w0
 ```
 
-Both commands read the plaintext from a file rather than from an argument, so that it does not end up in your shell
-history. Unwrapped, the plaintext is what the variable expects: a [keyring entry](#rotating-the-key) for
-`DATABASE_ENCRYPTION_KEY`, the base64 secret on its own for `JWT_SECRET` and the PEM block for
-`LICENSE_KEY_PRIVATE_KEY`.
-
-### Permissions
-
-Distr only ever decrypts; wrapping a value is a one-time action you perform yourself, so its credentials do not
-need permission to encrypt.
-
-- **AWS**: `kms:Decrypt` on the key. You can restrict it to Distr by requiring the encryption context in the key
-  policy, e.g. `"kms:EncryptionContext:distr": "DATABASE_ENCRYPTION_KEY"`. Credentials come from the default chain,
-  so IRSA or an instance profile need no further configuration.
-- **GCP**: `roles/cloudkms.cryptoKeyDecrypter` on the key. Credentials come from Application Default Credentials, so
-  Workload Identity needs no further configuration and a service account key file is passed through
-  `GOOGLE_APPLICATION_CREDENTIALS`.
+Distr needs `roles/cloudkms.cryptoKeyDecrypter` on the key. Credentials come from
+[Application Default Credentials](https://docs.cloud.google.com/docs/authentication/provide-credentials-adc), so
+Workload Identity needs no further configuration and a service account key file goes into
+`GOOGLE_APPLICATION_CREDENTIALS`.
 
 <Aside type="caution">
   Your data now depends on the key management service. If you lose the KMS key
