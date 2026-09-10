@@ -97,7 +97,9 @@ issued so far, since they no longer verify against the new public key, so plan a
 By default `JWT_SECRET`, `DATABASE_ENCRYPTION_KEY` and `LICENSE_KEY_PRIVATE_KEY` hold the key material itself. All
 three also accept a ciphertext that Distr unwraps with a key management service during boot, so the key material
 appears in neither your configuration nor a Kubernetes Secret, and reading it becomes an API call that your cloud logs
-and that you can revoke without touching the instance. Two providers are supported:
+and that you can revoke without touching the instance. Keeping a value and the key that opens it apart like this is
+called transient encryption, but it also means losing either part makes the other useless, if you have no backup. Two providers are
+supported:
 
 - AWS Key Management Service (KMS)
 - GCP Cloud Key Management Service (Cloud KMS)
@@ -124,7 +126,9 @@ opened, Distr refuses to start rather than run without the value.
 ### Wrapping a value
 
 What you wrap is the exact string you would otherwise put into the variable. A keyring of several keys is therefore
-one ciphertext, and [rotating it](#rotating-the-key) works exactly as it does for an unwrapped key.
+one ciphertext, and [rotating it](#rotating-the-key) works exactly as it does for an unwrapped key. Rotating the KMS
+key itself is safe as well, including automatically on the provider side, since every ciphertext records the key
+version it was made with.
 
 Every ciphertext is bound to the variable it is read for through the encryption context `distr=<variable>`. You have
 to pass it when you wrap the value, otherwise Distr cannot open it. It keeps a ciphertext made for one variable from
@@ -143,15 +147,12 @@ permission to encrypt.
 
 ### AWS KMS
 
-<Aside type="note" title="The AWS KMS key has to be symmetric">
-  Create it with key type "Symmetric" and key usage "Encrypt and decrypt", which
-  is what `aws kms create-key` does by default (`--key-spec SYMMETRIC_DEFAULT
-  --key-usage ENCRYPT_DECRYPT`). An asymmetric or HMAC key does not work, since
-  only a symmetric key takes the encryption context the command below passes.
-  Name the key in `KMS_AWS_KEY_ID`, as a key ARN, a key id or `alias/<name>`.
-</Aside>
+Create a key first, with key type "Symmetric" and key usage "Encrypt and decrypt", which is what `aws kms create-key`
+gives you by default (`--key-spec SYMMETRIC_DEFAULT --key-usage ENCRYPT_DECRYPT`). An asymmetric or HMAC key does not
+work, since only a symmetric key takes an encryption context. Name it in `KMS_AWS_KEY_ID`, as a key ARN, a key id or
+`alias/<name>`.
 
-The output is base64 already and goes behind `kms:` as it is:
+The command prints base64 already, so its output goes behind `kms:` as it is:
 
 ```sh
 aws kms encrypt \
@@ -167,14 +168,11 @@ IRSA or an instance profile need no further configuration.
 
 ### GCP Cloud KMS
 
-<Aside type="note" title="The Cloud KMS key has to be symmetric">
-  Create it with purpose "Symmetric encrypt/decrypt", which is `--purpose
-  encryption` in `gcloud kms keys create`, see [Create encryption keys with
-  Cloud KMS](https://docs.cloud.google.com/kms/docs/create-encryption-keys). No
-  other purpose takes the additional authenticated data that carries the
-  encryption context. Name the key in `KMS_GCP_KEY_NAME`, as the full resource
-  name `projects/…/locations/…/keyRings/…/cryptoKeys/…`.
-</Aside>
+Create a key first, with purpose "Symmetric encrypt/decrypt", which is `--purpose encryption` in
+`gcloud kms keys create`, see
+[Create encryption keys with Cloud KMS](https://docs.cloud.google.com/kms/docs/create-encryption-keys). No other
+purpose takes the additional authenticated data that carries the encryption context. Name it in `KMS_GCP_KEY_NAME`, as
+the full resource name `projects/…/locations/…/keyRings/…/cryptoKeys/…`.
 
 `gcloud` writes raw bytes, hence the pipe:
 
@@ -191,11 +189,3 @@ Distr needs `roles/cloudkms.cryptoKeyDecrypter` on the key. Credentials come fro
 [Application Default Credentials](https://docs.cloud.google.com/docs/authentication/provide-credentials-adc), so
 Workload Identity needs no further configuration and a service account key file goes into
 `GOOGLE_APPLICATION_CREDENTIALS`.
-
-<Aside type="caution">
-  Your data now depends on the key management service. If you lose the KMS key
-  you lose the [database encryption key](#database-encryption) and every value
-  it protects, so a backup of a wrapped value is only worth as much as the KMS
-  key that opens it. Provider-side automatic key rotation is safe, because every
-  ciphertext records the key version it was made with.
-</Aside>
