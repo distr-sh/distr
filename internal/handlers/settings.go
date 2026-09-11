@@ -90,7 +90,7 @@ func SettingsRouter(r chiopenapi.Router) {
 	r.Route("/tokens", func(r chiopenapi.Router) {
 		r.WithOptions(option.GroupTags("Access Tokens"))
 
-		r.Use(middleware.RequireOrgAndRole)
+		r.Use(middleware.RequireOrgAndRole, middleware.BlockCredentialChange)
 
 		r.Get("/", getAccessTokensHandler()).
 			With(option.Description("List all access tokens")).
