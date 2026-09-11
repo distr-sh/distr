@@ -304,8 +304,9 @@ func (m *manifests) handleReferrers(resp http.ResponseWriter, req *http.Request)
 					Message: err.Error(),
 				}
 			}
-			defer b.Close()
-			if manifest.Data, err = io.ReadAll(b); err != nil {
+			manifest.Data, err = io.ReadAll(b)
+			_ = b.Close()
+			if err != nil {
 				return regErrInternal(err)
 			}
 		}

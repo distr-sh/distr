@@ -90,9 +90,9 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 			// Allow the collector to cancel the context used for the API request.
 			// This allows propagating append errors downstream.
 			ctx, cancel := context.WithCancelCause(ctx)
-			defer cancel(nil)
 			collector := composeCollector{ctx, cancel, deploymentCollector}
 			toplevelErr = composeService.Logs(ctx, d.ProjectName, &collector, logOptions)
+			cancel(nil)
 			if toplevelErr != nil {
 				logger.Warn("could not get compose logs", zap.Error(toplevelErr))
 			}
