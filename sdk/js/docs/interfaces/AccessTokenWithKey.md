@@ -48,6 +48,19 @@
 
 ---
 
+### keyId
+
+> **keyId**: `string`
+
+The part of the token that identifies it, so that a user can tell which of their tokens a
+client is configured with. It stays the same when the secrets are rotated.
+
+#### Inherited from
+
+[`AccessToken`](AccessToken.md).[`keyId`](AccessToken.md#keyid)
+
+---
+
 ### label?
 
 > `optional` **label?**: `string`
@@ -65,6 +78,16 @@
 #### Inherited from
 
 [`AccessToken`](AccessToken.md).[`lastUsedAt`](AccessToken.md#lastusedat)
+
+---
+
+### secrets
+
+> **secrets**: [`AccessTokenSecret`](AccessTokenSecret.md)[]
+
+#### Inherited from
+
+[`AccessToken`](AccessToken.md).[`secrets`](AccessToken.md#secrets)
 
 ---
 

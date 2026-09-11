@@ -42,6 +42,15 @@
 
 ---
 
+### keyId
+
+> **keyId**: `string`
+
+The part of the token that identifies it, so that a user can tell which of their tokens a
+client is configured with. It stays the same when the secrets are rotated.
+
+---
+
 ### label?
 
 > `optional` **label?**: `string`
@@ -51,6 +60,12 @@
 ### lastUsedAt?
 
 > `optional` **lastUsedAt?**: `string`
+
+---
+
+### secrets
+
+> **secrets**: [`AccessTokenSecret`](AccessTokenSecret.md)[]
 
 ---
 

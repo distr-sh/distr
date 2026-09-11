@@ -47,7 +47,12 @@ func OrganizationRouter(r chiopenapi.Router) {
 			With(option.Response(http.StatusOK, types.Organization{}))
 	})
 
-	r.With(middleware.RequireVendor, middleware.RequireAdmin, middleware.BlockSuperAdminUnlessOrganizationExpired).
+	r.With(
+		middleware.RequireVendor,
+		middleware.RequireAdmin,
+		middleware.BlockCrossOrganizationAction,
+		middleware.BlockSuperAdminUnlessOrganizationExpired,
+	).
 		Delete("/", deleteOrganizationHandler()).
 		With(option.Description("Delete current organization"))
 

@@ -278,7 +278,8 @@ func RequireTokenScope(scope authjwt.TokenScope) func(http.Handler) http.Handler
 }
 
 // BlockCrossOrganizationAction rejects an action that would leave the organization the credential is
-// confined to, for the credentials described by authinfo.AuthInfo.OrganizationScoped.
+// confined to, or destroy it, for the credentials described by authinfo.AuthInfo.OrganizationScoped.
+// A personal access token is one of them.
 func BlockCrossOrganizationAction(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		if auth.Authentication.Require(r.Context()).OrganizationScoped() {
@@ -301,7 +302,9 @@ const CredentialChangeBlockedMessage = "your sign-in methods cannot be changed f
 // BlockCredentialChange rejects a change to the account's sign-in methods for the credentials described by
 // authinfo.AuthInfo.OrganizationScoped, which are not proof that the account's owner is present. Without
 // it, such a credential could set a password or move the email address to an inbox somebody else controls,
-// and thereby produce an unrestricted session of the same account.
+// and thereby produce an unrestricted session of the same account. A personal access token is one of those
+// credentials and an access token is itself a sign-in method, so this also keeps a token from reading or
+// managing tokens, which would let it hand itself a role it was not created with.
 func BlockCredentialChange(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		if auth.Authentication.Require(r.Context()).OrganizationScoped() {

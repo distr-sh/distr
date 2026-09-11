@@ -1,0 +1,227 @@
+<app-page>
+  <div class="flex flex-col gap-6">
+    <div class="distr-panel">
+      <nav class="flex justify-between" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center mb-3 sm:mb-0">
+          <li class="flex items-center">
+            <a
+              [routerLink]="['/', 'settings', 'access-tokens']"
+              class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
+              <fa-icon class="mr-2" [icon]="faKey" />
+              Personal Access Tokens
+            </a>
+          </li>
+          @if (token()) {
+            <span class="mx-2 text-gray-400">/</span>
+            <li aria-current="page">
+              <div class="flex items-center">
+                <button
+                  cdkOverlayOrigin
+                  #dropdownTrigger="cdkOverlayOrigin"
+                  #dropdownTriggerButton
+                  (click)="toggleBreadcrumbDropdown()"
+                  class="inline-flex items-center px-3 py-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
+                  <span class="block max-w-64 overflow-hidden text-ellipsis whitespace-nowrap" [title]="name()">
+                    {{ name() }}
+                  </span>
+                  <fa-icon class="ml-2" [icon]="faChevronDown" />
+                </button>
+                <ng-template
+                  cdkConnectedOverlay
+                  [cdkConnectedOverlayHasBackdrop]="true"
+                  (backdropClick)="breadcrumbDropdown.set(false)"
+                  [cdkConnectedOverlayBackdropClass]="'transparent'"
+                  [cdkConnectedOverlayOrigin]="dropdownTrigger"
+                  [cdkConnectedOverlayMinWidth]="breadcrumbDropdownWidth() + 'px'"
+                  [cdkConnectedOverlayOpen]="breadcrumbDropdown()">
+                  <div
+                    animate.enter="animate-flip-in-top"
+                    animate.leave="animate-flip-out-top"
+                    class="distr-dropdown-panel w-full max-w-80">
+                    <ul>
+                      @for (sibling of siblings(); track sibling.id) {
+                        <li>
+                          <a
+                            class="distr-dropdown-item"
+                            [routerLink]="['/', 'settings', 'access-tokens', sibling.id]"
+                            [title]="sibling.name"
+                            (click)="breadcrumbDropdown.set(false)">
+                            <span class="truncate">{{ sibling.name }}</span>
+                          </a>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                </ng-template>
+              </div>
+            </li>
+          }
+        </ol>
+      </nav>
+
+      @if (token(); as token) {
+        <app-inline-edit
+          class="block mt-4"
+          tag="h3"
+          size="lg"
+          [value]="token.label ?? ''"
+          [required]="false"
+          placeholder="Token label"
+          emptyLabel="No label"
+          textClass="block max-w-lg overflow-hidden text-ellipsis whitespace-nowrap text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
+          [loading]="savingLabel()"
+          (save)="saveLabel($event)" />
+
+        @if (legacy()) {
+          <p class="mt-4 max-w-3xl text-sm text-gray-500 dark:text-gray-400">
+            This token has no secret, so it is stored as it is and shown here in full.
+          </p>
+        } @else {
+          <p class="mt-4 max-w-3xl text-sm text-gray-500 dark:text-gray-400">
+            A token has the format
+            <code class="text-gray-900 dark:text-white">distr-&lt;key id&gt;_&lt;secret&gt;</code>
+            where the secret is stored hashed and only visible on creation.
+          </p>
+        }
+
+        <dl class="grid grid-cols-2 gap-6 mt-4 max-w-3xl text-sm" [formGroup]="settingsForm">
+          <div>
+            <dt class="distr-label mb-2">
+              @if (legacy()) {
+                Token
+              } @else {
+                Key ID
+              }
+            </dt>
+            <dd class="flex items-center gap-2">
+              <code
+                data-ph-mask-text="true"
+                class="select-all px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600">
+                {{ token.keyId }}
+              </code>
+              <app-clip [clip]="token.keyId" />
+            </dd>
+          </div>
+          <div>
+            <dt class="distr-label mb-2">Created</dt>
+            <dd class="text-gray-900 dark:text-white">{{ token.createdAt | date: 'medium' }}</dd>
+          </div>
+          <div>
+            <dt class="distr-label mb-2">Role</dt>
+            <dd>
+              <app-user-role-select
+                formControlName="userRole"
+                ariaLabel="Role"
+                [maxRole]="currentUserRole()"
+                [emptyOptionLabel]="inheritOptionLabel()"
+                selectClass="distr-input" />
+            </dd>
+          </div>
+          <div>
+            <dt class="distr-label mb-2">
+              Expires
+              @if (expired()) {
+                <span class="ml-1 font-normal text-red-600 dark:text-red-500">
+                  <fa-icon [icon]="faTriangleExclamation" />
+                  expired
+                </span>
+              }
+            </dt>
+            <dd><app-expires-at-picker formControlName="expiresAt" inputId="expiresAt" /></dd>
+          </div>
+        </dl>
+      } @else if (!loading()) {
+        <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">
+          This token does not exist. It may have been deleted in the meantime.
+        </p>
+      }
+    </div>
+
+    @if (token()) {
+      <div class="distr-table-panel">
+        <div class="distr-toolbar p-4">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Secrets</h2>
+          <div class="distr-toolbar-actions">
+            @if (canCreateSecret()) {
+              <button
+                type="button"
+                (click)="createSecret()"
+                class="distr-btn-secondary w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium">
+                <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+                @if (legacy()) {
+                  Secure token
+                } @else {
+                  Add secret
+                }
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (createdToken(); as created) {
+          <app-created-access-token
+            class="block mx-4 mb-4"
+            [tokenKey]="created.key"
+            [dismissible]="true"
+            (dismissed)="createdToken.set(null)" />
+        }
+
+        @if (legacy()) {
+          <div class="mx-4 mb-4 flex items-start gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <fa-icon [icon]="faTriangleExclamation" class="mt-0.5 text-yellow-500" />
+            <span>
+              This token was created before tokens were split into a key and a secret, so the token itself is the whole
+              credential. Securing it gives it a secret and replaces the token, so anything still using the old one has
+              to be updated.
+            </span>
+          </div>
+        } @else {
+          <div class="overflow-x-auto">
+            <table class="distr-table">
+              <thead class="distr-table-head">
+                <tr>
+                  <th scope="col" class="p-4">Secret</th>
+                  <th scope="col" class="p-4">Created</th>
+                  <th scope="col" class="p-4">Last used</th>
+                  <th scope="col" class="p-4"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (secret of secrets(); track secret.slot) {
+                  <tr class="distr-table-row">
+                    <td class="px-4 py-3">
+                      <span class="distr-tag-badge">Secret {{ secret.slot }}</span>
+                    </td>
+                    <td class="px-4 py-3">{{ secret.createdAt | date: 'medium' }}</td>
+                    <td class="px-4 py-3">
+                      @if (secret.lastUsedAt; as lastUsedAt) {
+                        {{ lastUsedAt | relativeDate }}
+                      } @else {
+                        never
+                      }
+                    </td>
+                    <td class="px-4 py-3 flex justify-end">
+                      @if (canDeleteSecret()) {
+                        <button
+                          type="button"
+                          aria-label="Delete secret"
+                          (click)="deleteSecret(secret.slot)"
+                          class="py-2 px-3 distr-btn-danger">
+                          <fa-icon [icon]="faTrash" class="h-4 w-4" />
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="m-4 text-sm text-gray-500 dark:text-gray-400">
+            A token can hold two secrets at once, so that one can be replaced without downtime. The last remaining
+            secret cannot be deleted, delete the token itself instead.
+          </p>
+        }
+      </div>
+    }
+  </div>
+</app-page>
