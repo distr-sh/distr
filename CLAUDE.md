@@ -58,7 +58,7 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 - Split a component into `component-name.component.ts` and `.html`, plus a `.scss` only when it needs styling beyond utility classes in the template.
 - Type API models with the interfaces in `app/types/`, and avoid `undefined` types in favor of the actual type.
 - Use [signals](https://angular.dev/guide/signals) for inputs, child views and anywhere else the current Angular version supports them, and convert the non-signal usages you come across in files you edit anyway.
-- Use `takeUntilDestroyed` rather than a manual `destroyed$` subject, and [signal-based animations](https://angular.dev/guide/animations) rather than animations defined in the component.
+- Use `takeUntilDestroyed` rather than a manual `destroyed$` subject, and [CSS-based animations](https://angular.dev/guide/animations) rather than using the deprecated `@angular/animations` package.
 - Self-close components without content: `<fa-icon [icon]="faPlus" />`.
 - Take icons from the icon library, never as an SVG path, and keep the name identical in the import, the component and the template (`faServer`, not `serverIcon`). This covers CSS too: never hand-write an inline SVG or a `url("data:image/svg+xml,...")` background, not even to restyle a browser or Flowbite default.
 - Leave responsive classes out of modals. They are for desktop only.
