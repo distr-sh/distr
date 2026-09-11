@@ -255,7 +255,7 @@ const isLanding = !slug.startsWith('docs');
   .header {
     border: none !important;
   }
-  body[data-mobile-menu-expanded] header {
+  body:has(#starlight__sidebar:popover-open) header {
     background-color: var(--sl-color-bg);
   }
   @media (min-width: 50rem) {
