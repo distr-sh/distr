@@ -8,7 +8,7 @@ Distr distributes applications to self-managed customers. A control plane (which
 
 ## Repository layout
 
-- `cmd/hub/`: Distr. Go backend on chi/v5, serving the REST API on `/api/v1` and the compiled frontend on `/`.
+- `cmd/hub/`: Distr itself, a Go backend on chi/v5 serving the REST API on `/api/v1` and the compiled frontend on `/`.
 - `cmd/agent/docker/`, `cmd/agent/kubernetes/`: the agents that run Docker Compose and Helm deployments in customer environments and report logs and metrics back.
 - `frontend/ui/`: the Angular app (standalone components, TailwindCSS 4, SCSS, Flowbite), built into `internal/frontend/dist/ui/`.
 - `sdk/js/`: `@distr-sh/distr-sdk`, a standalone pnpm project. Prefer its high-level `DistrService` over the low-level `Client`, and run its examples against the config in `src/examples/config.ts`.
@@ -145,9 +145,9 @@ Read the doc comments of `internal/dbcrypto` and `internal/db/encryption.go` bef
 
 ## Scheduled Jobs
 
-A job has to be runnable from outside the hub process, since a high-availability installation would otherwise run it once per replica. Register it in `internal/svc/jobs_scheduler.go` behind its own `*_CRON` env var that defaults to unscheduled, give it a subcommand (`cleanup` for pruning, `maintenance` for everything else), and add a `cronJobs` entry to `deploy/charts/distr/values.yaml` that calls it. Never make behavior outside the job depend on whether its cron is scheduled: in the chart it never is, because the CronJob runs it.
+A job has to be runnable from outside the Distr process, since a high-availability installation would otherwise run it once per replica. Register it in `internal/svc/jobs_scheduler.go` behind its own `*_CRON` env var that defaults to unscheduled, give it a subcommand (`cleanup` for pruning, `maintenance` for everything else), and add a `cronJobs` entry to `deploy/charts/distr/values.yaml` that calls it. Never make behavior outside the job depend on whether its cron is scheduled: in the chart it never is, because the CronJob runs it.
 
-Give a one-time migration such as `maintenance encrypt-database` the subcommand and nothing else: no `*_CRON` env var, no `cronJobs` entry and no Helm hook. Document the command on the website instead, and let the hub log on startup that there is work left.
+Give a one-time migration such as `maintenance encrypt-database` the subcommand and nothing else: no `*_CRON` env var, no `cronJobs` entry and no Helm hook. Document the command on the website instead, and let Distr log on startup that there is work left.
 
 ## Subscription Gating
 
