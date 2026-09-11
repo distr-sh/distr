@@ -24,6 +24,7 @@ const (
 		dtm.agent_cpu_usage_millis,
 		dtm.agent_memory_bytes,
 		dtm.agent_log_bytes,
+		dtm.image_bytes,
 		array_agg(row(dtdm.device, dtdm.path, dtdm.fs_type, dtdm.bytes_total, dtdm.bytes_used) ORDER BY dtdm.device)
 			FILTER (WHERE dtdm.id IS NOT NULL)
 			AS disk_metrics
@@ -45,7 +46,7 @@ func GetLatestDeploymentTargetMetrics(
 			ON dt.customer_organization_id = co.id
 		INNER JOIN LATERAL (
 			SELECT id, created_at, deployment_target_id, cpu_cores_millis, cpu_usage, memory_bytes, memory_usage,
-				agent_cpu_usage_millis, agent_memory_bytes, agent_log_bytes
+				agent_cpu_usage_millis, agent_memory_bytes, agent_log_bytes, image_bytes
 			FROM DeploymentTargetMetrics
 			WHERE deployment_target_id = dt.id
 			ORDER BY created_at DESC, id
@@ -59,7 +60,8 @@ func GetLatestDeploymentTargetMetrics(
 			OR co.partner_organization_id = @partnerOrganizationId)
 		AND dt.metrics_enabled = true
 		GROUP BY dtm.id, dtm.created_at, dtm.deployment_target_id, dtm.cpu_cores_millis, dtm.cpu_usage, dtm.memory_bytes,
-			dtm.memory_usage, dtm.agent_cpu_usage_millis, dtm.agent_memory_bytes, dtm.agent_log_bytes, co.name, dt.name
+			dtm.memory_usage, dtm.agent_cpu_usage_millis, dtm.agent_memory_bytes, dtm.agent_log_bytes, dtm.image_bytes,
+			co.name, dt.name
 		ORDER BY co.name, dt.name`,
 		pgx.NamedArgs{
 			"orgId":                  orgID,
@@ -87,7 +89,7 @@ func GetLatestDeploymentTargetMetricsForID(ctx context.Context, id uuid.UUID) (*
 		`SELECT `+deploymentTargetMetricsOutputExpr+` FROM DeploymentTarget dt
 		INNER JOIN LATERAL (
 			SELECT id, created_at, deployment_target_id, cpu_cores_millis, cpu_usage, memory_bytes, memory_usage,
-				agent_cpu_usage_millis, agent_memory_bytes, agent_log_bytes
+				agent_cpu_usage_millis, agent_memory_bytes, agent_log_bytes, image_bytes
 			FROM DeploymentTargetMetrics
 			WHERE deployment_target_id = @deploymentTargetId
 			ORDER BY created_at DESC, id
@@ -99,7 +101,7 @@ func GetLatestDeploymentTargetMetricsForID(ctx context.Context, id uuid.UUID) (*
 			AND dt.metrics_enabled = true
 		GROUP BY dtm.id, dtm.created_at, dtm.deployment_target_id, dtm.cpu_cores_millis, dtm.cpu_usage,
 			dtm.memory_bytes, dtm.memory_usage, dtm.agent_cpu_usage_millis, dtm.agent_memory_bytes,
-			dtm.agent_log_bytes`,
+			dtm.agent_log_bytes, dtm.image_bytes`,
 		pgx.NamedArgs{"deploymentTargetId": id},
 	)
 	if err != nil {
@@ -127,9 +129,9 @@ func CreateDeploymentTargetMetrics(
 	err := db.QueryRow(ctx,
 		"INSERT INTO DeploymentTargetMetrics "+
 			"(deployment_target_id, cpu_cores_millis, cpu_usage, memory_bytes, memory_usage, "+
-			"agent_cpu_usage_millis, agent_memory_bytes, agent_log_bytes) "+
+			"agent_cpu_usage_millis, agent_memory_bytes, agent_log_bytes, image_bytes) "+
 			"VALUES (@deploymentTargetId, @cpuCoresMillis, @cpuUsage, @memoryBytes, @memoryUsage, "+
-			"@agentCpuUsageMillis, @agentMemoryBytes, @agentLogBytes) "+
+			"@agentCpuUsageMillis, @agentMemoryBytes, @agentLogBytes, @imageBytes) "+
 			"RETURNING id, created_at",
 		pgx.NamedArgs{
 			"deploymentTargetId":  metrics.DeploymentTargetID,
@@ -140,6 +142,7 @@ func CreateDeploymentTargetMetrics(
 			"agentCpuUsageMillis": metrics.AgentCPUUsageMillis,
 			"agentMemoryBytes":    metrics.AgentMemoryBytes,
 			"agentLogBytes":       metrics.AgentLogBytes,
+			"imageBytes":          metrics.ImageBytes,
 		}).Scan(&metrics.ID, &metrics.CreatedAt)
 	if err != nil {
 		return err

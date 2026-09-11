@@ -63,5 +63,6 @@ type AgentDeploymentTargetMetricsRequest struct {
 	AgentCPUUsageMillis *int64                       `json:"agentCpuUsageMillis,omitempty"`
 	AgentMemoryBytes    *int64                       `json:"agentMemoryBytes,omitempty"`
 	AgentLogBytes       *int64                       `json:"agentLogBytes,omitempty"`
+	ImageBytes          *int64                       `json:"imageBytes,omitempty"`
 	DiskMetrics         []DeploymentTargetDiskMetric `json:"diskMetrics,omitempty"`
 }

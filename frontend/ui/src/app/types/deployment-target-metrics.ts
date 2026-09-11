@@ -8,6 +8,7 @@ export interface DeploymentTargetLatestMetrics {
   agentCpuUsageMillis?: number;
   agentMemoryBytes?: number;
   agentLogBytes?: number;
+  imageBytes?: number;
   diskMetrics?: DeploymentTargetDiskMetric[];
 }
 

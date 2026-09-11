@@ -17,6 +17,7 @@ type DeploymentTargetMetrics struct {
 	AgentCPUUsageMillis *int64                       `db:"agent_cpu_usage_millis"`
 	AgentMemoryBytes    *int64                       `db:"agent_memory_bytes"`
 	AgentLogBytes       *int64                       `db:"agent_log_bytes"`
+	ImageBytes          *int64                       `db:"image_bytes"`
 	DiskMetrics         []DeploymentTargetDiskMetric `db:"disk_metrics"`
 }
 

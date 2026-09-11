@@ -8,6 +8,8 @@ import (
 	"path"
 	"slices"
 	"strings"
+	"sync/atomic"
+	"time"
 
 	"github.com/distr-sh/distr/api"
 	composeapi "github.com/docker/compose/v5/pkg/api"
@@ -27,9 +29,13 @@ import (
 var metrics receiver.Metrics
 
 // agentComposeProject is the fixed project name of the agent's own compose stack from the
-// connect manifest ("name: distr"). Deployment projects are renamed to "distr-<id>" by the hub
+// connect manifest ("name: distr"). Deployment projects are renamed to "distr-<id>" by Distr
 // (see patchProjectName), so the exact label match cannot collide with a deployment.
 const agentComposeProject = "distr"
+
+const imageDiskUsageInterval = 5 * time.Minute
+
+var imageBytes atomic.Pointer[int64]
 
 const hostMetricsReceiverConfig = `
 collection_interval: 30s
@@ -156,6 +162,8 @@ func startMetrics(ctx context.Context) {
 			reportMetrics.DiskMetrics = dm
 		}
 
+		reportMetrics.ImageBytes = imageBytes.Load()
+
 		if err := client.ReportMetrics(ctx, reportMetrics); err != nil {
 			logger.Error("failed to report metrics", zap.Error(err))
 			return err
@@ -230,6 +238,35 @@ func agentSelfUsage(ctx context.Context) (agentSelfMetrics, error) {
 		metrics.LogBytes = &logBytes
 	}
 	return metrics, nil
+}
+
+// watchImageDiskUsage keeps the size of the image store in a cache that the metrics report reads,
+// because the daemon walks the whole image store to answer the request, which is too expensive to
+// do on every report.
+func watchImageDiskUsage(ctx context.Context) {
+	logger.Info("starting image disk usage watch")
+	tick := time.Tick(imageDiskUsageInterval)
+	for ctx.Err() == nil {
+		refreshImageDiskUsage(ctx)
+		select {
+		case <-tick:
+		case <-ctx.Done():
+			logger.Info("stopping to watch image disk usage")
+			return
+		}
+	}
+}
+
+func refreshImageDiskUsage(ctx context.Context) {
+	usage, err := dockerCli.Client().DiskUsage(ctx, mobyClient.DiskUsageOptions{Images: true})
+	if err != nil {
+		logger.Warn("failed to collect image disk usage", zap.Error(err))
+		return
+	}
+	logger.Debug("image disk usage",
+		zap.Int64("bytes", usage.Images.TotalSize),
+		zap.Int64("count", usage.Images.TotalCount))
+	imageBytes.Store(&usage.Images.TotalSize)
 }
 
 func diskMetrics(ctx context.Context) ([]api.DeploymentTargetDiskMetric, error) {

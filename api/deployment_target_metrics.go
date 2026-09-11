@@ -7,16 +7,19 @@ import (
 )
 
 type DeploymentTargetMetrics struct {
-	DeploymentTargetID  uuid.UUID                    `json:"deploymentTargetId"`
-	CreatedAt           time.Time                    `json:"createdAt"`
-	CPUCoresMillis      int64                        `json:"cpuCoresMillis"`
-	CPUUsage            float64                      `json:"cpuUsage"`
-	MemoryBytes         int64                        `json:"memoryBytes"`
-	MemoryUsage         float64                      `json:"memoryUsage"`
-	AgentCPUUsageMillis *int64                       `json:"agentCpuUsageMillis,omitempty"`
-	AgentMemoryBytes    *int64                       `json:"agentMemoryBytes,omitempty"`
-	AgentLogBytes       *int64                       `json:"agentLogBytes,omitempty"`
-	DiskMetrics         []DeploymentTargetDiskMetric `json:"diskMetrics,omitempty"`
+	DeploymentTargetID  uuid.UUID `json:"deploymentTargetId"`
+	CreatedAt           time.Time `json:"createdAt"`
+	CPUCoresMillis      int64     `json:"cpuCoresMillis"`
+	CPUUsage            float64   `json:"cpuUsage"`
+	MemoryBytes         int64     `json:"memoryBytes"`
+	MemoryUsage         float64   `json:"memoryUsage"`
+	AgentCPUUsageMillis *int64    `json:"agentCpuUsageMillis,omitempty"`
+	AgentMemoryBytes    *int64    `json:"agentMemoryBytes,omitempty"`
+	AgentLogBytes       *int64    `json:"agentLogBytes,omitempty"`
+	// ImageBytes is the size of the docker image store, with layers shared between images counted
+	// once. It is always nil in kubernetes.
+	ImageBytes  *int64                       `json:"imageBytes,omitempty"`
+	DiskMetrics []DeploymentTargetDiskMetric `json:"diskMetrics,omitempty"`
 }
 
 type AgentDeploymentResourceMetricsRequest struct {

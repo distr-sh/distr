@@ -19,6 +19,7 @@ func DeploymentTargetMetricsRequestToInternal(
 		AgentCPUUsageMillis: req.AgentCPUUsageMillis,
 		AgentMemoryBytes:    req.AgentMemoryBytes,
 		AgentLogBytes:       req.AgentLogBytes,
+		ImageBytes:          req.ImageBytes,
 		DiskMetrics:         List(req.DiskMetrics, DeploymentTargetDiskMetricToInternal),
 	}
 }
@@ -44,6 +45,7 @@ func DeploymentTargetMetricsToAPI(metrics types.DeploymentTargetMetrics) api.Dep
 		AgentCPUUsageMillis: metrics.AgentCPUUsageMillis,
 		AgentMemoryBytes:    metrics.AgentMemoryBytes,
 		AgentLogBytes:       metrics.AgentLogBytes,
+		ImageBytes:          metrics.ImageBytes,
 		DiskMetrics:         List(metrics.DiskMetrics, DeploymentTargetDiskMetricToAPI),
 	}
 }

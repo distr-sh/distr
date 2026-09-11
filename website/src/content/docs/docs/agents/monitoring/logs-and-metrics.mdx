@@ -157,6 +157,14 @@ Nothing is reported for a container whose [logging driver](https://docs.docker.c
   services to bound it.
 </Aside>
 
+### Image Storage
+
+The Docker agent reports how much disk space the image store occupies, shown as **Container images** in the metrics tooltip of the deployment target. It is the same number as the `SIZE` column of `docker system df`: every image on the host, including images no container currently uses, with layers shared between images counted once.
+
+Because the Docker daemon has to walk the whole image store to answer, this number is collected every five minutes rather than every 30 seconds like CPU and memory. It is sent with the next regular metrics report, so it can be up to five minutes older than the values next to it.
+
+Enable [image cleanup](/docs/agents/docker-agent/#image-cleanup) on a deployment target to have the agent remove the images of previous versions instead of letting them accumulate.
+
 <Aside type="note" title="Kubernetes Requirements">
   Kubernetes metrics require
   [`metrics-server`](https://github.com/kubernetes-sigs/metrics-server) to be
