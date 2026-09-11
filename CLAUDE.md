@@ -39,7 +39,7 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 
 - Use `context.Context` for request-scoped values and cancellation, and the `internal/context` helpers to read the logger, database and user from it.
 - Do not add new accessors to `internal/context`. They belong in the package that defines the stored type (e.g. `logstore.NewContext`/`logstore.FromContext`), which also avoids import cycles.
-- Query through the `internal/db/queryable.Queryable` interface, which covers both `*pgxpool.Pool` and `pgx.Tx`, and `defer rows.Close()` after every query.
+- Query through the `internal/db/queryable.Queryable` interface, which covers both `*pgxpool.Pool` and `pgx.Tx`, and collect rows with `pgx.CollectRows`, which closes them itself. Only a query iterated manually needs `defer rows.Close()`.
 - Pass dependencies into HTTP handlers via closure.
 - Return API errors through `internal/apierrors` so they carry a status code.
 - Log with zap: `logger.Info("message", zap.String("key", value))`.
@@ -56,7 +56,7 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 - Use standalone components (no NgModules), reactive forms, and `inject()` rather than constructor injection for dependencies (`private readonly http = inject(HttpClient)`). `standalone: true` is the default and never needs writing, and neither does `changeDetection: ChangeDetectionStrategy.OnPush`. Set `changeDetection` only to opt a component out with `ChangeDetectionStrategy.Eager`, and drop that opt-out once the component's state is fully signal-based.
 - Give services `providedIn: 'root'`.
 - Split a component into `component-name.component.ts` and `.html`, plus a `.scss` only when it needs styling beyond utility classes in the template.
-- Type API models with the interfaces in `app/types/`, and avoid `undefined` types in favor of the actual type.
+- Type API models with the interfaces in `app/types/`. Never type a value `any` or `unknown`, and do not widen a type with `| undefined` or `?` where the value is always present.
 - Use [signals](https://angular.dev/guide/signals) for inputs, child views and anywhere else the current Angular version supports them, and convert the non-signal usages you come across in files you edit anyway.
 - Use `takeUntilDestroyed` rather than a manual `destroyed$` subject, and [CSS-based animations](https://angular.dev/guide/animations) rather than using the deprecated `@angular/animations` package.
 - Self-close components without content: `<fa-icon [icon]="faPlus" />`.
