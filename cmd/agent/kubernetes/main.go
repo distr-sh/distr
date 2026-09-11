@@ -85,7 +85,8 @@ func main() {
 		}
 	}()
 
-	ctx, _ := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer stop()
 
 	context.AfterFunc(ctx, func() { logger.Info("shutdown signal received") })
 

@@ -108,7 +108,8 @@ func runCleanup(ctx context.Context, opts CleanupOptions) error {
 		cleanupFuncs = append(cleanupFuncs, f)
 	}
 
-	ctx, _ = signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 	ctx = internalctx.WithDb(ctx, registry.GetDbPool())
 	ctx = internalctx.WithLogger(ctx, log)
 	if s3Client := registry.GetS3Client(); s3Client != nil {

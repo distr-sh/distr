@@ -94,7 +94,8 @@ func runServe(ctx context.Context, opts ServeOptions) {
 	metricsServer := registry.GetMetricsServer()
 	internalServer := registry.GetInternalServer()
 
-	sigCtx, _ := signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT)
+	sigCtx, stop := signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT)
+	defer stop()
 	context.AfterFunc(sigCtx, func() {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		server.Shutdown(ctx)
