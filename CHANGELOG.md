@@ -1,5 +1,46 @@
 # Changelog
 
+## [4.0.0](https://github.com/distr-sh/distr/compare/3.5.1...4.0.0) (2026-09-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* **backend:** drop legacy log record tables from database ([#3204](https://github.com/distr-sh/distr/issues/3204))
+* **backend:** add encrypting sensitive data at rest ([#3169](https://github.com/distr-sh/distr/issues/3169))
+
+### Features
+
+* **backend:** add encrypting sensitive data at rest ([#3169](https://github.com/distr-sh/distr/issues/3169)) ([ccd3746](https://github.com/distr-sh/distr/commit/ccd3746dda77655d0536bf701de42d4f4e393b97))
+* **backend:** add unwrapping KMS encrypted config secrets ([#3193](https://github.com/distr-sh/distr/issues/3193)) ([e596ed3](https://github.com/distr-sh/distr/commit/e596ed3e27bd342f58412e89a5ddb80441e74e3f))
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([#3212](https://github.com/distr-sh/distr/issues/3212)) ([30dbf3a](https://github.com/distr-sh/distr/commit/30dbf3ae2d41bf0e0ee25bf9ae71e7d3bd4cd6e2))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/service/s3 to v1.112.0 ([#3197](https://github.com/distr-sh/distr/issues/3197)) ([cd34f63](https://github.com/distr-sh/distr/commit/cd34f639798384b3046c0b38d52b70c113d3a1b9))
+* **deps:** update module github.com/containerd/log to v0.2.0 ([#3192](https://github.com/distr-sh/distr/issues/3192)) ([51b811d](https://github.com/distr-sh/distr/commit/51b811d9cf6a84acc86cffcefdd3d47515e33991))
+* **deps:** update module github.com/exaring/otelpgx to v0.12.0 ([#3214](https://github.com/distr-sh/distr/issues/3214)) ([c595617](https://github.com/distr-sh/distr/commit/c595617006f2ba39fbb87b6abde0738aebfe9b5c))
+* **deps:** update module github.com/golang-migrate/migrate/v4 to v4.20.1 ([#3199](https://github.com/distr-sh/distr/issues/3199)) ([21d482a](https://github.com/distr-sh/distr/commit/21d482a85beb4f0cf3d695d2e041d5a85d16476d))
+* **deps:** update module github.com/stripe/stripe-go/v86 to v86.4.2 ([#3211](https://github.com/distr-sh/distr/issues/3211)) ([e51610c](https://github.com/distr-sh/distr/commit/e51610c2798988fdea35ba636a2d3c45de748d8c))
+* **deps:** update module golang.org/x/crypto to v0.57.0 ([#3196](https://github.com/distr-sh/distr/issues/3196)) ([fea1925](https://github.com/distr-sh/distr/commit/fea19256aa1bda42caa80c881c16b7c2d78f8ab4))
+
+
+### Other
+
+* **backend:** drop legacy log record tables from database ([#3204](https://github.com/distr-sh/distr/issues/3204)) ([007c7e2](https://github.com/distr-sh/distr/commit/007c7e25cb94b7de45ef07c31dbdf370560181f4))
+* **deps:** update angular monorepo to v22.1.6 ([#3210](https://github.com/distr-sh/distr/issues/3210)) ([215b1a4](https://github.com/distr-sh/distr/commit/215b1a447fe5facc0841d4a1f5f0b74893020830))
+* **deps:** update dependency @angular/cdk to v22.1.6 ([#3201](https://github.com/distr-sh/distr/issues/3201)) ([cb0126e](https://github.com/distr-sh/distr/commit/cb0126ed3e9304361626ad255f3fee9a6ec855db))
+* **deps:** update dependency autoprefixer to v10.5.6 ([#3216](https://github.com/distr-sh/distr/issues/3216)) ([644997d](https://github.com/distr-sh/distr/commit/644997d035bdeea06628fe87c8a08a396c5ab990))
+* **deps:** update module go:github.com/go-delve/delve/cmd/dlv to v1.27.2 ([#3207](https://github.com/distr-sh/distr/issues/3207)) ([d7d78a9](https://github.com/distr-sh/distr/commit/d7d78a97d96d0758b3e74576480afb2577b25b55))
+* **deps:** update postgresql docker tag to v18.10.0 ([#3185](https://github.com/distr-sh/distr/issues/3185)) ([c8bd925](https://github.com/distr-sh/distr/commit/c8bd925bee5652c643cdb450bf1d468c4aceb3b8))
+* **frontend:** rounded dopdown list item hover ([#3203](https://github.com/distr-sh/distr/issues/3203)) ([3a1a80d](https://github.com/distr-sh/distr/commit/3a1a80d4b3949cde06ad4ecceca6a29353869ba4))
+
+
+### Docs
+
+* compact CLAUDE.md ([#3209](https://github.com/distr-sh/distr/issues/3209)) ([ed00301](https://github.com/distr-sh/distr/commit/ed00301a97c8ae5145146aaca4f2131282910f0f))
+* **website:** include encrpytion to secrets documentation ([#3208](https://github.com/distr-sh/distr/issues/3208)) ([443e7c7](https://github.com/distr-sh/distr/commit/443e7c7b4afa278de1235790d6e95e081c35c84d))
+
 ## [3.5.1](https://github.com/distr-sh/distr/compare/3.5.0...3.5.1) (2026-09-09)
 
 

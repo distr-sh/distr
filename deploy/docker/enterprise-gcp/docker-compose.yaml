@@ -53,7 +53,7 @@ services:
     logging: *default-logging
 
   hub:
-    image: registry.distr.sh/enterprise/distr-ee:3.5.1 # x-release-please-version
+    image: registry.distr.sh/enterprise/distr-ee:4.0.0 # x-release-please-version
     depends_on:
       loki:
         condition: service_started
