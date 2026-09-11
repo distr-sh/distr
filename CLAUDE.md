@@ -4,7 +4,7 @@ Guidance for Claude Code (claude.ai/code) and other agents working in this repos
 
 ## Project
 
-Distr distributes applications to self-managed customers. A control plane (which should be referred to as Distr - no longer as Hub) runs in the cloud, agents run in customer environments, and an OCI-compatible registry serves the artifacts.
+Distr distributes applications to self-managed customers. A control plane (call it Distr, never Hub) runs in the cloud, agents run in customer environments and an OCI-compatible registry serves the artifacts.
 
 ## Repository layout
 
@@ -13,9 +13,9 @@ Distr distributes applications to self-managed customers. A control plane (which
 - `frontend/ui/`: the Angular app (standalone components, TailwindCSS 4, SCSS, Flowbite), built into `internal/frontend/dist/ui/`.
 - `sdk/js/`: `@distr-sh/distr-sdk`, a standalone pnpm project. Prefer its high-level `DistrService` over the low-level `Client`, and run its examples against the config in `src/examples/config.ts`.
 - `website/`: the docs and marketing site, a standalone pnpm project with a Prettier config of its own.
-- `internal/`: the backend. `db/` holds every query, `handlers/` the HTTP handlers, `api/` their request and response structs, `routing/` the routes and middleware, `mapping/` the conversions between `api` and `types`, `types/` the database models, `svc/` the services, `authn/` the authentication providers, `logstore/` the Loki-backed log records, `registry/` the OCI registry, `advisory/` the advisory visibility rules, and `migrations/sql/` the schema.
+- `internal/`: the backend. `db/` holds every query, `handlers/` the HTTP handlers, `api/` their request and response structs, `routing/` the routes and middleware, `mapping/` the conversions between `api` and `types`, `types/` the database models, `svc/` the services, `authn/` the authentication providers, `logstore/` the Loki-backed log records, `registry/` the OCI registry, `advisory/` the advisory visibility rules and `migrations/sql/` the schema.
 
-PostgreSQL is reached through pgx/v5, registry blobs and Loki chunks live in S3-compatible object storage, and deployment logs live in Loki rather than in the database. Timestamp columns are `TIMESTAMP`, never `TIMESTAMPTZ`.
+PostgreSQL is reached through pgx/v5, registry blobs and Loki chunks live in S3-compatible object storage and deployment logs live in Loki rather than in the database. Timestamp columns are `TIMESTAMP`, never `TIMESTAMPTZ`.
 
 ## Commands
 
@@ -53,7 +53,7 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 
 ## Frontend Code
 
-- Use standalone components (no NgModules), reactive forms, and `inject()` rather than constructor injection for dependencies (`private readonly http = inject(HttpClient)`). `standalone: true` is the default and never needs writing, and neither does `changeDetection: ChangeDetectionStrategy.OnPush`. Set `changeDetection` only to opt a component out with `ChangeDetectionStrategy.Eager`, and drop that opt-out once the component's state is fully signal-based.
+- Use standalone components (no NgModules), reactive forms and `inject()` rather than constructor injection for dependencies (`private readonly http = inject(HttpClient)`). `standalone: true` is the default and never needs writing, and neither does `changeDetection: ChangeDetectionStrategy.OnPush`. Set `changeDetection` only to opt a component out with `ChangeDetectionStrategy.Eager`, and drop that opt-out once the component's state is fully signal-based.
 - Give services `providedIn: 'root'`.
 - Split a component into `component-name.component.ts` and `.html`, plus a `.scss` only when it needs styling beyond utility classes in the template.
 - Type API models with the interfaces in `app/types/`. Never type a value `any` or `unknown`, and do not widen a type with `| undefined` or `?` where the value is always present.
@@ -83,7 +83,7 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 - Put styling a component always needs on the component itself via `host: {class: '…'}` (e.g. `app-search-bar`, `app-editor`), and leave only what varies per call site in the template.
 - Keep styling used by a single component in its own `.scss` rather than in `theme.scss`, and start that file with `@reference '<path>/styles/tailwind.css'`, or `@apply` fails the build with `Cannot apply unknown utility class`. Tailwind compiles each component stylesheet on its own, and that entry point holds the `@theme` tokens and the `dark` variant, so keep it plain CSS: `@reference` cannot read Sass. Prefer the `.scss` file over an inline `styles` block, since Tailwind scans `.ts` files and emits utilities found there into the global stylesheet as well.
 - Never map Tailwind utility chains in the component class to pick a variant at runtime. Put the variants into the stylesheet.
-- Use a shared badge class for every badge: `distr-status-badge` for a state, with the colors including a `border-*` from a color helper next to the feature, `distr-tag-badge` for a free-form label, and `distr-deployment-type-badge` or `distr-artifact-tag` for those two. Do not write a new pill inline.
+- Use a shared badge class for every badge: `distr-status-badge` for a state, with the colors including a `border-*` from a color helper next to the feature, `distr-tag-badge` for a free-form label and `distr-deployment-type-badge` or `distr-artifact-tag` for those two. Do not write a new pill inline.
 - Use `app-badge-select` where the state a badge shows can also be set, rather than a row of buttons or a separate `<select>`. It emits the picked value instead of writing it, so the caller sends the request and passes back what the server returned.
 - Put `distr-dropdown-panel` on the root element of every dropdown overlay: a wrapping `<div>` when the panel holds more than the list, the `<ul>` itself when it does not. Give the entries `distr-dropdown-item`, with `distr-dropdown-item-danger` for a destructive action and `distr-dropdown-item-warning` for one that needs caution, and put `distr-dropdown-divider` on an empty `<li>` for a section break. The item class goes on the `<button>` or `<a>`, never on the enclosing `<li>`, so the hover area and the click area match. Do not write a dropdown row inline and do not reintroduce the `divide-y` separators the panel replaced. Dropdowns whose entries are checkboxes are the exception: their rows stay bordered and have no hover.
 
@@ -140,12 +140,12 @@ Read the doc comments of `internal/dbcrypto` and `internal/db/encryption.go` bef
 `DATABASE_READONLY_URL` optionally configures a replica, which `ContextInjectorMiddleware` injects with `WithReadonlyDB`. Apply `middleware.UseReadonlyDB` to a route to serve it from there; the middleware swaps the context's active db so every `db.*` call in the handler follows, and does nothing when no replica is configured.
 
 - Apply it only to routes that run read-only queries exclusively.
-- Prefer logs, analytics, dashboards, metrics and status timeseries. Keep it away from anything the frontend refetches after an update, and from read-after-write workloads in general, since the replica may lag. The OCI registry always uses the primary: container clients rely on immediate consistency for push then pull, multi-arch index push and signing.
+- Prefer logs, analytics, dashboards, metrics and status timeseries. Keep it away from anything the frontend refetches after an update, and from read-after-write workloads, since the replica may lag. The OCI registry always uses the primary: container clients rely on immediate consistency for push then pull, multi-arch index push and signing.
 - Place it after the authentication and authorization middleware so those lookups keep hitting the primary. Applying it at the router mount (`r.With(middleware.UseReadonlyDB).Route(...)`) is fine when the whole router is read-only; otherwise wrap only the read routes in a group.
 
 ## Scheduled Jobs
 
-A job has to be runnable from outside the Distr process, since a high-availability installation would otherwise run it once per replica. Register it in `internal/svc/jobs_scheduler.go` behind its own `*_CRON` env var that defaults to unscheduled, give it a subcommand (`cleanup` for pruning, `maintenance` for everything else), and add a `cronJobs` entry to `deploy/charts/distr/values.yaml` that calls it. Never make behavior outside the job depend on whether its cron is scheduled: in the chart it never is, because the CronJob runs it.
+A job has to be runnable from outside the Distr process, since a high-availability installation would otherwise run it once per replica. Register it in `internal/svc/jobs_scheduler.go` behind its own `*_CRON` env var that defaults to unscheduled, give it a subcommand (`cleanup` for pruning, `maintenance` for everything else) and add a `cronJobs` entry to `deploy/charts/distr/values.yaml` that calls it. Never make behavior outside the job depend on whether its cron is scheduled: in the chart it never is, because the CronJob runs it.
 
 Give a one-time migration such as `maintenance encrypt-database` the subcommand and nothing else: no `*_CRON` env var, no `cronJobs` entry and no Helm hook. Document the command on the website instead, and let Distr log on startup that there is work left.
 
@@ -156,7 +156,7 @@ Never gate a feature by listing the subscription types allowed to use it. Such a
 - Go: `types.NonProSubscriptionTypes` with `SubscriptionType.IsPro()`, `middleware.ForbidSubscriptionTypes(...)` or the ready-made `middleware.ProFeature`.
 - Frontend: `isProSubscription()` / `isPayingSubscription()` from `app/types/subscription.ts`, or `NON_PRO_SUBSCRIPTION_TYPES` / `NON_PAYING_SUBSCRIPTION_TYPES` when a list is needed.
 
-Plan-specific billing UI (checkout, plan comparison) and upsell banners for one plan are the exceptions, since they are tied to concrete plans by nature.
+Plan-specific billing UI (checkout, plan comparison) and upsell banners for one plan are the exceptions, since they are tied to concrete plans.
 
 Keep the two sources of organization features (`types.Feature`) apart. Only the plan-managed ones, granted by `types.FeaturesForSubscriptionType` and collected in `types.PlanManagedFeatures`, may be revoked when an organization loses its plan. The rest is granted out of band (`vendor_billing` by staff, `pre_post_scripts` and `artifact_version_mutable` by an organization admin in the settings) and has to survive plan changes and edition reconciliation. Remove `types.PlanManagedFeatures` from the `features` array to revoke a plan; never overwrite the whole array.
 
@@ -181,7 +181,7 @@ Keep the OpenAPI spec valid, which the `chiopenapi` router generates from the ro
 Never hard-wire `https://` into a URL built for this instance. A hard-wired scheme breaks every locally running instance, and for the OIDC callback URL it produces a URL that disagrees with the `redirect_uri` the login sends. Take the scheme from `env.HostScheme()`, which reads `DISTR_HOST` (https unless it says http) and returns the `env.URLScheme` enum (`env.SchemeHTTP` / `env.SchemeHTTPS`); compare a parsed URL's scheme against that enum rather than against a bare `"https"` string.
 
 - On the host of the current request, use `handlerutil.GetRequestSchemeAndHost(r)`. It keeps the request's host, so a request on a custom domain stays there, and takes the scheme from the configuration rather than the request, which arrives as plain http behind a TLS-terminating proxy.
-- On another host, use `env.HostScheme()` directly: an organization's custom domain in `customdomains.withScheme`, the login forwarding target, and the OIDC callback URL an administrator has to register (`oidc.CustomCallbackURL`).
+- On another host, use `env.HostScheme()` directly: an organization's custom domain in `customdomains.withScheme`, the login forwarding target and the OIDC callback URL an administrator has to register (`oidc.CustomCallbackURL`).
 - In the frontend, use the protocol of the current page.
 
 Build the host through the `internal/customdomains` resolvers, never from `db.GetCustomDomains` directly, since only the resolvers drop unverified domains. Do not add that filter anywhere else. Listing a caller's domains and resolving the host of an incoming request deliberately accept unverified ones.
@@ -193,14 +193,14 @@ Write as few comments as possible. A comment has to say something the code canno
 Do not write a comment that:
 
 - Restates the code or the name below it, including a doc comment on a self-explanatory type, field, function or env getter. A getter named after the value it returns needs no comment saying that it returns that value.
-- Explains the change you are making, why it is correct, or what was there before. That belongs in the commit message or the pull request description.
+- Explains the change you are making, why it is correct or what was there before. That belongs in the commit message or the pull request description.
 - Narrates a step of an obvious sequence (`// send the request`, `// parse the response`).
 - Explains a styling or layout choice in a template, or a language detail a reader of that language already knows.
-- Repeats the documentation, a rule in this file, or a linked ticket.
+- Repeats the documentation, a rule in this file or a linked ticket.
 
 Do write a comment that records something a reader cannot see:
 
-- A constraint imposed from outside the code, such as a requirement of a third-party API, a browser or protocol quirk, or a database limitation the code works around.
+- A constraint imposed from outside the code, such as a requirement of a third-party API, a browser or protocol quirk or a database limitation the code works around.
 - Why a non-obvious approach was chosen, when the obvious one is wrong or breaks something.
 - A deliberate invariant that a future change would silently break.
 
@@ -209,19 +209,20 @@ Do write a comment that records something a reader cannot see:
 Only write a test that could fail for a real reason. Every test is code that has to be maintained, and one that restates the implementation costs maintenance without ever catching a bug.
 
 - Assert with [Gomega](https://onsi.github.io/gomega/) in Go tests.
-- Do not test guard clauses, getters, plain mappings, a single `if` branch, or that a value passed in comes back out.
+- Do not test guard clauses, getters, plain mappings, a single `if` branch or that a value passed in comes back out.
 - Do not write a test whose assertion is trivially true because the dependency it needs is not configured in tests.
-- Do test what is hard to get right and expensive to get wrong: wire formats sent to third parties, fail-closed security behavior, parsing, permission and subscription gating, and non-trivial query or business logic.
+- Do test what is hard to get right and expensive to get wrong: wire formats sent to third parties, fail-closed security behavior, parsing, permission or subscription gating and non-trivial query or business logic.
 - Prefer a few focused tests over an exhaustive matrix of near-duplicates.
 
 ## General rules
 
 - Keep this file current, and add a rule for it whenever a user asks you to do something differently than you did.
-- This file holds instructions and conventions for the agent, not technical documentation. Add a rule that changes what an agent does; never a description of how a feature, endpoint or subsystem works. That belongs in the code, in a doc comment, or on the website.
-  - Write every rule as an instruction: what to do, what not to do, and where. A rule needs no paragraph explaining the design it protects, no threat model and no history of what was there before. Where an agent has to understand the mechanism to follow the rule, point it at the doc comment or the docs page that explains it rather than restating them here, since a copy here goes stale without anything failing.
+- This file holds instructions and conventions for the agent, not technical documentation. Add a rule that changes what an agent does; never a description of how a feature, endpoint or subsystem works. That belongs in the code, in a doc comment or on the website.
+  - Write every rule as an instruction: what to do, what not to do and where. A rule needs no paragraph explaining the design it protects, no threat model and no history of what was there before. Where an agent has to understand the mechanism to follow the rule, point it at the doc comment or the docs page that explains it rather than restating them here, since a copy here goes stale without anything failing.
   - When you add a rule, check whether the surrounding section can lose prose in exchange. This file is read in full on every request, so its length is a cost paid by every task.
+- Write every text without Oxford commas and without em dashes, in this file as much as in documentation, code comments and UI copy. Use a comma, a colon or a second sentence where a dash is tempting.
 - Fix the code you read that breaks these rules, and the typos and spelling mistakes you come across.
-- Update `website/src/content/docs/docs/self-hosting/configuration.mdx` in the same change whenever you add, remove or change an environment variable in `internal/env/env.go`, including its default, whether it is required, and the values it accepts.
+- Update `website/src/content/docs/docs/self-hosting/configuration.mdx` in the same change whenever you add, remove or change an environment variable in `internal/env/env.go`, including its default, whether it is required and the values it accepts.
 - Use the GitHub CLI (`gh`) rather than the web interface to fetch data from GitHub.
 - Write shell for anything from a one-off command to a checked-in script (like `hack/validate-migrations.sh`), and Node once a task outgrows shell (like `hack/agent-changelog.mjs`). Avoid Python and never use Perl (e.g. `perl -pi -e`). Edit files directly rather than piping them through a stream editor.
 
