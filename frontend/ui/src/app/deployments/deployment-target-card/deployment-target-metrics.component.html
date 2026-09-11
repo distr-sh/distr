@@ -50,10 +50,10 @@
     {originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top'},
     {originX: 'center', originY: 'top', overlayX: 'center', overlayY: 'bottom'},
   ]">
-  <div class="mt-1 px-3 py-2 text-xs rounded-lg shadow-lg bg-gray-800 dark:bg-gray-700 text-white whitespace-nowrap">
+  <div class="distr-tooltip mt-1 px-3 py-2 text-xs whitespace-nowrap">
     <div class="flex flex-col gap-2">
       @if (outdated()) {
-        <div class="flex items-center gap-1.5 text-yellow-300">
+        <div class="flex items-center gap-1.5 text-yellow-600 dark:text-yellow-300">
           <fa-icon [icon]="faTriangleExclamation" />
           <span>Outdated metrics, last reported {{ metrics().createdAt | relativeDate }}</span>
         </div>
@@ -63,7 +63,7 @@
         <span class="font-semibold">CPU:</span>
         {{ metrics().cpuUsage | percent: '1.1-1' }} of {{ metrics().cpuCoresMillis / 1000 }} Cores
         @if (agentUsage(); as agent) {
-          <span class="text-gray-300 dark:text-gray-400">(Agent usage: {{ agent.cpuUsageMillis }}m)</span>
+          <span class="text-gray-500 dark:text-gray-400">(Agent usage: {{ agent.cpuUsageMillis }}m)</span>
         }
       </div>
       <div>
@@ -71,7 +71,7 @@
         <span class="font-semibold">RAM:</span>
         {{ metrics().memoryUsage | percent: '1.1-1' }} of {{ metrics().memoryBytes | bytes: '1.0-0' }}
         @if (agentUsage(); as agent) {
-          <span class="text-gray-300 dark:text-gray-400">(Agent usage: {{ agent.memoryBytes | bytes: '1.0-1' }})</span>
+          <span class="text-gray-500 dark:text-gray-400">(Agent usage: {{ agent.memoryBytes | bytes: '1.0-1' }})</span>
         }
       </div>
       @for (disk of metrics().diskMetrics; track disk.path) {
@@ -84,11 +84,11 @@
       }
       @let imageBytes = metrics().imageBytes;
       @if (imageBytes !== undefined) {
-        <div class="text-gray-300 dark:text-gray-400">Container images: {{ imageBytes | bytes: '1.0-1' }}</div>
+        <div class="text-gray-500 dark:text-gray-400">Container images: {{ imageBytes | bytes: '1.0-1' }}</div>
       }
       @let agentLogBytes = metrics().agentLogBytes;
       @if (agentLogBytes !== undefined) {
-        <div class="text-gray-300 dark:text-gray-400">Agent logs: {{ agentLogBytes | bytes: '1.0-1' }}</div>
+        <div class="text-gray-500 dark:text-gray-400">Agent logs: {{ agentLogBytes | bytes: '1.0-1' }}</div>
       }
     </div>
   </div>

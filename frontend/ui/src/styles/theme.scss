@@ -126,6 +126,11 @@
     @apply my-1 border-t border-gray-200 dark:border-gray-600;
   }
 
+  // the overlay panel of a tooltip or hover card. Add `max-w-*` where the content is prose.
+  .distr-tooltip {
+    @apply p-3 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600;
+  }
+
   // the white surface of a page. `distr-panel` is padded for prose and forms, `distr-table-panel`
   // is flush so that a table or list can span its full width.
   // No `overflow-hidden` here, unlike `distr-table-panel`: a padded panel has nothing to clip at its

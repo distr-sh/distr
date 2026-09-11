@@ -237,9 +237,7 @@
                             {originX: 'start', overlayX: 'start', originY: 'bottom', overlayY: 'top'},
                           ]"
                           [cdkConnectedOverlayOpen]="signatureOverlayDigest() === version.digest">
-                          <div
-                            role="tooltip"
-                            class="p-3 text-sm font-medium text-gray-900 bg-white border border-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-w-64">
+                          <div role="tooltip" class="distr-tooltip max-w-64">
                             This artifact has been signed with Cosign. Learn how to verify the signature at the
                             <a
                               class="font-medium text-primary-600 hover:underline dark:text-primary-500"
