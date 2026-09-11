@@ -3,4 +3,5 @@ ALTER TABLE DeploymentResourceMetrics
   ADD COLUMN log_bytes BIGINT;
 
 ALTER TABLE DeploymentTargetMetrics
-  ADD COLUMN agent_log_bytes BIGINT;
+  ADD COLUMN agent_log_bytes BIGINT,
+  ADD COLUMN image_bytes BIGINT;
