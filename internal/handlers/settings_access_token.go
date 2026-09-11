@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strconv"
@@ -23,6 +24,7 @@ const (
 		"Delete the one you want to replace before creating another."
 	accessTokenLastSecretMessage = "This token must keep at least one secret. " +
 		"Create the replacement first, or delete the token itself."
+	accessTokenRoleExceedsCallerMessage = "token role cannot exceed your own role"
 )
 
 func getAccessTokensHandler() http.HandlerFunc {
@@ -51,12 +53,8 @@ func createAccessTokenHandler() http.HandlerFunc {
 			return
 		}
 
-		if request.UserRole != nil {
-			callerRole := auth.CurrentUserRole()
-			if callerRole == nil || request.UserRole.GreaterThan(*callerRole) {
-				http.Error(w, "token role cannot exceed your own role", http.StatusBadRequest)
-				return
-			}
+		if !checkAccessTokenRole(ctx, w, request.UserRole) {
+			return
 		}
 
 		newToken, err := authkey.NewToken()
@@ -118,12 +116,8 @@ func patchAccessTokenHandler() http.HandlerFunc {
 			UpdateUserRole:  patch.UserRole.Present,
 			UserRole:        patch.UserRole.Value,
 		}
-		if params.UserRole != nil {
-			callerRole := auth.CurrentUserRole()
-			if callerRole == nil || params.UserRole.GreaterThan(*callerRole) {
-				http.Error(w, "token role cannot exceed your own role", http.StatusBadRequest)
-				return
-			}
+		if params.UpdateUserRole && !checkAccessTokenRole(ctx, w, params.UserRole) {
+			return
 		}
 
 		updated, err := db.UpdateAccessToken(ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(), params)
@@ -268,6 +262,37 @@ func deleteAccessTokenSecretHandler() http.HandlerFunc {
 			w.WriteHeader(http.StatusNoContent)
 		}
 	}
+}
+
+func checkAccessTokenRole(ctx context.Context, w http.ResponseWriter, requested *types.UserRole) bool {
+	log := internalctx.GetLogger(ctx)
+	auth := auth.Authentication.Require(ctx)
+	membershipRole, err := db.GetUserRoleInOrganization(ctx, auth.CurrentUserID(), *auth.CurrentOrgID())
+	if err != nil {
+		log.Warn("error getting user role", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return false
+	}
+	if !accessTokenRoleAllowed(requested, auth.CurrentUserRole(), membershipRole) {
+		http.Error(w, accessTokenRoleExceedsCallerMessage, http.StatusBadRequest)
+		return false
+	}
+	return true
+}
+
+// accessTokenRoleAllowed compares the role the token would act under, which for a token without
+// an explicit role is the role its owner has in the organization, against the caller's own role,
+// so that a credential restricted below its owner cannot hand out more than it has.
+func accessTokenRoleAllowed(requested, callerRole *types.UserRole, membershipRole types.UserRole) bool {
+	if callerRole == nil {
+		return false
+	}
+	effective := membershipRole
+	if requested != nil {
+		effective = *requested
+	}
+	return !effective.GreaterThan(*callerRole)
 }
 
 func newAccessTokenSecret(key authkey.Secret) (types.AccessTokenSecret, error) {

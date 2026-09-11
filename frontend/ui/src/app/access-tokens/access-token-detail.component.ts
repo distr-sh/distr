@@ -14,7 +14,7 @@ import {
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faChevronDown, faKey, faPlus, faTrash, faTriangleExclamation} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {catchError, firstValueFrom, Observable, of, switchMap, tap} from 'rxjs';
+import {catchError, concatMap, firstValueFrom, Observable, of, tap} from 'rxjs';
 import {isExpired, RelativeDatePipe} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {USER_ROLE_LABELS} from '../../util/user-role';
@@ -123,8 +123,9 @@ export class AccessTokenDetailComponent {
     this.settingsForm.valueChanges
       .pipe(
         // Every change sends both settings, so an older request that finishes last would put the
-        // value it was started with back. switchMap drops it in favor of the newer one.
-        switchMap(({userRole, expiresAt}) =>
+        // value it was started with back, and unsubscribing does not undo one the server has
+        // already accepted.
+        concatMap(({userRole, expiresAt}) =>
           this.patch({
             userRole: userRole ?? null,
             // The picker works in local dates, and new Date() would read one as UTC midnight,

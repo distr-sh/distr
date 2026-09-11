@@ -222,19 +222,38 @@ func GetAccessTokenByKey(ctx context.Context, key authkey.Key) (*types.AccessTok
 }
 
 // MarkAccessTokenUsed records the current time on the token and, unless the token authenticated
-// without a secret, on the secret that was used.
-func MarkAccessTokenUsed(ctx context.Context, id uuid.UUID, slot *types.AccessTokenSecretSlot) error {
+// without a secret, on the secret that was used. Because the secret was verified against a row
+// that was read earlier, it repeats that verification and returns apierrors.ErrNotFound when the
+// token no longer matches, so that a credential revoked in between does not authenticate.
+func MarkAccessTokenUsed(
+	ctx context.Context,
+	id uuid.UUID,
+	slot *types.AccessTokenSecretSlot,
+	hash []byte,
+) error {
 	db := internalctx.GetDb(ctx)
+	args := pgx.NamedArgs{"id": id}
 	secretExpr := ""
+	secretCondition := "tok.secret_1_hash IS NULL AND tok.secret_2_hash IS NULL"
 	if slot != nil {
-		secretExpr = fmt.Sprintf(", %v_last_used_at = now()", accessTokenSecretPrefix(*slot))
+		prefix := accessTokenSecretPrefix(*slot)
+		secretExpr = fmt.Sprintf(", %v_last_used_at = now()", prefix)
+		secretCondition = fmt.Sprintf("tok.%v_hash = @hash", prefix)
+		args["hash"] = hash
 	}
-	if _, err := db.Exec(
+	cmd, err := db.Exec(
 		ctx,
-		fmt.Sprintf("UPDATE AccessToken SET last_used_at = now()%v WHERE id = @id", secretExpr),
-		pgx.NamedArgs{"id": id},
-	); err != nil {
+		fmt.Sprintf(
+			`UPDATE AccessToken AS tok
+			SET last_used_at = now()%v
+			WHERE tok.id = @id AND %v AND (tok.expires_at IS NULL OR tok.expires_at > now())`,
+			secretExpr, secretCondition),
+		args,
+	)
+	if err != nil {
 		return fmt.Errorf("could not update access token: %w", err)
+	} else if cmd.RowsAffected() == 0 {
+		return fmt.Errorf("could not update access token: %w", apierrors.ErrNotFound)
 	}
 	return nil
 }
