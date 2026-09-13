@@ -40,6 +40,11 @@ jobs:
             website
             CHANGELOG.md
           sparse-checkout-cone-mode: false
+          # Starlight's lastUpdated reads each page's git history. At depth 1
+          # every docs page is stamped with the deploy commit instead, which
+          # both misinforms readers and makes IndexNow see all of them change on
+          # every deploy.
+          fetch-depth: 0
       - name: Restore LFS cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -82,6 +87,19 @@ jobs:
         with:
           aws-region: eu-central-1
           role-to-assume: arn:aws:iam::639130800065:role/github-actions-distr.sh
+      - name: Write IndexNow key file
+        if: github.ref == 'refs/heads/main'
+        env:
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+        run: |
+          if [ -z "$INDEXNOW_KEY" ]; then
+            echo "INDEXNOW_KEY is not set, skipping the key file."
+            exit 0
+          fi
+          printf '%s' "$INDEXNOW_KEY" > "dist/$INDEXNOW_KEY.txt"
+      - name: Detect changed pages
+        if: github.ref == 'refs/heads/main'
+        run: node scripts/indexnow.mjs prepare
       - name: Deploy hashed assets
         if: github.ref == 'refs/heads/main'
         run: >-
@@ -100,3 +118,8 @@ jobs:
           aws cloudfront create-invalidation
           --distribution-id E1PG5UM7ZE1H97
           --invalidation-batch "Paths={Quantity='1' ,Items=['/*']},CallerReference=WEBSITE_$GITHUB_RUN_ID"
+      - name: Submit changed pages to IndexNow
+        if: github.ref == 'refs/heads/main'
+        env:
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+        run: node scripts/indexnow.mjs submit
