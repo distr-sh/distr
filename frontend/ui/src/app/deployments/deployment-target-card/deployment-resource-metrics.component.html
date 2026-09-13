@@ -53,6 +53,7 @@
             </ng-template>
           </th>
           <th scope="col" class="p-4">Memory</th>
+          <th scope="col" class="p-4">Logs</th>
         </tr>
       </thead>
       @for (group of groups(); track group.resource) {
@@ -60,24 +61,31 @@
           <tr class="bg-gray-50 dark:bg-gray-800">
             <th
               scope="colgroup"
-              colspan="3"
+              colspan="4"
               class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
               {{ group.resource }}
             </th>
           </tr>
-          @for (container of group.containers; track container.container) {
+          @for (row of group.rows; track row.metric.container) {
             <tr class="distr-table-row">
-              <td class="px-4 py-3 pl-8 font-medium text-gray-900 dark:text-white">{{ container.container }}</td>
+              <td class="px-4 py-3 pl-8 font-medium text-gray-900 dark:text-white">{{ row.metric.container }}</td>
               <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-white">
-                {{ container.cpuUsageMillis }}m
-                @if (cpuUsageRatio(container.cpuUsageMillis, container.cpuLimitMillis); as ratio) {
+                {{ row.metric.cpuUsageMillis }}m
+                @if (row.cpuUsageRatio; as ratio) {
                   <span class="text-gray-500 dark:text-gray-400">({{ ratio | percent }})</span>
                 }
               </td>
               <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-white">
-                {{ container.memoryBytes | bytes: '1.0-1' }}
-                @if (memoryUsageRatio(container.memoryBytes, container.memoryLimitBytes); as ratio) {
+                {{ row.metric.memoryBytes | bytes: '1.0-1' }}
+                @if (row.memoryUsageRatio; as ratio) {
                   <span class="text-gray-500 dark:text-gray-400">({{ ratio | percent }})</span>
+                }
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-white">
+                @if (row.metric.logBytes !== undefined) {
+                  {{ row.metric.logBytes | bytes: '1.0-1' }}
+                } @else {
+                  <span class="text-gray-500 dark:text-gray-400">&mdash;</span>
                 }
               </td>
             </tr>

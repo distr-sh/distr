@@ -8,6 +8,8 @@ import (
 	"path"
 	"slices"
 	"strings"
+	"sync/atomic"
+	"time"
 
 	"github.com/distr-sh/distr/api"
 	composeapi "github.com/docker/compose/v5/pkg/api"
@@ -27,9 +29,13 @@ import (
 var metrics receiver.Metrics
 
 // agentComposeProject is the fixed project name of the agent's own compose stack from the
-// connect manifest ("name: distr"). Deployment projects are renamed to "distr-<id>" by the hub
+// connect manifest ("name: distr"). Deployment projects are renamed to "distr-<id>" by Distr
 // (see patchProjectName), so the exact label match cannot collide with a deployment.
 const agentComposeProject = "distr"
+
+const imageDiskUsageInterval = 5 * time.Minute
+
+var imageBytes atomic.Pointer[int64]
 
 const hostMetricsReceiverConfig = `
 collection_interval: 30s
@@ -133,11 +139,12 @@ func startMetrics(ctx context.Context) {
 			MemoryUsage:    memoryUsed,
 		}
 
-		if agentCPUUsageMillis, agentMemoryBytes, err := agentSelfUsage(ctx); err != nil {
+		if self, err := agentSelfUsage(ctx); err != nil {
 			logger.Warn("failed to collect agent self metrics", zap.Error(err))
 		} else {
-			reportMetrics.AgentCPUUsageMillis = &agentCPUUsageMillis
-			reportMetrics.AgentMemoryBytes = &agentMemoryBytes
+			reportMetrics.AgentCPUUsageMillis = &self.CPUUsageMillis
+			reportMetrics.AgentMemoryBytes = &self.MemoryBytes
+			reportMetrics.AgentLogBytes = self.LogBytes
 		}
 
 		if dm, err := diskMetrics(ctx); err != nil {
@@ -154,6 +161,8 @@ func startMetrics(ctx context.Context) {
 			}
 			reportMetrics.DiskMetrics = dm
 		}
+
+		reportMetrics.ImageBytes = imageBytes.Load()
 
 		if err := client.ReportMetrics(ctx, reportMetrics); err != nil {
 			logger.Error("failed to report metrics", zap.Error(err))
@@ -184,28 +193,80 @@ func startMetrics(ctx context.Context) {
 	}
 }
 
+type agentSelfMetrics struct {
+	CPUUsageMillis int64
+	MemoryBytes    int64
+	LogBytes       *int64
+}
+
 // agentSelfUsage returns the summed usage of the agent's own compose stack, which includes the
 // autoheal sidecar. The own container cannot be found via hostname because the agent runs with
 // host networking, so the compose project label is used instead.
-func agentSelfUsage(ctx context.Context) (cpuUsageMillis, memoryBytes int64, err error) {
+func agentSelfUsage(ctx context.Context) (agentSelfMetrics, error) {
 	list, err := dockerCli.Client().ContainerList(ctx, mobyClient.ContainerListOptions{
 		Filters: mobyClient.Filters{}.Add("label", composeapi.ProjectLabel+"="+agentComposeProject),
 	})
 	if err != nil {
-		return 0, 0, err
+		return agentSelfMetrics{}, err
 	}
+
+	var metrics agentSelfMetrics
+	var logBytes int64
+	var anyLogFiles bool
 	for _, summary := range list.Items {
 		if summary.State != container.StateRunning {
 			continue
 		}
 		cpu, memory, err := containerUsage(ctx, summary.ID)
 		if err != nil {
-			return 0, 0, err
+			return agentSelfMetrics{}, err
 		}
-		cpuUsageMillis += cpu
-		memoryBytes += memory
+		metrics.CPUUsageMillis += cpu
+		metrics.MemoryBytes += memory
+
+		// The log size is extra data on top of the usage, so a failed inspect must not cost us
+		// the CPU and memory we already have.
+		if inspected, err := inspectContainerMetrics(ctx, summary.ID); err != nil {
+			logger.Warn("failed to inspect agent container", zap.Error(err))
+		} else if inspected.LogBytes != nil {
+			logBytes += *inspected.LogBytes
+			anyLogFiles = true
+		}
 	}
-	return cpuUsageMillis, memoryBytes, nil
+
+	if anyLogFiles {
+		metrics.LogBytes = &logBytes
+	}
+	return metrics, nil
+}
+
+// watchImageDiskUsage keeps the size of the image store in a cache that the metrics report reads,
+// because the daemon walks the whole image store to answer the request, which is too expensive to
+// do on every report.
+func watchImageDiskUsage(ctx context.Context) {
+	logger.Info("starting image disk usage watch")
+	tick := time.Tick(imageDiskUsageInterval)
+	for ctx.Err() == nil {
+		refreshImageDiskUsage(ctx)
+		select {
+		case <-tick:
+		case <-ctx.Done():
+			logger.Info("stopping to watch image disk usage")
+			return
+		}
+	}
+}
+
+func refreshImageDiskUsage(ctx context.Context) {
+	usage, err := dockerCli.Client().DiskUsage(ctx, mobyClient.DiskUsageOptions{Images: true})
+	if err != nil {
+		logger.Warn("failed to collect image disk usage", zap.Error(err))
+		return
+	}
+	logger.Debug("image disk usage",
+		zap.Int64("bytes", usage.Images.TotalSize),
+		zap.Int64("count", usage.Images.TotalCount))
+	imageBytes.Store(&usage.Images.TotalSize)
 }
 
 func diskMetrics(ctx context.Context) ([]api.DeploymentTargetDiskMetric, error) {

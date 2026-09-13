@@ -7,15 +7,19 @@ import (
 )
 
 type DeploymentTargetMetrics struct {
-	DeploymentTargetID  uuid.UUID                    `json:"deploymentTargetId"`
-	CreatedAt           time.Time                    `json:"createdAt"`
-	CPUCoresMillis      int64                        `json:"cpuCoresMillis"`
-	CPUUsage            float64                      `json:"cpuUsage"`
-	MemoryBytes         int64                        `json:"memoryBytes"`
-	MemoryUsage         float64                      `json:"memoryUsage"`
-	AgentCPUUsageMillis *int64                       `json:"agentCpuUsageMillis,omitempty"`
-	AgentMemoryBytes    *int64                       `json:"agentMemoryBytes,omitempty"`
-	DiskMetrics         []DeploymentTargetDiskMetric `json:"diskMetrics,omitempty"`
+	DeploymentTargetID  uuid.UUID `json:"deploymentTargetId"`
+	CreatedAt           time.Time `json:"createdAt"`
+	CPUCoresMillis      int64     `json:"cpuCoresMillis"`
+	CPUUsage            float64   `json:"cpuUsage"`
+	MemoryBytes         int64     `json:"memoryBytes"`
+	MemoryUsage         float64   `json:"memoryUsage"`
+	AgentCPUUsageMillis *int64    `json:"agentCpuUsageMillis,omitempty"`
+	AgentMemoryBytes    *int64    `json:"agentMemoryBytes,omitempty"`
+	AgentLogBytes       *int64    `json:"agentLogBytes,omitempty"`
+	// ImageBytes is the size of the docker image store, with layers shared between images counted
+	// once. It is always nil in kubernetes.
+	ImageBytes  *int64                       `json:"imageBytes,omitempty"`
+	DiskMetrics []DeploymentTargetDiskMetric `json:"diskMetrics,omitempty"`
 }
 
 type AgentDeploymentResourceMetricsRequest struct {
@@ -38,6 +42,9 @@ type DeploymentResourceMetric struct {
 	// CPULimitMillis and MemoryLimitBytes are nil when the container has no limit configured.
 	CPULimitMillis   *int64 `json:"cpuLimitMillis,omitempty"`
 	MemoryLimitBytes *int64 `json:"memoryLimitBytes,omitempty"`
+	// LogBytes is the size of the container's log files on disk. It is nil when the container
+	// uses a log driver that does not write files (e.g. journald), and always nil in kubernetes.
+	LogBytes *int64 `json:"logBytes,omitempty"`
 }
 
 type DeploymentTargetDiskMetric struct {

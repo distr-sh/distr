@@ -1,6 +1,6 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {PercentPipe} from '@angular/common';
-import {ChangeDetectionStrategy, Component, computed, input, signal} from '@angular/core';
+import {Component, computed, input, signal} from '@angular/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faExclamation, faHardDrive, faTriangleExclamation} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
@@ -17,7 +17,6 @@ const metricsStaleThreshold = dayjs.duration({minutes: 2});
   selector: 'app-deployment-target-metrics',
   templateUrl: './deployment-target-metrics.component.html',
   imports: [OverlayModule, BytesPipe, PercentPipe, FaIconComponent, StatusDotDirective, RelativeDatePipe],
-  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./deployment-target-metrics.component.scss'],
 })
 export class DeploymentTargetMetricsComponent {
@@ -34,12 +33,14 @@ export class DeploymentTargetMetricsComponent {
     return {cpuUsageMillis: agentCpuUsageMillis, memoryBytes: agentMemoryBytes};
   });
   protected readonly outdated = computed(() => isStale(this.metrics(), metricsStaleThreshold));
+  protected readonly cpuUsageDegrees = computed(() => usageDegrees(this.metrics().cpuUsage));
+  protected readonly memoryUsageDegrees = computed(() => usageDegrees(this.metrics().memoryUsage));
 
   protected readonly faHardDrive = faHardDrive;
   protected readonly faExclamation = faExclamation;
   protected readonly faTriangleExclamation = faTriangleExclamation;
+}
 
-  protected getUsageDegrees(value: number | undefined): string {
-    return (360 * (value ?? 0)).toFixed() + 'deg';
-  }
+function usageDegrees(value: number): string {
+  return (360 * value).toFixed() + 'deg';
 }

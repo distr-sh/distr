@@ -7,9 +7,7 @@ import {PlanBadgeComponent} from './plan-badge.component';
   selector: 'app-plan-feature-hint',
   imports: [PlanBadgeComponent],
   template: `
-    <div
-      role="tooltip"
-      class="p-3 text-sm font-medium text-gray-900 bg-white border border-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-w-64">
+    <div role="tooltip" class="distr-tooltip max-w-64">
       <div class="mb-1">
         This feature is available to organizations with a
         <app-plan-badge [plan]="plan()" />

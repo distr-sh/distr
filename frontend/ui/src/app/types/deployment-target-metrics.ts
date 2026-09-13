@@ -7,6 +7,8 @@ export interface DeploymentTargetLatestMetrics {
   memoryUsage: number;
   agentCpuUsageMillis?: number;
   agentMemoryBytes?: number;
+  agentLogBytes?: number;
+  imageBytes?: number;
   diskMetrics?: DeploymentTargetDiskMetric[];
 }
 
@@ -23,6 +25,7 @@ export interface DeploymentResourceMetric {
   memoryBytes: number;
   cpuLimitMillis?: number;
   memoryLimitBytes?: number;
+  logBytes?: number;
 }
 
 interface DeploymentTargetDiskMetric {
