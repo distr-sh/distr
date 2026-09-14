@@ -121,24 +121,24 @@ Return the PostgreSQL Secret Name
 
 {{/*
 Return the Distr configuration as YAML, to be read back with fromYaml. Values files written before
-the "hub" key was renamed to "distr" still carry it there, so anything under "hub" fills in what
-"distr" leaves at its default and never overrides a value set under "distr". Helm merges the chart's
-own defaults into .Values before rendering, so "set under distr" is read off the values themselves:
-an env that differs from distr.defaultEnv, a non-empty envFrom, an enabled scratch volume.
+the "hub" key was renamed to "distr" still carry it there, so a key of "hub" is read while "distr"
+still holds the chart default for it, and never overrides a value written under "distr". The chart
+default is compared against distr.defaults, because Helm merges the chart's own values into a
+release's before rendering and leaves the templates nothing else to compare against. A map is
+merged over the default so that a partial hub.scratch keeps the defaults it does not name.
 */}}
 {{- define "distr.config" -}}
 {{- $values := .Values.distr | default dict -}}
-{{- $defaultEnv := dig "defaultEnv" (list) $values -}}
-{{- $config := omit (deepCopy $values) "defaultEnv" -}}
-{{- with .Values.hub -}}
-{{- if and .env (or (not $config.env) (eq (toYaml $config.env) (toYaml $defaultEnv))) -}}
-{{- $config = set $config "env" .env -}}
+{{- $defaults := dig "defaults" (dict) $values -}}
+{{- $config := omit (deepCopy $values) "defaults" -}}
+{{- range $key, $legacy := .Values.hub | default dict -}}
+{{- $default := index $defaults $key -}}
+{{- if and (hasKey $defaults $key) (eq (toYaml (index $config $key)) (toYaml $default)) -}}
+{{- if kindIs "map" $legacy -}}
+{{- $config = set $config $key (mergeOverwrite (deepCopy $default) $legacy) -}}
+{{- else -}}
+{{- $config = set $config $key $legacy -}}
 {{- end -}}
-{{- if and .envFrom (not $config.envFrom) -}}
-{{- $config = set $config "envFrom" .envFrom -}}
-{{- end -}}
-{{- if and .scratch (not (dig "scratch" "enabled" false $config)) -}}
-{{- $config = set $config "scratch" (mergeOverwrite (dig "scratch" (dict) $config) .scratch) -}}
 {{- end -}}
 {{- end -}}
 {{- toYaml $config -}}
