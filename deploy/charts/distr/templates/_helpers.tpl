@@ -119,7 +119,33 @@ Return the PostgreSQL Secret Name
 {{- end -}}
 {{- end -}}
 
+{{/*
+Return the Distr configuration as YAML, to be read back with fromYaml. Values files written before
+the "hub" key was renamed to "distr" still carry it there, so anything under "hub" fills in what
+"distr" leaves at its default and never overrides a value set under "distr". Helm merges the chart's
+own defaults into .Values before rendering, so "set under distr" is read off the values themselves:
+an env that differs from distr.defaultEnv, a non-empty envFrom, an enabled scratch volume.
+*/}}
+{{- define "distr.config" -}}
+{{- $values := .Values.distr | default dict -}}
+{{- $defaultEnv := dig "defaultEnv" (list) $values -}}
+{{- $config := omit (deepCopy $values) "defaultEnv" -}}
+{{- with .Values.hub -}}
+{{- if and .env (or (not $config.env) (eq (toYaml $config.env) (toYaml $defaultEnv))) -}}
+{{- $config = set $config "env" .env -}}
+{{- end -}}
+{{- if and .envFrom (not $config.envFrom) -}}
+{{- $config = set $config "envFrom" .envFrom -}}
+{{- end -}}
+{{- if and .scratch (not (dig "scratch" "enabled" false $config)) -}}
+{{- $config = set $config "scratch" (mergeOverwrite (dig "scratch" (dict) $config) .scratch) -}}
+{{- end -}}
+{{- end -}}
+{{- toYaml $config -}}
+{{- end -}}
+
 {{- define "distr.env" -}}
+{{- $distr := include "distr.config" . | fromYaml }}
 {{- if .Values.postgresql.enabled }}
 - name: DATABASE_PASSWORD
   valueFrom:
@@ -138,7 +164,7 @@ Return the PostgreSQL Secret Name
       name: {{ include "distr.databaseSecretName" . }}
       key: {{ .Values.externalDatabase.existingSecretUriKey }}
   {{- end }}
-{{ with .Values.distr.env }}
+{{ with $distr.env }}
 {{- toYaml . }}
 {{- end }}
 {{- end }}
