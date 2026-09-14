@@ -111,7 +111,7 @@ func runMaintenanceTask(
 	}
 
 	ctx, span := registry.GetTracers().Always().
-		Tracer("github.com/distr-sh/distr/cmd/hub/cmd", trace.WithInstrumentationVersion(buildconfig.Version())).
+		Tracer("github.com/distr-sh/distr/cmd/distr/cmd", trace.WithInstrumentationVersion(buildconfig.Version())).
 		Start(ctx, "maintenance_"+name, trace.WithSpanKind(trace.SpanKindInternal))
 	defer span.End()
 

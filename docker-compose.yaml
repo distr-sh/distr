@@ -119,7 +119,7 @@ configs:
         # offline can still push its backlog.
         reject_old_samples_max_age: 745h
         # Raised from the 4/6 MB defaults so the log generator dev tool
-        # (cmd/hub/generate/logs) can bulk-ingest without excessive throttling.
+        # (cmd/distr/generate/logs) can bulk-ingest without excessive throttling.
         ingestion_rate_mb: 64
         ingestion_burst_size_mb: 128
 

@@ -21,8 +21,8 @@ Check out our [Docker Compose](/docs/self-hosting/docker/) or [Kubernetes](/docs
 
 ## Configuration
 
-Whichever way you deploy it, the Hub is configured entirely through environment variables, in the `.env` file next to
-the Compose file or under `hub.env` in the Helm values. Only `DATABASE_URL`, `JWT_SECRET`,
+Whichever way you deploy it, Distr is configured entirely through environment variables, in the `.env` file next to
+the Compose file or under `distr.env` in the Helm values. Only `DATABASE_URL`, `JWT_SECRET`,
 `DATABASE_ENCRYPTION_KEY`, `DISTR_HOST` and `LOKI_URL` are needed to start it. Everything else either has a default or
 belongs to a feature you turn on, such as the OCI registry, OIDC sign-in, outgoing mail, custom domains or the
 maintenance jobs.
@@ -32,7 +32,7 @@ place to look up what a setting does and when it is required.
 
 ## Semantic Versioning
 
-We are using [semantic versioning](https://semver.org/) for the releases of Distr Hub, Distr Agents and Distr SDKs.
+We are using [semantic versioning](https://semver.org/) for the releases of Distr, the Distr Agents and the Distr SDKs.
 
 ## Changelog
 
@@ -49,6 +49,6 @@ How to obtain the image and where to put the license key is described for
 Reference setups for a paid plan ship with the repository, as Compose stacks under
 [`deploy/docker`](https://github.com/distr-sh/distr/tree/main/deploy/docker) and as Helm values files
 under [`deploy/charts/distr/examples`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples).
-One of each runs everything on a single VM or cluster, and two run the Hub against a managed database
+One of each runs everything on a single VM or cluster, and two run Distr against a managed database
 and managed object storage on AWS or GCP. The [Docker Compose](/docs/self-hosting/docker/#running-in-production)
 and [Kubernetes](/docs/self-hosting/kubernetes/#running-in-production) pages walk through both clouds.

@@ -119,7 +119,7 @@ Return the PostgreSQL Secret Name
 {{- end -}}
 {{- end -}}
 
-{{- define "distr.hubEnv" -}}
+{{- define "distr.env" -}}
 {{- if .Values.postgresql.enabled }}
 - name: DATABASE_PASSWORD
   valueFrom:
@@ -138,7 +138,7 @@ Return the PostgreSQL Secret Name
       name: {{ include "distr.databaseSecretName" . }}
       key: {{ .Values.externalDatabase.existingSecretUriKey }}
   {{- end }}
-{{ with .Values.hub.env }}
+{{ with .Values.distr.env }}
 {{- toYaml . }}
 {{- end }}
 {{- end }}

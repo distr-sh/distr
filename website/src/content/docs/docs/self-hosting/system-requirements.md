@@ -1,6 +1,6 @@
 ---
 title: System Requirements
-description: Distr is written in Go and highly resource efficient. Learn about the recommended resources for self-hosting the Hub, the registry and the log processing backend, and what to plan for in production.
+description: Distr is written in Go and highly resource efficient. Learn about the recommended resources for self-hosting Distr, the registry and the log processing backend, and what to plan for in production.
 sidebar:
   label: System Requirements
   order: 1
@@ -52,11 +52,11 @@ The shipped configuration retains logs for 30 days.
 ## Registry
 
 The registry buffers uploads while it receives them. Give it a scratch volume (`REGISTRY_SCRATCH_DIR`) so it buffers them to disk, sized for the layers you expect to be pushed at the same time.
-Without one, large layer uploads go to RAM and can increase the memory footprint of the Hub considerably.
+Without one, large layer uploads go to RAM and can increase the memory footprint of Distr considerably.
 
 We also recommend backing the registry with an external S3-compatible object storage like AWS S3.
-It is more scalable and durable than a single local RustFS container, and it lets the registry serve layer downloads via pre-signed URLs: instead of streaming the layer through the Hub, the registry answers with an HTTP `307 Temporary Redirect` to a short-lived URL, so clients download layers directly from the object storage.
-Pull bandwidth then stays off the Hub, which keeps its CPU and memory footprint low even under heavy pull load.
+It is more scalable and durable than a single local RustFS container, and it lets the registry serve layer downloads via pre-signed URLs: instead of streaming the layer through Distr, the registry answers with an HTTP `307 Temporary Redirect` to a short-lived URL, so clients download layers directly from the object storage.
+Pull bandwidth then stays off Distr, which keeps its CPU and memory footprint low even under heavy pull load.
 The redirect is enabled by default and can be turned off with `REGISTRY_S3_ALLOW_REDIRECT`.
 
 ## Networking and ports
@@ -73,8 +73,8 @@ Regardless of how you deploy, make sure the following is in place:
 
 For production use, we recommend the following:
 
-- Run PostgreSQL and the object storage as managed services, so you can scale, upgrade and operate them independently of the Hub.
-- Run several Hub replicas behind a load balancer so the control plane stays available during upgrades and node failures. Our [Helm chart](/docs/self-hosting/kubernetes/) does this via `replicaCount` and `autoscaling`.
-- Trigger the [maintenance jobs](/docs/self-hosting/maintenance/) from outside the Hub instead of using its built-in scheduler, since every replica would otherwise run every job. The Helm chart ships them as Kubernetes `CronJob`s under `cronJobs`.
+- Run PostgreSQL and the object storage as managed services, so you can scale, upgrade and operate them independently of Distr.
+- Run several Distr replicas behind a load balancer so Distr stays available during upgrades and node failures. Our [Helm chart](/docs/self-hosting/kubernetes/) does this via `replicaCount` and `autoscaling`.
+- Trigger the [maintenance jobs](/docs/self-hosting/maintenance/) from outside Distr instead of using its built-in scheduler, since every replica would otherwise run every job. The Helm chart ships them as Kubernetes `CronJob`s under `cronJobs`.
 - Back up the database and the object storage regularly and test your restore procedure. They hold all state there is. Back up `DATABASE_ENCRYPTION_KEY` alongside them but stored separately, since a database backup cannot be restored into a working instance without it.
 - Keep the database credentials, `JWT_SECRET`, `DATABASE_ENCRYPTION_KEY` and the object storage keys in a secret manager, such as a Kubernetes `Secret`, Vault or your cloud provider's secret store, rather than in plain-text environment files.

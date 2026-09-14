@@ -122,7 +122,7 @@ func runCleanup(ctx context.Context, opts CleanupOptions) error {
 	}
 
 	tracer := registry.GetTracers().Always().
-		Tracer("github.com/distr-sh/distr/cmd/hub/cmd", trace.WithInstrumentationVersion(buildconfig.Version()))
+		Tracer("github.com/distr-sh/distr/cmd/distr/cmd", trace.WithInstrumentationVersion(buildconfig.Version()))
 
 	var errs []error
 	for i, cleanupType := range opts.Types {

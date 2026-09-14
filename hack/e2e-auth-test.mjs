@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * E2E test for the Distr Hub authentication flows.
+ * E2E test for the Distr authentication flows.
  *
  * Exercises every credential-setup path against the API and verifies the side effects
  * (issued JWTs and the emails delivered to Mailpit):
@@ -19,7 +19,7 @@
  * Usage:
  *   DISTR_HOST=http://localhost:8080 MAILPIT_HOST=http://localhost:8025 node hack/e2e-auth-test.mjs
  *
- * Requires Node.js 18+ (native fetch) and a running Hub + Mailpit.
+ * Requires Node.js 18+ (native fetch) and a running Distr + Mailpit.
  */
 
 const BASE_URL = (process.env.DISTR_HOST ?? 'http://localhost:8080').replace(/\/$/, '');
@@ -171,7 +171,7 @@ async function step(name, fn) {
 }
 
 console.log(`Distr auth E2E test — run ${RUN_ID}`);
-console.log(`  hub:     ${BASE_URL}`);
+console.log(`  distr:   ${BASE_URL}`);
 console.log(`  mailpit: ${MAILPIT_URL}\n`);
 
 // The inviter admin is set up by the registration flow and reused by the invite/resend flows.

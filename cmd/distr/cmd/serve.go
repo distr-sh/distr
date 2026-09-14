@@ -28,7 +28,7 @@ var serveOpts = ServeOptions{Migrate: true}
 
 var ServeCommand = &cobra.Command{
 	Use:   "serve",
-	Short: "run the Distr Hub server",
+	Short: "run the Distr server",
 	Args:  cobra.NoArgs,
 	PreRun: func(cmd *cobra.Command, args []string) {
 		env.Initialize()

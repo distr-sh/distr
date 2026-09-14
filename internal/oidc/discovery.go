@@ -159,7 +159,7 @@ func fetchDiscoveryDocument(ctx context.Context, issuerURL *url.URL) (*discovery
 
 // RestrictedClientContext returns a context whose OpenID Connect and OAuth2 requests all go through the
 // client that refuses non-public addresses, so that neither the endpoints of a discovery document nor a
-// redirect can be used to reach into the network the hub runs in.
+// redirect can be used to reach into the network this server runs in.
 func RestrictedClientContext(ctx context.Context) context.Context {
 	client := restrictedHTTPClient()
 	return context.WithValue(oidc.ClientContext(ctx, client), oauth2.HTTPClient, client)
@@ -176,7 +176,7 @@ func restrictedHTTPClient() *http.Client {
 // nonPublicIssuersAllowed reports whether an issuer may be reached over http or at a non-public
 // address. That is the case exactly on an instance which is not served over https itself: it is a
 // local or internal installation, where the identity provider to develop or test against runs next
-// to the hub. On every other instance the issuer is administrator input this server fetches, so both
+// to it. On every other instance the issuer is administrator input this server fetches, so both
 // are refused - an operator with an identity provider inside their own network configures it as the
 // instance-wide generic provider instead.
 func nonPublicIssuersAllowed() bool {
