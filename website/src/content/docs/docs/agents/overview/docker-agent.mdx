@@ -76,8 +76,8 @@ All requests to Distr are authenticated with a JWT token obtained by calling `DI
 The agent runs the following loop at the interval defined by `DISTR_INTERVAL` (default 5 seconds):
 
 1. Fetch the deployments from `DISTR_RESOURCE_ENDPOINT`
-2. Delete Docker Compose projects that are no longer in the list (undeployed), with `docker compose down -v`
-3. Start Docker Compose projects that are in the list, with `docker compose up -d`. Environment variables are passed via `--env-file`. If images need pulling, the agent reports status `PROGRESSING`.
+2. Remove Docker Compose projects that are no longer in the list (undeployed), together with their volumes and networks
+3. Start Docker Compose projects that are in the list. If images need pulling, the agent reports status `PROGRESSING`.
 4. Send each Docker Compose output to `DISTR_STATUS_ENDPOINT`, reporting the deployment's status.
 
 Each deployment maps to one Docker Compose project on the host, named `distr-<short-deployment-id>`.
