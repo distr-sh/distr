@@ -88,54 +88,25 @@ func SettingsRouter(r chiopenapi.Router) {
 	})
 
 	r.Route("/tokens", func(r chiopenapi.Router) {
-		r.WithOptions(option.GroupTags("Access Tokens"))
+		// A token is created in the web UI by the person it belongs to, and a client that already
+		// holds one has no business minting another, so these endpoints are not part of the API.
+		r.WithOptions(option.GroupHidden())
 
 		r.Use(middleware.RequireOrgAndRole, middleware.BlockCredentialChange)
 
-		r.Get("/", getAccessTokensHandler()).
-			With(option.Description("List all access tokens")).
-			With(option.Response(http.StatusOK, []api.AccessToken{}))
+		r.Get("/", getAccessTokensHandler())
 
-		r.With(middleware.BlockSuperAdmin).Post("/", createAccessTokenHandler()).
-			With(option.Description("Create a new access token")).
-			With(option.Request(api.CreateAccessTokenRequest{})).
-			With(option.Response(http.StatusCreated, api.AccessTokenWithKey{}))
+		r.With(middleware.BlockSuperAdmin).Post("/", createAccessTokenHandler())
 
 		r.Route("/{accessTokenId}", func(r chiopenapi.Router) {
-			type AccessTokenIDRequest struct {
-				AccessTokenID uuid.UUID `path:"accessTokenId"`
-			}
+			r.With(middleware.BlockSuperAdmin).Patch("/", patchAccessTokenHandler())
 
-			r.With(middleware.BlockSuperAdmin).Patch("/", patchAccessTokenHandler()).
-				With(option.Description("Partially update an access token")).
-				With(option.Request(struct {
-					AccessTokenIDRequest
-					api.PatchAccessTokenRequest
-				}{})).
-				With(option.Response(http.StatusOK, api.AccessToken{}))
-
-			r.With(middleware.BlockSuperAdmin).Delete("/", deleteAccessTokenHandler()).
-				With(option.Description("Delete an access token")).
-				With(option.Request(AccessTokenIDRequest{}))
+			r.With(middleware.BlockSuperAdmin).Delete("/", deleteAccessTokenHandler())
 
 			r.Route("/secrets", func(r chiopenapi.Router) {
-				type AccessTokenSecretSlotRequest struct {
-					AccessTokenIDRequest
-					Slot types.AccessTokenSecretSlot `path:"slot"`
-				}
+				r.With(middleware.BlockSuperAdmin).Post("/", createAccessTokenSecretHandler())
 
-				r.With(middleware.BlockSuperAdmin).Post("/", createAccessTokenSecretHandler()).
-					With(option.Description(
-						"Create a second secret for an access token, so that the first one can be rotated out")).
-					With(option.Request(struct {
-						AccessTokenIDRequest
-						api.CreateAccessTokenSecretRequest
-					}{})).
-					With(option.Response(http.StatusCreated, api.AccessTokenWithKey{}))
-
-				r.With(middleware.BlockSuperAdmin).Delete("/{slot}", deleteAccessTokenSecretHandler()).
-					With(option.Description("Delete one of an access token's secrets")).
-					With(option.Request(AccessTokenSecretSlotRequest{}))
+				r.With(middleware.BlockSuperAdmin).Delete("/{slot}", deleteAccessTokenSecretHandler())
 			})
 		})
 	})

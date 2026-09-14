@@ -1,4 +1,4 @@
-import {AccessToken} from '@distr-sh/distr-sdk';
+import {AccessToken} from '../types/access-token';
 
 // A label is optional, so a token that has none is named after the beginning of its id, which is
 // also what the list and the detail page show to tell two unlabeled tokens apart.

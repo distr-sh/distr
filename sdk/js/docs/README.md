@@ -11,9 +11,6 @@
 
 ## Interfaces
 
-- [AccessToken](interfaces/AccessToken.md)
-- [AccessTokenSecret](interfaces/AccessTokenSecret.md)
-- [AccessTokenWithKey](interfaces/AccessTokenWithKey.md)
 - [Advisory](interfaces/Advisory.md)
 - [AdvisoryApplicationVersion](interfaces/AdvisoryApplicationVersion.md)
 - [AdvisoryArtifactVersion](interfaces/AdvisoryArtifactVersion.md)
@@ -30,8 +27,6 @@
 - [ApplicationVersionResource](interfaces/ApplicationVersionResource.md)
 - [AssignCustomerToPartnerRequest](interfaces/AssignCustomerToPartnerRequest.md)
 - [BaseModel](interfaces/BaseModel.md)
-- [CreateAccessTokenRequest](interfaces/CreateAccessTokenRequest.md)
-- [CreateAccessTokenSecretRequest](interfaces/CreateAccessTokenSecretRequest.md)
 - [CreateAdvisoryCommentRequest](interfaces/CreateAdvisoryCommentRequest.md)
 - [CreateSupportBundleCommentRequest](interfaces/CreateSupportBundleCommentRequest.md)
 - [CreateSupportBundleRequest](interfaces/CreateSupportBundleRequest.md)
@@ -57,7 +52,6 @@
 - [OrganizationBranding](interfaces/OrganizationBranding.md)
 - [PartnerOrganization](interfaces/PartnerOrganization.md)
 - [PartnerOrganizationWithUsage](interfaces/PartnerOrganizationWithUsage.md)
-- [PatchAccessTokenRequest](interfaces/PatchAccessTokenRequest.md)
 - [PatchAdvisoryRequest](interfaces/PatchAdvisoryRequest.md)
 - [PatchApplicationRequest](interfaces/PatchApplicationRequest.md)
 - [SidebarLink](interfaces/SidebarLink.md)
@@ -74,7 +68,6 @@
 
 ## Type Aliases
 
-- [AccessTokenSecretSlot](type-aliases/AccessTokenSecretSlot.md)
 - [AdvisoryEventType](type-aliases/AdvisoryEventType.md)
 - [AdvisoryImpactState](type-aliases/AdvisoryImpactState.md)
 - [AdvisorySeverity](type-aliases/AdvisorySeverity.md)

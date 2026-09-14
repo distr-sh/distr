@@ -4,13 +4,7 @@ import {Component, computed, effect, ElementRef, inject, signal, TemplateRef, vi
 import {rxResource, takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
-import {
-  AccessToken,
-  AccessTokenSecretSlot,
-  AccessTokenWithKey,
-  PatchAccessTokenRequest,
-  UserRole,
-} from '@distr-sh/distr-sdk';
+import {UserRole} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faChevronDown, faKey, faPlus, faTrash, faTriangleExclamation, faXmark} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
@@ -32,6 +26,7 @@ import {AuthService} from '../services/auth.service';
 import {CreatedAccessTokenStore} from '../services/created-access-token.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
+import {AccessToken, AccessTokenSecretSlot, AccessTokenWithKey, PatchAccessTokenRequest} from '../types/access-token';
 import {accessTokenName} from './access-token-name';
 
 @Component({

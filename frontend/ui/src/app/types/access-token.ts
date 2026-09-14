@@ -1,5 +1,4 @@
-import {BaseModel} from './base';
-import {UserRole} from './user-account';
+import {BaseModel, UserRole} from '@distr-sh/distr-sdk';
 
 export type AccessTokenSecretSlot = 1 | 2;
 

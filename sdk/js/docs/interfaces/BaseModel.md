@@ -8,7 +8,6 @@
 
 ## Extended by
 
-- [`AccessToken`](AccessToken.md)
 - [`AgentVersion`](AgentVersion.md)
 - [`Application`](Application.md)
 - [`Deployment`](Deployment.md)

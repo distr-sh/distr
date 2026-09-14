@@ -3,11 +3,11 @@ import {HttpTestingController, provideHttpClientTesting} from '@angular/common/h
 import {TestBed} from '@angular/core/testing';
 import {provideRouter, Router} from '@angular/router';
 import {RouterTestingHarness} from '@angular/router/testing';
-import {AccessToken, AccessTokenWithKey} from '@distr-sh/distr-sdk';
 import {of} from 'rxjs';
 import {AuthService} from '../services/auth.service';
 import {CreatedAccessTokenStore} from '../services/created-access-token.service';
 import {OverlayService} from '../services/overlay.service';
+import {AccessToken, AccessTokenWithKey} from '../types/access-token';
 import {AccessTokenDetailComponent} from './access-token-detail.component';
 
 const legacyToken: AccessToken = {

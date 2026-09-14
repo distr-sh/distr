@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {AccessTokenWithKey} from '@distr-sh/distr-sdk';
+import {AccessTokenWithKey} from '../types/access-token';
 
 // Hands a freshly created token to the page that displays it. The navigation state would do the
 // same, but it lives in the browser history entry, where a back navigation restores it and any

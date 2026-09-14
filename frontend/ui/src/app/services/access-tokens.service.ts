@@ -1,5 +1,6 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
+import {Observable} from 'rxjs';
 import {
   AccessToken,
   AccessTokenSecretSlot,
@@ -7,8 +8,7 @@ import {
   CreateAccessTokenRequest,
   CreateAccessTokenSecretRequest,
   PatchAccessTokenRequest,
-} from '@distr-sh/distr-sdk';
-import {Observable} from 'rxjs';
+} from '../types/access-token';
 
 const baseUrl = '/api/v1/settings/tokens';
 
