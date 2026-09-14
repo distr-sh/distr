@@ -1,4 +1,4 @@
-{{- if .Values.hub }}
+{{- if hasKey .Values "hub" }}
 {{- fail "the hub values key has been renamed to distr: move hub.env, hub.envFrom and hub.scratch under distr" }}
 {{- end }}
 {{- /* Checked here rather than in caddy-deployment.yaml so it also reaches installations that
