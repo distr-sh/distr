@@ -59,7 +59,7 @@ services:
   # If you don't want to use the OCI registry (REGISTRY_ENABLED=false) or want to use an external S3 provider,
   # you don't need to run the storage service.
   storage:
-    image: 'rustfs/rustfs:1.0.0-beta.8'
+    image: 'rustfs/rustfs:1.0.0-rc.6'
     volumes:
       - 'rustfs:/data/'
     environment:
