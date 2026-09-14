@@ -103,6 +103,21 @@ func (tok AccessToken) FreeSecretSlot() *AccessTokenSecretSlot {
 	return nil
 }
 
+// AccessTokenRoleAllowed compares the role a token would act under, which for a token without an
+// explicit role is the role its owner has in the organization, against the role of the caller
+// creating or changing it, so that a credential restricted below its owner cannot hand out more
+// than it has.
+func AccessTokenRoleAllowed(tokenRole, callerRole *UserRole, membershipRole UserRole) bool {
+	if callerRole == nil {
+		return false
+	}
+	effective := membershipRole
+	if tokenRole != nil {
+		effective = *tokenRole
+	}
+	return !effective.GreaterThan(*callerRole)
+}
+
 type AccessTokenWithUserAccount struct {
 	AccessToken
 	UserAccount            UserAccount `db:"user_account"`

@@ -36,6 +36,23 @@ func TestEffectiveUserRole(t *testing.T) {
 		To(Equal(UserRoleReadWrite))
 }
 
+func TestAccessTokenRoleAllowed(t *testing.T) {
+	g := NewWithT(t)
+
+	// A caller may issue a token up to their own role, but not beyond it.
+	g.Expect(AccessTokenRoleAllowed(new(UserRoleAdmin), new(UserRoleAdmin), UserRoleAdmin)).To(BeTrue())
+	g.Expect(AccessTokenRoleAllowed(new(UserRoleReadOnly), new(UserRoleReadWrite), UserRoleAdmin)).To(BeTrue())
+	g.Expect(AccessTokenRoleAllowed(new(UserRoleAdmin), new(UserRoleReadWrite), UserRoleAdmin)).To(BeFalse())
+
+	// A token without an explicit role acts under the role its owner has in the organization, so a
+	// caller below that role cannot create one.
+	g.Expect(AccessTokenRoleAllowed(nil, new(UserRoleReadOnly), UserRoleAdmin)).To(BeFalse())
+	g.Expect(AccessTokenRoleAllowed(nil, new(UserRoleAdmin), UserRoleAdmin)).To(BeTrue())
+
+	// A caller whose own role is unknown gets nothing.
+	g.Expect(AccessTokenRoleAllowed(new(UserRoleReadOnly), nil, UserRoleReadOnly)).To(BeFalse())
+}
+
 func TestEffectiveExpiresAt(t *testing.T) {
 	g := NewWithT(t)
 

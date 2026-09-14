@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/validation"
 	"github.com/google/uuid"
 )
 
@@ -48,6 +49,10 @@ type CreateAccessTokenRequest struct {
 	UserRole  *types.UserRole `json:"userRole"`
 }
 
+func (r CreateAccessTokenRequest) Validate() error {
+	return validateAccessTokenExpiresAt(r.ExpiresAt)
+}
+
 // PatchAccessTokenRequest supports partial updates: omitted fields are left unchanged, and an
 // explicit null clears the field, which means no label and the role of the user.
 type PatchAccessTokenRequest struct {
@@ -57,4 +62,17 @@ type PatchAccessTokenRequest struct {
 
 type CreateAccessTokenSecretRequest struct {
 	ExpiresAt *time.Time `json:"expiresAt"`
+}
+
+func (r CreateAccessTokenSecretRequest) Validate() error {
+	return validateAccessTokenExpiresAt(r.ExpiresAt)
+}
+
+// An expiration that has already passed would create a credential that is dead on arrival, and
+// since a secret's expiration cannot be changed, the only way out of it is to create another one.
+func validateAccessTokenExpiresAt(expiresAt *time.Time) error {
+	if expiresAt != nil && !expiresAt.After(time.Now()) {
+		return validation.NewValidationFailedError("the expiration date must be in the future")
+	}
+	return nil
 }

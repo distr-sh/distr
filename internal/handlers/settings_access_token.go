@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
@@ -26,7 +25,6 @@ const (
 	accessTokenLastSecretMessage = "This token must keep at least one secret. " +
 		"Create the replacement first, or delete the token itself."
 	accessTokenRoleExceedsCallerMessage = "token role cannot exceed your own role"
-	accessTokenExpiresAtInPastMessage   = "the expiration date must be in the future"
 )
 
 func getAccessTokensHandler() http.HandlerFunc {
@@ -55,11 +53,12 @@ func createAccessTokenHandler() http.HandlerFunc {
 			return
 		}
 
-		if !checkAccessTokenRole(ctx, w, request.UserRole) {
+		if err := request.Validate(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		if !checkAccessTokenExpiresAt(w, request.ExpiresAt) {
+		if !checkAccessTokenRole(ctx, w, request.UserRole) {
 			return
 		}
 
@@ -167,7 +166,8 @@ func createAccessTokenSecretHandler() http.HandlerFunc {
 			return
 		}
 
-		if !checkAccessTokenExpiresAt(w, request.ExpiresAt) {
+		if err := request.Validate(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
@@ -274,30 +274,8 @@ func checkAccessTokenRole(ctx context.Context, w http.ResponseWriter, requested 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return false
 	}
-	if !accessTokenRoleAllowed(requested, auth.CurrentUserRole(), membershipRole) {
+	if !types.AccessTokenRoleAllowed(requested, auth.CurrentUserRole(), membershipRole) {
 		http.Error(w, accessTokenRoleExceedsCallerMessage, http.StatusBadRequest)
-		return false
-	}
-	return true
-}
-
-// accessTokenRoleAllowed compares the role the token would act under, which for a token without
-// an explicit role is the role its owner has in the organization, against the caller's own role,
-// so that a credential restricted below its owner cannot hand out more than it has.
-func accessTokenRoleAllowed(requested, callerRole *types.UserRole, membershipRole types.UserRole) bool {
-	if callerRole == nil {
-		return false
-	}
-	effective := membershipRole
-	if requested != nil {
-		effective = *requested
-	}
-	return !effective.GreaterThan(*callerRole)
-}
-
-func checkAccessTokenExpiresAt(w http.ResponseWriter, expiresAt *time.Time) bool {
-	if expiresAt != nil && !expiresAt.After(time.Now()) {
-		http.Error(w, accessTokenExpiresAtInPastMessage, http.StatusBadRequest)
 		return false
 	}
 	return true
