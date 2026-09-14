@@ -36,9 +36,6 @@ type AccessTokenWithKey struct {
 }
 
 type CreateAccessTokenRequest struct {
-	// ExpiresAt is the expiration of the secret the token is created with, and a token without one
-	// never expires. It cannot be changed afterwards, so a token is kept alive by adding a secret
-	// that expires later.
 	ExpiresAt *time.Time      `json:"expiresAt"`
 	Label     *string         `json:"label"`
 	UserRole  *types.UserRole `json:"userRole"`
