@@ -12,9 +12,6 @@ type AccessToken struct {
 	ID uuid.UUID `json:"id"`
 	KeyID     string    `json:"keyId"`
 	CreatedAt time.Time `json:"createdAt"`
-	// ExpiresAt is when the token stops working, which is the last of its secrets to expire, since
-	// every secret that is still valid authenticates it. It is not settable: an expiration belongs
-	// to the secret it was created with.
 	ExpiresAt  *time.Time          `json:"expiresAt,omitempty"`
 	LastUsedAt *time.Time          `json:"lastUsedAt,omitempty"`
 	Label      *string             `json:"label,omitempty"`
