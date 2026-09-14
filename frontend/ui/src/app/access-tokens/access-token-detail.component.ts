@@ -14,13 +14,16 @@ import {
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faChevronDown, faKey, faPlus, faTrash, faTriangleExclamation} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {catchError, concatMap, firstValueFrom, Observable, of, tap} from 'rxjs';
+import {catchError, concatMap, EMPTY, firstValueFrom, Observable, of, tap} from 'rxjs';
 import {isExpired, RelativeDatePipe} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {USER_ROLE_LABELS} from '../../util/user-role';
 import {ClipComponent} from '../components/clip.component';
 import {CreatedAccessTokenComponent} from '../components/created-access-token.component';
-import {ExpiresAtPickerComponent} from '../components/expires-at-picker/expires-at-picker.component';
+import {
+  EXPIRES_AT_DATE_FORMAT,
+  ExpiresAtPickerComponent,
+} from '../components/expires-at-picker/expires-at-picker.component';
 import {InlineEditComponent} from '../components/inline-edit.component';
 import {PageComponent} from '../components/page.component';
 import {UserRoleSelectComponent} from '../components/user-role-select.component';
@@ -95,6 +98,11 @@ export class AccessTokenDetailComponent {
   protected readonly createdToken = signal<AccessTokenWithKey | null>(null);
   protected readonly savingLabel = signal(false);
 
+  private readonly expiresAtInput = computed(() => {
+    const expiresAt = this.token()?.expiresAt;
+    return expiresAt ? dayjs(expiresAt).format(EXPIRES_AT_DATE_FORMAT) : '';
+  });
+
   protected readonly settingsForm = new FormGroup({
     userRole: new FormControl<UserRole | undefined>(undefined),
     expiresAt: new FormControl('', {nonNullable: true}),
@@ -111,31 +119,38 @@ export class AccessTokenDetailComponent {
     // the server would immediately be sent back to it. It also has to be patchValue: a token
     // without an explicit role has none to supply, which setValue rejects.
     effect(() => {
-      const token = this.token();
       this.settingsForm.patchValue(
-        {
-          userRole: token?.userRole,
-          expiresAt: token?.expiresAt ? dayjs(token.expiresAt).format('YYYY-MM-DD') : '',
-        },
+        {userRole: this.token()?.userRole, expiresAt: this.expiresAtInput()},
         {emitEvent: false}
       );
     });
     this.settingsForm.valueChanges
       .pipe(
-        // Every change sends both settings, so an older request that finishes last would put the
-        // value it was started with back, and unsubscribing does not undo one the server has
-        // already accepted.
-        concatMap(({userRole, expiresAt}) =>
-          this.patch({
-            userRole: userRole ?? null,
-            // The picker works in local dates, and new Date() would read one as UTC midnight,
-            // which moves the day for everyone west of it.
-            expiresAt: expiresAt ? dayjs(expiresAt).toDate() : null,
-          })
-        ),
+        // The requests are sequenced because an older one that finishes last would put the value it
+        // was started with back, and unsubscribing does not undo one the server has already accepted.
+        concatMap(() => {
+          const request = this.changedSettings();
+          return request ? this.patch(request) : EMPTY;
+        }),
         takeUntilDestroyed()
       )
       .subscribe();
+  }
+
+  // Sending only what the user changed keeps a role change from rewriting an expiry the server no
+  // longer accepts, and keeps a date the picker rejects from being saved as "no expiration".
+  private changedSettings(): PatchAccessTokenRequest | null {
+    const {userRole, expiresAt} = this.settingsForm.value;
+    const request: PatchAccessTokenRequest = {};
+    if ((userRole ?? null) !== (this.token()?.userRole ?? null)) {
+      request.userRole = userRole ?? null;
+    }
+    if (this.settingsForm.controls.expiresAt.valid && expiresAt !== this.expiresAtInput()) {
+      // The picker works in local dates, and new Date() would read one as UTC midnight, which
+      // moves the day for everyone west of it.
+      request.expiresAt = expiresAt ? dayjs(expiresAt).toDate() : null;
+    }
+    return Object.keys(request).length > 0 ? request : null;
   }
 
   protected readonly dropdownTriggerButton = viewChild.required<ElementRef<HTMLElement>>('dropdownTriggerButton');

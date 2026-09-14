@@ -153,7 +153,7 @@
         <div class="flex justify-center w-full pb-4 space-x-4 sm:mt-0">
           <button
             type="submit"
-            [disabled]="editFormLoading()"
+            [disabled]="editFormLoading() || editForm.invalid"
             class="text-white w-full inline-flex items-center justify-center distr-btn-primary">
             <fa-icon [icon]="faPlus" class="me-2" />
             Create

@@ -1,14 +1,16 @@
-<input type="date" [id]="inputId()" [formControl]="control" class="distr-input" />
+<input #dateInput type="date" [id]="inputId()" [min]="minDate" [formControl]="control" class="distr-input" />
+@if (pastDate()) {
+  <p class="mt-1 text-sm text-red-600 dark:text-red-500">The expiration date must be in the future.</p>
+}
 <div class="flex flex-wrap gap-2 mt-2">
   @for (preset of presets; track preset.label) {
-    @let date = presetDate(preset);
     <button
       type="button"
       [disabled]="control.disabled"
-      (click)="control.setValue(date)"
+      (click)="control.setValue(preset.date)"
       class="text-gray-900 hover:border-primary-600 focus:ring-4 focus:outline-none focus:ring-primary-300 leading-5 rounded-lg text-xs px-3 py-0.5 transition-colors disabled:opacity-60 dark:text-white dark:hover:border-primary-500 dark:focus:ring-primary-800"
       [class]="
-        control.value === date
+        control.value === preset.date
           ? 'border-2 border-primary-600 font-semibold dark:border-primary-500'
           : 'border border-gray-300 font-medium dark:border-gray-600'
       ">
