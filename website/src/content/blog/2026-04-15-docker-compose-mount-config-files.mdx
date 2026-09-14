@@ -292,7 +292,7 @@ For customer-shipped Docker Compose deployments, inline `configs` is almost alwa
 
 ## Getting started
 
-If you are distributing Docker Compose applications to customer environments and you are tired of coordinating Compose files, configuration files, and credential files as separate artifacts, [try Distr](https://distr.sh/onboarding). Distr ships your Compose file to an agent running in the customer's environment (the Hub only rewrites the top-level `name:` to a unique `distr-<deployment-id>` project name so multiple deployments on the same host do not collide), injects [Distr Secrets](/docs/agents/secrets/) at deploy time, and gives you a single view for versioning, rollouts, and customer-scoped configuration. The inline `configs` pattern in this post fits cleanly into that model.
+If you are distributing Docker Compose applications to customer environments and you are tired of coordinating Compose files, configuration files, and credential files as separate artifacts, [try Distr](https://distr.sh/onboarding). Distr ships your Compose file to an agent running in the customer's environment (Distr only rewrites the top-level `name:` to a unique `distr-<deployment-id>` project name so multiple deployments on the same host do not collide), injects [Distr Secrets](/docs/agents/secrets/) at deploy time, and gives you a single view for versioning, rollouts, and customer-scoped configuration. The inline `configs` pattern in this post fits cleanly into that model.
 
 ## Join the conversation
 

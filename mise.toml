@@ -60,12 +60,12 @@ sources = [
   "package.json",
 ]
 
-[tasks."build:hub:community"]
-run = 'go build -ldflags="{{vars.ldflags}} -X github.com/distr-sh/distr/internal/buildconfig.edition=community" -o dist/distr ./cmd/hub'
+[tasks."build:distr:community"]
+run = 'go build -ldflags="{{vars.ldflags}} -X github.com/distr-sh/distr/internal/buildconfig.edition=community" -o dist/distr ./cmd/distr'
 depends = ["go-tidy", "build:frontend:community"]
 
-[tasks."build:hub:enterprise"]
-run = 'go build -ldflags="{{vars.ldflags}} -X github.com/distr-sh/distr/internal/buildconfig.edition=enterprise" -o dist/distr ./cmd/hub'
+[tasks."build:distr:enterprise"]
+run = 'go build -ldflags="{{vars.ldflags}} -X github.com/distr-sh/distr/internal/buildconfig.edition=enterprise" -o dist/distr ./cmd/distr'
 depends = ["go-tidy", "build:frontend:enterprise"]
 
 [tasks."build:website"]
@@ -103,7 +103,7 @@ dir = "website"
 
 [tasks."lint:app"]
 run = { tasks = ["lint:go", "lint:frontend", "lint:migrations"] }
-description = 'Lint hub and agents, without the website'
+description = 'Lint Distr and the agents, without the website'
 
 [tasks.lint]
 run = { tasks = ["lint:app", "lint:website"] }
@@ -144,15 +144,15 @@ description = 'Format the website. Also deletes unused images'
 
 [tasks."format:app"]
 run = { tasks = ["format:go", "format:frontend"] }
-description = 'Format hub and agents, without the website'
+description = 'Format Distr and the agents, without the website'
 
 [tasks.format]
 run = { tasks = ["format:app", "format:website"] }
 
 [tasks.distr]
-run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/hub/'
+run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/distr/'
 description = """
-Run the hub with arbitrary arguments: "mise run distr arg1 arg2...".
+Run Distr with arbitrary arguments: "mise run distr arg1 arg2...".
 Examples:
   - "mise run distr serve"
   - "mise run distr migrate --to ..."
@@ -176,9 +176,9 @@ run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/agent/docker/ run'
 [tasks."run:agent:kubernetes"]
 run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/agent/kubernetes/ run'
 
-[tasks."docker-build:hub"]
-depends = "build:hub:enterprise"
-run = 'cp dist/distr dist/distr-$(go env GOARCH) && docker build -f Dockerfile.hub --tag ghcr.io/distr-sh/distr:$VERSION .'
+[tasks."docker-build:distr"]
+depends = "build:distr:enterprise"
+run = 'cp dist/distr dist/distr-$(go env GOARCH) && docker build -f Dockerfile.distr --tag ghcr.io/distr-sh/distr:$VERSION .'
 
 [tasks."docker-build:agent:docker"]
 run = 'docker build -f Dockerfile.docker-agent --tag ghcr.io/distr-sh/distr/docker-agent:$VERSION --build-arg VERSION=$VERSION --build-arg COMMIT=$COMMIT --network host .'

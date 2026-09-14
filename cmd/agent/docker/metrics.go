@@ -27,7 +27,7 @@ import (
 var metrics receiver.Metrics
 
 // agentComposeProject is the fixed project name of the agent's own compose stack from the
-// connect manifest ("name: distr"). Deployment projects are renamed to "distr-<id>" by the hub
+// connect manifest ("name: distr"). Deployment projects are renamed to "distr-<id>" by the server
 // (see patchProjectName), so the exact label match cannot collide with a deployment.
 const agentComposeProject = "distr"
 

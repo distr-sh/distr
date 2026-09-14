@@ -41,7 +41,7 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           containers:
-            - name: hub
+            - name: distr
               {{- with $job.args }}
               args:
                 {{- toYaml . | nindent 16 }}
@@ -52,7 +52,7 @@ spec:
               {{- end }}
               image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
               imagePullPolicy: {{ $.Values.image.pullPolicy }}
-              {{- with $.Values.hub.envFrom }}
+              {{- with $.Values.distr.envFrom }}
               envFrom:
                 {{- toYaml . | nindent 16 }}
               {{- end }}

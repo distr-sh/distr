@@ -52,19 +52,19 @@ Read more about Distr and its core concepts at https://distr.sh/docs/core-concep
 ```mermaid
 architecture-beta
     group ctrl(cloud)[Distr Cloud or Your Cloud]
-    service hub(server)[Distr Hub] in ctrl
+    service distr(server)[Distr] in ctrl
     service db(database)[PostgreSQL] in ctrl
     service loki(database)[Loki Log Storage] in ctrl
     service oci(database)[Distr OCI Registry] in ctrl
     service s3(disk)[Object Storage] in ctrl
-    oci:R -- L:hub
-    db:T -- B:hub
-    loki:L -- R:hub
+    oci:R -- L:distr
+    db:T -- B:distr
+    loki:L -- R:distr
     oci:B -- T:s3
 
     junction customerjunction
 
-    hub:R <-- L:customerjunction
+    distr:R <-- L:customerjunction
     customerjunction:T -- B:agent
     customerjunction:B -- T:client
 
@@ -85,7 +85,7 @@ join our [community forum](https://github.com/distr-sh/distr/discussions).
 
 ### Docker
 
-The Distr Hub is distributed as a Docker image via ghcr.io.
+Distr is distributed as a Docker image via ghcr.io.
 Check out [`deploy/docker/quickstart`](deploy/docker/quickstart) for our example deployment using Docker Compose.
 To get started quickly, do the following:
 
@@ -122,13 +122,13 @@ Using Distr agents on Windows with WSL2? Follow the [Windows WSL2 guide](https:/
 
 ### Building from source
 
-To build Distr Hub from source we recommend that you use [mise](https://mise.jdx.dev/) to install all required dependencies, but you don't have to.
+To build Distr from source we recommend that you use [mise](https://mise.jdx.dev/) to install all required dependencies, but you don't have to.
 
 All dependency versions and build tasks can be found in the [`mise.toml`](./mise.toml) file, for example:
 
 ```shell
-# Build the control plane
-mise run build:hub
+# Build Distr
+mise run build:distr:community
 # Build all docker images
 mise run "docker-build:**"
 ```

@@ -21,7 +21,7 @@ data:
     	{{- . | trim | nindent 4 | replace "\n    " "\n    \t" }}
     	{{- end }}
     	on_demand_tls {
-    		# Authorizes certificate issuance per domain; the hub returns 200 only for
+    		# Authorizes certificate issuance per domain; Distr returns 200 only for
     		# registered custom domains. Served by the cluster-internal ask Service,
     		# never exposed publicly.
     		ask http://{{ include "distr.fullname" . }}-internal-caddy-ask:{{ .Values.caddy.askServerPort }}/internal/webhook/tls/ask

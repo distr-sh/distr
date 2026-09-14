@@ -13,13 +13,13 @@ The Kubernetes agent manages Kubernetes deployments, handling the complete lifec
 
 ## Installation and Environment
 
-The agent is installed by applying manifests fetched directly from the Distr Hub:
+The agent is installed by applying manifests fetched directly from Distr:
 
 ```
-kubectl apply -n <namespace> -f "https://<distr-hub>/api/v1/connect?targetId=<targetId>&targetSecret=<targetSecret>"
+kubectl apply -n <namespace> -f "https://<distr-host>/api/v1/connect?targetId=<targetId>&targetSecret=<targetSecret>"
 ```
 
-The namespace must already exist. The `targetId` and `targetSecret` ensure the agent can only fetch deployments for one specific deployment target. The secret is shown once and never stored by the Hub. It can only be verified.
+The namespace must already exist. The `targetId` and `targetSecret` ensure the agent can only fetch deployments for one specific deployment target. The secret is shown once and never stored by Distr. It can only be verified.
 
 The fetched manifests contain the `distr-agent` Deployment:
 
@@ -120,7 +120,7 @@ You can also provide credentials via an [application entitlement](/docs/platform
 
 ## Agent Self Updates
 
-When the agent version for a deployment target is updated in the Distr Hub, the agent updates itself on the next cycle. It fetches the new manifest from `DISTR_MANIFEST_ENDPOINT` and restarts.
+When the agent version for a deployment target is updated in Distr, the agent updates itself on the next cycle. It fetches the new manifest from `DISTR_MANIFEST_ENDPOINT` and restarts.
 
 ## Migrating an Existing Helm Release
 
