@@ -14,7 +14,6 @@ import {
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
-import {AccessTokenWithKey} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleCheck} from '@fortawesome/free-regular-svg-icons';
 import {
@@ -40,6 +39,7 @@ import {ContextService} from '../../services/context.service';
 import {OrganizationService} from '../../services/organization.service';
 import {ToastService} from '../../services/toast.service';
 import {TutorialsService} from '../../services/tutorials.service';
+import {AccessTokenWithKey} from '../../types/access-token';
 import {Organization} from '../../types/organization';
 import {TutorialProgress} from '../../types/tutorials';
 import {TutorialStepperComponent} from '../stepper/tutorial-stepper.component';

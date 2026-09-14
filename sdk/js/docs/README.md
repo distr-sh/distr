@@ -11,8 +11,6 @@
 
 ## Interfaces
 
-- [AccessToken](interfaces/AccessToken.md)
-- [AccessTokenWithKey](interfaces/AccessTokenWithKey.md)
 - [Advisory](interfaces/Advisory.md)
 - [AdvisoryApplicationVersion](interfaces/AdvisoryApplicationVersion.md)
 - [AdvisoryArtifactVersion](interfaces/AdvisoryArtifactVersion.md)
@@ -29,7 +27,6 @@
 - [ApplicationVersionResource](interfaces/ApplicationVersionResource.md)
 - [AssignCustomerToPartnerRequest](interfaces/AssignCustomerToPartnerRequest.md)
 - [BaseModel](interfaces/BaseModel.md)
-- [CreateAccessTokenRequest](interfaces/CreateAccessTokenRequest.md)
 - [CreateAdvisoryCommentRequest](interfaces/CreateAdvisoryCommentRequest.md)
 - [CreateSupportBundleCommentRequest](interfaces/CreateSupportBundleCommentRequest.md)
 - [CreateSupportBundleRequest](interfaces/CreateSupportBundleRequest.md)

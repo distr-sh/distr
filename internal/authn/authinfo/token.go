@@ -11,29 +11,32 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 )
 
-func FromAuthKey(ctx context.Context, token authkey.Key) (AuthInfo, error) {
-	if at, err := db.GetAccessTokenByKeyUpdatingLastUsed(ctx, token); err != nil {
+func FromAuthKey(ctx context.Context, token authkey.Token) (AuthInfo, error) {
+	at, err := db.AuthenticateAccessToken(ctx, token)
+	if err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			err = fmt.Errorf("%w: %w", authn.ErrBadAuthentication, err)
 		}
 		return nil, err
-	} else {
-		role := at.EffectiveUserRole()
-		return &SimpleAuthInfo{
-			userID:                 at.UserAccount.ID,
-			userEmail:              at.UserAccount.Email,
-			emailVerified:          at.UserAccount.EmailVerifiedAt != nil,
-			organizationID:         &at.OrganizationID,
-			customerOrganizationID: at.CustomerOrganizationID,
-			// An access token is created for one organization and is not proof that its owner is
-			// present, so it must not reach beyond the session it was created from.
-			organizationScoped: true,
-			userRole:           &role,
-			rawToken:           token,
-		}, nil
 	}
+
+	role := at.EffectiveUserRole()
+	return &SimpleAuthInfo{
+		userID:                 at.UserAccount.ID,
+		userEmail:              at.UserAccount.Email,
+		emailVerified:          at.UserAccount.EmailVerifiedAt != nil,
+		organizationID:         &at.OrganizationID,
+		customerOrganizationID: at.CustomerOrganizationID,
+		// An access token is created for one organization and is not proof that its owner is
+		// present, so it must not reach beyond the session it was created from.
+		organizationScoped: true,
+		userRole:           &role,
+		// Only the key, never the secret: nothing downstream needs to authenticate with the
+		// token again, and a credential that is not carried around cannot be leaked.
+		rawToken: token.Key,
+	}, nil
 }
 
-func AuthKeyAuthenticator() authn.Authenticator[authkey.Key, AuthInfo] {
-	return authn.AuthenticatorFunc[authkey.Key, AuthInfo](FromAuthKey)
+func AuthKeyAuthenticator() authn.Authenticator[authkey.Token, AuthInfo] {
+	return authn.AuthenticatorFunc[authkey.Token, AuthInfo](FromAuthKey)
 }

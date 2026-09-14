@@ -474,6 +474,27 @@ func GetUserAccountWithRole(
 	}
 }
 
+func GetUserRoleInOrganization(ctx context.Context, userID, orgID uuid.UUID) (types.UserRole, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT user_role
+		FROM Organization_UserAccount
+		WHERE user_account_id = @userId AND organization_id = @orgId`,
+		pgx.NamedArgs{"userId": userID, "orgId": orgID},
+	)
+	if err != nil {
+		return "", fmt.Errorf("could not query user role: %w", err)
+	}
+	if role, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[types.UserRole]); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			err = apierrors.ErrNotFound
+		}
+		return "", fmt.Errorf("could not get user role: %w", err)
+	} else {
+		return role, nil
+	}
+}
+
 func GetUserAccountAndOrg(ctx context.Context, userID, orgID uuid.UUID) (
 	*types.UserAccountWithUserRole,
 	*types.OrganizationWithBranding,

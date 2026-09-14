@@ -54,6 +54,7 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 - Use `new(value)` to obtain a `*T` from a typed value (e.g. `new(types.UserRoleReadOnly)`). Do not use `util.PtrTo`.
 - Use `errors.AsType[E](err)` where the target type is known at the call site, since it needs no pre-declared variable: `if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation`. Keep `errors.As` where the target is an interface a caller passes in.
 - Write 4xx bodies for the end user. The frontend forms display them verbatim (`getFormDisplayedError`), so put anything only a developer can use into the log instead.
+- Hash a credential that is CSPRNG output, an access token secret being the example, with the digest in `internal/authkey`, and have the statement that looks it up also check the expiration and record the use (`db.AuthenticateAccessToken`). Never read the row, compare in Go and write it back, which authenticates a credential revoked in between. Keep the argon2id hashing in `internal/security` for what a human chose (passwords) and for long-lived shared secrets (deployment target keys).
 
 ## Frontend Code
 

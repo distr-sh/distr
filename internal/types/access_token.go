@@ -7,20 +7,95 @@ import (
 	"github.com/google/uuid"
 )
 
-type AccessToken struct {
-	ID             uuid.UUID   `db:"id"`
-	CreatedAt      time.Time   `db:"created_at"`
-	ExpiresAt      *time.Time  `db:"expires_at"`
-	LastUsedAt     *time.Time  `db:"last_used_at"`
-	Label          *string     `db:"label"`
-	Key            authkey.Key `db:"key"`
-	UserAccountID  uuid.UUID   `db:"user_account_id"`
-	OrganizationID uuid.UUID   `db:"organization_id"`
-	UserRole       *UserRole   `db:"token_user_role"`
+type AccessTokenSecretSlot int
+
+const (
+	AccessTokenSecretSlot1 AccessTokenSecretSlot = 1
+	AccessTokenSecretSlot2 AccessTokenSecretSlot = 2
+)
+
+var AccessTokenSecretSlots = []AccessTokenSecretSlot{AccessTokenSecretSlot1, AccessTokenSecretSlot2}
+
+func (slot AccessTokenSecretSlot) Valid() bool {
+	return slot == AccessTokenSecretSlot1 || slot == AccessTokenSecretSlot2
 }
 
-func (tok AccessToken) HasExpired() bool {
-	return tok.ExpiresAt == nil || tok.ExpiresAt.After(time.Now())
+func (slot AccessTokenSecretSlot) Other() AccessTokenSecretSlot {
+	if slot == AccessTokenSecretSlot1 {
+		return AccessTokenSecretSlot2
+	}
+	return AccessTokenSecretSlot1
+}
+
+type AccessTokenSecret struct {
+	Hash      []byte    `db:"hash"`
+	CreatedAt time.Time `db:"created_at"`
+	// ExpiresAt is fixed when the secret is created: a token is kept alive by adding a secret that
+	// expires later, not by moving an expiration that something in circulation already relies on.
+	ExpiresAt  *time.Time `db:"expires_at"`
+	LastUsedAt *time.Time `db:"last_used_at"`
+}
+
+type AccessToken struct {
+	ID        uuid.UUID `db:"id"`
+	CreatedAt time.Time `db:"created_at"`
+	// Deprecated: Set only for a token that predates secrets. Every other token expires with the
+	// secrets that authenticate it, so nothing writes this column anymore.
+	ExpiresAt      *time.Time         `db:"expires_at"`
+	LastUsedAt     *time.Time         `db:"last_used_at"`
+	Label          *string            `db:"label"`
+	Key            authkey.Key        `db:"key"`
+	Secret1        *AccessTokenSecret `db:"secret_1"`
+	Secret2        *AccessTokenSecret `db:"secret_2"`
+	UserAccountID  uuid.UUID          `db:"user_account_id"`
+	OrganizationID uuid.UUID          `db:"organization_id"`
+	UserRole       *UserRole          `db:"token_user_role"`
+}
+
+func (tok AccessToken) Secret(slot AccessTokenSecretSlot) *AccessTokenSecret {
+	if slot == AccessTokenSecretSlot1 {
+		return tok.Secret1
+	}
+	return tok.Secret2
+}
+
+func (tok AccessToken) HasSecrets() bool {
+	return tok.Secret1 != nil || tok.Secret2 != nil
+}
+
+// KeyID returns the part of the token that identifies it, in the encoding its owner finds at the
+// beginning of the token itself, which for a token that predates secrets is the hex encoding it was
+// issued in. Only half of the key is disclosed, so that a token which is nothing but its key cannot
+// be recovered from the list of tokens it appears in.
+func (tok AccessToken) KeyID() string {
+	if !tok.HasSecrets() {
+		return tok.Key.LegacyID()
+	}
+	return tok.Key.ID()
+}
+
+func (tok AccessToken) FreeSecretSlot() *AccessTokenSecretSlot {
+	for _, slot := range AccessTokenSecretSlots {
+		if tok.Secret(slot) == nil {
+			return &slot
+		}
+	}
+	return nil
+}
+
+// AccessTokenRoleAllowed compares the role a token would act under, which for a token without an
+// explicit role is the role its owner has in the organization, against the role of the caller
+// creating or changing it, so that a credential restricted below its owner cannot hand out more
+// than it has.
+func AccessTokenRoleAllowed(tokenRole, callerRole *UserRole, membershipRole UserRole) bool {
+	if callerRole == nil {
+		return false
+	}
+	effective := membershipRole
+	if tokenRole != nil {
+		effective = *tokenRole
+	}
+	return !effective.GreaterThan(*callerRole)
 }
 
 type AccessTokenWithUserAccount struct {
