@@ -97,6 +97,7 @@ func mainLoop(ctx context.Context) {
 	tick := time.Tick(agentenv.Interval)
 	logsGoroutine := util.NewToggleableGoroutine(logWatcher.Watch)
 	deploymentMetricsGoroutine := util.NewToggleableGoroutine(watchDeploymentMetrics)
+	imageDiskUsageGoroutine := util.NewToggleableGoroutine(watchImageDiskUsage)
 
 loop:
 	for ctx.Err() == nil {
@@ -124,6 +125,7 @@ loop:
 				stopMetrics(ctx)
 			}
 			deploymentMetricsGoroutine.GoOrCancel(ctx, resource.MetricsEnabled)
+			imageDiskUsageGoroutine.GoOrCancel(ctx, resource.MetricsEnabled)
 
 			deployments, err := GetExistingDeployments()
 			if err != nil {
