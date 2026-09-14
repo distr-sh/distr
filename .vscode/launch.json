@@ -3,11 +3,11 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch Hub",
+      "name": "Launch Distr",
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "${workspaceFolder}/cmd/hub",
+      "program": "${workspaceFolder}/cmd/distr",
       "args": ["serve"],
       "cwd": "${workspaceFolder}",
       "env": {

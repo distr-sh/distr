@@ -110,7 +110,7 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           env:
-            {{- include "distr.hubEnv" . | nindent 12 }}
+            {{- include "distr.env" . | nindent 12 }}
             {{- if .Values.distr.scratch.enabled }}
             - name: REGISTRY_SCRATCH_DIR
               value: {{ .Values.distr.scratch.mountPath | quote }}

@@ -57,7 +57,7 @@ spec:
                 {{- toYaml . | nindent 16 }}
               {{- end }}
               env:
-                {{- include "distr.hubEnv" $ | nindent 16 }}
+                {{- include "distr.env" $ | nindent 16 }}
               {{- with $job.resources | default $.Values.cronJobResources }}
               resources:
                 {{- toYaml . | nindent 16 }}

@@ -119,7 +119,7 @@ Return the PostgreSQL Secret Name
 {{- end -}}
 {{- end -}}
 
-{{- define "distr.hubEnv" -}}
+{{- define "distr.env" -}}
 {{- if .Values.postgresql.enabled }}
 - name: DATABASE_PASSWORD
   valueFrom:

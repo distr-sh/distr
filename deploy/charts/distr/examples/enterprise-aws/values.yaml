@@ -28,7 +28,7 @@ imagePullSecrets:
 
 serviceAccount:
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/distr-hub
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/distr
 
 distr:
   # Helm replaces the whole list rather than merging it, so every variable Distr needs has to be
