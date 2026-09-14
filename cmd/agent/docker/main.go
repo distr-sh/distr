@@ -97,6 +97,7 @@ func mainLoop(ctx context.Context) {
 	tick := time.Tick(agentenv.Interval)
 	logsGoroutine := util.NewToggleableGoroutine(logWatcher.Watch)
 	deploymentMetricsGoroutine := util.NewToggleableGoroutine(watchDeploymentMetrics)
+	imageDiskUsageGoroutine := util.NewToggleableGoroutine(watchImageDiskUsage)
 
 loop:
 	for ctx.Err() == nil {
@@ -124,6 +125,7 @@ loop:
 				stopMetrics(ctx)
 			}
 			deploymentMetricsGoroutine.GoOrCancel(ctx, resource.MetricsEnabled)
+			imageDiskUsageGoroutine.GoOrCancel(ctx, resource.MetricsEnabled)
 
 			deployments, err := GetExistingDeployments()
 			if err != nil {
@@ -186,6 +188,11 @@ loop:
 							}
 						}()
 					} else {
+						if *deployment.DockerType == types.DockerTypeCompose {
+							if err1 := EnsureComposeProjectDir(deployment); err1 != nil {
+								logger.Warn("could not write compose project directory", zap.Error(err1))
+							}
+						}
 						if statusType1, statusMessage, err1 := CheckStatus(ctx, *agentDeployment); err1 != nil {
 							err = errors.Join(err, err1)
 						} else {
@@ -292,6 +299,10 @@ func cleanupOldDeployments(ctx context.Context, resource api.AgentResource, depl
 
 			if err := DeleteDeployment(deployment); err != nil {
 				logger.Warn("could not delete deployment", zap.Error(err))
+			}
+
+			if err := DeleteComposeProjectDir(deployment.ID); err != nil {
+				logger.Warn("could not delete compose project directory", zap.Error(err))
 			}
 
 			logWatcher.CleanupLogsTimestamps(deployment)

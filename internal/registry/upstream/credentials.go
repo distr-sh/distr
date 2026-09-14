@@ -40,8 +40,8 @@ func credentialForArtifact(artifact *types.Artifact) auth.CredentialFunc {
 				return auth.Credential{}, fmt.Errorf("missing upstream credentials for artifact %s", artifact.ID)
 			}
 		}
-		username := *artifact.UpstreamUsername
-		password := *artifact.UpstreamPassword
+		username := string(*artifact.UpstreamUsername)
+		password := string(*artifact.UpstreamPassword)
 		return func(_ context.Context, _ string) (auth.Credential, error) {
 			return auth.Credential{Username: username, Password: password}, nil
 		}
@@ -98,8 +98,8 @@ func getECRCredential(ctx context.Context, artifact *types.Artifact) (auth.Crede
 		cfg, err := config.LoadDefaultConfig(ctx,
 			config.WithRegion(region),
 			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
-				*artifact.UpstreamUsername,
-				*artifact.UpstreamPassword,
+				string(*artifact.UpstreamUsername),
+				string(*artifact.UpstreamPassword),
 				"",
 			)),
 		)

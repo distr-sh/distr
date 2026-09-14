@@ -1,8 +1,8 @@
-# Distr Enterprise on AWS, the counterpart of deploy/docker/enterprise-aws: the hub on EKS, the
+# Distr Enterprise on AWS, the counterpart of deploy/docker/enterprise-aws: Distr on EKS, the
 # database on RDS for PostgreSQL and both buckets on S3 in the region of the cluster. Nothing is
 # stored in the cluster, so the release can be replaced at any time.
 #
-# The hub and Loki reach their buckets through IRSA rather than static keys, which is why no access
+# Distr and Loki reach their buckets through IRSA rather than static keys, which is why no access
 # keys appear below: the AWS SDK picks up the web identity credentials of the annotated service
 # accounts by itself.
 #
@@ -10,7 +10,8 @@
 #   - a pull secret "distr-registry" for the enterprise image, from the credentials you received
 #     from us: kubectl create secret docker-registry distr-registry --docker-server=registry.distr.sh ...
 #   - a secret "distr-license" with the key licenseKey
-#   - a secret "distr-secrets" with the key jwtSecret (openssl rand -base64 32)
+#   - a secret "distr-secrets" with the keys jwtSecret and databaseEncryptionKey,
+#     each generated with "openssl rand -base64 32"
 #   - a secret "distr-database" with the key uri, holding the RDS connection URI
 #   - the two buckets, private, with versioning off and a lifecycle rule that aborts incomplete
 #     multipart uploads
@@ -27,10 +28,10 @@ imagePullSecrets:
 
 serviceAccount:
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/distr-hub
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/distr
 
-hub:
-  # Helm replaces the whole list rather than merging it, so every variable the hub needs has to be
+distr:
+  # Helm replaces the whole list rather than merging it, so every variable Distr needs has to be
   # in this one.
   env:
     # When this release is deployed by a Distr agent, use the template reference of the license key
@@ -48,6 +49,13 @@ hub:
         secretKeyRef:
           name: distr-secrets
           key: jwtSecret
+    # Encrypts the sensitive columns of the database. Back this key up separately from the
+    # database: a dump is worthless without it, and so is your data if you lose it.
+    - name: DATABASE_ENCRYPTION_KEY
+      valueFrom:
+        secretKeyRef:
+          name: distr-secrets
+          key: databaseEncryptionKey
     - name: REGISTRY_ENABLED
       value: 'true'
     - name: REGISTRY_HOST
@@ -62,7 +70,7 @@ hub:
     - name: REGISTRY_S3_USE_PATH_STYLE
       value: 'false'
     # Answers layer downloads with a redirect to a pre-signed S3 URL, which keeps pull bandwidth
-    # off the hub. Turn it off if your clients cannot reach S3 directly.
+    # off Distr. Turn it off if your clients cannot reach S3 directly.
     - name: REGISTRY_S3_ALLOW_REDIRECT
       value: 'true'
     - name: LOKI_URL

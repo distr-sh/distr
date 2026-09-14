@@ -141,6 +141,7 @@ func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 	}
 
 	existing := internalctx.GetApplicationEntitlement(ctx)
+	entitlement.OrganizationID = existing.OrganizationID
 	if entitlement.ID == uuid.Nil {
 		entitlement.ID = existing.ID
 	} else if entitlement.ID != existing.ID {

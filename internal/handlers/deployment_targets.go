@@ -211,7 +211,7 @@ func updateDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 	if dt.AgentVersion.ID != uuid.Nil {
 		dt.AgentVersionID = &dt.AgentVersion.ID
 	} else if dt.AutomaticUpdatesEnabled {
-		// Without this, enabling automatic updates would only take effect on the next hub restart.
+		// Without this, enabling automatic updates would only take effect on the next restart.
 		agentVersion, err := db.GetCurrentAgentVersion(ctx)
 		if err != nil {
 			log.Warn("could not get current agent version", zap.Error(err))

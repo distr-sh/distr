@@ -8,7 +8,7 @@ x-logging: &default-logging
 
 # Self-contained community edition stack for local use. It brings its own postgres and
 # object storage and publishes the app and registry on localhost without TLS. To serve
-# public hostnames, use deploy/docker/community, which puts caddy in front of the hub.
+# public hostnames, use deploy/docker/community, which puts caddy in front of distr.
 services:
   postgres:
     image: 'postgres:18.6-alpine3.23'
@@ -27,8 +27,8 @@ services:
       retries: 6
       start_period: 30s
 
-  hub:
-    image: ghcr.io/distr-sh/distr-ce:3.5.0 # x-release-please-version
+  distr:
+    image: ghcr.io/distr-sh/distr-ce:3.5.1 # x-release-please-version
     depends_on:
       postgres:
         condition: service_healthy
@@ -37,9 +37,9 @@ services:
         condition: service_healthy
       loki:
         condition: service_started
-    # The hub runs as a nonroot user (UID 65532), but a freshly created named volume
+    # Distr runs as a nonroot user (UID 65532), but a freshly created named volume
     # is owned by root, so this init container fixes ownership of the scratch volume
-    # before the hub starts. It requires Docker Compose >= 5.3.0.
+    # before Distr starts. It requires Docker Compose >= 5.3.0.
     pre_start:
       - image: 'busybox:1.38.0'
         command: ['chown', '65532:65532', '/scratch']
@@ -59,7 +59,7 @@ services:
   # If you don't want to use the OCI registry (REGISTRY_ENABLED=false) or want to use an external S3 provider,
   # you don't need to run the storage service.
   storage:
-    image: 'rustfs/rustfs:1.0.0-beta.8'
+    image: 'rustfs/rustfs:1.0.0-rc.6'
     volumes:
       - 'rustfs:/data/'
     environment:

@@ -7,12 +7,12 @@ global:
     # -- Allow the legacy Bitnami images the bundled PostgreSQL subchart is pinned to.
     allowInsecureImages: true
 
-# -- Number of hub [replicas](https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/).
+# -- Number of Distr [replicas](https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/).
 # Ignored when `autoscaling.enabled` is true.
 replicaCount: 2
 
 # -- [Deployment strategy](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy)
-# of the hub. Empty means the Kubernetes default.
+# of Distr. Empty means the Kubernetes default.
 strategy: {}
   # type: RollingUpdate
   # rollingUpdate:
@@ -20,12 +20,12 @@ strategy: {}
   #   maxUnavailable: 25%
 
 image:
-  # -- Hub [image](https://kubernetes.io/docs/concepts/containers/images/) repository. The community
+  # -- Distr [image](https://kubernetes.io/docs/concepts/containers/images/) repository. The community
   # edition is the default; the enterprise edition is `registry.distr.sh/enterprise/distr-ee`.
   repository: ghcr.io/distr-sh/distr-ce
-  # -- Hub image pull policy.
+  # -- Distr image pull policy.
   pullPolicy: IfNotPresent
-  # -- Hub image tag.
+  # -- Distr image tag.
   # @default -- the chart appVersion
   tag: ''
 
@@ -39,9 +39,9 @@ fullnameOverride: ''
 
 serviceAccount:
   # -- Create a [service account](https://kubernetes.io/docs/concepts/security/service-accounts/)
-  # for the hub.
+  # for Distr.
   create: true
-  # -- Automatically mount the service account's API credentials into the hub pods.
+  # -- Automatically mount the service account's API credentials into the Distr pods.
   automount: true
   # -- Annotations to add to the service account.
   annotations: {}
@@ -49,8 +49,8 @@ serviceAccount:
   # `serviceAccount.create` is true.
   name: ''
 
-hub:
-  # -- Environment of the hub container. This is where Distr itself is configured; see the
+distr:
+  # -- Environment of the Distr container. This is where Distr itself is configured; see the
   # [configuration reference](https://distr.sh/docs/self-hosting/configuration/) for every
   # supported variable, and the commented-out entries in this file for the common ones.
   # @default -- see the values file
@@ -96,6 +96,27 @@ hub:
       #   secretKeyRef:
       #     name: ""
       #     key: ""
+    # The base64 encoded key that sensitive database columns are encrypted with.
+    # Can be generated with `openssl rand -base64 32`. Losing it makes every encrypted value
+    # unreadable, so back it up separately from the database.
+    # Rotating it takes two rollouts with more than one replica, see
+    # https://distr.sh/docs/self-hosting/security/#rotating-the-key
+    - name: DATABASE_ENCRYPTION_KEY
+      value: 8fVQ3nZ5kL0xR7cWtYbA1sJmEuHpDgNiO2vXqTzKcRo=
+      # We recommend reading the encryption key from a secretKeyRef
+      # valueFrom:
+      #   secretKeyRef:
+      #     name: ""
+      #     key: ""
+    # Both secrets above, and LICENSE_KEY_PRIVATE_KEY, can instead hold a "kms:<base64 ciphertext>"
+    # value that is unwrapped with AWS KMS or GCP Cloud KMS during startup, so that no key material
+    # is stored in the cluster. See
+    # https://distr.sh/docs/self-hosting/security/
+    # Name the key of exactly one service, which is also what selects it:
+    # - name: KMS_AWS_KEY_ID
+    #   value: 'arn:aws:kms:eu-central-1:123456789012:key/00000000-0000-0000-0000-000000000000'
+    # - name: KMS_GCP_KEY_NAME
+    #   value: 'projects/my-project/locations/europe-west3/keyRings/distr/cryptoKeys/distr-master'
     - name: MAILER_FROM_ADDRESS
       value: My Distr <noreply@distr.local>
     - name: MAILER_TYPE
@@ -193,14 +214,14 @@ hub:
     # is left alone for 12h before it is checked again; failing ones are checked on every run.
     # - name: CUSTOM_DOMAIN_VERIFICATION_REFRESH_AFTER
     #   value: 12h
-  # -- Sources to populate the hub environment from, e.g. a ConfigMap or Secret reference.
+  # -- Sources to populate the Distr environment from, e.g. a ConfigMap or Secret reference.
   envFrom: []
   scratch:
     # -- Let the OCI registry buffer request bodies in temporary files instead of holding them in
     # memory. This provisions a generic ephemeral volume (a per-pod PVC created and deleted together
     # with the pod) and points REGISTRY_SCRATCH_DIR at its mount path. Requires Kubernetes >= 1.23.
     enabled: false
-    # -- Mount path of the scratch volume, passed to the hub as REGISTRY_SCRATCH_DIR.
+    # -- Mount path of the scratch volume, passed to Distr as REGISTRY_SCRATCH_DIR.
     mountPath: /scratch
     # -- Size requested for the ephemeral scratch volume.
     size: 10Gi
@@ -212,19 +233,19 @@ hub:
       - ReadWriteOnce
 
 # -- [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)
-# to add to the hub pods.
+# to add to the Distr pods.
 podAnnotations: {}
 # -- [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to
-# the hub pods.
+# the Distr pods.
 podLabels: {}
 
-# -- Pod-level security context of the hub pods. The hub image runs as UID/GID 65532.
+# -- Pod-level security context of the Distr pods. The Distr image runs as UID/GID 65532.
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 65532
   fsGroup: 65532
 
-# -- Container-level security context of the hub container.
+# -- Container-level security context of the Distr container.
 securityContext: {}
   # capabilities:
   #   drop:
@@ -235,7 +256,7 @@ securityContext: {}
 
 service:
   # -- [Type](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
-  # of the hub Service.
+  # of the Distr Service.
   type: ClusterIP
   # -- Port of the app and API server.
   port: 8080
@@ -246,7 +267,7 @@ service:
 
 ingress:
   # -- Create an [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) for the
-  # hub Service.
+  # Distr Service.
   enabled: false
   # -- Ingress class name, e.g. `nginx`.
   className: ''
@@ -259,7 +280,7 @@ ingress:
     # kubernetes.io/tls-acme: "true"
     # nginx.ingress.kubernetes.io/proxy-body-size: "0"
   # -- Hosts served by the Ingress. The app and the registry are served on separate hosts, routed to
-  # the `http` and `artifacts` ports of the hub Service.
+  # the `http` and `artifacts` ports of the Distr Service.
   # @default -- see the values file
   hosts:
     - host: distr.local
@@ -280,7 +301,7 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
-# -- Resource requests and limits of the hub container. Left empty deliberately so the chart also
+# -- Resource requests and limits of the Distr container. Left empty deliberately so the chart also
 # runs on clusters with few resources, such as Minikube. Uncomment and adjust the lines below to
 # specify resources.
 resources: {}
@@ -292,7 +313,7 @@ resources: {}
   #   memory: 256Mi
 
 # -- [Startup probe](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
-# of the hub container. It allows up to 5 minutes (failureThreshold * periodSeconds) for the hub to
+# of the Distr container. It allows up to 5 minutes (failureThreshold * periodSeconds) for Distr to
 # come up before the liveness and readiness probes take over.
 startupProbe:
   httpGet:
@@ -300,23 +321,23 @@ startupProbe:
     port: http
   periodSeconds: 10
   failureThreshold: 30
-# -- Liveness probe of the hub container.
+# -- Liveness probe of the Distr container.
 livenessProbe:
   httpGet:
     path: /
     port: http
-# -- Readiness probe of the hub container.
+# -- Readiness probe of the Distr container.
 readinessProbe:
   httpGet:
     path: /
     port: http
 
-# -- Seconds the hub pod is given to terminate gracefully after receiving a shutdown signal.
+# -- Seconds the Distr pod is given to terminate gracefully after receiving a shutdown signal.
 terminationGracePeriodSeconds: 60
 
 autoscaling:
   # -- Create a [HorizontalPodAutoscaler](https://kubernetes.io/docs/concepts/workloads/autoscaling/)
-  # for the hub, which takes precedence over `replicaCount`.
+  # for Distr, which takes precedence over `replicaCount`.
   enabled: false
   # -- Lower bound of the autoscaler.
   minReplicas: 2
@@ -327,38 +348,38 @@ autoscaling:
   # targetMemoryUtilizationPercentage: 80
 
 podDisruptionBudget:
-  # -- Keep voluntary disruptions (node drains, cluster upgrades) from taking down all hub replicas
-  # at once. Only the hub pods are covered; the cronjob pods run to completion and are not part of
+  # -- Keep voluntary disruptions (node drains, cluster upgrades) from taking down all Distr replicas
+  # at once. Only the Distr pods are covered; the cronjob pods run to completion and are not part of
   # the budget.
   enabled: true
-  # -- Hub replicas that may be unavailable during a voluntary disruption. Mutually exclusive with
+  # -- Distr replicas that may be unavailable during a voluntary disruption. Mutually exclusive with
   # `minAvailable`, which is why this one is set by default: a minAvailable budget would block node
   # drains indefinitely when replicaCount is 1.
   maxUnavailable: 1
-  # -- Hub replicas that must stay available during a voluntary disruption. Mutually exclusive with
+  # -- Distr replicas that must stay available during a voluntary disruption. Mutually exclusive with
   # `maxUnavailable`.
   minAvailable: ''
 
-# -- Additional volumes of the hub pods.
+# -- Additional volumes of the Distr pods.
 volumes: []
 # - name: foo
 #   secret:
 #     secretName: mysecret
 #     optional: false
 
-# -- Additional volume mounts of the hub container.
+# -- Additional volume mounts of the Distr container.
 volumeMounts: []
 # - name: foo
 #   mountPath: "/etc/foo"
 #   readOnly: true
 
-# -- Node selector of the hub pods.
+# -- Node selector of the Distr pods.
 nodeSelector: {}
 
-# -- Tolerations of the hub pods.
+# -- Tolerations of the Distr pods.
 tolerations: []
 
-# -- Affinity of the hub pods.
+# -- Affinity of the Distr pods.
 affinity: {}
 
 # @default -- see the values file
@@ -370,7 +391,7 @@ cronJobResources: {}
   #   cpu: 100m
   #   memory: 64Mi
 
-# -- Maintenance CronJobs run against the database, each executing the hub image with `args`. Removing
+# -- Maintenance CronJobs run against the database, each executing the Distr image with `args`. Removing
 # an entry disables that job; the commented-out `organization-cleanup` job deletes organizations that
 # have been marked for deletion.
 cronJobs:
@@ -409,13 +430,13 @@ cronJobs:
 
 # Plain Caddy deployment for automated custom domain configuration: vendors bring their
 # own domain via a CNAME record pointing at this Caddy's LoadBalancer. Caddy issues
-# certificates on demand (on the first TLS handshake), authorized per domain by the hub's
+# certificates on demand (on the first TLS handshake), authorized per domain by Distr's
 # internal caddy-ask endpoint, and routes /v2/* to the registry and everything else to the
 # app. Disabled by default.
 caddy:
   # -- Deploy the Caddy reverse proxy that terminates TLS for customer-configured custom domains.
   # The CNAME target customers point their domains at is configured as CUSTOM_DOMAIN_TARGET in
-  # `hub.env`, which is also what makes the feature available in the UI.
+  # `distr.env`, which is also what makes the feature available in the UI.
   enabled: false
   # -- Number of Caddy replicas. Anything above 1 requires certificate storage that all replicas
   # share, either a `ReadWriteMany` volume (see `caddy.persistence.accessModes`) or a `caddy.storage`
@@ -477,7 +498,7 @@ caddy:
       - ReadWriteOnce
   service:
     # -- Type of the public Caddy Service. It must be reachable under the CNAME targets configured
-    # in `hub.env`.
+    # in `distr.env`.
     type: LoadBalancer
     # -- Annotations of the public Caddy Service. The chart stays generic: set cloud-specific
     # annotations here. The commented-out ones provision an AWS Network Load Balancer. The Service
@@ -489,13 +510,13 @@ caddy:
       # service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
       # service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
       # service.beta.kubernetes.io/aws-load-balancer-enable-tcp-udp-listener: 'true'
-  # -- Port Caddy reaches the hub's on-demand TLS ask endpoint on. It is passed to the hub as
+  # -- Port Caddy reaches Distr's on-demand TLS ask endpoint on. It is passed to Distr as
   # INTERNAL_SERVER_ADDR, the address of its internal server, and must never be exposed publicly.
   askServerPort: 8085
   # -- Resource requests and limits of the Caddy container. Left empty deliberately so the chart also
   # runs on clusters with few resources, such as Minikube. Uncomment and adjust the lines below to
   # specify resources. Keep in mind that Caddy terminates TLS for all custom domain traffic,
-  # including registry pushes, which it streams to the hub without buffering or a size limit.
+  # including registry pushes, which it streams to Distr without buffering or a size limit.
   resources: {}
     # limits:
     #   cpu: 1000m
@@ -572,12 +593,12 @@ rustfs:
 # an S3-compatible object storage bucket (by default the in-cluster rustfs, using a
 # dedicated "loki" bucket that is provisioned by an init container).
 # Set loki.enabled to false to use an externally managed Loki instance instead and point
-# LOKI_URL (and the optional LOKI_* auth variables) in hub.env at it.
+# LOKI_URL (and the optional LOKI_* auth variables) in distr.env at it.
 loki:
-  # -- Deploy the bundled Loki subchart. When disabled, point `LOKI_URL` in `hub.env` at an
+  # -- Deploy the bundled Loki subchart. When disabled, point `LOKI_URL` in `distr.env` at an
   # externally managed Loki instance.
   enabled: true
-  # -- Name of the Loki resources. The default is referenced by `LOKI_URL` in `hub.env`.
+  # -- Name of the Loki resources. The default is referenced by `LOKI_URL` in `distr.env`.
   fullnameOverride: distr-loki
   # -- Loki deployment mode. Monolithic is sufficient for the log volume Distr produces.
   deploymentMode: Monolithic
@@ -663,7 +684,7 @@ loki:
           - name: RCLONE_CONFIG_STORAGE_SECRET_ACCESS_KEY
             value: distr123
   gateway:
-    # -- Deploy Loki's nginx gateway. Not needed: the hub talks to Loki directly.
+    # -- Deploy Loki's nginx gateway. Not needed: Distr talks to Loki directly.
     enabled: false
   lokiCanary:
     # -- Deploy the Loki canary, which continuously probes log delivery.

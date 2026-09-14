@@ -4,11 +4,11 @@
 // see: https://zed.dev/docs/debugger
 [
   {
-    "label": "Run Hub",
+    "label": "Run Distr",
     "adapter": "Delve",
     "request": "launch",
     "mode": "debug",
-    "program": "./cmd/hub",
+    "program": "./cmd/distr",
     "args": ["serve"],
     "envFile": ".env.development.local",
     "buildFlags": []

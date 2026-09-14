@@ -1,6 +1,7 @@
 package env
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -10,15 +11,22 @@ import (
 
 	"github.com/distr-sh/distr/internal/envparse"
 	"github.com/distr-sh/distr/internal/envutil"
+	"github.com/distr-sh/distr/internal/kms"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/joho/godotenv"
 )
+
+// kmsResolveTimeout bounds the requests to the key management service, which happen before
+// anything of this process runs that could cancel them.
+const kmsResolveTimeout = 30 * time.Second
 
 var (
 	databaseUrl                            string
 	databaseMaxConns                       *int
 	databaseReadonlyUrl                    *string
 	databaseReadonlyMaxConns               *int
+	databaseEncryptionKey                  string
+	databaseEncryptionMigrateOnBoot        bool
 	jwtSecret                              []byte
 	host                                   string
 	registryHost                           string
@@ -126,7 +134,25 @@ func Initialize() {
 	databaseMaxConns = envutil.GetEnvParsedOrNil("DATABASE_MAX_CONNS", strconv.Atoi)
 	databaseReadonlyUrl = envutil.GetEnvOrNil("DATABASE_READONLY_URL")
 	databaseReadonlyMaxConns = envutil.GetEnvParsedOrNil("DATABASE_READONLY_MAX_CONNS", strconv.Atoi)
-	jwtSecret = envutil.RequireEnvParsed("JWT_SECRET", base64.StdEncoding.DecodeString)
+
+	ctx, cancel := context.WithTimeout(context.Background(), kmsResolveTimeout)
+	defer cancel()
+	resolver := util.Require(kms.New(ctx, kms.Config{
+		AWS: kms.AWSConfig{
+			KeyID:    envutil.GetEnv("KMS_AWS_KEY_ID"),
+			Region:   envutil.GetEnvOrNil("KMS_AWS_REGION"),
+			Endpoint: envutil.GetEnvOrNil("KMS_AWS_ENDPOINT"),
+		},
+		GCP: kms.GCPConfig{KeyName: envutil.GetEnv("KMS_GCP_KEY_NAME")},
+	}))
+	defer func() { _ = resolver.Close() }()
+
+	databaseEncryptionKey = requireEnvResolved(ctx, resolver, "DATABASE_ENCRYPTION_KEY")
+	databaseEncryptionMigrateOnBoot = envutil.GetEnvParsedOrDefault(
+		"DATABASE_ENCRYPTION_MIGRATE_ON_BOOT", strconv.ParseBool, false,
+	)
+	jwtSecret = util.Require(envutil.ParseValue("JWT_SECRET",
+		requireEnvResolved(ctx, resolver, "JWT_SECRET"), base64.StdEncoding.DecodeString))
 	host = envutil.RequireEnv("DISTR_HOST")
 	agentInterval = envutil.GetEnvParsedOrDefault("AGENT_INTERVAL", envparse.PositiveDuration, 5*time.Second)
 	statusEntriesMaxAge = envutil.GetEnvParsedOrNil("STATUS_ENTRIES_MAX_AGE", envparse.PositiveDuration)
@@ -286,7 +312,7 @@ func Initialize() {
 	)
 	stripeAPIKey = envutil.GetEnvOrNil("STRIPE_API_KEY")
 
-	if pem := envutil.GetEnvOrNil("LICENSE_KEY_PRIVATE_KEY"); pem != nil {
+	if pem := getEnvResolvedOrNil(ctx, resolver, "LICENSE_KEY_PRIVATE_KEY"); pem != nil {
 		licenseKeyPrivateKeyPEM = []byte(*pem)
 	}
 
@@ -321,6 +347,21 @@ func Initialize() {
 	maintenanceMode = envutil.GetEnvParsedOrDefault("MAINTENANCE_MODE", strconv.ParseBool, false)
 }
 
+// requireEnvResolved reads a required variable whose value may be wrapped with a key management
+// service instead of being the secret itself.
+func requireEnvResolved(ctx context.Context, resolver *kms.Resolver, key string) string {
+	return util.Require(resolver.Resolve(ctx, key, envutil.RequireEnv(key)))
+}
+
+// getEnvResolvedOrNil is [requireEnvResolved] for an optional variable.
+func getEnvResolvedOrNil(ctx context.Context, resolver *kms.Resolver, key string) *string {
+	value := envutil.GetEnvOrNil(key)
+	if value == nil {
+		return nil
+	}
+	return new(util.Require(resolver.Resolve(ctx, key, *value)))
+}
+
 func DatabaseUrl() string {
 	return databaseUrl
 }
@@ -344,6 +385,18 @@ func DatabaseReadonlyUrl() *string {
 // DatabaseReadonlyMaxConns allows to override the MaxConns parameter of the read-only pgx pool config.
 func DatabaseReadonlyMaxConns() *int {
 	return databaseReadonlyMaxConns
+}
+
+// DatabaseEncryptionKey is the raw spec of the keyring. Pass it to dbcrypto.Init rather than parsing
+// it anywhere else, and read the keyring itself through dbcrypto.Keys.
+func DatabaseEncryptionKey() string {
+	return databaseEncryptionKey
+}
+
+// DatabaseEncryptionMigrateOnBoot makes the server encrypt every value that is still stored in
+// plaintext during startup, which is the alternative to running `distr maintenance encrypt-database`.
+func DatabaseEncryptionMigrateOnBoot() bool {
+	return databaseEncryptionMigrateOnBoot
 }
 
 func JWTSecret() []byte {

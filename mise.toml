@@ -8,9 +8,9 @@ go = "1.27.1"
 golangci-lint = "2.13.2"
 helm-docs = "1.14.2"
 watchexec = "2.7.2"
-pnpm = "12.3.4"
-stripe = "1.50.10"
-"go:github.com/go-delve/delve/cmd/dlv" = "1.27.1"
+pnpm = "12.4.1"
+stripe = "1.50.11"
+"go:github.com/go-delve/delve/cmd/dlv" = "1.27.2"
 git-lfs = "3.8.0"
 
 [env]
@@ -60,12 +60,12 @@ sources = [
   "package.json",
 ]
 
-[tasks."build:hub:community"]
-run = 'go build -ldflags="{{vars.ldflags}} -X github.com/distr-sh/distr/internal/buildconfig.edition=community" -o dist/distr ./cmd/hub'
+[tasks."build:distr:community"]
+run = 'go build -ldflags="{{vars.ldflags}} -X github.com/distr-sh/distr/internal/buildconfig.edition=community" -o dist/distr ./cmd/distr'
 depends = ["go-tidy", "build:frontend:community"]
 
-[tasks."build:hub:enterprise"]
-run = 'go build -ldflags="{{vars.ldflags}} -X github.com/distr-sh/distr/internal/buildconfig.edition=enterprise" -o dist/distr ./cmd/hub'
+[tasks."build:distr:enterprise"]
+run = 'go build -ldflags="{{vars.ldflags}} -X github.com/distr-sh/distr/internal/buildconfig.edition=enterprise" -o dist/distr ./cmd/distr'
 depends = ["go-tidy", "build:frontend:enterprise"]
 
 [tasks."build:website"]
@@ -103,7 +103,7 @@ dir = "website"
 
 [tasks."lint:app"]
 run = { tasks = ["lint:go", "lint:frontend", "lint:migrations"] }
-description = 'Lint hub and agents, without the website'
+description = 'Lint Distr and the agents, without the website'
 
 [tasks.lint]
 run = { tasks = ["lint:app", "lint:website"] }
@@ -144,31 +144,31 @@ description = 'Format the website. Also deletes unused images'
 
 [tasks."format:app"]
 run = { tasks = ["format:go", "format:frontend"] }
-description = 'Format hub and agents, without the website'
+description = 'Format Distr and the agents, without the website'
 
 [tasks.format]
 run = { tasks = ["format:app", "format:website"] }
 
-[tasks."run:hub:serve"]
-run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/hub/ serve'
-description = 'Only starts the hub, it will not serve the frontend on that port. Protip: "mise watch run:hub:serve -r"'
-depends = ["go-tidy"]
-sources = ["api/**/*.go", "cmd/**/*.go", "internal/**/*.go"]
-
-
-[tasks."run:all:serve"]
-alias = "serve"
-run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/hub/ serve'
-description = 'Builds the frontend and starts the hub server incl. serving the frontend. Protip: auto-reload with "mise watch serve -r"'
+[tasks.distr]
+run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/distr/'
+description = """
+Run Distr with arbitrary arguments: "mise run distr arg1 arg2...".
+Examples:
+  - "mise run distr serve"
+  - "mise run distr migrate --to ..."
+  - "mise run distr maintenance encrypt-database"
+Try "mise run distr help" to explore the available commands.
+Protip: "mise watch -r distr serve" to auto-reload on code changes.
+"""
 depends = ["go-tidy", "build:frontend:dev"]
+# sources are what "mise watch" reacts to. The empty outputs keep mise from
+# skipping the task as up-to-date when they have not changed since the last run.
 sources = ["api/**/*.go", "cmd/**/*.go", "internal/**/*.go"]
+outputs = []
 
-[tasks."run:hub:db-migrate"]
-run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/hub/ migrate'
-description = 'Migrate the database to the latest schema version. Protip: `mise run:hub:db-migrate -- --to xx` to migrate to a specific version'
-
-[tasks."run:hub:db-purge"]
-run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/hub/ migrate --down'
+[tasks.serve]
+run = {tasks = ["distr serve"]}
+description = "Shorthand for 'mise run distr serve'"
 
 [tasks."run:agent:docker"]
 run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/agent/docker/ run'
@@ -176,9 +176,9 @@ run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/agent/docker/ run'
 [tasks."run:agent:kubernetes"]
 run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/agent/kubernetes/ run'
 
-[tasks."docker-build:hub"]
-depends = "build:hub:enterprise"
-run = 'cp dist/distr dist/distr-$(go env GOARCH) && docker build -f Dockerfile.hub --tag ghcr.io/distr-sh/distr:$VERSION .'
+[tasks."docker-build:distr"]
+depends = "build:distr:enterprise"
+run = 'cp dist/distr dist/distr-$(go env GOARCH) && docker build -f Dockerfile.distr --tag ghcr.io/distr-sh/distr:$VERSION .'
 
 [tasks."docker-build:agent:docker"]
 run = 'docker build -f Dockerfile.docker-agent --tag ghcr.io/distr-sh/distr/docker-agent:$VERSION --build-arg VERSION=$VERSION --build-arg COMMIT=$COMMIT --network host .'

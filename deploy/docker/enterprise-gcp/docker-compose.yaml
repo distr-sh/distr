@@ -6,7 +6,7 @@ x-logging: &default-logging
     max-size: '10m'
     max-file: '3'
 
-# This stack runs the hub against an externally managed database and S3 compatible
+# This stack runs Distr against an externally managed database and S3 compatible
 # object storage, both configured through .env. If you want a self-contained stack
 # that brings its own postgres and object storage, use deploy/docker/enterprise.
 services:
@@ -16,7 +16,7 @@ services:
   caddy:
     image: 'caddy:2.11.4-alpine'
     depends_on:
-      - hub
+      - distr
     environment:
       DISTR_APP_HOSTNAME: ${DISTR_APP_HOSTNAME}
       DISTR_REGISTRY_HOSTNAME: ${DISTR_REGISTRY_HOSTNAME}
@@ -34,11 +34,11 @@ services:
         }
 
         {$$DISTR_APP_HOSTNAME} {
-        	reverse_proxy hub:8080
+        	reverse_proxy distr:8080
         }
 
         {$$DISTR_REGISTRY_HOSTNAME} {
-        	reverse_proxy hub:8585
+        	reverse_proxy distr:8585
         }
         EOF
         exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
@@ -52,20 +52,20 @@ services:
     restart: always
     logging: *default-logging
 
-  hub:
-    image: registry.distr.sh/enterprise/distr-ee:3.5.0 # x-release-please-version
+  distr:
+    image: registry.distr.sh/enterprise/distr-ee:3.5.1 # x-release-please-version
     depends_on:
       loki:
         condition: service_started
-    # The hub runs as a nonroot user (UID 65532), but a freshly created named volume
+    # Distr runs as a nonroot user (UID 65532), but a freshly created named volume
     # is owned by root, so this init container fixes ownership of the scratch volume
-    # before the hub starts. It requires Docker Compose >= 5.3.0.
+    # before Distr starts. It requires Docker Compose >= 5.3.0.
     pre_start:
       - image: 'busybox:1.38.0'
         command: ['chown', '65532:65532', '/scratch']
     env_file:
       - .env
-    # No ports are exposed on the host. The hub is only reachable through the
+    # No ports are exposed on the host. Distr is only reachable through the
     # caddy reverse proxy on the "proxy" network.
     networks:
       - proxy
@@ -152,12 +152,12 @@ configs:
         ingestion_burst_size_mb: 32
 
 networks:
-  # Public-facing network shared by caddy and the hub only.
+  # Public-facing network shared by caddy and distr only.
   proxy:
-  # Private network for the hub and loki. caddy is intentionally not attached here.
+  # Private network for distr and loki. caddy is intentionally not attached here.
   internal:
     internal: true
-  # Outbound-only network that gives loki a route to the object storage. The hub
+  # Outbound-only network that gives loki a route to the object storage. Distr
   # reaches it through "proxy" instead.
   egress:
 

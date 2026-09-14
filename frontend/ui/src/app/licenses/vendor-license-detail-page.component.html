@@ -35,12 +35,12 @@
                   <div
                     animate.enter="animate-flip-in-top"
                     animate.leave="animate-flip-out-top"
-                    class="origin-top z-10 w-full bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700">
-                    <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefault">
+                    class="distr-dropdown-panel w-full">
+                    <ul aria-labelledby="dropdownDefault">
                       @for (org of customerOrganizations(); track org.id) {
-                        <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                        <li>
                           <a
-                            class="px-4 flex items-stretch"
+                            class="distr-dropdown-item"
                             [routerLink]="['/', 'licenses', org.id]"
                             (click)="breadcrumbDropdown.set(false)">
                             {{ org.name }}

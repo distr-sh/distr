@@ -32,7 +32,7 @@ export abstract class ReactiveList<T> {
           return state;
         }
       }, []),
-      map((ls: T[]) => ls.sort(compareBy(this.sortAttr, this.sortInverted))),
+      map((ls: T[]) => [...ls].sort(compareBy(this.sortAttr, this.sortInverted))),
       shareReplay(1)
     );
   }

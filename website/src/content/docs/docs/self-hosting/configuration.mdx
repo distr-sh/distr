@@ -1,6 +1,6 @@
 ---
 title: Configuration Reference
-description: Complete reference of all environment variables used to configure a self-hosted Distr Hub instance, grouped by area.
+description: Complete reference of all environment variables used to configure a self-hosted Distr instance, grouped by area.
 slug: docs/self-hosting/configuration
 sidebar:
   label: Configuration Reference
@@ -9,8 +9,8 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 
-This page lists all environment variables used to configure a self-hosted Distr Hub.
-Variables marked as **required** must be set for the Hub to start (some are only required when a related feature is enabled).
+This page lists all environment variables used to configure a self-hosted Distr instance.
+Variables marked as **required** must be set for Distr to start (some are only required when a related feature is enabled).
 Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use standard cron syntax (e.g. `0 * * * *`).
 
 <Aside type="tip">
@@ -21,18 +21,20 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 
 ## General
 
-| Variable                           | Required | Default   | Description                                                                                     |
-| ---------------------------------- | -------- | --------- | ----------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                     | yes      | —         | PostgreSQL connection string (e.g. `postgres://user:pass@host:5432/distr`).                     |
-| `DATABASE_MAX_CONNS`               | no       | —         | Overrides the maximum number of connections in the pgx pool.                                    |
-| `JWT_SECRET`                       | yes      | —         | Base64-encoded secret used to sign JWTs. Generate with `openssl rand -base64 32`.               |
-| `DISTR_HOST`                       | yes      | —         | Base URL of your Distr instance. Its scheme is used for every link, callback URL and email.     |
-| `DISTR_ENV`                        | no       | —         | Path to a dotenv file to load on startup (a matching `.secret` file is also loaded if present). |
-| `REGISTRATION`                     | no       | `enabled` | Sign-up mode, see below: `enabled`, `hidden` or `disabled`.                                     |
-| `USER_EMAIL_VERIFICATION_REQUIRED` | no       | `true`    | Whether new users must verify their email address before signing in.                            |
-| `SERVER_SHUTDOWN_DELAY_DURATION`   | no       | —         | Delay between receiving a shutdown signal and stopping the server (useful for rolling deploys). |
-| `ENABLE_QUERY_LOGGING`             | no       | `false`   | Logs all database queries. Intended for debugging only.                                         |
-| `MAINTENANCE_MODE`                 | no       | `false`   | Answers every API and registry request with 503, see below. The frontend keeps being served.    |
+| Variable                              | Required | Default   | Description                                                                                                                                                             |
+| ------------------------------------- | -------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                        | yes      | —         | PostgreSQL connection string (e.g. `postgres://user:pass@host:5432/distr`).                                                                                             |
+| `DATABASE_MAX_CONNS`                  | no       | —         | Overrides the maximum number of connections in the pgx pool.                                                                                                            |
+| `JWT_SECRET`                          | yes      | —         | Base64-encoded secret every token is signed with, see [Security & Encryption](/docs/self-hosting/security#jwt-signing-secret). Generate with `openssl rand -base64 32`. |
+| `DATABASE_ENCRYPTION_KEY`             | yes      | —         | Base64-encoded key that sensitive database columns are encrypted with, see [Security & Encryption](/docs/self-hosting/security#database-encryption).                    |
+| `DATABASE_ENCRYPTION_MIGRATE_ON_BOOT` | no       | `false`   | Encrypt values that are still stored in plaintext during startup. Single instance deployments only.                                                                     |
+| `DISTR_HOST`                          | yes      | —         | Base URL of your Distr instance. Its scheme is used for every link, callback URL and email.                                                                             |
+| `DISTR_ENV`                           | no       | —         | Path to a dotenv file to load on startup (a matching `.secret` file is also loaded if present).                                                                         |
+| `REGISTRATION`                        | no       | `enabled` | Sign-up mode, see below: `enabled`, `hidden` or `disabled`.                                                                                                             |
+| `USER_EMAIL_VERIFICATION_REQUIRED`    | no       | `true`    | Whether new users must verify their email address before signing in.                                                                                                    |
+| `SERVER_SHUTDOWN_DELAY_DURATION`      | no       | —         | Delay between receiving a shutdown signal and stopping the server (useful for rolling deploys).                                                                         |
+| `ENABLE_QUERY_LOGGING`                | no       | `false`   | Logs all database queries. Intended for debugging only.                                                                                                                 |
+| `MAINTENANCE_MODE`                    | no       | `false`   | Answers every API and registry request with 503, see below. The frontend keeps being served.                                                                            |
 
 ### Sign-up modes
 
@@ -47,13 +49,26 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 
 ### Maintenance mode
 
-`MAINTENANCE_MODE=true` announces planned downtime instead of stopping the instance. The Hub keeps serving the
+`MAINTENANCE_MODE=true` announces planned downtime instead of stopping the instance. Distr keeps serving the
 frontend, but answers every API request, including the ones from agents, and every request to the OCI registry with
 `503 Service Unavailable`, so that nothing reaches the database while you work on it. The frontend picks that up and
 shows a maintenance page that reconnects on its own once the instance is back.
 
 The Kubernetes probes target `/`, which keeps being served, so the pod stays in its service, while `/ready` reports
 `503` for the whole maintenance window.
+
+## Key Management Service
+
+Distr unwraps `JWT_SECRET`, `DATABASE_ENCRYPTION_KEY` and `LICENSE_KEY_PRIVATE_KEY` with AWS KMS or GCP Cloud KMS
+during startup, so that no key material is kept in your configuration.
+See [Security & Encryption](/docs/self-hosting/security#key-management-service) for details.
+
+| Variable           | Required | Default | Description                                                                                                               |
+| ------------------ | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `KMS_AWS_KEY_ID`   | for AWS  | —       | Key ARN, key id or `alias/<name>` of the AWS KMS key. Setting it selects AWS KMS.                                         |
+| `KMS_AWS_REGION`   | no       | —       | Region of that key. Defaults to the region of `KMS_AWS_KEY_ID` when it is an ARN, then to the AWS SDK's own resolution.   |
+| `KMS_AWS_ENDPOINT` | no       | —       | Overrides the AWS KMS endpoint. Intended for testing against a local stand-in.                                            |
+| `KMS_GCP_KEY_NAME` | for GCP  | —       | Full resource name of the Cloud KMS key (`projects/…/locations/…/keyRings/…/cryptoKeys/…`). Setting it selects Cloud KMS. |
 
 ## Tokens & Sessions
 
@@ -85,7 +100,7 @@ the widget and are not verified; they remain subject to the rate limits of the a
 
 | Variable              | Required | Default | Description                                                                              |
 | --------------------- | -------- | ------- | ---------------------------------------------------------------------------------------- |
-| `AGENT_INTERVAL`      | no       | `5s`    | Interval at which agents poll the Hub for updates.                                       |
+| `AGENT_INTERVAL`      | no       | `5s`    | Interval at which agents poll Distr for updates.                                         |
 | `AGENT_DOCKER_CONFIG` | no       | —       | Base64-encoded Docker config JSON provided to Docker agents for registry authentication. |
 
 ## Mailer
@@ -132,7 +147,7 @@ See [Registry Configuration](/docs/registry/configuration/) for a feature overvi
 ## Custom Domains
 
 Custom domain self-service lets vendor organizations serve Distr under their own domains.
-It requires an edge proxy with on-demand TLS (e.g. Caddy, included in the Helm chart) in front of the Hub.
+It requires an edge proxy with on-demand TLS (e.g. Caddy, included in the Helm chart) in front of Distr.
 The feature is only offered in the UI when `CUSTOM_DOMAIN_TARGET` is set.
 
 A domain is only used for links, mails, agent manifests and registry URLs once a CNAME check has
@@ -144,7 +159,7 @@ their own once a record is fixed. Serving requests on a domain does not depend o
 | Variable                                   | Required | Default | Description                                                                                                                      |
 | ------------------------------------------ | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `CUSTOM_DOMAIN_TARGET`                     | no       | —       | Hostname customers point every custom domain's CNAME record at (e.g. `whitelabel.distr.sh`). Enables custom domain self-service. |
-| `CUSTOM_DOMAIN_VERIFICATION_CRON`          | no       | —       | Cron schedule of the built-in domain verification job. If unset, no verification is scheduled in the Hub.                        |
+| `CUSTOM_DOMAIN_VERIFICATION_CRON`          | no       | —       | Cron schedule of the built-in domain verification job. If unset, no verification is scheduled in Distr.                          |
 | `CUSTOM_DOMAIN_VERIFICATION_TIMEOUT`       | no       | `4m`    | Timeout for a single verification run. Must be greater than `0`.                                                                 |
 | `CUSTOM_DOMAIN_VERIFICATION_REFRESH_AFTER` | no       | `12h`   | How long a verified domain is left alone before it is checked again. Failing domains are checked on every run.                   |
 | `INTERNAL_SERVER_ADDR`                     | no       | `:8085` | Listen address of the internal server exposing the Caddy on-demand TLS ask endpoint. Never expose it outside the cluster.        |
@@ -243,7 +258,7 @@ unknown email address; invite the user beforehand to place them in an existing o
 `REGISTRATION=disabled` (see [Sign-up modes](#sign-up-modes)) to reject unknown addresses.
 
 Vendor organizations on the Business plan can also configure their own providers in the UI, which requires no
-instance configuration. Those issuer URLs are entered by organization administrators and fetched by the Hub, so they
+instance configuration. Those issuer URLs are entered by organization administrators and fetched by Distr, so they
 must be `https` and must not resolve to a private network address. Both restrictions are lifted when `DISTR_HOST` is an
 `http` URL, so that an instance running locally can be developed against an identity provider next to it. An operator
 whose identity provider only exists inside their own network configures it as the instance-wide generic provider above
@@ -293,10 +308,10 @@ These values are injected into the compiled frontend at runtime.
 
 Options relevant to Distr Pro and hosted billing.
 
-| Variable                                   | Required | Default | Description                                                   |
-| ------------------------------------------ | -------- | ------- | ------------------------------------------------------------- |
-| `LICENSE_KEY`                              | no       | —       | Distr license key unlocking the plan it was issued for.       |
-| `LICENSE_KEY_PRIVATE_KEY`                  | no       | —       | PEM-encoded private key used to sign customer license keys.   |
-| `STRIPE_API_KEY`                           | no       | —       | Stripe API key for billing integration.                       |
-| `STRIPE_WEBHOOK_SECRET`                    | no       | —       | Secret used to verify incoming Stripe webhooks.               |
-| `STRIPE_WEBHOOK_VERSION_MISMATCH_BEHAVIOR` | no       | `error` | Behavior on Stripe API version mismatch: `error` or `ignore`. |
+| Variable                                   | Required | Default | Description                                                                                                                               |
+| ------------------------------------------ | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `LICENSE_KEY`                              | no       | —       | Distr license key unlocking the plan it was issued for.                                                                                   |
+| `LICENSE_KEY_PRIVATE_KEY`                  | no       | —       | PEM-encoded private key used to sign customer license keys, see [Security & Encryption](/docs/self-hosting/security#license-signing-key). |
+| `STRIPE_API_KEY`                           | no       | —       | Stripe API key for billing integration.                                                                                                   |
+| `STRIPE_WEBHOOK_SECRET`                    | no       | —       | Secret used to verify incoming Stripe webhooks.                                                                                           |
+| `STRIPE_WEBHOOK_VERSION_MISMATCH_BEHAVIOR` | no       | `error` | Behavior on Stripe API version mismatch: `error` or `ignore`.                                                                             |

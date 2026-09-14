@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.5.1](https://github.com/distr-sh/distr/compare/3.5.0...3.5.1) (2026-09-09)
+
+
+### Other
+
+* fix down migrations ([#3194](https://github.com/distr-sh/distr/issues/3194)) ([0c9e66d](https://github.com/distr-sh/distr/commit/0c9e66d1d8e1f90b19ebdbe2ec3d761b051ca72e))
+
 ## [3.5.0](https://github.com/distr-sh/distr/compare/3.4.2...3.5.0) (2026-09-09)
 
 

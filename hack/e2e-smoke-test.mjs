@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * E2E smoke test for the Distr Hub API.
+ * E2E smoke test for the Distr API.
  *
  * Exercises the full user journey: register → login → tutorial flow → verify side effects.
  *

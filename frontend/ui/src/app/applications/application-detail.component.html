@@ -37,12 +37,12 @@
                 <div
                   animate.enter="animate-flip-in-top"
                   animate.leave="animate-flip-out-top"
-                  class="z-10 w-full max-w-80 bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700 origin-top">
-                  <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefault">
+                  class="distr-dropdown-panel w-full max-w-80">
+                  <ul aria-labelledby="dropdownDefault">
                     @for (app of applications$ | async; track app.id) {
-                      <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                      <li>
                         <a
-                          class="px-4 flex items-stretch overflow-hidden text-ellipsis whitespace-nowrap"
+                          class="distr-dropdown-item overflow-hidden text-ellipsis whitespace-nowrap"
                           [routerLink]="['/', 'applications', app.id]"
                           [title]="app.name"
                           >{{ app.name }}</a

@@ -6,14 +6,15 @@
 # the enterprise-aws and enterprise-gcp examples replace with managed services.
 #
 # Create these before installing:
-#   - a secret "distr-secrets" with the key jwtSecret (openssl rand -base64 32)
+#   - a secret "distr-secrets" with the keys jwtSecret and databaseEncryptionKey,
+#     each generated with "openssl rand -base64 32"
 #   - DNS records for both hostnames pointing at your ingress controller
 #
 #   helm upgrade --install distr oci://ghcr.io/distr-sh/charts/distr -n distr --create-namespace \
 #     -f deploy/charts/distr/examples/community/values.yaml
 
-hub:
-  # Helm replaces the whole list rather than merging it, so every variable the hub needs has to be
+distr:
+  # Helm replaces the whole list rather than merging it, so every variable Distr needs has to be
   # in this one.
   env:
     - name: DISTR_HOST
@@ -23,6 +24,13 @@ hub:
         secretKeyRef:
           name: distr-secrets
           key: jwtSecret
+    # Encrypts the sensitive columns of the database. Back this key up separately from the
+    # database: a dump is worthless without it, and so is your data if you lose it.
+    - name: DATABASE_ENCRYPTION_KEY
+      valueFrom:
+        secretKeyRef:
+          name: distr-secrets
+          key: databaseEncryptionKey
     - name: REGISTRY_ENABLED
       value: 'true'
     - name: REGISTRY_HOST
@@ -42,7 +50,7 @@ hub:
       value: CHANGE_ME
     - name: REGISTRY_S3_USE_PATH_STYLE
       value: 'true'
-    # Clients cannot reach the in-cluster object storage, so layer downloads are served by the hub.
+    # Clients cannot reach the in-cluster object storage, so layer downloads are served by Distr.
     - name: REGISTRY_S3_ALLOW_REDIRECT
       value: 'false'
     - name: LOKI_URL
@@ -73,7 +81,7 @@ hub:
 postgresql:
   enabled: true
   auth:
-    # An empty password is generated randomly on every upgrade, which the hub cannot survive.
+    # An empty password is generated randomly on every upgrade, which Distr cannot survive.
     password: CHANGE_ME
 
 rustfs:
@@ -81,7 +89,7 @@ rustfs:
   secret:
     rustfs:
       access_key: distr
-      # Changing this means changing it in hub.env, in loki.loki.storage.s3 and in the
+      # Changing this means changing it in distr.env, in loki.loki.storage.s3 and in the
       # create-loki-bucket init container as well, all of which authenticate against this storage.
       secret_key: CHANGE_ME
 

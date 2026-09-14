@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/distr-sh/distr/cmd/hub/cmd"
+	"github.com/distr-sh/distr/cmd/distr/cmd"
 )
 
 func main() {

@@ -3,10 +3,10 @@ title: Prometheus Integration
 description: Monitor your Distr instance with Prometheus by scraping built-in metrics for deployments, organizations and Go runtime data.
 sidebar:
   label: Prometheus Integration
-  order: 7
+  order: 8
 ---
 
-Distr Hub exposes a Prometheus-compatible metrics endpoint that can be scraped by any Prometheus-compatible monitoring system.
+Distr exposes a Prometheus-compatible metrics endpoint that can be scraped by any Prometheus-compatible monitoring system.
 
 ## Configuration
 
@@ -31,7 +31,7 @@ METRICS_ENABLED=true
 
 ### Kubernetes (Helm)
 
-When deploying with the Distr Helm chart, the same environment variables can be set via `hub.env` in your `values.yaml`.
+When deploying with the Distr Helm chart, the same environment variables can be set via `distr.env` in your `values.yaml`.
 The metrics server port is configured separately via `service.metricsPort`.
 
 An example configuration can be found in
@@ -51,7 +51,7 @@ scrape_configs:
   - job_name: distr
     scheme: http
     static_configs:
-      - targets: ['distr-hub:3000']
+      - targets: ['distr:3000']
     authorization:
       type: Bearer
       credentials: my-secret-token

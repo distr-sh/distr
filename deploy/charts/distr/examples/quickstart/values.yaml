@@ -15,14 +15,16 @@
 
 replicaCount: 1
 
-hub:
-  # Helm replaces the whole list rather than merging it, so every variable the hub needs has to be
+distr:
+  # Helm replaces the whole list rather than merging it, so every variable Distr needs has to be
   # in this one.
   env:
     - name: DISTR_HOST
       value: http://localhost:8080
     - name: JWT_SECRET
       value: 'WQrGMYx4tZdGwKlt0RTrhMzfQ+j1wr6z7oRWfmGlETk='
+    - name: DATABASE_ENCRYPTION_KEY
+      value: '8fVQ3nZ5kL0xR7cWtYbA1sJmEuHpDgNiO2vXqTzKcRo='
     - name: USER_EMAIL_VERIFICATION_REQUIRED
       value: 'false'
     - name: REGISTRY_ENABLED

@@ -9,6 +9,8 @@ import (
 	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/dbencryption"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/license"
 	"github.com/distr-sh/distr/internal/subscription"
@@ -26,10 +28,11 @@ var serveOpts = ServeOptions{Migrate: true}
 
 var ServeCommand = &cobra.Command{
 	Use:   "serve",
-	Short: "run the Distr Hub server",
+	Short: "run the Distr server",
 	Args:  cobra.NoArgs,
 	PreRun: func(cmd *cobra.Command, args []string) {
 		env.Initialize()
+		util.Must(dbcrypto.Init(env.DatabaseEncryptionKey()))
 		util.Must(license.Initialize())
 	},
 	Run: func(cmd *cobra.Command, args []string) {
@@ -75,6 +78,12 @@ func runServe(ctx context.Context, opts ServeOptions) {
 	updatedTargets := util.Require(db.ApplyAutomaticAgentUpdates(dbLogCtx))
 	registry.GetLogger().Info("applied automatic agent updates", zap.Int64("deploymentTargets", updatedTargets))
 	util.Must(subscription.ReconcileEditionFeatures(dbLogCtx))
+
+	if env.DatabaseEncryptionMigrateOnBoot() {
+		util.Must(dbencryption.RunEncrypt(dbLogCtx))
+	} else {
+		dbencryption.WarnAboutUnencrypted(dbLogCtx)
+	}
 
 	if env.MetricsEnabled() {
 		util.Must(registry.GetPrometheusCollector().Initialize(dbCtx, db.QueryableInitDataSource{}))

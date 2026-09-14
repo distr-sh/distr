@@ -25,8 +25,15 @@ func RunDockerRestart(ctx context.Context, deployment AgentDeployment) error {
 }
 
 func RunDockerComposeRestart(ctx context.Context, deployment AgentDeployment) error {
-	err := composeService.Restart(ctx, deployment.ProjectName, composeapi.RestartOptions{})
+	project, err := LoadComposeProject(ctx, deployment)
 	if err != nil {
+		return fmt.Errorf("cannot restart deployment %v: %w", deployment.ProjectName, err)
+	}
+	if err := composeService.Restart(
+		ctx,
+		deployment.ProjectName,
+		composeapi.RestartOptions{Project: project},
+	); err != nil {
 		return fmt.Errorf("failed to restart deployment %v: %w", deployment.ProjectName, err)
 	}
 	return nil

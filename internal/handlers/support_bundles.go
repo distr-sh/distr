@@ -17,6 +17,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/security"
@@ -351,7 +352,7 @@ func createSupportBundleHandler() http.HandlerFunc {
 			CreatedByUserAccountID: a.CurrentUserID(),
 			Title:                  request.Title,
 			Description:            request.Description,
-			BundleSecret:           bundleSecret,
+			BundleSecret:           dbcrypto.String(bundleSecret),
 			BundleSecretExpiresAt:  &expiresAt,
 		}
 		if err := db.CreateSupportBundle(ctx, &bundle); err != nil {
