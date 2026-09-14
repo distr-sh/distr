@@ -12,7 +12,7 @@ import {AccessTokenDetailComponent} from './access-token-detail.component';
 
 const legacyToken: AccessToken = {
   id: '11111111-1111-1111-1111-111111111111',
-  keyId: 'distr-2LTMfjV5xU8sJfF1M0hIm8',
+  keyId: 'distr-2LTMfjV5xU8',
   createdAt: '2026-01-01T00:00:00Z',
   label: 'legacy',
   secrets: [],

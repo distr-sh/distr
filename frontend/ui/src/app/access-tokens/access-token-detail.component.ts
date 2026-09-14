@@ -12,7 +12,6 @@ import {catchError, concatMap, firstValueFrom, Observable, of, tap} from 'rxjs';
 import {isExpired, RelativeDatePipe} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {USER_ROLE_LABELS} from '../../util/user-role';
-import {ClipComponent} from '../components/clip.component';
 import {CreatedAccessTokenComponent} from '../components/created-access-token.component';
 import {
   EXPIRES_AT_DATE_FORMAT,
@@ -38,7 +37,6 @@ import {accessTokenName} from './access-token-name';
     ReactiveFormsModule,
     RouterLink,
     RelativeDatePipe,
-    ClipComponent,
     CreatedAccessTokenComponent,
     ExpiresAtPickerComponent,
     InlineEditComponent,

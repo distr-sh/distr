@@ -10,8 +10,9 @@ import (
 
 type AccessToken struct {
 	ID uuid.UUID `json:"id"`
-	// KeyID is the part of the token that identifies it, so that a user can tell which of their
-	// tokens a client is configured with. It stays the same when the secrets are rotated.
+	// KeyID is the beginning of the token, so that a user can tell which of their tokens a client
+	// is configured with. It stays the same when the secrets are rotated, and covers only half of
+	// the key, since a token is shown in full exactly once.
 	KeyID     string    `json:"keyId"`
 	CreatedAt time.Time `json:"createdAt"`
 	// ExpiresAt is when the token stops working, which is the last of its secrets to expire, since

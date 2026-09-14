@@ -85,13 +85,14 @@ func (tok AccessToken) EffectiveExpiresAt() *time.Time {
 }
 
 // KeyID returns the part of the token that identifies it, in the encoding its owner finds at the
-// beginning of the token itself. For a token that predates secrets that is the hex encoding it was
-// issued in, and since such a token is nothing but its key, the whole token.
+// beginning of the token itself, which for a token that predates secrets is the hex encoding it was
+// issued in. Only half of the key is disclosed, so that a token which is nothing but its key cannot
+// be recovered from the list of tokens it appears in.
 func (tok AccessToken) KeyID() string {
 	if !tok.HasSecrets() {
-		return authkey.Token{Key: tok.Key}.Serialize()
+		return tok.Key.LegacyID()
 	}
-	return tok.Key.Serialize()
+	return tok.Key.ID()
 }
 
 func (tok AccessToken) FreeSecretSlot() *AccessTokenSecretSlot {

@@ -28,6 +28,11 @@ const (
 	// legacyKeyEncodedLen is the length of the hex encoding that predates the secret. Hex is a subset
 	// of the base62 alphabet, so the two encodings of a key are told apart by their length.
 	legacyKeyEncodedLen = 2 * len(Key{})
+	// The lengths of what a token's owner is shown of its key. Half of the encoding tells their
+	// tokens apart, and leaves a token that predates secrets, which is nothing but its key, with
+	// too little of it disclosed to authenticate.
+	keyIDEncodedLen       = keyEncodedLen / 2
+	legacyKeyIDEncodedLen = legacyKeyEncodedLen / 2
 )
 
 type Key [16]byte
@@ -174,10 +179,15 @@ func (key Key) String() string {
 	return keyPrefix + base62Encode(key[:], keyEncodedLen)[:5] + "___REDACTED___"
 }
 
-// Serialize renders the key as it appears at the beginning of a token, which is how a token is
-// shown to the user it belongs to. For a token that has no secret this is the whole credential in
-// a different encoding, since such a token is nothing but its key.
-func (key Key) Serialize() string { return keyPrefix + base62Encode(key[:], keyEncodedLen) }
+// ID renders the beginning of the key as it appears at the beginning of a token, which is how a
+// token is identified to the user it belongs to.
+func (key Key) ID() string { return keyPrefix + base62Encode(key[:], keyEncodedLen)[:keyIDEncodedLen] }
+
+// LegacyID is [Key.ID] in the hex encoding that predates secrets, which is the only form in which
+// the owner of such a token has ever seen it.
+func (key Key) LegacyID() string {
+	return keyPrefix + hex.EncodeToString(key[:])[:legacyKeyIDEncodedLen]
+}
 
 func (key *Key) Scan(src any) error {
 	switch v := src.(type) {

@@ -86,20 +86,13 @@
 
         <dl class="grid grid-cols-2 gap-6 mt-4 max-w-3xl text-sm">
           <div>
-            <dt class="distr-label mb-2">
-              @if (legacy()) {
-                Token
-              } @else {
-                Key ID
-              }
-            </dt>
-            <dd class="flex items-center gap-2">
+            <dt class="distr-label mb-2">Key ID</dt>
+            <dd>
               <code
                 data-ph-mask-text="true"
-                class="select-all px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600">
-                {{ token.keyId }}
+                class="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600">
+                {{ token.keyId }}…
               </code>
-              <app-clip [clip]="token.keyId" />
             </dd>
           </div>
           <div>

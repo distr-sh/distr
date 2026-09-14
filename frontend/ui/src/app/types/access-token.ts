@@ -15,8 +15,9 @@ export interface AccessTokenSecret {
 
 export interface AccessToken extends BaseModel {
   /**
-   * The part of the token that identifies it, so that a user can tell which of their tokens a
-   * client is configured with. It stays the same when the secrets are rotated.
+   * The beginning of the token, so that a user can tell which of their tokens a client is
+   * configured with. It stays the same when the secrets are rotated, and covers only half of the
+   * key, since a token is shown in full exactly once.
    */
   keyId: string;
   /**
