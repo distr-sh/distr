@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"os"
+	"path"
 	"sync"
 	"time"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	composeapi "github.com/docker/compose/v5/pkg/api"
 	"github.com/moby/moby/api/types/container"
 	mobyClient "github.com/moby/moby/client"
@@ -120,13 +123,14 @@ func collectContainerMetrics(ctx context.Context, containers []resourceContainer
 				CPUUsageMillis: cpuUsageMillis,
 				MemoryBytes:    memoryBytes,
 			}
-			// Limits are optional extra data: report the usage even if the inspect fails.
-			if cpuLimitMillis, memoryLimitBytes, err := containerLimits(ctx, c.ID); err != nil {
-				logger.Warn("failed to get container limits",
+			// Limits and log size are optional extra data: report the usage even if the inspect fails.
+			if inspected, err := inspectContainerMetrics(ctx, c.ID); err != nil {
+				logger.Warn("failed to inspect container",
 					zap.String("container", c.Container), zap.Error(err))
 			} else {
-				metric.CPULimitMillis = cpuLimitMillis
-				metric.MemoryLimitBytes = memoryLimitBytes
+				metric.CPULimitMillis = inspected.CPULimitMillis
+				metric.MemoryLimitBytes = inspected.MemoryLimitBytes
+				metric.LogBytes = inspected.LogBytes
 			}
 			mutex.Lock()
 			defer mutex.Unlock()
@@ -138,27 +142,64 @@ func collectContainerMetrics(ctx context.Context, containers []resourceContainer
 	return result
 }
 
-// containerLimits reads the configured limits from the container's HostConfig. The limits from
-// the stats response cannot be used instead: for containers without a memory limit the daemon
-// reports the host's total memory there, making "no limit" indistinguishable from a real limit.
-func containerLimits(ctx context.Context, containerID string) (cpuLimitMillis, memoryLimitBytes *int64, err error) {
+type containerInspectMetrics struct {
+	CPULimitMillis   *int64
+	MemoryLimitBytes *int64
+	LogBytes         *int64
+}
+
+// inspectContainerMetrics reads everything a single container inspect can contribute, so that
+// collecting the log size costs no additional request. Reading the log files is allowed to fail
+// on its own, so that an unreadable log directory does not also cost us the limits.
+//
+// The limits come from the container's HostConfig. The limits from the stats response cannot be
+// used instead: for containers without a memory limit the daemon reports the host's total memory
+// there, making "no limit" indistinguishable from a real limit.
+func inspectContainerMetrics(ctx context.Context, containerID string) (containerInspectMetrics, error) {
 	result, err := dockerCli.Client().ContainerInspect(ctx, containerID, mobyClient.ContainerInspectOptions{})
 	if err != nil {
-		return nil, nil, err
+		return containerInspectMetrics{}, err
 	}
-	hostConfig := result.Container.HostConfig
-	if hostConfig == nil {
-		return nil, nil, nil
+
+	var metrics containerInspectMetrics
+	if hostConfig := result.Container.HostConfig; hostConfig != nil {
+		if hostConfig.NanoCPUs > 0 {
+			metrics.CPULimitMillis = new(hostConfig.NanoCPUs / 1_000_000)
+		} else if hostConfig.CPUQuota > 0 && hostConfig.CPUPeriod > 0 {
+			metrics.CPULimitMillis = new(hostConfig.CPUQuota * 1000 / hostConfig.CPUPeriod)
+		}
+		if hostConfig.Memory > 0 {
+			metrics.MemoryLimitBytes = new(hostConfig.Memory)
+		}
 	}
-	if hostConfig.NanoCPUs > 0 {
-		cpuLimitMillis = new(hostConfig.NanoCPUs / 1_000_000)
-	} else if hostConfig.CPUQuota > 0 && hostConfig.CPUPeriod > 0 {
-		cpuLimitMillis = new(hostConfig.CPUQuota * 1000 / hostConfig.CPUPeriod)
+
+	if logBytes, err := containerLogBytes(result.Container.LogPath); err != nil {
+		logger.Warn("failed to get container log size",
+			zap.String("containerId", containerID), zap.Error(err))
+	} else {
+		metrics.LogBytes = logBytes
 	}
-	if hostConfig.Memory > 0 {
-		memoryLimitBytes = new(hostConfig.Memory)
+
+	return metrics, nil
+}
+
+// containerLogBytes returns the size of the container's log files, or nil when the container uses
+// a log driver that does not write files and therefore reports no log path. The rotated files sit
+// next to the log file and are named after it: "<log>.1" and "<log>.2" by the json-file driver,
+// "<log>.1.gz" by the local driver.
+func containerLogBytes(logPath string) (*int64, error) {
+	if logPath == "" {
+		return nil, nil
 	}
-	return cpuLimitMillis, memoryLimitBytes, nil
+	hostRoot := os.Getenv("HOST_ROOT_DIR")
+	if hostRoot == "" {
+		return nil, errors.New("HOST_ROOT_DIR is not set, cannot reach container log files")
+	}
+	size, err := util.SumFileSizesWithPrefix(path.Join(hostRoot, logPath))
+	if err != nil {
+		return nil, err
+	}
+	return &size, nil
 }
 
 func containerUsage(ctx context.Context, containerID string) (cpuUsageMillis, memoryBytes int64, err error) {
