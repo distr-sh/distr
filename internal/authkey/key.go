@@ -1,10 +1,8 @@
 package authkey
 
 import (
-	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
-	"crypto/subtle"
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
@@ -18,7 +16,6 @@ import (
 const (
 	keyPrefix       = "distr-"
 	secretSeparator = "_"
-	saltLength      = 16
 	// base62 is dense enough to keep a token short, and unlike base64 its alphabet contains neither
 	// the separator between key and secret nor a character that has to be escaped in a URL.
 	base62Alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
@@ -211,21 +208,11 @@ func parseSecret(encoded string) (Secret, error) {
 
 func (secret Secret) String() string { return "___REDACTED___" }
 
-// Hash derives the value stored in the database. Unlike a password, a secret is 256 bits of
-// CSPRNG output, so there is no dictionary to search and no need for a costly key derivation
-// function: one HMAC-SHA256 keeps verification affordable on every single request.
-func (secret Secret) Hash(salt []byte) []byte {
-	mac := hmac.New(sha256.New, salt)
-	mac.Write(secret[:])
-	return mac.Sum(nil)
-}
-
-func NewSalt() ([]byte, error) {
-	salt := make([]byte, saltLength)
-	_, err := rand.Read(salt)
-	return salt, err
-}
-
-func VerifySecret(salt, hash []byte, secret Secret) bool {
-	return subtle.ConstantTimeCompare(hash, secret.Hash(salt)) == 1
+// Hash derives the value stored in the database, and the value a stored one is looked up by. Unlike
+// a password, a secret is 256 bits of CSPRNG output, so there is no dictionary to search and nothing
+// a salt could keep apart: one SHA-256 keeps verification affordable on every single request, and
+// leaves the comparison to the database.
+func (secret Secret) Hash() []byte {
+	hash := sha256.Sum256(secret[:])
+	return hash[:]
 }

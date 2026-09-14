@@ -127,7 +127,10 @@ func SettingsRouter(r chiopenapi.Router) {
 				r.With(middleware.BlockSuperAdmin).Post("/", createAccessTokenSecretHandler()).
 					With(option.Description(
 						"Create a second secret for an access token, so that the first one can be rotated out")).
-					With(option.Request(AccessTokenIDRequest{})).
+					With(option.Request(struct {
+						AccessTokenIDRequest
+						api.CreateAccessTokenSecretRequest
+					}{})).
 					With(option.Response(http.StatusCreated, api.AccessTokenWithKey{}))
 
 				r.With(middleware.BlockSuperAdmin).Delete("/{slot}", deleteAccessTokenSecretHandler()).

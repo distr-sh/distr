@@ -10,7 +10,7 @@ func AccessTokenToAPI(model types.AccessToken) api.AccessToken {
 		ID:         model.ID,
 		KeyID:      model.KeyID(),
 		CreatedAt:  model.CreatedAt,
-		ExpiresAt:  model.ExpiresAt,
+		ExpiresAt:  model.EffectiveExpiresAt(),
 		LastUsedAt: model.LastUsedAt,
 		Label:      model.Label,
 		UserRole:   model.UserRole,
@@ -25,6 +25,7 @@ func AccessTokenSecretsToAPI(model types.AccessToken) []api.AccessTokenSecret {
 			secrets = append(secrets, api.AccessTokenSecret{
 				Slot:       slot,
 				CreatedAt:  secret.CreatedAt,
+				ExpiresAt:  secret.ExpiresAt,
 				LastUsedAt: secret.LastUsedAt,
 			})
 		}

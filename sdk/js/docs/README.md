@@ -31,6 +31,7 @@
 - [AssignCustomerToPartnerRequest](interfaces/AssignCustomerToPartnerRequest.md)
 - [BaseModel](interfaces/BaseModel.md)
 - [CreateAccessTokenRequest](interfaces/CreateAccessTokenRequest.md)
+- [CreateAccessTokenSecretRequest](interfaces/CreateAccessTokenSecretRequest.md)
 - [CreateAdvisoryCommentRequest](interfaces/CreateAdvisoryCommentRequest.md)
 - [CreateSupportBundleCommentRequest](interfaces/CreateSupportBundleCommentRequest.md)
 - [CreateSupportBundleRequest](interfaces/CreateSupportBundleRequest.md)

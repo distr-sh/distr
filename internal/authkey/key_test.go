@@ -73,21 +73,17 @@ func TestBase62Widths(t *testing.T) {
 	}
 }
 
-func TestVerifySecret(t *testing.T) {
+func TestSecretHash(t *testing.T) {
 	g := NewWithT(t)
 
 	secret, err := NewSecret()
 	g.Expect(err).ToNot(HaveOccurred())
 	other, err := NewSecret()
 	g.Expect(err).ToNot(HaveOccurred())
-	salt, err := NewSalt()
-	g.Expect(err).ToNot(HaveOccurred())
-	otherSalt, err := NewSalt()
-	g.Expect(err).ToNot(HaveOccurred())
 
-	hash := secret.Hash(salt)
-	g.Expect(hash).ToNot(Equal(secret[:]))
-	g.Expect(VerifySecret(salt, hash, secret)).To(BeTrue())
-	g.Expect(VerifySecret(salt, hash, other)).To(BeFalse())
-	g.Expect(VerifySecret(otherSalt, hash, secret)).To(BeFalse())
+	// The stored value is what a lookup compares against, so it has to be derived from the secret
+	// alone, and never be the secret itself.
+	g.Expect(secret.Hash()).To(Equal(secret.Hash()))
+	g.Expect(secret.Hash()).ToNot(Equal(secret[:]))
+	g.Expect(secret.Hash()).ToNot(Equal(other.Hash()))
 }

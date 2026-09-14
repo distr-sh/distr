@@ -1,7 +1,6 @@
 package types
 
 import (
-	"errors"
 	"time"
 
 	"github.com/distr-sh/distr/internal/authkey"
@@ -17,8 +16,6 @@ const (
 
 var AccessTokenSecretSlots = []AccessTokenSecretSlot{AccessTokenSecretSlot1, AccessTokenSecretSlot2}
 
-var ErrInvalidAccessTokenSecret = errors.New("invalid access token secret")
-
 func (slot AccessTokenSecretSlot) Valid() bool {
 	return slot == AccessTokenSecretSlot1 || slot == AccessTokenSecretSlot2
 }
@@ -31,15 +28,19 @@ func (slot AccessTokenSecretSlot) Other() AccessTokenSecretSlot {
 }
 
 type AccessTokenSecret struct {
-	Salt       []byte     `db:"salt"`
-	Hash       []byte     `db:"hash"`
-	CreatedAt  time.Time  `db:"created_at"`
+	Hash      []byte    `db:"hash"`
+	CreatedAt time.Time `db:"created_at"`
+	// ExpiresAt is fixed when the secret is created: a token is kept alive by adding a secret that
+	// expires later, not by moving an expiration that something in circulation already relies on.
+	ExpiresAt  *time.Time `db:"expires_at"`
 	LastUsedAt *time.Time `db:"last_used_at"`
 }
 
 type AccessToken struct {
-	ID             uuid.UUID          `db:"id"`
-	CreatedAt      time.Time          `db:"created_at"`
+	ID        uuid.UUID `db:"id"`
+	CreatedAt time.Time `db:"created_at"`
+	// ExpiresAt is the expiration of a token that predates secrets. A token with secrets expires
+	// with them, so nothing writes this column anymore.
 	ExpiresAt      *time.Time         `db:"expires_at"`
 	LastUsedAt     *time.Time         `db:"last_used_at"`
 	Label          *string            `db:"label"`
@@ -62,6 +63,27 @@ func (tok AccessToken) HasSecrets() bool {
 	return tok.Secret1 != nil || tok.Secret2 != nil
 }
 
+// EffectiveExpiresAt is when the token stops working, which for a token with secrets is the last of
+// them to expire, since every secret that is still valid authenticates it. It is nil when the token
+// never expires.
+func (tok AccessToken) EffectiveExpiresAt() *time.Time {
+	if !tok.HasSecrets() {
+		return tok.ExpiresAt
+	}
+	var last *time.Time
+	for _, slot := range AccessTokenSecretSlots {
+		if secret := tok.Secret(slot); secret != nil {
+			if secret.ExpiresAt == nil {
+				return nil
+			}
+			if last == nil || secret.ExpiresAt.After(*last) {
+				last = secret.ExpiresAt
+			}
+		}
+	}
+	return last
+}
+
 // KeyID returns the part of the token that identifies it, in the encoding its owner finds at the
 // beginning of the token itself. For a token that predates secrets that is the hex encoding it was
 // issued in, and since such a token is nothing but its key, the whole token.
@@ -79,32 +101,6 @@ func (tok AccessToken) FreeSecretSlot() *AccessTokenSecretSlot {
 		}
 	}
 	return nil
-}
-
-// VerifySecret returns the slot the given secret belongs to, or nil for a token that has no
-// secrets at all. Such a token predates them and is the whole credential on its own, which is
-// why it is only accepted when no secret is presented for it: as soon as one of its slots is
-// filled, the version of it that is in circulation stops working.
-func (tok AccessToken) VerifySecret(secret *authkey.Secret) (*AccessTokenSecretSlot, error) {
-	if !tok.HasSecrets() {
-		if secret != nil {
-			return nil, ErrInvalidAccessTokenSecret
-		}
-		return nil, nil
-	} else if secret == nil {
-		return nil, ErrInvalidAccessTokenSecret
-	}
-
-	var matched *AccessTokenSecretSlot
-	for _, slot := range AccessTokenSecretSlots {
-		if s := tok.Secret(slot); s != nil && authkey.VerifySecret(s.Salt, s.Hash, *secret) {
-			matched = &slot
-		}
-	}
-	if matched == nil {
-		return nil, ErrInvalidAccessTokenSecret
-	}
-	return matched, nil
 }
 
 type AccessTokenWithUserAccount struct {

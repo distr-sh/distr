@@ -5,6 +5,7 @@ import {
   AccessTokenSecretSlot,
   AccessTokenWithKey,
   CreateAccessTokenRequest,
+  CreateAccessTokenSecretRequest,
   PatchAccessTokenRequest,
 } from '@distr-sh/distr-sdk';
 import {Observable} from 'rxjs';
@@ -31,8 +32,8 @@ export class AccessTokensService {
     return this.httpClient.delete<void>(`${baseUrl}/${id}`);
   }
 
-  public createSecret(id: string): Observable<AccessTokenWithKey> {
-    return this.httpClient.post<AccessTokenWithKey>(`${baseUrl}/${id}/secrets`, {});
+  public createSecret(id: string, request: CreateAccessTokenSecretRequest): Observable<AccessTokenWithKey> {
+    return this.httpClient.post<AccessTokenWithKey>(`${baseUrl}/${id}/secrets`, request);
   }
 
   public deleteSecret(id: string, slot: AccessTokenSecretSlot): Observable<void> {

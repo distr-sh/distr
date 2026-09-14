@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/authkey"
@@ -21,10 +20,10 @@ const accessTokenOutputExpr = `
 	tok.id, tok.created_at, tok.expires_at, tok.last_used_at, tok.label, tok.key,
 	tok.user_account_id, tok.organization_id, tok.user_role AS token_user_role,
 	CASE WHEN tok.secret_1_hash IS NOT NULL THEN
-		(tok.secret_1_salt, tok.secret_1_hash, tok.secret_1_created_at, tok.secret_1_last_used_at)
+		(tok.secret_1_hash, tok.secret_1_created_at, tok.secret_1_expires_at, tok.secret_1_last_used_at)
 	END AS secret_1,
 	CASE WHEN tok.secret_2_hash IS NOT NULL THEN
-		(tok.secret_2_salt, tok.secret_2_hash, tok.secret_2_created_at, tok.secret_2_last_used_at)
+		(tok.secret_2_hash, tok.secret_2_created_at, tok.secret_2_expires_at, tok.secret_2_last_used_at)
 	END AS secret_2
 `
 
@@ -49,21 +48,20 @@ func CreateAccessToken(ctx context.Context, token *types.AccessToken) error {
 	rows, err := db.Query(
 		ctx,
 		fmt.Sprintf(
-			`INSERT INTO AccessToken AS tok (label, expires_at, key, user_account_id, organization_id, user_role,
-				secret_1_salt, secret_1_hash, secret_1_created_at)
-			VALUES (@label, @expiresAt, @key, @userAccountId, @orgId, @userRole,
-				@secretSalt, @secretHash, now())
+			`INSERT INTO AccessToken AS tok (label, key, user_account_id, organization_id, user_role,
+				secret_1_hash, secret_1_created_at, secret_1_expires_at)
+			VALUES (@label, @key, @userAccountId, @orgId, @userRole,
+				@secretHash, now(), @secretExpiresAt)
 			RETURNING %v`,
 			accessTokenOutputExpr),
 		pgx.NamedArgs{
-			"label":         token.Label,
-			"expiresAt":     token.ExpiresAt,
-			"key":           token.Key[:],
-			"userAccountId": token.UserAccountID,
-			"orgId":         token.OrganizationID,
-			"userRole":      token.UserRole,
-			"secretSalt":    token.Secret1.Salt,
-			"secretHash":    token.Secret1.Hash,
+			"label":           token.Label,
+			"key":             token.Key[:],
+			"userAccountId":   token.UserAccountID,
+			"orgId":           token.OrganizationID,
+			"userRole":        token.UserRole,
+			"secretHash":      token.Secret1.Hash,
+			"secretExpiresAt": token.Secret1.ExpiresAt,
 		},
 	)
 	if err != nil {
@@ -78,12 +76,10 @@ func CreateAccessToken(ctx context.Context, token *types.AccessToken) error {
 }
 
 type UpdateAccessTokenParams struct {
-	UpdateLabel     bool
-	Label           *string
-	UpdateExpiresAt bool
-	ExpiresAt       *time.Time
-	UpdateUserRole  bool
-	UserRole        *types.UserRole
+	UpdateLabel    bool
+	Label          *string
+	UpdateUserRole bool
+	UserRole       *types.UserRole
 }
 
 // UpdateAccessToken changes the fields of a token that are not part of the credential itself and
@@ -96,10 +92,6 @@ func UpdateAccessToken(ctx context.Context, id, userID, orgID uuid.UUID, p Updat
 	if p.UpdateLabel {
 		setClauses = append(setClauses, "label = nullif(@label, '')")
 		args["label"] = p.Label
-	}
-	if p.UpdateExpiresAt {
-		setClauses = append(setClauses, "expires_at = @expiresAt")
-		args["expiresAt"] = p.ExpiresAt
 	}
 	if p.UpdateUserRole {
 		setClauses = append(setClauses, "user_role = @userRole")
@@ -189,24 +181,52 @@ func GetAccessToken(ctx context.Context, id, userID, orgID uuid.UUID) (*types.Ac
 	}
 }
 
-// GetAccessTokenByKey returns the token identified by the given key. The key is only an
-// identifier, so the caller must still verify the secret of the presented token against the
-// returned row before treating the request as authenticated.
-func GetAccessTokenByKey(ctx context.Context, key authkey.Key) (*types.AccessTokenWithUserAccount, error) {
+// AuthenticateAccessToken returns the token the given credential authenticates, and records the use
+// on the token and on the secret that matched. A secret needs no salt, so its hash is a value the
+// database can compare, which is why verification, expiration and the usage timestamps are a single
+// statement: a secret deleted or expired while the request is on its way can then not authenticate
+// it. apierrors.ErrNotFound means the credential is not valid, without saying which part of it was
+// wrong. The comparison is deliberately not constant-time, unlike one against a password hash,
+// because a digest of CSPRNG output only helps somebody who can invert SHA-256.
+func AuthenticateAccessToken(ctx context.Context, token authkey.Token) (
+	*types.AccessTokenWithUserAccount, error,
+) {
 	db := internalctx.GetDb(ctx)
+	args := pgx.NamedArgs{"key": token.Key[:]}
+	// A token that predates secrets is the whole credential on its own, so it is only accepted when
+	// no secret is presented for it, and its expiration is the one on the token itself.
+	secretExpr := ""
+	secretCondition := `tok.secret_1_hash IS NULL AND tok.secret_2_hash IS NULL
+		AND (tok.expires_at IS NULL OR tok.expires_at > now())`
+	if token.Secret != nil {
+		matches := make([]string, 0, len(types.AccessTokenSecretSlots))
+		for _, slot := range types.AccessTokenSecretSlots {
+			prefix := accessTokenSecretPrefix(slot)
+			secretExpr += fmt.Sprintf(
+				`, %[1]v_last_used_at = CASE WHEN tok.%[1]v_hash = @hash
+					THEN now() ELSE tok.%[1]v_last_used_at END`, prefix)
+			matches = append(matches, fmt.Sprintf(
+				`(tok.%[1]v_hash = @hash AND (tok.%[1]v_expires_at IS NULL OR tok.%[1]v_expires_at > now()))`,
+				prefix))
+		}
+		secretCondition = strings.Join(matches, " OR ")
+		args["hash"] = token.Secret.Hash()
+	}
+
 	rows, err := db.Query(
 		ctx,
 		fmt.Sprintf(
-			`SELECT %v
-			FROM AccessToken tok
-			INNER JOIN UserAccount u ON tok.user_account_id = u.id
-			INNER JOIN Organization_UserAccount oua
-				ON oua.user_account_id = tok.user_account_id AND oua.organization_id = tok.organization_id
-			WHERE tok.key = @key AND (tok.expires_at IS NULL OR tok.expires_at > now())
-			`,
-			accessTokenWithUserAccountOutputExpr,
+			`UPDATE AccessToken AS tok
+			SET last_used_at = now()%v
+			FROM UserAccount u, Organization_UserAccount oua
+			WHERE tok.key = @key
+				AND u.id = tok.user_account_id
+				AND oua.user_account_id = tok.user_account_id AND oua.organization_id = tok.organization_id
+				AND (%v)
+			RETURNING %v`,
+			secretExpr, secretCondition, accessTokenWithUserAccountOutputExpr,
 		),
-		pgx.NamedArgs{"key": key[:]},
+		args,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error querying access token: %w", err)
@@ -221,45 +241,10 @@ func GetAccessTokenByKey(ctx context.Context, key authkey.Key) (*types.AccessTok
 	}
 }
 
-// MarkAccessTokenUsed records the current time on the token and, unless the token authenticated
-// without a secret, on the secret that was used. Because the secret was verified against a row
-// that was read earlier, it repeats that verification and returns apierrors.ErrNotFound when the
-// token no longer matches, so that a credential revoked in between does not authenticate.
-func MarkAccessTokenUsed(
-	ctx context.Context,
-	id uuid.UUID,
-	slot *types.AccessTokenSecretSlot,
-	hash []byte,
-) error {
-	db := internalctx.GetDb(ctx)
-	args := pgx.NamedArgs{"id": id}
-	secretExpr := ""
-	secretCondition := "tok.secret_1_hash IS NULL AND tok.secret_2_hash IS NULL"
-	if slot != nil {
-		prefix := accessTokenSecretPrefix(*slot)
-		secretExpr = fmt.Sprintf(", %v_last_used_at = now()", prefix)
-		secretCondition = fmt.Sprintf("tok.%v_hash = @hash", prefix)
-		args["hash"] = hash
-	}
-	cmd, err := db.Exec(
-		ctx,
-		fmt.Sprintf(
-			`UPDATE AccessToken AS tok
-			SET last_used_at = now()%v
-			WHERE tok.id = @id AND %v AND (tok.expires_at IS NULL OR tok.expires_at > now())`,
-			secretExpr, secretCondition),
-		args,
-	)
-	if err != nil {
-		return fmt.Errorf("could not update access token: %w", err)
-	} else if cmd.RowsAffected() == 0 {
-		return fmt.Errorf("could not update access token: %w", apierrors.ErrNotFound)
-	}
-	return nil
-}
-
 // CreateAccessTokenSecret fills the given slot and returns apierrors.ErrConflict if it is
 // already occupied, so that a concurrent request can never overwrite a secret that is in use.
+// It also clears the expiration of the token itself, which only ever belonged to a token that
+// predates secrets: from here on the token expires with the secrets it now has.
 func CreateAccessTokenSecret(
 	ctx context.Context,
 	id, userID, orgID uuid.UUID,
@@ -272,18 +257,19 @@ func CreateAccessTokenSecret(
 		ctx,
 		fmt.Sprintf(
 			`UPDATE AccessToken AS tok
-			SET %[1]v_salt = @salt, %[1]v_hash = @hash, %[1]v_created_at = now(), %[1]v_last_used_at = NULL
+			SET %[1]v_hash = @hash, %[1]v_created_at = now(), %[1]v_expires_at = @expiresAt,
+				%[1]v_last_used_at = NULL, expires_at = NULL
 			WHERE tok.id = @id AND tok.user_account_id = @userId AND tok.organization_id = @orgId
 				AND tok.%[1]v_hash IS NULL
 			RETURNING %[2]v`,
 			prefix, accessTokenOutputExpr,
 		),
 		pgx.NamedArgs{
-			"id":     id,
-			"userId": userID,
-			"orgId":  orgID,
-			"salt":   secret.Salt,
-			"hash":   secret.Hash,
+			"id":        id,
+			"userId":    userID,
+			"orgId":     orgID,
+			"hash":      secret.Hash,
+			"expiresAt": secret.ExpiresAt,
 		},
 	)
 	if err != nil {
@@ -313,7 +299,8 @@ func DeleteAccessTokenSecret(
 		ctx,
 		fmt.Sprintf(
 			`UPDATE AccessToken AS tok
-			SET %[1]v_salt = NULL, %[1]v_hash = NULL, %[1]v_created_at = NULL, %[1]v_last_used_at = NULL
+			SET %[1]v_hash = NULL, %[1]v_created_at = NULL, %[1]v_expires_at = NULL,
+				%[1]v_last_used_at = NULL
 			WHERE tok.id = @id AND tok.user_account_id = @userId AND tok.organization_id = @orgId
 				AND tok.%[1]v_hash IS NOT NULL AND tok.%[2]v_hash IS NOT NULL`,
 			prefix, accessTokenSecretPrefix(slot.Other()),

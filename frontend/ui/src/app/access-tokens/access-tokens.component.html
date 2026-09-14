@@ -135,6 +135,10 @@
         <div>
           <label for="expiresAt" class="distr-label mb-2">Expires At</label>
           <app-expires-at-picker formControlName="expiresAt" inputId="expiresAt" />
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Belongs to the secret the token is created with and cannot be changed afterwards. To keep the token alive,
+            add a secret that expires later.
+          </p>
         </div>
         <div>
           <label for="userRole" class="distr-label mb-2">Role</label>

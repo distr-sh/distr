@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
@@ -25,6 +26,7 @@ const (
 	accessTokenLastSecretMessage = "This token must keep at least one secret. " +
 		"Create the replacement first, or delete the token itself."
 	accessTokenRoleExceedsCallerMessage = "token role cannot exceed your own role"
+	accessTokenExpiresAtInPastMessage   = "the expiration date must be in the future"
 )
 
 func getAccessTokensHandler() http.HandlerFunc {
@@ -57,6 +59,10 @@ func createAccessTokenHandler() http.HandlerFunc {
 			return
 		}
 
+		if !checkAccessTokenExpiresAt(w, request.ExpiresAt) {
+			return
+		}
+
 		newToken, err := authkey.NewToken()
 		if err != nil {
 			log.Warn("error creating token", zap.Error(err))
@@ -65,20 +71,14 @@ func createAccessTokenHandler() http.HandlerFunc {
 			return
 		}
 
-		secret, err := newAccessTokenSecret(*newToken.Secret)
-		if err != nil {
-			log.Warn("error creating token", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
 		token := types.AccessToken{
-			ExpiresAt:      request.ExpiresAt,
-			Label:          request.Label,
-			UserAccountID:  auth.CurrentUserID(),
-			Key:            newToken.Key,
-			Secret1:        &secret,
+			Label:         request.Label,
+			UserAccountID: auth.CurrentUserID(),
+			Key:           newToken.Key,
+			Secret1: &types.AccessTokenSecret{
+				Hash:      newToken.Secret.Hash(),
+				ExpiresAt: request.ExpiresAt,
+			},
 			OrganizationID: *auth.CurrentOrgID(),
 			UserRole:       request.UserRole,
 		}
@@ -109,12 +109,10 @@ func patchAccessTokenHandler() http.HandlerFunc {
 		}
 
 		params := db.UpdateAccessTokenParams{
-			UpdateLabel:     patch.Label.Present,
-			Label:           patch.Label.Value,
-			UpdateExpiresAt: patch.ExpiresAt.Present,
-			ExpiresAt:       patch.ExpiresAt.Value,
-			UpdateUserRole:  patch.UserRole.Present,
-			UserRole:        patch.UserRole.Value,
+			UpdateLabel:    patch.Label.Present,
+			Label:          patch.Label.Value,
+			UpdateUserRole: patch.UserRole.Present,
+			UserRole:       patch.UserRole.Value,
 		}
 		if params.UpdateUserRole && !checkAccessTokenRole(ctx, w, params.UserRole) {
 			return
@@ -164,6 +162,15 @@ func createAccessTokenSecretHandler() http.HandlerFunc {
 			return
 		}
 
+		request, err := JsonBody[api.CreateAccessTokenSecretRequest](w, r)
+		if err != nil {
+			return
+		}
+
+		if !checkAccessTokenExpiresAt(w, request.ExpiresAt) {
+			return
+		}
+
 		token, err := db.GetAccessToken(ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID())
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.NotFound(w, r)
@@ -189,14 +196,7 @@ func createAccessTokenSecretHandler() http.HandlerFunc {
 			return
 		}
 
-		secret, err := newAccessTokenSecret(newSecret)
-		if err != nil {
-			log.Warn("error creating token secret", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
+		secret := types.AccessTokenSecret{Hash: newSecret.Hash(), ExpiresAt: request.ExpiresAt}
 		updated, err := db.CreateAccessTokenSecret(ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(), *slot, secret)
 		if errors.Is(err, apierrors.ErrConflict) {
 			http.Error(w, accessTokenSecretSlotsExhaustedMessage, http.StatusBadRequest)
@@ -295,10 +295,10 @@ func accessTokenRoleAllowed(requested, callerRole *types.UserRole, membershipRol
 	return !effective.GreaterThan(*callerRole)
 }
 
-func newAccessTokenSecret(key authkey.Secret) (types.AccessTokenSecret, error) {
-	salt, err := authkey.NewSalt()
-	if err != nil {
-		return types.AccessTokenSecret{}, err
+func checkAccessTokenExpiresAt(w http.ResponseWriter, expiresAt *time.Time) bool {
+	if expiresAt != nil && !expiresAt.After(time.Now()) {
+		http.Error(w, accessTokenExpiresAtInPastMessage, http.StatusBadRequest)
+		return false
 	}
-	return types.AccessTokenSecret{Salt: salt, Hash: key.Hash(salt)}, nil
+	return true
 }

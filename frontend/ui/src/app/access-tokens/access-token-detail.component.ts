@@ -1,6 +1,6 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {DatePipe} from '@angular/common';
-import {Component, computed, effect, ElementRef, inject, signal, viewChild} from '@angular/core';
+import {Component, computed, effect, ElementRef, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {rxResource, takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
@@ -12,9 +12,9 @@ import {
   UserRole,
 } from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faChevronDown, faKey, faPlus, faTrash, faTriangleExclamation} from '@fortawesome/free-solid-svg-icons';
+import {faChevronDown, faKey, faPlus, faTrash, faTriangleExclamation, faXmark} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {catchError, concatMap, EMPTY, firstValueFrom, Observable, of, tap} from 'rxjs';
+import {catchError, concatMap, firstValueFrom, Observable, of, tap} from 'rxjs';
 import {isExpired, RelativeDatePipe} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {USER_ROLE_LABELS} from '../../util/user-role';
@@ -30,7 +30,7 @@ import {UserRoleSelectComponent} from '../components/user-role-select.component'
 import {AccessTokensService} from '../services/access-tokens.service';
 import {AuthService} from '../services/auth.service';
 import {CreatedAccessTokenStore} from '../services/created-access-token.service';
-import {OverlayService} from '../services/overlay.service';
+import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 import {accessTokenName} from './access-token-name';
 
@@ -58,6 +58,7 @@ export class AccessTokenDetailComponent {
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
   protected readonly faTriangleExclamation = faTriangleExclamation;
+  protected readonly faXmark = faXmark;
 
   private readonly accessTokensService = inject(AccessTokensService);
   private readonly auth = inject(AuthService);
@@ -83,7 +84,9 @@ export class AccessTokenDetailComponent {
     const token = this.token();
     return token !== undefined && isExpired(token);
   });
-  protected readonly secrets = computed(() => this.token()?.secrets ?? []);
+  protected readonly secrets = computed(() =>
+    (this.token()?.secrets ?? []).map((secret) => ({...secret, expired: isExpired(secret)}))
+  );
   // A token without secrets predates them and is the whole credential on its own, so giving it one
   // invalidates the token that is in circulation.
   protected readonly legacy = computed(() => this.secrets().length === 0);
@@ -98,15 +101,10 @@ export class AccessTokenDetailComponent {
   protected readonly createdToken = signal<AccessTokenWithKey | null>(null);
   protected readonly savingLabel = signal(false);
 
-  private readonly expiresAtInput = computed(() => {
-    const expiresAt = this.token()?.expiresAt;
-    return expiresAt ? dayjs(expiresAt).format(EXPIRES_AT_DATE_FORMAT) : '';
-  });
-
-  protected readonly settingsForm = new FormGroup({
-    userRole: new FormControl<UserRole | undefined>(undefined),
-    expiresAt: new FormControl('', {nonNullable: true}),
-  });
+  protected readonly roleControl = new FormControl<UserRole | undefined>(undefined);
+  protected readonly secretForm = new FormGroup({expiresAt: new FormControl('', {nonNullable: true})});
+  protected readonly secretFormLoading = signal(false);
+  private secretModal: DialogRef<void> | null = null;
 
   constructor() {
     // The router reuses this component for a sibling token, so the token a create handed over
@@ -115,42 +113,17 @@ export class AccessTokenDetailComponent {
       const id = this.tokenId();
       this.createdToken.set(id ? this.createdTokens.take(id) : null);
     });
-    // Filling the form from the loaded token must not emit, or the value that just arrived from
-    // the server would immediately be sent back to it. It also has to be patchValue: a token
-    // without an explicit role has none to supply, which setValue rejects.
-    effect(() => {
-      this.settingsForm.patchValue(
-        {userRole: this.token()?.userRole, expiresAt: this.expiresAtInput()},
-        {emitEvent: false}
-      );
-    });
-    this.settingsForm.valueChanges
+    // Filling the control from the loaded token must not emit, or the value that just arrived from
+    // the server would immediately be sent back to it.
+    effect(() => this.roleControl.setValue(this.token()?.userRole, {emitEvent: false}));
+    this.roleControl.valueChanges
       .pipe(
         // The requests are sequenced because an older one that finishes last would put the value it
         // was started with back, and unsubscribing does not undo one the server has already accepted.
-        concatMap(() => {
-          const request = this.changedSettings();
-          return request ? this.patch(request) : EMPTY;
-        }),
+        concatMap((userRole) => this.patch({userRole: userRole ?? null})),
         takeUntilDestroyed()
       )
       .subscribe();
-  }
-
-  // Sending only what the user changed keeps a role change from rewriting an expiry the server no
-  // longer accepts, and keeps a date the picker rejects from being saved as "no expiration".
-  private changedSettings(): PatchAccessTokenRequest | null {
-    const {userRole, expiresAt} = this.settingsForm.value;
-    const request: PatchAccessTokenRequest = {};
-    if ((userRole ?? null) !== (this.token()?.userRole ?? null)) {
-      request.userRole = userRole ?? null;
-    }
-    if (this.settingsForm.controls.expiresAt.valid && expiresAt !== this.expiresAtInput()) {
-      // The picker works in local dates, and new Date() would read one as UTC midnight, which
-      // moves the day for everyone west of it.
-      request.expiresAt = expiresAt ? dayjs(expiresAt).toDate() : null;
-    }
-    return Object.keys(request).length > 0 ? request : null;
   }
 
   protected readonly dropdownTriggerButton = viewChild.required<ElementRef<HTMLElement>>('dropdownTriggerButton');
@@ -190,20 +163,34 @@ export class AccessTokenDetailComponent {
     );
   }
 
+  public openSecretModal(template: TemplateRef<unknown>) {
+    this.secretForm.reset({expiresAt: dayjs().add(30, 'day').format(EXPIRES_AT_DATE_FORMAT)});
+    this.secretModal = this.overlay.showModal(template);
+  }
+
+  public closeSecretModal() {
+    this.secretModal?.dismiss();
+  }
+
   public async createSecret() {
-    const confirmation = this.legacy()
-      ? `Token '${this.name()}' is still stored in plain text. Securing it replaces it with a new token, ` +
-        'so the one currently in use stops working. Continue?'
-      : `Add a second secret to token '${this.name()}'?`;
-    if (!(await firstValueFrom(this.overlay.confirm(confirmation)))) {
-      return;
-    }
+    this.secretFormLoading.set(true);
+    const {expiresAt} = this.secretForm.value;
     try {
-      this.createdToken.set(await firstValueFrom(this.accessTokensService.createSecret(this.tokenId()!)));
+      const created = await firstValueFrom(
+        this.accessTokensService.createSecret(this.tokenId()!, {
+          // The picker works in local dates, and new Date() would read one as UTC midnight, which
+          // moves the day for everyone west of it.
+          expiresAt: expiresAt ? dayjs(expiresAt).toDate() : undefined,
+        })
+      );
+      this.closeSecretModal();
+      this.createdToken.set(created);
       this.toast.success('secret created');
       this.accessTokens.reload();
     } catch (e) {
       this.showError(e);
+    } finally {
+      this.secretFormLoading.set(false);
     }
   }
 

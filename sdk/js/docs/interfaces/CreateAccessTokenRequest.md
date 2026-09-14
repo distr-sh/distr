@@ -12,6 +12,9 @@
 
 > `optional` **expiresAt?**: `Date`
 
+The expiration of the secret the token is created with, and a token without one never expires.
+It cannot be changed afterwards, so a token is kept alive by adding a secret that expires later.
+
 ---
 
 ### label?

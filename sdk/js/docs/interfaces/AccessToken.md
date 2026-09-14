@@ -30,6 +30,9 @@
 
 > `optional` **expiresAt?**: `string`
 
+When the token stops working, which is the last of its secrets to expire, since every secret
+that is still valid authenticates it. Not settable: an expiration belongs to a secret.
+
 ---
 
 ### id?

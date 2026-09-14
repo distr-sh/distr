@@ -12,26 +12,11 @@ import (
 )
 
 func FromAuthKey(ctx context.Context, token authkey.Token) (AuthInfo, error) {
-	at, err := db.GetAccessTokenByKey(ctx, token.Key)
+	at, err := db.AuthenticateAccessToken(ctx, token)
 	if err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			err = fmt.Errorf("%w: %w", authn.ErrBadAuthentication, err)
 		}
-		return nil, err
-	}
-
-	slot, err := at.VerifySecret(token.Secret)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %w", authn.ErrBadAuthentication, err)
-	}
-
-	var hash []byte
-	if slot != nil {
-		hash = at.Secret(*slot).Hash
-	}
-	if err := db.MarkAccessTokenUsed(ctx, at.ID, slot, hash); errors.Is(err, apierrors.ErrNotFound) {
-		return nil, fmt.Errorf("%w: %w", authn.ErrBadAuthentication, err)
-	} else if err != nil {
 		return nil, err
 	}
 

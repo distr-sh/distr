@@ -4,11 +4,14 @@ WHERE secret_1_hash IS NOT NULL OR secret_2_hash IS NOT NULL;
 ALTER TABLE AccessToken
   DROP CONSTRAINT AccessToken_secret_1_complete,
   DROP CONSTRAINT AccessToken_secret_2_complete,
-  DROP COLUMN secret_1_salt,
+  DROP CONSTRAINT AccessToken_legacy_expires_at,
   DROP COLUMN secret_1_hash,
   DROP COLUMN secret_1_created_at,
+  DROP COLUMN secret_1_expires_at,
   DROP COLUMN secret_1_last_used_at,
-  DROP COLUMN secret_2_salt,
   DROP COLUMN secret_2_hash,
   DROP COLUMN secret_2_created_at,
+  DROP COLUMN secret_2_expires_at,
   DROP COLUMN secret_2_last_used_at;
+
+COMMENT ON COLUMN AccessToken.expires_at IS NULL;
