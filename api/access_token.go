@@ -9,9 +9,9 @@ import (
 )
 
 type AccessToken struct {
-	ID uuid.UUID `json:"id"`
-	KeyID     string    `json:"keyId"`
-	CreatedAt time.Time `json:"createdAt"`
+	ID         uuid.UUID           `json:"id"`
+	KeyID      string              `json:"keyId"`
+	CreatedAt  time.Time           `json:"createdAt"`
 	ExpiresAt  *time.Time          `json:"expiresAt,omitempty"`
 	LastUsedAt *time.Time          `json:"lastUsedAt,omitempty"`
 	Label      *string             `json:"label,omitempty"`
