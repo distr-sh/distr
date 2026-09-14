@@ -1,14 +1,13 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {DatePipe} from '@angular/common';
 import {Component, computed, effect, ElementRef, inject, signal, TemplateRef, viewChild} from '@angular/core';
-import {rxResource, takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
+import {rxResource, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
-import {UserRole} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faChevronDown, faKey, faPlus, faTrash, faTriangleExclamation, faXmark} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {catchError, concatMap, firstValueFrom, Observable, of, tap} from 'rxjs';
+import {catchError, firstValueFrom, Observable, of, tap} from 'rxjs';
 import {isExpired, RelativeDatePipe} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {USER_ROLE_LABELS} from '../../util/user-role';
@@ -19,7 +18,6 @@ import {
 } from '../components/expires-at-picker/expires-at-picker.component';
 import {InlineEditComponent} from '../components/inline-edit.component';
 import {PageComponent} from '../components/page.component';
-import {UserRoleSelectComponent} from '../components/user-role-select.component';
 import {AccessTokensService} from '../services/access-tokens.service';
 import {AuthService} from '../services/auth.service';
 import {CreatedAccessTokenStore} from '../services/created-access-token.service';
@@ -41,7 +39,6 @@ import {accessTokenName} from './access-token-name';
     ExpiresAtPickerComponent,
     InlineEditComponent,
     PageComponent,
-    UserRoleSelectComponent,
   ],
   templateUrl: './access-token-detail.component.html',
 })
@@ -73,10 +70,6 @@ export class AccessTokenDetailComponent {
     (this.accessTokens.value() ?? []).map((token) => ({id: token.id!, name: accessTokenName(token)}))
   );
 
-  protected readonly expired = computed(() => {
-    const token = this.token();
-    return token !== undefined && isExpired(token);
-  });
   protected readonly secrets = computed(() =>
     (this.token()?.secrets ?? []).map((secret) => ({...secret, expired: isExpired(secret)}))
   );
@@ -86,15 +79,19 @@ export class AccessTokenDetailComponent {
   protected readonly canCreateSecret = computed(() => this.secrets().length < 2);
   protected readonly canDeleteSecret = computed(() => this.secrets().length > 1);
 
-  protected readonly currentUserRole = computed<UserRole | undefined>(() => this.auth.getClaims()?.role);
-  protected readonly inheritOptionLabel = computed(() => {
-    const role = this.currentUserRole();
-    return role ? `Inherit (${USER_ROLE_LABELS[role]})` : 'Inherit from my role';
+  // A token that was created without a role of its own acts under the role its owner has, which
+  // is re-read on every request, so it follows them when they are promoted or demoted.
+  protected readonly roleLabel = computed(() => {
+    const tokenRole = this.token()?.userRole;
+    if (tokenRole) {
+      return USER_ROLE_LABELS[tokenRole];
+    }
+    const ownRole = this.auth.getClaims()?.role;
+    return ownRole ? `Inherited (${USER_ROLE_LABELS[ownRole]})` : 'Inherited';
   });
   protected readonly createdToken = signal<AccessTokenWithKey | null>(null);
   protected readonly savingLabel = signal(false);
 
-  protected readonly roleControl = new FormControl<UserRole | undefined>(undefined);
   protected readonly secretForm = new FormGroup({expiresAt: new FormControl('', {nonNullable: true})});
   protected readonly secretFormLoading = signal(false);
   private secretModal: DialogRef<void> | null = null;
@@ -106,17 +103,6 @@ export class AccessTokenDetailComponent {
       const id = this.tokenId();
       this.createdToken.set(id ? this.createdTokens.take(id) : null);
     });
-    // Filling the control from the loaded token must not emit, or the value that just arrived from
-    // the server would immediately be sent back to it.
-    effect(() => this.roleControl.setValue(this.token()?.userRole, {emitEvent: false}));
-    this.roleControl.valueChanges
-      .pipe(
-        // The requests are sequenced because an older one that finishes last would put the value it
-        // was started with back, and unsubscribing does not undo one the server has already accepted.
-        concatMap((userRole) => this.patch({userRole: userRole ?? null})),
-        takeUntilDestroyed()
-      )
-      .subscribe();
   }
 
   protected readonly dropdownTriggerButton = viewChild.required<ElementRef<HTMLElement>>('dropdownTriggerButton');

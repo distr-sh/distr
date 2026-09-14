@@ -54,11 +54,10 @@ func (r CreateAccessTokenRequest) Validate() error {
 	return validateAccessTokenExpiresAt(r.ExpiresAt)
 }
 
-// PatchAccessTokenRequest supports partial updates: omitted fields are left unchanged, and an
-// explicit null clears the field, which means no label and the role of the user.
+// PatchAccessTokenRequest carries the only part of a token that is not fixed when it is created.
+// An omitted label is left unchanged and an explicit null clears it.
 type PatchAccessTokenRequest struct {
-	Label    Nullable[string]         `json:"label"`
-	UserRole Nullable[types.UserRole] `json:"userRole"`
+	Label Nullable[string] `json:"label"`
 }
 
 type CreateAccessTokenSecretRequest struct {

@@ -46,12 +46,11 @@ export interface CreateAccessTokenRequest {
 }
 
 /**
- * Supports partial updates: an omitted field is left unchanged, an explicit null clears it, which
- * means no label and the role of the user.
+ * Carries the only part of a token that is not fixed when it is created. An omitted label is left
+ * unchanged and an explicit null clears it.
  */
 export interface PatchAccessTokenRequest {
   label?: string | null;
-  userRole?: UserRole | null;
 }
 
 export interface CreateAccessTokenSecretRequest {

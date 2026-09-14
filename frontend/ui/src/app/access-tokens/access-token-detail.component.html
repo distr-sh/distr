@@ -1,4 +1,4 @@
-<app-page>
+<app-page variant="narrow">
   <div class="flex flex-col gap-6">
     <div class="distr-panel">
       <nav class="flex justify-between" aria-label="Breadcrumb">
@@ -72,19 +72,7 @@
           [loading]="savingLabel()"
           (save)="saveLabel($event)" />
 
-        @if (legacy()) {
-          <p class="mt-4 max-w-3xl text-sm text-gray-500 dark:text-gray-400">
-            This token has no secret, so it is stored as it is and shown here in full.
-          </p>
-        } @else {
-          <p class="mt-4 max-w-3xl text-sm text-gray-500 dark:text-gray-400">
-            A token has the format
-            <code class="text-gray-900 dark:text-white">distr-&lt;key id&gt;_&lt;secret&gt;</code>
-            where the secret is stored hashed and only visible on creation.
-          </p>
-        }
-
-        <dl class="grid grid-cols-2 gap-6 mt-4 max-w-3xl text-sm">
+        <dl class="grid grid-cols-3 gap-6 mt-4 text-sm">
           <div>
             <dt class="distr-label mb-2">Key ID</dt>
             <dd>
@@ -101,32 +89,7 @@
           </div>
           <div>
             <dt class="distr-label mb-2">Role</dt>
-            <dd>
-              <app-user-role-select
-                [formControl]="roleControl"
-                ariaLabel="Role"
-                [maxRole]="currentUserRole()"
-                [emptyOptionLabel]="inheritOptionLabel()"
-                selectClass="distr-input" />
-            </dd>
-          </div>
-          <div>
-            <dt class="distr-label mb-2">
-              Expires
-              @if (expired()) {
-                <span class="ml-1 font-normal text-red-600 dark:text-red-500">
-                  <fa-icon [icon]="faTriangleExclamation" />
-                  expired
-                </span>
-              }
-            </dt>
-            <dd class="text-gray-900 dark:text-white">
-              @if (token.expiresAt; as expiresAt) {
-                {{ expiresAt | date: 'medium' }}
-              } @else {
-                never
-              }
-            </dd>
+            <dd class="text-gray-900 dark:text-white">{{ roleLabel() }}</dd>
           </div>
         </dl>
       } @else if (!loading()) {
@@ -147,11 +110,7 @@
                 (click)="openSecretModal(secretModalTemplate)"
                 class="distr-btn-secondary w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium">
                 <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
-                @if (legacy()) {
-                  Secure token
-                } @else {
-                  Add secret
-                }
+                Add secret
               </button>
             }
           </div>
@@ -166,12 +125,14 @@
         }
 
         @if (legacy()) {
-          <div class="mx-4 mb-4 flex items-start gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <fa-icon [icon]="faTriangleExclamation" class="mt-0.5 text-yellow-500" />
+          <div
+            class="mx-4 mb-4 flex items-start gap-3 p-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-transparent dark:text-yellow-300 dark:border dark:border-yellow-300"
+            role="alert">
+            <fa-icon [icon]="faTriangleExclamation" class="mt-0.5" />
             <span>
-              This token was created before tokens were split into a key and a secret, so the token itself is the whole
-              credential. Securing it gives it a secret and replaces the token, so anything still using the old one has
-              to be updated.
+              Please migrate this access token to the new, more secure format that adds a secret to it. Adding one
+              issues a new token and invalidates the current one, so anything still using the current one has to be
+              updated.
             </span>
           </div>
         } @else {
@@ -229,11 +190,6 @@
               </tbody>
             </table>
           </div>
-          <p class="m-4 text-sm text-gray-500 dark:text-gray-400">
-            A token can hold two secrets at once, so that one can be replaced without downtime. An expiration belongs to
-            the secret it was created with and cannot be changed, so a token is kept alive by adding a secret that
-            expires later. The last remaining secret cannot be deleted, delete the token itself instead.
-          </p>
         }
       </div>
     }
@@ -246,13 +202,7 @@
     animate.enter="animate-fly-in-top"
     animate.leave="animate-fly-out-top">
     <div class="flex items-center justify-between p-4 border-b border-gray-200 rounded-t dark:border-gray-600">
-      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-        @if (legacy()) {
-          Secure Token
-        } @else {
-          Add Secret
-        }
-      </h2>
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Add Secret</h2>
       <button
         type="button"
         (click)="closeSecretModal()"
@@ -263,18 +213,7 @@
     </div>
 
     <form [formGroup]="secretForm" (ngSubmit)="createSecret()" class="p-4 space-y-4">
-      @if (legacy()) {
-        <div
-          class="flex items-center p-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
-          role="alert">
-          <fa-icon [icon]="faTriangleExclamation" />
-          <span class="sr-only">Warning</span>
-          <div class="ml-3 text-sm font-medium">
-            This token is stored as it is. Securing it replaces it with a new token, so anything still using the current
-            one stops working.
-          </div>
-        </div>
-      } @else {
+      @if (!legacy()) {
         <p class="text-sm text-gray-500 dark:text-gray-400">
           The new secret authenticates the token alongside the existing one, so the one in use keeps working until you
           delete it.
@@ -294,11 +233,7 @@
           type="submit"
           [disabled]="secretFormLoading() || secretForm.invalid"
           class="distr-btn-primary py-2 px-4 text-sm font-medium">
-          @if (legacy()) {
-            Secure Token
-          } @else {
-            Add Secret
-          }
+          Add Secret
         </button>
       </div>
     </form>

@@ -75,42 +75,21 @@ func CreateAccessToken(ctx context.Context, token *types.AccessToken) error {
 	}
 }
 
-type UpdateAccessTokenParams struct {
-	UpdateLabel    bool
-	Label          *string
-	UpdateUserRole bool
-	UserRole       *types.UserRole
-}
-
-// UpdateAccessToken changes the fields of a token that are not part of the credential itself and
-// returns it as it is now, which for a params value that updates nothing is simply the stored row.
-func UpdateAccessToken(ctx context.Context, id, userID, orgID uuid.UUID, p UpdateAccessTokenParams) (
+// UpdateAccessTokenLabel changes the only part of a token that is not fixed when it is created and
+// returns the token as it is now.
+func UpdateAccessTokenLabel(ctx context.Context, id, userID, orgID uuid.UUID, label *string) (
 	*types.AccessToken, error,
 ) {
-	args := pgx.NamedArgs{"id": id, "userId": userID, "orgId": orgID}
-	var setClauses []string
-	if p.UpdateLabel {
-		setClauses = append(setClauses, "label = nullif(@label, '')")
-		args["label"] = p.Label
-	}
-	if p.UpdateUserRole {
-		setClauses = append(setClauses, "user_role = @userRole")
-		args["userRole"] = p.UserRole
-	}
-	if len(setClauses) == 0 {
-		return GetAccessToken(ctx, id, userID, orgID)
-	}
-
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
 		fmt.Sprintf(
 			`UPDATE AccessToken AS tok
-			SET %v
+			SET label = nullif(@label, '')
 			WHERE tok.id = @id AND tok.user_account_id = @userId AND tok.organization_id = @orgId
 			RETURNING %v`,
-			strings.Join(setClauses, ", "), accessTokenOutputExpr),
-		args,
+			accessTokenOutputExpr),
+		pgx.NamedArgs{"id": id, "userId": userID, "orgId": orgID, "label": label},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not update access token: %w", err)

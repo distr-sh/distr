@@ -60,7 +60,7 @@ describe('AccessTokenDetailComponent', () => {
   }
 
   it('opens a token that has neither secrets nor an explicit role', async () => {
-    expect(await open(legacyToken)).toContain('Secure token');
+    expect(await open(legacyToken)).toContain('Add secret');
   });
 
   it('shows the token a create handed over', async () => {
