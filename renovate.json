@@ -117,7 +117,7 @@
       "managerFilePatterns": [
         "internal/handlers/tutorials.go",
         "frontend/ui/src/app/tutorials/registry/registry-tutorial.component.ts",
-        ".github/workflows/build-hub.yaml"
+        ".github/workflows/build-distr.yaml"
       ],
       "matchStrings": [
         "\"(?<currentValue>[^\"]+)\",\\s+// renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)",

@@ -27,7 +27,7 @@ image:
   # needs the credentials you received from us, as an imagePullSecrets entry.
   repository: registry.distr.sh/enterprise/distr-ee
 
-hub:
+distr:
   # Helm replaces the whole list rather than merging it, so this repeats the defaults it needs.
   env:
     - name: DISTR_HOST
@@ -63,7 +63,7 @@ hub:
     - name: CUSTOM_DOMAIN_TARGET
       value: whitelabel.distr.local
   # Buffers registry layer uploads on disk instead of in memory. Caddy streams pushes on a custom
-  # domain to the hub without a size limit, so this keeps a large layer out of its memory.
+  # domain to Distr without a size limit, so this keeps a large layer out of its memory.
   scratch:
     enabled: true
 

@@ -25,7 +25,7 @@ func CreateAgentVersion(ctx context.Context) error {
 }
 
 // ApplyAutomaticAgentUpdates points every DeploymentTarget with automatic updates enabled at the agent version of
-// the running hub. Agents self-update as soon as the version they receive differs from the one they run.
+// the running server. Agents self-update as soon as the version they receive differs from the one they run.
 func ApplyAutomaticAgentUpdates(ctx context.Context) (int64, error) {
 	db := internalctx.GetDb(ctx)
 	cmd, err := db.Exec(ctx,

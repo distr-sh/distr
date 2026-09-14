@@ -34,7 +34,7 @@ const (
 	MaxRegistryStorageBytesTrial                 = limit.Unlimited
 
 	// MaxLogExportRows is a hard cap on the number of lines a single log export may
-	// produce, so very large exports cannot exhaust hub or client resources. It applies
+	// produce, so very large exports cannot exhaust server or client resources. It applies
 	// to all subscription types.
 	MaxLogExportRows limit.Limit = 1_000_000
 

@@ -6,10 +6,10 @@ sidebar:
   order: 2
 ---
 
-The easiest way to host your own Distr Hub is Docker Compose.
+The easiest way to host your own Distr instance is Docker Compose.
 You need Docker Engine 29 or later and the Docker Compose plugin 5.3 or later.
 
-All five Compose stacks under [`deploy/docker`](https://github.com/distr-sh/distr/tree/main/deploy/docker) run the Hub and [Loki](/docs/self-hosting/configuration/#log-processing-loki) for log processing.
+All five Compose stacks under [`deploy/docker`](https://github.com/distr-sh/distr/tree/main/deploy/docker) run Distr and [Loki](/docs/self-hosting/configuration/#log-processing-loki) for log processing.
 They differ in the edition they run and in what they bring along:
 
 | Example                                                                                      | Edition    | Includes                                         | Intended for                           |
@@ -31,18 +31,20 @@ mkdir distr && cd distr && curl -fsSL https://github.com/distr-sh/distr/releases
 This command creates a new directory called `distr` containing two files: `docker-compose.yaml` and `.env`.
 For a basic setup, you don't have to modify `docker-compose.yaml`, but please open `.env` in your favorite text editor and change the values of `POSTGRES_PASSWORD`, `JWT_SECRET` and `DATABASE_ENCRYPTION_KEY`.
 Feel free to also change the value of `DISTR_HOST`, if you intend to make your instance publicly available.
-Once you are happy with your configuration, simply start the Hub using Docker Compose:
+Once you are happy with your configuration, simply start Distr using Docker Compose:
 
 ```shell
-docker compose up -d
+docker compose up -d --remove-orphans
 ```
 
 Open [`http://localhost:8080`](http://localhost:8080) to access Distr.
 
+Use the same command to apply later changes. `--remove-orphans` drops containers that the stack no longer defines, which a plain `up` would leave running and holding on to their published ports.
+
 ## Running in production
 
 In production, run PostgreSQL and the object storage as managed services so that the Compose stack stays stateless.
-That is what the `enterprise-aws` and `enterprise-gcp` stacks do: they run `hub`, `loki` and `caddy` in Docker and nothing else.
+That is what the `enterprise-aws` and `enterprise-gcp` stacks do: they run `distr`, `loki` and `caddy` in Docker and nothing else.
 All of their configuration lives in the `.env` file next to the Compose file.
 
 Whichever cloud you use, you need the same pieces:
@@ -51,11 +53,11 @@ Whichever cloud you use, you need the same pieces:
 - Two public hostnames, one for the app and one for the registry, both pointing at the VM. Caddy obtains and renews their certificates via ACME, so TCP `80` and `443` have to be reachable from the internet.
 - A managed PostgreSQL instance the VM can reach over a private network, with TLS enforced. We test against PostgreSQL 18 with 2 CPUs and 2 GB RAM.
 - Two buckets, one for the registry blobs and one for Loki's log chunks.
-- Disk space for the scratch volume, where the registry buffers layer uploads instead of holding them in memory. Every stack mounts one into the Hub, so give the VM room for the layers you expect to be pushed at the same time.
+- Disk space for the scratch volume, where the registry buffers layer uploads instead of holding them in memory. Every stack mounts one into Distr, so give the VM room for the layers you expect to be pushed at the same time.
 - A `JWT_SECRET` and a `DATABASE_ENCRYPTION_KEY`, each from `openssl rand -base64 32`, and a `LICENSE_KEY` if you run a paid plan. Back the encryption key up somewhere other than the database, since it is what makes the encrypted columns readable.
 
-On a single VM, keep running the [maintenance jobs](/docs/self-hosting/maintenance/) inside the Hub process through the `*_CRON` variables in `.env`.
-Switch them off and trigger the `cleanup` and `maintenance` subcommands from outside only once you run more than one Hub replica, since every replica would otherwise run every job.
+On a single VM, keep running the [maintenance jobs](/docs/self-hosting/maintenance/) inside the Distr process through the `*_CRON` variables in `.env`.
+Switch them off and trigger the `cleanup` and `maintenance` subcommands from outside only once you run more than one Distr replica, since every replica would otherwise run every job.
 
 ### Distr Enterprise
 
@@ -78,7 +80,7 @@ It bundles the instance, a static IP, a DNS zone, a firewall and optional daily 
 3. Open TCP `80` and `443` in the instance firewall.
 
 A Lightsail managed database is the simplest choice. It sits in the same Lightsail VPC as the instance, is not publicly reachable unless you ask for it and takes daily backups.
-Pick RDS for PostgreSQL when you need Multi-AZ failover, larger instance classes or a read replica, which the Hub can use via `DATABASE_READONLY_URL`.
+Pick RDS for PostgreSQL when you need Multi-AZ failover, larger instance classes or a read replica, which Distr can use via `DATABASE_READONLY_URL`.
 RDS instances run in the region's default VPC, so a Lightsail instance only reaches them once you enable VPC peering under Account → Advanced in the Lightsail console.
 
 Neither option creates the database Distr expects, so connect to the new instance from the VM and create it yourself:
@@ -95,7 +97,7 @@ Create the two buckets in the region of the VM:
 - On plain S3, add a lifecycle rule that aborts incomplete multipart uploads after a day. The registry uploads large layers as multipart uploads, and an interrupted push leaves parts behind that you keep paying for.
 
 Buckets created in Lightsail come with their own access keys, listed under Permissions on the bucket, so there is no IAM user or bucket policy to manage.
-Copy one key pair per bucket into the matching `REGISTRY_S3_*` and `LOKI_S3_*` variables. Neither of them needs an endpoint, since the regional one follows from `REGISTRY_S3_REGION` and `LOKI_S3_REGION`. Do not add `REGISTRY_S3_ENDPOINT` back with an empty value, which the Hub reads as a custom endpoint and the AWS SDK then rejects.
+Copy one key pair per bucket into the matching `REGISTRY_S3_*` and `LOKI_S3_*` variables. Neither of them needs an endpoint, since the regional one follows from `REGISTRY_S3_REGION` and `LOKI_S3_REGION`. Do not add `REGISTRY_S3_ENDPOINT` back with an empty value, which Distr reads as a custom endpoint and the AWS SDK then rejects.
 If you do set one, use the plain regional endpoint (`https://s3.us-east-2.amazonaws.com`) without the bucket in it.
 
 The relevant part of `deploy/docker/enterprise-aws/.env` then looks like this:
@@ -131,7 +133,7 @@ LOKI_S3_SECRET_ACCESS_KEY="..."
 LOKI_S3_USE_PATH_STYLE=false
 ```
 
-`REGISTRY_S3_ALLOW_REDIRECT=true` answers layer downloads with a redirect to a pre-signed S3 URL, which keeps pull bandwidth off the Hub.
+`REGISTRY_S3_ALLOW_REDIRECT=true` answers layer downloads with a redirect to a pre-signed S3 URL, which keeps pull bandwidth off Distr.
 Turn it off if your clients cannot reach S3 directly.
 
 ### Distr Enterprise on GCP

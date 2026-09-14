@@ -15,8 +15,8 @@
 
 replicaCount: 1
 
-hub:
-  # Helm replaces the whole list rather than merging it, so every variable the hub needs has to be
+distr:
+  # Helm replaces the whole list rather than merging it, so every variable Distr needs has to be
   # in this one.
   env:
     - name: DISTR_HOST

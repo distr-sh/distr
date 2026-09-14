@@ -4,11 +4,15 @@ Guidance for Claude Code (claude.ai/code) and other agents working in this repos
 
 ## Project
 
-Distr distributes applications to self-managed customers. A control plane (call it Distr, never Hub) runs in the cloud, agents run in customer environments and an OCI-compatible registry serves the artifacts.
+Distr distributes applications to self-managed customers. The Distr server runs in the cloud, agents run in customer environments and an OCI-compatible registry serves the artifacts.
+
+That server is called Distr, never Hub. The name holds for user-facing text, for identifiers in configuration users write (Helm values, Compose services, Kubernetes labels) and for file, folder and mise task names. Reintroducing "Hub" anywhere is a regression.
+
+"Control plane" is a category, not a name. Keep it where it explains an architecture in general (BYOC, Kubernetes, what a vendor's SaaS does), and never use it as a second name for our own server: write "Distr", not "the Distr control plane" or "the control plane".
 
 ## Repository layout
 
-- `cmd/hub/`: Distr itself, a Go backend on chi/v5 serving the REST API on `/api/v1` and the compiled frontend on `/`.
+- `cmd/distr/`: Distr itself, a Go backend on chi/v5 serving the REST API on `/api/v1` and the compiled frontend on `/`.
 - `cmd/agent/docker/`, `cmd/agent/kubernetes/`: the agents that run Docker Compose and Helm deployments in customer environments and report logs and metrics back.
 - `frontend/ui/`: the Angular app (standalone components, TailwindCSS 4, SCSS, Flowbite), built into `internal/frontend/dist/ui/`.
 - `sdk/js/`: `@distr-sh/distr-sdk`, a standalone pnpm project. Prefer its high-level `DistrService` over the low-level `Client`, and run its examples against the config in `src/examples/config.ts`.
@@ -22,7 +26,7 @@ PostgreSQL is reached through pgx/v5, registry blobs and Loki chunks live in S3-
 Build, test, lint and format through mise. Never invoke `go build`, `go test`, `golangci-lint` or `pnpm` directly.
 
 ```sh
-mise run build:hub:community   # includes the frontend
+mise run build:distr:community # includes the frontend
 mise run build:agent:docker
 mise run build:agent:kubernetes
 mise run build:sdk             # after every SDK change

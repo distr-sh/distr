@@ -1,6 +1,6 @@
 ---
 title: Configuration Reference
-description: Complete reference of all environment variables used to configure a self-hosted Distr Hub instance, grouped by area.
+description: Complete reference of all environment variables used to configure a self-hosted Distr instance, grouped by area.
 slug: docs/self-hosting/configuration
 sidebar:
   label: Configuration Reference
@@ -9,8 +9,8 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 
-This page lists all environment variables used to configure a self-hosted Distr Hub.
-Variables marked as **required** must be set for the Hub to start (some are only required when a related feature is enabled).
+This page lists all environment variables used to configure a self-hosted Distr instance.
+Variables marked as **required** must be set for Distr to start (some are only required when a related feature is enabled).
 Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use standard cron syntax (e.g. `0 * * * *`).
 
 <Aside type="tip">
@@ -49,7 +49,7 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 
 ### Maintenance mode
 
-`MAINTENANCE_MODE=true` announces planned downtime instead of stopping the instance. The Hub keeps serving the
+`MAINTENANCE_MODE=true` announces planned downtime instead of stopping the instance. Distr keeps serving the
 frontend, but answers every API request, including the ones from agents, and every request to the OCI registry with
 `503 Service Unavailable`, so that nothing reaches the database while you work on it. The frontend picks that up and
 shows a maintenance page that reconnects on its own once the instance is back.
@@ -100,7 +100,7 @@ the widget and are not verified; they remain subject to the rate limits of the a
 
 | Variable              | Required | Default | Description                                                                              |
 | --------------------- | -------- | ------- | ---------------------------------------------------------------------------------------- |
-| `AGENT_INTERVAL`      | no       | `5s`    | Interval at which agents poll the Hub for updates.                                       |
+| `AGENT_INTERVAL`      | no       | `5s`    | Interval at which agents poll Distr for updates.                                         |
 | `AGENT_DOCKER_CONFIG` | no       | —       | Base64-encoded Docker config JSON provided to Docker agents for registry authentication. |
 
 ## Mailer
@@ -147,7 +147,7 @@ See [Registry Configuration](/docs/registry/configuration/) for a feature overvi
 ## Custom Domains
 
 Custom domain self-service lets vendor organizations serve Distr under their own domains.
-It requires an edge proxy with on-demand TLS (e.g. Caddy, included in the Helm chart) in front of the Hub.
+It requires an edge proxy with on-demand TLS (e.g. Caddy, included in the Helm chart) in front of Distr.
 The feature is only offered in the UI when `CUSTOM_DOMAIN_TARGET` is set.
 
 A domain is only used for links, mails, agent manifests and registry URLs once a CNAME check has
@@ -159,7 +159,7 @@ their own once a record is fixed. Serving requests on a domain does not depend o
 | Variable                                   | Required | Default | Description                                                                                                                      |
 | ------------------------------------------ | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `CUSTOM_DOMAIN_TARGET`                     | no       | —       | Hostname customers point every custom domain's CNAME record at (e.g. `whitelabel.distr.sh`). Enables custom domain self-service. |
-| `CUSTOM_DOMAIN_VERIFICATION_CRON`          | no       | —       | Cron schedule of the built-in domain verification job. If unset, no verification is scheduled in the Hub.                        |
+| `CUSTOM_DOMAIN_VERIFICATION_CRON`          | no       | —       | Cron schedule of the built-in domain verification job. If unset, no verification is scheduled in Distr.                          |
 | `CUSTOM_DOMAIN_VERIFICATION_TIMEOUT`       | no       | `4m`    | Timeout for a single verification run. Must be greater than `0`.                                                                 |
 | `CUSTOM_DOMAIN_VERIFICATION_REFRESH_AFTER` | no       | `12h`   | How long a verified domain is left alone before it is checked again. Failing domains are checked on every run.                   |
 | `INTERNAL_SERVER_ADDR`                     | no       | `:8085` | Listen address of the internal server exposing the Caddy on-demand TLS ask endpoint. Never expose it outside the cluster.        |
@@ -258,7 +258,7 @@ unknown email address; invite the user beforehand to place them in an existing o
 `REGISTRATION=disabled` (see [Sign-up modes](#sign-up-modes)) to reject unknown addresses.
 
 Vendor organizations on the Business plan can also configure their own providers in the UI, which requires no
-instance configuration. Those issuer URLs are entered by organization administrators and fetched by the Hub, so they
+instance configuration. Those issuer URLs are entered by organization administrators and fetched by Distr, so they
 must be `https` and must not resolve to a private network address. Both restrictions are lifted when `DISTR_HOST` is an
 `http` URL, so that an instance running locally can be developed against an identity provider next to it. An operator
 whose identity provider only exists inside their own network configures it as the instance-wide generic provider above

@@ -9,8 +9,17 @@ sidebar:
 Distr is available as a [Helm chart](/glossary/helm-chart/) distributed via ghcr.io.
 Every setting mentioned on this page is documented in the chart's reference [values.yaml](https://artifacthub.io/packages/helm/distr/distr?modal=values).
 
+:::caution[Upgrading from an earlier chart version]
+The top-level `hub` values key is now called `distr`, so move `hub.env`, `hub.envFrom` and `hub.scratch` to `distr.env`, `distr.envFrom` and `distr.scratch` in your values file.
+The chart refuses to render while the old key is still set rather than silently dropping your environment.
+
+The pods are also relabelled from `app.kubernetes.io/component: hub` to `distr` and the container is renamed from `hub` to `distr`.
+Since the Service selects on that label, it has no endpoints until the first new pod is ready, which makes this upgrade briefly interrupt traffic.
+Anything outside the chart that addresses the old names, such as `kubectl logs -c hub`, Kustomize patches or dashboards, has to be updated too.
+:::
+
 Complete values files for the setups below live under [`deploy/charts/distr/examples`](https://github.com/distr-sh/distr/tree/main/deploy/charts/distr/examples), one per folder, and match the [Docker Compose examples](/docs/self-hosting/docker/) of the same name.
-Every one of them deploys the Hub and [Loki](/docs/self-hosting/configuration/#log-processing-loki) for log processing, and they differ in the edition they run and in what they bring along:
+Every one of them deploys Distr and [Loki](/docs/self-hosting/configuration/#log-processing-loki) for log processing, and they differ in the edition they run and in what they bring along:
 
 | Example                                                                                                     | Edition    | Includes                                                   | Intended for                                                                  |
 | ----------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------- |
@@ -30,7 +39,7 @@ helm upgrade --install --wait --namespace distr --create-namespace \
   --set postgresql.enabled=true --set rustfs.enabled=true
 ```
 
-This deploys the Hub together with PostgreSQL, the RustFS object storage and Loki, so you don't have to modify any values to get a working instance.
+This deploys Distr together with PostgreSQL, the RustFS object storage and Loki, so you don't have to modify any values to get a working instance.
 Both bundled dependencies keep their data in a single `ReadWriteOnce` volume each and use the default credentials from the values file, which makes them fine for a test cluster and unsuitable for production.
 The same install as a values file is [`examples/quickstart/values.yaml`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/quickstart/values.yaml).
 
@@ -43,12 +52,12 @@ For production, disable the bundled dependencies and point the chart at managed 
 This part is the same on every cloud:
 
 - Leave `postgresql.enabled` at `false` and set `externalDatabase.existingSecret` to a secret holding the connection URI. The alternative, `externalDatabase.uri`, puts the URI into the release values in plain text.
-- Use external object storage for both the registry (`REGISTRY_S3_*` in `hub.env`) and Loki (`loki.loki.storage`). Create both buckets up front, set `REGISTRY_S3_CREATE_BUCKET` to `false` and drop the `create-loki-bucket` init container with `loki.singleBinary.initContainers: []`, which only exists to provision a bucket in the in-cluster RustFS.
-- Put `JWT_SECRET`, `DATABASE_ENCRYPTION_KEY`, the license key and the object storage credentials in a `secretKeyRef` or in `hub.envFrom`, not in your `hub.env` values.
-- Enable a scratch volume with `hub.scratch.enabled`, so the registry buffers layer uploads on disk instead of in memory.
+- Use external object storage for both the registry (`REGISTRY_S3_*` in `distr.env`) and Loki (`loki.loki.storage`). Create both buckets up front, set `REGISTRY_S3_CREATE_BUCKET` to `false` and drop the `create-loki-bucket` init container with `loki.singleBinary.initContainers: []`, which only exists to provision a bucket in the in-cluster RustFS.
+- Put `JWT_SECRET`, `DATABASE_ENCRYPTION_KEY`, the license key and the object storage credentials in a `secretKeyRef` or in `distr.envFrom`, not in your `distr.env` values.
+- Enable a scratch volume with `distr.scratch.enabled`, so the registry buffers layer uploads on disk instead of in memory.
 - Add an Ingress for the two hostnames the chart serves, the app and the registry. Registry pushes have no size limit, so raise or disable the request body limit of your ingress controller on the registry host.
 
-The rest of the defaults are already shaped for production: two Hub replicas with a `PodDisruptionBudget`, and the [maintenance jobs](/docs/self-hosting/maintenance/) as `CronJob`s under `cronJobs` instead of in-process cron, which is what you want as soon as more than one replica runs.
+The rest of the defaults are already shaped for production: two Distr replicas with a `PodDisruptionBudget`, and the [maintenance jobs](/docs/self-hosting/maintenance/) as `CronJob`s under `cronJobs` instead of in-process cron, which is what you want as soon as more than one replica runs.
 Set `resources` and consider `autoscaling` based on the [System Requirements](/docs/self-hosting/system-requirements/).
 
 Without managed services next door, the [`community`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/community/values.yaml) and [`enterprise`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/enterprise/values.yaml) examples keep PostgreSQL and RustFS in the cluster and put an Ingress with a cert-manager certificate in front, which is the trade-off the self-contained Compose examples make as well.
@@ -61,7 +70,7 @@ It comes from our own registry, so create a pull secret from the credentials you
 
 :::tip[Let Distr manage your own instance]
 The smoothest way to run a paid plan is to deploy the chart with Distr itself, through a [Kubernetes agent](/docs/agents/kubernetes-agent/) in the target cluster.
-The agent then handles the rollout of new Hub versions and injects the license key for you: put `value: '{{ index .LicenseKeys "Distr" }}'` on the `LICENSE_KEY` entry of your Helm values and it is resolved at deploy time from the [license key](/docs/platform/license-keys/) named `Distr`, so the token is never stored in the release.
+The agent then handles the rollout of new Distr versions and injects the license key for you: put `value: '{{ index .LicenseKeys "Distr" }}'` on the `LICENSE_KEY` entry of your Helm values and it is resolved at deploy time from the [license key](/docs/platform/license-keys/) named `Distr`, so the token is never stored in the release.
 :::
 
 ```yaml
@@ -71,7 +80,7 @@ image:
 imagePullSecrets:
   - name: distr-registry
 
-hub:
+distr:
   env:
     - name: LICENSE_KEY
       valueFrom:
@@ -81,14 +90,14 @@ hub:
     # ... the rest of your environment
 ```
 
-Keep in mind that Helm replaces the `hub.env` list rather than merging it, so every variable you need has to be in the same list.
+Keep in mind that Helm replaces the `distr.env` list rather than merging it, so every variable you need has to be in the same list.
 
 ### Distr Enterprise on AWS
 
-Run the Hub on EKS, the database on RDS for PostgreSQL and both buckets on S3 in the region of the cluster.
+Run Distr on EKS, the database on RDS for PostgreSQL and both buckets on S3 in the region of the cluster.
 The buckets need the same setup as for the [Docker Compose example](/docs/self-hosting/docker/#distr-enterprise-on-aws): private, public access blocked, versioning off so blob cleanup can reclaim storage and a lifecycle rule that aborts incomplete multipart uploads.
 
-For access, use IRSA rather than static keys. Annotate the Hub's service account with a role that carries the S3 policy and leave the access keys unset, so the AWS SDK picks up the web identity credentials by itself.
+For access, use IRSA rather than static keys. Annotate Distr's service account with a role that carries the S3 policy and leave the access keys unset, so the AWS SDK picks up the web identity credentials by itself.
 Loki needs the same on its own service account.
 
 The values file for all of it is [`examples/enterprise-aws/values.yaml`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/enterprise-aws/values.yaml), which also carries the Enterprise image and the secrets it expects.
@@ -100,7 +109,7 @@ If you prefer static credentials over IRSA, drop the service account annotations
 
 ### Distr Enterprise on GCP
 
-Run the Hub on GKE, the database on Cloud SQL for PostgreSQL with a private IP in the cluster's VPC and both buckets on Cloud Storage in the region of the cluster.
+Run Distr on GKE, the database on Cloud SQL for PostgreSQL with a private IP in the cluster's VPC and both buckets on Cloud Storage in the region of the cluster.
 As in the Compose example, the two buckets are reached in different ways: the registry uses the S3 interoperability API with an HMAC key, while Loki uses the native GCS API and authenticates through Workload Identity.
 So bind a Google service account with `roles/storage.objectAdmin` on the logs bucket to Loki's Kubernetes service account, and keep the HMAC key of a service account with access to the registry bucket in a secret.
 
@@ -122,7 +131,7 @@ certificate for every domain a vendor registers, so the chart ships an optional
 [on-demand TLS](https://caddyserver.com/docs/automatic-https#on-demand-tls):
 
 ```yaml
-hub:
+distr:
   env:
     # DNS record your vendors point their domains at
     - name: CUSTOM_DOMAIN_TARGET
@@ -136,10 +145,10 @@ caddy:
 Point that hostname at the external address of the `<release>-caddy` `LoadBalancer` Service. One
 target covers every domain a vendor registers, registry domains included, because Caddy routes
 registry traffic by the `/v2/` path prefix the OCI distribution API mandates rather than by
-hostname. Before issuing a certificate, Caddy asks the Hub whether a domain is registered, using an
+hostname. Before issuing a certificate, Caddy asks Distr whether a domain is registered, using an
 internal Service that must never be exposed publicly. `CUSTOM_DOMAIN_TARGET` is what enables the
 feature in the UI, so the chart refuses to render a Caddy deployment without it. Helm replaces the
-`hub.env` list rather than merging it, so add the variable to the rest of your hub environment
+`distr.env` list rather than merging it, so add the variable to the rest of your Distr environment
 instead of setting it on its own.
 
 Caddy stores the certificates it obtains on a persistent volume, which the chart keeps when the
