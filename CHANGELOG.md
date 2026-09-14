@@ -1,5 +1,67 @@
 # Changelog
 
+## [4.0.0](https://github.com/distr-sh/distr/compare/3.5.1...4.0.0) (2026-09-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* add access token key secrets ([#3191](https://github.com/distr-sh/distr/issues/3191))
+* no longer refer to Distr as Hub ([#3227](https://github.com/distr-sh/distr/issues/3227))
+* **backend:** drop legacy log record tables from database ([#3204](https://github.com/distr-sh/distr/issues/3204))
+* **backend:** add encrypting sensitive data at rest ([#3169](https://github.com/distr-sh/distr/issues/3169))
+
+### Features
+
+* add access token key secrets ([#3191](https://github.com/distr-sh/distr/issues/3191)) ([a6cb7e0](https://github.com/distr-sh/distr/commit/a6cb7e031f8fcc1b9234b879e38618510f8cd96d))
+* **backend:** add encrypting sensitive data at rest ([#3169](https://github.com/distr-sh/distr/issues/3169)) ([ccd3746](https://github.com/distr-sh/distr/commit/ccd3746dda77655d0536bf701de42d4f4e393b97))
+* **backend:** add unwrapping KMS encrypted config secrets ([#3193](https://github.com/distr-sh/distr/issues/3193)) ([e596ed3](https://github.com/distr-sh/distr/commit/e596ed3e27bd342f58412e89a5ddb80441e74e3f))
+* **docker-agent:** add collecting container image and log storage usage ([#3206](https://github.com/distr-sh/distr/issues/3206)) ([c873ec2](https://github.com/distr-sh/distr/commit/c873ec29d642a525d05e33aff310151a43eb0d2c))
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([#3212](https://github.com/distr-sh/distr/issues/3212)) ([30dbf3a](https://github.com/distr-sh/distr/commit/30dbf3ae2d41bf0e0ee25bf9ae71e7d3bd4cd6e2))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/service/s3 to v1.112.0 ([#3197](https://github.com/distr-sh/distr/issues/3197)) ([cd34f63](https://github.com/distr-sh/distr/commit/cd34f639798384b3046c0b38d52b70c113d3a1b9))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/service/s3 to v1.113.1 ([#3222](https://github.com/distr-sh/distr/issues/3222)) ([d6b6885](https://github.com/distr-sh/distr/commit/d6b6885f01d9f203f731f0d4fc51f6acb1e60982))
+* **deps:** update module github.com/containerd/log to v0.2.0 ([#3192](https://github.com/distr-sh/distr/issues/3192)) ([51b811d](https://github.com/distr-sh/distr/commit/51b811d9cf6a84acc86cffcefdd3d47515e33991))
+* **deps:** update module github.com/exaring/otelpgx to v0.12.0 ([#3214](https://github.com/distr-sh/distr/issues/3214)) ([c595617](https://github.com/distr-sh/distr/commit/c595617006f2ba39fbb87b6abde0738aebfe9b5c))
+* **deps:** update module github.com/golang-migrate/migrate/v4 to v4.20.1 ([#3199](https://github.com/distr-sh/distr/issues/3199)) ([21d482a](https://github.com/distr-sh/distr/commit/21d482a85beb4f0cf3d695d2e041d5a85d16476d))
+* **deps:** update module github.com/stripe/stripe-go/v86 to v86.4.2 ([#3211](https://github.com/distr-sh/distr/issues/3211)) ([e51610c](https://github.com/distr-sh/distr/commit/e51610c2798988fdea35ba636a2d3c45de748d8c))
+* **deps:** update module golang.org/x/crypto to v0.57.0 ([#3196](https://github.com/distr-sh/distr/issues/3196)) ([fea1925](https://github.com/distr-sh/distr/commit/fea19256aa1bda42caa80c881c16b7c2d78f8ab4))
+* **deps:** update module helm.sh/helm/v4 to v4.3.0 ([#3213](https://github.com/distr-sh/distr/issues/3213)) ([9715259](https://github.com/distr-sh/distr/commit/9715259eff1686574ea3984fead2c4f1929248bb))
+* **docker-agent:** add running container lifecycle hooks on restart, undeploy ([#3228](https://github.com/distr-sh/distr/issues/3228)) ([b93f95f](https://github.com/distr-sh/distr/commit/b93f95fa6c9ec7abcc17493e1353a4993c54e5b6))
+* **frontend:** prevent inconsistend deployment target sorting ([#3229](https://github.com/distr-sh/distr/issues/3229)) ([22c1b70](https://github.com/distr-sh/distr/commit/22c1b7045f3d9eca795568aef048de8eda90f364))
+
+
+### Other
+
+* **backend:** drop legacy log record tables from database ([#3204](https://github.com/distr-sh/distr/issues/3204)) ([007c7e2](https://github.com/distr-sh/distr/commit/007c7e25cb94b7de45ef07c31dbdf370560181f4))
+* **deps:** update angular monorepo to v22.1.6 ([#3210](https://github.com/distr-sh/distr/issues/3210)) ([215b1a4](https://github.com/distr-sh/distr/commit/215b1a447fe5facc0841d4a1f5f0b74893020830))
+* **deps:** update angular-cli monorepo to v22.1.8 ([#3217](https://github.com/distr-sh/distr/issues/3217)) ([b96e1e6](https://github.com/distr-sh/distr/commit/b96e1e6397721246cc082b914dd6721e90bc81bc))
+* **deps:** update dependency @angular/cdk to v22.1.6 ([#3201](https://github.com/distr-sh/distr/issues/3201)) ([cb0126e](https://github.com/distr-sh/distr/commit/cb0126ed3e9304361626ad255f3fee9a6ec855db))
+* **deps:** update dependency autoprefixer to v10.5.6 ([#3216](https://github.com/distr-sh/distr/issues/3216)) ([644997d](https://github.com/distr-sh/distr/commit/644997d035bdeea06628fe87c8a08a396c5ab990))
+* **deps:** update dependency autoprefixer to v10.6.0 ([#3226](https://github.com/distr-sh/distr/issues/3226)) ([620e8cb](https://github.com/distr-sh/distr/commit/620e8cbbbb7b9807ff1bb4713b9691cf2e061aea))
+* **deps:** update dependency marked to v18.0.13 ([#3223](https://github.com/distr-sh/distr/issues/3223)) ([3f709ae](https://github.com/distr-sh/distr/commit/3f709aeb70a04d32fbeca65c7e8bf5326d046e92))
+* **deps:** update dependency postcss to v8.5.28 ([#3224](https://github.com/distr-sh/distr/issues/3224)) ([887415d](https://github.com/distr-sh/distr/commit/887415df058229bf0f25ec8737a734efe35fd4c6))
+* **deps:** update dependency stripe to v1.50.11 ([#3218](https://github.com/distr-sh/distr/issues/3218)) ([aeda536](https://github.com/distr-sh/distr/commit/aeda536cf438998eec20a070a997f64be403d608))
+* **deps:** update helm release rustfs to v1.0.0-rc.6 ([#3221](https://github.com/distr-sh/distr/issues/3221)) ([fdf319f](https://github.com/distr-sh/distr/commit/fdf319fa117b2cec73cc5d57d6ec91d75f961a69))
+* **deps:** update loki docker tag to v18.13.0 ([#3219](https://github.com/distr-sh/distr/issues/3219)) ([c168e9c](https://github.com/distr-sh/distr/commit/c168e9cddf978e039c77f2a3baf0c8112739e747))
+* **deps:** update loki docker tag to v18.13.1 ([#3230](https://github.com/distr-sh/distr/issues/3230)) ([604df07](https://github.com/distr-sh/distr/commit/604df07f8ab109c48ab4f22c2cac4279ce3d0fc8))
+* **deps:** update module go:github.com/go-delve/delve/cmd/dlv to v1.27.2 ([#3207](https://github.com/distr-sh/distr/issues/3207)) ([d7d78a9](https://github.com/distr-sh/distr/commit/d7d78a97d96d0758b3e74576480afb2577b25b55))
+* **deps:** update pnpm to v12.4.1 ([#3220](https://github.com/distr-sh/distr/issues/3220)) ([5f714a3](https://github.com/distr-sh/distr/commit/5f714a39c0fa5fc8759559ad5e3e337321d76966))
+* **deps:** update postgresql docker tag to v18.10.0 ([#3185](https://github.com/distr-sh/distr/issues/3185)) ([c8bd925](https://github.com/distr-sh/distr/commit/c8bd925bee5652c643cdb450bf1d468c4aceb3b8))
+* **deps:** update postgresql docker tag to v18.11.1 ([#3215](https://github.com/distr-sh/distr/issues/3215)) ([6aadd7a](https://github.com/distr-sh/distr/commit/6aadd7a38c8a1f0357a3c4b8404567f84b37281a))
+* **deps:** upgrade rustfs to v1.0.0-rc.6 ([#3225](https://github.com/distr-sh/distr/issues/3225)) ([1036167](https://github.com/distr-sh/distr/commit/10361672a2ddb8e49c71e1733b5568a0fc0ca7fb))
+* **frontend:** rounded dopdown list item hover ([#3203](https://github.com/distr-sh/distr/issues/3203)) ([3a1a80d](https://github.com/distr-sh/distr/commit/3a1a80d4b3949cde06ad4ecceca6a29353869ba4))
+* no longer refer to Distr as Hub ([#3227](https://github.com/distr-sh/distr/issues/3227)) ([74b6b0a](https://github.com/distr-sh/distr/commit/74b6b0a1c4d8a8842953810529631aceaf9a14a4))
+* update website dependencies ([#3205](https://github.com/distr-sh/distr/issues/3205)) ([46fb30a](https://github.com/distr-sh/distr/commit/46fb30a4b85b89ec317ed75eaccf7c96d53797c7))
+
+
+### Docs
+
+* compact CLAUDE.md ([#3209](https://github.com/distr-sh/distr/issues/3209)) ([ed00301](https://github.com/distr-sh/distr/commit/ed00301a97c8ae5145146aaca4f2131282910f0f))
+* **website:** include encrpytion to secrets documentation ([#3208](https://github.com/distr-sh/distr/issues/3208)) ([443e7c7](https://github.com/distr-sh/distr/commit/443e7c7b4afa278de1235790d6e95e081c35c84d))
+
 ## [3.5.1](https://github.com/distr-sh/distr/compare/3.5.0...3.5.1) (2026-09-09)
 
 
