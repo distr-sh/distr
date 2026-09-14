@@ -46,16 +46,35 @@
                 {{ row.token.createdAt | date: 'shortDate' }}
               </td>
               <td class="px-4 py-3 truncate">
-                @if (row.token.expiresAt; as d) {
-                  {{ d | date: 'shortDate' }}
-                  @if (row.expired) {
-                    <span class="ml-1 text-red-600 dark:text-red-500">
-                      <fa-icon [icon]="faTriangleExclamation" />
-                      expired
-                    </span>
+                @if (row.legacy) {
+                  @if (row.token.expiresAt; as d) {
+                    <span [title]="d | date: 'medium'">{{ d | date: 'shortDate' }}</span>
+                    @if (row.expired) {
+                      <span class="ml-1 text-red-600 dark:text-red-500">
+                        <fa-icon [icon]="faTriangleExclamation" />
+                        expired
+                      </span>
+                    }
+                  } @else {
+                    never
                   }
                 } @else {
-                  never
+                  @for (secret of row.secrets; track secret.slot) {
+                    @if (secret.expiresAt; as d) {
+                      <span [title]="d | date: 'medium'">{{ d | date: 'shortDate' }}</span>
+                      @if (secret.expired) {
+                        <span class="ml-1 text-red-600 dark:text-red-500">
+                          <fa-icon [icon]="faTriangleExclamation" />
+                          expired
+                        </span>
+                      }
+                    } @else {
+                      never
+                    }
+                    @if (!$last) {
+                      <span>,&nbsp;</span>
+                    }
+                  }
                 }
               </td>
               <td class="px-4 py-3 truncate">

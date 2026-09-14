@@ -9,9 +9,11 @@ import (
 )
 
 type AccessToken struct {
-	ID         uuid.UUID           `json:"id"`
-	KeyID      string              `json:"keyId"`
-	CreatedAt  time.Time           `json:"createdAt"`
+	ID        uuid.UUID `json:"id"`
+	KeyID     string    `json:"keyId"`
+	CreatedAt time.Time `json:"createdAt"`
+	// Deprecated: Set only for a token that predates secrets. Every other token expires with the
+	// secrets that authenticate it.
 	ExpiresAt  *time.Time          `json:"expiresAt,omitempty"`
 	LastUsedAt *time.Time          `json:"lastUsedAt,omitempty"`
 	Label      *string             `json:"label,omitempty"`
@@ -45,10 +47,8 @@ func (r CreateAccessTokenRequest) Validate() error {
 	return validateAccessTokenExpiresAt(r.ExpiresAt)
 }
 
-// PatchAccessTokenRequest carries the only part of a token that is not fixed when it is created.
-// An omitted label is left unchanged and an explicit null clears it.
 type PatchAccessTokenRequest struct {
-	Label Nullable[string] `json:"label"`
+	Label string `json:"label"`
 }
 
 type CreateAccessTokenSecretRequest struct {

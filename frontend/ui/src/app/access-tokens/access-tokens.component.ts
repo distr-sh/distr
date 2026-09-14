@@ -31,11 +31,13 @@ interface AccessTokenRow {
   // Everything the filter matches against: the label, and the key and id so that one pasted from
   // elsewhere finds its token.
   search: string;
+  // A token that predates secrets carries its own expiration, every other one expires with the
+  // secrets that authenticate it.
   expired: boolean;
   // A token without secrets predates them and is stored in plain text. Its first secret can only
   // be added at the cost of invalidating the token that is in circulation.
   legacy: boolean;
-  secrets: AccessTokenSecret[];
+  secrets: (AccessTokenSecret & {expired: boolean})[];
 }
 
 @Component({
@@ -74,14 +76,17 @@ export class AccessTokensComponent {
   private readonly accessTokens = rxResource({stream: () => this.accessTokensService.list()});
 
   private readonly rows = computed<AccessTokenRow[]>(() =>
-    (this.accessTokens.value() ?? []).map((token) => ({
-      token,
-      name: accessTokenName(token),
-      search: `${token.label ?? ''} ${token.keyId} ${token.id}`.toLowerCase(),
-      expired: isExpired(token),
-      legacy: token.secrets.length === 0,
-      secrets: token.secrets,
-    }))
+    (this.accessTokens.value() ?? []).map((token) => {
+      const secrets = token.secrets.map((secret) => ({...secret, expired: isExpired(secret)}));
+      return {
+        token,
+        name: accessTokenName(token),
+        search: `${token.label ?? ''} ${token.keyId} ${token.id}`.toLowerCase(),
+        expired: secrets.length > 0 ? secrets.every((secret) => secret.expired) : isExpired(token),
+        legacy: secrets.length === 0,
+        secrets,
+      };
+    })
   );
 
   protected readonly filterForm = new FormGroup({search: new FormControl('', {nonNullable: true})});

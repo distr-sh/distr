@@ -2,7 +2,6 @@ package types
 
 import (
 	"testing"
-	"time"
 
 	. "github.com/onsi/gomega"
 )
@@ -51,25 +50,4 @@ func TestAccessTokenRoleAllowed(t *testing.T) {
 
 	// A caller whose own role is unknown gets nothing.
 	g.Expect(AccessTokenRoleAllowed(new(UserRoleReadOnly), nil, UserRoleReadOnly)).To(BeFalse())
-}
-
-func TestEffectiveExpiresAt(t *testing.T) {
-	g := NewWithT(t)
-
-	early := time.Now().Add(time.Hour)
-	late := early.Add(time.Hour)
-
-	// A token that predates secrets carries its own expiration.
-	g.Expect(AccessToken{ExpiresAt: &early}.EffectiveExpiresAt()).To(HaveValue(Equal(early)))
-
-	// Every secret that is still valid authenticates the token, so the last one to expire decides,
-	// and a secret that never expires keeps the token alive indefinitely.
-	g.Expect(AccessToken{
-		Secret1: &AccessTokenSecret{ExpiresAt: &early},
-		Secret2: &AccessTokenSecret{ExpiresAt: &late},
-	}.EffectiveExpiresAt()).To(HaveValue(Equal(late)))
-	g.Expect(AccessToken{
-		Secret1: &AccessTokenSecret{ExpiresAt: &early},
-		Secret2: &AccessTokenSecret{},
-	}.EffectiveExpiresAt()).To(BeNil())
 }

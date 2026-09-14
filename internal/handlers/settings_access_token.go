@@ -107,13 +107,9 @@ func patchAccessTokenHandler() http.HandlerFunc {
 			return
 		}
 
-		userID, orgID := auth.CurrentUserID(), *auth.CurrentOrgID()
-		var updated *types.AccessToken
-		if patch.Label.Present {
-			updated, err = db.UpdateAccessTokenLabel(ctx, tokenID, userID, orgID, patch.Label.Value)
-		} else {
-			updated, err = db.GetAccessToken(ctx, tokenID, userID, orgID)
-		}
+		updated, err := db.UpdateAccessTokenLabel(
+			ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(), patch.Label,
+		)
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.NotFound(w, r)
 		} else if err != nil {

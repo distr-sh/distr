@@ -76,6 +76,10 @@ export class AccessTokenDetailComponent {
   // A token without secrets predates them and is the whole credential on its own, so giving it one
   // invalidates the token that is in circulation.
   protected readonly legacy = computed(() => this.secrets().length === 0);
+  protected readonly expired = computed(() => {
+    const token = this.token();
+    return token !== undefined && isExpired(token);
+  });
   protected readonly canCreateSecret = computed(() => this.secrets().length < 2);
   protected readonly canDeleteSecret = computed(() => this.secrets().length > 1);
 

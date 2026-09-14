@@ -85,12 +85,32 @@
           </div>
           <div>
             <dt class="distr-label mb-2">Created</dt>
-            <dd class="text-gray-900 dark:text-white">{{ token.createdAt | date: 'medium' }}</dd>
+            <dd class="text-gray-900 dark:text-white" [title]="token.createdAt | date: 'medium'">
+              {{ token.createdAt | date: 'shortDate' }}
+            </dd>
           </div>
           <div>
             <dt class="distr-label mb-2">Role</dt>
             <dd class="text-gray-900 dark:text-white">{{ roleLabel() }}</dd>
           </div>
+          @if (legacy()) {
+            <div>
+              <dt class="distr-label mb-2">Expires</dt>
+              <dd class="text-gray-900 dark:text-white">
+                @if (token.expiresAt; as expiresAt) {
+                  <span [title]="expiresAt | date: 'medium'">{{ expiresAt | date: 'shortDate' }}</span>
+                  @if (expired()) {
+                    <span class="ml-1 text-red-600 dark:text-red-500">
+                      <fa-icon [icon]="faTriangleExclamation" />
+                      expired
+                    </span>
+                  }
+                } @else {
+                  never
+                }
+              </dd>
+            </div>
+          }
         </dl>
       } @else if (!loading()) {
         <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">
@@ -152,10 +172,12 @@
                     <td class="px-4 py-3">
                       <span class="distr-tag-badge">Secret {{ secret.slot }}</span>
                     </td>
-                    <td class="px-4 py-3">{{ secret.createdAt | date: 'medium' }}</td>
+                    <td class="px-4 py-3" [title]="secret.createdAt | date: 'medium'">
+                      {{ secret.createdAt | date: 'shortDate' }}
+                    </td>
                     <td class="px-4 py-3">
                       @if (secret.expiresAt; as expiresAt) {
-                        {{ expiresAt | date: 'medium' }}
+                        <span [title]="expiresAt | date: 'medium'">{{ expiresAt | date: 'shortDate' }}</span>
                         @if (secret.expired) {
                           <span class="ml-1 text-red-600 dark:text-red-500">
                             <fa-icon [icon]="faTriangleExclamation" />

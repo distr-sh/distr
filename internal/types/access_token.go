@@ -39,8 +39,8 @@ type AccessTokenSecret struct {
 type AccessToken struct {
 	ID        uuid.UUID `db:"id"`
 	CreatedAt time.Time `db:"created_at"`
-	// ExpiresAt is the expiration of a token that predates secrets. A token with secrets expires
-	// with them, so nothing writes this column anymore.
+	// Deprecated: Set only for a token that predates secrets. Every other token expires with the
+	// secrets that authenticate it, so nothing writes this column anymore.
 	ExpiresAt      *time.Time         `db:"expires_at"`
 	LastUsedAt     *time.Time         `db:"last_used_at"`
 	Label          *string            `db:"label"`
@@ -61,27 +61,6 @@ func (tok AccessToken) Secret(slot AccessTokenSecretSlot) *AccessTokenSecret {
 
 func (tok AccessToken) HasSecrets() bool {
 	return tok.Secret1 != nil || tok.Secret2 != nil
-}
-
-// EffectiveExpiresAt is when the token stops working, which for a token with secrets is the last of
-// them to expire, since every secret that is still valid authenticates it. It is nil when the token
-// never expires.
-func (tok AccessToken) EffectiveExpiresAt() *time.Time {
-	if !tok.HasSecrets() {
-		return tok.ExpiresAt
-	}
-	var last *time.Time
-	for _, slot := range AccessTokenSecretSlots {
-		if secret := tok.Secret(slot); secret != nil {
-			if secret.ExpiresAt == nil {
-				return nil
-			}
-			if last == nil || secret.ExpiresAt.After(*last) {
-				last = secret.ExpiresAt
-			}
-		}
-	}
-	return last
 }
 
 // KeyID returns the part of the token that identifies it, in the encoding its owner finds at the

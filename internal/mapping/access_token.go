@@ -10,7 +10,7 @@ func AccessTokenToAPI(model types.AccessToken) api.AccessToken {
 		ID:         model.ID,
 		KeyID:      model.KeyID(),
 		CreatedAt:  model.CreatedAt,
-		ExpiresAt:  model.EffectiveExpiresAt(),
+		ExpiresAt:  model.ExpiresAt, //nolint:staticcheck // a token that predates secrets has one
 		LastUsedAt: model.LastUsedAt,
 		Label:      model.Label,
 		UserRole:   model.UserRole,

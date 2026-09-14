@@ -77,7 +77,7 @@ func CreateAccessToken(ctx context.Context, token *types.AccessToken) error {
 
 // UpdateAccessTokenLabel changes the only part of a token that is not fixed when it is created and
 // returns the token as it is now.
-func UpdateAccessTokenLabel(ctx context.Context, id, userID, orgID uuid.UUID, label *string) (
+func UpdateAccessTokenLabel(ctx context.Context, id, userID, orgID uuid.UUID, label string) (
 	*types.AccessToken, error,
 ) {
 	db := internalctx.GetDb(ctx)
