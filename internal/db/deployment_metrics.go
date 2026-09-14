@@ -17,7 +17,10 @@ const deploymentMetricsOutputExpr = `
 	dm.created_at,
 	dm.deployment_id,
 	array_agg(
-		row(drm.resource, drm.container, drm.cpu_usage_millis, drm.memory_bytes, drm.cpu_limit_millis, drm.memory_limit_bytes)
+		row(
+			drm.resource, drm.container, drm.cpu_usage_millis, drm.memory_bytes,
+			drm.cpu_limit_millis, drm.memory_limit_bytes, drm.log_bytes
+		)
 		ORDER BY drm.resource, drm.container
 	) FILTER (WHERE drm.id IS NOT NULL)
 		AS resources
@@ -44,13 +47,13 @@ func CreateDeploymentMetrics(ctx context.Context, metrics *types.DeploymentMetri
 			pgx.Identifier{"deploymentresourcemetrics"},
 			[]string{
 				"deployment_metrics_id", "resource", "container",
-				"cpu_usage_millis", "memory_bytes", "cpu_limit_millis", "memory_limit_bytes",
+				"cpu_usage_millis", "memory_bytes", "cpu_limit_millis", "memory_limit_bytes", "log_bytes",
 			},
 			pgx.CopyFromSlice(len(metrics.Resources), func(i int) ([]any, error) {
 				r := metrics.Resources[i]
 				return []any{
 					metrics.ID, r.Resource, r.Container,
-					r.CPUUsageMillis, r.MemoryBytes, r.CPULimitMillis, r.MemoryLimitBytes,
+					r.CPUUsageMillis, r.MemoryBytes, r.CPULimitMillis, r.MemoryLimitBytes, r.LogBytes,
 				}, nil
 			}),
 		)

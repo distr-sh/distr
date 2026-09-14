@@ -13,9 +13,15 @@ import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {DeploymentTargetsMetricsService} from '../../services/deployment-target-metrics.service';
 import {DeploymentResourceMetric} from '../../types/deployment-target-metrics';
 
+interface ResourceRow {
+  metric: DeploymentResourceMetric;
+  cpuUsageRatio?: number;
+  memoryUsageRatio?: number;
+}
+
 interface ResourceGroup {
   resource: string;
-  containers: DeploymentResourceMetric[];
+  rows: ResourceRow[];
 }
 
 const staleThreshold = dayjs.duration(2, 'minutes');
@@ -48,22 +54,18 @@ export class DeploymentResourceMetricsComponent {
 
   protected readonly groups = computed<ResourceGroup[]>(() => {
     const groups = new Map<string, ResourceGroup>();
-    for (const container of this.metrics.value()?.resources ?? []) {
-      let group = groups.get(container.resource);
+    for (const metric of this.metrics.value()?.resources ?? []) {
+      let group = groups.get(metric.resource);
       if (!group) {
-        group = {resource: container.resource, containers: []};
-        groups.set(container.resource, group);
+        group = {resource: metric.resource, rows: []};
+        groups.set(metric.resource, group);
       }
-      group.containers.push(container);
+      group.rows.push({
+        metric,
+        cpuUsageRatio: metric.cpuLimitMillis ? metric.cpuUsageMillis / metric.cpuLimitMillis : undefined,
+        memoryUsageRatio: metric.memoryLimitBytes ? metric.memoryBytes / metric.memoryLimitBytes : undefined,
+      });
     }
     return [...groups.values()];
   });
-
-  protected cpuUsageRatio(usageMillis: number, limitMillis: number | undefined): number | undefined {
-    return limitMillis ? usageMillis / limitMillis : undefined;
-  }
-
-  protected memoryUsageRatio(usageBytes: number, limitBytes: number | undefined): number | undefined {
-    return limitBytes ? usageBytes / limitBytes : undefined;
-  }
 }

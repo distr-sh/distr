@@ -24,6 +24,7 @@ func DeploymentResourceMetricToInternal(resource api.DeploymentResourceMetric) t
 		MemoryBytes:      resource.MemoryBytes,
 		CPULimitMillis:   resource.CPULimitMillis,
 		MemoryLimitBytes: resource.MemoryLimitBytes,
+		LogBytes:         resource.LogBytes,
 	}
 }
 
@@ -43,5 +44,6 @@ func DeploymentResourceMetricToAPI(resource types.DeploymentResourceMetric) api.
 		MemoryBytes:      resource.MemoryBytes,
 		CPULimitMillis:   resource.CPULimitMillis,
 		MemoryLimitBytes: resource.MemoryLimitBytes,
+		LogBytes:         resource.LogBytes,
 	}
 }
