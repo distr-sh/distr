@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.1](https://github.com/distr-sh/distr/compare/4.0.0...4.0.1) (2026-09-15)
+
+
+### Other
+
+* add possiblity to still reference legacy hub config ([#3232](https://github.com/distr-sh/distr/issues/3232)) ([4ea6ce3](https://github.com/distr-sh/distr/commit/4ea6ce3372242076a20b3e9728969fc52d69194a))
+
 ## [4.0.0](https://github.com/distr-sh/distr/compare/3.5.1...4.0.0) (2026-09-14)
 
 
