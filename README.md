@@ -54,13 +54,14 @@ architecture-beta
     group ctrl(cloud)[Distr Cloud or Your Cloud]
     service distr(server)[Distr] in ctrl
     service db(database)[PostgreSQL] in ctrl
-    service loki(database)[Loki Log Storage] in ctrl
+    service loki(server)[Loki Log Processing] in ctrl
     service oci(database)[Distr OCI Registry] in ctrl
     service s3(disk)[Object Storage] in ctrl
     oci:R -- L:distr
     db:T -- B:distr
     loki:L -- R:distr
     oci:B -- T:s3
+    loki:B --> T:s3
 
     junction customerjunction
 
