@@ -294,21 +294,30 @@ func BlockCrossOrganizationAction(handler http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-// CredentialChangeBlockedMessage is the response of BlockCredentialChange, exported for the endpoints that
-// reject only part of their request body and therefore cannot apply the middleware.
-const CredentialChangeBlockedMessage = "your sign-in methods cannot be changed from this session. " +
-	"Request a password reset to receive a link to your email address that lets you change them"
+// The messages are exported for the endpoints that reject only part of their request body and
+// therefore cannot apply the middleware.
+const (
+	OidcSessionBlockedMessage = "your sign-in methods cannot be changed from a session your organization's " +
+		"identity provider signed you in with. Request a password reset to receive a link to your email " +
+		"address that lets you change them"
+	AccessTokenBlockedMessage = "this cannot be done with an access token. Sign in to Distr to do it"
+)
 
-// BlockCredentialChange rejects a change to the account's sign-in methods for the credentials described by
-// authinfo.AuthInfo.OrganizationScoped, which are not proof that the account's owner is present. Without
-// it, such a credential could set a password or move the email address to an inbox somebody else controls,
-// and thereby produce an unrestricted session of the same account. A personal access token is one of those
-// credentials and an access token is itself a sign-in method, so this also keeps a token from reading or
-// managing tokens, which would let it hand itself a role it was not created with.
-func BlockCredentialChange(handler http.Handler) http.Handler {
+func RequireNonOidcToken(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		if auth.Authentication.Require(r.Context()).OrganizationScoped() {
-			http.Error(w, CredentialChangeBlockedMessage, http.StatusForbidden)
+		if auth.Authentication.Require(r.Context()).IsCustomOIDCSession() {
+			http.Error(w, OidcSessionBlockedMessage, http.StatusForbidden)
+			return
+		}
+		handler.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
+
+func RequireNonAccessToken(handler http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		if auth.Authentication.Require(r.Context()).IsAccessToken() {
+			http.Error(w, AccessTokenBlockedMessage, http.StatusForbidden)
 			return
 		}
 		handler.ServeHTTP(w, r)

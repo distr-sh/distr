@@ -27,10 +27,8 @@ func FromAuthKey(ctx context.Context, token authkey.Token) (AuthInfo, error) {
 		emailVerified:          at.UserAccount.EmailVerifiedAt != nil,
 		organizationID:         &at.OrganizationID,
 		customerOrganizationID: at.CustomerOrganizationID,
-		// An access token is created for one organization and is not proof that its owner is
-		// present, so it must not reach beyond the session it was created from.
-		organizationScoped: true,
-		userRole:           &role,
+		isAccessToken:          true,
+		userRole:               &role,
 		// Only the key, never the secret: nothing downstream needs to authenticate with the
 		// token again, and a credential that is not carried around cannot be leaked.
 		rawToken: token.Key,

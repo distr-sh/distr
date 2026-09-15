@@ -57,7 +57,7 @@ func FromUserJWT(token jwt.Token) (*SimpleAuthInfo, error) {
 
 	// Only the presence of the claim is evaluated, and deliberately without reading its value: a claim
 	// this server cannot make sense of must confine the session just the same.
-	result.organizationScoped = token.Has(authjwt.CustomOIDCConfigurationIDKey)
+	result.isCustomOIDCSession = token.Has(authjwt.CustomOIDCConfigurationIDKey)
 
 	return &result, nil
 }
