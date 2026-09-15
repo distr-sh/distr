@@ -22,22 +22,20 @@ import {AuthService} from '../services/auth.service';
 import {CreatedAccessTokenStore} from '../services/created-access-token.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
-import {AccessToken, AccessTokenSecret, CreateAccessTokenRequest} from '../types/access-token';
+import {AccessToken, CreateAccessTokenRequest} from '../types/access-token';
 import {accessTokenName} from './access-token-name';
 
 interface AccessTokenRow {
   token: AccessToken;
   name: string;
-  // Everything the filter matches against: the label, and the key and id so that one pasted from
-  // elsewhere finds its token.
+  // Everything the filter matches against: the label, and both encodings of the key plus the id, so
+  // that a token pasted from elsewhere finds its row whichever format it is in.
   search: string;
-  // A token that predates secrets carries its own expiration, every other one expires with the
-  // secrets that authenticate it.
+  // An access token is spent once every credential that could authenticate it has expired.
   expired: boolean;
-  // A token without secrets predates them and is stored in plain text. Its first secret can only
-  // be added at the cost of invalidating the token that is in circulation.
+  // Whether the key still authenticates on its own, which is the format that predates secrets.
   legacy: boolean;
-  secrets: (AccessTokenSecret & {expired: boolean})[];
+  credentials: {expiresAt?: string; expired: boolean}[];
 }
 
 @Component({
@@ -77,14 +75,17 @@ export class AccessTokensComponent {
 
   private readonly rows = computed<AccessTokenRow[]>(() =>
     (this.accessTokens.value() ?? []).map((token) => {
-      const secrets = token.secrets.map((secret) => ({...secret, expired: isExpired(secret)}));
+      const credentials = [...(token.legacyKey ? [token.legacyKey] : []), ...token.secrets].map((credential) => ({
+        expiresAt: credential.expiresAt,
+        expired: isExpired(credential),
+      }));
       return {
         token,
         name: accessTokenName(token),
-        search: `${token.label ?? ''} ${token.keyId} ${token.id}`.toLowerCase(),
-        expired: secrets.length > 0 ? secrets.every((secret) => secret.expired) : isExpired(token),
-        legacy: secrets.length === 0,
-        secrets,
+        search: `${token.label ?? ''} ${token.keyId} ${token.legacyKey?.keyId ?? ''} ${token.id}`.toLowerCase(),
+        expired: credentials.every((credential) => credential.expired),
+        legacy: token.legacyKey !== undefined,
+        credentials,
       };
     })
   );

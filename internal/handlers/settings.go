@@ -103,6 +103,8 @@ func SettingsRouter(r chiopenapi.Router) {
 
 			r.With(middleware.BlockSuperAdmin).Delete("/", deleteAccessTokenHandler())
 
+			r.With(middleware.BlockSuperAdmin).Delete("/key", deleteAccessTokenKeyHandler())
+
 			r.Route("/secrets", func(r chiopenapi.Router) {
 				r.With(middleware.BlockSuperAdmin).Post("/", createAccessTokenSecretHandler())
 

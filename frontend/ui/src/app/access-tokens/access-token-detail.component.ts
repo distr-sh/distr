@@ -26,6 +26,19 @@ import {ToastService} from '../services/toast.service';
 import {AccessToken, AccessTokenSecretSlot, AccessTokenWithKey, PatchAccessTokenRequest} from '../types/access-token';
 import {accessTokenName} from './access-token-name';
 
+// One credential of an access token: a secret in one of the two slots, or the key itself while it
+// still authenticates on its own. The prefix is per credential, since a legacy key is shown in the
+// hex encoding it was issued in and a secret in the one the current format uses.
+interface CredentialRow {
+  slot?: AccessTokenSecretSlot;
+  label: string;
+  keyId: string;
+  createdAt: string;
+  expiresAt?: string;
+  lastUsedAt?: string;
+  expired: boolean;
+}
+
 @Component({
   selector: 'app-access-token-detail',
   imports: [
@@ -70,18 +83,40 @@ export class AccessTokenDetailComponent {
     (this.accessTokens.value() ?? []).map((token) => ({id: token.id!, name: accessTokenName(token)}))
   );
 
-  protected readonly secrets = computed(() =>
-    (this.token()?.secrets ?? []).map((secret) => ({...secret, expired: isExpired(secret)}))
-  );
-  // A token without secrets predates them and is the whole credential on its own, so giving it one
-  // invalidates the token that is in circulation.
-  protected readonly legacy = computed(() => this.secrets().length === 0);
-  protected readonly expired = computed(() => {
+  protected readonly credentials = computed<CredentialRow[]>(() => {
     const token = this.token();
-    return token !== undefined && isExpired(token);
+    if (!token) {
+      return [];
+    }
+    const rows: CredentialRow[] = [];
+    if (token.legacyKey) {
+      rows.push({
+        label: 'Legacy',
+        keyId: token.legacyKey.keyId,
+        createdAt: token.legacyKey.createdAt,
+        expiresAt: token.legacyKey.expiresAt,
+        lastUsedAt: token.legacyKey.lastUsedAt,
+        expired: isExpired(token.legacyKey),
+      });
+    }
+    for (const secret of token.secrets) {
+      rows.push({
+        slot: secret.slot,
+        label: `Token ${secret.slot}`,
+        keyId: token.keyId,
+        createdAt: secret.createdAt,
+        expiresAt: secret.expiresAt,
+        lastUsedAt: secret.lastUsedAt,
+        expired: isExpired(secret),
+      });
+    }
+    return rows;
   });
-  protected readonly canCreateSecret = computed(() => this.secrets().length < 2);
-  protected readonly canDeleteSecret = computed(() => this.secrets().length > 1);
+  // The key of a token issued before secrets existed keeps authenticating until it is deleted, so
+  // adding a secret migrates such a token without cutting off whatever holds the old one.
+  protected readonly legacy = computed(() => this.token()?.legacyKey !== undefined);
+  protected readonly canCreateSecret = computed(() => this.credentials().length < 2);
+  protected readonly canDeleteCredential = computed(() => this.credentials().length > 1);
 
   // A token that was created without a role of its own acts under the role its owner has, which
   // is re-read on every request, so it follows them when they are promoted or demoted.
@@ -168,7 +203,7 @@ export class AccessTokenDetailComponent {
       );
       this.closeSecretModal();
       this.createdToken.set(created);
-      this.toast.success('secret created');
+      this.toast.success('token added');
       this.accessTokens.reload();
     } catch (e) {
       this.showError(e);
@@ -177,15 +212,20 @@ export class AccessTokenDetailComponent {
     }
   }
 
-  public async deleteSecret(slot: AccessTokenSecretSlot) {
+  public async deleteCredential(credential: CredentialRow) {
     const confirmation =
-      `Really delete secret ${slot} of token '${this.name()}'? ` +
-      'Everything that still authenticates with it stops working.';
+      `Really delete ${credential.slot ? `token ${credential.slot}` : 'the legacy token'} of ` +
+      `'${this.name()}'? Everything that still authenticates with it stops working.`;
     if (await firstValueFrom(this.overlay.confirm(confirmation))) {
       try {
-        await firstValueFrom(this.accessTokensService.deleteSecret(this.tokenId()!, slot));
-        this.toast.success('secret deleted');
-        // The token on screen may be the one this secret belonged to, and it no longer works.
+        const id = this.tokenId()!;
+        await firstValueFrom(
+          credential.slot
+            ? this.accessTokensService.deleteSecret(id, credential.slot)
+            : this.accessTokensService.deleteLegacyKey(id)
+        );
+        this.toast.success('token deleted');
+        // The token on screen may be the one that was deleted, and it no longer works.
         this.createdToken.set(null);
         this.accessTokens.reload();
       } catch (e) {
