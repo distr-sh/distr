@@ -54,7 +54,7 @@ distr:
   # [configuration reference](https://distr.sh/docs/self-hosting/configuration/) for every
   # supported variable, and the commented-out entries in this file for the common ones.
   # @default -- see the values file
-  env:
+  env: &defaultDistrEnv
     - name: DISTR_HOST
       value: http://distr.local
     - name: REGISTRY_ENABLED
@@ -215,8 +215,8 @@ distr:
     # - name: CUSTOM_DOMAIN_VERIFICATION_REFRESH_AFTER
     #   value: 12h
   # -- Sources to populate the Distr environment from, e.g. a ConfigMap or Secret reference.
-  envFrom: []
-  scratch:
+  envFrom: &defaultDistrEnvFrom []
+  scratch: &defaultDistrScratch
     # -- Let the OCI registry buffer request bodies in temporary files instead of holding them in
     # memory. This provisions a generic ephemeral volume (a per-pod PVC created and deleted together
     # with the pod) and points REGISTRY_SCRATCH_DIR at its mount path. Requires Kubernetes >= 1.23.
@@ -231,6 +231,22 @@ distr:
     # sufficient.
     accessModes:
       - ReadWriteOnce
+  # Aliases of the three defaults above, which let the chart tell a value you wrote from the
+  # untouched default: Helm merges the chart's own values into a release's before rendering, so the
+  # templates have nothing else to compare against. They decide where the deprecated `hub` key below
+  # is still read, and are not settings.
+  # @ignore
+  defaults:
+    env: *defaultDistrEnv
+    envFrom: *defaultDistrEnvFrom
+    scratch: *defaultDistrScratch
+
+# -- Deprecated name of the `distr` section above, so that values files written for chart versions
+# before the rename keep working. `env`, `envFrom` and `scratch` are read from here only while
+# `distr` still holds the chart default for that key, so anything you move to `distr` takes effect
+# immediately. Drop a setting here rather than emptying its counterpart: a value that equals the
+# chart default, `envFrom: []` for instance, cannot be told apart from the default.
+hub: {}
 
 # -- [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)
 # to add to the Distr pods.

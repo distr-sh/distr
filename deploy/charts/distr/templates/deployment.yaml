@@ -1,9 +1,7 @@
-{{- if hasKey .Values "hub" }}
-{{- fail "the hub values key has been renamed to distr: move hub.env, hub.envFrom and hub.scratch under distr" }}
-{{- end }}
+{{- $distr := include "distr.config" . | fromYaml }}
 {{- /* Checked here rather than in caddy-deployment.yaml so it also reaches installations that
 terminate custom domains with their own proxy instead of the chart's Caddy. */}}
-{{- range .Values.distr.env }}
+{{- range $distr.env }}
 {{- if or (eq .name "CUSTOM_DOMAIN_APP_CNAME_TARGET") (eq .name "CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET") }}
 {{- fail "CUSTOM_DOMAIN_APP_CNAME_TARGET and CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET have been replaced by a single CUSTOM_DOMAIN_TARGET: one proxy serves every custom domain, registry traffic included, so there was never a second target to point at" }}
 {{- end }}
@@ -46,7 +44,7 @@ spec:
       {{- /* The Distr image runs as UID/GID 65532. Default fsGroup so the scratch
              ephemeral volume, provisioned root-owned by the CSI driver, is writable. */}}
       {{- $podSecurityContext := deepCopy (.Values.podSecurityContext | default dict) }}
-      {{- if .Values.distr.scratch.enabled }}
+      {{- if $distr.scratch.enabled }}
       {{- $podSecurityContext = merge $podSecurityContext (dict "fsGroup" 65532) }}
       {{- end }}
       {{- with $podSecurityContext }}
@@ -95,25 +93,25 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- if or .Values.volumeMounts .Values.distr.scratch.enabled }}
+          {{- if or .Values.volumeMounts $distr.scratch.enabled }}
           volumeMounts:
             {{- with .Values.volumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-            {{- if .Values.distr.scratch.enabled }}
+            {{- if $distr.scratch.enabled }}
             - name: scratch
-              mountPath: {{ .Values.distr.scratch.mountPath | quote }}
+              mountPath: {{ $distr.scratch.mountPath | quote }}
             {{- end }}
           {{- end }}
-          {{- with .Values.distr.envFrom }}
+          {{- with $distr.envFrom }}
           envFrom:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           env:
             {{- include "distr.env" . | nindent 12 }}
-            {{- if .Values.distr.scratch.enabled }}
+            {{- if $distr.scratch.enabled }}
             - name: REGISTRY_SCRATCH_DIR
-              value: {{ .Values.distr.scratch.mountPath | quote }}
+              value: {{ $distr.scratch.mountPath | quote }}
             {{- end }}
             {{- if .Values.caddy.enabled }}
             {{- /* Derived from caddy.askServerPort so Distr, the Caddyfile and the caddy-ask
@@ -121,12 +119,12 @@ spec:
             - name: INTERNAL_SERVER_ADDR
               value: ":{{ .Values.caddy.askServerPort }}"
             {{- end }}
-      {{- if or .Values.volumes .Values.distr.scratch.enabled }}
+      {{- if or .Values.volumes $distr.scratch.enabled }}
       volumes:
         {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- if .Values.distr.scratch.enabled }}
+        {{- if $distr.scratch.enabled }}
         - name: scratch
           ephemeral:
             volumeClaimTemplate:
@@ -135,13 +133,13 @@ spec:
                   {{- include "distr.labels" . | nindent 18 }}
               spec:
                 accessModes:
-                  {{- toYaml .Values.distr.scratch.accessModes | nindent 18 }}
-                {{- with .Values.distr.scratch.storageClassName }}
+                  {{- toYaml $distr.scratch.accessModes | nindent 18 }}
+                {{- with $distr.scratch.storageClassName }}
                 storageClassName: {{ . | quote }}
                 {{- end }}
                 resources:
                   requests:
-                    storage: {{ .Values.distr.scratch.size | quote }}
+                    storage: {{ $distr.scratch.size | quote }}
         {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}

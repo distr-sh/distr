@@ -119,7 +119,33 @@ Return the PostgreSQL Secret Name
 {{- end -}}
 {{- end -}}
 
+{{/*
+Return the Distr configuration as YAML, to be read back with fromYaml. Values files written before
+the "hub" key was renamed to "distr" still carry it there, so a key of "hub" is read while "distr"
+still holds the chart default for it, and never overrides a value written under "distr". The chart
+default is compared against distr.defaults, because Helm merges the chart's own values into a
+release's before rendering and leaves the templates nothing else to compare against. A map is
+merged over the default so that a partial hub.scratch keeps the defaults it does not name.
+*/}}
+{{- define "distr.config" -}}
+{{- $values := .Values.distr | default dict -}}
+{{- $defaults := dig "defaults" (dict) $values -}}
+{{- $config := omit (deepCopy $values) "defaults" -}}
+{{- range $key, $legacy := .Values.hub | default dict -}}
+{{- $default := index $defaults $key -}}
+{{- if and (hasKey $defaults $key) (eq (toYaml (index $config $key)) (toYaml $default)) -}}
+{{- if kindIs "map" $legacy -}}
+{{- $config = set $config $key (mergeOverwrite (deepCopy $default) $legacy) -}}
+{{- else -}}
+{{- $config = set $config $key $legacy -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- toYaml $config -}}
+{{- end -}}
+
 {{- define "distr.env" -}}
+{{- $distr := include "distr.config" . | fromYaml }}
 {{- if .Values.postgresql.enabled }}
 - name: DATABASE_PASSWORD
   valueFrom:
@@ -138,7 +164,7 @@ Return the PostgreSQL Secret Name
       name: {{ include "distr.databaseSecretName" . }}
       key: {{ .Values.externalDatabase.existingSecretUriKey }}
   {{- end }}
-{{ with .Values.distr.env }}
+{{ with $distr.env }}
 {{- toYaml . }}
 {{- end }}
 {{- end }}
