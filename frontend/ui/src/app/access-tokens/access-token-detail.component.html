@@ -73,16 +73,18 @@
           (save)="saveLabel($event)" />
 
         <dl class="grid grid-cols-3 gap-6 mt-4 text-sm">
-          <div>
-            <dt class="distr-label mb-2">Key ID</dt>
-            <dd>
-              <code
-                data-ph-mask-text="true"
-                class="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600">
-                {{ token.keyId }}…
-              </code>
-            </dd>
-          </div>
+          @if (!legacy()) {
+            <div>
+              <dt class="distr-label mb-2">Token prefix</dt>
+              <dd>
+                <code
+                  data-ph-mask-text="true"
+                  class="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600">
+                  {{ token.keyId }}…
+                </code>
+              </dd>
+            </div>
+          }
           <div>
             <dt class="distr-label mb-2">Created</dt>
             <dd class="text-gray-900 dark:text-white" [title]="token.createdAt | date: 'medium'">
@@ -93,24 +95,6 @@
             <dt class="distr-label mb-2">Role</dt>
             <dd class="text-gray-900 dark:text-white">{{ roleLabel() }}</dd>
           </div>
-          @if (legacy()) {
-            <div>
-              <dt class="distr-label mb-2">Expires</dt>
-              <dd class="text-gray-900 dark:text-white">
-                @if (token.expiresAt; as expiresAt) {
-                  <span [title]="expiresAt | date: 'medium'">{{ expiresAt | date: 'shortDate' }}</span>
-                  @if (expired()) {
-                    <span class="ml-1 text-red-600 dark:text-red-500">
-                      <fa-icon [icon]="faTriangleExclamation" />
-                      expired
-                    </span>
-                  }
-                } @else {
-                  never
-                }
-              </dd>
-            </div>
-          }
         </dl>
       } @else if (!loading()) {
         <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">
@@ -122,7 +106,7 @@
     @if (token()) {
       <div class="distr-table-panel">
         <div class="distr-toolbar p-4">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Secrets</h2>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Tokens</h2>
           <div class="distr-toolbar-actions">
             @if (canCreateSecret()) {
               <button
@@ -130,7 +114,7 @@
                 (click)="openSecretModal(secretModalTemplate)"
                 class="distr-btn-secondary w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium">
                 <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
-                Add secret
+                Add token
               </button>
             }
           </div>
@@ -150,68 +134,87 @@
             role="alert">
             <fa-icon [icon]="faTriangleExclamation" class="mt-0.5" />
             <span>
-              Please migrate this access token to the new, more secure format. Adding a secret will issue a new token
-              and invalidate the current one, so anything still using the current one has to be updated.
+              Please migrate this access token to the new, more secure format. Add a token, roll it out everywhere the
+              legacy one is in use, then delete the legacy one. It keeps working until you do.
             </span>
           </div>
-        } @else {
-          <div class="overflow-x-auto">
-            <table class="distr-table">
-              <thead class="distr-table-head">
-                <tr>
-                  <th scope="col" class="p-4">Secret</th>
-                  <th scope="col" class="p-4">Created</th>
-                  <th scope="col" class="p-4">Expires</th>
-                  <th scope="col" class="p-4">Last used</th>
-                  <th scope="col" class="p-4"></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (secret of secrets(); track secret.slot) {
-                  <tr class="distr-table-row">
-                    <td class="px-4 py-3">
-                      <span class="distr-tag-badge">Secret {{ secret.slot }}</span>
-                    </td>
-                    <td class="px-4 py-3" [title]="secret.createdAt | date: 'medium'">
-                      {{ secret.createdAt | date: 'shortDate' }}
-                    </td>
-                    <td class="px-4 py-3">
-                      @if (secret.expiresAt; as expiresAt) {
-                        <span [title]="expiresAt | date: 'medium'">{{ expiresAt | date: 'shortDate' }}</span>
-                        @if (secret.expired) {
-                          <span class="ml-1 text-red-600 dark:text-red-500">
-                            <fa-icon [icon]="faTriangleExclamation" />
-                            expired
-                          </span>
-                        }
-                      } @else {
-                        never
-                      }
-                    </td>
-                    <td class="px-4 py-3">
-                      @if (secret.lastUsedAt; as lastUsedAt) {
-                        {{ lastUsedAt | relativeDate }}
-                      } @else {
-                        never
-                      }
-                    </td>
-                    <td class="px-4 py-3 flex justify-end">
-                      @if (canDeleteSecret()) {
-                        <button
-                          type="button"
-                          aria-label="Delete secret"
-                          (click)="deleteSecret(secret.slot)"
-                          class="py-2 px-3 distr-btn-danger">
-                          <fa-icon [icon]="faTrash" class="h-4 w-4" />
-                        </button>
-                      }
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
         }
+
+        <div class="overflow-x-auto">
+          <table class="distr-table">
+            <thead class="distr-table-head">
+              <tr>
+                <th scope="col" class="p-4">Token</th>
+                @if (legacy()) {
+                  <th scope="col" class="p-4">Prefix</th>
+                }
+                <th scope="col" class="p-4">Created</th>
+                <th scope="col" class="p-4">Expires</th>
+                <th scope="col" class="p-4">Last used</th>
+                <th scope="col" class="p-4"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (credential of credentials(); track credential.label) {
+                <tr class="distr-table-row">
+                  <td class="px-4 py-3">
+                    @if (credential.slot) {
+                      <span class="distr-tag-badge">{{ credential.label }}</span>
+                    } @else {
+                      <span
+                        class="distr-status-badge bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-700">
+                        {{ credential.label }}
+                      </span>
+                    }
+                  </td>
+                  @if (legacy()) {
+                    <td class="px-4 py-3">
+                      <code
+                        data-ph-mask-text="true"
+                        class="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600">
+                        {{ credential.keyId }}…
+                      </code>
+                    </td>
+                  }
+                  <td class="px-4 py-3" [title]="credential.createdAt | date: 'medium'">
+                    {{ credential.createdAt | date: 'shortDate' }}
+                  </td>
+                  <td class="px-4 py-3">
+                    @if (credential.expiresAt; as expiresAt) {
+                      <span [title]="expiresAt | date: 'medium'">{{ expiresAt | date: 'shortDate' }}</span>
+                      @if (credential.expired) {
+                        <span class="ml-1 text-red-600 dark:text-red-500">
+                          <fa-icon [icon]="faTriangleExclamation" />
+                          expired
+                        </span>
+                      }
+                    } @else {
+                      never
+                    }
+                  </td>
+                  <td class="px-4 py-3">
+                    @if (credential.lastUsedAt; as lastUsedAt) {
+                      {{ lastUsedAt | relativeDate }}
+                    } @else {
+                      never
+                    }
+                  </td>
+                  <td class="px-4 py-3 flex justify-end">
+                    @if (canDeleteCredential()) {
+                      <button
+                        type="button"
+                        aria-label="Delete token"
+                        (click)="deleteCredential(credential)"
+                        class="py-2 px-3 distr-btn-danger">
+                        <fa-icon [icon]="faTrash" class="h-4 w-4" />
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       </div>
     }
   </div>
@@ -223,7 +226,7 @@
     animate.enter="animate-fly-in-top"
     animate.leave="animate-fly-out-top">
     <div class="flex items-center justify-between p-4 border-b border-gray-200 rounded-t dark:border-gray-600">
-      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Add Secret</h2>
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Add token</h2>
       <button
         type="button"
         (click)="closeSecretModal()"
@@ -234,12 +237,9 @@
     </div>
 
     <form [formGroup]="secretForm" (ngSubmit)="createSecret()" class="p-4 space-y-4">
-      @if (!legacy()) {
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          The new secret authenticates the token alongside the existing one, so the one in use keeps working until you
-          delete it.
-        </p>
-      }
+      <p class="text-sm text-gray-500 dark:text-gray-400">
+        The new token authenticates alongside the existing one, so the one in use keeps working until you delete it.
+      </p>
 
       <div>
         <label for="secretExpiresAt" class="distr-label mb-2">Expires At</label>
@@ -254,7 +254,7 @@
           type="submit"
           [disabled]="secretFormLoading() || secretForm.invalid"
           class="distr-btn-primary py-2 px-4 text-sm font-medium">
-          Add Secret
+          Add token
         </button>
       </div>
     </form>

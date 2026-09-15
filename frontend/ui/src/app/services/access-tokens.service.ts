@@ -39,4 +39,8 @@ export class AccessTokensService {
   public deleteSecret(id: string, slot: AccessTokenSecretSlot): Observable<void> {
     return this.httpClient.delete<void>(`${baseUrl}/${id}/secrets/${slot}`);
   }
+
+  public deleteLegacyKey(id: string): Observable<void> {
+    return this.httpClient.delete<void>(`${baseUrl}/${id}/key`);
+  }
 }

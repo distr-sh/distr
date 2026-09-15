@@ -17,7 +17,8 @@ import (
 // The column order of the secret row expressions must match the field order of
 // types.AccessTokenSecret, because an anonymous record is decoded positionally.
 const accessTokenOutputExpr = `
-	tok.id, tok.created_at, tok.expires_at, tok.last_used_at, tok.label, tok.key,
+	tok.id, tok.created_at, tok.expires_at, tok.key_is_credential, tok.key_last_used_at,
+	tok.last_used_at, tok.label, tok.key,
 	tok.user_account_id, tok.organization_id, tok.user_role AS token_user_role,
 	CASE WHEN tok.secret_1_hash IS NOT NULL THEN
 		(tok.secret_1_hash, tok.secret_1_created_at, tok.secret_1_expires_at, tok.secret_1_last_used_at)
@@ -172,12 +173,13 @@ func AuthenticateAccessToken(ctx context.Context, token authkey.Token) (
 ) {
 	db := internalctx.GetDb(ctx)
 	args := pgx.NamedArgs{"key": token.Key[:]}
-	// A token that predates secrets is the whole credential on its own, so it is only accepted when
-	// no secret is presented for it, and its expiration is the one on the token itself.
-	secretExpr := ""
-	secretCondition := `tok.secret_1_hash IS NULL AND tok.secret_2_hash IS NULL
+	// A key that is a credential of its own is only accepted when no secret is presented for it, and
+	// carries its own expiration and last use, since a secret of the same token has its own.
+	secretExpr := ", key_last_used_at = now()"
+	secretCondition := `tok.key_is_credential
 		AND (tok.expires_at IS NULL OR tok.expires_at > now())`
 	if token.Secret != nil {
+		secretExpr = ""
 		matches := make([]string, 0, len(types.AccessTokenSecretSlots))
 		for _, slot := range types.AccessTokenSecretSlots {
 			prefix := accessTokenSecretPrefix(slot)
@@ -237,9 +239,11 @@ func CreateAccessTokenSecret(
 		fmt.Sprintf(
 			`UPDATE AccessToken AS tok
 			SET %[1]v_hash = @hash, %[1]v_created_at = now(), %[1]v_expires_at = @expiresAt,
-				%[1]v_last_used_at = NULL, expires_at = NULL
+				%[1]v_last_used_at = NULL
 			WHERE tok.id = @id AND tok.user_account_id = @userId AND tok.organization_id = @orgId
 				AND tok.%[1]v_hash IS NULL
+				AND num_nonnulls(tok.secret_1_hash, tok.secret_2_hash)
+					+ tok.key_is_credential::INT < 2
 			RETURNING %[2]v`,
 			prefix, accessTokenOutputExpr,
 		),
@@ -281,13 +285,36 @@ func DeleteAccessTokenSecret(
 			SET %[1]v_hash = NULL, %[1]v_created_at = NULL, %[1]v_expires_at = NULL,
 				%[1]v_last_used_at = NULL
 			WHERE tok.id = @id AND tok.user_account_id = @userId AND tok.organization_id = @orgId
-				AND tok.%[1]v_hash IS NOT NULL AND tok.%[2]v_hash IS NOT NULL`,
+				AND tok.%[1]v_hash IS NOT NULL
+				AND (tok.%[2]v_hash IS NOT NULL OR tok.key_is_credential)`,
 			prefix, accessTokenSecretPrefix(slot.Other()),
 		),
 		pgx.NamedArgs{"id": id, "userId": userID, "orgId": orgID},
 	)
 	if err != nil {
 		return fmt.Errorf("could not delete access token secret: %w", err)
+	} else if cmd.RowsAffected() == 0 {
+		return apierrors.ErrConflict
+	}
+	return nil
+}
+
+// RetireAccessTokenKeyCredential stops the key from authenticating on its own, which is how a token
+// issued before secrets existed is migrated once a secret has taken over. The key itself stays, as
+// it identifies the row for every credential of it.
+func RetireAccessTokenKeyCredential(ctx context.Context, id, userID, orgID uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	cmd, err := db.Exec(
+		ctx,
+		`UPDATE AccessToken AS tok
+		SET key_is_credential = false, expires_at = NULL, key_last_used_at = NULL
+		WHERE tok.id = @id AND tok.user_account_id = @userId AND tok.organization_id = @orgId
+			AND tok.key_is_credential
+			AND num_nonnulls(tok.secret_1_hash, tok.secret_2_hash) > 0`,
+		pgx.NamedArgs{"id": id, "userId": userID, "orgId": orgID},
+	)
+	if err != nil {
+		return fmt.Errorf("could not retire access token key: %w", err)
 	} else if cmd.RowsAffected() == 0 {
 		return apierrors.ErrConflict
 	}

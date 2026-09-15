@@ -8,13 +8,25 @@ import (
 func AccessTokenToAPI(model types.AccessToken) api.AccessToken {
 	return api.AccessToken{
 		ID:         model.ID,
-		KeyID:      model.KeyID(),
+		KeyID:      model.Key.ID(),
 		CreatedAt:  model.CreatedAt,
-		ExpiresAt:  model.ExpiresAt, //nolint:staticcheck // a token that predates secrets has one
 		LastUsedAt: model.LastUsedAt,
 		Label:      model.Label,
 		UserRole:   model.UserRole,
+		LegacyKey:  AccessTokenLegacyKeyToAPI(model),
 		Secrets:    AccessTokenSecretsToAPI(model),
+	}
+}
+
+func AccessTokenLegacyKeyToAPI(model types.AccessToken) *api.AccessTokenLegacyKey {
+	if !model.KeyIsCredential {
+		return nil
+	}
+	return &api.AccessTokenLegacyKey{
+		KeyID:      model.Key.LegacyID(),
+		CreatedAt:  model.CreatedAt,
+		ExpiresAt:  model.ExpiresAt,
+		LastUsedAt: model.KeyLastUsedAt,
 	}
 }
 

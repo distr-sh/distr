@@ -12,9 +12,9 @@ This applies for any kind of integration, no matter whether you are using the Di
 
 A Personal Access Token is a unique string that you generate in the Distr web interface. It is directly associated with the user who created it, and with the organization it was created in. It cannot be used to access data of other organizations of the same user.
 
-A token consists of a key id and a secret, separated by an underscore: `distr-<key-id>_<secret>`. The key id identifies the token and stays the same for its whole life, while the secret is what proves that you are allowed to use it. Distr only stores a hash of the secret, which is why a token is shown to you exactly once and cannot be recovered afterwards.
+A token consists of a prefix and a second part, separated by an underscore: `distr-<prefix>_<second-part>`. The prefix identifies the token and stays the same for its whole life, while the second part is what proves that you are allowed to use it. Distr only stores a hash of that second part, which is why a token is shown to you exactly once and cannot be recovered afterwards.
 
-Both parts use digits and letters only, and the token ends in a six character checksum of everything before it. That checksum lets Distr reject a token that was mistyped or truncated on the way, and lets a secret scanner recognize one of our tokens in a repository. Tokens that were issued before secrets existed consist of the key alone and have no checksum.
+Both parts use digits and letters only, and the token ends in a six character checksum of everything before it. That checksum lets Distr reject a token that was mistyped or truncated on the way, and lets a secret scanner recognize one of our tokens in a repository. Tokens issued before this format existed consist of the prefix alone and have no checksum.
 
 ## Creating a Personal Access Token
 
@@ -25,7 +25,7 @@ The page lists the tokens that already exist for your user account, with a filte
 
 To create a token, click **Create token** in the top right corner. You will be prompted to enter a label, an expiry date and a role. You can leave the label and the expiry empty, but we recommend setting a descriptive label and an expiry date to keep your tokens organized and secure.
 
-Only the label can be changed later. The role cannot, so that a token cannot gain access it was not created with, and neither can the expiry date, which belongs to the secret the token is created with: moving it would change a deadline that whatever holds the token already relies on. To keep a token alive past its expiry, add a secret that expires later, as described under [rotating a token's secret](#rotating-a-tokens-secret).
+Only the label can be changed later. The role cannot, so that a token cannot gain access it was not created with, and neither can the expiry date: moving it would change a deadline that whatever holds the token already relies on. To keep an access token alive past that date, add a second token that expires later, as described under [rotating a token](#rotating-a-token).
 
 After you have entered the details, click **Create**. Distr generates the token and opens its page, where the token is displayed.
 
@@ -45,29 +45,35 @@ We recommend creating dedicated lower-privilege tokens for automation that does 
 
 ## A token's page
 
-Click **Details / Edit** next to a token to open its page. It shows the beginning of the key id, so that you can tell which of your tokens a client is configured with, when the token was created and the role it acts under, and below that its secrets with the time each of them was created, expires and was last used. Only the beginning of the key id is shown, because a token that predates secrets is nothing but its key.
+Click **Details / Edit** next to a token to open its page. It shows when the access token was created and the role it acts under, and below that the tokens issued for it, each with its own prefix and the time it was created, expires and was last used. The prefix lets you tell which of your tokens a client is configured with, and only the beginning of it is shown, because a legacy token is nothing but its prefix.
 
-A token expires when the last of its secrets does, because every secret that is still valid authenticates it.
+An access token can have at most two tokens at a time. That second slot exists so that you can rotate without downtime, and **Add token** is unavailable while both are in use. An access token expires when the last token issued for it does, because every token that is still valid authenticates it.
 
 The label can be changed here and is saved right away.
 
-## Rotating a token's secret
+## Rotating a token
 
-A token can hold two secrets at the same time, so that you can replace one without ever having a moment where nothing works. Both secrets grant exactly the same access. This is also how a token is kept alive: the new secret gets its own expiry date, and the token stops working when the last of its secrets has expired.
+Both of an access token's two tokens can be valid at the same time, so that you can replace one without ever having a moment where nothing works. They grant exactly the same access, and two tokens of the current format also share a prefix. This is also how an access token is kept alive: the new token gets its own expiry date, and the access token stops working once both have expired.
 
-To rotate a secret:
+To rotate a token:
 
-1. Click **Add secret** on the token's page and pick the expiry date of the new secret. Distr shows you the new token, which is the same key id with the new secret. Note it down, it is only shown once.
-2. Roll the new token out everywhere the old one is in use. The "last used" timestamp of the old secret tells you whether anything is still authenticating with it.
-3. Delete the old secret once its "last used" timestamp stops moving.
+1. Click **Add token** on the access token's page and pick the expiry date of the new one. Distr shows you the new token, which is the same prefix with a new second part. Note it down, it is only shown once.
+2. Roll it out everywhere the old one is in use. The "last used" timestamp of the old token tells you whether anything is still authenticating with it.
+3. Delete the old token once its "last used" timestamp stops moving.
 
-A token always keeps at least one secret, so the last remaining secret cannot be deleted. Delete the whole access token instead.
+At least one token has to remain, so the last one cannot be deleted. Delete the whole access token instead.
 
-## Migrating a token created before secrets existed
+## Migrating a legacy token
 
-Tokens created before Distr split them into a key id and a secret have no secret at all, and the list marks them with **No secret**. Such a token is its own credential, which is why Distr asks you to migrate it to the format that has one.
+Tokens created before Distr split them into a prefix and a second part have no second part at all, and both the list and the token's own page mark them as **Legacy**. Such a token is its own credential, which is why Distr asks you to migrate it to the format that has one.
 
-Open it and click **Add secret** to pick the expiry date of its first secret. Doing so replaces the token, so anything still using the old one has to be updated with the new token that is shown to you. From then on the token expires with its secrets, and the expiry date it had before no longer applies.
+A legacy token keeps working while you migrate, so the steps are the same as [rotating a token](#rotating-a-token): click **Add token**, roll the new one out, then delete the legacy entry once its "last used" timestamp stops moving. Nothing breaks the moment you add the token, and the legacy one stops working only when you delete it or its expiry date passes.
+
+A legacy token counts towards the two an access token can have, so you can add exactly one token next to it and have to delete the legacy entry before adding another.
+
+Migrating is not optional forever: a legacy token that was issued without an expiry date was given one 90 days out when your instance introduced this format, and it stops working on that date whether or not it has been migrated by then.
+
+The two differ in the prefix they start with, because a legacy token is in the hex encoding it was issued in and the new one in the encoding the current format uses. The token's page shows the prefix per entry for exactly that reason.
 
 ## Deleting Personal Access Tokens
 

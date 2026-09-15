@@ -9,16 +9,14 @@ import (
 )
 
 type AccessToken struct {
-	ID        uuid.UUID `json:"id"`
-	KeyID     string    `json:"keyId"`
-	CreatedAt time.Time `json:"createdAt"`
-	// Deprecated: Set only for a token that predates secrets. Every other token expires with the
-	// secrets that authenticate it.
-	ExpiresAt  *time.Time          `json:"expiresAt,omitempty"`
-	LastUsedAt *time.Time          `json:"lastUsedAt,omitempty"`
-	Label      *string             `json:"label,omitempty"`
-	UserRole   *types.UserRole     `json:"userRole,omitempty"`
-	Secrets    []AccessTokenSecret `json:"secrets"`
+	ID         uuid.UUID             `json:"id"`
+	KeyID      string                `json:"keyId"`
+	CreatedAt  time.Time             `json:"createdAt"`
+	LastUsedAt *time.Time            `json:"lastUsedAt,omitempty"`
+	Label      *string               `json:"label,omitempty"`
+	UserRole   *types.UserRole       `json:"userRole,omitempty"`
+	LegacyKey  *AccessTokenLegacyKey `json:"legacyKey,omitempty"`
+	Secrets    []AccessTokenSecret   `json:"secrets"`
 }
 
 type AccessTokenSecret struct {
@@ -26,6 +24,16 @@ type AccessTokenSecret struct {
 	CreatedAt  time.Time                   `json:"createdAt"`
 	ExpiresAt  *time.Time                  `json:"expiresAt,omitempty"`
 	LastUsedAt *time.Time                  `json:"lastUsedAt,omitempty"`
+}
+
+// AccessTokenLegacyKey is present while the key authenticates on its own, which is the format that
+// predates secrets. Its KeyID is the hex encoding the token was issued in, so it differs from the
+// one every other credential of the same token is shown with.
+type AccessTokenLegacyKey struct {
+	KeyID      string     `json:"keyId"`
+	CreatedAt  time.Time  `json:"createdAt"`
+	ExpiresAt  *time.Time `json:"expiresAt,omitempty"`
+	LastUsedAt *time.Time `json:"lastUsedAt,omitempty"`
 }
 
 func (obj AccessToken) WithKey(key string) AccessTokenWithKey {
