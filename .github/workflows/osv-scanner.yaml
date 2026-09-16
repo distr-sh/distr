@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: OSV Scanner
+
+on:
+  pull_request:
+    paths:
+      - 'go.mod'
+      - 'go.sum'
+      - '**/package.json'
+      - '**/pnpm-lock.yaml'
+      - '.github/workflows/osv-scanner.yaml'
+  schedule:
+    - cron: '0 2,14 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: osv-scanner-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: Scheduled OSV Scan
+    if: ${{ github.event_name != 'pull_request' }}
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@a345acffa64b0eaede81a3d9aae6141214d9c8fc # v2.6.0
+    with:
+      fail-on-vuln: false
+
+  # Fails only on a vulnerability this pull request adds. The reusable workflow scans the target
+  # branch too and reports the difference, so the findings already on main do not block a merge.
+  scan-pr:
+    name: Pull Request OSV Scan
+    if: ${{ github.event_name == 'pull_request' }}
+    # Granted only because GitHub validates the permissions a called workflow declares when the run
+    # starts. Nothing uses them, as upload-sarif below skips the code scanning upload.
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@a345acffa64b0eaede81a3d9aae6141214d9c8fc # v2.6.0
+    with:
+      # Report on the diff through inline annotations instead. Only the scheduled scan writes the
+      # Security tab, which keeps its alerts to what is actually on main.
+      upload-sarif: false
