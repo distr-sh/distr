@@ -15,6 +15,7 @@ const legacyToken: AccessToken = {
   keyId: 'distr-2LTMfjV5xU8',
   createdAt: '2026-01-01T00:00:00Z',
   label: 'legacy',
+  legacyKey: {keyId: 'distr-4f3ab1c2d3e4f506', createdAt: '2026-01-01T00:00:00Z'},
   secrets: [],
 };
 
@@ -60,7 +61,7 @@ describe('AccessTokenDetailComponent', () => {
   }
 
   it('opens a token that has neither secrets nor an explicit role', async () => {
-    expect(await open(legacyToken)).toContain('Add secret');
+    expect(await open(legacyToken)).toContain('Add token');
   });
 
   it('shows the token a create handed over', async () => {

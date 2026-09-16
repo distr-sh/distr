@@ -39,17 +39,19 @@ type AccessTokenSecret struct {
 type AccessToken struct {
 	ID        uuid.UUID `db:"id"`
 	CreatedAt time.Time `db:"created_at"`
-	// Deprecated: Set only for a token that predates secrets. Every other token expires with the
-	// secrets that authenticate it, so nothing writes this column anymore.
-	ExpiresAt      *time.Time         `db:"expires_at"`
-	LastUsedAt     *time.Time         `db:"last_used_at"`
-	Label          *string            `db:"label"`
-	Key            authkey.Key        `db:"key"`
-	Secret1        *AccessTokenSecret `db:"secret_1"`
-	Secret2        *AccessTokenSecret `db:"secret_2"`
-	UserAccountID  uuid.UUID          `db:"user_account_id"`
-	OrganizationID uuid.UUID          `db:"organization_id"`
-	UserRole       *UserRole          `db:"token_user_role"`
+	// ExpiresAt and KeyLastUsedAt belong to the key as a credential of its own and are set only
+	// while KeyIsCredential is, which no token created after secrets existed ever is.
+	ExpiresAt       *time.Time         `db:"expires_at"`
+	KeyIsCredential bool               `db:"key_is_credential"`
+	KeyLastUsedAt   *time.Time         `db:"key_last_used_at"`
+	LastUsedAt      *time.Time         `db:"last_used_at"`
+	Label           *string            `db:"label"`
+	Key             authkey.Key        `db:"key"`
+	Secret1         *AccessTokenSecret `db:"secret_1"`
+	Secret2         *AccessTokenSecret `db:"secret_2"`
+	UserAccountID   uuid.UUID          `db:"user_account_id"`
+	OrganizationID  uuid.UUID          `db:"organization_id"`
+	UserRole        *UserRole          `db:"token_user_role"`
 }
 
 func (tok AccessToken) Secret(slot AccessTokenSecretSlot) *AccessTokenSecret {
@@ -63,15 +65,20 @@ func (tok AccessToken) HasSecrets() bool {
 	return tok.Secret1 != nil || tok.Secret2 != nil
 }
 
-// KeyID returns the part of the token that identifies it, in the encoding its owner finds at the
-// beginning of the token itself, which for a token that predates secrets is the hex encoding it was
-// issued in. Only half of the key is disclosed, so that a token which is nothing but its key cannot
-// be recovered from the list of tokens it appears in.
-func (tok AccessToken) KeyID() string {
-	if !tok.HasSecrets() {
-		return tok.Key.LegacyID()
+// CredentialCount is how many credentials authenticate this token, counting the key itself while it
+// is one. Two is the maximum, so that a credential can be replaced without a gap but a token cannot
+// accumulate them.
+func (tok AccessToken) CredentialCount() int {
+	count := 0
+	if tok.KeyIsCredential {
+		count++
 	}
-	return tok.Key.ID()
+	for _, slot := range AccessTokenSecretSlots {
+		if tok.Secret(slot) != nil {
+			count++
+		}
+	}
+	return count
 }
 
 func (tok AccessToken) FreeSecretSlot() *AccessTokenSecretSlot {

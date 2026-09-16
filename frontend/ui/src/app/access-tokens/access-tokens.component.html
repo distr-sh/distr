@@ -23,7 +23,7 @@
             <th scope="col" class="p-4">Creation Date</th>
             <th scope="col" class="p-4">Expires</th>
             <th scope="col" class="p-4">Last used</th>
-            <th scope="col" class="p-4">Secrets</th>
+            <th scope="col" class="p-4">Tokens</th>
             <th scope="col" class="p-4"></th>
           </tr>
         </thead>
@@ -46,10 +46,10 @@
                 {{ row.token.createdAt | date: 'shortDate' }}
               </td>
               <td class="px-4 py-3 truncate">
-                @if (row.legacy) {
-                  @if (row.token.expiresAt; as d) {
+                @for (credential of row.credentials; track $index) {
+                  @if (credential.expiresAt; as d) {
                     <span [title]="d | date: 'medium'">{{ d | date: 'shortDate' }}</span>
-                    @if (row.expired) {
+                    @if (credential.expired) {
                       <span class="ml-1 text-red-600 dark:text-red-500">
                         <fa-icon [icon]="faTriangleExclamation" />
                         expired
@@ -58,22 +58,8 @@
                   } @else {
                     never
                   }
-                } @else {
-                  @for (secret of row.secrets; track secret.slot) {
-                    @if (secret.expiresAt; as d) {
-                      <span [title]="d | date: 'medium'">{{ d | date: 'shortDate' }}</span>
-                      @if (secret.expired) {
-                        <span class="ml-1 text-red-600 dark:text-red-500">
-                          <fa-icon [icon]="faTriangleExclamation" />
-                          expired
-                        </span>
-                      }
-                    } @else {
-                      never
-                    }
-                    @if (!$last) {
-                      <span>,&nbsp;</span>
-                    }
+                  @if (!$last) {
+                    <span>,&nbsp;</span>
                   }
                 }
               </td>
@@ -85,14 +71,13 @@
                 }
               </td>
               <td class="px-4 py-3 truncate">
+                {{ row.credentials.length }}
                 @if (row.legacy) {
                   <span
-                    class="distr-status-badge bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-700">
+                    class="ml-1 distr-status-badge bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-700">
                     <fa-icon [icon]="faTriangleExclamation" />
-                    No secret
+                    Legacy
                   </span>
-                } @else {
-                  {{ row.secrets.length }}
                 }
               </td>
               <td
@@ -155,8 +140,8 @@
           <label for="expiresAt" class="distr-label mb-2">Expires At</label>
           <app-expires-at-picker formControlName="expiresAt" inputId="expiresAt" />
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Belongs to the secret the token is created with and cannot be changed afterwards. To keep the token alive,
-            add a secret that expires later.
+            Fixed when the token is created and cannot be changed afterwards. To keep it alive, add a second token on
+            its page that expires later.
           </p>
         </div>
         <div>

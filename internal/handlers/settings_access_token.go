@@ -20,10 +20,10 @@ import (
 )
 
 const (
-	accessTokenSecretSlotsExhaustedMessage = "This token already has two secrets. " +
-		"Delete the one you want to replace before creating another."
-	accessTokenLastSecretMessage = "This token must keep at least one secret. " +
-		"Create the replacement first, or delete the token itself."
+	accessTokenCredentialsExhaustedMessage = "This access token already has two tokens. " +
+		"Delete the one you want to replace before adding another."
+	accessTokenLastCredentialMessage = "This access token must keep at least one token. " +
+		"Add the replacement first, or delete the access token itself."
 	accessTokenRoleExceedsCallerMessage = "token role cannot exceed your own role"
 )
 
@@ -175,8 +175,8 @@ func createAccessTokenSecretHandler() http.HandlerFunc {
 		}
 
 		slot := token.FreeSecretSlot()
-		if slot == nil {
-			http.Error(w, accessTokenSecretSlotsExhaustedMessage, http.StatusBadRequest)
+		if slot == nil || token.CredentialCount() >= 2 {
+			http.Error(w, accessTokenCredentialsExhaustedMessage, http.StatusBadRequest)
 			return
 		}
 
@@ -191,7 +191,7 @@ func createAccessTokenSecretHandler() http.HandlerFunc {
 		secret := types.AccessTokenSecret{Hash: newSecret.Hash(), ExpiresAt: request.ExpiresAt}
 		updated, err := db.CreateAccessTokenSecret(ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(), *slot, secret)
 		if errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, accessTokenSecretSlotsExhaustedMessage, http.StatusBadRequest)
+			http.Error(w, accessTokenCredentialsExhaustedMessage, http.StatusBadRequest)
 		} else if err != nil {
 			log.Warn("error creating token secret", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -237,17 +237,58 @@ func deleteAccessTokenSecretHandler() http.HandlerFunc {
 		} else if token.Secret(slot) == nil {
 			http.NotFound(w, r)
 			return
-		} else if token.Secret(slot.Other()) == nil {
-			http.Error(w, accessTokenLastSecretMessage, http.StatusBadRequest)
+		} else if token.CredentialCount() < 2 {
+			http.Error(w, accessTokenLastCredentialMessage, http.StatusBadRequest)
 			return
 		}
 
 		if err := db.DeleteAccessTokenSecret(
 			ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(), slot,
 		); errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, accessTokenLastSecretMessage, http.StatusBadRequest)
+			http.Error(w, accessTokenLastCredentialMessage, http.StatusBadRequest)
 		} else if err != nil {
 			log.Warn("error deleting token secret", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			w.WriteHeader(http.StatusNoContent)
+		}
+	}
+}
+
+// deleteAccessTokenKeyHandler retires the key as a credential of its own, which is the last step of
+// migrating a token issued before secrets existed.
+func deleteAccessTokenKeyHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		log := internalctx.GetLogger(ctx)
+		auth := auth.Authentication.Require(ctx)
+		tokenID, err := uuid.Parse(r.PathValue("accessTokenId"))
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+
+		token, err := db.GetAccessToken(ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID())
+		if errors.Is(err, apierrors.ErrNotFound) || (err == nil && !token.KeyIsCredential) {
+			http.NotFound(w, r)
+			return
+		} else if err != nil {
+			log.Warn("error getting token", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		} else if !token.HasSecrets() {
+			http.Error(w, accessTokenLastCredentialMessage, http.StatusBadRequest)
+			return
+		}
+
+		if err := db.RetireAccessTokenKeyCredential(
+			ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(),
+		); errors.Is(err, apierrors.ErrConflict) {
+			http.Error(w, accessTokenLastCredentialMessage, http.StatusBadRequest)
+		} else if err != nil {
+			log.Warn("error retiring token key", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
