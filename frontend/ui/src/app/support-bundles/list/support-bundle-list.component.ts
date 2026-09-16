@@ -4,7 +4,7 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faDownload, faGear, faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faDownload, faGear, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, map, of, startWith, Subject, switchMap, take} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
@@ -18,7 +18,7 @@ import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService, supportBundleZipFileName} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
 import {SupportBundle} from '../../types/support-bundle';
-import {supportBundleStatusBadgeClass} from '../support-bundle-display';
+import {supportBundleDeleteConfirm, supportBundleStatusBadgeClass} from '../support-bundle-display';
 
 @Component({
   selector: 'app-support-bundle-list',
@@ -45,6 +45,7 @@ export class SupportBundleListComponent {
   protected readonly faDownload = faDownload;
   protected readonly faGear = faGear;
   protected readonly faPlus = faPlus;
+  protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
   protected readonly statusBadgeClass = supportBundleStatusBadgeClass;
 
@@ -151,6 +152,34 @@ export class SupportBundleListComponent {
     } finally {
       if (this.downloadingBundleId() === bundle.id) {
         this.downloadingBundleId.set(null);
+      }
+    }
+  }
+
+  protected readonly deletingBundleId = signal<string | null>(null);
+
+  protected async deleteBundle(bundle: SupportBundle, event: Event): Promise<void> {
+    event.stopPropagation();
+    if (this.deletingBundleId() !== null) {
+      return;
+    }
+    const confirmed = await firstValueFrom(this.overlay.confirm(supportBundleDeleteConfirm));
+    if (!confirmed) {
+      return;
+    }
+    this.deletingBundleId.set(bundle.id);
+    try {
+      await firstValueFrom(this.svc.delete(bundle.id));
+      this.toast.success('Support bundle deleted');
+      this.refresh$.next();
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    } finally {
+      if (this.deletingBundleId() === bundle.id) {
+        this.deletingBundleId.set(null);
       }
     }
   }
