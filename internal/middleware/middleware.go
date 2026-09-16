@@ -297,8 +297,7 @@ func BlockCrossOrganizationAction(handler http.Handler) http.Handler {
 // The messages are exported for the endpoints that reject only part of their request body and
 // therefore cannot apply the middleware.
 const (
-	OidcSessionBlockedMessage = "your sign-in methods cannot be changed from a session your organization's " +
-		"identity provider signed you in with. Request a password reset to receive a link to your email " +
+	OidcSessionBlockedMessage = "operation not permitted in SSO session. Request a password reset to receive a link to your email " +
 		"address that lets you change them"
 	AccessTokenBlockedMessage = "this cannot be done with an access token. Sign in to Distr to do it"
 )
