@@ -98,9 +98,27 @@ func createArtifactHandler() http.HandlerFunc {
 			return
 		}
 
+		orgID := *authentication.CurrentOrgID()
+		org, err := db.GetOrganizationByID(ctx, orgID)
+		if err != nil {
+			log.Error("failed to get organization", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		if org.Slug == nil || *org.Slug == "" {
+			http.Error(
+				w,
+				"your organization does not have a slug yet. Please set one in the organization settings "+
+					"before creating an artifact.",
+				http.StatusBadRequest,
+			)
+			return
+		}
+
 		artifact := &types.Artifact{
 			Name:           body.Name,
-			OrganizationID: *authentication.CurrentOrgID(),
+			OrganizationID: orgID,
 			UpstreamURL:    body.UpstreamURL,
 		}
 		if body.UpstreamAuth != nil {
