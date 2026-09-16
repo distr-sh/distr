@@ -33,7 +33,7 @@ func SettingsRouter(r chiopenapi.Router) {
 			With(option.Request(api.UpdateUserAccountRequest{})).
 			With(option.Response(http.StatusOK, types.UserAccount{}))
 
-		r.With(middleware.BlockCredentialChange).
+		r.With(middleware.RequireNonAccessToken, middleware.RequireNonOidcToken).
 			Post("/email", userSettingsUpdateEmailHandler()).
 			With(option.Description("Update current user email address")).
 			With(option.Request(api.UpdateUserAccountEmailRequest{})).
@@ -48,7 +48,7 @@ func SettingsRouter(r chiopenapi.Router) {
 				With(option.Description("List the identity provider accounts connected to the current user")).
 				With(option.Response(http.StatusOK, []api.UserAccountOIDCIdentity{}))
 
-			r.With(middleware.BlockCredentialChange).
+			r.With(middleware.RequireNonAccessToken, middleware.RequireNonOidcToken).
 				Delete("/{oidcIdentityId}", deleteOIDCIdentityHandler).
 				With(option.Description("Disconnect an identity provider account from the current user")).
 				With(option.Request(OIDCIdentityIDRequest{}))
@@ -61,12 +61,12 @@ func SettingsRouter(r chiopenapi.Router) {
 		// Enrollment is gated because it needs no password and would hand whoever performs it a second
 		// factor the account's owner does not have. Disabling MFA and regenerating the recovery codes
 		// verify the password, which is proof of ownership on its own.
-		r.With(middleware.BlockCredentialChange).
+		r.With(middleware.RequireNonAccessToken, middleware.RequireNonOidcToken).
 			Post("/setup", mfaSetupHandler).
 			With(option.Description("Setup a new TOTP secret for the current user. MFA must still be enabled afterwards")).
 			With(option.Response(http.StatusOK, api.SetupMFAResponse{}))
 
-		r.With(middleware.BlockCredentialChange).
+		r.With(middleware.RequireNonAccessToken, middleware.RequireNonOidcToken).
 			Post("/enable", mfaEnableHandler).
 			With(option.Description("Enable MFA for the current user and receive recovery codes")).
 			With(option.Request(api.EnableMFARequest{})).
@@ -92,7 +92,7 @@ func SettingsRouter(r chiopenapi.Router) {
 		// holds one has no business minting another, so these endpoints are not part of the API.
 		r.WithOptions(option.GroupHidden())
 
-		r.Use(middleware.RequireOrgAndRole, middleware.BlockCredentialChange)
+		r.Use(middleware.RequireOrgAndRole, middleware.RequireNonAccessToken)
 
 		r.Get("/", getAccessTokensHandler())
 
@@ -127,9 +127,14 @@ func userSettingsUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Only the password is a credential change; the name and the image stay available to every session.
-	if body.Password != nil && auth.OrganizationScoped() {
-		http.Error(w, middleware.CredentialChangeBlockedMessage, http.StatusForbidden)
-		return
+	if body.Password != nil {
+		if auth.IsAccessToken() {
+			http.Error(w, middleware.AccessTokenBlockedMessage, http.StatusForbidden)
+			return
+		} else if auth.IsCustomOIDCSession() {
+			http.Error(w, middleware.OidcSessionBlockedMessage, http.StatusForbidden)
+			return
+		}
 	}
 
 	user := auth.CurrentUser()
