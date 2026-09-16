@@ -1,5 +1,29 @@
 # Changelog
 
+## [4.0.2](https://github.com/distr-sh/distr/compare/4.0.1...4.0.2) (2026-09-16)
+
+
+### Bug Fixes
+
+* **backend:** allow access token management in SSO sessions ([#3234](https://github.com/distr-sh/distr/issues/3234)) ([9136e76](https://github.com/distr-sh/distr/commit/9136e76a50e69ae69bbb7cbc68f676bdba253718))
+* **backend:** prevent pull-through artifact creation without org slug ([#3253](https://github.com/distr-sh/distr/issues/3253)) ([7285ad5](https://github.com/distr-sh/distr/commit/7285ad5fc4a6369d26d32b7af451168c3050b5d4))
+* **deps:** update aws-sdk-go-v2 monorepo ([#3237](https://github.com/distr-sh/distr/issues/3237)) ([ccec384](https://github.com/distr-sh/distr/commit/ccec384cff9007cf3627fe099d9256842ecc6a98))
+* **deps:** update module go.opentelemetry.io/collector/component to v1.67.0 ([#3238](https://github.com/distr-sh/distr/issues/3238)) ([6990c73](https://github.com/distr-sh/distr/commit/6990c73505847578eae1f41c6df410ed9515453a))
+* **deps:** update module go.opentelemetry.io/collector/confmap to v1.67.0 ([#3239](https://github.com/distr-sh/distr/issues/3239)) ([c18279b](https://github.com/distr-sh/distr/commit/c18279b136a9c1bf42a4402431df4abea71a6489))
+* **deps:** update module go.opentelemetry.io/collector/consumer to v1.67.0 ([#3240](https://github.com/distr-sh/distr/issues/3240)) ([dc6c0c1](https://github.com/distr-sh/distr/commit/dc6c0c1c2d6733d07cfc503e86a1470ad18f8cad))
+
+
+### Other
+
+* **deps:** update aws-actions/configure-aws-credentials action to v6.3.0 ([#3242](https://github.com/distr-sh/distr/issues/3242)) ([f7853ca](https://github.com/distr-sh/distr/commit/f7853cafec40c3345ad719cb32154f871aabceae))
+* **deps:** update dependency vitest to v5.0.1 ([#3244](https://github.com/distr-sh/distr/issues/3244)) ([28887c5](https://github.com/distr-sh/distr/commit/28887c5de8386415ecfc64a701ce8bf6f7aee02f))
+* **deps:** update docker/build-push-action action to v7.4.0 ([#3245](https://github.com/distr-sh/distr/issues/3245)) ([f97be3f](https://github.com/distr-sh/distr/commit/f97be3f7ab8ba556f3cc09288a18b2dae5b7357f))
+* **deps:** update docker/setup-buildx-action action to v4.4.0 ([#3252](https://github.com/distr-sh/distr/issues/3252)) ([be102ef](https://github.com/distr-sh/distr/commit/be102eff4141927fc0a0f15f5c0d40b97fabc532))
+* **deps:** update pnpm to v12.4.2 ([#3248](https://github.com/distr-sh/distr/issues/3248)) ([0695dd0](https://github.com/distr-sh/distr/commit/0695dd0f74bc0b832de56c010ebf36406b25c729))
+* **deps:** update postgresql docker tag to v18.11.3 ([#3236](https://github.com/distr-sh/distr/issues/3236)) ([d3c09cd](https://github.com/distr-sh/distr/commit/d3c09cdc415d63a13f606f68bff1a0918ca9ea16))
+* **frontend:** reduce `distr-card-grid` column count on very large screens ([#3250](https://github.com/distr-sh/distr/issues/3250)) ([df084de](https://github.com/distr-sh/distr/commit/df084de1efdd5cbce9cfab0a33d17d1fab4d3efd))
+* improve access token migration rollover ([#3235](https://github.com/distr-sh/distr/issues/3235)) ([bd3695e](https://github.com/distr-sh/distr/commit/bd3695e0608b2f3518121fd778236930ce7315ba))
+
 ## [4.0.1](https://github.com/distr-sh/distr/compare/4.0.0...4.0.1) (2026-09-15)
 
 
