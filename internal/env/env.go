@@ -74,6 +74,9 @@ var (
 	cleanupOrganizationCron                *string
 	cleanupOrganizationTimeout             time.Duration
 	cleanupOrganizationMinAge              time.Duration
+	cleanupUserAccountCron                 *string
+	cleanupUserAccountTimeout              time.Duration
+	cleanupUserAccountMinAge               time.Duration
 	deploymentStatusNotificationCron       *string
 	deploymentStatusNotificationTimeout    time.Duration
 	notificationEmailHourlyQuota           int
@@ -270,6 +273,11 @@ func Initialize() {
 	cleanupOrganizationTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_ORGANIZATION_TIMEOUT",
 		envparse.PositiveDuration, 0)
 	cleanupOrganizationMinAge = envutil.GetEnvParsedOrDefault("CLEANUP_ORGANIZATION_MIN_AGE",
+		envparse.PositiveDuration, 30*24*time.Hour)
+	cleanupUserAccountCron = envutil.GetEnvOrNil("CLEANUP_USER_ACCOUNT_CRON")
+	cleanupUserAccountTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_USER_ACCOUNT_TIMEOUT",
+		envparse.PositiveDuration, 0)
+	cleanupUserAccountMinAge = envutil.GetEnvParsedOrDefault("CLEANUP_USER_ACCOUNT_MIN_AGE",
 		envparse.PositiveDuration, 30*24*time.Hour)
 	deploymentStatusNotificationCron = envutil.GetEnvOrNil("DEPLOYMENT_STATUS_NOTIFICATION_CRON")
 	deploymentStatusNotificationTimeout = envutil.GetEnvParsedOrDefault("DEPLOYMENT_STATUS_NOTIFICATION_TIMEOUT",
@@ -605,6 +613,18 @@ func CleanupOrganizationTimeout() time.Duration {
 
 func CleanupOrganizationMinAge() time.Duration {
 	return cleanupOrganizationMinAge
+}
+
+func CleanupUserAccountCron() *string {
+	return cleanupUserAccountCron
+}
+
+func CleanupUserAccountTimeout() time.Duration {
+	return cleanupUserAccountTimeout
+}
+
+func CleanupUserAccountMinAge() time.Duration {
+	return cleanupUserAccountMinAge
 }
 
 func OIDCGithubEnabled() bool {

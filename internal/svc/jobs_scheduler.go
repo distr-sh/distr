@@ -79,6 +79,16 @@ func (r *Registry) createJobsScheduler() (*jobs.Scheduler, error) {
 		}
 	}
 
+	if cron := env.CleanupUserAccountCron(); cron != nil {
+		err = scheduler.RegisterCronJob(
+			*cron,
+			jobs.NewJob("UserAccountCleanup", cleanup.RunUserAccountCleanup, env.CleanupUserAccountTimeout()),
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if cron := env.DeploymentStatusNotificationCron(); cron != nil {
 		err = scheduler.RegisterCronJob(
 			*cron,

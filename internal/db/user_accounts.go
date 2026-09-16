@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
@@ -187,6 +188,51 @@ func DeleteUserAccountWithID(ctx context.Context, id uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func DeleteUserAccountsOlderThan(ctx context.Context, minAge time.Duration) (int64, error) {
+	var rowsAffected int64
+	err := RunTx(ctx, func(ctx context.Context) error {
+		db := internalctx.GetDb(ctx)
+		rows, err := db.Query(
+			ctx,
+			`DELETE FROM UserAccount AS u
+			WHERE NOT u.is_super_admin
+				AND now() - u.created_at > @minAge
+				AND NOT EXISTS (
+					SELECT 1 FROM Organization_UserAccount j WHERE j.user_account_id = u.id
+				)
+			RETURNING u.image_id`,
+			pgx.NamedArgs{"minAge": minAge},
+		)
+		if err != nil {
+			return fmt.Errorf("could not delete user accounts: %w", err)
+		}
+		imageIDs, err := pgx.CollectRows(rows, pgx.RowTo[*uuid.UUID])
+		if err != nil {
+			return fmt.Errorf("could not delete user accounts: %w", err)
+		}
+		rowsAffected = int64(len(imageIDs))
+
+		// UserAccount.image_id is ON DELETE SET NULL, so the avatar would stay behind.
+		orphanedImageIDs := make([]uuid.UUID, 0, len(imageIDs))
+		for _, imageID := range imageIDs {
+			if imageID != nil {
+				orphanedImageIDs = append(orphanedImageIDs, *imageID)
+			}
+		}
+		if len(orphanedImageIDs) > 0 {
+			if _, err := db.Exec(
+				ctx,
+				"DELETE FROM File WHERE id = ANY(@imageIds)",
+				pgx.NamedArgs{"imageIds": orphanedImageIDs},
+			); err != nil {
+				return fmt.Errorf("could not delete images of deleted user accounts: %w", err)
+			}
+		}
+		return nil
+	})
+	return rowsAffected, err
 }
 
 func DeleteUserAccountFromOrganization(ctx context.Context, userID, orgID uuid.UUID) error {

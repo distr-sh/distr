@@ -210,6 +210,9 @@ If a `*_CRON` variable is unset, the corresponding job is not scheduled. For the
 | `CLEANUP_ORGANIZATION_CRON`                  | no       | —       | Cron schedule for permanently deleting soft-deleted organizations.          |
 | `CLEANUP_ORGANIZATION_TIMEOUT`               | no       | `0`     | Timeout for the organization cleanup run.                                   |
 | `CLEANUP_ORGANIZATION_MIN_AGE`               | no       | `720h`  | Retention period before a soft-deleted organization is permanently deleted. |
+| `CLEANUP_USER_ACCOUNT_CRON`                  | no       | —       | Cron schedule for deleting user accounts that belong to no organization.    |
+| `CLEANUP_USER_ACCOUNT_TIMEOUT`               | no       | `0`     | Timeout for the user account cleanup run.                                   |
+| `CLEANUP_USER_ACCOUNT_MIN_AGE`               | no       | `720h`  | Minimum age of a user account before it is eligible for deletion.           |
 | `DEPLOYMENT_STATUS_NOTIFICATION_CRON`        | no       | —       | Cron schedule for sending deployment status notification emails.            |
 | `DEPLOYMENT_STATUS_NOTIFICATION_TIMEOUT`     | no       | `0`     | Timeout for the deployment status notification run.                         |
 

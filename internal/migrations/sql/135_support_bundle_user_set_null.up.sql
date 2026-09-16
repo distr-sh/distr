@@ -1,0 +1,14 @@
+ALTER TABLE SupportBundle
+  ALTER COLUMN created_by_user_account_id DROP NOT NULL,
+  DROP CONSTRAINT supportbundle_created_by_user_account_id_fkey,
+  ADD CONSTRAINT supportbundle_created_by_user_account_id_fkey
+    FOREIGN KEY (created_by_user_account_id) REFERENCES UserAccount (id) ON DELETE SET NULL,
+  DROP CONSTRAINT supportbundle_status_changed_by_user_account_id_fkey,
+  ADD CONSTRAINT supportbundle_status_changed_by_user_account_id_fkey
+    FOREIGN KEY (status_changed_by_user_account_id) REFERENCES UserAccount (id) ON DELETE SET NULL;
+
+ALTER TABLE SupportBundleComment
+  ALTER COLUMN user_account_id DROP NOT NULL,
+  DROP CONSTRAINT supportbundlecomment_user_account_id_fkey,
+  ADD CONSTRAINT supportbundlecomment_user_account_id_fkey
+    FOREIGN KEY (user_account_id) REFERENCES UserAccount (id) ON DELETE SET NULL;
