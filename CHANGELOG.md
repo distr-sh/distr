@@ -1,5 +1,32 @@
 # Changelog
 
+## [4.0.3](https://github.com/distr-sh/distr/compare/4.0.2...4.0.3) (2026-09-17)
+
+
+### Bug Fixes
+
+* **backend:** fix application entitlement registry input sanitization ([#3254](https://github.com/distr-sh/distr/issues/3254)) ([ee0115d](https://github.com/distr-sh/distr/commit/ee0115dd8df448bd26b96325fe54e1e8796a8c4f))
+* **deps:** update module github.com/docker/cli to v29.8.1+incompatible ([#3251](https://github.com/distr-sh/distr/issues/3251)) ([f7a5b50](https://github.com/distr-sh/distr/commit/f7a5b50734ba226b7d1da1925296db89cc5f0a43))
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.161.0 ([#3260](https://github.com/distr-sh/distr/issues/3260)) ([18b9d83](https://github.com/distr-sh/distr/commit/18b9d83bb7348879c0a4e4c662e41bf7e3dc6bfb))
+* require TOTP on password reset if configured ([#3246](https://github.com/distr-sh/distr/issues/3246)) ([7dcd2bc](https://github.com/distr-sh/distr/commit/7dcd2bc2d84c4511f585116ef1634c3712f37ba1))
+
+
+### Other
+
+* add support bundle deletion ([#3256](https://github.com/distr-sh/distr/issues/3256)) ([ebe3bad](https://github.com/distr-sh/distr/commit/ebe3bad7a7dfb764672dc54cbfc94550e6952ffc))
+* **backend:** disable registration on legacy branding domains ([#3276](https://github.com/distr-sh/distr/issues/3276)) ([58c1ba0](https://github.com/distr-sh/distr/commit/58c1ba0b0255fcd060585079f027e8b1e10ef6de))
+* **backend:** remove `organizationScopeCutoff` and always enforce organization id ([#3265](https://github.com/distr-sh/distr/issues/3265)) ([104858f](https://github.com/distr-sh/distr/commit/104858f90cceb2ee077110be8b59515dd3498e11))
+* **deps:** update codemirror ([#3261](https://github.com/distr-sh/distr/issues/3261)) ([0f3a943](https://github.com/distr-sh/distr/commit/0f3a94340dc499e7cfec28ef5fbbab6294b36e3c))
+* **deps:** update dependency @angular/cdk to v22.1.7 ([#3267](https://github.com/distr-sh/distr/issues/3267)) ([c31acfc](https://github.com/distr-sh/distr/commit/c31acfcd48fd6499bb5c046e9815d81a6cbacd50))
+* **deps:** update dependency autoprefixer to v10.6.1 ([#3257](https://github.com/distr-sh/distr/issues/3257)) ([c710a2d](https://github.com/distr-sh/distr/commit/c710a2d08e958d6d162f931d4001d61918adc312))
+* **deps:** update dependency prettier to v3.9.7 ([#3271](https://github.com/distr-sh/distr/issues/3271)) ([b468d49](https://github.com/distr-sh/distr/commit/b468d498f69f61e3d1c55e1a8fb7b29633023256))
+* **deps:** update dependency watchexec to v2.7.3 ([#3247](https://github.com/distr-sh/distr/issues/3247)) ([3c6ab62](https://github.com/distr-sh/distr/commit/3c6ab625f262a059967c008c34125f74289305dc))
+* **deps:** update docker docker tag to v29.8.1 ([#3263](https://github.com/distr-sh/distr/issues/3263)) ([dbaa5cf](https://github.com/distr-sh/distr/commit/dbaa5cfa353038367bedc538b36ce71c8b9bcb2b))
+* **deps:** update docker/setup-buildx-action action to v4.4.1 ([#3268](https://github.com/distr-sh/distr/issues/3268)) ([0654da6](https://github.com/distr-sh/distr/commit/0654da6625877fcd694dd86f5b3859e69d982845))
+* **deps:** update helm release rustfs to v1.0.0 ([#3270](https://github.com/distr-sh/distr/issues/3270)) ([b9aaa28](https://github.com/distr-sh/distr/commit/b9aaa280770186e144571ddb32fb2c967f859149))
+* **deps:** update loki docker tag to v18.13.2 ([#3269](https://github.com/distr-sh/distr/issues/3269)) ([f6ddb90](https://github.com/distr-sh/distr/commit/f6ddb90d556ac45379f15e70f98519d4a36c83e4))
+* **deps:** upgrade rustfs to version 1.0.0 ([#3274](https://github.com/distr-sh/distr/issues/3274)) ([5d59798](https://github.com/distr-sh/distr/commit/5d59798e63e46832351df90f1f9b705741cb6407))
+
 ## [4.0.2](https://github.com/distr-sh/distr/compare/4.0.1...4.0.2) (2026-09-16)
 
 
