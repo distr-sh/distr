@@ -1,6 +1,7 @@
-import {Component, input} from '@angular/core';
+import {Component, inject, input} from '@angular/core';
 import {FormControl, ReactiveFormsModule, Validators} from '@angular/forms';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {PortalService} from '../services/portal.service';
 
 export const mfaCodeValidators = [
   Validators.required,
@@ -20,4 +21,5 @@ export function newMfaCodeControl(): FormControl<string> {
 })
 export class MfaCodeInputComponent {
   public readonly control = input.required<FormControl<string>>();
+  protected readonly supportEmail = inject(PortalService).supportEmail;
 }
