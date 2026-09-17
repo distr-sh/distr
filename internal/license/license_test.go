@@ -264,49 +264,42 @@ func buildToken(t *testing.T, issuedAt time.Time, claims map[string]any) jwt.Tok
 }
 
 func TestValidateOrganizationScope(t *testing.T) {
-	cutoff := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	const orgID = "11111111-1111-1111-1111-111111111111"
 	const otherOrgID = "22222222-2222-2222-2222-222222222222"
 
 	t.Run("disabled when no organization configured", func(t *testing.T) {
 		g := NewWithT(t)
-		tok := buildToken(t, cutoff.Add(time.Hour), map[string]any{"org": otherOrgID})
-		g.Expect(validateOrganizationScope(tok, "", cutoff)).To(Succeed())
+		tok := buildToken(t, time.Now(), map[string]any{"org": otherOrgID})
+		g.Expect(validateOrganizationScope(tok, "")).To(Succeed())
 	})
 
-	t.Run("exempt when issued before cutoff", func(t *testing.T) {
+	t.Run("accepts matching organization", func(t *testing.T) {
 		g := NewWithT(t)
-		tok := buildToken(t, cutoff.Add(-time.Hour), map[string]any{"org": otherOrgID})
-		g.Expect(validateOrganizationScope(tok, orgID, cutoff)).To(Succeed())
+		tok := buildToken(t, time.Now(), map[string]any{"org": orgID})
+		g.Expect(validateOrganizationScope(tok, orgID)).To(Succeed())
 	})
 
-	t.Run("exempt when issued at cutoff", func(t *testing.T) {
+	t.Run("accepts matching organization without issued-at claim", func(t *testing.T) {
 		g := NewWithT(t)
-		tok := buildToken(t, cutoff, map[string]any{"org": otherOrgID})
-		g.Expect(validateOrganizationScope(tok, orgID, cutoff)).To(Succeed())
+		tok := buildToken(t, time.Time{}, map[string]any{"org": orgID})
+		g.Expect(validateOrganizationScope(tok, orgID)).To(Succeed())
 	})
 
-	t.Run("exempt when no issued-at claim", func(t *testing.T) {
+	t.Run("rejects mismatched organization", func(t *testing.T) {
 		g := NewWithT(t)
-		tok := buildToken(t, time.Time{}, map[string]any{"org": otherOrgID})
-		g.Expect(validateOrganizationScope(tok, orgID, cutoff)).To(Succeed())
+		tok := buildToken(t, time.Now(), map[string]any{"org": otherOrgID})
+		g.Expect(validateOrganizationScope(tok, orgID)).To(HaveOccurred())
 	})
 
-	t.Run("accepts matching organization after cutoff", func(t *testing.T) {
+	t.Run("rejects missing organization claim", func(t *testing.T) {
 		g := NewWithT(t)
-		tok := buildToken(t, cutoff.Add(time.Hour), map[string]any{"org": orgID})
-		g.Expect(validateOrganizationScope(tok, orgID, cutoff)).To(Succeed())
+		tok := buildToken(t, time.Now(), nil)
+		g.Expect(validateOrganizationScope(tok, orgID)).To(HaveOccurred())
 	})
 
-	t.Run("rejects mismatched organization after cutoff", func(t *testing.T) {
+	t.Run("rejects missing organization claim without issued-at claim", func(t *testing.T) {
 		g := NewWithT(t)
-		tok := buildToken(t, cutoff.Add(time.Hour), map[string]any{"org": otherOrgID})
-		g.Expect(validateOrganizationScope(tok, orgID, cutoff)).To(HaveOccurred())
-	})
-
-	t.Run("rejects missing organization claim after cutoff", func(t *testing.T) {
-		g := NewWithT(t)
-		tok := buildToken(t, cutoff.Add(time.Hour), nil)
-		g.Expect(validateOrganizationScope(tok, orgID, cutoff)).To(HaveOccurred())
+		tok := buildToken(t, time.Time{}, nil)
+		g.Expect(validateOrganizationScope(tok, orgID)).To(HaveOccurred())
 	})
 }
