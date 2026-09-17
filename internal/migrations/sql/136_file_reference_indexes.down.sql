@@ -1,0 +1,6 @@
+DROP INDEX fk_UserAccount_image_id;
+DROP INDEX fk_Application_image_id;
+DROP INDEX fk_Artifact_image_id;
+DROP INDEX fk_CustomerOrganization_image_id;
+DROP INDEX fk_OrganizationBranding_logo_image_id;
+DROP INDEX fk_OrganizationBranding_favicon_image_id;

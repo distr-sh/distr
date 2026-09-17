@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
@@ -98,4 +99,34 @@ func DeleteFileWithID(ctx context.Context, id uuid.UUID) error {
 	}
 
 	return nil
+}
+
+// DeleteUnreferencedFilesOlderThan collects every image that was replaced, since attaching a new one
+// only overwrites the id and leaves the previous file behind, plus the avatars of the accounts
+// DeleteUserAccountsOlderThan removed.
+//
+// minAge has to outlast the flows that upload an image before anything references it: the organization
+// branding form and the user profile settings stage the returned id and attach it only when the form
+// is saved, so a young file may still be waiting for a save. Everywhere else attaches one request
+// later. Deleting such a file makes that save fail with "file does not exist".
+func DeleteUnreferencedFilesOlderThan(ctx context.Context, minAge time.Duration) (int64, error) {
+	db := internalctx.GetDb(ctx)
+	cmd, err := db.Exec(
+		ctx,
+		`DELETE FROM File AS f
+		WHERE now() - f.created_at > @minAge
+			AND NOT EXISTS (SELECT 1 FROM UserAccount u WHERE u.image_id = f.id)
+			AND NOT EXISTS (SELECT 1 FROM Application a WHERE a.image_id = f.id)
+			AND NOT EXISTS (SELECT 1 FROM Artifact a WHERE a.image_id = f.id)
+			AND NOT EXISTS (SELECT 1 FROM CustomerOrganization c WHERE c.image_id = f.id)
+			AND NOT EXISTS (
+				SELECT 1 FROM OrganizationBranding b
+				WHERE b.logo_image_id = f.id OR b.favicon_image_id = f.id
+			)`,
+		pgx.NamedArgs{"minAge": minAge},
+	)
+	if err != nil {
+		return 0, fmt.Errorf("could not delete unreferenced files: %w", err)
+	}
+	return cmd.RowsAffected(), nil
 }

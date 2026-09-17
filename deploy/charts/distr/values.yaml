@@ -169,6 +169,8 @@ distr:
     #   value: '720h'  # 30 days (default)
     # - name: CLEANUP_USER_ACCOUNT_MIN_AGE
     #   value: '720h'  # 30 days (default)
+    # - name: CLEANUP_FILE_MIN_AGE
+    #   value: '24h'
     # OIDC providers, see https://distr.sh/docs/self-hosting/configuration/#oidc-authentication
     # - name: OIDC_GITHUB_ENABLED
     #   value: 'true'
@@ -433,6 +435,10 @@ cronJobs:
     labels:
       distr.sh/job: artifact-blob-cleanup
     args: [cleanup, ArtifactBlob, --timeout, 10m]
+  - name: file-cleanup
+    labels:
+      distr.sh/job: file-cleanup
+    args: [cleanup, File, --timeout, 10m]
   # - name: organization-cleanup
   #   labels:
   #     distr.sh/job: organization-cleanup
