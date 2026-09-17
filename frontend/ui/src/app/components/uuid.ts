@@ -14,12 +14,13 @@ import {ClipDirective} from './clip.component';
       (click)="clip.writeClip()"
       [title]="uuid()"
       type="button"
-      class="text-gray-900 dark:text-gray-400 m-0.5 hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 px-2 inline-flex gap-1 items-center justify-center bg-white border-gray-200 border"
+      class="text-gray-900 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 px-2 flex gap-1 items-center justify-center bg-white border-gray-200 border"
       [ngClass]="small() ? ['text-xs', 'py-0.5', 'rounded-sm'] : ['py-1', 'rounded-lg']">
       <code>{{ shortUuid() }}</code>
       <fa-icon [icon]="clipIcon()" />
     </button>
   `,
+  host: {class: 'inline-block'},
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FaIconComponent, NgClass, ClipDirective],
 })

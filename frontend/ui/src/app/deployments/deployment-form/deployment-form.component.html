@@ -190,6 +190,19 @@
     </div>
   }
 
+  @if (deployForm.controls.automaticApplicationUpdatesEnabled.enabled) {
+    <div class="col-span-2">
+      <label class="inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
+        <input type="checkbox" class="distr-checkbox" formControlName="automaticApplicationUpdatesEnabled" />
+        <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enable automatic updates</span>
+      </label>
+      <div class="text-xs text-gray-500">
+        This deployment then always runs the latest version of the application, which is why the version cannot be
+        chosen.
+      </div>
+    </div>
+  }
+
   @if (deployForm.controls.ignoreRevisionSkew.enabled) {
     <div class="col-span-2">
       <label class="inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">

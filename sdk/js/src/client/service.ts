@@ -116,7 +116,7 @@ export class DistrService {
    * base URL can be set. Optionally, a strategy for determining the latest version of an application can be specified –
    * the default is semantic versioning.
    * @param config ClientConfig containing at least an API key and optionally an API base URL
-   * @param latestVersionStrategy Strategy for determining the latest version of an application (default: 'semver')
+   * @param latestVersionStrategy Strategy for applications that do not define one themselves (default: 'semver')
    */
   constructor(
     config: ConditionalPartial<ClientConfig, keyof typeof defaultClientConfig>,
@@ -400,13 +400,13 @@ export class DistrService {
     if (!currentVersion && currentVersionId) {
       throw new Error('given version ID does not exist in this application');
     }
+    const strategy = this.strategyFor(app);
     const newerVersions = (app.versions || [])
       .filter((it) => {
         if (!currentVersion) {
           return true;
         }
-        // surely there are fancier ways to deal with strategies but that's it for now
-        switch (this.latestVersionStrategy) {
+        switch (strategy) {
           case 'semver':
             return semver.gt(it.name!, currentVersion.name!, {loose: true});
           case 'chronological':
@@ -414,7 +414,7 @@ export class DistrService {
         }
       })
       .sort((a, b) => {
-        switch (this.latestVersionStrategy) {
+        switch (strategy) {
           case 'semver':
             return semver.compare(a.name!, b.name!, {loose: true});
           case 'chronological':
@@ -422,6 +422,16 @@ export class DistrService {
         }
       });
     return {app, newerVersions};
+  }
+
+  /**
+   * The application's own versioning strategy wins over the one this service was constructed
+   * with, which remains the fallback for an application that has none or has the legacy one.
+   */
+  private strategyFor(app: Application): LatestVersionStrategy {
+    return app.versioningStrategy === 'semver' || app.versioningStrategy === 'chronological'
+      ? app.versioningStrategy
+      : this.latestVersionStrategy;
   }
 
   /**

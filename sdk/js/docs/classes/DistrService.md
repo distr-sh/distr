@@ -32,7 +32,7 @@ ClientConfig containing at least an API key and optionally an API base URL
 
 [`LatestVersionStrategy`](../type-aliases/LatestVersionStrategy.md) = `'semver'`
 
-Strategy for determining the latest version of an application (default: 'semver')
+Strategy for applications that do not define one themselves (default: 'semver')
 
 #### Returns
 

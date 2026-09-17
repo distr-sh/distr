@@ -14,6 +14,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
@@ -23,7 +24,8 @@ import (
 
 const (
 	deploymentOutputExpr = `
-		d.id, d.created_at, d.deployment_target_id, d.release_name, d.application_entitlement_id, d.docker_type
+		d.id, d.created_at, d.deployment_target_id, d.release_name, d.application_entitlement_id, d.docker_type,
+		d.automatic_application_updates_enabled
 	`
 	deploymentWithLatestRevisionFromExpr = `
 		Deployment d
@@ -61,6 +63,35 @@ const (
 				AND drs.created_at = status_max.max_created_at
 	`
 )
+
+var deploymentWithLatestRevisionOutputExpr = deploymentOutputExpr + `,
+	dr.application_version_id AS application_version_id,
+	` + deploymentValuesYaml.Output("dr") + `,
+	` + deploymentEnvFileData.Output("dr") + `,
+	dr.values_hash AS values_hash,
+	dr.id AS deployment_revision_id,
+	dr.created_at AS deployment_revision_created_at,
+	dr.force_restart AS force_restart,
+	dr.ignore_revision_skew AS ignore_revision_skew,
+	CASE WHEN dr.helm_options_timeout IS NOT NULL THEN (
+		dr.helm_options_timeout,
+		dr.helm_options_wait_strategy,
+		dr.helm_options_rollback_on_failure,
+		dr.helm_options_cleanup_on_failure,
+		dr.helm_options_force_conflicts
+	) END AS helm_options,
+	a.id AS application_id,
+	a.name AS application_name,
+	(` + applicationOutputExpr + `) AS application,
+	av.name AS application_version_name,
+	av.link_template AS application_link_template,
+	CASE WHEN drs.id IS NOT NULL THEN (
+		drs.id,
+		drs.created_at,
+		drs.deployment_revision_id,
+		drs.type, drs.message
+	) END AS latest_status
+`
 
 func GetDeployment(
 	ctx context.Context,
@@ -110,33 +141,7 @@ func GetDeploymentsForDeploymentTarget(
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`SELECT`+deploymentOutputExpr+`,
-				dr.application_version_id AS application_version_id,
-				`+deploymentValuesYaml.Output("dr")+`,
-				`+deploymentEnvFileData.Output("dr")+`,
-				dr.values_hash AS values_hash,
-				dr.id AS deployment_revision_id,
-				dr.created_at AS deployment_revision_created_at,
-				dr.force_restart AS force_restart,
-				dr.ignore_revision_skew AS ignore_revision_skew,
-				CASE WHEN dr.helm_options_timeout IS NOT NULL THEN (
-					dr.helm_options_timeout,
-					dr.helm_options_wait_strategy,
-					dr.helm_options_rollback_on_failure,
-					dr.helm_options_cleanup_on_failure,
-					dr.helm_options_force_conflicts
-				) END AS helm_options,
-				a.id AS application_id,
-				a.name AS application_name,
-				(`+applicationOutputExpr+`) AS application,
-				av.name AS application_version_name,
-				av.link_template AS application_link_template,
-				CASE WHEN drs.id IS NOT NULL THEN (
-					drs.id,
-					drs.created_at,
-					drs.deployment_revision_id,
-					drs.type, drs.message
-				) END AS latest_status
+		`SELECT`+deploymentWithLatestRevisionOutputExpr+`
 			FROM `+deploymentWithLatestRevisionFromExpr+`
 			WHERE d.deployment_target_id = @deploymentTargetId
 			ORDER BY d.created_at`,
@@ -153,6 +158,30 @@ func GetDeploymentsForDeploymentTarget(
 		return nil, fmt.Errorf("failed to template deployment links: %w", err)
 	}
 
+	return result, nil
+}
+
+// GetDeploymentsWithAutomaticApplicationUpdates returns every deployment of the application that
+// has automatic updates enabled, regardless of the version it is on.
+func GetDeploymentsWithAutomaticApplicationUpdates(
+	ctx context.Context,
+	applicationID uuid.UUID,
+) ([]types.DeploymentWithLatestRevision, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT`+deploymentWithLatestRevisionOutputExpr+`
+			FROM `+deploymentWithLatestRevisionFromExpr+`
+			WHERE a.id = @applicationId AND d.automatic_application_updates_enabled
+			ORDER BY d.created_at`,
+		pgx.NamedArgs{"applicationId": applicationID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to query Deployments: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.DeploymentWithLatestRevision])
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan Deployments: %w", err)
+	}
 	return result, nil
 }
 
@@ -211,14 +240,17 @@ func CreateDeployment(ctx context.Context, request *api.DeploymentRequest) error
 	rows, err := db.Query(
 		ctx,
 		`INSERT INTO Deployment AS d
-			(deployment_target_id, release_name, application_entitlement_id, docker_type)
-			VALUES (@deploymentTargetId, @releaseName, @applicationEntitlementId, @dockerType)
+			(deployment_target_id, release_name, application_entitlement_id, docker_type,
+				automatic_application_updates_enabled)
+			VALUES (@deploymentTargetId, @releaseName, @applicationEntitlementId, @dockerType,
+				@automaticApplicationUpdatesEnabled)
 			RETURNING`+deploymentOutputExpr,
 		pgx.NamedArgs{
-			"deploymentTargetId":       request.DeploymentTargetID,
-			"releaseName":              request.ReleaseName,
-			"applicationEntitlementId": request.ApplicationEntitlementID,
-			"dockerType":               request.DockerType,
+			"deploymentTargetId":                 request.DeploymentTargetID,
+			"releaseName":                        request.ReleaseName,
+			"applicationEntitlementId":           request.ApplicationEntitlementID,
+			"dockerType":                         request.DockerType,
+			"automaticApplicationUpdatesEnabled": util.PtrDerefOrDefault(request.AutomaticApplicationUpdatesEnabled),
 		},
 	)
 	if err != nil {
@@ -248,6 +280,36 @@ func UpdateDeploymentEntitlement(ctx context.Context, deployment *types.Deployme
 		pgx.NamedArgs{
 			"id":                       deployment.ID,
 			"applicationEntitlementID": deployment.ApplicationEntitlementID,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("could not update Deployment: %w", err)
+	}
+	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.Deployment]); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			err = apierrors.ErrNotFound
+		}
+		return fmt.Errorf("could not update Deployment: %w", err)
+	} else {
+		*deployment = result
+		return nil
+	}
+}
+
+func UpdateDeploymentAutomaticApplicationUpdates(
+	ctx context.Context,
+	deployment *types.Deployment,
+) error {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`UPDATE Deployment AS d
+		SET automatic_application_updates_enabled = @automaticApplicationUpdatesEnabled
+		WHERE id = @id
+		RETURNING`+deploymentOutputExpr,
+		pgx.NamedArgs{
+			"id":                                 deployment.ID,
+			"automaticApplicationUpdatesEnabled": deployment.AutomaticApplicationUpdatesEnabled,
 		},
 	)
 	if err != nil {

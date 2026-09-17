@@ -16,7 +16,10 @@ import (
 )
 
 const (
-	applicationOutputExpr        = `a.id, a.created_at, a.organization_id, a.name, a.type, a.image_id`
+	// The column order is part of the contract with types.Application: this expression is also
+	// selected as a composite row, which pgx scans positionally.
+	applicationOutputExpr = `a.id, a.created_at, a.organization_id, a.name, a.type, a.image_id,
+		a.versioning_strategy, a.allow_automatic_updates`
 	applicationVersionOutputExpr = `av.id, av.created_at, av.archived_at, av.name, av.link_template, av.application_id,
 		av.chart_type, av.chart_name, av.chart_url, av.chart_version, av.values_file_data, av.template_file_data,
 	 av.compose_file_data`
@@ -46,8 +49,16 @@ func CreateApplication(ctx context.Context, application *types.Application, orgI
 	application.OrganizationID = orgID
 	db := internalctx.GetDb(ctx)
 	row := db.QueryRow(ctx,
-		"INSERT INTO Application (name, type, organization_id) VALUES (@name, @type, @orgId) RETURNING id, created_at",
-		pgx.NamedArgs{"name": application.Name, "type": application.Type, "orgId": application.OrganizationID})
+		`INSERT INTO Application (name, type, organization_id, versioning_strategy, allow_automatic_updates)
+		VALUES (@name, @type, @orgId, @versioningStrategy, @allowAutomaticUpdates)
+		RETURNING id, created_at`,
+		pgx.NamedArgs{
+			"name":                  application.Name,
+			"type":                  application.Type,
+			"orgId":                 application.OrganizationID,
+			"versioningStrategy":    application.VersioningStrategy,
+			"allowAutomaticUpdates": application.AllowAutomaticUpdates,
+		})
 	if err := row.Scan(&application.ID, &application.CreatedAt); err != nil {
 		return fmt.Errorf("could not save application: %w", err)
 	}
@@ -58,8 +69,19 @@ func UpdateApplication(ctx context.Context, application *types.Application, orgI
 	application.OrganizationID = orgID
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		"UPDATE Application SET name = @name WHERE id = @id AND organization_id = @orgId RETURNING *",
-		pgx.NamedArgs{"id": application.ID, "name": application.Name, "orgId": application.OrganizationID})
+		`UPDATE Application SET
+			name = @name,
+			versioning_strategy = @versioningStrategy,
+			allow_automatic_updates = @allowAutomaticUpdates
+		WHERE id = @id AND organization_id = @orgId
+		RETURNING *`,
+		pgx.NamedArgs{
+			"id":                    application.ID,
+			"name":                  application.Name,
+			"orgId":                 application.OrganizationID,
+			"versioningStrategy":    application.VersioningStrategy,
+			"allowAutomaticUpdates": application.AllowAutomaticUpdates,
+		})
 	if err != nil {
 		return fmt.Errorf("could not update application: %w", err)
 	} else if updated, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByNameLax[types.Application]); err != nil {

@@ -9,10 +9,11 @@ import (
 
 type Deployment struct {
 	Base
-	DeploymentTargetID       uuid.UUID   `db:"deployment_target_id" json:"deploymentTargetId"`
-	ReleaseName              *string     `db:"release_name" json:"releaseName,omitempty"`
-	ApplicationEntitlementID *uuid.UUID  `db:"application_entitlement_id" json:"applicationEntitlementId,omitempty"`
-	DockerType               *DockerType `db:"docker_type" json:"dockerType,omitempty"`
+	DeploymentTargetID                 uuid.UUID   `db:"deployment_target_id" json:"deploymentTargetId"`
+	ReleaseName                        *string     `db:"release_name" json:"releaseName,omitempty"`
+	ApplicationEntitlementID           *uuid.UUID  `db:"application_entitlement_id" json:"applicationEntitlementId,omitempty"` //nolint:lll
+	DockerType                         *DockerType `db:"docker_type" json:"dockerType,omitempty"`
+	AutomaticApplicationUpdatesEnabled bool        `db:"automatic_application_updates_enabled" json:"automaticApplicationUpdatesEnabled"` //nolint:lll
 }
 
 type DeploymentWithLatestRevision struct {

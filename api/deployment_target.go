@@ -26,6 +26,14 @@ type DeploymentRequest struct {
 	HelmOptions              *HelmOptions      `json:"helmOptions,omitempty"`
 	ValuesHash               []byte            `json:"-"`
 	CreatedByUserAccountID   *uuid.UUID        `json:"-"`
+
+	// AutomaticApplicationUpdatesEnabled leaves an existing deployment's setting alone when it is
+	// absent, so that a client written before the field existed cannot turn automatic updates off.
+	AutomaticApplicationUpdatesEnabled *bool `json:"automaticApplicationUpdatesEnabled,omitempty"`
+}
+
+type PatchDeploymentRequest struct {
+	AutomaticApplicationUpdatesEnabled *bool `json:"automaticApplicationUpdatesEnabled,omitempty"`
 }
 
 func (d *DeploymentRequest) GetValuesYAML() []byte {

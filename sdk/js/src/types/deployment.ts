@@ -5,6 +5,11 @@ export interface Deployment extends BaseModel {
   deploymentTargetId: string;
   releaseName?: string;
   dockerType?: DockerType;
+  /**
+   * Whether this deployment is rolled forward to the application's latest version automatically.
+   * Unrelated to DeploymentTarget.automaticUpdatesEnabled, which is the agent updating itself.
+   */
+  automaticApplicationUpdatesEnabled?: boolean;
 }
 
 export interface DeploymentRequest {
@@ -19,6 +24,12 @@ export interface DeploymentRequest {
   forceRestart?: boolean;
   ignoreRevisionSkew?: boolean;
   helmOptions?: HelmOptions;
+  /** Leaves an existing deployment's setting alone when absent. */
+  automaticApplicationUpdatesEnabled?: boolean;
+}
+
+export interface PatchDeploymentRequest {
+  automaticApplicationUpdatesEnabled?: boolean;
 }
 
 export interface HelmOptions {

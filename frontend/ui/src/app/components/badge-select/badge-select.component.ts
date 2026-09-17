@@ -1,6 +1,6 @@
 import {OverlayModule} from '@angular/cdk/overlay';
-import {NgClass} from '@angular/common';
-import {ChangeDetectionStrategy, Component, computed, input, output, signal} from '@angular/core';
+import {NgClass, NgTemplateOutlet} from '@angular/common';
+import {ChangeDetectionStrategy, Component, computed, input, output, signal, TemplateRef} from '@angular/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faChevronDown} from '@fortawesome/free-solid-svg-icons';
 
@@ -19,15 +19,19 @@ export interface BadgeSelectOption<T extends string = string> {
 @Component({
   selector: 'app-badge-select',
   templateUrl: './badge-select.component.html',
-  host: {class: 'inline-block'},
+  host: {class: 'flex'},
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [OverlayModule, NgClass, FaIconComponent],
+  imports: [OverlayModule, NgClass, NgTemplateOutlet, FaIconComponent],
 })
 export class BadgeSelectComponent<T extends string = string> {
   public readonly options = input.required<BadgeSelectOption<T>[]>();
   public readonly value = input.required<T>();
   public readonly disabled = input(false);
   public readonly ariaLabel = input('Change');
+  /** Renders the options as plain labels, for a badge whose options share one color. */
+  public readonly plainOptions = input(false);
+  /** Shown in place of the options while disabled, to explain what it takes to enable the badge. */
+  public readonly disabledHint = input<TemplateRef<unknown>>();
 
   public readonly selected = output<T>();
 
@@ -36,6 +40,8 @@ export class BadgeSelectComponent<T extends string = string> {
   protected readonly open = signal(false);
 
   protected readonly current = computed(() => this.options().find((option) => option.value === this.value()));
+
+  protected readonly interactive = computed(() => !this.disabled() || this.disabledHint() !== undefined);
 
   // Stops the click from reaching an enclosing row link, which is what the list rows are.
   protected toggleOpen(event: Event): void {
