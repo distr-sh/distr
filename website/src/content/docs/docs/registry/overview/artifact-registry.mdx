@@ -135,9 +135,11 @@ curl -sSL https://registry.example.com/v2/acme/my-image/manifests/1.0.0 \
   The Docker CLI, Podman and Skopeo ask the registry whether authentication is
   needed before they pull. Distr has to answer yes, because a client holding a
   PAT sends it only after it has seen that answer, and those clients read it as
-  "log in first" rather than trying without credentials. Pull a public artifact
-  with them after `docker login` or `podman login` with any PAT, or use one of
-  the clients above.
+  "log in first" rather than trying without credentials. Use one of the clients
+  above, or pull with them after `docker login` or `podman login` with a PAT of
+  the organization that owns the artifact. A PAT sent along identifies its
+  holder, so credentials of another organization are rejected rather than
+  treated as no credentials at all.
 </Aside>
 
 Anonymous pulls are rate limited per client IP address, considerably more strictly than the pull

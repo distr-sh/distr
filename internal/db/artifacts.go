@@ -622,8 +622,7 @@ func CheckEntitlementForArtifact(
 			exists(
 				SELECT 1
 					FROM Artifact a
-					JOIN Organization o ON o.id = a.organization_id
-					WHERE o.slug = @orgName AND a.name = @name AND a.public
+					WHERE a.organization_id = @orgId AND a.name = @name AND a.public
 			)
 			OR exists(
 				SELECT 1
@@ -637,6 +636,7 @@ func CheckEntitlementForArtifact(
 			)`,
 		pgx.NamedArgs{
 			"orgName":                orgName,
+			"orgId":                  orgID,
 			"name":                   name,
 			"reference":              reference,
 			"customerOrganizationId": customerOrganizationID,
@@ -709,7 +709,7 @@ func ArtifactBlobBelongsToPublicArtifact(
 	return belongs, nil
 }
 
-func CheckEntitlementForArtifactBlob(ctx context.Context, digest string,
+func CheckEntitlementForArtifactBlob(ctx context.Context, digest, artifactName string,
 	customerOrganizationID uuid.UUID,
 	orgID uuid.UUID,
 ) error {
@@ -741,10 +741,12 @@ func CheckEntitlementForArtifactBlob(ctx context.Context, digest string,
 				JOIN ArtifactVersionAggregate agg ON avp.artifact_blob_digest = agg.manifest_blob_digest
 		)
 		SELECT exists(
+			-- a blob digest is shared across organizations, so the public artifact that carries it
+			-- has to be the one this request names, in the organization the caller belongs to
 			SELECT 1
 				FROM ArtifactVersionAggregate av
 				JOIN Artifact a ON a.id = av.artifact_id
-				WHERE a.public
+				WHERE a.organization_id = @orgId AND a.name = @artifactName AND a.public
 		) OR exists(
 			SELECT *
 				FROM ArtifactVersionAggregate av
@@ -755,7 +757,12 @@ func CheckEntitlementForArtifactBlob(ctx context.Context, digest string,
 				WHERE al.customer_organization_id = @customerOrganizationId
 					AND (al.expires_at IS NULL OR al.expires_at > now())
 		)`,
-		pgx.NamedArgs{"digest": digest, "customerOrganizationId": customerOrganizationID},
+		pgx.NamedArgs{
+			"digest":                 digest,
+			"artifactName":           artifactName,
+			"orgId":                  orgID,
+			"customerOrganizationId": customerOrganizationID,
+		},
 	)
 	if err != nil {
 		return fmt.Errorf("could not query ArtifactVersion: %w", err)

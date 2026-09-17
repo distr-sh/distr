@@ -196,6 +196,11 @@ func (a *authorizer) AuthorizeBlob(
 	}
 
 	org := principal.CurrentOrg()
+	if org.Slug == nil {
+		return NewErrAccessDenied("organization has no slug")
+	} else if *org.Slug != n.OrgName {
+		return NewErrAccessDenied("organization slug does not match reference")
+	}
 
 	if belongs, err := db.ArtifactBlobBelongsToOrg(ctx, org.ID, digest.String()); err != nil {
 		return err
@@ -205,7 +210,7 @@ func (a *authorizer) AuthorizeBlob(
 
 	if principal.CurrentCustomerOrgID() != nil && org.HasFeature(types.FeatureLicensing) {
 		err := db.CheckEntitlementForArtifactBlob(
-			ctx, digest.String(), *principal.CurrentCustomerOrgID(), *principal.CurrentOrgID())
+			ctx, digest.String(), n.ArtifactName, *principal.CurrentCustomerOrgID(), *principal.CurrentOrgID())
 		if errors.Is(err, apierrors.ErrForbidden) {
 			return NewErrAccessDenied("entitlement required")
 		} else if err != nil {
