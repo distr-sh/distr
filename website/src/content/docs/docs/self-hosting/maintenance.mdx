@@ -188,8 +188,8 @@ distr maintenance encrypt-database --timeout 60m
 ```
 
 Unlike the jobs above this is not recurring work, so do not schedule it. There are exactly two
-occasions on which it has anything to do — the upgrade to a version that encrypts, and a rotation of
-`DATABASE_ENCRYPTION_KEY` — and both are things you do deliberately. Run it once afterwards. Nothing
+occasions on which it has anything to do, the upgrade to a version that encrypts and a rotation of
+`DATABASE_ENCRYPTION_KEY`, and both are things you do deliberately. Run it once afterwards. Nothing
 in Distr writes a plaintext value, so once it reports that there is nothing left, that stays true.
 
 It is safe to run while Distr is serving traffic, it can be interrupted and resumed, and it is a no-op

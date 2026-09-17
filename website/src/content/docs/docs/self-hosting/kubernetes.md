@@ -11,7 +11,7 @@ Every setting mentioned on this page is documented in the chart's reference [val
 
 :::caution[Upgrading from an earlier chart version]
 The top-level `hub` values key is now called `distr`, so move `hub.env`, `hub.envFrom` and `hub.scratch` to `distr.env`, `distr.envFrom` and `distr.scratch` in your values file.
-The chart refuses to render while the old key is still set rather than silently dropping your environment.
+A value under `hub` is still read as long as the matching one under `distr` is untouched, and the chart warns about it on every install, so an unmigrated values file does not break the upgrade.
 
 The pods are also relabelled from `app.kubernetes.io/component: hub` to `distr` and the container is renamed from `hub` to `distr`.
 Since the Service selects on that label, it has no endpoints until the first new pod is ready, which makes this upgrade briefly interrupt traffic.
