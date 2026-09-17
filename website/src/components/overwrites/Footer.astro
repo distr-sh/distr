@@ -3,6 +3,7 @@ import EditLink from '@astrojs/starlight/components/EditLink.astro';
 import LastUpdated from '@astrojs/starlight/components/LastUpdated.astro';
 import Pagination from '@astrojs/starlight/components/Pagination.astro';
 import DistrFooter from '../DistrFooter.astro';
+import AskAi from '~/components/AskAi.astro';
 import DocsCta from '~/components/cta/DocsCta.astro';
 
 const {entry} = Astro.locals.starlightRoute;
@@ -20,6 +21,7 @@ const currentYear = new Date().getFullYear();
         </div>
         <Pagination />
         <DocsCta />
+        <AskAi class="items-center text-center" />
         <div class="kudos sl-flex">© {currentYear} Glasskube, Inc.</div>
       </>
     )
