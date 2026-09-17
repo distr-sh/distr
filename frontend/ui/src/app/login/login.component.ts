@@ -4,6 +4,7 @@ import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {distinctUntilChanged, filter, lastValueFrom, map, take} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {MfaCodeInputComponent, newMfaCodeControl} from '../components/mfa-code-input.component';
 import {OidcButtonsComponent} from '../components/oidc-buttons.component';
 import {PortalLogoComponent} from '../components/portal-logo/portal-logo.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
@@ -23,6 +24,7 @@ import {PortalLoginConfig} from '../types/portal';
     PlaceholderDirective,
     OidcButtonsComponent,
     PortalLogoComponent,
+    MfaCodeInputComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './login.component.html',
@@ -41,12 +43,7 @@ export class LoginComponent implements OnInit {
   });
 
   protected readonly mfaCodeForm = this.fb.group({
-    mfaCode: this.fb.control('', [
-      Validators.required,
-      Validators.pattern(/^(\d{6}|\w{5}-\w{5})$/),
-      Validators.minLength(6),
-      Validators.maxLength(11),
-    ]),
+    mfaCode: newMfaCodeControl(),
   });
 
   protected readonly mfaRequired = signal(false);
