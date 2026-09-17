@@ -18,7 +18,11 @@ This is needed because some interpret the phrase "recovery code" as conflicting 
   <p>You can use a code from your authenticator app or a one-time recovery code.</p>
   <p>
     If you lost access to your authenticator app and recovery codes, please contact our
-    <a class="font-medium text-blue-600 dark:text-blue-500 hover:underline" href="mailto:support@distr.sh">support</a>
+    @if (supportEmail(); as email) {
+      <a class="font-medium text-blue-600 dark:text-blue-500 hover:underline" href="mailto:{{ email }}">support</a>
+    } @else {
+      support
+    }
     to regain access to your account.
   </p>
 </div>
