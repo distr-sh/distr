@@ -83,6 +83,10 @@ export class SupportBundlesService {
     return this.httpClient.patch<void>(`${baseUrl}/${id}/status`, request);
   }
 
+  public delete(id: string) {
+    return this.httpClient.delete<void>(`${baseUrl}/${id}`);
+  }
+
   public createComment(bundleId: string, request: CreateSupportBundleCommentRequest) {
     return this.httpClient.post<SupportBundleComment>(`${baseUrl}/${bundleId}/comments`, request);
   }

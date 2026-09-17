@@ -43,4 +43,8 @@ export class PortalService {
   readonly loginConfig = toSignal(this.portal$.pipe(map((portal) => portal.loginConfig)), {
     initialValue: defaultPortal.loginConfig,
   });
+
+  readonly supportEmail = toSignal(this.portal$.pipe(map((portal) => portal.supportEmail)), {
+    initialValue: defaultPortal.supportEmail,
+  });
 }

@@ -1,7 +1,8 @@
-import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {MfaCodeInputComponent, newMfaCodeControl} from '../components/mfa-code-input.component';
 import {PortalLogoComponent} from '../components/portal-logo/portal-logo.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {PlaceholderDirective} from '../directives/placeholder.directive';
@@ -9,7 +10,7 @@ import {AuthService} from '../services/auth.service';
 
 @Component({
   selector: 'app-invite',
-  imports: [ReactiveFormsModule, AutotrimDirective, PlaceholderDirective, PortalLogoComponent],
+  imports: [ReactiveFormsModule, AutotrimDirective, PlaceholderDirective, PortalLogoComponent, MfaCodeInputComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './invite.component.html',
 })
@@ -26,21 +27,36 @@ export class InviteComponent {
     },
     (control) => (control.value.password === control.value.passwordConfirm ? null : {passwordMismatch: 'error'})
   );
-  public submitted = false;
-  errorMessage?: string;
+  public readonly mfaCode = newMfaCodeControl();
+  public readonly mfaRequired = signal(false);
+  public readonly submitted = signal(false);
+  public readonly errorMessage = signal<string | undefined>(undefined);
 
   public async submit(): Promise<void> {
     this.form.markAllAsTouched();
-    this.errorMessage = undefined;
+    this.errorMessage.set(undefined);
+    if (this.mfaRequired()) {
+      this.mfaCode.markAsTouched();
+      if (this.mfaCode.invalid) {
+        return;
+      }
+    }
     if (this.form.valid) {
-      this.submitted = true;
+      this.submitted.set(true);
       try {
         const value = this.form.value;
-        await firstValueFrom(this.auth.acceptInvite(value.name, value.password!));
-        location.assign('/');
+        const {requiresMfa} = await firstValueFrom(
+          this.auth.acceptInvite(value.name, value.password!, this.mfaCode.value || undefined)
+        );
+        if (requiresMfa) {
+          this.mfaRequired.set(true);
+          this.submitted.set(false);
+        } else {
+          location.assign('/');
+        }
       } catch (e) {
-        this.errorMessage = getFormDisplayedError(e);
-        this.submitted = false;
+        this.errorMessage.set(getFormDisplayedError(e));
+        this.submitted.set(false);
       }
     }
   }

@@ -1,5 +1,6 @@
 ---
 import {Icon} from '@astrojs/starlight/components';
+import AskAi from '~/components/AskAi.astro';
 import distr from '~/assets/distr.svg';
 import {Image} from 'astro:assets';
 
@@ -212,8 +213,11 @@ const currentYear = new Date().getFullYear();
       </div>
     </div>
 
+    {/* Ask AI */}
+    <AskAi class="items-center text-center mt-20" />
+
     {/* Bottom section */}
-    <div class="mt-16 pt-8">
+    <div class="mt-8">
       <div
         class="flex flex-col-reverse sm:flex-row justify-between items-center">
         {/* Copyright */}

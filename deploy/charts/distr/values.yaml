@@ -145,6 +145,9 @@ distr:
     #   value: ''
     # - name: TURNSTILE_SECRET
     #   value: ''
+    # Address the frontend links to where it mentions support. Without it support is not a link.
+    # - name: SUPPORT_EMAIL
+    #   value: 'support@example.local'
     - name: USER_EMAIL_VERIFICATION_REQUIRED
       value: 'false'
     - name: METRICS_ENTRIES_MAX_AGE

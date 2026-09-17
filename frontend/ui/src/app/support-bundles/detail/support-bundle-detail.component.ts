@@ -1,7 +1,7 @@
 import {DatePipe, NgClass} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, viewChild} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {ActivatedRoute, RouterLink} from '@angular/router';
+import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faArrowLeft,
@@ -10,6 +10,7 @@ import {
   faChevronRight,
   faComment,
   faDownload,
+  faTrash,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
@@ -26,7 +27,7 @@ import {OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService, supportBundleZipFileName} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
 import {SupportBundleDetail} from '../../types/support-bundle';
-import {supportBundleStatusBadgeClass} from '../support-bundle-display';
+import {supportBundleDeleteConfirm, supportBundleStatusBadgeClass} from '../support-bundle-display';
 
 @Component({
   selector: 'app-support-bundle-detail',
@@ -36,6 +37,7 @@ import {supportBundleStatusBadgeClass} from '../support-bundle-display';
 })
 export class SupportBundleDetailComponent {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly supportBundlesService = inject(SupportBundlesService);
   private readonly toast = inject(ToastService);
   private readonly overlay = inject(OverlayService);
@@ -47,6 +49,7 @@ export class SupportBundleDetailComponent {
   protected readonly faCheck = faCheck;
   protected readonly faComment = faComment;
   protected readonly faDownload = faDownload;
+  protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
   protected readonly statusBadgeClass = supportBundleStatusBadgeClass;
 
@@ -57,6 +60,7 @@ export class SupportBundleDetailComponent {
   protected readonly updatingStatus = signal(false);
   protected readonly submittingComment = signal(false);
   protected readonly downloading = signal(false);
+  protected readonly deleting = signal(false);
 
   protected readonly timelineEntries = computed<ActivityTimelineEntry[]>(() =>
     (this.bundle()?.comments ?? []).map((comment) => ({
@@ -184,6 +188,30 @@ export class SupportBundleDetailComponent {
       }
     } finally {
       this.updatingStatus.set(false);
+    }
+  }
+
+  protected async deleteBundle(): Promise<void> {
+    const bundle = this.bundle();
+    if (!bundle || this.deleting()) {
+      return;
+    }
+    const confirmed = await firstValueFrom(this.overlay.confirm(supportBundleDeleteConfirm));
+    if (!confirmed) {
+      return;
+    }
+    this.deleting.set(true);
+    try {
+      await firstValueFrom(this.supportBundlesService.delete(bundle.id));
+      this.toast.success('Support bundle deleted');
+      await this.router.navigate([this.backRoute]);
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    } finally {
+      this.deleting.set(false);
     }
   }
 

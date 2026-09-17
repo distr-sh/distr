@@ -390,6 +390,22 @@ func UpdateSupportBundleStatus(
 	return nil
 }
 
+func DeleteSupportBundle(ctx context.Context, id, orgID uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	result, err := db.Exec(
+		ctx,
+		`DELETE FROM SupportBundle WHERE id = @id AND organization_id = @orgId`,
+		pgx.NamedArgs{"id": id, "orgId": orgID},
+	)
+	if err != nil {
+		return fmt.Errorf("could not delete support bundle: %w", err)
+	}
+	if result.RowsAffected() == 0 {
+		return apierrors.ErrNotFound
+	}
+	return nil
+}
+
 func ClearSupportBundleBundleSecret(ctx context.Context, bundleID uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	if _, err := db.Exec(

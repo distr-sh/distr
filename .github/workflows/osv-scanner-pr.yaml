@@ -7,8 +7,9 @@ on:
     paths:
       - 'go.mod'
       - 'go.sum'
-      - '**/package.json'
-      - '**/pnpm-lock.yaml'
+      - '**package.json'
+      - '**pnpm-lock.yaml'
+      - '**osv-scanner.toml'
       - '.github/workflows/osv-scanner-pr.yaml'
 
 concurrency:
