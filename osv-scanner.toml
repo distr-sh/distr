@@ -1,7 +1,7 @@
 [[IgnoredVulns]]
 id = "GO-2026-5932"
 ignoreUntil = 2027-03-16
-reason = "The advisory covers the unmaintained golang.org/x/crypto/openpgp packages, none of which appear in 'go list -deps ./...'. The packages this build does use are argon2, bcrypt, scrypt, ssh and other primitives the advisory does not name."
+reason = "The advisory covers the unmaintained golang.org/x/crypto/openpgp packages, none of which appear in 'go list -deps ./...'."
 
 [[IgnoredVulns]]
 id = "CVE-2026-33997"
