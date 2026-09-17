@@ -52,6 +52,20 @@ func (h portalHost) instanceAuthAllowed() bool {
 	return h.source != portalHostCustomDomain
 }
 
+// registrationAllowed reports whether a visitor may sign up on this host. A host that belongs to an
+// organization offers no sign-up at all, through either the form or an OIDC provider, since a new account
+// created there would land in an organization of its own rather than in the one the host belongs to.
+func (h portalHost) registrationAllowed() bool {
+	return !h.customDomain()
+}
+
+func (h portalHost) registrationMode() env.RegistrationMode {
+	if !h.registrationAllowed() {
+		return env.RegistrationDisabled
+	}
+	return env.Registration()
+}
+
 func (h portalHost) turnstileSiteKey() *string {
 	if h.customDomain() {
 		return nil
@@ -95,17 +109,18 @@ func getPortalHandler(w http.ResponseWriter, r *http.Request) {
 	RespondJSON(w, response)
 }
 
-// portalLoginConfig lists the login methods offered on the given host. Instance-scoped OIDC providers and
-// registration are suppressed on self-service custom domains, where only the organization's own providers apply.
+// portalLoginConfig lists the login methods offered on the given host. Instance-scoped OIDC providers are
+// suppressed on self-service custom domains, where only the organization's own providers apply, and
+// registration on every custom domain.
 func portalLoginConfig(ctx context.Context, host portalHost) api.PortalLoginConfig {
 	if !host.instanceAuthAllowed() {
 		return api.PortalLoginConfig{
-			Registration:  env.RegistrationDisabled,
+			Registration:  host.registrationMode(),
 			OIDCProviders: portalOIDCProviders(ctx, host),
 		}
 	}
 	return api.PortalLoginConfig{
-		Registration:         env.Registration(),
+		Registration:         host.registrationMode(),
 		TurnstileSiteKey:     host.turnstileSiteKey(),
 		OIDCGithubEnabled:    env.OIDCGithubEnabled(),
 		OIDCGoogleEnabled:    env.OIDCGoogleEnabled(),
