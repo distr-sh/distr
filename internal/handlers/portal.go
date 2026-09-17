@@ -62,8 +62,8 @@ func (h portalHost) turnstileSiteKey() *string {
 func PublicPortalRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Portal"))
 	r.Get("/", getPortalHandler).
-		With(option.Description("Get the host-resolved portal branding (browser tab title, favicon and logo) " +
-			"and the login methods available on this host")).
+		With(option.Description("Get the host-resolved portal branding (browser tab title, favicon and logo), " +
+			"the instance support email and the login methods available on this host")).
 		With(option.Response(http.StatusOK, api.PortalResponse{}))
 }
 
@@ -86,6 +86,7 @@ func getPortalHandler(w http.ResponseWriter, r *http.Request) {
 	// Marking the host as a custom domain even without branding is what makes the client drop Distr's own
 	// branding when the organization has not configured any of its own.
 	response.CustomDomain = host.customDomain()
+	response.SupportEmail = env.SupportEmail()
 	response.LoginConfig = portalLoginConfig(ctx, host)
 
 	// Branding and login methods are resolved from the request Host, so shared caches/CDNs must key on it.
