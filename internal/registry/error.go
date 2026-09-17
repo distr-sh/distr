@@ -16,17 +16,29 @@ package registry
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+
+	"github.com/distr-sh/distr/internal/apierrors"
+	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/registry/authz"
+	registryerror "github.com/distr-sh/distr/internal/registry/error"
 )
 
 type regError struct {
 	Status  int
 	Code    string
 	Message string
+	Header  http.Header
 	Error   error
 }
 
 func (r *regError) Write(resp http.ResponseWriter) error {
+	for key, values := range r.Header {
+		for _, value := range values {
+			resp.Header().Add(key, value)
+		}
+	}
 	resp.WriteHeader(r.Status)
 
 	type err struct {
@@ -119,6 +131,42 @@ func regErrDenied(message string) *regError {
 		Code:    "DENIED",
 		Message: message,
 	}
+}
+
+var regErrTooManyRequests = &regError{
+	Status:  http.StatusTooManyRequests,
+	Code:    "TOOMANYREQUESTS",
+	Message: "anonymous pull rate limit exceeded, authenticate to raise it",
+}
+
+var regErrUnauthorized = &regError{
+	Status:  http.StatusUnauthorized,
+	Code:    "UNAUTHORIZED",
+	Message: "authentication required",
+	Header:  auth.ArtifactsAuthenticateHeader,
+}
+
+// regErrAuthz maps an authorization error of a route that names an artifact.
+func regErrAuthz(err error) *regError {
+	switch {
+	case errors.Is(err, authz.ErrAuthenticationRequired):
+		return regErrUnauthorized
+	case errors.Is(err, authz.ErrAccessDenied):
+		return regErrDenied(err.Error())
+	case errors.Is(err, registryerror.ErrInvalidArtifactName):
+		return regErrNameInvalid
+	default:
+		return regErrInternal(err)
+	}
+}
+
+// regErrBlobAuthz is regErrAuthz for the blob routes, where a digest the caller may not see is
+// reported as an unknown blob.
+func regErrBlobAuthz(err error) *regError {
+	if errors.Is(err, apierrors.ErrNotFound) {
+		return regErrBlobUnknown
+	}
+	return regErrAuthz(err)
 }
 
 var regErrDeniedQuotaExceeded = &regError{

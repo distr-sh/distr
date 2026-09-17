@@ -42,6 +42,7 @@
             formControlName="userAccountId"
             class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
             <option value="">All</option>
+            <option [value]="anonymousUser">Anonymous</option>
             @for (opt of options.userAccounts; track opt.id) {
               <option [value]="opt.id">{{ opt.name }}</option>
             }
@@ -153,6 +154,8 @@
               <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                 @if (pull.userAccountName || pull.userAccountEmail) {
                   {{ pull.userAccountName ?? pull.userAccountEmail }}
+                } @else if (pull.anonymous) {
+                  <app-artifact-anonymous-pull-badge />
                 } @else {
                   <span class="text-gray-500 dark:text-gray-400">-</span>
                 }

@@ -36,6 +36,7 @@ export interface ArtifactUpstreamAuth {
 }
 
 export interface Artifact extends BaseArtifact, HasDownloads {
+  public: boolean;
   upstreamUrl?: string;
   lastSyncedAt?: string;
   lastSyncError?: string;
@@ -120,6 +121,12 @@ export class ArtifactsService {
   public patchUpstreamAuth(artifactId: string, auth: ArtifactUpstreamAuth | null): Observable<ArtifactWithTags> {
     return this.http
       .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}`, {auth})
+      .pipe(tap((it) => this.cache.save(it)));
+  }
+
+  public patchPublic(artifactId: string, isPublic: boolean): Observable<ArtifactWithTags> {
+    return this.http
+      .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}/public`, {public: isPublic})
       .pipe(tap((it) => this.cache.save(it)));
   }
 

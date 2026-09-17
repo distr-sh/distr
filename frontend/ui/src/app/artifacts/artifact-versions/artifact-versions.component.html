@@ -23,8 +23,11 @@
               <h2 class="text-2xl font-semibold truncate">
                 {{ artifact.name }}
               </h2>
-              <p class="text-sm text-gray-500 dark:text-gray-400 truncate mt-1">
+              <p class="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 truncate mt-1">
                 <app-uuid [uuid]="artifact.id" [small]="true" />
+                @if (artifact.public) {
+                  <app-artifact-public-badge />
+                }
               </p>
             </div>
 
@@ -66,6 +69,25 @@
                           <fa-icon [icon]="faKey" />
                           Edit upstream credentials
                         </button>
+                      </li>
+                    }
+                    @if (auth.hasRole('admin')) {
+                      <li>
+                        @if (artifact.public) {
+                          <button
+                            class="distr-dropdown-item distr-dropdown-item-warning"
+                            (click)="setPublic(artifact, false)">
+                            <fa-icon [icon]="faLock" />
+                            Make private
+                          </button>
+                        } @else {
+                          <button
+                            class="distr-dropdown-item distr-dropdown-item-warning"
+                            (click)="setPublic(artifact, true)">
+                            <fa-icon [icon]="faGlobe" />
+                            Make public
+                          </button>
+                        }
                       </li>
                     }
                     <li>

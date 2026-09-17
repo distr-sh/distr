@@ -29,7 +29,7 @@ Each pull event records:
 | -------------- | ---------------------------------------------------------------------- |
 | **Date**       | Timestamp of the pull                                                  |
 | **Customer**   | The customer organization that performed the pull (if associated)      |
-| **User**       | The name or email of the authenticated user                            |
+| **User**       | The name or email of the authenticated user, or `Anonymous`            |
 | **Deployment** | The deployment target whose agent performed the pull                   |
 | **Address**    | The IP address the pull originated from                                |
 | **Artifact**   | The artifact name (e.g. `myapp`, `backend`)                            |
@@ -41,7 +41,10 @@ Each pull event records:
   organization name is shown. Vendor-internal pulls show the user name without a
   customer organization. Agents authenticate with their own token rather than as
   a user, so their pulls have no user and name the deployment target they run on
-  instead; the customer organization is taken from that deployment target.
+  instead; the customer organization is taken from that deployment target. A
+  pull from a [public artifact](/docs/registry/#public-artifacts) that came
+  without credentials is marked **Anonymous** and has neither a user nor a
+  customer organization, only an IP address.
 </Aside>
 
 ## Filtering pull data
@@ -50,7 +53,7 @@ The filter bar at the top of the Downloads page lets you narrow results by any c
 
 - **Date range**: Set a **From** and **To** date to limit results to a specific time window
 - **Customer**: Select a specific customer organization
-- **User**: Select a specific user account
+- **User**: Select a specific user account, or **Anonymous** for the pulls that came without credentials
 - **Deployment**: Select a specific deployment target whose agent pulled artifacts
 - **Address**: Select a specific IP address
 - **Artifact**: Select a specific artifact
@@ -80,6 +83,7 @@ The CSV file contains these columns:
 | User              | User display name             |
 | Email             | User email address            |
 | Deployment Target | Deployment target name        |
+| Anonymous         | `true` or `false`             |
 | Address           | IP address                    |
 | Artifact          | Artifact name                 |
 | Version           | Tag or digest                 |
@@ -100,7 +104,7 @@ The Downloads page loads 50 pull records at a time. If more records match your f
 ## Use cases for download analytics
 
 - **Audit customer usage**: Filter by customer to see exactly which artifacts and versions they have pulled and when
-- **Detect unusual activity**: Filter by IP address to spot pulls from unexpected locations
+- **Detect unusual activity**: Filter by IP address to spot pulls from unexpected locations, including anonymous pulls from public artifacts
 - **Track adoption**: Filter by a new artifact version to see how quickly customers are pulling it after release
 - **Generate compliance reports**: Export filtered pull data as CSV for security audits or license compliance reviews
 - **Debug access issues**: If a customer reports problems pulling an artifact, check whether their pulls appear in the log and from which IP address

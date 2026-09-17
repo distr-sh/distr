@@ -26,10 +26,11 @@ The registry also provides detailed download analytics that let you monitor whic
 Use it to publish versioned artifacts, enforce entitlement rules, and track consumption across your customer base.
 
 <Aside type="note">
-  The Distr Artifact registry is a private registry, meaning that only
+  The Distr Artifact registry is private by default, meaning that only
   [authenticated](/docs/registry/configuration/#2-authenticate-with-a-personal-access-token)
   users via PAT can push and pull artifacts. Unauthenticated users will not be
-  able to access your artifacts.
+  able to access your artifacts, unless you mark an artifact as
+  [public](#public-artifacts).
 </Aside>
 
 <ThemedImage
@@ -98,6 +99,57 @@ The artifact details page gives you a complete view of all tags associated with 
   need to overwrite existing tags, mutable tags can be enabled on the
   organization settings page ("Artifact versions are mutable").
 </Aside>
+
+## Public Artifacts
+
+A single artifact can be made public, so anyone who knows its name can pull it without credentials.
+This is meant for what you want to hand out freely, an installer image, a CLI, an agent chart or a
+public demo, while everything else in the registry stays private.
+
+Open the artifact details page and pick **Make public** from the menu in the top right. The artifact
+then carries a **Public** badge everywhere it is listed, and **Make private** in the same menu
+requires credentials again. Only organization admins can change it.
+
+<Aside type="caution">
+  Making an artifact public exposes every version and tag it has, present and
+  future, and [artifact entitlements](/docs/platform/artifact-entitlements/) no
+  longer restrict who may pull it. It also appears in the artifact list of every
+  customer of your organization, whether they hold an entitlement for it or not.
+  For a [pull-through cache](/docs/registry/pull-through-cache/) artifact this
+  extends to the upstream: a pull that misses the cache is fetched from the
+  upstream registry with the credentials stored on the artifact.
+</Aside>
+
+### Pulling without credentials
+
+ORAS and anything speaking the HTTP API directly pull a public artifact with no setup at all:
+
+```sh
+oras pull registry.example.com/acme/my-artifact:1.0.0
+helm pull oci://registry.example.com/acme/my-chart --version 1.0.0
+curl -sSL https://registry.example.com/v2/acme/my-image/manifests/1.0.0 \
+  -H 'Accept: application/vnd.oci.image.manifest.v1+json'
+```
+
+<Aside type="caution">
+  The Docker CLI, Podman and Skopeo ask the registry whether authentication is
+  needed before they pull. Distr has to answer yes, because a client holding a
+  PAT sends it only after it has seen that answer, and those clients read it as
+  "log in first" rather than trying without credentials. Pull a public artifact
+  with them after `docker login` or `podman login` with any PAT, or use one of
+  the clients above.
+</Aside>
+
+Anonymous pulls are rate limited per client IP address, considerably more strictly than the pull
+limits of the large public registries. A client that exceeds them gets `429 Too Many Requests` with
+a `Retry-After` header, which every OCI client honors by backing off. Authenticated pulls are never
+rate limited, so a customer who runs into the limit only has to log in with a PAT. Self-hosted
+instances can change the limits, see the [`REGISTRY_ANONYMOUS_*`
+variables](/docs/self-hosting/configuration/#oci-registry).
+
+Every anonymous pull is recorded in the [download
+analytics](/docs/registry/analytics/) like any other pull, marked as
+**Anonymous** since there is no user or customer behind it.
 
 ## Global Dashboard Artifact View
 

@@ -109,6 +109,9 @@
                   @if (auth.isVendor() && artifact.upstreamUrl) {
                     <span class="distr-tag-badge">pull-through</span>
                   }
+                  @if (artifact.public) {
+                    <app-artifact-public-badge />
+                  }
                 </p>
               </div>
               <div class="flex flex-col items-end gap-1" *appRequireVendor>

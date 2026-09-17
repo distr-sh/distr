@@ -166,13 +166,16 @@ func NewDefault(
 			// The OCI registry always uses the primary db: container clients rely on read-after-write
 			// consistency (push then pull/HEAD, multi-arch, signing), which a lagging replica would break.
 			middleware.ContextInjectorMiddleware(pool, nil, mailer, nil, nil, nil),
-			auth.ArtifactsAuthentication.Middleware,
-			auth.ArtifactsAuthentication.ValidatorMiddleware(func(value authinfo.AuthInfoWithOrganization) error {
-				if value.CurrentOrg() == nil {
-					return fmt.Errorf("%w: org is required", authn.ErrBadAuthentication)
-				}
-				return nil
-			}),
+			AnonymousAccess(
+				env.RegistryAnonymousRateLimits(),
+				auth.ArtifactsAuthentication.Middleware,
+				auth.ArtifactsAuthentication.ValidatorMiddleware(func(value authinfo.AuthInfoWithOrganization) error {
+					if value.CurrentOrg() == nil {
+						return fmt.Errorf("%w: org is required", authn.ErrBadAuthentication)
+					}
+					return nil
+				}),
+			),
 		),
 	)
 
