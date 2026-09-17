@@ -380,7 +380,7 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, "registration is not available on this domain", http.StatusForbidden)
 		return
-	} else if !host.instanceAuthAllowed() {
+	} else if !host.registrationAllowed() {
 		http.Error(w, "registration is not available on this domain", http.StatusForbidden)
 		return
 	}

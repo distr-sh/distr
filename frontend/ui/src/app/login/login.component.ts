@@ -96,7 +96,7 @@ export class LoginComponent implements OnInit {
         this.toast.error('Your login attempt took too long or was already used. Please try again.');
         break;
       case 'oidc-registration-disabled':
-        this.toast.error('Sign-up is disabled on this instance. Please contact your administrator.');
+        this.toast.error('Sign-up is not available here. Please contact your administrator.');
         break;
       case 'oidc-unavailable':
         this.toast.error('This login method is not available on this domain. Please contact your administrator.');

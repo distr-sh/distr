@@ -79,6 +79,13 @@ func authLoginOidcHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	flow := types.ParseOIDCFlow(r.URL.Query().Get("flow"))
+	if flow == types.OIDCFlowRegistration && !host.registrationAllowed() {
+		log.Info("rejecting instance OIDC registration on custom domain",
+			zap.String("provider", string(provider)), zap.String("host", r.Host))
+		http.Redirect(w, r, redirectToLoginOIDCRegistrationDisabled, http.StatusFound)
+		return
+	}
+
 	if state, err := db.CreateOIDCState(ctx, nil, flow); err != nil {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		log.Error("OIDC state creation failed", zap.Error(err))
