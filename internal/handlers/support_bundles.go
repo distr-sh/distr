@@ -109,6 +109,11 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 				}{}))
 
 			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
+				Delete("/", deleteSupportBundleHandler()).
+				With(option.Description("Delete a support bundle")).
+				With(option.Request(BundleIDRequest{}))
+
+			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 				Post("/comments", createSupportBundleCommentHandler()).
 				With(option.Description("Create a support bundle comment")).
 				With(option.Request(struct {
@@ -643,6 +648,27 @@ func updateSupportBundleStatusHandler() http.HandlerFunc {
 			http.NotFound(w, r)
 		} else if err != nil {
 			log.Error("failed to update support bundle status", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			w.WriteHeader(http.StatusNoContent)
+		}
+	}
+}
+
+func deleteSupportBundleHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		bundle := requireSupportBundle(w, r)
+		if bundle == nil {
+			return
+		}
+
+		ctx := r.Context()
+
+		if err := db.DeleteSupportBundle(ctx, bundle.ID, bundle.OrganizationID); errors.Is(err, apierrors.ErrNotFound) {
+			http.NotFound(w, r)
+		} else if err != nil {
+			internalctx.GetLogger(ctx).Error("failed to delete support bundle", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {

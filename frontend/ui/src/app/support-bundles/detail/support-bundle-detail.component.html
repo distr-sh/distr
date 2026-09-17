@@ -40,6 +40,12 @@
               Mark as Resolved
             </button>
           }
+          @if (auth.hasAnyRole('read_write', 'admin')) {
+            <button type="button" (click)="deleteBundle()" [disabled]="deleting()" class="py-2 px-4 distr-btn-danger">
+              <fa-icon [icon]="faTrash" class="mr-2" />
+              Delete
+            </button>
+          }
         </div>
       </div>
       @if (bundle.description) {
