@@ -29,6 +29,7 @@ var (
 	databaseEncryptionMigrateOnBoot        bool
 	jwtSecret                              []byte
 	host                                   string
+	agentHost                              *string
 	registryHost                           string
 	mailerConfig                           MailerConfig
 	inviteTokenValidDuration               time.Duration
@@ -154,6 +155,7 @@ func Initialize() {
 	jwtSecret = util.Require(envutil.ParseValue("JWT_SECRET",
 		requireEnvResolved(ctx, resolver, "JWT_SECRET"), base64.StdEncoding.DecodeString))
 	host = envutil.RequireEnv("DISTR_HOST")
+	agentHost = envutil.GetEnvOrNil("AGENT_HOST")
 	agentInterval = envutil.GetEnvParsedOrDefault("AGENT_INTERVAL", envparse.PositiveDuration, 5*time.Second)
 	statusEntriesMaxAge = envutil.GetEnvParsedOrNil("STATUS_ENTRIES_MAX_AGE", envparse.PositiveDuration)
 	metricsEntriesMaxAge = envutil.GetEnvParsedOrNil("METRICS_ENTRIES_MAX_AGE", envparse.PositiveDuration)
@@ -414,6 +416,11 @@ func HostScheme() URLScheme {
 	}
 	return SchemeHTTPS
 }
+
+// AgentHost is the host agents and connect commands reach this instance at, for an installation
+// whose app host is not publicly available. Build a URL on it through
+// customdomains.AgentDomainOrDefault, which keeps the fallback to the app host in one place.
+func AgentHost() *string { return agentHost }
 
 func RegistryHost() string { return registryHost }
 

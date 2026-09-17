@@ -240,12 +240,15 @@ func legacyDomainOwnedByOtherOrg(ctx context.Context, domain string, orgID uuid.
 
 // isPlatformOwnedDomain reports whether the given normalized domain is owned by the platform
 // and must therefore not be registrable as a custom domain: distr.sh (and subdomains), the
-// instance's own app and registry hosts, and the CNAME target host.
+// instance's own app, agent and registry hosts, and the CNAME target host.
 func isPlatformOwnedDomain(domain string) bool {
 	platformHosts := []string{
 		"distr.sh",
 		validation.NormalizeHostname(env.Host()),
 		validation.NormalizeHostname(env.RegistryHost()),
+	}
+	if agentHost := env.AgentHost(); agentHost != nil {
+		platformHosts = append(platformHosts, validation.NormalizeHostname(*agentHost))
 	}
 	if target := env.CustomDomainTarget(); target != nil {
 		platformHosts = append(platformHosts, validation.NormalizeHostname(*target))

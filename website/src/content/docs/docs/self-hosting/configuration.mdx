@@ -98,10 +98,26 @@ the widget and are not verified; they remain subject to the rate limits of the a
 
 ## Agents
 
-| Variable              | Required | Default | Description                                                                              |
-| --------------------- | -------- | ------- | ---------------------------------------------------------------------------------------- |
-| `AGENT_INTERVAL`      | no       | `5s`    | Interval at which agents poll Distr for updates.                                         |
-| `AGENT_DOCKER_CONFIG` | no       | —       | Base64-encoded Docker config JSON provided to Docker agents for registry authentication. |
+| Variable              | Required | Default      | Description                                                                                               |
+| --------------------- | -------- | ------------ | --------------------------------------------------------------------------------------------------------- |
+| `AGENT_HOST`          | no       | `DISTR_HOST` | Host (and optional port) agents reach this instance at, see below. Its scheme is taken from `DISTR_HOST`. |
+| `AGENT_INTERVAL`      | no       | `5s`         | Interval at which agents poll Distr for updates.                                                          |
+| `AGENT_DOCKER_CONFIG` | no       | —            | Base64-encoded Docker config JSON provided to Docker agents for registry authentication.                  |
+
+### Separate agent host
+
+`AGENT_HOST` lets you publish the endpoints a customer environment needs without exposing the rest of the
+instance. Set it when `DISTR_HOST` points at a host that is only reachable from your own network, for example
+because the UI sits behind a VPN, and point it at a public hostname that routes to the same Distr instance.
+
+It is used for the connect and pre-connect URLs, for the connect command and the pre- and post-connect scripts built
+around them, and for every endpoint in the agent manifest the agents poll afterwards. It takes precedence over an
+organization's custom app domain, so agents keep reaching the public host even for a vendor that serves the UI under
+its own domain. Links, emails and the customer portal are unaffected and keep using `DISTR_HOST` or the
+organization's custom domains.
+
+Existing deployment targets pick the new host up with their next manifest poll. Keep the old host reachable for
+agents until they have, or reconnect them.
 
 ## Mailer
 
