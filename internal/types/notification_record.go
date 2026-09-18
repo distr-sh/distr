@@ -9,35 +9,67 @@ import (
 type NotificationRecordType string
 
 const (
-	NotificationRecordTypeAlert    NotificationRecordType = "alert"
-	NotificationRecordTypeWarning  NotificationRecordType = "warning"
-	NotificationRecordTypeResolved NotificationRecordType = "resolved"
+	NotificationRecordTypeAlert           NotificationRecordType = "alert"
+	NotificationRecordTypeWarning         NotificationRecordType = "warning"
+	NotificationRecordTypeResolved        NotificationRecordType = "resolved"
+	NotificationRecordTypeUpdateAvailable NotificationRecordType = "update_available"
+	NotificationRecordTypeNewVersion      NotificationRecordType = "new_version"
+)
+
+type NotificationSourceType string
+
+const (
+	NotificationSourceTypeAlert       NotificationSourceType = "alert"
+	NotificationSourceTypeApplication NotificationSourceType = "application"
+	NotificationSourceTypeArtifact    NotificationSourceType = "artifact"
 )
 
 type NotificationRecord struct {
-	ID                                 uuid.UUID              `db:"id"`
-	CreatedAt                          time.Time              `db:"created_at"`
-	OrganizationID                     uuid.UUID              `db:"organization_id"`
-	CustomerOrganizationID             *uuid.UUID             `db:"customer_organization_id"`
-	DeploymentTargetID                 *uuid.UUID             `db:"deployment_target_id"`
-	AlertConfigurationID               *uuid.UUID             `db:"alert_configuration_id"`
-	Type                               NotificationRecordType `db:"type"`
-	PreviousDeploymentRevisionStatusID *uuid.UUID             `db:"previous_deployment_revision_status_id"`
-	CurrentDeploymentRevisionStatusID  *uuid.UUID             `db:"current_deployment_revision_status_id"`
-	MetricType                         *string                `db:"metric_type"`
-	DiskDevice                         *string                `db:"disk_device"`
-	DiskPath                           *string                `db:"disk_path"`
-	PreviousDeploymentTargetMetricsID  *uuid.UUID             `db:"previous_deployment_target_metrics_id"`
-	CurrentDeploymentTargetMetricsID   *uuid.UUID             `db:"current_deployment_target_metrics_id"`
-	Message                            string                 `db:"message" json:"message"`
+	ID                     uuid.UUID                 `db:"id"`
+	CreatedAt              time.Time                 `db:"created_at"`
+	OrganizationID         uuid.UUID                 `db:"organization_id"`
+	CustomerOrganizationID *uuid.UUID                `db:"customer_organization_id"`
+	UserAccountID          *uuid.UUID                `db:"user_account_id"`
+	SourceType             NotificationSourceType    `db:"source_type"`
+	SourceConfigurationID  *uuid.UUID                `db:"source_configuration_id"`
+	SubjectID              *uuid.UUID                `db:"subject_id"`
+	Type                   NotificationRecordType    `db:"type"`
+	Details                NotificationRecordDetails `db:"details"`
+	Message                string                    `db:"message"`
 }
 
-type NotificationRecordWithCurrentStatus struct {
-	NotificationRecord
-	DeploymentTargetName            *string                   `db:"deployment_target_name"`
-	CustomerOrganizationName        *string                   `db:"customer_organization_name"`
-	ApplicationName                 *string                   `db:"application_name"`
-	ApplicationVersionName          *string                   `db:"application_version_name"`
-	CurrentDeploymentRevisionStatus *DeploymentRevisionStatus `db:"current_deployment_revision_status"`
-	CurrentDeploymentTargetMetrics  *DeploymentTargetMetrics  `db:"current_deployment_target_metrics"`
+// NotificationRecordDetails is the trigger-specific payload of a record, stored in a single JSONB
+// column so that a new notification trigger does not add a column to the shared history table. It
+// carries json tags rather than db tags for that reason, and it holds the names of everything it
+// refers to, because a record has to stay displayable after its subject has been deleted.
+type NotificationRecordDetails struct {
+	Summary                  string  `json:"summary,omitempty"`
+	CustomerOrganizationName *string `json:"customerOrganizationName,omitempty"`
+
+	DeploymentTargetName   *string         `json:"deploymentTargetName,omitempty"`
+	ApplicationName        *string         `json:"applicationName,omitempty"`
+	ApplicationType        *DeploymentType `json:"applicationType,omitempty"`
+	ApplicationVersionName *string         `json:"applicationVersionName,omitempty"`
+	ArtifactName           *string         `json:"artifactName,omitempty"`
+	ArtifactVersionName    *string         `json:"artifactVersionName,omitempty"`
+
+	MetricType *string `json:"metricType,omitempty"`
+	DiskDevice *string `json:"diskDevice,omitempty"`
+	DiskPath   *string `json:"diskPath,omitempty"`
+
+	PreviousDeploymentRevisionStatusID *uuid.UUID `json:"previousDeploymentRevisionStatusId,omitempty"`
+	CurrentDeploymentRevisionStatusID  *uuid.UUID `json:"currentDeploymentRevisionStatusId,omitempty"`
+	PreviousDeploymentTargetMetricsID  *uuid.UUID `json:"previousDeploymentTargetMetricsId,omitempty"`
+	CurrentDeploymentTargetMetricsID   *uuid.UUID `json:"currentDeploymentTargetMetricsId,omitempty"`
+
+	// Deployments are the ones a notification announced an update for, which is more than one
+	// whenever a recipient sees several affected deployments.
+	Deployments []NotificationRecordDeployment `json:"deployments,omitempty"`
+}
+
+type NotificationRecordDeployment struct {
+	CustomerOrganizationName *string `json:"customerOrganizationName,omitempty"`
+	DeploymentTargetName     string  `json:"deploymentTargetName"`
+	DeploymentName           string  `json:"deploymentName"`
+	CurrentVersionName       *string `json:"currentVersionName,omitempty"`
 }

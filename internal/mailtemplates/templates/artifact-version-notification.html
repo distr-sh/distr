@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    {{ template "fragments/style.html" }}
+  </head>
+  <body>
+    <div class="message-container">
+      {{ template "fragments/header.html" . }}
+      <main>
+        {{ template "fragments/greeting.html" . }}
+
+
+        <p>
+          A new version of
+          <strong>{{ .Artifact.Name }}</strong>
+          is available:
+          <strong>{{ .VersionName }}</strong>
+        </p>
+
+        {{ with .CustomerMessage }}
+          <blockquote>{{ . }}</blockquote>
+        {{ end }}
+
+
+        <p>
+          {{ with .ImageDataUrl }}
+            <img alt="{{ $.Artifact.Name }}" width="24" src="{{ . | UnsafeURL }}" />
+          {{ end }}
+          {{ .Artifact.Name }}:{{ .VersionName }}
+        </p>
+
+        <p class="my-3">
+          <a class="cta" href="{{ .Link }}">Open Distr</a>
+        </p>
+
+        <p>{{ template "fragments/signature.html" . }}</p>
+      </main>
+      {{ template "fragments/footer.html" . }}
+    </div>
+  </body>
+</html>

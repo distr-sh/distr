@@ -5,36 +5,43 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 )
 
-func NotificationRecordWithCurrentStatusToAPI(
-	record types.NotificationRecordWithCurrentStatus,
-) api.NotificationRecordWithCurrentStatus {
-	return api.NotificationRecordWithCurrentStatus{
-		NotificationRecord: api.NotificationRecord{
-			ID:                                 record.ID,
-			CreatedAt:                          record.CreatedAt,
-			DeploymentTargetID:                 record.DeploymentTargetID,
-			AlertConfigurationID:               record.AlertConfigurationID,
-			Type:                               string(record.Type),
-			PreviousDeploymentRevisionStatusID: record.PreviousDeploymentRevisionStatusID,
-			CurrentDeploymentRevisionStatusID:  record.CurrentDeploymentRevisionStatusID,
-			MetricType:                         record.MetricType,
-			DiskDevice:                         record.DiskDevice,
-			DiskPath:                           record.DiskPath,
-			PreviousDeploymentTargetMetricsID:  record.PreviousDeploymentTargetMetricsID,
-			CurrentDeploymentTargetMetricsID:   record.CurrentDeploymentTargetMetricsID,
-			Message:                            record.Message,
-		},
-		DeploymentTargetName:     record.DeploymentTargetName,
-		CustomerOrganizationName: record.CustomerOrganizationName,
-		ApplicationName:          record.ApplicationName,
-		ApplicationVersionName:   record.ApplicationVersionName,
-		CurrentDeploymentRevisionStatus: PtrOrNil(
-			record.CurrentDeploymentRevisionStatus,
-			DeploymentRevisionStatusToAPI,
-		),
-		CurrentDeploymentTargetMetrics: PtrOrNil(
-			record.CurrentDeploymentTargetMetrics,
-			DeploymentTargetMetricsToAPI,
-		),
+func NotificationRecordToAPI(record types.NotificationRecord) api.NotificationRecord {
+	return api.NotificationRecord{
+		ID:                    record.ID,
+		CreatedAt:             record.CreatedAt,
+		UserAccountID:         record.UserAccountID,
+		SourceType:            record.SourceType,
+		SourceConfigurationID: record.SourceConfigurationID,
+		SubjectID:             record.SubjectID,
+		Type:                  record.Type,
+		Details:               notificationRecordDetailsToAPI(record.Details),
+		Message:               record.Message,
+	}
+}
+
+// notificationRecordDetailsToAPI drops the identifiers that only the notification logic itself
+// needs, so that the response carries what the history displays and nothing else.
+func notificationRecordDetailsToAPI(details types.NotificationRecordDetails) api.NotificationRecordDetails {
+	return api.NotificationRecordDetails{
+		Summary:                  details.Summary,
+		CustomerOrganizationName: details.CustomerOrganizationName,
+		DeploymentTargetName:     details.DeploymentTargetName,
+		ApplicationName:          details.ApplicationName,
+		ApplicationType:          details.ApplicationType,
+		ApplicationVersionName:   details.ApplicationVersionName,
+		ArtifactName:             details.ArtifactName,
+		ArtifactVersionName:      details.ArtifactVersionName,
+		Deployments:              List(details.Deployments, notificationRecordDeploymentToAPI),
+	}
+}
+
+func notificationRecordDeploymentToAPI(
+	deployment types.NotificationRecordDeployment,
+) api.NotificationRecordDeployment {
+	return api.NotificationRecordDeployment{
+		CustomerOrganizationName: deployment.CustomerOrganizationName,
+		DeploymentTargetName:     deployment.DeploymentTargetName,
+		DeploymentName:           deployment.DeploymentName,
+		CurrentVersionName:       deployment.CurrentVersionName,
 	}
 }

@@ -59,7 +59,7 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 ## Frontend Code
 
 - Use standalone components (no NgModules), reactive forms and `inject()` rather than constructor injection for dependencies (`private readonly http = inject(HttpClient)`). `standalone: true` is the default and never needs writing, and neither does `changeDetection: ChangeDetectionStrategy.OnPush`. Set `changeDetection` only to opt a component out with `ChangeDetectionStrategy.Eager`, and drop that opt-out once the component's state is fully signal-based.
-- Give services `providedIn: 'root'`.
+- Give services `providedIn: 'root'`. Injecting one of the few that are not (`CustomerOrganizationsCache`, `OverlayService`) obliges every page rendering the component to list it in `providers`, and when the component sits in a drawer or modal template the missing provider surfaces as a dialog that silently fails to open. Use the root-provided service instead unless the per-page cache is the point.
 - Split a component into `component-name.component.ts` and `.html`, plus a `.scss` only when it needs styling beyond utility classes in the template.
 - Type API models with the interfaces in `app/types/`. Never type a value `any` or `unknown`, and do not widen a type with `| undefined` or `?` where the value is always present.
 - Use [signals](https://angular.dev/guide/signals) for inputs, child views and anywhere else the current Angular version supports them, and convert the non-signal usages you come across in files you edit anyway.

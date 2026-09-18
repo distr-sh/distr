@@ -137,7 +137,7 @@ func sendDeploymentStatusNotificationsWithConfig(
 		}
 	} else if shouldNotifyError(previousStatus, *currentStatus) ||
 		shouldNotifyErrorRecovered(previousStatus, *currentStatus) {
-		if existingRecord != nil && existingRecord.CurrentDeploymentRevisionStatusID != nil {
+		if existingRecord != nil && existingRecord.Details.CurrentDeploymentRevisionStatusID != nil {
 			log.Debug("skip error/recovery notifications because it was already sent")
 			return nil
 		}
@@ -189,26 +189,39 @@ func sendDeploymentStatusNotificationsWithConfig(
 	}
 
 	recordType := types.NotificationRecordTypeResolved
+	summary := "Stale"
 	if currentStatus == nil {
 		recordType = types.NotificationRecordTypeWarning
-	} else if currentStatus.Type == types.DeploymentStatusTypeError {
-		recordType = types.NotificationRecordTypeAlert
+	} else {
+		summary = currentStatus.Message
+		if currentStatus.Type == types.DeploymentStatusTypeError {
+			recordType = types.NotificationRecordTypeAlert
+		}
 	}
 
 	record := types.NotificationRecord{
 		OrganizationID:         config.OrganizationID,
 		CustomerOrganizationID: config.CustomerOrganizationID,
-		DeploymentTargetID:     &deploymentTarget.ID,
-		AlertConfigurationID:   &config.ID,
+		SourceType:             types.NotificationSourceTypeAlert,
+		SourceConfigurationID:  &config.ID,
+		SubjectID:              &deploymentTarget.ID,
 		Type:                   recordType,
+		Details: types.NotificationRecordDetails{
+			Summary:                  summary,
+			CustomerOrganizationName: customerOrganizationName(deploymentTarget),
+			DeploymentTargetName:     &deploymentTarget.Name,
+			ApplicationName:          &deployment.Application.Name,
+			ApplicationType:          &deployment.Application.Type,
+			ApplicationVersionName:   &deployment.ApplicationVersionName,
+		},
 	}
 
 	if currentStatus != nil {
-		record.CurrentDeploymentRevisionStatusID = &currentStatus.ID
+		record.Details.CurrentDeploymentRevisionStatusID = &currentStatus.ID
 	}
 
 	if previousStatus != nil {
-		record.PreviousDeploymentRevisionStatusID = &previousStatus.ID
+		record.Details.PreviousDeploymentRevisionStatusID = &previousStatus.ID
 	}
 
 	if aggErr != nil {

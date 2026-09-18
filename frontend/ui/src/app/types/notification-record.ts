@@ -1,22 +1,36 @@
-import {DeploymentRevisionStatus} from '@distr-sh/distr-sdk';
-import {DeploymentTargetLatestMetrics} from './deployment-target-metrics';
+import {DeploymentType} from '@distr-sh/distr-sdk';
 
-export type NotificationRecordType = 'alert' | 'warning' | 'resolved';
-export type NotificationRecordMetricType = 'cpu' | 'memory' | 'disk';
+export type NotificationRecordType = 'alert' | 'warning' | 'resolved' | 'update_available' | 'new_version';
+export type NotificationSourceType = 'alert' | 'application' | 'artifact';
+
+export interface NotificationRecordDeployment {
+  customerOrganizationName?: string;
+  deploymentTargetName: string;
+  deploymentName: string;
+  currentVersionName?: string;
+}
+
+/** Everything specific to what triggered a notification, denormalized when it was sent. */
+export interface NotificationRecordDetails {
+  summary?: string;
+  customerOrganizationName?: string;
+  deploymentTargetName?: string;
+  applicationName?: string;
+  applicationType?: DeploymentType;
+  applicationVersionName?: string;
+  artifactName?: string;
+  artifactVersionName?: string;
+  deployments?: NotificationRecordDeployment[];
+}
 
 export interface NotificationRecord {
   id: string;
   createdAt: string;
-  deploymentTargetId?: string;
-  deploymentTargetName?: string;
-  customerOrganizationName?: string;
-  applicationName?: string;
-  applicationVersionName?: string;
+  userAccountId?: string;
+  sourceType: NotificationSourceType;
+  sourceConfigurationId?: string;
+  subjectId?: string;
   type: NotificationRecordType;
-  metricType?: NotificationRecordMetricType;
-  diskDevice?: string;
-  diskPath?: string;
+  details: NotificationRecordDetails;
   message: string;
-  currentDeploymentRevisionStatus?: DeploymentRevisionStatus;
-  currentDeploymentTargetMetrics?: DeploymentTargetLatestMetrics;
 }

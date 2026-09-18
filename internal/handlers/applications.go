@@ -15,6 +15,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/notification"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/distr-sh/distr/internal/validation"
@@ -424,6 +425,18 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
 	} else {
+		go func(ctx context.Context) {
+			asyncCtx, cancel := context.WithTimeout(ctx, notificationTimeout)
+			defer cancel()
+
+			if err := notification.SendApplicationUpdateAvailableNotifications(
+				asyncCtx, applicationVersion,
+			); err != nil {
+				sentry.GetHubFromContext(asyncCtx).CaptureException(err)
+				log.Error("failed to dispatch update available notification", zap.Error(err))
+			}
+		}(context.WithoutCancel(ctx))
+
 		RespondJSON(w, applicationVersion)
 	}
 }

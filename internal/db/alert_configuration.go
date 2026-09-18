@@ -9,7 +9,6 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"go.uber.org/zap"
 )
 
 var alertConfigurationOutputExpr = `
@@ -207,12 +206,8 @@ func CreateAlertConfiguration(ctx context.Context, config *types.AlertConfigurat
 			config.ID = insertedID
 		}
 
-		if err := updateAlertConfigUserAccountIDs(ctx, config); err != nil {
-			return fmt.Errorf("failed to update user account IDs: %w", err)
-		}
-
-		if err := updateAlertConfigDeploymentTargetIDs(ctx, config); err != nil {
-			return fmt.Errorf("failed to update deployment target IDs: %w", err)
+		if err := updateAlertConfigurationLinks(ctx, config); err != nil {
+			return err
 		}
 
 		return getAlertConfigurationInto(ctx, config.ID, config)
@@ -252,102 +247,31 @@ func UpdateAlertConfiguration(ctx context.Context, config *types.AlertConfigurat
 			return fmt.Errorf("failed to update AlertConfiguration: %w", err)
 		}
 
-		if err := updateAlertConfigUserAccountIDs(ctx, config); err != nil {
-			return fmt.Errorf("failed to update user account IDs: %w", err)
-		}
-
-		if err := updateAlertConfigDeploymentTargetIDs(ctx, config); err != nil {
-			return fmt.Errorf("failed to update deployment target IDs: %w", err)
+		if err := updateAlertConfigurationLinks(ctx, config); err != nil {
+			return err
 		}
 
 		return getAlertConfigurationInto(ctx, config.ID, config)
 	})
 }
 
-func updateAlertConfigUserAccountIDs(ctx context.Context, config *types.AlertConfiguration) error {
-	db := internalctx.GetDb(ctx)
-
-	cmd, err := db.Exec(
-		ctx,
-		`INSERT INTO AlertConfiguration_Organization_UserAccount (
-			alert_configuration_id,
-			organization_id,
-			user_account_id
-		)
-		(SELECT @id, @organizationID, id FROM UserAccount WHERE id = any(@userAccountIDs))
-		ON CONFLICT (alert_configuration_id, organization_id, user_account_id) DO NOTHING`,
-		pgx.NamedArgs{
-			"id":             config.ID,
-			"organizationID": config.OrganizationID,
-			"userAccountIDs": config.UserAccountIDs,
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("failed to insert user account IDs: %w", err)
+func updateAlertConfigurationLinks(ctx context.Context, config *types.AlertConfiguration) error {
+	if err := replaceNotificationLinks(ctx, notificationLink{
+		table:        "AlertConfiguration_DeploymentTarget",
+		configColumn: "alert_configuration_id",
+		valueColumn:  "deployment_target_id",
+		valueTable:   "DeploymentTarget",
+	}, config.ID, config.OrganizationID, config.DeploymentTargetIDs); err != nil {
+		return err
 	}
-
-	log := internalctx.GetLogger(ctx)
-	log.Debug("inserted config user relations", zap.Int64("rowsAffected", cmd.RowsAffected()))
-
-	_, err = db.Exec(
+	return replaceNotificationRecipients(
 		ctx,
-		`DELETE FROM AlertConfiguration_Organization_UserAccount
-		WHERE alert_configuration_id = @id
-			AND NOT user_account_id = any(@userAccountIDs)`,
-		pgx.NamedArgs{
-			"id":             config.ID,
-			"userAccountIDs": config.UserAccountIDs,
-		},
+		"AlertConfiguration_Organization_UserAccount",
+		"alert_configuration_id",
+		config.ID,
+		config.OrganizationID,
+		config.UserAccountIDs,
 	)
-	if err != nil {
-		return fmt.Errorf("failed to delete user account IDs: %w", err)
-	}
-
-	log.Debug("deleted config user relations", zap.Int64("rowsAffected", cmd.RowsAffected()))
-
-	return nil
-}
-
-func updateAlertConfigDeploymentTargetIDs(ctx context.Context, config *types.AlertConfiguration) error {
-	db := internalctx.GetDb(ctx)
-
-	cmd, err := db.Exec(
-		ctx,
-		`INSERT INTO AlertConfiguration_DeploymentTarget (
-			alert_configuration_id,
-			deployment_target_id
-		)
-		SELECT @id, id FROM DeploymentTarget WHERE id = any(@deploymentTargetIDs)
-		ON CONFLICT (alert_configuration_id, deployment_target_id) DO NOTHING`,
-		pgx.NamedArgs{
-			"id":                  config.ID,
-			"deploymentTargetIDs": config.DeploymentTargetIDs,
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("failed to insert deployment target IDs: %w", err)
-	}
-
-	log := internalctx.GetLogger(ctx)
-	log.Debug("inserted config DeploymentTarget relations", zap.Int64("rowsAffected", cmd.RowsAffected()))
-
-	_, err = db.Exec(
-		ctx,
-		`DELETE FROM AlertConfiguration_DeploymentTarget
-		WHERE alert_configuration_id = @id
-			AND NOT deployment_target_id = any(@deploymentTargetIDs)`,
-		pgx.NamedArgs{
-			"id":                  config.ID,
-			"deploymentTargetIDs": config.DeploymentTargetIDs,
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("failed to delete deployment target IDs: %w", err)
-	}
-
-	log.Debug("deleted config DeploymentTarget relations", zap.Int64("rowsAffected", cmd.RowsAffected()))
-
-	return nil
 }
 
 func getAlertConfigurationInto(ctx context.Context, id uuid.UUID, target *types.AlertConfiguration) error {

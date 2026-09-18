@@ -14,6 +14,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/notification"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
@@ -94,7 +95,7 @@ func createApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = db.RunTx(ctx, func(ctx context.Context) error {
+	err = db.RunTx(ctx, func(ctx context.Context) error {
 		err := db.CreateApplicationEntitlement(ctx, &entitlement.ApplicationEntitlementBase)
 		if errors.Is(err, apierrors.ErrConflict) {
 			http.Error(w, "An entitlement with this name already exists", http.StatusBadRequest)
@@ -126,6 +127,36 @@ func createApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 
 		return nil
 	})
+
+	if err == nil {
+		notifyEntitledVersions(ctx, log, versionIDs(entitlement.Versions))
+	}
+}
+
+// notifyEntitledVersions announces a version that the customer of an entitlement can now deploy.
+func notifyEntitledVersions(ctx context.Context, log *zap.Logger, applicationVersionIDs []uuid.UUID) {
+	if len(applicationVersionIDs) == 0 {
+		return
+	}
+	go func(ctx context.Context) {
+		asyncCtx, cancel := context.WithTimeout(ctx, notificationTimeout)
+		defer cancel()
+
+		if err := notification.SendApplicationEntitlementVersionsNotifications(
+			asyncCtx, applicationVersionIDs,
+		); err != nil {
+			sentry.GetHubFromContext(asyncCtx).CaptureException(err)
+			log.Error("failed to dispatch update available notification", zap.Error(err))
+		}
+	}(context.WithoutCancel(ctx))
+}
+
+func versionIDs(versions []types.ApplicationVersion) []uuid.UUID {
+	ids := make([]uuid.UUID, len(versions))
+	for i, version := range versions {
+		ids[i] = version.ID
+	}
+	return ids
 }
 
 func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
@@ -164,7 +195,14 @@ func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = db.RunTx(ctx, func(ctx context.Context) error {
+	addedVersionIDs := make([]uuid.UUID, 0, len(entitlement.Versions))
+	for _, version := range entitlement.Versions {
+		if !existing.HasVersionWithID(version.ID) {
+			addedVersionIDs = append(addedVersionIDs, version.ID)
+		}
+	}
+
+	err = db.RunTx(ctx, func(ctx context.Context) error {
 		err := db.UpdateApplicationEntitlement(ctx, &entitlement.ApplicationEntitlementBase)
 		if errors.Is(err, apierrors.ErrConflict) {
 			http.Error(w, "An entitlement with this name already exists", http.StatusBadRequest)
@@ -227,6 +265,10 @@ func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 
 		return nil
 	})
+
+	if err == nil {
+		notifyEntitledVersions(ctx, log, addedVersionIDs)
+	}
 }
 
 func formatVersionConflictError(conflicts []types.DeploymentVersionUsage) string {

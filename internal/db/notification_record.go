@@ -9,7 +9,9 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 const notificationRecordOutputExpr = `
@@ -17,17 +19,18 @@ const notificationRecordOutputExpr = `
 	r.created_at,
 	r.organization_id,
 	r.customer_organization_id,
-	r.deployment_target_id,
-	r.alert_configuration_id,
+	r.user_account_id,
+	r.source_type,
+	r.source_configuration_id,
+	r.subject_id,
 	r.type,
-	r.previous_deployment_revision_status_id,
-	r.current_deployment_revision_status_id,
-	r.metric_type,
-	r.disk_device,
-	r.disk_path,
-	r.previous_deployment_target_metrics_id,
-	r.current_deployment_target_metrics_id,
+	r.details,
 	r.message `
+
+// ErrNotificationRecordExists is returned when a record for the same configuration, recipient and
+// subject has been written already, which is what keeps a recipient from hearing about the same
+// version twice.
+var ErrNotificationRecordExists = errors.New("notification record already exists")
 
 func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecord) error {
 	db := internalctx.GetDb(ctx)
@@ -37,53 +40,44 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 			INSERT INTO NotificationRecord (
 				organization_id,
 				customer_organization_id,
-				deployment_target_id,
-				alert_configuration_id,
+				user_account_id,
+				source_type,
+				source_configuration_id,
+				subject_id,
 				type,
-				previous_deployment_revision_status_id,
-				current_deployment_revision_status_id,
-				metric_type,
-				disk_device,
-				disk_path,
-				previous_deployment_target_metrics_id,
-				current_deployment_target_metrics_id,
+				details,
 				message
 			)
 			VALUES (
 				@organizationID,
 				@customerOrganizationID,
-				@deploymentTargetID,
-				@alertConfigurationID,
+				@userAccountID,
+				@sourceType,
+				@sourceConfigurationID,
+				@subjectID,
 				@type,
-				@previousDeploymentStatusID,
-				@currentDeploymentStatusID,
-				@metricType,
-				@diskDevice,
-				@diskPath,
-				@previousMetricsID,
-				@currentMetricsID,
+				@details,
 				@message
 			)
 			RETURNING *
 		)
 		SELECT`+notificationRecordOutputExpr+`FROM inserted r`,
 		pgx.NamedArgs{
-			"organizationID":             record.OrganizationID,
-			"customerOrganizationID":     record.CustomerOrganizationID,
-			"deploymentTargetID":         record.DeploymentTargetID,
-			"alertConfigurationID":       record.AlertConfigurationID,
-			"type":                       record.Type,
-			"previousDeploymentStatusID": record.PreviousDeploymentRevisionStatusID,
-			"currentDeploymentStatusID":  record.CurrentDeploymentRevisionStatusID,
-			"metricType":                 record.MetricType,
-			"diskDevice":                 record.DiskDevice,
-			"diskPath":                   record.DiskPath,
-			"previousMetricsID":          record.PreviousDeploymentTargetMetricsID,
-			"currentMetricsID":           record.CurrentDeploymentTargetMetricsID,
-			"message":                    record.Message,
+			"organizationID":         record.OrganizationID,
+			"customerOrganizationID": record.CustomerOrganizationID,
+			"userAccountID":          record.UserAccountID,
+			"sourceType":             record.SourceType,
+			"sourceConfigurationID":  record.SourceConfigurationID,
+			"subjectID":              record.SubjectID,
+			"type":                   record.Type,
+			"details":                record.Details,
+			"message":                record.Message,
 		},
 	)
 	if err != nil {
+		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation {
+			return ErrNotificationRecordExists
+		}
 		return fmt.Errorf("failed to save NotificationRecord: %w", err)
 	}
 
@@ -104,12 +98,12 @@ func GetLatestNotificationRecord(
 	rows, err := db.Query(
 		ctx,
 		`SELECT`+notificationRecordOutputExpr+`FROM NotificationRecord r
-		WHERE r.alert_configuration_id = @alertConfigurationID
-			AND r.previous_deployment_revision_status_id = @previousDeploymentStatusID
+		WHERE r.source_configuration_id = @sourceConfigurationID
+			AND r.details ->> 'previousDeploymentRevisionStatusId' = @previousDeploymentStatusID
 		ORDER BY r.created_at DESC LIMIT 1`,
 		pgx.NamedArgs{
-			"alertConfigurationID":       configID,
-			"previousDeploymentStatusID": previousID,
+			"sourceConfigurationID":      configID,
+			"previousDeploymentStatusID": previousID.String(),
 		},
 	)
 	if err != nil {
@@ -126,58 +120,43 @@ func GetLatestNotificationRecord(
 	}
 }
 
+func NotificationRecordExists(
+	ctx context.Context,
+	configID, userAccountID, subjectID uuid.UUID,
+) (bool, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT count(*) > 0 FROM NotificationRecord r
+		WHERE r.source_configuration_id = @sourceConfigurationID
+			AND r.user_account_id = @userAccountID
+			AND r.subject_id = @subjectID`,
+		pgx.NamedArgs{
+			"sourceConfigurationID": configID,
+			"userAccountID":         userAccountID,
+			"subjectID":             subjectID,
+		},
+	)
+	if err != nil {
+		return false, fmt.Errorf("failed to query NotificationRecord: %w", err)
+	}
+
+	return pgx.CollectExactlyOneRow(rows, pgx.RowTo[bool])
+}
+
 func GetNotificationRecords(
 	ctx context.Context,
 	organizationID uuid.UUID,
 	customerOrganizationID *uuid.UUID,
-) ([]types.NotificationRecordWithCurrentStatus, error) {
+) ([]types.NotificationRecord, error) {
 	db := internalctx.GetDb(ctx)
 
 	rows, err := db.Query(
 		ctx,
-		`SELECT`+notificationRecordOutputExpr+`,
-			dt.name AS deployment_target_name,
-			co.name AS customer_organization_name,
-			a.name AS application_name,
-			av.name AS application_version_name,
-			CASE WHEN s.id IS NOT NULL THEN (
-				s.id, s.created_at, s.deployment_revision_id, s.type, s.message
-			) END current_deployment_revision_status,
-			CASE WHEN dtm.id IS NOT NULL THEN (
-				dtm.id,
-				dtm.created_at,
-				dtm.deployment_target_id,
-				dtm.cpu_cores_millis,
-				dtm.cpu_usage,
-				dtm.memory_bytes,
-				dtm.memory_usage,
-				array_agg(row(dtdm.device, dtdm.path, dtdm.fs_type, dtdm.bytes_total, dtdm.bytes_used) ORDER BY dtdm.device)
-					FILTER (WHERE dtdm.id IS NOT NULL)
-			) END AS current_deployment_target_metrics
-		FROM NotificationRecord r
-		LEFT JOIN DeploymentTarget dt
-			ON r.deployment_target_id = dt.id
-		LEFT JOIN CustomerOrganization co
-			ON dt.customer_organization_id = co.id
-		LEFT JOIN DeploymentRevisionStatus s
-			ON r.current_deployment_revision_status_id = s.id
-		LEFT JOIN DeploymentRevisionStatus s_prev
-			ON r.previous_deployment_revision_status_id = s_prev.id
-		LEFT JOIN DeploymentRevision dr
-			ON s.deployment_revision_id = dr.id
-				OR (s.id IS NULL AND s_prev.deployment_revision_id = dr.id)
-		LEFT JOIN ApplicationVersion av
-			ON dr.application_version_id = av.id
-		LEFT JOIN Application a
-			ON av.application_id = a.id
-		LEFT JOIN DeploymentTargetMetrics dtm
-			ON r.current_deployment_target_metrics_id = dtm.id
-		LEFT JOIN DeploymentTargetDiskMetrics dtdm
-			ON dtdm.deployment_target_metrics_id = dtm.id
+		`SELECT`+notificationRecordOutputExpr+`FROM NotificationRecord r
 		WHERE r.organization_id = @organizationID
 			AND ((@isVendor AND r.customer_organization_id IS NULL)
 				OR r.customer_organization_id = @customerOrganizationID)
-		GROUP BY r.id, dt.id, co.id, a.id, av.id, s.id, dtm.id
 		ORDER BY r.created_at DESC`,
 		pgx.NamedArgs{
 			"organizationID":         organizationID,
@@ -189,7 +168,7 @@ func GetNotificationRecords(
 		return nil, fmt.Errorf("failed to query NotificationRecord: %w", err)
 	}
 
-	records, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.NotificationRecordWithCurrentStatus])
+	records, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.NotificationRecord])
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect NotificationRecord: %w", err)
 	}
