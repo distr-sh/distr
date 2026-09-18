@@ -3,6 +3,20 @@ import DemoButton from '~/components/buttons/DemoButton.astro';
 import SignupButton from '~/components/buttons/SignupButton.astro';
 import HeroCarousel from './HeroCarousel.astro';
 import {images} from '~/assets/index';
+
+// Every industry is rendered into the HTML and only the visibility is
+// animated, so crawlers that do not execute JavaScript still read the
+// full list. Keep this in sync with the "Why Distr" section of README.md.
+const industries = [
+  'GovCloud and defense',
+  'regulated banking',
+  'health tech',
+  'manufacturing',
+  'enterprise AI',
+  'developer tools',
+];
+const secondsPerIndustry = 2.5;
+const cycleSeconds = industries.length * secondsPerIndustry;
 ---
 
 <header
@@ -17,9 +31,21 @@ import {images} from '~/assets/index';
       </h1>
       <p
         class="mx-auto mb-8 max-w-3xl text-lg md:text-xl leading-relaxed text-white/90">
-        Distr gives your customers a SaaS-like path to install, update, and
-        support software in their own cloud, VPC, or air-gapped environment, so
-        your team can ship self-hosted offerings without operating overhead.
+        Start simple, scale as you go. Onboard to Distr and setup Docker Compose
+        POCs up in minutes, Helm and air-gapped when the deal needs it. All the
+        tools you need to succeed with offering self-hosted. Proven in <span
+          class="industry-rotator"
+          aria-label={industries.join(', ')}
+          >{
+            industries.map((industry, i) => (
+              <span
+                aria-hidden="true"
+                style={`animation-delay: ${i * secondsPerIndustry}s`}>
+                {industry}.
+              </span>
+            ))
+          }</span
+        >
       </p>
     </div>
 
@@ -52,3 +78,56 @@ import {images} from '~/assets/index';
     </div>
   </div>
 </header>
+
+<style define:vars={{cycleSeconds: `${cycleSeconds}s`}}>
+  /* Stacking every option in one grid cell sizes the slot to the widest
+     industry, so the sentence around it never reflows mid-cycle. */
+  .industry-rotator {
+    display: inline-grid;
+    vertical-align: bottom;
+    text-align: left;
+  }
+
+  .industry-rotator > span {
+    grid-area: 1 / 1;
+    opacity: 0;
+    white-space: nowrap;
+    font-weight: 600;
+    animation: industry-cycle var(--cycleSeconds) infinite;
+  }
+
+  @keyframes industry-cycle {
+    0% {
+      opacity: 0;
+      transform: translateY(0.25em);
+    }
+    2%,
+    14.5% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    16.66%,
+    100% {
+      opacity: 0;
+      transform: translateY(-0.25em);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .industry-rotator {
+      display: inline;
+    }
+
+    .industry-rotator > span {
+      grid-area: auto;
+      opacity: 1;
+      transform: none;
+      white-space: normal;
+      animation: none;
+    }
+
+    .industry-rotator > span:not(:last-child)::after {
+      content: ', ';
+    }
+  }
+</style>
