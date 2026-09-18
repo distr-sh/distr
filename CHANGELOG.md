@@ -1,5 +1,34 @@
 # Changelog
 
+## [4.1.0](https://github.com/distr-sh/distr/compare/4.0.3...4.1.0) (2026-09-18)
+
+
+### Features
+
+* **backend:** agent host ([#3281](https://github.com/distr-sh/distr/issues/3281)) ([4e3934d](https://github.com/distr-sh/distr/commit/4e3934da7e0cb60907a47f86aa0c8292aac662bb))
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([#3273](https://github.com/distr-sh/distr/issues/3273)) ([b3d3644](https://github.com/distr-sh/distr/commit/b3d36443726639f8b90b2dda1ac4eccb150e3a31))
+
+
+### Other
+
+* add UserAccount and File cleanup job ([#3255](https://github.com/distr-sh/distr/issues/3255)) ([c70d819](https://github.com/distr-sh/distr/commit/c70d819defe72320c79284fb81e3dd45deff5be5))
+* configure support email via env ([#3277](https://github.com/distr-sh/distr/issues/3277)) ([6c8a36b](https://github.com/distr-sh/distr/commit/6c8a36b60b36de5a72cccfad71963469e42e8c27))
+* **deps:** update dependency jsdom to v30.1.0 ([#3286](https://github.com/distr-sh/distr/issues/3286)) ([22778dd](https://github.com/distr-sh/distr/commit/22778dd5a231b2238ac689b124d1671ee00c0517))
+* **deps:** update loki docker tag to v18.13.3 ([#3285](https://github.com/distr-sh/distr/issues/3285)) ([edfe7ac](https://github.com/distr-sh/distr/commit/edfe7ac4490fa8635fee9b4e2789249c6fe74a24))
+
+
+### Docs
+
+* refresh README positioning, fix broken hero image ([#3288](https://github.com/distr-sh/distr/issues/3288)) ([4066422](https://github.com/distr-sh/distr/commit/406642209a261f1b3b1732615f603762fd752cca))
+* **website:** add AskAI component ([#3282](https://github.com/distr-sh/distr/issues/3282)) ([6c8b6ad](https://github.com/distr-sh/distr/commit/6c8b6ad10f774a1f03ad7c33ffebec4cecad1bc4))
+* **website:** add Distr v4 release blog post ([#3272](https://github.com/distr-sh/distr/issues/3272)) ([d4cbe45](https://github.com/distr-sh/distr/commit/d4cbe4553d3b55b8d0194b4b09c3885f1ae30053))
+* **website:** refresh architecture diagrams ([#3287](https://github.com/distr-sh/distr/issues/3287)) ([98618a8](https://github.com/distr-sh/distr/commit/98618a82724258c61b2ec584939425b823bb9e02))
+* **website:** rewrite hero subheadline with rotating industry proof ([#3289](https://github.com/distr-sh/distr/issues/3289)) ([fcfc5a2](https://github.com/distr-sh/distr/commit/fcfc5a2d38500bb0e973ea684ab81be3bd693c46))
+
 ## [4.0.3](https://github.com/distr-sh/distr/compare/4.0.2...4.0.3) (2026-09-17)
 
 
