@@ -26,6 +26,10 @@ type PatchArtifactUpstreamRequest struct {
 	Auth        Nullable[ArtifactUpstreamAuth] `json:"auth"`
 }
 
+type PatchArtifactPublicRequest struct {
+	Public bool `json:"public"`
+}
+
 type ArtifactResponse struct {
 	types.ArtifactWithTaggedVersion
 	ImageUrl *string `json:"imageUrl,omitempty"`
@@ -39,6 +43,7 @@ type ArtifactsResponse struct {
 type ArtifactVersionPullResponse struct {
 	CreatedAt                time.Time             `json:"createdAt"`
 	RemoteAddress            *string               `json:"remoteAddress,omitempty"`
+	Anonymous                bool                  `json:"anonymous"`
 	UserAccountName          *string               `json:"userAccountName,omitempty"`
 	UserAccountEmail         *string               `json:"userAccountEmail,omitempty"`
 	CustomerOrganizationName *string               `json:"customerOrganizationName,omitempty"`

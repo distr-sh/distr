@@ -12,11 +12,16 @@ import {shortDigest} from '../../../util/digest';
 import {PageComponent} from '../../components/page.component';
 import {ArtifactPullFilters, ArtifactPullsService} from '../../services/artifact-pulls.service';
 import {ToastService} from '../../services/toast.service';
+import {ArtifactAnonymousPullBadgeComponent} from '../components';
+
+// The User filter holds a user account id, plus this value for the pulls that have no user because
+// they came without credentials.
+const ANONYMOUS_USER = 'anonymous';
 
 @Component({
   templateUrl: './artifact-pulls.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [DatePipe, ReactiveFormsModule, FaIconComponent, PageComponent],
+  imports: [DatePipe, ReactiveFormsModule, FaIconComponent, PageComponent, ArtifactAnonymousPullBadgeComponent],
 })
 export class ArtifactPullsComponent {
   private readonly pullsService = inject(ArtifactPullsService);
@@ -27,6 +32,7 @@ export class ArtifactPullsComponent {
 
   protected readonly faDownload = faDownload;
   protected readonly faFilterCircleXmark = faFilterCircleXmark;
+  protected readonly anonymousUser = ANONYMOUS_USER;
   protected readonly formatVersionName = shortDigest;
   protected readonly today = dayjs().format('YYYY-MM-DD');
   protected readonly hasMore = signal(true);
@@ -110,7 +116,12 @@ export class ArtifactPullsComponent {
         takeUntilDestroyed(),
         filter((value) => value !== null && value !== '')
       )
-      .subscribe(() => this.filterForm.controls.deploymentTargetId.setValue(''));
+      .subscribe((value) => {
+        this.filterForm.controls.deploymentTargetId.setValue('');
+        if (value === ANONYMOUS_USER) {
+          this.filterForm.controls.customerOrganizationId.setValue('');
+        }
+      });
     this.filterForm.controls.deploymentTargetId.valueChanges
       .pipe(
         takeUntilDestroyed(),
@@ -196,7 +207,9 @@ export class ArtifactPullsComponent {
     if (values.customerOrganizationId) {
       filters.customerOrganizationId = values.customerOrganizationId;
     }
-    if (values.userAccountId) {
+    if (values.userAccountId === ANONYMOUS_USER) {
+      filters.anonymous = true;
+    } else if (values.userAccountId) {
       filters.userAccountId = values.userAccountId;
     }
     if (values.remoteAddress) {

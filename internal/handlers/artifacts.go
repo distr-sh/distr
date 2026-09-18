@@ -62,6 +62,14 @@ func ArtifactsRouter(r chiopenapi.Router) {
 						api.PatchArtifactUpstreamRequest
 					}{})).
 					With(option.Response(http.StatusOK, api.ArtifactResponse{}))
+				r.With(middleware.RequireAdmin).
+					Patch("/public", patchArtifactPublicHandler).
+					With(option.Description("Make an artifact publicly pullable or private again")).
+					With(option.Request(struct {
+						ArtifactRequest
+						api.PatchArtifactPublicRequest
+					}{})).
+					With(option.Response(http.StatusOK, api.ArtifactResponse{}))
 				r.Post("/sync", syncArtifactHandler()).
 					With(option.Description("Trigger upstream sync for a pull-through artifact")).
 					With(option.Request(ArtifactRequest{})).
@@ -367,6 +375,33 @@ func patchArtifactUpstreamHandler(w http.ResponseWriter, r *http.Request) {
 	result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil)
 	if err != nil {
 		log.Error("failed to fetch artifact after upstream update", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	RespondJSON(w, mapping.ArtifactToAPI(*result))
+}
+
+func patchArtifactPublicHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+	artifact := internalctx.GetArtifact(ctx)
+
+	body, err := JsonBody[api.PatchArtifactPublicRequest](w, r)
+	if err != nil {
+		return
+	}
+
+	if err := db.UpdateArtifactPublic(ctx, artifact.ID, artifact.OrganizationID, body.Public); err != nil {
+		log.Error("failed to update artifact visibility", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil)
+	if err != nil {
+		log.Error("failed to fetch artifact after visibility update", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return

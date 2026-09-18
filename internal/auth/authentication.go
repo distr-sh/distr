@@ -45,13 +45,18 @@ var AgentAuthentication = authn.New(
 	),
 )
 
+// ArtifactsAuthenticateHeader is the challenge an unauthenticated registry request is answered with.
+// OCI clients send credentials only after they have seen it, so every response that refuses an
+// anonymous request has to carry it, not just the ones this package produces.
+var ArtifactsAuthenticateHeader = http.Header{"WWW-Authenticate": []string{`Basic realm="Distr"`}}
+
 // ArtifactsAuthentication supports Basic auth login for OCI clients, where the password should be a PAT.
 // The given PAT is verified against the database, to make sure that the user still exists.
 var ArtifactsAuthentication = authn.New(
 	authn.Chain(
 		token.NewExtractor(
 			token.WithExtractorFuncs(token.FromBasicAuth()),
-			token.WithErrorHeaders(http.Header{"WWW-Authenticate": []string{"Basic realm=\"Distr\""}}),
+			token.WithErrorHeaders(ArtifactsAuthenticateHeader),
 		),
 		authn.Alternative[string, authinfo.AuthInfoWithOrganization](
 			// Authenticate UserAccount with PAT
@@ -70,6 +75,16 @@ var ArtifactsAuthentication = authn.New(
 		),
 	),
 )
+
+// ArtifactsPrincipal returns the principal of a registry request, or false when the request carries
+// no credentials, which the registry allows so that public artifacts can be pulled anonymously.
+func ArtifactsPrincipal(ctx context.Context) (authinfo.AuthInfoWithOrganization, bool) {
+	if principal, err := ArtifactsAuthentication.Get(ctx); err != nil {
+		return nil, false
+	} else {
+		return principal, true
+	}
+}
 
 // SupportBundleAuthentication authenticates collect script requests using
 // a query-param token tied to a specific support bundle.

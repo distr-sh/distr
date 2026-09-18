@@ -60,6 +60,7 @@ var (
 	registryEnabled                        bool
 	registryS3Config                       S3Config
 	registryScratchDir                     *string
+	registryAnonymousRateLimits            AnonymousRateLimits
 	artifactTagsDefaultLimitPerOrg         int
 	registryUpstreamSyncCron               *string
 	registryUpstreamSyncTimeout            time.Duration
@@ -222,6 +223,20 @@ func Initialize() {
 			"REGISTRY_RESIGN_FOR_GCP", strconv.ParseBool, false,
 		)
 		registryScratchDir = envutil.GetEnvOrNil("REGISTRY_SCRATCH_DIR")
+		registryAnonymousRateLimits = AnonymousRateLimits{
+			ManifestsPerMinute: envutil.GetEnvParsedOrDefault(
+				"REGISTRY_ANONYMOUS_MANIFEST_RATE_LIMIT_PER_MINUTE", envparse.NonNegativeNumber, 10,
+			),
+			ManifestsPerHour: envutil.GetEnvParsedOrDefault(
+				"REGISTRY_ANONYMOUS_MANIFEST_RATE_LIMIT_PER_HOUR", envparse.NonNegativeNumber, 30,
+			),
+			BlobsPerMinute: envutil.GetEnvParsedOrDefault(
+				"REGISTRY_ANONYMOUS_BLOB_RATE_LIMIT_PER_MINUTE", envparse.NonNegativeNumber, 60,
+			),
+			BlobsPerHour: envutil.GetEnvParsedOrDefault(
+				"REGISTRY_ANONYMOUS_BLOB_RATE_LIMIT_PER_HOUR", envparse.NonNegativeNumber, 300,
+			),
+		}
 	}
 	artifactTagsDefaultLimitPerOrg = envutil.GetEnvParsedOrDefault(
 		"ARTIFACT_TAGS_DEFAULT_LIMIT_PER_ORG", envparse.NonNegativeNumber, 0,
@@ -420,6 +435,17 @@ func HostScheme() URLScheme {
 }
 
 func RegistryHost() string { return registryHost }
+
+// AnonymousRateLimits bounds what a single client IP may pull from public artifacts without
+// credentials. A zero disables the limit it stands for.
+type AnonymousRateLimits struct {
+	ManifestsPerMinute int
+	ManifestsPerHour   int
+	BlobsPerMinute     int
+	BlobsPerHour       int
+}
+
+func RegistryAnonymousRateLimits() AnonymousRateLimits { return registryAnonymousRateLimits }
 
 func GetMailerConfig() MailerConfig {
 	return mailerConfig

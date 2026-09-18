@@ -11,7 +11,9 @@ import {
   faEllipsisVertical,
   faExclamationTriangle,
   faFileSignature,
+  faGlobe,
   faKey,
+  faLock,
   faPen,
   faRotate,
   faTrash,
@@ -57,7 +59,12 @@ import {ImageUploadService} from '../../services/image-upload.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
-import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent, ArtifactsHashComponent} from '../components';
+import {
+  ArtifactPublicBadgeComponent,
+  ArtifactsDownloadCountComponent,
+  ArtifactsDownloadedByComponent,
+  ArtifactsHashComponent,
+} from '../components';
 
 @Component({
   selector: 'app-artifact-tags',
@@ -66,6 +73,7 @@ import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent, Artifac
     AsyncPipe,
     UuidComponent,
     RelativeDatePipe,
+    ArtifactPublicBadgeComponent,
     ArtifactsDownloadCountComponent,
     ArtifactsDownloadedByComponent,
     ArtifactsHashComponent,
@@ -104,6 +112,8 @@ export class ArtifactVersionsComponent {
   protected readonly faRotate = faRotate;
   protected readonly faPen = faPen;
   protected readonly faKey = faKey;
+  protected readonly faGlobe = faGlobe;
+  protected readonly faLock = faLock;
   protected readonly faCheck = faCheck;
   protected readonly faExclamationTriangle = faExclamationTriangle;
 
@@ -396,6 +406,38 @@ export class ArtifactVersionsComponent {
           return NEVER;
         }),
         tap(() => this.toast.success(`Tag "${tagName}" removed successfully`))
+      )
+      .subscribe();
+  }
+
+  public setPublic(artifact: ArtifactWithTags, isPublic: boolean): void {
+    this.overlay
+      .confirm(
+        isPublic
+          ? {
+              message: {
+                message: `This will let anyone pull ${artifact.name} without credentials. Are you sure?`,
+                alert: {
+                  type: 'warning',
+                  message: artifact.upstreamUrl
+                    ? 'Every version and tag becomes readable to anyone who knows the name, entitlements no longer apply, and a pull that misses the cache is fetched from the upstream registry with the credentials stored here.'
+                    : 'Every version and tag becomes readable to anyone who knows the name, and entitlements no longer apply.',
+                },
+              },
+            }
+          : `This will require credentials to pull ${artifact.name} again. Are you sure?`
+      )
+      .pipe(
+        filter((result) => result === true),
+        switchMap(() => this.artifacts.patchPublic(artifact.id, isPublic)),
+        catchError((e) => {
+          const msg = getFormDisplayedError(e);
+          if (msg) {
+            this.toast.error(msg);
+          }
+          return NEVER;
+        }),
+        tap(() => this.toast.success(isPublic ? 'Artifact is now public' : 'Artifact is now private'))
       )
       .subscribe();
   }
