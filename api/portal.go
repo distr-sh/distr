@@ -7,6 +7,7 @@ type PortalResponse struct {
 	PageTitle    *string           `json:"pageTitle,omitempty"`
 	FaviconUrl   *string           `json:"faviconUrl,omitempty"`
 	LogoUrl      *string           `json:"logoUrl,omitempty"`
+	SupportEmail *string           `json:"supportEmail,omitempty"`
 	LoginConfig  PortalLoginConfig `json:"loginConfig"`
 }
 

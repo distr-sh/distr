@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/mail"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -17,6 +18,15 @@ func PositiveDuration(value string) (time.Duration, error) {
 
 func ByteSlice(s string) ([]byte, error) {
 	return []byte(s), nil
+}
+
+// Host accepts a host with an optional port. A scheme is rejected because the URL scheme of such a
+// variable is taken from DISTR_HOST, and one given here would silently win over it.
+func Host(value string) (string, error) {
+	if value == "" || strings.Contains(value, "/") {
+		return "", errors.New("must be a host with an optional port, without scheme or path")
+	}
+	return value, nil
 }
 
 func MailAddress(s string) (mail.Address, error) {

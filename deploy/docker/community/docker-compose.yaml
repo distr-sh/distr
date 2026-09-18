@@ -72,7 +72,7 @@ services:
       start_period: 30s
 
   distr:
-    image: ghcr.io/distr-sh/distr-ce:4.0.2 # x-release-please-version
+    image: ghcr.io/distr-sh/distr-ce:4.0.3 # x-release-please-version
     depends_on:
       postgres:
         condition: service_healthy
@@ -105,7 +105,7 @@ services:
   # If you don't want to use the OCI registry (REGISTRY_ENABLED=false) or want to use an external S3 provider,
   # you don't need to run the storage service.
   storage:
-    image: 'rustfs/rustfs:1.0.0-rc.6'
+    image: 'rustfs/rustfs:1.0.0'
     volumes:
       - 'rustfs:/data/'
     environment:

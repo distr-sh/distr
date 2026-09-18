@@ -52,6 +52,20 @@ func (h portalHost) instanceAuthAllowed() bool {
 	return h.source != portalHostCustomDomain
 }
 
+// registrationAllowed reports whether a visitor may sign up on this host. A host that belongs to an
+// organization offers no sign-up at all, through either the form or an OIDC provider, since a new account
+// created there would land in an organization of its own rather than in the one the host belongs to.
+func (h portalHost) registrationAllowed() bool {
+	return !h.customDomain()
+}
+
+func (h portalHost) registrationMode() env.RegistrationMode {
+	if !h.registrationAllowed() {
+		return env.RegistrationDisabled
+	}
+	return env.Registration()
+}
+
 func (h portalHost) turnstileSiteKey() *string {
 	if h.customDomain() {
 		return nil
@@ -62,8 +76,8 @@ func (h portalHost) turnstileSiteKey() *string {
 func PublicPortalRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Portal"))
 	r.Get("/", getPortalHandler).
-		With(option.Description("Get the host-resolved portal branding (browser tab title, favicon and logo) " +
-			"and the login methods available on this host")).
+		With(option.Description("Get the host-resolved portal branding (browser tab title, favicon and logo), " +
+			"the instance support email and the login methods available on this host")).
 		With(option.Response(http.StatusOK, api.PortalResponse{}))
 }
 
@@ -86,6 +100,7 @@ func getPortalHandler(w http.ResponseWriter, r *http.Request) {
 	// Marking the host as a custom domain even without branding is what makes the client drop Distr's own
 	// branding when the organization has not configured any of its own.
 	response.CustomDomain = host.customDomain()
+	response.SupportEmail = env.SupportEmail()
 	response.LoginConfig = portalLoginConfig(ctx, host)
 
 	// Branding and login methods are resolved from the request Host, so shared caches/CDNs must key on it.
@@ -95,17 +110,18 @@ func getPortalHandler(w http.ResponseWriter, r *http.Request) {
 	RespondJSON(w, response)
 }
 
-// portalLoginConfig lists the login methods offered on the given host. Instance-scoped OIDC providers and
-// registration are suppressed on self-service custom domains, where only the organization's own providers apply.
+// portalLoginConfig lists the login methods offered on the given host. Instance-scoped OIDC providers are
+// suppressed on self-service custom domains, where only the organization's own providers apply, and
+// registration on every custom domain.
 func portalLoginConfig(ctx context.Context, host portalHost) api.PortalLoginConfig {
 	if !host.instanceAuthAllowed() {
 		return api.PortalLoginConfig{
-			Registration:  env.RegistrationDisabled,
+			Registration:  host.registrationMode(),
 			OIDCProviders: portalOIDCProviders(ctx, host),
 		}
 	}
 	return api.PortalLoginConfig{
-		Registration:         env.Registration(),
+		Registration:         host.registrationMode(),
 		TurnstileSiteKey:     host.turnstileSiteKey(),
 		OIDCGithubEnabled:    env.OIDCGithubEnabled(),
 		OIDCGoogleEnabled:    env.OIDCGoogleEnabled(),

@@ -105,8 +105,8 @@ type SupportBundle struct {
 	CreatedAt                time.Time  `json:"createdAt"`
 	CustomerOrganizationID   uuid.UUID  `json:"customerOrganizationId"`
 	CustomerOrganizationName string     `json:"customerOrganizationName"`
-	CreatedByUserAccountID   uuid.UUID  `json:"createdByUserAccountId"`
-	CreatedByUserName        string     `json:"createdByUserName"`
+	CreatedByUserAccountID   *uuid.UUID `json:"createdByUserAccountId,omitempty"`
+	CreatedByUserName        *string    `json:"createdByUserName,omitempty"`
 	CreatedByImageURL        *string    `json:"createdByImageUrl,omitempty"`
 	Title                    string     `json:"title"`
 	Description              *string    `json:"description,omitempty"`
@@ -158,12 +158,12 @@ type SupportBundleResourceSummary struct {
 // Comment
 
 type SupportBundleComment struct {
-	ID            uuid.UUID `json:"id"`
-	CreatedAt     time.Time `json:"createdAt"`
-	UserAccountID uuid.UUID `json:"userAccountId"`
-	UserName      string    `json:"userName"`
-	UserImageURL  *string   `json:"userImageUrl,omitempty"`
-	Content       string    `json:"content"`
+	ID            uuid.UUID  `json:"id"`
+	CreatedAt     time.Time  `json:"createdAt"`
+	UserAccountID *uuid.UUID `json:"userAccountId,omitempty"`
+	UserName      *string    `json:"userName,omitempty"`
+	UserImageURL  *string    `json:"userImageUrl,omitempty"`
+	Content       string     `json:"content"`
 }
 
 type CreateSupportBundleCommentRequest struct {

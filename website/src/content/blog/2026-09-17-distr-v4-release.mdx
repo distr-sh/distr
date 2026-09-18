@@ -1,0 +1,115 @@
+---
+title: 'Introducing Distr v4'
+description: 'Distr v4 drops the "Hub" name for the server, encrypts the sensitive columns of its database at rest and replaces the access token format with one that is not stored in plaintext.'
+publishDate: 2026-09-17
+lastUpdated: 2026-09-17
+slug: 'distr-v4-release'
+authors:
+  - name: 'Philip Miglinci'
+    role: 'Co-Founder'
+    image: '/src/assets/blog/authors/pmig.jpg'
+    linkedIn: https://www.linkedin.com/in/pmigat/
+    gitHub: https://github.com/pmig
+image: '/src/assets/blog/2026-09-17-distr-v4-release/thumb.webp'
+tags:
+  - Releases
+---
+
+import {Aside} from '@astrojs/starlight/components';
+import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
+
+I am Philip, co-founder of Distr, which helps software and AI companies distribute their applications to self-hosted environments.
+Our Open Source Software Distribution platform is available on GitHub ([`github.com/distr-sh/distr`](https://github.com/distr-sh/distr)).
+
+[Distr 4.0](https://github.com/distr-sh/distr/releases/tag/4.0.0) is out, two months and five minor releases after [v3](/blog/distr-v3-release/). The name change is the one people will notice first: what we used to call the Hub is now just Distr. Behind that, two pieces of security work landed that we had wanted to do for a long time. The sensitive columns of the database are encrypted at rest, and access tokens have a new format that is no longer stored in a form anyone can authenticate with.
+
+If you use Distr Cloud, none of this asks anything of you, except that your existing Personal Access Tokens are now marked as legacy and should be migrated. If you self-host, all three changes touch your configuration, so the upgrade notes at the end are the part to read.
+
+## Why the Hub is now just Distr
+
+The server has been "the Hub" since the first commit. The Go binary lived in `cmd/hub`, the Compose service was called `hub`, the Helm values key was `hub` and so was the container inside the pod.
+
+Nobody outside the team ever used the word the way we meant it. When you open Distr you are looking at the [Vendor Portal](/docs/vendor-portal/) or the [Customer Portal](/docs/platform/customer-portal/), and the same binary serves both of them, so "Hub" was usually read as "the frontend". That is a reasonable guess and a wrong one, and once a conversation started on it, every following sentence needed a clarification that had nothing to do with the actual question. It made our own docs read as if they described two products.
+
+So we removed the word. The pieces now have one name each and none of them overlap:
+
+- **Distr** is the server you run, in the cloud or in your own infrastructure.
+- **[Distr Agents](/docs/agents/)** run in customer environments and do the deploying.
+- **[Distr Registry](/docs/registry/)** serves the artifacts.
+- The **Vendor Portal** and the **Customer Portal** are the two UIs Distr serves.
+
+What that means in practice is mostly mechanical. The binary and its subcommands are `distr` now, so a maintenance job reads `distr maintenance encrypt-database` rather than starting with `hub`. The Compose service is `distr`, the Helm values key is `distr` and the container in the pod is called `distr` as well.
+
+This is the kind of change that is never urgent and gets more expensive every month you put it off, which is why we finally did it in a major release rather than waiting for a better moment.
+
+<TestimonialCTA name="lerian" />
+
+## Encrypting sensitive columns at rest
+
+Distr now encrypts the sensitive columns of its database with AES-256-GCM before it writes them. That covers the things you would not want in a database dump: [secret values](/docs/agents/secrets/) shared with customer deployments, deployment value and env files, SMTP credentials, [pull-through cache](/docs/registry/pull-through-cache/) credentials, OIDC client secrets, MFA secrets and support bundle contents.
+
+Encryption is transparent, so nothing in the API, the SDK or the UI behaves differently. For self-hosters it adds one required variable: `DATABASE_ENCRYPTION_KEY`, which Distr refuses to start without. Generate it with `openssl rand -base64 32`.
+
+The variable takes more than a single key. A comma-separated keyring like `1:<new key>,0:<old key>` lets you rotate without downtime, since every stored value records which key sealed it. It also accepts a ciphertext instead of the key itself, which Distr unwraps through AWS KMS or GCP Cloud KMS while it starts, so the key material never appears in your values file or in a Kubernetes Secret.
+
+[Security & Encryption](/docs/self-hosting/security/) covers all of it: what is encrypted, how to rotate and how to wrap a value with a key management service.
+
+<Aside type="danger" title="Back up the encryption key">
+  A database backup is unreadable without the key it was encrypted with. Keep
+  the key somewhere that cannot go down or get deleted together with the
+  database.
+</Aside>
+
+## A new access token format
+
+The old access token was 16 random bytes, and the database stored those bytes as they were. Read access to that one table was enough to authenticate as every token in it. We were not comfortable with that, and the fix was not something we could do without breaking the format.
+
+A token now has two parts, separated by an underscore: `distr-<key>_<secret>`. The key identifies the row and stays in plaintext, because that is what the lookup needs. The secret is 256 bits from the CSPRNG and only its SHA-256 digest is stored, so a dump no longer holds anything you can sign in with.
+
+Two smaller things came with the format. Every token ends in a six character checksum, which lets Distr reject one that was truncated or line wrapped on its way into a CI variable before it even looks in the database, and lets a secret scanner recognize one of ours in a repository. And an access token can hold two tokens at the same time, which turns rotation into a rollout: add the second token, deploy it, watch the "last used" timestamp of the old one stop moving, then delete it.
+
+Existing tokens keep working and are marked **Legacy** in the UI. One caveat if you have any: a legacy token that was issued without an expiry date was given one 90 days out when your instance upgraded, so it does eventually stop working. [Migrating a legacy token](/docs/integrations/personal-access-token/#migrating-a-legacy-token) is the same three steps as a rotation.
+
+## Looking back at the Distr 3.x series
+
+Distr follows [Conventional Commits](https://www.conventionalcommits.org/) and derives its version from them, so a feature bumps the minor version and only a breaking change makes a major one. The 3.x series ran for five minor releases, and the theme running through it was making a Distr instance look like it belongs to you rather than to us:
+
+- [3.1](https://github.com/distr-sh/distr/releases/tag/3.1.0): [custom domains](/docs/platform/branding/#custom-domains) for vendors, with DNS verification and certificates issued on demand
+- [3.2](https://github.com/distr-sh/distr/releases/tag/3.2.0): a [custom identity provider](/docs/platform/custom-identity-provider/) for single sign-on, your own SMTP server for [transactional mail](/docs/platform/branding/#custom-email), custom domains for the Customer Portal, [automatic agent updates](/docs/agents/#agent-updates) and per-resource [deployment metrics](/docs/agents/logs-and-metrics/)
+- [3.3](https://github.com/distr-sh/distr/releases/tag/3.3.0): custom domain verification that stores its result and falls back to the default domain when it fails, plus the subscription type in the [license key](/docs/platform/license-keys/) payload
+- [3.4](https://github.com/distr-sh/distr/releases/tag/3.4.0): vendor-defined collection scripts in [support bundles](/docs/platform/support-bundles/), so you decide what a customer's diagnostics contain
+- [3.5](https://github.com/distr-sh/distr/releases/tag/3.5.0): [Vulnerability Management](/docs/platform/vulnerability-management/), which tracks a security issue from triage to a published advisory and tells you which customers deployed an affected version
+
+Two more things landed in 4.0 next to the three changes above. Config secrets other than the encryption key can be wrapped with a key management service as well, and the [Docker Agent](/docs/agents/docker-agent/) now reports how much disk its container images and logs occupy, which is the number that actually fills up a customer's VM.
+
+<TestimonialCTA name="sophris" />
+
+## Upgrading to Distr v4
+
+The upgrade touches your configuration in a few places, and the encryption key is the one Distr will not start without.
+
+**Generate an encryption key.** `DATABASE_ENCRYPTION_KEY` has no default, so set it before the upgrade and back it up separately from the database. Rows written before the upgrade stay in plaintext until you move them over, either with a single run of `distr maintenance encrypt-database` in a Distr container or, on a single instance deployment, with `DATABASE_ENCRYPTION_MIGRATE_ON_BOOT=true`. Both are safe to do while Distr is serving traffic and both can be interrupted and resumed. Until it has finished, Distr logs a warning on every start naming the columns that are left, so you cannot forget about it. With more than one replica, wait for the upgrade to roll out completely first, see [Database Encryption](/docs/self-hosting/maintenance/#database-encryption).
+
+**Rename the Helm values key.** The top-level `hub` key is now `distr`, so `hub.env`, `hub.envFrom` and `hub.scratch` become `distr.env`, `distr.envFrom` and `distr.scratch`. Since 4.0.1 the chart still reads a value under `hub` as long as the matching one under `distr` is untouched, and warns about it on every install, so an upgrade does not fail on a values file you have not migrated yet. Do migrate it anyway. The pods are also relabelled from `app.kubernetes.io/component: hub` to `distr` and the container is renamed, and because the Service selects on that label it has no endpoints until the first new pod is ready. Expect a brief interruption, and update anything outside the chart that addresses the old names, such as `kubectl logs -c hub` or a dashboard query. Details are in the [Kubernetes self-hosting docs](/docs/self-hosting/kubernetes/).
+
+**Use `--remove-orphans` on Compose.** The service is called `distr` instead of `hub`, and a plain `docker compose up -d` leaves the old `hub` container running and holding on to its published ports. `docker compose up -d --remove-orphans` is what you want here and from now on. See the [Docker self-hosting docs](/docs/self-hosting/docker/).
+
+One more thing to be aware of if you skipped the v3 upgrade notes: the PostgreSQL log record tables that v3 replaced with [Loki](/docs/self-hosting/configuration/#log-processing-loki) are dropped in 4.0. A rollback to v2 no longer brings back the log history it left behind.
+
+&nbsp;
+
+<Aside type="tip">
+  The full list of environment variables, including everything the encryption
+  key and the key management services add, is in the [configuration
+  reference](/docs/self-hosting/configuration/).
+</Aside>
+
+## Join the conversation
+
+Thank you to everyone who filed an issue, opened a pull request or told us that "Hub" made no sense. The last one took us embarrassingly long to act on.
+
+We would love to hear how the upgrade goes, especially if you self-host and something in it surprised you.
+
+- [Join the discussion](https://github.com/distr-sh/distr/discussions)
+- [Book a demo call](https://cal.glasskube.com/team/gk/demo?duration=30)
+- [Star us on GitHub](https://github.com/distr-sh/distr)

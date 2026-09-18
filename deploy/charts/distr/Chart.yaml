@@ -15,8 +15,8 @@ icon: >-
   https://github.com/distr-sh/distr/raw/refs/heads/main/frontend/ui/public/distr-logo.svg
 home: https://distr.sh/docs/
 type: application
-version: 4.0.2
-appVersion: 4.0.2
+version: 4.0.3
+appVersion: 4.0.3
 dependencies:
   - name: postgresql
     repository: oci://registry-1.docker.io/bitnamicharts
@@ -28,5 +28,5 @@ dependencies:
     condition: rustfs.enabled
   - name: loki
     repository: oci://ghcr.io/grafana-community/helm-charts
-    version: 18.13.2
+    version: 18.13.3
     condition: loki.enabled

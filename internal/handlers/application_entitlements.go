@@ -89,7 +89,10 @@ func createApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	sanitizeRegistryInput(entitlement)
+	if err := checkRegistryInput(&entitlement); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	_ = db.RunTx(ctx, func(ctx context.Context) error {
 		err := db.CreateApplicationEntitlement(ctx, &entitlement.ApplicationEntitlementBase)
@@ -156,7 +159,10 @@ func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Changing the application is not allowed", http.StatusBadRequest)
 		return
 	}
-	sanitizeRegistryInput(entitlement)
+	if err := checkRegistryInput(&entitlement); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	_ = db.RunTx(ctx, func(ctx context.Context) error {
 		err := db.UpdateApplicationEntitlement(ctx, &entitlement.ApplicationEntitlementBase)
@@ -249,12 +255,25 @@ func formatVersionConflictError(conflicts []types.DeploymentVersionUsage) string
 	)
 }
 
-func sanitizeRegistryInput(entitlement types.ApplicationEntitlementWithVersions) {
-	if entitlement.RegistryURL == nil || (*entitlement.RegistryURL) == "" {
+// checkRegistryInput enforces that either all or none of the registry fields are set.
+func checkRegistryInput(entitlement *types.ApplicationEntitlementWithVersions) error {
+	if entitlement.RegistryURL != nil && *entitlement.RegistryURL == "" {
 		entitlement.RegistryURL = nil
+	}
+	if entitlement.RegistryUsername != nil && *entitlement.RegistryUsername == "" {
 		entitlement.RegistryUsername = nil
+	}
+	if entitlement.RegistryPassword != nil && *entitlement.RegistryPassword == "" {
 		entitlement.RegistryPassword = nil
 	}
+	if entitlement.RegistryURL == nil {
+		if entitlement.RegistryUsername != nil || entitlement.RegistryPassword != nil {
+			return errors.New("registry URL is required when registry credentials are given")
+		}
+	} else if entitlement.RegistryUsername == nil || entitlement.RegistryPassword == nil {
+		return errors.New("registry username and password are required when a registry URL is given")
+	}
+	return nil
 }
 
 func getApplicationEntitlements(w http.ResponseWriter, r *http.Request) {

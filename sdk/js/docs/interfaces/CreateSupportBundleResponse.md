@@ -48,9 +48,9 @@
 
 ---
 
-### createdByUserAccountId
+### createdByUserAccountId?
 
-> **createdByUserAccountId**: `string`
+> `optional` **createdByUserAccountId?**: `string`
 
 #### Inherited from
 
@@ -58,9 +58,9 @@
 
 ---
 
-### createdByUserName
+### createdByUserName?
 
-> **createdByUserName**: `string`
+> `optional` **createdByUserName?**: `string`
 
 #### Inherited from
 

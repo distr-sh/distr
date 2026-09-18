@@ -29,6 +29,7 @@ var (
 	databaseEncryptionMigrateOnBoot        bool
 	jwtSecret                              []byte
 	host                                   string
+	agentHost                              *string
 	registryHost                           string
 	mailerConfig                           MailerConfig
 	inviteTokenValidDuration               time.Duration
@@ -56,6 +57,7 @@ var (
 	registration                           RegistrationMode
 	turnstileSiteKey                       *string
 	turnstileSecret                        *string
+	supportEmail                           *string
 	registryEnabled                        bool
 	registryS3Config                       S3Config
 	registryScratchDir                     *string
@@ -74,6 +76,12 @@ var (
 	cleanupOrganizationCron                *string
 	cleanupOrganizationTimeout             time.Duration
 	cleanupOrganizationMinAge              time.Duration
+	cleanupUserAccountCron                 *string
+	cleanupUserAccountTimeout              time.Duration
+	cleanupUserAccountMinAge               time.Duration
+	cleanupFileCron                        *string
+	cleanupFileTimeout                     time.Duration
+	cleanupFileMinAge                      time.Duration
 	deploymentStatusNotificationCron       *string
 	deploymentStatusNotificationTimeout    time.Duration
 	notificationEmailHourlyQuota           int
@@ -154,6 +162,7 @@ func Initialize() {
 	jwtSecret = util.Require(envutil.ParseValue("JWT_SECRET",
 		requireEnvResolved(ctx, resolver, "JWT_SECRET"), base64.StdEncoding.DecodeString))
 	host = envutil.RequireEnv("DISTR_HOST")
+	agentHost = envutil.GetEnvParsedOrNil("AGENT_HOST", envparse.Host)
 	agentInterval = envutil.GetEnvParsedOrDefault("AGENT_INTERVAL", envparse.PositiveDuration, 5*time.Second)
 	statusEntriesMaxAge = envutil.GetEnvParsedOrNil("STATUS_ENTRIES_MAX_AGE", envparse.PositiveDuration)
 	metricsEntriesMaxAge = envutil.GetEnvParsedOrNil("METRICS_ENTRIES_MAX_AGE", envparse.PositiveDuration)
@@ -172,6 +181,9 @@ func Initialize() {
 	} else if siteKey != "" || secret != "" {
 		fmt.Fprintln(os.Stderr,
 			"WARNING: TURNSTILE_SITE_KEY and TURNSTILE_SECRET must both be set, Turnstile has been disabled")
+	}
+	if email := envutil.GetEnv("SUPPORT_EMAIL"); email != "" {
+		supportEmail = &email
 	}
 	inviteTokenValidDuration = envutil.GetEnvParsedOrDefault(
 		"INVITE_TOKEN_VALID_DURATION", envparse.PositiveDuration, 24*time.Hour,
@@ -271,6 +283,16 @@ func Initialize() {
 		envparse.PositiveDuration, 0)
 	cleanupOrganizationMinAge = envutil.GetEnvParsedOrDefault("CLEANUP_ORGANIZATION_MIN_AGE",
 		envparse.PositiveDuration, 30*24*time.Hour)
+	cleanupUserAccountCron = envutil.GetEnvOrNil("CLEANUP_USER_ACCOUNT_CRON")
+	cleanupUserAccountTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_USER_ACCOUNT_TIMEOUT",
+		envparse.PositiveDuration, 0)
+	cleanupUserAccountMinAge = envutil.GetEnvParsedOrDefault("CLEANUP_USER_ACCOUNT_MIN_AGE",
+		envparse.PositiveDuration, 30*24*time.Hour)
+	cleanupFileCron = envutil.GetEnvOrNil("CLEANUP_FILE_CRON")
+	cleanupFileTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_FILE_TIMEOUT",
+		envparse.PositiveDuration, 0)
+	cleanupFileMinAge = envutil.GetEnvParsedOrDefault("CLEANUP_FILE_MIN_AGE",
+		envparse.PositiveDuration, 24*time.Hour)
 	deploymentStatusNotificationCron = envutil.GetEnvOrNil("DEPLOYMENT_STATUS_NOTIFICATION_CRON")
 	deploymentStatusNotificationTimeout = envutil.GetEnvParsedOrDefault("DEPLOYMENT_STATUS_NOTIFICATION_TIMEOUT",
 		envparse.PositiveDuration, 0)
@@ -415,6 +437,8 @@ func HostScheme() URLScheme {
 	return SchemeHTTPS
 }
 
+func AgentHost() *string { return agentHost }
+
 func RegistryHost() string { return registryHost }
 
 func GetMailerConfig() MailerConfig {
@@ -503,6 +527,10 @@ func TurnstileSiteKey() *string {
 
 func TurnstileSecret() *string {
 	return turnstileSecret
+}
+
+func SupportEmail() *string {
+	return supportEmail
 }
 
 func RegistryEnabled() bool {
@@ -605,6 +633,30 @@ func CleanupOrganizationTimeout() time.Duration {
 
 func CleanupOrganizationMinAge() time.Duration {
 	return cleanupOrganizationMinAge
+}
+
+func CleanupUserAccountCron() *string {
+	return cleanupUserAccountCron
+}
+
+func CleanupUserAccountTimeout() time.Duration {
+	return cleanupUserAccountTimeout
+}
+
+func CleanupUserAccountMinAge() time.Duration {
+	return cleanupUserAccountMinAge
+}
+
+func CleanupFileCron() *string {
+	return cleanupFileCron
+}
+
+func CleanupFileTimeout() time.Duration {
+	return cleanupFileTimeout
+}
+
+func CleanupFileMinAge() time.Duration {
+	return cleanupFileMinAge
 }
 
 func OIDCGithubEnabled() bool {

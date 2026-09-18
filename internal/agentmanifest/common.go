@@ -49,7 +49,7 @@ func getTemplateData(
 		agentLogsEndpoint         string
 	)
 
-	if u, err := url.Parse(customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding)); err != nil {
+	if u, err := url.Parse(customdomains.AgentDomainOrDefault(ctx, org.ID, org.Branding)); err != nil {
 		return nil, err
 	} else {
 		u = u.JoinPath("api/v1/agent")

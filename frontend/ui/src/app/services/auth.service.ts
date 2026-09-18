@@ -131,22 +131,36 @@ export class AuthService {
     this.actionToken = null;
   }
 
-  public acceptInvite(name: string | undefined, password: string): Observable<void> {
-    return this.httpClient.post<TokenResponse>(`${authBaseUrl}/invite/accept`, {name, password}).pipe(
-      tap((r) => this.loginWithToken(r.token)),
-      map(() => undefined)
-    );
+  public acceptInvite(
+    name: string | undefined,
+    password: string,
+    mfaCode?: string
+  ): Observable<{requiresMfa: boolean}> {
+    return this.httpClient
+      .post<LoginResponse>(`${authBaseUrl}/invite/accept`, {name, password, mfaCode})
+      .pipe(map((r) => this.loginAfterPasswordSet(r)));
   }
 
   public resetPassword(email: string): Observable<void> {
     return this.httpClient.post<void>(`${authBaseUrl}/reset`, {email});
   }
 
-  public confirmPasswordReset(password: string): Observable<void> {
-    return this.httpClient.post<TokenResponse>(`${authBaseUrl}/reset/confirm`, {password}).pipe(
-      tap((r) => this.loginWithToken(r.token)),
-      map(() => undefined)
-    );
+  public confirmPasswordReset(password: string, mfaCode?: string): Observable<{requiresMfa: boolean}> {
+    return this.httpClient
+      .post<LoginResponse>(`${authBaseUrl}/reset/confirm`, {password, mfaCode})
+      .pipe(map((r) => this.loginAfterPasswordSet(r)));
+  }
+
+  /**
+   * Logs the user in with the token of an invite-accept or reset-confirm response, unless the account has MFA
+   * enabled, in which case the password was not set and the request has to be repeated with a code.
+   */
+  private loginAfterPasswordSet(response: LoginResponse): {requiresMfa: boolean} {
+    if (response.requiresMfa) {
+      return {requiresMfa: true};
+    }
+    this.loginWithToken(response.token);
+    return {requiresMfa: false};
   }
 
   public register(

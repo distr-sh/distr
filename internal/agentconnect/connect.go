@@ -18,7 +18,7 @@ func buildURL(
 	targetSecret string,
 	preConnect bool,
 ) (string, error) {
-	u, err := url.Parse(customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding))
+	u, err := url.Parse(customdomains.AgentDomainOrDefault(ctx, org.ID, org.Branding))
 	if err != nil {
 		return "", err
 	}

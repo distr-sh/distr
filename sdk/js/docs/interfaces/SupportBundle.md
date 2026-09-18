@@ -31,15 +31,15 @@
 
 ---
 
-### createdByUserAccountId
+### createdByUserAccountId?
 
-> **createdByUserAccountId**: `string`
+> `optional` **createdByUserAccountId?**: `string`
 
 ---
 
-### createdByUserName
+### createdByUserName?
 
-> **createdByUserName**: `string`
+> `optional` **createdByUserName?**: `string`
 
 ---
 

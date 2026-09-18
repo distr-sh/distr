@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
@@ -187,6 +188,26 @@ func DeleteUserAccountWithID(ctx context.Context, id uuid.UUID) error {
 	}
 
 	return nil
+}
+
+// DeleteUserAccountsOlderThan exempts super admins, which belong to no organization by design and
+// would otherwise all be deleted.
+func DeleteUserAccountsOlderThan(ctx context.Context, minAge time.Duration) (int64, error) {
+	db := internalctx.GetDb(ctx)
+	cmd, err := db.Exec(
+		ctx,
+		`DELETE FROM UserAccount AS u
+		WHERE NOT u.is_super_admin
+			AND now() - coalesce(u.last_logged_in_at, u.created_at) > @minAge
+			AND NOT EXISTS (
+				SELECT 1 FROM Organization_UserAccount j WHERE j.user_account_id = u.id
+			)`,
+		pgx.NamedArgs{"minAge": minAge},
+	)
+	if err != nil {
+		return 0, fmt.Errorf("could not delete user accounts: %w", err)
+	}
+	return cmd.RowsAffected(), nil
 }
 
 func DeleteUserAccountFromOrganization(ctx context.Context, userID, orgID uuid.UUID) error {
