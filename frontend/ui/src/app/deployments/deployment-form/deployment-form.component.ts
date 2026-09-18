@@ -471,6 +471,7 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
       .pipe(takeUntil(this.destroyed$))
       .subscribe(([versions, latest, automaticUpdates]) => {
         if (versions.length === 0) {
+          this.deployForm.controls.applicationVersionId.setValue('');
           this.deployForm.controls.applicationVersionId.disable();
           return;
         }
