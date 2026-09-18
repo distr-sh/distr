@@ -19,7 +19,7 @@
 
 Ship self-hosted software
 
-Distr gives your customers a SaaS-like path to install, update, and support software in their own cloud, VPC, or air-gapped environment, so your team can ship self-hosted offerings without operating overhead.
+Distr is the open-source platform to ship self-hosted software. Start simple, scale as you go. Onboard to Distr and setup Docker Compose POCs up in minutes, Helm and air-gapped when the deal needs it. All the tools you need to succeed with offering self-hosted.
 
 **Homepage:** <https://distr.sh/docs/>
 
@@ -47,7 +47,7 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | Repository                                  | Name       | Version |
 | ------------------------------------------- | ---------- | ------- |
 | https://charts.rustfs.com                   | rustfs     | 1.0.0   |
-| oci://ghcr.io/grafana-community/helm-charts | loki       | 18.13.2 |
+| oci://ghcr.io/grafana-community/helm-charts | loki       | 18.13.3 |
 | oci://registry-1.docker.io/bitnamicharts    | postgresql | 18.11.3 |
 
 ## Values
