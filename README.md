@@ -1,23 +1,26 @@
 <br>
 <div align="center">
   <a href="https://distr.sh?utm_source=github">
-    <img src="https://distr.sh/_astro/distr.BLLQO2pM.svg" alt="Distr Logo" height="160">
+    <img src="https://github.com/distr-sh/distr/raw/refs/heads/main/frontend/ui/public/distr-logo.svg" alt="Distr Logo" height="160">
   </a>
 <h1 align="center">Distr</h1>
 <br>
 <h2>Software Distribution Platform</h2>
 
-Distr enables software and AI companies to distribute applications to self-managed customers with minimal setup.
+Distr is the open-source platform to ship self-hosted software. Start simple, scale as you go. Onboard to Distr and setup Docker Compose POCs in minutes, Helm and air-gapped when the deal needs it. All the tools you need to succeed with offering self-hosted.
 
 ### **[Website](https://distr.sh/?utm_source=github)** • **[Quickstart](https://distr.sh/docs/quickstart/?utm_source=github)** • **[Documentation](https://distr.sh/docs/?utm_source=github)** • **[Blog](https://distr.sh/blog/)** • **[Community](https://github.com/distr-sh/distr/discussions)**
 
 <hr>
 
-[![GitHub Repo stars](https://img.shields.io/github/stars/glasskube/distr?style=flat)](https://github.com/distr-sh/distr)
+[![GitHub Repo stars](https://img.shields.io/github/stars/distr-sh/distr?style=flat)](https://github.com/distr-sh/distr)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/distr)](https://artifacthub.io/packages/helm/distr/distr)
 
-![Deployment Overview](https://github.com/glasskube/glasskube.dev/blob/main/static/img/screenshots/distr/distr-dashboard-dark.webp)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/distr-sh/distr/raw/refs/heads/main/.github/assets/readme-deployments-dark.webp">
+  <img alt="Distr deployment overview: status dashboard with logs across customer environments" src="https://github.com/distr-sh/distr/raw/refs/heads/main/.github/assets/readme-deployments-light.webp">
+</picture>
 
 <hr>
 
@@ -25,23 +28,26 @@ Distr enables software and AI companies to distribute applications to self-manag
 
 ## Main features
 
-- **Centralized Management:** View & manage all deployments, artifacts, connected agents, self-managed & BYOC customers via the intuitive web UI
-- **Deployment Automation:** Optional prebuilt Helm and Docker agents manage deployments, collect logs and metrics, and allow remote troubleshooting.
-- **White-label customer portal:** Let your customers control their deployments or download your artifacts
-- **License Management:** Distribute specific versions of your application to specific customers
-- **Container registry:** Distribute OCI-compatible artifacts (Docker images, Helm charts, Terraform modules) with built-in granular access control and analytics.
-- Access the API using our [**rich SDK**](#distr-sdk)
-- Fully Open Source and [self-hostable](#self-hosting)
+- **Deployment agents:** Prebuilt Docker Compose, Docker Swarm, and Helm agents install and update your application in customer environments and report status, logs, and metrics back.
+- **OCI registry:** Distribute Docker images, Helm charts, Zarf packages, and any OCI artifact, with per-customer tag access control, pull-through caching, and download analytics.
+- **Licensing:** Application and artifact entitlements per customer, plus signed JWT license keys your application verifies offline with no call back to Distr.
+- **Remote diagnostics:** Container logs, live metrics, deployment status history, alerts, and customer-initiated support bundles, without access to their infrastructure.
+- **Customer portal:** White-labeled install instructions, artifact downloads, credentials, and version control per customer organization.
+- **Air-gapped:** Build a Zarf package in CI, publish it to Distr, transfer it across the gap, deploy offline.
+- **Self-hostable:** Apache-2.0. One Go binary plus Postgres, object storage, and Loki. Paid plans run self-hosted too.
+- Automate everything through the [REST API](#distr-api) and the [SDK](#distr-sdk).
+
+Community Edition is free and Apache-2.0. Paid plans start at $80/month on Distr Cloud, or fully self-hosted with a license key. See https://distr.sh/pricing/.
 
 Check out the hosted version at https://distr.sh/get-started/.
 
-## About
+## Why Distr
 
-Distr is an Open Source software distribution platform that provides a ready-to-use setup with prebuilt components to help software and AI companies distribute applications to customers in complex, self-managed environments.
+Shipping into customer-controlled environments starts with a Helm chart or a Compose file. It ends with license keys, per-customer artifact entitlements, version tracking across every install, update orchestration, and a way to debug a deployment you cannot SSH into. Distr is that layer, running today in GovCloud and defense, regulated banking, health tech, manufacturing, enterprise AI, and developer tools.
 
 **Use cases include:**
 
-- On-premises, VPC and self-managed software deployments
+- On-premises, VPC and self-hosted software deployments
 - Bring Your Own Cloud (BYOC) automation
 - Edge & Fleet management
 
