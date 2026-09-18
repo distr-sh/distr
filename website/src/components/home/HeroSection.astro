@@ -41,7 +41,8 @@ const cycleSeconds = industries.length * secondsPerIndustry;
               <span
                 aria-hidden="true"
                 style={`animation-delay: ${i * secondsPerIndustry}s`}>
-                {industry}.
+                {industry}
+                <span class="industry-stop">.</span>
               </span>
             ))
           }</span
@@ -128,6 +129,12 @@ const cycleSeconds = industries.length * secondsPerIndustry;
 
     .industry-rotator > span:not(:last-child)::after {
       content: ', ';
+    }
+
+    /* The full stop rides inside each option so the fixed-width slot cannot
+       orphan it while rotating. Inline, only the final one belongs. */
+    .industry-rotator > span:not(:last-child) .industry-stop {
+      display: none;
     }
   }
 </style>
