@@ -417,9 +417,6 @@ func HostScheme() URLScheme {
 	return SchemeHTTPS
 }
 
-// AgentHost is the host agents and connect commands reach this instance at, for an installation
-// whose app host is not publicly available. Build a URL on it through
-// customdomains.AgentDomainOrDefault, which keeps the fallback to the app host in one place.
 func AgentHost() *string { return agentHost }
 
 func RegistryHost() string { return registryHost }
