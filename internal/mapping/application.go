@@ -24,6 +24,8 @@ func CreateApplicationToInternal(request api.CreateApplicationRequest) types.App
 func UpdateApplicationToInternal(request api.UpdateApplicationRequest, existing types.Application) types.Application {
 	existing.Name = request.Name
 	existing.VersioningStrategy = request.VersioningStrategy
-	existing.AllowAutomaticUpdates = request.AllowAutomaticUpdates
+	if request.AllowAutomaticUpdates != nil {
+		existing.AllowAutomaticUpdates = *request.AllowAutomaticUpdates
+	}
 	return existing
 }

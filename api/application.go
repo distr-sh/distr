@@ -22,9 +22,11 @@ type CreateApplicationRequest struct {
 }
 
 type UpdateApplicationRequest struct {
-	Name                  string                   `json:"name"`
-	VersioningStrategy    types.VersioningStrategy `json:"versioningStrategy,omitempty"`
-	AllowAutomaticUpdates bool                     `json:"allowAutomaticUpdates,omitempty"`
+	Name               string                   `json:"name"`
+	VersioningStrategy types.VersioningStrategy `json:"versioningStrategy,omitempty"`
+	// AllowAutomaticUpdates leaves the application's setting alone when it is absent, so that a
+	// client written before the field existed cannot turn automatic updates off.
+	AllowAutomaticUpdates *bool `json:"allowAutomaticUpdates,omitempty"`
 }
 
 type PatchApplicationRequest struct {
