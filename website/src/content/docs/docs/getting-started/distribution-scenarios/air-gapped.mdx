@@ -8,6 +8,9 @@ sidebar:
 ---
 
 import {Steps} from '@astrojs/starlight/components';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import airGappedLight from '~/assets/docs/getting-started/distribution-scenarios/air-gapped/air-gapped-light.png';
+import airGappedDark from '~/assets/docs/getting-started/distribution-scenarios/air-gapped/air-gapped-dark.png';
 
 [Air-gapped](/glossary/air-gapped-meaning/) deployments sit at the far end of the [self-hosted spectrum](/blog/self-hosted-spectrum/): the product runs in the customer's environment with **no vendor access** and no live path to your SaaS control plane.
 
@@ -17,6 +20,15 @@ Two problems to solve:
 2. **Move that package across the gap** (USB, exchange/staging server, or another customer-approved transfer), then deploy inside the isolated network.
 
 A Compose file or Helm chart alone is not enough. Images have to travel with the recipe, or be pullable from a place the customer is allowed to reach.
+
+## Solution Architecture
+
+<ThemedImage
+  lightSrc={airGappedLight}
+  darkSrc={airGappedDark}
+  alt="Air-gapped deployment architecture diagram"
+  dropShadow={false}
+/>
 
 ## True air-gapped deployments: Kubernetes with Zarf (recommended)
 
