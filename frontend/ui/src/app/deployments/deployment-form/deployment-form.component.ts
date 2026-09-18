@@ -79,7 +79,8 @@ export function mapToDeploymentRequest(value: DeploymentFormValue, deploymentTar
     envFileData: value.envFileData ? toBase64(value.envFileData) : undefined,
     forceRestart: value.forceRestart ?? false,
     ignoreRevisionSkew: value.ignoreRevisionSkew ?? false,
-    automaticApplicationUpdatesEnabled: value.automaticApplicationUpdatesEnabled ?? false,
+    // Absent while the control is disabled, which leaves the deployment's setting as it is.
+    automaticApplicationUpdatesEnabled: value.automaticApplicationUpdatesEnabled,
     helmOptions: value.helmOptions as HelmOptions | undefined,
   };
 }
