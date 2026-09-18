@@ -57,8 +57,6 @@ distr:
   env: &defaultDistrEnv
     - name: DISTR_HOST
       value: http://distr.local
-    # Host agents and connect commands reach Distr at, for an installation whose DISTR_HOST is not
-    # publicly available. Defaults to DISTR_HOST.
     # - name: AGENT_HOST
     #   value: agent.distr.local
     - name: REGISTRY_ENABLED

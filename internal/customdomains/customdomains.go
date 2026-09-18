@@ -85,9 +85,8 @@ func customerDomains(ctx context.Context, orgID uuid.UUID, customerOrgID *uuid.U
 	return customDomains(ctx, orgID, customerOrgID)
 }
 
-// AgentDomainOrDefault resolves the host every URL an agent or a connect command talks to is built
-// on. AGENT_HOST takes precedence over the organization's own domains, since it is set for an
-// instance whose app host is not reachable from a customer environment at all.
+// AGENT_HOST takes precedence over the organization's own domains, since it is set for an instance
+// whose app host is not reachable from a customer environment at all.
 func AgentDomainOrDefault(ctx context.Context, orgID uuid.UUID, b *types.OrganizationBranding) string {
 	if host := env.AgentHost(); host != nil {
 		return withScheme(*host)
