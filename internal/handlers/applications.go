@@ -219,16 +219,33 @@ func updateApplication(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := db.UpdateApplication(ctx, &application, *auth.CurrentOrgID()); err != nil {
-		log.Warn("could not update application", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := db.RunTx(ctx, func(ctx context.Context) error {
+		if err := db.UpdateApplication(ctx, &application, *auth.CurrentOrgID()); err != nil {
+			log.Warn("could not update application", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return err
+		}
+		// TODO ?
+		// there surely is some way to have the update command returning the versions too, but I don't think it's worth
+		// the work right now
+		application.Versions = existing.Versions
+
+		if err := triggerAutomaticApplicationUpdates(
+			ctx, auth.CurrentOrg(), &application, new(auth.CurrentUserID()),
+		); err != nil {
+			return automaticUpdateError(ctx, w, err)
+		}
+		return nil
+	}); err != nil {
+		if errors.Is(err, pgx.ErrTxCommitRollback) {
+			log.Warn("could not commit db transaction", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
-	// TODO ?
-	// there surely is some way to have the update command returning the versions too, but I don't think it's worth
-	// the work right now
-	application.Versions = existing.Versions
+
 	RespondJSON(w, mapping.ApplicationToAPI(application))
 }
 
