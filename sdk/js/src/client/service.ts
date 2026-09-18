@@ -425,13 +425,23 @@ export class DistrService {
   }
 
   /**
-   * The application's own versioning strategy wins over the one this service was constructed
-   * with, which remains the fallback for an application that has none or has the legacy one.
+   * The application's own versioning strategy wins over the one this service was constructed with,
+   * which remains the fallback for an application that has none. The legacy strategy orders by
+   * SemVer while every name parses and by creation date as soon as one does not, which is how the
+   * versions of an application that predates the strategy were always ordered.
    */
   private strategyFor(app: Application): LatestVersionStrategy {
-    return app.versioningStrategy === 'semver' || app.versioningStrategy === 'chronological'
-      ? app.versioningStrategy
-      : this.latestVersionStrategy;
+    switch (app.versioningStrategy) {
+      case 'semver':
+      case 'chronological':
+        return app.versioningStrategy;
+      case 'legacy':
+        return (app.versions ?? []).every((it) => semver.valid(it.name, {loose: true}) !== null)
+          ? 'semver'
+          : 'chronological';
+      default:
+        return this.latestVersionStrategy;
+    }
   }
 
   /**
