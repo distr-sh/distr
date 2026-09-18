@@ -19,7 +19,7 @@
 
 Ship self-hosted software
 
-Distr is the open-source platform to ship self-hosted software. Start simple, scale as you go. Onboard to Distr and setup Docker Compose POCs up in minutes, Helm and air-gapped when the deal needs it. All the tools you need to succeed with offering self-hosted.
+Distr is the open-source platform to ship self-hosted software. Start simple, scale as you go. Onboard to Distr and setup Docker Compose POCs in minutes, Helm and air-gapped when the deal needs it. All the tools you need to succeed with offering self-hosted.
 
 **Homepage:** <https://distr.sh/docs/>
 
