@@ -196,7 +196,6 @@ func patchDeploymentHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
-		authInfo := auth.Authentication.Require(ctx)
 		deployment := internalctx.GetDeployment(ctx)
 		patch, err := JsonBody[api.PatchDeploymentRequest](w, r)
 		if err != nil {
@@ -208,64 +207,89 @@ func patchDeploymentHandler() http.HandlerFunc {
 		}
 		enabled := *patch.AutomaticApplicationUpdatesEnabled
 
-		_ = db.RunTx(ctx, func(ctx context.Context) error {
-			target, err := db.GetDeploymentTargetForDeploymentID(ctx, deployment.ID)
-			if err != nil {
-				log.Warn("could not get DeploymentTarget", zap.Error(err))
+		// Only an error returned from the transaction function has written a response of its own,
+		// so beginning or committing the transaction has failed when there is none.
+		var patchErr error
+		if err := db.RunTx(ctx, func(ctx context.Context) error {
+			patchErr = setDeploymentAutomaticUpdates(ctx, w, r, deployment, enabled)
+			return patchErr
+		}); err != nil {
+			if patchErr == nil {
+				log.Warn("could not run db transaction", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return err
 			}
-			if target.OrganizationID != *authInfo.CurrentOrgID() || !isDeploymentTargetVisible(ctx, target) {
-				http.NotFound(w, r)
-				return apierrors.ErrNotFound
-			}
-			index := slices.IndexFunc(target.Deployments, func(d types.DeploymentWithLatestRevision) bool {
-				return d.ID == deployment.ID
-			})
-			if index < 0 {
-				http.NotFound(w, r)
-				return apierrors.ErrNotFound
-			}
-			current := target.Deployments[index]
+			return
+		}
 
-			application, err := db.GetApplication(ctx, current.Application.ID, target.OrganizationID)
-			if err != nil {
-				log.Warn("could not get Application", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return err
-			}
-			if enabled && (!application.AllowAutomaticUpdates ||
-				!application.VersioningStrategy.AllowsAutomaticUpdates()) {
-				return badRequestError(w, "this application does not allow automatic updates")
-			}
-
-			if deployment.AutomaticApplicationUpdatesEnabled != enabled {
-				deployment.AutomaticApplicationUpdatesEnabled = enabled
-				if err := db.UpdateDeploymentAutomaticApplicationUpdates(ctx, deployment); err != nil {
-					log.Warn("could not update Deployment", zap.Error(err))
-					sentry.GetHubFromContext(ctx).CaptureException(err)
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-					return err
-				}
-			}
-
-			// Enabling has to catch the deployment up, otherwise it would stay behind until the
-			// next version is created.
-			if enabled {
-				current.AutomaticApplicationUpdatesEnabled = true
-				if err := triggerAutomaticUpdateOfDeployment(
-					ctx, authInfo.CurrentOrg(), application, current, new(authInfo.CurrentUserID()),
-				); err != nil {
-					return automaticUpdateError(ctx, w, err)
-				}
-			}
-
-			w.WriteHeader(http.StatusNoContent)
-			return nil
-		})
+		w.WriteHeader(http.StatusNoContent)
 	}
+}
+
+func setDeploymentAutomaticUpdates(
+	ctx context.Context,
+	w http.ResponseWriter,
+	r *http.Request,
+	deployment *types.Deployment,
+	enabled bool,
+) error {
+	log := internalctx.GetLogger(ctx)
+	authInfo := auth.Authentication.Require(ctx)
+
+	target, err := db.GetDeploymentTargetForDeploymentID(ctx, deployment.ID)
+	if err != nil {
+		log.Warn("could not get DeploymentTarget", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return err
+	}
+	if target.OrganizationID != *authInfo.CurrentOrgID() || !isDeploymentTargetVisible(ctx, target) {
+		http.NotFound(w, r)
+		return apierrors.ErrNotFound
+	}
+	index := slices.IndexFunc(target.Deployments, func(d types.DeploymentWithLatestRevision) bool {
+		return d.ID == deployment.ID
+	})
+	if index < 0 {
+		http.NotFound(w, r)
+		return apierrors.ErrNotFound
+	}
+	current := target.Deployments[index]
+
+	application, err := db.GetApplication(ctx, current.Application.ID, target.OrganizationID)
+	if err != nil {
+		log.Warn("could not get Application", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return err
+	}
+	if enabled && (!application.AllowAutomaticUpdates ||
+		!application.VersioningStrategy.AllowsAutomaticUpdates()) {
+		return badRequestError(w, "this application does not allow automatic updates")
+	}
+
+	if deployment.AutomaticApplicationUpdatesEnabled != enabled {
+		deployment.AutomaticApplicationUpdatesEnabled = enabled
+		if err := db.UpdateDeploymentAutomaticApplicationUpdates(ctx, deployment); err != nil {
+			log.Warn("could not update Deployment", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return err
+		}
+	}
+
+	// Enabling has to catch the deployment up, otherwise it would stay behind until the next
+	// version is created.
+	if enabled {
+		current.AutomaticApplicationUpdatesEnabled = true
+		if err := triggerAutomaticUpdateOfDeployment(
+			ctx, authInfo.CurrentOrg(), application, current, new(authInfo.CurrentUserID()),
+		); err != nil {
+			return automaticUpdateError(ctx, w, err)
+		}
+	}
+
+	return nil
 }
 
 func deleteDeploymentHandler() http.HandlerFunc {
