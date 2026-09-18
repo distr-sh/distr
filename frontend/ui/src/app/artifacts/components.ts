@@ -153,3 +153,45 @@ export class ArtifactsHashComponent {
 
   protected readonly faEllipsis = faEllipsis;
 }
+
+/** An artifact with its logo and, where one is meant, the digest and tags of a version. */
+@Component({
+  selector: 'app-artifact-preview',
+  template: `
+    <app-artifact-logo class="size-10 shrink-0" [imageUrl]="imageUrl()" />
+    <div class="min-w-0">
+      <div class="flex items-baseline gap-2 min-w-0" [title]="label()">
+        <span class="truncate">{{ name() }}</span>
+        @if (digest(); as digest) {
+          <span class="shrink-0 text-xs text-gray-500 dark:text-gray-400">
+            <app-artifacts-hash [hash]="digest" [expandable]="false" />
+          </span>
+        }
+      </div>
+      @if (tags().length > 0) {
+        <div class="flex flex-row flex-wrap gap-1 mt-1">
+          @for (tag of tags(); track tag) {
+            <span
+              class="inline-block max-w-40 truncate"
+              [class]="tag === 'latest' ? 'distr-artifact-tag-latest' : 'distr-artifact-tag'"
+              [title]="tag">
+              {{ tag }}
+            </span>
+          }
+        </div>
+      }
+    </div>
+  `,
+  host: {class: 'flex items-center gap-2'},
+  imports: [ArtifactLogoComponent, ArtifactsHashComponent],
+})
+export class ArtifactPreviewComponent {
+  public readonly name = input.required<string>();
+  public readonly imageUrl = input<string>();
+  public readonly digest = input<string>();
+  public readonly tags = input<string[]>([]);
+
+  protected readonly label = computed(() =>
+    [this.name(), this.tags().join(', '), this.digest()].filter((part) => part).join(' ')
+  );
+}

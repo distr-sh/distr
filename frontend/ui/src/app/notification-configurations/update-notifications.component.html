@@ -1,0 +1,7 @@
+<app-page>
+  <app-tab-bar [tabs]="tabs" [(active)]="activeTab" (tabClick)="onTabClick($event)" />
+
+  <div role="tabpanel" class="pt-4" [id]="'tabpanel-' + activeTab()" [attr.aria-labelledby]="'tab-' + activeTab()">
+    <router-outlet />
+  </div>
+</app-page>

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    {{ template "fragments/style.html" }}
+  </head>
+  <body>
+    <div class="message-container">
+      {{ template "fragments/header.html" . }}
+      <main>
+        {{ template "fragments/greeting.html" . }}
+
+
+        <p>
+          Version
+          <strong>{{ .VersionName }}</strong>
+          of
+          <strong>{{ .Application.Name }}</strong>
+          is available.
+        </p>
+
+        {{ with .CustomerMessage }}
+          <blockquote>{{ . }}</blockquote>
+        {{ end }}
+
+
+        <p>
+          {{ with .ImageDataUrl }}
+            <img alt="{{ $.Application.Name }}" width="24" src="{{ . | UnsafeURL }}" />
+          {{ end }}
+          {{ .Application.Name }}
+          ({{ .Application.Type }}) &middot;
+          {{ .VersionName }}
+        </p>
+
+        {{ if .Deployments }}
+          <p>The following deployments do not run this version yet:</p>
+
+          <table>
+            <thead>
+              <tr>
+                {{ if .ShowCustomers }}
+                  <th>Customer</th>
+                {{ end }}
+                <th>Deployment</th>
+                <th>Current version</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{ range .Deployments }}
+                <tr>
+                  {{ if $.ShowCustomers }}
+                    <td>{{ with .CustomerOrganizationName }}{{ . }}{{ else }}Internal{{ end }}</td>
+                  {{ end }}
+                  <td>
+                    {{ .DeploymentTargetName }}
+                    {{ with .ReleaseName }}({{ . }}){{ end }}
+                  </td>
+                  <td>{{ .CurrentVersionName }}</td>
+                </tr>
+              {{ end }}
+            </tbody>
+          </table>
+        {{ end }}
+
+
+        <p class="my-3">
+          <a class="cta" href="{{ .Link }}">Open Distr</a>
+        </p>
+
+        <p>{{ template "fragments/signature.html" . }}</p>
+      </main>
+      {{ template "fragments/footer.html" . }}
+    </div>
+  </body>
+</html>

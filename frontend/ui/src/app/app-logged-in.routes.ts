@@ -28,6 +28,9 @@ import {DeploymentTargetsComponent} from './deployments/deployment-targets.compo
 import {CustomerLicenseDetailPageComponent} from './licenses/customer-license-detail-page.component';
 import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
 import {VendorLicenseDetailPageComponent} from './licenses/vendor-license-detail-page.component';
+import {ApplicationNotificationConfigurationsComponent} from './notification-configurations/application-notification-configurations.component';
+import {ArtifactNotificationConfigurationsComponent} from './notification-configurations/artifact-notification-configurations.component';
+import {UpdateNotificationsComponent} from './notification-configurations/update-notifications.component';
 import {NotificationRecordsComponent} from './notification-records/notification-records.component';
 import {OrganizationBrandingComponent} from './organization-branding/organization-branding.component';
 import {CustomEmailComponent} from './organization-settings/custom-email.component';
@@ -440,6 +443,15 @@ export const routes: Routes = [
           {
             path: 'alert-configurations',
             component: AlertConfigurationsComponent,
+          },
+          {
+            path: 'updates',
+            component: UpdateNotificationsComponent,
+            children: [
+              {path: 'applications', component: ApplicationNotificationConfigurationsComponent},
+              {path: 'artifacts', component: ArtifactNotificationConfigurationsComponent},
+              {path: '', pathMatch: 'full', redirectTo: 'applications'},
+            ],
           },
           {
             path: 'history',
