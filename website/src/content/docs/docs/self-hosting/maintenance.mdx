@@ -1,6 +1,6 @@
 ---
 title: Maintenance Jobs
-description: Configure automated cleanup jobs to prune metrics, logs, registry blobs and deleted organizations from your Distr database and storage.
+description: Configure automated cleanup jobs to prune metrics, logs, registry blobs, deleted organizations, orphaned user accounts and unreferenced files from your Distr database and storage.
 slug: docs/self-hosting/maintenance
 sidebar:
   label: Maintenance Jobs
@@ -21,13 +21,15 @@ distr cleanup $CLEANUP_TARGET...
 
 Available cleanup targets:
 
-| Target                     | Description                                                             |
-| -------------------------- | ----------------------------------------------------------------------- |
-| `DeploymentRevisionStatus` | Deployment revision status entries                                      |
-| `DeploymentTargetMetrics`  | Deployment target metrics entries                                       |
-| `OIDCState`                | Expired OIDC state entries                                              |
-| `ArtifactBlob`             | Unreferenced registry blobs from S3 (requires registry to be enabled)   |
-| `Organization`             | Permanently delete soft-deleted organizations past the retention period |
+| Target                     | Description                                                                                   |
+| -------------------------- | --------------------------------------------------------------------------------------------- |
+| `DeploymentRevisionStatus` | Deployment revision status entries                                                            |
+| `DeploymentTargetMetrics`  | Deployment target metrics entries                                                             |
+| `OIDCState`                | Expired OIDC state entries                                                                    |
+| `ArtifactBlob`             | Unreferenced registry blobs from S3 (requires registry to be enabled)                         |
+| `Organization`             | Permanently delete soft-deleted organizations past the retention period                       |
+| `UserAccount`              | Permanently delete user accounts that belong to no organization past the retention period     |
+| `File`                     | Uploaded files that nothing references any more, such as logos and avatars that were replaced |
 
 For production deployments we recommend scheduling these jobs automatically, either using the built-in job scheduler for single instance deployments
 or using Kubernetes CronJobs for high-availability deployments.
@@ -59,6 +61,14 @@ CLEANUP_ARTIFACT_BLOB_MIN_AGE="24h"
 # CLEANUP_ORGANIZATION_CRON="0 0 * * *"
 # CLEANUP_ORGANIZATION_TIMEOUT="10m"
 # CLEANUP_ORGANIZATION_MIN_AGE="720h"
+# Cron interval for permanently deleting user accounts without an organization older than CLEANUP_USER_ACCOUNT_MIN_AGE
+# CLEANUP_USER_ACCOUNT_CRON="0 0 * * *"
+# CLEANUP_USER_ACCOUNT_TIMEOUT="10m"
+# CLEANUP_USER_ACCOUNT_MIN_AGE="720h"
+# Cron interval for deleting unreferenced files older than CLEANUP_FILE_MIN_AGE
+CLEANUP_FILE_CRON="0 * * * *"
+CLEANUP_FILE_TIMEOUT="10m"
+CLEANUP_FILE_MIN_AGE="24h"
 ```
 
 If these variables are not set, no cleanup jobs are scheduled.
@@ -94,10 +104,18 @@ cronJobs:
     labels:
       distr.sh/job: artifact-blob-cleanup
     args: [cleanup, ArtifactBlob, --timeout, 10m]
+  - name: file-cleanup
+    labels:
+      distr.sh/job: file-cleanup
+    args: [cleanup, File, --timeout, 10m]
   # - name: organization-cleanup
   #   labels:
   #     distr.sh/job: organization-cleanup
   #   args: [cleanup, Organization, --timeout, 10m]
+  # - name: user-account-cleanup
+  #   labels:
+  #     distr.sh/job: user-account-cleanup
+  #   args: [cleanup, UserAccount, --timeout, 10m]
 ```
 
 ## Additional configuration
@@ -109,6 +127,8 @@ STATUS_ENTRIES_MAX_AGE="24h"
 METRICS_ENTRIES_MAX_AGE="24h"
 CLEANUP_ARTIFACT_BLOB_MIN_AGE="24h"
 CLEANUP_ORGANIZATION_MIN_AGE="720h"
+CLEANUP_USER_ACCOUNT_MIN_AGE="720h"
+CLEANUP_FILE_MIN_AGE="24h"
 ```
 
 <Aside type="caution">
@@ -121,6 +141,23 @@ CLEANUP_ORGANIZATION_MIN_AGE="720h"
   organizations and all their associated data. The default retention period is
   30 days (`720h`). Only enable this job if you are sure you want to purge
   soft-deleted organizations.
+</Aside>
+
+<Aside type="caution">
+  The `UserAccount` cleanup target permanently and irreversibly deletes user
+  accounts that belong to no organization, which is the state an account is left
+  in after its last organization was removed or purged. The default retention
+  period is 30 days (`720h`) since the last login, or since the account was
+  created if it never logged in. Super admin accounts are never deleted, as they
+  belong to no organization by design.
+</Aside>
+
+<Aside type="note">
+  `CLEANUP_FILE_MIN_AGE` exists because the branding settings and the user
+  profile upload an image as soon as it is picked, but only attach it when the
+  form is saved. Keep it well above the time a user may spend in such a form: an
+  image deleted in between can no longer be attached, and saving the form then
+  fails.
 </Aside>
 
 ## Upstream Tag Synchronization

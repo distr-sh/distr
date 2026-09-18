@@ -52,7 +52,11 @@
         <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">{{ bundle.description }}</p>
       }
       <p class="text-xs text-gray-500 dark:text-gray-500">
-        Created by {{ bundle.createdByUserName }} on {{ bundle.createdAt | date: 'medium' }}
+        Created
+        @if (bundle.createdByUserName) {
+          by {{ bundle.createdByUserName }}
+        }
+        on {{ bundle.createdAt | date: 'medium' }}
       </p>
       @if (bundle.statusChangedByUserName && (bundle.status === 'resolved' || bundle.status === 'canceled')) {
         <p class="text-xs text-gray-500 dark:text-gray-500">

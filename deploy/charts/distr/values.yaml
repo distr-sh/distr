@@ -169,6 +169,10 @@ distr:
     #   value: '24h'
     # - name: CLEANUP_ORGANIZATION_MIN_AGE
     #   value: '720h'  # 30 days (default)
+    # - name: CLEANUP_USER_ACCOUNT_MIN_AGE
+    #   value: '720h'  # 30 days (default)
+    # - name: CLEANUP_FILE_MIN_AGE
+    #   value: '24h'
     # OIDC providers, see https://distr.sh/docs/self-hosting/configuration/#oidc-authentication
     # - name: OIDC_GITHUB_ENABLED
     #   value: 'true'
@@ -414,7 +418,8 @@ cronJobResources: {}
 
 # -- Maintenance CronJobs run against the database, each executing the Distr image with `args`. Removing
 # an entry disables that job; the commented-out `organization-cleanup` job deletes organizations that
-# have been marked for deletion.
+# have been marked for deletion and `user-account-cleanup` deletes user accounts that belong to no
+# organization.
 cronJobs:
   - name: deployment-revision-status-cleanup
     labels:
@@ -432,10 +437,18 @@ cronJobs:
     labels:
       distr.sh/job: artifact-blob-cleanup
     args: [cleanup, ArtifactBlob, --timeout, 10m]
+  - name: file-cleanup
+    labels:
+      distr.sh/job: file-cleanup
+    args: [cleanup, File, --timeout, 10m]
   # - name: organization-cleanup
   #   labels:
   #     distr.sh/job: organization-cleanup
   #   args: [cleanup, Organization, --timeout, 10m]
+  # - name: user-account-cleanup
+  #   labels:
+  #     distr.sh/job: user-account-cleanup
+  #   args: [cleanup, UserAccount, --timeout, 10m]
   # Keeps the state that decides whether a custom domain is used for links, mails, agent manifests
   # and registry URLs. It is a no-op while no CNAME target is configured, and runs more often than
   # the hourly default so that a domain whose record was just fixed starts being used again quickly.

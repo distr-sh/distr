@@ -30,8 +30,8 @@ export interface SupportBundle {
   createdAt: string;
   customerOrganizationId: string;
   customerOrganizationName: string;
-  createdByUserAccountId: string;
-  createdByUserName: string;
+  createdByUserAccountId?: string;
+  createdByUserName?: string;
   createdByImageUrl?: string;
   title: string;
   description?: string;
@@ -63,8 +63,8 @@ export interface SupportBundleResource {
 export interface SupportBundleComment {
   id: string;
   createdAt: string;
-  userAccountId: string;
-  userName: string;
+  userAccountId?: string;
+  userName?: string;
   userImageUrl?: string;
   content: string;
 }
