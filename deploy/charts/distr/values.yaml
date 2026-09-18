@@ -57,6 +57,8 @@ distr:
   env: &defaultDistrEnv
     - name: DISTR_HOST
       value: http://distr.local
+    # - name: AGENT_HOST
+    #   value: agent.distr.local
     - name: REGISTRY_ENABLED
       value: 'true'
     # REGISTRY_* variables are only relevant if REGISTRY_ENABLED is true

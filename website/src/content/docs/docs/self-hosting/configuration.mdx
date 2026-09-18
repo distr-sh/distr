@@ -99,10 +99,11 @@ the widget and are not verified; they remain subject to the rate limits of the a
 
 ## Agents
 
-| Variable              | Required | Default | Description                                                                              |
-| --------------------- | -------- | ------- | ---------------------------------------------------------------------------------------- |
-| `AGENT_INTERVAL`      | no       | `5s`    | Interval at which agents poll Distr for updates.                                         |
-| `AGENT_DOCKER_CONFIG` | no       | —       | Base64-encoded Docker config JSON provided to Docker agents for registry authentication. |
+| Variable              | Required | Default | Description                                                                                                                                                                                                                                                                                 |
+| --------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AGENT_HOST`          | no       | —       | Host (and optional port, no scheme) agents and connect commands reach this instance at, taking precedence over an organization's custom app domain. Its scheme is taken from `DISTR_HOST`. Unset, agents use the organization's custom app domain if it has one and `DISTR_HOST` otherwise. |
+| `AGENT_INTERVAL`      | no       | `5s`    | Interval at which agents poll Distr for updates.                                                                                                                                                                                                                                            |
+| `AGENT_DOCKER_CONFIG` | no       | —       | Base64-encoded Docker config JSON provided to Docker agents for registry authentication.                                                                                                                                                                                                    |
 
 ## Mailer
 

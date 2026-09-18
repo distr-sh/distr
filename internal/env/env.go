@@ -29,6 +29,7 @@ var (
 	databaseEncryptionMigrateOnBoot        bool
 	jwtSecret                              []byte
 	host                                   string
+	agentHost                              *string
 	registryHost                           string
 	mailerConfig                           MailerConfig
 	inviteTokenValidDuration               time.Duration
@@ -155,6 +156,7 @@ func Initialize() {
 	jwtSecret = util.Require(envutil.ParseValue("JWT_SECRET",
 		requireEnvResolved(ctx, resolver, "JWT_SECRET"), base64.StdEncoding.DecodeString))
 	host = envutil.RequireEnv("DISTR_HOST")
+	agentHost = envutil.GetEnvParsedOrNil("AGENT_HOST", envparse.Host)
 	agentInterval = envutil.GetEnvParsedOrDefault("AGENT_INTERVAL", envparse.PositiveDuration, 5*time.Second)
 	statusEntriesMaxAge = envutil.GetEnvParsedOrNil("STATUS_ENTRIES_MAX_AGE", envparse.PositiveDuration)
 	metricsEntriesMaxAge = envutil.GetEnvParsedOrNil("METRICS_ENTRIES_MAX_AGE", envparse.PositiveDuration)
@@ -418,6 +420,8 @@ func HostScheme() URLScheme {
 	}
 	return SchemeHTTPS
 }
+
+func AgentHost() *string { return agentHost }
 
 func RegistryHost() string { return registryHost }
 
