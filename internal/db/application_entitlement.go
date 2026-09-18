@@ -36,7 +36,7 @@ var (
 		) as versions
 	`
 	applicationEntitlementCompleteOutputExpr = applicationEntitlementWithVersionsOutputExpr + `,
-		(a.id, a.created_at, a.organization_id, a.name, a.type) as application,
+		(` + applicationOutputExpr + `) as application,
 		CASE WHEN al.customer_organization_id IS NOT NULL
 			THEN (` + customerOrganizationOutputExpr + `)
 		END as customer_organization

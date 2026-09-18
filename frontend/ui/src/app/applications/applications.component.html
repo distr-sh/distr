@@ -20,7 +20,6 @@
       <thead class="distr-table-head">
         <tr>
           <th scope="col" class="p-4">Application</th>
-          <th scope="col" class="p-4">Type</th>
           <th scope="col" class="p-4">Versions</th>
           @if (fullVersion()) {
             <th scope="col" class="p-4">Creation Date</th>
@@ -32,8 +31,8 @@
         @for (application of applications$ | async; track application.id) {
           <tr class="distr-table-row">
             <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-              <a [routerLink]="['/', 'applications', application.id]">
-                <div class="flex items-center mr-3">
+              <div class="flex flex-wrap items-center gap-2">
+                <a [routerLink]="['/', 'applications', application.id]" class="flex items-center">
                   <app-application-logo
                     class="size-8 mr-3 shrink-0"
                     [imageUrl]="application.imageUrl"
@@ -41,11 +40,14 @@
                   <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
                     {{ application.name }}
                   </span>
-                </div>
-              </a>
-            </td>
-            <td class="px-4 py-3">
-              <span class="distr-deployment-type-badge me-2 text-sm capitalize">{{ application.type }}</span>
+                </a>
+                <span class="distr-deployment-type-badge">{{ application.type }}</span>
+                @if (isAutoUpdatesEnabled() && application.allowAutomaticUpdates) {
+                  <span class="distr-status-badge whitespace-nowrap" [ngClass]="automaticUpdatesBadgeClass">
+                    Auto-Updates allowed
+                  </span>
+                }
+              </div>
             </td>
             <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
               <div class="flex items-center">
@@ -81,7 +83,7 @@
   <div
     animate.enter="animate-fly-in-top"
     animate.leave="animate-fly-out-top"
-    class="p-4 w-128 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
+    class="p-4 w-140 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
     <div class="relative w-full max-h-full">
       <div class="relative rounded-lg">
         <div
@@ -101,7 +103,9 @@
             <div>
               <div class="space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
                 <div class="w-full">
-                  <label for="name" class="distr-label mb-2">Application Name *</label>
+                  <label for="name" class="distr-label mb-2">
+                    Application Name <span class="text-red-500">*</span>
+                  </label>
                   <input
                     [formControl]="createApplicationForm.controls.name"
                     autotrim
@@ -117,8 +121,8 @@
               </div>
 
               <div class="mt-4">
-                <label class="distr-label mb-2">Application Type *</label>
-                <div class="mb-2 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                <label class="distr-label mb-2">Application Type <span class="text-red-500">*</span></label>
+                <div class="mb-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div
                     class="rounded-lg border border-gray-200 bg-gray-50 p-4 ps-4 dark:border-gray-700 dark:bg-gray-800">
                     <div class="flex items-start">
@@ -181,6 +185,47 @@
                   <p class="text-sm text-red-600 dark:text-red-500">Field is required.</p>
                 }
               </div>
+
+              <div class="mt-4">
+                <label for="versioningStrategy" class="distr-label mb-2">
+                  Versioning Strategy <span class="text-red-500">*</span>
+                </label>
+                <select
+                  id="versioningStrategy"
+                  [formControl]="createApplicationForm.controls.versioningStrategy"
+                  class="distr-input">
+                  <option value="semver">Semantic versioning</option>
+                  <option value="chronological">Chronological versioning</option>
+                </select>
+                <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+                  @if (createApplicationForm.controls.versioningStrategy.value === 'chronological') {
+                    The most recently created version is the latest, whatever it is named.
+                  } @else {
+                    Every version name has to be a valid SemVer version, such as 1.4.0.
+                  }
+                </p>
+              </div>
+
+              @if (isAutoUpdatesEnabled()) {
+                <div class="mt-4 flex items-start">
+                  <div class="flex h-5 items-center">
+                    <input
+                      id="allow-automatic-updates-checkbox"
+                      [formControl]="createApplicationForm.controls.allowAutomaticUpdates"
+                      aria-describedby="allow-automatic-updates-checkbox-text"
+                      type="checkbox"
+                      class="distr-checkbox" />
+                  </div>
+                  <div class="ms-3 text-sm">
+                    <label for="allow-automatic-updates-checkbox" class="distr-label">Allow automatic updates</label>
+                    <p
+                      id="allow-automatic-updates-checkbox-text"
+                      class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+                      Let a deployment of this application be updated to the latest version without anyone deploying it.
+                    </p>
+                  </div>
+                </div>
+              }
 
               <div class="flex justify-stretch sm:justify-end mt-5 space-x-2.5">
                 <button

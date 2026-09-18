@@ -15,7 +15,7 @@ It supports both Docker and Helm applications.
 ### Key Features
 
 - **Automatic Version Creation** - Create new application versions in Distr on every release
-- **Automatic Deployment Updates** - Optionally update all customer deployments to the new version
+- **Automatic Deployment Updates** - Optionally update all customer deployments to the new version, for a rollout your CI has to gate. Distr's own [automatic updates](/docs/agents/deployment/#automatic-updates) do this without the workflow, per deployment and for every way a version can be created
 - **Docker Support** - Upload Docker Compose files with environment variable templates
 - **Helm Support** - Reference Helm charts from OCI or traditional repositories
 - **Multi-Organization** - Deploy to multiple Distr instances or organizations in parallel

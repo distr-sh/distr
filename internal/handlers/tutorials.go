@@ -118,8 +118,9 @@ func createHelloDistrApp(ctx context.Context) (*types.Application, error) {
 	auth := auth.Authentication.Require(ctx)
 
 	application := types.Application{
-		Name: "hello-distr",
-		Type: types.DeploymentTypeDocker,
+		Name:               "hello-distr",
+		Type:               types.DeploymentTypeDocker,
+		VersioningStrategy: types.VersioningStrategySemver,
 	}
 
 	var composeFileData []byte

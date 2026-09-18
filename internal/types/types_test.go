@@ -88,6 +88,7 @@ func TestFeaturesForSubscriptionType(t *testing.T) {
 		FeatureVulnerabilities,
 		FeatureCustomEmails,
 		FeatureCustomOidcProviders,
+		FeatureAutoUpdates,
 	}
 	cases := []struct {
 		subscriptionType SubscriptionType
@@ -121,6 +122,7 @@ func TestPlanManagedFeatures(t *testing.T) {
 		FeatureVulnerabilities,
 		FeatureCustomEmails,
 		FeatureCustomOidcProviders,
+		FeatureAutoUpdates,
 	))
 
 	for _, st := range AllSubscriptionTypes() {

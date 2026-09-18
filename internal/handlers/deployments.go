@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -91,6 +92,13 @@ func DeploymentsRouter(r chiopenapi.Router) {
 			r.Delete("/", deleteDeploymentHandler()).
 				With(option.Description("Delete a deployment")).
 				With(option.Request(DeploymentIDRequest{}))
+			r.With(middleware.AutoUpdatesFeatureMiddleware).
+				Patch("/", patchDeploymentHandler()).
+				With(option.Description("Partially update a deployment")).
+				With(option.Request(struct {
+					DeploymentIDRequest
+					api.PatchDeploymentRequest
+				}{}))
 		})
 	})
 }
@@ -116,6 +124,8 @@ func putDeployment(w http.ResponseWriter, r *http.Request) {
 		); err != nil {
 			return deploymentValuesError(ctx, w, err, "invalid deployment values")
 		}
+
+		deploymentRequest.AutomaticApplicationUpdatesEnabled = &validationResult.AutomaticApplicationUpdatesEnabled
 
 		if deploymentRequest.DeploymentID == nil {
 			if err = db.CreateDeployment(ctx, &deploymentRequest); errors.Is(err, apierrors.ErrConflict) {
@@ -153,6 +163,17 @@ func putDeployment(w http.ResponseWriter, r *http.Request) {
 					return err
 				}
 			}
+
+			automaticUpdates := validationResult.AutomaticApplicationUpdatesEnabled
+			if deployment.AutomaticApplicationUpdatesEnabled != automaticUpdates {
+				deployment.AutomaticApplicationUpdatesEnabled = automaticUpdates
+				if err := db.UpdateDeploymentAutomaticApplicationUpdates(ctx, deployment); err != nil {
+					log.Warn("could not set automatic updates for deployment", zap.Error(err))
+					sentry.GetHubFromContext(ctx).CaptureException(err)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return err
+				}
+			}
 		}
 
 		createdByUserID := auth.Authentication.Require(ctx).CurrentUserID()
@@ -169,6 +190,106 @@ func putDeployment(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		return nil
 	})
+}
+
+func patchDeploymentHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		log := internalctx.GetLogger(ctx)
+		deployment := internalctx.GetDeployment(ctx)
+		patch, err := JsonBody[api.PatchDeploymentRequest](w, r)
+		if err != nil {
+			return
+		}
+		if patch.AutomaticApplicationUpdatesEnabled == nil {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		enabled := *patch.AutomaticApplicationUpdatesEnabled
+
+		// Only an error returned from the transaction function has written a response of its own,
+		// so beginning or committing the transaction has failed when there is none.
+		var patchErr error
+		if err := db.RunTx(ctx, func(ctx context.Context) error {
+			patchErr = setDeploymentAutomaticUpdates(ctx, w, r, deployment, enabled)
+			return patchErr
+		}); err != nil {
+			if patchErr == nil {
+				log.Warn("could not run db transaction", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			}
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func setDeploymentAutomaticUpdates(
+	ctx context.Context,
+	w http.ResponseWriter,
+	r *http.Request,
+	deployment *types.Deployment,
+	enabled bool,
+) error {
+	log := internalctx.GetLogger(ctx)
+	authInfo := auth.Authentication.Require(ctx)
+
+	target, err := db.GetDeploymentTargetForDeploymentID(ctx, deployment.ID)
+	if err != nil {
+		log.Warn("could not get DeploymentTarget", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return err
+	}
+	if target.OrganizationID != *authInfo.CurrentOrgID() || !isDeploymentTargetVisible(ctx, target) {
+		http.NotFound(w, r)
+		return apierrors.ErrNotFound
+	}
+	index := slices.IndexFunc(target.Deployments, func(d types.DeploymentWithLatestRevision) bool {
+		return d.ID == deployment.ID
+	})
+	if index < 0 {
+		http.NotFound(w, r)
+		return apierrors.ErrNotFound
+	}
+	current := target.Deployments[index]
+
+	application, err := db.GetApplication(ctx, current.Application.ID, target.OrganizationID)
+	if err != nil {
+		log.Warn("could not get Application", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return err
+	}
+	if enabled && (!application.AllowAutomaticUpdates ||
+		!application.VersioningStrategy.AllowsAutomaticUpdates()) {
+		return badRequestError(w, "this application does not allow automatic updates")
+	}
+
+	if deployment.AutomaticApplicationUpdatesEnabled != enabled {
+		deployment.AutomaticApplicationUpdatesEnabled = enabled
+		if err := db.UpdateDeploymentAutomaticApplicationUpdates(ctx, deployment); err != nil {
+			log.Warn("could not update Deployment", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return err
+		}
+	}
+
+	// Enabling has to catch the deployment up, otherwise it would stay behind until the next
+	// version is created.
+	if enabled {
+		current.AutomaticApplicationUpdatesEnabled = true
+		if err := triggerAutomaticUpdateOfDeployment(
+			ctx, authInfo.CurrentOrg(), application, current, new(authInfo.CurrentUserID()),
+		); err != nil {
+			return automaticUpdateError(ctx, w, err)
+		}
+	}
+
+	return nil
 }
 
 func deleteDeploymentHandler() http.HandlerFunc {
@@ -305,6 +426,11 @@ func validateDeploymentRequest(
 		return nil, err
 	}
 
+	automaticUpdates := util.PtrDerefOrDefault(request.AutomaticApplicationUpdatesEnabled)
+	if request.AutomaticApplicationUpdatesEnabled == nil && existingDeployment != nil {
+		automaticUpdates = existingDeployment.AutomaticApplicationUpdatesEnabled
+	}
+
 	if err = validateDeploymentRequestEntitlement(
 		ctx, w, request, entitlement, app, target, existingDeployment,
 	); err != nil {
@@ -315,19 +441,59 @@ func validateDeploymentRequest(
 		return nil, err
 	} else if err = validateDeploymentRequestValues(ctx, w, request, version, secrets, licenseKeys); err != nil {
 		return nil, err
+	} else if err = validateAutomaticApplicationUpdates(
+		w, request.ApplicationVersionID, automaticUpdates, entitlement, app, org,
+	); err != nil {
+		return nil, err
 	} else {
 		return &deploymentRequestValidationResult{
-			Target:      target.DeploymentTarget,
-			Secrets:     secrets,
-			LicenseKeys: licenseKeys,
+			Target:                             target.DeploymentTarget,
+			Secrets:                            secrets,
+			LicenseKeys:                        licenseKeys,
+			AutomaticApplicationUpdatesEnabled: automaticUpdates,
 		}, nil
 	}
 }
 
+// validateAutomaticApplicationUpdates keeps a deployment with automatic updates on the newest
+// version the customer is entitled to, so that the next update does not immediately supersede the
+// revision this request creates.
+func validateAutomaticApplicationUpdates(
+	w http.ResponseWriter,
+	applicationVersionID uuid.UUID,
+	enabled bool,
+	entitlement *types.ApplicationEntitlement,
+	app *types.Application,
+	org *types.Organization,
+) error {
+	if !enabled {
+		return nil
+	}
+	if !org.HasFeature(types.FeatureAutoUpdates) {
+		return badRequestError(w, "automatic updates are not enabled for this organization")
+	}
+	if !app.AllowAutomaticUpdates || !app.VersioningStrategy.AllowsAutomaticUpdates() {
+		return badRequestError(w, "this application does not allow automatic updates")
+	}
+	versions := app.Versions
+	if entitlement != nil && len(entitlement.Versions) > 0 {
+		versions = entitlement.Versions
+	}
+	latest := types.LatestApplicationVersion(
+		types.ApplicationVersionComparator(app.VersioningStrategy, app.Versions),
+		versions,
+	)
+	if latest == nil || latest.ID != applicationVersionID {
+		return badRequestError(w, "a deployment with automatic updates must use the latest application version")
+	}
+	return nil
+}
+
 type deploymentRequestValidationResult struct {
-	Target      types.DeploymentTarget
-	Secrets     []types.SecretWithUpdatedBy
-	LicenseKeys []types.LicenseKey
+	Target                             types.DeploymentTarget
+	Secrets                            []types.SecretWithUpdatedBy
+	LicenseKeys                        []types.LicenseKey
+	AutomaticApplicationUpdatesEnabled bool
 }
 
 func setDeploymentRequestValuesHash(
