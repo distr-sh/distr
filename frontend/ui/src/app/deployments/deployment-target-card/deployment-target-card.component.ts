@@ -17,6 +17,7 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {
+  ApplicationVersion,
   DeploymentRevisionResponse,
   DeploymentTarget,
   DeploymentTargetScope,
@@ -250,28 +251,41 @@ export class DeploymentTargetCardComponent {
 
   private readonly applications = toSignal(this.applicationsService.list(), {initialValue: []});
 
-  protected readonly deploymentIdsWithUpdate = computed(() => {
+  /** The newest version each deployment is entitled to, which is the one it runs when it is current. */
+  private readonly latestVersionByDeploymentId = computed(() => {
     const deploymentTarget = this.deploymentTarget();
     const applications = this.applications();
     const entitlements = this.entitlements();
 
-    return new Set(
-      deploymentTarget.deployments
-        .map((deployment) => {
-          const application = applications.find((app) => app.id === deployment.application.id);
-          const entitledVersions = deployment.applicationEntitlementId
-            ? entitlements.find((entitlement) => entitlement.id === deployment.applicationEntitlementId)?.versions
-            : undefined;
-          // An entitlement without versions covers all of them.
-          const candidates = entitledVersions?.length ? entitledVersions : (application?.versions ?? []);
-          const maxVersion = latestApplicationVersion(
-            applicationVersionComparator(application?.versioningStrategy, application?.versions ?? []),
-            candidates
-          );
+    const latestVersions = new Map<string, ApplicationVersion>();
+    for (const deployment of deploymentTarget.deployments) {
+      const application = applications.find((app) => app.id === deployment.application.id);
+      const entitledVersions = deployment.applicationEntitlementId
+        ? entitlements.find((entitlement) => entitlement.id === deployment.applicationEntitlementId)?.versions
+        : undefined;
+      // An entitlement without versions covers all of them.
+      const candidates = entitledVersions?.length ? entitledVersions : (application?.versions ?? []);
+      const maxVersion = latestApplicationVersion(
+        applicationVersionComparator(application?.versioningStrategy, application?.versions ?? []),
+        candidates
+      );
 
-          return maxVersion && deployment.applicationVersionId !== maxVersion.id ? deployment.id : undefined;
+      if (deployment.id && maxVersion) {
+        latestVersions.set(deployment.id, maxVersion);
+      }
+    }
+    return latestVersions;
+  });
+
+  protected readonly deploymentIdsWithUpdate = computed(() => {
+    const latestVersions = this.latestVersionByDeploymentId();
+    return new Set(
+      this.deploymentTarget()
+        .deployments.filter((deployment) => {
+          const latestVersion = deployment.id ? latestVersions.get(deployment.id) : undefined;
+          return latestVersion !== undefined && latestVersion.id !== deployment.applicationVersionId;
         })
-        .filter((id) => id !== undefined)
+        .map((deployment) => deployment.id!)
     );
   });
 
@@ -281,6 +295,11 @@ export class DeploymentTargetCardComponent {
 
   protected async toggleAutomaticUpdates(deployment: DeploymentWithLatestRevision): Promise<void> {
     const enabled = !deployment.automaticApplicationUpdatesEnabled;
+    if (enabled) {
+      // The dialog names the version the deployment moves to, which a list from an earlier point
+      // in the session may no longer have.
+      await this.applicationsService.refresh();
+    }
     const confirmed = await firstValueFrom(
       this.overlay.confirm(
         enabled
@@ -289,9 +308,7 @@ export class DeploymentTargetCardComponent {
                 message: `Enable automatic updates for ${deployment.application.name} on ${this.deploymentTarget().name}?`,
                 alert: {
                   type: 'warning',
-                  message:
-                    'The deployment is updated to the latest version right away, and to every version ' +
-                    'released from now on, without anyone confirming it.',
+                  message: this.enableAutomaticUpdatesMessage(deployment),
                 },
               },
               confirmLabel: 'Enable automatic updates',
@@ -322,6 +339,21 @@ export class DeploymentTargetCardComponent {
         this.toast.error(msg);
       }
     }
+  }
+
+  private enableAutomaticUpdatesMessage(deployment: DeploymentWithLatestRevision): string {
+    const everyFutureVersion = 'to every version released from now on, without anyone confirming it.';
+    const latestVersion = deployment.id ? this.latestVersionByDeploymentId().get(deployment.id) : undefined;
+    if (latestVersion === undefined) {
+      return `The deployment is updated to the latest version right away and ${everyFutureVersion}`;
+    }
+    if (latestVersion.id === deployment.applicationVersionId) {
+      return `The deployment stays on ${latestVersion.name} for now and is updated ${everyFutureVersion}`;
+    }
+    return (
+      `The deployment is updated from ${deployment.applicationVersionName} to ${latestVersion.name} ` +
+      `right away and ${everyFutureVersion}`
+    );
   }
 
   protected readonly agentUpdatePending = computed(
