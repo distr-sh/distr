@@ -1,6 +1,6 @@
 ---
 title: Bring Your Own Cloud (BYOC)
-description: Distr Terraform and application agents run in end-customer cloud environments, Terraform agents provision the infrastructure, and the application agents deploy, manage and update the software on top of it.
+description: In BYOC deployments the Distr Docker agent deploys an infrastructure application onto a management VM in the end customer's cloud account, where it provisions and reconciles their infrastructure. The Distr Helm agent then deploys, manages and updates your application in the cluster that infrastructure application creates.
 slug: docs/use-cases/byoc-bring-your-own-cloud
 sidebar:
   label: BYOC
@@ -9,8 +9,8 @@ sidebar:
 
 import {Aside, Steps} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import byocLight from '~/assets/docs/getting-started/distribution-scenarios/byoc/byoc-light.png';
-import byocDark from '~/assets/docs/getting-started/distribution-scenarios/byoc/byoc-dark.png';
+import byocLight from '~/assets/docs/getting-started/distribution-scenarios/byoc/byoc-light.webp';
+import byocDark from '~/assets/docs/getting-started/distribution-scenarios/byoc/byoc-dark.webp';
 
 <Aside type="caution" title="Currently in development">
   We are still working on automating the BYOC integration process. Please reach
@@ -20,10 +20,17 @@ import byocDark from '~/assets/docs/getting-started/distribution-scenarios/byoc/
 [Bring Your Own Cloud (BYOC)](/glossary/byoc-definition/) is the vendor-operated pole of [self-hosted](/glossary/self-hosted-software/) (see [the self-hosted spectrum](/blog/self-hosted-spectrum/)): fully managed operations inside customer-owned cloud resources.
 It suits organizations with strict data residency or compliance requirements that need to keep ownership of their cloud infrastructure.
 
-After the end customer's cloud account is connected to Distr, the Terraform agent provisions the required infrastructure.
-The initial infrastructure is set up first, then the vendor application is deployed.
-From there, the Distr agents apply all further changes to the applications or infrastructure, so every managed BYOC customer
-runs the same version of the infrastructure and application.
+BYOC runs on two independent Distr applications.
+
+The first is an infrastructure application: a Docker Compose application that the [Docker agent](/docs/agents/docker-agent/)
+deploys onto a small management VM in the end customer's cloud account. It reconciles their infrastructure on a loop and
+creates the cluster and the resources your product needs. Its cloud credentials and its state stay in the customer's account.
+
+The second is your application. The [Kubernetes agent](/docs/agents/kubernetes-agent/) manages it in the cluster the
+infrastructure application created.
+
+Both are versioned Distr applications, so an infrastructure change ships like any application update: publish a new version
+and roll it out. This keeps every managed BYOC customer on the same infrastructure and application versions.
 
 ## Solution Architecture
 
