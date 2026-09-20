@@ -62,3 +62,11 @@ ALTER TABLE NotificationRecord
     DROP COLUMN details;
 
 DROP TYPE NOTIFICATION_SOURCE_TYPE;
+
+DROP TABLE ArtifactNotificationConfiguration_Organization_UserAccount;
+DROP TABLE ArtifactNotificationConfiguration_Artifact;
+DROP TABLE ArtifactNotificationConfiguration;
+
+DROP TABLE ApplicationNotificationConfiguration_Organization_UserAccount;
+DROP TABLE ApplicationNotificationConfiguration_Application;
+DROP TABLE ApplicationNotificationConfiguration;
