@@ -22,11 +22,12 @@ Deployment agents run inside customer environments alongside vendor applications
   [BYOC](/glossary/byoc-definition/) use cases.
 </Aside>
 
-Distr provides two production-ready agents and one in development:
+Distr provides two deployment agents:
 
 - **[Docker Agent](/docs/agents/docker-agent/)**: manages Docker Compose deployments on any Linux host. Handles updates, environment variables, container health, and supports Docker Swarm mode.
 - **[Kubernetes Agent](/docs/agents/kubernetes-agent/)**: manages Helm chart deployments in Kubernetes clusters. Supports cluster- and namespace-scoped permissions, value overrides, and migration of existing releases.
-- **Terraform Agent** _(coming soon)_: designed for [BYOC](/glossary/byoc-definition/) deployments.
+
+[BYOC](/docs/use-cases/byoc-bring-your-own-cloud/) does not need a third agent type. You ship the infrastructure as an ordinary Compose application, and the Docker agent deploys it onto a management VM in the customer's cloud account.
 
 <Aside>
   We are also working on a read-only version of the Distr agent that will

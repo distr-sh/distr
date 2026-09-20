@@ -37,7 +37,7 @@ type SupportBundle struct {
 	CreatedAt                    time.Time           `db:"created_at"`
 	OrganizationID               uuid.UUID           `db:"organization_id"`
 	CustomerOrganizationID       uuid.UUID           `db:"customer_organization_id"`
-	CreatedByUserAccountID       uuid.UUID           `db:"created_by_user_account_id"`
+	CreatedByUserAccountID       *uuid.UUID          `db:"created_by_user_account_id"`
 	Title                        string              `db:"title"`
 	Description                  *string             `db:"description"`
 	Status                       SupportBundleStatus `db:"status"`
@@ -49,7 +49,7 @@ type SupportBundle struct {
 
 type SupportBundleWithDetails struct {
 	SupportBundle
-	CreatedByUserName        string     `db:"created_by_user_name"`
+	CreatedByUserName        *string    `db:"created_by_user_name"`
 	CreatedByImageID         *uuid.UUID `db:"created_by_image_id"`
 	CustomerOrganizationName string     `db:"customer_organization_name"`
 	ResourceCount            int64      `db:"resource_count"`
@@ -70,15 +70,15 @@ type SupportBundleResource struct {
 }
 
 type SupportBundleComment struct {
-	ID              uuid.UUID `db:"id"`
-	CreatedAt       time.Time `db:"created_at"`
-	SupportBundleID uuid.UUID `db:"support_bundle_id"`
-	UserAccountID   uuid.UUID `db:"user_account_id"`
-	Content         string    `db:"content"`
+	ID              uuid.UUID  `db:"id"`
+	CreatedAt       time.Time  `db:"created_at"`
+	SupportBundleID uuid.UUID  `db:"support_bundle_id"`
+	UserAccountID   *uuid.UUID `db:"user_account_id"`
+	Content         string     `db:"content"`
 }
 
 type SupportBundleCommentWithUser struct {
 	SupportBundleComment
-	UserName    string     `db:"user_name"`
+	UserName    *string    `db:"user_name"`
 	UserImageID *uuid.UUID `db:"user_image_id"`
 }

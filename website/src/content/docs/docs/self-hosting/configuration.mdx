@@ -99,10 +99,11 @@ the widget and are not verified; they remain subject to the rate limits of the a
 
 ## Agents
 
-| Variable              | Required | Default | Description                                                                              |
-| --------------------- | -------- | ------- | ---------------------------------------------------------------------------------------- |
-| `AGENT_INTERVAL`      | no       | `5s`    | Interval at which agents poll Distr for updates.                                         |
-| `AGENT_DOCKER_CONFIG` | no       | —       | Base64-encoded Docker config JSON provided to Docker agents for registry authentication. |
+| Variable              | Required | Default | Description                                                                                                                                                                                                                                                                                 |
+| --------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AGENT_HOST`          | no       | —       | Host (and optional port, no scheme) agents and connect commands reach this instance at, taking precedence over an organization's custom app domain. Its scheme is taken from `DISTR_HOST`. Unset, agents use the organization's custom app domain if it has one and `DISTR_HOST` otherwise. |
+| `AGENT_INTERVAL`      | no       | `5s`    | Interval at which agents poll Distr for updates.                                                                                                                                                                                                                                            |
+| `AGENT_DOCKER_CONFIG` | no       | —       | Base64-encoded Docker config JSON provided to Docker agents for registry authentication.                                                                                                                                                                                                    |
 
 ## Mailer
 
@@ -211,6 +212,12 @@ If a `*_CRON` variable is unset, the corresponding job is not scheduled. For the
 | `CLEANUP_ORGANIZATION_CRON`                  | no       | —       | Cron schedule for permanently deleting soft-deleted organizations.          |
 | `CLEANUP_ORGANIZATION_TIMEOUT`               | no       | `0`     | Timeout for the organization cleanup run.                                   |
 | `CLEANUP_ORGANIZATION_MIN_AGE`               | no       | `720h`  | Retention period before a soft-deleted organization is permanently deleted. |
+| `CLEANUP_USER_ACCOUNT_CRON`                  | no       | —       | Cron schedule for deleting user accounts that belong to no organization.    |
+| `CLEANUP_USER_ACCOUNT_TIMEOUT`               | no       | `0`     | Timeout for the user account cleanup run.                                   |
+| `CLEANUP_USER_ACCOUNT_MIN_AGE`               | no       | `720h`  | Time since the last login, or creation if never logged in, before deletion. |
+| `CLEANUP_FILE_CRON`                          | no       | —       | Cron schedule for deleting files that nothing references any more.          |
+| `CLEANUP_FILE_TIMEOUT`                       | no       | `0`     | Timeout for the file cleanup run.                                           |
+| `CLEANUP_FILE_MIN_AGE`                       | no       | `24h`   | Minimum age of an unreferenced file before it is deleted.                   |
 | `DEPLOYMENT_STATUS_NOTIFICATION_CRON`        | no       | —       | Cron schedule for sending deployment status notification emails.            |
 | `DEPLOYMENT_STATUS_NOTIFICATION_TIMEOUT`     | no       | `0`     | Timeout for the deployment status notification run.                         |
 

@@ -354,7 +354,7 @@ func createSupportBundleHandler() http.HandlerFunc {
 		bundle := types.SupportBundle{
 			OrganizationID:         *a.CurrentOrgID(),
 			CustomerOrganizationID: *a.CurrentCustomerOrgID(),
-			CreatedByUserAccountID: a.CurrentUserID(),
+			CreatedByUserAccountID: new(a.CurrentUserID()),
 			Title:                  request.Title,
 			Description:            request.Description,
 			BundleSecret:           dbcrypto.String(bundleSecret),
