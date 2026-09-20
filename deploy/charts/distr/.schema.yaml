@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/losisin/helm-values-schema-json/main/config.schema.json
+
+values:
+  - values.yaml
+output: values.schema.json
+draft: 2020
+indent: 2
+useHelmDocs: true
+# The subchart sections of the values file hold only the keys this chart overrides, so a closed
+# schema would reject every other PostgreSQL, RustFS or Loki setting a user is entitled to set.
+noAdditionalProperties: false
+schemaRoot:
+  title: Distr
+  description: Values of the Distr Helm chart

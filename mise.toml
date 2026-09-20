@@ -6,7 +6,9 @@ task.output = "prefix"
 node = "26"
 go = "1.27.1"
 golangci-lint = "2.13.2"
+helm = "4.3.0"
 helm-docs = "1.14.2"
+"github:losisin/helm-values-schema-json" = "2.6.0"
 watchexec = "2.7.3"
 pnpm = "12.4.2"
 stripe = "1.50.11"
@@ -133,9 +135,16 @@ sources = [
 ]
 outputs = ["deploy/charts/distr/README.md"]
 
+[tasks."build:helm-schema"]
+description = "Generate the chart's values.schema.json with helm-values-schema-json"
+run = 'schema'
+dir = "deploy/charts/distr"
+sources = ["values.yaml", ".schema.yaml"]
+outputs = ["values.schema.json"]
+
 [tasks."format:frontend"]
 run = ['pnpm dedupe', 'pnpm format']
-depends = ["build:helm-docs"]
+depends = ["build:helm-docs", "build:helm-schema"]
 
 [tasks."format:website"]
 run = ['pnpm dedupe', 'pnpm format']

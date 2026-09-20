@@ -27,7 +27,7 @@ image:
   pullPolicy: IfNotPresent
   # -- Distr image tag.
   # @default -- the chart appVersion
-  tag: ''
+  tag: '' # @schema type: [string, number]
 
 # -- [Secrets for pulling the images](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
 # from a private repository.
@@ -245,7 +245,7 @@ distr:
   # templates have nothing else to compare against. They decide where the deprecated `hub` key below
   # is still read, and are not settings.
   # @ignore
-  defaults:
+  defaults: # @schema hidden
     env: *defaultDistrEnv
     envFrom: *defaultDistrEnvFrom
     scratch: *defaultDistrScratch
@@ -255,7 +255,7 @@ distr:
 # `distr` still holds the chart default for that key, so anything you move to `distr` takes effect
 # immediately. Drop a setting here rather than emptying its counterpart: a value that equals the
 # chart default, `envFrom: []` for instance, cannot be told apart from the default.
-hub: {}
+hub: {} # @schema deprecated
 
 # -- [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)
 # to add to the Distr pods.
@@ -343,19 +343,19 @@ resources: {}
 startupProbe:
   httpGet:
     path: /
-    port: http
+    port: http # @schema type: [string, integer]
   periodSeconds: 10
   failureThreshold: 30
 # -- Liveness probe of the Distr container.
 livenessProbe:
   httpGet:
     path: /
-    port: http
+    port: http # @schema type: [string, integer]
 # -- Readiness probe of the Distr container.
 readinessProbe:
   httpGet:
     path: /
-    port: http
+    port: http # @schema type: [string, integer]
 
 # -- Seconds the Distr pod is given to terminate gracefully after receiving a shutdown signal.
 terminationGracePeriodSeconds: 60
@@ -380,10 +380,10 @@ podDisruptionBudget:
   # -- Distr replicas that may be unavailable during a voluntary disruption. Mutually exclusive with
   # `minAvailable`, which is why this one is set by default: a minAvailable budget would block node
   # drains indefinitely when replicaCount is 1.
-  maxUnavailable: 1
+  maxUnavailable: 1 # @schema type: [integer, string]
   # -- Distr replicas that must stay available during a voluntary disruption. Mutually exclusive with
   # `maxUnavailable`.
-  minAvailable: ''
+  minAvailable: '' # @schema type: [string, integer]
 
 # -- Additional volumes of the Distr pods.
 volumes: []
@@ -483,7 +483,7 @@ caddy:
     # storage module for `caddy.storage`.
     repository: caddy
     # -- Caddy image tag.
-    tag: 2.11.4-alpine
+    tag: 2.11.4-alpine # @schema type: [string, number]
     # -- Caddy image pull policy.
     pullPolicy: IfNotPresent
   # -- E-mail address used for the ACME account.
@@ -510,10 +510,10 @@ caddy:
     # -- Replicas that may be unavailable during a voluntary disruption. Mutually exclusive with
     # `minAvailable`, which is why this one is set by default: a minAvailable budget would block node
     # drains indefinitely when replicaCount is 1.
-    maxUnavailable: 1
+    maxUnavailable: 1 # @schema type: [integer, string]
     # -- Replicas that must stay available during a voluntary disruption. Mutually exclusive with
     # `maxUnavailable`.
-    minAvailable: ''
+    minAvailable: '' # @schema type: [string, integer]
   persistence:
     # -- Keep the certificates on a volume. It is kept when the release is uninstalled, so that a
     # reinstall does not reissue a certificate for every custom domain. Disable this only when
@@ -582,7 +582,7 @@ postgresql:
     # -- PostgreSQL image repository.
     repository: bitnamilegacy/postgresql
     # -- PostgreSQL image tag.
-    tag: 17.6.0
+    tag: 17.6.0 # @schema type: [string, number]
 
 rustfs:
   # -- Deploy the bundled RustFS object storage, used by the OCI registry and by Loki. When disabled,
@@ -664,11 +664,14 @@ loki:
         ruler: loki
         admin: loki
       s3:
-        endpoint: http://distr-rustfs-svc:9000
+        # Setting the endpoint and the credentials to null is how Loki is pointed at a bucket it
+        # reaches through the credentials of its service account, see examples/enterprise-aws.
+        endpoint: http://distr-rustfs-svc:9000 # @schema nullable
         region: local
-        # Must match rustfs.secret.rustfs and the create-loki-bucket init container below.
-        accessKeyId: distr
-        secretAccessKey: distr123 # please change this
+        # Must match rustfs.secret.rustfs and the create-loki-bucket init container below, and
+        # please change the secret key for any real deployment.
+        accessKeyId: distr # @schema nullable
+        secretAccessKey: distr123 # @schema nullable
         s3ForcePathStyle: true
     compactor:
       retention_enabled: true

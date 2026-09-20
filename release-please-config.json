@@ -16,6 +16,12 @@
         "deploy/docker/enterprise-gcp/docker-compose.yaml",
         "deploy/charts/distr/README.md",
         "deploy/charts/distr/README.md.gotmpl",
+        "deploy/charts/distr/examples/community/values.yaml",
+        "deploy/charts/distr/examples/enterprise/values.yaml",
+        "deploy/charts/distr/examples/enterprise-aws/values.yaml",
+        "deploy/charts/distr/examples/enterprise-gcp/values.yaml",
+        "deploy/charts/distr/examples/quickstart/values.yaml",
+        "deploy/charts/distr/examples/quickstart/custom-domains-values.yaml",
         {
           "type": "json",
           "path": "package.json",
