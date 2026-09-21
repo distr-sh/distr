@@ -1,0 +1,18 @@
+---
+export interface Props {
+  competitor: string;
+  teaser: string;
+  slug: string;
+}
+
+const {competitor, teaser, slug} = Astro.props;
+---
+
+<a
+  href={`/compare/${slug}/`}
+  class="block p-6 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-400 transition-colors no-underline">
+  <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+    Distr vs {competitor}
+  </h2>
+  <p class="text-gray-600 dark:text-gray-400">{teaser}</p>
+</a>
