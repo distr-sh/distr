@@ -112,84 +112,106 @@ func putDeployment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = db.RunTx(ctx, func(ctx context.Context) error {
-		validationResult, err := validateDeploymentRequest(ctx, w, deploymentRequest)
-		if err != nil {
+	// Only an error returned from the transaction function has written a response of its own,
+	// so beginning or committing the transaction has failed when there is none.
+	var putErr error
+	if err := db.RunTx(ctx, func(ctx context.Context) error {
+		putErr = applyDeploymentRequest(ctx, w, deploymentRequest)
+		return putErr
+	}); err != nil {
+		if putErr == nil {
+			log.Warn("could not run db transaction", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// TODO: We might need to send a proper deployment object back, but not sure yet what it looks like
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func applyDeploymentRequest(
+	ctx context.Context,
+	w http.ResponseWriter,
+	deploymentRequest api.DeploymentRequest,
+) error {
+	log := internalctx.GetLogger(ctx)
+
+	validationResult, err := validateDeploymentRequest(ctx, w, deploymentRequest)
+	if err != nil {
+		return err
+	}
+	if err := setDeploymentRequestValuesHash(
+		&deploymentRequest,
+		validationResult.Secrets,
+		validationResult.LicenseKeys,
+	); err != nil {
+		return deploymentValuesError(ctx, w, err, "invalid deployment values")
+	}
+
+	if deploymentRequest.DeploymentID == nil {
+		deploymentRequest.AutomaticApplicationUpdatesEnabled = &validationResult.AutomaticApplicationUpdatesEnabled
+		if err = db.CreateDeployment(ctx, &deploymentRequest); errors.Is(err, apierrors.ErrConflict) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return err
+		} else if err != nil {
+			log.Warn("could not create deployment", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return err
 		}
-		if err := setDeploymentRequestValuesHash(
-			&deploymentRequest,
-			validationResult.Secrets,
-			validationResult.LicenseKeys,
-		); err != nil {
-			return deploymentValuesError(ctx, w, err, "invalid deployment values")
-		}
-
-		if deploymentRequest.DeploymentID == nil {
-			deploymentRequest.AutomaticApplicationUpdatesEnabled = &validationResult.AutomaticApplicationUpdatesEnabled
-			if err = db.CreateDeployment(ctx, &deploymentRequest); errors.Is(err, apierrors.ErrConflict) {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return err
-			} else if err != nil {
-				log.Warn("could not create deployment", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return err
-			}
-		} else {
-			authInfo := auth.Authentication.Require(ctx)
-			deployment, err := db.GetDeployment(
-				ctx,
-				*deploymentRequest.DeploymentID,
-				authInfo.CurrentUserID(),
-				*authInfo.CurrentOrgID(),
-				authInfo.CurrentCustomerOrgID(),
-				authInfo.CurrentPartnerOrgID(),
-			)
-			if err != nil {
-				log.Warn("could not get deployment", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return err
-			}
-
-			if deployment.ApplicationEntitlementID == nil && deploymentRequest.ApplicationEntitlementID != nil {
-				deployment.ApplicationEntitlementID = deploymentRequest.ApplicationEntitlementID
-				if err := db.UpdateDeploymentEntitlement(ctx, deployment); err != nil {
-					log.Warn("could not set entitlement for deployment", zap.Error(err))
-					sentry.GetHubFromContext(ctx).CaptureException(err)
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return err
-				}
-			}
-
-			requested := deploymentRequest.AutomaticApplicationUpdatesEnabled
-			if requested != nil && deployment.AutomaticApplicationUpdatesEnabled != *requested {
-				deployment.AutomaticApplicationUpdatesEnabled = *requested
-				if err := db.UpdateDeploymentAutomaticApplicationUpdates(ctx, deployment); err != nil {
-					log.Warn("could not set automatic updates for deployment", zap.Error(err))
-					sentry.GetHubFromContext(ctx).CaptureException(err)
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return err
-				}
-			}
-		}
-
-		createdByUserID := auth.Authentication.Require(ctx).CurrentUserID()
-		deploymentRequest.CreatedByUserAccountID = &createdByUserID
-		deploymentRequest.Trigger = types.DeploymentRevisionTriggerUser
-
-		if _, err := db.CreateDeploymentRevision(ctx, &deploymentRequest); err != nil {
-			log.Warn("could not create deployment revision", zap.Error(err))
+	} else {
+		authInfo := auth.Authentication.Require(ctx)
+		deployment, err := db.GetDeployment(
+			ctx,
+			*deploymentRequest.DeploymentID,
+			authInfo.CurrentUserID(),
+			*authInfo.CurrentOrgID(),
+			authInfo.CurrentCustomerOrgID(),
+			authInfo.CurrentPartnerOrgID(),
+		)
+		if err != nil {
+			log.Warn("could not get deployment", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return err
 		}
 
-		// TODO: We might need to send a proper deployment object back, but not sure yet what it looks like
-		w.WriteHeader(http.StatusNoContent)
-		return nil
-	})
+		if deployment.ApplicationEntitlementID == nil && deploymentRequest.ApplicationEntitlementID != nil {
+			deployment.ApplicationEntitlementID = deploymentRequest.ApplicationEntitlementID
+			if err := db.UpdateDeploymentEntitlement(ctx, deployment); err != nil {
+				log.Warn("could not set entitlement for deployment", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return err
+			}
+		}
+
+		requested := deploymentRequest.AutomaticApplicationUpdatesEnabled
+		if requested != nil && deployment.AutomaticApplicationUpdatesEnabled != *requested {
+			deployment.AutomaticApplicationUpdatesEnabled = *requested
+			if err := db.UpdateDeploymentAutomaticApplicationUpdates(ctx, deployment); err != nil {
+				log.Warn("could not set automatic updates for deployment", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return err
+			}
+		}
+	}
+
+	createdByUserID := auth.Authentication.Require(ctx).CurrentUserID()
+	deploymentRequest.CreatedByUserAccountID = &createdByUserID
+	deploymentRequest.Trigger = types.DeploymentRevisionTriggerUser
+
+	if _, err := db.CreateDeploymentRevision(ctx, &deploymentRequest); err != nil {
+		log.Warn("could not create deployment revision", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	return nil
 }
 
 func patchDeploymentHandler() http.HandlerFunc {
