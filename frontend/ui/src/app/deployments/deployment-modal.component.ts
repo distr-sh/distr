@@ -68,6 +68,7 @@ export class DeploymentModalComponent {
         valuesYaml: deployment?.valuesYaml ? fromBase64(deployment.valuesYaml) : undefined,
         swarmMode: deployment?.dockerType === 'swarm',
         envFileData: deployment?.envFileData ? fromBase64(deployment.envFileData) : undefined,
+        automaticApplicationUpdatesEnabled: deployment?.automaticApplicationUpdatesEnabled ?? false,
         helmOptions: deployment?.helmOptions,
       });
     });

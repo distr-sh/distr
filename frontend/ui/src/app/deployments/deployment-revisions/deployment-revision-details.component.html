@@ -9,6 +9,10 @@
       <span class="block text-xs text-gray-500 dark:text-gray-400">Created</span>
       <div>{{ rev.createdAt | date: 'medium' }}</div>
     </div>
+    <div>
+      <span class="block text-xs text-gray-500 dark:text-gray-400">Trigger</span>
+      <div>{{ triggerLabel() }}</div>
+    </div>
     @if (rev.createdBy; as createdBy) {
       <div>
         <span class="block text-xs text-gray-500 dark:text-gray-400">Created by</span>

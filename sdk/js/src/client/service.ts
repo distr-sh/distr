@@ -116,7 +116,7 @@ export class DistrService {
    * base URL can be set. Optionally, a strategy for determining the latest version of an application can be specified –
    * the default is semantic versioning.
    * @param config ClientConfig containing at least an API key and optionally an API base URL
-   * @param latestVersionStrategy Strategy for determining the latest version of an application (default: 'semver')
+   * @param latestVersionStrategy Strategy for applications that do not define one themselves (default: 'semver')
    */
   constructor(
     config: ConditionalPartial<ClientConfig, keyof typeof defaultClientConfig>,
@@ -387,7 +387,9 @@ export class DistrService {
 
   /**
    * Returns the application and all versions that are newer than the given version ID. If no version ID is given,
-   * all versions are considered. The versions are ordered ascending according to the given strategy.
+   * all versions are considered. Archived versions are never returned, since nothing should be deployed to one, but
+   * a deployment can still be on one, so currentVersionId may name an archived version.
+   * The versions are ordered ascending according to the given strategy.
    * @param appId
    * @param currentVersionId
    */
@@ -400,13 +402,16 @@ export class DistrService {
     if (!currentVersion && currentVersionId) {
       throw new Error('given version ID does not exist in this application');
     }
+    const strategy = this.strategyFor(app);
     const newerVersions = (app.versions || [])
       .filter((it) => {
+        if (it.archivedAt) {
+          return false;
+        }
         if (!currentVersion) {
           return true;
         }
-        // surely there are fancier ways to deal with strategies but that's it for now
-        switch (this.latestVersionStrategy) {
+        switch (strategy) {
           case 'semver':
             return semver.gt(it.name!, currentVersion.name!, {loose: true});
           case 'chronological':
@@ -414,7 +419,7 @@ export class DistrService {
         }
       })
       .sort((a, b) => {
-        switch (this.latestVersionStrategy) {
+        switch (strategy) {
           case 'semver':
             return semver.compare(a.name!, b.name!, {loose: true});
           case 'chronological':
@@ -422,6 +427,26 @@ export class DistrService {
         }
       });
     return {app, newerVersions};
+  }
+
+  /**
+   * The application's own versioning strategy wins over the one this service was constructed with,
+   * which remains the fallback for an application that has none. The legacy strategy orders by
+   * SemVer while every name parses and by creation date as soon as one does not, which is how the
+   * versions of an application that predates the strategy were always ordered.
+   */
+  private strategyFor(app: Application): LatestVersionStrategy {
+    switch (app.versioningStrategy) {
+      case 'semver':
+      case 'chronological':
+        return app.versioningStrategy;
+      case 'legacy':
+        return (app.versions ?? []).every((it) => semver.valid(it.name, {loose: true}) !== null)
+          ? 'semver'
+          : 'chronological';
+      default:
+        return this.latestVersionStrategy;
+    }
   }
 
   /**

@@ -20,6 +20,14 @@
 
 ---
 
+### automaticApplicationUpdatesEnabled?
+
+> `optional` **automaticApplicationUpdatesEnabled?**: `boolean`
+
+Leaves an existing deployment's setting alone when absent.
+
+---
+
 ### deploymentId?
 
 > `optional` **deploymentId?**: `string`

@@ -12,6 +12,14 @@
 
 ## Properties
 
+### allowAutomaticUpdates?
+
+> `optional` **allowAutomaticUpdates?**: `boolean`
+
+Whether deployments of this application may have automatic updates enabled.
+
+---
+
 ### createdAt?
 
 > `optional` **createdAt?**: `string`
@@ -57,6 +65,12 @@
 ### type
 
 > **type**: [`DeploymentType`](../type-aliases/DeploymentType.md)
+
+---
+
+### versioningStrategy?
+
+> `optional` **versioningStrategy?**: [`VersioningStrategy`](../type-aliases/VersioningStrategy.md)
 
 ---
 

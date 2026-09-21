@@ -55,8 +55,9 @@
       }
     </div>
   }
+  <!-- Automatic updates disable the version control, so its value decides here and not its validity. -->
   @if (
-    deployForm.controls.applicationVersionId.valid &&
+    deployForm.controls.applicationVersionId.value &&
     (deployForm.controls.envFileData.enabled || deployForm.controls.valuesYaml.enabled || resources().length > 0)
   ) {
     <div class="col-span-2 text-gray-500 dark:text-gray-400">
@@ -112,7 +113,7 @@
       <div class="mt-4">
         @if (activeTab() === 'environment') {
           <app-editor id="env-file" class="distr-input distr-input-raised" formControlName="envFileData" />
-          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <div class="distr-hint mt-1">
             Set your environment variables here. Documentation:
             <a
               target="_blank"
@@ -137,14 +138,14 @@
             language="yaml"
             class="distr-input distr-input-raised cursor-not-allowed"
             [formControl]="composeFile" />
-          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <div class="distr-hint mt-1">
             This Docker Compose file comes from the application version and is read-only.
           </div>
         }
         @if (activeTab() === 'values') {
           <app-editor language="yaml" class="distr-input distr-input-raised" formControlName="valuesYaml" />
           @if (auth.hasAnyRole('read_write', 'admin')) {
-            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <div class="distr-hint mt-1">
               You can reference
               <a
                 [routerLink]="secretsUrl()"
@@ -190,15 +191,26 @@
     </div>
   }
 
+  @if (deployForm.controls.automaticApplicationUpdatesEnabled.enabled) {
+    <div class="col-span-2">
+      <label class="inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
+        <input type="checkbox" class="distr-checkbox" formControlName="automaticApplicationUpdatesEnabled" />
+        <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enable automatic updates</span>
+      </label>
+      <div class="distr-hint mt-1">
+        This deployment then always runs the latest version of the application, which is why the version cannot be
+        chosen.
+      </div>
+    </div>
+  }
+
   @if (deployForm.controls.ignoreRevisionSkew.enabled) {
     <div class="col-span-2">
       <label class="inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
         <input type="checkbox" class="distr-checkbox" formControlName="ignoreRevisionSkew" />
         <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Ignore Helm revision skew</span>
       </label>
-      <div class="text-xs text-gray-500">
-        Check this if you want to force the agent to overwrite a newer Helm release
-      </div>
+      <div class="distr-hint mt-1">Check this if you want to force the agent to overwrite a newer Helm release</div>
     </div>
   }
 
@@ -265,7 +277,7 @@
             <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Force conflicts</span>
           </label>
 
-          <div class="col-span-2 text-xs text-gray-500">
+          <div class="col-span-2 distr-hint">
             Please refer to the
             <a
               class="font-medium text-primary-600 hover:underline dark:text-primary-500"

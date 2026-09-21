@@ -118,8 +118,9 @@ func createHelloDistrApp(ctx context.Context) (*types.Application, error) {
 	auth := auth.Authentication.Require(ctx)
 
 	application := types.Application{
-		Name: "hello-distr",
-		Type: types.DeploymentTypeDocker,
+		Name:               "hello-distr",
+		Type:               types.DeploymentTypeDocker,
+		VersioningStrategy: types.VersioningStrategySemver,
 	}
 
 	var composeFileData []byte
@@ -199,6 +200,7 @@ func createHelloDistrDeploymentAndRevision(ctx context.Context, appVersionID uui
 		DeploymentTargetID:   dtID,
 		EnvFileData:          []byte(helloDistrEnvironment),
 		DockerType:           util.PtrTo(types.DockerTypeCompose),
+		Trigger:              types.DeploymentRevisionTriggerUser,
 	}
 	if err := db.CreateDeployment(ctx, deploymentRequest); err != nil {
 		return err

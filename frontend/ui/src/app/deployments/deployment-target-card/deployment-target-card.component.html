@@ -199,6 +199,7 @@
     <div class="overflow-hidden">
       <ul class="distr-table">
         @let deploymentIdsWithUpdate1 = deploymentIdsWithUpdate();
+        @let autoUpdatableDeploymentIds = deploymentIdsAllowingAutomaticUpdates();
         @for (deployment of deploymentTarget().deployments; track deployment.id) {
           <li class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-300 dark:border-gray-500">
             <div class="px-4 py-2">
@@ -293,19 +294,25 @@
                             </button>
                           </li>
                           @if (auth.hasAnyRole('read_write', 'admin')) {
-                            <li>
-                              <button
-                                type="button"
-                                class="distr-dropdown-item"
-                                (click)="showDeploymentDropdownForId.set(undefined); showLogsEnabledMovedAlert()">
-                                <fa-icon [icon]="faFileLines" class="w-4 text-gray-500 dark:text-gray-400" />
-                                @if (deploymentTarget().deploymentLogsEnabled) {
-                                  Disable log collection
-                                } @else {
-                                  Enable log collection
-                                }
-                              </button>
-                            </li>
+                            @if (
+                              isAutoUpdatesEnabled() && deployment.id && autoUpdatableDeploymentIds.has(deployment.id)
+                            ) {
+                              <li>
+                                <button
+                                  type="button"
+                                  class="distr-dropdown-item"
+                                  (click)="
+                                    showDeploymentDropdownForId.set(undefined); toggleAutomaticUpdates(deployment)
+                                  ">
+                                  <fa-icon [icon]="faRotate" class="w-4 text-gray-500 dark:text-gray-400" />
+                                  @if (deployment.automaticApplicationUpdatesEnabled) {
+                                    Disable automatic updates
+                                  } @else {
+                                    Enable automatic updates
+                                  }
+                                </button>
+                              </li>
+                            }
                             <li>
                               <button
                                 type="button"
@@ -366,12 +373,26 @@
                   </div>
                 </div>
                 <div class="flex items-center justify-between gap-3">
-                  <a
-                    class="flex items-center"
-                    [routerLink]="[deploymentTarget().id]"
-                    [queryParams]="{deploymentId: deployment.id}">
-                    <app-deployment-status-text [deployment]="deployment" />
-                  </a>
+                  <div class="flex items-center gap-2 min-w-0">
+                    <a
+                      class="flex items-center"
+                      [routerLink]="[deploymentTarget().id]"
+                      [queryParams]="{deploymentId: deployment.id}">
+                      <app-deployment-status-text [deployment]="deployment" />
+                    </a>
+                    @if (
+                      deployment.automaticApplicationUpdatesEnabled &&
+                      deployment.id &&
+                      autoUpdatableDeploymentIds.has(deployment.id)
+                    ) {
+                      <span
+                        class="distr-status-badge whitespace-nowrap"
+                        [ngClass]="automaticUpdatesBadgeClass"
+                        title="This deployment is updated to the latest version automatically.">
+                        Auto-Updates
+                      </span>
+                    }
+                  </div>
                   <div class="text-xs text-end whitespace-nowrap">
                     <div class="text-gray-500 dark:text-gray-400 wrap-break-word">Last modified</div>
                     <div class="text-gray-900 dark:text-white">

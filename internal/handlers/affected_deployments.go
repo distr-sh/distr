@@ -203,6 +203,7 @@ func triggerAffectedDeployments(
 	ctx context.Context,
 	affected []api.AffectedDeployment,
 	createdByUserID *uuid.UUID,
+	trigger types.DeploymentRevisionTrigger,
 ) error {
 	byTarget := make(map[uuid.UUID][]api.AffectedDeployment)
 	for _, ad := range affected {
@@ -233,6 +234,7 @@ func triggerAffectedDeployments(
 			}
 			request := deploymentRequestFromLatestRevision(target.Deployments[index])
 			request.CreatedByUserAccountID = createdByUserID
+			request.Trigger = trigger
 			if err := setDeploymentRequestValuesHash(&request, secrets, licenseKeys); err != nil {
 				return err
 			}
@@ -254,8 +256,6 @@ func deploymentRequestFromLatestRevision(deployment types.DeploymentWithLatestRe
 		ValuesYaml:               deployment.ValuesYaml,
 		DockerType:               deployment.DockerType,
 		EnvFileData:              deployment.EnvFileData,
-		ForceRestart:             deployment.ForceRestart,
-		IgnoreRevisionSkew:       deployment.IgnoreRevisionSkew,
 		HelmOptions:              apiHelmOptionsFromInternal(deployment.HelmOptions),
 	}
 }
