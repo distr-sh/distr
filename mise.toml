@@ -136,11 +136,9 @@ sources = [
 outputs = ["deploy/charts/distr/README.md"]
 
 [tasks."build:helm-schema"]
-description = "Generate the chart's values.schema.json with helm-values-schema-json"
+description = "Generate values.schema.json from values.yaml and its helm-docs comments"
 run = 'schema'
 dir = "deploy/charts/distr"
-sources = ["values.yaml", ".schema.yaml"]
-outputs = ["values.schema.json"]
 
 [tasks."format:frontend"]
 run = ['pnpm dedupe', 'pnpm format']
