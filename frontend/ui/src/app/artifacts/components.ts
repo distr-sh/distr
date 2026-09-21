@@ -46,23 +46,6 @@ export class ArtifactPublicBadgeComponent {
 }
 
 @Component({
-  selector: 'app-artifact-anonymous-pull-badge',
-  host: {
-    class:
-      'distr-status-badge bg-blue-100 text-blue-800 border-blue-400 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-800',
-    title: 'Pulled from a public artifact without credentials',
-  },
-  template: `
-    <fa-icon [icon]="faGlobe" />
-    Anonymous
-  `,
-  imports: [FaIconComponent],
-})
-export class ArtifactAnonymousPullBadgeComponent {
-  protected readonly faGlobe = faGlobe;
-}
-
-@Component({
   selector: 'app-artifacts-download-count',
   template: `
     <div class="inline-flex items-center text-sm text-gray-500 truncate dark:text-gray-400">

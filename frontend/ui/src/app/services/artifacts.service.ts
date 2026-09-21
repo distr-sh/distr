@@ -57,6 +57,12 @@ export interface ArtifactWithTags extends Artifact {
   versions?: TaggedArtifactVersion[];
 }
 
+export interface PatchArtifactRequest {
+  upstreamUrl?: string | null;
+  auth?: ArtifactUpstreamAuth | null;
+  public?: boolean;
+}
+
 class ArtifactsReactiveList extends ReactiveList<ArtifactWithTags> {
   protected override identify = (a: ArtifactWithTags) => a.id;
   protected override sortAttr = (a: ArtifactWithTags) => a.versions?.[0]?.createdAt ?? '';
@@ -112,21 +118,9 @@ export class ArtifactsService {
       .pipe(tap((it) => this.cache.save(it)));
   }
 
-  public patchUpstreamURL(artifactId: string, upstreamUrl: string | null): Observable<ArtifactWithTags> {
+  public patchArtifact(artifactId: string, patch: PatchArtifactRequest): Observable<ArtifactWithTags> {
     return this.http
-      .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}`, {upstreamUrl})
-      .pipe(tap((it) => this.cache.save(it)));
-  }
-
-  public patchUpstreamAuth(artifactId: string, auth: ArtifactUpstreamAuth | null): Observable<ArtifactWithTags> {
-    return this.http
-      .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}`, {auth})
-      .pipe(tap((it) => this.cache.save(it)));
-  }
-
-  public patchPublic(artifactId: string, isPublic: boolean): Observable<ArtifactWithTags> {
-    return this.http
-      .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}`, {public: isPublic})
+      .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}`, patch)
       .pipe(tap((it) => this.cache.save(it)));
   }
 

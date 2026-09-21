@@ -297,7 +297,7 @@ export class ArtifactVersionsComponent {
 
     try {
       const {upstreamUrl} = this.upstreamURLForm.value;
-      await lastValueFrom(this.artifacts.patchUpstreamURL(artifact.id, upstreamUrl || null));
+      await lastValueFrom(this.artifacts.patchArtifact(artifact.id, {upstreamUrl: upstreamUrl || null}));
       this.toast.success('Upstream URL updated');
       this.upstreamURLModalRef?.close();
     } catch (e) {
@@ -337,7 +337,7 @@ export class ArtifactVersionsComponent {
           password: upstreamPassword || undefined,
         };
       }
-      await lastValueFrom(this.artifacts.patchUpstreamAuth(artifact.id, auth));
+      await lastValueFrom(this.artifacts.patchArtifact(artifact.id, {auth}));
       this.toast.success('Upstream authentication updated');
       this.upstreamAuthModalRef?.close();
     } catch (e) {
@@ -429,7 +429,7 @@ export class ArtifactVersionsComponent {
       )
       .pipe(
         filter((result) => result === true),
-        switchMap(() => this.artifacts.patchPublic(artifact.id, isPublic)),
+        switchMap(() => this.artifacts.patchArtifact(artifact.id, {public: isPublic})),
         catchError((e) => {
           const msg = getFormDisplayedError(e);
           if (msg) {
