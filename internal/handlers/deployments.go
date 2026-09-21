@@ -280,9 +280,8 @@ func setDeploymentAutomaticUpdates(
 	// Enabling has to catch the deployment up, otherwise it would stay behind until the next
 	// version is created.
 	if enabled {
-		current.AutomaticApplicationUpdatesEnabled = true
 		if err := triggerAutomaticUpdateOfDeployment(
-			ctx, authInfo.CurrentOrg(), application, current, new(authInfo.CurrentUserID()),
+			ctx, authInfo.CurrentOrg(), application.ID, deployment.ID, new(authInfo.CurrentUserID()),
 		); err != nil {
 			return automaticUpdateError(ctx, w, err)
 		}

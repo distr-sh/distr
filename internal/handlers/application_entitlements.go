@@ -218,13 +218,8 @@ func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Widening the entitlement can make a newer version available to the customer.
-		if application, err := db.GetApplication(ctx, entitlement.ApplicationID, entitlement.OrganizationID); err != nil {
-			log.Warn("could not get application", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return err
-		} else if err := triggerAutomaticApplicationUpdates(
-			ctx, auth.CurrentOrg(), application, new(auth.CurrentUserID()),
+		if err := triggerAutomaticApplicationUpdates(
+			ctx, auth.CurrentOrg(), entitlement.ApplicationID, new(auth.CurrentUserID()),
 		); err != nil {
 			return automaticUpdateError(ctx, w, err)
 		}

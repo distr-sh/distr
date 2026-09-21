@@ -32,21 +32,17 @@ func automaticUpdatesAllowed(org *types.Organization, application *types.Applica
 // entitlement need no special case: both can only lower the newest version, and the deployment is
 // then already ahead of it. That also makes the function safe to call after any change to an
 // application, its versions or an entitlement.
+//
+// The caller has to have written its own change to the application before calling, and to be inside
+// a transaction, since the newest version is determined from what the database holds rather than
+// from what the caller has in memory.
 func triggerAutomaticApplicationUpdates(
 	ctx context.Context,
 	org *types.Organization,
-	application *types.Application,
+	applicationID uuid.UUID,
 	createdByUserID *uuid.UUID,
 ) error {
-	if !automaticUpdatesAllowed(org, application) {
-		return nil
-	}
-
-	deployments, err := db.GetDeploymentsWithAutomaticApplicationUpdates(ctx, application.ID)
-	if err != nil {
-		return err
-	}
-	return updateDeploymentsToLatestVersion(ctx, application, deployments, createdByUserID)
+	return updateDeploymentsToLatestVersion(ctx, org, applicationID, nil, createdByUserID)
 }
 
 // triggerAutomaticUpdateOfDeployment is triggerAutomaticApplicationUpdates for the single
@@ -54,19 +50,11 @@ func triggerAutomaticApplicationUpdates(
 func triggerAutomaticUpdateOfDeployment(
 	ctx context.Context,
 	org *types.Organization,
-	application *types.Application,
-	deployment types.DeploymentWithLatestRevision,
+	applicationID uuid.UUID,
+	deploymentID uuid.UUID,
 	createdByUserID *uuid.UUID,
 ) error {
-	if !automaticUpdatesAllowed(org, application) {
-		return nil
-	}
-	return updateDeploymentsToLatestVersion(
-		ctx,
-		application,
-		[]types.DeploymentWithLatestRevision{deployment},
-		createdByUserID,
-	)
+	return updateDeploymentsToLatestVersion(ctx, org, applicationID, &deploymentID, createdByUserID)
 }
 
 // automaticUpdateError writes the response for a failed automatic update, for a handler whose
@@ -80,10 +68,36 @@ func automaticUpdateError(ctx context.Context, w http.ResponseWriter, err error)
 
 func updateDeploymentsToLatestVersion(
 	ctx context.Context,
-	application *types.Application,
-	deployments []types.DeploymentWithLatestRevision,
+	org *types.Organization,
+	applicationID uuid.UUID,
+	onlyDeploymentID *uuid.UUID,
 	createdByUserID *uuid.UUID,
 ) error {
+	// Two transactions creating a version at the same time each miss the other's version, and a
+	// revision's created_at is the start of the transaction that inserted it, so the one that
+	// started later can make the older of the two versions the latest revision. The lock, and
+	// reading the versions and the current revisions only while holding it, keep that out.
+	if err := db.LockApplicationExclusive(ctx, applicationID); err != nil {
+		return err
+	}
+
+	application, err := db.GetApplication(ctx, applicationID, org.ID)
+	if err != nil {
+		return err
+	}
+	if !automaticUpdatesAllowed(org, application) {
+		return nil
+	}
+
+	deployments, err := db.GetDeploymentsWithAutomaticApplicationUpdates(ctx, applicationID)
+	if err != nil {
+		return err
+	}
+	if onlyDeploymentID != nil {
+		deployments = slices.DeleteFunc(deployments, func(d types.DeploymentWithLatestRevision) bool {
+			return d.ID != *onlyDeploymentID
+		})
+	}
 	if len(deployments) == 0 {
 		return nil
 	}

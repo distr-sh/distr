@@ -232,7 +232,7 @@ func updateApplication(w http.ResponseWriter, r *http.Request) {
 		application.Versions = existing.Versions
 
 		if err := triggerAutomaticApplicationUpdates(
-			ctx, auth.CurrentOrg(), &application, new(auth.CurrentUserID()),
+			ctx, auth.CurrentOrg(), application.ID, new(auth.CurrentUserID()),
 		); err != nil {
 			return automaticUpdateError(ctx, w, err)
 		}
@@ -323,7 +323,7 @@ func patchApplicationHandler() http.HandlerFunc {
 			// Un-archiving a version, or switching the strategy, can make another version the
 			// newest one.
 			if err := triggerAutomaticApplicationUpdates(
-				ctx, auth.CurrentOrg(), existing, new(auth.CurrentUserID()),
+				ctx, auth.CurrentOrg(), existing.ID, new(auth.CurrentUserID()),
 			); err != nil {
 				return automaticUpdateError(ctx, w, err)
 			}
@@ -499,10 +499,8 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 		if err := db.CreateApplicationVersionResources(ctx, applicationVersion.ID, resources); err != nil {
 			return err
 		}
-		withNewVersion := *application
-		withNewVersion.Versions = append(slices.Clone(application.Versions), applicationVersion)
 		return triggerAutomaticApplicationUpdates(
-			ctx, auth.CurrentOrg(), &withNewVersion, new(auth.CurrentUserID()))
+			ctx, auth.CurrentOrg(), application.ID, new(auth.CurrentUserID()))
 	}); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.NotFound(w, r)
@@ -560,9 +558,8 @@ func updateApplicationVersion(w http.ResponseWriter, r *http.Request) {
 		if err := db.UpdateApplicationVersion(ctx, &updatedVersion); err != nil {
 			return err
 		}
-		updated.Versions[existingIndex] = updatedVersion
 		return triggerAutomaticApplicationUpdates(
-			ctx, auth.CurrentOrg(), &updated, new(auth.CurrentUserID()))
+			ctx, auth.CurrentOrg(), existing.ID, new(auth.CurrentUserID()))
 	}); err != nil {
 		if errors.Is(err, apierrors.ErrAlreadyExists) {
 			http.Error(w, "Application version cannot be updated because a version with this name already exists.",

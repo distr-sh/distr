@@ -192,6 +192,21 @@ func GetApplication(ctx context.Context, id, orgID uuid.UUID) (*types.Applicatio
 	}
 }
 
+// LockApplicationExclusive locks an application against a concurrent change to it, to its versions
+// or to one of its entitlements, each of which is a different row and would therefore not conflict.
+func LockApplicationExclusive(ctx context.Context, applicationID uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	// Advisory locks share one namespace instance-wide, hence the entity prefix in the key.
+	if _, err := db.Exec(
+		ctx,
+		`SELECT pg_advisory_xact_lock(hashtextextended('Application:' || @applicationId::TEXT, 0))`,
+		pgx.NamedArgs{"applicationId": applicationID},
+	); err != nil {
+		return fmt.Errorf("could not lock application: %w", err)
+	}
+	return nil
+}
+
 func GetApplicationWithEntitlementOwnerID(
 	ctx context.Context,
 	customerOrganizationID uuid.UUID,
