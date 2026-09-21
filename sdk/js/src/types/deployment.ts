@@ -89,8 +89,11 @@ export interface DeploymentRevisionResponse {
   forceRestart: boolean;
   ignoreRevisionSkew: boolean;
   helmOptions?: HelmOptions;
+  trigger: DeploymentRevisionTrigger;
   createdBy?: DeploymentRevisionCreator;
 }
+
+export type DeploymentRevisionTrigger = 'user' | 'automatic_update' | 'secret_change' | 'license_key_change';
 
 export type DeploymentType = 'docker' | 'kubernetes';
 

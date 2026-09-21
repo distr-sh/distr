@@ -13,19 +13,20 @@ type DeploymentTargetAccessTokenResponse struct {
 }
 
 type DeploymentRequest struct {
-	DeploymentID             *uuid.UUID        `json:"deploymentId"`
-	DeploymentTargetID       uuid.UUID         `json:"deploymentTargetId"`
-	ApplicationVersionID     uuid.UUID         `json:"applicationVersionId"`
-	ApplicationEntitlementID *uuid.UUID        `json:"applicationEntitlementId"`
-	ReleaseName              *string           `json:"releaseName"`
-	ValuesYaml               []byte            `json:"valuesYaml"`
-	DockerType               *types.DockerType `json:"dockerType"`
-	EnvFileData              []byte            `json:"envFileData"`
-	ForceRestart             bool              `json:"forceRestart"`
-	IgnoreRevisionSkew       bool              `json:"ignoreRevisionSkew"`
-	HelmOptions              *HelmOptions      `json:"helmOptions,omitempty"`
-	ValuesHash               []byte            `json:"-"`
-	CreatedByUserAccountID   *uuid.UUID        `json:"-"`
+	DeploymentID             *uuid.UUID                      `json:"deploymentId"`
+	DeploymentTargetID       uuid.UUID                       `json:"deploymentTargetId"`
+	ApplicationVersionID     uuid.UUID                       `json:"applicationVersionId"`
+	ApplicationEntitlementID *uuid.UUID                      `json:"applicationEntitlementId"`
+	ReleaseName              *string                         `json:"releaseName"`
+	ValuesYaml               []byte                          `json:"valuesYaml"`
+	DockerType               *types.DockerType               `json:"dockerType"`
+	EnvFileData              []byte                          `json:"envFileData"`
+	ForceRestart             bool                            `json:"forceRestart"`
+	IgnoreRevisionSkew       bool                            `json:"ignoreRevisionSkew"`
+	HelmOptions              *HelmOptions                    `json:"helmOptions,omitempty"`
+	ValuesHash               []byte                          `json:"-"`
+	CreatedByUserAccountID   *uuid.UUID                      `json:"-"`
+	Trigger                  types.DeploymentRevisionTrigger `json:"-"`
 
 	// AutomaticApplicationUpdatesEnabled leaves an existing deployment's setting alone when it is
 	// absent, so that a client written before the field existed cannot turn automatic updates off.

@@ -10,3 +10,13 @@ ALTER TABLE Application
 
 ALTER TABLE Deployment
   ADD COLUMN automatic_application_updates_enabled BOOLEAN NOT NULL DEFAULT false;
+
+CREATE TYPE DEPLOYMENT_REVISION_TRIGGER AS ENUM (
+  'user',
+  'automatic_update',
+  'secret_change',
+  'license_key_change'
+);
+
+ALTER TABLE DeploymentRevision
+  ADD COLUMN trigger DEPLOYMENT_REVISION_TRIGGER NOT NULL DEFAULT 'user';

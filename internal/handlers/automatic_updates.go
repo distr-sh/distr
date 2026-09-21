@@ -157,6 +157,7 @@ func updateDeploymentToLatestVersion(
 	// A restart was asked for once, for the revision it was asked on, and must not repeat here.
 	request.ForceRestart = false
 	request.CreatedByUserAccountID = createdByUserID
+	request.Trigger = types.DeploymentRevisionTriggerAutomaticUpdate
 
 	if err := validateAutomaticUpdateValues(&request, latestWithFiles, secrets, licenseKeys); err != nil {
 		log.Warn("skipping automatic update because the deployment values do not apply to the new version",

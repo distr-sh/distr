@@ -178,6 +178,7 @@ func putDeployment(w http.ResponseWriter, r *http.Request) {
 
 		createdByUserID := auth.Authentication.Require(ctx).CurrentUserID()
 		deploymentRequest.CreatedByUserAccountID = &createdByUserID
+		deploymentRequest.Trigger = types.DeploymentRevisionTriggerUser
 
 		if _, err := db.CreateDeploymentRevision(ctx, &deploymentRequest); err != nil {
 			log.Warn("could not create deployment revision", zap.Error(err))

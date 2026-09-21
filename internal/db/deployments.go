@@ -397,6 +397,7 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 		"forceRestart":           request.ForceRestart,
 		"ignoreRevisionSkew":     request.IgnoreRevisionSkew,
 		"createdByUserAccountId": request.CreatedByUserAccountID,
+		"trigger":                request.Trigger,
 	}
 
 	if request.HelmOptions != nil {
@@ -424,7 +425,8 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 			helm_options_rollback_on_failure,
 			helm_options_cleanup_on_failure,
 			helm_options_force_conflicts,
-			created_by_user_account_id
+			created_by_user_account_id,
+			trigger
 		) VALUES (
 		 	@deploymentId,
 			@applicationVersionId,
@@ -438,7 +440,8 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 			@helmOptionsRollbackOnFailure,
 			@helmOptionsCleanupOnFailure,
 			@helmOptionsForceConflicts,
-			@createdByUserAccountId
+			@createdByUserAccountId,
+			@trigger
 		) RETURNING
 		 	dr.id,
 			dr.created_at,
@@ -448,6 +451,7 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 			dr.force_restart,
 			dr.ignore_revision_skew,
 			dr.created_by_user_account_id,
+			dr.trigger,
 			CASE WHEN dr.helm_options_timeout IS NOT NULL THEN (
 				dr.helm_options_timeout,
 				dr.helm_options_wait_strategy,
@@ -516,6 +520,7 @@ func GetDeploymentRevisions(
 					dr.helm_options_cleanup_on_failure,
 					dr.helm_options_force_conflicts
 				) END AS helm_options,
+				dr.trigger AS trigger,
 				u.id AS created_by_id,
 				u.name AS created_by_name,
 				u.email AS created_by_email,

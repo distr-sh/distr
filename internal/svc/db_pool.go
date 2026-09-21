@@ -67,6 +67,7 @@ func (reg *Registry) createDBPoolFor(ctx context.Context, url string, maxConns *
 			"USER_ROLE",
 			"HELM_CHART_TYPE",
 			"DEPLOYMENT_STATUS_TYPE",
+			"DEPLOYMENT_REVISION_TRIGGER",
 			"FEATURE",
 			"_FEATURE",
 			"TUTORIAL",

@@ -1,3 +1,8 @@
+ALTER TABLE DeploymentRevision
+  DROP COLUMN IF EXISTS trigger;
+
+DROP TYPE IF EXISTS DEPLOYMENT_REVISION_TRIGGER;
+
 ALTER TABLE Deployment
   DROP COLUMN IF EXISTS automatic_application_updates_enabled;
 

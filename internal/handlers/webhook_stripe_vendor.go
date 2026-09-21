@@ -205,7 +205,7 @@ func handleVendorStripeSubscription(ctx context.Context, orgID uuid.UUID, sub st
 		if err := db.CreateLicenseKeyRevision(ctx, &revision); err != nil {
 			return err
 		}
-		return triggerAffectedDeployments(ctx, affected, nil)
+		return triggerAffectedDeployments(ctx, affected, nil, types.DeploymentRevisionTriggerLicenseKeyChange)
 	}); err != nil {
 		return err
 	}
