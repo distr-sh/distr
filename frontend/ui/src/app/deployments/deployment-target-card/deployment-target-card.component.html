@@ -223,7 +223,7 @@
                         Open
                       </a>
                     }
-                    @if (deployment.latestStatus) {
+                    @if (deployment.currentStatus ?? deployment.latestStatus) {
                       <a
                         class="px-2 py-1 flex items-center text-sm font-medium text-center distr-btn-secondary"
                         [routerLink]="[deploymentTarget().id]"
@@ -908,7 +908,8 @@
       <app-deployment-revisions-timeline
         [deploymentTarget]="deploymentTarget()"
         [deploymentId]="deployment.id!"
-        [currentRevisionId]="deployment.deploymentRevisionId"
+        [currentRevisionId]="deployment.currentDeploymentRevisionId"
+        [latestRevisionId]="deployment.deploymentRevisionId"
         (revisionSelected)="openRevisionDetails($event)" />
     }
   </div>

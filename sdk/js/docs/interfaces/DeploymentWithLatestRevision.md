@@ -85,6 +85,21 @@ Unrelated to DeploymentTarget.automaticUpdatesEnabled, which is the agent updati
 
 ---
 
+### currentDeploymentRevisionId?
+
+> `optional` **currentDeploymentRevisionId?**: `string`
+
+The revision an agent last reported as applied, which differs from deploymentRevisionId while a
+newer revision is being rolled out or has failed.
+
+---
+
+### currentStatus?
+
+> `optional` **currentStatus?**: [`DeploymentRevisionStatus`](DeploymentRevisionStatus.md)
+
+---
+
 ### deploymentRevisionCreatedAt?
 
 > `optional` **deploymentRevisionCreatedAt?**: `string`

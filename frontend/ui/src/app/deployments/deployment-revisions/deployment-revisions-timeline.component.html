@@ -19,6 +19,8 @@
             <span class="font-semibold text-gray-900 dark:text-white">{{ revision.applicationVersionName }}</span>
             @if (revision.id === currentRevisionId()) {
               <span class="text-gray-500 dark:text-gray-400">(current)</span>
+            } @else if (revision.id === latestRevisionId()) {
+              <span class="text-gray-500 dark:text-gray-400">(latest)</span>
             }
           </div>
           @if (revision.createdBy; as createdBy) {

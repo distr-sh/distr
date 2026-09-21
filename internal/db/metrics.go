@@ -15,7 +15,8 @@ func GetDeploymentsForMetrics(ctx context.Context) ([]types.DeploymentStatusMetr
 
 	rows, err := db.Query(
 		ctx,
-		`SELECT o.name, co.name, dt.name, d.id, a.name, av.name, drs.created_at, drs.type
+		`SELECT o.name, co.name, dt.name, d.id, a.name, av.name,
+			coalesce(drs.created_at, drs_current.created_at), coalesce(drs.type, drs_current.type)
 		FROM`+deploymentWithLatestRevisionFromExpr+`
 		JOIN DeploymentTarget dt ON d.deployment_target_id = dt.id
 		LEFT JOIN CustomerOrganization co ON dt.customer_organization_id = co.id
@@ -42,7 +43,8 @@ func GetDeploymentForMetricsByRevisionID(
 
 	rows, err := db.Query(
 		ctx,
-		`SELECT o.name, co.name, dt.name, d.id, a.name, av.name, drs.created_at, drs.type
+		`SELECT o.name, co.name, dt.name, d.id, a.name, av.name,
+			coalesce(drs.created_at, drs_current.created_at), coalesce(drs.type, drs_current.type)
 		FROM`+deploymentWithLatestRevisionFromExpr+`
 		JOIN DeploymentTarget dt ON d.deployment_target_id = dt.id
 		LEFT JOIN CustomerOrganization co ON dt.customer_organization_id = co.id

@@ -15,6 +15,7 @@ import {DeploymentTargetsService} from '../../services/deployment-targets.servic
 export class DeploymentRevisionsTimelineComponent {
   public readonly deploymentId = input.required<string>();
   public readonly currentRevisionId = input<string>();
+  public readonly latestRevisionId = input<string>();
   public readonly deploymentTarget = input.required<DeploymentTarget>();
   public readonly revisionSelected = output<DeploymentRevisionResponse>();
 

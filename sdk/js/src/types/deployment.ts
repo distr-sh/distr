@@ -59,6 +59,12 @@ export interface DeploymentWithLatestRevision extends Deployment {
   deploymentRevisionId?: string;
   deploymentRevisionCreatedAt?: string;
   latestStatus?: DeploymentRevisionStatus;
+  /**
+   * The revision an agent last reported as applied, which differs from deploymentRevisionId while a
+   * newer revision is being rolled out or has failed.
+   */
+  currentDeploymentRevisionId?: string;
+  currentStatus?: DeploymentRevisionStatus;
   helmOptions?: HelmOptions;
 }
 
