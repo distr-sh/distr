@@ -85,7 +85,7 @@ services:
   # internal network has no default route, which leaves Docker's embedded resolver
   # unable to forward queries and makes the bucket hostname unresolvable.
   loki:
-    image: 'grafana/loki:3.7.7'
+    image: 'grafana/loki:3.7.8'
     command: ['-config.file=/etc/loki/distr-config.yaml']
     configs:
       - source: loki-config
