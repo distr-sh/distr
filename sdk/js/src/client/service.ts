@@ -387,7 +387,9 @@ export class DistrService {
 
   /**
    * Returns the application and all versions that are newer than the given version ID. If no version ID is given,
-   * all versions are considered. The versions are ordered ascending according to the given strategy.
+   * all versions are considered. Archived versions are never returned, since nothing should be deployed to one, but
+   * a deployment can still be on one, so currentVersionId may name an archived version.
+   * The versions are ordered ascending according to the given strategy.
    * @param appId
    * @param currentVersionId
    */
@@ -403,6 +405,9 @@ export class DistrService {
     const strategy = this.strategyFor(app);
     const newerVersions = (app.versions || [])
       .filter((it) => {
+        if (it.archivedAt) {
+          return false;
+        }
         if (!currentVersion) {
           return true;
         }
