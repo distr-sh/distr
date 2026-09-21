@@ -256,8 +256,6 @@ func deploymentRequestFromLatestRevision(deployment types.DeploymentWithLatestRe
 		ValuesYaml:               deployment.ValuesYaml,
 		DockerType:               deployment.DockerType,
 		EnvFileData:              deployment.EnvFileData,
-		ForceRestart:             deployment.ForceRestart,
-		IgnoreRevisionSkew:       deployment.IgnoreRevisionSkew,
 		HelmOptions:              apiHelmOptionsFromInternal(deployment.HelmOptions),
 	}
 }

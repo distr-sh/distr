@@ -154,8 +154,6 @@ func updateDeploymentToLatestVersion(
 
 	request := deploymentRequestFromLatestRevision(deployment)
 	request.ApplicationVersionID = latest.ID
-	// A restart was asked for once, for the revision it was asked on, and must not repeat here.
-	request.ForceRestart = false
 	request.CreatedByUserAccountID = createdByUserID
 	request.Trigger = types.DeploymentRevisionTriggerAutomaticUpdate
 
