@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/distr-sh/distr/api"
 	. "github.com/onsi/gomega"
@@ -63,6 +64,34 @@ func TestBufferedCollectorNeverWedgesOnRejection(t *testing.T) {
 		g.Expect(bc.ExportDeploymentTargetLogs(api.DeploymentTargetLogRecord{Body: "x"})).To(Succeed())
 		g.Expect(len(bc.buf)).To(BeNumerically("<", bc.maxSizeOrDefault()))
 	}
+}
+
+// loggingDelegate is an exporter that logs while exporting, like the agent client does when it
+// refreshes its token. The agent's logger writes into the collector the export came from.
+type loggingDelegate struct {
+	collector *BufferedCollector
+	calls     int
+}
+
+func (d *loggingDelegate) ExportDeploymentTargetLogs(...api.DeploymentTargetLogRecord) error {
+	d.calls++
+	return d.collector.ExportDeploymentTargetLogs(api.DeploymentTargetLogRecord{Body: "token refreshed"})
+}
+
+func TestBufferedCollectorDelegateMayLogWhileExporting(t *testing.T) {
+	g := NewWithT(t)
+	delegate := &loggingDelegate{}
+	bc := newTestBufferedCollector(delegate, 1, 4)
+	delegate.collector = bc
+
+	done := make(chan error, 1)
+	go func() { done <- bc.ExportDeploymentTargetLogs(api.DeploymentTargetLogRecord{Body: "a"}) }()
+
+	g.Eventually(done).WithTimeout(time.Second).Should(Receive(BeNil()))
+	// The record the delegate logged is buffered for the next batch rather than exported from
+	// within the export it was written during.
+	g.Expect(delegate.calls).To(Equal(1))
+	g.Expect(bc.buf).To(HaveLen(1))
 }
 
 func TestBufferedCollectorRetainsRecordsOnTransientError(t *testing.T) {

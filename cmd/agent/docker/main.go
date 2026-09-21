@@ -17,6 +17,7 @@ import (
 	"github.com/distr-sh/distr/internal/agentcheck"
 	"github.com/distr-sh/distr/internal/agentclient"
 	"github.com/distr-sh/distr/internal/agentenv"
+	"github.com/distr-sh/distr/internal/agentlogging"
 	"github.com/distr-sh/distr/internal/buildconfig"
 	"github.com/distr-sh/distr/internal/deploymenttargetlogs"
 	"github.com/distr-sh/distr/internal/types"
@@ -53,6 +54,7 @@ var (
 
 func init() {
 	platformLoggingCore.Collector = &deploymenttargetlogs.BufferedCollector{Delegate: client}
+	agentlogging.Redirect(logger)
 	if agentenv.AgentVersionID == "" {
 		logger.Warn("AgentVersionID is not set. self updates will be disabled")
 	}
