@@ -34,6 +34,9 @@ export class FeatureFlagService {
   public readonly isCustomOidcProvidersEnabled$ = this.hasFeature('custom_oidc_providers');
   public readonly isCustomOidcProvidersEnabled = toSignal(this.isCustomOidcProvidersEnabled$, {initialValue: false});
 
+  public readonly isAutoUpdatesEnabled$ = this.hasFeature('auto_updates');
+  public readonly isAutoUpdatesEnabled = toSignal(this.isAutoUpdatesEnabled$, {initialValue: false});
+
   public readonly isNotificationsEnabled$ = this.forbidSubscriptionType(...NON_PRO_SUBSCRIPTION_TYPES);
 
   public readonly isSupportBundlesEnabled$ = this.forbidSubscriptionType(...NON_PRO_SUBSCRIPTION_TYPES);

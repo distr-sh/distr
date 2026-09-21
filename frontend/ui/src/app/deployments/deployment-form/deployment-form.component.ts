@@ -43,6 +43,7 @@ import {
 import {isArchived} from '../../../util/dates';
 import {toBase64} from '../../../util/encoding';
 import {DURATION_REGEX, HELM_RELEASE_NAME_MAX_LENGTH, HELM_RELEASE_NAME_REGEX} from '../../../util/validation';
+import {allowsAutomaticUpdates, applicationVersionComparator, latestApplicationVersion} from '../../../util/versions';
 import {EditorComponent} from '../../components/editor.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {InnerMarkdownDirective} from '../../directives/inner-markdown.directive';
@@ -62,6 +63,7 @@ export type DeploymentFormValue = Partial<{
   swarmMode: boolean;
   forceRestart: boolean;
   ignoreRevisionSkew: boolean;
+  automaticApplicationUpdatesEnabled: boolean;
   helmOptions: Partial<HelmOptions>;
 }>;
 
@@ -77,6 +79,8 @@ export function mapToDeploymentRequest(value: DeploymentFormValue, deploymentTar
     envFileData: value.envFileData ? toBase64(value.envFileData) : undefined,
     forceRestart: value.forceRestart ?? false,
     ignoreRevisionSkew: value.ignoreRevisionSkew ?? false,
+    // Absent while the control is disabled, which leaves the deployment's setting as it is.
+    automaticApplicationUpdatesEnabled: value.automaticApplicationUpdatesEnabled,
     helmOptions: value.helmOptions as HelmOptions | undefined,
   };
 }
@@ -140,6 +144,7 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
     swarmMode: this.fb.control(false),
     forceRestart: this.fb.control(false),
     ignoreRevisionSkew: this.fb.control(false),
+    automaticApplicationUpdatesEnabled: this.fb.control(false),
     helmOptionsEnabled: this.fb.control(false),
     helmOptions: this.fb.group({
       timeout: this.fb.control('15m', [Validators.required, Validators.pattern(DURATION_REGEX)]),
@@ -295,6 +300,42 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
     shareReplay(1)
   );
 
+  private readonly latestAvailableApplicationVersion$ = combineLatest([
+    this.selectedApplication$,
+    this.availableApplicationVersions$,
+  ]).pipe(
+    map(([application, versions]) =>
+      latestApplicationVersion(
+        applicationVersionComparator(application?.versioningStrategy, application?.versions ?? []),
+        versions
+      )
+    ),
+    shareReplay(1)
+  );
+
+  protected readonly automaticUpdatesVisible$ = combineLatest([
+    this.featureFlags.isAutoUpdatesEnabled$,
+    this.selectedApplication$,
+  ]).pipe(
+    map(([enabled, application]) => enabled && application !== undefined && allowsAutomaticUpdates(application)),
+    distinctUntilChanged(),
+    shareReplay(1)
+  );
+
+  // A deployment keeps the flag after the application stops allowing automatic updates, where the
+  // hidden toggle can no longer clear it. The deployment therefore counts as automatically updated
+  // only while the toggle is shown, so that a saved change does not move it to the latest version.
+  private readonly automaticUpdatesEnabled$ = combineLatest([
+    this.deployForm.controls.automaticApplicationUpdatesEnabled.valueChanges.pipe(
+      startWith(this.deployForm.controls.automaticApplicationUpdatesEnabled.value)
+    ),
+    this.automaticUpdatesVisible$,
+  ]).pipe(
+    map(([enabled, visible]) => enabled && visible),
+    distinctUntilChanged(),
+    shareReplay(1)
+  );
+
   private readonly destroyed$ = new Subject<void>();
 
   private onChange?: DeploymentFormValueCallback;
@@ -304,9 +345,12 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
     combineLatest([this.deployForm.valueChanges, this.deployForm.statusChanges])
       .pipe(takeUntil(this.destroyed$))
       .subscribe(([value, status]) => {
-        // value omits the applicationId control while it's disabled, so add it back to stay lossless.
+        // value omits disabled controls, so add back the ones a caller still needs.
+        const raw = this.deployForm.getRawValue();
         const callbackArg =
-          status === 'VALID' ? {...value, applicationId: this.deployForm.getRawValue().applicationId} : undefined;
+          status === 'VALID'
+            ? {...value, applicationId: raw.applicationId, applicationVersionId: raw.applicationVersionId}
+            : undefined;
         this.onChange?.(callbackArg);
         this.onTouched?.(callbackArg);
       });
@@ -426,17 +470,39 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
       }
     });
 
-    this.availableApplicationVersions$.pipe(takeUntil(this.destroyed$)).subscribe((versions) => {
-      if (versions.length > 0) {
-        this.deployForm.controls.applicationVersionId.enable();
-        const version = versions[versions.length - 1];
-        // Only update the form control, if the previously selected version is no longer in the list
-        if (version.id && versions.every((v: {id?: string}) => v.id !== this.deployForm.value.applicationVersionId)) {
-          this.deployForm.controls.applicationVersionId.setValue(version.id);
+    combineLatest([
+      this.availableApplicationVersions$,
+      this.latestAvailableApplicationVersion$,
+      this.automaticUpdatesEnabled$,
+    ])
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe(([versions, latest, automaticUpdates]) => {
+        if (versions.length === 0) {
+          this.deployForm.controls.applicationVersionId.setValue('');
+          this.deployForm.controls.applicationVersionId.disable();
+          return;
         }
+        if (automaticUpdates) {
+          // An automatically updated deployment always runs the latest version, so the version is
+          // chosen here rather than left to be superseded by the first update.
+          this.deployForm.controls.applicationVersionId.disable();
+          if (latest?.id) {
+            this.deployForm.controls.applicationVersionId.setValue(latest.id);
+          }
+          return;
+        }
+        this.deployForm.controls.applicationVersionId.enable();
+        // Only update the form control, if the previously selected version is no longer in the list
+        if (latest?.id && versions.every((v: {id?: string}) => v.id !== this.deployForm.value.applicationVersionId)) {
+          this.deployForm.controls.applicationVersionId.setValue(latest.id);
+        }
+      });
+
+    this.automaticUpdatesVisible$.pipe(takeUntil(this.destroyed$)).subscribe((visible) => {
+      if (visible) {
+        this.deployForm.controls.automaticApplicationUpdatesEnabled.enable();
       } else {
-        this.deployForm.controls.applicationVersionId.disable();
-        // this.deployForm.controls.applicationVersionId.reset();
+        this.deployForm.controls.automaticApplicationUpdatesEnabled.disable();
       }
     });
 

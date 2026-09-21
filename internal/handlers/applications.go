@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/distr-sh/distr/api"
@@ -20,7 +21,6 @@ import (
 	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
 	"go.uber.org/zap"
@@ -37,6 +37,7 @@ func ApplicationsRouter(r chiopenapi.Router) {
 	r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 		Post("/", createApplication).
 		With(option.Description("Create a new application")).
+		With(option.Request(api.CreateApplicationRequest{})).
 		With(option.Response(http.StatusOK, api.ApplicationResponse{}))
 
 	r.Route("/{applicationId}", func(r chiopenapi.Router) {
@@ -58,7 +59,7 @@ func ApplicationsRouter(r chiopenapi.Router) {
 						With(option.Description("Update an application")).
 						With(option.Request(struct {
 							ApplicationRequest
-							types.Application
+							api.UpdateApplicationRequest
 						}{})).
 						With(option.Response(http.StatusOK, api.ApplicationResponse{}))
 					r.Patch("/", patchApplicationHandler()).
@@ -137,27 +138,61 @@ func ApplicationsRouter(r chiopenapi.Router) {
 	})
 }
 
+// validateApplicationSettings checks the versioning strategy and the automatic update opt-in of an
+// application about to be written, and writes the reason it rejects to the response.
+func validateApplicationSettings(
+	w http.ResponseWriter,
+	org *types.Organization,
+	application *types.Application,
+	previousStrategy types.VersioningStrategy,
+) error {
+	if application.VersioningStrategy != previousStrategy {
+		if !application.VersioningStrategy.IsSelectable() {
+			return badRequestError(w, fmt.Sprintf("versioning strategy must be one of %v",
+				types.SelectableVersioningStrategies()))
+		}
+		if err := types.ValidateVersionsForStrategy(application.VersioningStrategy, application.Versions); err != nil {
+			return badRequestError(w, err.Error())
+		}
+	}
+	if application.AllowAutomaticUpdates {
+		if !org.HasFeature(types.FeatureAutoUpdates) {
+			return badRequestError(w, "automatic updates are not enabled for this organization")
+		}
+		if !application.VersioningStrategy.AllowsAutomaticUpdates() {
+			return badRequestError(w,
+				"automatic updates require a versioning strategy of semver or chronological")
+		}
+	}
+	return nil
+}
+
 func createApplication(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
-	application, err := JsonBody[types.Application](w, r)
+	request, err := JsonBody[api.CreateApplicationRequest](w, r)
 	if err != nil {
 		return
-	} else if application.Name == "" {
-		w.WriteHeader(http.StatusBadRequest)
+	} else if request.Name == "" {
+		http.Error(w, "name is required", http.StatusBadRequest)
+		return
+	}
+
+	application := mapping.CreateApplicationToInternal(request)
+	if application.VersioningStrategy == "" {
+		application.VersioningStrategy = types.VersioningStrategyChronological
+	}
+	if validateApplicationSettings(w, auth.CurrentOrg(), &application, "") != nil {
 		return
 	}
 
 	if err = db.CreateApplication(ctx, &application, *auth.CurrentOrgID()); err != nil {
 		log.Warn("could not create application", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		if _, err = fmt.Fprintln(w, err); err != nil {
-			log.Error("failed to write error to response", zap.Error(err))
-		}
-	} else if err = json.NewEncoder(w).Encode(application); err != nil {
-		log.Error("failed to encode json", zap.Error(err))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	} else {
+		RespondJSON(w, mapping.ApplicationToAPI(application))
 	}
 }
 
@@ -165,31 +200,46 @@ func updateApplication(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
-	application, err := JsonBody[types.Application](w, r)
+	request, err := JsonBody[api.UpdateApplicationRequest](w, r)
 	if err != nil {
 		return
-	} else if application.Name == "" {
+	} else if request.Name == "" {
 		http.Error(w, "name is required", http.StatusBadRequest)
 		return
 	}
 	existing := internalctx.GetApplication(ctx)
-	if application.ID == uuid.Nil {
-		application.ID = existing.ID
-	} else if application.ID != existing.ID || application.Type != existing.Type {
-		w.WriteHeader(http.StatusBadRequest)
+	application := mapping.UpdateApplicationToInternal(request, *existing)
+	// A client written before the strategy existed does not send it, and must not silently move
+	// the application off the one it has.
+	if application.VersioningStrategy == "" {
+		application.VersioningStrategy = existing.VersioningStrategy
+	}
+	if validateApplicationSettings(w, auth.CurrentOrg(), &application, existing.VersioningStrategy) != nil {
 		return
 	}
 
-	if err := db.UpdateApplication(ctx, &application, *auth.CurrentOrgID()); err != nil {
-		log.Warn("could not update application", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if !runTxOrRespond(ctx, w, func(ctx context.Context) error {
+		if err := db.UpdateApplication(ctx, &application, *auth.CurrentOrgID()); err != nil {
+			log.Warn("could not update application", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return err
+		}
+		// TODO ?
+		// there surely is some way to have the update command returning the versions too, but I don't think it's worth
+		// the work right now
+		application.Versions = existing.Versions
+
+		if err := triggerAutomaticApplicationUpdates(
+			ctx, auth.CurrentOrg(), application.ID, new(auth.CurrentUserID()),
+		); err != nil {
+			return automaticUpdateError(ctx, w, err)
+		}
+		return nil
+	}) {
 		return
 	}
-	// TODO ?
-	// there surely is some way to have the update command returning the versions too, but I don't think it's worth
-	// the work right now
-	application.Versions = existing.Versions
+
 	RespondJSON(w, mapping.ApplicationToAPI(application))
 }
 
@@ -204,20 +254,35 @@ func patchApplicationHandler() http.HandlerFunc {
 			return
 		}
 
-		if err := db.RunTx(ctx, func(ctx context.Context) error {
-			appliationNeedsUpdate := false
-			if patch.Name != nil && patch.Name != &existing.Name {
-				existing.Name = *patch.Name
-				appliationNeedsUpdate = true
-			}
+		previousStrategy := existing.VersioningStrategy
+		patched := *existing
+		if patch.Name != nil {
+			patched.Name = *patch.Name
+		}
+		if patch.VersioningStrategy != nil {
+			patched.VersioningStrategy = *patch.VersioningStrategy
+		}
+		if patch.AllowAutomaticUpdates != nil {
+			patched.AllowAutomaticUpdates = *patch.AllowAutomaticUpdates
+		}
+		if validateApplicationSettings(w, auth.CurrentOrg(), &patched, previousStrategy) != nil {
+			return
+		}
+		applicationNeedsUpdate := patched.Name != existing.Name ||
+			patched.VersioningStrategy != existing.VersioningStrategy ||
+			patched.AllowAutomaticUpdates != existing.AllowAutomaticUpdates
 
-			if appliationNeedsUpdate {
-				if err := db.UpdateApplication(ctx, existing, *auth.CurrentOrgID()); err != nil {
+		if !runTxOrRespond(ctx, w, func(ctx context.Context) error {
+			if applicationNeedsUpdate {
+				versions := existing.Versions
+				if err := db.UpdateApplication(ctx, &patched, *auth.CurrentOrgID()); err != nil {
 					log.Warn("could not update application", zap.Error(err))
 					sentry.GetHubFromContext(ctx).CaptureException(err)
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return err
 				}
+				patched.Versions = versions
+				*existing = patched
 			}
 
 			for _, vp := range patch.Versions {
@@ -248,13 +313,16 @@ func patchApplicationHandler() http.HandlerFunc {
 					}
 				}
 			}
-			return nil
-		}); err != nil {
-			if errors.Is(err, pgx.ErrTxCommitRollback) {
-				log.Warn("could not commit db transaction", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+
+			// Un-archiving a version, or switching the strategy, can make another version the
+			// newest one.
+			if err := triggerAutomaticApplicationUpdates(
+				ctx, auth.CurrentOrg(), existing.ID, new(auth.CurrentUserID()),
+			); err != nil {
+				return automaticUpdateError(ctx, w, err)
 			}
+			return nil
+		}) {
 			return
 		}
 
@@ -403,6 +471,15 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := types.ValidateVersionsForStrategy(
+		application.VersioningStrategy,
+		append(slices.Clone(application.Versions), applicationVersion),
+	); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	auth := auth.Authentication.Require(ctx)
 	resources := applicationVersion.Resources
 	if err := db.RunTx(ctx, func(ctx context.Context) error {
 		if err := db.CreateApplicationVersion(ctx, &applicationVersion); err != nil {
@@ -411,7 +488,8 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 		if err := db.CreateApplicationVersionResources(ctx, applicationVersion.ID, resources); err != nil {
 			return err
 		}
-		return nil
+		return triggerAutomaticApplicationUpdates(
+			ctx, auth.CurrentOrg(), application.ID, new(auth.CurrentUserID()))
 	}); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.NotFound(w, r)
@@ -445,20 +523,33 @@ func updateApplicationVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	existing := internalctx.GetApplication(ctx)
-	var existingVersion *types.ApplicationVersion
-	for _, version := range existing.Versions {
-		if version.ID == applicationVersionIdFromUrl {
-			existingVersion = &version
-		}
-	}
-	if existingVersion == nil {
+	existingIndex := slices.IndexFunc(existing.Versions, func(v types.ApplicationVersion) bool {
+		return v.ID == applicationVersionIdFromUrl
+	})
+	if existingIndex < 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
-	} else if applicationVersion.ID == uuid.Nil {
-		applicationVersion.ID = existingVersion.ID
 	}
 
-	if err := db.UpdateApplicationVersion(ctx, &applicationVersion); err != nil {
+	updatedVersion := existing.Versions[existingIndex]
+	updatedVersion.Name = applicationVersion.Name
+	updatedVersion.ArchivedAt = applicationVersion.ArchivedAt
+	updated := *existing
+	updated.Versions = slices.Clone(existing.Versions)
+	updated.Versions[existingIndex] = updatedVersion
+	if err := types.ValidateVersionsForStrategy(updated.VersioningStrategy, updated.Versions); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	auth := auth.Authentication.Require(ctx)
+	if err := db.RunTx(ctx, func(ctx context.Context) error {
+		if err := db.UpdateApplicationVersion(ctx, &updatedVersion); err != nil {
+			return err
+		}
+		return triggerAutomaticApplicationUpdates(
+			ctx, auth.CurrentOrg(), existing.ID, new(auth.CurrentUserID()))
+	}); err != nil {
 		if errors.Is(err, apierrors.ErrAlreadyExists) {
 			http.Error(w, "Application version cannot be updated because a version with this name already exists.",
 				http.StatusBadRequest)
@@ -468,7 +559,7 @@ func updateApplicationVersion(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	} else {
-		RespondJSON(w, applicationVersion)
+		RespondJSON(w, updatedVersion)
 	}
 }
 

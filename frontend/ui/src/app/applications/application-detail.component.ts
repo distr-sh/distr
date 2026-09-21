@@ -1,8 +1,9 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
-import {AsyncPipe, DatePipe, NgOptimizedImage} from '@angular/common';
+import {AsyncPipe, DatePipe, NgClass, NgOptimizedImage} from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   ElementRef,
   inject,
   OnDestroy,
@@ -11,9 +12,17 @@ import {
   TemplateRef,
   viewChild,
 } from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
-import {Application, ApplicationVersion, ApplicationVersionResource, HelmChartType} from '@distr-sh/distr-sdk';
+import {
+  Application,
+  ApplicationVersion,
+  ApplicationVersionResource,
+  HelmChartType,
+  PatchApplicationRequest,
+  VersioningStrategy,
+} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faArchive,
@@ -23,6 +32,7 @@ import {
   faEye,
   faPlus,
   faTrash,
+  faTriangleExclamation,
 } from '@fortawesome/free-solid-svg-icons';
 import {
   catchError,
@@ -44,17 +54,26 @@ import {isArchived} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {disableControlsWithoutEvent, enableControlsWithoutEvent} from '../../util/forms';
 import {SecureImagePipe} from '../../util/secureImage';
+import {SelectableVersioningStrategy, versioningStrategyBadgeClass, versioningStrategyLabel} from '../../util/versions';
+import {BadgeSelectComponent} from '../components/badge-select/badge-select.component';
 import {EditorComponent} from '../components/editor.component';
 import {InlineEditComponent} from '../components/inline-edit.component';
 import {PageComponent} from '../components/page.component';
+import {PlanFeatureHintComponent} from '../components/plan-feature-hint.component';
 import {UuidComponent} from '../components/uuid';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
 import {ApplicationsService} from '../services/applications.service';
 import {AuthService} from '../services/auth.service';
+import {FeatureFlagService} from '../services/feature-flag.service';
 import {ImageUploadService} from '../services/image-upload.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
+import {
+  AllowAutomaticUpdates,
+  allowAutomaticUpdatesSelectOptions,
+  versioningStrategySelectOptions,
+} from './application-display';
 import {
   ApplicationVersionDetail,
   ApplicationVersionDetailModalComponent,
@@ -78,6 +97,9 @@ import {
     ApplicationVersionDetailModalComponent,
     InnerMarkdownDirective,
     PageComponent,
+    NgClass,
+    BadgeSelectComponent,
+    PlanFeatureHintComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './application-detail.component.html',
@@ -172,6 +194,7 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   protected readonly faBox = faBox;
   protected readonly faEye = faEye;
   protected readonly faPlus = faPlus;
+  protected readonly faTriangleExclamation = faTriangleExclamation;
 
   protected readonly resourcePreviewIndices = signal(new Set<number>());
 
@@ -209,6 +232,56 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
 
   protected readonly savingApplicationName = signal(false);
   protected readonly savingVersionId = signal<string | undefined>(undefined);
+  protected readonly savingVersioning = signal(false);
+  protected readonly isAutoUpdatesEnabled = inject(FeatureFlagService).isAutoUpdatesEnabled;
+
+  private readonly application = toSignal(this.application$);
+
+  protected readonly versioningStrategy = computed(() => this.application()?.versioningStrategy ?? 'legacy');
+  protected readonly versioningStrategyLabel = computed(() => versioningStrategyLabel(this.versioningStrategy()));
+  protected readonly versioningStrategyBadgeClass = versioningStrategyBadgeClass();
+  protected readonly versioningStrategyOptions = computed(() =>
+    versioningStrategySelectOptions(this.versioningStrategy())
+  );
+  protected readonly allowAutomaticUpdatesOptions = allowAutomaticUpdatesSelectOptions;
+  protected readonly autoUpdatesLocked = computed(
+    () => !this.isAutoUpdatesEnabled() || this.versioningStrategy() === 'legacy'
+  );
+  protected readonly allowAutomaticUpdatesValue = computed<AllowAutomaticUpdates>(() =>
+    this.application()?.allowAutomaticUpdates ? 'allowed' : 'disallowed'
+  );
+  private readonly allowAutomaticUpdatesOption = computed(() =>
+    allowAutomaticUpdatesSelectOptions.find((option) => option.value === this.allowAutomaticUpdatesValue())
+  );
+  protected readonly allowAutomaticUpdatesLabel = computed(() => this.allowAutomaticUpdatesOption()?.label);
+  protected readonly allowAutomaticUpdatesBadgeClass = computed(() => this.allowAutomaticUpdatesOption()?.badgeClass);
+
+  protected updateVersioningStrategy(versioningStrategy: VersioningStrategy): void {
+    this.patchVersioning({versioningStrategy: versioningStrategy as SelectableVersioningStrategy});
+  }
+
+  protected updateAllowAutomaticUpdates(value: AllowAutomaticUpdates): void {
+    this.patchVersioning({allowAutomaticUpdates: value === 'allowed'});
+  }
+
+  private async patchVersioning(patch: PatchApplicationRequest): Promise<void> {
+    const application = this.application();
+    if (!application) {
+      return;
+    }
+    this.savingVersioning.set(true);
+    try {
+      await firstValueFrom(this.applicationService.patch(application.id!, patch));
+      this.toast.success('Application has been updated');
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    } finally {
+      this.savingVersioning.set(false);
+    }
+  }
 
   protected updateApplicationName(application: Application, name: string): void {
     this.savingApplicationName.set(true);

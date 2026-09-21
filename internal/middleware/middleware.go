@@ -424,6 +424,7 @@ var (
 	VulnerabilitiesFeatureMiddleware      = FeatureFlagMiddleware(types.FeatureVulnerabilities)
 	CustomEmailsFeatureMiddleware         = FeatureFlagMiddleware(types.FeatureCustomEmails)
 	CustomOidcProvidersFeatureMiddleware  = FeatureFlagMiddleware(types.FeatureCustomOidcProviders)
+	AutoUpdatesFeatureMiddleware          = FeatureFlagMiddleware(types.FeatureAutoUpdates)
 )
 
 // RequireCustomDomainsConfigured rejects requests unless the instance itself is set up for custom

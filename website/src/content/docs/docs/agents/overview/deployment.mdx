@@ -147,6 +147,18 @@ Simply navigate to the **Deployments** section and click on the **+ Deploy App**
 
 This will show you the same flow as above, where you can select your application and version to deploy, configure the deployment settings, and get the command to install both the agent and application.
 
+## Automatic Updates
+
+A deployment can follow its application's latest version instead of being updated by hand or by a release pipeline. Distr then creates a new revision for it whenever the latest version changes, which is when a version is created, when an archived version is brought back, when the application's [versioning strategy](/docs/agents/application/#versioning-strategy) changes and when an entitlement starts covering a newer version.
+
+Open the actions menu on a deployment and select **Enable automatic updates**, or tick **Enable automatic updates** while creating or updating the deployment. Both a vendor and a customer can do this. Enabling it deploys the latest version right away, which is also why the version cannot be chosen while it is on.
+
+A deployment is only ever moved forward. Archiving a version or narrowing an entitlement does not roll a deployment back to an older one, and neither does a version that the strategy orders below the one currently deployed.
+
+A deployment whose values no longer apply to the new version is left on the version it runs, rather than being updated into a failing state. The same happens when the deployment is not entitled to the newer version.
+
+The option requires **Allow automatic updates** on the application and is part of the Business plan.
+
 ## Deployment History
 
 Distr keeps a full history of every deployment. Each time a deployment's version or configuration changes, a new revision is recorded, so you can always see what was deployed, when, and by whom.

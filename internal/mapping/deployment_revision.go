@@ -45,6 +45,7 @@ func DeploymentRevisionToAPI(
 			ForceRestart:           r.ForceRestart,
 			IgnoreRevisionSkew:     r.IgnoreRevisionSkew,
 			HelmOptions:            r.HelmOptions,
+			Trigger:                r.Trigger,
 		}
 
 		if r.CreatedByID != nil {

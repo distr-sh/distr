@@ -62,6 +62,19 @@ Use application.name instead
 
 ---
 
+### automaticApplicationUpdatesEnabled?
+
+> `optional` **automaticApplicationUpdatesEnabled?**: `boolean`
+
+Whether this deployment is rolled forward to the application's latest version automatically.
+Unrelated to DeploymentTarget.automaticUpdatesEnabled, which is the agent updating itself.
+
+#### Inherited from
+
+[`Deployment`](Deployment.md).[`automaticApplicationUpdatesEnabled`](Deployment.md#automaticapplicationupdatesenabled)
+
+---
+
 ### createdAt?
 
 > `optional` **createdAt?**: `string`

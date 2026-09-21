@@ -82,13 +82,38 @@
                 textClass="block max-w-lg overflow-hidden text-ellipsis whitespace-nowrap text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
                 [loading]="savingApplicationName()"
                 (save)="updateApplicationName(application, $event)" />
-              @if (application.id) {
-                <app-uuid class="mr-2" [uuid]="application.id" [small]="true" />
-              }
-              <span
-                class="me-2 inline-block rounded-sm bg-primary-100 px-2.5 py-0.5 text-xs font-medium text-primary-800 dark:bg-primary-900 dark:text-primary-300">
-                {{ application.type }}
-              </span>
+              <div class="flex flex-wrap items-center gap-2 mt-1">
+                @if (application.id) {
+                  <app-uuid [uuid]="application.id" [small]="true" />
+                }
+                <span class="distr-deployment-type-badge">{{ application.type }}</span>
+                @if (auth.hasAnyRole('read_write', 'admin')) {
+                  <app-badge-select
+                    ariaLabel="Change versioning strategy"
+                    [plainOptions]="true"
+                    [options]="versioningStrategyOptions()"
+                    [value]="versioningStrategy()"
+                    [disabled]="savingVersioning()"
+                    (selected)="updateVersioningStrategy($event)" />
+                  <app-badge-select
+                    ariaLabel="Change whether automatic updates are allowed"
+                    [plainOptions]="true"
+                    [options]="allowAutomaticUpdatesOptions"
+                    [value]="allowAutomaticUpdatesValue()"
+                    [disabled]="autoUpdatesLocked() || savingVersioning()"
+                    [disabledHint]="autoUpdatesLocked() ? autoUpdatesHint : undefined"
+                    (selected)="updateAllowAutomaticUpdates($event)" />
+                } @else {
+                  <span class="distr-status-badge" [ngClass]="versioningStrategyBadgeClass">
+                    {{ versioningStrategyLabel() }}
+                  </span>
+                  @if (isAutoUpdatesEnabled()) {
+                    <span class="distr-status-badge" [ngClass]="allowAutomaticUpdatesBadgeClass()">
+                      {{ allowAutomaticUpdatesLabel() }}
+                    </span>
+                  }
+                }
+              </div>
             </div>
             @if (auth.hasAnyRole('read_write', 'admin')) {
               <div class="inline-flex self-start items-end justify-end grow">
@@ -105,6 +130,20 @@
           </div>
         </div>
       </div>
+
+      @if (versioningStrategy() === 'legacy' && auth.hasAnyRole('read_write', 'admin')) {
+        <div
+          class="mb-4 flex items-start gap-3 p-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-transparent dark:text-yellow-300 dark:border dark:border-yellow-300"
+          role="alert">
+          <fa-icon [icon]="faTriangleExclamation" class="mt-0.5" />
+          <span>
+            This application still uses the legacy versioning strategy, which orders versions by SemVer for as long as
+            every name is a valid SemVer version and switches to ordering by creation date as soon as one is not.
+            Picking semantic versioning or chronological versioning above gives you one order that always applies, so
+            which version is the latest cannot change with the next name you add.
+          </span>
+        </div>
+      }
 
       <div>
         @if ((application.versions || []).length > 0) {
@@ -562,6 +601,16 @@
     }
   </div>
 </app-page>
+
+<ng-template #autoUpdatesHint>
+  @if (!isAutoUpdatesEnabled()) {
+    <app-plan-feature-hint plan="business" />
+  } @else {
+    <div role="tooltip" class="distr-tooltip max-w-64">
+      Please choose semantic or chronological versioning to enable automatic updates.
+    </div>
+  }
+</ng-template>
 
 <ng-template #versionDetailsModal>
   @if (versionDetail(); as detail) {

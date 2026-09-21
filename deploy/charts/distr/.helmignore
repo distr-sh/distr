@@ -21,3 +21,5 @@
 .idea/
 *.tmproj
 .vscode/
+# Config of the generator that writes values.schema.json
+.schema.yaml
