@@ -46,6 +46,18 @@ The same install as a values file is [`examples/quickstart/values.yaml`](https:/
 For a local cluster with custom domains enabled, see
 [`examples/quickstart/custom-domains-values.yaml`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/examples/quickstart/custom-domains-values.yaml).
 
+## Verifying the chart signature
+
+Every released chart version is signed with [cosign](https://docs.sigstore.dev/cosign/signing/overview/) keyless signing by the workflow that publishes it.
+To check a version before installing it:
+
+```shell
+cosign verify \
+  --certificate-identity-regexp '^https://github\.com/distr-sh/distr/' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  ghcr.io/distr-sh/charts/distr:<version>
+```
+
 ## Running in production
 
 For production, disable the bundled dependencies and point the chart at managed services instead.
