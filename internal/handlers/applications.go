@@ -21,7 +21,6 @@ import (
 	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
 	"go.uber.org/zap"
@@ -219,7 +218,7 @@ func updateApplication(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := db.RunTx(ctx, func(ctx context.Context) error {
+	if !runTxOrRespond(ctx, w, func(ctx context.Context) error {
 		if err := db.UpdateApplication(ctx, &application, *auth.CurrentOrgID()); err != nil {
 			log.Warn("could not update application", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -237,12 +236,7 @@ func updateApplication(w http.ResponseWriter, r *http.Request) {
 			return automaticUpdateError(ctx, w, err)
 		}
 		return nil
-	}); err != nil {
-		if errors.Is(err, pgx.ErrTxCommitRollback) {
-			log.Warn("could not commit db transaction", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+	}) {
 		return
 	}
 
@@ -278,7 +272,7 @@ func patchApplicationHandler() http.HandlerFunc {
 			patched.VersioningStrategy != existing.VersioningStrategy ||
 			patched.AllowAutomaticUpdates != existing.AllowAutomaticUpdates
 
-		if err := db.RunTx(ctx, func(ctx context.Context) error {
+		if !runTxOrRespond(ctx, w, func(ctx context.Context) error {
 			if applicationNeedsUpdate {
 				versions := existing.Versions
 				if err := db.UpdateApplication(ctx, &patched, *auth.CurrentOrgID()); err != nil {
@@ -328,12 +322,7 @@ func patchApplicationHandler() http.HandlerFunc {
 				return automaticUpdateError(ctx, w, err)
 			}
 			return nil
-		}); err != nil {
-			if errors.Is(err, pgx.ErrTxCommitRollback) {
-				log.Warn("could not commit db transaction", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
+		}) {
 			return
 		}
 
