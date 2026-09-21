@@ -542,15 +542,14 @@ func updateApplicationVersion(w http.ResponseWriter, r *http.Request) {
 	if existingIndex < 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
-	} else if applicationVersion.ID == uuid.Nil {
-		applicationVersion.ID = existing.Versions[existingIndex].ID
 	}
 
-	// A rename can break the strategy's ordering, and un-archiving can make this the newest
-	// version, so both are validated against the application as it will be.
+	updatedVersion := existing.Versions[existingIndex]
+	updatedVersion.Name = applicationVersion.Name
+	updatedVersion.ArchivedAt = applicationVersion.ArchivedAt
 	updated := *existing
 	updated.Versions = slices.Clone(existing.Versions)
-	updated.Versions[existingIndex] = applicationVersion
+	updated.Versions[existingIndex] = updatedVersion
 	if err := types.ValidateVersionsForStrategy(updated.VersioningStrategy, updated.Versions); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -558,9 +557,10 @@ func updateApplicationVersion(w http.ResponseWriter, r *http.Request) {
 
 	auth := auth.Authentication.Require(ctx)
 	if err := db.RunTx(ctx, func(ctx context.Context) error {
-		if err := db.UpdateApplicationVersion(ctx, &applicationVersion); err != nil {
+		if err := db.UpdateApplicationVersion(ctx, &updatedVersion); err != nil {
 			return err
 		}
+		updated.Versions[existingIndex] = updatedVersion
 		return triggerAutomaticApplicationUpdates(
 			ctx, auth.CurrentOrg(), &updated, new(auth.CurrentUserID()))
 	}); err != nil {
@@ -573,7 +573,7 @@ func updateApplicationVersion(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	} else {
-		RespondJSON(w, applicationVersion)
+		RespondJSON(w, updatedVersion)
 	}
 }
 
