@@ -47,6 +47,7 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 - Pass dependencies into HTTP handlers via closure.
 - Return API errors through `internal/apierrors` so they carry a status code.
 - Log with zap: `logger.Info("message", zap.String("key", value))`.
+- Route what a dependency logs in an agent into the agent's zap logger with `agentlogging.Redirect`, which covers logrus and the standard library logger. Only what passes through zap reaches Distr, so anything else ends up in the agent's container output alone.
 - Report exceptions with `sentry.GetHubFromContext(ctx).CaptureException(err)`. Use `sentry.CurrentHub()` in a background job, since a job context carries no hub and taking one from it panics.
 - Give types in `internal/types` `db:` tags only. Never serialize one into a response and never embed one in an `api` type. `api.OrganizationResponse` and `api.LicenseKeyRevision` do embed one; they are legacy, do not copy them.
 - Give every endpoint its own struct in `api/` and put both conversion directions in `internal/mapping`: `XToAPI` for model to response, `XToInternal` for request to model, with `mapping.List(...)` for slices. Never assemble an `api.*` or `types.*` struct field by field in a handler.
