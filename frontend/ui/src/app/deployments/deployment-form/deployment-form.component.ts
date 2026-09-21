@@ -313,18 +313,25 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
     shareReplay(1)
   );
 
-  private readonly automaticUpdatesEnabled$ =
-    this.deployForm.controls.automaticApplicationUpdatesEnabled.valueChanges.pipe(
-      startWith(this.deployForm.controls.automaticApplicationUpdatesEnabled.value),
-      distinctUntilChanged(),
-      shareReplay(1)
-    );
-
   protected readonly automaticUpdatesVisible$ = combineLatest([
     this.featureFlags.isAutoUpdatesEnabled$,
     this.selectedApplication$,
   ]).pipe(
     map(([enabled, application]) => enabled && application !== undefined && allowsAutomaticUpdates(application)),
+    distinctUntilChanged(),
+    shareReplay(1)
+  );
+
+  // A deployment keeps the flag after the application stops allowing automatic updates, where the
+  // hidden toggle can no longer clear it. The deployment therefore counts as automatically updated
+  // only while the toggle is shown, so that a saved change does not move it to the latest version.
+  private readonly automaticUpdatesEnabled$ = combineLatest([
+    this.deployForm.controls.automaticApplicationUpdatesEnabled.valueChanges.pipe(
+      startWith(this.deployForm.controls.automaticApplicationUpdatesEnabled.value)
+    ),
+    this.automaticUpdatesVisible$,
+  ]).pipe(
+    map(([enabled, visible]) => enabled && visible),
     distinctUntilChanged(),
     shareReplay(1)
   );

@@ -16,6 +16,15 @@ import (
 	"go.uber.org/zap"
 )
 
+// automaticUpdatesAllowed reports whether the organization and the application currently permit
+// automatic updates. A deployment can outlive all three conditions, since the vendor may withdraw
+// them from the application and the organization may lose the feature with its plan.
+func automaticUpdatesAllowed(org *types.Organization, application *types.Application) bool {
+	return org.HasFeature(types.FeatureAutoUpdates) &&
+		application.AllowAutomaticUpdates &&
+		application.VersioningStrategy.AllowsAutomaticUpdates()
+}
+
 // triggerAutomaticApplicationUpdates rolls every deployment of the application that has automatic
 // updates enabled forward to the newest version it is entitled to.
 //
@@ -29,9 +38,7 @@ func triggerAutomaticApplicationUpdates(
 	application *types.Application,
 	createdByUserID *uuid.UUID,
 ) error {
-	if !application.AllowAutomaticUpdates ||
-		!application.VersioningStrategy.AllowsAutomaticUpdates() ||
-		!org.HasFeature(types.FeatureAutoUpdates) {
+	if !automaticUpdatesAllowed(org, application) {
 		return nil
 	}
 
@@ -51,9 +58,7 @@ func triggerAutomaticUpdateOfDeployment(
 	deployment types.DeploymentWithLatestRevision,
 	createdByUserID *uuid.UUID,
 ) error {
-	if !application.AllowAutomaticUpdates ||
-		!application.VersioningStrategy.AllowsAutomaticUpdates() ||
-		!org.HasFeature(types.FeatureAutoUpdates) {
+	if !automaticUpdatesAllowed(org, application) {
 		return nil
 	}
 	return updateDeploymentsToLatestVersion(

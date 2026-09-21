@@ -125,9 +125,8 @@ func putDeployment(w http.ResponseWriter, r *http.Request) {
 			return deploymentValuesError(ctx, w, err, "invalid deployment values")
 		}
 
-		deploymentRequest.AutomaticApplicationUpdatesEnabled = &validationResult.AutomaticApplicationUpdatesEnabled
-
 		if deploymentRequest.DeploymentID == nil {
+			deploymentRequest.AutomaticApplicationUpdatesEnabled = &validationResult.AutomaticApplicationUpdatesEnabled
 			if err = db.CreateDeployment(ctx, &deploymentRequest); errors.Is(err, apierrors.ErrConflict) {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return err
@@ -164,9 +163,9 @@ func putDeployment(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			automaticUpdates := validationResult.AutomaticApplicationUpdatesEnabled
-			if deployment.AutomaticApplicationUpdatesEnabled != automaticUpdates {
-				deployment.AutomaticApplicationUpdatesEnabled = automaticUpdates
+			requested := deploymentRequest.AutomaticApplicationUpdatesEnabled
+			if requested != nil && deployment.AutomaticApplicationUpdatesEnabled != *requested {
+				deployment.AutomaticApplicationUpdatesEnabled = *requested
 				if err := db.UpdateDeploymentAutomaticApplicationUpdates(ctx, deployment); err != nil {
 					log.Warn("could not set automatic updates for deployment", zap.Error(err))
 					sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -264,8 +263,7 @@ func setDeploymentAutomaticUpdates(
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return err
 	}
-	if enabled && (!application.AllowAutomaticUpdates ||
-		!application.VersioningStrategy.AllowsAutomaticUpdates()) {
+	if enabled && !automaticUpdatesAllowed(authInfo.CurrentOrg(), application) {
 		return badRequestError(w, "this application does not allow automatic updates")
 	}
 
@@ -429,7 +427,8 @@ func validateDeploymentRequest(
 
 	automaticUpdates := util.PtrDerefOrDefault(request.AutomaticApplicationUpdatesEnabled)
 	if request.AutomaticApplicationUpdatesEnabled == nil && existingDeployment != nil {
-		automaticUpdates = existingDeployment.AutomaticApplicationUpdatesEnabled
+		automaticUpdates = existingDeployment.AutomaticApplicationUpdatesEnabled &&
+			automaticUpdatesAllowed(org, app)
 	}
 
 	if err = validateDeploymentRequestEntitlement(
@@ -473,7 +472,7 @@ func validateAutomaticApplicationUpdates(
 	if !org.HasFeature(types.FeatureAutoUpdates) {
 		return badRequestError(w, "automatic updates are not enabled for this organization")
 	}
-	if !app.AllowAutomaticUpdates || !app.VersioningStrategy.AllowsAutomaticUpdates() {
+	if !automaticUpdatesAllowed(org, app) {
 		return badRequestError(w, "this application does not allow automatic updates")
 	}
 	versions := app.Versions
