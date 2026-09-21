@@ -1,14 +1,15 @@
-import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {MfaCodeInputComponent, newMfaCodeControl} from '../components/mfa-code-input.component';
 import {PortalLogoComponent} from '../components/portal-logo/portal-logo.component';
 import {PlaceholderDirective} from '../directives/placeholder.directive';
 import {AuthService} from '../services/auth.service';
 
 @Component({
   selector: 'app-password-reset',
-  imports: [ReactiveFormsModule, PlaceholderDirective, PortalLogoComponent],
+  imports: [ReactiveFormsModule, PlaceholderDirective, PortalLogoComponent, MfaCodeInputComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './password-reset.component.html',
 })
@@ -22,21 +23,36 @@ export class PasswordResetComponent {
     },
     (control) => (control.value.password === control.value.passwordConfirm ? null : {passwordMismatch: 'error'})
   );
+  public readonly mfaCode = newMfaCodeControl();
+  public readonly mfaRequired = signal(false);
   public readonly email = this.auth.getClaims()?.email;
-  public errorMessage?: string;
-  loading = false;
+  public readonly errorMessage = signal<string | undefined>(undefined);
+  public readonly loading = signal(false);
 
   public async submit() {
     this.form.markAllAsTouched();
-    this.errorMessage = undefined;
+    this.errorMessage.set(undefined);
+    if (this.mfaRequired()) {
+      this.mfaCode.markAsTouched();
+      if (this.mfaCode.invalid) {
+        return;
+      }
+    }
     if (this.form.valid) {
-      this.loading = true;
+      this.loading.set(true);
       try {
-        await firstValueFrom(this.auth.confirmPasswordReset(this.form.value.password!));
-        location.assign('/');
+        const {requiresMfa} = await firstValueFrom(
+          this.auth.confirmPasswordReset(this.form.value.password!, this.mfaCode.value || undefined)
+        );
+        if (requiresMfa) {
+          this.mfaRequired.set(true);
+          this.loading.set(false);
+        } else {
+          location.assign('/');
+        }
       } catch (e) {
-        this.errorMessage = getFormDisplayedError(e);
-        this.loading = false;
+        this.errorMessage.set(getFormDisplayedError(e));
+        this.loading.set(false);
       }
     }
   }

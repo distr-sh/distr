@@ -239,7 +239,7 @@ func GetSupportBundles(
 	query := fmt.Sprintf(`
 		SELECT %v
 		FROM SupportBundle sb
-		INNER JOIN UserAccount u ON sb.created_by_user_account_id = u.id
+		LEFT JOIN UserAccount u ON sb.created_by_user_account_id = u.id
 		INNER JOIN CustomerOrganization co ON sb.customer_organization_id = co.id
 		LEFT JOIN UserAccount scu ON sb.status_changed_by_user_account_id = scu.id
 		WHERE sb.organization_id = @orgId
@@ -272,7 +272,7 @@ func GetSupportBundleByID(ctx context.Context, id, orgID uuid.UUID) (*types.Supp
 		fmt.Sprintf(`
 			SELECT %v
 			FROM SupportBundle sb
-			INNER JOIN UserAccount u ON sb.created_by_user_account_id = u.id
+			LEFT JOIN UserAccount u ON sb.created_by_user_account_id = u.id
 			INNER JOIN CustomerOrganization co ON sb.customer_organization_id = co.id
 			LEFT JOIN UserAccount scu ON sb.status_changed_by_user_account_id = scu.id
 			WHERE sb.id = @id AND sb.organization_id = @orgId`,
@@ -390,6 +390,22 @@ func UpdateSupportBundleStatus(
 	return nil
 }
 
+func DeleteSupportBundle(ctx context.Context, id, orgID uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	result, err := db.Exec(
+		ctx,
+		`DELETE FROM SupportBundle WHERE id = @id AND organization_id = @orgId`,
+		pgx.NamedArgs{"id": id, "orgId": orgID},
+	)
+	if err != nil {
+		return fmt.Errorf("could not delete support bundle: %w", err)
+	}
+	if result.RowsAffected() == 0 {
+		return apierrors.ErrNotFound
+	}
+	return nil
+}
+
 func ClearSupportBundleBundleSecret(ctx context.Context, bundleID uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	if _, err := db.Exec(
@@ -463,7 +479,7 @@ func GetSupportBundleComments(ctx context.Context, bundleID uuid.UUID) ([]types.
 		`SELECT c.id, c.created_at, c.support_bundle_id, c.user_account_id, c.content,
 			u.name AS user_name, u.image_id AS user_image_id
 		FROM SupportBundleComment c
-		INNER JOIN UserAccount u ON c.user_account_id = u.id
+		LEFT JOIN UserAccount u ON c.user_account_id = u.id
 		WHERE c.support_bundle_id = @bundleId
 		ORDER BY c.created_at`,
 		pgx.NamedArgs{"bundleId": bundleID},
@@ -492,7 +508,7 @@ func CreateSupportBundleComment(
 		SELECT i.id, i.created_at, i.support_bundle_id, i.user_account_id, i.content,
 			u.name AS user_name, u.image_id AS user_image_id
 		FROM inserted i
-		INNER JOIN UserAccount u ON i.user_account_id = u.id`,
+		LEFT JOIN UserAccount u ON i.user_account_id = u.id`,
 		pgx.NamedArgs{
 			"bundleId": bundleID,
 			"userId":   userID,

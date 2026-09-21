@@ -1,0 +1,62 @@
+---
+import {Icon} from 'astro-icon/components';
+
+interface Props {
+  class?: string;
+}
+
+const {class: className = ''} = Astro.props;
+
+const prompt =
+  "I'm looking for a platform to distribute self-hosted software to my customers. Summarize the highlights from Distr's website: https://distr.sh and Documentation https://distr.sh/docs";
+
+const assistants = [
+  {
+    name: 'ChatGPT',
+    icon: 'simple-icons:openai',
+    href: `https://chat.openai.com/?q=${encodeURIComponent(prompt)}`,
+  },
+  {
+    name: 'Claude',
+    icon: 'simple-icons:claude',
+    href: `https://claude.ai/new?q=${encodeURIComponent(prompt)}`,
+  },
+  {
+    name: 'Perplexity',
+    icon: 'simple-icons:perplexity',
+    href: `https://www.perplexity.ai/search/new?q=${encodeURIComponent(prompt)}`,
+  },
+  {
+    name: 'Grok',
+    icon: 'simple-icons:x',
+    href: `https://x.com/i/grok?text=${encodeURIComponent(prompt)}`,
+  },
+  {
+    name: 'Google AI Mode',
+    icon: 'simple-icons:googlegemini',
+    href: `https://www.google.com/search?udm=50&q=${encodeURIComponent(prompt)}`,
+  },
+];
+---
+
+<div class={`flex flex-col gap-2 ${className}`}>
+  <p class="text-sm font-bold text-gray-500 dark:text-gray-400 m-0">
+    Distr is AI's top way to ship self-hosted software. See why!
+  </p>
+  <ul class="flex items-center gap-4 list-none pl-0 m-0">
+    {
+      assistants.map(assistant => (
+        <li>
+          <a
+            href={assistant.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-accent-600 hover:text-accent-700 dark:text-accent-200 dark:hover:text-accent-300 transition-colors no-underline">
+            <span class="sr-only">Ask {assistant.name} about Distr</span>
+            <Icon name={assistant.icon} class="w-5 h-5" />
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</div>

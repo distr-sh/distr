@@ -26,9 +26,9 @@
 
 ---
 
-### userAccountId
+### userAccountId?
 
-> **userAccountId**: `string`
+> `optional` **userAccountId?**: `string`
 
 ---
 
@@ -38,6 +38,6 @@
 
 ---
 
-### userName
+### userName?
 
-> **userName**: `string`
+> `optional` **userName?**: `string`

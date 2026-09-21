@@ -1,0 +1,31 @@
+<label for="totp" class="distr-label mb-2">MFA Code</label>
+<!--
+This input field is wrapped in a div in order to make autofill services ignore the help text below.
+This is needed because some interpret the phrase "recovery code" as conflicting with the TOTP field name.
+-->
+<div>
+  <input
+    type="text"
+    [formControl]="control()"
+    id="totp"
+    autocomplete="one-time-code"
+    autotrim
+    class="distr-input"
+    placeholder="Enter code"
+    required />
+</div>
+<div class="text-xs text-gray-500 mt-1 space-y-1">
+  <p>You can use a code from your authenticator app or a one-time recovery code.</p>
+  <p>
+    If you lost access to your authenticator app and recovery codes, please contact our
+    @if (supportEmail(); as email) {
+      <a class="font-medium text-blue-600 dark:text-blue-500 hover:underline" href="mailto:{{ email }}">support</a>
+    } @else {
+      support
+    }
+    to regain access to your account.
+  </p>
+</div>
+@if (control().touched && control().errors) {
+  <div class="text-sm text-red-500">Please enter your MFA code</div>
+}

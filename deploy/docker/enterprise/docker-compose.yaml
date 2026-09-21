@@ -73,7 +73,7 @@ services:
       start_period: 30s
 
   distr:
-    image: registry.distr.sh/enterprise/distr-ee:4.0.2 # x-release-please-version
+    image: registry.distr.sh/enterprise/distr-ee:4.0.3 # x-release-please-version
     depends_on:
       postgres:
         condition: service_healthy
@@ -106,7 +106,7 @@ services:
   # If you don't want to use the OCI registry (REGISTRY_ENABLED=false) or want to use an external S3 provider,
   # you don't need to run the storage service.
   storage:
-    image: 'rustfs/rustfs:1.0.0-rc.6'
+    image: 'rustfs/rustfs:1.0.0'
     volumes:
       - 'rustfs:/data/'
     environment:
@@ -129,7 +129,7 @@ services:
   # init container, which requires Docker Compose >= 5.3.0.
   # Loki only joins the private "internal" network and is not reachable from outside.
   loki:
-    image: 'grafana/loki:3.7.7'
+    image: 'grafana/loki:3.7.8'
     command: ['-config.file=/etc/loki/distr-config.yaml']
     configs:
       - source: loki-config

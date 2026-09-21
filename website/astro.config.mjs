@@ -36,7 +36,12 @@ export default defineConfig({
   ],
 
   integrations: [
-    icon({include: {lucide: ['*']}}),
+    icon({
+      include: {
+        lucide: ['*'],
+        'simple-icons': ['openai', 'claude', 'perplexity', 'x', 'googlegemini'],
+      },
+    }),
     preact(),
     sitemap({
       filter: page => {

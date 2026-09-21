@@ -1,0 +1,29 @@
+[[IgnoredVulns]]
+id = "GO-2026-5932"
+ignoreUntil = 2027-03-16
+reason = "The advisory covers the unmaintained golang.org/x/crypto/openpgp packages, none of which appear in 'go list -deps ./...'."
+
+[[IgnoredVulns]]
+id = "CVE-2026-33997"
+ignoreUntil = 2027-03-16
+reason = "Plugin privilege validation in the Docker daemon. Only github.com/docker/docker/api/types/versions is compiled in, pulled in by containers/image. Fixed in github.com/moby/moby/v2 only, never in this module path."
+
+[[IgnoredVulns]]
+id = "CVE-2026-34040"
+ignoreUntil = 2027-03-16
+reason = "AuthZ plugin request handling in the Docker daemon. Only github.com/docker/docker/api/types/versions is compiled in, pulled in by containers/image. Fixed in github.com/moby/moby/v2 only, never in this module path."
+
+[[IgnoredVulns]]
+id = "CVE-2026-41567"
+ignoreUntil = 2027-03-16
+reason = "The 'PUT /containers/{id}/archive' endpoint of the Docker daemon. Only github.com/docker/docker/api/types/versions is compiled in, pulled in by containers/image. Fixed in github.com/moby/moby/v2 only, never in this module path."
+
+[[IgnoredVulns]]
+id = "CVE-2026-41568"
+ignoreUntil = 2027-03-16
+reason = "The 'docker cp' implementation in the Docker daemon. Only github.com/docker/docker/api/types/versions is compiled in, pulled in by containers/image. Fixed in github.com/moby/moby/v2 only, never in this module path."
+
+[[IgnoredVulns]]
+id = "CVE-2026-42306"
+ignoreUntil = 2027-03-16
+reason = "The 'docker cp' implementation in the Docker daemon. Only github.com/docker/docker/api/types/versions is compiled in, pulled in by containers/image. Fixed in github.com/moby/moby/v2 only, never in this module path."
