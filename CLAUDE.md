@@ -229,6 +229,7 @@ Only write a test that could fail for a real reason. Every test is code that has
 - Write every text without Oxford commas and without em dashes, in this file as much as in documentation, code comments and UI copy. Use a comma, a colon or a second sentence where a dash is tempting.
 - Fix the code you read that breaks these rules, and the typos and spelling mistakes you come across.
 - Update `website/src/content/docs/docs/self-hosting/configuration.mdx` in the same change whenever you add, remove or change an environment variable in `internal/env/env.go`, including its default, whether it is required and the values it accepts.
+- Run `mise run build:helm-schema` after every change to `deploy/charts/distr/values.yaml`, since CI rejects a stale `values.schema.json`. Annotate a value with `# @schema` where the type inferred from the default is too narrow, an IntOrString field or an override a user sets to null being the cases, and render every file under `deploy/charts/distr/examples/` to confirm the schema still accepts them.
 - Use the GitHub CLI (`gh`) rather than the web interface to fetch data from GitHub.
 - Write shell for anything from a one-off command to a checked-in script (like `hack/validate-migrations.sh`), and Node once a task outgrows shell (like `hack/agent-changelog.mjs`). Avoid Python and never use Perl (e.g. `perl -pi -e`). Edit files directly rather than piping them through a stream editor.
 

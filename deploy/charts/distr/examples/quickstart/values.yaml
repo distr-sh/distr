@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/distr-sh/distr/4.0.3/deploy/charts/distr/values.schema.json # x-release-please-version
 # Helm values for trying Distr out on a local cluster. Everything runs in-cluster, including
 # PostgreSQL and RustFS, and nothing is exposed outside the cluster, so this is a test setup and
 # not a starting point for a production installation. Both bundled dependencies keep their data on
