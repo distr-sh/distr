@@ -50,10 +50,12 @@ var (
 	composeService composeapi.Compose
 	health         = agentcheck.NewServer(time.Hour)
 	logWatcher     = NewLogsWatcher(30 * time.Second)
+	logCollector   = &deploymenttargetlogs.BufferedCollector{}
 )
 
 func init() {
-	platformLoggingCore.Collector = &deploymenttargetlogs.BufferedCollector{Delegate: client}
+	logCollector.Delegate = client
+	platformLoggingCore.Collector = logCollector
 	agentlogging.Redirect(logger)
 	if agentenv.AgentVersionID == "" {
 		logger.Warn("AgentVersionID is not set. self updates will be disabled")
@@ -65,6 +67,12 @@ func init() {
 func main() {
 	defer func() {
 		if err := logger.Sync(); err != nil && !errors.Is(err, syscall.EINVAL) {
+			fmt.Println(err)
+		}
+	}()
+
+	defer func() {
+		if err := logCollector.Stop(); err != nil {
 			fmt.Println(err)
 		}
 	}()

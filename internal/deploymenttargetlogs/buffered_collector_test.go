@@ -3,6 +3,7 @@ package deploymenttargetlogs
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -92,6 +93,56 @@ func TestBufferedCollectorDelegateMayLogWhileExporting(t *testing.T) {
 	// within the export it was written during.
 	g.Expect(delegate.calls).To(Equal(1))
 	g.Expect(bc.buf).To(HaveLen(1))
+}
+
+// blockingDelegate is an exporter whose first export blocks, like an HTTP request that is still in
+// flight when the agent shuts down.
+type blockingDelegate struct {
+	release chan struct{}
+	mu      sync.Mutex
+	calls   [][]api.DeploymentTargetLogRecord
+}
+
+func (d *blockingDelegate) ExportDeploymentTargetLogs(records ...api.DeploymentTargetLogRecord) error {
+	d.mu.Lock()
+	first := len(d.calls) == 0
+	d.calls = append(d.calls, append([]api.DeploymentTargetLogRecord(nil), records...))
+	d.mu.Unlock()
+	if first {
+		<-d.release
+	}
+	return nil
+}
+
+func TestBufferedCollectorStopWaitsForExportInFlight(t *testing.T) {
+	g := NewWithT(t)
+	delegate := &blockingDelegate{release: make(chan struct{})}
+	bc := &BufferedCollector{Delegate: delegate, Size: 1, MaxSize: 4, FlushInterval: time.Hour}
+
+	exported := make(chan error, 1)
+	go func() { exported <- bc.ExportDeploymentTargetLogs(api.DeploymentTargetLogRecord{Body: "a"}) }()
+	g.Eventually(func() int {
+		delegate.mu.Lock()
+		defer delegate.mu.Unlock()
+		return len(delegate.calls)
+	}).WithTimeout(time.Second).Should(Equal(1))
+
+	// This record is buffered for the next batch because the first export is still in flight.
+	g.Expect(bc.ExportDeploymentTargetLogs(api.DeploymentTargetLogRecord{Body: "b"})).To(Succeed())
+
+	stopped := make(chan error, 1)
+	go func() { stopped <- bc.Stop() }()
+	g.Consistently(stopped).WithTimeout(100 * time.Millisecond).ShouldNot(Receive())
+
+	close(delegate.release)
+	g.Eventually(exported).WithTimeout(time.Second).Should(Receive(BeNil()))
+	g.Eventually(stopped).WithTimeout(time.Second).Should(Receive(BeNil()))
+
+	delegate.mu.Lock()
+	defer delegate.mu.Unlock()
+	g.Expect(delegate.calls).To(HaveLen(2))
+	g.Expect(delegate.calls[1]).To(HaveLen(1))
+	g.Expect(delegate.calls[1][0].Body).To(Equal("b"))
 }
 
 func TestBufferedCollectorRetainsRecordsOnTransientError(t *testing.T) {

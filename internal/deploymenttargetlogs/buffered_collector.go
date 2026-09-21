@@ -14,6 +14,7 @@ const (
 	defaultBufferSize    = 128
 	defaultMaxSize       = 1024
 	defaultFlushInterval = 30 * time.Second
+	stopTimeout          = 5 * time.Second
 )
 
 type BufferedCollector struct {
@@ -25,7 +26,7 @@ type BufferedCollector struct {
 	buf         []api.DeploymentTargetLogRecord
 	mu          sync.Mutex
 	initialized bool
-	syncing     bool
+	inFlight    chan struct{}
 	stop        chan struct{}
 	done        chan struct{}
 }
@@ -75,14 +76,14 @@ func (bc *BufferedCollector) Sync() error {
 	}
 
 	bc.mu.Lock()
-	if bc.syncing || len(bc.buf) == 0 {
+	if bc.inFlight != nil || len(bc.buf) == 0 {
 		// A record appended while the delegate is exporting belongs to the next batch. Exporting it
 		// from here would recurse through the delegate, which logs and therefore ends up back here.
 		bc.mu.Unlock()
 		return nil
 	}
 	batch := bc.buf
-	bc.syncing = true
+	bc.inFlight = make(chan struct{})
 	bc.resetBuffer()
 	bc.mu.Unlock()
 
@@ -92,7 +93,8 @@ func (bc *BufferedCollector) Sync() error {
 
 	bc.mu.Lock()
 	defer bc.mu.Unlock()
-	bc.syncing = false
+	close(bc.inFlight)
+	bc.inFlight = nil
 
 	if err != nil {
 		if errors.Is(err, ErrRecordsRejected) {
@@ -110,9 +112,33 @@ func (bc *BufferedCollector) Sync() error {
 	return nil
 }
 
+// Stop stops the periodic flush and exports what is left. Unlike [BufferedCollector.Sync] it waits
+// for an export that is already in flight, so that the records buffered while it ran are exported
+// too instead of dying with the process.
 func (bc *BufferedCollector) Stop() error {
+	bc.mu.Lock()
+	initialized := bc.initialized
+	bc.mu.Unlock()
+
+	if !initialized {
+		return nil
+	}
+
 	close(bc.stop)
 	<-bc.done
+
+	bc.mu.Lock()
+	inFlight := bc.inFlight
+	bc.mu.Unlock()
+
+	if inFlight != nil {
+		select {
+		case <-inFlight:
+		case <-time.After(stopTimeout):
+			return errors.New("timed out waiting for the export in flight")
+		}
+	}
+
 	return bc.Sync()
 }
 
