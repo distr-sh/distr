@@ -1,7 +1,7 @@
 -- Application and artifact notifications have no representation in the old columns.
 DELETE FROM NotificationRecord WHERE source_type <> 'alert';
 
-DROP INDEX idx_notification_record_source_user_subject;
+DROP INDEX idx_notification_record_user_subject;
 DROP INDEX idx_notification_record_user_account_id;
 DROP INDEX idx_notification_record_source_previous_status_created;
 
@@ -62,6 +62,12 @@ ALTER TABLE NotificationRecord
     DROP COLUMN details;
 
 DROP TYPE NOTIFICATION_SOURCE_TYPE;
+
+-- ALTER TYPE CUSTOMER_ORGANIZATION_FEATURE DROP VALUE is not supported by postgres, and recreating
+-- the type would fail for every value a later migration added that a customer still holds. The
+-- value is harmless when unused.
+UPDATE CustomerOrganization SET features = array_remove(features, 'update_notifications')
+WHERE 'update_notifications' = ANY(features);
 
 DROP TABLE ArtifactNotificationConfiguration_Organization_UserAccount;
 DROP TABLE ArtifactNotificationConfiguration_Artifact;

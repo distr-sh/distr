@@ -5,8 +5,16 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faBox, faLightbulb, faPlus, faTrash, faUserCircle, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, lastValueFrom, map, startWith} from 'rxjs';
+import {
+  faArrowUpRightDots,
+  faBox,
+  faLightbulb,
+  faPlus,
+  faTrash,
+  faUserCircle,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
+import {combineLatest, combineLatestWith, lastValueFrom, map, startWith} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {PageComponent} from '../../components/page.component';
@@ -19,6 +27,7 @@ import {ArtifactsService, ArtifactUpstreamAuth, UpstreamAuthType} from '../../se
 import {AuthService} from '../../services/auth.service';
 import {ContextService} from '../../services/context.service';
 import {CustomerOrganizationsCache} from '../../services/customer-organizations.service';
+import {FeatureFlagService} from '../../services/feature-flag.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
@@ -60,6 +69,7 @@ export class ArtifactsComponent {
   protected readonly faXmark = faXmark;
   protected readonly faLightbulb = faLightbulb;
   protected readonly faUserCircle = faUserCircle;
+  protected readonly faArrowUpRightDots = faArrowUpRightDots;
 
   protected readonly filterForm = new FormGroup({
     search: this.fb.control(''),
@@ -93,6 +103,17 @@ export class ArtifactsComponent {
 
   protected readonly auth = inject(AuthService);
   protected readonly hasSubscription = this.organizationService.hasSubscription;
+
+  protected readonly isUpdateNotificationsVisible = toSignal(
+    inject(FeatureFlagService).isNotificationsEnabled$.pipe(
+      combineLatestWith(this.contextService.getCustomerOrganization()),
+      map(
+        ([enabled, customerOrg]) =>
+          enabled && this.auth.isCustomer() && (customerOrg?.features?.includes('update_notifications') ?? false)
+      )
+    ),
+    {initialValue: false}
+  );
 
   constructor() {
     this.createForm.controls.upstreamAuthType.valueChanges

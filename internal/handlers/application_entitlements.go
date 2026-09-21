@@ -139,7 +139,7 @@ func notifyEntitledVersions(ctx context.Context, log *zap.Logger, applicationVer
 		return
 	}
 	go func(ctx context.Context) {
-		asyncCtx, cancel := context.WithTimeout(ctx, notificationTimeout)
+		asyncCtx, cancel := context.WithTimeout(ctx, notification.SendTimeout)
 		defer cancel()
 
 		if err := notification.SendApplicationEntitlementVersionsNotifications(

@@ -16,13 +16,12 @@ func ApplicationUpdateAvailableNotification(
 	application types.NotificationApplication,
 	versionName string,
 	deployments []types.DeploymentPendingUpdate,
-	customerMessage *string,
 ) error {
 	return sendNotificationWithQuota(ctx, organization.ID, recipient.Email,
 		mailx.Subject(fmt.Sprintf("[%v] Update available: %v %v",
 			organization.Name, application.Name, versionName)),
 		mailx.HtmlBodyTemplate(mailtemplates.ApplicationUpdateAvailableNotification(
-			ctx, recipient, organization, application, versionName, deployments, customerMessage,
+			ctx, recipient, organization, application, versionName, deployments,
 		)),
 	)
 }
@@ -33,13 +32,12 @@ func ArtifactVersionAvailableNotification(
 	organization types.OrganizationWithBranding,
 	artifact types.NotificationArtifact,
 	versionName string,
-	customerMessage *string,
 ) error {
 	return sendNotificationWithQuota(ctx, organization.ID, recipient.Email,
 		mailx.Subject(fmt.Sprintf("[%v] New version available: %v:%v",
 			organization.Name, artifact.Name, versionName)),
 		mailx.HtmlBodyTemplate(mailtemplates.ArtifactVersionAvailableNotification(
-			ctx, recipient, organization, artifact, versionName, customerMessage,
+			ctx, recipient, organization, artifact, versionName,
 		)),
 	)
 }

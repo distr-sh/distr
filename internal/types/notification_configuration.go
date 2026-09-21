@@ -68,7 +68,6 @@ type ApplicationNotificationConfiguration struct {
 	Name                          string     `db:"name"`
 	Enabled                       bool       `db:"enabled"`
 	UpdateAvailableTriggerEnabled bool       `db:"update_available_trigger_enabled"`
-	CustomerMessage               *string    `db:"customer_message"`
 
 	Applications []NotificationApplication `db:"applications"`
 	Recipients   []NotificationRecipient   `db:"recipients"`
@@ -87,7 +86,6 @@ type ArtifactNotificationConfiguration struct {
 	Name                     string     `db:"name"`
 	Enabled                  bool       `db:"enabled"`
 	NewVersionTriggerEnabled bool       `db:"new_version_trigger_enabled"`
-	CustomerMessage          *string    `db:"customer_message"`
 
 	Artifacts  []NotificationArtifact  `db:"artifacts"`
 	Recipients []NotificationRecipient `db:"recipients"`

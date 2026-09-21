@@ -6,6 +6,7 @@ import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faClockRotateLeft, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
+import {compareBy} from '../../util/arrays';
 import {getFormDisplayedError} from '../../util/errors';
 import {checkedIds, checkedRecord} from '../../util/formRecord';
 import {validateRecordAtLeast} from '../../util/validation';
@@ -59,7 +60,10 @@ export class ApplicationNotificationConfigurationsComponent {
       switchMap(() => this.svc.list())
     )
   );
-  protected readonly applications = toSignal(this.applicationsService.list(), {initialValue: []});
+  private readonly unsortedApplications = toSignal(this.applicationsService.list(), {initialValue: []});
+  protected readonly applications = computed(() =>
+    [...this.unsortedApplications()].sort(compareBy((application) => application.name!))
+  );
   protected readonly users = toSignal(this.usersService.getUsers(), {initialValue: []});
 
   protected readonly filterForm = this.fb.group({search: ''});
@@ -80,7 +84,6 @@ export class ApplicationNotificationConfigurationsComponent {
       name: this.fb.control('', [Validators.required]),
       enabled: this.fb.control(true),
       updateAvailableTriggerEnabled: this.fb.control(true),
-      customerMessage: this.fb.control(''),
       applicationIds: this.fb.record<boolean>({}, {validators: [validateRecordAtLeast(1)]}),
       userAccountIds: this.fb.record<boolean>({}, {validators: [validateRecordAtLeast(1)]}),
     },
@@ -90,10 +93,12 @@ export class ApplicationNotificationConfigurationsComponent {
   private readonly editConfigDrawerTpl = viewChild.required<TemplateRef<unknown>>('editConfigDrawer');
   private editConfigDrawerRef?: DialogRef;
 
-  protected showDrawer(config?: ApplicationNotificationConfiguration) {
+  protected async showDrawer(config?: ApplicationNotificationConfiguration) {
     this.hideDrawer();
     this.editConfigRef.set(config);
     this.editConfigForm.reset();
+
+    await Promise.all([this.applicationsService.refresh(), this.usersService.refresh()]);
 
     for (const application of this.applications()) {
       this.editConfigForm.controls.applicationIds.addControl(application.id!, this.fb.control(false));
@@ -108,7 +113,6 @@ export class ApplicationNotificationConfigurationsComponent {
         name: config.name,
         enabled: config.enabled,
         updateAvailableTriggerEnabled: config.updateAvailableTriggerEnabled,
-        customerMessage: config.customerMessage ?? '',
         applicationIds: checkedRecord(config.applications.map((it) => it.id)),
         userAccountIds: checkedRecord(config.recipients.map((it) => it.id)),
       });
@@ -132,7 +136,6 @@ export class ApplicationNotificationConfigurationsComponent {
       name: formValue.name,
       enabled: formValue.enabled,
       updateAvailableTriggerEnabled: formValue.updateAvailableTriggerEnabled,
-      customerMessage: formValue.customerMessage.trim() || undefined,
       applicationIds: checkedIds(formValue.applicationIds),
       userAccountIds: checkedIds(formValue.userAccountIds),
     };
@@ -167,7 +170,6 @@ export class ApplicationNotificationConfigurationsComponent {
           name: config.name,
           enabled,
           updateAvailableTriggerEnabled: config.updateAvailableTriggerEnabled,
-          customerMessage: config.customerMessage,
           applicationIds: config.applications.map((it) => it.id),
           userAccountIds: config.recipients.map((it) => it.id),
         })
@@ -184,13 +186,20 @@ export class ApplicationNotificationConfigurationsComponent {
     }
   }
 
-  protected deleteConfig(config: ApplicationNotificationConfiguration) {
-    this.svc.delete(config.id).subscribe({
-      next: () => {
-        this.toast.success('Notification configuration deleted');
-        this.reload$.next();
-      },
-      error: (e) => this.toast.error(e),
-    });
+  protected async deleteConfig(config: ApplicationNotificationConfiguration) {
+    if (!(await firstValueFrom(this.overlay.confirm(`Really delete the notification "${config.name}"?`)))) {
+      return;
+    }
+
+    try {
+      await firstValueFrom(this.svc.delete(config.id));
+      this.toast.success('Notification configuration deleted');
+      this.reload$.next();
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    }
   }
 }

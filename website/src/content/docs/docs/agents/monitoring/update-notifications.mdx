@@ -4,7 +4,7 @@ description: Notify users by email when a new application version or a new artif
 slug: docs/agents/update-notifications
 sidebar:
   label: Update Notifications
-  order: 2
+  order: 3
 ---
 
 import {Aside} from '@astrojs/starlight/components';
@@ -24,9 +24,12 @@ In the sidebar, navigate to **Notifications** > **Updates**, where applications 
 2. Enter a name for the configuration.
 3. Select the applications or artifacts to watch.
 4. Select the users who should receive the emails. Your own team, your partners and your customers' users can all be picked.
-5. Optionally, write a message that is included in every email this configuration sends, for example a link to the changelog or an upgrade instruction.
 
 Each configuration can be toggled on or off without deleting it, and the **History** page lists what has been sent.
+
+## Letting Customers Configure Their Own
+
+Grant a customer organization the **Update Notifications** feature in **Customers** to let its admins decide who of their own users hears about a new version. They reach the page through the **Updates** button on their deployments and artifacts pages, and can only pick the applications and artifacts they are entitled to and users of their own organization.
 
 ## When a Notification Is Sent
 
@@ -34,10 +37,10 @@ An application notification is sent when a new version of a watched application 
 
 An artifact notification is sent when a new tag is pushed to a watched artifact. Artifacts that mirror an upstream registry cannot be watched, because all of their versions appear at once when the mirror syncs.
 
-Each recipient hears about a version once per configuration, however many deployments are affected.
+Each recipient hears about a version once, however many deployments are affected and however many configurations cover them. A customer who watches the same application as you do receives one email, not two.
 
 ## Notification Emails
 
-Every email contains the application or artifact, its type and logo, the new version, the message of the configuration when one is set, and a link to Distr.
+Every email contains the application or artifact, its type and logo, the new version and a link to Distr.
 
 A recipient from your own team or a partner organization sees every affected customer and deployment in one email. A customer user sees only their own deployments.

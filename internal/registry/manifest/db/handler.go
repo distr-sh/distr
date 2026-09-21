@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
@@ -19,10 +18,6 @@ import (
 	"github.com/opencontainers/go-digest"
 	"go.uber.org/zap"
 )
-
-// notificationTimeout bounds the send that is deferred into a goroutine and therefore outlives the
-// push it belongs to.
-const notificationTimeout = 30 * time.Second
 
 type handler struct{}
 
@@ -253,7 +248,7 @@ func (h *handler) Put(
 	if created != nil {
 		log := internalctx.GetLogger(ctx)
 		go func(ctx context.Context) {
-			asyncCtx, cancel := context.WithTimeout(ctx, notificationTimeout)
+			asyncCtx, cancel := context.WithTimeout(ctx, notification.SendTimeout)
 			defer cancel()
 
 			if err := notification.SendArtifactVersionAvailableNotifications(asyncCtx, *created); err != nil {

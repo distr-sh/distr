@@ -34,7 +34,7 @@ From the Customers page you can:
 - **Invite customer users** (name, email, and [role](/docs/platform/rbac/)) and manage access per customer
 - **Manage secrets** for a specific customer. See [Manage Secrets](/docs/agents/secrets/) for how secrets work
 - **Manage links** that appear in that customer's [Customer Portal](/docs/platform/customer-portal/) sidebar
-- **Enable or disable features** per customer: Deployments, [Alerts](/docs/agents/alerts/), Artifacts, and [Support Bundles](/docs/platform/support-bundles/)
+- **Enable or disable features** per customer: Deployments, [Alerts](/docs/agents/alerts/), Artifacts, [Update Notifications](/docs/agents/update-notifications/), and [Support Bundles](/docs/platform/support-bundles/)
 
 Use the **Filter customers** search bar to find customers, and **+ Create Customer** to add a new one.
 
@@ -103,6 +103,7 @@ You can control which features are available to each customer organization. The 
 - **Deployments**: access to agent-based deployments
 - **Alerts**: deployment health notifications (requires Deployments)
 - **Artifacts**: access to the artifact registry
+- **Update Notifications**: deciding which of their own users hears about a new application or artifact version
 - **Support Bundles**: ability to create and submit diagnostic bundles
 
 Each customer has a **Features** button in the customer list showing how many features are currently enabled. Click it to open a dropdown where you can check or uncheck individual features.
@@ -117,7 +118,8 @@ A few things to note:
 
 - **Alerts** depends on **Deployments**. Enabling Alerts automatically enables Deployments; disabling Deployments automatically disables Alerts.
 - **Support Bundles** and **Artifacts** are independent and can be toggled without affecting other features.
-- **Deployments** and **Artifacts** are enabled by default for new customers. **Alerts** and **Support Bundles** must be explicitly enabled.
+- **Update Notifications** covers whichever of **Deployments** and **Artifacts** the customer also has, since a customer can only watch what it can reach.
+- **Deployments** and **Artifacts** are enabled by default for new customers. **Alerts**, **Update Notifications** and **Support Bundles** must be explicitly enabled.
 - Changes take effect immediately. Disabled features are hidden entirely from the customer in the Customer Portal. Customers only see the sections that are enabled for them.
 
 ---

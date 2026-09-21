@@ -27,7 +27,6 @@ export interface ApplicationNotificationConfiguration {
   name: string;
   enabled: boolean;
   updateAvailableTriggerEnabled: boolean;
-  customerMessage?: string;
   applications: NotificationApplication[];
   recipients: NotificationRecipient[];
 }
@@ -36,7 +35,6 @@ export interface CreateUpdateApplicationNotificationConfigurationRequest {
   name: string;
   enabled: boolean;
   updateAvailableTriggerEnabled: boolean;
-  customerMessage?: string;
   applicationIds: string[];
   userAccountIds: string[];
 }
@@ -47,7 +45,6 @@ export interface ArtifactNotificationConfiguration {
   name: string;
   enabled: boolean;
   newVersionTriggerEnabled: boolean;
-  customerMessage?: string;
   artifacts: NotificationArtifact[];
   recipients: NotificationRecipient[];
 }
@@ -56,7 +53,6 @@ export interface CreateUpdateArtifactNotificationConfigurationRequest {
   name: string;
   enabled: boolean;
   newVersionTriggerEnabled: boolean;
-  customerMessage?: string;
   artifactIds: string[];
   userAccountIds: string[];
 }

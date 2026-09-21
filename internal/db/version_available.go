@@ -101,8 +101,8 @@ func GetNewestApplicationVersion(
 
 // GetArtifactVersionEntitlement returns which customer organizations may know that the given
 // artifact version exists. An entitlement for the whole artifact covers every version, and one
-// for a version that resolves to the same content — a sibling tag, or an index the version is part
-// of — covers it too.
+// for a version that resolves to the same content covers it too, be that a sibling tag or an index
+// the version is part of.
 func GetArtifactVersionEntitlement(
 	ctx context.Context,
 	artifactID, artifactVersionID uuid.UUID,

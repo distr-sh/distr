@@ -426,7 +426,7 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		go func(ctx context.Context) {
-			asyncCtx, cancel := context.WithTimeout(ctx, notificationTimeout)
+			asyncCtx, cancel := context.WithTimeout(ctx, notification.SendTimeout)
 			defer cancel()
 
 			if err := notification.SendApplicationUpdateAvailableNotifications(

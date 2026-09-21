@@ -59,7 +59,7 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 ## Frontend Code
 
 - Use standalone components (no NgModules), reactive forms and `inject()` rather than constructor injection for dependencies (`private readonly http = inject(HttpClient)`). `standalone: true` is the default and never needs writing, and neither does `changeDetection: ChangeDetectionStrategy.OnPush`. Set `changeDetection` only to opt a component out with `ChangeDetectionStrategy.Eager`, and drop that opt-out once the component's state is fully signal-based.
-- Give services `providedIn: 'root'`. Injecting one of the few that are not (`CustomerOrganizationsCache`, `OverlayService`) obliges every page rendering the component to list it in `providers`, and when the component sits in a drawer or modal template the missing provider surfaces as a dialog that silently fails to open. Use the root-provided service instead unless the per-page cache is the point.
+- Give services `providedIn: 'root'`, and list one in a component's `providers` only where the subtree has to share exactly that instance (`OverlayService` and `ImageUploadService` on `AppComponent`) or where a page needs a cache of its own (`CustomerOrganizationsCache`).
 - Split a component into `component-name.component.ts` and `.html`, plus a `.scss` only when it needs styling beyond utility classes in the template.
 - Type API models with the interfaces in `app/types/`. Never type a value `any` or `unknown`, and do not widen a type with `| undefined` or `?` where the value is always present.
 - Use [signals](https://angular.dev/guide/signals) for inputs, child views and anywhere else the current Angular version supports them, and convert the non-signal usages you come across in files you edit anyway.
@@ -72,6 +72,7 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 - Call a `ReactiveList`-backed service's `refresh()` before opening a form or modal that has to show the current state, and await it before building the form. Such a service fetches its list once per session, so anything created in another tab, by another user or through the API is missing from it, and a list that arrives later updates the options but no longer moves a selection the form already made.
 - Return a `Promise` from a service method that exists for its side effect, `refresh()` being the example, so a caller cannot forget to subscribe. Everything that is a stream (`list()`, the CRUD methods) stays an `Observable`, and a reactive consumer wraps the promise in `from(...)`.
 - Never start an HTTP request or other async work inside a `subscribe` callback. Compose it with `switchMap`, or write the handler as an `async` method with `await firstValueFrom(...)`, which is what most event handlers here do.
+- Pass a caught error through `getFormDisplayedError` before handing it to `ToastService`, never the raw object, and confirm a destructive action with `overlay.confirm(...)` first.
 - Transform text with Tailwind utilities (`capitalize`, `uppercase`, `lowercase`) rather than in TypeScript.
 - Pluralize with [NgPlural](https://angular.dev/api/common/NgPlural) instead of a ternary like `count === 1 ? 'day' : 'days'`:
 
@@ -162,6 +163,8 @@ Never gate a feature by listing the subscription types allowed to use it. Such a
 - Frontend: `isProSubscription()` / `isPayingSubscription()` from `app/types/subscription.ts`, or `NON_PRO_SUBSCRIPTION_TYPES` / `NON_PAYING_SUBSCRIPTION_TYPES` when a list is needed.
 
 Plan-specific billing UI (checkout, plan comparison) and upsell banners for one plan are the exceptions, since they are tied to concrete plans.
+
+Gate what a customer organization may configure for itself with a `types.CustomerOrganizationFeature`, the way `alerts` does: the toggle on the customers page, the entry point on the page the feature belongs to rather than in the sidebar, and the rows a customer may link narrowed down in `internal/db` so hiding the UI is not what protects them.
 
 Keep the two sources of organization features (`types.Feature`) apart. Only the plan-managed ones, granted by `types.FeaturesForSubscriptionType` and collected in `types.PlanManagedFeatures`, may be revoked when an organization loses its plan. The rest is granted out of band (`vendor_billing` by staff, `pre_post_scripts` and `artifact_version_mutable` by an organization admin in the settings) and has to survive plan changes and edition reconciliation. Remove `types.PlanManagedFeatures` from the `features` array to revoke a plan; never overwrite the whole array.
 

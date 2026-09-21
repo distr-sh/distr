@@ -5,8 +5,7 @@ CREATE TABLE ApplicationNotificationConfiguration (
     customer_organization_id UUID REFERENCES CustomerOrganization (id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
-    update_available_trigger_enabled BOOLEAN NOT NULL DEFAULT TRUE,
-    customer_message TEXT
+    update_available_trigger_enabled BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 CREATE INDEX idx_application_notification_configuration_organization_id
@@ -39,8 +38,7 @@ CREATE TABLE ArtifactNotificationConfiguration (
     customer_organization_id UUID REFERENCES CustomerOrganization (id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
-    new_version_trigger_enabled BOOLEAN NOT NULL DEFAULT TRUE,
-    customer_message TEXT
+    new_version_trigger_enabled BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 CREATE INDEX idx_artifact_notification_configuration_organization_id
@@ -65,6 +63,8 @@ CREATE TABLE ArtifactNotificationConfiguration_Organization_UserAccount (
     FOREIGN KEY (organization_id, user_account_id)
         REFERENCES Organization_UserAccount (organization_id, user_account_id) ON DELETE CASCADE
 );
+
+ALTER TYPE CUSTOMER_ORGANIZATION_FEATURE ADD VALUE IF NOT EXISTS 'update_notifications';
 
 CREATE TYPE NOTIFICATION_SOURCE_TYPE AS ENUM ('alert', 'application', 'artifact');
 
@@ -168,9 +168,10 @@ CREATE INDEX idx_notification_record_source_previous_status_created
 CREATE INDEX idx_notification_record_user_account_id
     ON NotificationRecord (user_account_id);
 
--- A recipient hears about a version once per configuration, no matter how many deployments of it
--- are affected, whether a mutable tag is pushed again, or whether an entitlement change replays
--- the notification.
-CREATE UNIQUE INDEX idx_notification_record_source_user_subject
-    ON NotificationRecord (source_configuration_id, user_account_id, subject_id)
+-- A recipient hears about a version once, whichever configuration reaches them first, no matter
+-- how many deployments of it are affected, whether a mutable tag is pushed again, or whether an
+-- entitlement change replays the notification. Alert records carry no user account and stay
+-- outside this index.
+CREATE UNIQUE INDEX idx_notification_record_user_subject
+    ON NotificationRecord (user_account_id, subject_id)
     WHERE user_account_id IS NOT NULL AND subject_id IS NOT NULL;

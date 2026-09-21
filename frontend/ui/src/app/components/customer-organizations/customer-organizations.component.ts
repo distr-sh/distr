@@ -123,6 +123,7 @@ export class CustomerOrganizationsComponent {
     'deployment_targets',
     'alerts',
     'artifacts',
+    'update_notifications',
     'support_bundles',
     'oidc_providers',
   ];
@@ -266,6 +267,8 @@ export class CustomerOrganizationsComponent {
         return 'Artifacts';
       case 'alerts':
         return 'Alerts';
+      case 'update_notifications':
+        return 'Update Notifications';
       case 'support_bundles':
         return 'Support Bundles';
       case 'oidc_providers':

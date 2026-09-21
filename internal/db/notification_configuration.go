@@ -34,7 +34,6 @@ var applicationNotificationConfigurationOutputExpr = `
 	c.name,
 	c.enabled,
 	c.update_available_trigger_enabled,
-	c.customer_message,
 	(
 		SELECT array_agg(row(a.id, a.name, a.type, a.image_id) ORDER BY a.name)
 		FROM Application a
@@ -56,7 +55,6 @@ var artifactNotificationConfigurationOutputExpr = `
 	c.name,
 	c.enabled,
 	c.new_version_trigger_enabled,
-	c.customer_message,
 	(
 		SELECT array_agg(row(a.id, a.name, a.image_id) ORDER BY a.name)
 		FROM Artifact a
@@ -135,15 +133,13 @@ func CreateApplicationNotificationConfiguration(
 				customer_organization_id,
 				name,
 				enabled,
-				update_available_trigger_enabled,
-				customer_message
+				update_available_trigger_enabled
 			) VALUES (
 				@organizationID,
 				@customerOrganizationID,
 				@name,
 				@enabled,
-				@updateAvailableTriggerEnabled,
-				@customerMessage
+				@updateAvailableTriggerEnabled
 			)
 			RETURNING id`,
 			applicationNotificationConfigurationArgs(config),
@@ -171,8 +167,7 @@ func UpdateApplicationNotificationConfiguration(
 			`UPDATE ApplicationNotificationConfiguration SET
 				name = @name,
 				enabled = @enabled,
-				update_available_trigger_enabled = @updateAvailableTriggerEnabled,
-				customer_message = @customerMessage
+				update_available_trigger_enabled = @updateAvailableTriggerEnabled
 			WHERE id = @id
 				AND organization_id = @organizationID
 				AND ((@customerOrgIsNull AND customer_organization_id IS NULL)
@@ -199,7 +194,6 @@ func applicationNotificationConfigurationArgs(
 		"name":                          config.Name,
 		"enabled":                       config.Enabled,
 		"updateAvailableTriggerEnabled": config.UpdateAvailableTriggerEnabled,
-		"customerMessage":               config.CustomerMessage,
 	}
 }
 
@@ -212,7 +206,13 @@ func updateApplicationNotificationConfigurationLinks(
 		configColumn: "application_notification_configuration_id",
 		valueColumn:  "application_id",
 		valueTable:   "Application",
-	}, config.ID, config.OrganizationID, config.ApplicationIDs); err != nil {
+		customerCondition: `EXISTS (
+			SELECT 1 FROM ApplicationEntitlement ae
+			WHERE ae.application_id = v.id
+				AND ae.customer_organization_id = @customerOrganizationID
+				AND (ae.expires_at IS NULL OR ae.expires_at > now())
+		)`,
+	}, config.ID, config.OrganizationID, config.CustomerOrganizationID, config.ApplicationIDs); err != nil {
 		return err
 	}
 	if err := replaceNotificationRecipients(
@@ -221,6 +221,7 @@ func updateApplicationNotificationConfigurationLinks(
 		"application_notification_configuration_id",
 		config.ID,
 		config.OrganizationID,
+		config.CustomerOrganizationID,
 		config.UserAccountIDs,
 	); err != nil {
 		return err
@@ -333,15 +334,13 @@ func CreateArtifactNotificationConfiguration(
 				customer_organization_id,
 				name,
 				enabled,
-				new_version_trigger_enabled,
-				customer_message
+				new_version_trigger_enabled
 			) VALUES (
 				@organizationID,
 				@customerOrganizationID,
 				@name,
 				@enabled,
-				@newVersionTriggerEnabled,
-				@customerMessage
+				@newVersionTriggerEnabled
 			)
 			RETURNING id`,
 			artifactNotificationConfigurationArgs(config),
@@ -369,8 +368,7 @@ func UpdateArtifactNotificationConfiguration(
 			`UPDATE ArtifactNotificationConfiguration SET
 				name = @name,
 				enabled = @enabled,
-				new_version_trigger_enabled = @newVersionTriggerEnabled,
-				customer_message = @customerMessage
+				new_version_trigger_enabled = @newVersionTriggerEnabled
 			WHERE id = @id
 				AND organization_id = @organizationID
 				AND ((@customerOrgIsNull AND customer_organization_id IS NULL)
@@ -395,7 +393,6 @@ func artifactNotificationConfigurationArgs(config *types.ArtifactNotificationCon
 		"name":                     config.Name,
 		"enabled":                  config.Enabled,
 		"newVersionTriggerEnabled": config.NewVersionTriggerEnabled,
-		"customerMessage":          config.CustomerMessage,
 	}
 }
 
@@ -411,7 +408,14 @@ func updateArtifactNotificationConfigurationLinks(
 		// Every version of a mirrored artifact appears at once when the upstream sync runs, so
 		// announcing them would mean a mail per upstream tag.
 		valueCondition: "v.upstream_url IS NULL",
-	}, config.ID, config.OrganizationID, config.ArtifactIDs); err != nil {
+		customerCondition: `EXISTS (
+			SELECT 1 FROM ArtifactEntitlement ae
+			JOIN ArtifactEntitlement_Artifact aea ON aea.artifact_entitlement_id = ae.id
+			WHERE aea.artifact_id = v.id
+				AND ae.customer_organization_id = @customerOrganizationID
+				AND (ae.expires_at IS NULL OR ae.expires_at > now())
+		)`,
+	}, config.ID, config.OrganizationID, config.CustomerOrganizationID, config.ArtifactIDs); err != nil {
 		return err
 	}
 	if err := replaceNotificationRecipients(
@@ -420,6 +424,7 @@ func updateArtifactNotificationConfigurationLinks(
 		"artifact_notification_configuration_id",
 		config.ID,
 		config.OrganizationID,
+		config.CustomerOrganizationID,
 		config.UserAccountIDs,
 	); err != nil {
 		return err

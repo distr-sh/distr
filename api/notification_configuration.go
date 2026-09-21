@@ -35,7 +35,6 @@ type ApplicationNotificationConfiguration struct {
 	Name                          string                    `json:"name"`
 	Enabled                       bool                      `json:"enabled"`
 	UpdateAvailableTriggerEnabled bool                      `json:"updateAvailableTriggerEnabled"`
-	CustomerMessage               *string                   `json:"customerMessage,omitempty"`
 	Applications                  []NotificationApplication `json:"applications"`
 	Recipients                    []NotificationRecipient   `json:"recipients"`
 }
@@ -44,7 +43,6 @@ type CreateUpdateApplicationNotificationConfigurationRequest struct {
 	Name                          string      `json:"name"`
 	Enabled                       bool        `json:"enabled"`
 	UpdateAvailableTriggerEnabled bool        `json:"updateAvailableTriggerEnabled"`
-	CustomerMessage               *string     `json:"customerMessage,omitempty"`
 	ApplicationIDs                []uuid.UUID `json:"applicationIds"`
 	UserAccountIDs                []uuid.UUID `json:"userAccountIds"`
 }
@@ -66,7 +64,6 @@ type ArtifactNotificationConfiguration struct {
 	Name                     string                  `json:"name"`
 	Enabled                  bool                    `json:"enabled"`
 	NewVersionTriggerEnabled bool                    `json:"newVersionTriggerEnabled"`
-	CustomerMessage          *string                 `json:"customerMessage,omitempty"`
 	Artifacts                []NotificationArtifact  `json:"artifacts"`
 	Recipients               []NotificationRecipient `json:"recipients"`
 }
@@ -75,7 +72,6 @@ type CreateUpdateArtifactNotificationConfigurationRequest struct {
 	Name                     string      `json:"name"`
 	Enabled                  bool        `json:"enabled"`
 	NewVersionTriggerEnabled bool        `json:"newVersionTriggerEnabled"`
-	CustomerMessage          *string     `json:"customerMessage,omitempty"`
 	ArtifactIDs              []uuid.UUID `json:"artifactIds"`
 	UserAccountIDs           []uuid.UUID `json:"userAccountIds"`
 }

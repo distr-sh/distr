@@ -249,13 +249,20 @@ export class AlertConfigurationsComponent {
   }
 
   protected async deleteConfig(config: AlertConfiguration) {
-    this.svc.delete(config.id).subscribe({
-      next: () => {
-        this.toast.success('Alert configuration deleted');
-        this.reload$.next();
-      },
-      error: (e) => this.toast.error(e),
-    });
+    if (!(await firstValueFrom(this.overlay.confirm(`Really delete the alert "${config.name}"?`)))) {
+      return;
+    }
+
+    try {
+      await firstValueFrom(this.svc.delete(config.id));
+      this.toast.success('Alert configuration deleted');
+      this.reload$.next();
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    }
   }
 
   protected getTriggersCount(config: AlertConfiguration): number {

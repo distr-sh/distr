@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
@@ -12,6 +13,10 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
+
+// SendTimeout bounds a send that is deferred into a goroutine and therefore outlives the request it
+// belongs to.
+const SendTimeout = 30 * time.Second
 
 // SendApplicationUpdateAvailableNotifications tells the recipients of every configuration that
 // watches the version's application that it exists, listing the deployments they may see that do
@@ -88,7 +93,7 @@ func sendApplicationUpdateAvailableWithConfig(
 			continue
 		}
 
-		if sent, err := db.NotificationRecordExists(ctx, config.ID, recipient.ID, version.ID); err != nil {
+		if sent, err := db.NotificationRecordExists(ctx, recipient.ID, version.ID); err != nil {
 			return fmt.Errorf("failed to check notification record: %w", err)
 		} else if sent {
 			log.Debug("skip recipient that was notified about this version already")
@@ -98,7 +103,7 @@ func sendApplicationUpdateAvailableWithConfig(
 		log.Info("sending update available notification")
 		var message string
 		if err := mailsending.ApplicationUpdateAvailableNotification(
-			ctx, recipient, *organization, *application, version.Name, visible, config.CustomerMessage,
+			ctx, recipient, *organization, *application, version.Name, visible,
 		); err != nil {
 			log.Warn("update available notification sending failed", zap.Error(err))
 			aggErr = errors.Join(aggErr, err)
@@ -107,7 +112,7 @@ func sendApplicationUpdateAvailableWithConfig(
 
 		record := types.NotificationRecord{
 			OrganizationID:         config.OrganizationID,
-			CustomerOrganizationID: config.CustomerOrganizationID,
+			CustomerOrganizationID: recipient.CustomerOrganizationID,
 			UserAccountID:          &recipient.ID,
 			SourceType:             types.NotificationSourceTypeApplication,
 			SourceConfigurationID:  &config.ID,
@@ -188,7 +193,7 @@ func sendArtifactVersionAvailableWithConfig(
 			continue
 		}
 
-		if sent, err := db.NotificationRecordExists(ctx, config.ID, recipient.ID, version.ID); err != nil {
+		if sent, err := db.NotificationRecordExists(ctx, recipient.ID, version.ID); err != nil {
 			return fmt.Errorf("failed to check notification record: %w", err)
 		} else if sent {
 			log.Debug("skip recipient that was notified about this version already")
@@ -198,7 +203,7 @@ func sendArtifactVersionAvailableWithConfig(
 		log.Info("sending new artifact version notification")
 		var message string
 		if err := mailsending.ArtifactVersionAvailableNotification(
-			ctx, recipient, *organization, *artifact, version.Name, config.CustomerMessage,
+			ctx, recipient, *organization, *artifact, version.Name,
 		); err != nil {
 			log.Warn("new artifact version notification sending failed", zap.Error(err))
 			aggErr = errors.Join(aggErr, err)
@@ -207,7 +212,7 @@ func sendArtifactVersionAvailableWithConfig(
 
 		record := types.NotificationRecord{
 			OrganizationID:         config.OrganizationID,
-			CustomerOrganizationID: config.CustomerOrganizationID,
+			CustomerOrganizationID: recipient.CustomerOrganizationID,
 			UserAccountID:          &recipient.ID,
 			SourceType:             types.NotificationSourceTypeArtifact,
 			SourceConfigurationID:  &config.ID,

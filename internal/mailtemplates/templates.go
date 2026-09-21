@@ -14,7 +14,6 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 )
 
@@ -75,7 +74,8 @@ func fileDataURL(ctx context.Context, imageID *uuid.UUID) *string {
 	if err != nil {
 		return nil
 	}
-	return util.PtrTo(fmt.Sprintf("data:%s;base64,%s", file.ContentType, base64.StdEncoding.EncodeToString(file.Data)))
+	dataURL := fmt.Sprintf("data:%s;base64,%s", file.ContentType, base64.StdEncoding.EncodeToString(file.Data))
+	return &dataURL
 }
 
 func InviteUser(
@@ -233,7 +233,6 @@ func ApplicationUpdateAvailableNotification(
 	application types.NotificationApplication,
 	versionName string,
 	deployments []types.DeploymentPendingUpdate,
-	customerMessage *string,
 ) (*template.Template, any) {
 	host := notificationHost(ctx, organization, recipient)
 	link := fmt.Sprintf("%v/deployments", host)
@@ -241,17 +240,16 @@ func ApplicationUpdateAvailableNotification(
 		link = fmt.Sprintf("%v/applications/%v", host, application.ID)
 	}
 	return templates.Lookup("application-update-notification.html"), map[string]any{
-		"UserAccount":     recipient,
-		"Organization":    organization,
-		"Host":            host,
-		"LogoDataUrl":     BrandingLogoDataURL(ctx, organization.Branding),
-		"ImageDataUrl":    fileDataURL(ctx, application.ImageID),
-		"Application":     application,
-		"VersionName":     versionName,
-		"Deployments":     deployments,
-		"ShowCustomers":   recipient.CustomerOrganizationID == nil,
-		"CustomerMessage": customerMessage,
-		"Link":            link,
+		"UserAccount":   recipient,
+		"Organization":  organization,
+		"Host":          host,
+		"LogoDataUrl":   BrandingLogoDataURL(ctx, organization.Branding),
+		"ImageDataUrl":  fileDataURL(ctx, application.ImageID),
+		"Application":   application,
+		"VersionName":   versionName,
+		"Deployments":   deployments,
+		"ShowCustomers": recipient.CustomerOrganizationID == nil,
+		"Link":          link,
 	}
 }
 
@@ -261,19 +259,17 @@ func ArtifactVersionAvailableNotification(
 	organization types.OrganizationWithBranding,
 	artifact types.NotificationArtifact,
 	versionName string,
-	customerMessage *string,
 ) (*template.Template, any) {
 	host := notificationHost(ctx, organization, recipient)
 	return templates.Lookup("artifact-version-notification.html"), map[string]any{
-		"UserAccount":     recipient,
-		"Organization":    organization,
-		"Host":            host,
-		"LogoDataUrl":     BrandingLogoDataURL(ctx, organization.Branding),
-		"ImageDataUrl":    fileDataURL(ctx, artifact.ImageID),
-		"Artifact":        artifact,
-		"VersionName":     versionName,
-		"CustomerMessage": customerMessage,
-		"Link":            fmt.Sprintf("%v/artifacts/%v", host, artifact.ID),
+		"UserAccount":  recipient,
+		"Organization": organization,
+		"Host":         host,
+		"LogoDataUrl":  BrandingLogoDataURL(ctx, organization.Branding),
+		"ImageDataUrl": fileDataURL(ctx, artifact.ImageID),
+		"Artifact":     artifact,
+		"VersionName":  versionName,
+		"Link":         fmt.Sprintf("%v/artifacts/%v", host, artifact.ID),
 	}
 }
 

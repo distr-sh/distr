@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"time"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
@@ -17,10 +16,6 @@ import (
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
 )
-
-// notificationTimeout bounds a send that is deferred into a goroutine and therefore outlives the
-// request it belongs to.
-const notificationTimeout = 30 * time.Second
 
 func ApplicationNotificationConfigurationsRouter(r chiopenapi.Router) {
 	notificationConfigurations[

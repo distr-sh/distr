@@ -48,11 +48,25 @@ describe('ApplicationNotificationConfigurationsComponent', () => {
     httpTesting.verify();
   });
 
-  it('opens the drawer with the applications and recipients to pick from', async () => {
+  it('refreshes the picklists and opens the drawer with the applications and recipients to pick from', async () => {
     const create = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
       (button) => button.textContent?.includes('Create Notification')
     );
     create!.click();
+
+    // The drawer opens only after both picklists have been refreshed, and the recipient list asks
+    // for the customer organizations only once the drawer template is rendered.
+    httpTesting
+      .expectOne('/api/v1/applications')
+      .flush([{id: '11111111-1111-1111-1111-111111111111', name: 'app', type: 'docker', versions: []}]);
+    httpTesting
+      .expectOne('/api/v1/user-accounts')
+      .flush([{id: '22222222-2222-2222-2222-222222222222', email: 'a@b.c', name: 'Aaa', userRole: 'admin'}]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
     httpTesting.expectOne('/api/v1/customer-organizations').flush([]);
     await fixture.whenStable();
     fixture.detectChanges();

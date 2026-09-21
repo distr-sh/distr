@@ -19,11 +19,6 @@
           is available.
         </p>
 
-        {{ with .CustomerMessage }}
-          <blockquote>{{ . }}</blockquote>
-        {{ end }}
-
-
         <p>
           {{ with .ImageDataUrl }}
             <img alt="{{ $.Application.Name }}" width="24" src="{{ . | UnsafeURL }}" />

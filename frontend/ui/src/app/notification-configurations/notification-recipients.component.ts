@@ -11,6 +11,14 @@ interface RecipientGroup {
   users: UserAccountWithRole[];
 }
 
+// Own team first, then partners, then one group per customer, ordered by name.
+const groupOrder = ['Team', 'Partners'];
+
+function groupRank(label: string): number {
+  const index = groupOrder.indexOf(label);
+  return index === -1 ? groupOrder.length : index;
+}
+
 /** The users a notification configuration sends to, grouped by the organization they belong to. */
 @Component({
   selector: 'app-notification-recipients',
@@ -58,6 +66,8 @@ export class NotificationRecipientsComponent {
       byGroup.set(label, [...(byGroup.get(label) ?? []), user]);
     }
 
-    return [...byGroup.entries()].map(([label, groupUsers]) => ({label, users: groupUsers}));
+    return [...byGroup.entries()]
+      .map(([label, groupUsers]) => ({label, users: groupUsers}))
+      .sort((a, b) => groupRank(a.label) - groupRank(b.label) || a.label.localeCompare(b.label));
   });
 }

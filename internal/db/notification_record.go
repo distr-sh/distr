@@ -27,9 +27,9 @@ const notificationRecordOutputExpr = `
 	r.details,
 	r.message `
 
-// ErrNotificationRecordExists is returned when a record for the same configuration, recipient and
-// subject has been written already, which is what keeps a recipient from hearing about the same
-// version twice.
+// ErrNotificationRecordExists is returned when a record for the same recipient and subject has
+// been written already, which is what keeps a recipient from hearing about the same version twice,
+// including when a vendor and a customer configuration both cover them.
 var ErrNotificationRecordExists = errors.New("notification record already exists")
 
 func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecord) error {
@@ -120,21 +120,17 @@ func GetLatestNotificationRecord(
 	}
 }
 
-func NotificationRecordExists(
-	ctx context.Context,
-	configID, userAccountID, subjectID uuid.UUID,
-) (bool, error) {
+func NotificationRecordExists(ctx context.Context, userAccountID, subjectID uuid.UUID) (bool, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`SELECT count(*) > 0 FROM NotificationRecord r
-		WHERE r.source_configuration_id = @sourceConfigurationID
-			AND r.user_account_id = @userAccountID
-			AND r.subject_id = @subjectID`,
+		`SELECT EXISTS (
+			SELECT 1 FROM NotificationRecord r
+			WHERE r.user_account_id = @userAccountID AND r.subject_id = @subjectID
+		)`,
 		pgx.NamedArgs{
-			"sourceConfigurationID": configID,
-			"userAccountID":         userAccountID,
-			"subjectID":             subjectID,
+			"userAccountID": userAccountID,
+			"subjectID":     subjectID,
 		},
 	)
 	if err != nil {
@@ -153,10 +149,11 @@ func GetNotificationRecords(
 
 	rows, err := db.Query(
 		ctx,
+		// A record of an update notification carries the recipient's customer organization, so a
+		// vendor has to see the rows of its customers too in order to see what was sent at all.
 		`SELECT`+notificationRecordOutputExpr+`FROM NotificationRecord r
 		WHERE r.organization_id = @organizationID
-			AND ((@isVendor AND r.customer_organization_id IS NULL)
-				OR r.customer_organization_id = @customerOrganizationID)
+			AND (@isVendor OR r.customer_organization_id = @customerOrganizationID)
 		ORDER BY r.created_at DESC`,
 		pgx.NamedArgs{
 			"organizationID":         organizationID,

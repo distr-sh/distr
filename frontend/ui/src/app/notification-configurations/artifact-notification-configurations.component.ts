@@ -88,7 +88,6 @@ export class ArtifactNotificationConfigurationsComponent {
       name: this.fb.control('', [Validators.required]),
       enabled: this.fb.control(true),
       newVersionTriggerEnabled: this.fb.control(true),
-      customerMessage: this.fb.control(''),
       artifactIds: this.fb.record<boolean>({}, {validators: [validateRecordAtLeast(1)]}),
       userAccountIds: this.fb.record<boolean>({}, {validators: [validateRecordAtLeast(1)]}),
     },
@@ -98,10 +97,12 @@ export class ArtifactNotificationConfigurationsComponent {
   private readonly editConfigDrawerTpl = viewChild.required<TemplateRef<unknown>>('editConfigDrawer');
   private editConfigDrawerRef?: DialogRef;
 
-  protected showDrawer(config?: ArtifactNotificationConfiguration) {
+  protected async showDrawer(config?: ArtifactNotificationConfiguration) {
     this.hideDrawer();
     this.editConfigRef.set(config);
     this.editConfigForm.reset();
+
+    await Promise.all([this.artifactsService.refresh(), this.usersService.refresh()]);
 
     for (const artifact of this.artifacts()) {
       this.editConfigForm.controls.artifactIds.addControl(artifact.id, this.fb.control(false));
@@ -116,7 +117,6 @@ export class ArtifactNotificationConfigurationsComponent {
         name: config.name,
         enabled: config.enabled,
         newVersionTriggerEnabled: config.newVersionTriggerEnabled,
-        customerMessage: config.customerMessage ?? '',
         artifactIds: checkedRecord(config.artifacts.map((it) => it.id)),
         userAccountIds: checkedRecord(config.recipients.map((it) => it.id)),
       });
@@ -140,7 +140,6 @@ export class ArtifactNotificationConfigurationsComponent {
       name: formValue.name,
       enabled: formValue.enabled,
       newVersionTriggerEnabled: formValue.newVersionTriggerEnabled,
-      customerMessage: formValue.customerMessage.trim() || undefined,
       artifactIds: checkedIds(formValue.artifactIds),
       userAccountIds: checkedIds(formValue.userAccountIds),
     };
@@ -175,7 +174,6 @@ export class ArtifactNotificationConfigurationsComponent {
           name: config.name,
           enabled,
           newVersionTriggerEnabled: config.newVersionTriggerEnabled,
-          customerMessage: config.customerMessage,
           artifactIds: config.artifacts.map((it) => it.id),
           userAccountIds: config.recipients.map((it) => it.id),
         })
@@ -192,13 +190,20 @@ export class ArtifactNotificationConfigurationsComponent {
     }
   }
 
-  protected deleteConfig(config: ArtifactNotificationConfiguration) {
-    this.svc.delete(config.id).subscribe({
-      next: () => {
-        this.toast.success('Notification configuration deleted');
-        this.reload$.next();
-      },
-      error: (e) => this.toast.error(e),
-    });
+  protected async deleteConfig(config: ArtifactNotificationConfiguration) {
+    if (!(await firstValueFrom(this.overlay.confirm(`Really delete the notification "${config.name}"?`)))) {
+      return;
+    }
+
+    try {
+      await firstValueFrom(this.svc.delete(config.id));
+      this.toast.success('Notification configuration deleted');
+      this.reload$.next();
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    }
   }
 }

@@ -107,6 +107,19 @@ function notificationsEnabledGuard(): CanActivateFn {
   };
 }
 
+// A customer configures update notifications only where the vendor has granted the feature, the
+// way alerts work.
+const requireUpdateNotifications: CanActivateFn = async () => {
+  const auth = inject(AuthService);
+  const context = inject(ContextService);
+  const router = inject(Router);
+  if (!auth.isCustomer()) {
+    return true;
+  }
+  const customerOrganization = await firstValueFrom(context.getCustomerOrganization());
+  return customerOrganization?.features.includes('update_notifications') || router.createUrlTree(['/']);
+};
+
 function supportBundlesEnabledGuard(): CanActivateFn {
   return async () => {
     const featureFlags = inject(FeatureFlagService);
@@ -446,6 +459,7 @@ export const routes: Routes = [
           },
           {
             path: 'updates',
+            canActivate: [requireUpdateNotifications],
             component: UpdateNotificationsComponent,
             children: [
               {path: 'applications', component: ApplicationNotificationConfigurationsComponent},

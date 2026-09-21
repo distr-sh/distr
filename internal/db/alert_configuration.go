@@ -257,11 +257,12 @@ func UpdateAlertConfiguration(ctx context.Context, config *types.AlertConfigurat
 
 func updateAlertConfigurationLinks(ctx context.Context, config *types.AlertConfiguration) error {
 	if err := replaceNotificationLinks(ctx, notificationLink{
-		table:        "AlertConfiguration_DeploymentTarget",
-		configColumn: "alert_configuration_id",
-		valueColumn:  "deployment_target_id",
-		valueTable:   "DeploymentTarget",
-	}, config.ID, config.OrganizationID, config.DeploymentTargetIDs); err != nil {
+		table:             "AlertConfiguration_DeploymentTarget",
+		configColumn:      "alert_configuration_id",
+		valueColumn:       "deployment_target_id",
+		valueTable:        "DeploymentTarget",
+		customerCondition: "v.customer_organization_id = @customerOrganizationID",
+	}, config.ID, config.OrganizationID, config.CustomerOrganizationID, config.DeploymentTargetIDs); err != nil {
 		return err
 	}
 	return replaceNotificationRecipients(
@@ -270,6 +271,7 @@ func updateAlertConfigurationLinks(ctx context.Context, config *types.AlertConfi
 		"alert_configuration_id",
 		config.ID,
 		config.OrganizationID,
+		config.CustomerOrganizationID,
 		config.UserAccountIDs,
 	)
 }

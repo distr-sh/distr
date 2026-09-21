@@ -15,7 +15,6 @@ func ApplicationNotificationConfigurationToAPI(
 		Name:                          config.Name,
 		Enabled:                       config.Enabled,
 		UpdateAvailableTriggerEnabled: config.UpdateAvailableTriggerEnabled,
-		CustomerMessage:               config.CustomerMessage,
 		Applications:                  List(config.Applications, notificationApplicationToAPI),
 		Recipients:                    List(config.Recipients, notificationRecipientToAPI),
 	}
@@ -32,7 +31,6 @@ func ApplicationNotificationConfigurationToInternal(
 		Name:                          request.Name,
 		Enabled:                       request.Enabled,
 		UpdateAvailableTriggerEnabled: request.UpdateAvailableTriggerEnabled,
-		CustomerMessage:               request.CustomerMessage,
 		ApplicationIDs:                request.ApplicationIDs,
 		UserAccountIDs:                request.UserAccountIDs,
 	}
@@ -47,7 +45,6 @@ func ArtifactNotificationConfigurationToAPI(
 		Name:                     config.Name,
 		Enabled:                  config.Enabled,
 		NewVersionTriggerEnabled: config.NewVersionTriggerEnabled,
-		CustomerMessage:          config.CustomerMessage,
 		Artifacts:                List(config.Artifacts, notificationArtifactToAPI),
 		Recipients:               List(config.Recipients, notificationRecipientToAPI),
 	}
@@ -64,7 +61,6 @@ func ArtifactNotificationConfigurationToInternal(
 		Name:                     request.Name,
 		Enabled:                  request.Enabled,
 		NewVersionTriggerEnabled: request.NewVersionTriggerEnabled,
-		CustomerMessage:          request.CustomerMessage,
 		ArtifactIDs:              request.ArtifactIDs,
 		UserAccountIDs:           request.UserAccountIDs,
 	}
