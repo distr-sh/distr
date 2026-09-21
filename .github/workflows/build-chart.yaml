@@ -59,23 +59,31 @@ jobs:
         if: ${{ startsWith(github.ref, 'refs/tags/') || inputs.publish }}
       - name: Push and sign helm chart (tag or manual only)
         if: ${{ startsWith(github.ref, 'refs/tags/') || inputs.publish }}
+        env:
+          CERTIFICATE_IDENTITY: ^https://github\.com/distr-sh/distr/\.github/workflows/build-chart\.yaml@
+          CERTIFICATE_OIDC_ISSUER: https://token.actions.githubusercontent.com
         run: |
-          set -euo pipefail
+          # a failing helm push must fail the step even though its output is piped into tee
+          set -o pipefail
           for chart in distr-*.tgz; do
-              digest="$(helm push "$chart" oci://ghcr.io/distr-sh/charts 2>&1 | tee /dev/stderr | awk '/^Digest: /{print $2}')"
+              helm push "$chart" oci://ghcr.io/distr-sh/charts 2>&1 | tee push.log
+              digest="$(awk '/^Digest: /{print $2}' push.log)"
               # Artifact Hub looks a chart's cosign signature up under the legacy sha256-<digest>.sig tag, and
               # ghcr.io implements no referrers API that cosign could use instead, so the new bundle format
-              # would end up on a fallback tag Artifact Hub does not read.
-              cosign sign --yes --new-bundle-format=false "ghcr.io/distr-sh/charts/distr@${digest}"
+              # would end up on a fallback tag Artifact Hub does not read. cosign refuses the legacy format
+              # together with the TUF signing config, which is why that has to be turned off as well.
+              cosign sign --yes --new-bundle-format=false --use-signing-config=false \
+                "ghcr.io/distr-sh/charts/distr@${digest}"
               cosign verify \
-                --certificate-identity-regexp '^https://github\.com/distr-sh/distr/' \
-                --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+                --certificate-identity-regexp "$CERTIFICATE_IDENTITY" \
+                --certificate-oidc-issuer "$CERTIFICATE_OIDC_ISSUER" \
                 "ghcr.io/distr-sh/charts/distr@${digest}" > /dev/null
 
-              digest="$(helm push "$chart" oci://registry.distr.sh/enterprise/charts 2>&1 | tee /dev/stderr | awk '/^Digest: /{print $2}')"
+              helm push "$chart" oci://registry.distr.sh/enterprise/charts 2>&1 | tee push.log
+              digest="$(awk '/^Digest: /{print $2}' push.log)"
               cosign sign --yes "registry.distr.sh/enterprise/charts/distr@${digest}"
               cosign verify \
-                --certificate-identity-regexp '^https://github\.com/distr-sh/distr/' \
-                --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+                --certificate-identity-regexp "$CERTIFICATE_IDENTITY" \
+                --certificate-oidc-issuer "$CERTIFICATE_OIDC_ISSUER" \
                 "registry.distr.sh/enterprise/charts/distr@${digest}" > /dev/null
           done

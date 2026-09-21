@@ -53,7 +53,7 @@ To check a version before installing it:
 
 ```shell
 cosign verify \
-  --certificate-identity-regexp '^https://github\.com/distr-sh/distr/' \
+  --certificate-identity-regexp '^https://github\.com/distr-sh/distr/\.github/workflows/build-chart\.yaml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   ghcr.io/distr-sh/charts/distr:<version>
 ```
