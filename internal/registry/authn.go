@@ -5,46 +5,22 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/middleware"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httprate"
 )
 
-// AnonymousAccess lets a request that carries no credentials reach the handlers without
-// authentication, so that the authorizer can serve it from a public artifact. Everything else keeps
-// going through authenticated, which answers 401 with the challenge.
-//
-// Only the routes that address an artifact are opened up. The /v2/ ping in particular has to keep
-// its 401: OCI clients record the authentication challenge from that response alone, so a 200 there
-// would leave a client that holds credentials with no challenge to answer and it would never send
-// them, breaking every private pull.
-func AnonymousAccess(
-	limits env.AnonymousRateLimits,
-	authenticated ...func(http.Handler) http.Handler,
-) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		anonymous := next
-		for _, mw := range []func(http.Handler) http.Handler{
-			limitAnonymous(isManifestOrListing, limits.ManifestsPerMinute, time.Minute),
-			limitAnonymous(isManifestOrListing, limits.ManifestsPerHour, time.Hour),
-			limitAnonymous(isBlob, limits.BlobsPerMinute, time.Minute),
-			limitAnonymous(isBlob, limits.BlobsPerHour, time.Hour),
-		} {
-			anonymous = mw(anonymous)
-		}
+func requiresAuthentication(r *http.Request) bool {
+	return hasCredentials(r) || !allowsAnonymous(r)
+}
 
-		withAuth := next
-		for i := len(authenticated) - 1; i >= 0; i-- {
-			withAuth = authenticated[i](withAuth)
-		}
-
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if hasCredentials(r) || !allowsAnonymous(r) {
-				withAuth.ServeHTTP(w, r)
-			} else {
-				anonymous.ServeHTTP(w, r)
-			}
-		})
-	}
+func rateLimitAnonymous(limits env.AnonymousRateLimits) func(http.Handler) http.Handler {
+	return middleware.Chain(
+		limitAnonymous(isManifestOrListing, limits.ManifestsPerMinute, time.Minute),
+		limitAnonymous(isManifestOrListing, limits.ManifestsPerHour, time.Hour),
+		limitAnonymous(isBlob, limits.BlobsPerMinute, time.Minute),
+		limitAnonymous(isBlob, limits.BlobsPerHour, time.Hour),
+	)
 }
 
 // hasCredentials reports whether the request is worth authenticating. An OCI client that has no
@@ -59,7 +35,9 @@ func hasCredentials(r *http.Request) bool {
 
 // allowsAnonymous lists the routes that name an artifact, which is what makes the authorizer able
 // to decide anonymous access at all. The catalog belongs to the organization rather than to an
-// artifact and must stay out, as must the ping.
+// artifact and must stay out, as must the ping: OCI clients record the authentication challenge
+// from the /v2/ response alone, so a 200 there would leave a client that holds credentials with no
+// challenge to answer and it would never send them, breaking every private pull.
 func allowsAnonymous(r *http.Request) bool {
 	return isManifest(r) || isBlob(r) || isTags(r) || isReferrers(r)
 }

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/middleware"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	. "github.com/onsi/gomega"
 )
@@ -18,8 +19,9 @@ const (
 	blobPath     = "/v2/acme/app/blobs/sha256:0000000000000000000000000000000000000000000000000000000000000000"
 )
 
-// registryHandler wraps AnonymousAccess in place of the real authentication chain and records
-// whether a request was sent down that chain instead of being served anonymously.
+// registryHandler composes the registry's middleware split with a marker in place of the real
+// authentication chain, which records whether a request was sent down it instead of being served
+// anonymously.
 type registryHandler struct {
 	handler       http.Handler
 	authenticated bool
@@ -34,7 +36,7 @@ func newRegistryHandler(limits env.AnonymousRateLimits) *registryHandler {
 		})
 	}
 	ok := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
-	h.handler = AnonymousAccess(limits, marker)(ok)
+	h.handler = middleware.Split(requiresAuthentication, marker, rateLimitAnonymous(limits))(ok)
 	return h
 }
 
