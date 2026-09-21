@@ -19,15 +19,12 @@ type CreateArtifactRequest struct {
 	UpstreamAuth *ArtifactUpstreamAuth `json:"upstreamAuth,omitempty"`
 }
 
-// PatchArtifactUpstreamRequest supports partial updates: omitted fields are left unchanged.
+// PatchArtifactRequest supports partial updates: omitted fields are left unchanged.
 // For auth, explicit null clears the credentials.
-type PatchArtifactUpstreamRequest struct {
+type PatchArtifactRequest struct {
 	UpstreamURL *string                        `json:"upstreamUrl,omitempty"`
 	Auth        Nullable[ArtifactUpstreamAuth] `json:"auth"`
-}
-
-type PatchArtifactPublicRequest struct {
-	Public bool `json:"public"`
+	Public      *bool                          `json:"public,omitempty"`
 }
 
 type ArtifactResponse struct {

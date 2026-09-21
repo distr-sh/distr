@@ -55,19 +55,12 @@ func ArtifactsRouter(r chiopenapi.Router) {
 						api.PatchImageRequest
 					}{})).
 					With(option.Response(http.StatusOK, []api.ArtifactResponse{}))
-				r.Patch("/", patchArtifactUpstreamHandler).
-					With(option.Description("Update artifact upstream URL and/or authentication")).
+				r.Patch("/", patchArtifactHandler).
+					With(option.Description(
+						"Update artifact upstream URL and/or authentication, or its public visibility")).
 					With(option.Request(struct {
 						ArtifactRequest
-						api.PatchArtifactUpstreamRequest
-					}{})).
-					With(option.Response(http.StatusOK, api.ArtifactResponse{}))
-				r.With(middleware.RequireAdmin).
-					Patch("/public", patchArtifactPublicHandler).
-					With(option.Description("Make an artifact publicly pullable or private again")).
-					With(option.Request(struct {
-						ArtifactRequest
-						api.PatchArtifactPublicRequest
+						api.PatchArtifactRequest
 					}{})).
 					With(option.Response(http.StatusOK, api.ArtifactResponse{}))
 				r.Post("/sync", syncArtifactHandler()).
@@ -314,19 +307,22 @@ func deleteArtifactTagHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func patchArtifactUpstreamHandler(w http.ResponseWriter, r *http.Request) {
+func patchArtifactHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	artifact := internalctx.GetArtifact(ctx)
 
-	if artifact.UpstreamURL == nil {
-		http.Error(w, "artifact is not a pull-through cache artifact", http.StatusBadRequest)
+	body, err := JsonBody[api.PatchArtifactRequest](w, r)
+	if err != nil {
 		return
 	}
 
-	body, err := JsonBody[api.PatchArtifactUpstreamRequest](w, r)
-	if err != nil {
-		return
+	if body.Public != nil {
+		role := auth.Authentication.Require(ctx).CurrentUserRole()
+		if role == nil || *role != types.UserRoleAdmin {
+			http.Error(w, "must be admin to change the visibility of an artifact", http.StatusForbidden)
+			return
+		}
 	}
 
 	params := db.UpdateArtifactUpstreamParams{}
@@ -350,6 +346,10 @@ func patchArtifactUpstreamHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if params.UpdateURL || params.UpdateAuth {
+		if artifact.UpstreamURL == nil {
+			http.Error(w, "artifact is not a pull-through cache artifact", http.StatusBadRequest)
+			return
+		}
 		validationArtifact := artifact.Artifact
 		if params.UpdateURL {
 			validationArtifact.UpstreamURL = params.UpstreamURL
@@ -365,8 +365,18 @@ func patchArtifactUpstreamHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := db.UpdateArtifactUpstream(ctx, artifact.ID, artifact.OrganizationID, params); err != nil {
-		log.Error("failed to update artifact upstream", zap.Error(err))
+	if err := db.RunTx(ctx, func(ctx context.Context) error {
+		if params.UpdateURL || params.UpdateAuth {
+			if err := db.UpdateArtifactUpstream(ctx, artifact.ID, artifact.OrganizationID, params); err != nil {
+				return err
+			}
+		}
+		if body.Public != nil {
+			return db.UpdateArtifactPublic(ctx, artifact.ID, artifact.OrganizationID, *body.Public)
+		}
+		return nil
+	}); err != nil {
+		log.Error("failed to update artifact", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -374,34 +384,7 @@ func patchArtifactUpstreamHandler(w http.ResponseWriter, r *http.Request) {
 
 	result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil)
 	if err != nil {
-		log.Error("failed to fetch artifact after upstream update", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	RespondJSON(w, mapping.ArtifactToAPI(*result))
-}
-
-func patchArtifactPublicHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
-	artifact := internalctx.GetArtifact(ctx)
-
-	body, err := JsonBody[api.PatchArtifactPublicRequest](w, r)
-	if err != nil {
-		return
-	}
-
-	if err := db.UpdateArtifactPublic(ctx, artifact.ID, artifact.OrganizationID, body.Public); err != nil {
-		log.Error("failed to update artifact visibility", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil)
-	if err != nil {
-		log.Error("failed to fetch artifact after visibility update", zap.Error(err))
+		log.Error("failed to fetch artifact after update", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return

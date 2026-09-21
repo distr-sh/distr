@@ -126,7 +126,7 @@ export class ArtifactsService {
 
   public patchPublic(artifactId: string, isPublic: boolean): Observable<ArtifactWithTags> {
     return this.http
-      .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}/public`, {public: isPublic})
+      .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}`, {public: isPublic})
       .pipe(tap((it) => this.cache.save(it)));
   }
 
