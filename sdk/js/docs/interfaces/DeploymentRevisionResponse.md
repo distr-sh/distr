@@ -74,6 +74,12 @@
 
 ---
 
+### trigger
+
+> **trigger**: [`DeploymentRevisionTrigger`](../type-aliases/DeploymentRevisionTrigger.md)
+
+---
+
 ### valuesYaml?
 
 > `optional` **valuesYaml?**: `string`

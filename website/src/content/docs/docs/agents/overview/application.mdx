@@ -117,6 +117,25 @@ If you are looking for a more automated and integrated experience in creating ne
   </TabItem>
 </Tabs>
 
+## Versioning Strategy
+
+Every application has a versioning strategy, which decides which of its versions is the latest one:
+
+- **Semantic versioning** orders versions by [SemVer](https://semver.org/) precedence. Every version name has to be a valid SemVer version, so `1.10.0` is newer than `1.9.0` and `2.0.0` is newer than `2.0.0-rc.1`. Distr rejects a version name that is not valid SemVer and one that resolves to a version the application already has, `1.0.0` and `v1.0.0` being the same version.
+- **Chronological versioning** orders versions by the time they were created, whatever they are named. Pick this when your versions are dates, build numbers or channel names.
+
+You pick the strategy when creating an application and can change it later on the application detail page. Switching to semantic versioning is only possible while every existing version name, including the archived ones, is a valid SemVer version.
+
+Applications created before strategies existed keep **Legacy versioning**, which orders by SemVer while every name happens to parse and by creation date otherwise. It cannot be selected, and an application has to move off it to use automatic updates.
+
+## Automatic Updates
+
+With **Allow automatic updates** enabled on an application, a deployment of it can be set to follow the application's latest version instead of being updated by hand or by a release pipeline. See [Automatic updates](/docs/agents/deployment/#automatic-updates) for what this does to a deployment.
+
+The setting only makes the feature available. Whether an individual deployment follows the latest version is decided per deployment, by you or by the customer.
+
+Automatic updates are part of the Business plan and need a versioning strategy other than legacy versioning.
+
 ## Additional Resources
 
 Each application version can include additional resources: named markdown documents such as release notes, upgrade instructions, or troubleshooting tips.

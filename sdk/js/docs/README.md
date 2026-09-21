@@ -54,6 +54,7 @@
 - [PartnerOrganizationWithUsage](interfaces/PartnerOrganizationWithUsage.md)
 - [PatchAdvisoryRequest](interfaces/PatchAdvisoryRequest.md)
 - [PatchApplicationRequest](interfaces/PatchApplicationRequest.md)
+- [PatchDeploymentRequest](interfaces/PatchDeploymentRequest.md)
 - [SidebarLink](interfaces/SidebarLink.md)
 - [SupportBundle](interfaces/SupportBundle.md)
 - [SupportBundleComment](interfaces/SupportBundleComment.md)
@@ -78,6 +79,7 @@
 - [CreateDeploymentParams](type-aliases/CreateDeploymentParams.md)
 - [CreateDeploymentResult](type-aliases/CreateDeploymentResult.md)
 - [CustomerOrganizationFeature](type-aliases/CustomerOrganizationFeature.md)
+- [DeploymentRevisionTrigger](type-aliases/DeploymentRevisionTrigger.md)
 - [DeploymentStatusType](type-aliases/DeploymentStatusType.md)
 - [DeploymentTargetScope](type-aliases/DeploymentTargetScope.md)
 - [DeploymentType](type-aliases/DeploymentType.md)
@@ -93,6 +95,7 @@
 - [UpdateAllDeploymentsUpdatedTarget](type-aliases/UpdateAllDeploymentsUpdatedTarget.md)
 - [UpdateDeploymentParams](type-aliases/UpdateDeploymentParams.md)
 - [UserRole](type-aliases/UserRole.md)
+- [VersioningStrategy](type-aliases/VersioningStrategy.md)
 
 ## Functions
 

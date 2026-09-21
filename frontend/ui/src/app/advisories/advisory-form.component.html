@@ -201,7 +201,7 @@
                     [imageUrl]="application.imageUrl"
                     [type]="application.type" />
                   <span class="truncate">{{ application.name }}</span>
-                  <span class="distr-deployment-type-badge capitalize">{{ application.type }}</span>
+                  <span class="distr-deployment-type-badge">{{ application.type }}</span>
                 </span>
                 @let versionCount = application.versions?.length ?? 0;
                 <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">

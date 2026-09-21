@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/distr-sh/distr/4.0.3/deploy/charts/distr/values.schema.json # x-release-please-version
 # Self-contained community edition install on any cluster, the counterpart of
 # deploy/docker/community: the chart brings its own PostgreSQL and RustFS object storage, and an
 # Ingress serves the app and the registry under public hostnames.

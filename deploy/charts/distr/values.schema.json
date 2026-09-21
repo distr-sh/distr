@@ -1,0 +1,1009 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Distr",
+  "description": "Values of the Distr Helm chart",
+  "type": "object",
+  "properties": {
+    "affinity": {
+      "description": "Affinity of the Distr pods.",
+      "type": "object"
+    },
+    "autoscaling": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Create a [HorizontalPodAutoscaler](https://kubernetes.io/docs/concepts/workloads/autoscaling/) for Distr, which takes precedence over `replicaCount`.",
+          "type": "boolean"
+        },
+        "maxReplicas": {
+          "description": "Upper bound of the autoscaler.",
+          "type": "integer"
+        },
+        "minReplicas": {
+          "description": "Lower bound of the autoscaler.",
+          "type": "integer"
+        },
+        "targetCPUUtilizationPercentage": {
+          "description": "Target average CPU utilization the autoscaler scales for.",
+          "type": "integer"
+        }
+      }
+    },
+    "caddy": {
+      "type": "object",
+      "properties": {
+        "acmeCA": {
+          "description": "ACME directory URL. Leave empty for Caddy's defaults (Let's Encrypt / ZeroSSL). Point it at `https://acme-staging-v02.api.letsencrypt.org/directory` while testing a new setup.",
+          "type": "string"
+        },
+        "acmeEmail": {
+          "description": "E-mail address used for the ACME account.",
+          "type": "string"
+        },
+        "askServerPort": {
+          "description": "Port Caddy reaches Distr's on-demand TLS ask endpoint on. It is passed to Distr as INTERNAL_SERVER_ADDR, the address of its internal server, and must never be exposed publicly.",
+          "type": "integer"
+        },
+        "enabled": {
+          "description": "Deploy the Caddy reverse proxy that terminates TLS for customer-configured custom domains. The CNAME target customers point their domains at is configured as CUSTOM_DOMAIN_TARGET in `distr.env`, which is also what makes the feature available in the UI.",
+          "type": "boolean"
+        },
+        "image": {
+          "type": "object",
+          "properties": {
+            "pullPolicy": {
+              "description": "Caddy image pull policy.",
+              "type": "string"
+            },
+            "repository": {
+              "description": "Caddy image repository. Only change this for a custom build, e.g. one that includes a storage module for `caddy.storage`.",
+              "type": "string"
+            },
+            "tag": {
+              "description": "Caddy image tag.",
+              "type": [
+                "string",
+                "number"
+              ]
+            }
+          }
+        },
+        "issuer": {
+          "description": "Certificate issuer for custom domains: `acme` (public certificates) or `internal` (Caddy's own CA, for local testing or environments with a private trust store).",
+          "type": "string"
+        },
+        "persistence": {
+          "type": "object",
+          "properties": {
+            "accessModes": {
+              "description": "Access modes of the certificate storage volume. All replicas mount the same volume, so `caddy.replicaCount` above 1 needs ReadWriteMany and a storage class that provides it.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "enabled": {
+              "description": "Keep the certificates on a volume. It is kept when the release is uninstalled, so that a reinstall does not reissue a certificate for every custom domain. Disable this only when `caddy.storage` stores the certificates elsewhere.",
+              "type": "boolean"
+            },
+            "existingClaim": {
+              "description": "Use an existing PersistentVolumeClaim instead of the one created by the chart, for example a preprovisioned NFS or EFS claim.",
+              "type": "string"
+            },
+            "size": {
+              "description": "Size of the certificate storage volume.",
+              "type": "string"
+            },
+            "storageClassName": {
+              "description": "Storage class of the certificate storage volume. Empty means the cluster default.",
+              "type": "string"
+            }
+          }
+        },
+        "podDisruptionBudget": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Keep voluntary disruptions (node drains, cluster upgrades) from taking down all replicas at once, which would make every custom domain unreachable.",
+              "type": "boolean"
+            },
+            "maxUnavailable": {
+              "description": "Replicas that may be unavailable during a voluntary disruption. Mutually exclusive with `minAvailable`, which is why this one is set by default: a minAvailable budget would block node drains indefinitely when replicaCount is 1.",
+              "type": [
+                "integer",
+                "string"
+              ]
+            },
+            "minAvailable": {
+              "description": "Replicas that must stay available during a voluntary disruption. Mutually exclusive with `maxUnavailable`.",
+              "type": [
+                "string",
+                "integer"
+              ]
+            }
+          }
+        },
+        "replicaCount": {
+          "description": "Number of Caddy replicas. Anything above 1 requires certificate storage that all replicas share, either a `ReadWriteMany` volume (see `caddy.persistence.accessModes`) or a `caddy.storage` module: Caddy instances coordinate certificate issuance and solve each other's ACME challenges only when they use the same storage, and the load balancer routes a challenge to an arbitrary replica. The chart refuses to render otherwise.",
+          "type": "integer"
+        },
+        "resources": {
+          "description": "Resource requests and limits of the Caddy container. Left empty deliberately so the chart also runs on clusters with few resources, such as Minikube. Uncomment and adjust the lines below to specify resources. Keep in mind that Caddy terminates TLS for all custom domain traffic, including registry pushes, which it streams to Distr without buffering or a size limit.",
+          "type": "object"
+        },
+        "service": {
+          "type": "object",
+          "properties": {
+            "annotations": {
+              "description": "Annotations of the public Caddy Service. The chart stays generic: set cloud-specific annotations here. The commented-out ones provision an AWS Network Load Balancer. The Service serves HTTP/3 on UDP 443 next to TCP 443, which an AWS NLB only does as a `TCP_UDP` listener, enabled by the last annotation together with AWS Load Balancer Controller v2.13.0 or later and its `EnableTCPUDPListener` feature gate.",
+              "type": "object"
+            },
+            "type": {
+              "description": "Type of the public Caddy Service. It must be reachable under the CNAME targets configured in `distr.env`.",
+              "type": "string"
+            }
+          }
+        },
+        "storage": {
+          "description": "Advanced: a Caddyfile global `storage` directive, as an alternative to the volume for clusters without a `ReadWriteMany` storage class. Requires a Caddy image built with the corresponding storage module, because Caddy has no runtime plugins. Set `caddy.persistence.enabled` to false when the module keeps the certificates.",
+          "type": "string"
+        }
+      }
+    },
+    "cronJobResources": {
+      "description": "Default resources for all cron job containers. Individual jobs can override this with `cronJobs[].resources`.",
+      "type": "object"
+    },
+    "cronJobs": {
+      "description": "Maintenance CronJobs run against the database, each executing the Distr image with `args`. Removing an entry disables that job; the commented-out `organization-cleanup` job deletes organizations that have been marked for deletion and `user-account-cleanup` deletes user accounts that belong to no organization.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "labels": {
+            "type": "object",
+            "properties": {
+              "distr.sh/job": {
+                "type": "string"
+              }
+            }
+          },
+          "name": {
+            "type": "string"
+          },
+          "schedule": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "distr": {
+      "type": "object",
+      "properties": {
+        "env": {
+          "description": "Environment of the Distr container. This is where Distr itself is configured; see the [configuration reference](https://distr.sh/docs/self-hosting/configuration/) for every supported variable, and the commented-out entries in this file for the common ones.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "envFrom": {
+          "description": "Sources to populate the Distr environment from, e.g. a ConfigMap or Secret reference.",
+          "type": "array"
+        },
+        "scratch": {
+          "type": "object",
+          "properties": {
+            "accessModes": {
+              "description": "Access modes of the scratch volume. It is mounted by exactly one pod, so ReadWriteOnce is sufficient.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "enabled": {
+              "description": "Let the OCI registry buffer request bodies in temporary files instead of holding them in memory. This provisions a generic ephemeral volume (a per-pod PVC created and deleted together with the pod) and points REGISTRY_SCRATCH_DIR at its mount path. Requires Kubernetes \u003e= 1.23.",
+              "type": "boolean"
+            },
+            "mountPath": {
+              "description": "Mount path of the scratch volume, passed to Distr as REGISTRY_SCRATCH_DIR.",
+              "type": "string"
+            },
+            "size": {
+              "description": "Size requested for the ephemeral scratch volume.",
+              "type": "string"
+            },
+            "storageClassName": {
+              "description": "Storage class of the scratch volume. Empty means the cluster default.",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "externalDatabase": {
+      "type": "object",
+      "properties": {
+        "existingSecret": {
+          "description": "Existing secret holding the connection URI, instead of `externalDatabase.uri`.",
+          "type": "string"
+        },
+        "existingSecretUriKey": {
+          "description": "Key of the connection URI inside `externalDatabase.existingSecret`.",
+          "type": "string"
+        },
+        "uri": {
+          "description": "Connection URI of an external PostgreSQL, used when `postgresql.enabled` is false.",
+          "type": "string"
+        }
+      }
+    },
+    "fullnameOverride": {
+      "description": "Overrides the full name prefix of all resources created by this chart.",
+      "type": "string"
+    },
+    "global": {
+      "type": "object",
+      "properties": {
+        "security": {
+          "type": "object",
+          "properties": {
+            "allowInsecureImages": {
+              "description": "Allow the legacy Bitnami images the bundled PostgreSQL subchart is pinned to.",
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "hub": {
+      "description": "Deprecated name of the `distr` section above, so that values files written for chart versions before the rename keep working. `env`, `envFrom` and `scratch` are read from here only while `distr` still holds the chart default for that key, so anything you move to `distr` takes effect immediately. Drop a setting here rather than emptying its counterpart: a value that equals the chart default, `envFrom: []` for instance, cannot be told apart from the default.",
+      "deprecated": true,
+      "type": "object"
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "pullPolicy": {
+          "description": "Distr image pull policy.",
+          "type": "string"
+        },
+        "repository": {
+          "description": "Distr [image](https://kubernetes.io/docs/concepts/containers/images/) repository. The community edition is the default; the enterprise edition is `registry.distr.sh/enterprise/distr-ee`.",
+          "type": "string"
+        },
+        "tag": {
+          "description": "Distr image tag.",
+          "type": [
+            "string",
+            "number"
+          ]
+        }
+      }
+    },
+    "imagePullSecrets": {
+      "description": "[Secrets for pulling the images](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/) from a private repository.",
+      "type": "array"
+    },
+    "ingress": {
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "description": "Annotations of the Ingress. Registry pushes have no size limit, so raise or disable the body size limit of your Ingress controller on the registry host. Traefik applies none, while ingress-nginx rejects anything above 1 MB unless `nginx.ingress.kubernetes.io/proxy-body-size` says otherwise.",
+          "type": "object"
+        },
+        "className": {
+          "description": "Ingress class name, e.g. `nginx`.",
+          "type": "string"
+        },
+        "enabled": {
+          "description": "Create an [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) for the Distr Service.",
+          "type": "boolean"
+        },
+        "hosts": {
+          "description": "Hosts served by the Ingress. The app and the registry are served on separate hosts, routed to the `http` and `artifacts` ports of the Distr Service.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "host": {
+                "type": "string"
+              },
+              "paths": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    },
+                    "pathType": {
+                      "type": "string"
+                    },
+                    "port": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tls": {
+          "description": "TLS configuration of the Ingress.",
+          "type": "array"
+        }
+      }
+    },
+    "livenessProbe": {
+      "description": "Liveness probe of the Distr container.",
+      "type": "object",
+      "properties": {
+        "httpGet": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "port": {
+              "type": [
+                "string",
+                "integer"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "loki": {
+      "type": "object",
+      "properties": {
+        "backend": {
+          "type": "object",
+          "properties": {
+            "replicas": {
+              "description": "Backend replicas of Loki's scalable mode, unused in monolithic mode.",
+              "type": "integer"
+            }
+          }
+        },
+        "chunksCache": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Deploy the memcached chunks cache.",
+              "type": "boolean"
+            }
+          }
+        },
+        "deploymentMode": {
+          "description": "Loki deployment mode. Monolithic is sufficient for the log volume Distr produces.",
+          "type": "string"
+        },
+        "enabled": {
+          "description": "Deploy the bundled Loki subchart. When disabled, point `LOKI_URL` in `distr.env` at an externally managed Loki instance.",
+          "type": "boolean"
+        },
+        "fullnameOverride": {
+          "description": "Name of the Loki resources. The default is referenced by `LOKI_URL` in `distr.env`.",
+          "type": "string"
+        },
+        "gateway": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Deploy Loki's nginx gateway. Not needed: Distr talks to Loki directly.",
+              "type": "boolean"
+            }
+          }
+        },
+        "loki": {
+          "description": "Loki's own configuration: object storage, schema, retention (`limits_config.retention_period`, 30 days by default) and ingestion limits. See the values file for the individual settings and why they deviate from Loki's defaults.",
+          "type": "object",
+          "properties": {
+            "auth_enabled": {
+              "type": "boolean"
+            },
+            "commonConfig": {
+              "type": "object",
+              "properties": {
+                "replication_factor": {
+                  "type": "integer"
+                }
+              }
+            },
+            "compactor": {
+              "type": "object",
+              "properties": {
+                "delete_request_store": {
+                  "type": "string"
+                },
+                "retention_enabled": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "limits_config": {
+              "type": "object",
+              "properties": {
+                "allow_structured_metadata": {
+                  "type": "boolean"
+                },
+                "increment_duplicate_timestamp": {
+                  "type": "boolean"
+                },
+                "ingestion_burst_size_mb": {
+                  "type": "integer"
+                },
+                "ingestion_rate_mb": {
+                  "type": "integer"
+                },
+                "max_global_streams_per_user": {
+                  "type": "integer"
+                },
+                "max_line_size_truncate": {
+                  "type": "boolean"
+                },
+                "reject_old_samples_max_age": {
+                  "type": "string"
+                },
+                "retention_period": {
+                  "type": "string"
+                }
+              }
+            },
+            "schemaConfig": {
+              "type": "object",
+              "properties": {
+                "configs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "from": {
+                        "type": "string"
+                      },
+                      "index": {
+                        "type": "object",
+                        "properties": {
+                          "period": {
+                            "type": "string"
+                          },
+                          "prefix": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "object_store": {
+                        "type": "string"
+                      },
+                      "schema": {
+                        "type": "string"
+                      },
+                      "store": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "server": {
+              "type": "object",
+              "properties": {
+                "grpc_server_max_recv_msg_size": {
+                  "type": "integer"
+                },
+                "grpc_server_max_send_msg_size": {
+                  "type": "integer"
+                }
+              }
+            },
+            "storage": {
+              "type": "object",
+              "properties": {
+                "bucketNames": {
+                  "type": "object",
+                  "properties": {
+                    "admin": {
+                      "type": "string"
+                    },
+                    "chunks": {
+                      "type": "string"
+                    },
+                    "ruler": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "s3": {
+                  "type": "object",
+                  "properties": {
+                    "accessKeyId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "endpoint": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "s3ForcePathStyle": {
+                      "type": "boolean"
+                    },
+                    "secretAccessKey": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                },
+                "type": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "lokiCanary": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Deploy the Loki canary, which continuously probes log delivery.",
+              "type": "boolean"
+            }
+          }
+        },
+        "memcached": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Deploy the shared memcached instance of the Loki chart.",
+              "type": "boolean"
+            }
+          }
+        },
+        "read": {
+          "type": "object",
+          "properties": {
+            "replicas": {
+              "description": "Read replicas of Loki's scalable mode, unused in monolithic mode.",
+              "type": "integer"
+            }
+          }
+        },
+        "resultsCache": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Deploy the memcached query results cache.",
+              "type": "boolean"
+            }
+          }
+        },
+        "singleBinary": {
+          "description": "Loki's monolithic instance: replica count, volume size and the init container that provisions the `loki` bucket in the object storage. Keep its credentials in sync with `rustfs.secret.rustfs` when you change them.",
+          "type": "object",
+          "properties": {
+            "initContainers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "command": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "env": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "image": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "persistence": {
+              "type": "object",
+              "properties": {
+                "size": {
+                  "type": "string"
+                }
+              }
+            },
+            "replicas": {
+              "type": "integer"
+            }
+          }
+        },
+        "test": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Deploy the Loki chart's test resources.",
+              "type": "boolean"
+            }
+          }
+        },
+        "write": {
+          "type": "object",
+          "properties": {
+            "replicas": {
+              "description": "Write replicas of Loki's scalable mode, unused in monolithic mode.",
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "nameOverride": {
+      "description": "Overrides the chart name used in resource names and labels.",
+      "type": "string"
+    },
+    "nodeSelector": {
+      "description": "Node selector of the Distr pods.",
+      "type": "object"
+    },
+    "podAnnotations": {
+      "description": "[Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/) to add to the Distr pods.",
+      "type": "object"
+    },
+    "podDisruptionBudget": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Keep voluntary disruptions (node drains, cluster upgrades) from taking down all Distr replicas at once. Only the Distr pods are covered; the cronjob pods run to completion and are not part of the budget.",
+          "type": "boolean"
+        },
+        "maxUnavailable": {
+          "description": "Distr replicas that may be unavailable during a voluntary disruption. Mutually exclusive with `minAvailable`, which is why this one is set by default: a minAvailable budget would block node drains indefinitely when replicaCount is 1.",
+          "type": [
+            "integer",
+            "string"
+          ]
+        },
+        "minAvailable": {
+          "description": "Distr replicas that must stay available during a voluntary disruption. Mutually exclusive with `maxUnavailable`.",
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      }
+    },
+    "podLabels": {
+      "description": "[Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the Distr pods.",
+      "type": "object"
+    },
+    "podSecurityContext": {
+      "description": "Pod-level security context of the Distr pods. The Distr image runs as UID/GID 65532.",
+      "type": "object",
+      "properties": {
+        "fsGroup": {
+          "type": "integer"
+        },
+        "runAsNonRoot": {
+          "type": "boolean"
+        },
+        "runAsUser": {
+          "type": "integer"
+        }
+      }
+    },
+    "postgresql": {
+      "type": "object",
+      "properties": {
+        "architecture": {
+          "description": "PostgreSQL architecture, `standalone` or `replication`.",
+          "type": "string"
+        },
+        "auth": {
+          "type": "object",
+          "properties": {
+            "database": {
+              "description": "Database created by the bundled PostgreSQL.",
+              "type": "string"
+            },
+            "existingSecret": {
+              "description": "Existing secret holding the database password, instead of `postgresql.auth.password`.",
+              "type": "string"
+            },
+            "password": {
+              "description": "Password of that user. Generated randomly when empty, which breaks on upgrades, so set it or use `postgresql.auth.existingSecret`.",
+              "type": "string"
+            },
+            "username": {
+              "description": "Database user created by the bundled PostgreSQL.",
+              "type": "string"
+            }
+          }
+        },
+        "enabled": {
+          "description": "Deploy the bundled PostgreSQL subchart. When disabled, configure `externalDatabase` instead.",
+          "type": "boolean"
+        },
+        "image": {
+          "type": "object",
+          "properties": {
+            "repository": {
+              "description": "PostgreSQL image repository.",
+              "type": "string"
+            },
+            "tag": {
+              "description": "PostgreSQL image tag.",
+              "type": [
+                "string",
+                "number"
+              ]
+            }
+          }
+        },
+        "service": {
+          "type": "object",
+          "properties": {
+            "ports": {
+              "type": "object",
+              "properties": {
+                "postgresql": {
+                  "description": "Port the bundled PostgreSQL listens on.",
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "readinessProbe": {
+      "description": "Readiness probe of the Distr container.",
+      "type": "object",
+      "properties": {
+        "httpGet": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "port": {
+              "type": [
+                "string",
+                "integer"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "replicaCount": {
+      "description": "Number of Distr [replicas](https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/). Ignored when `autoscaling.enabled` is true.",
+      "type": "integer"
+    },
+    "resources": {
+      "description": "Resource requests and limits of the Distr container. Left empty deliberately so the chart also runs on clusters with few resources, such as Minikube. Uncomment and adjust the lines below to specify resources.",
+      "type": "object"
+    },
+    "rustfs": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Deploy the bundled RustFS object storage, used by the OCI registry and by Loki. When disabled, provide external object storage for both (see `loki.loki.storage.s3`), otherwise they cannot persist data.",
+          "type": "boolean"
+        },
+        "fullnameOverride": {
+          "description": "Name of the RustFS resources. The default is referenced by the registry and Loki endpoints.",
+          "type": "string"
+        },
+        "ingress": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Expose RustFS through an Ingress. Not needed by Distr, which reaches it in-cluster.",
+              "type": "boolean"
+            }
+          }
+        },
+        "mode": {
+          "type": "object",
+          "properties": {
+            "distributed": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "description": "Run RustFS as a distributed cluster instead.",
+                  "type": "boolean"
+                }
+              }
+            },
+            "standalone": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "description": "Run RustFS as a single instance.",
+                  "type": "boolean"
+                },
+                "strategy": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "description": "Deployment strategy of the standalone instance. Recreate, because the data volume is ReadWriteOnce.",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "secret": {
+          "type": "object",
+          "properties": {
+            "rustfs": {
+              "type": "object",
+              "properties": {
+                "access_key": {
+                  "description": "Object storage access key. This is the source of truth: changing it requires keeping `loki.loki.storage.s3` and the create-loki-bucket init container in sync, otherwise Loki cannot access its bucket.",
+                  "type": "string"
+                },
+                "secret_key": {
+                  "description": "Object storage secret key. Change this for any real deployment, and keep it in sync as described above.",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "storageclass": {
+          "type": "object",
+          "properties": {
+            "dataStorageSize": {
+              "description": "Size of the RustFS data volume.",
+              "type": "string"
+            },
+            "logStorageSize": {
+              "description": "Size of the RustFS log volume.",
+              "type": "string"
+            },
+            "name": {
+              "description": "Storage class of the RustFS volumes. Empty means the cluster default.",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "securityContext": {
+      "description": "Container-level security context of the Distr container.",
+      "type": "object"
+    },
+    "service": {
+      "type": "object",
+      "properties": {
+        "artifactsPort": {
+          "description": "Port of the OCI registry server.",
+          "type": "integer"
+        },
+        "metricsPort": {
+          "description": "Port of the Prometheus metrics server.",
+          "type": "integer"
+        },
+        "port": {
+          "description": "Port of the app and API server.",
+          "type": "integer"
+        },
+        "type": {
+          "description": "[Type](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) of the Distr Service.",
+          "type": "string"
+        }
+      }
+    },
+    "serviceAccount": {
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "description": "Annotations to add to the service account.",
+          "type": "object"
+        },
+        "automount": {
+          "description": "Automatically mount the service account's API credentials into the Distr pods.",
+          "type": "boolean"
+        },
+        "create": {
+          "description": "Create a [service account](https://kubernetes.io/docs/concepts/security/service-accounts/) for Distr.",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "Name of the service account to use. Generated from the fullname template when empty and `serviceAccount.create` is true.",
+          "type": "string"
+        }
+      }
+    },
+    "startupProbe": {
+      "description": "[Startup probe](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/) of the Distr container. It allows up to 5 minutes (failureThreshold * periodSeconds) for Distr to come up before the liveness and readiness probes take over.",
+      "type": "object",
+      "properties": {
+        "failureThreshold": {
+          "type": "integer"
+        },
+        "httpGet": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "port": {
+              "type": [
+                "string",
+                "integer"
+              ]
+            }
+          }
+        },
+        "periodSeconds": {
+          "type": "integer"
+        }
+      }
+    },
+    "strategy": {
+      "description": "[Deployment strategy](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy) of Distr. Empty means the Kubernetes default.",
+      "type": "object"
+    },
+    "terminationGracePeriodSeconds": {
+      "description": "Seconds the Distr pod is given to terminate gracefully after receiving a shutdown signal.",
+      "type": "integer"
+    },
+    "tolerations": {
+      "description": "Tolerations of the Distr pods.",
+      "type": "array"
+    },
+    "volumeMounts": {
+      "description": "Additional volume mounts of the Distr container.",
+      "type": "array"
+    },
+    "volumes": {
+      "description": "Additional volumes of the Distr pods.",
+      "type": "array"
+    }
+  }
+}

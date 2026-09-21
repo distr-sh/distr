@@ -12,9 +12,28 @@ type ApplicationResponse struct {
 	ImageUrl *string `json:"imageUrl,omitempty"`
 }
 
+type CreateApplicationRequest struct {
+	Name string               `json:"name"`
+	Type types.DeploymentType `json:"type"`
+	// VersioningStrategy defaults to chronological when absent, which imposes no requirement on
+	// version names and so cannot break a client written before the field existed.
+	VersioningStrategy    types.VersioningStrategy `json:"versioningStrategy,omitempty"`
+	AllowAutomaticUpdates bool                     `json:"allowAutomaticUpdates,omitempty"`
+}
+
+type UpdateApplicationRequest struct {
+	Name               string                   `json:"name"`
+	VersioningStrategy types.VersioningStrategy `json:"versioningStrategy,omitempty"`
+	// AllowAutomaticUpdates leaves the application's setting alone when it is absent, so that a
+	// client written before the field existed cannot turn automatic updates off.
+	AllowAutomaticUpdates *bool `json:"allowAutomaticUpdates,omitempty"`
+}
+
 type PatchApplicationRequest struct {
-	Name     *string                          `json:"name,omitempty"`
-	Versions []PatchApplicationVersionRequest `json:"versions,omitempty"`
+	Name                  *string                          `json:"name,omitempty"`
+	VersioningStrategy    *types.VersioningStrategy        `json:"versioningStrategy,omitempty"`
+	AllowAutomaticUpdates *bool                            `json:"allowAutomaticUpdates,omitempty"`
+	Versions              []PatchApplicationVersionRequest `json:"versions,omitempty"`
 }
 
 type PatchApplicationVersionRequest struct {

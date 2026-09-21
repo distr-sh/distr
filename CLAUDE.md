@@ -47,6 +47,7 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 - Pass dependencies into HTTP handlers via closure.
 - Return API errors through `internal/apierrors` so they carry a status code.
 - Log with zap: `logger.Info("message", zap.String("key", value))`.
+- Route what a dependency logs in an agent into the agent's zap logger with `agentlogging.Redirect`, which covers logrus and the standard library logger. Only what passes through zap reaches Distr, so anything else ends up in the agent's container output alone.
 - Report exceptions with `sentry.GetHubFromContext(ctx).CaptureException(err)`. Use `sentry.CurrentHub()` in a background job, since a job context carries no hub and taking one from it panics.
 - Give types in `internal/types` `db:` tags only. Never serialize one into a response and never embed one in an `api` type. `api.OrganizationResponse` and `api.LicenseKeyRevision` do embed one; they are legacy, do not copy them.
 - Give every endpoint its own struct in `api/` and put both conversion directions in `internal/mapping`: `XToAPI` for model to response, `XToInternal` for request to model, with `mapping.List(...)` for slices. Never assemble an `api.*` or `types.*` struct field by field in a handler.
@@ -232,6 +233,7 @@ Only write a test that could fail for a real reason. Every test is code that has
 - Write every text without Oxford commas and without em dashes, in this file as much as in documentation, code comments and UI copy. Use a comma, a colon or a second sentence where a dash is tempting.
 - Fix the code you read that breaks these rules, and the typos and spelling mistakes you come across.
 - Update `website/src/content/docs/docs/self-hosting/configuration.mdx` in the same change whenever you add, remove or change an environment variable in `internal/env/env.go`, including its default, whether it is required and the values it accepts.
+- Run `mise run build:helm-schema` after every change to `deploy/charts/distr/values.yaml`, since CI rejects a stale `values.schema.json`. Annotate a value with `# @schema` where the type inferred from the default is too narrow, an IntOrString field or an override a user sets to null being the cases, and render every file under `deploy/charts/distr/examples/` to confirm the schema still accepts them.
 - Use the GitHub CLI (`gh`) rather than the web interface to fetch data from GitHub.
 - Write shell for anything from a one-off command to a checked-in script (like `hack/validate-migrations.sh`), and Node once a task outgrows shell (like `hack/agent-changelog.mjs`). Avoid Python and never use Perl (e.g. `perl -pi -e`). Edit files directly rather than piping them through a stream editor.
 

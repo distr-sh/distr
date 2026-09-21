@@ -32,7 +32,7 @@ ClientConfig containing at least an API key and optionally an API base URL
 
 [`LatestVersionStrategy`](../type-aliases/LatestVersionStrategy.md) = `'semver'`
 
-Strategy for determining the latest version of an application (default: 'semver')
+Strategy for applications that do not define one themselves (default: 'semver')
 
 #### Returns
 
@@ -277,7 +277,9 @@ Returns the latest version of the given application according to the specified s
 > **getNewerVersions**(`appId`, `currentVersionId?`): `Promise`\<\{ `app`: [`Application`](../interfaces/Application.md); `newerVersions`: [`ApplicationVersion`](../interfaces/ApplicationVersion.md)[]; \}\>
 
 Returns the application and all versions that are newer than the given version ID. If no version ID is given,
-all versions are considered. The versions are ordered ascending according to the given strategy.
+all versions are considered. Archived versions are never returned, since nothing should be deployed to one, but
+a deployment can still be on one, so currentVersionId may name an archived version.
+The versions are ordered ascending according to the given strategy.
 
 #### Parameters
 

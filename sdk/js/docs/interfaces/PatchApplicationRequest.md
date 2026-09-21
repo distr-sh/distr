@@ -8,9 +8,21 @@
 
 ## Properties
 
+### allowAutomaticUpdates?
+
+> `optional` **allowAutomaticUpdates?**: `boolean`
+
+---
+
 ### name?
 
 > `optional` **name?**: `string`
+
+---
+
+### versioningStrategy?
+
+> `optional` **versioningStrategy?**: [`VersioningStrategy`](../type-aliases/VersioningStrategy.md)
 
 ---
 
