@@ -1,0 +1,38 @@
+---
+export interface Props {
+  distr: string[];
+  competitor: {
+    name: string;
+    items: string[];
+  };
+}
+
+const {distr, competitor} = Astro.props;
+
+const columns = [
+  {heading: 'Choose Distr When:', items: distr},
+  {heading: `Choose ${competitor.name} When:`, items: competitor.items},
+];
+---
+
+<div class="not-prose my-8 grid gap-6 sm:grid-cols-2">
+  {
+    columns.map(column => (
+      <div class="rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6">
+        <h3 class="text-lg font-bold tracking-tight text-gray-900 dark:text-white mb-4">
+          {column.heading}
+        </h3>
+        <ul class="list-none pl-0 space-y-3">
+          {column.items.map(item => (
+            <li class="flex gap-2 text-gray-700 dark:text-gray-300">
+              <span class="text-blue-600 dark:text-blue-400" aria-hidden="true">
+                ✓
+              </span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))
+  }
+</div>
