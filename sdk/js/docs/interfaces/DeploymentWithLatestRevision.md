@@ -85,6 +85,18 @@ Unrelated to DeploymentTarget.automaticUpdatesEnabled, which is the agent updati
 
 ---
 
+### currentApplicationVersionId?
+
+> `optional` **currentApplicationVersionId?**: `string`
+
+---
+
+### currentApplicationVersionName?
+
+> `optional` **currentApplicationVersionName?**: `string`
+
+---
+
 ### currentDeploymentRevisionId?
 
 > `optional` **currentDeploymentRevisionId?**: `string`

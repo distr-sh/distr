@@ -65,6 +65,8 @@ export interface DeploymentWithLatestRevision extends Deployment {
    */
   currentDeploymentRevisionId?: string;
   currentStatus?: DeploymentRevisionStatus;
+  currentApplicationVersionId?: string;
+  currentApplicationVersionName?: string;
   helmOptions?: HelmOptions;
 }
 

@@ -206,9 +206,7 @@
               <div class="flex flex-col gap-1">
                 <div class="flex items-center justify-between gap-3">
                   <div class="flex-1 min-w-0">
-                    <app-deployment-app-name
-                      [application]="deployment.application"
-                      [applicationVersionName]="deployment.applicationVersionName" />
+                    <app-deployment-app-name [deployment]="deployment" />
                   </div>
                   <div class="flex items-center justify-end space-x-2">
                     @if (deployment.applicationLink) {

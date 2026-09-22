@@ -46,6 +46,8 @@ const (
 				ORDER BY created_at DESC
 				LIMIT 1
 			) drs_current ON true
+			LEFT JOIN DeploymentRevision dr_current ON dr_current.id = d.current_deployment_revision_id
+			LEFT JOIN ApplicationVersion av_current ON av_current.id = dr_current.application_version_id
 	`
 )
 
@@ -82,7 +84,9 @@ var deploymentWithLatestRevisionOutputExpr = deploymentOutputExpr + `,
 		drs_current.created_at,
 		drs_current.deployment_revision_id,
 		drs_current.type, drs_current.message
-	) END AS current_status
+	) END AS current_status,
+	dr_current.application_version_id AS current_application_version_id,
+	av_current.name AS current_application_version_name
 `
 
 func GetDeployment(

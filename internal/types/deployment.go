@@ -40,6 +40,9 @@ type DeploymentWithLatestRevision struct {
 	// from DeploymentRevisionID while a newer revision is being rolled out or has failed.
 	CurrentDeploymentRevisionID *uuid.UUID                `db:"current_deployment_revision_id" json:"currentDeploymentRevisionId,omitempty"` //nolint:lll
 	CurrentStatus               *DeploymentRevisionStatus `db:"current_status" json:"currentStatus,omitempty"`
+	CurrentApplicationVersionID *uuid.UUID                `db:"current_application_version_id" json:"currentApplicationVersionId,omitempty"` //nolint:lll
+	//nolint:lll
+	CurrentApplicationVersionName *string `db:"current_application_version_name" json:"currentApplicationVersionName,omitempty"`
 }
 
 // NewestStatus returns the status the agent reported last, no matter which revision it belongs to.
