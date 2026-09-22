@@ -1,28 +1,12 @@
 import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, Directive, input} from '@angular/core';
 import {DeploymentRevisionStatus, DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
-import dayjs from 'dayjs';
 import {never} from '../../../util/exhaust';
 import {isStale} from '../../../util/model';
 import {AbstractStatusDotDirective} from '../../components/status-dot';
 
 function currentStatus(deployment: DeploymentWithLatestRevision): DeploymentRevisionStatus | undefined {
   return deployment.currentStatus ?? deployment.latestStatus;
-}
-
-function newestStatus(deployment: DeploymentWithLatestRevision): DeploymentRevisionStatus | undefined {
-  const {currentStatus, latestStatus} = deployment;
-  if (currentStatus && latestStatus) {
-    return dayjs(currentStatus.createdAt).isAfter(latestStatus.createdAt) ? currentStatus : latestStatus;
-  }
-  return currentStatus ?? latestStatus;
-}
-
-// An agent that retries a revision it could not apply keeps reporting, so the current revision's
-// status must not decay into "Stale" just because the reports are about the newer revision.
-function isDeploymentStale(deployment: DeploymentWithLatestRevision): boolean {
-  const status = newestStatus(deployment);
-  return status !== undefined && isStale(status);
 }
 
 function pendingStatus(deployment: DeploymentWithLatestRevision): DeploymentRevisionStatus | undefined {
@@ -40,13 +24,12 @@ function pendingStatus(deployment: DeploymentWithLatestRevision): DeploymentRevi
 export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
   public readonly deployment = input.required<DeploymentWithLatestRevision>();
   protected override style = computed(() => {
-    const deployment = this.deployment();
-    const s = currentStatus(deployment);
+    const s = currentStatus(this.deployment());
     if (s === undefined) {
       return 'unknown';
     } else if (s.type === 'error') {
       return 'danger';
-    } else if (isDeploymentStale(deployment)) {
+    } else if (isStale(s)) {
       return 'warning';
     } else if (s.type === 'progressing') {
       return 'info';
@@ -95,6 +78,9 @@ export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
 export class DeploymentStatusTextComponent {
   public readonly deployment = input.required<DeploymentWithLatestRevision>();
   protected readonly status = computed(() => currentStatus(this.deployment()));
-  protected readonly stale = computed(() => isDeploymentStale(this.deployment()));
+  protected readonly stale = computed(() => {
+    const status = this.status();
+    return status !== undefined && isStale(status);
+  });
   protected readonly pending = computed(() => pendingStatus(this.deployment()));
 }
