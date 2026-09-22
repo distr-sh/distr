@@ -158,15 +158,17 @@ export class AccessTokensComponent {
   }
 
   public async deleteAccessToken(row: AccessTokenRow) {
-    if (await firstValueFrom(this.overlay.confirm(`Really delete token '${row.name}'?`))) {
-      try {
-        await firstValueFrom(this.accessTokensService.delete(row.token.id!));
-        this.accessTokens.reload();
-      } catch (e) {
-        const message = getFormDisplayedError(e);
-        if (message) {
-          this.toast.error(message);
-        }
+    if (!row.expired && !(await firstValueFrom(this.overlay.confirm(`Really delete token '${row.name}'?`)))) {
+      return;
+    }
+    try {
+      await firstValueFrom(this.accessTokensService.delete(row.token.id!));
+      this.toast.success('Access Token deleted');
+      this.accessTokens.reload();
+    } catch (e) {
+      const message = getFormDisplayedError(e);
+      if (message) {
+        this.toast.error(message);
       }
     }
   }

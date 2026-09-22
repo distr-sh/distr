@@ -60,17 +60,25 @@
       </nav>
 
       @if (token(); as token) {
-        <app-inline-edit
-          class="block mt-4"
-          tag="h3"
-          size="lg"
-          [value]="token.label ?? ''"
-          [required]="false"
-          placeholder="Token label"
-          emptyLabel="No label"
-          textClass="block max-w-lg overflow-hidden text-ellipsis whitespace-nowrap text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
-          [loading]="savingLabel()"
-          (save)="saveLabel($event)" />
+        <div class="flex mt-4">
+          <app-inline-edit
+            class="block"
+            tag="h3"
+            size="lg"
+            [value]="token.label ?? ''"
+            [required]="false"
+            placeholder="Token label"
+            emptyLabel="No label"
+            textClass="block max-w-lg overflow-hidden text-ellipsis whitespace-nowrap text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
+            [loading]="savingLabel()"
+            (save)="saveLabel($event)" />
+          <div class="inline-flex self-start items-end justify-end grow">
+            <button type="button" (click)="deleteAccessToken()" class="py-2 px-3 distr-btn-danger">
+              <fa-icon [icon]="faTrash" class="h-4 w-4 mr-2" />
+              Delete Token
+            </button>
+          </div>
+        </div>
 
         <dl class="grid grid-cols-3 gap-6 mt-4 text-sm">
           @if (!legacy()) {
