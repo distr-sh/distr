@@ -1,4 +1,4 @@
-import {DatePipe} from '@angular/common';
+import {DatePipe, NgClass} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, effect, input} from '@angular/core';
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {DeploymentRevisionResponse, DeploymentRevisionTrigger, DeploymentTarget} from '@distr-sh/distr-sdk';
@@ -8,6 +8,7 @@ import {fromBase64} from '../../../util/encoding';
 import {OrganizationKindPipe} from '../../../util/organization-kind';
 import {AvatarComponent} from '../../components/avatar.component';
 import {EditorComponent} from '../../components/editor.component';
+import {deploymentStatusBadgeClass} from '../deployment-display';
 
 const triggerLabels: Record<DeploymentRevisionTrigger, string> = {
   user: 'Manual',
@@ -20,7 +21,15 @@ const triggerLabels: Record<DeploymentRevisionTrigger, string> = {
   selector: 'app-deployment-revision-details',
   templateUrl: './deployment-revision-details.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [ReactiveFormsModule, EditorComponent, FaIconComponent, DatePipe, OrganizationKindPipe, AvatarComponent],
+  imports: [
+    ReactiveFormsModule,
+    EditorComponent,
+    FaIconComponent,
+    DatePipe,
+    OrganizationKindPipe,
+    AvatarComponent,
+    NgClass,
+  ],
 })
 export class DeploymentRevisionDetailsComponent {
   public readonly revision = input.required<DeploymentRevisionResponse>();
@@ -29,6 +38,8 @@ export class DeploymentRevisionDetailsComponent {
   protected readonly faCheck = faCheck;
   protected readonly faXmark = faXmark;
   protected readonly faTriangleExclamation = faTriangleExclamation;
+
+  protected readonly deploymentStatusBadgeClass = deploymentStatusBadgeClass;
 
   protected readonly isKubernetes = computed(() => this.deploymentTarget().type === 'kubernetes');
   protected readonly triggerLabel = computed(() => triggerLabels[this.revision().trigger]);

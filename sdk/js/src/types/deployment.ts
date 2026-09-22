@@ -99,6 +99,7 @@ export interface DeploymentRevisionResponse {
   helmOptions?: HelmOptions;
   trigger: DeploymentRevisionTrigger;
   createdBy?: DeploymentRevisionCreator;
+  latestStatus?: DeploymentRevisionStatus;
 }
 
 export type DeploymentRevisionTrigger = 'user' | 'automatic_update' | 'secret_change' | 'license_key_change';

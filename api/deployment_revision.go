@@ -31,4 +31,5 @@ type DeploymentRevisionResponse struct {
 	HelmOptions            *types.HelmOptions              `json:"helmOptions,omitempty"`
 	Trigger                types.DeploymentRevisionTrigger `json:"trigger"`
 	CreatedBy              *DeploymentRevisionCreator      `json:"createdBy,omitempty"`
+	LatestStatus           *DeploymentRevisionStatus       `json:"latestStatus,omitempty"`
 }

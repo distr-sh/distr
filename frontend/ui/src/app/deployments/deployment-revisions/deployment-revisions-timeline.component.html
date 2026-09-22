@@ -15,12 +15,25 @@
           type="button"
           (click)="revisionSelected.emit(revision)"
           class="text-start w-full rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700">
-          <div class="flex gap-2 text-sm">
+          <div class="flex items-center gap-2 text-sm">
             <span class="font-semibold text-gray-900 dark:text-white">{{ revision.applicationVersionName }}</span>
             @if (revision.id === currentRevisionId()) {
               <span class="text-gray-500 dark:text-gray-400">(current)</span>
             } @else if (revision.id === latestRevisionId()) {
               <span class="text-gray-500 dark:text-gray-400">(latest)</span>
+            }
+            @if (revision.latestStatus; as status) {
+              @if (revision.id === currentRevisionId() && status.type !== 'error' && (status | isStale)) {
+                <span class="distr-status-badge shrink-0" [ngClass]="staleDeploymentStatusBadgeClass">Stale</span>
+              } @else if (
+                revision.id === currentRevisionId() || revision.id === latestRevisionId() || status.type === 'error'
+              ) {
+                <span
+                  class="distr-status-badge shrink-0 capitalize"
+                  [ngClass]="deploymentStatusBadgeClass(status.type)">
+                  {{ status.type }}
+                </span>
+              }
             }
           </div>
           @if (revision.createdBy; as createdBy) {
@@ -47,6 +60,14 @@
           <time [attr.datetime]="revision.createdAt" class="block text-xs font-normal text-gray-400 dark:text-gray-500">
             {{ revision.createdAt | date: 'short' }}
           </time>
+          @if (revision.latestStatus; as status) {
+            @if (status.type === 'error') {
+              <div
+                class="mt-1 border border-gray-200 dark:border-gray-600 rounded-lg p-2 font-mono text-xs text-gray-500 dark:text-gray-400 max-h-40 overflow-y-auto wrap-break-word">
+                {{ status.message }}
+              </div>
+            }
+          }
         </button>
       </li>
     }

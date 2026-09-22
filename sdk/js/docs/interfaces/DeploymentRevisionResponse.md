@@ -68,6 +68,12 @@
 
 ---
 
+### latestStatus?
+
+> `optional` **latestStatus?**: [`DeploymentRevisionStatus`](DeploymentRevisionStatus.md)
+
+---
+
 ### releaseName?
 
 > `optional` **releaseName?**: `string`

@@ -372,12 +372,9 @@
                 </div>
                 <div class="flex items-center justify-between gap-3">
                   <div class="flex items-center gap-2 min-w-0">
-                    <a
-                      class="flex items-center"
-                      [routerLink]="[deploymentTarget().id]"
-                      [queryParams]="{deploymentId: deployment.id}">
+                    <button type="button" class="flex items-center" (click)="openRevisionsDrawer(deployment)">
                       <app-deployment-status-text [deployment]="deployment" />
-                    </a>
+                    </button>
                     @if (
                       deployment.automaticApplicationUpdatesEnabled &&
                       deployment.id &&

@@ -1,6 +1,6 @@
 @let rev = revision();
 <div class="space-y-4 text-sm text-gray-900 dark:text-white">
-  <div class="grid grid-cols-2 gap-4">
+  <div class="grid grid-cols-2 gap-3">
     <div>
       <span class="block text-xs text-gray-500 dark:text-gray-400">Application version</span>
       <div>{{ rev.applicationVersionName }}</div>
@@ -50,6 +50,24 @@
       </div>
     }
   </div>
+
+  @if (rev.latestStatus; as status) {
+    <div>
+      <span class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Latest status</span>
+      <div>
+        <span class="distr-status-badge shrink-0 capitalize" [ngClass]="deploymentStatusBadgeClass(status.type)">{{
+          status.type
+        }}</span>
+        on {{ status.createdAt | date: 'medium' }}
+      </div>
+      @if (status.message) {
+        <div
+          class="mt-1 border border-gray-200 dark:border-gray-600 rounded-lg p-2 font-mono text-xs text-gray-500 dark:text-gray-400 max-h-40 overflow-y-auto wrap-break-word">
+          {{ status.message }}
+        </div>
+      }
+    </div>
+  }
 
   @if (isKubernetes()) {
     <div>
