@@ -67,9 +67,17 @@ export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
       }
       @if (pending(); as pending) {
         @if (pending.type === 'error') {
-          <span class="text-xs text-red-500 dark:text-red-400" [title]="pending.message">Update failed</span>
+          <span
+            class="distr-status-badge ms-2 bg-red-100 text-red-800 border-red-400 dark:bg-red-900 dark:text-red-300 dark:border-red-800"
+            [title]="pending.message">
+            Update failed
+          </span>
         } @else {
-          <span class="text-xs text-gray-500 dark:text-gray-400" [title]="pending.message">Update in progress</span>
+          <span
+            class="distr-status-badge ms-2 bg-blue-100 text-blue-800 border-blue-400 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-800"
+            [title]="pending.message">
+            Update in progress
+          </span>
         }
       }
     </div>
