@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/middleware"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
@@ -113,6 +114,34 @@ func TestAnonymousAccessRouting(t *testing.T) {
 			g.Expect(handler.authenticated).To(Equal(tt.authenticated))
 		})
 	}
+}
+
+func TestUnauthenticatedResponse(t *testing.T) {
+	g := NewWithT(t)
+	useRegistryErrorFormat()
+	served := false
+	handler := auth.ArtifactsAuthentication.Middleware(
+		http.HandlerFunc(func(http.ResponseWriter, *http.Request) { served = true }),
+	)
+
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/v2/", nil))
+
+	g.Expect(served).To(BeFalse())
+	g.Expect(w.Code).To(Equal(http.StatusUnauthorized))
+	g.Expect(w.Header().Get("WWW-Authenticate")).
+		NotTo(BeEmpty(), "a client sends its credentials only after it has seen the challenge")
+
+	var body struct {
+		Errors []struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		} `json:"errors"`
+	}
+	g.Expect(json.Unmarshal(w.Body.Bytes(), &body)).To(Succeed())
+	g.Expect(body.Errors).To(HaveLen(1))
+	g.Expect(body.Errors[0].Code).To(Equal("UNAUTHORIZED"))
+	g.Expect(body.Errors[0].Message).To(ContainSubstring("containerd image store"))
 }
 
 func TestAnonymousAccessRateLimit(t *testing.T) {

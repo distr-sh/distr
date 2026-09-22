@@ -131,15 +131,32 @@ curl -sSL https://registry.example.com/v2/acme/my-image/manifests/1.0.0 \
   -H 'Accept: application/vnd.oci.image.manifest.v1+json'
 ```
 
+### Pulling with Docker
+
+Pulling a public artifact with Docker requires the
+[containerd image store](https://docs.docker.com/engine/storage/containerd/). It does not work on the
+legacy `overlay2` storage driver, which cannot pull a public artifact without credentials at all.
+
+The reason is that the Docker CLI asks the registry whether authentication is needed before it pulls
+anything, and Distr has to answer yes, because a client holding a PAT sends it only after it has seen
+that answer. A daemon on `overlay2` reads that answer as "log in first" and gives up, while the
+containerd image store never asks and pulls the artifact like any other:
+
+```sh
+docker pull registry.example.com/acme/my-image:1.0.0
+```
+
+The containerd image store is the default for a fresh installation of Docker Engine 29 and later and
+for Docker Desktop, while a daemon upgraded from an earlier version keeps `overlay2` until you enable
+it. Check which one is in use with `docker info`: the storage driver reads `overlayfs` with the
+containerd image store and `overlay2` without it. Podman and Skopeo ask the same question as Docker
+does.
+
 <Aside type="caution">
-  The Docker CLI, Podman and Skopeo ask the registry whether authentication is
-  needed before they pull. Distr has to answer yes, because a client holding a
-  PAT sends it only after it has seen that answer, and those clients read it as
-  "log in first" rather than trying without credentials. Use one of the clients
-  above, or pull with them after `docker login` or `podman login` with a PAT of
-  the organization that owns the artifact. A PAT sent along identifies its
-  holder, so credentials of another organization are rejected rather than
-  treated as no credentials at all.
+  On `overlay2`, pull after `docker login` or `podman login` with a PAT of the
+  organization that owns the artifact. A PAT sent along identifies its holder,
+  so credentials of another organization are rejected rather than treated as no
+  credentials at all.
 </Aside>
 
 Anonymous pulls are rate limited per client IP address, considerably more strictly than the pull

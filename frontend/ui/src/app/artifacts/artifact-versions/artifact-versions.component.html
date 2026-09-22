@@ -171,6 +171,19 @@
               </div>
             </div>
           }
+          @if (artifact.public) {
+            <p class="distr-hint">
+              ORAS, Helm and other OCI clients pull this artifact without credentials. Docker requires the
+              <a
+                href="https://docs.docker.com/engine/storage/containerd/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-primary-600 hover:underline dark:text-primary-500"
+                >containerd image store</a
+              >: on the legacy <code>overlay2</code> storage driver it asks the registry for authentication before it
+              pulls and reports that a login is needed.
+            </p>
+          }
         </div>
       </div>
     </div>

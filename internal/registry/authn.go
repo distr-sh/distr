@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/middleware"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
@@ -12,6 +13,14 @@ import (
 
 func requiresAuthentication(r *http.Request) bool {
 	return hasCredentials(r) || !allowsAnonymous(r)
+}
+
+// useRegistryErrorFormat replaces the plain text 401 of the authentication middleware with the error
+// format of the distribution spec, which is what an OCI client reads.
+func useRegistryErrorFormat() {
+	auth.ArtifactsAuthentication.SetUnauthorizedHandler(func(w http.ResponseWriter, r *http.Request) {
+		_ = regErrCredentialsRequired.Write(w)
+	})
 }
 
 func rateLimitAnonymous(limits env.AnonymousRateLimits) func(http.Handler) http.Handler {

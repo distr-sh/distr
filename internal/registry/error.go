@@ -146,6 +146,18 @@ var regErrUnauthorized = &regError{
 	Header:  auth.ArtifactsAuthenticateHeader,
 }
 
+// regErrCredentialsRequired answers a request the registry refuses before it knows which artifact is
+// meant, the API version check being the one an OCI client makes first. The Docker CLI takes that
+// answer for every repository, so the message names the setup that pulls a public artifact anyway.
+// The challenge header is already on the response, since the authentication middleware writes it.
+var regErrCredentialsRequired = &regError{
+	Status: http.StatusUnauthorized,
+	Code:   "UNAUTHORIZED",
+	Message: "authentication required. A public artifact needs no credentials, but the Docker CLI pulls one " +
+		"only with the containerd image store, not with the legacy overlay2 storage driver: " +
+		"https://docs.docker.com/engine/storage/containerd/",
+}
+
 // regErrAuthz maps an authorization error of a route that names an artifact.
 func regErrAuthz(err error) *regError {
 	switch {

@@ -146,6 +146,8 @@ func NewDefault(
 		seekbuf.SetDefault(&seekbuf.FileBufferFactory{Dir: *dir})
 	}
 
+	useRegistryErrorFormat()
+
 	reg := New(
 		WithLogger(logger),
 		WithBlobHandler(blobHandler),
