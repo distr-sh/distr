@@ -1,7 +1,199 @@
-<app-page>
-  <app-tab-bar [tabs]="tabs()" [(active)]="activeTab" (tabClick)="onTabClick($event)" />
-
-  <div role="tabpanel" class="pt-4" [id]="'tabpanel-' + activeTab()" [attr.aria-labelledby]="'tab-' + activeTab()">
-    <router-outlet />
+<div class="distr-toolbar p-4">
+  <app-search-bar [control]="filterForm.controls.search" placeholder="Filter notification configurations" />
+  <div class="distr-toolbar-actions">
+    @if (auth.hasAnyRole('read_write', 'admin') && kinds().length > 0) {
+      <button
+        type="button"
+        (click)="showDrawer()"
+        class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium distr-btn-secondary">
+        <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+        Update Notification
+      </button>
+    }
   </div>
-</app-page>
+</div>
+<div class="overflow-x-auto">
+  <table class="distr-table">
+    <thead class="distr-table-head">
+      <tr>
+        <th scope="col" class="p-4">Name</th>
+        <th scope="col" class="p-4">Enabled</th>
+        <th scope="col" class="p-4">Created at</th>
+        <th scope="col" class="p-4">Applications and artifacts</th>
+        <th scope="col" class="p-4">Recipients</th>
+        <th scope="col" class="p-4"></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (config of filteredRows(); track config.id) {
+        <tr class="distr-table-row">
+          <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+            {{ config.name }}
+          </td>
+          <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap align-middle">
+            <label class="inline-flex items-center cursor-pointer my-1">
+              <input
+                type="checkbox"
+                class="sr-only peer"
+                aria-label="Enabled"
+                [disabled]="!auth.hasAnyRole('read_write', 'admin') || enabledToggleLoading()"
+                [checked]="config.enabled"
+                (change)="toggleConfigEnabled(config)" />
+              <div class="distr-toggle peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+            </label>
+          </td>
+          <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+            {{ config.createdAt | date }}
+          </td>
+          <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">
+            <div class="flex flex-col gap-2">
+              @for (application of config.applications; track application.id) {
+                <app-application-preview
+                  [name]="application.name"
+                  [type]="application.type"
+                  [imageUrl]="application.imageUrl" />
+              }
+              @for (artifact of config.artifacts; track artifact.id) {
+                <app-artifact-preview [name]="artifact.name" [imageUrl]="artifact.imageUrl" />
+              }
+            </div>
+          </td>
+          <td
+            class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
+            @for (recipient of config.recipients; track recipient.id; let last = $last) {
+              {{ recipient.name || recipient.email }}{{ last ? '' : ', ' }}
+            }
+          </td>
+          <td class="px-4 py-3 flex gap-2 justify-end">
+            @if (auth.hasAnyRole('read_write', 'admin')) {
+              <button
+                type="button"
+                (click)="showDrawer(config)"
+                class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
+                Edit
+              </button>
+              <button
+                type="button"
+                aria-label="Delete"
+                (click)="deleteConfig(config)"
+                class="py-2 px-3 distr-btn-danger">
+                <fa-icon [icon]="faTrash" class="h-4 w-4" />
+              </button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr class="border-t border-gray-200 dark:border-gray-600">
+          <td colspan="6" class="px-4 py-3 font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap text-center">
+            No configurations found
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<ng-template #editConfigDrawer>
+  <div
+    class="h-screen p-4 overflow-y-auto bg-white w-lg dark:bg-gray-800"
+    tabindex="-1"
+    animate.enter="animate-fly-in-right"
+    animate.leave="animate-fly-out-right">
+    <h2 class="inline-flex items-center mb-2 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
+      Update Notification
+    </h2>
+    <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+      Notify users when a new version of an application becomes available for their deployments or when a new version of
+      an artifact is pushed to the registry.
+    </p>
+    <button
+      type="button"
+      (click)="hideDrawer()"
+      class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
+      <fa-icon [icon]="faXmark" class="w-5 h-5" />
+      <span class="sr-only">Close menu</span>
+    </button>
+
+    <form [formGroup]="editConfigForm" (ngSubmit)="saveConfig()">
+      <div class="mb-4 space-y-4">
+        <div>
+          <label for="name" class="distr-label mb-2">Name</label>
+          <input formControlName="name" autotrim type="text" id="name" class="distr-input" placeholder="Name" />
+        </div>
+
+        <label class="flex items-center cursor-pointer">
+          <input type="checkbox" class="sr-only peer" formControlName="enabled" />
+          <div class="distr-toggle"></div>
+          <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enabled</span>
+        </label>
+
+        <div class="space-y-2">
+          <app-pill-tab-bar [tabs]="picklistTabs()" [(active)]="picklistTab" />
+          <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-2">
+            @if (picklistTab() === 'application') {
+              @for (application of applications(); track application.id) {
+                <label class="flex items-center gap-2 w-full text-sm font-medium text-gray-900 dark:text-white">
+                  <input
+                    type="checkbox"
+                    class="distr-checkbox"
+                    [formControl]="editConfigForm.controls.applicationIds.controls[application.id!]" />
+                  <app-application-logo
+                    class="size-6 shrink-0"
+                    [imageUrl]="application.imageUrl"
+                    [type]="application.type!" />
+                  <span class="truncate">{{ application.name }}</span>
+                  <span class="distr-deployment-type-badge">{{ application.type }}</span>
+                </label>
+              } @empty {
+                <p class="text-sm text-gray-500 dark:text-gray-400">No applications to notify about.</p>
+              }
+            } @else {
+              @for (artifact of artifacts(); track artifact.id) {
+                <label
+                  class="flex items-center gap-2 w-full text-sm font-medium text-gray-900 dark:text-white"
+                  [title]="
+                    artifact.upstreamUrl ? 'An artifact that mirrors an upstream registry cannot be watched.' : ''
+                  ">
+                  <input
+                    type="checkbox"
+                    class="distr-checkbox"
+                    [formControl]="editConfigForm.controls.artifactIds.controls[artifact.id]" />
+                  <app-artifact-logo class="size-6 shrink-0" [imageUrl]="artifact.imageUrl" />
+                  <span class="truncate">{{ artifact.name }}</span>
+                  @if (artifact.upstreamUrl) {
+                    <span class="distr-tag-badge">pull-through</span>
+                  }
+                </label>
+              } @empty {
+                <p class="text-sm text-gray-500 dark:text-gray-400">No artifacts to notify about.</p>
+              }
+            }
+          </div>
+          @if (editConfigForm.touched && editConfigForm.errors?.['noTargets']) {
+            <div class="text-sm text-red-500">Check at least one application or artifact.</div>
+          }
+        </div>
+
+        <div class="space-y-1">
+          <h3 class="text-sm font-medium text-gray-900 dark:text-white">Users to notify</h3>
+          <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3">
+            <app-notification-recipients [control]="editConfigForm.controls.userAccountIds" [users]="users()" />
+          </div>
+          @if (editConfigForm.controls.userAccountIds.touched && editConfigForm.controls.userAccountIds.errors) {
+            <div class="text-sm text-red-500">Check at least one user.</div>
+          }
+        </div>
+      </div>
+      <div class="mt-8 flex justify-center w-full pb-4 space-x-4 sm:mt-0">
+        <button
+          type="submit"
+          [disabled]="editFormLoading() || editConfigForm.invalid"
+          class="text-white w-full inline-flex items-center justify-center distr-btn-primary disabled:opacity-50">
+          <fa-icon [icon]="faPen" class="mr-2" />
+          Save
+        </button>
+      </div>
+    </form>
+  </div>
+</ng-template>

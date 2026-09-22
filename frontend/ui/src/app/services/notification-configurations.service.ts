@@ -1,52 +1,33 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {
-  ApplicationNotificationConfiguration,
-  ArtifactNotificationConfiguration,
-  CreateUpdateApplicationNotificationConfigurationRequest,
-  CreateUpdateArtifactNotificationConfigurationRequest,
+  CreateUpdateNotificationConfigurationRequest,
+  UpdateNotificationConfiguration,
 } from '../types/notification-configuration';
+import {customerScopeParams} from './customer-scope';
 
 @Injectable({providedIn: 'root'})
-export class ApplicationNotificationConfigurationsService {
-  private readonly baseUrl = '/api/v1/application-notification-configurations';
+export class UpdateNotificationConfigurationsService {
+  private readonly baseUrl = '/api/v1/update-notification-configurations';
   private readonly httpClient = inject(HttpClient);
 
-  public list() {
-    return this.httpClient.get<ApplicationNotificationConfiguration[]>(this.baseUrl);
+  public list(customerOrganizationId?: string) {
+    return this.httpClient.get<UpdateNotificationConfiguration[]>(this.baseUrl, {
+      params: customerScopeParams(customerOrganizationId),
+    });
   }
 
-  public create(request: CreateUpdateApplicationNotificationConfigurationRequest) {
-    return this.httpClient.post<ApplicationNotificationConfiguration>(this.baseUrl, request);
+  public create(request: CreateUpdateNotificationConfigurationRequest) {
+    return this.httpClient.post<UpdateNotificationConfiguration>(this.baseUrl, request);
   }
 
-  public update(id: string, request: CreateUpdateApplicationNotificationConfigurationRequest) {
-    return this.httpClient.put<ApplicationNotificationConfiguration>(`${this.baseUrl}/${id}`, request);
+  public update(id: string, request: CreateUpdateNotificationConfigurationRequest) {
+    return this.httpClient.put<UpdateNotificationConfiguration>(`${this.baseUrl}/${id}`, request);
   }
 
-  public delete(id: string) {
-    return this.httpClient.delete<void>(`${this.baseUrl}/${id}`);
-  }
-}
-
-@Injectable({providedIn: 'root'})
-export class ArtifactNotificationConfigurationsService {
-  private readonly baseUrl = '/api/v1/artifact-notification-configurations';
-  private readonly httpClient = inject(HttpClient);
-
-  public list() {
-    return this.httpClient.get<ArtifactNotificationConfiguration[]>(this.baseUrl);
-  }
-
-  public create(request: CreateUpdateArtifactNotificationConfigurationRequest) {
-    return this.httpClient.post<ArtifactNotificationConfiguration>(this.baseUrl, request);
-  }
-
-  public update(id: string, request: CreateUpdateArtifactNotificationConfigurationRequest) {
-    return this.httpClient.put<ArtifactNotificationConfiguration>(`${this.baseUrl}/${id}`, request);
-  }
-
-  public delete(id: string) {
-    return this.httpClient.delete<void>(`${this.baseUrl}/${id}`);
+  public delete(id: string, customerOrganizationId?: string) {
+    return this.httpClient.delete<void>(`${this.baseUrl}/${id}`, {
+      params: customerScopeParams(customerOrganizationId),
+    });
   }
 }

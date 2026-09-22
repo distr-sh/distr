@@ -69,10 +69,7 @@ DROP TYPE NOTIFICATION_SOURCE_TYPE;
 UPDATE CustomerOrganization SET features = array_remove(features, 'update_notifications')
 WHERE 'update_notifications' = ANY(features);
 
-DROP TABLE ArtifactNotificationConfiguration_Organization_UserAccount;
-DROP TABLE ArtifactNotificationConfiguration_Artifact;
-DROP TABLE ArtifactNotificationConfiguration;
-
-DROP TABLE ApplicationNotificationConfiguration_Organization_UserAccount;
-DROP TABLE ApplicationNotificationConfiguration_Application;
-DROP TABLE ApplicationNotificationConfiguration;
+DROP TABLE UpdateNotificationConfiguration_Organization_UserAccount;
+DROP TABLE UpdateNotificationConfiguration_Artifact;
+DROP TABLE UpdateNotificationConfiguration_Application;
+DROP TABLE UpdateNotificationConfiguration;

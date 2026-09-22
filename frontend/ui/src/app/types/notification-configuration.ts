@@ -21,38 +21,21 @@ export interface NotificationArtifact {
   imageUrl?: string;
 }
 
-export interface ApplicationNotificationConfiguration {
+export interface UpdateNotificationConfiguration {
   id: string;
   createdAt: string;
   name: string;
   enabled: boolean;
-  updateAvailableTriggerEnabled: boolean;
   applications: NotificationApplication[];
-  recipients: NotificationRecipient[];
-}
-
-export interface CreateUpdateApplicationNotificationConfigurationRequest {
-  name: string;
-  enabled: boolean;
-  updateAvailableTriggerEnabled: boolean;
-  applicationIds: string[];
-  userAccountIds: string[];
-}
-
-export interface ArtifactNotificationConfiguration {
-  id: string;
-  createdAt: string;
-  name: string;
-  enabled: boolean;
-  newVersionTriggerEnabled: boolean;
   artifacts: NotificationArtifact[];
   recipients: NotificationRecipient[];
 }
 
-export interface CreateUpdateArtifactNotificationConfigurationRequest {
+export interface CreateUpdateNotificationConfigurationRequest {
+  customerOrganizationId?: string;
   name: string;
   enabled: boolean;
-  newVersionTriggerEnabled: boolean;
+  applicationIds: string[];
   artifactIds: string[];
   userAccountIds: string[];
 }

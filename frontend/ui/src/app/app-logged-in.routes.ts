@@ -7,7 +7,8 @@ import {AccessTokenDetailComponent} from './access-tokens/access-token-detail.co
 import {AccessTokensComponent} from './access-tokens/access-tokens.component';
 import {AdvisoryDetailComponent} from './advisories/advisory-detail.component';
 import {AdvisoryListComponent} from './advisories/advisory-list.component';
-import {AlertConfigurationsComponent} from './alert-configurations/alert-configurations.component';
+import {AlertConfigurationsPageComponent} from './alert-configurations/alert-configurations-page.component';
+import {CustomerAlertConfigurationsPageComponent} from './alert-configurations/customer-alert-configurations-page.component';
 import {ApplicationDetailComponent} from './applications/application-detail.component';
 import {ApplicationsPageComponent} from './applications/applications-page.component';
 import {ArtifactPullsComponent} from './artifacts/artifact-pulls/artifact-pulls.component';
@@ -28,10 +29,10 @@ import {DeploymentTargetsComponent} from './deployments/deployment-targets.compo
 import {CustomerLicenseDetailPageComponent} from './licenses/customer-license-detail-page.component';
 import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
 import {VendorLicenseDetailPageComponent} from './licenses/vendor-license-detail-page.component';
-import {ApplicationNotificationConfigurationsComponent} from './notification-configurations/application-notification-configurations.component';
-import {ArtifactNotificationConfigurationsComponent} from './notification-configurations/artifact-notification-configurations.component';
-import {UpdateNotificationsComponent} from './notification-configurations/update-notifications.component';
-import {NotificationRecordsComponent} from './notification-records/notification-records.component';
+import {CustomerUpdateNotificationsPageComponent} from './notification-configurations/customer-update-notifications-page.component';
+import {UpdateNotificationsPageComponent} from './notification-configurations/update-notifications-page.component';
+import {CustomerNotificationRecordsPageComponent} from './notification-records/customer-notification-records-page.component';
+import {NotificationRecordsPageComponent} from './notification-records/notification-records-page.component';
 import {OrganizationBrandingComponent} from './organization-branding/organization-branding.component';
 import {CustomEmailComponent} from './organization-settings/custom-email.component';
 import {CustomOidcComponent} from './organization-settings/custom-oidc.component';
@@ -270,6 +271,21 @@ export const routes: Routes = [
           {path: 'secrets', component: CustomerSecretsPageComponent},
           {path: 'links', component: SidebarLinksPageComponent},
           {
+            path: 'alerts',
+            component: CustomerAlertConfigurationsPageComponent,
+            canActivate: [notificationsEnabledGuard()],
+          },
+          {
+            path: 'updates',
+            component: CustomerUpdateNotificationsPageComponent,
+            canActivate: [notificationsEnabledGuard(), requireUpdateNotifications],
+          },
+          {
+            path: 'notification-history',
+            component: CustomerNotificationRecordsPageComponent,
+            canActivate: [notificationsEnabledGuard()],
+          },
+          {
             path: 'settings',
             component: CustomerSettingsComponent,
             canActivate: [customOidcProvidersEnabledGuard()],
@@ -455,21 +471,16 @@ export const routes: Routes = [
         children: [
           {
             path: 'alert-configurations',
-            component: AlertConfigurationsComponent,
+            component: AlertConfigurationsPageComponent,
           },
           {
             path: 'updates',
             canActivate: [requireUpdateNotifications],
-            component: UpdateNotificationsComponent,
-            children: [
-              {path: 'applications', component: ApplicationNotificationConfigurationsComponent},
-              {path: 'artifacts', component: ArtifactNotificationConfigurationsComponent},
-              {path: '', pathMatch: 'full', redirectTo: 'applications'},
-            ],
+            component: UpdateNotificationsPageComponent,
           },
           {
             path: 'history',
-            component: NotificationRecordsComponent,
+            component: NotificationRecordsPageComponent,
           },
         ],
       },

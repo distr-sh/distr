@@ -25,9 +25,9 @@ func SendApplicationUpdateAvailableNotifications(
 	ctx context.Context,
 	version types.ApplicationVersion,
 ) error {
-	configs, err := db.GetApplicationNotificationConfigurationsForApplication(ctx, version.ApplicationID)
+	configs, err := db.GetUpdateNotificationConfigurationsForApplication(ctx, version.ApplicationID)
 	if err != nil {
-		return fmt.Errorf("failed to get application notification configurations: %w", err)
+		return fmt.Errorf("failed to get update notification configurations: %w", err)
 	} else if len(configs) == 0 {
 		return nil
 	}
@@ -67,7 +67,7 @@ func SendApplicationEntitlementVersionsNotifications(
 
 func sendApplicationUpdateAvailableWithConfig(
 	ctx context.Context,
-	config types.ApplicationNotificationConfiguration,
+	config types.UpdateNotificationConfiguration,
 	version types.ApplicationVersion,
 	deployments []types.DeploymentPendingUpdate,
 ) error {
@@ -144,9 +144,9 @@ func SendArtifactVersionAvailableNotifications(ctx context.Context, version type
 		return nil
 	}
 
-	configs, err := db.GetArtifactNotificationConfigurationsForArtifact(ctx, version.ArtifactID)
+	configs, err := db.GetUpdateNotificationConfigurationsForArtifact(ctx, version.ArtifactID)
 	if err != nil {
-		return fmt.Errorf("failed to get artifact notification configurations: %w", err)
+		return fmt.Errorf("failed to get update notification configurations: %w", err)
 	} else if len(configs) == 0 {
 		return nil
 	}
@@ -167,7 +167,7 @@ func SendArtifactVersionAvailableNotifications(ctx context.Context, version type
 
 func sendArtifactVersionAvailableWithConfig(
 	ctx context.Context,
-	config types.ArtifactNotificationConfiguration,
+	config types.UpdateNotificationConfiguration,
 	version types.ArtifactVersion,
 	entitlement types.ArtifactVersionEntitlement,
 ) error {

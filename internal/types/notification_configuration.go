@@ -60,36 +60,23 @@ func (e ArtifactVersionEntitlement) Allows(customerOrganizationID uuid.UUID) boo
 	return slices.Contains(e.CustomerOrganizationIDs, customerOrganizationID)
 }
 
-type ApplicationNotificationConfiguration struct {
-	ID                            uuid.UUID  `db:"id"`
-	CreatedAt                     time.Time  `db:"created_at"`
-	OrganizationID                uuid.UUID  `db:"organization_id"`
-	CustomerOrganizationID        *uuid.UUID `db:"customer_organization_id"`
-	Name                          string     `db:"name"`
-	Enabled                       bool       `db:"enabled"`
-	UpdateAvailableTriggerEnabled bool       `db:"update_available_trigger_enabled"`
+// UpdateNotificationConfiguration watches applications, artifacts or both: a vendor who ships an
+// application together with the images it pulls announces them from one configuration.
+type UpdateNotificationConfiguration struct {
+	ID                     uuid.UUID  `db:"id"`
+	CreatedAt              time.Time  `db:"created_at"`
+	OrganizationID         uuid.UUID  `db:"organization_id"`
+	CustomerOrganizationID *uuid.UUID `db:"customer_organization_id"`
+	Name                   string     `db:"name"`
+	Enabled                bool       `db:"enabled"`
 
 	Applications []NotificationApplication `db:"applications"`
+	Artifacts    []NotificationArtifact    `db:"artifacts"`
 	Recipients   []NotificationRecipient   `db:"recipients"`
 
-	// ApplicationIDs and UserAccountIDs are what insert and update write to the link tables. The
-	// selected rows come back in Applications and Recipients instead.
+	// ApplicationIDs, ArtifactIDs and UserAccountIDs are what insert and update write to the link
+	// tables. The selected rows come back in Applications, Artifacts and Recipients instead.
 	ApplicationIDs []uuid.UUID `db:"-"`
-	UserAccountIDs []uuid.UUID `db:"-"`
-}
-
-type ArtifactNotificationConfiguration struct {
-	ID                       uuid.UUID  `db:"id"`
-	CreatedAt                time.Time  `db:"created_at"`
-	OrganizationID           uuid.UUID  `db:"organization_id"`
-	CustomerOrganizationID   *uuid.UUID `db:"customer_organization_id"`
-	Name                     string     `db:"name"`
-	Enabled                  bool       `db:"enabled"`
-	NewVersionTriggerEnabled bool       `db:"new_version_trigger_enabled"`
-
-	Artifacts  []NotificationArtifact  `db:"artifacts"`
-	Recipients []NotificationRecipient `db:"recipients"`
-
 	ArtifactIDs    []uuid.UUID `db:"-"`
 	UserAccountIDs []uuid.UUID `db:"-"`
 }

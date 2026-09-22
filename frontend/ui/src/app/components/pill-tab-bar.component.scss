@@ -1,0 +1,13 @@
+@reference '../../styles/tailwind.css';
+
+:host {
+  @apply inline-flex p-1 text-sm font-medium text-gray-500 bg-gray-100 rounded-lg dark:bg-gray-800 dark:text-gray-400;
+}
+
+.pill-tab {
+  @apply px-3 py-1.5 rounded-md cursor-pointer disabled:cursor-not-allowed disabled:opacity-50;
+
+  &[aria-selected='true'] {
+    @apply text-gray-900 bg-white shadow-sm dark:bg-gray-600 dark:text-white;
+  }
+}

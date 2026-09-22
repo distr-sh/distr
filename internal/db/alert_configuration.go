@@ -218,7 +218,7 @@ func UpdateAlertConfiguration(ctx context.Context, config *types.AlertConfigurat
 	return RunTxRR(ctx, func(ctx context.Context) error {
 		db := internalctx.GetDb(ctx)
 
-		_, err := db.Exec(
+		cmd, err := db.Exec(
 			ctx,
 			`UPDATE AlertConfiguration SET
 				name = @name,
@@ -245,6 +245,8 @@ func UpdateAlertConfiguration(ctx context.Context, config *types.AlertConfigurat
 		)
 		if err != nil {
 			return fmt.Errorf("failed to update AlertConfiguration: %w", err)
+		} else if cmd.RowsAffected() == 0 {
+			return apierrors.ErrNotFound
 		}
 
 		if err := updateAlertConfigurationLinks(ctx, config); err != nil {

@@ -188,10 +188,8 @@ func ApiRouter(
 						Route("/partner-organizations", handlers.PartnerOrganizationsRouter)
 					r.With(middleware.UseReadonlyDB).Route("/dashboard", handlers.DashboardRouter)
 					r.Route("/alert-configurations", handlers.AlertConfigurationsRouter)
-					r.Route("/application-notification-configurations",
-						handlers.ApplicationNotificationConfigurationsRouter)
-					r.Route("/artifact-notification-configurations",
-						handlers.ArtifactNotificationConfigurationsRouter)
+					r.Route("/update-notification-configurations",
+						handlers.UpdateNotificationConfigurationsRouter)
 					r.With(middleware.UseReadonlyDB).
 						Route("/deployment-target-metrics", handlers.DeploymentTargetMetricsRouter)
 					r.Route("/deployment-targets", handlers.DeploymentTargetsRouter)

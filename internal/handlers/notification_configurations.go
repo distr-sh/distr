@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"errors"
 	"net/http"
 
@@ -11,102 +10,43 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
-	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
 )
 
-func ApplicationNotificationConfigurationsRouter(r chiopenapi.Router) {
-	notificationConfigurations[
-		api.CreateUpdateApplicationNotificationConfigurationRequest,
-		types.ApplicationNotificationConfiguration,
-		api.ApplicationNotificationConfiguration,
-	]{
-		name: "application notification configuration",
-		updateRequest: struct {
-			notificationConfigurationIDRequest
-			api.CreateUpdateApplicationNotificationConfigurationRequest
-		}{},
-		list:       db.GetApplicationNotificationConfigurations,
-		create:     db.CreateApplicationNotificationConfiguration,
-		update:     db.UpdateApplicationNotificationConfiguration,
-		remove:     db.DeleteApplicationNotificationConfiguration,
-		toInternal: mapping.ApplicationNotificationConfigurationToInternal,
-		toAPI:      mapping.ApplicationNotificationConfigurationToAPI,
-		setID:      func(config *types.ApplicationNotificationConfiguration, id uuid.UUID) { config.ID = id },
-	}.mount(r)
-}
-
-func ArtifactNotificationConfigurationsRouter(r chiopenapi.Router) {
-	notificationConfigurations[
-		api.CreateUpdateArtifactNotificationConfigurationRequest,
-		types.ArtifactNotificationConfiguration,
-		api.ArtifactNotificationConfiguration,
-	]{
-		name: "artifact notification configuration",
-		updateRequest: struct {
-			notificationConfigurationIDRequest
-			api.CreateUpdateArtifactNotificationConfigurationRequest
-		}{},
-		list:       db.GetArtifactNotificationConfigurations,
-		create:     db.CreateArtifactNotificationConfiguration,
-		update:     db.UpdateArtifactNotificationConfiguration,
-		remove:     db.DeleteArtifactNotificationConfiguration,
-		toInternal: mapping.ArtifactNotificationConfigurationToInternal,
-		toAPI:      mapping.ArtifactNotificationConfigurationToAPI,
-		setID:      func(config *types.ArtifactNotificationConfiguration, id uuid.UUID) { config.ID = id },
-	}.mount(r)
-}
-
-type validatable interface {
-	Validate() error
-}
-
-// notificationConfigurations is the CRUD of one kind of notification configuration. Application and
-// artifact configurations differ only in what they are linked to, so they share these handlers.
-type notificationConfigurations[Request validatable, Model any, Response any] struct {
-	name string
-	// updateRequest describes the body and path parameter of the update endpoint for the OpenAPI
-	// spec. It is passed in because a type parameter cannot be embedded in a struct.
-	updateRequest any
-	list          func(ctx context.Context, orgID uuid.UUID, customerOrgID *uuid.UUID) ([]Model, error)
-	create        func(ctx context.Context, config *Model) error
-	update        func(ctx context.Context, config *Model) error
-	remove        func(ctx context.Context, id, orgID uuid.UUID, customerOrgID *uuid.UUID) error
-	toInternal    func(request Request, orgID uuid.UUID, customerOrgID *uuid.UUID) Model
-	toAPI         func(config Model) Response
-	setID         func(config *Model, id uuid.UUID)
-}
-
-func (h notificationConfigurations[Request, Model, Response]) mount(r chiopenapi.Router) {
+func UpdateNotificationConfigurationsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Notifications"))
 
 	r.Use(middleware.ProFeature)
 
-	var request Request
-	var response Response
-
-	r.Get("/", h.getHandler()).
-		With(option.Description("list all " + h.name + "s")).
-		With(option.Response(http.StatusOK, []Response{}))
+	r.Get("/", getUpdateNotificationConfigurationsHandler()).
+		With(option.Description("list all update notification configurations")).
+		With(option.Request(customerScopeQuery{})).
+		With(option.Response(http.StatusOK, []api.UpdateNotificationConfiguration{}))
 
 	r.With(middleware.RequireReadWriteOrAdmin).
-		Post("/", h.createHandler()).
-		With(option.Description("create a new " + h.name)).
-		With(option.Request(request)).
-		With(option.Response(http.StatusOK, response))
+		Post("/", createUpdateNotificationConfigurationHandler()).
+		With(option.Description("create a new update notification configuration")).
+		With(option.Request(api.CreateUpdateNotificationConfigurationRequest{})).
+		With(option.Response(http.StatusOK, api.UpdateNotificationConfiguration{}))
 
 	r.With(middleware.RequireReadWriteOrAdmin).
 		Route("/{id}", func(r chiopenapi.Router) {
-			r.Put("/", h.updateHandler()).
-				With(option.Description("update an existing " + h.name)).
-				With(option.Request(h.updateRequest)).
-				With(option.Response(http.StatusOK, response))
+			r.Put("/", updateUpdateNotificationConfigurationHandler()).
+				With(option.Description("update an existing update notification configuration")).
+				With(option.Request(struct {
+					notificationConfigurationIDRequest
+					api.CreateUpdateNotificationConfigurationRequest
+				}{})).
+				With(option.Response(http.StatusOK, api.UpdateNotificationConfiguration{}))
 
-			r.Delete("/", h.deleteHandler()).
-				With(option.Description("delete an existing " + h.name)).
-				With(option.Request(notificationConfigurationIDRequest{}))
+			r.Delete("/", deleteUpdateNotificationConfigurationHandler()).
+				With(option.Description("delete an existing update notification configuration")).
+				With(option.Request(struct {
+					notificationConfigurationIDRequest
+					customerScopeQuery
+				}{}))
 		})
 }
 
@@ -114,42 +54,52 @@ type notificationConfigurationIDRequest struct {
 	ID string `path:"id"`
 }
 
-func (h notificationConfigurations[Request, Model, Response]) getHandler() http.HandlerFunc {
+func getUpdateNotificationConfigurationsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		auth := auth.Authentication.Require(ctx)
 
-		configs, err := h.list(ctx, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID())
-		if err != nil {
-			respondInternalError(w, r, err, "failed to get "+h.name+"s")
-			return
-		}
-
-		RespondJSON(w, mapping.List(configs, h.toAPI))
-	}
-}
-
-func (h notificationConfigurations[Request, Model, Response]) createHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		auth := auth.Authentication.Require(ctx)
-
-		request, ok := h.requestBody(w, r)
+		customerOrgID, ok := resolveCustomerScopeFromQuery(w, r)
 		if !ok {
 			return
 		}
 
-		config := h.toInternal(request, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID())
-		if err := h.create(ctx, &config); err != nil {
-			respondInternalError(w, r, err, "failed to create "+h.name)
+		configs, err := db.GetUpdateNotificationConfigurations(ctx, *auth.CurrentOrgID(), customerOrgID)
+		if err != nil {
+			respondInternalError(w, r, err, "failed to get update notification configurations")
 			return
 		}
 
-		RespondJSON(w, h.toAPI(config))
+		RespondJSON(w, mapping.List(configs, mapping.UpdateNotificationConfigurationToAPI))
 	}
 }
 
-func (h notificationConfigurations[Request, Model, Response]) updateHandler() http.HandlerFunc {
+func createUpdateNotificationConfigurationHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		auth := auth.Authentication.Require(ctx)
+
+		request, ok := updateNotificationConfigurationBody(w, r)
+		if !ok {
+			return
+		}
+
+		customerOrgID, ok := resolveCustomerScope(w, r, request.CustomerOrganizationID)
+		if !ok {
+			return
+		}
+
+		config := mapping.UpdateNotificationConfigurationToInternal(request, *auth.CurrentOrgID(), customerOrgID)
+		if err := db.CreateUpdateNotificationConfiguration(ctx, &config); err != nil {
+			respondInternalError(w, r, err, "failed to create update notification configuration")
+			return
+		}
+
+		RespondJSON(w, mapping.UpdateNotificationConfigurationToAPI(config))
+	}
+}
+
+func updateUpdateNotificationConfigurationHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		auth := auth.Authentication.Require(ctx)
@@ -160,27 +110,32 @@ func (h notificationConfigurations[Request, Model, Response]) updateHandler() ht
 			return
 		}
 
-		request, ok := h.requestBody(w, r)
+		request, ok := updateNotificationConfigurationBody(w, r)
 		if !ok {
 			return
 		}
 
-		config := h.toInternal(request, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID())
-		h.setID(&config, id)
-		if err := h.update(ctx, &config); err != nil {
+		customerOrgID, ok := resolveCustomerScope(w, r, request.CustomerOrganizationID)
+		if !ok {
+			return
+		}
+
+		config := mapping.UpdateNotificationConfigurationToInternal(request, *auth.CurrentOrgID(), customerOrgID)
+		config.ID = id
+		if err := db.UpdateUpdateNotificationConfiguration(ctx, &config); err != nil {
 			if errors.Is(err, apierrors.ErrNotFound) {
 				http.NotFound(w, r)
 			} else {
-				respondInternalError(w, r, err, "failed to update "+h.name)
+				respondInternalError(w, r, err, "failed to save update notification configuration")
 			}
 			return
 		}
 
-		RespondJSON(w, h.toAPI(config))
+		RespondJSON(w, mapping.UpdateNotificationConfigurationToAPI(config))
 	}
 }
 
-func (h notificationConfigurations[Request, Model, Response]) deleteHandler() http.HandlerFunc {
+func deleteUpdateNotificationConfigurationHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		auth := auth.Authentication.Require(ctx)
@@ -191,22 +146,27 @@ func (h notificationConfigurations[Request, Model, Response]) deleteHandler() ht
 			return
 		}
 
-		if err := h.remove(ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID()); err != nil {
+		customerOrgID, ok := resolveCustomerScopeFromQuery(w, r)
+		if !ok {
+			return
+		}
+
+		if err := db.DeleteUpdateNotificationConfiguration(ctx, id, *auth.CurrentOrgID(), customerOrgID); err != nil {
 			if errors.Is(err, apierrors.ErrNotFound) {
 				http.NotFound(w, r)
 			} else {
-				respondInternalError(w, r, err, "failed to delete "+h.name)
+				respondInternalError(w, r, err, "failed to delete update notification configuration")
 			}
 			return
 		}
 	}
 }
 
-func (h notificationConfigurations[Request, Model, Response]) requestBody(
+func updateNotificationConfigurationBody(
 	w http.ResponseWriter,
 	r *http.Request,
-) (Request, bool) {
-	request, err := JsonBody[Request](w, r)
+) (api.CreateUpdateNotificationConfigurationRequest, bool) {
+	request, err := JsonBody[api.CreateUpdateNotificationConfigurationRequest](w, r)
 	if err != nil {
 		return request, false
 	} else if err := request.Validate(); err != nil {

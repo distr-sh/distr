@@ -1,6 +1,7 @@
 import {DeploymentTarget, UserAccount} from '@distr-sh/distr-sdk';
 
 export interface CreateUpdateAlertConfigurationRequest {
+  customerOrganizationId?: string;
   name: string;
   enabled: boolean;
   statusTriggerEnabled: boolean;

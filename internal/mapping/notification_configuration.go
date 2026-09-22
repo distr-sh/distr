@@ -6,63 +6,33 @@ import (
 	"github.com/google/uuid"
 )
 
-func ApplicationNotificationConfigurationToAPI(
-	config types.ApplicationNotificationConfiguration,
-) api.ApplicationNotificationConfiguration {
-	return api.ApplicationNotificationConfiguration{
-		ID:                            config.ID,
-		CreatedAt:                     config.CreatedAt,
-		Name:                          config.Name,
-		Enabled:                       config.Enabled,
-		UpdateAvailableTriggerEnabled: config.UpdateAvailableTriggerEnabled,
-		Applications:                  List(config.Applications, notificationApplicationToAPI),
-		Recipients:                    List(config.Recipients, notificationRecipientToAPI),
+func UpdateNotificationConfigurationToAPI(
+	config types.UpdateNotificationConfiguration,
+) api.UpdateNotificationConfiguration {
+	return api.UpdateNotificationConfiguration{
+		ID:           config.ID,
+		CreatedAt:    config.CreatedAt,
+		Name:         config.Name,
+		Enabled:      config.Enabled,
+		Applications: List(config.Applications, notificationApplicationToAPI),
+		Artifacts:    List(config.Artifacts, notificationArtifactToAPI),
+		Recipients:   List(config.Recipients, notificationRecipientToAPI),
 	}
 }
 
-func ApplicationNotificationConfigurationToInternal(
-	request api.CreateUpdateApplicationNotificationConfigurationRequest,
+func UpdateNotificationConfigurationToInternal(
+	request api.CreateUpdateNotificationConfigurationRequest,
 	organizationID uuid.UUID,
 	customerOrganizationID *uuid.UUID,
-) types.ApplicationNotificationConfiguration {
-	return types.ApplicationNotificationConfiguration{
-		OrganizationID:                organizationID,
-		CustomerOrganizationID:        customerOrganizationID,
-		Name:                          request.Name,
-		Enabled:                       request.Enabled,
-		UpdateAvailableTriggerEnabled: request.UpdateAvailableTriggerEnabled,
-		ApplicationIDs:                request.ApplicationIDs,
-		UserAccountIDs:                request.UserAccountIDs,
-	}
-}
-
-func ArtifactNotificationConfigurationToAPI(
-	config types.ArtifactNotificationConfiguration,
-) api.ArtifactNotificationConfiguration {
-	return api.ArtifactNotificationConfiguration{
-		ID:                       config.ID,
-		CreatedAt:                config.CreatedAt,
-		Name:                     config.Name,
-		Enabled:                  config.Enabled,
-		NewVersionTriggerEnabled: config.NewVersionTriggerEnabled,
-		Artifacts:                List(config.Artifacts, notificationArtifactToAPI),
-		Recipients:               List(config.Recipients, notificationRecipientToAPI),
-	}
-}
-
-func ArtifactNotificationConfigurationToInternal(
-	request api.CreateUpdateArtifactNotificationConfigurationRequest,
-	organizationID uuid.UUID,
-	customerOrganizationID *uuid.UUID,
-) types.ArtifactNotificationConfiguration {
-	return types.ArtifactNotificationConfiguration{
-		OrganizationID:           organizationID,
-		CustomerOrganizationID:   customerOrganizationID,
-		Name:                     request.Name,
-		Enabled:                  request.Enabled,
-		NewVersionTriggerEnabled: request.NewVersionTriggerEnabled,
-		ArtifactIDs:              request.ArtifactIDs,
-		UserAccountIDs:           request.UserAccountIDs,
+) types.UpdateNotificationConfiguration {
+	return types.UpdateNotificationConfiguration{
+		OrganizationID:         organizationID,
+		CustomerOrganizationID: customerOrganizationID,
+		Name:                   request.Name,
+		Enabled:                request.Enabled,
+		ApplicationIDs:         request.ApplicationIDs,
+		ArtifactIDs:            request.ArtifactIDs,
+		UserAccountIDs:         request.UserAccountIDs,
 	}
 }
 

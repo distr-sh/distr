@@ -29,72 +29,33 @@ type NotificationArtifact struct {
 	ImageUrl *string   `json:"imageUrl,omitempty"`
 }
 
-type ApplicationNotificationConfiguration struct {
-	ID                            uuid.UUID                 `json:"id"`
-	CreatedAt                     time.Time                 `json:"createdAt"`
-	Name                          string                    `json:"name"`
-	Enabled                       bool                      `json:"enabled"`
-	UpdateAvailableTriggerEnabled bool                      `json:"updateAvailableTriggerEnabled"`
-	Applications                  []NotificationApplication `json:"applications"`
-	Recipients                    []NotificationRecipient   `json:"recipients"`
+type UpdateNotificationConfiguration struct {
+	ID           uuid.UUID                 `json:"id"`
+	CreatedAt    time.Time                 `json:"createdAt"`
+	Name         string                    `json:"name"`
+	Enabled      bool                      `json:"enabled"`
+	Applications []NotificationApplication `json:"applications"`
+	Artifacts    []NotificationArtifact    `json:"artifacts"`
+	Recipients   []NotificationRecipient   `json:"recipients"`
 }
 
-type CreateUpdateApplicationNotificationConfigurationRequest struct {
-	Name                          string      `json:"name"`
-	Enabled                       bool        `json:"enabled"`
-	UpdateAvailableTriggerEnabled bool        `json:"updateAvailableTriggerEnabled"`
-	ApplicationIDs                []uuid.UUID `json:"applicationIds"`
-	UserAccountIDs                []uuid.UUID `json:"userAccountIds"`
+type CreateUpdateNotificationConfigurationRequest struct {
+	CustomerOrganizationID *uuid.UUID  `json:"customerOrganizationId,omitempty"`
+	Name                   string      `json:"name"`
+	Enabled                bool        `json:"enabled"`
+	ApplicationIDs         []uuid.UUID `json:"applicationIds"`
+	ArtifactIDs            []uuid.UUID `json:"artifactIds"`
+	UserAccountIDs         []uuid.UUID `json:"userAccountIds"`
 }
 
-func (r CreateUpdateApplicationNotificationConfigurationRequest) Validate() error {
-	if err := validateNotificationConfiguration(r.Name, len(r.ApplicationIDs), len(r.UserAccountIDs),
-		"application"); err != nil {
-		return err
-	}
-	if !r.UpdateAvailableTriggerEnabled {
-		return validation.NewValidationFailedError("enable at least one trigger")
-	}
-	return nil
-}
-
-type ArtifactNotificationConfiguration struct {
-	ID                       uuid.UUID               `json:"id"`
-	CreatedAt                time.Time               `json:"createdAt"`
-	Name                     string                  `json:"name"`
-	Enabled                  bool                    `json:"enabled"`
-	NewVersionTriggerEnabled bool                    `json:"newVersionTriggerEnabled"`
-	Artifacts                []NotificationArtifact  `json:"artifacts"`
-	Recipients               []NotificationRecipient `json:"recipients"`
-}
-
-type CreateUpdateArtifactNotificationConfigurationRequest struct {
-	Name                     string      `json:"name"`
-	Enabled                  bool        `json:"enabled"`
-	NewVersionTriggerEnabled bool        `json:"newVersionTriggerEnabled"`
-	ArtifactIDs              []uuid.UUID `json:"artifactIds"`
-	UserAccountIDs           []uuid.UUID `json:"userAccountIds"`
-}
-
-func (r CreateUpdateArtifactNotificationConfigurationRequest) Validate() error {
-	if err := validateNotificationConfiguration(r.Name, len(r.ArtifactIDs), len(r.UserAccountIDs),
-		"artifact"); err != nil {
-		return err
-	}
-	if !r.NewVersionTriggerEnabled {
-		return validation.NewValidationFailedError("enable at least one trigger")
-	}
-	return nil
-}
-
-func validateNotificationConfiguration(name string, subjects, recipients int, subjectLabel string) error {
-	if name == "" {
+func (r CreateUpdateNotificationConfigurationRequest) Validate() error {
+	if r.Name == "" {
 		return validation.NewValidationFailedError("a name is required")
 	}
-	if subjects == 0 {
-		return validation.NewValidationFailedError("select at least one " + subjectLabel)
+	if len(r.ApplicationIDs) == 0 && len(r.ArtifactIDs) == 0 {
+		return validation.NewValidationFailedError("select at least one application or artifact")
 	}
-	if recipients == 0 {
+	if len(r.UserAccountIDs) == 0 {
 		return validation.NewValidationFailedError("select at least one recipient")
 	}
 	return nil
