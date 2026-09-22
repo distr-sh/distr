@@ -29,7 +29,7 @@ mkdir distr && cd distr && curl -fsSL https://github.com/distr-sh/distr/releases
 ```
 
 This command creates a new directory called `distr` containing two files: `docker-compose.yaml` and `.env`.
-For a basic setup, you don't have to modify `docker-compose.yaml`, but please open `.env` in your favorite text editor and change the values of `POSTGRES_PASSWORD`, `JWT_SECRET` and `DATABASE_ENCRYPTION_KEY`.
+For a basic setup, you don't have to modify `docker-compose.yaml`, but please open `.env` in your favorite text editor and change the values of `POSTGRES_PASSWORD`, `JWT_SECRET`, `DATABASE_ENCRYPTION_KEY` and `RUSTFS_SECRET_KEY`.
 Feel free to also change the value of `DISTR_HOST`, if you intend to make your instance publicly available.
 Once you are happy with your configuration, simply start Distr using Docker Compose:
 
@@ -68,6 +68,23 @@ It comes from our own registry, so run `docker login registry.distr.sh` with the
 :::tip[Let Distr manage your own instance]
 The smoothest way to run a paid plan is to deploy the stack with Distr itself, through a [Docker agent](/docs/agents/docker-agent/) on the target VM.
 The agent then handles the rollout of new Distr versions, configures registry credentials and injects the license key for you: the `enterprise`, `enterprise-aws` and `enterprise-gcp` stacks ship `LICENSE_KEY={{ index .LicenseKeys "Distr" }}` in their `.env`, which the agent resolves at deploy time from the [license key](/docs/platform/license-keys/) named `Distr`.
+
+Those three stacks reference their credentials as [Distr Secrets](/docs/agents/secrets/) in the same way, so no value ever lives in the `.env` file itself.
+Create the secrets your stack needs before the first deployment, since the agent fails a deployment that references a secret the organization does not have:
+
+| Secret                          | `enterprise` | `enterprise-aws` | `enterprise-gcp` |
+| ------------------------------- | ------------ | ---------------- | ---------------- |
+| `JWT_SECRET`                    | yes          | yes              | yes              |
+| `DATABASE_ENCRYPTION_KEY`       | yes          | yes              | yes              |
+| `POSTGRES_PASSWORD`             | yes          | no               | no               |
+| `RUSTFS_SECRET_KEY`             | yes          | no               | no               |
+| `REGISTRY_S3_SECRET_ACCESS_KEY` | no           | yes              | yes              |
+| `LOKI_S3_SECRET_ACCESS_KEY`     | no           | yes              | no               |
+
+The `enterprise` stack needs neither of the last two: its object storage is the RustFS container, whose single root credential is `RUSTFS_SECRET_KEY`, and both the registry and Loki authenticate with it.
+The two external-storage stacks have no `POSTGRES_PASSWORD`, since their whole connection string is one `DATABASE_URL`. Reference a secret from inside that URL instead.
+
+Running one of these stacks by hand means replacing every reference with the value itself first, which is what the AWS and GCP `.env` examples below show.
 :::
 
 ### Distr Enterprise on AWS

@@ -172,6 +172,14 @@ Never take the mailer straight from the context. An organization can configure i
 
 Pass the organization explicitly rather than reading it from the authentication. Background jobs carry no authentication (`internal/jobs/runner.go`), and notification mail is sent from exactly there.
 
+## Compose Stacks
+
+The stacks in `deploy/docker/` share one `.env` per stack, which is both the Compose interpolation source and the `env_file` of the `distr` service.
+
+- Give every consumer of a credential its own variable and assign it from the one that owns the value (`LOKI_S3_SECRET_ACCESS_KEY="${RUSTFS_SECRET_KEY}"`), rather than letting two services read the same variable. Compose resolves these top to bottom, so the owning variable has to be defined above the ones deriving from it.
+- Reference a credential in the three enterprise stacks as a Distr secret (`{{ .Secrets.KEY }}`), never as a literal, and list it in the secrets table in `website/src/content/docs/docs/self-hosting/docker.md`. The `community` and `quickstart` stacks are started by hand and keep literal values.
+- Keep Go template syntax out of the comments in an enterprise `.env`. A Distr agent renders the whole file with `missingkey=error`, so a reference in a comment either fails the deployment or is a parse error.
+
 ## Input Trimming
 
 Never trim a single request field by hand. `validation.TrimStrings` in `handlers.JsonBody` and the frontend's `trimInterceptor` trim request body strings generically; where surrounding whitespace matters, opt out with `trim:"-"` and `skipTrim()`.
