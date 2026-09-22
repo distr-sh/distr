@@ -80,6 +80,8 @@ The agent runs the following loop at the interval defined by `DISTR_INTERVAL` (d
 3. Start Docker Compose projects that are in the list. If images need pulling, the agent reports status `PROGRESSING`.
 4. Send each Docker Compose output to `DISTR_STATUS_ENDPOINT`, reporting the deployment's status.
 
+An apply that has not finished after 10 minutes is reported as an error rather than left in `PROGRESSING`, and is retried on the next cycle.
+
 Each deployment maps to one Docker Compose project on the host, named `distr-<short-deployment-id>`.
 
 ## Authentication with OCI Registries
