@@ -69,22 +69,26 @@ It comes from our own registry, so run `docker login registry.distr.sh` with the
 The smoothest way to run a paid plan is to deploy the stack with Distr itself, through a [Docker agent](/docs/agents/docker-agent/) on the target VM.
 The agent then handles the rollout of new Distr versions, configures registry credentials and injects the license key for you: the `enterprise`, `enterprise-aws` and `enterprise-gcp` stacks ship `LICENSE_KEY={{ index .LicenseKeys "Distr" }}` in their `.env`, which the agent resolves at deploy time from the [license key](/docs/platform/license-keys/) named `Distr`.
 
-Those three stacks reference their credentials as [Distr Secrets](/docs/agents/secrets/) in the same way, so no value ever lives in the `.env` file itself.
+Those three stacks reference their credentials as [Distr Secrets](/docs/agents/secrets/) in the same way, so the file you version and ship holds references and the agent resolves them into the `.env` it writes on the target.
 Create the secrets your stack needs before the first deployment, since the agent fails a deployment that references a secret the organization does not have:
 
-| Secret                          | `enterprise` | `enterprise-aws` | `enterprise-gcp` |
-| ------------------------------- | ------------ | ---------------- | ---------------- |
-| `JWT_SECRET`                    | yes          | yes              | yes              |
-| `DATABASE_ENCRYPTION_KEY`       | yes          | yes              | yes              |
-| `POSTGRES_PASSWORD`             | yes          | no               | no               |
-| `RUSTFS_SECRET_KEY`             | yes          | no               | no               |
-| `REGISTRY_S3_SECRET_ACCESS_KEY` | no           | yes              | yes              |
-| `LOKI_S3_SECRET_ACCESS_KEY`     | no           | yes              | no               |
+| Secret                          | `enterprise` | `enterprise-aws`  | `enterprise-gcp`  |
+| ------------------------------- | ------------ | ----------------- | ----------------- |
+| `JWT_SECRET`                    | yes          | yes               | yes               |
+| `DATABASE_ENCRYPTION_KEY`       | yes          | yes               | yes               |
+| `POSTGRES_PASSWORD`             | yes          | in `DATABASE_URL` | in `DATABASE_URL` |
+| `RUSTFS_SECRET_KEY`             | yes          | no                | no                |
+| `REGISTRY_S3_SECRET_ACCESS_KEY` | no           | yes               | yes               |
+| `LOKI_S3_SECRET_ACCESS_KEY`     | no           | yes               | no                |
 
-The `enterprise` stack needs neither of the last two: its object storage is the RustFS container, whose single root credential is `RUSTFS_SECRET_KEY`, and both the registry and Loki authenticate with it.
-The two external-storage stacks have no `POSTGRES_PASSWORD`, since their whole connection string is one `DATABASE_URL`. Reference a secret from inside that URL instead.
+RustFS has one root credential, so in the `enterprise` stack the registry and Loki both authenticate with `RUSTFS_SECRET_KEY`.
+The other two have no `POSTGRES_PASSWORD` variable: reference it from inside `DATABASE_URL`, which ships empty because only you know the host.
 
-Running one of these stacks by hand means replacing every reference with the value itself first, which is what the AWS and GCP `.env` examples below show.
+```dotenv
+DATABASE_URL="postgres://distr:{{ .Secrets.POSTGRES_PASSWORD }}@db.example.com:5432/distr?sslmode=require"
+```
+
+Deploying a stack by hand means replacing every reference with its value, as the AWS and GCP examples below do.
 :::
 
 ### Distr Enterprise on AWS
