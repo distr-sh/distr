@@ -297,6 +297,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         starlightLinksValidator({
           exclude: [
             '/',
+            '/compare/**',
             '/contact/',
             '/pricing/',
             '/blog/**',

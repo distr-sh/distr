@@ -3,6 +3,7 @@ import {getCollection, render} from 'astro:content';
 import Layout from '~/layouts/StarlightLayout.astro';
 import SignUpCta from '~/components/cta/standalone/SignUpCta.astro';
 import CompareHero from '~/components/compare/CompareHero.astro';
+import FAQ from '~/components/common/FAQ.astro';
 import TestimonialsSection from '~/components/home/TestimonialsSection.astro';
 
 export async function getStaticPaths() {
@@ -15,7 +16,8 @@ export async function getStaticPaths() {
 
 const {comparison} = Astro.props;
 const {Content} = await render(comparison);
-const {title, description, heroImage} = comparison.data;
+const {title, description, heroImage, heading, subheading, faqs} =
+  comparison.data;
 ---
 
 <style>
@@ -36,6 +38,21 @@ const {title, description, heroImage} = comparison.data;
       margin-top: 2rem;
     }
   }
+
+  /* Starlight scales link buttons up above 50rem, which is too heavy for a link
+     that closes every section. Keep the compact size and centre it in the column. */
+  .prose :global(a.sl-link-button) {
+    display: flex;
+    width: fit-content;
+    margin-inline: auto;
+    font-size: var(--sl-text-sm);
+    padding: 0.4375rem 1.125rem;
+  }
+
+  /* MDX wraps the label in a paragraph, which would add the prose margins to it. */
+  .prose :global(a.sl-link-button p) {
+    margin: 0;
+  }
 </style>
 
 <Layout title={title} description={description}>
@@ -46,6 +63,8 @@ const {title, description, heroImage} = comparison.data;
           title={title}
           description={description}
           heroImage={heroImage}
+          heading={heading}
+          subheading={subheading}
         />
 
         <div
@@ -68,6 +87,7 @@ const {title, description, heroImage} = comparison.data;
       </article>
     </section>
   </div>
+  {faqs.length > 0 && <FAQ faqs={faqs} />}
   <SignUpCta bgClass="bg-[var(--sl-color-bg)]" />
   <TestimonialsSection />
 </Layout>

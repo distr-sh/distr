@@ -1,0 +1,24 @@
+---
+export interface Props {
+  class?: string;
+}
+
+const {class: className = ''} = Astro.props;
+---
+
+<div
+  class:list={[
+    'not-content not-prose flex flex-col sm:flex-row gap-4 justify-center items-center',
+    className,
+  ]}>
+  <a
+    href="/pricing/"
+    class="inline-flex w-full sm:w-auto items-center justify-center rounded-lg border-2 border-accent-700 bg-accent-700 px-6 py-3 text-base font-medium text-white no-underline transition-colors hover:bg-accent-800 dark:border-accent-600 dark:bg-accent-600 dark:hover:bg-accent-700">
+    Start with Distr
+  </a>
+  <a
+    href="/docs/"
+    class="inline-flex w-full sm:w-auto items-center justify-center rounded-lg border-2 border-gray-300 px-6 py-3 text-base font-medium text-gray-900 no-underline transition-colors hover:border-gray-400 dark:border-slate-600 dark:text-white dark:hover:border-slate-500">
+    View the documentation
+  </a>
+</div>
