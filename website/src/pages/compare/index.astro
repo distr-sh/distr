@@ -1,6 +1,12 @@
 ---
+import {getCollection} from 'astro:content';
 import Layout from '~/layouts/StarlightLayout.astro';
 import SignUpCta from '~/components/cta/standalone/SignUpCta.astro';
+import CompareCard from '~/components/compare/CompareCard.astro';
+
+const comparisons = (await getCollection('compare')).sort((a, b) =>
+  a.data.competitor.localeCompare(b.data.competitor),
+);
 ---
 
 <Layout
@@ -19,21 +25,18 @@ import SignUpCta from '~/components/cta/standalone/SignUpCta.astro';
         </p>
 
         <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <a
-            href="/compare/replicated/"
-            class="block p-6 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-400 transition-colors no-underline">
-            <h2
-              class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Distr vs Replicated
-            </h2>
-            <p class="text-gray-600 dark:text-gray-400">
-              Compare Distr with Replicated, a mature software distribution
-              platform
-            </p>
-          </a>
+          {
+            comparisons.map(comparison => (
+              <CompareCard
+                competitor={comparison.data.competitor}
+                teaser={comparison.data.teaser}
+                slug={comparison.data.slug}
+              />
+            ))
+          }
         </div>
       </div>
     </section>
   </div>
-  <SignUpCta />
+  <SignUpCta bgClass="bg-[var(--sl-color-bg)]" />
 </Layout>

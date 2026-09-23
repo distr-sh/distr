@@ -65,6 +65,23 @@ export const CraGuideConfigSchema = z.object({
     .optional(),
 });
 
+export const CompareConfigSchema = ({image}: SchemaContext) =>
+  z.object({
+    title: z.string(),
+    description: z.string(),
+    slug: z.string(),
+    competitor: z.string(),
+    teaser: z.string(),
+    heroImage: image(),
+    // `title` and `description` are the SEO title and meta description. Set these
+    // when the visible headline has to read differently from them.
+    heading: z.string().optional(),
+    subheading: z.string().optional(),
+    faqs: z
+      .array(z.object({question: z.string(), answer: z.string()}))
+      .default([]),
+  });
+
 export const CustomerConfigSchema = ({image}: SchemaContext) =>
   z.object({
     company: z.string(),
@@ -115,6 +132,10 @@ export const collections = {
   cra: defineCollection({
     loader: glob({pattern: '**/*.{md,mdx}', base: 'src/content/cra'}),
     schema: CraGuideConfigSchema,
+  }),
+  compare: defineCollection({
+    loader: glob({pattern: '**/*.{md,mdx}', base: 'src/content/compare'}),
+    schema: CompareConfigSchema,
   }),
 };
 

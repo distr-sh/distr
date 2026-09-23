@@ -23,6 +23,8 @@ import (
 
 var helmEnvSettings = cli.New()
 
+const helmUpgradeInstallTimeout = 10 * time.Minute
+
 func GetHelmActionConfig(
 	ctx context.Context,
 	namespace string,
@@ -118,7 +120,7 @@ func RunHelmInstall(
 		installAction.WaitStrategy = kube.WaitStrategy(deployment.HelmOptions.WaitStrategy)
 		installAction.RollbackOnFailure = deployment.HelmOptions.RollbackOnFailure
 	} else {
-		installAction.Timeout = 5 * time.Minute
+		installAction.Timeout = helmUpgradeInstallTimeout
 		installAction.WaitStrategy = kube.StatusWatcherStrategy
 		installAction.RollbackOnFailure = true
 	}
@@ -177,7 +179,7 @@ func RunHelmUpgrade(
 		upgradeAction.ForceConflicts = deployment.HelmOptions.ForceConflicts
 	} else {
 		logger.Debug("settings default helm options")
-		upgradeAction.Timeout = 5 * time.Minute
+		upgradeAction.Timeout = helmUpgradeInstallTimeout
 		upgradeAction.WaitStrategy = kube.StatusWatcherStrategy
 		upgradeAction.RollbackOnFailure = true
 		upgradeAction.CleanupOnFail = true

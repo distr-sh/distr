@@ -82,6 +82,16 @@ distr:
       value: 'true'
     - name: REGISTRY_S3_ALLOW_REDIRECT
       value: 'false'
+    # What a single client IP may pull from public artifacts without credentials, per replica.
+    # A value of 0 disables the limit it stands for.
+    # - name: REGISTRY_ANONYMOUS_MANIFEST_RATE_LIMIT_PER_MINUTE
+    #   value: '10'
+    # - name: REGISTRY_ANONYMOUS_MANIFEST_RATE_LIMIT_PER_HOUR
+    #   value: '30'
+    # - name: REGISTRY_ANONYMOUS_BLOB_RATE_LIMIT_PER_MINUTE
+    #   value: '60'
+    # - name: REGISTRY_ANONYMOUS_BLOB_RATE_LIMIT_PER_HOUR
+    #   value: '300'
     # Set of variables required to use GCP as a S3 compatible backend
     # - name: REGISTRY_S3_REQUEST_CHECKSUM_CALCULATION
     #   value: 'true'

@@ -98,6 +98,8 @@ The agent runs the following loop at the interval defined by `DISTR_INTERVAL` (d
 3. Install or upgrade Helm releases that are in the list. If images need pulling, the agent reports status `PROGRESSING`.
 4. Send the Helm output to `DISTR_STATUS_ENDPOINT`, reporting the deployment's status.
 
+An install or upgrade that has not finished after 10 minutes is reported as an error rather than left in `PROGRESSING`. The deployment's Helm options set that timeout per deployment.
+
 All requests are authenticated with a JWT token obtained from `DISTR_LOGIN_ENDPOINT`.
 
 ## Altering the Helm Release

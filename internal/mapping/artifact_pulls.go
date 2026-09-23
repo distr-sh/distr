@@ -9,6 +9,7 @@ func ArtifactVersionPullToAPI(pull types.ArtifactVersionPull) api.ArtifactVersio
 	response := api.ArtifactVersionPullResponse{
 		CreatedAt:       pull.CreatedAt,
 		RemoteAddress:   pull.RemoteAddress,
+		Anonymous:       pull.Anonymous,
 		Artifact:        pull.Artifact,
 		ArtifactVersion: pull.ArtifactVersion,
 	}

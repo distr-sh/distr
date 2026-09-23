@@ -24,7 +24,7 @@ const (
 type Authorizer interface {
 	Authorize(ctx context.Context, name string, action Action) error
 	AuthorizeReference(ctx context.Context, name string, reference string, action Action) error
-	AuthorizeBlob(ctx context.Context, digest digest.Digest, action Action) error
+	AuthorizeBlob(ctx context.Context, name string, digest digest.Digest, action Action) error
 }
 
 type authorizer struct{}
@@ -55,34 +55,61 @@ func authorizeWrite(auth authinfo.AuthInfoWithOrganization) error {
 	return nil
 }
 
+// authorizeAnonymous is the only thing a request without credentials may do: read an artifact that
+// its organization has made public.
+func authorizeAnonymous(ctx context.Context, n *name.Name, action Action) error {
+	if action != ActionRead && action != ActionStat {
+		return ErrAuthenticationRequired
+	} else if artifact, err := db.GetArtifactByName(ctx, n.OrgName, n.ArtifactName); err != nil {
+		if errors.Is(err, apierrors.ErrNotFound) {
+			return ErrAuthenticationRequired
+		}
+		return err
+	} else if !artifact.Public {
+		return ErrAuthenticationRequired
+	}
+	return nil
+}
+
+// authorizeUpstreamWrite rejects a push to a pull-through cache artifact.
+func authorizeUpstreamWrite(ctx context.Context, n *name.Name) error {
+	if artifact, err := db.GetArtifactByName(ctx, n.OrgName, n.ArtifactName); err != nil {
+		if !errors.Is(err, apierrors.ErrNotFound) {
+			return err
+		}
+	} else if artifact.UpstreamURL != nil {
+		return NewErrAccessDenied("cannot push to a pull-through cache artifact")
+	}
+	return nil
+}
+
 // Authorize implements ArtifactsAuthorizer.
 func (a *authorizer) Authorize(ctx context.Context, nameStr string, action Action) error {
-	auth := auth.ArtifactsAuthentication.Require(ctx)
+	n, err := name.Parse(nameStr)
+	if err != nil {
+		return err
+	}
+
+	principal, ok := auth.ArtifactsPrincipal(ctx)
+	if !ok {
+		return authorizeAnonymous(ctx, n, action)
+	}
 
 	if action == ActionWrite {
-		if err := authorizeWrite(auth); err != nil {
+		if err := authorizeWrite(principal); err != nil {
 			return err
 		}
 	}
 
-	org := auth.CurrentOrg()
-	n, err := name.Parse(nameStr)
-	if err != nil {
-		return err
-	} else if org.Slug == nil {
+	org := principal.CurrentOrg()
+	if org.Slug == nil {
 		return NewErrAccessDenied("organization has no slug")
 	} else if *org.Slug != n.OrgName {
 		return NewErrAccessDenied("organization slug does not match reference")
 	}
 
 	if action == ActionWrite {
-		if artifact, err := db.GetArtifactByName(ctx, n.OrgName, n.ArtifactName); err != nil {
-			if !errors.Is(err, apierrors.ErrNotFound) {
-				return err
-			}
-		} else if artifact.UpstreamURL != nil {
-			return NewErrAccessDenied("cannot push to a pull-through cache artifact")
-		}
+		return authorizeUpstreamWrite(ctx, n)
 	}
 
 	return nil
@@ -90,43 +117,45 @@ func (a *authorizer) Authorize(ctx context.Context, nameStr string, action Actio
 
 // AuthorizeReference implements ArtifactsAuthorizer.
 func (a *authorizer) AuthorizeReference(ctx context.Context, nameStr string, reference string, action Action) error {
-	auth := auth.ArtifactsAuthentication.Require(ctx)
+	n, err := name.Parse(nameStr)
+	if err != nil {
+		return err
+	}
+
+	principal, ok := auth.ArtifactsPrincipal(ctx)
+	if !ok {
+		return authorizeAnonymous(ctx, n, action)
+	}
 
 	if action == ActionWrite {
-		if err := authorizeWrite(auth); err != nil {
+		if err := authorizeWrite(principal); err != nil {
 			return err
 		}
 	}
 
-	org := auth.CurrentOrg()
-	if n, err := name.Parse(nameStr); err != nil {
-		return err
-	} else if org.Slug == nil {
+	org := principal.CurrentOrg()
+	if org.Slug == nil {
 		return NewErrAccessDenied("organization has no slug")
 	} else if *org.Slug != n.OrgName {
 		return NewErrAccessDenied("organization slug does not match reference")
-	} else if action != ActionWrite && auth.CurrentCustomerOrgID() != nil {
-		if org.HasFeature(types.FeatureLicensing) {
-			err := db.CheckEntitlementForArtifact(ctx,
-				n.OrgName,
-				n.ArtifactName,
-				reference,
-				*auth.CurrentCustomerOrgID(),
-				*auth.CurrentOrgID(),
-			)
-			if errors.Is(err, apierrors.ErrForbidden) {
-				return NewErrAccessDenied("entitlement required")
-			} else if err != nil {
-				return err
-			}
-		}
-	} else if action == ActionWrite {
-		if artifact, err := db.GetArtifactByName(ctx, n.OrgName, n.ArtifactName); err != nil {
-			if !errors.Is(err, apierrors.ErrNotFound) {
-				return err
-			}
-		} else if artifact.UpstreamURL != nil {
-			return NewErrAccessDenied("cannot push to a pull-through cache artifact")
+	}
+
+	if action == ActionWrite {
+		return authorizeUpstreamWrite(ctx, n)
+	}
+
+	if principal.CurrentCustomerOrgID() != nil && org.HasFeature(types.FeatureLicensing) {
+		err := db.CheckEntitlementForArtifact(ctx,
+			n.OrgName,
+			n.ArtifactName,
+			reference,
+			*principal.CurrentCustomerOrgID(),
+			*principal.CurrentOrgID(),
+		)
+		if errors.Is(err, apierrors.ErrForbidden) {
+			return NewErrAccessDenied("entitlement required")
+		} else if err != nil {
+			return err
 		}
 	}
 
@@ -134,15 +163,44 @@ func (a *authorizer) AuthorizeReference(ctx context.Context, nameStr string, ref
 }
 
 // AuthorizeBlob implements ArtifactsAuthorizer.
-func (a *authorizer) AuthorizeBlob(ctx context.Context, digest digest.Digest, action Action) error {
-	auth := auth.ArtifactsAuthentication.Require(ctx)
+func (a *authorizer) AuthorizeBlob(
+	ctx context.Context,
+	nameStr string,
+	digest digest.Digest,
+	action Action,
+) error {
+	n, err := name.Parse(nameStr)
+	if err != nil {
+		return err
+	}
+
+	principal, ok := auth.ArtifactsPrincipal(ctx)
+	if !ok {
+		// The blob route carries the repository name, so an anonymous caller is held to the artifact
+		// it names rather than to any artifact of the organization that references the digest.
+		if action != ActionRead && action != ActionStat {
+			return ErrAuthenticationRequired
+		} else if belongs, err := db.ArtifactBlobBelongsToPublicArtifact(
+			ctx, n.OrgName, n.ArtifactName, digest.String(),
+		); err != nil {
+			return err
+		} else if !belongs {
+			return ErrAuthenticationRequired
+		}
+		return nil
+	}
 
 	// For writes we skip ownership checks: the push may (re)associate this digest with the org, even if it already exists.
 	if action == ActionWrite {
-		return authorizeWrite(auth)
+		return authorizeWrite(principal)
 	}
 
-	org := auth.CurrentOrg()
+	org := principal.CurrentOrg()
+	if org.Slug == nil {
+		return NewErrAccessDenied("organization has no slug")
+	} else if *org.Slug != n.OrgName {
+		return NewErrAccessDenied("organization slug does not match reference")
+	}
 
 	if belongs, err := db.ArtifactBlobBelongsToOrg(ctx, org.ID, digest.String()); err != nil {
 		return err
@@ -150,8 +208,9 @@ func (a *authorizer) AuthorizeBlob(ctx context.Context, digest digest.Digest, ac
 		return apierrors.ErrNotFound
 	}
 
-	if auth.CurrentCustomerOrgID() != nil && org.HasFeature(types.FeatureLicensing) {
-		err := db.CheckEntitlementForArtifactBlob(ctx, digest.String(), *auth.CurrentCustomerOrgID(), *auth.CurrentOrgID())
+	if principal.CurrentCustomerOrgID() != nil && org.HasFeature(types.FeatureLicensing) {
+		err := db.CheckEntitlementForArtifactBlob(
+			ctx, digest.String(), n.ArtifactName, *principal.CurrentCustomerOrgID(), *principal.CurrentOrgID())
 		if errors.Is(err, apierrors.ErrForbidden) {
 			return NewErrAccessDenied("entitlement required")
 		} else if err != nil {

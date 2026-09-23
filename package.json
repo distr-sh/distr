@@ -1,6 +1,6 @@
 {
   "name": "@distr-sh/distr",
-  "version": "4.0.3",
+  "version": "4.1.0",
   "type": "module",
   "license": "Apache-2.0",
   "description": "Distr",
@@ -63,6 +63,8 @@
     "@angular/build": "^22.0.8",
     "@angular/cli": "^22.0.8",
     "@angular/compiler-cli": "^22.0.8",
+    "@angular/language-server": "^22.0.8",
+    "@angular/language-service": "^22.0.8",
     "@sentry/cli": "^3.6.2",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/semver": "^7.7.1",

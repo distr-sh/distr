@@ -65,22 +65,6 @@ export default defineConfig({
         baseUrl: 'https://github.com/distr-sh/distr/tree/main/website',
       },
       lastUpdated: true,
-      head:
-        process.env.NODE_ENV === 'production'
-          ? [
-              {
-                tag: 'script',
-                attrs: {
-                  type: 'text/javascript',
-                },
-                content: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-T58STPCJ');`,
-              },
-            ]
-          : [],
       description: 'Open Source Software Distribution Platform',
       logo: {
         src: './src/assets/distr.svg',
@@ -297,6 +281,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         starlightLinksValidator({
           exclude: [
             '/',
+            '/compare/**',
             '/contact/',
             '/pricing/',
             '/blog/**',

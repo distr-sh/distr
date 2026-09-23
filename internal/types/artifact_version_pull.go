@@ -9,8 +9,10 @@ import (
 type ArtifactVersionPull struct {
 	CreatedAt     time.Time
 	RemoteAddress *string
+	// Anonymous says the pull came without credentials, which only a public artifact allows.
+	Anonymous bool
 	// UserAccount is nil when an agent pulled the artifact with its own token, in which case
-	// DeploymentTarget identifies it instead.
+	// DeploymentTarget identifies it instead, and when the pull was anonymous.
 	UserAccount          *UserAccount
 	CustomerOrganization *CustomerOrganization
 	DeploymentTarget     *ArtifactPullDeploymentTarget
@@ -44,6 +46,7 @@ type ArtifactVersionPullFilter struct {
 	Count                  int
 	CustomerOrganizationID *uuid.UUID
 	UserAccountID          *uuid.UUID
+	Anonymous              bool
 	RemoteAddress          *string
 	ArtifactID             *uuid.UUID
 	ArtifactVersionID      *uuid.UUID

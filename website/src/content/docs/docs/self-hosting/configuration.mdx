@@ -146,6 +146,21 @@ See [Registry Configuration](/docs/registry/configuration/) for a feature overvi
 | `REGISTRY_UPSTREAM_SYNC_CRON`              | no                  | —       | Cron schedule for syncing tags from upstream registries (pull-through cache).      |
 | `REGISTRY_UPSTREAM_SYNC_TIMEOUT`           | no                  | `10m`   | Timeout for a single upstream sync run.                                            |
 
+### Anonymous pull rate limits
+
+These limit what a single client IP address may pull from [public
+artifacts](/docs/registry/#public-artifacts) without credentials. Authenticated pulls are not rate
+limited. A value of `0` disables the limit it stands for. The limits are counted per Distr replica
+and in memory, so they reset on a rollout and a client spread across replicas may exceed them by up
+to a factor of the replica count.
+
+| Variable                                            | Required | Default | Description                                                  |
+| --------------------------------------------------- | -------- | ------- | ------------------------------------------------------------ |
+| `REGISTRY_ANONYMOUS_MANIFEST_RATE_LIMIT_PER_MINUTE` | no       | `10`    | Anonymous manifest and tag list requests per IP, per minute. |
+| `REGISTRY_ANONYMOUS_MANIFEST_RATE_LIMIT_PER_HOUR`   | no       | `30`    | Anonymous manifest and tag list requests per IP, per hour.   |
+| `REGISTRY_ANONYMOUS_BLOB_RATE_LIMIT_PER_MINUTE`     | no       | `60`    | Anonymous blob requests per IP, per minute.                  |
+| `REGISTRY_ANONYMOUS_BLOB_RATE_LIMIT_PER_HOUR`       | no       | `300`   | Anonymous blob requests per IP, per hour.                    |
+
 ## Custom Domains
 
 Custom domain self-service lets vendor organizations serve Distr under their own domains.

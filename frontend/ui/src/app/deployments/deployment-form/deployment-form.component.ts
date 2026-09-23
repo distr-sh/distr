@@ -147,7 +147,7 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
     automaticApplicationUpdatesEnabled: this.fb.control(false),
     helmOptionsEnabled: this.fb.control(false),
     helmOptions: this.fb.group({
-      timeout: this.fb.control('15m', [Validators.required, Validators.pattern(DURATION_REGEX)]),
+      timeout: this.fb.control('10m', [Validators.required, Validators.pattern(DURATION_REGEX)]),
       waitStrategy: this.fb.control('watcher', [Validators.required]),
       rollbackOnFailure: this.fb.control(true),
       cleanupOnFailure: this.fb.control(true),
