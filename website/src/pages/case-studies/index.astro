@@ -4,7 +4,7 @@ import {Image} from 'astro:assets';
 import StarlightLayout from '~/layouts/StarlightLayout.astro';
 import SignUpCta from '~/components/cta/standalone/SignUpCta.astro';
 import NewsletterSection from '~/components/home/NewsletterSection.astro';
-import {Icon} from 'astro-icon/components';
+import LinkButton from '~/components/overwrites/LinkButton.astro';
 import MetricsSection from '~/components/home/MetricsSection.astro';
 
 const title = 'Case Studies';
@@ -85,10 +85,9 @@ const customers = (await getCollection('customers')).sort((a, b) =>
                     </p>
                   </div>
                   {caseStudy && (
-                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-br from-[#00b5eb] to-[#63c5e3] text-white font-medium text-sm hover:shadow-lg transition-all duration-300 hover:scale-105 whitespace-nowrap">
+                    <LinkButton icon="lucide:arrow-right" iconPlacement="end">
                       Read case study
-                      <Icon name="lucide:arrow-right" class="w-4 h-4" />
-                    </div>
+                    </LinkButton>
                   )}
                 </div>
               </Wrapper>

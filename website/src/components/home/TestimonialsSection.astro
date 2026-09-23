@@ -1,7 +1,7 @@
 ---
 import {getCollection} from 'astro:content';
 import {Image} from 'astro:assets';
-import {Icon} from 'astro-icon/components';
+import LinkButton from '~/components/overwrites/LinkButton.astro';
 
 const customers = (await getCollection('customers', c => c.data.featured)).sort(
   (a, b) => a.data.company.localeCompare(b.data.company),
@@ -83,13 +83,13 @@ const MIN_CARDS_PER_ROW = 10;
                           </p>
                         </div>
                         {testimonial.caseStudyUrl && (
-                          <a
+                          <LinkButton
                             href={testimonial.caseStudyUrl}
                             tabindex={copyIndex === 0 ? undefined : -1}
-                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-br from-[#00b5eb] to-[#63c5e3] text-white font-medium text-sm hover:shadow-lg transition-all duration-300 hover:scale-105 whitespace-nowrap">
+                            icon="lucide:arrow-right"
+                            iconPlacement="end">
                             Read case study
-                            <Icon name="lucide:arrow-right" class="w-4 h-4" />
-                          </a>
+                          </LinkButton>
                         )}
                       </div>
                     </div>

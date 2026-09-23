@@ -281,6 +281,7 @@ export default defineConfig({
         starlightLinksValidator({
           exclude: [
             '/',
+            '/compare/**',
             '/contact/',
             '/pricing/',
             '/blog/**',

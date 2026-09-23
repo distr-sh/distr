@@ -1,328 +1,405 @@
 ---
-title: 'Replicated Alternative 2026: Distr (Open Source, $80/mo)'
-description: "Distr is the open-source Replicated alternative. Supports Docker Compose + Kubernetes. Starts at $80/mo vs Replicated's $2,000/mo. Full feature comparison."
+title: 'Replicated Alternative 2026: Distr vs Replicated'
+description: 'Distr is an open-source Replicated alternative for Docker Compose and Kubernetes distribution, offline licensing, air-gapped environments and self-hosting.'
 slug: replicated
 competitor: Replicated
-teaser: 'Compare Distr with Replicated, a mature software distribution platform'
+teaser: 'Compare Docker Compose and Kubernetes distribution, air-gapped workflows, licensing, self-hosting and pricing.'
 heroImage: '/src/assets/compare/replicated.png'
+heading: Distr vs Replicated for Self-Hosted Software Distribution
+subheading: 'Distr and Replicated both provide the core capabilities required to distribute commercial software to customer-controlled environments.'
+faqs:
+  - question: Is Distr easier for customers to install?
+    answer: |
+      <p>Distr provides a guided installation workflow.</p>
+      <p>The vendor defines the required configuration fields in the application template. The customer sees only those fields, enters the values for its environment and receives a generated installation command.</p>
+      <p>The customer does not need to edit the vendor's Docker Compose file or Helm chart. The Distr agent handles registry authentication, application configuration, deployment, updates, status reporting, logs and health information.</p>
+  - question: Does Distr provide a customer portal?
+    answer: |
+      <p>Yes. Distr provides a simplified, white-labeled Customer Portal.</p>
+      <p>Vendors control which sections customers can access, including deployments, artifacts, licenses, secrets, alerts, support bundles, documentation, logs and metrics.</p>
+  - question: Can Distr help vendors get POCs live faster?
+    answer: |
+      <p>Yes. Vendors can distribute applications with Docker Compose to standard Linux virtual machines when the application does not require Kubernetes.</p>
+      <p>The prospect completes the vendor-defined setup form and runs the generated installation command. This avoids cluster provisioning and lets the prospect begin evaluating the application sooner.</p>
+  - question: Does the customer decide between Docker Compose and Kubernetes?
+    answer: |
+      <p>The vendor defines the supported distribution formats for the application.</p>
+      <p>A vendor can offer Docker Compose, Helm or both. Docker Compose suits fast POCs and single-server installations, while Helm fits customers that already operate Kubernetes. The customer follows the installation path provided for its environment.</p>
+  - question: Is Docker Compose a replacement for Embedded Cluster?
+    answer: |
+      <p>Docker Compose is an alternative when the application does not require Kubernetes-specific capabilities.</p>
+      <p>Instead of provisioning and maintaining a cluster for one application, the vendor can distribute the software as a Docker Compose application on a Linux host.</p>
+      <p>If the application depends on Kubernetes, Replicated Embedded Cluster remains a valid option for customers that do not already operate a cluster.</p>
+  - question: Does Distr fully support Kubernetes?
+    answer: |
+      <p>Yes. Distr installs and updates Helm applications through its Kubernetes agent. It supports cluster-scoped and namespace-scoped agents, application versions, release automation, registry authentication, customer entitlements, deployment history, logs, metrics, air-gapped distribution and compatibility reports.</p>
+  - question: Does Distr fit into enterprise CI/CD pipelines?
+    answer: |
+      <p>Yes. Enterprise customers can pull Helm charts, container images and other artifacts from Distr's OCI registry and incorporate them into their existing CI/CD and deployment workflows.</p>
+      <p>This allows customers to retain their established artifact promotion, security review and deployment processes while using Distr for software distribution, customer entitlements and authenticated artifact access.</p>
 ---
 
-import CompareVerdict from '~/components/compare/CompareVerdict.astro';
+import LinkButton from '~/components/overwrites/LinkButton.astro';
 import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
-
-## Introduction: Two Approaches to Modern Software Distribution
-
-Software distribution has evolved beyond simple downloads and installation
-scripts. Today's enterprises demand sophisticated deployment options, from
-air-gapped environments to cloud-native architectures, while maintaining
-security, compliance, and control.
-
-Distr and Replicated represent two distinct philosophies in solving these
-distribution challenges. While both platforms enable vendors to deliver
-applications to customer-controlled environments, they differ significantly in
-their architectural approach, flexibility, and target markets.
-
-This comparison examines both platforms objectively to help software vendors
-make informed decisions based on their specific requirements, technical stack,
-and customer needs.
 
 ## Executive Summary
 
-Distr is an open-source software distribution platform that emphasizes
-flexibility and gradual adoption. It supports both Docker Compose and Kubernetes
-deployments, offers a built-in OCI registry, and provides multiple distribution
-models (registry-only, pull, and push).
+Distr and Replicated overlap substantially for Kubernetes software distribution.
+Both platforms can distribute Kubernetes applications, manage releases, control
+customer access, issue license entitlements, support air-gapped installations,
+collect operational data and give customers a portal for managing their
+software.
 
-Replicated is an enterprise-grade distribution platform focused on
-Kubernetes-native deployments with comprehensive enterprise features including
-embedded clusters, compatibility matrices, and extensive pre-flight checks.
+The main differences are:
 
-Both platforms serve the growing need for self-hosted software deployment, but
-target different segments of the market with distinct architectural
-philosophies.
+- Distr supports Docker Compose, Docker Swarm and Kubernetes from one platform.
+- Distr provides a guided installation flow with vendor-defined configuration fields and a generated installation command.
+- Distr is open source and can be self-hosted.
+- Distr publishes pricing that scales with internal users and customer organizations.
+- Replicated can provision an embedded Kubernetes cluster.
+- Replicated has a longer operating history and a larger provisioned-cluster compatibility-testing service.
 
-## Platform Philosophy and Architecture
+Distr adds native Docker Compose and Docker Swarm distribution. Vendors can
+support a customer running one Linux server and another customer running
+Kubernetes without building separate distribution systems.
 
-### Distr: Flexibility-First Architecture
+Distr also provides a guided installation experience. Vendors define the
+required configuration in a reusable template and expose only the values each
+customer must provide. The customer completes a focused setup form and receives
+a generated command for installing the application.
 
-Distr embraces a dual-runtime approach that meets teams where they are
-technically. The platform natively supports both Docker Compose and Kubernetes,
-recognizing that the path from proof-of-concept to production rarely follows a
-straight line.
+Distr is open source and can run in Distr Cloud or can be self-hosted. Pricing is published and scales with internal users and customer
+organizations.
 
-#### Start with Docker Compose, Scale to Kubernetes
+Replicated provides a comparable Kubernetes distribution workflow, a longer
+operating history and an Embedded Cluster installer that provisions Kubernetes
+together with the application on a customer's virtual machine or bare-metal
+server. Replicated also runs a larger compatibility-testing service that
+provisions real clusters across Kubernetes distributions and versions.
 
-The Docker Compose support enables vendors to validate their distribution
-strategy in hours rather than weeks. A single VM running Docker Compose can
-demonstrate the entire distribution workflow, from artifact delivery to license
-management to deployment updates. This approach particularly resonates with
-teams who need to show value quickly to their first enterprise customers before
-investing in Kubernetes infrastructure.
+For vendors that already package applications with Helm, Distr and Replicated
+address many of the same requirements. The decision comes down to Docker
+support, installation experience, platform control, pricing, embedded
+Kubernetes and the type of compatibility testing required.
 
-As deployments mature, the same distribution platform seamlessly handles
-Kubernetes deployments without requiring architectural changes. Vendors can
-serve customers across the technical spectrum: startups running Docker Compose
-on single VMs, mid-market companies with Docker Swarm clusters, and enterprises
-with sophisticated Kubernetes environments.
+## Why Vendors Choose Distr
 
-#### Progressive Deployment Models
+### A Simpler Installation Experience for Vendors and Customers
 
-The architecture supports three deployment models that vendors can adopt based
-on their customer relationships:
+Distr separates application configuration from customer installation.
 
-- **Registry Mode:** Start by using Distr purely as an artifact registry with
-  built-in licensing. Perfect for vendors whose customers have established
-  deployment processes but need secure artifact access.
-- **Pull Mode:** Enable customers to control their update cadence while
-  providing vendors with deployment visibility and metrics. Ideal for
-  security-conscious enterprises who mandate control over their environments.
-- **Push Mode:** Take active control of deployments in shared-responsibility
-  scenarios such as BYOC (Bring Your Own Cloud) or managed private cloud
-  offerings. Essential for vendors who need to ensure consistent deployments
-  across their customer base.
+The vendor creates the application template and decides which configuration
+values a customer must provide. These can include domain names, credentials,
+storage settings, feature options and application-specific values.
 
-This flexibility proves valuable in practice. Teams distributing legacy system
-modernization tools can start with simple Docker Compose deployments for
-proof-of-concepts, then gradually introduce Kubernetes as customers scale.
-Similarly, AI and data analytics companies can quickly deploy single-container
-solutions for evaluation while maintaining the option to scale to distributed
-architectures as data volumes grow.
+The customer sees a focused setup form containing only those vendor-defined
+fields. The customer does not need to edit a Docker Compose file, modify a Helm
+chart or understand the application's complete internal configuration.
 
-The open-source foundation ensures that vendors and their customers can inspect,
-audit, and if necessary, modify the distribution platform to meet specific
-requirements, from compliance needs in regulated industries to custom
-integration requirements in complex enterprise environments.
+After entering the required values, the customer receives a generated command
+that connects the environment to Distr and installs the application.
+
+The Distr agent then handles:
+
+- Registry authentication
+- Application configuration
+- Initial deployment
+- Version updates
+- Deployment status
+- Logs and metrics
+- Health reporting
+
+This gives vendors a reusable installation workflow and gives customers a guided
+path from configuration to a running application.
+
+<LinkButton
+  href="/docs/agents/deployment/"
+  variant="secondary"
+  icon="lucide:arrow-right"
+  iconPlacement="end">
+  Deployment
+</LinkButton>
+
+### A Focused, White-Labeled Customer Portal
+
+Distr gives each customer a white-labeled portal for managing its own
+environments and software.
+
+Vendors control which sections and actions customers can access. Depending on
+the application, the portal can provide:
+
+- Guided application installation
+- Deployments and updates
+- Application health
+- Logs and metrics
+- Artifacts
+- License keys
+- Secrets
+- Alerts
+- Support bundles
+- Vendor documentation
+
+Customers receive a focused view of their own environments. Vendors manage
+application versions, templates, customer access and deployment status across
+every customer from the Vendor Portal.
+
+<LinkButton
+  href="/docs/platform/customer-portal/"
+  variant="secondary"
+  icon="lucide:arrow-right"
+  iconPlacement="end">
+  Customer Portal
+</LinkButton>
 
 <TestimonialCTA name="weave" />
 
-### Replicated: Enterprise-First Architecture
+### Docker Compose and Kubernetes in One Platform
 
-Replicated takes a comprehensive, opinionated approach to software distribution.
-The platform assumes Kubernetes as the deployment target and builds extensive
-enterprise capabilities around this foundation. This includes embedded
-Kubernetes clusters for non-native environments and sophisticated compatibility
-testing frameworks.
+Distr manages Docker Compose applications on Linux servers and Helm
+applications in Kubernetes.
 
-The architecture emphasizes:
+The vendor chooses the appropriate distribution format for each application and
+customer segment. Customers do not need to make an infrastructure decision
+before they can evaluate the product.
 
-- Standardized Kubernetes deployments
-- Comprehensive pre-flight validation
-- Enterprise-grade security and compliance features
-- Mature ecosystem integrations
+A vendor can use Docker Compose to provide a simple single-server installation
+and Helm for customers that already operate Kubernetes. Both deployment models
+remain part of the same software distribution workflow.
 
-## Core Capabilities Comparison
+Distr manages installation, configuration, updates, deployment status, logs,
+metrics and application versions across both deployment environments.
 
-| Capability                    | Distr                           | Replicated                        |
-| ----------------------------- | ------------------------------- | --------------------------------- |
-| **Deployment Targets**        | Docker Compose, Kubernetes, VMs | Kubernetes (with embedded option) |
-| **Open Source**               | Full platform                   | Closed source                     |
-| **Self-Hosting**              | Native support                  | SaaS only                         |
-| **Minimum Viable Deployment** | Single container                | Kubernetes cluster                |
-| **API Access**                | Full API on all tiers           | Limited by tier                   |
-| **White Labeling**            | Available on Pro tier           | Enterprise tier                   |
-| **Air-Gapped Support**        | Native                          | Native                            |
-| **Pricing (Starts at)**       | $80/month                       | $2000/month                       |
+<LinkButton
+  href="/docs/agents/"
+  variant="secondary"
+  icon="lucide:arrow-right"
+  iconPlacement="end">
+  Deployment Agents
+</LinkButton>
 
-## Technical Deep Dive
+### Full Kubernetes Application Distribution
 
-### Container Runtime Support
+Distr does not treat Kubernetes as a secondary distribution option.
 
-Distr provides native support for both Docker Compose and Helm-based
-deployments. This dual approach serves organizations across the technical
-maturity spectrum, from startups running simple Docker Compose files to
-enterprises with complex Kubernetes architectures.
+The Kubernetes agent installs and updates Helm releases in existing clusters. It
+can run with cluster-scoped or namespace-scoped permissions, depending on the
+customer's security requirements.
 
-Replicated focuses exclusively on Kubernetes, providing embedded single-node
-clusters for environments without native Kubernetes support. This
-standardization simplifies support but requires all applications to be packaged
-as Helm charts.
+Distr also supports:
 
-### Registry and Artifact Management
+- Automatic release creation from GitHub
+- Helm application versions
+- Authenticated container image access
+- Application and artifact entitlements
+- Deployment history
+- Rollback behavior
+- Logs and deployment metrics
+- Air-gapped distribution with Zarf
+- Kubernetes compatibility reports
+- Customer-visible resources and installation information
 
-Both platforms include OCI-compliant registries, but with different emphases:
+<LinkButton
+  href="/docs/agents/kubernetes-agent/"
+  variant="secondary"
+  icon="lucide:arrow-right"
+  iconPlacement="end">
+  Kubernetes Agent
+</LinkButton>
 
-**Distr's Registry:**
+### Get POCs Live Faster Without Provisioning Kubernetes
 
-- Granular tag-level access control
-- Support for multiple artifact types (images, Helm charts, arbitrary files)
-- SBOM storage and security scanning
-- Flexible licensing tied to specific versions or tags
+Kubernetes is the right production environment for many applications. It should
+not become an installation requirement for software that can run reliably with
+Docker Compose.
 
-**Replicated's Registry:**
+Vendors can package a POC with Docker Compose and distribute it to a standard
+Linux virtual machine. The prospect completes the vendor-defined configuration
+form and runs the generated installation command.
 
-- Proxy registry capabilities
-- Focus on Helm chart distribution
-- Integration with existing registries
-- Channel-based release management
+This removes cluster provisioning and Kubernetes administration from the
+evaluation. The vendor gets the POC live faster, and the prospect can evaluate
+the product without first introducing new infrastructure.
 
-### License Management
+Distr still provides the vendor with:
 
-Distr implements license management at the artifact level, allowing vendors to
-control access to specific versions or features. Licenses can be managed
-programmatically via API or through the vendor portal.
+- Deployment visibility
+- Application updates
+- Logs and metrics
+- License enforcement
+- Customer access controls
+- Configuration management
+- Support workflows
 
-Replicated provides more sophisticated license enforcement, including seat-based
-licensing, feature flags, and expiration handling. The platform includes SDKs
-for runtime license validation within applications.
+When the production customer already operates Kubernetes, the vendor can
+distribute the Helm version through the same platform.
 
-## Deployment Scenarios
+This also gives vendors an alternative to embedded Kubernetes. If the
+application does not depend on Kubernetes-specific capabilities, Docker Compose
+can provide a smaller and easier operating model than provisioning a cluster
+solely for that application.
 
-### Multi-Product, Multi-Version Deployments
+If the application genuinely requires Kubernetes and the customer has no
+cluster, Replicated Embedded Cluster can be the better fit because it provisions
+Kubernetes together with the application.
 
-Organizations managing multiple products across various customer versions face
-unique challenges. Distr's tag-based access control and flexible licensing model
-accommodate complex version matrices without duplicating artifacts. Replicated's
-channel-based approach provides clear release tracks but may require more
-structured release management.
-
-### Bring Your Own Image (BYOI) Requirements
-
-Some enterprises mandate using their hardened base images. Distr's architecture
-naturally accommodates this through override mechanisms in both Docker Compose
-and Helm deployments. Replicated's Kubernetes-centric approach requires
-packaging applications as Helm charts with configurable image sources.
-
-### Air-Gapped and Regulated Environments
-
-Both platforms support air-gapped deployments, but implementation differs:
-
-**Distr:** Provides artifact entitlements for offline distribution, with
-optional self-hosted deployment for complete control. Open-source agents can be
-rebuilt and signed by vendors for compliance requirements.
-
-**Replicated:** Offers comprehensive air-gapped bundles with embedded Kubernetes
-if needed. The platform includes extensive pre-flight checks to validate
-environment compatibility before deployment.
-
-## Integration and Automation
-
-### CI/CD Integration
-
-Distr provides GitHub Actions and a comprehensive API for automation. Vendors
-can programmatically manage artifacts, licenses, and deployments. The platform's
-simplicity enables quick integration with existing pipelines.
-
-Replicated offers mature CI/CD integrations with extensive documentation. The
-platform includes tools for automated testing across different Kubernetes
-distributions and versions.
-
-### Customer Portal Experience
-
-Both platforms provide white-labeled customer portals, but with different focal
-points:
-
-**Distr's Portal:** Emphasizes simplicity and self-service artifact access.
-Customers can generate personal access tokens and download specific versions
-based on their licenses.
-
-**Replicated's Portal:** Provides comprehensive deployment management, including
-update scheduling, configuration management, and support bundle generation.
-
-## Pricing and Business Model
-
-### Distr's Approach
-
-Distr employs usage-based pricing that scales with your distribution needs:
-
-- Open-source self-hosted option (free forever)
-- Pro tier with license management and artifact entitlements
-- Business tier with partner management and full white label
-- Enterprise tier with custom pricing and SLAs
-
-The model allows vendors to start small and scale gradually without large
-upfront commitments.
-
-### Replicated's Approach
-
-Replicated follows a traditional enterprise software pricing model:
-
-- Substantial minimum commitments
-- Tier-based feature access
-- Annual contracts typical
-- Enterprise-focused pricing structure
-
-This model provides predictability for established vendors but may present
-barriers for emerging companies.
-
-## Operational Considerations
-
-### Time to First Deployment
-
-**Distr:** Most teams achieve their first successful deployment within hours.
-The platform's self-service nature and included onboarding support accelerate
-adoption.
-
-**Replicated:** Initial setup typically requires days to weeks, including sales
-discussions, environment setup, and Kubernetes preparation. However, the
-comprehensive setup process ensures enterprise readiness.
+<LinkButton
+  href="/docs/agents/docker-agent/"
+  variant="secondary"
+  icon="lucide:arrow-right"
+  iconPlacement="end">
+  Docker Agent
+</LinkButton>
 
 <TestimonialCTA name="sophris" />
 
-### Support and Documentation
+### Open-Source and Self-Hosted
 
-**Distr:** Includes personalized onboarding for all tiers, with direct access to
-the engineering team. Documentation focuses on practical implementation with
-extensive examples.
+The Distr platform and its deployment agents are open source under the Apache
+2.0 license.
 
-**Replicated:** Provides comprehensive documentation and enterprise support
-options. The mature ecosystem includes community resources and partner
-integrations.
+Vendors can use Distr Cloud or run the platform inside their own environment
+with Docker Compose or Helm. Paid Distr plans can also be used with a
+self-hosted installation.
 
-## Decision Framework
+Self-hosting gives vendors control over platform infrastructure and data
+location without losing access to commercial Distr features.
 
-<CompareVerdict
-  distr={[
-    'Flexibility is paramount - You need to support diverse deployment scenarios from Docker Compose to Kubernetes',
-    'Gradual adoption matters - You want to start simple and add sophistication over time',
-    'Open source is required - Your organization mandates source code access or self-hosting',
-    'Flexible pricing - You need pricing that scales with your needs without large upfront commitments',
-    'Speed is critical - You need to start distributing software immediately',
-  ]}
-  competitor={{
-    name: 'Replicated',
-    items: [
-      'Kubernetes standardization - Your entire customer base runs or will run Kubernetes',
-      'Enterprise validation - You need the market-recognized enterprise standard',
-      'Compatibility testing - Validating across multiple Kubernetes distributions is critical',
-      'Embedded Kubernetes - You need to provide Kubernetes to non-native environments',
-      'Mature ecosystem - You value extensive third-party integrations and partnerships',
-    ],
-  }}
-/>
+<LinkButton
+  href="/docs/self-hosting/"
+  variant="secondary"
+  icon="lucide:arrow-right"
+  iconPlacement="end">
+  Self-Hosting Distr
+</LinkButton>
 
-## Migration Considerations
+### Offline Software Licensing
 
-### Moving from Manual Processes
+Distr generates Ed25519-signed JWT license tokens. Applications verify these
+tokens locally using the published public key.
 
-Teams currently using FTP servers, email distribution, or manual processes can
-adopt either platform. Distr's gradual adoption model allows starting with
-simple registry features, while Replicated requires full platform commitment but
-provides comprehensive capabilities immediately.
+License tokens can contain vendor-defined claims such as:
 
-### Platform Switching
+- Plan or edition
+- Licensed features
+- Seat counts
+- Instance limits
+- Customer identifiers
+- Expiration dates
+- Application-specific entitlements
 
-While both platforms use standard formats (OCI images, Helm charts), switching
-between them requires consideration:
+Verification does not require a callback to Distr, making the same licensing
+model usable in connected, restricted-network and fully offline environments.
 
-- License model differences
-- Customer portal migration
-- Deployment agent changes
-- Integration updates
+<LinkButton
+  href="/docs/platform/license-keys/"
+  variant="secondary"
+  icon="lucide:arrow-right"
+  iconPlacement="end">
+  License Keys
+</LinkButton>
 
-Organizations should evaluate long-term needs before committing to ensure
-alignment with their distribution strategy.
+### Public Pricing That Scales with Adoption
 
-## Conclusion: Context Determines Choice
+Distr publishes its prices and provides a calculator based on two operating
+metrics:
 
-Both Distr and Replicated solve critical software distribution challenges, but
-serve different needs:
+- Internal users who manage Distr
+- Customer organizations receiving the software
 
-Distr excels when flexibility, rapid deployment, and gradual sophistication
-matter. Its open-source nature, support for multiple deployment models, and
-accessible pricing make it ideal for modern software companies serving diverse
-customer bases.
+Each customer organization can have unlimited customer users. Distr also offers
+a flat-rate Enterprise plan with unlimited users and customers.
 
-Replicated shines in pure enterprise scenarios where Kubernetes standardization,
-extensive validation, and market recognition justify the investment. Its mature
-platform provides comprehensive capabilities for vendors serving traditional
-enterprise customers.
+Distr Cloud and self-hosted paid installations use the same feature model.
+
+<LinkButton
+  href="/pricing/"
+  variant="secondary"
+  icon="lucide:arrow-right"
+  iconPlacement="end">
+  Pricing
+</LinkButton>
+
+## Longer Operating History Versus a Newer Distribution Architecture
+
+Replicated has operated in the self-hosted software distribution category for
+longer and has greater existing market recognition.
+
+Distr is newer, but its architecture reflects a different distribution model.
+
+Distr manages Docker Compose and Helm applications through lightweight agents.
+Vendors do not need separate distribution products for single-server, Docker
+Swarm and Kubernetes customers.
+
+The same platform connects application versions, artifacts, customer
+entitlements, license keys, vendor-defined configuration templates, deployment
+status, logs, metrics and support workflows.
+
+Customers receive a guided configuration interface and a generated installation
+command. Vendors retain control over the application template and decide which
+values each customer must provide.
+
+Distr's advantages come from this unified architecture, support for more
+deployment environments, simpler installation experience, open-source model,
+self-hosting option and transparent pricing.
+
+Replicated's longer history remains relevant for organizations that prioritize
+an established vendor record, Embedded Cluster or the existing Replicated
+ecosystem.
+
+## How to Choose
+
+### Choose Distr when:
+
+- Both Docker Compose and Kubernetes applications must be distributed.
+- Kubernetes distribution is required, but embedded cluster provisioning is not.
+- Vendors want to get POCs live faster on standard Linux virtual machines.
+- Vendors want to offer a simple installation without requiring prospects to operate Kubernetes.
+- Customers should configure only the values exposed by the vendor.
+- Customers should receive a generated command instead of assembling installation steps manually.
+- A focused, white-labeled portal should cover installations, updates, licenses, artifacts, logs and support.
+- Open-source code and platform self-hosting matter.
+- Offline license verification must work without a platform callback.
+- Pricing should scale transparently with the vendor's team and customer base.
+- One platform should manage releases, deployments, licenses, artifacts, customers, observability and support workflows.
+- The vendor wants to retain control over its software distribution infrastructure.
+
+### Choose Replicated when:
+
+- The application requires Kubernetes and customers need the distribution platform to provision the cluster.
+- Provisioned compatibility testing across a large matrix of complete Kubernetes environments is a primary requirement.
+- Replicated-specific installers, preflight checks or support tooling are already part of the application architecture.
+- The vendor is already invested in the Replicated ecosystem.
+- A longer operating history is more important than Docker Compose support, open-source platform control, self-hosting, transparent pricing or a simpler customer installation experience.
+
+## The Bottom Line
+
+Distr and Replicated provide many of the same core capabilities for distributing
+commercial Kubernetes applications.
+
+Replicated's main advantages are its longer operating history, Embedded Cluster
+installer and provisioned-cluster compatibility-testing service.
+
+Distr's advantages are support for more deployment environments, a simpler and
+more user-friendly installation experience, an open-source and self-hosted
+platform, locally verified offline licenses and public pricing that scales with
+internal users and customer organizations.
+
+For Kubernetes customers that already operate a cluster, both platforms address
+the core software distribution workflow.
+
+For POCs and applications that do not require Kubernetes, Distr lets the vendor
+provide a smaller installation based on Docker Compose. The prospect completes
+the vendor-defined configuration and runs a generated command without first
+provisioning a cluster.
+
+The vendor chooses the distribution model. Docker Compose provides a fast path
+for POCs and single-server installations, while Helm supports customers that
+already operate Kubernetes. Both models remain connected to the same
+applications, customers, licenses, releases and operational workflows in Distr.
+
+Choose Replicated when the distribution platform must provision Kubernetes
+itself.
+
+Choose Distr when the vendor wants one distribution platform across Docker and
+Kubernetes, with guided installation, a focused customer experience,
+open-source platform control, self-hosting and transparent pricing.
