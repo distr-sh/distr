@@ -4,6 +4,7 @@ import {DeploymentRevisionStatus, DeploymentWithLatestRevision} from '@distr-sh/
 import {never} from '../../../util/exhaust';
 import {isStale} from '../../../util/model';
 import {AbstractStatusDotDirective} from '../../components/status-dot';
+import {DeploymentStatusBadgeComponent} from '../deployment-status-badge.component';
 
 function currentStatus(deployment: DeploymentWithLatestRevision): DeploymentRevisionStatus | undefined {
   return deployment.currentStatus ?? deployment.latestStatus;
@@ -45,7 +46,7 @@ export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
 
 @Component({
   selector: 'app-deployment-status-text',
-  imports: [DeploymentStatusDotDirective, DatePipe],
+  imports: [DeploymentStatusDotDirective, DatePipe, DeploymentStatusBadgeComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="flex gap-1 items-center" [title]="(status()?.createdAt | date: 'short') ?? ''">
@@ -66,19 +67,13 @@ export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
         No status
       }
       @if (pending(); as pending) {
-        @if (pending.type === 'error') {
-          <span
-            class="distr-status-badge ms-2 bg-red-100 text-red-800 border-red-400 dark:bg-red-900 dark:text-red-300 dark:border-red-800"
-            [title]="pending.message">
+        <app-deployment-status-badge [status]="pending.type" class="ms-2" [title]="pending.message">
+          @if (pending.type === 'error') {
             Update failed
-          </span>
-        } @else {
-          <span
-            class="distr-status-badge ms-2 bg-blue-100 text-blue-800 border-blue-400 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-800"
-            [title]="pending.message">
+          } @else {
             Update in progress
-          </span>
-        }
+          }
+        </app-deployment-status-badge>
       }
     </div>
   `,

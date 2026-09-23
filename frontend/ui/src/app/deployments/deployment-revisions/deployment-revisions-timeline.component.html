@@ -24,15 +24,11 @@
             }
             @if (revision.latestStatus; as status) {
               @if (revision.id === currentRevisionId() && status.type !== 'error' && (status | isStale)) {
-                <span class="distr-status-badge shrink-0" [ngClass]="staleDeploymentStatusBadgeClass">Stale</span>
+                <app-deployment-status-badge status="stale" />
               } @else if (
                 revision.id === currentRevisionId() || revision.id === latestRevisionId() || status.type === 'error'
               ) {
-                <span
-                  class="distr-status-badge shrink-0 capitalize"
-                  [ngClass]="deploymentStatusBadgeClass(status.type)">
-                  {{ status.type }}
-                </span>
+                <app-deployment-status-badge [status]="status.type" />
               }
             }
           </div>

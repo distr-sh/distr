@@ -55,9 +55,7 @@
     <div>
       <span class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Latest status</span>
       <div>
-        <span class="distr-status-badge shrink-0 capitalize" [ngClass]="deploymentStatusBadgeClass(status.type)">{{
-          status.type
-        }}</span>
+        <app-deployment-status-badge [status]="status.type" />
         on {{ status.createdAt | date: 'medium' }}
       </div>
       @if (status.message) {
