@@ -985,10 +985,14 @@ const signupSteps = [
 
   // Track form progress for analytics
   const eventPrefix = flowType === 'onboarding' ? 'onboarding' : 'signup';
-  function trackStep(step, properties = {}) {
+  function trackStep(step, dataLayerProperties = {}) {
+    window.dataLayer?.push({
+      event: `signup_step_${step}_completed`,
+      flow_type: flowType,
+      ...dataLayerProperties,
+    });
     window.posthog?.capture(`${eventPrefix}_step_${step}_completed`, {
       flow_type: flowType,
-      ...properties,
     });
   }
 
@@ -997,6 +1001,12 @@ const signupSteps = [
     const url = new URL(window.location.href);
     url.searchParams.set('step', step.toString());
     window.history.pushState({step}, '', url);
+
+    window.dataLayer?.push({
+      event: 'page_view',
+      page_title: `Signup - Step ${step}`,
+      page_location: url.href,
+    });
   }
 
   // Show specific step
@@ -1215,7 +1225,7 @@ const signupSteps = [
           company: data.companyName,
           job_title: data.jobTitle,
         });
-        trackStep(1);
+        trackStep(1, {email: data.email});
 
         // Success - move to step 2
         showStep(2);

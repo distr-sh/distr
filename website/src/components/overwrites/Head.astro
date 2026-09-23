@@ -1,5 +1,6 @@
 ---
 import {Font} from 'astro:assets';
+import GoogleTagManager from '~/components/telemetry/GoogleTagManager.astro';
 import PostHog from '~/components/telemetry/PostHog.astro';
 const {head} = Astro.locals.starlightRoute;
 
@@ -23,4 +24,5 @@ const ogImageUrl = hasOgImage
   )
 }
 {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
+{import.meta.env.PROD && <GoogleTagManager />}
 {import.meta.env.PROD && <PostHog />}

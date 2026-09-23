@@ -77,11 +77,8 @@ const REPLAY_PATHS = ['/onboarding', '/contact', '/pricing'];
   posthog.init('phc_kT9cJBgrQwRx9ayg0PUQkukLFowbTfN47jQuWqScglR', {
     api_host: 'https://edge.distr.sh',
     ui_host: 'https://eu.posthog.com',
-    defaults: '2026-05-30',
+    defaults: '2026-08-30',
     person_profiles: 'identified_only',
-    // The shared .distr.sh cookie must beat stale per-origin localStorage,
-    // otherwise distr.sh and app.distr.sh disagree about who a visitor is.
-    cookieWinsOnConflict: true,
     disable_session_recording: true,
   });
 
