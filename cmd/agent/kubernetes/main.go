@@ -390,6 +390,8 @@ func (psr *progressStatusRunner) Run(ctx context.Context, f func() error) error 
 	progressCtx, progressCancel := context.WithCancel(ctx)
 	defer progressCancel()
 
+	pushProgressingStatus(ctx, psr.deployment)
+
 	go func(ctx context.Context) {
 		tick := time.Tick(agentenv.Interval)
 		for {
