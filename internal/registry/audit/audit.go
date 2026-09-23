@@ -7,6 +7,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/registry/name"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/google/uuid"
 )
 
 type ArtifactAuditor interface {
@@ -21,19 +22,32 @@ func NewAuditor() ArtifactAuditor {
 
 // AuditPull implements ArtifactAuditor.
 func (a *auditor) AuditPull(ctx context.Context, nameStr string, reference string) error {
-	auth := auth.ArtifactsAuthentication.Require(ctx)
-	if name, err := name.Parse(nameStr); err != nil {
+	name, err := name.Parse(nameStr)
+	if err != nil {
 		return err
-	} else if digestVersion, err := db.GetArtifactVersion(ctx, name.OrgName, name.ArtifactName, reference); err != nil {
+	}
+	digestVersion, err := db.GetArtifactVersion(ctx, name.OrgName, name.ArtifactName, reference)
+	if err != nil {
 		return err
-	} else {
+	}
+	if principal, ok := auth.ArtifactsPrincipal(ctx); ok {
 		return db.CreateArtifactPullLogEntry(
 			ctx,
 			digestVersion.ID,
-			auth.CurrentUserID(),
+			principal.CurrentUserID(),
 			chimiddleware.GetClientIP(ctx),
-			auth.CurrentCustomerOrgID(),
-			auth.CurrentDeploymentTargetID(),
+			principal.CurrentCustomerOrgID(),
+			principal.CurrentDeploymentTargetID(),
+			false,
 		)
 	}
+	return db.CreateArtifactPullLogEntry(
+		ctx,
+		digestVersion.ID,
+		uuid.Nil,
+		chimiddleware.GetClientIP(ctx),
+		nil,
+		nil,
+		true,
+	)
 }

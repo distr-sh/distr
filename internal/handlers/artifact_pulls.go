@@ -41,6 +41,7 @@ func ArtifactPullsRouter(r chiopenapi.Router) {
 			Count                  *int       `query:"count"`
 			CustomerOrganizationID *string    `query:"customerOrganizationId"`
 			UserAccountID          *string    `query:"userAccountId"`
+			Anonymous              *bool      `query:"anonymous"`
 			RemoteAddress          *string    `query:"remoteAddress"`
 			ArtifactID             *string    `query:"artifactId"`
 			ArtifactVersionID      *string    `query:"artifactVersionId"`
@@ -114,6 +115,14 @@ func parseArtifactPullFilters(w http.ResponseWriter, r *http.Request) (types.Art
 		return fail(apierrors.NewBadRequest("userAccountId must be a valid UUID"))
 	} else {
 		filter.UserAccountID = &id
+	}
+
+	if anonymous, err := QueryParam(r, "anonymous", strconv.ParseBool); errors.Is(err, ErrParamNotDefined) {
+		// use default
+	} else if err != nil {
+		return fail(apierrors.NewBadRequest("anonymous must be true or false"))
+	} else {
+		filter.Anonymous = anonymous
 	}
 
 	if addr := strings.TrimSpace(r.FormValue("remoteAddress")); addr != "" {
@@ -272,7 +281,8 @@ func exportArtifactPullsHandler() http.HandlerFunc {
 
 		csvWriter := csv.NewWriter(w)
 		header := []string{
-			"Date", "Customer", "User", "Email", "Deployment Target", "Address", "Artifact", "Version",
+			"Date", "Customer", "User", "Email", "Deployment Target", "Anonymous", "Address",
+			"Artifact", "Version",
 		}
 		if err := csvWriter.Write(header); err != nil {
 			log.Warn("could not write CSV header", zap.Error(err))
@@ -287,6 +297,7 @@ func exportArtifactPullsHandler() http.HandlerFunc {
 				util.PtrDerefOrDefault(apiPull.UserAccountName),
 				util.PtrDerefOrDefault(apiPull.UserAccountEmail),
 				util.PtrDerefOrDefault(apiPull.DeploymentTargetName),
+				strconv.FormatBool(apiPull.Anonymous),
 				util.PtrDerefOrDefault(apiPull.RemoteAddress),
 				apiPull.Artifact.Name,
 				apiPull.ArtifactVersion.Name,

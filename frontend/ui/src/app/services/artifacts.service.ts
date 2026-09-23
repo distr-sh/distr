@@ -36,6 +36,7 @@ export interface ArtifactUpstreamAuth {
 }
 
 export interface Artifact extends BaseArtifact, HasDownloads {
+  public: boolean;
   upstreamUrl?: string;
   lastSyncedAt?: string;
   lastSyncError?: string;
@@ -54,6 +55,12 @@ export interface TaggedArtifactVersion extends HasDownloads {
 
 export interface ArtifactWithTags extends Artifact {
   versions?: TaggedArtifactVersion[];
+}
+
+export interface PatchArtifactRequest {
+  upstreamUrl?: string | null;
+  auth?: ArtifactUpstreamAuth | null;
+  public?: boolean;
 }
 
 class ArtifactsReactiveList extends ReactiveList<ArtifactWithTags> {
@@ -111,15 +118,9 @@ export class ArtifactsService {
       .pipe(tap((it) => this.cache.save(it)));
   }
 
-  public patchUpstreamURL(artifactId: string, upstreamUrl: string | null): Observable<ArtifactWithTags> {
+  public patchArtifact(artifactId: string, patch: PatchArtifactRequest): Observable<ArtifactWithTags> {
     return this.http
-      .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}`, {upstreamUrl})
-      .pipe(tap((it) => this.cache.save(it)));
-  }
-
-  public patchUpstreamAuth(artifactId: string, auth: ArtifactUpstreamAuth | null): Observable<ArtifactWithTags> {
-    return this.http
-      .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}`, {auth})
+      .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}`, patch)
       .pipe(tap((it) => this.cache.save(it)));
   }
 

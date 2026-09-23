@@ -32,7 +32,6 @@ import (
 	"github.com/distr-sh/distr/internal/registry/audit"
 	"github.com/distr-sh/distr/internal/registry/authz"
 	"github.com/distr-sh/distr/internal/registry/blob"
-	registryerror "github.com/distr-sh/distr/internal/registry/error"
 	imanifest "github.com/distr-sh/distr/internal/registry/manifest"
 	"github.com/getsentry/sentry-go"
 	"github.com/opencontainers/go-digest"
@@ -108,42 +107,22 @@ func (handler *manifests) handle(resp http.ResponseWriter, req *http.Request) *r
 	switch req.Method {
 	case http.MethodGet:
 		if err := handler.authz.AuthorizeReference(req.Context(), repo, target, authz.ActionRead); err != nil {
-			if errors.Is(err, authz.ErrAccessDenied) {
-				return regErrDenied(err.Error())
-			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
-				return regErrNameInvalid
-			}
-			return regErrInternal(err)
+			return regErrAuthz(err)
 		}
 		return handler.handleGet(resp, req, repo, target)
 	case http.MethodHead:
 		if err := handler.authz.AuthorizeReference(req.Context(), repo, target, authz.ActionStat); err != nil {
-			if errors.Is(err, authz.ErrAccessDenied) {
-				return regErrDenied(err.Error())
-			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
-				return regErrNameInvalid
-			}
-			return regErrInternal(err)
+			return regErrAuthz(err)
 		}
 		return handler.handleHead(resp, req, repo, target)
 	case http.MethodPut:
 		if err := handler.authz.AuthorizeReference(req.Context(), repo, target, authz.ActionWrite); err != nil {
-			if errors.Is(err, authz.ErrAccessDenied) {
-				return regErrDenied(err.Error())
-			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
-				return regErrNameInvalid
-			}
-			return regErrInternal(err)
+			return regErrAuthz(err)
 		}
 		return handler.handlePut(resp, req, repo, target)
 	case http.MethodDelete:
 		if err := handler.authz.AuthorizeReference(req.Context(), repo, target, authz.ActionWrite); err != nil {
-			if errors.Is(err, authz.ErrAccessDenied) {
-				return regErrDenied(err.Error())
-			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
-				return regErrNameInvalid
-			}
-			return regErrInternal(err)
+			return regErrAuthz(err)
 		}
 		return handler.handleDelete(resp, req, repo, target)
 	default:
@@ -158,12 +137,7 @@ func (m *manifests) handleTags(resp http.ResponseWriter, req *http.Request) *reg
 
 	if req.Method == http.MethodGet {
 		if err := m.authz.Authorize(req.Context(), repo, authz.ActionRead); err != nil {
-			if errors.Is(err, authz.ErrAccessDenied) {
-				return regErrDenied(err.Error())
-			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
-				return regErrNameInvalid
-			}
-			return regErrInternal(err)
+			return regErrAuthz(err)
 		}
 
 		last := req.URL.Query().Get("last")
@@ -251,12 +225,7 @@ func (m *manifests) handleReferrers(resp http.ResponseWriter, req *http.Request)
 	repo := strings.Join(elem[1:len(elem)-2], "/")
 
 	if err := m.authz.AuthorizeReference(req.Context(), repo, target, authz.ActionRead); err != nil {
-		if errors.Is(err, authz.ErrAccessDenied) {
-			return regErrDenied(err.Error())
-		} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
-			return regErrNameInvalid
-		}
-		return regErrInternal(err)
+		return regErrAuthz(err)
 	}
 
 	// Validate that incoming target is a valid digest
