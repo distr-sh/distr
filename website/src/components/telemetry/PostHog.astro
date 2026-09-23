@@ -7,6 +7,10 @@ const REPLAY_PATHS = ['/onboarding', '/contact', '/pricing'];
 ---
 
 <script is:inline define:vars={{REPLAY_PATHS, BOOKING_FLOW_STORAGE_KEY}}>
+  const isReplayPage = REPLAY_PATHS.some(path =>
+    window.location.pathname.startsWith(path),
+  );
+
   !(function (t, e) {
     var o, n, p, r;
     e.__SV ||
@@ -27,7 +31,9 @@ const REPLAY_PATHS = ['/onboarding', '/contact', '/pricing'];
           (p.async = !0),
           (p.src =
             s.api_host.replace('.i.posthog.com', '-assets.i.posthog.com') +
-            '/static/array.js'),
+            // EasyPrivacy blocks posthog-recorder.js and dead-clicks-autocapture.js
+            // by filename; the full bundle ships both inline.
+            (isReplayPage ? '/static/array.full.js' : '/static/array.js')),
           (p.onerror = function () {
             p = null;
           }),
@@ -80,9 +86,10 @@ const REPLAY_PATHS = ['/onboarding', '/contact', '/pricing'];
     defaults: '2026-08-30',
     person_profiles: 'identified_only',
     disable_session_recording: true,
+    disable_surveys: true,
   });
 
-  if (REPLAY_PATHS.some(path => window.location.pathname.startsWith(path))) {
+  if (isReplayPage) {
     posthog.startSessionRecording();
   }
 
