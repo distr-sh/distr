@@ -7,19 +7,19 @@ import (
 )
 
 type NotificationRecord struct {
-	ID                                 uuid.UUID  `json:"id"`
-	CreatedAt                          time.Time  `json:"createdAt"`
-	DeploymentTargetID                 *uuid.UUID `json:"deploymentTargetId"`
-	AlertConfigurationID               *uuid.UUID `json:"alertConfigurationId,omitempty"`
-	Type                               string     `json:"type"`
-	PreviousDeploymentRevisionStatusID *uuid.UUID `json:"previousDeploymentStatusId,omitempty"`
-	CurrentDeploymentRevisionStatusID  *uuid.UUID `json:"currentDeploymentStatusId,omitempty"`
-	MetricType                         *string    `json:"metricType,omitempty"`
-	DiskDevice                         *string    `json:"diskDevice,omitempty"`
-	DiskPath                           *string    `json:"diskPath,omitempty"`
-	PreviousDeploymentTargetMetricsID  *uuid.UUID `json:"previousDeploymentTargetMetricsId,omitempty"`
-	CurrentDeploymentTargetMetricsID   *uuid.UUID `json:"currentDeploymentTargetMetricsId,omitempty"`
-	Message                            string     `json:"message"`
+	ID                                uuid.UUID  `json:"id"`
+	CreatedAt                         time.Time  `json:"createdAt"`
+	DeploymentTargetID                *uuid.UUID `json:"deploymentTargetId"`
+	AlertConfigurationID              *uuid.UUID `json:"alertConfigurationId,omitempty"`
+	Type                              string     `json:"type"`
+	PreviousDeploymentRevisionID      *uuid.UUID `json:"previousDeploymentRevisionId,omitempty"`
+	CurrentDeploymentRevisionID       *uuid.UUID `json:"currentDeploymentRevisionId,omitempty"`
+	MetricType                        *string    `json:"metricType,omitempty"`
+	DiskDevice                        *string    `json:"diskDevice,omitempty"`
+	DiskPath                          *string    `json:"diskPath,omitempty"`
+	PreviousDeploymentTargetMetricsID *uuid.UUID `json:"previousDeploymentTargetMetricsId,omitempty"`
+	CurrentDeploymentTargetMetricsID  *uuid.UUID `json:"currentDeploymentTargetMetricsId,omitempty"`
+	Message                           string     `json:"message"`
 }
 
 type NotificationRecordWithCurrentStatus struct {

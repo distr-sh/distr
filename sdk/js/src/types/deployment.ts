@@ -70,7 +70,9 @@ export interface DeploymentWithLatestRevision extends Deployment {
   helmOptions?: HelmOptions;
 }
 
-export interface DeploymentRevisionStatus extends BaseModel {
+export interface DeploymentRevisionStatus {
+  createdAt: string;
+  deploymentRevisionId: string;
   type: DeploymentStatusType;
   message: string;
 }

@@ -410,13 +410,13 @@ func (psr *progressStatusRunner) Run(ctx context.Context, f func() error) error 
 }
 
 func pushHealthyStatus(ctx context.Context, deployment api.AgentDeployment, status string) {
-	if err := agentClient.Status(ctx, deployment.RevisionID, types.DeploymentStatusTypeHealthy, status); err != nil {
+	if err := agentClient.Status(ctx, deployment, types.DeploymentStatusTypeHealthy, status); err != nil {
 		logger.Warn("status push failed", zap.Error(err))
 	}
 }
 
 func pushRunningStatus(ctx context.Context, deployment api.AgentDeployment, status string) {
-	if err := agentClient.Status(ctx, deployment.RevisionID, types.DeploymentStatusTypeRunning, status); err != nil {
+	if err := agentClient.Status(ctx, deployment, types.DeploymentStatusTypeRunning, status); err != nil {
 		logger.Warn("status push failed", zap.Error(err))
 	}
 }
@@ -424,7 +424,7 @@ func pushRunningStatus(ctx context.Context, deployment api.AgentDeployment, stat
 func pushProgressingStatus(ctx context.Context, deployment api.AgentDeployment) {
 	if err := agentClient.Status(
 		ctx,
-		deployment.RevisionID,
+		deployment,
 		types.DeploymentStatusTypeProgressing,
 		"helm operation in progress",
 	); err != nil {
@@ -433,7 +433,7 @@ func pushProgressingStatus(ctx context.Context, deployment api.AgentDeployment) 
 }
 
 func pushErrorStatus(ctx context.Context, deployment api.AgentDeployment, err error) {
-	if err := agentClient.Status(ctx, deployment.RevisionID, types.DeploymentStatusTypeError, err.Error()); err != nil {
+	if err := agentClient.Status(ctx, deployment, types.DeploymentStatusTypeError, err.Error()); err != nil {
 		logger.Warn("status push failed", zap.Error(err))
 	}
 }

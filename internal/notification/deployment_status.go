@@ -125,7 +125,9 @@ func sendDeploymentStatusNotificationsWithConfig(
 
 	var existingRecord *types.NotificationRecord
 	if previousStatus != nil {
-		existingRecord, err = db.GetLatestNotificationRecord(ctx, config.ID, previousStatus.ID)
+		existingRecord, err = db.GetLatestNotificationRecord(
+			ctx, config.ID, previousStatus.DeploymentRevisionID, previousStatus.CreatedAt,
+		)
 		if err != nil && !errors.Is(err, apierrors.ErrNotFound) {
 			return fmt.Errorf("failed to get latest notification record: %w", err)
 		}
@@ -138,7 +140,7 @@ func sendDeploymentStatusNotificationsWithConfig(
 		}
 	} else if shouldNotifyError(previousStatus, *currentStatus) ||
 		shouldNotifyErrorRecovered(previousStatus, *currentStatus) {
-		if existingRecord != nil && existingRecord.CurrentDeploymentRevisionStatusID != nil {
+		if existingRecord != nil && existingRecord.CurrentStatusCreatedAt != nil {
 			log.Debug("skip error/recovery notifications because it was already sent")
 			return nil
 		}
@@ -205,11 +207,15 @@ func sendDeploymentStatusNotificationsWithConfig(
 	}
 
 	if currentStatus != nil {
-		record.CurrentDeploymentRevisionStatusID = &currentStatus.ID
+		record.CurrentDeploymentRevisionID = &currentStatus.DeploymentRevisionID
+		record.CurrentStatusCreatedAt = &currentStatus.CreatedAt
+		record.CurrentStatusType = &currentStatus.Type
+		record.CurrentStatusMessage = &currentStatus.Message
 	}
 
 	if previousStatus != nil {
-		record.PreviousDeploymentRevisionStatusID = &previousStatus.ID
+		record.PreviousDeploymentRevisionID = &previousStatus.DeploymentRevisionID
+		record.PreviousStatusCreatedAt = &previousStatus.CreatedAt
 	}
 
 	if aggErr != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
@@ -20,8 +21,12 @@ const notificationRecordOutputExpr = `
 	r.deployment_target_id,
 	r.alert_configuration_id,
 	r.type,
-	r.previous_deployment_revision_status_id,
-	r.current_deployment_revision_status_id,
+	r.previous_deployment_revision_id,
+	r.previous_status_created_at,
+	r.current_deployment_revision_id,
+	r.current_status_created_at,
+	r.current_status_type,
+	r.current_status_message,
 	r.metric_type,
 	r.disk_device,
 	r.disk_path,
@@ -40,8 +45,12 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 				deployment_target_id,
 				alert_configuration_id,
 				type,
-				previous_deployment_revision_status_id,
-				current_deployment_revision_status_id,
+				previous_deployment_revision_id,
+				previous_status_created_at,
+				current_deployment_revision_id,
+				current_status_created_at,
+				current_status_type,
+				current_status_message,
 				metric_type,
 				disk_device,
 				disk_path,
@@ -55,8 +64,12 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 				@deploymentTargetID,
 				@alertConfigurationID,
 				@type,
-				@previousDeploymentStatusID,
-				@currentDeploymentStatusID,
+				@previousDeploymentRevisionID,
+				@previousStatusCreatedAt,
+				@currentDeploymentRevisionID,
+				@currentStatusCreatedAt,
+				@currentStatusType,
+				@currentStatusMessage,
 				@metricType,
 				@diskDevice,
 				@diskPath,
@@ -68,19 +81,23 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 		)
 		SELECT`+notificationRecordOutputExpr+`FROM inserted r`,
 		pgx.NamedArgs{
-			"organizationID":             record.OrganizationID,
-			"customerOrganizationID":     record.CustomerOrganizationID,
-			"deploymentTargetID":         record.DeploymentTargetID,
-			"alertConfigurationID":       record.AlertConfigurationID,
-			"type":                       record.Type,
-			"previousDeploymentStatusID": record.PreviousDeploymentRevisionStatusID,
-			"currentDeploymentStatusID":  record.CurrentDeploymentRevisionStatusID,
-			"metricType":                 record.MetricType,
-			"diskDevice":                 record.DiskDevice,
-			"diskPath":                   record.DiskPath,
-			"previousMetricsID":          record.PreviousDeploymentTargetMetricsID,
-			"currentMetricsID":           record.CurrentDeploymentTargetMetricsID,
-			"message":                    record.Message,
+			"organizationID":               record.OrganizationID,
+			"customerOrganizationID":       record.CustomerOrganizationID,
+			"deploymentTargetID":           record.DeploymentTargetID,
+			"alertConfigurationID":         record.AlertConfigurationID,
+			"type":                         record.Type,
+			"previousDeploymentRevisionID": record.PreviousDeploymentRevisionID,
+			"previousStatusCreatedAt":      record.PreviousStatusCreatedAt,
+			"currentDeploymentRevisionID":  record.CurrentDeploymentRevisionID,
+			"currentStatusCreatedAt":       record.CurrentStatusCreatedAt,
+			"currentStatusType":            record.CurrentStatusType,
+			"currentStatusMessage":         record.CurrentStatusMessage,
+			"metricType":                   record.MetricType,
+			"diskDevice":                   record.DiskDevice,
+			"diskPath":                     record.DiskPath,
+			"previousMetricsID":            record.PreviousDeploymentTargetMetricsID,
+			"currentMetricsID":             record.CurrentDeploymentTargetMetricsID,
+			"message":                      record.Message,
 		},
 	)
 	if err != nil {
@@ -98,18 +115,21 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 
 func GetLatestNotificationRecord(
 	ctx context.Context,
-	configID, previousID uuid.UUID,
+	configID, previousRevisionID uuid.UUID,
+	previousStatusCreatedAt time.Time,
 ) (*types.NotificationRecord, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
 		`SELECT`+notificationRecordOutputExpr+`FROM NotificationRecord r
 		WHERE r.alert_configuration_id = @alertConfigurationID
-			AND r.previous_deployment_revision_status_id = @previousDeploymentStatusID
+			AND r.previous_deployment_revision_id = @previousDeploymentRevisionID
+			AND r.previous_status_created_at = @previousStatusCreatedAt
 		ORDER BY r.created_at DESC LIMIT 1`,
 		pgx.NamedArgs{
-			"alertConfigurationID":       configID,
-			"previousDeploymentStatusID": previousID,
+			"alertConfigurationID":         configID,
+			"previousDeploymentRevisionID": previousRevisionID,
+			"previousStatusCreatedAt":      previousStatusCreatedAt,
 		},
 	)
 	if err != nil {
@@ -140,9 +160,6 @@ func GetNotificationRecords(
 			co.name AS customer_organization_name,
 			a.name AS application_name,
 			av.name AS application_version_name,
-			CASE WHEN s.id IS NOT NULL THEN (
-				s.id, s.created_at, s.deployment_revision_id, s.type, s.message
-			) END current_deployment_revision_status,
 			CASE WHEN dtm.id IS NOT NULL THEN (
 				dtm.id,
 				dtm.created_at,
@@ -159,13 +176,8 @@ func GetNotificationRecords(
 			ON r.deployment_target_id = dt.id
 		LEFT JOIN CustomerOrganization co
 			ON dt.customer_organization_id = co.id
-		LEFT JOIN DeploymentRevisionStatus s
-			ON r.current_deployment_revision_status_id = s.id
-		LEFT JOIN DeploymentRevisionStatus s_prev
-			ON r.previous_deployment_revision_status_id = s_prev.id
 		LEFT JOIN DeploymentRevision dr
-			ON s.deployment_revision_id = dr.id
-				OR (s.id IS NULL AND s_prev.deployment_revision_id = dr.id)
+			ON dr.id = coalesce(r.current_deployment_revision_id, r.previous_deployment_revision_id)
 		LEFT JOIN ApplicationVersion av
 			ON dr.application_version_id = av.id
 		LEFT JOIN Application a
@@ -177,7 +189,7 @@ func GetNotificationRecords(
 		WHERE r.organization_id = @organizationID
 			AND ((@isVendor AND r.customer_organization_id IS NULL)
 				OR r.customer_organization_id = @customerOrganizationID)
-		GROUP BY r.id, dt.id, co.id, a.id, av.id, s.id, dtm.id
+		GROUP BY r.id, dt.id, co.id, a.id, av.id, dtm.id
 		ORDER BY r.created_at DESC`,
 		pgx.NamedArgs{
 			"organizationID":         organizationID,

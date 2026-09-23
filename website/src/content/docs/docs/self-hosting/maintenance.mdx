@@ -21,15 +21,14 @@ distr cleanup $CLEANUP_TARGET...
 
 Available cleanup targets:
 
-| Target                     | Description                                                                                   |
-| -------------------------- | --------------------------------------------------------------------------------------------- |
-| `DeploymentRevisionStatus` | Deployment revision status entries                                                            |
-| `DeploymentTargetMetrics`  | Deployment target metrics entries                                                             |
-| `OIDCState`                | Expired OIDC state entries                                                                    |
-| `ArtifactBlob`             | Unreferenced registry blobs from S3 (requires registry to be enabled)                         |
-| `Organization`             | Permanently delete soft-deleted organizations past the retention period                       |
-| `UserAccount`              | Permanently delete user accounts that belong to no organization past the retention period     |
-| `File`                     | Uploaded files that nothing references any more, such as logos and avatars that were replaced |
+| Target                    | Description                                                                                   |
+| ------------------------- | --------------------------------------------------------------------------------------------- |
+| `DeploymentTargetMetrics` | Deployment target metrics entries                                                             |
+| `OIDCState`               | Expired OIDC state entries                                                                    |
+| `ArtifactBlob`            | Unreferenced registry blobs from S3 (requires registry to be enabled)                         |
+| `Organization`            | Permanently delete soft-deleted organizations past the retention period                       |
+| `UserAccount`             | Permanently delete user accounts that belong to no organization past the retention period     |
+| `File`                    | Uploaded files that nothing references any more, such as logos and avatars that were replaced |
 
 For production deployments we recommend scheduling these jobs automatically, either using the built-in job scheduler for single instance deployments
 or using Kubernetes CronJobs for high-availability deployments.
@@ -44,9 +43,6 @@ An example configuration file can be found on
 [`github.com/distr-sh/distr/deploy/docker/quickstart`](https://github.com/distr-sh/distr/blob/main/deploy/docker/quickstart/.env):
 
 ```dotenv
-# Cron interval for cleaning deployment revision statuses older than STATUS_ENTRIES_MAX_AGE
-CLEANUP_DEPLOYMENT_REVISION_STATUS_CRON="0 * * * *"
-CLEANUP_DEPLOYMENT_REVISION_STATUS_TIMEOUT="10m"
 # Cron interval for cleaning metrics older than METRICS_ENTRIES_MAX_AGE
 CLEANUP_DEPLOYMENT_TARGET_METRICS_CRON="0 * * * *"
 CLEANUP_DEPLOYMENT_TARGET_METRICS_TIMEOUT="10m"
@@ -88,10 +84,6 @@ An example configuration can be found in
 
 ```yaml
 cronJobs:
-  - name: deployment-revision-status-cleanup
-    labels:
-      distr.sh/job: deployment-revision-status-cleanup
-    args: [cleanup, DeploymentRevisionStatus, --timeout, 10m]
   - name: deployment-target-metrics-cleanup
     labels:
       distr.sh/job: deployment-target-metrics-cleanup
@@ -123,7 +115,6 @@ cronJobs:
 Some cleanup targets allow for additional customization using the following environment variables:
 
 ```dotenv
-STATUS_ENTRIES_MAX_AGE="24h"
 METRICS_ENTRIES_MAX_AGE="24h"
 CLEANUP_ARTIFACT_BLOB_MIN_AGE="24h"
 CLEANUP_ORGANIZATION_MIN_AGE="720h"
@@ -132,8 +123,8 @@ CLEANUP_FILE_MIN_AGE="24h"
 ```
 
 <Aside type="caution">
-  `STATUS_ENTRIES_MAX_AGE` and `METRICS_ENTRIES_MAX_AGE` do not have a default
-  value. If unset, the cleanup routine for these targets will have no effect.
+  `METRICS_ENTRIES_MAX_AGE` does not have a default value. If unset, the cleanup
+  routine for that target will have no effect.
 </Aside>
 
 <Aside type="caution">
@@ -266,6 +257,24 @@ Leave this off if you run more than one replica, for the reason above: the first
 version would start encrypting while replicas of the previous one are still serving.
 
 ## Removed features
+
+### Deployment Revision Status Cleanup (removed in v4.2.0)
+
+Prior to v4.2.0, every status an agent reported was appended to a `DeploymentRevisionStatus`
+table, which the portal showed as a status history per deployment. Since agents report once per
+`AGENT_INTERVAL` that table grew continuously, and the `DeploymentRevisionStatus` cleanup target
+pruned entries older than `STATUS_ENTRIES_MAX_AGE`, always keeping the newest one per deployment.
+
+Distr now stores only the latest status, on the deployment revision itself, so there is nothing
+left to prune. The cleanup target, its cron environment variables
+(`CLEANUP_DEPLOYMENT_REVISION_STATUS_CRON`, `CLEANUP_DEPLOYMENT_REVISION_STATUS_TIMEOUT`) and
+`STATUS_ENTRIES_MAX_AGE` have been removed, along with the `GET /api/v1/deployments/{id}/status`
+and `GET /api/v1/deployments/{id}/status/export` endpoints. Remove the
+`deployment-revision-status-cleanup` CronJob from your Helm values and the variables from your
+environment; Distr ignores them.
+
+What an agent reports is now written to the agent logs instead, which you reach from the menu of a
+deployment target in the portal. Their retention is the Loki retention described below.
 
 ### Deployment & Deployment Target Log Cleanup (removed in v3.0.0)
 

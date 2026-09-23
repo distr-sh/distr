@@ -15,7 +15,7 @@ import {
 } from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {RouterLink} from '@angular/router';
+import {Router, RouterLink} from '@angular/router';
 import {
   ApplicationVersion,
   DeploymentRevisionResponse,
@@ -34,7 +34,6 @@ import {
   faEllipsisVertical,
   faGauge,
   faGear,
-  faHeartPulse,
   faLink,
   faPen,
   faPlus,
@@ -66,6 +65,7 @@ import {AgentVersionService} from '../../services/agent-version.service';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
 import {AuthService} from '../../services/auth.service';
+import {DeploymentLogsService} from '../../services/deployment-logs.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
@@ -111,6 +111,8 @@ export class DeploymentTargetCardComponent {
 
   protected readonly overlay = inject(OverlayService);
   protected readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly deploymentLogs = inject(DeploymentLogsService);
   private readonly deploymentTargets = inject(DeploymentTargetsService);
   private readonly toast = inject(ToastService);
   private readonly agentVersionsSvc = inject(AgentVersionService);
@@ -148,7 +150,6 @@ export class DeploymentTargetCardComponent {
   protected readonly faEllipsisVertical = faEllipsisVertical;
   protected readonly faGauge = faGauge;
   protected readonly faGear = faGear;
-  protected readonly faHeartPulse = faHeartPulse;
   protected readonly faLink = faLink;
   protected readonly faPen = faPen;
   protected readonly faPlus = faPlus;
@@ -673,6 +674,17 @@ export class DeploymentTargetCardComponent {
     this.drawerRef?.close();
     this.resetEditForm();
     this.notesForm.reset();
+  }
+
+  protected async openDeploymentLogs(deployment: DeploymentWithLatestRevision) {
+    if (!deployment.id) return;
+    const available = await firstValueFrom(this.deploymentLogs.getResources(deployment.id));
+    this.router.navigate(['/deployments', this.deploymentTarget().id], {
+      queryParams: {
+        deploymentId: deployment.id,
+        resource: available.active?.length ? available.active : null,
+      },
+    });
   }
 
   protected openRevisionsDrawer(deployment: DeploymentWithLatestRevision) {

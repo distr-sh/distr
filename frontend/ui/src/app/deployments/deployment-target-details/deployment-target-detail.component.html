@@ -115,7 +115,7 @@
                 @if (selectedResources().length > 0) {
                   {{ selectedResources().length }} services selected
                 } @else {
-                  Deployment Status
+                  No services selected
                 }
                 <fa-icon
                   class="transition duration-150 ease-in-out"
@@ -137,9 +137,6 @@
                   <ul>
                     <li>
                       <button class="distr-dropdown-item" (click)="selectDeployment(undefined)">Agent Logs</button>
-                    </li>
-                    <li>
-                      <button class="distr-dropdown-item" (click)="clearResources()">Deployment Status</button>
                     </li>
                     @if (visibleResources().length > 1) {
                       <li class="w-full border-t border-gray-100 dark:border-gray-600">
@@ -337,13 +334,14 @@
           [before]="before()"
           [filter]="filter()"
           [orderDirection]="orderDirection()" />
-      } @else {
-        <app-deployment-status-table
-          [deploymentId]="deploymentId"
-          [after]="after()"
-          [before]="before()"
-          [filter]="filter()"
-          [orderDirection]="orderDirection()" />
+      } @else if (availableResources()) {
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          @if (deploymentHasResources()) {
+            Select at least one service to view logs.
+          } @else {
+            This deployment has no services to show logs for.
+          }
+        </p>
       }
     } @else if (deploymentTargetId(); as targetId) {
       <app-deployment-target-logs-table
