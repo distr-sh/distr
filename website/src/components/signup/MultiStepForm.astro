@@ -974,19 +974,9 @@ const signupSteps = [
   const submitEndpoint = `${formsServerBaseUrl}${apiPath}/submit`;
   const telemetryEndpoint = `${formsServerBaseUrl}${apiPath}/telemetry`;
 
-  // Declare global variables for analytics
-  const dataLayer = window.dataLayer || [];
-  window.dataLayer = dataLayer;
-
   // Track events for analytics
   function trackEvent(eventName, properties = {}) {
-    // Send to Google Tag Manager
-    if (window.dataLayer) {
-      window.dataLayer.push({
-        event: eventName,
-        ...properties,
-      });
-    }
+    window.posthog?.capture(eventName, properties);
   }
 
   // Update URL with step parameter
@@ -994,12 +984,6 @@ const signupSteps = [
     const url = new URL(window.location.href);
     url.searchParams.set('step', step.toString());
     window.history.pushState({step}, '', url);
-
-    // Track page view for analytics
-    trackEvent('page_view', {
-      page_title: `Signup - Step ${step}`,
-      page_location: url.href,
-    });
   }
 
   // Show specific step
@@ -1191,8 +1175,17 @@ const signupSteps = [
 
       userData = {...userData, ...data};
 
-      trackEvent('signup_step_1_completed', {
+      // Identify before capturing so this step, and every anonymous pageview
+      // that preceded it, resolve to the same person.
+      window.posthog?.identify(data.email, {
         email: data.email,
+        name: [data.firstName, data.lastName].filter(Boolean).join(' '),
+        company: data.companyName,
+        job_title: data.jobTitle,
+      });
+
+      trackEvent('signup_step_1_completed', {
+        flow_type: flowType,
       });
 
       // Show loading state
