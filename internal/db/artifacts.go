@@ -30,7 +30,7 @@ var (
 )
 
 func artifactOutputExprWith(upstreamCredential func(EncryptedColumn, string) string) string {
-	return ` a.id, a.created_at, a.organization_id, a.name, a.image_id, ` +
+	return ` a.id, a.created_at, a.organization_id, a.name, a.image_id, a.public, ` +
 		`a.upstream_url, a.last_synced_at, a.last_sync_error, a.upstream_auth_type, ` +
 		upstreamCredential(artifactUpstreamUsername, "a") + `, ` +
 		upstreamCredential(artifactUpstreamPassword, "a") + ` `
@@ -133,13 +133,16 @@ func GetArtifactsByEntitlementOwnerID(ctx context.Context, orgID uuid.UUID, owne
 			LEFT JOIN ArtifactVersionPull avpl
 				ON avpl.artifact_version_id = av.id AND `+artifactPullOfCustomerOrgExpr+`
 			WHERE a.organization_id = @orgId
-			AND EXISTS(
-				SELECT ala.id
-				FROM ArtifactEntitlement_Artifact ala
-				INNER JOIN ArtifactEntitlement al ON ala.artifact_entitlement_id = al.id
-				WHERE al.customer_organization_id = @customerOrganizationId
-				AND (al.expires_at IS NULL OR al.expires_at > now())
-				AND ala.artifact_id = a.id
+			AND (
+				a.public
+				OR EXISTS(
+					SELECT ala.id
+					FROM ArtifactEntitlement_Artifact ala
+					INNER JOIN ArtifactEntitlement al ON ala.artifact_entitlement_id = al.id
+					WHERE al.customer_organization_id = @customerOrganizationId
+					AND (al.expires_at IS NULL OR al.expires_at > now())
+					AND ala.artifact_id = a.id
+				)
 			)
 			GROUP BY a.id, a.created_at, a.organization_id, a.name, o.slug
 			ORDER BY max(av.created_at) DESC`,
@@ -316,6 +319,7 @@ func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerO
 			AND `+artifactVersionIsDigestExpr("av")+`
 			AND (
 				@isVendorUser
+				OR a.public
 				-- only check entitlement if there is at least one entitlement in this organization
 				OR NOT EXISTS (
 					SELECT al.id
@@ -540,6 +544,18 @@ func UpdateArtifactUpstream(
 	return nil
 }
 
+func UpdateArtifactPublic(ctx context.Context, artifactID, organizationID uuid.UUID, public bool) error {
+	db := internalctx.GetDb(ctx)
+	_, err := db.Exec(ctx,
+		`UPDATE Artifact SET public = @public WHERE id = @id AND organization_id = @organizationId`,
+		pgx.NamedArgs{"id": artifactID, "organizationId": organizationID, "public": public},
+	)
+	if err != nil {
+		return fmt.Errorf("could not update artifact visibility: %w", err)
+	}
+	return nil
+}
+
 func GetArtifactsWithUpstreamURL(ctx context.Context) ([]types.Artifact, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `SELECT`+artifactOutputExpr+`FROM Artifact a WHERE a.upstream_url IS NOT NULL`)
@@ -605,6 +621,11 @@ func CheckEntitlementForArtifact(
 			exists(SELECT 1 FROM ArtifactVersionAggregate),
 			exists(
 				SELECT 1
+					FROM Artifact a
+					WHERE a.organization_id = @orgId AND a.name = @name AND a.public
+			)
+			OR exists(
+				SELECT 1
 					FROM ArtifactVersionAggregate av
 					JOIN ArtifactEntitlement_Artifact ala
 						ON av.artifact_id = ala.artifact_id
@@ -615,6 +636,7 @@ func CheckEntitlementForArtifact(
 			)`,
 		pgx.NamedArgs{
 			"orgName":                orgName,
+			"orgId":                  orgID,
 			"name":                   name,
 			"reference":              reference,
 			"customerOrganizationId": customerOrganizationID,
@@ -652,7 +674,42 @@ func ArtifactBlobBelongsToOrg(ctx context.Context, orgID uuid.UUID, blobDigest s
 	return belongs, nil
 }
 
-func CheckEntitlementForArtifactBlob(ctx context.Context, digest string,
+// ArtifactBlobBelongsToPublicArtifact narrows ArtifactBlobBelongsToOrg down to a single public
+// artifact, so that an anonymous caller who knows a digest cannot reach it through a private
+// artifact that happens to reference the same blob.
+func ArtifactBlobBelongsToPublicArtifact(
+	ctx context.Context,
+	orgSlug, artifactName, blobDigest string,
+) (bool, error) {
+	db := internalctx.GetDb(ctx)
+	args := pgx.NamedArgs{"orgSlug": orgSlug, "name": artifactName, "blobDigest": blobDigest}
+	var belongs bool
+	err := db.QueryRow(ctx, `
+		SELECT EXISTS(
+			SELECT 1
+			FROM ArtifactVersionPart avp
+			JOIN ArtifactVersion av ON av.id = avp.artifact_version_id
+			JOIN Artifact a ON a.id = av.artifact_id
+			JOIN Organization o ON o.id = a.organization_id
+			WHERE o.slug = @orgSlug AND a.name = @name AND a.public
+				AND avp.artifact_blob_digest = @blobDigest
+		) OR EXISTS(
+			SELECT 1
+			FROM ArtifactVersion av
+			JOIN Artifact a ON a.id = av.artifact_id
+			JOIN Organization o ON o.id = a.organization_id
+			WHERE o.slug = @orgSlug AND a.name = @name AND a.public
+				AND av.manifest_blob_digest = @blobDigest
+		)`,
+		args,
+	).Scan(&belongs)
+	if err != nil {
+		return false, fmt.Errorf("could not check public blob ownership: %w", err)
+	}
+	return belongs, nil
+}
+
+func CheckEntitlementForArtifactBlob(ctx context.Context, digest, artifactName string,
 	customerOrganizationID uuid.UUID,
 	orgID uuid.UUID,
 ) error {
@@ -684,6 +741,13 @@ func CheckEntitlementForArtifactBlob(ctx context.Context, digest string,
 				JOIN ArtifactVersionAggregate agg ON avp.artifact_blob_digest = agg.manifest_blob_digest
 		)
 		SELECT exists(
+			-- a blob digest is shared across organizations, so the public artifact that carries it
+			-- has to be the one this request names, in the organization the caller belongs to
+			SELECT 1
+				FROM ArtifactVersionAggregate av
+				JOIN Artifact a ON a.id = av.artifact_id
+				WHERE a.organization_id = @orgId AND a.name = @artifactName AND a.public
+		) OR exists(
 			SELECT *
 				FROM ArtifactVersionAggregate av
 				JOIN ArtifactEntitlement_Artifact ala
@@ -693,7 +757,12 @@ func CheckEntitlementForArtifactBlob(ctx context.Context, digest string,
 				WHERE al.customer_organization_id = @customerOrganizationId
 					AND (al.expires_at IS NULL OR al.expires_at > now())
 		)`,
-		pgx.NamedArgs{"digest": digest, "customerOrganizationId": customerOrganizationID},
+		pgx.NamedArgs{
+			"digest":                 digest,
+			"artifactName":           artifactName,
+			"orgId":                  orgID,
+			"customerOrganizationId": customerOrganizationID,
+		},
 	)
 	if err != nil {
 		return fmt.Errorf("could not query ArtifactVersion: %w", err)
@@ -851,6 +920,7 @@ func CreateArtifactPullLogEntry(
 	remoteAddress string,
 	customerOrgID *uuid.UUID,
 	deploymentTargetID *uuid.UUID,
+	anonymous bool,
 ) error {
 	db := internalctx.GetDb(ctx)
 	remoteAddressPtr := &remoteAddress
@@ -863,6 +933,7 @@ func CreateArtifactPullLogEntry(
 		"remoteAddress":      remoteAddressPtr,
 		"customerOrgId":      customerOrgID,
 		"deploymentTargetId": deploymentTargetID,
+		"anonymous":          anonymous,
 	}
 
 	if userID != uuid.Nil {
@@ -878,14 +949,16 @@ func CreateArtifactPullLogEntry(
 			useraccount_id,
 			remote_address,
 			customer_organization_id,
-			deployment_target_id
+			deployment_target_id,
+			anonymous
 		)
 		VALUES (
 			@versionId,
 			@userId,
 			@remoteAddress,
 			@customerOrgId,
-			@deploymentTargetId
+			@deploymentTargetId,
+			@anonymous
 		)`,
 		args,
 	)
@@ -1096,6 +1169,9 @@ func GetArtifactVersionPulls(
 		conditions = append(conditions, "p.useraccount_id = @userAccountId")
 		args["userAccountId"] = *filter.UserAccountID
 	}
+	if filter.Anonymous {
+		conditions = append(conditions, "p.anonymous")
+	}
 	if filter.RemoteAddress != nil {
 		conditions = append(conditions, "p.remote_address = @remoteAddress")
 		args["remoteAddress"] = *filter.RemoteAddress
@@ -1116,6 +1192,7 @@ func GetArtifactVersionPulls(
 	query := `SELECT
 			p.created_at,
 			p.remote_address,
+			p.anonymous,
 			CASE WHEN u.id IS NOT NULL THEN (` + userAccountOutputExpr + `) ELSE NULL END,
 			CASE WHEN co.id IS NOT NULL THEN (` + customerOrganizationOutputExpr + `) ELSE NULL END,
 			CASE WHEN dt.id IS NOT NULL THEN (dt.id, dt.name) ELSE NULL END,

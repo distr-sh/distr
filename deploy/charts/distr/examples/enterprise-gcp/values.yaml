@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/distr-sh/distr/4.0.3/deploy/charts/distr/values.schema.json # x-release-please-version
+# yaml-language-server: $schema=https://raw.githubusercontent.com/distr-sh/distr/4.1.0/deploy/charts/distr/values.schema.json # x-release-please-version
 # Distr Enterprise on GCP, the counterpart of deploy/docker/enterprise-gcp: Distr on GKE, the
 # database on Cloud SQL for PostgreSQL with a private IP in the cluster's VPC and both buckets on
 # Cloud Storage in the region of the cluster. Nothing is stored in the cluster, so the release can
