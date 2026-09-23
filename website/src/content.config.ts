@@ -65,6 +65,16 @@ export const CraGuideConfigSchema = z.object({
     .optional(),
 });
 
+export const CompareConfigSchema = ({image}: SchemaContext) =>
+  z.object({
+    title: z.string(),
+    description: z.string(),
+    slug: z.string(),
+    competitor: z.string(),
+    teaser: z.string(),
+    heroImage: image(),
+  });
+
 export const CustomerConfigSchema = ({image}: SchemaContext) =>
   z.object({
     company: z.string(),
@@ -115,6 +125,10 @@ export const collections = {
   cra: defineCollection({
     loader: glob({pattern: '**/*.{md,mdx}', base: 'src/content/cra'}),
     schema: CraGuideConfigSchema,
+  }),
+  compare: defineCollection({
+    loader: glob({pattern: '**/*.{md,mdx}', base: 'src/content/compare'}),
+    schema: CompareConfigSchema,
   }),
 };
 

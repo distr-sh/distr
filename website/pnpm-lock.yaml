@@ -207,7 +207,7 @@ importers:
         version: 8.6.0(embla-carousel@8.6.0)
       github-buttons:
         specifier: ^2.33.0
-        version: 2.33.0
+        version: 2.33.1
       marked:
         specifier: ^18.0.13
         version: 18.0.13
@@ -2097,8 +2097,8 @@ packages:
     resolution: {integrity: sha512-7nF7C9fIPFEMHgEMEfgIlO9wDdZ8CyHw27rWciFZfHvHDReIiPhsYuzPRXsfvBCqFy1l8RRyyWV7QLM+ZhUJsQ==}
     engines: {node: '>=20.20.0'}
 
-  github-buttons@2.33.0:
-    resolution: {integrity: sha512-+WQ+r3nSM2/NGBo17LaQ2evPOEjXUmSLzFuZzpz9rCzwa7HrmIDQCaMx6uTsfL1aW7/bmBd5slREkCp3XKpuFw==}
+  github-buttons@2.33.1:
+    resolution: {integrity: sha512-T0yhQKV/qicsr4IH1Cwa7Oy0L9Q/nsG5m2OftH88+Sq9Ub+1chjnhl4D8bFN2RlB3s63IJv4zEqcF2vgO5TJiw==}
 
   github-slugger@2.0.0:
     resolution: {integrity: sha512-IaOQ9puYtjrkq7Y0Ygl9KDZnrf/aiUJYUpVf89y8kyaxbRG7Y1SrX/jaumrv81vc61+kiMempujsM3Yw7w5qcw==}
@@ -5462,7 +5462,7 @@ snapshots:
     dependencies:
       resolve-pkg-maps: 1.0.0
 
-  github-buttons@2.33.0: {}
+  github-buttons@2.33.1: {}
 
   github-slugger@2.0.0: {}
 

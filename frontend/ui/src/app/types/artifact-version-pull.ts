@@ -3,6 +3,7 @@ import {BaseArtifact, BaseArtifactVersion} from '../services/artifacts.service';
 export interface ArtifactVersionPull {
   createdAt: string;
   remoteAddress?: string;
+  anonymous: boolean;
   userAccountName?: string;
   userAccountEmail?: string;
   customerOrganizationName?: string;

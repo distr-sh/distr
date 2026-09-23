@@ -25,6 +25,19 @@ func NewManifestHandler() manifest.ManifestHandler {
 	return &handler{}
 }
 
+// entitlementCustomerOrgID returns the customer organization whose entitlements narrow down what a
+// listing may show, and nil for a vendor user and for an anonymous request, which reaches nothing
+// but a public artifact. A public artifact is not narrowed either, which the queries decide.
+func entitlementCustomerOrgID(ctx context.Context) *uuid.UUID {
+	if principal, ok := auth.ArtifactsPrincipal(ctx); !ok {
+		return nil
+	} else if principal.CurrentOrg().HasFeature(types.FeatureLicensing) {
+		return principal.CurrentCustomerOrgID()
+	} else {
+		return nil
+	}
+}
+
 // Delete removes a manifest by tag reference.
 func (h *handler) Delete(ctx context.Context, nameStr string, reference string) error {
 	if _, err := digest.Parse(reference); err == nil {
@@ -112,11 +125,6 @@ func (h *handler) ListDigests(ctx context.Context, nameStr string) ([]digest.Dig
 	if name, err := name.Parse(nameStr); err != nil {
 		return nil, fmt.Errorf("%w: %w", manifest.ErrNameUnknown, err)
 	} else {
-		auth := auth.ArtifactsAuthentication.Require(ctx)
-		var entitlementCustomerOrgID *uuid.UUID
-		if auth.CurrentOrg().HasFeature(types.FeatureLicensing) && auth.CurrentCustomerOrgID() != nil {
-			entitlementCustomerOrgID = auth.CurrentCustomerOrgID()
-		}
 		if artifact, err := db.GetArtifactByName(ctx, name.OrgName, name.ArtifactName); err != nil {
 			if errors.Is(err, apierrors.ErrNotFound) {
 				return nil, fmt.Errorf("%w: %w", manifest.ErrNameUnknown, err)
@@ -125,7 +133,7 @@ func (h *handler) ListDigests(ctx context.Context, nameStr string) ([]digest.Dig
 		} else if versions, err := db.GetVersionsForArtifact(
 			ctx,
 			artifact.ID,
-			entitlementCustomerOrgID,
+			entitlementCustomerOrgID(ctx),
 		); err != nil {
 			return nil, err
 		} else {
@@ -147,11 +155,6 @@ func (h *handler) ListTags(ctx context.Context, nameStr string, n int, last stri
 	if name, err := name.Parse(nameStr); err != nil {
 		return nil, fmt.Errorf("%w: %w", manifest.ErrNameUnknown, err)
 	} else {
-		auth := auth.ArtifactsAuthentication.Require(ctx)
-		var entitlementCustomerOrgID *uuid.UUID
-		if auth.CurrentOrg().HasFeature(types.FeatureLicensing) && auth.CurrentCustomerOrgID() != nil {
-			entitlementCustomerOrgID = auth.CurrentCustomerOrgID()
-		}
 		if artifact, err := db.GetArtifactByName(ctx, name.OrgName, name.ArtifactName); err != nil {
 			if errors.Is(err, apierrors.ErrNotFound) {
 				return nil, fmt.Errorf("%w: %w", manifest.ErrNameUnknown, err)
@@ -160,7 +163,7 @@ func (h *handler) ListTags(ctx context.Context, nameStr string, n int, last stri
 		} else if versions, err := db.GetVersionsForArtifact(
 			ctx,
 			artifact.ID,
-			entitlementCustomerOrgID,
+			entitlementCustomerOrgID(ctx),
 		); err != nil {
 			return nil, err
 		} else {

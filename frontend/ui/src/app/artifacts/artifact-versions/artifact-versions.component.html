@@ -23,8 +23,11 @@
               <h2 class="text-2xl font-semibold truncate">
                 {{ artifact.name }}
               </h2>
-              <p class="text-sm text-gray-500 dark:text-gray-400 truncate mt-1">
+              <p class="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 truncate mt-1">
                 <app-uuid [uuid]="artifact.id" [small]="true" />
+                @if (artifact.public) {
+                  <app-artifact-public-badge />
+                }
               </p>
             </div>
 
@@ -66,6 +69,25 @@
                           <fa-icon [icon]="faKey" />
                           Edit upstream credentials
                         </button>
+                      </li>
+                    }
+                    @if (auth.hasRole('admin')) {
+                      <li>
+                        @if (artifact.public) {
+                          <button
+                            class="distr-dropdown-item distr-dropdown-item-warning"
+                            (click)="setPublic(artifact, false)">
+                            <fa-icon [icon]="faLock" />
+                            Make private
+                          </button>
+                        } @else {
+                          <button
+                            class="distr-dropdown-item distr-dropdown-item-warning"
+                            (click)="setPublic(artifact, true)">
+                            <fa-icon [icon]="faGlobe" />
+                            Make public
+                          </button>
+                        }
                       </li>
                     }
                     <li>
@@ -148,6 +170,19 @@
                 <app-clip [clip]="usage" />
               </div>
             </div>
+          }
+          @if (artifact.public) {
+            <p class="distr-hint">
+              ORAS, Helm and other OCI clients pull this artifact without credentials. Docker requires the
+              <a
+                href="https://docs.docker.com/engine/storage/containerd/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-primary-600 hover:underline dark:text-primary-500"
+                >containerd image store</a
+              >: on the legacy <code>overlay2</code> storage driver it asks the registry for authentication before it
+              pulls and reports that a login is needed.
+            </p>
           }
         </div>
       </div>

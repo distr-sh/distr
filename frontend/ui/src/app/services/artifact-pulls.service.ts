@@ -13,6 +13,7 @@ export interface ArtifactPullFilters {
   count?: number;
   customerOrganizationId?: string;
   userAccountId?: string;
+  anonymous?: boolean;
   remoteAddress?: string;
   artifactId?: string;
   artifactVersionId?: string;
@@ -57,6 +58,9 @@ export class ArtifactPullsService {
     }
     if (filters.userAccountId) {
       params = params.set('userAccountId', filters.userAccountId);
+    }
+    if (filters.anonymous) {
+      params = params.set('anonymous', true);
     }
     if (filters.remoteAddress) {
       params = params.set('remoteAddress', filters.remoteAddress);

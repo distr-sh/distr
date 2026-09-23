@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/compose-spec/compose-go/v2/dotenv"
 	"github.com/distr-sh/distr/api"
@@ -19,6 +20,8 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
+
+const dockerApplyTimeout = 10 * time.Minute
 
 func DockerEngineApply(
 	ctx context.Context,
@@ -36,12 +39,15 @@ func DockerEngineApply(
 		logger.Warn("failed to save deployment before apply", zap.Error(err))
 	}
 
+	applyCtx, cancel := context.WithTimeout(ctx, dockerApplyTimeout)
+	defer cancel()
+
 	if *deployment.DockerType == types.DockerTypeSwarm {
 		logger.Debug("applying compose file in swarm mode")
-		status, err = ApplyComposeFileSwarm(ctx, deployment, updateStatus)
+		status, err = ApplyComposeFileSwarm(applyCtx, deployment, updateStatus)
 	} else {
 		logger.Debug("applying compose file")
-		err = ApplyComposeFile(ctx, deployment, updateStatus)
+		err = ApplyComposeFile(applyCtx, deployment, updateStatus)
 		if err == nil {
 			status = "compose command executed successfully"
 		}

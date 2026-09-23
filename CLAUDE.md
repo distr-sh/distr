@@ -90,6 +90,7 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 - Put styling a component always needs on the component itself via `host: {class: '…'}` (e.g. `app-search-bar`, `app-editor`), and leave only what varies per call site in the template.
 - Keep styling used by a single component in its own `.scss` rather than in `theme.scss`, and start that file with `@reference '<path>/styles/tailwind.css'`, or `@apply` fails the build with `Cannot apply unknown utility class`. Tailwind compiles each component stylesheet on its own, and that entry point holds the `@theme` tokens and the `dark` variant, so keep it plain CSS: `@reference` cannot read Sass. Prefer the `.scss` file over an inline `styles` block, since Tailwind scans `.ts` files and emits utilities found there into the global stylesheet as well.
 - Never map Tailwind utility chains in the component class to pick a variant at runtime. Put the variants into the stylesheet.
+- Write a Tailwind chain as one literal string where it applies, in `host: {class: '…'}` or in the template, never interpolated from a TypeScript constant (`class: \`distr-status-badge ${colors}\``). A chain that has to vary with a value goes into a `*BadgeClass()`helper read through`[ngClass]`, as the advisory and support bundle badges do, and one that repeats across the app becomes a shared class in `theme.scss`.
 - Use a shared badge class for every badge: `distr-status-badge` for a state, with the colors including a `border-*` from a color helper next to the feature, `distr-tag-badge` for a free-form label and `distr-deployment-type-badge` or `distr-artifact-tag` for those two. Do not write a new pill inline.
 - Give a page that a vendor also manages per customer the shape the users and secrets pages have: an inner component with a `customerOrganizationId` input that scopes what it reads and writes, a routed organization page with `app-organization-scope-nav` and a routed customer page under `customers/:customerOrganizationId/<section>` with `app-customer-breadcrumb`. Scope such an endpoint with a `customerOrganizationId` parameter resolved through `resolveCustomerScope` rather than by widening what a list returns.
 - Switch between the sections of a page with `app-tab-bar` and between the sections of a form, a drawer or a panel with `app-pill-tab-bar`. Do not write the buttons of either inline, and do not give a list of configurations one route per kind when one table can show them all.
@@ -101,6 +102,8 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 Route every database access through `internal/db/`. Never write raw SQL in a handler or service; add the query to the matching file in `internal/db/` instead.
 
 Use `now()` for the current time, never `current_timestamp`, in `internal/db/` and in the migrations in `internal/migrations/sql/`, including column defaults.
+
+Never write `COMMENT ON COLUMN` or `COMMENT ON TABLE`. What a column means belongs on its field in `internal/types`, where it is read and reviewed; a comment in a migration is invisible there and cannot be changed without another migration.
 
 ```go
 err := db.BeginFunc(ctx, func(tx pgx.Tx) error {

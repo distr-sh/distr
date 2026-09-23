@@ -31,7 +31,11 @@ import {FeatureFlagService} from '../../services/feature-flag.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
-import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent} from '../components';
+import {
+  ArtifactPublicBadgeComponent,
+  ArtifactsDownloadCountComponent,
+  ArtifactsDownloadedByComponent,
+} from '../components';
 
 @Component({
   selector: 'app-artifacts',
@@ -41,6 +45,7 @@ import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent} from '.
     FaIconComponent,
     UuidComponent,
     RouterLink,
+    ArtifactPublicBadgeComponent,
     ArtifactsDownloadCountComponent,
     ArtifactsDownloadedByComponent,
     AutotrimDirective,

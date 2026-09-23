@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/distr-sh/distr/4.0.3/deploy/charts/distr/values.schema.json # x-release-please-version
+# yaml-language-server: $schema=https://raw.githubusercontent.com/distr-sh/distr/4.1.0/deploy/charts/distr/values.schema.json # x-release-please-version
 # Self-contained enterprise edition install on any cluster, the counterpart of
 # deploy/docker/enterprise: the community example with the enterprise image, which unlocks the plan
 # its LICENSE_KEY was issued for. The chart brings its own PostgreSQL and RustFS object storage,
