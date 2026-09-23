@@ -1188,17 +1188,6 @@ const signupSteps = [
 
       userData = {...userData, ...data};
 
-      // Identify before capturing so this step, and every anonymous pageview
-      // that preceded it, resolve to the same person.
-      window.posthog?.identify(data.email, {
-        email: data.email,
-        name: [data.firstName, data.lastName].filter(Boolean).join(' '),
-        company: data.companyName,
-        job_title: data.jobTitle,
-      });
-
-      trackStep(1);
-
       // Show loading state
       setLoadingState('signup', true);
       hideMessages();
@@ -1219,6 +1208,14 @@ const signupSteps = [
           showError(errorMessage);
           return;
         }
+
+        window.posthog?.identify(data.email, {
+          email: data.email,
+          name: [data.firstName, data.lastName].filter(Boolean).join(' '),
+          company: data.companyName,
+          job_title: data.jobTitle,
+        });
+        trackStep(1);
 
         // Success - move to step 2
         showStep(2);

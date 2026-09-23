@@ -89,22 +89,41 @@ const REPLAY_PATHS = ['/onboarding', '/contact', '/pricing'];
     posthog.startSessionRecording();
   }
 
-  // Demo links live in components and in blog markdown, so one delegated
-  // listener covers all of them.
-  document.addEventListener('click', event => {
-    const link =
-      event.target instanceof Element &&
-      event.target.closest('a[href*="cal.glasskube.com/team/gk/demo"]');
-    if (!link) return;
+  // Demo entry points live in components, blog markdown and the mobile menu's
+  // <select>, so document-level listeners cover all of them.
+  const DEMO_URL = 'cal.glasskube.com/team/gk/demo';
 
+  function trackDemoIntent(placement, linkText) {
     try {
       localStorage.setItem(BOOKING_FLOW_STORAGE_KEY, 'demo');
     } catch {
       // Storage can be blocked; the click is still captured below.
     }
-    posthog.capture('demo_cta_clicked', {
-      placement: link.closest('header') ? 'header' : 'page',
-      link_text: link.textContent.trim(),
-    });
+    posthog.capture('demo_cta_clicked', {placement, link_text: linkText});
+  }
+
+  document.addEventListener('click', event => {
+    const link =
+      event.target instanceof Element &&
+      event.target.closest(`a[href*="${DEMO_URL}"]`);
+    if (link) {
+      trackDemoIntent(
+        link.closest('header') ? 'header' : 'page',
+        link.textContent.trim(),
+      );
+    }
+  });
+
+  document.addEventListener('change', event => {
+    const select = event.target;
+    if (
+      select instanceof HTMLSelectElement &&
+      select.value.includes(DEMO_URL)
+    ) {
+      trackDemoIntent(
+        'mobile_menu',
+        select.selectedOptions[0]?.textContent.trim() ?? '',
+      );
+    }
   });
 </script>
