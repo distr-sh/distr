@@ -181,6 +181,12 @@ importers:
       '@angular/forms':
         specifier: ^22.0.8
         version: 22.1.7(@angular/common@22.1.7(@angular/core@22.1.7(@angular/compiler@22.1.7)(rxjs@7.8.2)(zone.js@0.16.3))(rxjs@7.8.2))(@angular/core@22.1.7(@angular/compiler@22.1.7)(rxjs@7.8.2)(zone.js@0.16.3))(@angular/platform-browser@22.1.7(@angular/common@22.1.7(@angular/core@22.1.7(@angular/compiler@22.1.7)(rxjs@7.8.2)(zone.js@0.16.3))(rxjs@7.8.2))(@angular/core@22.1.7(@angular/compiler@22.1.7)(rxjs@7.8.2)(zone.js@0.16.3)))(rxjs@7.8.2)
+      '@angular/language-server':
+        specifier: ^22.1.7
+        version: 22.1.7
+      '@angular/language-service':
+        specifier: ^22.1.7
+        version: 22.1.7
       '@angular/platform-browser':
         specifier: ^22.0.8
         version: 22.1.7(@angular/common@22.1.7(@angular/core@22.1.7(@angular/compiler@22.1.7)(rxjs@7.8.2)(zone.js@0.16.3))(rxjs@7.8.2))(@angular/core@22.1.7(@angular/compiler@22.1.7)(rxjs@7.8.2)(zone.js@0.16.3))
@@ -449,6 +455,15 @@ packages:
       '@angular/core': 22.1.7
       '@angular/platform-browser': 22.1.7
       rxjs: ^6.5.3 || ^7.4.0
+
+  '@angular/language-server@22.1.7':
+    resolution: {integrity: sha512-TcB/yZL0IC4i+s5xH9117DvO7F8oW+INFh/nG+W0PkJSe1lmO9Ku36an6ER4Iw5HFrFLkpJuagdjNpt2gS6ZCA==}
+    engines: {node: ^22.22.3 || ^24.15.0 || >=26.0.0}
+    hasBin: true
+
+  '@angular/language-service@22.1.7':
+    resolution: {integrity: sha512-6IAVLufu/F8VMzoLmCvH1fyzxUFZ9IJZWjGW/LI+aYlkL+3KGyo15uji8W/e6D6p++/9O5QBL89o67ydg14LsQ==}
+    engines: {node: ^22.22.3 || ^24.15.0 || >=26.0.0}
 
   '@angular/platform-browser@22.1.7':
     resolution: {integrity: sha512-4dT3qGw3ZHVQUcHKALzMx9MTo+pxAMzHIPxc8HUESklqXfq6GRaIIfFMvE0RsquI9iqu6admD6lOAEzLWS8DxA==}
@@ -3602,6 +3617,13 @@ snapshots:
       rxjs: 7.8.2
       tslib: 2.8.1
       zod: 4.4.3
+
+  '@angular/language-server@22.1.7':
+    dependencies:
+      '@angular/language-service': 22.1.7
+      typescript: 6.0.3
+
+  '@angular/language-service@22.1.7': {}
 
   '@angular/platform-browser@22.1.7(@angular/common@22.1.7(@angular/core@22.1.7(@angular/compiler@22.1.7)(rxjs@7.8.2)(zone.js@0.16.3))(rxjs@7.8.2))(@angular/core@22.1.7(@angular/compiler@22.1.7)(rxjs@7.8.2)(zone.js@0.16.3))':
     dependencies:
