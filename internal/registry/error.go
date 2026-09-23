@@ -163,6 +163,8 @@ func regErrAuthz(err error) *regError {
 	switch {
 	case errors.Is(err, authz.ErrAuthenticationRequired):
 		return regErrUnauthorized
+	case errors.Is(err, authz.ErrRateLimited):
+		return regErrTooManyRequests
 	case errors.Is(err, authz.ErrAccessDenied):
 		return regErrDenied(err.Error())
 	case errors.Is(err, registryerror.ErrInvalidArtifactName):
