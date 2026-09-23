@@ -39,19 +39,10 @@ const {title, description, heroImage, heading, subheading, faqs} =
     }
   }
 
-  /* Starlight scales link buttons up above 50rem, which is too heavy for a link
-     that closes every section. Keep the compact size and centre it in the column. */
-  .prose :global(a.sl-link-button) {
+  .prose :global(.link-button) {
     display: flex;
     width: fit-content;
     margin-inline: auto;
-    font-size: var(--sl-text-sm);
-    padding: 0.4375rem 1.125rem;
-  }
-
-  /* MDX wraps the label in a paragraph, which would add the prose margins to it. */
-  .prose :global(a.sl-link-button p) {
-    margin: 0;
   }
 </style>
 

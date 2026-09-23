@@ -1,6 +1,6 @@
 ---
 import {Image} from 'astro:assets';
-import {Icon} from 'astro-icon/components';
+import LinkButton from '~/components/overwrites/LinkButton.astro';
 import type {ImageMetadata} from 'astro';
 
 export interface Props {
@@ -130,13 +130,12 @@ const useThemedLogo = logoLight && logoDark;
           </div>
         </div>
 
-        <!-- Back to Case Studies Link -->
-        <a
+        <LinkButton
           href="/case-studies/"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-br from-[#00b5eb] to-[#63c5e3] text-white font-medium text-sm hover:shadow-lg transition-all duration-300 hover:scale-105 w-full justify-center">
-          <Icon name="lucide:arrow-left" class="w-4 h-4" />
+          icon="lucide:arrow-left"
+          class="w-full justify-center">
           All case studies
-        </a>
+        </LinkButton>
       </div>
     </div>
   </div>

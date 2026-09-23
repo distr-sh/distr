@@ -1,7 +1,6 @@
 ---
 import {Icon} from '@astrojs/starlight/components';
 import Image from '~/components/common/Image.astro';
-import CompareCtas from '~/components/compare/CompareCtas.astro';
 import type {ImageMetadata} from 'astro';
 
 export interface Props {
@@ -29,18 +28,16 @@ const intro = subheading ?? description;
 
 <header class="mb-12 text-center">
   <h1
-    class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 dark:text-white mb-8 leading-tight">
+    class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 dark:text-white mb-3 leading-tight">
     {headline}
   </h1>
 
   <p
-    class="text-lg sm:text-xl text-gray-600 dark:text-gray-400 mb-8 leading-relaxed max-w-3xl mx-auto">
+    class="text-lg sm:text-xl text-gray-600 dark:text-gray-400 sm:mb-16 mb-8 leading-relaxed max-w-3xl mx-auto">
     {intro}
   </p>
 
-  <CompareCtas />
-
-  <div class="mt-12 -mx-6 sm:-mx-8 lg:-mx-16">
+  <div class="mt-8 -mx-6 sm:-mx-8 lg:-mx-16">
     <Image
       src={heroImage}
       class="w-full rounded-xl bg-gray-100 dark:bg-gray-800"

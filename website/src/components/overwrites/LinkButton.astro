@@ -1,0 +1,59 @@
+---
+// Starlight's `components` config cannot override its LinkButton, so pages import
+// this one instead of the one from `@astrojs/starlight/components`.
+import {Icon} from 'astro-icon/components';
+import type {HTMLAttributes} from 'astro/types';
+
+interface Props extends Omit<HTMLAttributes<'a'>, 'href'> {
+  href?: string;
+  variant?: 'primary' | 'secondary' | 'minimal';
+  icon?: string;
+  iconPlacement?: 'start' | 'end';
+}
+
+const {
+  href,
+  variant = 'primary',
+  icon,
+  iconPlacement = 'start',
+  class: className,
+  ...attrs
+} = Astro.props;
+
+const Tag = href ? 'a' : 'span';
+
+const variants = {
+  primary:
+    'border-transparent bg-gradient-to-br bg-origin-border from-[#00b5eb] to-[#63c5e3] text-white hover:scale-105 hover:shadow-lg',
+  secondary:
+    'border-accent-600 text-accent-700 hover:bg-accent-600/10 dark:border-accent-300 dark:text-accent-200 dark:hover:bg-accent-300/10',
+  minimal:
+    'border-transparent px-0 text-accent-600 hover:text-accent-800 dark:text-accent-300 dark:hover:text-accent-200',
+};
+
+const iconClass = `h-4 w-4 shrink-0 transition-transform duration-300 ${
+  iconPlacement === 'end'
+    ? 'group-hover/link-button:translate-x-0.5'
+    : 'group-hover/link-button:-translate-x-0.5'
+}`;
+---
+
+<Tag
+  href={href}
+  class:list={[
+    'link-button group/link-button not-prose inline-flex items-center gap-2 whitespace-nowrap rounded-lg border-2 px-4 py-1.5 text-sm font-medium no-underline transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-600',
+    variants[variant],
+    className,
+  ]}
+  {...attrs}>
+  {icon && iconPlacement === 'start' && <Icon name={icon} class={iconClass} />}
+  <slot />
+  {icon && iconPlacement === 'end' && <Icon name={icon} class={iconClass} />}
+</Tag>
+
+<style>
+  /* MDX wraps a label written on its own line in a paragraph. */
+  .link-button :global(p) {
+    display: contents;
+  }
+</style>
