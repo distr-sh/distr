@@ -3,6 +3,7 @@ import {Icon} from 'astro-icon/components';
 import distrBrandLogo from '~/assets/distr-brand.svg';
 import CalComIFrame from '~/components/booking/CalComIFrame.astro';
 import {metrics} from '~/data/metrics';
+import {BOOKING_FLOW_STORAGE_KEY} from '~/utils/analytics';
 
 const formsServerBaseUrl = import.meta.env.FORMS_SERVER;
 const reCaptchaKeyV2 = import.meta.env.RE_CAPTCHA_KEY_v2;
@@ -964,7 +965,15 @@ const signupSteps = [
   </div>
 </div>
 
-<script is:inline define:vars={{flowType, requirePassword, formsServerBaseUrl}}>
+<script
+  is:inline
+  define:vars={{
+    flowType,
+    requirePassword,
+    formsServerBaseUrl,
+    BOOKING_FLOW_STORAGE_KEY,
+  }}
+>
   // Store user data across steps
   let userData = {};
   let reCaptchaToken = '';
@@ -974,9 +983,13 @@ const signupSteps = [
   const submitEndpoint = `${formsServerBaseUrl}${apiPath}/submit`;
   const telemetryEndpoint = `${formsServerBaseUrl}${apiPath}/telemetry`;
 
-  // Track events for analytics
-  function trackEvent(eventName, properties = {}) {
-    window.posthog?.capture(eventName, properties);
+  // Track form progress for analytics
+  const eventPrefix = flowType === 'onboarding' ? 'onboarding' : 'signup';
+  function trackStep(step, properties = {}) {
+    window.posthog?.capture(`${eventPrefix}_step_${step}_completed`, {
+      flow_type: flowType,
+      ...properties,
+    });
   }
 
   // Update URL with step parameter
@@ -1184,9 +1197,7 @@ const signupSteps = [
         job_title: data.jobTitle,
       });
 
-      trackEvent('signup_step_1_completed', {
-        flow_type: flowType,
-      });
+      trackStep(1);
 
       // Show loading state
       setLoadingState('signup', true);
@@ -1255,7 +1266,7 @@ const signupSteps = [
 
       userData = {...userData, ...data};
 
-      trackEvent('signup_step_2_completed');
+      trackStep(2);
 
       setLoadingState('details', true);
 
@@ -1340,7 +1351,7 @@ const signupSteps = [
 
       userData = {...userData, ...data};
 
-      trackEvent('signup_step_3_completed');
+      trackStep(3);
 
       setLoadingState('application', true);
 
@@ -1414,7 +1425,7 @@ const signupSteps = [
 
       userData = {...userData, ...data};
 
-      trackEvent('signup_step_4_completed');
+      trackStep(4);
 
       setLoadingState('discovery', true);
 
@@ -1443,9 +1454,7 @@ const signupSteps = [
 
       userData = {...userData, ...data};
 
-      trackEvent('signup_step_5_completed', {
-        flow_type: flowType,
-      });
+      trackStep(5);
 
       setLoadingState('timeline', true);
 
@@ -1455,6 +1464,14 @@ const signupSteps = [
       setLoadingState('timeline', false);
 
       console.log('Final signup data:', userData);
+
+      // The success view embeds the booking calendar; remember this flow so
+      // /demo/success can attribute the booking to it.
+      try {
+        localStorage.setItem(BOOKING_FLOW_STORAGE_KEY, flowType);
+      } catch {
+        // Storage can be blocked; the booking then records as 'unknown'.
+      }
 
       // Show success message
       document.querySelectorAll('.step-content').forEach(el => {

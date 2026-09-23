@@ -1,10 +1,12 @@
 ---
+import {BOOKING_FLOW_STORAGE_KEY} from '~/utils/analytics';
+
 // Paths where session replay is useful. Recording blog and docs reading is high
 // volume and low signal, so replay starts only on conversion flows.
-const REPLAY_PATHS = ['/get-started', '/onboarding', '/contact', '/pricing'];
+const REPLAY_PATHS = ['/onboarding', '/contact', '/pricing'];
 ---
 
-<script is:inline define:vars={{REPLAY_PATHS}}>
+<script is:inline define:vars={{REPLAY_PATHS, BOOKING_FLOW_STORAGE_KEY}}>
   !(function (t, e) {
     var o, n, p, r;
     e.__SV ||
@@ -86,4 +88,23 @@ const REPLAY_PATHS = ['/get-started', '/onboarding', '/contact', '/pricing'];
   if (REPLAY_PATHS.some(path => window.location.pathname.startsWith(path))) {
     posthog.startSessionRecording();
   }
+
+  // Demo links live in components and in blog markdown, so one delegated
+  // listener covers all of them.
+  document.addEventListener('click', event => {
+    const link =
+      event.target instanceof Element &&
+      event.target.closest('a[href*="cal.glasskube.com/team/gk/demo"]');
+    if (!link) return;
+
+    try {
+      localStorage.setItem(BOOKING_FLOW_STORAGE_KEY, 'demo');
+    } catch {
+      // Storage can be blocked; the click is still captured below.
+    }
+    posthog.capture('demo_cta_clicked', {
+      placement: link.closest('header') ? 'header' : 'page',
+      link_text: link.textContent.trim(),
+    });
+  });
 </script>
