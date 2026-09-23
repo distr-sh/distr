@@ -42,6 +42,7 @@
             formControlName="userAccountId"
             class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
             <option value="">All</option>
+            <option [value]="anonymousUser">Anonymous</option>
             @for (opt of options.userAccounts; track opt.id) {
               <option [value]="opt.id">{{ opt.name }}</option>
             }
@@ -97,6 +98,11 @@
             </select>
           </div>
         }
+      } @else {
+        <div class="self-end flex items-center gap-2 py-2 distr-text-muted">
+          <app-spinner class="size-5" />
+          <span class="text-xs">Loading filters&hellip;</span>
+        </div>
       }
       <div class="ml-auto flex items-center gap-2 self-end">
         <button
@@ -104,7 +110,7 @@
           title="Reset"
           (click)="resetFilters()"
           class="p-2 leading-none flex items-center text-xs font-medium text-center distr-btn-secondary">
-          <fa-icon [icon]="faFilterCircleXmark" class="2xl:mr-2 text-gray-500 dark:text-gray-400" />
+          <fa-icon [icon]="faFilterCircleXmark" class="2xl:mr-2 distr-text-muted" />
           <span class="hidden 2xl:inline">Reset</span>
         </button>
         <button
@@ -113,7 +119,7 @@
           (click)="exportCsv()"
           [disabled]="isExporting()"
           class="p-2 leading-none flex items-center text-xs font-medium text-center distr-btn-secondary disabled:opacity-50 disabled:cursor-not-allowed">
-          <fa-icon [icon]="faDownload" class="2xl:mr-2 text-gray-500 dark:text-gray-400" />
+          <fa-icon [icon]="faDownload" class="2xl:mr-2 distr-text-muted" />
           <span class="hidden 2xl:inline">
             @if (isExporting()) {
               Exporting…
@@ -124,75 +130,92 @@
         </button>
       </div>
     </div>
-    <div class="overflow-x-auto">
-      <table class="distr-table">
-        <thead class="distr-table-head">
-          <tr>
-            <th scope="col" class="p-4">Date</th>
-            <th scope="col" class="p-4">Customer</th>
-            <th scope="col" class="p-4">User</th>
-            <th scope="col" class="p-4">Deployment</th>
-            <th scope="col" class="p-4">Address</th>
-            <th scope="col" class="p-4">Artifact</th>
-            <th scope="col" class="p-4">Version</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (pull of pulls(); track pull.createdAt) {
-            <tr class="distr-table-row">
-              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                {{ pull.createdAt | date: 'short' }}
-              </td>
-              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                @if (pull.customerOrganizationName) {
-                  {{ pull.customerOrganizationName }}
-                } @else {
-                  <span class="text-gray-500 dark:text-gray-400">-</span>
-                }
-              </td>
-              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                @if (pull.userAccountName || pull.userAccountEmail) {
-                  {{ pull.userAccountName ?? pull.userAccountEmail }}
-                } @else {
-                  <span class="text-gray-500 dark:text-gray-400">-</span>
-                }
-              </td>
-              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                @if (pull.deploymentTargetName) {
-                  {{ pull.deploymentTargetName }}
-                } @else {
-                  <span class="text-gray-500 dark:text-gray-400">-</span>
-                }
-              </td>
-              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                @if (pull.remoteAddress) {
-                  {{ pull.remoteAddress }}
-                } @else {
-                  <span class="text-gray-500 dark:text-gray-400">unknown</span>
-                }
-              </td>
-              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                {{ pull.artifact.name }}
-              </td>
-              <td
-                class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white"
-                [title]="pull.artifactVersion.name">
-                {{ formatVersionName(pull.artifactVersion.name) }}
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-    @if (hasMore()) {
-      <div class="flex justify-center px-2 py-4">
-        <button
-          type="button"
-          class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary"
-          (click)="showMore()">
-          Show more
-        </button>
+    @if (initialLoading()) {
+      <div class="flex justify-center items-center py-8 distr-text-muted">
+        <app-spinner class="size-6 me-2" />
+        <span>Loading&hellip;</span>
       </div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="distr-table">
+          <thead class="distr-table-head">
+            <tr>
+              <th scope="col" class="p-4">Date</th>
+              <th scope="col" class="p-4">Customer</th>
+              <th scope="col" class="p-4">User</th>
+              <th scope="col" class="p-4">Deployment</th>
+              <th scope="col" class="p-4">Address</th>
+              <th scope="col" class="p-4">Artifact</th>
+              <th scope="col" class="p-4">Version</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (pull of pulls(); track pull.createdAt) {
+              <tr class="distr-table-row">
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  {{ pull.createdAt | date: 'short' }}
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  @if (pull.customerOrganizationName) {
+                    {{ pull.customerOrganizationName }}
+                  } @else {
+                    <span class="distr-text-muted">-</span>
+                  }
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  @if (pull.userAccountName || pull.userAccountEmail) {
+                    {{ pull.userAccountName ?? pull.userAccountEmail }}
+                  } @else if (pull.anonymous) {
+                    <span class="distr-text-muted" title="Pulled from a public artifact without credentials">
+                      anonymous
+                    </span>
+                  } @else {
+                    <span class="distr-text-muted">-</span>
+                  }
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  @if (pull.deploymentTargetName) {
+                    {{ pull.deploymentTargetName }}
+                  } @else {
+                    <span class="distr-text-muted">-</span>
+                  }
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  @if (pull.remoteAddress) {
+                    {{ pull.remoteAddress }}
+                  } @else {
+                    <span class="distr-text-muted">unknown</span>
+                  }
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  {{ pull.artifact.name }}
+                </td>
+                <td
+                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+                  [title]="pull.artifactVersion.name">
+                  {{ formatVersionName(pull.artifactVersion.name) }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (hasMore()) {
+        <div class="flex justify-center px-2 py-4">
+          <button
+            type="button"
+            [disabled]="loading()"
+            class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary"
+            (click)="showMore()">
+            @if (loading()) {
+              <app-spinner class="size-4 me-2" />
+              Loading&hellip;
+            } @else {
+              Show more
+            }
+          </button>
+        </div>
+      }
     }
   </div>
 </app-page>
