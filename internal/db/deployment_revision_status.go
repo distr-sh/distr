@@ -16,6 +16,8 @@ import (
 // UpdateDeploymentRevisionStatus overwrites the status of the given revision. Agents report the
 // status they observe on every interval, so created_at is bumped even when nothing changed, which
 // is what [types.DeploymentRevisionStatus.IsStale] reads to tell a silent agent from a healthy one.
+// Any status other than progressing also becomes the revision's settled status, which a progressing
+// status leaves alone (see [GetLatestSettledDeploymentRevisionStatus]).
 func UpdateDeploymentRevisionStatus(
 	ctx context.Context,
 	deploymentRevisionID uuid.UUID,
@@ -25,7 +27,14 @@ func UpdateDeploymentRevisionStatus(
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`UPDATE DeploymentRevision SET status_type = @type, status_message = @message, status_created_at = now()
+		`UPDATE DeploymentRevision SET
+			status_type = @type::DEPLOYMENT_STATUS_TYPE,
+			status_message = @message,
+			status_created_at = now(),
+			settled_status_type = CASE WHEN @type::DEPLOYMENT_STATUS_TYPE = 'progressing'
+				THEN settled_status_type ELSE @type::DEPLOYMENT_STATUS_TYPE END,
+			settled_status_created_at = CASE WHEN @type::DEPLOYMENT_STATUS_TYPE = 'progressing'
+				THEN settled_status_created_at ELSE now() END
 		WHERE id = @deploymentRevisionId
 		RETURNING id AS deployment_revision_id, status_created_at AS created_at, status_type AS type,
 			status_message AS message`,
@@ -62,7 +71,11 @@ func UpdateDeploymentRevisionStatus(
 	return &status, nil
 }
 
-func GetLatestDeploymentRevisionStatus(
+// GetLatestSettledDeploymentRevisionStatus returns the newest status other than progressing across all
+// revisions of the deployment, which is what a new status is compared with to decide about notifications.
+// An agent that retries applying a revision reports progressing between two errors, so comparing with the
+// newest status of any type would alert on every retry. The message of a settled status is not stored.
+func GetLatestSettledDeploymentRevisionStatus(
 	ctx context.Context,
 	deploymentID uuid.UUID,
 ) (*types.DeploymentRevisionStatus, error) {
@@ -70,16 +83,16 @@ func GetLatestDeploymentRevisionStatus(
 
 	rows, err := db.Query(
 		ctx,
-		`SELECT id AS deployment_revision_id, status_created_at AS created_at, status_type AS type,
-			status_message AS message
+		`SELECT id AS deployment_revision_id, settled_status_created_at AS created_at, settled_status_type AS type,
+			'' AS message
 		FROM DeploymentRevision
-		WHERE deployment_id = @deploymentId AND status_type IS NOT NULL
-		ORDER BY status_created_at DESC
+		WHERE deployment_id = @deploymentId AND settled_status_type IS NOT NULL
+		ORDER BY settled_status_created_at DESC
 		LIMIT 1`,
 		pgx.NamedArgs{"deploymentId": deploymentID},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query latest DeploymentRevision status: %w", err)
+		return nil, fmt.Errorf("failed to query latest settled DeploymentRevision status: %w", err)
 	}
 
 	if result, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[types.DeploymentRevisionStatus]); err != nil {

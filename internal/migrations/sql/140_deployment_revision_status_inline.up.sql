@@ -2,9 +2,14 @@ ALTER TABLE DeploymentRevision
   ADD COLUMN status_type DEPLOYMENT_STATUS_TYPE,
   ADD COLUMN status_message TEXT,
   ADD COLUMN status_created_at TIMESTAMP,
+  ADD COLUMN settled_status_type DEPLOYMENT_STATUS_TYPE,
+  ADD COLUMN settled_status_created_at TIMESTAMP,
   ADD CONSTRAINT DeploymentRevision_status_complete CHECK (
     (status_type IS NULL) = (status_created_at IS NULL)
       AND (status_type IS NULL) = (status_message IS NULL)
+  ),
+  ADD CONSTRAINT DeploymentRevision_settled_status_complete CHECK (
+    (settled_status_type IS NULL) = (settled_status_created_at IS NULL)
   );
 
 UPDATE DeploymentRevision dr SET
@@ -14,6 +19,17 @@ UPDATE DeploymentRevision dr SET
 FROM (
   SELECT DISTINCT ON (deployment_revision_id) deployment_revision_id, type, message, created_at
   FROM DeploymentRevisionStatus
+  ORDER BY deployment_revision_id, created_at DESC
+) drs
+WHERE drs.deployment_revision_id = dr.id;
+
+UPDATE DeploymentRevision dr SET
+  settled_status_type = drs.type,
+  settled_status_created_at = drs.created_at
+FROM (
+  SELECT DISTINCT ON (deployment_revision_id) deployment_revision_id, type, created_at
+  FROM DeploymentRevisionStatus
+  WHERE type != 'progressing'
   ORDER BY deployment_revision_id, created_at DESC
 ) drs
 WHERE drs.deployment_revision_id = dr.id;

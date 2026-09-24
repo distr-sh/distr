@@ -16,6 +16,13 @@ SELECT id, status_type, status_message, status_created_at
 FROM DeploymentRevision
 WHERE status_type IS NOT NULL;
 
+-- The message of the settled status is not stored.
+INSERT INTO DeploymentRevisionStatus (deployment_revision_id, type, message, created_at)
+SELECT id, settled_status_type, '', settled_status_created_at
+FROM DeploymentRevision
+WHERE settled_status_type IS NOT NULL
+  AND settled_status_created_at IS DISTINCT FROM status_created_at;
+
 ALTER TABLE NotificationRecord
   ADD COLUMN previous_deployment_revision_status_id UUID REFERENCES DeploymentRevisionStatus (id) ON DELETE CASCADE,
   ADD COLUMN current_deployment_revision_status_id UUID REFERENCES DeploymentRevisionStatus (id) ON DELETE CASCADE;
@@ -53,6 +60,9 @@ CREATE INDEX idx_notification_record_config_prev_status_created
 
 ALTER TABLE DeploymentRevision
   DROP CONSTRAINT DeploymentRevision_status_complete,
+  DROP CONSTRAINT DeploymentRevision_settled_status_complete,
   DROP COLUMN status_type,
   DROP COLUMN status_message,
-  DROP COLUMN status_created_at;
+  DROP COLUMN status_created_at,
+  DROP COLUMN settled_status_type,
+  DROP COLUMN settled_status_created_at;
