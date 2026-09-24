@@ -103,6 +103,7 @@ func RunHelmInstall(
 	ctx context.Context,
 	namespace string,
 	deployment api.AgentDeployment,
+	previous *AgentDeployment,
 ) (*AgentDeployment, error) {
 	config, err := GetHelmActionConfig(ctx, namespace, &deployment)
 	if err != nil {
@@ -130,7 +131,7 @@ func RunHelmInstall(
 		return nil, fmt.Errorf("helm preflight failed: %w", err)
 	}
 
-	agentDeployment := NewAgentDeployment(deployment)
+	agentDeployment := NewAgentDeployment(deployment, previous)
 	agentDeployment.State = StateProgressing
 	if err := SaveDeployment(ctx, namespace, agentDeployment); err != nil {
 		logger.Warn("failed to save deployment before install", zap.Error(err))
@@ -144,7 +145,8 @@ func RunHelmInstall(
 		return nil, fmt.Errorf("failed to create release accessor: %w", err)
 	} else {
 		agentDeployment.State = StateReady
-		agentDeployment.HelmRevision = util.PtrTo(acc.Version())
+		agentDeployment.CurrentRevisionID = agentDeployment.RevisionID
+		agentDeployment.HelmRevision = new(acc.Version())
 	}
 
 	if err := SaveDeployment(ctx, namespace, agentDeployment); err != nil {
@@ -158,6 +160,7 @@ func RunHelmUpgrade(
 	ctx context.Context,
 	namespace string,
 	deployment api.AgentDeployment,
+	previous AgentDeployment,
 ) (*AgentDeployment, error) {
 	cfg, err := GetHelmActionConfig(ctx, namespace, &deployment)
 	if err != nil {
@@ -190,24 +193,60 @@ func RunHelmUpgrade(
 		return nil, fmt.Errorf("helm preflight failed: %w", err)
 	}
 
+	agentDeployment := NewAgentDeployment(deployment, &previous)
+	agentDeployment.State = StateProgressing
+	if err := SaveDeployment(ctx, namespace, agentDeployment); err != nil {
+		logger.Warn("failed to save deployment before upgrade", zap.Error(err))
+	}
+
 	releaser, err := upgradeAction.RunWithContext(ctx, deployment.ReleaseName, chart, deployment.Values)
 	if err != nil {
+		saveFailedUpgrade(ctx, namespace, deployment, previous, agentDeployment)
 		return nil, fmt.Errorf("helm upgrade failed: %w", err)
 	}
 
 	acc, err := release.NewAccessor(releaser)
 	if err != nil {
+		saveFailedUpgrade(ctx, namespace, deployment, previous, agentDeployment)
 		return nil, fmt.Errorf("failed to create release accessor: %w", err)
 	}
 
-	agentDeployment := NewAgentDeployment(deployment)
 	agentDeployment.State = StateReady
-	agentDeployment.HelmRevision = util.PtrTo(acc.Version())
+	agentDeployment.CurrentRevisionID = agentDeployment.RevisionID
+	agentDeployment.HelmRevision = new(acc.Version())
 	if err := SaveDeployment(ctx, namespace, agentDeployment); err != nil {
 		logger.Warn("failed to save deployment after upgrade", zap.Error(err))
 	}
 
-	return &agentDeployment, err
+	return &agentDeployment, nil
+}
+
+// saveFailedUpgrade restores the previous state if Helm did not create a new release, so that the upgrade
+// is retried. Otherwise, it records the failed revision as the attempted one, so that it is not retried, and
+// syncs the Helm revision, because Helm creates one release for the failed upgrade and another one for the
+// rollback when RollbackOnFailure is set. Without the sync, verifyLatestHelmRelease would refuse every
+// further upgrade because of the revision skew.
+func saveFailedUpgrade(
+	ctx context.Context,
+	namespace string,
+	deployment api.AgentDeployment,
+	previous AgentDeployment,
+	agentDeployment AgentDeployment,
+) {
+	latest, err := GetLatestHelmRelease(ctx, namespace, deployment)
+	if err != nil {
+		logger.Warn("could not get latest helm release after failed upgrade", zap.Error(err))
+		agentDeployment = previous
+	} else if helmRevision := latest.Version(); util.PtrEq(previous.HelmRevision, &helmRevision) {
+		agentDeployment = previous
+	} else {
+		agentDeployment.State = StateFailed
+		agentDeployment.HelmRevision = &helmRevision
+		logger.Info("synced tracking secret after failed upgrade", zap.Int("helmRevision", helmRevision))
+	}
+	if err := SaveDeployment(ctx, namespace, agentDeployment); err != nil {
+		logger.Warn("could not save deployment after failed upgrade", zap.Error(err))
+	}
 }
 
 func RunHelmUninstall(ctx context.Context, namespace, releaseName string) error {

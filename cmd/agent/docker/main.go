@@ -26,6 +26,7 @@ import (
 	"github.com/docker/cli/cli/flags"
 	composeapi "github.com/docker/compose/v5/pkg/api"
 	"github.com/docker/compose/v5/pkg/compose"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -108,6 +109,8 @@ func mainLoop(ctx context.Context) {
 	deploymentMetricsGoroutine := util.NewToggleableGoroutine(watchDeploymentMetrics)
 	imageDiskUsageGoroutine := util.NewToggleableGoroutine(watchImageDiskUsage)
 
+	go watchStatus(ctx)
+
 loop:
 	for ctx.Err() == nil {
 		select {
@@ -149,79 +152,80 @@ loop:
 			}
 
 			for _, deployment := range resource.Deployments {
-				var agentDeployment *AgentDeployment
-				var status string
-				statusType := types.DeploymentStatusTypeProgressing
-				_, err = agentauth.EnsureAuth(ctx, client.RawToken(), deployment)
-				if err != nil {
-					logger.Error("docker auth error", zap.Error(err))
-				} else {
-					if deployment.DockerType == nil {
-						logger.Error("cannot apply deployment because docker type is nil",
-							zap.Any("deploymentRevisionId", deployment.RevisionID))
-						continue
-					}
-
-					if existing, ok := deployments[deployment.ID]; ok {
-						agentDeployment = &existing
-					}
-
-					if agentDeployment == nil ||
-						agentDeployment.RevisionID != deployment.RevisionID ||
-						agentDeployment.State == StateFailed ||
-						agentDeployment.State == StateProgressing {
-						func() {
-							var previousDeploymentImages []string
-							if agentDeployment != nil {
-								if images, err := GetDeploymentImages(ctx, *agentDeployment); err != nil {
-									logger.Error("failed to get old images", zap.Error(err))
-								} else {
-									previousDeploymentImages = images
-								}
-							}
-
-							progressCtx, progressCancel := context.WithCancel(ctx)
-							defer progressCancel()
-							updateStatus := sendProgressInterval(progressCtx, deployment)
-							agentDeployment, status, err = DockerEngineApply(ctx, deployment, updateStatus)
-							if err == nil {
-								if deployment.ImageCleanupEnabled {
-									if delErr := DeleteImages(ctx, previousDeploymentImages); delErr != nil {
-										logger.Warn("failed to delete old images", zap.Error(delErr))
-									}
-								}
-
-								if deployment.ForceRestart {
-									err = errors.Join(err, RunDockerRestart(ctx, *agentDeployment))
-								}
-							}
-						}()
-					} else {
-						if *deployment.DockerType == types.DockerTypeCompose {
-							if err1 := EnsureComposeProjectDir(deployment); err1 != nil {
-								logger.Warn("could not write compose project directory", zap.Error(err1))
-							}
-						}
-						if statusType1, statusMessage, err1 := CheckStatus(ctx, *agentDeployment); err1 != nil {
-							err = errors.Join(err, err1)
-						} else {
-							status = statusMessage
-							statusType = statusType1
-						}
-					}
-				}
-
-				if err != nil {
-					err = client.StatusWithError(ctx, deployment, err)
-				} else {
-					err = client.Status(ctx, deployment, statusType, status)
-				}
-
-				if err != nil {
-					logger.Error("failed to send status", zap.Error(err))
-				}
+				applyDeployment(ctx, deployment, deployments)
 			}
 		}
+	}
+}
+
+func applyDeployment(ctx context.Context, deployment api.AgentDeployment, existing map[uuid.UUID]AgentDeployment) {
+	if _, err := agentauth.EnsureAuth(ctx, client.RawToken(), deployment); err != nil {
+		logger.Error("docker auth error", zap.Error(err))
+		sendApplyStatus(ctx, deployment, "", err)
+		return
+	}
+
+	if deployment.DockerType == nil {
+		logger.Error("cannot apply deployment because docker type is nil",
+			zap.Any("deploymentRevisionId", deployment.RevisionID))
+		return
+	}
+
+	var agentDeployment *AgentDeployment
+	if d, ok := existing[deployment.ID]; ok {
+		agentDeployment = &d
+	}
+
+	if agentDeployment != nil &&
+		agentDeployment.RevisionID == deployment.RevisionID &&
+		agentDeployment.State != StateFailed &&
+		agentDeployment.State != StateProgressing {
+		if *deployment.DockerType == types.DockerTypeCompose {
+			if err := EnsureComposeProjectDir(deployment); err != nil {
+				logger.Warn("could not write compose project directory", zap.Error(err))
+			}
+		}
+		return
+	}
+
+	var previousDeploymentImages []string
+	if agentDeployment != nil {
+		if images, err := GetDeploymentImages(ctx, *agentDeployment); err != nil {
+			logger.Error("failed to get old images", zap.Error(err))
+		} else {
+			previousDeploymentImages = images
+		}
+	}
+
+	progressCtx, progressCancel := context.WithCancel(ctx)
+	defer progressCancel()
+	updateStatus := sendProgressInterval(progressCtx, deployment)
+	appliedDeployment, status, err := DockerEngineApply(ctx, deployment, agentDeployment, updateStatus)
+	if err == nil {
+		if deployment.ImageCleanupEnabled {
+			if delErr := DeleteImages(ctx, previousDeploymentImages); delErr != nil {
+				logger.Warn("failed to delete old images", zap.Error(delErr))
+			}
+		}
+
+		if deployment.ForceRestart {
+			err = RunDockerRestart(ctx, *appliedDeployment)
+		}
+	}
+
+	progressCancel()
+	sendApplyStatus(ctx, deployment, status, err)
+}
+
+func sendApplyStatus(ctx context.Context, deployment api.AgentDeployment, status string, err error) {
+	if err != nil {
+		err = client.StatusWithError(ctx, deployment, err)
+	} else {
+		err = client.Status(ctx, deployment, types.DeploymentStatusTypeProgressing, status)
+	}
+
+	if err != nil {
+		logger.Error("failed to send status", zap.Error(err))
 	}
 }
 

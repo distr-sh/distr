@@ -4,13 +4,58 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/distr-sh/distr/api"
+	"github.com/distr-sh/distr/internal/agentenv"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/docker/cli/cli/compose/convert"
-	"github.com/docker/compose/v5/pkg/api"
+	composeapi "github.com/docker/compose/v5/pkg/api"
+	"github.com/google/uuid"
 	"github.com/moby/moby/api/types/container"
 	mobyClient "github.com/moby/moby/client"
+	"go.uber.org/zap"
 )
+
+// watchStatus reports the status of the revision that was last applied successfully for every deployment,
+// independently of the main loop, which may be busy applying or retrying a newer revision.
+func watchStatus(ctx context.Context) {
+	tick := time.Tick(agentenv.Interval)
+	for {
+		select {
+		case <-tick:
+			reportStatus(ctx)
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func reportStatus(ctx context.Context) {
+	deployments, err := GetExistingDeployments()
+	if err != nil {
+		logger.Error("could not get existing deployments for status check", zap.Error(err))
+		return
+	}
+
+	for _, deployment := range deployments {
+		revisionID := deployment.AppliedRevisionID()
+		if revisionID == uuid.Nil || deployment.State == StateProgressing {
+			continue
+		}
+
+		current := api.AgentDeployment{ID: deployment.ID, RevisionID: revisionID}
+		var sendErr error
+		if statusType, message, err := CheckStatus(ctx, deployment); err != nil {
+			sendErr = client.StatusWithError(ctx, current, err)
+		} else {
+			sendErr = client.Status(ctx, current, statusType, message)
+		}
+		if err := sendErr; err != nil {
+			logger.Warn("failed to send status", zap.Error(err))
+		}
+	}
+}
 
 func CheckStatus(ctx context.Context, deployment AgentDeployment) (types.DeploymentStatusType, string, error) {
 	switch deployment.DockerType {
@@ -27,7 +72,7 @@ func CheckDockerComposeStatus(
 	ctx context.Context,
 	deployment AgentDeployment,
 ) (types.DeploymentStatusType, string, error) {
-	summaries, err := composeService.Ps(ctx, deployment.ProjectName, api.PsOptions{All: true})
+	summaries, err := composeService.Ps(ctx, deployment.ProjectName, composeapi.PsOptions{All: true})
 	if err != nil {
 		return types.DeploymentStatusTypeError, "", err
 	}
