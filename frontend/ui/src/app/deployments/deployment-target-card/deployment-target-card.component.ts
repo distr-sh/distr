@@ -678,11 +678,11 @@ export class DeploymentTargetCardComponent {
 
   protected async openDeploymentLogs(deployment: DeploymentWithLatestRevision) {
     if (!deployment.id) return;
-    const available = await firstValueFrom(this.deploymentLogs.getResources(deployment.id));
+    const available = await firstValueFrom(this.deploymentLogs.getResources(deployment.id)).catch(() => undefined);
     this.router.navigate(['/deployments', this.deploymentTarget().id], {
       queryParams: {
         deploymentId: deployment.id,
-        resource: available.active?.length ? available.active : null,
+        resource: available?.active?.length ? available.active : null,
       },
     });
   }

@@ -312,8 +312,10 @@ export class DeploymentTargetDetailComponent {
     const deploymentId = deployment?.id ?? null;
     let resources: string[] | null = null;
     if (deploymentId) {
-      const available = await firstValueFrom(this.deploymentLogsService.getResources(deploymentId));
-      resources = available.active?.length ? available.active : null;
+      const available = await firstValueFrom(this.deploymentLogsService.getResources(deploymentId)).catch(
+        () => undefined
+      );
+      resources = available?.active?.length ? available.active : null;
     }
     this.router.navigate([], {
       relativeTo: this.route,
