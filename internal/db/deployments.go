@@ -29,38 +29,25 @@ const (
 	`
 	deploymentWithLatestRevisionFromExpr = `
 		Deployment d
-			LEFT JOIN (
-				SELECT deployment_id, max(created_at) AS max_created_at
-				FROM DeploymentRevision
-				GROUP BY deployment_id
-			) dr_max ON d.id = dr_max.deployment_id
-			JOIN DeploymentRevision dr
-				ON d.id = dr.deployment_id
-				AND dr.created_at = dr_max.max_created_at
+			JOIN DeploymentRevision dr ON dr.id = d.latest_deployment_revision_id
 			JOIN ApplicationVersion av ON dr.application_version_id = av.id
 			JOIN Application a ON av.application_id = a.id
-			-- Join the DeploymentRevision table again because we ALSO need the latest deployment revision for
-			-- which exists a status. Otherwise, the deployment is shown as "no status" after an update
 			LEFT JOIN LATERAL (
-				SELECT deployment_id, max(created_at) AS max_created_at
-				FROM DeploymentRevision dr1
-				WHERE dr1.deployment_id = d.id
-					AND exists(SELECT id FROM DeploymentRevisionStatus WHERE deployment_revision_id = dr1.id)
-				GROUP BY deployment_id
-			) dr_max_status ON d.id = dr_max_status.deployment_id
-			LEFT JOIN DeploymentRevision dr_status
-				ON d.id = dr_status.deployment_id
-				AND dr_status.created_at = dr_max_status.max_created_at
+				SELECT id, created_at, deployment_revision_id, type, message
+				FROM DeploymentRevisionStatus
+				WHERE deployment_revision_id = dr.id
+				ORDER BY created_at DESC
+				LIMIT 1
+			) drs ON true
 			LEFT JOIN LATERAL (
-				SELECT
-					dr1.id AS deployment_revision_id,
-					(SELECT max(created_at) FROM DeploymentRevisionStatus WHERE deployment_revision_id = dr1.id) AS max_created_at
-				FROM DeploymentRevision dr1
-				WHERE dr1.deployment_id = d.id
-			) status_max ON dr_status.id = status_max.deployment_revision_id
-			LEFT JOIN DeploymentRevisionStatus drs
-				ON dr_status.id = drs.deployment_revision_id
-				AND drs.created_at = status_max.max_created_at
+				SELECT id, created_at, deployment_revision_id, type, message
+				FROM DeploymentRevisionStatus
+				WHERE deployment_revision_id = d.current_deployment_revision_id
+				ORDER BY created_at DESC
+				LIMIT 1
+			) drs_current ON true
+			LEFT JOIN DeploymentRevision dr_current ON dr_current.id = d.current_deployment_revision_id
+			LEFT JOIN ApplicationVersion av_current ON av_current.id = dr_current.application_version_id
 	`
 )
 
@@ -90,7 +77,16 @@ var deploymentWithLatestRevisionOutputExpr = deploymentOutputExpr + `,
 		drs.created_at,
 		drs.deployment_revision_id,
 		drs.type, drs.message
-	) END AS latest_status
+	) END AS latest_status,
+	d.current_deployment_revision_id AS current_deployment_revision_id,
+	CASE WHEN drs_current.id IS NOT NULL THEN (
+		drs_current.id,
+		drs_current.created_at,
+		drs_current.deployment_revision_id,
+		drs_current.type, drs_current.message
+	) END AS current_status,
+	dr_current.application_version_id AS current_application_version_id,
+	av_current.name AS current_application_version_name
 `
 
 func GetDeployment(
@@ -412,53 +408,60 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 
 	rows, err := db.Query(
 		ctx,
-		`INSERT INTO DeploymentRevision AS dr (
-			deployment_id,
-			application_version_id,
-			values_yaml_enc,
-			env_file_data_enc,
-			values_hash,
-			force_restart,
-			ignore_revision_skew,
-			helm_options_timeout,
-			helm_options_wait_strategy,
-			helm_options_rollback_on_failure,
-			helm_options_cleanup_on_failure,
-			helm_options_force_conflicts,
-			created_by_user_account_id,
-			trigger
-		) VALUES (
-		 	@deploymentId,
-			@applicationVersionId,
-			@valuesYamlEnc,
-			@envFileDataEnc,
-			@valuesHash,
-			@forceRestart,
-			@ignoreRevisionSkew,
-			@helmOptionsTimeout,
-			@helmOptionsWaitStrategy,
-			@helmOptionsRollbackOnFailure,
-			@helmOptionsCleanupOnFailure,
-			@helmOptionsForceConflicts,
-			@createdByUserAccountId,
-			@trigger
-		) RETURNING
-		 	dr.id,
-			dr.created_at,
-			dr.deployment_id,
-			dr.application_version_id,
-			dr.values_hash,
-			dr.force_restart,
-			dr.ignore_revision_skew,
-			dr.created_by_user_account_id,
-			dr.trigger,
-			CASE WHEN dr.helm_options_timeout IS NOT NULL THEN (
-				dr.helm_options_timeout,
-				dr.helm_options_wait_strategy,
-				dr.helm_options_rollback_on_failure,
-				dr.helm_options_cleanup_on_failure,
-				dr.helm_options_force_conflicts
-			) END as helm_options`,
+		`WITH inserted AS (
+			INSERT INTO DeploymentRevision AS dr (
+				deployment_id,
+				application_version_id,
+				values_yaml_enc,
+				env_file_data_enc,
+				values_hash,
+				force_restart,
+				ignore_revision_skew,
+				helm_options_timeout,
+				helm_options_wait_strategy,
+				helm_options_rollback_on_failure,
+				helm_options_cleanup_on_failure,
+				helm_options_force_conflicts,
+				created_by_user_account_id,
+				trigger
+			) VALUES (
+				@deploymentId,
+				@applicationVersionId,
+				@valuesYamlEnc,
+				@envFileDataEnc,
+				@valuesHash,
+				@forceRestart,
+				@ignoreRevisionSkew,
+				@helmOptionsTimeout,
+				@helmOptionsWaitStrategy,
+				@helmOptionsRollbackOnFailure,
+				@helmOptionsCleanupOnFailure,
+				@helmOptionsForceConflicts,
+				@createdByUserAccountId,
+				@trigger
+			) RETURNING
+				dr.id,
+				dr.created_at,
+				dr.deployment_id,
+				dr.application_version_id,
+				dr.values_hash,
+				dr.force_restart,
+				dr.ignore_revision_skew,
+				dr.created_by_user_account_id,
+				dr.trigger,
+				CASE WHEN dr.helm_options_timeout IS NOT NULL THEN (
+					dr.helm_options_timeout,
+					dr.helm_options_wait_strategy,
+					dr.helm_options_rollback_on_failure,
+					dr.helm_options_cleanup_on_failure,
+					dr.helm_options_force_conflicts
+				) END as helm_options
+		), updated AS (
+			UPDATE Deployment
+			SET latest_deployment_revision_id = (SELECT id FROM inserted)
+			WHERE id = @deploymentId
+		)
+		SELECT * FROM inserted`,
 		args,
 	)
 	if err != nil {
@@ -471,6 +474,33 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 	} else {
 		return &result, nil
 	}
+}
+
+// UpdateDeploymentCurrentRevision marks the given revision as the one currently applied on the
+// deployment target. It never moves the current revision back to an older one, because an agent may
+// report a status of the previous revision after the next one has already been applied. Reporting
+// the revision that is already current writes nothing, which is what every agent does once per
+// AGENT_INTERVAL for as long as nothing changes.
+func UpdateDeploymentCurrentRevision(ctx context.Context, revisionID uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	if _, err := db.Exec(
+		ctx,
+		`UPDATE Deployment d
+		SET current_deployment_revision_id = dr.id
+		FROM DeploymentRevision dr
+		WHERE dr.id = @revisionId
+			AND d.id = dr.deployment_id
+			AND (
+				d.current_deployment_revision_id IS NULL
+				OR dr.created_at > (
+					SELECT created_at FROM DeploymentRevision WHERE id = d.current_deployment_revision_id
+				)
+			)`,
+		pgx.NamedArgs{"revisionId": revisionID},
+	); err != nil {
+		return fmt.Errorf("could not update current Deployment revision: %w", err)
+	}
+	return nil
 }
 
 // GetLatestDeploymentRevisionIDs returns the IDs of the most recently created revisions
@@ -528,7 +558,13 @@ func GetDeploymentRevisions(
 				j.customer_organization_id AS created_by_customer_organization_id,
 				j.partner_organization_id AS created_by_partner_organization_id,
 				(dr.created_by_user_account_id IS NOT NULL AND j.user_account_id IS NULL)
-					AS created_by_deleted
+					AS created_by_deleted,
+				CASE WHEN drs.id IS NOT NULL THEN (
+					drs.id,
+					drs.created_at,
+					drs.deployment_revision_id,
+					drs.type, drs.message
+				) END AS latest_status
 			FROM DeploymentRevision dr
 				JOIN Deployment d ON dr.deployment_id = d.id
 				JOIN DeploymentTarget dt ON d.deployment_target_id = dt.id
@@ -536,6 +572,13 @@ func GetDeploymentRevisions(
 				LEFT JOIN UserAccount u ON dr.created_by_user_account_id = u.id
 				LEFT JOIN Organization_UserAccount j
 					ON j.user_account_id = u.id AND j.organization_id = dt.organization_id
+				LEFT JOIN LATERAL (
+					SELECT id, created_at, deployment_revision_id, type, message
+					FROM DeploymentRevisionStatus
+					WHERE deployment_revision_id = dr.id
+					ORDER BY created_at DESC
+					LIMIT 1
+				) drs ON true
 			WHERE dr.deployment_id = @deploymentId
 			ORDER BY dr.created_at DESC`,
 		pgx.NamedArgs{"deploymentId": deploymentID},

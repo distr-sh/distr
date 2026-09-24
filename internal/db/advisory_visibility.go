@@ -46,6 +46,12 @@ func GetCustomerView(
 // ever exposed, which decides visibility, while this answers whether they still are, which is
 // what advisory.IsStillAffected reports.
 //
+// A deployment whose agent has not reported the newest revision as applied still runs the
+// revision before it, so an upgrade away from an affected version clears the advisory only
+// once it has actually been applied. The current revision is NULL until the first applied
+// status arrives and for deployments whose last one has aged out, which falls back to the
+// latest revision.
+//
 // Vendors are not scoped and never ask for this, so an unscoped call returns nothing rather
 // than every deployment in the organization.
 func getCurrentApplicationVersionIDs(
@@ -57,15 +63,15 @@ func getCurrentApplicationVersionIDs(
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`SELECT DISTINCT ON (d.id) dr.application_version_id
-		FROM DeploymentRevision dr
-			JOIN Deployment d ON d.id = dr.deployment_id
+		`SELECT dr.application_version_id
+		FROM Deployment d
+			JOIN DeploymentRevision dr
+				ON dr.id = coalesce(d.current_deployment_revision_id, d.latest_deployment_revision_id)
 			JOIN DeploymentTarget dt ON dt.id = d.deployment_target_id
 			LEFT JOIN CustomerOrganization co ON co.id = dt.customer_organization_id
 		WHERE dt.organization_id = @orgId
 			AND (@partnerOrgId::uuid IS NULL OR co.partner_organization_id = @partnerOrgId)
-			AND (@customerOrgId::uuid IS NULL OR dt.customer_organization_id = @customerOrgId)
-		ORDER BY d.id, dr.created_at DESC`,
+			AND (@customerOrgId::uuid IS NULL OR dt.customer_organization_id = @customerOrgId)`,
 		scope.bind(pgx.NamedArgs{"orgId": orgID}),
 	)
 	if err != nil {

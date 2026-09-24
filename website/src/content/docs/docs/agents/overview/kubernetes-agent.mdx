@@ -108,8 +108,9 @@ The Kubernetes agent uses the Helm API to manage releases, similar to how the [F
 
 <Aside type="danger">
   Manually running `helm upgrade` or `helm rollback` will stop the Distr agent
-  from making any future changes. It is currently not easily possible to resync
-  the revision ID to let the agent pick up the release again.
+  from making any future changes. If you want the Distr agent to force an
+  update, enable the "Ignore Helm revision skew" checkbox when configuring an
+  update.
 </Aside>
 
 ## Authentication with OCI Registries

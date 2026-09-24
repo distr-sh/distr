@@ -469,7 +469,15 @@ func agentPostStatusHandler(w http.ResponseWriter, r *http.Request) {
 		Message:              requestBody.Message,
 	}
 
-	if err := db.CreateDeploymentRevisionStatus(ctx, &status); err != nil {
+	if err := db.RunTx(ctx, func(ctx context.Context) error {
+		if err := db.CreateDeploymentRevisionStatus(ctx, &status); err != nil {
+			return err
+		}
+		if status.Type.IsApplied() {
+			return db.UpdateDeploymentCurrentRevision(ctx, status.DeploymentRevisionID)
+		}
+		return nil
+	}); err != nil {
 		if errors.Is(err, apierrors.ErrConflict) {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		} else {

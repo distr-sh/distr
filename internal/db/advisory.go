@@ -921,10 +921,11 @@ func GetAdvisoryImpactedDeployments(
 					AND marked.relation = 'affected'
 			ORDER BY dr.deployment_id, dr.created_at DESC
 		), current_revision AS (
-			SELECT DISTINCT ON (dr.deployment_id) dr.deployment_id, dr.application_version_id
-			FROM DeploymentRevision dr
-			WHERE dr.deployment_id IN (SELECT deployment_id FROM impacted)
-			ORDER BY dr.deployment_id, dr.created_at DESC
+			SELECT d.id AS deployment_id, dr.application_version_id
+			FROM Deployment d
+				JOIN DeploymentRevision dr
+					ON dr.id = coalesce(d.current_deployment_revision_id, d.latest_deployment_revision_id)
+			WHERE d.id IN (SELECT deployment_id FROM impacted)
 		), classified AS (
 			SELECT
 				dt.customer_organization_id,
