@@ -230,6 +230,15 @@ func sendProgressInterval(ctx context.Context, revisionID uuid.UUID) func(string
 	var status atomic.Value
 	status.Store("initializing")
 
+	sendProgress := func() {
+		err := client.Status(ctx, revisionID, types.DeploymentStatusTypeProgressing, status.Load().(string))
+		if err != nil {
+			logger.Warn("error updating status", zap.Error(err))
+		}
+	}
+
+	sendProgress()
+
 	go func() {
 		tick := time.Tick(agentenv.Interval)
 		for {
@@ -239,15 +248,7 @@ func sendProgressInterval(ctx context.Context, revisionID uuid.UUID) func(string
 				return
 			case <-tick:
 				logger.Info("sending progress update")
-				err := client.Status(
-					ctx,
-					revisionID,
-					types.DeploymentStatusTypeProgressing,
-					status.Load().(string),
-				)
-				if err != nil {
-					logger.Warn("error updating status", zap.Error(err))
-				}
+				sendProgress()
 			}
 		}
 	}()
