@@ -72,7 +72,7 @@ func UpdateDeploymentRevisionStatus(
 }
 
 // GetLatestSettledDeploymentRevisionStatus returns the newest status other than progressing across all
-// revisions of the deployment, which is what a new status is compared with to decide about notifications.
+// revisions of the deployment, which is what a new status is compared with to decide about error notifications.
 // An agent that retries applying a revision reports progressing between two errors, so comparing with the
 // newest status of any type would alert on every retry. The message of a settled status is not stored.
 func GetLatestSettledDeploymentRevisionStatus(

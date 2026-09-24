@@ -455,7 +455,8 @@ func agentPostStatusHandler(w http.ResponseWriter, r *http.Request) {
 		deployment = deploymentTarget.Deployments[i]
 	}
 
-	previousStatus, err := db.GetLatestSettledDeploymentRevisionStatus(ctx, deploymentID)
+	previousStatus := deployment.NewestStatus()
+	settledStatus, err := db.GetLatestSettledDeploymentRevisionStatus(ctx, deploymentID)
 	if err != nil {
 		sentry.CaptureException(err)
 		log.Error("failed to get latest settled deployment revision status", zap.Error(err))
@@ -495,6 +496,7 @@ func agentPostStatusHandler(w http.ResponseWriter, r *http.Request) {
 			*deploymentTarget,
 			deployment,
 			previousStatus,
+			settledStatus,
 			*status,
 		); err != nil {
 			sentry.CaptureException(err)
