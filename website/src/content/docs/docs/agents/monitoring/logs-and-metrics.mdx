@@ -28,7 +28,7 @@ Each deployment within a target also has its own colored dot and status label. T
   **Running**: The deployment is running but no healthchecks are configured.
 - 🟢 **Healthy**: The deployment is running and all healthchecks are passing.
 
-Clicking the status label (e.g. "Running") opens the [log viewer](#log-viewer) with the full status history for that deployment.
+Clicking the status label (e.g. "Running") opens the revision history of the deployment, which shows the latest status the agent reported for each revision along with its message.
 
 ### Healthchecks
 
@@ -48,9 +48,8 @@ The log viewer is a dedicated page for inspecting all log data associated with a
 
 Once open, use the breadcrumb dropdowns to switch between deployment targets and views. The view dropdown lets you choose what to inspect:
 
-- **Deployment Status**: The history of status transitions for the selected deployment.
 - **Agent Logs**: Raw output from the Distr agent process: connection events, reconciliation cycles, errors. Always available.
-- **Container resources**: Application container logs (e.g. `backend-1`, `proxy-1`). Only available when [log collection is enabled](#container-logs).
+- **Container resources**: Application container logs (e.g. `backend-1`, `proxy-1`). Only available when [log collection is enabled](#container-logs). You can select several resources at once to see their logs interleaved. **Inspect** preselects all [active resources](#active-and-archived-resources) of the deployment.
 
 <ThemedImage
   lightSrc={logViewerResourceDropdownLight}
