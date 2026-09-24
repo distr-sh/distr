@@ -338,10 +338,60 @@ func GetApplicationVersion(ctx context.Context, applicationVersionID uuid.UUID) 
 		return nil, fmt.Errorf("could not get ApplicationVersion: %w", err)
 	} else if data, err := pgx.CollectExactlyOneRow(rows,
 		pgx.RowToStructByName[types.ApplicationVersion]); err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apierrors.ErrNotFound
 		}
 		return nil, err
+	} else {
+		return &data, nil
+	}
+}
+
+// GetApplicationVersionOfApplication returns the version only if it belongs to the application in
+// the organization. With a customerOrganizationID it additionally requires an unexpired entitlement
+// of that customer that covers the version.
+func GetApplicationVersionOfApplication(
+	ctx context.Context,
+	applicationVersionID, applicationID, organizationID uuid.UUID,
+	customerOrganizationID *uuid.UUID,
+) (*types.ApplicationVersion, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT `+applicationVersionOutputExpr+`
+		FROM ApplicationVersion av
+			JOIN Application a ON a.id = av.application_id
+		WHERE av.id = @id
+			AND av.application_id = @applicationId
+			AND a.organization_id = @organizationId
+			AND (@customerOrganizationId::UUID IS NULL OR EXISTS (
+				SELECT FROM ApplicationEntitlement al
+				WHERE al.application_id = a.id
+					AND al.organization_id = a.organization_id
+					AND al.customer_organization_id = @customerOrganizationId
+					AND (al.expires_at IS NULL OR al.expires_at > now())
+					AND (
+						NOT EXISTS (SELECT FROM ApplicationEntitlement_ApplicationVersion alav
+							WHERE alav.application_entitlement_id = al.id)
+						OR EXISTS (SELECT FROM ApplicationEntitlement_ApplicationVersion alav
+							WHERE alav.application_entitlement_id = al.id AND alav.application_version_id = av.id)
+					)
+			))`,
+		pgx.NamedArgs{
+			"id":                     applicationVersionID,
+			"applicationId":          applicationID,
+			"organizationId":         organizationID,
+			"customerOrganizationId": customerOrganizationID,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query ApplicationVersion: %w", err)
+	} else if data, err := pgx.CollectExactlyOneRow(rows,
+		pgx.RowToStructByName[types.ApplicationVersion]); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apierrors.ErrNotFound
+		}
+		return nil, fmt.Errorf("could not get ApplicationVersion: %w", err)
 	} else {
 		return &data, nil
 	}

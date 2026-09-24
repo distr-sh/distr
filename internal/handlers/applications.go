@@ -400,17 +400,55 @@ func getApplication(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getApplicationVersion(w http.ResponseWriter, r *http.Request) {
+// getAccessibleApplicationVersion responds with 404 for a version outside the current organization,
+// outside the application in the path or, for a customer, not covered by one of their entitlements.
+// Like getApplication, it applies entitlements only once the vendor has created any. It returns nil
+// once it has written an error response.
+func getAccessibleApplicationVersion(w http.ResponseWriter, r *http.Request) *types.ApplicationVersion {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+	auth := auth.Authentication.Require(ctx)
+
+	applicationID, err := uuid.Parse(r.PathValue("applicationId"))
+	if err != nil {
+		http.NotFound(w, r)
+		return nil
+	}
 	applicationVersionID, err := uuid.Parse(r.PathValue("applicationVersionId"))
 	if err != nil {
 		http.NotFound(w, r)
-	} else if applicationVersion, err := db.GetApplicationVersion(r.Context(), applicationVersionID); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
-		} else {
-			http.Error(w, "something went wrong", http.StatusInternalServerError)
+		return nil
+	}
+
+	var entitledCustomerOrgID *uuid.UUID
+	if auth.CurrentCustomerOrgID() != nil && auth.CurrentOrg().HasFeature(types.FeatureLicensing) {
+		if hasEntitlements, err := db.HasAnyApplicationEntitlement(ctx, *auth.CurrentOrgID()); err != nil {
+			log.Error("failed to check for application entitlements", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return nil
+		} else if hasEntitlements {
+			entitledCustomerOrgID = auth.CurrentCustomerOrgID()
 		}
-	} else {
+	}
+
+	version, err := db.GetApplicationVersionOfApplication(
+		ctx, applicationVersionID, applicationID, *auth.CurrentOrgID(), entitledCustomerOrgID,
+	)
+	if errors.Is(err, apierrors.ErrNotFound) {
+		http.NotFound(w, r)
+		return nil
+	} else if err != nil {
+		log.Error("failed to get application version", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return nil
+	}
+	return version
+}
+
+func getApplicationVersion(w http.ResponseWriter, r *http.Request) {
+	if applicationVersion := getAccessibleApplicationVersion(w, r); applicationVersion != nil {
 		RespondJSON(w, applicationVersion)
 	}
 }
@@ -580,17 +618,7 @@ func getApplicationVersionFileHandler(fileAccessor func(types.ApplicationVersion
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
-		applicationVersionID, err := uuid.Parse(r.PathValue("applicationVersionId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-		if v, err := db.GetApplicationVersion(ctx, applicationVersionID); errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
-		} else if err != nil {
-			log.Error("failed to get ApplicationVersion from DB", zap.Error(err))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
+		if v := getAccessibleApplicationVersion(w, r); v != nil {
 			data := fileAccessor(*v)
 			w.Header().Add("Content-Type", "application/yaml")
 			w.Header().Add("Cache-Control", "max-age=300, private")
@@ -607,17 +635,17 @@ func getApplicationVersionResources(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	a := auth.Authentication.Require(ctx)
-	applicationVersionID, err := uuid.Parse(r.PathValue("applicationVersionId"))
-	if err != nil {
-		http.NotFound(w, r)
+	version := getAccessibleApplicationVersion(w, r)
+	if version == nil {
 		return
 	}
 
 	var resources []types.ApplicationVersionResource
+	var err error
 	if a.CurrentCustomerOrgID() != nil {
-		resources, err = db.GetApplicationVersionResourcesVisibleToCustomers(ctx, applicationVersionID)
+		resources, err = db.GetApplicationVersionResourcesVisibleToCustomers(ctx, version.ID)
 	} else {
-		resources, err = db.GetApplicationVersionResources(ctx, applicationVersionID)
+		resources, err = db.GetApplicationVersionResources(ctx, version.ID)
 	}
 	if err != nil {
 		log.Error("failed to get application version resources", zap.Error(err))
