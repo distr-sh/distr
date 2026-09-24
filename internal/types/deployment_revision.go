@@ -63,4 +63,5 @@ type DeploymentRevisionWithCreator struct {
 	CreatedByCustomerOrganizationID *uuid.UUID                `db:"created_by_customer_organization_id"`
 	CreatedByPartnerOrganizationID  *uuid.UUID                `db:"created_by_partner_organization_id"`
 	CreatedByDeleted                bool                      `db:"created_by_deleted"`
+	LatestStatus                    *DeploymentRevisionStatus `db:"latest_status"`
 }

@@ -199,6 +199,12 @@ const (
 	DeploymentStatusTypeError       DeploymentStatusType = "error"
 )
 
+// IsApplied reports whether the status means the agent has the revision up and running, which is
+// everything a new status type should mean unless it explicitly does not.
+func (t DeploymentStatusType) IsApplied() bool {
+	return t != DeploymentStatusTypeProgressing && t != DeploymentStatusTypeError
+}
+
 func AllDeploymentStatusTypes() []DeploymentStatusType {
 	return []DeploymentStatusType{
 		DeploymentStatusTypeHealthy,
