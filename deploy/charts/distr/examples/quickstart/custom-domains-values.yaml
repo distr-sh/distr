@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/distr-sh/distr/4.0.3/deploy/charts/distr/values.schema.json # x-release-please-version
+# yaml-language-server: $schema=https://raw.githubusercontent.com/distr-sh/distr/4.1.0/deploy/charts/distr/values.schema.json # x-release-please-version
 # Helm values for trying self-service custom domains on a local minikube cluster. Everything runs
 # in-cluster, including PostgreSQL and RustFS, so this is a local test setup and not a starting
 # point for a production installation.

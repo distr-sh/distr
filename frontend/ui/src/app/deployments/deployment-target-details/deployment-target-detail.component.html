@@ -93,9 +93,7 @@
                   @for (deployment of selectedDeploymentTarget()?.deployments; track deployment.id) {
                     <li>
                       <button class="distr-dropdown-item" (click)="selectDeployment(deployment)">
-                        <app-deployment-app-name
-                          [application]="deployment.application"
-                          [applicationVersionName]="deployment.applicationVersionName" />
+                        <app-deployment-app-name [deployment]="deployment" />
                       </button>
                     </li>
                   }

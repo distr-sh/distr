@@ -75,6 +75,29 @@ func UseReadonlyDB(next http.Handler) http.Handler {
 	})
 }
 
+// Chain composes middlewares into one, the first listed running outermost.
+func Chain(middlewares ...func(http.Handler) http.Handler) func(http.Handler) http.Handler {
+	return chi.Chain(middlewares...).Handler
+}
+
+// Split sends a request through ifTrue or ifFalse, both of which wrap the same handler.
+func Split(
+	predicate func(*http.Request) bool,
+	ifTrue func(http.Handler) http.Handler,
+	ifFalse func(http.Handler) http.Handler,
+) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		yes, no := ifTrue(next), ifFalse(next)
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if predicate(r) {
+				yes.ServeHTTP(w, r)
+			} else {
+				no.ServeHTTP(w, r)
+			}
+		})
+	}
+}
+
 func LoggerCtxMiddleware(logger *zap.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

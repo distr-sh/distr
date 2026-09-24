@@ -48,6 +48,10 @@ func DeploymentRevisionToAPI(
 			Trigger:                r.Trigger,
 		}
 
+		if r.LatestStatus != nil {
+			response.LatestStatus = new(DeploymentRevisionStatusToAPI(*r.LatestStatus))
+		}
+
 		if r.CreatedByID != nil {
 			creatorRank := organizationKindRank(r.CreatedByCustomerOrganizationID, r.CreatedByPartnerOrganizationID)
 			showIdentity := creatorRank >= viewerRank

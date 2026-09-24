@@ -8,6 +8,7 @@ import {fromBase64} from '../../../util/encoding';
 import {OrganizationKindPipe} from '../../../util/organization-kind';
 import {AvatarComponent} from '../../components/avatar.component';
 import {EditorComponent} from '../../components/editor.component';
+import {DeploymentStatusBadgeComponent} from '../deployment-status-badge.component';
 
 const triggerLabels: Record<DeploymentRevisionTrigger, string> = {
   user: 'Manual',
@@ -20,7 +21,15 @@ const triggerLabels: Record<DeploymentRevisionTrigger, string> = {
   selector: 'app-deployment-revision-details',
   templateUrl: './deployment-revision-details.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [ReactiveFormsModule, EditorComponent, FaIconComponent, DatePipe, OrganizationKindPipe, AvatarComponent],
+  imports: [
+    ReactiveFormsModule,
+    EditorComponent,
+    FaIconComponent,
+    DatePipe,
+    OrganizationKindPipe,
+    AvatarComponent,
+    DeploymentStatusBadgeComponent,
+  ],
 })
 export class DeploymentRevisionDetailsComponent {
   public readonly revision = input.required<DeploymentRevisionResponse>();

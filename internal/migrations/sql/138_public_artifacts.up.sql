@@ -1,0 +1,3 @@
+ALTER TABLE Artifact ADD COLUMN public BOOLEAN NOT NULL DEFAULT false;
+
+ALTER TABLE ArtifactVersionPull ADD COLUMN anonymous BOOLEAN NOT NULL DEFAULT false;

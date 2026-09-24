@@ -174,7 +174,7 @@
                     </td>
                   }
                   @if (selectedVersionIds().size > 0) {
-                    <td class="px-3 normal-case text-sm" [attr.colspan]="application.type === 'kubernetes' ? 7 : 4">
+                    <td class="px-3 normal-case text-sm" [attr.colspan]="application.type === 'kubernetes' ? 8 : 5">
                       {{ selectedVersionIds().size }} selected
                       <button
                         (click)="bulkArchiveVersions(application)"
@@ -191,6 +191,7 @@
                       <th scope="col" class="px-6 py-3">Chart Version</th>
                     }
                     <th scope="col" class="px-6 py-3">Created At</th>
+                    <th scope="col" class="px-6 py-3">Created By</th>
                     <th scope="col" class="px-6 py-3">Status</th>
                     <th scope="col" class="px-6 py-3"></th>
                   }
@@ -241,6 +242,19 @@
                     }
                     <td class="px-6 py-4">
                       {{ version.createdAt | date: 'short' }}
+                    </td>
+                    <td class="px-6 py-4">
+                      @if (version.createdBy; as createdBy) {
+                        @let createdByLabel = createdBy.name || createdBy.email;
+                        <div class="flex items-center gap-2 whitespace-nowrap">
+                          <app-avatar
+                            [image]="createdBy.imageId"
+                            [name]="createdByLabel"
+                            initialsClass="text-[0.5rem]"
+                            class="size-5 rounded-full" />
+                          <span [title]="createdBy.email ?? ''">{{ createdByLabel }}</span>
+                        </div>
+                      }
                     </td>
                     <td class="px-6 py-4">
                       {{ archived ? 'Archived' : 'Active' }}
