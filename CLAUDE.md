@@ -220,7 +220,7 @@ Only write a test that could fail for a real reason. Every test is code that has
 - Assert with [Gomega](https://onsi.github.io/gomega/) in Go tests.
 - Do not test guard clauses, getters, plain mappings, a single `if` branch or that a value passed in comes back out.
 - Do not write a test whose assertion is trivially true because the dependency it needs is not configured in tests.
-- Do test what is hard to get right and expensive to get wrong: wire formats sent to third parties, fail-closed security behavior, parsing, permission or subscription gating and non-trivial query or business logic.
+- Do test what is hard to get right and expensive to get wrong: wire formats sent to third parties, fail-closed security behavior, parsing, gating whose rule is more than one condition and non-trivial query or business logic. A single condition deciding who sees a field needs no test, however security relevant it is.
 - Prefer a few focused tests over an exhaustive matrix of near-duplicates.
 - Do not put a test in the agent `main` packages under `cmd/agent/`. They build their clients in package-level variables through `util.Require`, which panics before `TestMain` can set the agent's environment variables. Extract the part that needs no Docker or Kubernetes client into a package under `internal/` and test it there.
 
