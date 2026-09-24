@@ -67,6 +67,8 @@ func authorizeAnonymous(ctx context.Context, n *name.Name, action Action) error 
 		return err
 	} else if !artifact.Public {
 		return ErrAuthenticationRequired
+	} else if AnonymousLimitExceeded(ctx) {
+		return ErrRateLimited
 	}
 	return nil
 }
@@ -186,6 +188,8 @@ func (a *authorizer) AuthorizeBlob(
 			return err
 		} else if !belongs {
 			return ErrAuthenticationRequired
+		} else if AnonymousLimitExceeded(ctx) {
+			return ErrRateLimited
 		}
 		return nil
 	}

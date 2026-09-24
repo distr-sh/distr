@@ -160,10 +160,13 @@ does.
 </Aside>
 
 Anonymous pulls are rate limited per client IP address, considerably more strictly than the pull
-limits of the large public registries. A client that exceeds them gets `429 Too Many Requests` with
-a `Retry-After` header, which every OCI client honors by backing off. Authenticated pulls are never
-rate limited, so a customer who runs into the limit only has to log in with a PAT. Self-hosted
-instances can change the limits, see the [`REGISTRY_ANONYMOUS_*`
+limits of the large public registries. A client that exceeds them gets `401 Unauthorized` with an
+authentication challenge and a `Retry-After` header. Authenticated pulls are never rate limited, so
+a client that holds a PAT answers the challenge with it and pulls on, and a customer who runs into
+the limit only has to log in. The answer is a challenge rather than `429 Too Many Requests` because
+OCI clients send their credentials only once they have seen a 401, so a 429 would lock out a
+customer whose credentials are sitting unused in the client's config file. Self-hosted instances can
+change the limits, see the [`REGISTRY_ANONYMOUS_*`
 variables](/docs/self-hosting/configuration/#oci-registry).
 
 Every anonymous pull is recorded in the [download

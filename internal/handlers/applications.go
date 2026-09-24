@@ -93,9 +93,9 @@ func ApplicationsRouter(r chiopenapi.Router) {
 						With(option.Description("Create a new application version")).
 						With(option.Request(struct {
 							ApplicationRequest
-							types.ApplicationVersion
+							api.CreateApplicationVersionRequest
 						}{})).
-						With(option.Response(http.StatusOK, types.ApplicationVersion{}))
+						With(option.Response(http.StatusOK, api.ApplicationVersionResponse{}))
 				})
 			r.Route("/{applicationVersionId}", func(r chiopenapi.Router) {
 				type ApplicationVersionRequest struct {
@@ -103,10 +103,11 @@ func ApplicationsRouter(r chiopenapi.Router) {
 					ApplicationVersionId string `path:"applicationVersionId"`
 				}
 
-				r.Get("/", getApplicationVersion).
+				r.With(applicationMiddleware).
+					Get("/", getApplicationVersion).
 					With(option.Description("Get an application version")).
 					With(option.Request(ApplicationVersionRequest{})).
-					With(option.Response(http.StatusOK, types.ApplicationVersion{}))
+					With(option.Response(http.StatusOK, api.ApplicationVersionResponse{}))
 				r.With(middleware.RequireVendor).
 					With(middleware.RequireReadWriteOrAdmin).
 					With(middleware.BlockSuperAdmin).
@@ -115,9 +116,9 @@ func ApplicationsRouter(r chiopenapi.Router) {
 					With(option.Description("Update an application version")).
 					With(option.Request(struct {
 						ApplicationVersionRequest
-						types.ApplicationVersion
+						api.UpdateApplicationVersionRequest
 					}{})).
-					With(option.Response(http.StatusOK, types.ApplicationVersion{}))
+					With(option.Response(http.StatusOK, api.ApplicationVersionResponse{}))
 				r.Get("/compose-file", getApplicationVersionComposeFile).
 					With(option.Description("Get application version compose file")).
 					With(option.Request(ApplicationVersionRequest{})).
@@ -137,6 +138,16 @@ func ApplicationsRouter(r chiopenapi.Router) {
 			})
 		})
 	})
+}
+
+func applicationMapper(ctx context.Context) func(types.Application) api.ApplicationResponse {
+	a := auth.Authentication.Require(ctx)
+	return mapping.ApplicationToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID())
+}
+
+func applicationVersionMapper(ctx context.Context) func(types.ApplicationVersion) api.ApplicationVersionResponse {
+	a := auth.Authentication.Require(ctx)
+	return mapping.ApplicationVersionToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID())
 }
 
 // validateApplicationSettings checks the versioning strategy and the automatic update opt-in of an
@@ -193,7 +204,7 @@ func createApplication(w http.ResponseWriter, r *http.Request) {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	} else {
-		RespondJSON(w, mapping.ApplicationToAPI(application))
+		RespondJSON(w, applicationMapper(ctx)(application))
 	}
 }
 
@@ -241,7 +252,7 @@ func updateApplication(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	RespondJSON(w, mapping.ApplicationToAPI(application))
+	RespondJSON(w, applicationMapper(ctx)(application))
 }
 
 func patchApplicationHandler() http.HandlerFunc {
@@ -327,7 +338,7 @@ func patchApplicationHandler() http.HandlerFunc {
 			return
 		}
 
-		RespondJSON(w, mapping.ApplicationToAPI(*existing))
+		RespondJSON(w, applicationMapper(ctx)(*existing))
 	}
 }
 
@@ -361,7 +372,7 @@ func getApplications(w http.ResponseWriter, r *http.Request) {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	} else {
-		RespondJSON(w, mapping.List(applications, mapping.ApplicationToAPI))
+		RespondJSON(w, mapping.List(applications, applicationMapper(ctx)))
 	}
 }
 
@@ -391,28 +402,66 @@ func getApplication(w http.ResponseWriter, r *http.Request) {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			} else {
-				RespondJSON(w, mapping.ApplicationToAPI(*application))
+				RespondJSON(w, applicationMapper(ctx)(*application))
 			}
 		} else {
-			RespondJSON(w, mapping.ApplicationToAPI(*internalctx.GetApplication(ctx)))
+			RespondJSON(w, applicationMapper(ctx)(*internalctx.GetApplication(ctx)))
 		}
 	} else {
-		RespondJSON(w, mapping.ApplicationToAPI(*internalctx.GetApplication(ctx)))
+		RespondJSON(w, applicationMapper(ctx)(*internalctx.GetApplication(ctx)))
 	}
 }
 
-func getApplicationVersion(w http.ResponseWriter, r *http.Request) {
+// getAccessibleApplicationVersion responds with 404 for a version outside the current organization,
+// outside the application in the path or, for a customer, not covered by one of their entitlements.
+// Like getApplication, it applies entitlements only once the vendor has created any. It returns nil
+// once it has written an error response.
+func getAccessibleApplicationVersion(w http.ResponseWriter, r *http.Request) *types.ApplicationVersion {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+	auth := auth.Authentication.Require(ctx)
+
+	applicationID, err := uuid.Parse(r.PathValue("applicationId"))
+	if err != nil {
+		http.NotFound(w, r)
+		return nil
+	}
 	applicationVersionID, err := uuid.Parse(r.PathValue("applicationVersionId"))
 	if err != nil {
 		http.NotFound(w, r)
-	} else if applicationVersion, err := db.GetApplicationVersion(r.Context(), applicationVersionID); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
-		} else {
-			http.Error(w, "something went wrong", http.StatusInternalServerError)
+		return nil
+	}
+
+	var entitledCustomerOrgID *uuid.UUID
+	if auth.CurrentCustomerOrgID() != nil && auth.CurrentOrg().HasFeature(types.FeatureLicensing) {
+		if hasEntitlements, err := db.HasAnyApplicationEntitlement(ctx, *auth.CurrentOrgID()); err != nil {
+			log.Error("failed to check for application entitlements", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return nil
+		} else if hasEntitlements {
+			entitledCustomerOrgID = auth.CurrentCustomerOrgID()
 		}
-	} else {
-		RespondJSON(w, applicationVersion)
+	}
+
+	version, err := db.GetApplicationVersionOfApplication(
+		ctx, applicationVersionID, applicationID, *auth.CurrentOrgID(), entitledCustomerOrgID,
+	)
+	if errors.Is(err, apierrors.ErrNotFound) {
+		http.NotFound(w, r)
+		return nil
+	} else if err != nil {
+		log.Error("failed to get application version", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return nil
+	}
+	return version
+}
+
+func getApplicationVersion(w http.ResponseWriter, r *http.Request) {
+	if applicationVersion := getAccessibleApplicationVersion(w, r); applicationVersion != nil {
+		RespondJSON(w, applicationVersionMapper(r.Context())(*applicationVersion))
 	}
 }
 
@@ -421,15 +470,16 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 	log := internalctx.GetLogger(ctx)
 
 	body := r.FormValue("applicationversion")
-	var applicationVersion types.ApplicationVersion
-	if err := json.NewDecoder(strings.NewReader(body)).Decode(&applicationVersion); err != nil {
+	var request api.CreateApplicationVersionRequest
+	if err := json.NewDecoder(strings.NewReader(body)).Decode(&request); err != nil {
 		log.Error("failed to decode version", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	validation.TrimStrings(&applicationVersion)
+	validation.TrimStrings(&request)
 
 	application := internalctx.GetApplication(ctx)
+	applicationVersion := mapping.CreateApplicationVersionToInternal(request)
 	applicationVersion.ApplicationID = application.ID
 
 	if application.Type == types.DeploymentTypeDocker {
@@ -481,6 +531,7 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	auth := auth.Authentication.Require(ctx)
+	applicationVersion.CreatedByUserAccountID = new(auth.CurrentUserID())
 	resources := applicationVersion.Resources
 	if err := db.RunTx(ctx, func(ctx context.Context) error {
 		if err := db.CreateApplicationVersion(ctx, &applicationVersion); err != nil {
@@ -515,17 +566,17 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 			}
 		}(context.WithoutCancel(ctx))
 
-		RespondJSON(w, applicationVersion)
+		RespondJSON(w, applicationVersionMapper(ctx)(applicationVersion))
 	}
 }
 
 func updateApplicationVersion(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
-	applicationVersion, err := JsonBody[types.ApplicationVersion](w, r)
+	request, err := JsonBody[api.UpdateApplicationVersionRequest](w, r)
 	if err != nil {
 		return
-	} else if applicationVersion.Name == "" {
+	} else if request.Name == "" {
 		http.Error(w, "name is required", http.StatusBadRequest)
 		return
 	}
@@ -544,9 +595,7 @@ func updateApplicationVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedVersion := existing.Versions[existingIndex]
-	updatedVersion.Name = applicationVersion.Name
-	updatedVersion.ArchivedAt = applicationVersion.ArchivedAt
+	updatedVersion := mapping.UpdateApplicationVersionToInternal(request, existing.Versions[existingIndex])
 	updated := *existing
 	updated.Versions = slices.Clone(existing.Versions)
 	updated.Versions[existingIndex] = updatedVersion
@@ -572,7 +621,7 @@ func updateApplicationVersion(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	} else {
-		RespondJSON(w, updatedVersion)
+		RespondJSON(w, applicationVersionMapper(ctx)(updatedVersion))
 	}
 }
 
@@ -593,17 +642,7 @@ func getApplicationVersionFileHandler(fileAccessor func(types.ApplicationVersion
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
-		applicationVersionID, err := uuid.Parse(r.PathValue("applicationVersionId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-		if v, err := db.GetApplicationVersion(ctx, applicationVersionID); errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
-		} else if err != nil {
-			log.Error("failed to get ApplicationVersion from DB", zap.Error(err))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
+		if v := getAccessibleApplicationVersion(w, r); v != nil {
 			data := fileAccessor(*v)
 			w.Header().Add("Content-Type", "application/yaml")
 			w.Header().Add("Cache-Control", "max-age=300, private")
@@ -620,17 +659,17 @@ func getApplicationVersionResources(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	a := auth.Authentication.Require(ctx)
-	applicationVersionID, err := uuid.Parse(r.PathValue("applicationVersionId"))
-	if err != nil {
-		http.NotFound(w, r)
+	version := getAccessibleApplicationVersion(w, r)
+	if version == nil {
 		return
 	}
 
 	var resources []types.ApplicationVersionResource
+	var err error
 	if a.CurrentCustomerOrgID() != nil {
-		resources, err = db.GetApplicationVersionResourcesVisibleToCustomers(ctx, applicationVersionID)
+		resources, err = db.GetApplicationVersionResourcesVisibleToCustomers(ctx, version.ID)
 	} else {
-		resources, err = db.GetApplicationVersionResources(ctx, applicationVersionID)
+		resources, err = db.GetApplicationVersionResources(ctx, version.ID)
 	}
 	if err != nil {
 		log.Error("failed to get application version resources", zap.Error(err))
@@ -665,7 +704,7 @@ var patchImageApplication = patchImageHandler(func(ctx context.Context, body api
 	if err := db.UpdateApplicationImage(ctx, application, body.ImageID); err != nil {
 		return nil, err
 	} else {
-		return mapping.ApplicationToAPI(*application), nil
+		return applicationMapper(ctx)(*application), nil
 	}
 })
 

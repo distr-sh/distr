@@ -2,19 +2,22 @@ import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, inject, input, output} from '@angular/core';
 import {rxResource} from '@angular/core/rxjs-interop';
 import {DeploymentRevisionResponse, DeploymentTarget} from '@distr-sh/distr-sdk';
+import {IsStalePipe} from '../../../util/model';
 import {OrganizationKindPipe} from '../../../util/organization-kind';
 import {AvatarComponent} from '../../components/avatar.component';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
+import {DeploymentStatusBadgeComponent} from '../deployment-status-badge.component';
 
 @Component({
   selector: 'app-deployment-revisions-timeline',
   templateUrl: './deployment-revisions-timeline.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [DatePipe, OrganizationKindPipe, AvatarComponent],
+  imports: [DatePipe, OrganizationKindPipe, AvatarComponent, IsStalePipe, DeploymentStatusBadgeComponent],
 })
 export class DeploymentRevisionsTimelineComponent {
   public readonly deploymentId = input.required<string>();
   public readonly currentRevisionId = input<string>();
+  public readonly latestRevisionId = input<string>();
   public readonly deploymentTarget = input.required<DeploymentTarget>();
   public readonly revisionSelected = output<DeploymentRevisionResponse>();
 

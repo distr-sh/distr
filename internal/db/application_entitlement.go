@@ -379,14 +379,7 @@ func GetDeploymentsUsingVersionsNotInList(
 			av.name AS application_version_name
 		FROM Deployment d
 			JOIN DeploymentTarget dt ON d.deployment_target_id = dt.id
-			JOIN (
-				SELECT deployment_id, max(created_at) AS max_created_at
-				FROM DeploymentRevision
-				GROUP BY deployment_id
-			) dr_max ON d.id = dr_max.deployment_id
-			JOIN DeploymentRevision dr
-				ON d.id = dr.deployment_id
-				AND dr.created_at = dr_max.max_created_at
+			JOIN DeploymentRevision dr ON dr.id = d.latest_deployment_revision_id
 			JOIN ApplicationVersion av ON dr.application_version_id = av.id
 		WHERE d.application_entitlement_id = @entitlementId
 			AND dr.application_version_id != ALL(@allowedVersionIds)`,

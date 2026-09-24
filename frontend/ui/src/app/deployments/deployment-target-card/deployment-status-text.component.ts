@@ -1,15 +1,31 @@
 import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, Directive, input} from '@angular/core';
-import {DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
+import {DeploymentRevisionStatus, DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {never} from '../../../util/exhaust';
-import {isStale, IsStalePipe} from '../../../util/model';
+import {isStale} from '../../../util/model';
 import {AbstractStatusDotDirective} from '../../components/status-dot';
+import {DeploymentStatusBadgeComponent} from '../deployment-status-badge.component';
+
+function currentStatus(deployment: DeploymentWithLatestRevision): DeploymentRevisionStatus | undefined {
+  return deployment.currentStatus ?? deployment.latestStatus;
+}
+
+function pendingStatus(deployment: DeploymentWithLatestRevision): DeploymentRevisionStatus | undefined {
+  const {currentDeploymentRevisionId, deploymentRevisionId, latestStatus} = deployment;
+  if (!currentDeploymentRevisionId || currentDeploymentRevisionId === deploymentRevisionId) {
+    return undefined;
+  }
+  if (latestStatus?.type === 'error' || latestStatus?.type === 'progressing') {
+    return latestStatus;
+  }
+  return undefined;
+}
 
 @Directive({selector: '[appDeploymentStatusDot]'})
 export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
   public readonly deployment = input.required<DeploymentWithLatestRevision>();
   protected override style = computed(() => {
-    const s = this.deployment().latestStatus;
+    const s = currentStatus(this.deployment());
     if (s === undefined) {
       return 'unknown';
     } else if (s.type === 'error') {
@@ -30,15 +46,15 @@ export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
 
 @Component({
   selector: 'app-deployment-status-text',
-  imports: [DeploymentStatusDotDirective, IsStalePipe, DatePipe],
+  imports: [DeploymentStatusDotDirective, DatePipe, DeploymentStatusBadgeComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
-    <div class="flex gap-1 items-center" [title]="(deployment().latestStatus?.createdAt | date: 'short') ?? ''">
+    <div class="flex gap-1 items-center" [title]="(status()?.createdAt | date: 'short') ?? ''">
       <div class="size-3" appDeploymentStatusDot [deployment]="deployment()"></div>
-      @if (deployment().latestStatus; as drs) {
+      @if (status(); as drs) {
         @if (drs.type === 'error') {
           Error
-        } @else if (drs | isStale) {
+        } @else if (stale()) {
           Stale
         } @else if (drs.type === 'progressing') {
           Progressing
@@ -50,9 +66,24 @@ export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
       } @else {
         No status
       }
+      @if (pending(); as pending) {
+        <app-deployment-status-badge [status]="pending.type" class="ms-2" [title]="pending.message">
+          @if (pending.type === 'error') {
+            Update failed
+          } @else {
+            Update in progress
+          }
+        </app-deployment-status-badge>
+      }
     </div>
   `,
 })
 export class DeploymentStatusTextComponent {
   public readonly deployment = input.required<DeploymentWithLatestRevision>();
+  protected readonly status = computed(() => currentStatus(this.deployment()));
+  protected readonly stale = computed(() => {
+    const status = this.status();
+    return status !== undefined && isStale(status);
+  });
+  protected readonly pending = computed(() => pendingStatus(this.deployment()));
 }

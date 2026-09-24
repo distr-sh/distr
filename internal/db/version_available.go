@@ -47,13 +47,9 @@ func GetDeploymentsPendingUpdate(
 					)
 			)) AS entitled
 		FROM Deployment d
-			JOIN (
-				SELECT deployment_id, max(created_at) AS max_created_at
-				FROM DeploymentRevision
-				GROUP BY deployment_id
-			) dr_max ON dr_max.deployment_id = d.id
-			JOIN DeploymentRevision dr
-				ON dr.deployment_id = d.id AND dr.created_at = dr_max.max_created_at
+			-- The latest revision rather than the current one: an automatic update has already
+			-- created a revision for the new version, and that deployment needs no notification.
+			JOIN DeploymentRevision dr ON dr.id = d.latest_deployment_revision_id
 			JOIN ApplicationVersion av ON av.id = dr.application_version_id
 			JOIN DeploymentTarget dt ON dt.id = d.deployment_target_id
 			LEFT JOIN CustomerOrganization co ON co.id = dt.customer_organization_id

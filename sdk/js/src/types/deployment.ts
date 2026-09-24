@@ -59,6 +59,14 @@ export interface DeploymentWithLatestRevision extends Deployment {
   deploymentRevisionId?: string;
   deploymentRevisionCreatedAt?: string;
   latestStatus?: DeploymentRevisionStatus;
+  /**
+   * The revision an agent last reported as applied, which differs from deploymentRevisionId while a
+   * newer revision is being rolled out or has failed.
+   */
+  currentDeploymentRevisionId?: string;
+  currentStatus?: DeploymentRevisionStatus;
+  currentApplicationVersionId?: string;
+  currentApplicationVersionName?: string;
   helmOptions?: HelmOptions;
 }
 
@@ -91,6 +99,7 @@ export interface DeploymentRevisionResponse {
   helmOptions?: HelmOptions;
   trigger: DeploymentRevisionTrigger;
   createdBy?: DeploymentRevisionCreator;
+  latestStatus?: DeploymentRevisionStatus;
 }
 
 export type DeploymentRevisionTrigger = 'user' | 'automatic_update' | 'secret_change' | 'license_key_change';
