@@ -1,0 +1,525 @@
+---
+title: 'Nuon Alternative 2026: Distr vs Nuon'
+description: 'Compare Distr and Nuon for BYOC, customer-cloud software distribution, infrastructure provisioning, Kubernetes, Docker, licensing, enterprise CI/CD and on-premises deployments.'
+slug: nuon
+competitor: Nuon
+teaser: 'Compare software distribution and vendor-operated BYOC across customer clouds, on-premises infrastructure, CI/CD pipelines and managed environments.'
+heading: Distr vs Nuon for BYOC and Enterprise Software Distribution
+subheading: 'Distr and Nuon both help software vendors run applications inside customer-controlled environments, but they assign different responsibilities to the vendor and customer.'
+faqs:
+  - question: Is Distr a Nuon alternative?
+    answer: |
+      <p>Yes, but the products have different centers of gravity.</p>
+      <p>Nuon is a BYOC infrastructure and operations platform. Distr is a software distribution platform for customer-cloud, on-premises, air-gapped, Docker, Kubernetes and customer-managed environments.</p>
+  - question: Does Distr support BYOC?
+    answer: |
+      <p>Distr supports distributing software to existing customer-cloud infrastructure today.</p>
+      <p>Customers can install through Distr deployment agents or pull approved Helm charts, container images, Terraform modules, Zarf packages and other OCI artifacts into their existing pipelines.</p>
+      <p>Fully automated, vendor-operated infrastructure provisioning through Distr is currently in development.</p>
+  - question: Does Distr provision customer-cloud infrastructure?
+    answer: |
+      <p>Not as a generally available, fully automated workflow today.</p>
+      <p>Distr can distribute Terraform modules and other infrastructure artifacts, and vendors can keep using their existing infrastructure automation.</p>
+      <p>Nuon is currently the stronger option when the distribution platform itself must provision and continuously reconcile networks, clusters, databases and other cloud resources.</p>
+  - question: Is Distr easier to set up than Nuon?
+    answer: |
+      <p>Distr provides a shorter integration when the customer already has approved infrastructure.</p>
+      <p>The vendor publishes the application, assigns customer entitlements and provides either a guided deployment or authenticated OCI access.</p>
+      <p>Nuon removes the need to build a custom BYOC control plane, but the vendor must model the infrastructure, application components, cloud-provider differences, permissions and day-two operations inside Nuon.</p>
+  - question: Can Distr use infrastructure automation the vendor already has?
+    answer: |
+      <p>Yes.</p>
+      <p>Vendors can retain existing Terraform, Pulumi, CI/CD and cloud automation. Distr handles the software distribution layer, including artifacts, customer access, releases, entitlements, licenses and support.</p>
+  - question: Does Distr require access to customer infrastructure?
+    answer: |
+      <p>No.</p>
+      <p>Customers can pull approved artifacts from Distr and deploy them through their own CI/CD and operations workflows.</p>
+      <p>Customers can optionally use a Distr deployment agent when they want guided installation, updates, logs, metrics and shared deployment visibility.</p>
+  - question: Does Distr fit into enterprise CI/CD pipelines?
+    answer: |
+      <p>Yes.</p>
+      <p>Enterprise customers can pull Helm charts, container images, Terraform modules, Zarf packages, SBOMs and other artifacts from Distr’s OCI registry.</p>
+      <p>These artifacts can move through existing security reviews, scanning systems, internal registries, approval stages and deployment pipelines.</p>
+  - question: Does Distr support on-premises and air-gapped environments?
+    answer: |
+      <p>Yes.</p>
+      <p>Distr supports customer-owned servers, private data centers, Docker hosts, existing Kubernetes clusters and isolated environments.</p>
+      <p>Nuon customer installs currently target AWS, Azure and Google Cloud.</p>
+  - question: When is Nuon the better choice?
+    answer: |
+      <p>Nuon is the better choice when the vendor must provision and continuously operate the full application infrastructure inside customer-owned AWS, Azure or Google Cloud accounts.</p>
+  - question: When is Distr the better choice?
+    answer: |
+      <p>Distr is the better choice when customers already provide infrastructure or want to retain operational control.</p>
+      <p>It is also the stronger fit when the distribution strategy must support enterprise CI/CD, on-premises environments, Docker, Kubernetes, air-gapped networks, software licensing and multiple customer operating models.</p>
+---
+
+import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
+import LinkButton from '~/components/overwrites/LinkButton.astro';
+
+Distr is a software distribution platform. It helps vendors publish, license,
+update and support software across existing customer infrastructure. Customers
+can deploy through Distr or pull approved artifacts into their existing
+enterprise workflows.
+
+Nuon is a BYOC operations platform. It helps vendors provision infrastructure
+and operate applications inside customer-owned AWS, Azure and Google Cloud
+accounts.
+
+The central question is not simply whether the application runs in the
+customer’s cloud.
+
+The central question is:
+
+**Who is responsible for provisioning and operating the infrastructure?**
+
+## The Short Answer
+
+Choose Distr when:
+
+- Customers already provide a virtual machine, Kubernetes cluster, cloud account or internal deployment pipeline.
+- Enterprise customers want to retain infrastructure, change control and production operations.
+- Customers need to pull approved Helm charts, images and other artifacts into their existing CI/CD pipelines, registries, security controls and approval processes.
+- The vendor does not need infrastructure permissions inside the customer environment.
+- The vendor already has infrastructure automation that can be reused.
+- The distribution strategy must cover customer cloud, on-premises, Docker, Kubernetes and air-gapped environments.
+- Software licensing, artifact and application entitlements, customer portals and offline operation are required.
+- BYOC is one enterprise scenario among several.
+- The vendor wants a simpler integration without introducing a separate infrastructure control plane.
+- The vendor wants to reduce operational responsibility for customer infrastructure.
+- Public pricing and self-hosting matter.
+
+Choose Nuon when:
+
+- The vendor must provision networks, clusters, databases and cloud resources for each customer.
+- The vendor operates the application and infrastructure on the customer’s behalf, including day-two operations.
+- Infrastructure drift detection and remediation are core requirements.
+- The vendor sells a managed BYOC service with an operational SLA.
+- Customer-approved permissions can be granted to an in-account runner.
+- Every supported installation can remain in AWS, Azure or Google Cloud.
+- The team does not already have a suitable customer-cloud provisioning system.
+
+## Executive Summary
+
+Nuon is the specialist for vendor-operated BYOC.
+
+Its runner operates inside the customer’s cloud account and can apply Terraform,
+install Helm charts, provision Kubernetes clusters, execute operational actions,
+detect infrastructure drift and manage updates and rollbacks.
+
+This is valuable when infrastructure operation is part of the product being
+sold.
+
+It also creates a larger responsibility boundary. The vendor must define, test,
+support and operate the customer-cloud infrastructure across every supported
+cloud provider. The vendor remains responsible for application and day-two
+operations, typically under an SLA.
+
+Distr takes a lighter approach.
+
+Distr distributes applications, artifacts, licenses, configuration and updates
+to customer-controlled environments. The customer can use a Distr deployment
+agent or pull approved OCI artifacts into an existing internal pipeline.
+
+When infrastructure already exists, Distr does not require the vendor to
+introduce another infrastructure orchestration layer. The vendor can keep using
+the Terraform, Pulumi, CI/CD and cloud automation that already supports its SaaS
+or enterprise deployments.
+
+Distr is also not limited to one customer-cloud operating model.
+
+Nuon is stronger when full infrastructure provisioning and vendor-operated cloud
+services on AWS, GCP or Azure are required.
+
+Distr is stronger when BYOC is one part of a broader enterprise software
+distribution strategy.
+
+## The Core Difference
+
+### Distr Distributes Software
+
+Distr starts with the commercial software and its artifacts.
+
+The vendor publishes:
+
+- Helm charts
+- Container images
+- Docker Compose applications
+- Terraform modules
+- Zarf packages
+- SBOMs
+- Signatures
+- Other OCI-compatible artifacts
+
+Distr then controls which customers can access each application, artifact,
+version and tag.
+
+Customers can install the software through a guided Distr deployment or pull
+approved artifacts into their own internal systems.
+
+Distr manages the software distribution layer:
+
+- Artifact access
+- Customer entitlements
+- Application versions
+- Release availability
+- Software licenses
+- Offline license verification
+- Customer onboarding
+- Customer documentation
+- Distribution analytics
+- Optional deployment agents
+- Deployment visibility where permitted
+- Logs and metrics for managed deployments
+- Support workflows
+
+The customer can retain responsibility for infrastructure provisioning, security
+reviews, deployment approvals and production operations.
+
+### Nuon Operates Customer-Cloud Environments
+
+Nuon starts with the complete customer-cloud application architecture.
+
+The vendor defines:
+
+- Cloud networks
+- Kubernetes clusters
+- Databases
+- Storage
+- IAM roles
+- Terraform or Pulumi infrastructure
+- Helm applications
+- Kubernetes manifests
+- Operational actions
+- Update workflows
+- Environment policies
+
+A Nuon runner operates inside the customer’s cloud account with
+customer-approved permissions.
+
+Nuon then provisions and operates the application environment. It can manage
+infrastructure changes, application releases, health checks, rollbacks, drift
+detection and day-two operations.
+
+This provides the vendor with a SaaS-like operating model inside customer-owned
+cloud accounts.
+
+It also means the vendor accepts more operational responsibility for each
+customer environment.
+
+## Why Vendors Choose Distr
+
+### A Shorter Path When Infrastructure Already Exists
+
+Many enterprise customers already have approved infrastructure.
+
+They may provide:
+
+- An existing Kubernetes cluster
+- A Linux virtual machine
+- A Docker host
+- A cloud account with an approved landing zone
+- An internal OCI registry
+- An established CI/CD pipeline
+
+Distr lets the vendor distribute software into that environment without first
+modeling the complete infrastructure in another control plane.
+
+A typical flow is:
+
+1. Publish the Helm chart, container image or other artifact to Distr.
+2. Create the application version.
+3. Grant the customer access through an entitlement.
+4. Provide a guided Distr deployment or OCI registry credentials.
+5. Let the customer install through Distr or its existing internal pipeline.
+
+The vendor retains control over software versions, licenses, documentation and
+customer access.
+
+The customer retains control over infrastructure, security, approvals and
+production operations.
+
+This reduces setup and operational work when infrastructure provisioning is not
+part of the product.
+
+<TestimonialCTA name="weave" />
+
+### Fit Into Existing Enterprise CI/CD Pipelines
+
+Distr does not require enterprise customers to replace their existing deployment
+workflows.
+
+The Distr Artifact Registry follows the OCI distribution standard. Customers can
+use established tools such as:
+
+- Helm
+- Docker
+- ORAS
+- Zarf
+- Kubernetes deployment automation
+- CI/CD runners
+- Internal artifact registries
+- Artifact promotion systems
+
+Enterprise customers can pull the artifacts they are entitled to access and move
+them through existing:
+
+- Vulnerability scanning
+- Signature verification
+- Security review
+- Change approval
+- Registry mirroring
+- Staging environments
+- Production promotion
+- Deployment automation
+
+Distr provides authenticated software distribution, customer entitlements,
+licensing and download visibility without taking over the customer’s
+infrastructure process.
+
+<LinkButton
+  href="/docs/registry/"
+  variant="secondary"
+  icon="lucide:arrow-right"
+  iconPlacement="end">
+  Artifact Registry
+</LinkButton>
+
+### Keep Existing Infrastructure Automation
+
+Distr does not require vendors to move their infrastructure automation into a
+separate BYOC control plane.
+
+Vendors can continue using the Terraform, Pulumi, cloud APIs, CI/CD pipelines
+and platform tooling that already operate their SaaS or enterprise deployments.
+
+Distr adds the commercial distribution layer.
+
+This is especially useful when the vendor already has reliable infrastructure
+automation and needs a better way to package, license and distribute the
+product.
+
+Nuon can also use existing Terraform, Pulumi, Helm and container artifacts. The
+difference is that Nuon brings those components into its own customer-cloud
+operations model.
+
+Choose based on whether a new BYOC operations layer is required.
+
+### Support More Enterprise Deployment Scenarios
+
+Customer cloud is only one enterprise distribution model.
+
+Some customers require:
+
+- Existing Kubernetes clusters
+- Docker Compose on a Linux server
+- Docker Swarm
+- Customer-owned cloud infrastructure
+- Private cloud
+- Private data centers and physical infrastructure
+- Fully customer-managed installations
+- Air-gapped networks
+- Edge environments
+- Internal deployment pipelines
+- Vendor-assisted operation
+
+Distr supports these models from one software distribution platform.
+
+This reduces the risk of building the commercial distribution strategy around
+one operating model or a fixed set of public cloud providers.
+
+A vendor can begin with Docker Compose, support existing Kubernetes clusters,
+integrate with customer CI/CD pipelines and add customer-cloud automation
+without replacing the software distribution layer.
+
+<LinkButton
+  href="/docs/core-concepts/"
+  variant="secondary"
+  icon="lucide:arrow-right"
+  iconPlacement="end">
+  Core Concepts
+</LinkButton>
+
+<TestimonialCTA name="artifact" />
+
+### Provide Software Licensing and Entitlements
+
+Distr combines software distribution with customer-specific licensing.
+
+Vendors can control:
+
+- Which applications a customer can access
+- Which versions a customer can install
+- Which artifacts and tags a customer can pull
+- When access expires
+- Which product features are licensed
+- Seat and instance limits
+- Vendor-defined license claims
+
+Distr generates Ed25519-signed JWT license tokens that applications can verify
+locally.
+
+License validation does not require a callback to Distr, making it suitable for
+connected, restricted-network and offline environments.
+
+<LinkButton
+  href="/docs/platform/license-keys/"
+  variant="secondary"
+  icon="lucide:arrow-right"
+  iconPlacement="end">
+  License Keys
+</LinkButton>
+
+### Give Customers a Focused Portal
+
+Distr provides separate Vendor and Customer Portals.
+
+The Vendor Portal manages applications, artifacts, customers, entitlements,
+licenses, deployments and support workflows.
+
+The Customer Portal gives each customer a simplified and white-labeled
+interface. Vendors control which sections customers can access.
+
+Customers can use the portal to:
+
+- Configure installations through vendor-defined fields
+- Access approved versions
+- Install applications
+- Pull artifacts
+- Access license keys
+- Review deployment health
+- View logs and metrics
+- Create support bundles
+- Read vendor documentation
+
+For customers with strict enterprise workflows, the portal can provide access
+and documentation while the actual deployment remains inside the customer’s
+CI/CD process.
+
+<LinkButton
+  href="/docs/platform/customer-portal/"
+  variant="secondary"
+  icon="lucide:arrow-right"
+  iconPlacement="end">
+  Customer Portal
+</LinkButton>
+
+## Why Vendors Choose Nuon
+
+### Provision Complete Customer-Cloud Environments
+
+Nuon is stronger when the vendor must provision the infrastructure as well as
+the application.
+
+Nuon manages dependencies between the infrastructure and application components
+and applies them inside the customer’s cloud account.
+
+This reduces the engineering required to build a custom BYOC control plane.
+
+### Sell a Managed BYOC Service
+
+Nuon fits vendors that sell an operationally managed product inside
+customer-owned cloud accounts.
+
+The vendor operates the application and handles day-two work such as:
+
+- Updates
+- Rollbacks
+- Health checks
+- Operational actions
+- Infrastructure changes
+- Drift remediation
+- Release windows
+- Troubleshooting
+
+The customer retains ownership of the cloud account and controls the permissions
+granted to the Nuon runner.
+
+This model is valuable when the commercial agreement includes vendor
+responsibility for operating the environment.
+
+### Manage Infrastructure Drift
+
+Nuon treats infrastructure as part of the managed application.
+
+It can detect changes made outside the declared infrastructure configuration and
+help the vendor review or remediate those changes.
+
+Distr focuses on software distribution. It does not replace a complete
+infrastructure reconciliation system when the vendor must continuously provision
+and manage customer-cloud resources.
+
+### Standardize Vendor-Operated Public-Cloud Installs
+
+Nuon provides a structured model for applications that will run across AWS,
+Azure and Google Cloud.
+
+Vendors define separate cloud-specific configurations because networks,
+Kubernetes services, IAM systems and other resources differ between cloud
+providers.
+
+This can be useful when every supported customer installation follows the
+vendor-operated BYOC model.
+
+## Security and Enterprise Control
+
+Distr and Nuon can both operate without the vendor directly holding customer
+cloud credentials, but the operational models differ.
+
+Nuon deploys a runner inside the customer’s cloud account. The customer controls
+its permissions, and the runner provisions and operates infrastructure on the
+vendor’s behalf.
+
+Nuon does not remove the vendor’s operational responsibility. In a
+vendor-operated BYOC model, the vendor still owns the application architecture,
+infrastructure definitions, cloud-provider differences, updates, day-two
+operations and customer-facing SLA.
+
+Distr does not require vendor access to customer infrastructure. The vendor
+publishes approved artifacts and assigns customer entitlements. The customer
+pulls only the software and versions it is entitled to access, and deployment
+can remain inside the customer’s existing CI/CD, security and change-management
+systems.
+
+This model is useful when enterprise security policies do not permit vendors to:
+
+- Provision cloud infrastructure
+- Receive infrastructure permissions
+- Execute operational actions
+- Access production clusters
+- Control production release timing
+
+When the customer provides and operates the infrastructure, the vendor can focus
+on:
+
+- Building the application
+- Publishing approved releases
+- Managing customer access
+- Issuing licenses
+- Providing updates
+- Supporting the software
+
+The customer’s platform or operations team remains responsible for the
+production environment. This boundary can simplify security reviews and reduce
+the number of infrastructure scenarios the vendor must operate.
+
+Customers that want shared operational visibility can use a Distr deployment
+agent, which can automate installation and updates where the customer permits
+it. Customers that require full operational control can use Distr only for
+artifact distribution, licensing and customer access.
+
+## The Bottom Line
+
+Nuon is a specialized platform for vendor-operated BYOC.
+
+It is strongest when the vendor must provision infrastructure, deploy the
+application, manage day-two operations, detect drift and accept operational
+responsibility inside customer-owned AWS, Azure or Google Cloud accounts.
+
+Distr is a broader software distribution platform.
+
+It is strongest when customers already provide infrastructure, retain
+deployment control or require software to fit into existing enterprise
+pipelines. Distr also supports Docker, Kubernetes, private data centers,
+air-gapped environments, software licensing, artifact entitlements and
+customer-managed installations.
