@@ -55,6 +55,7 @@ import {getFormDisplayedError} from '../../util/errors';
 import {disableControlsWithoutEvent, enableControlsWithoutEvent} from '../../util/forms';
 import {SecureImagePipe} from '../../util/secureImage';
 import {SelectableVersioningStrategy, versioningStrategyBadgeClass, versioningStrategyLabel} from '../../util/versions';
+import {AvatarComponent} from '../components/avatar.component';
 import {BadgeSelectComponent} from '../components/badge-select/badge-select.component';
 import {EditorComponent} from '../components/editor.component';
 import {InlineEditComponent} from '../components/inline-edit.component';
@@ -100,6 +101,7 @@ import {
     NgClass,
     BadgeSelectComponent,
     PlanFeatureHintComponent,
+    AvatarComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './application-detail.component.html',

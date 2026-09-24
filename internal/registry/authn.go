@@ -6,7 +6,7 @@ import (
 
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/env"
-	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/registry/authz"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httprate"
 )
@@ -23,13 +23,43 @@ func useRegistryErrorFormat() {
 	})
 }
 
+type anonymousLimiter struct {
+	pred    func(*http.Request) bool
+	limiter *httprate.RateLimiter
+}
+
+// rateLimitAnonymous attaches the anonymous pull budget of the client IP to the request, which the
+// authorizer spends only on requests it grants (see authz.WithAnonymousLimit).
 func rateLimitAnonymous(limits env.AnonymousRateLimits) func(http.Handler) http.Handler {
-	return middleware.Chain(
-		limitAnonymous(isManifestOrListing, limits.ManifestsPerMinute, time.Minute),
-		limitAnonymous(isManifestOrListing, limits.ManifestsPerHour, time.Hour),
-		limitAnonymous(isBlob, limits.BlobsPerMinute, time.Minute),
-		limitAnonymous(isBlob, limits.BlobsPerHour, time.Hour),
-	)
+	var limiters []anonymousLimiter
+	for _, l := range []struct {
+		pred   func(*http.Request) bool
+		limit  int
+		window time.Duration
+	}{
+		{isManifestOrListing, limits.ManifestsPerMinute, time.Minute},
+		{isManifestOrListing, limits.ManifestsPerHour, time.Hour},
+		{isBlob, limits.BlobsPerMinute, time.Minute},
+		{isBlob, limits.BlobsPerHour, time.Hour},
+	} {
+		if l.limit > 0 {
+			limiters = append(limiters, anonymousLimiter{l.pred, httprate.NewRateLimiter(l.limit, l.window)})
+		}
+	}
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := authz.WithAnonymousLimit(r.Context(), func() bool {
+				key := clientIPKey(r)
+				for _, l := range limiters {
+					if l.pred(r) && l.limiter.OnLimit(w, r, key) {
+						return true
+					}
+				}
+				return false
+			})
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }
 
 // hasCredentials reports whether the request is worth authenticating. An OCI client that has no
@@ -57,35 +87,9 @@ func isManifestOrListing(r *http.Request) bool {
 	return isManifest(r) || isTags(r) || isReferrers(r)
 }
 
-// limitAnonymous rate limits the requests matching pred by client IP. A limit of zero is disabled.
-func limitAnonymous(
-	pred func(*http.Request) bool,
-	limit int,
-	window time.Duration,
-) func(http.Handler) http.Handler {
-	if limit <= 0 {
-		return func(next http.Handler) http.Handler { return next }
-	}
-	limiter := httprate.LimitBy(limit, window, clientIPKey, httprate.WithLimitHandler(writeTooManyRequests))
-	return func(next http.Handler) http.Handler {
-		limited := limiter(next)
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if pred(r) {
-				limited.ServeHTTP(w, r)
-			} else {
-				next.ServeHTTP(w, r)
-			}
-		})
-	}
-}
-
 // clientIPKey keys the limiter by the IP that chi's ClientIPFrom* middlewares resolved.
 // CanonicalizeIP reduces an IPv6 client to its /64, without which it would rotate addresses inside
 // its own prefix to win a fresh bucket per request.
-func clientIPKey(r *http.Request) (string, error) {
-	return httprate.CanonicalizeIP(chimiddleware.GetClientIP(r.Context())), nil
-}
-
-func writeTooManyRequests(w http.ResponseWriter, r *http.Request) {
-	_ = regErrTooManyRequests.Write(w)
+func clientIPKey(r *http.Request) string {
+	return httprate.CanonicalizeIP(chimiddleware.GetClientIP(r.Context()))
 }

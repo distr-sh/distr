@@ -133,10 +133,17 @@ func regErrDenied(message string) *regError {
 	}
 }
 
-var regErrTooManyRequests = &regError{
-	Status:  http.StatusTooManyRequests,
-	Code:    "TOOMANYREQUESTS",
+// regErrRateLimited answers an anonymous request that has spent its client IP's pull budget. It is a
+// 401 with the challenge rather than the 429 the distribution spec would suggest, because an OCI
+// client attaches its credentials only after a 401 and hands every other status straight back to the
+// caller (oras-go, which Helm uses, does so in auth.Client.Do). A 429 would therefore lock a client
+// that holds credentials out of an artifact it is allowed to pull, since authenticated requests are
+// not rate limited. The limiter has already written Retry-After and the X-RateLimit-* headers.
+var regErrRateLimited = &regError{
+	Status:  http.StatusUnauthorized,
+	Code:    "UNAUTHORIZED",
 	Message: "anonymous pull rate limit exceeded, authenticate to raise it",
+	Header:  auth.ArtifactsAuthenticateHeader,
 }
 
 var regErrUnauthorized = &regError{
@@ -163,6 +170,8 @@ func regErrAuthz(err error) *regError {
 	switch {
 	case errors.Is(err, authz.ErrAuthenticationRequired):
 		return regErrUnauthorized
+	case errors.Is(err, authz.ErrRateLimited):
+		return regErrRateLimited
 	case errors.Is(err, authz.ErrAccessDenied):
 		return regErrDenied(err.Error())
 	case errors.Is(err, registryerror.ErrInvalidArtifactName):

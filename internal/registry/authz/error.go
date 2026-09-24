@@ -14,6 +14,8 @@ var ErrAccessDenied = errors.New("access denied")
 // artifact exists.
 var ErrAuthenticationRequired = errors.New("authentication required")
 
+var ErrRateLimited = errors.New("anonymous pull rate limit exceeded")
+
 func NewErrAccessDenied(message string) error {
 	return fmt.Errorf("%w: %s", ErrAccessDenied, message)
 }

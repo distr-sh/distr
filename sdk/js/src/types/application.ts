@@ -31,7 +31,16 @@ export interface ApplicationVersion {
   chartName?: string;
   chartUrl?: string;
   chartVersion?: string;
+  /** The user who created this version. Only vendor users get to see it. */
+  createdBy?: ApplicationVersionCreator;
   resources?: ApplicationVersionResource[];
+}
+
+export interface ApplicationVersionCreator {
+  id: string;
+  name?: string;
+  email?: string;
+  imageId?: string;
 }
 
 export interface ApplicationVersionResource {
