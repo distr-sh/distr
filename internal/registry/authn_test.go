@@ -174,19 +174,24 @@ func TestAnonymousAccessRateLimit(t *testing.T) {
 			To(Equal(http.StatusOK), "the blob budget is untouched by the manifest requests")
 
 		w := handler.serve(http.MethodGet, manifestPath)
-		g.Expect(w.Code).To(Equal(http.StatusTooManyRequests))
+		// An OCI client sends its credentials only after a 401 and returns every other status to its
+		// caller, so a 429 would lock a client that holds credentials out of a public artifact.
+		g.Expect(w.Code).To(Equal(http.StatusUnauthorized))
+		g.Expect(w.Header().Get("WWW-Authenticate")).NotTo(BeEmpty())
 		g.Expect(w.Header().Get("Retry-After")).NotTo(BeEmpty())
 
 		var body struct {
 			Errors []struct {
-				Code string `json:"code"`
+				Code    string `json:"code"`
+				Message string `json:"message"`
 			} `json:"errors"`
 		}
 		g.Expect(json.Unmarshal(w.Body.Bytes(), &body)).To(Succeed())
 		g.Expect(body.Errors).To(HaveLen(1))
-		g.Expect(body.Errors[0].Code).To(Equal("TOOMANYREQUESTS"), "clients back off on the OCI error code")
+		g.Expect(body.Errors[0].Message).To(ContainSubstring("rate limit"),
+			"a client without credentials has only the message to tell it apart from a private artifact")
 
-		g.Expect(handler.serve(http.MethodGet, blobPath).Code).To(Equal(http.StatusTooManyRequests))
+		g.Expect(handler.serve(http.MethodGet, blobPath).Code).To(Equal(http.StatusUnauthorized))
 	})
 
 	t.Run("authenticated requests are not counted", func(t *testing.T) {
@@ -198,21 +203,19 @@ func TestAnonymousAccessRateLimit(t *testing.T) {
 		}
 	})
 
-	t.Run("refused requests are not counted and keep their challenge", func(t *testing.T) {
+	t.Run("refused requests are not counted", func(t *testing.T) {
 		g := NewWithT(t)
 		handler := newRegistryHandler(env.AnonymousRateLimits{ManifestsPerHour: 1})
 
 		// Helm and other OCI clients send every pull of a private artifact without credentials
-		// first and authenticate only after the challenge, so a 429 here would lock them out.
+		// first and authenticate only after the challenge.
 		for range 3 {
 			w := handler.serve(http.MethodGet, privateManifestPath)
 			g.Expect(w.Code).To(Equal(http.StatusUnauthorized))
 			g.Expect(w.Header().Get("WWW-Authenticate")).NotTo(BeEmpty())
 		}
-		g.Expect(handler.serve(http.MethodGet, manifestPath).Code).To(Equal(http.StatusOK))
-		g.Expect(handler.serve(http.MethodGet, manifestPath).Code).To(Equal(http.StatusTooManyRequests))
-		g.Expect(handler.serve(http.MethodGet, privateManifestPath).Code).
-			To(Equal(http.StatusUnauthorized), "an exhausted budget still answers with the challenge")
+		g.Expect(handler.serve(http.MethodGet, manifestPath).Code).
+			To(Equal(http.StatusOK), "the refused pulls left the budget untouched")
 	})
 
 	t.Run("a zero limit is disabled", func(t *testing.T) {
