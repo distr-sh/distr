@@ -35,6 +35,7 @@ bootstrapApplication(AppComponent, appConfig).catch((err) => console.error(err))
     posthog.init(remoteEnvironment.posthogToken, {
       api_host: remoteEnvironment.posthogApiHost,
       ui_host: remoteEnvironment.posthogUiHost,
+      defaults: '2026-08-30',
       person_profiles: 'identified_only',
       session_recording: {
         maskAllInputs: false,
