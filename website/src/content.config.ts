@@ -72,7 +72,7 @@ export const CompareConfigSchema = ({image}: SchemaContext) =>
     slug: z.string(),
     competitor: z.string(),
     teaser: z.string(),
-    heroImage: image(),
+    heroImage: image().optional(),
     // `title` and `description` are the SEO title and meta description. Set these
     // when the visible headline has to read differently from them.
     heading: z.string().optional(),
