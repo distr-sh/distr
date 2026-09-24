@@ -1,7 +1,7 @@
 import {DatePipe} from '@angular/common';
 import {Component, computed, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
-import {AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators} from '@angular/forms';
+import {AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, firstValueFrom, map, of, shareReplay, startWith, Subject, switchMap} from 'rxjs';
@@ -199,7 +199,7 @@ export class UpdateNotificationsComponent {
   protected readonly editConfigForm = this.fb.group(
     {
       id: this.fb.control(''),
-      name: this.fb.control('', [Validators.required]),
+      name: this.fb.control(''),
       enabled: this.fb.control(true),
       applicationIds: this.fb.record<boolean>({}),
       artifactIds: this.fb.record<boolean>({}),

@@ -39,6 +39,7 @@ type DeploymentPendingUpdate struct {
 	CustomerOrganizationID   *uuid.UUID `db:"customer_organization_id"`
 	CustomerOrganizationName *string    `db:"customer_organization_name"`
 	PartnerOrganizationID    *uuid.UUID `db:"partner_organization_id"`
+	CurrentVersionID         uuid.UUID  `db:"current_version_id"`
 	CurrentVersionName       string     `db:"current_version_name"`
 	// Entitled reports whether the entitlement the deployment was created with covers the
 	// announced version. It is always true for a deployment without an entitlement.

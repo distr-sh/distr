@@ -49,9 +49,6 @@ type CreateUpdateNotificationConfigurationRequest struct {
 }
 
 func (r CreateUpdateNotificationConfigurationRequest) Validate() error {
-	if r.Name == "" {
-		return validation.NewValidationFailedError("a name is required")
-	}
 	if len(r.ApplicationIDs) == 0 && len(r.ArtifactIDs) == 0 {
 		return validation.NewValidationFailedError("select at least one application or artifact")
 	}

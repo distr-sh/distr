@@ -18,15 +18,8 @@
           <strong>{{ .VersionName }}</strong>
         </p>
 
-        <p>
-          {{ with .ImageDataUrl }}
-            <img alt="{{ $.Artifact.Name }}" width="24" src="{{ . | UnsafeURL }}" />
-          {{ end }}
-          {{ .Artifact.Name }}:{{ .VersionName }}
-        </p>
-
         <p class="my-3">
-          <a class="cta" href="{{ .Link }}">Open Distr</a>
+          <a class="cta" href="{{ .Host }}">Open Distr</a>
         </p>
 
         <p>{{ template "fragments/signature.html" . }}</p>

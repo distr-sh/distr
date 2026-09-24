@@ -102,7 +102,7 @@ export class SideBarComponent {
   protected feedbackAlert = true;
   protected readonly agentsSubMenuOpen = signal(true);
   protected readonly registrySubMenuOpen = signal(true);
-  protected readonly notificationsSubMenuOpen = signal(false);
+  protected readonly notificationsSubMenuOpen = signal(true);
   protected readonly licenseOverlayOpen = signal(false);
   protected readonly notificationsOverlayOpen = signal(false);
   protected readonly supportBundlesOverlayOpen = signal(false);

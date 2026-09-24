@@ -39,6 +39,16 @@ func SendApplicationUpdateAvailableNotifications(
 		return nil
 	}
 
+	// A configuration can only link applications of its own organization, so any of them names
+	// the organization the application belongs to.
+	application, err := db.GetApplication(ctx, version.ApplicationID, configs[0].OrganizationID)
+	if err != nil {
+		return fmt.Errorf("failed to get application: %w", err)
+	}
+	if deployments = deploymentsBehind(*application, version, deployments); len(deployments) == 0 {
+		return nil
+	}
+
 	var aggErr error
 	for _, config := range configs {
 		if err := sendApplicationUpdateAvailableWithConfig(ctx, config, version, deployments); err != nil {
@@ -231,6 +241,30 @@ func sendArtifactVersionAvailableWithConfig(
 	}
 
 	return aggErr
+}
+
+// deploymentsBehind narrows the deployments down to those that run a version the application
+// orders before the announced one. A customer already on 2.1.0 has nothing to update to when a
+// 2.0.5 bugfix is released. The ordering is the application's own, taken from all of its versions
+// because the legacy strategy decides between SemVer and creation date for the whole set.
+func deploymentsBehind(
+	application types.Application,
+	announced types.ApplicationVersion,
+	deployments []types.DeploymentPendingUpdate,
+) []types.DeploymentPendingUpdate {
+	compare := types.ApplicationVersionComparator(application.VersioningStrategy, application.Versions)
+	versions := make(map[uuid.UUID]types.ApplicationVersion, len(application.Versions))
+	for _, version := range application.Versions {
+		versions[version.ID] = version
+	}
+
+	behind := make([]types.DeploymentPendingUpdate, 0, len(deployments))
+	for _, deployment := range deployments {
+		if current, ok := versions[deployment.CurrentVersionID]; !ok || compare(current, announced) < 0 {
+			behind = append(behind, deployment)
+		}
+	}
+	return behind
 }
 
 // visibleDeployments narrows the affected deployments down to what a recipient may see. A customer

@@ -83,82 +83,6 @@
         </li>
 
         <li>
-          @if (isNotificationsFeatureEnabled()) {
-            <button
-              type="button"
-              (click)="toggle(notificationsSubMenuOpen)"
-              class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
-              <fa-icon
-                [icon]="faBell"
-                size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-              <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Notifications</span>
-              <fa-icon
-                [icon]="faChevronDown"
-                [class.rotate-x-180]="notificationsSubMenuOpen()"
-                class="transition duration-150 ease-in-out" />
-            </button>
-            @if (notificationsSubMenuOpen()) {
-              <ul class="space-y-1">
-                <li>
-                  <a
-                    (click)="sidebar.hide()"
-                    routerLinkActive="bg-gray-100 dark:bg-gray-700"
-                    routerLink="/notifications/alert-configurations"
-                    class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                    <span class="">Alerts</span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    (click)="sidebar.hide()"
-                    routerLinkActive="bg-gray-100 dark:bg-gray-700"
-                    routerLink="/notifications/updates"
-                    class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                    <span class="">Updates</span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    (click)="sidebar.hide()"
-                    routerLinkActive="bg-gray-100 dark:bg-gray-700"
-                    routerLink="/notifications/history"
-                    class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                    <span class="">History</span>
-                  </a>
-                </li>
-              </ul>
-            }
-          } @else {
-            <a
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group cursor-pointer"
-              title="Upgrade to Pro to enable notifications"
-              (click)="toggle(notificationsOverlayOpen)"
-              cdkOverlayOrigin
-              #notificationsTooltipTrigger="cdkOverlayOrigin">
-              <fa-icon
-                [icon]="faBell"
-                size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-              <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Notifications</span>
-              <app-plan-badge plan="pro" class="ml-2 me-2" />
-              <ng-template
-                cdkConnectedOverlay
-                [cdkConnectedOverlayHasBackdrop]="true"
-                (backdropClick)="toggle(notificationsOverlayOpen)"
-                [cdkConnectedOverlayOrigin]="notificationsTooltipTrigger"
-                [cdkConnectedOverlayBackdropClass]="'transparent'"
-                [cdkConnectedOverlayPositions]="[
-                  {originX: 'end', overlayX: 'start', originY: 'center', overlayY: 'center'},
-                ]"
-                [cdkConnectedOverlayOpen]="notificationsOverlayOpen()">
-                <ng-container *ngTemplateOutlet="proFeatureOverlayContent" />
-              </ng-template>
-            </a>
-          }
-        </li>
-
-        <li>
           <button
             type="button"
             (click)="toggle(registrySubMenuOpen)"
@@ -234,6 +158,82 @@
                   {originX: 'end', overlayX: 'start', originY: 'center', overlayY: 'center'},
                 ]"
                 [cdkConnectedOverlayOpen]="licenseOverlayOpen()">
+                <ng-container *ngTemplateOutlet="proFeatureOverlayContent" />
+              </ng-template>
+            </a>
+          }
+        </li>
+
+        <li>
+          @if (isNotificationsFeatureEnabled()) {
+            <button
+              type="button"
+              (click)="toggle(notificationsSubMenuOpen)"
+              class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
+              <fa-icon
+                [icon]="faBell"
+                size="lg"
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+              <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Notifications</span>
+              <fa-icon
+                [icon]="faChevronDown"
+                [class.rotate-x-180]="notificationsSubMenuOpen()"
+                class="transition duration-150 ease-in-out" />
+            </button>
+            @if (notificationsSubMenuOpen()) {
+              <ul class="space-y-1">
+                <li>
+                  <a
+                    (click)="sidebar.hide()"
+                    routerLinkActive="bg-gray-100 dark:bg-gray-700"
+                    routerLink="/notifications/alert-configurations"
+                    class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                    <span class="">Alerts</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    (click)="sidebar.hide()"
+                    routerLinkActive="bg-gray-100 dark:bg-gray-700"
+                    routerLink="/notifications/updates"
+                    class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                    <span class="">Updates</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    (click)="sidebar.hide()"
+                    routerLinkActive="bg-gray-100 dark:bg-gray-700"
+                    routerLink="/notifications/history"
+                    class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                    <span class="">History</span>
+                  </a>
+                </li>
+              </ul>
+            }
+          } @else {
+            <a
+              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group cursor-pointer"
+              title="Upgrade to Pro to enable notifications"
+              (click)="toggle(notificationsOverlayOpen)"
+              cdkOverlayOrigin
+              #notificationsTooltipTrigger="cdkOverlayOrigin">
+              <fa-icon
+                [icon]="faBell"
+                size="lg"
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+              <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Notifications</span>
+              <app-plan-badge plan="pro" class="ml-2 me-2" />
+              <ng-template
+                cdkConnectedOverlay
+                [cdkConnectedOverlayHasBackdrop]="true"
+                (backdropClick)="toggle(notificationsOverlayOpen)"
+                [cdkConnectedOverlayOrigin]="notificationsTooltipTrigger"
+                [cdkConnectedOverlayBackdropClass]="'transparent'"
+                [cdkConnectedOverlayPositions]="[
+                  {originX: 'end', overlayX: 'start', originY: 'center', overlayY: 'center'},
+                ]"
+                [cdkConnectedOverlayOpen]="notificationsOverlayOpen()">
                 <ng-container *ngTemplateOutlet="proFeatureOverlayContent" />
               </ng-template>
             </a>

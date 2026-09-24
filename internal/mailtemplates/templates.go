@@ -234,22 +234,15 @@ func ApplicationUpdateAvailableNotification(
 	versionName string,
 	deployments []types.DeploymentPendingUpdate,
 ) (*template.Template, any) {
-	host := notificationHost(ctx, organization, recipient)
-	link := fmt.Sprintf("%v/deployments", host)
-	if recipient.CustomerOrganizationID == nil {
-		link = fmt.Sprintf("%v/applications/%v", host, application.ID)
-	}
 	return templates.Lookup("application-update-notification.html"), map[string]any{
 		"UserAccount":   recipient,
 		"Organization":  organization,
-		"Host":          host,
+		"Host":          notificationHost(ctx, organization, recipient),
 		"LogoDataUrl":   BrandingLogoDataURL(ctx, organization.Branding),
-		"ImageDataUrl":  fileDataURL(ctx, application.ImageID),
 		"Application":   application,
 		"VersionName":   versionName,
 		"Deployments":   deployments,
 		"ShowCustomers": recipient.CustomerOrganizationID == nil,
-		"Link":          link,
 	}
 }
 
@@ -260,16 +253,13 @@ func ArtifactVersionAvailableNotification(
 	artifact types.NotificationArtifact,
 	versionName string,
 ) (*template.Template, any) {
-	host := notificationHost(ctx, organization, recipient)
 	return templates.Lookup("artifact-version-notification.html"), map[string]any{
 		"UserAccount":  recipient,
 		"Organization": organization,
-		"Host":         host,
+		"Host":         notificationHost(ctx, organization, recipient),
 		"LogoDataUrl":  BrandingLogoDataURL(ctx, organization.Branding),
-		"ImageDataUrl": fileDataURL(ctx, artifact.ImageID),
 		"Artifact":     artifact,
 		"VersionName":  versionName,
-		"Link":         fmt.Sprintf("%v/artifacts/%v", host, artifact.ID),
 	}
 }
 

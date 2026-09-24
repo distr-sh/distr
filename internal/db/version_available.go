@@ -12,8 +12,8 @@ import (
 )
 
 // GetDeploymentsPendingUpdate returns the deployments of the given version's application that run
-// a different version of it. The trigger is that the version exists at all, so no version
-// ordering is involved: every deployment that is not on it can move to it.
+// a different version of it. Whether that version is older is left to the caller, since the
+// ordering depends on the application's versioning strategy.
 func GetDeploymentsPendingUpdate(
 	ctx context.Context,
 	applicationVersionID uuid.UUID,
@@ -29,6 +29,7 @@ func GetDeploymentsPendingUpdate(
 			dt.customer_organization_id,
 			co.name AS customer_organization_name,
 			co.partner_organization_id,
+			av.id AS current_version_id,
 			av.name AS current_version_name,
 			(d.application_entitlement_id IS NULL OR EXISTS (
 				SELECT 1 FROM ApplicationEntitlement ae

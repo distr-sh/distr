@@ -21,7 +21,7 @@ Update notifications tell selected users by email that a new version is availabl
 In the sidebar, navigate to **Notifications** > **Updates**.
 
 1. Click **Update Notification**.
-2. Enter a name for the configuration.
+2. Optionally enter a name for the configuration.
 3. Switch between **Applications** and **Artifacts**, and select what to watch. One configuration can watch applications and artifacts together, so an application and the images it is shipped with are announced from a single place.
 4. Select the users who should receive the emails. Your own team, your partners and your customers' users can all be picked.
 
@@ -39,7 +39,7 @@ Grant a customer organization the **Update Notifications** feature in **Customer
 
 ## When a Notification Is Sent
 
-An application notification is sent when a new version of a watched application is created, to every selected recipient who can see at least one deployment that does not run it yet. A customer is left out while their [entitlement](/docs/platform/license-management/) does not cover the new version, and hears about it once the entitlement is widened.
+An application notification is sent when a new version of a watched application is created, to every selected recipient who can see at least one deployment that runs an older version. Older is decided by the application's versioning strategy: with SemVer, a customer already on 2.1.0 is not told about a 2.0.5 bugfix. A customer is left out while their [entitlement](/docs/platform/license-management/) does not cover the new version, and hears about it once the entitlement is widened.
 
 An artifact notification is sent when a new tag is pushed to a watched artifact. Artifacts that mirror an upstream registry cannot be watched, because all of their versions appear at once when the mirror syncs.
 
@@ -47,6 +47,6 @@ Each recipient hears about a version once, however many deployments are affected
 
 ## Notification Emails
 
-Every email contains the application or artifact, its type and logo, the new version and a link to Distr.
+Every email names the application or artifact and the new version, and links to Distr.
 
 A recipient from your own team or a partner organization sees every affected customer and deployment in one email. A customer user sees only their own deployments.

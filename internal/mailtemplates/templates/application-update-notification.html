@@ -19,15 +19,6 @@
           is available.
         </p>
 
-        <p>
-          {{ with .ImageDataUrl }}
-            <img alt="{{ $.Application.Name }}" width="24" src="{{ . | UnsafeURL }}" />
-          {{ end }}
-          {{ .Application.Name }}
-          ({{ .Application.Type }}) &middot;
-          {{ .VersionName }}
-        </p>
-
         {{ if .Deployments }}
           <p>The following deployments do not run this version yet:</p>
 
@@ -60,7 +51,7 @@
 
 
         <p class="my-3">
-          <a class="cta" href="{{ .Link }}">Open Distr</a>
+          <a class="cta" href="{{ .Host }}">Open Distr</a>
         </p>
 
         <p>{{ template "fragments/signature.html" . }}</p>
