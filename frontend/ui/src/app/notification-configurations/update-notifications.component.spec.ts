@@ -110,14 +110,17 @@ describe('UpdateNotificationsComponent', () => {
     const nameInput = document.body.querySelector('#name') as HTMLInputElement;
     nameInput.value = 'everything we ship';
     nameInput.dispatchEvent(new Event('input'));
+    expect(tabCount('application')).toBeUndefined();
     checkboxBefore('alpha-app').click();
     checkboxBefore('Aaa').click();
     await settle();
+    expect(tabCount('application')).toBe('1');
 
     buttonWithText('Artifacts').click();
     await settle();
     checkboxBefore('beta-artifact').click();
     await settle();
+    expect(tabCount('artifact')).toBe('1');
 
     const save = buttonWithText('Save');
     expect(save.disabled).toBe(false);
@@ -269,6 +272,11 @@ describe('UpdateNotificationsComponent scoped to a customer', () => {
     return buttons.find((button) => button.textContent?.trim() === text)!;
   }
 });
+
+/** The number of selected entries the given picklist tab shows, if any. */
+function tabCount(tabId: string): string | undefined {
+  return document.body.querySelector(`#tab-${tabId} .distr-tag-badge`)?.textContent?.trim();
+}
 
 /** The checkbox of the row whose label contains the given text. */
 function checkboxBefore(text: string): HTMLInputElement {

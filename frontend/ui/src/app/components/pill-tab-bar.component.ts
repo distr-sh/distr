@@ -1,9 +1,11 @@
-import {Component, input, model} from '@angular/core';
+import {NgTemplateOutlet} from '@angular/common';
+import {Component, contentChild, input, model, TemplateRef} from '@angular/core';
 import {TabItem} from './tab-bar.component';
 
 /** The compact tab bar that switches between the sections of a form or a panel. */
 @Component({
   selector: 'app-pill-tab-bar',
+  imports: [NgTemplateOutlet],
   template: `
     @for (tab of tabs(); track tab.id) {
       <button
@@ -16,6 +18,9 @@ import {TabItem} from './tab-bar.component';
         [disabled]="!!tab.disabled"
         (click)="active.set(tab.id)">
         {{ tab.label }}
+        @if (tabSuffix(); as tabSuffix) {
+          <ng-container *ngTemplateOutlet="tabSuffix; context: {$implicit: tab}" />
+        }
       </button>
     }
   `,
@@ -25,4 +30,7 @@ import {TabItem} from './tab-bar.component';
 export class PillTabBarComponent<T extends string> {
   public readonly tabs = input.required<readonly TabItem<T>[]>();
   public readonly active = model.required<T>();
+
+  /** Rendered after the label of each tab, with the tab as context. */
+  protected readonly tabSuffix = contentChild<TemplateRef<unknown>>('tabSuffix');
 }

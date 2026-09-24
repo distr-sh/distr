@@ -45,18 +45,10 @@
           <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
             {{ config.createdAt | date }}
           </td>
-          <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">
-            <div class="flex flex-col gap-2">
-              @for (application of config.applications; track application.id) {
-                <app-application-preview
-                  [name]="application.name"
-                  [type]="application.type"
-                  [imageUrl]="application.imageUrl" />
-              }
-              @for (artifact of config.artifacts; track artifact.id) {
-                <app-artifact-preview [name]="artifact.name" [imageUrl]="artifact.imageUrl" />
-              }
-            </div>
+          <td
+            class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
+            [title]="config.subjectNames">
+            {{ config.subjectNames }}
           </td>
           <td
             class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
@@ -129,7 +121,13 @@
         </label>
 
         <div class="space-y-2">
-          <app-pill-tab-bar [tabs]="picklistTabs()" [(active)]="picklistTab" />
+          <app-pill-tab-bar [tabs]="picklistTabs()" [(active)]="picklistTab">
+            <ng-template #tabSuffix let-tab>
+              @if (selectedCounts()[tab.id] > 0) {
+                <span class="ms-2 distr-tag-badge">{{ selectedCounts()[tab.id] }}</span>
+              }
+            </ng-template>
+          </app-pill-tab-bar>
           <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-2">
             @if (picklistTab() === 'application') {
               @for (application of applications(); track application.id) {

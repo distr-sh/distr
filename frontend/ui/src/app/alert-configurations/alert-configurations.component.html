@@ -281,7 +281,7 @@
           <h3 class="text-sm font-medium text-gray-900 dark:text-white">Users to notify</h3>
           <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-1">
             @for (user of users(); track user.id) {
-              <label class="flex items-center w-full">
+              <label class="flex items-center w-full" [title]="user.email">
                 <input
                   type="checkbox"
                   class="distr-checkbox"

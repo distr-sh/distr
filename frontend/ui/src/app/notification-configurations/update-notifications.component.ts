@@ -9,8 +9,8 @@ import {compareBy} from '../../util/arrays';
 import {getFormDisplayedError} from '../../util/errors';
 import {checkedIds, checkedRecord} from '../../util/formRecord';
 import {validateRecordAtLeast} from '../../util/validation';
-import {ApplicationLogoComponent, ApplicationPreviewComponent} from '../applications/components';
-import {ArtifactLogoComponent, ArtifactPreviewComponent} from '../artifacts/components';
+import {ApplicationLogoComponent} from '../applications/components';
+import {ArtifactLogoComponent} from '../artifacts/components';
 import {PillTabBarComponent} from '../components/pill-tab-bar.component';
 import {SearchBarComponent} from '../components/search-bar.component';
 import {TabItem} from '../components/tab-bar.component';
@@ -44,9 +44,7 @@ type NotificationKind = 'application' | 'artifact';
     SearchBarComponent,
     AutotrimDirective,
     ApplicationLogoComponent,
-    ApplicationPreviewComponent,
     ArtifactLogoComponent,
-    ArtifactPreviewComponent,
     NotificationRecipientsComponent,
   ],
 })
@@ -112,7 +110,14 @@ export class UpdateNotificationsComponent {
     ),
     {initialValue: [] as UpdateNotificationConfiguration[]}
   );
-  private readonly rows = computed(() => [...this.configs()].sort(compareBy((config) => config.name)));
+  private readonly rows = computed(() =>
+    this.configs()
+      .map((config) => ({
+        ...config,
+        subjectNames: [...config.applications, ...config.artifacts].map((it) => it.name).join(', '),
+      }))
+      .sort(compareBy((config) => config.name))
+  );
 
   private readonly unsortedApplications = toSignal(
     this.kinds$.pipe(switchMap((kinds) => (kinds.includes('application') ? this.applicationsService.list() : of([])))),
@@ -202,6 +207,17 @@ export class UpdateNotificationsComponent {
     },
     {validators: [validateAnyTarget]}
   );
+
+  private readonly editConfigValue = toSignal(this.editConfigForm.valueChanges, {
+    initialValue: this.editConfigForm.value,
+  });
+  protected readonly selectedCounts = computed<Record<string, number>>(() => {
+    const value = this.editConfigValue();
+    return {
+      application: checkedIds(value.applicationIds ?? {}).length,
+      artifact: checkedIds(value.artifactIds ?? {}).length,
+    };
+  });
 
   protected readonly picklistTab = signal<NotificationKind>('application');
   protected readonly picklistTabs = computed<TabItem<NotificationKind>[]>(() =>
