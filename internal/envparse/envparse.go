@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/distr-sh/distr/internal/validation"
 )
 
 func PositiveDuration(value string) (time.Duration, error) {
@@ -72,9 +74,10 @@ func commaSeparated(value string) []string {
 // EmailDomainList parses a comma-separated list of email domains, e.g. "example.com,spam.io".
 func EmailDomainList(value string) ([]string, error) {
 	domains := commaSeparated(strings.ToLower(value))
-	for _, domain := range domains {
-		if strings.ContainsAny(domain, "@/ ") {
-			return nil, fmt.Errorf("invalid email domain %q", domain)
+	for i, domain := range domains {
+		domains[i] = strings.TrimSuffix(domain, ".")
+		if err := validation.ValidateHostname(domains[i]); err != nil {
+			return nil, fmt.Errorf("invalid email domain %q: %w", domain, err)
 		}
 	}
 	return domains, nil

@@ -61,7 +61,8 @@ password reset endpoints from a listed address or range. When a request carries 
 client address is its rightmost entry, so it is only accurate with exactly one reverse proxy in front of Distr.
 A request whose address cannot be determined is not blocked.
 
-Both answer with `403 Forbidden`. An invalid entry in either variable stops Distr from starting.
+Both answer with `403 Forbidden`, except a blocked email domain on a built-in OIDC login, which redirects back to the
+login page and shows the reason there.
 
 ### Maintenance mode
 
