@@ -24,6 +24,7 @@ type UserAccount struct {
 	MFAEnabled             bool             `db:"mfa_enabled" json:"mfaEnabled"`
 	MFAEnabledAt           *time.Time       `db:"mfa_enabled_at" json:"-"`
 	IsSuperAdmin           bool             `db:"is_super_admin" json:"-"`
+	Activated              bool             `db:"activated" json:"-"`
 	Password               string           `db:"-" json:"-"`
 
 	// Remember to update AsUserAccountWithRole when adding fields!
@@ -48,6 +49,7 @@ func (u *UserAccount) AsUserAccountWithRole(
 		MFAEnabled:             u.MFAEnabled,
 		MFAEnabledAt:           util.PtrCopy(u.MFAEnabledAt),
 		IsSuperAdmin:           u.IsSuperAdmin,
+		Activated:              u.Activated,
 		Password:               u.Password,
 		UserRole:               role,
 		JoinedOrgAt:            joinedOrgAt,
@@ -74,6 +76,7 @@ type UserAccountWithUserRole struct {
 	MFAEnabled             bool             `db:"mfa_enabled" json:"mfaEnabled"`
 	MFAEnabledAt           *time.Time       `db:"mfa_enabled_at" json:"-"`
 	IsSuperAdmin           bool             `db:"is_super_admin" json:"-"`
+	Activated              bool             `db:"activated" json:"-"`
 
 	// not copy+pasted
 
@@ -104,6 +107,7 @@ func (u *UserAccountWithUserRole) AsUserAccount() UserAccount {
 		MFAEnabled:             u.MFAEnabled,
 		MFAEnabledAt:           util.PtrCopy(u.MFAEnabledAt),
 		IsSuperAdmin:           u.IsSuperAdmin,
+		Activated:              u.Activated,
 		Password:               u.Password,
 	}
 }
