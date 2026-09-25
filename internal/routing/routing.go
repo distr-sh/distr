@@ -1,6 +1,7 @@
 package routing
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -88,7 +89,7 @@ func NewRouter(
 			option.SecurityAPIKey("Authorization", openapi.SecuritySchemeAPIKeyInHeader),
 			option.SecurityDescription(
 				"Provide a PAT using the Authorization header and adding the AccessToken prefix.\n\n"+
-					"Example: `Authorization: AccessToken distr-xxxxxx`",
+					"Example: `Authorization: AccessToken distr-xxxxxx_yyyyyy`",
 			),
 		),
 		option.WithStoplightElements(config.StoplightElements{
@@ -130,6 +131,7 @@ func ApiRouter(
 			middleware.Sentry,
 			middleware.LoggerCtxMiddleware(logger),
 			middleware.LoggingMiddleware,
+			middleware.MaintenanceMode,
 			middleware.ContextInjectorMiddleware(db, dbReadonly, mailer, oidcer, prometheusCollector, logStore),
 		)
 
@@ -202,6 +204,8 @@ func ApiRouter(
 					r.Route("/license-templates", handlers.LicenseTemplatesRouter)
 					r.Route("/licenses", handlers.LicensesRouter)
 					r.Route("/user-accounts", handlers.UserAccountsRouter)
+					r.With(middleware.VulnerabilitiesFeatureMiddleware).
+						Route("/advisories", handlers.AdvisoriesRouter)
 				})
 			})
 
@@ -262,18 +266,27 @@ func StatusRouter() http.Handler {
 func ReadyRouter(db *pgxpool.Pool) http.Handler {
 	router := chi.NewRouter()
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		var result int
-		err := db.QueryRow(r.Context(), "SELECT 1").Scan(&result)
-		if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		if !isReady(r.Context(), db) {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`{"ready":false}`))
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"ready":true}`))
 	})
 	return router
+}
+
+// isReady reports whether requests can be served. In maintenance mode the instance is never ready,
+// because the frontend probes this endpoint to decide whether to show its maintenance page. The
+// Kubernetes probes target "/" instead, so a maintenance window does not take the pod out of its
+// service and the frontend keeps being served.
+func isReady(ctx context.Context, db *pgxpool.Pool) bool {
+	if env.MaintenanceMode() {
+		return false
+	}
+	var result int
+	return db.QueryRow(ctx, "SELECT 1").Scan(&result) == nil
 }
 
 func PublicRouter(tracers *tracers.Tracers) func(r chiopenapi.Router) {

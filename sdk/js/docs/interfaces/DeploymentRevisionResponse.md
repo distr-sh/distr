@@ -68,9 +68,21 @@
 
 ---
 
+### latestStatus?
+
+> `optional` **latestStatus?**: [`DeploymentRevisionStatus`](DeploymentRevisionStatus.md)
+
+---
+
 ### releaseName?
 
 > `optional` **releaseName?**: `string`
+
+---
+
+### trigger
+
+> **trigger**: [`DeploymentRevisionTrigger`](../type-aliases/DeploymentRevisionTrigger.md)
 
 ---
 

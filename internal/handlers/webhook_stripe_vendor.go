@@ -61,7 +61,7 @@ func vendorStripeWebhookHandler() http.HandlerFunc {
 			return
 		}
 
-		event, err := webhook.ConstructEvent(payload, req.Header.Get("Stripe-Signature"), *org.StripeWebhookSecret)
+		event, err := webhook.ConstructEvent(payload, req.Header.Get("Stripe-Signature"), string(*org.StripeWebhookSecret))
 		if err != nil {
 			log.Warn("vendor webhook signature verification failed", zap.Error(err))
 			w.WriteHeader(http.StatusBadRequest)
@@ -205,7 +205,7 @@ func handleVendorStripeSubscription(ctx context.Context, orgID uuid.UUID, sub st
 		if err := db.CreateLicenseKeyRevision(ctx, &revision); err != nil {
 			return err
 		}
-		return triggerAffectedDeployments(ctx, affected, nil)
+		return triggerAffectedDeployments(ctx, affected, nil, types.DeploymentRevisionTriggerLicenseKeyChange)
 	}); err != nil {
 		return err
 	}

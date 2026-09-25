@@ -22,7 +22,7 @@
     <div
       class="gauge relative size-10 rounded-full bg-conic from-green-700 via-yellow-300 to-red-600"
       [class.grayscale]="outdated()"
-      [style.--deg]="getUsageDegrees(metrics().cpuUsage)"></div>
+      [style.--deg]="cpuUsageDegrees()"></div>
     <div class="absolute inset-1 rounded-full bg-white dark:bg-gray-800"></div>
     <div class="absolute inset-0 flex items-center justify-center text-xs font-thin text-black dark:text-white">
       {{ metrics().cpuUsage | percent }}
@@ -33,7 +33,7 @@
     <div
       class="gauge relative size-10 rounded-full bg-conic from-green-700 via-yellow-300 to-red-600"
       [class.grayscale]="outdated()"
-      [style.--deg]="getUsageDegrees(metrics().memoryUsage)"></div>
+      [style.--deg]="memoryUsageDegrees()"></div>
     <div class="absolute inset-1 rounded-full bg-white dark:bg-gray-800"></div>
     <div class="absolute inset-0 flex items-center justify-center text-xs font-thin text-black dark:text-white">
       {{ metrics().memoryUsage | percent }}
@@ -50,10 +50,10 @@
     {originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top'},
     {originX: 'center', originY: 'top', overlayX: 'center', overlayY: 'bottom'},
   ]">
-  <div class="mt-1 px-3 py-2 text-xs rounded-lg shadow-lg bg-gray-800 dark:bg-gray-700 text-white whitespace-nowrap">
+  <div class="distr-tooltip mt-1 px-3 py-2 text-xs whitespace-nowrap">
     <div class="flex flex-col gap-2">
       @if (outdated()) {
-        <div class="flex items-center gap-1.5 text-yellow-300">
+        <div class="flex items-center gap-1.5 text-yellow-600 dark:text-yellow-300">
           <fa-icon [icon]="faTriangleExclamation" />
           <span>Outdated metrics, last reported {{ metrics().createdAt | relativeDate }}</span>
         </div>
@@ -63,7 +63,7 @@
         <span class="font-semibold">CPU:</span>
         {{ metrics().cpuUsage | percent: '1.1-1' }} of {{ metrics().cpuCoresMillis / 1000 }} Cores
         @if (agentUsage(); as agent) {
-          <span class="text-gray-300 dark:text-gray-400">(Agent usage: {{ agent.cpuUsageMillis }}m)</span>
+          <span class="text-gray-500 dark:text-gray-400">(Agent usage: {{ agent.cpuUsageMillis }}m)</span>
         }
       </div>
       <div>
@@ -71,7 +71,7 @@
         <span class="font-semibold">RAM:</span>
         {{ metrics().memoryUsage | percent: '1.1-1' }} of {{ metrics().memoryBytes | bytes: '1.0-0' }}
         @if (agentUsage(); as agent) {
-          <span class="text-gray-300 dark:text-gray-400">(Agent usage: {{ agent.memoryBytes | bytes: '1.0-1' }})</span>
+          <span class="text-gray-500 dark:text-gray-400">(Agent usage: {{ agent.memoryBytes | bytes: '1.0-1' }})</span>
         }
       </div>
       @for (disk of metrics().diskMetrics; track disk.path) {
@@ -81,6 +81,14 @@
           <span class="font-semibold">{{ disk.device }}:</span>
           {{ diskUsage | percent: '1.1-1' }} of {{ disk.bytesTotal | bytes: '1.0-0' }}
         </div>
+      }
+      @let imageBytes = metrics().imageBytes;
+      @if (imageBytes !== undefined) {
+        <div class="text-gray-500 dark:text-gray-400">Container images: {{ imageBytes | bytes: '1.0-1' }}</div>
+      }
+      @let agentLogBytes = metrics().agentLogBytes;
+      @if (agentLogBytes !== undefined) {
+        <div class="text-gray-500 dark:text-gray-400">Agent logs: {{ agentLogBytes | bytes: '1.0-1' }}</div>
       }
     </div>
   </div>

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/internal/validation"
@@ -13,7 +12,7 @@ type CreateUpdatePartnerOrganizationRequest struct {
 }
 
 func (r *CreateUpdatePartnerOrganizationRequest) Validate() error {
-	if strings.TrimSpace(r.Name) == "" {
+	if r.Name == "" {
 		return validation.NewValidationFailedError("name is required")
 	}
 	return nil

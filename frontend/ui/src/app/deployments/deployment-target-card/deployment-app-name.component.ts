@@ -1,6 +1,6 @@
 import {AsyncPipe} from '@angular/common';
-import {ChangeDetectionStrategy, Component, input} from '@angular/core';
-import {Application} from '@distr-sh/distr-sdk';
+import {ChangeDetectionStrategy, Component, computed, input} from '@angular/core';
+import {DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faShip} from '@fortawesome/free-solid-svg-icons';
 import {SecureImagePipe} from '../../../util/secureImage';
@@ -30,8 +30,20 @@ import {SecureImagePipe} from '../../../util/secureImage';
   `,
 })
 export class DeploymentAppNameComponent {
-  public readonly application = input.required<Application>();
-  public readonly applicationVersionName = input.required<string>();
+  public readonly deployment = input.required<DeploymentWithLatestRevision>();
+
+  protected readonly application = computed(() => this.deployment().application);
+
+  protected readonly applicationVersionName = computed(() => {
+    const deployment = this.deployment();
+    if (
+      deployment.currentApplicationVersionName &&
+      deployment.currentApplicationVersionId !== deployment.applicationVersionId
+    ) {
+      return `${deployment.currentApplicationVersionName} → ${deployment.applicationVersionName}`;
+    }
+    return deployment.applicationVersionName;
+  });
 
   protected readonly faShip = faShip;
 }

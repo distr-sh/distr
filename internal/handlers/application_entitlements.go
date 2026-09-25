@@ -68,7 +68,7 @@ func createApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 	}
 	entitlement.OrganizationID = *auth.CurrentOrgID()
 
-	if strings.TrimSpace(entitlement.Name) == "" {
+	if entitlement.Name == "" {
 		http.Error(w, "name is required", http.StatusBadRequest)
 		return
 	}
@@ -89,7 +89,10 @@ func createApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	sanitizeRegistryInput(entitlement)
+	if err := checkRegistryInput(&entitlement); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	_ = db.RunTx(ctx, func(ctx context.Context) error {
 		err := db.CreateApplicationEntitlement(ctx, &entitlement.ApplicationEntitlementBase)
@@ -135,12 +138,13 @@ func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 	}
 	entitlement.OrganizationID = *auth.CurrentOrgID()
 
-	if strings.TrimSpace(entitlement.Name) == "" {
+	if entitlement.Name == "" {
 		http.Error(w, "name is required", http.StatusBadRequest)
 		return
 	}
 
 	existing := internalctx.GetApplicationEntitlement(ctx)
+	entitlement.OrganizationID = existing.OrganizationID
 	if entitlement.ID == uuid.Nil {
 		entitlement.ID = existing.ID
 	} else if entitlement.ID != existing.ID {
@@ -155,7 +159,10 @@ func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Changing the application is not allowed", http.StatusBadRequest)
 		return
 	}
-	sanitizeRegistryInput(entitlement)
+	if err := checkRegistryInput(&entitlement); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	_ = db.RunTx(ctx, func(ctx context.Context) error {
 		err := db.UpdateApplicationEntitlement(ctx, &entitlement.ApplicationEntitlementBase)
@@ -210,6 +217,13 @@ func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
+		// Widening the entitlement can make a newer version available to the customer.
+		if err := triggerAutomaticApplicationUpdates(
+			ctx, auth.CurrentOrg(), entitlement.ApplicationID, new(auth.CurrentUserID()),
+		); err != nil {
+			return automaticUpdateError(ctx, w, err)
+		}
+
 		if updatedEntitlement, err := db.GetApplicationEntitlementByID(ctx, entitlement.ID); err != nil {
 			log.Warn("could not read previously updated entitlement", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -236,12 +250,25 @@ func formatVersionConflictError(conflicts []types.DeploymentVersionUsage) string
 	)
 }
 
-func sanitizeRegistryInput(entitlement types.ApplicationEntitlementWithVersions) {
-	if entitlement.RegistryURL == nil || (*entitlement.RegistryURL) == "" {
+// checkRegistryInput enforces that either all or none of the registry fields are set.
+func checkRegistryInput(entitlement *types.ApplicationEntitlementWithVersions) error {
+	if entitlement.RegistryURL != nil && *entitlement.RegistryURL == "" {
 		entitlement.RegistryURL = nil
+	}
+	if entitlement.RegistryUsername != nil && *entitlement.RegistryUsername == "" {
 		entitlement.RegistryUsername = nil
+	}
+	if entitlement.RegistryPassword != nil && *entitlement.RegistryPassword == "" {
 		entitlement.RegistryPassword = nil
 	}
+	if entitlement.RegistryURL == nil {
+		if entitlement.RegistryUsername != nil || entitlement.RegistryPassword != nil {
+			return errors.New("registry URL is required when registry credentials are given")
+		}
+	} else if entitlement.RegistryUsername == nil || entitlement.RegistryPassword == nil {
+		return errors.New("registry username and password are required when a registry URL is given")
+	}
+	return nil
 }
 
 func getApplicationEntitlements(w http.ResponseWriter, r *http.Request) {

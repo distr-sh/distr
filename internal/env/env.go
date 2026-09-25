@@ -1,6 +1,7 @@
 package env
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -10,17 +11,25 @@ import (
 
 	"github.com/distr-sh/distr/internal/envparse"
 	"github.com/distr-sh/distr/internal/envutil"
+	"github.com/distr-sh/distr/internal/kms"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/joho/godotenv"
 )
+
+// kmsResolveTimeout bounds the requests to the key management service, which happen before
+// anything of this process runs that could cancel them.
+const kmsResolveTimeout = 30 * time.Second
 
 var (
 	databaseUrl                            string
 	databaseMaxConns                       *int
 	databaseReadonlyUrl                    *string
 	databaseReadonlyMaxConns               *int
+	databaseEncryptionKey                  string
+	databaseEncryptionMigrateOnBoot        bool
 	jwtSecret                              []byte
 	host                                   string
+	agentHost                              *string
 	registryHost                           string
 	mailerConfig                           MailerConfig
 	inviteTokenValidDuration               time.Duration
@@ -48,9 +57,11 @@ var (
 	registration                           RegistrationMode
 	turnstileSiteKey                       *string
 	turnstileSecret                        *string
+	supportEmail                           *string
 	registryEnabled                        bool
 	registryS3Config                       S3Config
 	registryScratchDir                     *string
+	registryAnonymousRateLimits            AnonymousRateLimits
 	artifactTagsDefaultLimitPerOrg         int
 	registryUpstreamSyncCron               *string
 	registryUpstreamSyncTimeout            time.Duration
@@ -66,6 +77,12 @@ var (
 	cleanupOrganizationCron                *string
 	cleanupOrganizationTimeout             time.Duration
 	cleanupOrganizationMinAge              time.Duration
+	cleanupUserAccountCron                 *string
+	cleanupUserAccountTimeout              time.Duration
+	cleanupUserAccountMinAge               time.Duration
+	cleanupFileCron                        *string
+	cleanupFileTimeout                     time.Duration
+	cleanupFileMinAge                      time.Duration
 	deploymentStatusNotificationCron       *string
 	deploymentStatusNotificationTimeout    time.Duration
 	notificationEmailHourlyQuota           int
@@ -107,6 +124,7 @@ var (
 	customDomainVerificationTimeout        time.Duration
 	customDomainVerificationRefreshAfter   time.Duration
 	internalServerAddr                     string
+	maintenanceMode                        bool
 )
 
 func Initialize() {
@@ -125,8 +143,27 @@ func Initialize() {
 	databaseMaxConns = envutil.GetEnvParsedOrNil("DATABASE_MAX_CONNS", strconv.Atoi)
 	databaseReadonlyUrl = envutil.GetEnvOrNil("DATABASE_READONLY_URL")
 	databaseReadonlyMaxConns = envutil.GetEnvParsedOrNil("DATABASE_READONLY_MAX_CONNS", strconv.Atoi)
-	jwtSecret = envutil.RequireEnvParsed("JWT_SECRET", base64.StdEncoding.DecodeString)
+
+	ctx, cancel := context.WithTimeout(context.Background(), kmsResolveTimeout)
+	defer cancel()
+	resolver := util.Require(kms.New(ctx, kms.Config{
+		AWS: kms.AWSConfig{
+			KeyID:    envutil.GetEnv("KMS_AWS_KEY_ID"),
+			Region:   envutil.GetEnvOrNil("KMS_AWS_REGION"),
+			Endpoint: envutil.GetEnvOrNil("KMS_AWS_ENDPOINT"),
+		},
+		GCP: kms.GCPConfig{KeyName: envutil.GetEnv("KMS_GCP_KEY_NAME")},
+	}))
+	defer func() { _ = resolver.Close() }()
+
+	databaseEncryptionKey = requireEnvResolved(ctx, resolver, "DATABASE_ENCRYPTION_KEY")
+	databaseEncryptionMigrateOnBoot = envutil.GetEnvParsedOrDefault(
+		"DATABASE_ENCRYPTION_MIGRATE_ON_BOOT", strconv.ParseBool, false,
+	)
+	jwtSecret = util.Require(envutil.ParseValue("JWT_SECRET",
+		requireEnvResolved(ctx, resolver, "JWT_SECRET"), base64.StdEncoding.DecodeString))
 	host = envutil.RequireEnv("DISTR_HOST")
+	agentHost = envutil.GetEnvParsedOrNil("AGENT_HOST", envparse.Host)
 	agentInterval = envutil.GetEnvParsedOrDefault("AGENT_INTERVAL", envparse.PositiveDuration, 5*time.Second)
 	statusEntriesMaxAge = envutil.GetEnvParsedOrNil("STATUS_ENTRIES_MAX_AGE", envparse.PositiveDuration)
 	metricsEntriesMaxAge = envutil.GetEnvParsedOrNil("METRICS_ENTRIES_MAX_AGE", envparse.PositiveDuration)
@@ -145,6 +182,9 @@ func Initialize() {
 	} else if siteKey != "" || secret != "" {
 		fmt.Fprintln(os.Stderr,
 			"WARNING: TURNSTILE_SITE_KEY and TURNSTILE_SECRET must both be set, Turnstile has been disabled")
+	}
+	if email := envutil.GetEnv("SUPPORT_EMAIL"); email != "" {
+		supportEmail = &email
 	}
 	inviteTokenValidDuration = envutil.GetEnvParsedOrDefault(
 		"INVITE_TOKEN_VALID_DURATION", envparse.PositiveDuration, 24*time.Hour,
@@ -191,6 +231,20 @@ func Initialize() {
 			"REGISTRY_RESIGN_FOR_GCP", strconv.ParseBool, false,
 		)
 		registryScratchDir = envutil.GetEnvOrNil("REGISTRY_SCRATCH_DIR")
+		registryAnonymousRateLimits = AnonymousRateLimits{
+			ManifestsPerMinute: envutil.GetEnvParsedOrDefault(
+				"REGISTRY_ANONYMOUS_MANIFEST_RATE_LIMIT_PER_MINUTE", envparse.NonNegativeNumber, 10,
+			),
+			ManifestsPerHour: envutil.GetEnvParsedOrDefault(
+				"REGISTRY_ANONYMOUS_MANIFEST_RATE_LIMIT_PER_HOUR", envparse.NonNegativeNumber, 30,
+			),
+			BlobsPerMinute: envutil.GetEnvParsedOrDefault(
+				"REGISTRY_ANONYMOUS_BLOB_RATE_LIMIT_PER_MINUTE", envparse.NonNegativeNumber, 60,
+			),
+			BlobsPerHour: envutil.GetEnvParsedOrDefault(
+				"REGISTRY_ANONYMOUS_BLOB_RATE_LIMIT_PER_HOUR", envparse.NonNegativeNumber, 300,
+			),
+		}
 	}
 	artifactTagsDefaultLimitPerOrg = envutil.GetEnvParsedOrDefault(
 		"ARTIFACT_TAGS_DEFAULT_LIMIT_PER_ORG", envparse.NonNegativeNumber, 0,
@@ -244,6 +298,16 @@ func Initialize() {
 		envparse.PositiveDuration, 0)
 	cleanupOrganizationMinAge = envutil.GetEnvParsedOrDefault("CLEANUP_ORGANIZATION_MIN_AGE",
 		envparse.PositiveDuration, 30*24*time.Hour)
+	cleanupUserAccountCron = envutil.GetEnvOrNil("CLEANUP_USER_ACCOUNT_CRON")
+	cleanupUserAccountTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_USER_ACCOUNT_TIMEOUT",
+		envparse.PositiveDuration, 0)
+	cleanupUserAccountMinAge = envutil.GetEnvParsedOrDefault("CLEANUP_USER_ACCOUNT_MIN_AGE",
+		envparse.PositiveDuration, 30*24*time.Hour)
+	cleanupFileCron = envutil.GetEnvOrNil("CLEANUP_FILE_CRON")
+	cleanupFileTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_FILE_TIMEOUT",
+		envparse.PositiveDuration, 0)
+	cleanupFileMinAge = envutil.GetEnvParsedOrDefault("CLEANUP_FILE_MIN_AGE",
+		envparse.PositiveDuration, 24*time.Hour)
 	deploymentStatusNotificationCron = envutil.GetEnvOrNil("DEPLOYMENT_STATUS_NOTIFICATION_CRON")
 	deploymentStatusNotificationTimeout = envutil.GetEnvParsedOrDefault("DEPLOYMENT_STATUS_NOTIFICATION_TIMEOUT",
 		envparse.PositiveDuration, 0)
@@ -285,7 +349,7 @@ func Initialize() {
 	)
 	stripeAPIKey = envutil.GetEnvOrNil("STRIPE_API_KEY")
 
-	if pem := envutil.GetEnvOrNil("LICENSE_KEY_PRIVATE_KEY"); pem != nil {
+	if pem := getEnvResolvedOrNil(ctx, resolver, "LICENSE_KEY_PRIVATE_KEY"); pem != nil {
 		licenseKeyPrivateKeyPEM = []byte(*pem)
 	}
 
@@ -316,6 +380,23 @@ func Initialize() {
 	customDomainVerificationRefreshAfter = envutil.GetEnvParsedOrDefault("CUSTOM_DOMAIN_VERIFICATION_REFRESH_AFTER",
 		envparse.PositiveDuration, 12*time.Hour)
 	internalServerAddr = envutil.GetEnvOrDefault("INTERNAL_SERVER_ADDR", ":8085", envutil.GetEnvOpts{})
+
+	maintenanceMode = envutil.GetEnvParsedOrDefault("MAINTENANCE_MODE", strconv.ParseBool, false)
+}
+
+// requireEnvResolved reads a required variable whose value may be wrapped with a key management
+// service instead of being the secret itself.
+func requireEnvResolved(ctx context.Context, resolver *kms.Resolver, key string) string {
+	return util.Require(resolver.Resolve(ctx, key, envutil.RequireEnv(key)))
+}
+
+// getEnvResolvedOrNil is [requireEnvResolved] for an optional variable.
+func getEnvResolvedOrNil(ctx context.Context, resolver *kms.Resolver, key string) *string {
+	value := envutil.GetEnvOrNil(key)
+	if value == nil {
+		return nil
+	}
+	return new(util.Require(resolver.Resolve(ctx, key, *value)))
 }
 
 func DatabaseUrl() string {
@@ -343,6 +424,18 @@ func DatabaseReadonlyMaxConns() *int {
 	return databaseReadonlyMaxConns
 }
 
+// DatabaseEncryptionKey is the raw spec of the keyring. Pass it to dbcrypto.Init rather than parsing
+// it anywhere else, and read the keyring itself through dbcrypto.Keys.
+func DatabaseEncryptionKey() string {
+	return databaseEncryptionKey
+}
+
+// DatabaseEncryptionMigrateOnBoot makes the server encrypt every value that is still stored in
+// plaintext during startup, which is the alternative to running `distr maintenance encrypt-database`.
+func DatabaseEncryptionMigrateOnBoot() bool {
+	return databaseEncryptionMigrateOnBoot
+}
+
 func JWTSecret() []byte {
 	return jwtSecret
 }
@@ -359,7 +452,20 @@ func HostScheme() URLScheme {
 	return SchemeHTTPS
 }
 
+func AgentHost() *string { return agentHost }
+
 func RegistryHost() string { return registryHost }
+
+// AnonymousRateLimits bounds what a single client IP may pull from public artifacts without
+// credentials. A zero disables the limit it stands for.
+type AnonymousRateLimits struct {
+	ManifestsPerMinute int
+	ManifestsPerHour   int
+	BlobsPerMinute     int
+	BlobsPerHour       int
+}
+
+func RegistryAnonymousRateLimits() AnonymousRateLimits { return registryAnonymousRateLimits }
 
 func GetMailerConfig() MailerConfig {
 	return mailerConfig
@@ -447,6 +553,10 @@ func TurnstileSiteKey() *string {
 
 func TurnstileSecret() *string {
 	return turnstileSecret
+}
+
+func SupportEmail() *string {
+	return supportEmail
 }
 
 func RegistryEnabled() bool {
@@ -549,6 +659,30 @@ func CleanupOrganizationTimeout() time.Duration {
 
 func CleanupOrganizationMinAge() time.Duration {
 	return cleanupOrganizationMinAge
+}
+
+func CleanupUserAccountCron() *string {
+	return cleanupUserAccountCron
+}
+
+func CleanupUserAccountTimeout() time.Duration {
+	return cleanupUserAccountTimeout
+}
+
+func CleanupUserAccountMinAge() time.Duration {
+	return cleanupUserAccountMinAge
+}
+
+func CleanupFileCron() *string {
+	return cleanupFileCron
+}
+
+func CleanupFileTimeout() time.Duration {
+	return cleanupFileTimeout
+}
+
+func CleanupFileMinAge() time.Duration {
+	return cleanupFileMinAge
 }
 
 func OIDCGithubEnabled() bool {
@@ -704,4 +838,10 @@ func CustomDomainVerificationRefreshAfter() time.Duration {
 // cluster.
 func InternalServerAddr() string {
 	return internalServerAddr
+}
+
+// MaintenanceMode reports whether this instance is down for maintenance. It keeps serving the
+// frontend, but answers every API request with 503 instead of letting it reach the database.
+func MaintenanceMode() bool {
+	return maintenanceMode
 }

@@ -14,7 +14,7 @@ import agentApplicationsDark from '~/assets/docs/agents/overview/deployment-agen
 import agentDeploymentLight from '~/assets/docs/agents/overview/deployment-agents/agent-deployment-light.png';
 import agentDeploymentDark from '~/assets/docs/agents/overview/deployment-agents/agent-deployment-dark.png';
 
-Deployment agents run inside customer environments alongside vendor applications. They connect the Distr Hub to deployment targets and manage the full deployment lifecycle while requiring minimal access to customer infrastructure.
+Deployment agents run inside customer environments alongside vendor applications. They connect Distr to deployment targets and manage the full deployment lifecycle while requiring minimal access to customer infrastructure.
 
 <Aside type="note">
   Deployment agents are the key components that enable the [Assisted
@@ -22,11 +22,12 @@ Deployment agents run inside customer environments alongside vendor applications
   [BYOC](/glossary/byoc-definition/) use cases.
 </Aside>
 
-Distr provides two production-ready agents and one in development:
+Distr provides two deployment agents:
 
 - **[Docker Agent](/docs/agents/docker-agent/)**: manages Docker Compose deployments on any Linux host. Handles updates, environment variables, container health, and supports Docker Swarm mode.
 - **[Kubernetes Agent](/docs/agents/kubernetes-agent/)**: manages Helm chart deployments in Kubernetes clusters. Supports cluster- and namespace-scoped permissions, value overrides, and migration of existing releases.
-- **Terraform Agent** _(coming soon)_: designed for [BYOC](/glossary/byoc-definition/) deployments.
+
+[BYOC](/docs/use-cases/byoc-bring-your-own-cloud/) does not need a third agent type. You ship the infrastructure as an ordinary Compose application, and the Docker agent deploys it onto a management VM in the customer's cloud account.
 
 <Aside>
   We are also working on a read-only version of the Distr agent that will
@@ -76,6 +77,6 @@ Each deployment target card has a **⋮** (vertical ellipsis) menu in its top-ri
 
 ### Agent Updates
 
-Every deployment target runs a specific agent version, and each Distr Hub ships the agent version that matches it. When a target is on an older version, the **Update Agent** action assigns it the version of the Hub. The agent notices the change the next time it polls the Hub and updates itself. Updating an agent does not restart the deployed application.
+Every deployment target runs a specific agent version, and each Distr instance ships the agent version that matches it. When a target is on an older version, the **Update Agent** action assigns it the version of that instance. The agent notices the change the next time it polls Distr and updates itself. Updating an agent does not restart the deployed application.
 
-Agents can also update themselves without any interaction. When **automatic agent updates** are enabled for a target, the Hub assigns it the current agent version on every start, so upgrading the Hub updates those agents along with it. The option can be set per target when creating a deployment, in the target settings, and in the **Update Agent** dialog. It is enabled by default for new deployment targets and disabled for targets that existed before the option was introduced.
+Agents can also update themselves without any interaction. When **automatic agent updates** are enabled for a target, Distr assigns it the current agent version on every start, so upgrading Distr updates those agents along with it. The option can be set per target when creating a deployment, in the target settings, and in the **Update Agent** dialog. It is enabled by default for new deployment targets and disabled for targets that existed before the option was introduced.

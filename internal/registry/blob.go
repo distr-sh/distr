@@ -29,7 +29,6 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/registry/authz"
 	"github.com/distr-sh/distr/internal/registry/blob"
-	registryerror "github.com/distr-sh/distr/internal/registry/error"
 	"github.com/distr-sh/distr/internal/registry/name"
 	"github.com/distr-sh/distr/internal/registry/verify"
 	"github.com/glasskube/pkg/seekbuf"
@@ -103,59 +102,37 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 	case http.MethodHead:
 		if h, err := digest.Parse(target); err != nil {
 			return regErrDigestInvalid
-		} else if err := b.authz.AuthorizeBlob(req.Context(), h, authz.ActionStat); err != nil {
-			if errors.Is(err, authz.ErrAccessDenied) {
-				return regErrDenied(err.Error())
-			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
-				return regErrNameInvalid
-			}
-			return regErrInternal(err)
+		} else if err := b.authz.AuthorizeBlob(req.Context(), repo, h, authz.ActionStat); err != nil {
+			return regErrBlobAuthz(err)
 		}
 		return b.handleHead(resp, req, repo, target)
 	case http.MethodGet:
 		if h, err := digest.Parse(target); err == nil {
-			if err := b.authz.AuthorizeBlob(req.Context(), h, authz.ActionRead); err != nil {
-				if errors.Is(err, authz.ErrAccessDenied) {
-					return regErrDenied(err.Error())
-				} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
-					return regErrNameInvalid
-				}
-				return regErrInternal(err)
+			if err := b.authz.AuthorizeBlob(req.Context(), repo, h, authz.ActionRead); err != nil {
+				return regErrBlobAuthz(err)
 			}
 		} else if _, err := uuid.Parse(target); err != nil {
 			return regErrDigestInvalid
+		} else if err := b.authz.Authorize(req.Context(), repo, authz.ActionWrite); err != nil {
+			// Reading an upload by its id belongs to a push, so it takes the same authorization.
+			return regErrAuthz(err)
 		}
 		return b.handleGet(resp, req, repo, target, rangeHeader)
 	case http.MethodPost:
 		if err := b.authz.Authorize(req.Context(), repo, authz.ActionWrite); err != nil {
-			if errors.Is(err, authz.ErrAccessDenied) {
-				return regErrDenied(err.Error())
-			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
-				return regErrNameInvalid
-			}
-			return regErrInternal(err)
+			return regErrAuthz(err)
 		}
 		return b.handlePost(resp, req, repo, target, digestFromQuery)
 	case http.MethodPatch:
 		if err := b.authz.Authorize(req.Context(), repo, authz.ActionWrite); err != nil {
-			if errors.Is(err, authz.ErrAccessDenied) {
-				return regErrDenied(err.Error())
-			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
-				return regErrNameInvalid
-			}
-			return regErrInternal(err)
+			return regErrAuthz(err)
 		}
 		return b.handlePatch(resp, req, target, service, contentRange)
 	case http.MethodPut:
 		if h, err := digest.Parse(digestFromQuery); err != nil {
 			return regErrDigestInvalid
-		} else if err := b.authz.AuthorizeBlob(req.Context(), h, authz.ActionWrite); err != nil {
-			if errors.Is(err, authz.ErrAccessDenied) {
-				return regErrDenied(err.Error())
-			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
-				return regErrNameInvalid
-			}
-			return regErrInternal(err)
+		} else if err := b.authz.AuthorizeBlob(req.Context(), repo, h, authz.ActionWrite); err != nil {
+			return regErrBlobAuthz(err)
 		}
 		return b.handlePut(resp, req, service, repo, target, digestFromQuery, contentRange)
 	// case http.MethodDelete:

@@ -5,6 +5,11 @@ export interface Deployment extends BaseModel {
   deploymentTargetId: string;
   releaseName?: string;
   dockerType?: DockerType;
+  /**
+   * Whether this deployment is rolled forward to the application's latest version automatically.
+   * Unrelated to DeploymentTarget.automaticUpdatesEnabled, which is the agent updating itself.
+   */
+  automaticApplicationUpdatesEnabled?: boolean;
 }
 
 export interface DeploymentRequest {
@@ -19,6 +24,12 @@ export interface DeploymentRequest {
   forceRestart?: boolean;
   ignoreRevisionSkew?: boolean;
   helmOptions?: HelmOptions;
+  /** Leaves an existing deployment's setting alone when absent. */
+  automaticApplicationUpdatesEnabled?: boolean;
+}
+
+export interface PatchDeploymentRequest {
+  automaticApplicationUpdatesEnabled?: boolean;
 }
 
 export interface HelmOptions {
@@ -48,6 +59,14 @@ export interface DeploymentWithLatestRevision extends Deployment {
   deploymentRevisionId?: string;
   deploymentRevisionCreatedAt?: string;
   latestStatus?: DeploymentRevisionStatus;
+  /**
+   * The revision an agent last reported as applied, which differs from deploymentRevisionId while a
+   * newer revision is being rolled out or has failed.
+   */
+  currentDeploymentRevisionId?: string;
+  currentStatus?: DeploymentRevisionStatus;
+  currentApplicationVersionId?: string;
+  currentApplicationVersionName?: string;
   helmOptions?: HelmOptions;
 }
 
@@ -78,8 +97,12 @@ export interface DeploymentRevisionResponse {
   forceRestart: boolean;
   ignoreRevisionSkew: boolean;
   helmOptions?: HelmOptions;
+  trigger: DeploymentRevisionTrigger;
   createdBy?: DeploymentRevisionCreator;
+  latestStatus?: DeploymentRevisionStatus;
 }
+
+export type DeploymentRevisionTrigger = 'user' | 'automatic_update' | 'secret_change' | 'license_key_change';
 
 export type DeploymentType = 'docker' | 'kubernetes';
 

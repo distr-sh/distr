@@ -128,8 +128,13 @@ const (
 	FeatureDeploymentLogsAfter    Feature = "deployment_logs_after"
 	FeaturePartnerManagement      Feature = "partner_management"
 	FeatureCustomDomains          Feature = "custom_domains"
-	FeatureCustomEmails           Feature = "custom_emails"
-	FeatureCustomOidcProviders    Feature = "custom_oidc_providers"
+	// FeatureVulnerabilities gates the "Vulnerability Management" category. It is deliberately
+	// not named after the Advisory entity: the category covers security advisories today and
+	// will cover vulnerability scan logs as well.
+	FeatureVulnerabilities     Feature = "vulnerabilities"
+	FeatureCustomEmails        Feature = "custom_emails"
+	FeatureCustomOidcProviders Feature = "custom_oidc_providers"
+	FeatureAutoUpdates         Feature = "auto_updates"
 )
 
 // ProFeatures is the set of features granted to organizations with a paid (pro) subscription.
@@ -137,7 +142,19 @@ var ProFeatures = []Feature{
 	FeatureLicensing,
 }
 
+// BusinessFeatures is the set granted on top of ProFeatures to the Business plan.
+var BusinessFeatures = []Feature{
+	FeaturePartnerManagement,
+	FeatureCustomDomains,
+	FeatureVulnerabilities,
+	FeatureCustomEmails,
+	FeatureCustomOidcProviders,
+	FeatureAutoUpdates,
+}
+
 // FeaturesForSubscriptionType returns the features granted by a subscription type.
+// Enterprise is a superset of Business, so any feature added to Business must also be
+// available to Enterprise.
 // Subscription reconciliation only ever adds these features, it never removes any:
 // manually granted features (e.g. vendor_billing) must survive plan changes, and
 // organizations without a paid plan have their PlanManagedFeatures revoked by
@@ -147,9 +164,8 @@ func FeaturesForSubscriptionType(st SubscriptionType) []Feature {
 		return []Feature{}
 	}
 	features := slices.Clone(ProFeatures)
-	if st == SubscriptionTypeBusiness {
-		features = append(features,
-			FeaturePartnerManagement, FeatureCustomDomains, FeatureCustomEmails, FeatureCustomOidcProviders)
+	if st == SubscriptionTypeBusiness || st == SubscriptionTypeEnterprise {
+		features = append(features, BusinessFeatures...)
 	}
 	return features
 }
@@ -182,6 +198,12 @@ const (
 	DeploymentStatusTypeProgressing DeploymentStatusType = "progressing"
 	DeploymentStatusTypeError       DeploymentStatusType = "error"
 )
+
+// IsApplied reports whether the status means the agent has the revision up and running, which is
+// everything a new status type should mean unless it explicitly does not.
+func (t DeploymentStatusType) IsApplied() bool {
+	return t != DeploymentStatusTypeProgressing && t != DeploymentStatusTypeError
+}
 
 func AllDeploymentStatusTypes() []DeploymentStatusType {
 	return []DeploymentStatusType{

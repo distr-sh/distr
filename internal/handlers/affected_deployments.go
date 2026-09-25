@@ -10,13 +10,14 @@ import (
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/deploymentvalues"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 )
 
 func updateSecretValuePatchFunc(
-	secretKey string, newValue string,
+	secretKey string, newValue dbcrypto.String,
 ) func([]types.SecretWithUpdatedBy) []types.SecretWithUpdatedBy {
 	return func(secrets []types.SecretWithUpdatedBy) []types.SecretWithUpdatedBy {
 		patched := slices.Clone(secrets)
@@ -34,7 +35,7 @@ func findAffectedDeploymentsBySecret(
 	ctx context.Context,
 	orgID uuid.UUID,
 	secretKey string,
-	newValue string,
+	newValue dbcrypto.String,
 	customerOrgID *uuid.UUID,
 ) ([]api.AffectedDeployment, error) {
 	return findAffectedDeployments(ctx, orgID, customerOrgID, updateSecretValuePatchFunc(secretKey, newValue), nil)
@@ -202,6 +203,7 @@ func triggerAffectedDeployments(
 	ctx context.Context,
 	affected []api.AffectedDeployment,
 	createdByUserID *uuid.UUID,
+	trigger types.DeploymentRevisionTrigger,
 ) error {
 	byTarget := make(map[uuid.UUID][]api.AffectedDeployment)
 	for _, ad := range affected {
@@ -232,6 +234,7 @@ func triggerAffectedDeployments(
 			}
 			request := deploymentRequestFromLatestRevision(target.Deployments[index])
 			request.CreatedByUserAccountID = createdByUserID
+			request.Trigger = trigger
 			if err := setDeploymentRequestValuesHash(&request, secrets, licenseKeys); err != nil {
 				return err
 			}
@@ -253,8 +256,6 @@ func deploymentRequestFromLatestRevision(deployment types.DeploymentWithLatestRe
 		ValuesYaml:               deployment.ValuesYaml,
 		DockerType:               deployment.DockerType,
 		EnvFileData:              deployment.EnvFileData,
-		ForceRestart:             deployment.ForceRestart,
-		IgnoreRevisionSkew:       deployment.IgnoreRevisionSkew,
 		HelmOptions:              apiHelmOptionsFromInternal(deployment.HelmOptions),
 	}
 }

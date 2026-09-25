@@ -3,6 +3,7 @@ package types
 import (
 	"time"
 
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/google/uuid"
 )
 
@@ -36,11 +37,11 @@ type SupportBundle struct {
 	CreatedAt                    time.Time           `db:"created_at"`
 	OrganizationID               uuid.UUID           `db:"organization_id"`
 	CustomerOrganizationID       uuid.UUID           `db:"customer_organization_id"`
-	CreatedByUserAccountID       uuid.UUID           `db:"created_by_user_account_id"`
+	CreatedByUserAccountID       *uuid.UUID          `db:"created_by_user_account_id"`
 	Title                        string              `db:"title"`
 	Description                  *string             `db:"description"`
 	Status                       SupportBundleStatus `db:"status"`
-	BundleSecret                 string              `db:"bundle_secret"`
+	BundleSecret                 dbcrypto.String     `db:"bundle_secret"`
 	BundleSecretExpiresAt        *time.Time          `db:"bundle_secret_expires_at"`
 	StatusChangedByUserAccountID *uuid.UUID          `db:"status_changed_by_user_account_id"`
 	StatusChangedAt              *time.Time          `db:"status_changed_at"`
@@ -48,7 +49,7 @@ type SupportBundle struct {
 
 type SupportBundleWithDetails struct {
 	SupportBundle
-	CreatedByUserName        string     `db:"created_by_user_name"`
+	CreatedByUserName        *string    `db:"created_by_user_name"`
 	CreatedByImageID         *uuid.UUID `db:"created_by_image_id"`
 	CustomerOrganizationName string     `db:"customer_organization_name"`
 	ResourceCount            int64      `db:"resource_count"`
@@ -63,19 +64,21 @@ type SupportBundleResource struct {
 	CreatedAt       time.Time `db:"created_at"`
 	SupportBundleID uuid.UUID `db:"support_bundle_id"`
 	Name            string    `db:"name"`
-	Content         string    `db:"content"`
+	// The content is a file the collect script gathered verbatim, and is served back as a download
+	// and rendered in a <pre>, so it must not be trimmed if it ever reaches a JSON request body.
+	Content dbcrypto.String `db:"content" trim:"-"`
 }
 
 type SupportBundleComment struct {
-	ID              uuid.UUID `db:"id"`
-	CreatedAt       time.Time `db:"created_at"`
-	SupportBundleID uuid.UUID `db:"support_bundle_id"`
-	UserAccountID   uuid.UUID `db:"user_account_id"`
-	Content         string    `db:"content"`
+	ID              uuid.UUID  `db:"id"`
+	CreatedAt       time.Time  `db:"created_at"`
+	SupportBundleID uuid.UUID  `db:"support_bundle_id"`
+	UserAccountID   *uuid.UUID `db:"user_account_id"`
+	Content         string     `db:"content"`
 }
 
 type SupportBundleCommentWithUser struct {
 	SupportBundleComment
-	UserName    string     `db:"user_name"`
+	UserName    *string    `db:"user_name"`
 	UserImageID *uuid.UUID `db:"user_image_id"`
 }

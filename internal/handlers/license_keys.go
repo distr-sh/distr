@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -108,7 +107,7 @@ func createLicenseKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if strings.TrimSpace(body.Name) == "" {
+	if body.Name == "" {
 		http.Error(w, "name is required", http.StatusBadRequest)
 		return
 	}
@@ -327,7 +326,9 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		return triggerAffectedDeployments(ctx, affected, new(authCtx.CurrentUserID()))
+		return triggerAffectedDeployments(
+			ctx, affected, new(authCtx.CurrentUserID()), types.DeploymentRevisionTriggerLicenseKeyChange,
+		)
 	})
 
 	if err != nil {

@@ -12,6 +12,7 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/subscription"
@@ -46,7 +47,12 @@ func OrganizationRouter(r chiopenapi.Router) {
 			With(option.Response(http.StatusOK, types.Organization{}))
 	})
 
-	r.With(middleware.RequireVendor, middleware.RequireAdmin, middleware.BlockSuperAdminUnlessOrganizationExpired).
+	r.With(
+		middleware.RequireVendor,
+		middleware.RequireAdmin,
+		middleware.BlockCrossOrganizationAction,
+		middleware.BlockSuperAdminUnlessOrganizationExpired,
+	).
 		Delete("/", deleteOrganizationHandler()).
 		With(option.Description("Delete current organization"))
 
@@ -312,7 +318,8 @@ func updateOrganizationWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := db.SetOrganizationStripeWebhookSecret(ctx, *authCtx.CurrentOrgID(), body.WebhookSecret); err != nil {
+	secret := dbcrypto.StringPtr(body.WebhookSecret)
+	if err := db.SetOrganizationStripeWebhookSecret(ctx, *authCtx.CurrentOrgID(), secret); err != nil {
 		log.Error("failed to update stripe webhook secret", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

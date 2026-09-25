@@ -1,18 +1,19 @@
 ---
-import 'virtual:starlight/user-css';
+import '~/styles/global.css';
 
 // Starlight nested cascade layers definitions which specify the default order of internal layers.
-import '../../node_modules/@astrojs/starlight/style/layers.css';
+import '../../node_modules/@astrojs/starlight/dist/style/layers.css';
 
 // Built-in CSS styles.
-import '../../node_modules/@astrojs/starlight/style/props.css';
-import '../../node_modules/@astrojs/starlight/style/reset.css';
-import '../../node_modules/@astrojs/starlight/style/asides.css';
-import '../../node_modules/@astrojs/starlight/style/util.css';
-import 'virtual:starlight/optional-css';
+import '../../node_modules/@astrojs/starlight/dist/style/props.css';
+import '../../node_modules/@astrojs/starlight/dist/style/reset.css';
+import '../../node_modules/@astrojs/starlight/dist/style/asides.css';
+import '../../node_modules/@astrojs/starlight/dist/style/util.css';
+import '../../node_modules/@astrojs/starlight/dist/style/anchor-links.css';
 
 import StandaloneFooter from '~/components/StandaloneFooter.astro';
 import GoogleTagManager from '~/components/telemetry/GoogleTagManager.astro';
+import PostHog from '~/components/telemetry/PostHog.astro';
 import ReCAPTCHA from '~/components/telemetry/ReCAPTCHA.astro';
 
 export interface Props {
@@ -45,6 +46,7 @@ const ogUrl = Astro.url.href;
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="sitemap" href="/sitemap-index.xml" />
     {import.meta.env.PROD && <GoogleTagManager />}
+    {import.meta.env.PROD && <PostHog />}
     <ReCAPTCHA />
   </head>
   <body class="bg-gray-50 dark:bg-gray-900 min-h-screen">

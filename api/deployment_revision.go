@@ -18,16 +18,18 @@ type DeploymentRevisionCreator struct {
 }
 
 type DeploymentRevisionResponse struct {
-	ID                     uuid.UUID                  `json:"id"`
-	CreatedAt              time.Time                  `json:"createdAt"`
-	ApplicationVersionID   uuid.UUID                  `json:"applicationVersionId"`
-	ApplicationVersionName string                     `json:"applicationVersionName"`
-	ReleaseName            *string                    `json:"releaseName,omitempty"`
-	DockerType             *types.DockerType          `json:"dockerType,omitempty"`
-	ValuesYaml             []byte                     `json:"valuesYaml,omitempty"`
-	EnvFileData            []byte                     `json:"envFileData,omitempty"`
-	ForceRestart           bool                       `json:"forceRestart"`
-	IgnoreRevisionSkew     bool                       `json:"ignoreRevisionSkew"`
-	HelmOptions            *types.HelmOptions         `json:"helmOptions,omitempty"`
-	CreatedBy              *DeploymentRevisionCreator `json:"createdBy,omitempty"`
+	ID                     uuid.UUID                       `json:"id"`
+	CreatedAt              time.Time                       `json:"createdAt"`
+	ApplicationVersionID   uuid.UUID                       `json:"applicationVersionId"`
+	ApplicationVersionName string                          `json:"applicationVersionName"`
+	ReleaseName            *string                         `json:"releaseName,omitempty"`
+	DockerType             *types.DockerType               `json:"dockerType,omitempty"`
+	ValuesYaml             []byte                          `json:"valuesYaml,omitempty"`
+	EnvFileData            []byte                          `json:"envFileData,omitempty"`
+	ForceRestart           bool                            `json:"forceRestart"`
+	IgnoreRevisionSkew     bool                            `json:"ignoreRevisionSkew"`
+	HelmOptions            *types.HelmOptions              `json:"helmOptions,omitempty"`
+	Trigger                types.DeploymentRevisionTrigger `json:"trigger"`
+	CreatedBy              *DeploymentRevisionCreator      `json:"createdBy,omitempty"`
+	LatestStatus           *DeploymentRevisionStatus       `json:"latestStatus,omitempty"`
 }

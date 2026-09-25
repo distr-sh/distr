@@ -4,11 +4,10 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faDownload, faGear, faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faDownload, faGear, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, map, of, startWith, Subject, switchMap, take} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
-import {never} from '../../../util/exhaust';
 import {filteredByFormControl} from '../../../util/filter';
 import {ClipComponent} from '../../components/clip.component';
 import {PageComponent} from '../../components/page.component';
@@ -18,7 +17,8 @@ import {AuthService} from '../../services/auth.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService, supportBundleZipFileName} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
-import {SupportBundle, SupportBundleStatus} from '../../types/support-bundle';
+import {SupportBundle} from '../../types/support-bundle';
+import {supportBundleDeleteConfirm, supportBundleStatusBadgeClass} from '../support-bundle-display';
 
 @Component({
   selector: 'app-support-bundle-list',
@@ -45,7 +45,9 @@ export class SupportBundleListComponent {
   protected readonly faDownload = faDownload;
   protected readonly faGear = faGear;
   protected readonly faPlus = faPlus;
+  protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
+  protected readonly statusBadgeClass = supportBundleStatusBadgeClass;
 
   protected readonly routePrefix = this.auth.isCustomer() ? '/support' : '/support-bundles';
 
@@ -154,18 +156,31 @@ export class SupportBundleListComponent {
     }
   }
 
-  protected statusBadgeClass(status: SupportBundleStatus): string {
-    switch (status) {
-      case 'initialized':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-      case 'created':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-      case 'resolved':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-      case 'canceled':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
-      default:
-        return never(status);
+  protected readonly deletingBundleId = signal<string | null>(null);
+
+  protected async deleteBundle(bundle: SupportBundle, event: Event): Promise<void> {
+    event.stopPropagation();
+    if (this.deletingBundleId() !== null) {
+      return;
+    }
+    const confirmed = await firstValueFrom(this.overlay.confirm(supportBundleDeleteConfirm));
+    if (!confirmed) {
+      return;
+    }
+    this.deletingBundleId.set(bundle.id);
+    try {
+      await firstValueFrom(this.svc.delete(bundle.id));
+      this.toast.success('Support bundle deleted');
+      this.refresh$.next();
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    } finally {
+      if (this.deletingBundleId() === bundle.id) {
+        this.deletingBundleId.set(null);
+      }
     }
   }
 }

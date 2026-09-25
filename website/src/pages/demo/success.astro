@@ -1,6 +1,7 @@
 ---
 import StandaloneLayout from '~/layouts/StandaloneLayout.astro';
 import {Icon} from 'astro-icon/components';
+import {BOOKING_FLOW_STORAGE_KEY} from '~/utils/analytics';
 
 const pageTitle = 'Demo - Success';
 const pageDescription = 'Thanks for booking a demo call';
@@ -34,4 +35,20 @@ const pageDescription = 'Thanks for booking a demo call';
       </div>
     </div>
   </div>
+
+  <script is:inline define:vars={{BOOKING_FLOW_STORAGE_KEY}}>
+    const recordedKey = `${BOOKING_FLOW_STORAGE_KEY}_recorded`;
+    try {
+      // Reloading this page must not count a second booking.
+      if (sessionStorage.getItem(recordedKey) === null) {
+        const bookingFlow =
+          localStorage.getItem(BOOKING_FLOW_STORAGE_KEY) ?? 'unknown';
+        localStorage.removeItem(BOOKING_FLOW_STORAGE_KEY);
+        sessionStorage.setItem(recordedKey, '1');
+        window.posthog?.capture('call_booked', {booking_flow: bookingFlow});
+      }
+    } catch {
+      window.posthog?.capture('call_booked', {booking_flow: 'unknown'});
+    }
+  </script>
 </StandaloneLayout>

@@ -26,6 +26,8 @@ func TestFromUserJWT(t *testing.T) {
 			authjwt.CustomOIDCConfigurationIDKey: uuid.NewString(),
 		}))
 		g.Expect(err).ToNot(HaveOccurred())
+		g.Expect(info.IsCustomOIDCSession()).To(BeTrue())
+		g.Expect(info.IsAccessToken()).To(BeFalse())
 		g.Expect(info.OrganizationScoped()).To(BeTrue())
 	})
 
@@ -35,6 +37,7 @@ func TestFromUserJWT(t *testing.T) {
 			authjwt.CustomOIDCConfigurationIDKey: map[string]any{"not": "a configuration ID"},
 		}))
 		g.Expect(err).ToNot(HaveOccurred())
+		g.Expect(info.IsCustomOIDCSession()).To(BeTrue())
 		g.Expect(info.OrganizationScoped()).To(BeTrue())
 	})
 
@@ -42,6 +45,8 @@ func TestFromUserJWT(t *testing.T) {
 		g := NewWithT(t)
 		info, err := FromUserJWT(userToken(g, nil))
 		g.Expect(err).ToNot(HaveOccurred())
+		g.Expect(info.IsCustomOIDCSession()).To(BeFalse())
+		g.Expect(info.IsAccessToken()).To(BeFalse())
 		g.Expect(info.OrganizationScoped()).To(BeFalse())
 	})
 }

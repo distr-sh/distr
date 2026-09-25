@@ -188,7 +188,7 @@ Practical hygiene:
 - **Consider socket-proxy.** Projects like Tecnativa's `docker-socket-proxy` expose a filtered subset of the API to the container that needs it (e.g. read-only `containers` and `events` for monitoring) instead of the full socket.
 - **Keep socket-mounting images minimal.** Smaller surface, fewer libraries, fewer ways in.
 
-The Distr Docker agent does mount the socket. It has to, in order to orchestrate Compose and Swarm on the host. We document that boundary openly in the [Docker agent docs](/docs/agents/docker-agent) so customer security teams can review it before installation. The agent authenticates to the Hub with a JWT, and the install secret is shown once and never stored.
+The Distr Docker agent does mount the socket. It has to, in order to orchestrate Compose and Swarm on the host. We document that boundary openly in the [Docker agent docs](/docs/agents/docker-agent) so customer security teams can review it before installation. The agent authenticates to Distr with a JWT, and the install secret is shown once and never stored.
 
 ## Updating Docker Compose Deployments Across Customer Hosts
 
@@ -198,7 +198,7 @@ The usual workarounds and what they cost:
 
 - **[Watchtower](https://github.com/containrrr/watchtower):** Polls the registry on a schedule, pulls new images, recreates containers. Easy to set up, hard to control. No staged rollout, no rollback path, limited visibility from your side: you find out a customer updated when they file a ticket.
 - **Bastion + SSH + Ansible/scripts:** Works for ten customers. Falls apart at fifty, especially when three of them are air-gapped and four run their own change-control cadence. Every operator has to live with shared keys and a maintenance window calendar.
-- **A pull-based agent.** This is the shape Distr lands on. The agent runs on the customer host, polls a known endpoint every 5 seconds, and reconciles the local Compose state against what the Hub says it should be. The agent reports status back, so you can see in your dashboard which customers are on which version. When the agent itself needs to update, it spawns a separate container to perform the swap so it is not trying to replace itself while running.
+- **A pull-based agent.** This is the shape Distr lands on. The agent runs on the customer host, polls a known endpoint every 5 seconds, and reconciles the local Compose state against what Distr says it should be. The agent reports status back, so you can see in your dashboard which customers are on which version. When the agent itself needs to update, it spawns a separate container to perform the swap so it is not trying to replace itself while running.
 
 The pattern is not unique, Kubernetes operators and GitOps tools do the same thing, but Compose users routinely re-invent it badly. If you find yourself building one, at least give it rollback, status reporting, and a way to pin versions, or you will end up with a fleet that drifts in ways you cannot see.
 
@@ -220,7 +220,7 @@ Docker Swarm is the other option. It reuses the Compose YAML format, ships in th
   is the safer long-term bet.
 </Aside>
 
-The Distr agent supports both. The Hub records whether a deployment is Compose or Swarm, and the agent runs the matching `docker compose up` or `docker stack deploy`. If you do choose Swarm, read our [routing and Traefik guide for Docker Swarm](/blog/docker-swarm-load-balancing-routing/) and the [product walkthrough for distributing applications to Swarm](/blog/distr-docker-swarm/) for the details.
+The Distr agent supports both. Distr records whether a deployment is Compose or Swarm, and the agent runs the matching `docker compose up` or `docker stack deploy`. If you do choose Swarm, read our [routing and Traefik guide for Docker Swarm](/blog/docker-swarm-load-balancing-routing/) and the [product walkthrough for distributing applications to Swarm](/blog/distr-docker-swarm/) for the details.
 
 ## So, should you run plain Docker Compose in production?
 

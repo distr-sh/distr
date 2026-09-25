@@ -5,6 +5,7 @@ import {
   DeploymentRevisionResponse,
   DeploymentTarget,
   DeploymentTargetAccessResponse,
+  PatchDeploymentRequest,
 } from '@distr-sh/distr-sdk';
 import {EMPTY, merge, Observable, retry, shareReplay, Subject, switchMap, tap, timer} from 'rxjs';
 import {ReactiveList} from './cache';
@@ -90,6 +91,12 @@ export class DeploymentTargetsService implements CrudService<DeploymentTarget> {
 
   undeploy(id: string): Observable<void> {
     return this.httpClient.delete<void>(`${this.deploymentsBaseUrl}/${id}`).pipe(tap(() => this.pollRefresh$.next()));
+  }
+
+  patchDeployment(id: string, patch: PatchDeploymentRequest): Observable<void> {
+    return this.httpClient
+      .patch<void>(`${this.deploymentsBaseUrl}/${id}`, patch)
+      .pipe(tap(() => this.pollRefresh$.next()));
   }
 
   public getRevisions(deploymentId: string): Observable<DeploymentRevisionResponse[]> {

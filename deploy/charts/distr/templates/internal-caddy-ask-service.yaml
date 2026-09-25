@@ -1,7 +1,7 @@
 {{- if .Values.caddy.enabled }}
-{{- /* Dedicated cluster-internal Service for the hub's Caddy on-demand TLS ask endpoint.
-It exposes only the hub's internal server port (INTERNAL_SERVER_ADDR, default :8085),
-separate from the public hub Service, so it cannot accidentally be picked up by an Ingress
+{{- /* Dedicated cluster-internal Service for Distr's Caddy on-demand TLS ask endpoint.
+It exposes only Distr's internal server port (INTERNAL_SERVER_ADDR, default :8085),
+separate from the public Distr Service, so it cannot accidentally be picked up by an Ingress
 for the public Service. It must never be exposed outside the cluster. */}}
 apiVersion: v1
 kind: Service
@@ -19,5 +19,5 @@ spec:
       name: caddy-ask
   selector:
     {{- include "distr.selectorLabels" . | nindent 4 }}
-    app.kubernetes.io/component: hub
+    app.kubernetes.io/component: distr
 {{- end }}

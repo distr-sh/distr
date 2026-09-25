@@ -13,6 +13,7 @@ import {routes} from './app.routes';
 import {tokenInterceptor} from './services/auth.service';
 import {errorToastInterceptor} from './services/error-toast.interceptor';
 import {PortalBrandingService} from './services/portal-branding.service';
+import {trimInterceptor} from './services/trim.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -22,7 +23,7 @@ export const appConfig: ApplicationConfig = {
     },
     provideZoneChangeDetection({eventCoalescing: true}),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([tokenInterceptor, errorToastInterceptor])),
+    provideHttpClient(withInterceptors([tokenInterceptor, trimInterceptor, errorToastInterceptor])),
     provideAppInitializer(async () => inject(Sentry.TraceService)),
     provideAppInitializer(() => {
       // Branding is best-effort and resolves asynchronously, so it never blocks bootstrap.

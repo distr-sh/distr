@@ -3,6 +3,12 @@ import {ChangeDetectionStrategy, Component, computed, input} from '@angular/core
 import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
 import {SecureImagePipe} from '../../util/secureImage';
 
+/**
+ * A user's profile image, falling back to their initials.
+ *
+ * Both renderings fill the host, so the caller must give it a size (`class="size-8"`). Without
+ * one the host collapses onto its content, leaving an uploaded image at its natural resolution.
+ */
 @Component({
   selector: 'app-avatar',
   changeDetection: ChangeDetectionStrategy.Eager,

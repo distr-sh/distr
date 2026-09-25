@@ -17,6 +17,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/security"
@@ -106,6 +107,11 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 					BundleIDRequest
 					api.UpdateSupportBundleStatusRequest
 				}{}))
+
+			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
+				Delete("/", deleteSupportBundleHandler()).
+				With(option.Description("Delete a support bundle")).
+				With(option.Request(BundleIDRequest{}))
 
 			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 				Post("/comments", createSupportBundleCommentHandler()).
@@ -348,10 +354,10 @@ func createSupportBundleHandler() http.HandlerFunc {
 		bundle := types.SupportBundle{
 			OrganizationID:         *a.CurrentOrgID(),
 			CustomerOrganizationID: *a.CurrentCustomerOrgID(),
-			CreatedByUserAccountID: a.CurrentUserID(),
+			CreatedByUserAccountID: new(a.CurrentUserID()),
 			Title:                  request.Title,
 			Description:            request.Description,
-			BundleSecret:           bundleSecret,
+			BundleSecret:           dbcrypto.String(bundleSecret),
 			BundleSecretExpiresAt:  &expiresAt,
 		}
 		if err := db.CreateSupportBundle(ctx, &bundle); err != nil {
@@ -642,6 +648,27 @@ func updateSupportBundleStatusHandler() http.HandlerFunc {
 			http.NotFound(w, r)
 		} else if err != nil {
 			log.Error("failed to update support bundle status", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			w.WriteHeader(http.StatusNoContent)
+		}
+	}
+}
+
+func deleteSupportBundleHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		bundle := requireSupportBundle(w, r)
+		if bundle == nil {
+			return
+		}
+
+		ctx := r.Context()
+
+		if err := db.DeleteSupportBundle(ctx, bundle.ID, bundle.OrganizationID); errors.Is(err, apierrors.ErrNotFound) {
+			http.NotFound(w, r)
+		} else if err != nil {
+			internalctx.GetLogger(ctx).Error("failed to delete support bundle", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {

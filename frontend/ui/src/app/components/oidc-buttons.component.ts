@@ -14,9 +14,11 @@ export class OidcButtonsComponent {
   protected readonly loginConfig = inject(PortalService).loginConfig;
 
   readonly label = input('Or use one of these to sign in:');
+  readonly flow = input<'login' | 'registration'>('login');
 
   protected getLoginURL(provider: string): string {
-    return `/api/v1/auth/oidc/${provider}`;
+    const url = `/api/v1/auth/oidc/${provider}`;
+    return this.flow() === 'registration' ? `${url}?flow=registration` : url;
   }
 
   protected readonly faGithub = faGithub;

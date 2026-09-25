@@ -11,18 +11,28 @@
 
 ## Interfaces
 
-- [AccessToken](interfaces/AccessToken.md)
-- [AccessTokenWithKey](interfaces/AccessTokenWithKey.md)
+- [Advisory](interfaces/Advisory.md)
+- [AdvisoryApplicationVersion](interfaces/AdvisoryApplicationVersion.md)
+- [AdvisoryArtifactVersion](interfaces/AdvisoryArtifactVersion.md)
+- [AdvisoryDetail](interfaces/AdvisoryDetail.md)
+- [AdvisoryEvent](interfaces/AdvisoryEvent.md)
+- [AdvisoryFilter](interfaces/AdvisoryFilter.md)
+- [AdvisoryImpact](interfaces/AdvisoryImpact.md)
+- [AdvisoryImpactedDeployment](interfaces/AdvisoryImpactedDeployment.md)
+- [AdvisoryImpactedPull](interfaces/AdvisoryImpactedPull.md)
+- [AdvisoryReference](interfaces/AdvisoryReference.md)
 - [AgentVersion](interfaces/AgentVersion.md)
 - [Application](interfaces/Application.md)
 - [ApplicationVersion](interfaces/ApplicationVersion.md)
+- [ApplicationVersionCreator](interfaces/ApplicationVersionCreator.md)
 - [ApplicationVersionResource](interfaces/ApplicationVersionResource.md)
 - [AssignCustomerToPartnerRequest](interfaces/AssignCustomerToPartnerRequest.md)
 - [BaseModel](interfaces/BaseModel.md)
-- [CreateAccessTokenRequest](interfaces/CreateAccessTokenRequest.md)
+- [CreateAdvisoryCommentRequest](interfaces/CreateAdvisoryCommentRequest.md)
 - [CreateSupportBundleCommentRequest](interfaces/CreateSupportBundleCommentRequest.md)
 - [CreateSupportBundleRequest](interfaces/CreateSupportBundleRequest.md)
 - [CreateSupportBundleResponse](interfaces/CreateSupportBundleResponse.md)
+- [CreateUpdateAdvisoryRequest](interfaces/CreateUpdateAdvisoryRequest.md)
 - [CreateUpdateCustomerOrganizationRequest](interfaces/CreateUpdateCustomerOrganizationRequest.md)
 - [CreateUpdatePartnerOrganizationRequest](interfaces/CreateUpdatePartnerOrganizationRequest.md)
 - [CreateUpdateSupportBundleConfigurationRequest](interfaces/CreateUpdateSupportBundleConfigurationRequest.md)
@@ -43,7 +53,9 @@
 - [OrganizationBranding](interfaces/OrganizationBranding.md)
 - [PartnerOrganization](interfaces/PartnerOrganization.md)
 - [PartnerOrganizationWithUsage](interfaces/PartnerOrganizationWithUsage.md)
+- [PatchAdvisoryRequest](interfaces/PatchAdvisoryRequest.md)
 - [PatchApplicationRequest](interfaces/PatchApplicationRequest.md)
+- [PatchDeploymentRequest](interfaces/PatchDeploymentRequest.md)
 - [SidebarLink](interfaces/SidebarLink.md)
 - [SupportBundle](interfaces/SupportBundle.md)
 - [SupportBundleComment](interfaces/SupportBundleComment.md)
@@ -58,11 +70,17 @@
 
 ## Type Aliases
 
+- [AdvisoryEventType](type-aliases/AdvisoryEventType.md)
+- [AdvisoryImpactState](type-aliases/AdvisoryImpactState.md)
+- [AdvisorySeverity](type-aliases/AdvisorySeverity.md)
+- [AdvisoryStatus](type-aliases/AdvisoryStatus.md)
+- [AdvisoryVersionRelation](type-aliases/AdvisoryVersionRelation.md)
 - [ApplicationVersionFiles](type-aliases/ApplicationVersionFiles.md)
 - [ClientConfig](type-aliases/ClientConfig.md)
 - [CreateDeploymentParams](type-aliases/CreateDeploymentParams.md)
 - [CreateDeploymentResult](type-aliases/CreateDeploymentResult.md)
 - [CustomerOrganizationFeature](type-aliases/CustomerOrganizationFeature.md)
+- [DeploymentRevisionTrigger](type-aliases/DeploymentRevisionTrigger.md)
 - [DeploymentStatusType](type-aliases/DeploymentStatusType.md)
 - [DeploymentTargetScope](type-aliases/DeploymentTargetScope.md)
 - [DeploymentType](type-aliases/DeploymentType.md)
@@ -78,6 +96,7 @@
 - [UpdateAllDeploymentsUpdatedTarget](type-aliases/UpdateAllDeploymentsUpdatedTarget.md)
 - [UpdateDeploymentParams](type-aliases/UpdateDeploymentParams.md)
 - [UserRole](type-aliases/UserRole.md)
+- [VersioningStrategy](type-aliases/VersioningStrategy.md)
 
 ## Functions
 

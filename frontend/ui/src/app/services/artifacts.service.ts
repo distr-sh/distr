@@ -16,21 +16,6 @@ export interface ArtifactUser {
   avatarUrl: string;
 }
 
-export interface VulnerabilitySeverity {
-  type: 'CVSS_V2' | 'CVSS_V3' | 'CVSS_V4';
-  score: string;
-}
-
-/**
- * From https://ossf.github.io/osv-schema/
- *
- * Severity calculator: https://www.first.org/cvss/calculator/4.0
- */
-export interface Vulnerability {
-  id: string;
-  severity: VulnerabilitySeverity[];
-}
-
 export interface BaseArtifact {
   id: string;
   name: string;
@@ -51,6 +36,7 @@ export interface ArtifactUpstreamAuth {
 }
 
 export interface Artifact extends BaseArtifact, HasDownloads {
+  public: boolean;
   upstreamUrl?: string;
   lastSyncedAt?: string;
   lastSyncError?: string;
@@ -60,18 +46,21 @@ export interface Artifact extends BaseArtifact, HasDownloads {
 export interface TaggedArtifactVersion extends HasDownloads {
   id: string;
   digest: string;
-  sbom?: string;
   createdAt: string;
   size: number;
   tags: {name: string; downloads: HasDownloads}[];
-  vulnerabilities: Vulnerability[];
-  lastScannedAt?: string;
   imageUrl?: string;
   inferredType: 'generic' | 'container-image' | 'helm-chart' | 'signature';
 }
 
 export interface ArtifactWithTags extends Artifact {
   versions?: TaggedArtifactVersion[];
+}
+
+export interface PatchArtifactRequest {
+  upstreamUrl?: string | null;
+  auth?: ArtifactUpstreamAuth | null;
+  public?: boolean;
 }
 
 class ArtifactsReactiveList extends ReactiveList<ArtifactWithTags> {
@@ -129,15 +118,9 @@ export class ArtifactsService {
       .pipe(tap((it) => this.cache.save(it)));
   }
 
-  public patchUpstreamURL(artifactId: string, upstreamUrl: string | null): Observable<ArtifactWithTags> {
+  public patchArtifact(artifactId: string, patch: PatchArtifactRequest): Observable<ArtifactWithTags> {
     return this.http
-      .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}`, {upstreamUrl})
-      .pipe(tap((it) => this.cache.save(it)));
-  }
-
-  public patchUpstreamAuth(artifactId: string, auth: ArtifactUpstreamAuth | null): Observable<ArtifactWithTags> {
-    return this.http
-      .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}`, {auth})
+      .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}`, patch)
       .pipe(tap((it) => this.cache.save(it)));
   }
 

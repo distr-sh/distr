@@ -1,4 +1,4 @@
-export * from './access-token';
+export * from './advisory';
 export * from './agent-version';
 export * from './application';
 export * from './base';

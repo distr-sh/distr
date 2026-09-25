@@ -15,7 +15,8 @@ type SimpleAuthInfo struct {
 	deploymentTargetID     *uuid.UUID
 	emailVerified          bool
 	tokenScope             authjwt.TokenScope
-	organizationScoped     bool
+	isAccessToken          bool
+	isCustomOIDCSession    bool
 	userRole               *types.UserRole
 	isSuperAdmin           bool
 	rawToken               any
@@ -39,8 +40,14 @@ func (i *SimpleAuthInfo) CurrentUserEmailVerified() bool { return i.emailVerifie
 // TokenScope implements AuthInfo.
 func (i *SimpleAuthInfo) TokenScope() authjwt.TokenScope { return i.tokenScope }
 
+// IsAccessToken implements AuthInfo.
+func (i *SimpleAuthInfo) IsAccessToken() bool { return i.isAccessToken }
+
+// IsCustomOIDCSession implements AuthInfo.
+func (i *SimpleAuthInfo) IsCustomOIDCSession() bool { return i.isCustomOIDCSession }
+
 // OrganizationScoped implements AuthInfo.
-func (i *SimpleAuthInfo) OrganizationScoped() bool { return i.organizationScoped }
+func (i *SimpleAuthInfo) OrganizationScoped() bool { return i.isAccessToken || i.isCustomOIDCSession }
 
 // CurrentUserID implements AuthInfo.
 func (i *SimpleAuthInfo) CurrentUserID() uuid.UUID { return i.userID }

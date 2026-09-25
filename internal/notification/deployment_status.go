@@ -79,18 +79,19 @@ func RunDeploymentStatusNotifications(ctx context.Context) error {
 			for _, deployment := range deploymentTarget.Deployments {
 				log := log.With(zap.Stringer("deploymentId", deployment.ID))
 				ctx := internalctx.WithLogger(ctx, log)
-				if deployment.LatestStatus == nil {
+				newestStatus := deployment.NewestStatus()
+				if newestStatus == nil {
 					log.Debug("skip deployment with no status")
 					continue
 				}
 
-				if !deployment.LatestStatus.IsStale() {
+				if !newestStatus.IsStale() {
 					log.Debug("skip deployment with latest status not stale")
 					continue
 				}
 
 				if err := sendDeploymentStatusNotificationsWithConfig(
-					ctx, *deploymentTarget, deployment, deployment.LatestStatus, nil, config,
+					ctx, *deploymentTarget, deployment, newestStatus, nil, config,
 				); err != nil {
 					return fmt.Errorf("failed to send deployment status notifications with config: %w", err)
 				}

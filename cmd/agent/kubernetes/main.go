@@ -57,10 +57,12 @@ var (
 	k8sDynamicClient = util.Require(dynamic.NewForConfig(util.Require(k8sConfigFlags.ToRESTConfig())))
 	k8sRestMapper    = util.Require(k8sConfigFlags.ToRESTMapper())
 	agentConfigDirs  []string
+	logCollector     = &deploymenttargetlogs.BufferedCollector{}
 )
 
 func init() {
-	platformLoggingCore.Collector = &deploymenttargetlogs.BufferedCollector{Delegate: agentClient}
+	logCollector.Delegate = agentClient
+	platformLoggingCore.Collector = logCollector
 	if agentenv.AgentVersionID == "" {
 		logger.Warn("AgentVersionID is not set. self updates will be disabled")
 	}
@@ -75,6 +77,12 @@ func init() {
 func main() {
 	defer func() {
 		if err := logger.Sync(); err != nil && !errors.Is(err, syscall.EINVAL) {
+			fmt.Println(err)
+		}
+	}()
+
+	defer func() {
+		if err := logCollector.Stop(); err != nil {
 			fmt.Println(err)
 		}
 	}()
@@ -381,6 +389,8 @@ func Progress(deployment api.AgentDeployment) *progressStatusRunner {
 func (psr *progressStatusRunner) Run(ctx context.Context, f func() error) error {
 	progressCtx, progressCancel := context.WithCancel(ctx)
 	defer progressCancel()
+
+	pushProgressingStatus(ctx, psr.deployment)
 
 	go func(ctx context.Context) {
 		tick := time.Tick(agentenv.Interval)

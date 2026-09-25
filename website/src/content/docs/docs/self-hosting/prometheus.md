@@ -1,12 +1,12 @@
 ---
 title: Prometheus Integration
-description: Monitor your Distr instance with Prometheus by scraping built-in metrics for deployments, organizations, and Go runtime data.
+description: Monitor your Distr instance with Prometheus by scraping built-in metrics for deployments, organizations and Go runtime data.
 sidebar:
   label: Prometheus Integration
-  order: 7
+  order: 8
 ---
 
-Distr Hub exposes a Prometheus-compatible metrics endpoint that can be scraped by any Prometheus-compatible monitoring system.
+Distr exposes a Prometheus-compatible metrics endpoint that can be scraped by any Prometheus-compatible monitoring system.
 
 ## Configuration
 
@@ -21,7 +21,7 @@ The metrics endpoint is configured via environment variables:
 ### Docker Compose
 
 An example configuration can be found in
-[`github.com/distr-sh/distr/deploy/docker`](https://github.com/distr-sh/distr/blob/main/deploy/docker/.env):
+[`github.com/distr-sh/distr/deploy/docker/quickstart`](https://github.com/distr-sh/distr/blob/main/deploy/docker/quickstart/.env):
 
 ```dotenv
 METRICS_ENABLED=true
@@ -31,7 +31,7 @@ METRICS_ENABLED=true
 
 ### Kubernetes (Helm)
 
-When deploying with the Distr Helm chart, the same environment variables can be set via `hub.env` in your `values.yaml`.
+When deploying with the Distr Helm chart, the same environment variables can be set via `distr.env` in your `values.yaml`.
 The metrics server port is configured separately via `service.metricsPort`.
 
 An example configuration can be found in
@@ -51,7 +51,7 @@ scrape_configs:
   - job_name: distr
     scheme: http
     static_configs:
-      - targets: ['distr-hub:3000']
+      - targets: ['distr:3000']
     authorization:
       type: Bearer
       credentials: my-secret-token
@@ -85,4 +85,4 @@ In addition to the Distr-specific metrics, the endpoint exposes standard Go runt
 Distr includes built-in [alerts](/docs/agents/alerts/) that notify users by email when deployments become unhealthy or resource usage exceeds thresholds.
 For more advanced alerting workflows, the Prometheus metrics endpoint can be combined with [Alertmanager](https://github.com/prometheus/alertmanager) or [Grafana Alerts](https://grafana.com/docs/grafana/latest/alerting/) to build custom error reporting independently from the integrated Distr alerts.
 
-For example, you can define Prometheus alerting rules based on `distr_deployment_status` to trigger notifications via Slack, PagerDuty, or other channels when a customer deployment enters an error state, or to escalate issues that remain unresolved after a certain period.
+For example, you can define Prometheus alerting rules based on `distr_deployment_status` to trigger notifications via Slack, PagerDuty or other channels when a customer deployment enters an error state, or to escalate issues that remain unresolved after a certain period.

@@ -34,6 +34,10 @@ export interface JWTClaims {
 export class AuthService {
   private readonly httpClient = inject(HttpClient);
 
+  // Decoding a JWT costs a base64 decode and a JSON.parse, and the role and context checks below are called
+  // from templates, so they can run thousands of times per change detection pass on a page with many rows.
+  private decodeCache?: {token: string; claims: JWTClaims};
+
   private get token(): string | null {
     return localStorage.getItem(tokenStorageKey);
   }
@@ -127,22 +131,36 @@ export class AuthService {
     this.actionToken = null;
   }
 
-  public acceptInvite(name: string | undefined, password: string): Observable<void> {
-    return this.httpClient.post<TokenResponse>(`${authBaseUrl}/invite/accept`, {name, password}).pipe(
-      tap((r) => this.loginWithToken(r.token)),
-      map(() => undefined)
-    );
+  public acceptInvite(
+    name: string | undefined,
+    password: string,
+    mfaCode?: string
+  ): Observable<{requiresMfa: boolean}> {
+    return this.httpClient
+      .post<LoginResponse>(`${authBaseUrl}/invite/accept`, {name, password, mfaCode})
+      .pipe(map((r) => this.loginAfterPasswordSet(r)));
   }
 
   public resetPassword(email: string): Observable<void> {
     return this.httpClient.post<void>(`${authBaseUrl}/reset`, {email});
   }
 
-  public confirmPasswordReset(password: string): Observable<void> {
-    return this.httpClient.post<TokenResponse>(`${authBaseUrl}/reset/confirm`, {password}).pipe(
-      tap((r) => this.loginWithToken(r.token)),
-      map(() => undefined)
-    );
+  public confirmPasswordReset(password: string, mfaCode?: string): Observable<{requiresMfa: boolean}> {
+    return this.httpClient
+      .post<LoginResponse>(`${authBaseUrl}/reset/confirm`, {password, mfaCode})
+      .pipe(map((r) => this.loginAfterPasswordSet(r)));
+  }
+
+  /**
+   * Logs the user in with the token of an invite-accept or reset-confirm response, unless the account has MFA
+   * enabled, in which case the password was not set and the request has to be repeated with a code.
+   */
+  private loginAfterPasswordSet(response: LoginResponse): {requiresMfa: boolean} {
+    if (response.requiresMfa) {
+      return {requiresMfa: true};
+    }
+    this.loginWithToken(response.token);
+    return {requiresMfa: false};
   }
 
   public register(
@@ -174,24 +192,28 @@ export class AuthService {
   }
 
   public getTokenAndClaims(): {token: string | null; claims: JWTClaims | undefined} {
-    const actionToken = this.actionToken;
-    if (actionToken !== null) {
-      try {
-        return {token: actionToken, claims: jwtDecode(actionToken)};
-      } catch (e) {
-        console.error(e);
-      }
-    } else {
-      const token = this.token;
-      if (token !== null) {
-        try {
-          return {token, claims: jwtDecode(token)};
-        } catch (e) {
-          console.error(e);
-        }
+    const token = this.actionToken ?? this.token;
+    if (token !== null) {
+      const claims = this.decodeClaims(token);
+      if (claims !== undefined) {
+        return {token, claims};
       }
     }
     return {token: null, claims: undefined};
+  }
+
+  private decodeClaims(token: string): JWTClaims | undefined {
+    if (this.decodeCache?.token === token) {
+      return this.decodeCache.claims;
+    }
+    try {
+      const claims = jwtDecode<JWTClaims>(token);
+      this.decodeCache = {token, claims};
+      return claims;
+    } catch (e) {
+      console.error(e);
+      return undefined;
+    }
   }
 
   public requestEmailVerification(): Observable<void> {

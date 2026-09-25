@@ -1,0 +1,191 @@
+---
+title: Security & Encryption
+description: How a self-hosted Distr instance protects the key material it holds, how to rotate it and how to keep it out of your configuration with AWS KMS or GCP Cloud KMS.
+sidebar:
+  label: Security & Encryption
+  order: 5
+---
+
+import {Aside} from '@astrojs/starlight/components';
+
+Distr holds key material of its own: the key its sensitive database columns are encrypted with, the secret its
+tokens are signed with and, if you issue license keys to your customers, the key those are signed with. Each one is set
+as an environment variable, listed in the [configuration reference](/docs/self-hosting/configuration), and each can be
+stored as the ciphertext of a key management service instead, so that it never appears in your configuration.
+
+## Database Encryption
+
+Distr encrypts the sensitive columns of its database with AES-256-GCM before writing them: secret values, OIDC
+client secrets, SMTP credentials, pull-through registry credentials, deployment value and env files, support bundle
+resources, MFA secrets, Stripe webhook secrets and entitlement registry credentials.
+
+`DATABASE_ENCRYPTION_KEY` is required and Distr refuses to start without it. Generate one with
+`openssl rand -base64 32`.
+
+<Aside type="danger" title="Back up your encryption key or cipher text">
+  A database dump is worthless without the encryption key, and so is your data
+  if you lose it. Keep the key somewhere that will not go down or get deleted
+  together with the database.
+</Aside>
+
+The variable can also hold a ciphertext instead of the key itself, which Distr unwraps with a
+[key management service](#key-management-service) while it starts.
+
+Encryption is transparent, so nothing else in your configuration changes, but the values that were written before you
+upgraded to a version with encryption are still in plaintext. Move them over in one of two ways:
+
+- run [`distr maintenance encrypt-database`](/docs/self-hosting/maintenance#database-encryption) once, in a Distr
+  container, or
+- set `DATABASE_ENCRYPTION_MIGRATE_ON_BOOT=true` and restart Distr, which does the same during startup. This is
+  for single instance deployments only.
+
+Either way it is safe to run while Distr is serving traffic, and it can be interrupted and resumed. Until it has
+finished, Distr logs a warning on every start listing the columns that are still unencrypted. With more than one
+replica, wait for the upgrade to roll out completely first, see
+[Database Encryption](/docs/self-hosting/maintenance#database-encryption).
+
+### Rotating the key
+
+`DATABASE_ENCRYPTION_KEY` also accepts a comma-separated list of `<id>:<key>` entries, where the id is a number
+between 0 and 255 and the first entry is the key that new writes are encrypted with. Every stored value records the id
+of the key it was encrypted with, so the other entries keep older values readable.
+
+To rotate, put the new key first and keep the old one:
+
+```sh
+DATABASE_ENCRYPTION_KEY="1:<new key>,0:<old key>"
+```
+
+Then run `distr maintenance encrypt-database`, which re-encrypts every value that still uses the old key. Once it
+reports nothing left to do, drop the old entry and keep only `1:<new key>`.
+
+With more than one replica, put the new key on every replica before you make it active. A rolling update replaces
+one replica at a time, so an updated one would otherwise seal writes with a key the others do not have yet, and
+their reads of those values fail until the rollout finishes:
+
+1. roll out `DATABASE_ENCRYPTION_KEY="0:<old key>,1:<new key>"`. The old key stays active, so nothing about how
+   values are written changes, but every replica can read the new one.
+2. roll out `DATABASE_ENCRYPTION_KEY="1:<new key>,0:<old key>"` to make the new key active.
+3. run `distr maintenance encrypt-database` and drop the old entry as above.
+
+## JWT Signing Secret
+
+`JWT_SECRET` signs every token Distr issues, with HS256: user sessions, the access tokens agents call the API with
+and the invite, password reset and email verification links it sends out. Generate it with
+`openssl rand -base64 32` and wrap it with a [key management service](#key-management-service) to keep it out of your
+configuration as well.
+
+There is no keyring for this secret, so replacing it invalidates everything signed with the previous one at once: users
+are signed out and have to sign in again, and invite and password reset links that have been sent but not used stop
+working. Agents recover on their own, because their manifest carries the access key of their deployment target, which
+they exchange for a new token.
+
+## License Signing Key
+
+`LICENSE_KEY_PRIVATE_KEY` is the PEM-encoded private key that signs the [license keys](/docs/platform/license-keys)
+you issue to your customers, and it is only needed if you issue any. Your instance serves the matching public key, so
+that the software you distribute can [verify a license key](/docs/platform/license-keys#verifying-tokens-in-your-application)
+on its own.
+
+Treat it like a release signing key rather than a credential. Anyone holding it can mint license keys your own software
+accepts and there is nobody to revoke it at, so it belongs out of your configuration just like the two above. Wrapping
+it also turns the multi-line PEM into a single-line value. Replacing the key invalidates every license key you have
+issued so far, since they no longer verify against the new public key, so plan a rotation as a reissue of all of them.
+
+## Key Management Service
+
+By default `JWT_SECRET`, `DATABASE_ENCRYPTION_KEY` and `LICENSE_KEY_PRIVATE_KEY` hold the key material itself. All
+three also accept a ciphertext that Distr unwraps with a key management service during boot, so the key material
+appears in neither your configuration nor a Kubernetes Secret, and reading it becomes an API call that your cloud logs
+and that you can revoke without touching the instance. Keeping a value and the key that opens it apart like this is
+called transient encryption, but it also means losing either part makes the other useless, if you have no backup. Two providers are
+supported:
+
+- AWS Key Management Service (KMS)
+- GCP Cloud Key Management Service (Cloud KMS)
+
+Which provider is used follows from the key you name: `KMS_AWS_KEY_ID` selects AWS KMS and `KMS_GCP_KEY_NAME` selects
+Cloud KMS. Only one provider can be configured at a time; setting the key of both is an error. See the
+[configuration reference](/docs/self-hosting/configuration#key-management-service) for both variables and for the
+optional AWS region and endpoint overrides.
+
+A wrapped value is the `kms:` prefix followed by the base64-encoded ciphertext:
+
+```sh
+KMS_AWS_KEY_ID=alias/distr
+DATABASE_ENCRYPTION_KEY=kms:AQICAHhwPRWvSKbxYYqVjZ9…
+```
+
+A value without a `kms:` prefix is used as it is and you can wrap one variable while leaving the others in plaintext.
+
+Distr calls the service once for every wrapped value while it starts and keeps the plaintext in memory afterwards.
+Requests it serves later never wait for your cloud, and an outage of the service only stops instances that are
+starting up. Each call has 30 seconds to come back, and if the service is unreachable or a ciphertext cannot be
+opened, Distr refuses to start rather than run without the value.
+
+### Wrapping a value
+
+What you wrap is the exact string you would otherwise put into the variable. A keyring of several keys is therefore
+one ciphertext, and [rotating it](#rotating-the-key) works exactly as it does for an unwrapped key. Rotating the KMS
+key itself is safe as well, including automatically on the provider side, since every ciphertext records the key
+version it was made with.
+
+Every ciphertext is bound to the variable it is read for through the encryption context `distr=<variable>`. You have
+to pass it when you wrap the value, otherwise Distr cannot open it. It keeps a ciphertext made for one variable from
+being used as another, and on AWS the key policy can require it.
+
+Write the value into `plaintext.txt` with `printf '%s' '<value>' > plaintext.txt` and delete it once you have the
+ciphertext, along with `context.txt` on GCP.
+
+Both commands below read the plaintext from a file rather than from an argument, so that it does not end up in your
+shell history. Unwrapped, the plaintext is what the variable expects: a [keyring entry](#rotating-the-key) for
+`DATABASE_ENCRYPTION_KEY`, the base64 secret on its own for `JWT_SECRET` and the PEM block for
+`LICENSE_KEY_PRIVATE_KEY`.
+
+Distr only ever decrypts; wrapping a value is a one-time action you perform yourself, so its credentials do not need
+permission to encrypt.
+
+### AWS KMS
+
+Create a key first, with key type "Symmetric" and key usage "Encrypt and decrypt", which is what `aws kms create-key`
+gives you by default (`--key-spec SYMMETRIC_DEFAULT --key-usage ENCRYPT_DECRYPT`). An asymmetric or HMAC key does not
+work, since only a symmetric key takes an encryption context. Name it in `KMS_AWS_KEY_ID`, as a key ARN, a key id or
+`alias/<name>`.
+
+The command prints base64 already, so its output goes behind `kms:` as it is:
+
+```sh
+aws kms encrypt \
+  --key-id alias/distr \
+  --plaintext fileb://plaintext.txt \
+  --encryption-context distr=DATABASE_ENCRYPTION_KEY \
+  --output text --query CiphertextBlob
+```
+
+Distr needs `kms:Decrypt` on the key. You can restrict it to Distr by requiring the encryption context in the key
+policy, e.g. `"kms:EncryptionContext:distr": "DATABASE_ENCRYPTION_KEY"`. Credentials come from the default chain, so
+IRSA or an instance profile need no further configuration.
+
+### GCP Cloud KMS
+
+Create a key first, with purpose "Symmetric encrypt/decrypt", which is `--purpose encryption` in
+`gcloud kms keys create`, see
+[Create encryption keys with Cloud KMS](https://docs.cloud.google.com/kms/docs/create-encryption-keys). No other
+purpose takes the additional authenticated data that carries the encryption context. Name it in `KMS_GCP_KEY_NAME`, as
+the full resource name `projects/…/locations/…/keyRings/…/cryptoKeys/…`.
+
+`gcloud` writes raw bytes, hence the pipe:
+
+```sh
+printf 'distr=DATABASE_ENCRYPTION_KEY' > context.txt
+gcloud kms encrypt \
+  --location=europe-west3 --keyring=distr --key=distr-master \
+  --plaintext-file=plaintext.txt \
+  --additional-authenticated-data-file=context.txt \
+  --ciphertext-file=- | base64 -w0
+```
+
+Distr needs `roles/cloudkms.cryptoKeyDecrypter` on the key. Credentials come from
+[Application Default Credentials](https://docs.cloud.google.com/docs/authentication/provide-credentials-adc), so
+Workload Identity needs no further configuration and a service account key file goes into
+`GOOGLE_APPLICATION_CREDENTIALS`.

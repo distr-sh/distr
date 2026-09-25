@@ -16,18 +16,27 @@ import (
 )
 
 const (
-	applicationOutputExpr        = `a.id, a.created_at, a.organization_id, a.name, a.type, a.image_id`
-	applicationVersionOutputExpr = `av.id, av.created_at, av.archived_at, av.name, av.link_template, av.application_id,
-		av.chart_type, av.chart_name, av.chart_url, av.chart_version, av.values_file_data, av.template_file_data,
-	 av.compose_file_data`
+	// The column order is part of the contract with types.Application: this expression is also
+	// selected as a composite row, which pgx scans positionally.
+	applicationOutputExpr = `a.id, a.created_at, a.organization_id, a.name, a.type, a.image_id,
+		a.versioning_strategy, a.allow_automatic_updates`
+	applicationVersionCreatorOutputExpr = `av.created_by_user_account_id, u.name AS created_by_name,
+		u.email AS created_by_email, u.image_id AS created_by_image_id`
+	applicationVersionCreatorJoin = ` LEFT JOIN UserAccount u ON av.created_by_user_account_id = u.id `
+	applicationVersionOutputExpr  = `av.id, av.created_at, av.archived_at, av.name, av.link_template, av.application_id,
+		av.chart_type, av.chart_name, av.chart_url, av.chart_version, ` + applicationVersionCreatorOutputExpr + `,
+		av.values_file_data, av.template_file_data, av.compose_file_data`
 	applicationWithVersionsOutputExpr = applicationOutputExpr + `,
 		coalesce((
 			SELECT array_agg(row(av.id, av.created_at, av.archived_at, av.name, av.link_template, av.application_id,
-				av.chart_type, av.chart_name, av.chart_url, av.chart_version) ORDER BY av.created_at ASC)
-			FROM ApplicationVersion av
+				av.chart_type, av.chart_name, av.chart_url, av.chart_version, av.created_by_user_account_id,
+				u.name, u.email, u.image_id) ORDER BY av.created_at ASC)
+			FROM ApplicationVersion av` + applicationVersionCreatorJoin + `
 			WHERE av.application_id = a.id
 		), array[]::record[]) AS versions `
 
+	// The version rows here are the ones a customer gets to see, so they deliberately stop before
+	// the creator columns, which would expose the vendor's user accounts.
 	applicationWithEntitledVersionsOutputExpr = applicationOutputExpr + `,
 		coalesce((
 			SELECT array_agg(row(av.id, av.created_at, av.archived_at, av.name, av.link_template, av.application_id,
@@ -46,8 +55,16 @@ func CreateApplication(ctx context.Context, application *types.Application, orgI
 	application.OrganizationID = orgID
 	db := internalctx.GetDb(ctx)
 	row := db.QueryRow(ctx,
-		"INSERT INTO Application (name, type, organization_id) VALUES (@name, @type, @orgId) RETURNING id, created_at",
-		pgx.NamedArgs{"name": application.Name, "type": application.Type, "orgId": application.OrganizationID})
+		`INSERT INTO Application (name, type, organization_id, versioning_strategy, allow_automatic_updates)
+		VALUES (@name, @type, @orgId, @versioningStrategy, @allowAutomaticUpdates)
+		RETURNING id, created_at`,
+		pgx.NamedArgs{
+			"name":                  application.Name,
+			"type":                  application.Type,
+			"orgId":                 application.OrganizationID,
+			"versioningStrategy":    application.VersioningStrategy,
+			"allowAutomaticUpdates": application.AllowAutomaticUpdates,
+		})
 	if err := row.Scan(&application.ID, &application.CreatedAt); err != nil {
 		return fmt.Errorf("could not save application: %w", err)
 	}
@@ -58,8 +75,19 @@ func UpdateApplication(ctx context.Context, application *types.Application, orgI
 	application.OrganizationID = orgID
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		"UPDATE Application SET name = @name WHERE id = @id AND organization_id = @orgId RETURNING *",
-		pgx.NamedArgs{"id": application.ID, "name": application.Name, "orgId": application.OrganizationID})
+		`UPDATE Application SET
+			name = @name,
+			versioning_strategy = @versioningStrategy,
+			allow_automatic_updates = @allowAutomaticUpdates
+		WHERE id = @id AND organization_id = @orgId
+		RETURNING *`,
+		pgx.NamedArgs{
+			"id":                    application.ID,
+			"name":                  application.Name,
+			"orgId":                 application.OrganizationID,
+			"versioningStrategy":    application.VersioningStrategy,
+			"allowAutomaticUpdates": application.AllowAutomaticUpdates,
+		})
 	if err != nil {
 		return fmt.Errorf("could not update application: %w", err)
 	} else if updated, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByNameLax[types.Application]); err != nil {
@@ -170,6 +198,21 @@ func GetApplication(ctx context.Context, id, orgID uuid.UUID) (*types.Applicatio
 	}
 }
 
+// LockApplicationExclusive locks an application against a concurrent change to it, to its versions
+// or to one of its entitlements, each of which is a different row and would therefore not conflict.
+func LockApplicationExclusive(ctx context.Context, applicationID uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	// Advisory locks share one namespace instance-wide, hence the entity prefix in the key.
+	if _, err := db.Exec(
+		ctx,
+		`SELECT pg_advisory_xact_lock(hashtextextended('Application:' || @applicationId::TEXT, 0))`,
+		pgx.NamedArgs{"applicationId": applicationID},
+	); err != nil {
+		return fmt.Errorf("could not lock application: %w", err)
+	}
+	return nil
+}
+
 func GetApplicationWithEntitlementOwnerID(
 	ctx context.Context,
 	customerOrganizationID uuid.UUID,
@@ -224,6 +267,7 @@ func CreateApplicationVersion(ctx context.Context, applicationVersion *types.App
 		"chartName":     applicationVersion.ChartName,
 		"chartUrl":      applicationVersion.ChartUrl,
 		"chartVersion":  applicationVersion.ChartVersion,
+		"createdBy":     applicationVersion.CreatedByUserAccountID,
 	}
 	if applicationVersion.ComposeFileData != nil {
 		args["composeFileData"] = applicationVersion.ComposeFileData
@@ -236,13 +280,16 @@ func CreateApplicationVersion(ctx context.Context, applicationVersion *types.App
 	}
 
 	row, err := db.Query(ctx,
-		`INSERT INTO ApplicationVersion AS av (name, link_template, application_id, chart_type, chart_name, chart_url,
-				chart_version, compose_file_data, values_file_data, template_file_data)
-		VALUES (@name, @linkTemplate, @applicationId, @chartType, @chartName, @chartUrl, @chartVersion,
-			@composeFileData::bytea, @valuesFileData::bytea, @templateFileData::bytea)
-		RETURNING av.id, av.created_at, av.archived_at, av.name, av.link_template, av.chart_type, av.chart_name,
-			av.chart_url, av.chart_version, av.values_file_data, av.template_file_data, av.compose_file_data,
-			av.application_id`,
+		`WITH inserted AS (
+			INSERT INTO ApplicationVersion (name, link_template, application_id, chart_type, chart_name, chart_url,
+					chart_version, compose_file_data, values_file_data, template_file_data,
+					created_by_user_account_id)
+			VALUES (@name, @linkTemplate, @applicationId, @chartType, @chartName, @chartUrl, @chartVersion,
+				@composeFileData::bytea, @valuesFileData::bytea, @templateFileData::bytea, @createdBy)
+			RETURNING *
+		)
+		SELECT `+applicationVersionOutputExpr+`
+		FROM inserted av`+applicationVersionCreatorJoin,
 		args)
 	if err != nil {
 		return fmt.Errorf("cannot create ApplicationVersion: %w", err)
@@ -262,9 +309,13 @@ func CreateApplicationVersion(ctx context.Context, applicationVersion *types.App
 func UpdateApplicationVersion(ctx context.Context, applicationVersion *types.ApplicationVersion) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		`UPDATE ApplicationVersion AS av SET name = @name, archived_at = @archivedAt
-		WHERE id = @id
-		RETURNING `+applicationVersionOutputExpr,
+		`WITH updated AS (
+			UPDATE ApplicationVersion SET name = @name, archived_at = @archivedAt
+			WHERE id = @id
+			RETURNING *
+		)
+		SELECT `+applicationVersionOutputExpr+`
+		FROM updated av`+applicationVersionCreatorJoin,
 		pgx.NamedArgs{
 			"id":         applicationVersion.ID,
 			"name":       applicationVersion.Name,
@@ -293,18 +344,68 @@ func GetApplicationVersion(ctx context.Context, applicationVersionID uuid.UUID) 
 	rows, err := db.Query(
 		ctx,
 		`SELECT `+applicationVersionOutputExpr+`
-		FROM ApplicationVersion av
-		WHERE id = @id`,
+		FROM ApplicationVersion av`+applicationVersionCreatorJoin+`
+		WHERE av.id = @id`,
 		pgx.NamedArgs{"id": applicationVersionID},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not get ApplicationVersion: %w", err)
 	} else if data, err := pgx.CollectExactlyOneRow(rows,
 		pgx.RowToStructByName[types.ApplicationVersion]); err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apierrors.ErrNotFound
 		}
 		return nil, err
+	} else {
+		return &data, nil
+	}
+}
+
+// GetApplicationVersionOfApplication returns the version only if it belongs to the application in
+// the organization. With a customerOrganizationID it additionally requires an unexpired entitlement
+// of that customer that covers the version.
+func GetApplicationVersionOfApplication(
+	ctx context.Context,
+	applicationVersionID, applicationID, organizationID uuid.UUID,
+	customerOrganizationID *uuid.UUID,
+) (*types.ApplicationVersion, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT `+applicationVersionOutputExpr+`
+		FROM ApplicationVersion av
+			JOIN Application a ON a.id = av.application_id`+applicationVersionCreatorJoin+`
+		WHERE av.id = @id
+			AND av.application_id = @applicationId
+			AND a.organization_id = @organizationId
+			AND (@customerOrganizationId::UUID IS NULL OR EXISTS (
+				SELECT FROM ApplicationEntitlement al
+				WHERE al.application_id = a.id
+					AND al.organization_id = a.organization_id
+					AND al.customer_organization_id = @customerOrganizationId
+					AND (al.expires_at IS NULL OR al.expires_at > now())
+					AND (
+						NOT EXISTS (SELECT FROM ApplicationEntitlement_ApplicationVersion alav
+							WHERE alav.application_entitlement_id = al.id)
+						OR EXISTS (SELECT FROM ApplicationEntitlement_ApplicationVersion alav
+							WHERE alav.application_entitlement_id = al.id AND alav.application_version_id = av.id)
+					)
+			))`,
+		pgx.NamedArgs{
+			"id":                     applicationVersionID,
+			"applicationId":          applicationID,
+			"organizationId":         organizationID,
+			"customerOrganizationId": customerOrganizationID,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query ApplicationVersion: %w", err)
+	} else if data, err := pgx.CollectExactlyOneRow(rows,
+		pgx.RowToStructByName[types.ApplicationVersion]); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apierrors.ErrNotFound
+		}
+		return nil, fmt.Errorf("could not get ApplicationVersion: %w", err)
 	} else {
 		return &data, nil
 	}

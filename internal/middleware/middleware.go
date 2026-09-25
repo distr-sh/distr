@@ -75,6 +75,29 @@ func UseReadonlyDB(next http.Handler) http.Handler {
 	})
 }
 
+// Chain composes middlewares into one, the first listed running outermost.
+func Chain(middlewares ...func(http.Handler) http.Handler) func(http.Handler) http.Handler {
+	return chi.Chain(middlewares...).Handler
+}
+
+// Split sends a request through ifTrue or ifFalse, both of which wrap the same handler.
+func Split(
+	predicate func(*http.Request) bool,
+	ifTrue func(http.Handler) http.Handler,
+	ifFalse func(http.Handler) http.Handler,
+) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		yes, no := ifTrue(next), ifFalse(next)
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if predicate(r) {
+				yes.ServeHTTP(w, r)
+			} else {
+				no.ServeHTTP(w, r)
+			}
+		})
+	}
+}
+
 func LoggerCtxMiddleware(logger *zap.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -278,7 +301,8 @@ func RequireTokenScope(scope authjwt.TokenScope) func(http.Handler) http.Handler
 }
 
 // BlockCrossOrganizationAction rejects an action that would leave the organization the credential is
-// confined to, for the credentials described by authinfo.AuthInfo.OrganizationScoped.
+// confined to, or destroy it, for the credentials described by authinfo.AuthInfo.OrganizationScoped.
+// A personal access token is one of them.
 func BlockCrossOrganizationAction(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		if auth.Authentication.Require(r.Context()).OrganizationScoped() {
@@ -293,19 +317,29 @@ func BlockCrossOrganizationAction(handler http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-// CredentialChangeBlockedMessage is the response of BlockCredentialChange, exported for the endpoints that
-// reject only part of their request body and therefore cannot apply the middleware.
-const CredentialChangeBlockedMessage = "your sign-in methods cannot be changed from this session. " +
-	"Request a password reset to receive a link to your email address that lets you change them"
+// The messages are exported for the endpoints that reject only part of their request body and
+// therefore cannot apply the middleware.
+const (
+	OidcSessionBlockedMessage = "operation not permitted in SSO session. " +
+		"Request a password reset to receive a link to your email address that lets you change them."
+	AccessTokenBlockedMessage = "this cannot be done with an access token. Sign in to Distr to do it."
+)
 
-// BlockCredentialChange rejects a change to the account's sign-in methods for the credentials described by
-// authinfo.AuthInfo.OrganizationScoped, which are not proof that the account's owner is present. Without
-// it, such a credential could set a password or move the email address to an inbox somebody else controls,
-// and thereby produce an unrestricted session of the same account.
-func BlockCredentialChange(handler http.Handler) http.Handler {
+func RequireNonOidcToken(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		if auth.Authentication.Require(r.Context()).OrganizationScoped() {
-			http.Error(w, CredentialChangeBlockedMessage, http.StatusForbidden)
+		if auth.Authentication.Require(r.Context()).IsCustomOIDCSession() {
+			http.Error(w, OidcSessionBlockedMessage, http.StatusForbidden)
+			return
+		}
+		handler.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
+
+func RequireNonAccessToken(handler http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		if auth.Authentication.Require(r.Context()).IsAccessToken() {
+			http.Error(w, AccessTokenBlockedMessage, http.StatusForbidden)
 			return
 		}
 		handler.ServeHTTP(w, r)
@@ -387,8 +421,10 @@ var (
 	VendorBillingFeatureMiddleware        = FeatureFlagMiddleware(types.FeatureVendorBilling)
 	PartnerManagementFeatureMiddleware    = FeatureFlagMiddleware(types.FeaturePartnerManagement)
 	CustomDomainsFeatureMiddleware        = FeatureFlagMiddleware(types.FeatureCustomDomains)
+	VulnerabilitiesFeatureMiddleware      = FeatureFlagMiddleware(types.FeatureVulnerabilities)
 	CustomEmailsFeatureMiddleware         = FeatureFlagMiddleware(types.FeatureCustomEmails)
 	CustomOidcProvidersFeatureMiddleware  = FeatureFlagMiddleware(types.FeatureCustomOidcProviders)
+	AutoUpdatesFeatureMiddleware          = FeatureFlagMiddleware(types.FeatureAutoUpdates)
 )
 
 // RequireCustomDomainsConfigured rejects requests unless the instance itself is set up for custom

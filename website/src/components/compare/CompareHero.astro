@@ -1,0 +1,54 @@
+---
+import {Icon} from '@astrojs/starlight/components';
+import Image from '~/components/common/Image.astro';
+import type {ImageMetadata} from 'astro';
+
+export interface Props {
+  title: string;
+  description: string;
+  heroImage: ImageMetadata;
+  heading?: string;
+  subheading?: string;
+}
+
+const {title, description, heroImage, heading, subheading} = Astro.props;
+
+const headline = heading ?? title;
+const intro = subheading ?? description;
+---
+
+<div class="mb-8 text-center">
+  <a
+    href="/compare/"
+    class="inline-flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors no-underline">
+    <Icon name="left-arrow" class="w-4 h-4 mr-1" />
+    Compare
+  </a>
+</div>
+
+<header class="mb-12 text-center">
+  <h1
+    class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 dark:text-white mb-3 leading-tight">
+    {headline}
+  </h1>
+
+  <p
+    class="text-lg sm:text-xl text-gray-600 dark:text-gray-400 sm:mb-16 mb-8 leading-relaxed max-w-3xl mx-auto">
+    {intro}
+  </p>
+
+  <div class="mt-8 -mx-6 sm:-mx-8 lg:-mx-16">
+    <Image
+      src={heroImage}
+      class="w-full rounded-xl bg-gray-100 dark:bg-gray-800"
+      widths={[400, 800, 1200]}
+      sizes="(max-width: 640px) 400px, (max-width: 1024px) 800px, 1200px"
+      alt={headline}
+      loading="eager"
+      decoding="sync"
+      width={1200}
+      height={675}
+      layout="cover"
+    />
+  </div>
+</header>

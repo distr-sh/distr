@@ -45,6 +45,11 @@ func DeploymentRevisionToAPI(
 			ForceRestart:           r.ForceRestart,
 			IgnoreRevisionSkew:     r.IgnoreRevisionSkew,
 			HelmOptions:            r.HelmOptions,
+			Trigger:                r.Trigger,
+		}
+
+		if r.LatestStatus != nil {
+			response.LatestStatus = new(DeploymentRevisionStatusToAPI(*r.LatestStatus))
 		}
 
 		if r.CreatedByID != nil {

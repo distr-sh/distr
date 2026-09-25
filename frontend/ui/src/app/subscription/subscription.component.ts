@@ -26,7 +26,13 @@ import {OrganizationService} from '../services/organization.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {SubscriptionService} from '../services/subscription.service';
 import {ToastService} from '../services/toast.service';
-import {SubscriptionInfo, SubscriptionPeriod, SubscriptionType, UNLIMITED_QTY} from '../types/subscription';
+import {
+  isExpiredSubscription,
+  SubscriptionInfo,
+  SubscriptionPeriod,
+  SubscriptionType,
+  UNLIMITED_QTY,
+} from '../types/subscription';
 import {PendingSubscriptionUpdate, SubscriptionUpdateModalComponent} from './subscription-update-modal.component';
 
 @Component({
@@ -118,6 +124,15 @@ export class SubscriptionComponent implements OnInit {
   private readonly currentPlanLimits = computed(() => {
     const info = this.subscriptionInfo();
     return info ? info.limits[info.subscriptionType] : undefined;
+  });
+
+  // a trial does not renew, it runs out
+  protected readonly subscriptionEndsAtLabel = computed(() => {
+    const info = this.subscriptionInfo();
+    if (info?.subscriptionType !== 'trial') {
+      return 'Renews On';
+    }
+    return isExpiredSubscription(info.subscriptionType, info.subscriptionEndsAt) ? 'Expired On' : 'Expires On';
   });
 
   /** The registry storage included in the current plan, or `undefined` if it is unlimited. */

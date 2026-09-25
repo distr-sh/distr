@@ -1,34 +1,27 @@
 import {HttpClient} from '@angular/common/http';
-import {Injectable, inject} from '@angular/core';
-import {Observable, Subject, switchMap, tap} from 'rxjs';
+import {inject, Injectable} from '@angular/core';
+import {firstValueFrom, Observable, tap} from 'rxjs';
 import {ArtifactEntitlement} from '../types/artifact-entitlement';
-import {DefaultReactiveList, ReactiveList} from './cache';
+import {DefaultReactiveList} from './cache';
 import {CrudService} from './interfaces';
 
 @Injectable({providedIn: 'root'})
 export class ArtifactEntitlementsService implements CrudService<ArtifactEntitlement> {
   private readonly http = inject(HttpClient);
 
-  private readonly cache: ReactiveList<ArtifactEntitlement>;
   private readonly artifactEntitlementsUrl = '/api/v1/artifact-entitlements';
-  private readonly refresh$ = new Subject<void>();
-
-  constructor() {
-    this.cache = new DefaultReactiveList(this.http.get<ArtifactEntitlement[]>(this.artifactEntitlementsUrl));
-    this.refresh$
-      .pipe(
-        switchMap(() => this.http.get<ArtifactEntitlement[]>(this.artifactEntitlementsUrl)),
-        tap((entitlements) => this.cache.reset(entitlements))
-      )
-      .subscribe();
-  }
+  private readonly cache = new DefaultReactiveList(this.http.get<ArtifactEntitlement[]>(this.artifactEntitlementsUrl));
 
   public list(): Observable<ArtifactEntitlement[]> {
     return this.cache.get();
   }
 
-  refresh() {
-    this.refresh$.next();
+  refresh(): Promise<ArtifactEntitlement[]> {
+    return firstValueFrom(
+      this.http
+        .get<ArtifactEntitlement[]>(this.artifactEntitlementsUrl)
+        .pipe(tap((entitlements) => this.cache.reset(entitlements)))
+    );
   }
 
   create(request: ArtifactEntitlement): Observable<ArtifactEntitlement> {

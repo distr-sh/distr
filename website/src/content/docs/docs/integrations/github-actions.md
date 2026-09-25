@@ -18,6 +18,8 @@ By the end of this guide, you'll have:
 
 This is particularly useful for SaaS applications where you want to roll out updates to all customers simultaneously, or for managed services where you control the deployment timing.
 
+Distr can also keep deployments on the latest version by itself, without the pipeline updating them. See [Automatic updates](/docs/agents/deployment/#automatic-updates) for when to prefer that over the `update-deployments` input described below.
+
 ## Prerequisites
 
 Before starting, ensure you have:
@@ -387,7 +389,7 @@ jobs:
 - **`application-id`** - Your Application ID (from GitHub Variables)
 - **`version-name`** - The version name (here we use the git tag name)
 - **`link-template`** - Template for generating links to deployments (e.g., `http://{{ .Env.APP_HOST }}`). See [Application Links](/docs/agents/application-links/) for details
-- **`update-deployments: true`** - **This is the key setting that enables automatic deployment updates**
+- **`update-deployments: true`** - Updates every deployment of the application from the workflow. Leave it out and use [Distr's automatic updates](/docs/agents/deployment/#automatic-updates) instead when the rollout does not have to be gated by your CI
 
 When `update-deployments` is set to `true`, the action will:
 
@@ -512,6 +514,14 @@ The workflow will:
 4. Your deployment target should now show the new version as the deployed version
 
 ## Understanding Automatic Updates
+
+There are two ways to keep customer deployments on the latest version, and you should pick one.
+
+**Distr's own automatic updates** are the better fit for most setups. A deployment set to follow the latest version is updated by Distr whenever that version changes, so it also catches a version created through the API or the web interface, a version brought back from the archive and an entitlement that starts covering a newer version. Both you and your customer can turn it on per deployment, so a customer can stay on a version they chose while everyone else follows along. See [Automatic updates](/docs/agents/deployment/#automatic-updates).
+
+**The action's `update-deployments` input** updates every deployment of the application as a step of the workflow, which is what you want when the release pipeline has to decide whether an update happens at all, or when the rollout has to be visible in and gated by your CI.
+
+Do not use both for the same application. The two would update the same deployments, and each update creates a revision.
 
 When `update-deployments: true` is enabled, the GitHub Action will:
 

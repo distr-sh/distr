@@ -14,6 +14,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/validation"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
@@ -266,7 +267,15 @@ func (o *OIDCer) GetIdentityForCode(
 	if !prov.nonceSupported {
 		nonce = ""
 	}
-	return prov.identityExtractor(ctx, token, nonce)
+	identity, err := prov.identityExtractor(ctx, token, nonce)
+	if err != nil {
+		return Identity{}, err
+	}
+	// The claims come from a provider we do not control, and are not covered by the trimming that
+	// request bodies get. A padded email would miss the account a user already has and provision a
+	// second one for them.
+	validation.TrimStrings(&identity)
+	return identity, nil
 }
 
 func getIdentityFromGithubAccessToken(ctx context.Context, token *oauth2.Token, _ string) (Identity, error) {

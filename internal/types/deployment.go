@@ -3,15 +3,17 @@ package types
 import (
 	"time"
 
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/google/uuid"
 )
 
 type Deployment struct {
 	Base
-	DeploymentTargetID       uuid.UUID   `db:"deployment_target_id" json:"deploymentTargetId"`
-	ReleaseName              *string     `db:"release_name" json:"releaseName,omitempty"`
-	ApplicationEntitlementID *uuid.UUID  `db:"application_entitlement_id" json:"applicationEntitlementId,omitempty"`
-	DockerType               *DockerType `db:"docker_type" json:"dockerType,omitempty"`
+	DeploymentTargetID                 uuid.UUID   `db:"deployment_target_id" json:"deploymentTargetId"`
+	ReleaseName                        *string     `db:"release_name" json:"releaseName,omitempty"`
+	ApplicationEntitlementID           *uuid.UUID  `db:"application_entitlement_id" json:"applicationEntitlementId,omitempty"` //nolint:lll
+	DockerType                         *DockerType `db:"docker_type" json:"dockerType,omitempty"`
+	AutomaticApplicationUpdatesEnabled bool        `db:"automatic_application_updates_enabled" json:"automaticApplicationUpdatesEnabled"` //nolint:lll
 }
 
 type DeploymentWithLatestRevision struct {
@@ -27,13 +29,31 @@ type DeploymentWithLatestRevision struct {
 	ApplicationVersionName  string                    `db:"application_version_name" json:"applicationVersionName"`
 	ApplicationLinkTemplate string                    `db:"application_link_template" json:"-"`
 	ApplicationLink         string                    `db:"-" json:"applicationLink"`
-	ValuesYaml              []byte                    `db:"values_yaml" json:"valuesYaml,omitempty"`
-	EnvFileData             []byte                    `db:"env_file_data" json:"envFileData,omitempty"`
+	ValuesYaml              dbcrypto.Bytes            `db:"values_yaml" json:"valuesYaml,omitempty"`
+	EnvFileData             dbcrypto.Bytes            `db:"env_file_data" json:"envFileData,omitempty"`
 	ValuesHash              []byte                    `db:"values_hash" json:"-"`
 	LatestStatus            *DeploymentRevisionStatus `db:"latest_status" json:"latestStatus,omitempty"`
 	ForceRestart            bool                      `db:"force_restart" json:"forceRestart"`
 	IgnoreRevisionSkew      bool                      `db:"ignore_revision_skew" json:"ignoreRevisionSkew"`
 	HelmOptions             *HelmOptions              `db:"helm_options" json:"helmOptions,omitempty"`
+	// CurrentDeploymentRevisionID is the revision an agent last reported as applied, which differs
+	// from DeploymentRevisionID while a newer revision is being rolled out or has failed.
+	CurrentDeploymentRevisionID *uuid.UUID                `db:"current_deployment_revision_id" json:"currentDeploymentRevisionId,omitempty"` //nolint:lll
+	CurrentStatus               *DeploymentRevisionStatus `db:"current_status" json:"currentStatus,omitempty"`
+	CurrentApplicationVersionID *uuid.UUID                `db:"current_application_version_id" json:"currentApplicationVersionId,omitempty"` //nolint:lll
+	//nolint:lll
+	CurrentApplicationVersionName *string `db:"current_application_version_name" json:"currentApplicationVersionName,omitempty"`
+}
+
+// NewestStatus returns the status the agent reported last, no matter which revision it belongs to.
+func (d *DeploymentWithLatestRevision) NewestStatus() *DeploymentRevisionStatus {
+	if d.LatestStatus == nil {
+		return d.CurrentStatus
+	}
+	if d.CurrentStatus == nil || d.LatestStatus.CreatedAt.After(d.CurrentStatus.CreatedAt) {
+		return d.LatestStatus
+	}
+	return d.CurrentStatus
 }
 
 func (d *DeploymentWithLatestRevision) GetValuesYAML() []byte {

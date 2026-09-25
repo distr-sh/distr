@@ -1,1 +1,1 @@
-ALTER TYPE FEATURE ADD VALUE 'artifact_version_mutable';
+ALTER TYPE FEATURE ADD VALUE IF NOT EXISTS 'artifact_version_mutable';

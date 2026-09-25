@@ -11,6 +11,7 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/types"
@@ -125,7 +126,7 @@ func createSecretHandler() http.HandlerFunc {
 			body.CustomerOrganizationID,
 			auth.CurrentUserID(),
 			body.Key,
-			body.Value,
+			dbcrypto.String(body.Value),
 		)
 
 		if err != nil {
@@ -180,7 +181,7 @@ func updateSecretHandler() http.HandlerFunc {
 			ctx,
 			*auth.CurrentOrgID(),
 			existing.Key,
-			body.Value,
+			dbcrypto.String(body.Value),
 			existing.CustomerOrganizationID,
 		)
 		if err != nil {
@@ -200,14 +201,17 @@ func updateSecretHandler() http.HandlerFunc {
 			secret, err = db.UpdateSecret(
 				ctx,
 				id,
+				existing.OrganizationID,
 				existing.CustomerOrganizationID,
 				auth.CurrentUserID(),
-				body.Value,
+				dbcrypto.String(body.Value),
 			)
 			if err != nil {
 				return err
 			}
-			return triggerAffectedDeployments(ctx, affected, new(auth.CurrentUserID()))
+			return triggerAffectedDeployments(
+				ctx, affected, new(auth.CurrentUserID()), types.DeploymentRevisionTriggerSecretChange,
+			)
 		})
 		if err != nil {
 			internalctx.GetLogger(ctx).Error("failed to update secret", zap.Error(err))

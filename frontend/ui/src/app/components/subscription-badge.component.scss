@@ -1,0 +1,60 @@
+@reference '../../styles/tailwind.css';
+
+// Tailwind's `dark` variant, spelled out. An `@variant dark` block inside a rule makes Angular's
+// style shim emit a descendant selector rooted at `:scope`, which matches nothing, and a `dark:`
+// prefix per utility emits a rule per utility, which blows the 2 kB budget for component styles.
+@mixin dark {
+  &:where(.dark, .dark *) {
+    @content;
+  }
+}
+
+// the shape of the tag badges: a tinted fill in light mode, and in dark mode only colored text and
+// a border, like the artifact tag badges, since a filled badge is too loud on a dark surface. The
+// border is plain CSS and takes its color from the text: the `border` utility pulls a
+// `@property --tw-border-style` block into every component stylesheet, and a color per plan would
+// triple the rules below. The gray of the base rule is what community and a running trial get,
+// since neither is a paid plan.
+:host {
+  @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium capitalize;
+  @apply bg-gray-100 text-gray-800;
+  border: 1px solid color-mix(in oklab, currentcolor 30%, transparent);
+
+  @include dark {
+    @apply bg-transparent text-gray-300;
+  }
+}
+
+:host(.plan-pro) {
+  @apply bg-green-100 text-green-800;
+
+  @include dark {
+    @apply bg-transparent text-green-400;
+  }
+}
+
+:host(.plan-business) {
+  @apply bg-blue-100 text-blue-800;
+
+  @include dark {
+    @apply bg-transparent text-blue-400;
+  }
+}
+
+:host(.plan-enterprise) {
+  @apply bg-purple-100 text-purple-800;
+
+  @include dark {
+    @apply bg-transparent text-purple-400;
+  }
+}
+
+// an expired subscription is red whatever plan it was on, so this has to stay below the plan rules
+// that it overrides at equal specificity
+:host(.plan-expired) {
+  @apply bg-red-100 text-red-800;
+
+  @include dark {
+    @apply bg-transparent text-red-400;
+  }
+}

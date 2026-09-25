@@ -15,7 +15,7 @@ func CustomEmailConfigurationToAPI(c types.CustomEmailConfiguration) api.CustomE
 		FromAddress:     c.FromAddress,
 		SMTPHost:        c.SMTPHost,
 		SMTPPort:        c.SMTPPort,
-		SMTPUsername:    c.SMTPUsername,
+		SMTPUsername:    string(c.SMTPUsername),
 		SMTPPasswordSet: c.SMTPPassword != "",
 		SMTPImplicitTLS: c.SMTPImplicitTLS,
 	}

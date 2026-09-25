@@ -1,3 +1,4 @@
+{{- $distr := include "distr.config" . | fromYaml }}
 {{- range $job := .Values.cronJobs }}
 ---
 apiVersion: batch/v1
@@ -41,7 +42,7 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           containers:
-            - name: hub
+            - name: distr
               {{- with $job.args }}
               args:
                 {{- toYaml . | nindent 16 }}
@@ -52,12 +53,12 @@ spec:
               {{- end }}
               image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
               imagePullPolicy: {{ $.Values.image.pullPolicy }}
-              {{- with $.Values.hub.envFrom }}
+              {{- with $distr.envFrom }}
               envFrom:
                 {{- toYaml . | nindent 16 }}
               {{- end }}
               env:
-                {{- include "distr.hubEnv" $ | nindent 16 }}
+                {{- include "distr.env" $ | nindent 16 }}
               {{- with $job.resources | default $.Values.cronJobResources }}
               resources:
                 {{- toYaml . | nindent 16 }}

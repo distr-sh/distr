@@ -1,6 +1,15 @@
 import {Pipe, PipeTransform} from '@angular/core';
 import dayjs from 'dayjs';
-import {Duration} from 'dayjs/plugin/duration';
+import duration, {Duration} from 'dayjs/plugin/duration';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import utc from 'dayjs/plugin/utc';
+
+// The plugins this module calls have to be registered here rather than only during bootstrap,
+// because importing them is also what declares their methods on Dayjs. Without it, a program that
+// does not include main.ts, such as a unit test, does not compile.
+dayjs.extend(duration);
+dayjs.extend(relativeTime);
+dayjs.extend(utc);
 
 export function isOlderThan(date: dayjs.ConfigType, duration: Duration): boolean {
   return dayjs.duration(Math.abs(dayjs(date).diff(dayjs()))) > duration;

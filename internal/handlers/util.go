@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,7 +13,9 @@ import (
 
 	"github.com/distr-sh/distr/internal/contenttype"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/handlerutil"
+	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	"go.uber.org/zap"
 )
@@ -77,11 +80,32 @@ func parseTimeseriesRange(r *http.Request) (timeseriesRange, error) {
 	return timeseriesRange{Before: before, After: after, Filter: filter}, nil
 }
 
+// runTxOrRespond runs f in a transaction and reports whether that transaction committed. Failing to
+// begin or to commit it is answered with status 500, an error returned from f is not, since f has
+// already written the response for it.
+func runTxOrRespond(ctx context.Context, w http.ResponseWriter, f func(ctx context.Context) error) bool {
+	var fErr error
+	if err := db.RunTx(ctx, func(ctx context.Context) error {
+		fErr = f(ctx)
+		return fErr
+	}); err != nil {
+		if fErr == nil {
+			internalctx.GetLogger(ctx).Warn("could not run db transaction", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+		return false
+	}
+	return true
+}
+
 func JsonBody[T any](w http.ResponseWriter, r *http.Request) (T, error) {
 	var t T
 	err := json.NewDecoder(r.Body).Decode(&t)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+	} else {
+		validation.TrimStrings(&t)
 	}
 	return t, err
 }

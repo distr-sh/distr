@@ -23,5 +23,7 @@ export interface Portal {
   pageTitle?: string;
   faviconUrl?: string;
   logoUrl?: string;
+  // Absent when the instance has no SUPPORT_EMAIL configured, in which case support must not be offered as a link.
+  supportEmail?: string;
   loginConfig: PortalLoginConfig;
 }

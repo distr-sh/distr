@@ -1,0 +1,41 @@
+@reference '../../styles/tailwind.css';
+
+// Tailwind's `dark` variant, spelled out, for the same reason as in `subscription-badge.component.scss`
+@mixin dark {
+  &:where(.dark, .dark *) {
+    @content;
+  }
+}
+
+:host(.status-healthy),
+:host(.status-running) {
+  @apply bg-green-100 text-green-800 border-green-400;
+
+  @include dark {
+    @apply bg-green-900 text-green-300 border-green-800;
+  }
+}
+
+:host(.status-progressing) {
+  @apply bg-blue-100 text-blue-800 border-blue-400;
+
+  @include dark {
+    @apply bg-blue-900 text-blue-300 border-blue-800;
+  }
+}
+
+:host(.status-error) {
+  @apply bg-red-100 text-red-800 border-red-400;
+
+  @include dark {
+    @apply bg-red-900 text-red-300 border-red-800;
+  }
+}
+
+:host(.status-stale) {
+  @apply bg-yellow-100 text-yellow-800 border-yellow-400;
+
+  @include dark {
+    @apply bg-yellow-900 text-yellow-300 border-yellow-800;
+  }
+}

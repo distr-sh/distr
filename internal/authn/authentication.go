@@ -14,6 +14,7 @@ type Authentication[T any] struct {
 	authenticators      []RequestAuthenticator[T]
 	contextKey          contextKey
 	unknownErrorHandler func(w http.ResponseWriter, r *http.Request, err error)
+	unauthorizedHandler func(w http.ResponseWriter, r *http.Request)
 }
 
 func New[T any](authenticators ...RequestAuthenticator[T]) *Authentication[T] {
@@ -22,6 +23,13 @@ func New[T any](authenticators ...RequestAuthenticator[T]) *Authentication[T] {
 
 func (a *Authentication[T]) SetUnknownErrorHandler(handler func(w http.ResponseWriter, r *http.Request, err error)) {
 	a.unknownErrorHandler = handler
+}
+
+// SetUnauthorizedHandler overrides the plain text 401, for the registry whose clients expect the
+// error format of the distribution spec. The response headers of the authentication error, the
+// challenge among them, are already set when the handler is called.
+func (a *Authentication[T]) SetUnauthorizedHandler(handler func(w http.ResponseWriter, r *http.Request)) {
+	a.unauthorizedHandler = handler
 }
 
 func (a *Authentication[T]) NewContext(ctx context.Context, auth T) context.Context {
@@ -92,6 +100,10 @@ func (a *Authentication[T]) handleError(w http.ResponseWriter, r *http.Request, 
 	statusCode := http.StatusInternalServerError
 
 	if errors.Is(err, ErrBadAuthentication) || errors.Is(err, ErrNoAuthentication) {
+		if a.unauthorizedHandler != nil {
+			a.unauthorizedHandler(w, r)
+			return
+		}
 		statusCode = http.StatusUnauthorized
 	} else if a.unknownErrorHandler != nil {
 		a.unknownErrorHandler(w, r, err)

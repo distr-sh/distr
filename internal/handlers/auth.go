@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -32,7 +31,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"github.com/pquerna/otp/totp"
 	"go.uber.org/zap"
 )
 
@@ -145,7 +143,7 @@ func authAcceptInviteHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	setPasswordAndLogin(w, r, body.Password, body.Name)
+	setPasswordAndLogin(w, r, body.Password, body.Name, body.MFACode)
 }
 
 func authResetConfirmHandler(w http.ResponseWriter, r *http.Request) {
@@ -157,13 +155,15 @@ func authResetConfirmHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	setPasswordAndLogin(w, r, body.Password, nil)
+	setPasswordAndLogin(w, r, body.Password, nil, body.MFACode)
 }
 
 // setPasswordAndLogin sets (and persists) the given password and optional name for the authenticated user,
 // verifies their email when the credential carries a verified email claim, and responds with a fresh login
 // token so the frontend can log the user in directly. It is shared by the invite-accept and reset-confirm flows.
-func setPasswordAndLogin(w http.ResponseWriter, r *http.Request, password string, name *string) {
+// An account with MFA enabled has to pass the same check as on a regular login before any of this happens,
+// since a reset or invitation link only proves control over the mailbox.
+func setPasswordAndLogin(w http.ResponseWriter, r *http.Request, password string, name, mfaCode *string) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	authn := auth.Authentication.Require(ctx)
@@ -171,6 +171,9 @@ func setPasswordAndLogin(w http.ResponseWriter, r *http.Request, password string
 
 	var token string
 	err := db.RunTx(ctx, func(ctx context.Context) error {
+		if err := userauth.VerifyMFA(ctx, *user, mfaCode); err != nil {
+			return err
+		}
 		if err := userauth.SetUserPassword(ctx, user, password, name); err != nil {
 			return err
 		}
@@ -187,7 +190,13 @@ func setPasswordAndLogin(w http.ResponseWriter, r *http.Request, password string
 		return err
 	})
 	if err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, userauth.ErrMFARequired) {
+			RespondJSON(w, api.AuthLoginResponse{RequiresMFA: true})
+		} else if errors.Is(err, userauth.ErrMFACodeInvalid) {
+			// A 401 would make the frontend discard the invite or reset token and send the user back to the
+			// "link expired" page, so a wrong code must not be answered with one.
+			http.Error(w, "invalid MFA code or recovery code", http.StatusBadRequest)
+		} else if errors.Is(err, apierrors.ErrNotFound) {
 			http.Error(w, "could not update user", http.StatusBadRequest)
 		} else if errors.Is(err, subscription.ErrGlobalOrganizationLimitReached) {
 			log.Warn("could not set password, global organization limit reached")
@@ -324,45 +333,15 @@ func authLoginHandler(w http.ResponseWriter, r *http.Request) {
 			return nil
 		}
 
-		if user.MFAEnabled {
-			if request.MFACode == nil {
-				RespondJSON(w, api.AuthLoginResponse{RequiresMFA: true})
-				return nil
-			}
-
-			if user.MFASecret == nil {
-				// this can never happen because we guard against it with a db constraint
-				sentry.GetHubFromContext(ctx).CaptureException(errors.New("user has mfa enabled but no secret"))
-				http.Error(w, "MFA configuration error", http.StatusInternalServerError)
-				return nil
-			}
-
-			valid := totp.Validate(*request.MFACode, *user.MFASecret)
-
-			if !valid {
-				normalized := security.NormalizeRecoveryCode(*request.MFACode)
-				codes, err := db.GetUnusedMFARecoveryCodes(ctx, user.ID)
-				if err != nil {
-					return fmt.Errorf("failed to get recovery codes: %w", err)
-				}
-
-				var matchedCodeID *uuid.UUID
-				for _, code := range codes {
-					if security.VerifyRecoveryCode(normalized, code.CodeSalt, code.CodeHash) {
-						matchedCodeID = &code.ID
-						break
-					}
-				}
-
-				if matchedCodeID == nil {
-					http.Error(w, "invalid MFA code or recovery code", http.StatusUnauthorized)
-					return nil
-				}
-
-				if err := db.MarkMFARecoveryCodeAsUsed(ctx, *matchedCodeID); err != nil {
-					return err
-				}
-			}
+		switch err := userauth.VerifyMFA(ctx, *user, request.MFACode); {
+		case errors.Is(err, userauth.ErrMFARequired):
+			RespondJSON(w, api.AuthLoginResponse{RequiresMFA: true})
+			return nil
+		case errors.Is(err, userauth.ErrMFACodeInvalid):
+			http.Error(w, "invalid MFA code or recovery code", http.StatusUnauthorized)
+			return nil
+		case err != nil:
+			return err
 		}
 
 		if tokenString, err := userauth.GenerateLoginToken(ctx, *user); err != nil {
@@ -401,7 +380,7 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, "registration is not available on this domain", http.StatusForbidden)
 		return
-	} else if !host.instanceAuthAllowed() {
+	} else if !host.registrationAllowed() {
 		http.Error(w, "registration is not available on this domain", http.StatusForbidden)
 		return
 	}
@@ -420,7 +399,7 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 			Password: request.Password,
 		}
 		org := types.Organization{
-			Name: strings.TrimSpace(request.OrganizationName),
+			Name: request.OrganizationName,
 		}
 		var token string
 

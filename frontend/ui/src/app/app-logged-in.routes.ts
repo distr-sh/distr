@@ -3,7 +3,10 @@ import {CanActivateFn, Router, Routes} from '@angular/router';
 import {UserRole} from '@distr-sh/distr-sdk';
 import {firstValueFrom, map} from 'rxjs';
 import {getRemoteEnvironment} from '../env/remote';
+import {AccessTokenDetailComponent} from './access-tokens/access-token-detail.component';
 import {AccessTokensComponent} from './access-tokens/access-tokens.component';
+import {AdvisoryDetailComponent} from './advisories/advisory-detail.component';
+import {AdvisoryListComponent} from './advisories/advisory-list.component';
 import {AlertConfigurationsComponent} from './alert-configurations/alert-configurations.component';
 import {ApplicationDetailComponent} from './applications/application-detail.component';
 import {ApplicationsPageComponent} from './applications/applications-page.component';
@@ -22,9 +25,9 @@ import {VendorUsersComponent} from './components/users/vendors/vendor-users.comp
 import {CustomerSettingsComponent} from './customer-settings/customer-settings.component';
 import {DeploymentTargetDetailComponent} from './deployments/deployment-target-details/deployment-target-detail.component';
 import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
-import {CustomerLicenseDetailComponent} from './licenses/customer-license-detail.component';
-import {LicenseKeysComponent} from './licenses/license-keys/license-keys.component';
+import {CustomerLicenseDetailPageComponent} from './licenses/customer-license-detail-page.component';
 import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
+import {VendorLicenseDetailPageComponent} from './licenses/vendor-license-detail-page.component';
 import {NotificationRecordsComponent} from './notification-records/notification-records.component';
 import {OrganizationBrandingComponent} from './organization-branding/organization-branding.component';
 import {CustomEmailComponent} from './organization-settings/custom-email.component';
@@ -155,6 +158,13 @@ function partnerManagementEnabledGuard(): CanActivateFn {
   };
 }
 
+function vulnerabilitiesEnabledGuard(): CanActivateFn {
+  return async () => {
+    const featureFlags = inject(FeatureFlagService);
+    return await firstValueFrom(featureFlags.isVulnerabilitiesEnabled$);
+  };
+}
+
 function registryHostSetOrRedirectGuard(redirectTo: string): CanActivateFn {
   return async () => {
     const router = inject(Router);
@@ -275,7 +285,7 @@ export const routes: Routes = [
       },
       {
         path: 'license-keys',
-        component: LicenseKeysComponent,
+        component: CustomerLicenseDetailPageComponent,
         canActivate: [requireCustomer, licensingEnabledGuard()],
       },
       {
@@ -312,7 +322,7 @@ export const routes: Routes = [
           },
           {
             path: ':customerOrganizationId',
-            component: CustomerLicenseDetailComponent,
+            component: VendorLicenseDetailPageComponent,
           },
         ],
       },
@@ -381,7 +391,17 @@ export const routes: Routes = [
           },
           {
             path: 'access-tokens',
-            component: AccessTokensComponent,
+            children: [
+              {
+                path: '',
+                pathMatch: 'full',
+                component: AccessTokensComponent,
+              },
+              {
+                path: ':accessTokenId',
+                component: AccessTokenDetailComponent,
+              },
+            ],
           },
         ],
       },
@@ -459,6 +479,36 @@ export const routes: Routes = [
           {
             path: ':supportBundleId',
             component: SupportBundleDetailComponent,
+          },
+        ],
+      },
+      {
+        path: 'advisories',
+        canActivate: [requireVendorOrPartner, vulnerabilitiesEnabledGuard()],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            component: AdvisoryListComponent,
+          },
+          {
+            path: ':advisoryId',
+            component: AdvisoryDetailComponent,
+          },
+        ],
+      },
+      {
+        path: 'security',
+        canActivate: [requireCustomer, vulnerabilitiesEnabledGuard()],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            component: AdvisoryListComponent,
+          },
+          {
+            path: ':advisoryId',
+            component: AdvisoryDetailComponent,
           },
         ],
       },

@@ -1,7 +1,14 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {AccessToken, AccessTokenWithKey, CreateAccessTokenRequest} from '@distr-sh/distr-sdk';
 import {Observable} from 'rxjs';
+import {
+  AccessToken,
+  AccessTokenSecretSlot,
+  AccessTokenWithKey,
+  CreateAccessTokenRequest,
+  CreateAccessTokenSecretRequest,
+  PatchAccessTokenRequest,
+} from '../types/access-token';
 
 const baseUrl = '/api/v1/settings/tokens';
 
@@ -17,7 +24,23 @@ export class AccessTokensService {
     return this.httpClient.post<AccessTokenWithKey>(baseUrl, request);
   }
 
+  public patch(id: string, request: PatchAccessTokenRequest): Observable<AccessToken> {
+    return this.httpClient.patch<AccessToken>(`${baseUrl}/${id}`, request);
+  }
+
   public delete(id: string): Observable<void> {
     return this.httpClient.delete<void>(`${baseUrl}/${id}`);
+  }
+
+  public createSecret(id: string, request: CreateAccessTokenSecretRequest): Observable<AccessTokenWithKey> {
+    return this.httpClient.post<AccessTokenWithKey>(`${baseUrl}/${id}/secrets`, request);
+  }
+
+  public deleteSecret(id: string, slot: AccessTokenSecretSlot): Observable<void> {
+    return this.httpClient.delete<void>(`${baseUrl}/${id}/secrets/${slot}`);
+  }
+
+  public deleteLegacyKey(id: string): Observable<void> {
+    return this.httpClient.delete<void>(`${baseUrl}/${id}/key`);
   }
 }

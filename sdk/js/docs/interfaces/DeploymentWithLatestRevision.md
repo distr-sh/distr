@@ -62,6 +62,19 @@ Use application.name instead
 
 ---
 
+### automaticApplicationUpdatesEnabled?
+
+> `optional` **automaticApplicationUpdatesEnabled?**: `boolean`
+
+Whether this deployment is rolled forward to the application's latest version automatically.
+Unrelated to DeploymentTarget.automaticUpdatesEnabled, which is the agent updating itself.
+
+#### Inherited from
+
+[`Deployment`](Deployment.md).[`automaticApplicationUpdatesEnabled`](Deployment.md#automaticapplicationupdatesenabled)
+
+---
+
 ### createdAt?
 
 > `optional` **createdAt?**: `string`
@@ -69,6 +82,33 @@ Use application.name instead
 #### Inherited from
 
 [`Deployment`](Deployment.md).[`createdAt`](Deployment.md#createdat)
+
+---
+
+### currentApplicationVersionId?
+
+> `optional` **currentApplicationVersionId?**: `string`
+
+---
+
+### currentApplicationVersionName?
+
+> `optional` **currentApplicationVersionName?**: `string`
+
+---
+
+### currentDeploymentRevisionId?
+
+> `optional` **currentDeploymentRevisionId?**: `string`
+
+The revision an agent last reported as applied, which differs from deploymentRevisionId while a
+newer revision is being rolled out or has failed.
+
+---
+
+### currentStatus?
+
+> `optional` **currentStatus?**: [`DeploymentRevisionStatus`](DeploymentRevisionStatus.md)
 
 ---
 

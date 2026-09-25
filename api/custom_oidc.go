@@ -58,16 +58,12 @@ type CustomOIDCConfigurationRequest struct {
 }
 
 func (r *CustomOIDCConfigurationRequest) Normalize() {
-	r.Name = strings.TrimSpace(r.Name)
 	r.Slug = validation.NormalizeSlug(r.Slug)
-	r.Issuer = strings.TrimSpace(r.Issuer)
-	r.ClientID = strings.TrimSpace(r.ClientID)
-
 	r.Scopes = oidc.NormalizeScopes(r.Scopes)
 
 	domains := make([]string, 0, len(r.AllowedEmailDomains))
 	for _, domain := range r.AllowedEmailDomains {
-		domain = validation.NormalizeHostname(strings.TrimPrefix(strings.TrimSpace(domain), "@"))
+		domain = validation.NormalizeHostname(strings.TrimPrefix(domain, "@"))
 		if domain != "" && !slices.Contains(domains, domain) {
 			domains = append(domains, domain)
 		}
@@ -98,7 +94,7 @@ func (r *CustomOIDCConfigurationRequest) Validate() error {
 	if r.ClientID == "" {
 		return validation.NewValidationFailedError("clientId is required")
 	}
-	if r.ClientSecret != nil && strings.TrimSpace(*r.ClientSecret) == "" {
+	if r.ClientSecret != nil && *r.ClientSecret == "" {
 		return validation.NewValidationFailedError(
 			"clientSecret must not be empty. Omit it to keep the stored secret")
 	}

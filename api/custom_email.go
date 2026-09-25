@@ -2,7 +2,6 @@ package api
 
 import (
 	"net/mail"
-	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/internal/validation"
@@ -38,9 +37,7 @@ type CustomEmailSettings struct {
 // Normalize reduces the SMTP host to the bare hostname it is validated and stored as, so that a
 // value pasted as a URL is accepted as well.
 func (r *CustomEmailSettings) Normalize() {
-	r.FromAddress = strings.TrimSpace(r.FromAddress)
 	r.SMTPHost = validation.NormalizeHostname(r.SMTPHost)
-	r.SMTPUsername = strings.TrimSpace(r.SMTPUsername)
 }
 
 func (r *CustomEmailSettings) Validate() error {

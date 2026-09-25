@@ -3,6 +3,7 @@ package types
 import (
 	"time"
 
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/google/uuid"
 )
 
@@ -28,12 +29,13 @@ type Artifact struct {
 	OrganizationID   uuid.UUID         `db:"organization_id" json:"-"`
 	Name             string            `db:"name" json:"name"`
 	ImageID          *uuid.UUID        `db:"image_id" json:"-"`
+	Public           bool              `db:"public" json:"public"`
 	UpstreamURL      *string           `db:"upstream_url" json:"upstreamUrl,omitempty"`
 	LastSyncedAt     *time.Time        `db:"last_synced_at" json:"lastSyncedAt,omitempty"`
 	LastSyncError    *string           `db:"last_sync_error" json:"lastSyncError,omitempty"`
 	UpstreamAuthType *UpstreamAuthType `db:"upstream_auth_type" json:"upstreamAuthType,omitempty"`
-	UpstreamUsername *string           `db:"upstream_username" json:"-"`
-	UpstreamPassword *string           `db:"upstream_password" json:"-"`
+	UpstreamUsername *dbcrypto.String  `db:"upstream_username" json:"-"`
+	UpstreamPassword *dbcrypto.String  `db:"upstream_password" json:"-"`
 }
 
 type DownloadMetrics struct {

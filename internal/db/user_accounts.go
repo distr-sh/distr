@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -14,7 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-const (
+var (
 	userAccountOutputExpr = `
 		u.id,
 		u.created_at,
@@ -26,7 +28,7 @@ const (
 		u.name,
 		u.image_id,
 		u.last_used_organization_id,
-		u.mfa_secret,
+		` + userAccountMFASecret.Value("u") + `,
 		u.mfa_enabled,
 		u.mfa_enabled_at,
 		u.is_super_admin`
@@ -186,6 +188,26 @@ func DeleteUserAccountWithID(ctx context.Context, id uuid.UUID) error {
 	}
 
 	return nil
+}
+
+// DeleteUserAccountsOlderThan exempts super admins, which belong to no organization by design and
+// would otherwise all be deleted.
+func DeleteUserAccountsOlderThan(ctx context.Context, minAge time.Duration) (int64, error) {
+	db := internalctx.GetDb(ctx)
+	cmd, err := db.Exec(
+		ctx,
+		`DELETE FROM UserAccount AS u
+		WHERE NOT u.is_super_admin
+			AND now() - coalesce(u.last_logged_in_at, u.created_at) > @minAge
+			AND NOT EXISTS (
+				SELECT 1 FROM Organization_UserAccount j WHERE j.user_account_id = u.id
+			)`,
+		pgx.NamedArgs{"minAge": minAge},
+	)
+	if err != nil {
+		return 0, fmt.Errorf("could not delete user accounts: %w", err)
+	}
+	return cmd.RowsAffected(), nil
 }
 
 func DeleteUserAccountFromOrganization(ctx context.Context, userID, orgID uuid.UUID) error {
@@ -473,6 +495,27 @@ func GetUserAccountWithRole(
 	}
 }
 
+func GetUserRoleInOrganization(ctx context.Context, userID, orgID uuid.UUID) (types.UserRole, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT user_role
+		FROM Organization_UserAccount
+		WHERE user_account_id = @userId AND organization_id = @orgId`,
+		pgx.NamedArgs{"userId": userID, "orgId": orgID},
+	)
+	if err != nil {
+		return "", fmt.Errorf("could not query user role: %w", err)
+	}
+	if role, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[types.UserRole]); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			err = apierrors.ErrNotFound
+		}
+		return "", fmt.Errorf("could not get user role: %w", err)
+	} else {
+		return role, nil
+	}
+}
+
 func GetUserAccountAndOrg(ctx context.Context, userID, orgID uuid.UUID) (
 	*types.UserAccountWithUserRole,
 	*types.OrganizationWithBranding,
@@ -595,11 +638,15 @@ func ExistsUserAccountWithEmail(ctx context.Context, email string) (bool, error)
 	return exists, nil
 }
 
-func UpdateUserAccountMFASecret(ctx context.Context, userID uuid.UUID, secret string) error {
+func UpdateUserAccountMFASecret(ctx context.Context, userID uuid.UUID, secret dbcrypto.String) error {
+	secretEnc, err := userAccountMFASecret.Encrypt(secret, userID)
+	if err != nil {
+		return fmt.Errorf("could not encrypt MFA secret: %w", err)
+	}
 	db := internalctx.GetDb(ctx)
 	cmd, err := db.Exec(ctx,
-		`UPDATE UserAccount SET mfa_secret = @secret WHERE id = @id`,
-		pgx.NamedArgs{"secret": secret, "id": userID},
+		`UPDATE UserAccount SET mfa_secret = NULL, mfa_secret_enc = @secretEnc WHERE id = @id`,
+		pgx.NamedArgs{"secretEnc": secretEnc, "id": userID},
 	)
 	if err != nil {
 		return fmt.Errorf("could not update MFA secret: %w", err)
@@ -626,7 +673,9 @@ func EnableUserAccountMFA(ctx context.Context, userID uuid.UUID) error {
 func DisableUserAccountMFA(ctx context.Context, userID uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	cmd, err := db.Exec(ctx,
-		`UPDATE UserAccount SET mfa_enabled = false, mfa_secret = NULL, mfa_enabled_at = NULL WHERE id = @id`,
+		`UPDATE UserAccount
+			SET mfa_enabled = false, mfa_secret = NULL, mfa_secret_enc = NULL, mfa_enabled_at = NULL
+			WHERE id = @id`,
 		pgx.NamedArgs{"id": userID},
 	)
 	if err != nil {

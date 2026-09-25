@@ -17,6 +17,7 @@ import (
 	"github.com/distr-sh/distr/internal/agentcheck"
 	"github.com/distr-sh/distr/internal/agentclient"
 	"github.com/distr-sh/distr/internal/agentenv"
+	"github.com/distr-sh/distr/internal/agentlogging"
 	"github.com/distr-sh/distr/internal/buildconfig"
 	"github.com/distr-sh/distr/internal/deploymenttargetlogs"
 	"github.com/distr-sh/distr/internal/types"
@@ -49,10 +50,13 @@ var (
 	composeService composeapi.Compose
 	health         = agentcheck.NewServer(time.Hour)
 	logWatcher     = NewLogsWatcher(30 * time.Second)
+	logCollector   = &deploymenttargetlogs.BufferedCollector{}
 )
 
 func init() {
-	platformLoggingCore.Collector = &deploymenttargetlogs.BufferedCollector{Delegate: client}
+	logCollector.Delegate = client
+	platformLoggingCore.Collector = logCollector
+	agentlogging.Redirect(logger)
 	if agentenv.AgentVersionID == "" {
 		logger.Warn("AgentVersionID is not set. self updates will be disabled")
 	}
@@ -63,6 +67,12 @@ func init() {
 func main() {
 	defer func() {
 		if err := logger.Sync(); err != nil && !errors.Is(err, syscall.EINVAL) {
+			fmt.Println(err)
+		}
+	}()
+
+	defer func() {
+		if err := logCollector.Stop(); err != nil {
 			fmt.Println(err)
 		}
 	}()
@@ -97,6 +107,7 @@ func mainLoop(ctx context.Context) {
 	tick := time.Tick(agentenv.Interval)
 	logsGoroutine := util.NewToggleableGoroutine(logWatcher.Watch)
 	deploymentMetricsGoroutine := util.NewToggleableGoroutine(watchDeploymentMetrics)
+	imageDiskUsageGoroutine := util.NewToggleableGoroutine(watchImageDiskUsage)
 
 loop:
 	for ctx.Err() == nil {
@@ -124,6 +135,7 @@ loop:
 				stopMetrics(ctx)
 			}
 			deploymentMetricsGoroutine.GoOrCancel(ctx, resource.MetricsEnabled)
+			imageDiskUsageGoroutine.GoOrCancel(ctx, resource.MetricsEnabled)
 
 			deployments, err := GetExistingDeployments()
 			if err != nil {
@@ -186,6 +198,11 @@ loop:
 							}
 						}()
 					} else {
+						if *deployment.DockerType == types.DockerTypeCompose {
+							if err1 := EnsureComposeProjectDir(deployment); err1 != nil {
+								logger.Warn("could not write compose project directory", zap.Error(err1))
+							}
+						}
 						if statusType1, statusMessage, err1 := CheckStatus(ctx, *agentDeployment); err1 != nil {
 							err = errors.Join(err, err1)
 						} else {
@@ -213,6 +230,15 @@ func sendProgressInterval(ctx context.Context, revisionID uuid.UUID) func(string
 	var status atomic.Value
 	status.Store("initializing")
 
+	sendProgress := func() {
+		err := client.Status(ctx, revisionID, types.DeploymentStatusTypeProgressing, status.Load().(string))
+		if err != nil {
+			logger.Warn("error updating status", zap.Error(err))
+		}
+	}
+
+	sendProgress()
+
 	go func() {
 		tick := time.Tick(agentenv.Interval)
 		for {
@@ -222,15 +248,7 @@ func sendProgressInterval(ctx context.Context, revisionID uuid.UUID) func(string
 				return
 			case <-tick:
 				logger.Info("sending progress update")
-				err := client.Status(
-					ctx,
-					revisionID,
-					types.DeploymentStatusTypeProgressing,
-					status.Load().(string),
-				)
-				if err != nil {
-					logger.Warn("error updating status", zap.Error(err))
-				}
+				sendProgress()
 			}
 		}
 	}()
@@ -292,6 +310,10 @@ func cleanupOldDeployments(ctx context.Context, resource api.AgentResource, depl
 
 			if err := DeleteDeployment(deployment); err != nil {
 				logger.Warn("could not delete deployment", zap.Error(err))
+			}
+
+			if err := DeleteComposeProjectDir(deployment.ID); err != nil {
+				logger.Warn("could not delete compose project directory", zap.Error(err))
 			}
 
 			logWatcher.CleanupLogsTimestamps(deployment)

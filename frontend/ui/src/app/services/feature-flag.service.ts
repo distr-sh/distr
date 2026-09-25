@@ -25,11 +25,17 @@ export class FeatureFlagService {
   public readonly isCustomDomainsEnabled$ = this.hasFeature('custom_domains');
   public readonly isCustomDomainsEnabled = toSignal(this.isCustomDomainsEnabled$, {initialValue: false});
 
+  public readonly isVulnerabilitiesEnabled$ = this.hasFeature('vulnerabilities');
+  public readonly isVulnerabilitiesEnabled = toSignal(this.isVulnerabilitiesEnabled$, {initialValue: false});
+
   public readonly isCustomEmailsEnabled$ = this.hasFeature('custom_emails');
   public readonly isCustomEmailsEnabled = toSignal(this.isCustomEmailsEnabled$, {initialValue: false});
 
   public readonly isCustomOidcProvidersEnabled$ = this.hasFeature('custom_oidc_providers');
   public readonly isCustomOidcProvidersEnabled = toSignal(this.isCustomOidcProvidersEnabled$, {initialValue: false});
+
+  public readonly isAutoUpdatesEnabled$ = this.hasFeature('auto_updates');
+  public readonly isAutoUpdatesEnabled = toSignal(this.isAutoUpdatesEnabled$, {initialValue: false});
 
   public readonly isNotificationsEnabled$ = this.forbidSubscriptionType(...NON_PRO_SUBSCRIPTION_TYPES);
 

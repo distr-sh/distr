@@ -22,6 +22,12 @@ import (
 	"go.uber.org/zap"
 )
 
+// cache it indefinitely without ever revalidating.
+const (
+	cacheControlPrivateFile = "max-age=31536000, private, immutable"
+	cacheControlPublicFile  = "max-age=31536000, public, immutable"
+)
+
 func FileRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Files"))
 	r.With(middleware.RequireOrgAndRole).Group(func(r chiopenapi.Router) {
@@ -80,7 +86,7 @@ func getPublicFileHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		// SVGs are served with a sandboxing CSP so embedded scripts cannot execute in the app's origin.
 		writeSafeImageHeaders(w, file.ContentType)
-		w.Header().Set("Cache-Control", "max-age=604800, public")
+		w.Header().Set("Cache-Control", cacheControlPublicFile)
 		if _, err := w.Write(file.Data); err != nil {
 			log.Warn("failed to write file to response", zap.Error(err))
 			http.Error(w, "failed to write file to response", http.StatusInternalServerError)
@@ -119,7 +125,7 @@ func getFileHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", file.ContentType)
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", file.FileName))
-	w.Header().Set("Cache-Control", "max-age=604800, private")
+	w.Header().Set("Cache-Control", cacheControlPrivateFile)
 
 	// Write file data to response
 	if _, err := w.Write(file.Data); err != nil {

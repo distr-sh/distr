@@ -16,17 +16,29 @@ package registry
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+
+	"github.com/distr-sh/distr/internal/apierrors"
+	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/registry/authz"
+	registryerror "github.com/distr-sh/distr/internal/registry/error"
 )
 
 type regError struct {
 	Status  int
 	Code    string
 	Message string
+	Header  http.Header
 	Error   error
 }
 
 func (r *regError) Write(resp http.ResponseWriter) error {
+	for key, values := range r.Header {
+		for _, value := range values {
+			resp.Header().Add(key, value)
+		}
+	}
 	resp.WriteHeader(r.Status)
 
 	type err struct {
@@ -119,6 +131,63 @@ func regErrDenied(message string) *regError {
 		Code:    "DENIED",
 		Message: message,
 	}
+}
+
+// regErrRateLimited answers an anonymous request that has spent its client IP's pull budget. It is a
+// 401 with the challenge rather than the 429 the distribution spec would suggest, because an OCI
+// client attaches its credentials only after a 401 and hands every other status straight back to the
+// caller (oras-go, which Helm uses, does so in auth.Client.Do). A 429 would therefore lock a client
+// that holds credentials out of an artifact it is allowed to pull, since authenticated requests are
+// not rate limited. The limiter has already written Retry-After and the X-RateLimit-* headers.
+var regErrRateLimited = &regError{
+	Status:  http.StatusUnauthorized,
+	Code:    "UNAUTHORIZED",
+	Message: "anonymous pull rate limit exceeded, authenticate to raise it",
+	Header:  auth.ArtifactsAuthenticateHeader,
+}
+
+var regErrUnauthorized = &regError{
+	Status:  http.StatusUnauthorized,
+	Code:    "UNAUTHORIZED",
+	Message: "authentication required",
+	Header:  auth.ArtifactsAuthenticateHeader,
+}
+
+// regErrCredentialsRequired answers a request the registry refuses before it knows which artifact is
+// meant, the API version check being the one an OCI client makes first. The Docker CLI takes that
+// answer for every repository, so the message names the setup that pulls a public artifact anyway.
+// The challenge header is already on the response, since the authentication middleware writes it.
+var regErrCredentialsRequired = &regError{
+	Status: http.StatusUnauthorized,
+	Code:   "UNAUTHORIZED",
+	Message: "authentication required. A public artifact needs no credentials, but the Docker CLI pulls one " +
+		"only with the containerd image store, not with the legacy overlay2 storage driver: " +
+		"https://docs.docker.com/engine/storage/containerd/",
+}
+
+// regErrAuthz maps an authorization error of a route that names an artifact.
+func regErrAuthz(err error) *regError {
+	switch {
+	case errors.Is(err, authz.ErrAuthenticationRequired):
+		return regErrUnauthorized
+	case errors.Is(err, authz.ErrRateLimited):
+		return regErrRateLimited
+	case errors.Is(err, authz.ErrAccessDenied):
+		return regErrDenied(err.Error())
+	case errors.Is(err, registryerror.ErrInvalidArtifactName):
+		return regErrNameInvalid
+	default:
+		return regErrInternal(err)
+	}
+}
+
+// regErrBlobAuthz is regErrAuthz for the blob routes, where a digest the caller may not see is
+// reported as an unknown blob.
+func regErrBlobAuthz(err error) *regError {
+	if errors.Is(err, apierrors.ErrNotFound) {
+		return regErrBlobUnknown
+	}
+	return regErrAuthz(err)
 }
 
 var regErrDeniedQuotaExceeded = &regError{

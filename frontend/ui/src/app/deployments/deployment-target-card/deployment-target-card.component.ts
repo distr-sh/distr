@@ -1,6 +1,6 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {TextFieldModule} from '@angular/cdk/text-field';
-import {DatePipe, NgOptimizedImage} from '@angular/common';
+import {DatePipe, NgClass, NgOptimizedImage} from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -32,7 +32,6 @@ import {
   faClockRotateLeft,
   faComment,
   faEllipsisVertical,
-  faFileLines,
   faGauge,
   faGear,
   faHeartPulse,
@@ -50,10 +49,15 @@ import {EMPTY, filter, firstValueFrom, lastValueFrom, switchMap} from 'rxjs';
 import {SemVer} from 'semver';
 import {GITHUB_URL, WEBSITE_URL} from '../../../constants';
 import {agentChangelog} from '../../../data';
-import {maxBy} from '../../../util/arrays';
-import {dateTimeLocalToISO, isArchived, isoToDateTimeLocal} from '../../../util/dates';
+import {dateTimeLocalToISO, isoToDateTimeLocal} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {DOCKER_ENDPOINT_REGEX, RESOURCE_QUANTITY_REGEX} from '../../../util/validation';
+import {
+  applicationVersionComparator,
+  automaticUpdatesBadgeClass,
+  deploymentIdsAllowingAutomaticUpdates,
+  latestApplicationVersion,
+} from '../../../util/versions';
 import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {UuidComponent} from '../../components/uuid';
@@ -98,6 +102,7 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
     AutotrimDirective,
     RouterLink,
     SpinnerComponent,
+    NgClass,
   ],
 })
 export class DeploymentTargetCardComponent {
@@ -113,6 +118,7 @@ export class DeploymentTargetCardComponent {
   private readonly applicationsService = inject(ApplicationsService);
   private readonly featureFlags = inject(FeatureFlagService);
   protected readonly isDeploymentLogsAfterEnabled = this.featureFlags.isDeploymentLogsAfterEnabled;
+  protected readonly isAutoUpdatesEnabled = this.featureFlags.isAutoUpdatesEnabled;
 
   protected readonly customerManagedWarning = `
     You are about to make changes to a customer-managed deployment.
@@ -140,7 +146,6 @@ export class DeploymentTargetCardComponent {
   protected readonly faBinoculars = faBinoculars;
   protected readonly faClockRotateLeft = faClockRotateLeft;
   protected readonly faEllipsisVertical = faEllipsisVertical;
-  protected readonly faFileLines = faFileLines;
   protected readonly faGauge = faGauge;
   protected readonly faGear = faGear;
   protected readonly faHeartPulse = faHeartPulse;
@@ -152,6 +157,7 @@ export class DeploymentTargetCardComponent {
   protected readonly faTrash = faTrash;
   protected readonly faTriangleExclamation = faTriangleExclamation;
   protected readonly faXmark = faXmark;
+  protected readonly automaticUpdatesBadgeClass = automaticUpdatesBadgeClass(true);
 
   protected readonly githubUrl = GITHUB_URL;
   protected readonly websiteUrl = WEBSITE_URL;
@@ -245,27 +251,110 @@ export class DeploymentTargetCardComponent {
 
   private readonly applications = toSignal(this.applicationsService.list(), {initialValue: []});
 
-  protected readonly deploymentIdsWithUpdate = computed(() => {
+  /** The newest version each deployment is entitled to, which is the one it runs when it is current. */
+  private readonly latestVersionByDeploymentId = computed(() => {
     const deploymentTarget = this.deploymentTarget();
     const applications = this.applications();
     const entitlements = this.entitlements();
 
+    const latestVersions = new Map<string, ApplicationVersion>();
+    for (const deployment of deploymentTarget.deployments) {
+      const application = applications.find((app) => app.id === deployment.application.id);
+      const entitledVersions = deployment.applicationEntitlementId
+        ? entitlements.find((entitlement) => entitlement.id === deployment.applicationEntitlementId)?.versions
+        : undefined;
+      // An entitlement without versions covers all of them.
+      const candidates = entitledVersions?.length ? entitledVersions : (application?.versions ?? []);
+      const maxVersion = latestApplicationVersion(
+        applicationVersionComparator(application?.versioningStrategy, application?.versions ?? []),
+        candidates
+      );
+
+      if (deployment.id && maxVersion) {
+        latestVersions.set(deployment.id, maxVersion);
+      }
+    }
+    return latestVersions;
+  });
+
+  protected readonly deploymentIdsWithUpdate = computed(() => {
+    const latestVersions = this.latestVersionByDeploymentId();
     return new Set(
-      deploymentTarget.deployments
-        .map((deployment) => {
-          const applicationVersions =
-            (deployment.applicationEntitlementId
-              ? entitlements.find((entitlement) => entitlement.id === deployment.applicationEntitlementId)?.application
-                  ?.versions
-              : undefined) ?? applications.find((app) => app.id === deployment.application.id)?.versions;
-
-          const maxVersion = this.findMaxVersion(applicationVersions?.filter((version) => !isArchived(version)) ?? []);
-
-          return maxVersion && deployment.applicationVersionId !== maxVersion.id ? deployment.id : undefined;
+      this.deploymentTarget()
+        .deployments.filter((deployment) => {
+          const latestVersion = deployment.id ? latestVersions.get(deployment.id) : undefined;
+          return latestVersion !== undefined && latestVersion.id !== deployment.applicationVersionId;
         })
-        .filter((id) => id !== undefined)
+        .map((deployment) => deployment.id!)
     );
   });
+
+  protected readonly deploymentIdsAllowingAutomaticUpdates = computed(() =>
+    deploymentIdsAllowingAutomaticUpdates(this.deploymentTarget().deployments, this.applications())
+  );
+
+  protected async toggleAutomaticUpdates(deployment: DeploymentWithLatestRevision): Promise<void> {
+    const enabled = !deployment.automaticApplicationUpdatesEnabled;
+    if (enabled) {
+      // The dialog names the version the deployment moves to, which a list from an earlier point
+      // in the session may no longer have.
+      await this.applicationsService.refresh();
+    }
+    const confirmed = await firstValueFrom(
+      this.overlay.confirm(
+        enabled
+          ? {
+              message: {
+                message: `Enable automatic updates for ${deployment.application.name} on ${this.deploymentTarget().name}?`,
+                alert: {
+                  type: 'warning',
+                  message: this.enableAutomaticUpdatesMessage(deployment),
+                },
+              },
+              confirmLabel: 'Enable automatic updates',
+            }
+          : {
+              message: {
+                message: `Disable automatic updates for ${deployment.application.name} on ${this.deploymentTarget().name}?`,
+                alert: {
+                  type: 'info',
+                  message: 'The deployment stays on its current version until someone updates it.',
+                },
+              },
+              confirmLabel: 'Disable automatic updates',
+            }
+      )
+    );
+    if (!confirmed) {
+      return;
+    }
+    try {
+      await firstValueFrom(
+        this.deploymentTargets.patchDeployment(deployment.id!, {automaticApplicationUpdatesEnabled: enabled})
+      );
+      this.toast.success(enabled ? 'Automatic updates have been enabled' : 'Automatic updates have been disabled');
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    }
+  }
+
+  private enableAutomaticUpdatesMessage(deployment: DeploymentWithLatestRevision): string {
+    const everyFutureVersion = 'to every version released from now on, without anyone confirming it.';
+    const latestVersion = deployment.id ? this.latestVersionByDeploymentId().get(deployment.id) : undefined;
+    if (latestVersion === undefined) {
+      return `The deployment is updated to the latest version right away and ${everyFutureVersion}`;
+    }
+    if (latestVersion.id === deployment.applicationVersionId) {
+      return `The deployment stays on ${latestVersion.name} for now and is updated ${everyFutureVersion}`;
+    }
+    return (
+      `The deployment is updated from ${deployment.applicationVersionName} to ${latestVersion.name} ` +
+      `right away and ${everyFutureVersion}`
+    );
+  }
 
   protected readonly agentUpdatePending = computed(
     () =>
@@ -361,19 +450,6 @@ export class DeploymentTargetCardComponent {
         this.notesFormLoading = false;
       },
     });
-  }
-
-  protected showLogsEnabledMovedAlert() {
-    this.overlay
-      .confirm({
-        message: {
-          message: 'Log collection is now configured per agent. Open the agent settings to enable or disable it.',
-        },
-        confirmLabel: 'Open Settings',
-        cancelLabel: 'Close',
-      })
-      .pipe(filter((result) => result === true))
-      .subscribe(() => this.openEditDrawer());
   }
 
   protected forceRestart(deployment: DeploymentWithLatestRevision) {
@@ -683,18 +759,5 @@ export class DeploymentTargetCardComponent {
         return allowSnapshot && reported.name === 'snapshot';
       }
     });
-  }
-
-  private findMaxVersion(versions: ApplicationVersion[]): ApplicationVersion | undefined {
-    try {
-      return maxBy(
-        versions,
-        (version) => new SemVer(version.name),
-        (a, b) => a.compare(b) > 0
-      );
-    } catch (e) {
-      console.warn('semver compare failed, falling back to creation date', e);
-      return maxBy(versions, (version) => new Date(version.createdAt!));
-    }
   }
 }

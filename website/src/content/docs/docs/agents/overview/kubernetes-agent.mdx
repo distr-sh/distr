@@ -13,13 +13,13 @@ The Kubernetes agent manages Kubernetes deployments, handling the complete lifec
 
 ## Installation and Environment
 
-The agent is installed by applying manifests fetched directly from the Distr Hub:
+The agent is installed by applying manifests fetched directly from Distr:
 
 ```
-kubectl apply -n <namespace> -f "https://<distr-hub>/api/v1/connect?targetId=<targetId>&targetSecret=<targetSecret>"
+kubectl apply -n <namespace> -f "https://<distr-host>/api/v1/connect?targetId=<targetId>&targetSecret=<targetSecret>"
 ```
 
-The namespace must already exist. The `targetId` and `targetSecret` ensure the agent can only fetch deployments for one specific deployment target. The secret is shown once and never stored by the Hub. It can only be verified.
+The namespace must already exist. The `targetId` and `targetSecret` ensure the agent can only fetch deployments for one specific deployment target. The secret is shown once and never stored by Distr. It can only be verified.
 
 The fetched manifests contain the `distr-agent` Deployment:
 
@@ -98,6 +98,8 @@ The agent runs the following loop at the interval defined by `DISTR_INTERVAL` (d
 3. Install or upgrade Helm releases that are in the list. If images need pulling, the agent reports status `PROGRESSING`.
 4. Send the Helm output to `DISTR_STATUS_ENDPOINT`, reporting the deployment's status.
 
+An install or upgrade that has not finished after 10 minutes is reported as an error rather than left in `PROGRESSING`. The deployment's Helm options set that timeout per deployment.
+
 All requests are authenticated with a JWT token obtained from `DISTR_LOGIN_ENDPOINT`.
 
 ## Altering the Helm Release
@@ -106,8 +108,9 @@ The Kubernetes agent uses the Helm API to manage releases, similar to how the [F
 
 <Aside type="danger">
   Manually running `helm upgrade` or `helm rollback` will stop the Distr agent
-  from making any future changes. It is currently not easily possible to resync
-  the revision ID to let the agent pick up the release again.
+  from making any future changes. If you want the Distr agent to force an
+  update, enable the "Ignore Helm revision skew" checkbox when configuring an
+  update.
 </Aside>
 
 ## Authentication with OCI Registries
@@ -120,7 +123,7 @@ You can also provide credentials via an [application entitlement](/docs/platform
 
 ## Agent Self Updates
 
-When the agent version for a deployment target is updated in the Distr Hub, the agent updates itself on the next cycle. It fetches the new manifest from `DISTR_MANIFEST_ENDPOINT` and restarts.
+When the agent version for a deployment target is updated in Distr, the agent updates itself on the next cycle. It fetches the new manifest from `DISTR_MANIFEST_ENDPOINT` and restarts.
 
 ## Migrating an Existing Helm Release
 

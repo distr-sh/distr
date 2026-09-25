@@ -26,19 +26,13 @@ func TestCustomOIDCConfigurationRequestNormalize(t *testing.T) {
 	g := NewWithT(t)
 
 	request := api.CustomOIDCConfigurationRequest{
-		Name:                "  Acme SSO  ",
-		Slug:                "  Acme-SSO  ",
-		Issuer:              "  https://dex.acme.com/dex  ",
-		ClientID:            " client-id ",
+		Slug:                "Acme-SSO",
 		Scopes:              []string{" profile ", "email,groups", "", "email", "openid"},
-		AllowedEmailDomains: []string{" @Acme.com ", "acme.com", "https://sub.acme.com/path", ""},
+		AllowedEmailDomains: []string{"@Acme.com", "acme.com", "https://sub.acme.com/path", ""},
 	}
 	request.Normalize()
 
-	g.Expect(request.Name).To(Equal("Acme SSO"))
 	g.Expect(request.Slug).To(Equal("acme-sso"))
-	g.Expect(request.Issuer).To(Equal("https://dex.acme.com/dex"))
-	g.Expect(request.ClientID).To(Equal("client-id"))
 	g.Expect(request.Scopes).To(Equal([]string{"openid", "profile", "email", "groups"}))
 	g.Expect(request.AllowedEmailDomains).To(Equal([]string{"acme.com", "sub.acme.com"}))
 }
@@ -67,7 +61,7 @@ func TestCustomOIDCConfigurationRequestValidate(t *testing.T) {
 		"missing issuer":        func(r *api.CustomOIDCConfigurationRequest) { r.Issuer = "" },
 		"insecure issuer":       func(r *api.CustomOIDCConfigurationRequest) { r.Issuer = "http://acme.example.com" },
 		"missing client id":     func(r *api.CustomOIDCConfigurationRequest) { r.ClientID = "" },
-		"blank client secret":   func(r *api.CustomOIDCConfigurationRequest) { r.ClientSecret = new("  ") },
+		"blank client secret":   func(r *api.CustomOIDCConfigurationRequest) { r.ClientSecret = new("") },
 		"unknown role":          func(r *api.CustomOIDCConfigurationRequest) { r.DefaultUserRole = "root" },
 		"invalid email domain": func(r *api.CustomOIDCConfigurationRequest) {
 			r.AllowedEmailDomains = []string{"not a domain"}

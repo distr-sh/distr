@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/registry/upstream"
@@ -55,11 +55,12 @@ func ArtifactsRouter(r chiopenapi.Router) {
 						api.PatchImageRequest
 					}{})).
 					With(option.Response(http.StatusOK, []api.ArtifactResponse{}))
-				r.Patch("/", patchArtifactUpstreamHandler).
-					With(option.Description("Update artifact upstream URL and/or authentication")).
+				r.Patch("/", patchArtifactHandler).
+					With(option.Description(
+						"Update artifact upstream URL and/or authentication, or its public visibility")).
 					With(option.Request(struct {
 						ArtifactRequest
-						api.PatchArtifactUpstreamRequest
+						api.PatchArtifactRequest
 					}{})).
 					With(option.Response(http.StatusOK, api.ArtifactResponse{}))
 				r.Post("/sync", syncArtifactHandler()).
@@ -93,14 +94,32 @@ func createArtifactHandler() http.HandlerFunc {
 			http.Error(w, "name is required", http.StatusBadRequest)
 			return
 		}
-		if body.UpstreamURL != nil && strings.TrimSpace(*body.UpstreamURL) == "" {
+		if body.UpstreamURL != nil && *body.UpstreamURL == "" {
 			http.Error(w, "upstreamUrl must not be empty", http.StatusBadRequest)
+			return
+		}
+
+		orgID := *authentication.CurrentOrgID()
+		org, err := db.GetOrganizationByID(ctx, orgID)
+		if err != nil {
+			log.Error("failed to get organization", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		if org.Slug == nil || *org.Slug == "" {
+			http.Error(
+				w,
+				"your organization does not have a slug yet. Please set one in the organization settings "+
+					"before creating an artifact.",
+				http.StatusBadRequest,
+			)
 			return
 		}
 
 		artifact := &types.Artifact{
 			Name:           body.Name,
-			OrganizationID: *authentication.CurrentOrgID(),
+			OrganizationID: orgID,
 			UpstreamURL:    body.UpstreamURL,
 		}
 		if body.UpstreamAuth != nil {
@@ -110,8 +129,8 @@ func createArtifactHandler() http.HandlerFunc {
 			}
 
 			artifact.UpstreamAuthType = &body.UpstreamAuth.Type
-			artifact.UpstreamUsername = body.UpstreamAuth.Username
-			artifact.UpstreamPassword = body.UpstreamAuth.Password
+			artifact.UpstreamUsername = dbcrypto.StringPtr(body.UpstreamAuth.Username)
+			artifact.UpstreamPassword = dbcrypto.StringPtr(body.UpstreamAuth.Password)
 		}
 		if err := upstream.ValidateUpstreamCredentials(ctx, artifact); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -266,41 +285,7 @@ func deleteArtifactTagHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := db.RunTx(ctx, func(ctx context.Context) error {
-		// Step 1: Validate version exists and fetch it
-		version, err := db.GetArtifactVersionByName(ctx, artifact.ID, tagName)
-		if err != nil {
-			return err
-		}
-
-		// Step 2: Fetch all versions with the same digest
-		versionsWithSameDigest, err := db.GetArtifactVersionsByDigest(ctx, artifact.ID, string(version.ManifestBlobDigest))
-		if err != nil {
-			return err
-		}
-
-		// Step 3: Enhanced license check
-		if err := db.CheckArtifactVersionDeletionForEntitlements(
-			ctx, artifact.ID, version, versionsWithSameDigest,
-		); err != nil {
-			return err
-		}
-
-		// Step 4: Check if this is the last non-SHA tag of the artifact
-		isLast, err := db.IsLastTagOfArtifact(ctx, artifact.ID, tagName)
-		if err != nil {
-			return err
-		}
-		if isLast {
-			return apierrors.NewConflict(
-				"Cannot delete tag: it is the last tag of the artifact. At least one tag must remain for the artifact.",
-			)
-		}
-
-		// Step 5: Delete the tag
-		return db.DeleteArtifactVersion(ctx, artifact.ID, tagName)
-	})
-	if err != nil {
+	if err := db.DeleteArtifactTag(ctx, artifact.ID, tagName); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.NotFound(w, r)
 			return
@@ -322,19 +307,22 @@ func deleteArtifactTagHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func patchArtifactUpstreamHandler(w http.ResponseWriter, r *http.Request) {
+func patchArtifactHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	artifact := internalctx.GetArtifact(ctx)
 
-	if artifact.UpstreamURL == nil {
-		http.Error(w, "artifact is not a pull-through cache artifact", http.StatusBadRequest)
+	body, err := JsonBody[api.PatchArtifactRequest](w, r)
+	if err != nil {
 		return
 	}
 
-	body, err := JsonBody[api.PatchArtifactUpstreamRequest](w, r)
-	if err != nil {
-		return
+	if body.Public != nil {
+		role := auth.Authentication.Require(ctx).CurrentUserRole()
+		if role == nil || *role != types.UserRoleAdmin {
+			http.Error(w, "must be admin to change the visibility of an artifact", http.StatusForbidden)
+			return
+		}
 	}
 
 	params := db.UpdateArtifactUpstreamParams{}
@@ -352,12 +340,16 @@ func patchArtifactUpstreamHandler(w http.ResponseWriter, r *http.Request) {
 		params.UpdateAuth = true
 		if body.Auth.Value != nil {
 			params.AuthType = &body.Auth.Value.Type
-			params.Username = body.Auth.Value.Username
-			params.Password = body.Auth.Value.Password
+			params.Username = dbcrypto.StringPtr(body.Auth.Value.Username)
+			params.Password = dbcrypto.StringPtr(body.Auth.Value.Password)
 		}
 	}
 
 	if params.UpdateURL || params.UpdateAuth {
+		if artifact.UpstreamURL == nil {
+			http.Error(w, "artifact is not a pull-through cache artifact", http.StatusBadRequest)
+			return
+		}
 		validationArtifact := artifact.Artifact
 		if params.UpdateURL {
 			validationArtifact.UpstreamURL = params.UpstreamURL
@@ -373,8 +365,18 @@ func patchArtifactUpstreamHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := db.UpdateArtifactUpstream(ctx, artifact.ID, params); err != nil {
-		log.Error("failed to update artifact upstream", zap.Error(err))
+	if err := db.RunTx(ctx, func(ctx context.Context) error {
+		if params.UpdateURL || params.UpdateAuth {
+			if err := db.UpdateArtifactUpstream(ctx, artifact.ID, artifact.OrganizationID, params); err != nil {
+				return err
+			}
+		}
+		if body.Public != nil {
+			return db.UpdateArtifactPublic(ctx, artifact.ID, artifact.OrganizationID, *body.Public)
+		}
+		return nil
+	}); err != nil {
+		log.Error("failed to update artifact", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -382,7 +384,7 @@ func patchArtifactUpstreamHandler(w http.ResponseWriter, r *http.Request) {
 
 	result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil)
 	if err != nil {
-		log.Error("failed to fetch artifact after upstream update", zap.Error(err))
+		log.Error("failed to fetch artifact after update", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return

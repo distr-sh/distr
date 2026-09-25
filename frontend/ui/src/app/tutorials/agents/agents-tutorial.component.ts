@@ -5,12 +5,13 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   inject,
-  OnDestroy,
   OnInit,
   signal,
   viewChild,
 } from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -25,7 +26,7 @@ import {
   faPalette,
   faWarning,
 } from '@fortawesome/free-solid-svg-icons';
-import {firstValueFrom, lastValueFrom, Subject, switchMap, takeUntil, tap} from 'rxjs';
+import {firstValueFrom, lastValueFrom, switchMap, tap} from 'rxjs';
 import {GITHUB_URL, WEBSITE_URL} from '../../../constants';
 import {getFormDisplayedError} from '../../../util/errors';
 import {ClipComponent} from '../../components/clip.component';
@@ -67,9 +68,9 @@ const releaseStepTaskRelease = 'release';
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './agents-tutorial.component.html',
 })
-export class AgentsTutorialComponent implements OnInit, AfterViewInit, OnDestroy {
+export class AgentsTutorialComponent implements OnInit, AfterViewInit {
   loading = signal(true);
-  private readonly destroyed$ = new Subject<void>();
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly githubUrl = GITHUB_URL;
   protected readonly websiteUrl = WEBSITE_URL;
   protected readonly faBox = faBox;
@@ -114,7 +115,7 @@ export class AgentsTutorialComponent implements OnInit, AfterViewInit, OnDestroy
   private registerTaskToggle(ctrl: FormControl<boolean | null>, stepId: string, taskId: string) {
     ctrl.valueChanges
       .pipe(
-        takeUntil(this.destroyed$),
+        takeUntilDestroyed(this.destroyRef),
         switchMap((done) =>
           this.tutorialsService.saveDoneIfNotYetDone(this.progress, done ?? false, tutorialId, stepId, taskId)
         ),
@@ -267,11 +268,6 @@ export class AgentsTutorialComponent implements OnInit, AfterViewInit, OnDestroy
 
   protected readonly faArrowRight = faArrowRight;
   protected readonly faCheck = faCheck;
-
-  ngOnDestroy() {
-    this.destroyed$.next();
-    this.destroyed$.complete();
-  }
 
   protected readonly faClipboard = faClipboard;
   protected readonly faClipboardCheck = faClipboardCheck;

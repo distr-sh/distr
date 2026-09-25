@@ -3,6 +3,7 @@ import {inject, Injectable} from '@angular/core';
 import {Observable} from 'rxjs';
 import {AffectedDeployment} from '../types/affected-deployment';
 import {Secret} from '../types/secret';
+import {skipTrim} from './trim.interceptor';
 
 const baseUrl = '/api/v1/secrets';
 
@@ -19,7 +20,13 @@ export class SecretsService {
   }
 
   public create(key: string, value: string, customerOrganizationId?: string): Observable<Secret> {
-    return this.httpClient.post<Secret>(baseUrl, {key, value, customerOrganizationId});
+    return this.httpClient.post<Secret>(
+      baseUrl,
+      {key, value, customerOrganizationId},
+      {
+        context: skipTrim('value'),
+      }
+    );
   }
 
   public update(id: string, value: string, confirm = false): Observable<UpdateSecretResponse> {
@@ -27,6 +34,7 @@ export class SecretsService {
       `${baseUrl}/${id}`,
       {value},
       {
+        context: skipTrim('value'),
         params: confirm ? {confirm: 'true'} : {},
       }
     );

@@ -1,6 +1,6 @@
 {
   "name": "@distr-sh/distr",
-  "version": "3.4.0",
+  "version": "4.1.0",
   "type": "module",
   "license": "Apache-2.0",
   "description": "Distr",
@@ -20,7 +20,7 @@
     "format": "prettier --write --list-different ."
   },
   "private": true,
-  "packageManager": "pnpm@11.24.0",
+  "packageManager": "pnpm@12.6.0",
   "engines": {
     "node": "26.x"
   },
@@ -47,7 +47,6 @@
     "@fortawesome/free-regular-svg-icons": "^7.3.1",
     "@fortawesome/free-solid-svg-icons": "^7.3.1",
     "@lezer/highlight": "^1.2.3",
-    "@pandatix/js-cvss": "^0.4.4",
     "@sentry/angular": "^10.68.0",
     "@sentry/browser": "^10.68.0",
     "dayjs": "^1.11.21",
@@ -64,6 +63,8 @@
     "@angular/build": "^22.0.8",
     "@angular/cli": "^22.0.8",
     "@angular/compiler-cli": "^22.0.8",
+    "@angular/language-server": "^22.0.8",
+    "@angular/language-service": "^22.0.8",
     "@sentry/cli": "^3.6.2",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/semver": "^7.7.1",
@@ -75,6 +76,6 @@
     "prettier-plugin-organize-imports": "^4.3.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.3",
-    "vitest": "^4.1.10"
+    "vitest": "^5.0.0"
   }
 }

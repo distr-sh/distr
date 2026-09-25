@@ -46,7 +46,8 @@ func (r *AuthResetPasswordRequest) Validate() error {
 }
 
 type AuthResetPasswordConfirmRequest struct {
-	Password string `json:"password"`
+	Password string  `json:"password"`
+	MFACode  *string `json:"mfaCode"`
 }
 
 func (r *AuthResetPasswordConfirmRequest) Validate() error {
@@ -60,6 +61,7 @@ type AuthSwitchContextRequest struct {
 type AuthAcceptInviteRequest struct {
 	Name     *string `json:"name"`
 	Password string  `json:"password"`
+	MFACode  *string `json:"mfaCode"`
 }
 
 func (r *AuthAcceptInviteRequest) Validate() error {

@@ -13,6 +13,9 @@ type DeploymentMetrics struct {
 	Resources    []DeploymentResourceMetric `db:"resources"`
 }
 
+// DeploymentResourceMetric is decoded from a Postgres row() composite, which pgx maps to these
+// fields by position rather than by name. The field order must stay in lockstep with the column
+// order of the row() expression in deploymentMetricsOutputExpr.
 type DeploymentResourceMetric struct {
 	Resource         string
 	Container        string
@@ -20,4 +23,5 @@ type DeploymentResourceMetric struct {
 	MemoryBytes      int64
 	CPULimitMillis   *int64
 	MemoryLimitBytes *int64
+	LogBytes         *int64
 }

@@ -55,7 +55,7 @@ func getTemplateData(
 		LicenseKeys: make(map[string]string),
 	}
 	for _, secret := range secrets {
-		data.Secrets[secret.Key] = config.valueInterceptor(secret.Value)
+		data.Secrets[secret.Key] = config.valueInterceptor(string(secret.Value))
 	}
 	for _, lk := range licenseKeys {
 		token, err := licensekey.GenerateToken(licensekey.FromLicenseKey(lk), env.Host())

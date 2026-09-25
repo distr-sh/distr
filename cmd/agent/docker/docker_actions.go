@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/compose-spec/compose-go/v2/dotenv"
 	"github.com/distr-sh/distr/api"
@@ -19,6 +20,8 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
+
+const dockerApplyTimeout = 10 * time.Minute
 
 func DockerEngineApply(
 	ctx context.Context,
@@ -36,12 +39,15 @@ func DockerEngineApply(
 		logger.Warn("failed to save deployment before apply", zap.Error(err))
 	}
 
+	applyCtx, cancel := context.WithTimeout(ctx, dockerApplyTimeout)
+	defer cancel()
+
 	if *deployment.DockerType == types.DockerTypeSwarm {
 		logger.Debug("applying compose file in swarm mode")
-		status, err = ApplyComposeFileSwarm(ctx, deployment, updateStatus)
+		status, err = ApplyComposeFileSwarm(applyCtx, deployment, updateStatus)
 	} else {
 		logger.Debug("applying compose file")
-		err = ApplyComposeFile(ctx, deployment, updateStatus)
+		err = ApplyComposeFile(applyCtx, deployment, updateStatus)
 		if err == nil {
 			status = "compose command executed successfully"
 		}
@@ -63,14 +69,10 @@ func DockerEngineApply(
 func ApplyComposeFile(ctx context.Context, deployment api.AgentDeployment, updateStatus func(string)) error {
 	updateStatus("initializing compose service")
 
-	// Write the compose file and the env file into a dedicated working directory using their canonical
-	// names. This anchors relative paths (most importantly service-level "env_file: - .env" directives)
-	// to a known location so that they resolve during project loading.
-	workDir, cleanup, err := WriteComposeWorkingDir(deployment)
+	workDir, err := WriteComposeProjectDir(deployment)
 	if err != nil {
 		return err
 	}
-	defer cleanup()
 
 	eventProcessor := NewEventProcessor(updateStatus)
 	composeService, err := ComposeServiceForDeployment(deployment, compose.WithEventProcessor(eventProcessor))
@@ -78,15 +80,7 @@ func ApplyComposeFile(ctx context.Context, deployment api.AgentDeployment, updat
 		return fmt.Errorf("failed to initialize compose service: %w", err)
 	}
 
-	loadOpts := composeapi.ProjectLoadOptions{
-		WorkingDir:  workDir.Path,
-		ConfigPaths: []string{workDir.ComposeFile},
-	}
-	if workDir.EnvFile != "" {
-		loadOpts.EnvFiles = []string{workDir.EnvFile}
-	}
-
-	project, err := composeService.LoadProject(ctx, loadOpts)
+	project, err := composeService.LoadProject(ctx, ComposeLoadOptions(workDir))
 	if err != nil {
 		return fmt.Errorf("failed to load compose project: %w", err)
 	}
@@ -130,16 +124,12 @@ func ApplyComposeFileSwarm(
 		return "", err
 	}
 
-	// Write the compose file and the env file into a dedicated working directory using their canonical
-	// names so that relative paths (most importantly service-level "env_file: - .env" directives) resolve
-	// when "docker stack deploy" reads the project from disk.
-	workDir, cleanup, err := WriteComposeWorkingDir(
-		api.AgentDeployment{ComposeFile: cleanedComposeFile, EnvFile: deployment.EnvFile},
+	workDir, err := WriteComposeProjectDir(
+		api.AgentDeployment{ID: deployment.ID, ComposeFile: cleanedComposeFile, EnvFile: deployment.EnvFile},
 	)
 	if err != nil {
 		return "", err
 	}
-	defer cleanup()
 
 	// Construct environment variables
 	envVars := os.Environ()
@@ -191,13 +181,28 @@ func DockerEngineUninstall(ctx context.Context, deployment AgentDeployment) erro
 	return UninstallDockerCompose(ctx, deployment)
 }
 
+// UninstallDockerCompose tears a deployment down. Compose runs the pre_stop hook of a service only where
+// it is given the project, which it cannot reconstruct from the container labels, so the first Down is the
+// one that runs the hooks. It is best effort: a hook that fails aborts that Down with its containers still
+// running. The second Down is the authoritative teardown and additionally removes volumes and networks
+// that carry the project label but are no longer declared in the project of the last applied revision.
 func UninstallDockerCompose(ctx context.Context, deployment AgentDeployment) error {
-	cmd := exec.CommandContext(ctx, "docker", "compose", "--project-name", deployment.ProjectName, "down", "--volumes")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("%w: %v", err, string(out))
+	logger := logger.With(zap.Stringer("deploymentId", deployment.ID))
+
+	if project, err := LoadComposeProject(ctx, deployment); err != nil {
+		logger.Warn("could not load compose project, skipping lifecycle hooks", zap.Error(err))
+	} else if err := composeService.Down(ctx, deployment.ProjectName, composeapi.DownOptions{
+		Project:       project,
+		Volumes:       true,
+		RemoveOrphans: true,
+	}); err != nil {
+		logger.Warn("graceful teardown failed, removing the deployment anyway", zap.Error(err))
 	}
-	return nil
+
+	return composeService.Down(ctx, deployment.ProjectName, composeapi.DownOptions{
+		Volumes:       true,
+		RemoveOrphans: true,
+	})
 }
 
 func UninstallDockerSwarm(ctx context.Context, deployment AgentDeployment) error {

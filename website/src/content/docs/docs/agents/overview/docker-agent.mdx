@@ -25,13 +25,13 @@ The host system must have Docker and Docker Compose installed.
 
 ## Installation and Environment
 
-The agent is installed by running a single command that fetches a Docker Compose file from the Distr Hub and starts it:
+The agent is installed by running a single command that fetches a Docker Compose file from Distr and starts it:
 
 ```
-curl "https://<distr-hub>/api/v1/connect?targetId=<targetId>&targetSecret=<targetSecret>" | docker compose -f - up -d
+curl "https://<distr-host>/api/v1/connect?targetId=<targetId>&targetSecret=<targetSecret>" | docker compose -f - up -d
 ```
 
-The `targetId` and `targetSecret` ensure the agent can only fetch deployments for one specific deployment target. The secret is shown once and never stored by the Hub. It can only be verified.
+The `targetId` and `targetSecret` ensure the agent can only fetch deployments for one specific deployment target. The secret is shown once and never stored by Distr. It can only be verified.
 
 The fetched Compose file runs the agent container:
 
@@ -43,16 +43,16 @@ services:
     restart: unless-stopped
     image: 'ghcr.io/distr-sh/distr/docker-agent'
     environment:
-      # Authentication with Distr Hub, see above
+      # Authentication with Distr, see above
       DISTR_TARGET_ID: '<targetId>'
       DISTR_TARGET_SECRET: '<targetSecret>'
-      # various endpoints of the Distr Hub:
-      DISTR_LOGIN_ENDPOINT: 'https://<distr-hub>/api/v1/agent/login'
-      DISTR_MANIFEST_ENDPOINT: 'https://<distr-hub>/api/v1/agent/manifest'
-      DISTR_RESOURCE_ENDPOINT: 'https://<distr-hub>/api/v1/agent/resources'
-      DISTR_STATUS_ENDPOINT: 'https://<distr-hub>/api/v1/agent/status'
-      DISTR_METRICS_ENDPOINT: 'https://<distr-hub>/api/v1/agent/metrics'
-      DISTR_DEPLOYMENT_METRICS_ENDPOINT: 'https://<distr-hub>/api/v1/agent/deployments'
+      # various endpoints of Distr:
+      DISTR_LOGIN_ENDPOINT: 'https://<distr-host>/api/v1/agent/login'
+      DISTR_MANIFEST_ENDPOINT: 'https://<distr-host>/api/v1/agent/manifest'
+      DISTR_RESOURCE_ENDPOINT: 'https://<distr-host>/api/v1/agent/resources'
+      DISTR_STATUS_ENDPOINT: 'https://<distr-host>/api/v1/agent/status'
+      DISTR_METRICS_ENDPOINT: 'https://<distr-host>/api/v1/agent/metrics'
+      DISTR_DEPLOYMENT_METRICS_ENDPOINT: 'https://<distr-host>/api/v1/agent/deployments'
       # how often the agent fetches deployments
       DISTR_INTERVAL: '5s'
       # agent versioning information, needed for agent self-updates:
@@ -69,16 +69,18 @@ volumes:
   scratch:
 ```
 
-All requests to the Distr Hub are authenticated with a JWT token obtained by calling `DISTR_LOGIN_ENDPOINT` with the `targetId` and `targetSecret` credentials. The Docker socket is mounted so the agent can manage containers on the host. Which socket that is can be configured per deployment target, see [Custom Docker Endpoint](#custom-docker-endpoint).
+All requests to Distr are authenticated with a JWT token obtained by calling `DISTR_LOGIN_ENDPOINT` with the `targetId` and `targetSecret` credentials. The Docker socket is mounted so the agent can manage containers on the host. Which socket that is can be configured per deployment target, see [Custom Docker Endpoint](#custom-docker-endpoint).
 
 ## Core Logic
 
 The agent runs the following loop at the interval defined by `DISTR_INTERVAL` (default 5 seconds):
 
 1. Fetch the deployments from `DISTR_RESOURCE_ENDPOINT`
-2. Delete Docker Compose projects that are no longer in the list (undeployed), with `docker compose down -v`
-3. Start Docker Compose projects that are in the list, with `docker compose up -d`. Environment variables are passed via `--env-file`. If images need pulling, the agent reports status `PROGRESSING`.
+2. Remove Docker Compose projects that are no longer in the list (undeployed), together with their volumes and networks
+3. Start Docker Compose projects that are in the list. If images need pulling, the agent reports status `PROGRESSING`.
 4. Send each Docker Compose output to `DISTR_STATUS_ENDPOINT`, reporting the deployment's status.
+
+An apply that has not finished after 10 minutes is reported as an error rather than left in `PROGRESSING`, and is retried on the next cycle.
 
 Each deployment maps to one Docker Compose project on the host, named `distr-<short-deployment-id>`.
 
@@ -92,7 +94,7 @@ You can also provide credentials via an [application entitlement](/docs/platform
 
 ## Agent Self Updates
 
-When the agent version for a deployment target is updated in the Distr Hub, the agent updates itself on the next cycle. It fetches the new manifest from `DISTR_MANIFEST_ENDPOINT` and restarts. The `DISTR_AGENT_SCRATCH_DIR` environment variable and `scratch` volume mount are required for this to work.
+When the agent version for a deployment target is updated in Distr, the agent updates itself on the next cycle. It fetches the new manifest from `DISTR_MANIFEST_ENDPOINT` and restarts. The `DISTR_AGENT_SCRATCH_DIR` environment variable and `scratch` volume mount are required for this to work.
 
 ## Autoheal
 

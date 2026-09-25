@@ -138,7 +138,7 @@ export class SupportBundleSettingsComponent {
   private async persistConfiguration(): Promise<boolean> {
     this.saving.set(true);
     const envVars: SupportBundleConfigurationEnvVar[] = this.envVarsArray.controls.map((group) => ({
-      name: group.controls.name.value.trim(),
+      name: group.controls.name.value,
       redacted: group.controls.redacted.value,
     }));
 
@@ -207,7 +207,7 @@ export class SupportBundleSettingsComponent {
     }
     const description = this.scriptForm.controls.description.value.trim();
     const request = {
-      name: this.scriptForm.controls.name.value.trim(),
+      name: this.scriptForm.controls.name.value,
       description: description || undefined,
       content: this.scriptForm.controls.content.value,
       enabled: this.scriptForm.controls.enabled.value,
