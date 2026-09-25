@@ -2,8 +2,6 @@
 dist/
 # generated types
 .astro/
-# IndexNow deploy state (scripts/indexnow.mjs)
-.indexnow/
 
 # dependencies
 node_modules/
