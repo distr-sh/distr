@@ -7,7 +7,7 @@ sidebar:
 ---
 
 The easiest way to host your own Distr instance is Docker Compose.
-You need Docker Engine 29 or later and the Docker Compose plugin 5.3 or later.
+You need Docker Engine 29 or later with the [containerd image store](https://docs.docker.com/engine/storage/containerd/) and the Docker Compose plugin 5.3 or later.
 
 All five Compose stacks under [`deploy/docker`](https://github.com/distr-sh/distr/tree/main/deploy/docker) run Distr and [Loki](/docs/self-hosting/configuration/#log-processing-loki) for log processing.
 They differ in the edition they run and in what they bring along:
@@ -51,7 +51,7 @@ Whichever cloud you use, you need the same pieces:
 
 - A VM with at least 2 CPUs and 4 GB RAM (see [System Requirements](/docs/self-hosting/system-requirements/)).
 - Two public hostnames, one for the app and one for the registry, both pointing at the VM. Caddy obtains and renews their certificates via ACME, so TCP `80` and `443` have to be reachable from the internet.
-- A managed PostgreSQL instance the VM can reach over a private network, with TLS enforced. We test against PostgreSQL 18 with 2 CPUs and 2 GB RAM.
+- A managed PostgreSQL 18+ instance the VM can reach over a private network, with TLS enforced. We test with 2 CPUs and 2 GB RAM.
 - Two buckets, one for the registry blobs and one for Loki's log chunks.
 - Disk space for the scratch volume, where the registry buffers layer uploads instead of holding them in memory. Every stack mounts one into Distr, so give the VM room for the layers you expect to be pushed at the same time.
 - A `JWT_SECRET` and a `DATABASE_ENCRYPTION_KEY`, each from `openssl rand -base64 32`, and a `LICENSE_KEY` if you run a paid plan. Back the encryption key up somewhere other than the database, since it is what makes the encrypted columns readable.

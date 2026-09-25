@@ -2,7 +2,7 @@
 title: 'Introducing Distr v4'
 description: 'Distr v4 drops the "Hub" name for the server, encrypts the sensitive columns of its database at rest and replaces the access token format with one that is not stored in plaintext.'
 publishDate: 2026-09-17
-lastUpdated: 2026-09-17
+lastUpdated: 2026-09-25
 slug: 'distr-v4-release'
 authors:
   - name: 'Philip Miglinci'
@@ -87,6 +87,8 @@ Two more things landed in 4.0 next to the three changes above. Config secrets ot
 ## Upgrading to Distr v4
 
 The upgrade touches your configuration in a few places, and the encryption key is the one Distr will not start without.
+
+**Check your PostgreSQL and Docker versions.** Distr v4 requires PostgreSQL 18+. The Docker Compose stacks require Docker Engine 29+ with the [containerd image store](https://docs.docker.com/engine/storage/containerd/).
 
 **Generate an encryption key.** `DATABASE_ENCRYPTION_KEY` has no default, so set it before the upgrade and back it up separately from the database. Rows written before the upgrade stay in plaintext until you move them over, either with a single run of `distr maintenance encrypt-database` in a Distr container or, on a single instance deployment, with `DATABASE_ENCRYPTION_MIGRATE_ON_BOOT=true`. Both are safe to do while Distr is serving traffic and both can be interrupted and resumed. Until it has finished, Distr logs a warning on every start naming the columns that are left, so you cannot forget about it. With more than one replica, wait for the upgrade to roll out completely first, see [Database Encryption](/docs/self-hosting/maintenance/#database-encryption).
 

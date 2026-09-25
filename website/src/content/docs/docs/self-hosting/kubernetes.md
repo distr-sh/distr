@@ -63,7 +63,7 @@ cosign verify \
 For production, disable the bundled dependencies and point the chart at managed services instead.
 This part is the same on every cloud:
 
-- Leave `postgresql.enabled` at `false` and set `externalDatabase.existingSecret` to a secret holding the connection URI. The alternative, `externalDatabase.uri`, puts the URI into the release values in plain text.
+- Leave `postgresql.enabled` at `false` and set `externalDatabase.existingSecret` to a secret holding the connection URI of a PostgreSQL 18+ database. The alternative, `externalDatabase.uri`, puts the URI into the release values in plain text.
 - Use external object storage for both the registry (`REGISTRY_S3_*` in `distr.env`) and Loki (`loki.loki.storage`). Create both buckets up front, set `REGISTRY_S3_CREATE_BUCKET` to `false` and drop the `create-loki-bucket` init container with `loki.singleBinary.initContainers: []`, which only exists to provision a bucket in the in-cluster RustFS.
 - Put `JWT_SECRET`, `DATABASE_ENCRYPTION_KEY`, the license key and the object storage credentials in a `secretKeyRef` or in `distr.envFrom`, not in your `distr.env` values.
 - Enable a scratch volume with `distr.scratch.enabled`, so the registry buffers layer uploads on disk instead of in memory.

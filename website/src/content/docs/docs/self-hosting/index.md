@@ -11,7 +11,7 @@ The free and open source Community Edition is the perfect option to try Distr lo
 
 Distr comes as a statically compiled Go binary packaged as a container image, and has minimal dependencies:
 
-- A PostgreSQL database
+- A PostgreSQL 18+ database
 - Loki for log processing
 - Two S3 compatible object storage buckets for registry blobs and log chunks
 
