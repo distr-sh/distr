@@ -55,10 +55,10 @@ func SendUserInviteMail(
 		targetOrgName = customerOrg.Name
 	}
 
+	// No copy to the inviting user, the link logs in as the invitee.
 	if err := mailer.Send(ctx,
 		mailx.To(userAccount.Email),
 		mailx.From(*from),
-		mailx.Bcc(currentUser.Email),
 		mailx.ReplyTo(currentUser.Email),
 		mailx.Subject(subject),
 		mailx.HtmlBodyTemplate(

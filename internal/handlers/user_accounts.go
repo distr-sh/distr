@@ -15,6 +15,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mailsending"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
@@ -146,9 +147,8 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 		Email: body.Email,
 		Name:  body.Name,
 	}
-	// The invite link delivered via email carries a verified email claim (the invitee proves ownership of the
-	// address by accessing their inbox), while the link returned in the API response does not, so an invitee
-	// reached through that manually shared link still has to verify their email after accepting the invitation.
+	// An invite link lets its holder set the account's password, so the one in the response is only for an account
+	// created here.
 	var emailInviteURL, responseInviteURL string
 
 	if err := db.RunTx(ctx, func(ctx context.Context) error {
@@ -177,8 +177,9 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		userHasExisted := false
+		created := false
 		if existingUA, err := db.GetUserAccountByEmail(ctx, body.Email); errors.Is(err, apierrors.ErrNotFound) {
+			created = true
 			if err := db.CreateUserAccount(ctx, &userAccount); err != nil {
 				err = fmt.Errorf("failed to create user account: %w", err)
 				sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -191,7 +192,6 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return err
 		} else {
-			userHasExisted = true
 			userAccount = *existingUA
 		}
 
@@ -212,17 +212,27 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		if !userHasExisted || userAccount.EmailVerifiedAt == nil {
+		activated := false
+		if !created {
+			if activated, err = db.IsUserAccountActivated(ctx, userAccount.ID); err != nil {
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return err
+			}
+		}
+		if !activated {
 			if emailInviteURL, err = generateUserInviteUrl(
 				ctx, userAccount, *organization, body.CustomerOrganizationID, true); err != nil {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return err
 			}
+		}
+		if created && !env.UserEmailVerificationRequired() {
 			if responseInviteURL, err = generateUserInviteUrl(
 				ctx, userAccount, *organization, body.CustomerOrganizationID, false); err != nil {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return err
 			}
 		}
@@ -432,12 +442,18 @@ func resendUserInviteHandler() http.HandlerFunc {
 			http.NotFound(w, r)
 			return
 		} else if err != nil {
-			err = fmt.Errorf("failed to get org with branding: %w", err)
+			err = fmt.Errorf("failed to get user account: %w", err)
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
-		} else if userAccount.EmailVerified {
-			http.Error(w, "UserAccount is already verified", http.StatusBadRequest)
+		}
+
+		if activated, err := db.IsUserAccountActivated(ctx, userAccount.ID); err != nil {
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		} else if activated {
+			http.Error(w, "this user has already accepted an invitation", http.StatusBadRequest)
 			return
 		}
 
@@ -453,14 +469,7 @@ func resendUserInviteHandler() http.HandlerFunc {
 			ctx, userAccount.AsUserAccount(), *organization, userAccount.CustomerOrganizationID, true)
 		if err != nil {
 			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		responseInviteURL, err := generateUserInviteUrl(
-			ctx, userAccount.AsUserAccount(), *organization, userAccount.CustomerOrganizationID, false)
-		if err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
@@ -476,7 +485,7 @@ func resendUserInviteHandler() http.HandlerFunc {
 			return
 		}
 
-		RespondJSON(w, api.CreateUserAccountResponse{User: *userAccount, InviteURL: responseInviteURL})
+		RespondJSON(w, api.CreateUserAccountResponse{User: *userAccount})
 	}
 }
 
