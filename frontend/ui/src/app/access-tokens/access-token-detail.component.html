@@ -57,6 +57,12 @@
             </li>
           }
         </ol>
+        @if (token()) {
+          <button type="button" (click)="deleteAccessToken()" class="py-2 px-3 distr-btn-danger">
+            <fa-icon [icon]="faTrash" class="h-4 w-4 mr-2" />
+            Delete Token
+          </button>
+        }
       </nav>
 
       @if (token(); as token) {

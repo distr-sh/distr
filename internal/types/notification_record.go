@@ -25,17 +25,23 @@ const (
 )
 
 type NotificationRecord struct {
-	ID                     uuid.UUID                 `db:"id"`
-	CreatedAt              time.Time                 `db:"created_at"`
-	OrganizationID         uuid.UUID                 `db:"organization_id"`
-	CustomerOrganizationID *uuid.UUID                `db:"customer_organization_id"`
-	UserAccountID          *uuid.UUID                `db:"user_account_id"`
-	SourceType             NotificationSourceType    `db:"source_type"`
-	SourceConfigurationID  *uuid.UUID                `db:"source_configuration_id"`
-	SubjectID              *uuid.UUID                `db:"subject_id"`
-	Type                   NotificationRecordType    `db:"type"`
-	Details                NotificationRecordDetails `db:"details"`
-	Message                string                    `db:"message"`
+	ID                     uuid.UUID              `db:"id"`
+	CreatedAt              time.Time              `db:"created_at"`
+	OrganizationID         uuid.UUID              `db:"organization_id"`
+	CustomerOrganizationID *uuid.UUID             `db:"customer_organization_id"`
+	UserAccountID          *uuid.UUID             `db:"user_account_id"`
+	SourceType             NotificationSourceType `db:"source_type"`
+	SourceConfigurationID  *uuid.UUID             `db:"source_configuration_id"`
+	SubjectID              *uuid.UUID             `db:"subject_id"`
+	Type                   NotificationRecordType `db:"type"`
+	// DeploymentRevisionID is the revision a deployment status alert is about. It is a column rather
+	// than part of Details because resolving stale warnings joins on it.
+	DeploymentRevisionID *uuid.UUID `db:"deployment_revision_id"`
+	// ResolvedAt is set on a stale warning once the agent reports again. An unresolved warning
+	// suppresses further warnings for the same deployment and alert configuration.
+	ResolvedAt    *time.Time                `db:"resolved_at"`
+	Details       NotificationRecordDetails `db:"details"`
+	DeliveryError string                    `db:"delivery_error"`
 }
 
 // NotificationRecordDetails is the trigger-specific payload of a record, stored in a single JSONB
@@ -57,10 +63,8 @@ type NotificationRecordDetails struct {
 	DiskDevice *string `json:"diskDevice,omitempty"`
 	DiskPath   *string `json:"diskPath,omitempty"`
 
-	PreviousDeploymentRevisionStatusID *uuid.UUID `json:"previousDeploymentRevisionStatusId,omitempty"`
-	CurrentDeploymentRevisionStatusID  *uuid.UUID `json:"currentDeploymentRevisionStatusId,omitempty"`
-	PreviousDeploymentTargetMetricsID  *uuid.UUID `json:"previousDeploymentTargetMetricsId,omitempty"`
-	CurrentDeploymentTargetMetricsID   *uuid.UUID `json:"currentDeploymentTargetMetricsId,omitempty"`
+	PreviousDeploymentTargetMetricsID *uuid.UUID `json:"previousDeploymentTargetMetricsId,omitempty"`
+	CurrentDeploymentTargetMetricsID  *uuid.UUID `json:"currentDeploymentTargetMetricsId,omitempty"`
 
 	// Deployments are the ones a notification announced an update for, which is more than one
 	// whenever a recipient sees several affected deployments.

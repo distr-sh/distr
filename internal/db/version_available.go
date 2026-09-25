@@ -78,7 +78,7 @@ func GetNewestApplicationVersion(
 	rows, err := db.Query(
 		ctx,
 		`SELECT `+applicationVersionOutputExpr+`
-		FROM ApplicationVersion av
+		FROM ApplicationVersion av`+applicationVersionCreatorJoin+`
 		WHERE av.id = any(@ids) AND av.archived_at IS NULL
 		ORDER BY av.created_at DESC
 		LIMIT 1`,

@@ -76,18 +76,23 @@ func (c *Client) Manifest(ctx context.Context) ([]byte, error) {
 	}
 }
 
-func (c *Client) StatusWithError(ctx context.Context, revisionID uuid.UUID, err error) error {
-	return c.Status(ctx, revisionID, types.DeploymentStatusTypeError, err.Error())
+func (c *Client) StatusWithError(ctx context.Context, deployment api.AgentDeployment, err error) error {
+	return c.Status(ctx, deployment, types.DeploymentStatusTypeError, err.Error())
 }
 
 func (c *Client) Status(
 	ctx context.Context,
-	revisionID uuid.UUID,
+	deployment api.AgentDeployment,
 	statusType types.DeploymentStatusType,
 	message string,
 ) error {
+	c.logger.Info("reporting deployment status",
+		zap.Stringer("deploymentId", deployment.ID),
+		zap.Stringer("revisionId", deployment.RevisionID),
+		zap.String("type", string(statusType)),
+		zap.String("message", message))
 	deploymentStatus := api.AgentDeploymentStatus{
-		RevisionID: revisionID,
+		RevisionID: deployment.RevisionID,
 		Message:    message,
 		Type:       statusType,
 	}

@@ -15,7 +15,7 @@ func NotificationRecordToAPI(record types.NotificationRecord) api.NotificationRe
 		SubjectID:             record.SubjectID,
 		Type:                  record.Type,
 		Details:               notificationRecordDetailsToAPI(record.Details),
-		Message:               record.Message,
+		DeliveryError:         record.DeliveryError,
 	}
 }
 

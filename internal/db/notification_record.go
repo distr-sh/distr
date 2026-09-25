@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
@@ -24,8 +23,10 @@ const notificationRecordOutputExpr = `
 	r.source_configuration_id,
 	r.subject_id,
 	r.type,
+	r.deployment_revision_id,
+	r.resolved_at,
 	r.details,
-	r.message `
+	r.delivery_error `
 
 // ErrNotificationRecordExists is returned when a record for the same recipient and subject has
 // been written already, which is what keeps a recipient from hearing about the same version twice,
@@ -45,8 +46,9 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 				source_configuration_id,
 				subject_id,
 				type,
+				deployment_revision_id,
 				details,
-				message
+				delivery_error
 			)
 			VALUES (
 				@organizationID,
@@ -56,8 +58,9 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 				@sourceConfigurationID,
 				@subjectID,
 				@type,
+				@deploymentRevisionID,
 				@details,
-				@message
+				@deliveryError
 			)
 			RETURNING *
 		)
@@ -70,54 +73,82 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 			"sourceConfigurationID":  record.SourceConfigurationID,
 			"subjectID":              record.SubjectID,
 			"type":                   record.Type,
+			"deploymentRevisionID":   record.DeploymentRevisionID,
 			"details":                record.Details,
-			"message":                record.Message,
+			"deliveryError":          record.DeliveryError,
 		},
 	)
 	if err != nil {
-		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation {
-			return ErrNotificationRecordExists
-		}
 		return fmt.Errorf("failed to save NotificationRecord: %w", err)
 	}
 
-	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.NotificationRecord]); err != nil {
+	// The unique violation surfaces when the row is read, not when the query is sent.
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.NotificationRecord])
+	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation {
+		return ErrNotificationRecordExists
+	} else if err != nil {
 		return fmt.Errorf("failed to collect NotificationRecord: %w", err)
-	} else {
-		*record = result
 	}
+	*record = result
 
 	return nil
 }
 
-func GetLatestNotificationRecord(
-	ctx context.Context,
-	configID, previousID uuid.UUID,
-) (*types.NotificationRecord, error) {
+func HasOpenStaleWarning(ctx context.Context, configID, deploymentID uuid.UUID) (bool, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`SELECT`+notificationRecordOutputExpr+`FROM NotificationRecord r
-		WHERE r.source_configuration_id = @sourceConfigurationID
-			AND r.details ->> 'previousDeploymentRevisionStatusId' = @previousDeploymentStatusID
-		ORDER BY r.created_at DESC LIMIT 1`,
-		pgx.NamedArgs{
-			"sourceConfigurationID":      configID,
-			"previousDeploymentStatusID": previousID.String(),
-		},
+		`SELECT EXISTS (
+			SELECT 1 FROM NotificationRecord r
+			JOIN DeploymentRevision dr ON dr.id = r.deployment_revision_id
+			WHERE r.source_type = 'alert'
+				AND r.source_configuration_id = @alertConfigurationID
+				AND dr.deployment_id = @deploymentID
+				AND r.type = 'warning'
+				AND r.resolved_at IS NULL
+		)`,
+		pgx.NamedArgs{"alertConfigurationID": configID, "deploymentID": deploymentID},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query NotificationRecord exists: %w", err)
+		return false, fmt.Errorf("failed to query open stale warning: %w", err)
 	}
 
-	if record, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.NotificationRecord]); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
-		}
-		return nil, fmt.Errorf("failed to collect NotificationRecord exists: %w", err)
-	} else {
-		return &record, nil
+	exists, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[bool])
+	if err != nil {
+		return false, fmt.Errorf("failed to collect open stale warning: %w", err)
 	}
+	return exists, nil
+}
+
+// ResolveStaleWarnings resolves the open stale warnings of every alert configuration for the deployment and returns
+// the configurations they belonged to. Only one caller can resolve a warning, so it is the one that has to send the
+// recovery notification.
+func ResolveStaleWarnings(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`WITH resolved AS (
+			UPDATE NotificationRecord r SET resolved_at = now()
+			FROM DeploymentRevision dr
+			WHERE dr.id = r.deployment_revision_id
+				AND dr.deployment_id = @deploymentID
+				AND r.source_type = 'alert'
+				AND r.type = 'warning'
+				AND r.resolved_at IS NULL
+			RETURNING r.source_configuration_id
+		)
+		SELECT DISTINCT source_configuration_id FROM resolved WHERE source_configuration_id IS NOT NULL`,
+		pgx.NamedArgs{"deploymentID": deploymentID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve stale warnings: %w", err)
+	}
+
+	configIDs, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect resolved stale warnings: %w", err)
+	}
+	return configIDs, nil
 }
 
 func NotificationRecordExists(ctx context.Context, userAccountID, subjectID uuid.UUID) (bool, error) {

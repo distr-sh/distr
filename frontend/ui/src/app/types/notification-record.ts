@@ -32,5 +32,5 @@ export interface NotificationRecord {
   subjectId?: string;
   type: NotificationRecordType;
   details: NotificationRecordDetails;
-  message: string;
+  deliveryError: string;
 }

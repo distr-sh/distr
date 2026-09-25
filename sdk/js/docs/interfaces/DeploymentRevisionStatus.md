@@ -6,29 +6,17 @@
 
 # Interface: DeploymentRevisionStatus
 
-## Extends
-
-- [`BaseModel`](BaseModel.md)
-
 ## Properties
 
-### createdAt?
+### createdAt
 
-> `optional` **createdAt?**: `string`
-
-#### Inherited from
-
-[`BaseModel`](BaseModel.md).[`createdAt`](BaseModel.md#createdat)
+> **createdAt**: `string`
 
 ---
 
-### id?
+### deploymentRevisionId
 
-> `optional` **id?**: `string`
-
-#### Inherited from
-
-[`BaseModel`](BaseModel.md).[`id`](BaseModel.md#id)
+> **deploymentRevisionId**: `string`
 
 ---
 

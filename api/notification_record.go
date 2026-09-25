@@ -16,7 +16,7 @@ type NotificationRecord struct {
 	SubjectID             *uuid.UUID                   `json:"subjectId,omitempty"`
 	Type                  types.NotificationRecordType `json:"type"`
 	Details               NotificationRecordDetails    `json:"details"`
-	Message               string                       `json:"message"`
+	DeliveryError         string                       `json:"deliveryError"`
 }
 
 type NotificationRecordDetails struct {

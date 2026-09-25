@@ -455,22 +455,21 @@ func agentPostStatusHandler(w http.ResponseWriter, r *http.Request) {
 		deployment = deploymentTarget.Deployments[i]
 	}
 
-	previousStatus, err := db.GetLatestDeploymentRevisionStatus(ctx, deploymentID)
+	previousStatus := deployment.NewestStatus()
+	settledStatus, err := db.GetLatestSettledDeploymentRevisionStatus(ctx, deploymentID)
 	if err != nil {
 		sentry.CaptureException(err)
-		log.Error("failed to get latest deployment revision status", zap.Error(err))
+		log.Error("failed to get latest settled deployment revision status", zap.Error(err))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	status := types.DeploymentRevisionStatus{
-		DeploymentRevisionID: requestBody.RevisionID,
-		Type:                 requestBody.Type,
-		Message:              requestBody.Message,
-	}
-
+	var status *types.DeploymentRevisionStatus
 	if err := db.RunTx(ctx, func(ctx context.Context) error {
-		if err := db.CreateDeploymentRevisionStatus(ctx, &status); err != nil {
+		var err error
+		if status, err = db.UpdateDeploymentRevisionStatus(
+			ctx, requestBody.RevisionID, requestBody.Type, requestBody.Message,
+		); err != nil {
 			return err
 		}
 		if status.Type.IsApplied() {
@@ -481,7 +480,7 @@ func agentPostStatusHandler(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, apierrors.ErrConflict) {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		} else {
-			log.Error("failed to create deployment revision status", zap.Error(err))
+			log.Error("failed to update deployment revision status", zap.Error(err))
 			sentry.CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
@@ -497,7 +496,8 @@ func agentPostStatusHandler(w http.ResponseWriter, r *http.Request) {
 			*deploymentTarget,
 			deployment,
 			previousStatus,
-			status,
+			settledStatus,
+			*status,
 		); err != nil {
 			sentry.CaptureException(err)
 			log.Error("failed to dispatch deployment status notification", zap.Error(err))

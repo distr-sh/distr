@@ -70,8 +70,8 @@
             {{ record.details.summary }}
           </td>
           <td class="px-4 py-3 font-medium text-gray-900 whitespace-pre-wrap dark:text-white">
-            @if (record.message; as m) {
-              <div>{{ m }}</div>
+            @if (record.deliveryError; as deliveryError) {
+              <div>{{ deliveryError }}</div>
             } @else {
               <span class="text-gray-500">-</span>
             }

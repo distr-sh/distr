@@ -62,43 +62,41 @@ SET source_configuration_id = src.alert_configuration_id,
     subject_id = src.deployment_target_id,
     details = jsonb_strip_nulls(jsonb_build_object(
         'summary', CASE
-            WHEN src.status_id IS NOT NULL THEN src.status_message
             WHEN src.metric_type = 'cpu' THEN format('CPU utilization is %s%%', round(src.cpu_usage * 100))
             WHEN src.metric_type = 'memory' THEN format('Memory utilization is %s%%', round(src.memory_usage * 100))
             WHEN src.metric_type = 'disk' AND coalesce(src.bytes_total, 0) > 0
                 THEN format('Disk utilization is %s%%', round(src.bytes_used::NUMERIC / src.bytes_total * 100))
             WHEN src.metric_type = 'disk' THEN 'Disk utilization is N/A'
-            ELSE 'Stale'
+            WHEN src.type = 'warning' THEN 'Stale'
+            ELSE src.deployment_status_message
         END,
         'deploymentTargetName', src.deployment_target_name,
         'customerOrganizationName', src.customer_organization_name,
         'applicationName', src.application_name,
+        'applicationType', src.application_type,
         'applicationVersionName', src.application_version_name,
         'metricType', src.metric_type,
         'diskDevice', src.disk_device,
         'diskPath', src.disk_path,
-        'previousDeploymentRevisionStatusId', src.previous_deployment_revision_status_id,
-        'currentDeploymentRevisionStatusId', src.current_deployment_revision_status_id,
         'previousDeploymentTargetMetricsId', src.previous_deployment_target_metrics_id,
         'currentDeploymentTargetMetricsId', src.current_deployment_target_metrics_id
     ))
 FROM (
     SELECT nr.id,
+        nr.type,
         nr.alert_configuration_id,
         nr.deployment_target_id,
+        nr.deployment_status_message,
         nr.metric_type,
         nr.disk_device,
         nr.disk_path,
-        nr.previous_deployment_revision_status_id,
-        nr.current_deployment_revision_status_id,
         nr.previous_deployment_target_metrics_id,
         nr.current_deployment_target_metrics_id,
         dt.name AS deployment_target_name,
         co.name AS customer_organization_name,
         a.name AS application_name,
+        a.type AS application_type,
         av.name AS application_version_name,
-        s.id AS status_id,
-        s.message AS status_message,
         dtm.cpu_usage,
         dtm.memory_usage,
         dtdm.bytes_used,
@@ -106,11 +104,7 @@ FROM (
     FROM NotificationRecord nr
     LEFT JOIN DeploymentTarget dt ON dt.id = nr.deployment_target_id
     LEFT JOIN CustomerOrganization co ON co.id = dt.customer_organization_id
-    LEFT JOIN DeploymentRevisionStatus s ON s.id = nr.current_deployment_revision_status_id
-    LEFT JOIN DeploymentRevisionStatus s_prev ON s_prev.id = nr.previous_deployment_revision_status_id
-    LEFT JOIN DeploymentRevision dr
-        ON dr.id = s.deployment_revision_id
-            OR (s.id IS NULL AND dr.id = s_prev.deployment_revision_id)
+    LEFT JOIN DeploymentRevision dr ON dr.id = nr.deployment_revision_id
     LEFT JOIN ApplicationVersion av ON av.id = dr.application_version_id
     LEFT JOIN Application a ON a.id = av.application_id
     LEFT JOIN DeploymentTargetMetrics dtm ON dtm.id = nr.current_deployment_target_metrics_id
@@ -121,11 +115,12 @@ FROM (
 ) src
 WHERE src.id = r.id;
 
+DROP INDEX idx_notification_record_open_warning;
+
 ALTER TABLE NotificationRecord
     DROP COLUMN deployment_target_id,
     DROP COLUMN alert_configuration_id,
-    DROP COLUMN previous_deployment_revision_status_id,
-    DROP COLUMN current_deployment_revision_status_id,
+    DROP COLUMN deployment_status_message,
     DROP COLUMN metric_type,
     DROP COLUMN disk_device,
     DROP COLUMN disk_path,
@@ -133,12 +128,17 @@ ALTER TABLE NotificationRecord
     DROP COLUMN current_deployment_target_metrics_id,
     ALTER COLUMN source_type DROP DEFAULT;
 
-CREATE INDEX idx_notification_record_source_previous_status_created
-    ON NotificationRecord (
-        source_configuration_id,
-        (details ->> 'previousDeploymentRevisionStatusId'),
-        created_at DESC
-    );
+-- Deleting a deployment keeps the records about it for the same reason the generic columns carry
+-- no foreign key. A warning left without its revision can no longer be matched to a deployment,
+-- so it neither suppresses nor resolves anything.
+ALTER TABLE NotificationRecord
+    DROP CONSTRAINT notificationrecord_deployment_revision_id_fkey,
+    ADD CONSTRAINT notificationrecord_deployment_revision_id_fkey
+        FOREIGN KEY (deployment_revision_id) REFERENCES DeploymentRevision (id) ON DELETE SET NULL;
+
+CREATE INDEX idx_notification_record_open_warning
+    ON NotificationRecord (deployment_revision_id, source_configuration_id)
+    WHERE type = 'warning' AND resolved_at IS NULL;
 
 -- Deleting a user account nulls the column, which without an index scans the whole table.
 CREATE INDEX idx_notification_record_user_account_id

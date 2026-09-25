@@ -431,10 +431,6 @@ cronJobResources: {}
 # have been marked for deletion and `user-account-cleanup` deletes user accounts that belong to no
 # organization.
 cronJobs:
-  - name: deployment-revision-status-cleanup
-    labels:
-      distr.sh/job: deployment-revision-status-cleanup
-    args: [cleanup, DeploymentRevisionStatus, --timeout, 10m]
   - name: deployment-target-metrics-cleanup
     labels:
       distr.sh/job: deployment-target-metrics-cleanup

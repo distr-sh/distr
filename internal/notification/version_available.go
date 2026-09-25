@@ -111,13 +111,13 @@ func sendApplicationUpdateAvailableWithConfig(
 		}
 
 		log.Info("sending update available notification")
-		var message string
+		var deliveryError string
 		if err := mailsending.ApplicationUpdateAvailableNotification(
 			ctx, recipient, *organization, *application, version.Name, visible,
 		); err != nil {
 			log.Warn("update available notification sending failed", zap.Error(err))
 			aggErr = errors.Join(aggErr, err)
-			message = err.Error()
+			deliveryError = err.Error()
 		}
 
 		record := types.NotificationRecord{
@@ -135,7 +135,7 @@ func sendApplicationUpdateAvailableWithConfig(
 				ApplicationVersionName: &version.Name,
 				Deployments:            recordDeployments(visible),
 			},
-			Message: message,
+			DeliveryError: deliveryError,
 		}
 		if err := saveNotificationRecord(ctx, &record); err != nil {
 			aggErr = errors.Join(aggErr, err)
@@ -211,13 +211,13 @@ func sendArtifactVersionAvailableWithConfig(
 		}
 
 		log.Info("sending new artifact version notification")
-		var message string
+		var deliveryError string
 		if err := mailsending.ArtifactVersionAvailableNotification(
 			ctx, recipient, *organization, *artifact, version.Name,
 		); err != nil {
 			log.Warn("new artifact version notification sending failed", zap.Error(err))
 			aggErr = errors.Join(aggErr, err)
-			message = err.Error()
+			deliveryError = err.Error()
 		}
 
 		record := types.NotificationRecord{
@@ -233,7 +233,7 @@ func sendArtifactVersionAvailableWithConfig(
 				ArtifactName:        &artifact.Name,
 				ArtifactVersionName: &version.Name,
 			},
-			Message: message,
+			DeliveryError: deliveryError,
 		}
 		if err := saveNotificationRecord(ctx, &record); err != nil {
 			aggErr = errors.Join(aggErr, err)

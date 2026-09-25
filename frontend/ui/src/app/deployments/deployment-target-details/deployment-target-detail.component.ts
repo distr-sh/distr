@@ -39,7 +39,6 @@ import {OverlayService} from '../../services/overlay.service';
 import {OrderDirection} from '../../types/timeseries-options';
 import {DeploymentAppNameComponent} from '../deployment-target-card/deployment-app-name.component';
 import {DeploymentLogsTableComponent} from './deployment-logs-table.component';
-import {DeploymentStatusTableComponent} from './deployment-status-table.component';
 import {DeploymentTargetLogsTableComponent} from './deployment-target-logs-table.component';
 
 const ORDER_DIRECTION_KEY = 'logViewer.orderDirection';
@@ -52,7 +51,6 @@ const BUSINESS_LOG_BANNER_DISMISSED_KEY = 'logViewer.businessLogBannerDismissed'
   imports: [
     DeploymentAppNameComponent,
     DeploymentLogsTableComponent,
-    DeploymentStatusTableComponent,
     DeploymentTargetLogsTableComponent,
     FaIconComponent,
     OverlayModule,
@@ -206,6 +204,11 @@ export class DeploymentTargetDetailComponent {
     )
   );
 
+  protected readonly deploymentHasResources = computed(() => {
+    const available = this.availableResources();
+    return (available?.active?.length ?? 0) + (available?.archived?.length ?? 0) > 0;
+  });
+
   protected readonly visibleResources = computed(() => {
     const available = this.availableResources();
     if (!available) return [];
@@ -236,7 +239,6 @@ export class DeploymentTargetDetailComponent {
   });
 
   private readonly deploymentTargetLogsTable = viewChild(DeploymentTargetLogsTableComponent);
-  private readonly deploymentStatusTable = viewChild(DeploymentStatusTableComponent);
   private readonly deploymentLogsTable = viewChild(DeploymentLogsTableComponent);
 
   constructor() {
@@ -302,13 +304,22 @@ export class DeploymentTargetDetailComponent {
     }
   }
 
-  protected selectDeployment(deployment: DeploymentWithLatestRevision | undefined) {
+  protected async selectDeployment(deployment: DeploymentWithLatestRevision | undefined) {
     this.form.patchValue({filter: ''});
     this.deploymentDropdown.set(false);
     this.resourceDropdown.set(false);
+    this.showArchivedResources.set(false);
+    const deploymentId = deployment?.id ?? null;
+    let resources: string[] | null = null;
+    if (deploymentId) {
+      const available = await firstValueFrom(this.deploymentLogsService.getResources(deploymentId)).catch(
+        () => undefined
+      );
+      resources = available?.active?.length ? available.active : null;
+    }
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: {deploymentId: deployment?.id ?? null, resource: null},
+      queryParams: {deploymentId, resource: resources},
       queryParamsHandling: 'merge',
     });
   }
@@ -322,15 +333,6 @@ export class DeploymentTargetDetailComponent {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {resource: updated.length > 0 ? updated : null},
-      queryParamsHandling: 'merge',
-    });
-  }
-
-  protected clearResources() {
-    this.resourceDropdown.set(false);
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: {resource: null},
       queryParamsHandling: 'merge',
     });
   }
@@ -362,7 +364,6 @@ export class DeploymentTargetDetailComponent {
     }
     // Only one of the tables is shown at any given time, so it's fine to call export on all of them
     this.deploymentTargetLogsTable()?.export();
-    this.deploymentStatusTable()?.export();
     this.deploymentLogsTable()?.export();
   }
 }
