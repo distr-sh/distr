@@ -26,10 +26,11 @@ const dockerApplyTimeout = 10 * time.Minute
 func DockerEngineApply(
 	ctx context.Context,
 	deployment api.AgentDeployment,
+	previous *AgentDeployment,
 	updateStatus func(string),
 ) (agentDeployment *AgentDeployment, status string, err error) {
 	logger := logger.With(zap.Stringer("deploymentId", deployment.ID))
-	agentDeployment, err = NewAgentDeployment(deployment)
+	agentDeployment, err = NewAgentDeployment(deployment, previous)
 	if err != nil {
 		return agentDeployment, status, err
 	}
@@ -55,6 +56,7 @@ func DockerEngineApply(
 
 	if err == nil {
 		agentDeployment.State = StateReady
+		agentDeployment.CurrentRevisionID = agentDeployment.RevisionID
 	} else {
 		agentDeployment.State = StateFailed
 	}

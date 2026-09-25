@@ -10,6 +10,7 @@ import (
 	"path"
 	"slices"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -58,6 +59,8 @@ var (
 	k8sRestMapper    = util.Require(k8sConfigFlags.ToRESTMapper())
 	agentConfigDirs  []string
 	logCollector     = &deploymenttargetlogs.BufferedCollector{}
+	// agentNamespace is published by the main loop for the goroutines that have no access to the resource.
+	agentNamespace atomic.Pointer[string]
 )
 
 func init() {
@@ -122,6 +125,8 @@ func main() {
 	metricsGoroutine := util.NewToggleableGoroutine(watchMetrics)
 	deploymentMetricsGoroutine := util.NewToggleableGoroutine(watchDeploymentMetrics)
 
+	go watchStatus(ctx)
+
 	tick := time.Tick(agentenv.Interval)
 
 	for ctx.Err() == nil {
@@ -158,11 +163,8 @@ func main() {
 		logsWatcher.SetNamespace(res.Namespace)
 		logsWatcher.SetLogsAfter(res.DeploymentLogsAfter)
 		logsGoroutine.GoOrCancel(ctx, res.DeploymentLogsEnabled)
+		agentNamespace.Store(&res.Namespace)
 		metricsGoroutine.GoOrCancel(ctx, res.MetricsEnabled)
-		{
-			ns := res.Namespace
-			deploymentMetricsNamespace.Store(&ns)
-		}
 		deploymentMetricsGoroutine.GoOrCancel(ctx, res.MetricsEnabled)
 
 		existingDeployments, err := GetExistingDeployments(ctx, res.Namespace)
@@ -303,7 +305,7 @@ func runInstallOrUpgrade(
 
 	if currentDeployment == nil || currentDeployment.HelmRevision == nil {
 		err := progress.Run(ctx, func() error {
-			if _, err := RunHelmInstall(ctx, namespace, deployment); err != nil {
+			if _, err := RunHelmInstall(ctx, namespace, deployment, currentDeployment); err != nil {
 				return fmt.Errorf("helm install failed: %w", err)
 			}
 			return nil
@@ -315,10 +317,10 @@ func runInstallOrUpgrade(
 			logger.Info("helm install succeeded")
 			pushRunningStatus(ctx, deployment, "helm install succeeded")
 		}
-	} else if currentDeployment.RevisionID != deployment.RevisionID {
+	} else if currentDeployment.RevisionID != deployment.RevisionID || currentDeployment.State == StateProgressing {
 		successMessage := "helm upgrade succeeded"
 		err := progress.Run(ctx, func() error {
-			if updatedDeployment, err := RunHelmUpgrade(ctx, namespace, deployment); err != nil {
+			if updatedDeployment, err := RunHelmUpgrade(ctx, namespace, deployment, *currentDeployment); err != nil {
 				return fmt.Errorf("helm upgrade failed: %w", err)
 			} else if deployment.ForceRestart {
 				if err := ForceRestart(ctx, namespace, *updatedDeployment); err != nil {
@@ -332,49 +334,12 @@ func runInstallOrUpgrade(
 		if err != nil {
 			logger.Error("upgrade error", zap.Error(err))
 			pushErrorStatus(ctx, deployment, fmt.Errorf("upgrade error: %w", err))
-			// When RollbackOnFailure is true, Helm creates a new revision after rollback.
-			// Sync the tracking secret so verifyLatestHelmRelease passes on the next iteration
-			// instead of entering an infinite "revision skew" bail-out loop.
-			if recovered, recoverErr := GetLatestHelmRelease(ctx, namespace, deployment); recoverErr == nil {
-				synced := NewAgentDeployment(deployment)
-				synced.State = StateFailed
-				synced.HelmRevision = util.PtrTo(recovered.Version())
-				if util.PtrEq(currentDeployment.HelmRevision, synced.HelmRevision) {
-					logger.Debug("tracking secret is already synced")
-				} else if saveErr := SaveDeployment(ctx, namespace, synced); saveErr != nil {
-					logger.Warn("could not sync tracking secret after rollback", zap.Error(saveErr))
-				} else {
-					logger.Info("synced tracking secret after rollback", zap.Int("helmRevision", recovered.Version()))
-				}
-			} else {
-				logger.Warn("could not get helm release after rollback", zap.Error(recoverErr))
-			}
 		} else {
 			logger.Info(successMessage)
 			pushRunningStatus(ctx, deployment, successMessage)
 		}
 	} else {
-		logger.Info("no action required. running status check")
-		if resources, err := GetHelmManifest(ctx, namespace, deployment.ReleaseName); err != nil {
-			logger.Warn("could not get helm manifest", zap.Error(err))
-			pushErrorStatus(ctx, deployment, fmt.Errorf("could not get helm manifest: %w", err))
-		} else {
-			var err error
-			for _, resource := range resources {
-				logger.Sugar().Debugf("check status for %v %v", resource.GetKind(), resource.GetName())
-				if err = CheckStatus(ctx, namespace, resource); err != nil {
-					break
-				}
-			}
-
-			if err != nil {
-				logger.Warn("resource status error", zap.Error(err))
-				pushErrorStatus(ctx, deployment, fmt.Errorf("resource status error: %w", err))
-			} else {
-				logger.Info("status check passed")
-				pushHealthyStatus(ctx, deployment, fmt.Sprintf("status check passed. %v resources healthy", len(resources)))
-			}
-		}
+		logger.Debug("no action required")
 	}
 }
 
@@ -407,12 +372,6 @@ func (psr *progressStatusRunner) Run(ctx context.Context, f func() error) error 
 	}(progressCtx)
 
 	return f()
-}
-
-func pushHealthyStatus(ctx context.Context, deployment api.AgentDeployment, status string) {
-	if err := agentClient.Status(ctx, deployment, types.DeploymentStatusTypeHealthy, status); err != nil {
-		logger.Warn("status push failed", zap.Error(err))
-	}
 }
 
 func pushRunningStatus(ctx context.Context, deployment api.AgentDeployment, status string) {
