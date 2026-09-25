@@ -40,6 +40,10 @@ jobs:
             website
             CHANGELOG.md
           sparse-checkout-cone-mode: false
+          # Starlight's lastUpdated reads each page's git history. At depth 1
+          # every docs page is stamped with the deploy commit, which misinforms
+          # readers and makes IndexNow see all of them change.
+          fetch-depth: 0
       - name: Restore LFS cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -82,6 +86,30 @@ jobs:
         with:
           aws-region: eu-central-1
           role-to-assume: arn:aws:iam::639130800065:role/github-actions-distr.sh
+      # The search engine steps continue on error: none of them may keep the
+      # website from being deployed.
+      - name: Download deployed pages
+        id: deployed
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        run: >-
+          aws s3 sync s3://distr.sh/ "$RUNNER_TEMP/deployed"
+          --exclude "*" --include "*.html" --include "sitemap-*.xml"
+          --only-show-errors
+      - name: Detect changed pages
+        id: changed
+        if: github.ref == 'refs/heads/main' && steps.deployed.outcome == 'success'
+        continue-on-error: true
+        run: |
+          node scripts/changed-pages.mjs "$RUNNER_TEMP/deployed" > "$RUNNER_TEMP/changed-pages.txt"
+          echo "count=$(wc -l < "$RUNNER_TEMP/changed-pages.txt")" >> "$GITHUB_OUTPUT"
+      - name: Write IndexNow key file
+        id: indexnow-key
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+        run: printf '%s' "${INDEXNOW_KEY:?}" > "dist/$INDEXNOW_KEY.txt"
       - name: Deploy hashed assets
         if: github.ref == 'refs/heads/main'
         run: >-
@@ -100,3 +128,34 @@ jobs:
           aws cloudfront create-invalidation
           --distribution-id E1PG5UM7ZE1H97
           --invalidation-batch "Paths={Quantity='1' ,Items=['/*']},CallerReference=WEBSITE_$GITHUB_RUN_ID"
+      - name: Submit changed pages to IndexNow
+        if: steps.changed.outputs.count > 0 && steps.indexnow-key.outcome == 'success'
+        continue-on-error: true
+        env:
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+        run: |
+          jq -nR --arg key "$INDEXNOW_KEY" \
+            '{host: "distr.sh", key: $key, keyLocation: "https://distr.sh/\($key).txt", urlList: [inputs]}' \
+            < "$RUNNER_TEMP/changed-pages.txt" |
+            curl --fail-with-body --silent --show-error \
+              -H 'content-type: application/json; charset=utf-8' \
+              --data @- https://api.indexnow.org/indexnow
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        id: google
+        if: steps.changed.outputs.count > 0
+        continue-on-error: true
+        with:
+          workload_identity_provider: ${{ vars.GOOGLE_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GOOGLE_SEARCH_CONSOLE_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/webmasters
+          create_credentials_file: false
+      - name: Resubmit sitemap to Google Search Console
+        if: steps.google.outcome == 'success'
+        continue-on-error: true
+        env:
+          ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
+        run: >-
+          curl --fail-with-body --silent --show-error -X PUT
+          -H "Authorization: Bearer $ACCESS_TOKEN"
+          "https://www.googleapis.com/webmasters/v3/sites/sc-domain%3Adistr.sh/sitemaps/https%3A%2F%2Fdistr.sh%2Fsitemap-index.xml"
