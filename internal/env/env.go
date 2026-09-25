@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"net/netip"
 	"os"
 	"strconv"
 	"strings"
@@ -54,6 +55,8 @@ var (
 	userEmailVerificationRequired         bool
 	serverShutdownDelayDuration           *time.Duration
 	registration                          RegistrationMode
+	blockedEmailDomains                   []string
+	blockedIPs                            []netip.Prefix
 	turnstileSiteKey                      *string
 	turnstileSecret                       *string
 	supportEmail                          *string
@@ -169,6 +172,8 @@ func Initialize() {
 	)
 	serverShutdownDelayDuration = envutil.GetEnvParsedOrNil("SERVER_SHUTDOWN_DELAY_DURATION", envparse.PositiveDuration)
 	registration = envutil.GetEnvParsedOrDefault("REGISTRATION", parseRegistrationMode, RegistrationEnabled)
+	blockedEmailDomains = envutil.GetEnvParsedOrDefault("BLOCKED_EMAIL_DOMAINS", envparse.EmailDomainList, nil)
+	blockedIPs = envutil.GetEnvParsedOrDefault("BLOCKED_IPS", envparse.IPPrefixList, nil)
 	// Turnstile needs the site key in the browser and the secret on the server, so a half-configured widget
 	// can only ever fail: either the form has no widget to solve, or its token cannot be verified.
 	if siteKey, secret := envutil.GetEnv("TURNSTILE_SITE_KEY"), envutil.GetEnv("TURNSTILE_SECRET"); siteKey != "" &&
@@ -534,6 +539,14 @@ func ServerShutdownDelayDuration() *time.Duration {
 
 func Registration() RegistrationMode {
 	return registration
+}
+
+func BlockedEmailDomains() []string {
+	return blockedEmailDomains
+}
+
+func BlockedIPs() []netip.Prefix {
+	return blockedIPs
 }
 
 func TurnstileSiteKey() *string {
