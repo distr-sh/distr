@@ -7,27 +7,22 @@ import (
 )
 
 type NotificationRecord struct {
-	ID                                uuid.UUID  `json:"id"`
-	CreatedAt                         time.Time  `json:"createdAt"`
-	DeploymentTargetID                *uuid.UUID `json:"deploymentTargetId"`
-	AlertConfigurationID              *uuid.UUID `json:"alertConfigurationId,omitempty"`
-	Type                              string     `json:"type"`
-	PreviousDeploymentRevisionID      *uuid.UUID `json:"previousDeploymentRevisionId,omitempty"`
-	CurrentDeploymentRevisionID       *uuid.UUID `json:"currentDeploymentRevisionId,omitempty"`
-	MetricType                        *string    `json:"metricType,omitempty"`
-	DiskDevice                        *string    `json:"diskDevice,omitempty"`
-	DiskPath                          *string    `json:"diskPath,omitempty"`
-	PreviousDeploymentTargetMetricsID *uuid.UUID `json:"previousDeploymentTargetMetricsId,omitempty"`
-	CurrentDeploymentTargetMetricsID  *uuid.UUID `json:"currentDeploymentTargetMetricsId,omitempty"`
-	Message                           string     `json:"message"`
-}
-
-type NotificationRecordWithCurrentStatus struct {
-	NotificationRecord
-	DeploymentTargetName            *string                   `json:"deploymentTargetName,omitempty"`
-	CustomerOrganizationName        *string                   `json:"customerOrganizationName,omitempty"`
-	ApplicationName                 *string                   `json:"applicationName,omitempty"`
-	ApplicationVersionName          *string                   `json:"applicationVersionName,omitempty"`
-	CurrentDeploymentRevisionStatus *DeploymentRevisionStatus `json:"currentDeploymentRevisionStatus,omitempty"`
-	CurrentDeploymentTargetMetrics  *DeploymentTargetMetrics  `json:"currentDeploymentTargetMetrics,omitempty"`
+	ID                                uuid.UUID                `json:"id"`
+	CreatedAt                         time.Time                `json:"createdAt"`
+	DeploymentTargetID                *uuid.UUID               `json:"deploymentTargetId"`
+	DeploymentTargetName              *string                  `json:"deploymentTargetName,omitempty"`
+	CustomerOrganizationName          *string                  `json:"customerOrganizationName,omitempty"`
+	AlertConfigurationID              *uuid.UUID               `json:"alertConfigurationId,omitempty"`
+	Type                              string                   `json:"type"`
+	DeploymentRevisionID              *uuid.UUID               `json:"deploymentRevisionId,omitempty"`
+	ApplicationName                   *string                  `json:"applicationName,omitempty"`
+	ApplicationVersionName            *string                  `json:"applicationVersionName,omitempty"`
+	DeploymentStatusMessage           *string                  `json:"deploymentStatusMessage,omitempty"`
+	MetricType                        *string                  `json:"metricType,omitempty"`
+	DiskDevice                        *string                  `json:"diskDevice,omitempty"`
+	DiskPath                          *string                  `json:"diskPath,omitempty"`
+	PreviousDeploymentTargetMetricsID *uuid.UUID               `json:"previousDeploymentTargetMetricsId,omitempty"`
+	CurrentDeploymentTargetMetricsID  *uuid.UUID               `json:"currentDeploymentTargetMetricsId,omitempty"`
+	CurrentDeploymentTargetMetrics    *DeploymentTargetMetrics `json:"currentDeploymentTargetMetrics,omitempty"`
+	DeliveryError                     string                   `json:"deliveryError"`
 }

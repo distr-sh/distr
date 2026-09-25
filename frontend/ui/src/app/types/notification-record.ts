@@ -1,4 +1,3 @@
-import {DeploymentRevisionStatus} from '@distr-sh/distr-sdk';
 import {DeploymentTargetLatestMetrics} from './deployment-target-metrics';
 
 export type NotificationRecordType = 'alert' | 'warning' | 'resolved';
@@ -16,7 +15,8 @@ export interface NotificationRecord {
   metricType?: NotificationRecordMetricType;
   diskDevice?: string;
   diskPath?: string;
-  message: string;
-  currentDeploymentRevisionStatus?: DeploymentRevisionStatus;
+  deploymentRevisionId?: string;
+  deploymentStatusMessage?: string;
+  deliveryError: string;
   currentDeploymentTargetMetrics?: DeploymentTargetLatestMetrics;
 }

@@ -21,7 +21,7 @@ func NotificationRecordsRouter(r chiopenapi.Router) {
 	r.Use(middleware.ProFeature)
 
 	r.Get("/", getNotificationRecordsHandler()).
-		With(option.Response(http.StatusOK, []api.NotificationRecordWithCurrentStatus{}))
+		With(option.Response(http.StatusOK, []api.NotificationRecord{}))
 }
 
 func getNotificationRecordsHandler() http.HandlerFunc {
@@ -37,6 +37,6 @@ func getNotificationRecordsHandler() http.HandlerFunc {
 			return
 		}
 
-		RespondJSON(w, mapping.List(records, mapping.NotificationRecordWithCurrentStatusToAPI))
+		RespondJSON(w, mapping.List(records, mapping.NotificationRecordWithDetailsToAPI))
 	}
 }

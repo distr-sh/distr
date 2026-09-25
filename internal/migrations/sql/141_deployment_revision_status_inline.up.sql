@@ -37,42 +37,46 @@ WHERE drs.deployment_revision_id = dr.id;
 DROP INDEX idx_notification_record_config_prev_status_created;
 
 ALTER TABLE NotificationRecord
-  ADD COLUMN previous_deployment_revision_id UUID REFERENCES DeploymentRevision (id) ON DELETE CASCADE,
-  ADD COLUMN previous_status_created_at TIMESTAMP,
-  ADD COLUMN current_deployment_revision_id UUID REFERENCES DeploymentRevision (id) ON DELETE CASCADE,
-  ADD COLUMN current_status_created_at TIMESTAMP,
-  ADD COLUMN current_status_type DEPLOYMENT_STATUS_TYPE,
-  ADD COLUMN current_status_message TEXT;
+  RENAME COLUMN message TO delivery_error;
+
+ALTER TABLE NotificationRecord
+  ADD COLUMN deployment_revision_id UUID REFERENCES DeploymentRevision (id) ON DELETE CASCADE,
+  ADD COLUMN deployment_status_message TEXT,
+  ADD COLUMN resolved_at TIMESTAMP;
 
 UPDATE NotificationRecord r SET
-  previous_deployment_revision_id = drs.deployment_revision_id,
-  previous_status_created_at = drs.created_at
-FROM DeploymentRevisionStatus drs
-WHERE drs.id = r.previous_deployment_revision_status_id;
-
-UPDATE NotificationRecord r SET
-  current_deployment_revision_id = drs.deployment_revision_id,
-  current_status_created_at = drs.created_at,
-  current_status_type = drs.type,
-  current_status_message = drs.message
+  deployment_revision_id = drs.deployment_revision_id,
+  deployment_status_message = drs.message
 FROM DeploymentRevisionStatus drs
 WHERE drs.id = r.current_deployment_revision_status_id;
+
+UPDATE NotificationRecord r SET deployment_revision_id = drs.deployment_revision_id
+FROM DeploymentRevisionStatus drs
+WHERE drs.id = r.previous_deployment_revision_status_id
+  AND r.deployment_revision_id IS NULL;
+
+-- A stale warning counts as resolved by the first status the deployment reported after the one it warned about.
+-- Warnings without such a status stay open, so the agent's next report sends the recovery notification.
+UPDATE NotificationRecord r SET resolved_at = (
+  SELECT min(s.created_at)
+  FROM DeploymentRevisionStatus s
+  JOIN DeploymentRevision sdr ON sdr.id = s.deployment_revision_id
+  WHERE sdr.deployment_id = prev_dr.deployment_id
+    AND s.created_at > prev.created_at
+)
+FROM DeploymentRevisionStatus prev
+JOIN DeploymentRevision prev_dr ON prev_dr.id = prev.deployment_revision_id
+WHERE r.type = 'warning'
+  AND prev.id = r.previous_deployment_revision_status_id;
 
 ALTER TABLE NotificationRecord
   DROP COLUMN previous_deployment_revision_status_id,
   DROP COLUMN current_deployment_revision_status_id;
 
-CREATE INDEX idx_notification_record_config_prev_status_created
-  ON NotificationRecord (
-    alert_configuration_id,
-    previous_deployment_revision_id,
-    previous_status_created_at,
-    created_at DESC
-  );
-
-CREATE INDEX fk_NotificationRecord_previous_deployment_revision_id
-  ON NotificationRecord (previous_deployment_revision_id);
-CREATE INDEX fk_NotificationRecord_current_deployment_revision_id
-  ON NotificationRecord (current_deployment_revision_id);
+CREATE INDEX fk_NotificationRecord_deployment_revision_id
+  ON NotificationRecord (deployment_revision_id);
+CREATE INDEX idx_notification_record_open_warning
+  ON NotificationRecord (deployment_revision_id, alert_configuration_id)
+  WHERE type = 'warning' AND resolved_at IS NULL;
 
 DROP TABLE DeploymentRevisionStatus;

@@ -193,7 +193,7 @@ func sendMetricNotification(
 		record.PreviousDeploymentTargetMetricsID = &previousMetrics.ID
 	}
 	if aggErr != nil {
-		record.Message = aggErr.Error()
+		record.DeliveryError = aggErr.Error()
 	}
 
 	if err := db.SaveNotificationRecord(ctx, &record); err != nil {

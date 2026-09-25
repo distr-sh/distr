@@ -2,11 +2,8 @@ package db
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"time"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
@@ -21,18 +18,15 @@ const notificationRecordOutputExpr = `
 	r.deployment_target_id,
 	r.alert_configuration_id,
 	r.type,
-	r.previous_deployment_revision_id,
-	r.previous_status_created_at,
-	r.current_deployment_revision_id,
-	r.current_status_created_at,
-	r.current_status_type,
-	r.current_status_message,
+	r.deployment_revision_id,
+	r.deployment_status_message,
+	r.resolved_at,
 	r.metric_type,
 	r.disk_device,
 	r.disk_path,
 	r.previous_deployment_target_metrics_id,
 	r.current_deployment_target_metrics_id,
-	r.message `
+	r.delivery_error `
 
 func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecord) error {
 	db := internalctx.GetDb(ctx)
@@ -45,18 +39,14 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 				deployment_target_id,
 				alert_configuration_id,
 				type,
-				previous_deployment_revision_id,
-				previous_status_created_at,
-				current_deployment_revision_id,
-				current_status_created_at,
-				current_status_type,
-				current_status_message,
+				deployment_revision_id,
+				deployment_status_message,
 				metric_type,
 				disk_device,
 				disk_path,
 				previous_deployment_target_metrics_id,
 				current_deployment_target_metrics_id,
-				message
+				delivery_error
 			)
 			VALUES (
 				@organizationID,
@@ -64,40 +54,32 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 				@deploymentTargetID,
 				@alertConfigurationID,
 				@type,
-				@previousDeploymentRevisionID,
-				@previousStatusCreatedAt,
-				@currentDeploymentRevisionID,
-				@currentStatusCreatedAt,
-				@currentStatusType,
-				@currentStatusMessage,
+				@deploymentRevisionID,
+				@deploymentStatusMessage,
 				@metricType,
 				@diskDevice,
 				@diskPath,
 				@previousMetricsID,
 				@currentMetricsID,
-				@message
+				@deliveryError
 			)
 			RETURNING *
 		)
 		SELECT`+notificationRecordOutputExpr+`FROM inserted r`,
 		pgx.NamedArgs{
-			"organizationID":               record.OrganizationID,
-			"customerOrganizationID":       record.CustomerOrganizationID,
-			"deploymentTargetID":           record.DeploymentTargetID,
-			"alertConfigurationID":         record.AlertConfigurationID,
-			"type":                         record.Type,
-			"previousDeploymentRevisionID": record.PreviousDeploymentRevisionID,
-			"previousStatusCreatedAt":      record.PreviousStatusCreatedAt,
-			"currentDeploymentRevisionID":  record.CurrentDeploymentRevisionID,
-			"currentStatusCreatedAt":       record.CurrentStatusCreatedAt,
-			"currentStatusType":            record.CurrentStatusType,
-			"currentStatusMessage":         record.CurrentStatusMessage,
-			"metricType":                   record.MetricType,
-			"diskDevice":                   record.DiskDevice,
-			"diskPath":                     record.DiskPath,
-			"previousMetricsID":            record.PreviousDeploymentTargetMetricsID,
-			"currentMetricsID":             record.CurrentDeploymentTargetMetricsID,
-			"message":                      record.Message,
+			"organizationID":          record.OrganizationID,
+			"customerOrganizationID":  record.CustomerOrganizationID,
+			"deploymentTargetID":      record.DeploymentTargetID,
+			"alertConfigurationID":    record.AlertConfigurationID,
+			"type":                    record.Type,
+			"deploymentRevisionID":    record.DeploymentRevisionID,
+			"deploymentStatusMessage": record.DeploymentStatusMessage,
+			"metricType":              record.MetricType,
+			"diskDevice":              record.DiskDevice,
+			"diskPath":                record.DiskPath,
+			"previousMetricsID":       record.PreviousDeploymentTargetMetricsID,
+			"currentMetricsID":        record.CurrentDeploymentTargetMetricsID,
+			"deliveryError":           record.DeliveryError,
 		},
 	)
 	if err != nil {
@@ -113,44 +95,66 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 	return nil
 }
 
-func GetLatestNotificationRecord(
-	ctx context.Context,
-	configID, previousRevisionID uuid.UUID,
-	previousStatusCreatedAt time.Time,
-) (*types.NotificationRecord, error) {
+func HasOpenStaleWarning(ctx context.Context, configID, deploymentID uuid.UUID) (bool, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`SELECT`+notificationRecordOutputExpr+`FROM NotificationRecord r
-		WHERE r.alert_configuration_id = @alertConfigurationID
-			AND r.previous_deployment_revision_id = @previousDeploymentRevisionID
-			AND r.previous_status_created_at = @previousStatusCreatedAt
-		ORDER BY r.created_at DESC LIMIT 1`,
-		pgx.NamedArgs{
-			"alertConfigurationID":         configID,
-			"previousDeploymentRevisionID": previousRevisionID,
-			"previousStatusCreatedAt":      previousStatusCreatedAt,
-		},
+		`SELECT EXISTS (
+			SELECT 1 FROM NotificationRecord r
+			JOIN DeploymentRevision dr ON dr.id = r.deployment_revision_id
+			WHERE r.alert_configuration_id = @alertConfigurationID
+				AND dr.deployment_id = @deploymentID
+				AND r.type = 'warning'
+				AND r.resolved_at IS NULL
+		)`,
+		pgx.NamedArgs{"alertConfigurationID": configID, "deploymentID": deploymentID},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query NotificationRecord exists: %w", err)
+		return false, fmt.Errorf("failed to query open stale warning: %w", err)
 	}
 
-	if record, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.NotificationRecord]); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
-		}
-		return nil, fmt.Errorf("failed to collect NotificationRecord exists: %w", err)
-	} else {
-		return &record, nil
+	exists, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[bool])
+	if err != nil {
+		return false, fmt.Errorf("failed to collect open stale warning: %w", err)
 	}
+	return exists, nil
+}
+
+// ResolveStaleWarnings resolves the open stale warnings of every alert configuration for the deployment and returns
+// the configurations they belonged to. Only one caller can resolve a warning, so it is the one that has to send the
+// recovery notification.
+func ResolveStaleWarnings(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`WITH resolved AS (
+			UPDATE NotificationRecord r SET resolved_at = now()
+			FROM DeploymentRevision dr
+			WHERE dr.id = r.deployment_revision_id
+				AND dr.deployment_id = @deploymentID
+				AND r.type = 'warning'
+				AND r.resolved_at IS NULL
+			RETURNING r.alert_configuration_id
+		)
+		SELECT DISTINCT alert_configuration_id FROM resolved WHERE alert_configuration_id IS NOT NULL`,
+		pgx.NamedArgs{"deploymentID": deploymentID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve stale warnings: %w", err)
+	}
+
+	configIDs, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect resolved stale warnings: %w", err)
+	}
+	return configIDs, nil
 }
 
 func GetNotificationRecords(
 	ctx context.Context,
 	organizationID uuid.UUID,
 	customerOrganizationID *uuid.UUID,
-) ([]types.NotificationRecordWithCurrentStatus, error) {
+) ([]types.NotificationRecordWithDetails, error) {
 	db := internalctx.GetDb(ctx)
 
 	rows, err := db.Query(
@@ -177,7 +181,7 @@ func GetNotificationRecords(
 		LEFT JOIN CustomerOrganization co
 			ON dt.customer_organization_id = co.id
 		LEFT JOIN DeploymentRevision dr
-			ON dr.id = coalesce(r.current_deployment_revision_id, r.previous_deployment_revision_id)
+			ON dr.id = r.deployment_revision_id
 		LEFT JOIN ApplicationVersion av
 			ON dr.application_version_id = av.id
 		LEFT JOIN Application a
@@ -201,7 +205,7 @@ func GetNotificationRecords(
 		return nil, fmt.Errorf("failed to query NotificationRecord: %w", err)
 	}
 
-	records, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.NotificationRecordWithCurrentStatus])
+	records, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.NotificationRecordWithDetails])
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect NotificationRecord: %w", err)
 	}

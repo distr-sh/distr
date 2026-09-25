@@ -27,29 +27,17 @@ ALTER TABLE NotificationRecord
   ADD COLUMN previous_deployment_revision_status_id UUID REFERENCES DeploymentRevisionStatus (id) ON DELETE CASCADE,
   ADD COLUMN current_deployment_revision_status_id UUID REFERENCES DeploymentRevisionStatus (id) ON DELETE CASCADE;
 
--- Only the latest status per revision survived, so a record referring to an older one keeps a NULL
--- status reference.
-UPDATE NotificationRecord r SET previous_deployment_revision_status_id = drs.id
-FROM DeploymentRevisionStatus drs
-WHERE drs.deployment_revision_id = r.previous_deployment_revision_id
-  AND drs.created_at = r.previous_status_created_at;
-
-UPDATE NotificationRecord r SET current_deployment_revision_status_id = drs.id
-FROM DeploymentRevisionStatus drs
-WHERE drs.deployment_revision_id = r.current_deployment_revision_id
-  AND drs.created_at = r.current_status_created_at;
-
-DROP INDEX idx_notification_record_config_prev_status_created;
-DROP INDEX fk_NotificationRecord_previous_deployment_revision_id;
-DROP INDEX fk_NotificationRecord_current_deployment_revision_id;
+-- Records do not store which status they refer to, so the status references stay NULL.
+DROP INDEX fk_NotificationRecord_deployment_revision_id;
+DROP INDEX idx_notification_record_open_warning;
 
 ALTER TABLE NotificationRecord
-  DROP COLUMN previous_deployment_revision_id,
-  DROP COLUMN previous_status_created_at,
-  DROP COLUMN current_deployment_revision_id,
-  DROP COLUMN current_status_created_at,
-  DROP COLUMN current_status_type,
-  DROP COLUMN current_status_message;
+  DROP COLUMN deployment_revision_id,
+  DROP COLUMN deployment_status_message,
+  DROP COLUMN resolved_at;
+
+ALTER TABLE NotificationRecord
+  RENAME COLUMN delivery_error TO message;
 
 CREATE INDEX idx_notification_record_config_prev_status_created
   ON NotificationRecord (
