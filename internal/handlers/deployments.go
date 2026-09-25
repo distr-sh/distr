@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
-	"time"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
@@ -16,7 +15,6 @@ import (
 	"github.com/distr-sh/distr/internal/deploymentvalues"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
-	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
@@ -53,17 +51,6 @@ func DeploymentsRouter(r chiopenapi.Router) {
 			With(option.Response(http.StatusOK, []api.DeploymentRevisionResponse{}))
 		// These are read-only, agent-pushed timeseries that are safe to serve from the read-only db.
 		r.With(middleware.UseReadonlyDB).Group(func(r chiopenapi.Router) {
-			r.Get("/status", getDeploymentStatus).
-				With(option.Description("Get deployment status")).
-				With(option.Request(DeploymentTimeseriesRequest{})).
-				With(option.Response(http.StatusOK, []api.DeploymentRevisionStatus{}))
-			r.Get("/status/export", exportDeploymentStatusHandler()).
-				With(option.Description("Export deployment status")).
-				With(option.Request(struct {
-					DeploymentIDRequest
-					TimeseriesRangeRequest
-				}{})).
-				With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
 			r.Get("/metrics", getDeploymentMetrics).
 				With(option.Description("Get the latest resource metrics reported for a deployment")).
 				With(option.Request(DeploymentIDRequest{})).
@@ -682,35 +669,6 @@ func getDeploymentRevisions(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getDeploymentStatus(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	deployment := internalctx.GetDeployment(ctx)
-	limit, err := parseTimeseriesLimit(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	queryRange, err := parseTimeseriesRange(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	order := types.OrderDirection(r.FormValue("order"))
-	if deploymentStatus, err := db.GetDeploymentRevisionStatus(
-		ctx, deployment.ID, limit, queryRange.Before, queryRange.After, queryRange.Filter, order,
-	); err != nil {
-		if errors.Is(err, apierrors.ErrBadRequest) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		internalctx.GetLogger(ctx).Error("failed to get deploymentstatus", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	} else {
-		RespondJSON(w, mapping.List(deploymentStatus, mapping.DeploymentRevisionStatusToAPI))
-	}
-}
-
 func getDeploymentMetrics(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	deployment := internalctx.GetDeployment(ctx)
@@ -722,39 +680,6 @@ func getDeploymentMetrics(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	} else {
 		RespondJSON(w, mapping.DeploymentMetricsToAPI(*metrics))
-	}
-}
-
-func exportDeploymentStatusHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-
-		deployment := internalctx.GetDeployment(ctx)
-
-		queryRange, err := parseTimeseriesRange(r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		filename := fmt.Sprintf("%s_deployment_status.log", time.Now().Format("2006-01-02"))
-		export := newExportWriter(w, log, filename)
-
-		if err := db.GetDeploymentRevisionStatusForExport(
-			ctx, deployment.ID, int(subscription.MaxLogExportRows),
-			queryRange.Before, queryRange.After, queryRange.Filter,
-			func(record types.DeploymentRevisionStatus) error {
-				return export.writeLine("[%s] [%s] %s\n",
-					record.CreatedAt.Format(time.RFC3339),
-					record.Type,
-					record.Message)
-			},
-		); err != nil {
-			export.fail(ctx, "failed to export status records", err)
-			return
-		}
-		export.finish()
 	}
 }
 

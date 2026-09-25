@@ -11,7 +11,6 @@
 - [`AgentVersion`](AgentVersion.md)
 - [`Application`](Application.md)
 - [`Deployment`](Deployment.md)
-- [`DeploymentRevisionStatus`](DeploymentRevisionStatus.md)
 - [`DeploymentTarget`](DeploymentTarget.md)
 - [`OrganizationBranding`](OrganizationBranding.md)
 - [`UserAccount`](UserAccount.md)

@@ -32,20 +32,6 @@ const (
 			JOIN DeploymentRevision dr ON dr.id = d.latest_deployment_revision_id
 			JOIN ApplicationVersion av ON dr.application_version_id = av.id
 			JOIN Application a ON av.application_id = a.id
-			LEFT JOIN LATERAL (
-				SELECT id, created_at, deployment_revision_id, type, message
-				FROM DeploymentRevisionStatus
-				WHERE deployment_revision_id = dr.id
-				ORDER BY created_at DESC
-				LIMIT 1
-			) drs ON true
-			LEFT JOIN LATERAL (
-				SELECT id, created_at, deployment_revision_id, type, message
-				FROM DeploymentRevisionStatus
-				WHERE deployment_revision_id = d.current_deployment_revision_id
-				ORDER BY created_at DESC
-				LIMIT 1
-			) drs_current ON true
 			LEFT JOIN DeploymentRevision dr_current ON dr_current.id = d.current_deployment_revision_id
 			LEFT JOIN ApplicationVersion av_current ON av_current.id = dr_current.application_version_id
 	`
@@ -72,18 +58,18 @@ var deploymentWithLatestRevisionOutputExpr = deploymentOutputExpr + `,
 	(` + applicationOutputExpr + `) AS application,
 	av.name AS application_version_name,
 	av.link_template AS application_link_template,
-	CASE WHEN drs.id IS NOT NULL THEN (
-		drs.id,
-		drs.created_at,
-		drs.deployment_revision_id,
-		drs.type, drs.message
+	CASE WHEN dr.status_type IS NOT NULL THEN (
+		dr.status_created_at,
+		dr.id,
+		dr.status_type,
+		dr.status_message
 	) END AS latest_status,
 	d.current_deployment_revision_id AS current_deployment_revision_id,
-	CASE WHEN drs_current.id IS NOT NULL THEN (
-		drs_current.id,
-		drs_current.created_at,
-		drs_current.deployment_revision_id,
-		drs_current.type, drs_current.message
+	CASE WHEN dr_current.status_type IS NOT NULL THEN (
+		dr_current.status_created_at,
+		dr_current.id,
+		dr_current.status_type,
+		dr_current.status_message
 	) END AS current_status,
 	dr_current.application_version_id AS current_application_version_id,
 	av_current.name AS current_application_version_name
@@ -559,11 +545,11 @@ func GetDeploymentRevisions(
 				j.partner_organization_id AS created_by_partner_organization_id,
 				(dr.created_by_user_account_id IS NOT NULL AND j.user_account_id IS NULL)
 					AS created_by_deleted,
-				CASE WHEN drs.id IS NOT NULL THEN (
-					drs.id,
-					drs.created_at,
-					drs.deployment_revision_id,
-					drs.type, drs.message
+				CASE WHEN dr.status_type IS NOT NULL THEN (
+					dr.status_created_at,
+					dr.id,
+					dr.status_type,
+					dr.status_message
 				) END AS latest_status
 			FROM DeploymentRevision dr
 				JOIN Deployment d ON dr.deployment_id = d.id
@@ -572,13 +558,6 @@ func GetDeploymentRevisions(
 				LEFT JOIN UserAccount u ON dr.created_by_user_account_id = u.id
 				LEFT JOIN Organization_UserAccount j
 					ON j.user_account_id = u.id AND j.organization_id = dt.organization_id
-				LEFT JOIN LATERAL (
-					SELECT id, created_at, deployment_revision_id, type, message
-					FROM DeploymentRevisionStatus
-					WHERE deployment_revision_id = dr.id
-					ORDER BY created_at DESC
-					LIMIT 1
-				) drs ON true
 			WHERE dr.deployment_id = @deploymentId
 			ORDER BY dr.created_at DESC`,
 		pgx.NamedArgs{"deploymentId": deploymentID},

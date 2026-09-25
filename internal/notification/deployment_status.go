@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mailsending"
@@ -13,11 +13,26 @@ import (
 	"go.uber.org/zap"
 )
 
+type deploymentStatusNotificationKind int
+
+const (
+	deploymentStatusNotificationStale deploymentStatusNotificationKind = iota
+	deploymentStatusNotificationStaleRecovered
+	deploymentStatusNotificationError
+	deploymentStatusNotificationErrorRecovered
+)
+
+// SendDeploymentStatusNotifications judges staleness by previousStatus, the newest status of any type, because
+// progressing reports prove the agent alive. Error transitions are judged by settledStatus (see
+// [db.GetLatestSettledDeploymentRevisionStatus]). Any report resolves the open stale warnings of the deployment, and
+// an alert configuration whose warning it resolved gets a recovery notification unless the report calls for an error
+// notification.
 func SendDeploymentStatusNotifications(
 	ctx context.Context,
 	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
 	previousStatus *types.DeploymentRevisionStatus,
+	settledStatus *types.DeploymentRevisionStatus,
 	currentStatus types.DeploymentRevisionStatus,
 ) error {
 	log := internalctx.GetLogger(ctx).With(
@@ -29,9 +44,22 @@ func SendDeploymentStatusNotifications(
 			zap.Time("previousStatusCreatedAt", previousStatus.CreatedAt),
 		)
 	}
+	if settledStatus != nil {
+		log = log.With(
+			zap.String("settledStatus", string(settledStatus.Type)),
+			zap.Time("settledStatusCreatedAt", settledStatus.CreatedAt),
+		)
+	}
 	ctx = internalctx.WithLogger(ctx, log)
 
-	if !shouldNotify(previousStatus, currentStatus) {
+	resolvedConfigIDs, err := db.ResolveStaleWarnings(ctx, deployment.ID)
+	if err != nil {
+		return err
+	}
+
+	if _, ok := deploymentStatusNotificationFor(
+		previousStatus, settledStatus, currentStatus, len(resolvedConfigIDs) > 0,
+	); !ok {
 		log.Debug("notification not needed")
 		return nil
 	}
@@ -42,8 +70,14 @@ func SendDeploymentStatusNotifications(
 	}
 
 	for _, config := range configs {
+		kind, ok := deploymentStatusNotificationFor(
+			previousStatus, settledStatus, currentStatus, slices.Contains(resolvedConfigIDs, config.ID),
+		)
+		if !ok {
+			continue
+		}
 		if err := sendDeploymentStatusNotificationsWithConfig(
-			ctx, deploymentTarget, deployment, previousStatus, &currentStatus, config,
+			ctx, deploymentTarget, deployment, kind, currentStatus, config,
 		); err != nil {
 			return fmt.Errorf("failed to send deployment status notifications with config: %w", err)
 		}
@@ -91,7 +125,7 @@ func RunDeploymentStatusNotifications(ctx context.Context) error {
 				}
 
 				if err := sendDeploymentStatusNotificationsWithConfig(
-					ctx, *deploymentTarget, deployment, newestStatus, nil, config,
+					ctx, *deploymentTarget, deployment, deploymentStatusNotificationStale, *newestStatus, config,
 				); err != nil {
 					return fmt.Errorf("failed to send deployment status notifications with config: %w", err)
 				}
@@ -104,12 +138,14 @@ func RunDeploymentStatusNotifications(ctx context.Context) error {
 	return nil
 }
 
+// sendDeploymentStatusNotificationsWithConfig sends a notification about status, which is the stale status for a
+// stale warning and the newly reported status otherwise.
 func sendDeploymentStatusNotificationsWithConfig(
 	ctx context.Context,
 	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
-	previousStatus *types.DeploymentRevisionStatus,
-	currentStatus *types.DeploymentRevisionStatus,
+	kind deploymentStatusNotificationKind,
+	status types.DeploymentRevisionStatus,
 	config types.AlertConfiguration,
 ) error {
 	if !config.Enabled || !config.StatusTriggerEnabled {
@@ -118,35 +154,18 @@ func sendDeploymentStatusNotificationsWithConfig(
 
 	log := internalctx.GetLogger(ctx).With(zap.Stringer("configId", config.ID))
 
-	organization, err := db.GetOrganizationByID(ctx, config.OrganizationID)
-	if err != nil {
-		return fmt.Errorf("failed to get organization: %w", err)
-	}
-
-	var existingRecord *types.NotificationRecord
-	if previousStatus != nil {
-		existingRecord, err = db.GetLatestNotificationRecord(ctx, config.ID, previousStatus.ID)
-		if err != nil && !errors.Is(err, apierrors.ErrNotFound) {
-			return fmt.Errorf("failed to get latest notification record: %w", err)
-		}
-	}
-
-	if currentStatus == nil {
-		if existingRecord != nil {
+	if kind == deploymentStatusNotificationStale {
+		if open, err := db.HasOpenStaleWarning(ctx, config.ID, deployment.ID); err != nil {
+			return err
+		} else if open {
 			log.Debug("skip stale notifications because it was already sent")
 			return nil
 		}
-	} else if shouldNotifyError(previousStatus, *currentStatus) ||
-		shouldNotifyErrorRecovered(previousStatus, *currentStatus) {
-		if existingRecord != nil && existingRecord.CurrentDeploymentRevisionStatusID != nil {
-			log.Debug("skip error/recovery notifications because it was already sent")
-			return nil
-		}
-	} else {
-		if existingRecord == nil {
-			log.Debug("skip stale-recovery notifications because no previous stale notification was sent")
-			return nil
-		}
+	}
+
+	organization, err := db.GetOrganizationByID(ctx, config.OrganizationID)
+	if err != nil {
+		return fmt.Errorf("failed to get organization: %w", err)
 	}
 
 	var aggErr error
@@ -154,32 +173,33 @@ func sendDeploymentStatusNotificationsWithConfig(
 		log := log.With(zap.Stringer("userId", user.ID))
 		log.Info("send notification")
 		var err error
-		if currentStatus == nil {
+		switch kind {
+		case deploymentStatusNotificationStale:
 			err = mailsending.DeploymentStatusNotificationStale(
 				ctx,
 				user,
 				*organization,
 				deploymentTarget,
 				deployment,
-				*previousStatus,
+				status,
 			)
-		} else if currentStatus.Type == types.DeploymentStatusTypeError {
+		case deploymentStatusNotificationError:
 			err = mailsending.DeploymentStatusNotificationError(
 				ctx,
 				user,
 				*organization,
 				deploymentTarget,
 				deployment,
-				*currentStatus,
+				status,
 			)
-		} else {
+		default:
 			err = mailsending.DeploymentStatusNotificationRecovered(
 				ctx,
 				user,
 				*organization,
 				deploymentTarget,
 				deployment,
-				*currentStatus,
+				status,
 			)
 		}
 
@@ -190,9 +210,10 @@ func sendDeploymentStatusNotificationsWithConfig(
 	}
 
 	recordType := types.NotificationRecordTypeResolved
-	if currentStatus == nil {
+	switch kind {
+	case deploymentStatusNotificationStale:
 		recordType = types.NotificationRecordTypeWarning
-	} else if currentStatus.Type == types.DeploymentStatusTypeError {
+	case deploymentStatusNotificationError:
 		recordType = types.NotificationRecordTypeAlert
 	}
 
@@ -202,18 +223,15 @@ func sendDeploymentStatusNotificationsWithConfig(
 		DeploymentTargetID:     &deploymentTarget.ID,
 		AlertConfigurationID:   &config.ID,
 		Type:                   recordType,
+		DeploymentRevisionID:   &status.DeploymentRevisionID,
 	}
 
-	if currentStatus != nil {
-		record.CurrentDeploymentRevisionStatusID = &currentStatus.ID
-	}
-
-	if previousStatus != nil {
-		record.PreviousDeploymentRevisionStatusID = &previousStatus.ID
+	if kind != deploymentStatusNotificationStale {
+		record.DeploymentStatusMessage = &status.Message
 	}
 
 	if aggErr != nil {
-		record.Message = aggErr.Error()
+		record.DeliveryError = aggErr.Error()
 	}
 
 	if err := db.SaveNotificationRecord(ctx, &record); err != nil {
@@ -223,35 +241,43 @@ func sendDeploymentStatusNotificationsWithConfig(
 	return nil
 }
 
+// deploymentStatusNotificationFor returns which notification currentStatus calls for. staleWarningResolved tells
+// whether the report resolved an open stale warning of the alert configuration.
+func deploymentStatusNotificationFor(
+	previousStatus *types.DeploymentRevisionStatus,
+	settledStatus *types.DeploymentRevisionStatus,
+	currentStatus types.DeploymentRevisionStatus,
+	staleWarningResolved bool,
+) (deploymentStatusNotificationKind, bool) {
+	switch {
+	case shouldNotifyError(previousStatus, settledStatus, currentStatus):
+		return deploymentStatusNotificationError, true
+	case shouldNotifyErrorRecovered(settledStatus, currentStatus):
+		return deploymentStatusNotificationErrorRecovered, true
+	case staleWarningResolved && currentStatus.Type != types.DeploymentStatusTypeError:
+		return deploymentStatusNotificationStaleRecovered, true
+	default:
+		return 0, false
+	}
+}
+
 func shouldNotifyError(
 	previousStatus *types.DeploymentRevisionStatus,
+	settledStatus *types.DeploymentRevisionStatus,
 	currentStatus types.DeploymentRevisionStatus,
 ) bool {
 	return currentStatus.Type == types.DeploymentStatusTypeError &&
-		(previousStatus == nil ||
-			previousStatus.Type != types.DeploymentStatusTypeError ||
+		(settledStatus == nil ||
+			settledStatus.Type != types.DeploymentStatusTypeError ||
 			previousStatus.IsStale())
 }
 
-func shouldNotifyStaleRecovered(
-	previousStatus *types.DeploymentRevisionStatus,
-	currentStatus types.DeploymentRevisionStatus,
-) bool {
-	return previousStatus != nil && previousStatus.IsStale() && currentStatus.Type != types.DeploymentStatusTypeError
-}
-
 func shouldNotifyErrorRecovered(
-	previousStatus *types.DeploymentRevisionStatus,
+	settledStatus *types.DeploymentRevisionStatus,
 	currentStatus types.DeploymentRevisionStatus,
 ) bool {
-	return previousStatus != nil &&
-		previousStatus.Type == types.DeploymentStatusTypeError &&
+	return settledStatus != nil &&
+		settledStatus.Type == types.DeploymentStatusTypeError &&
 		currentStatus.Type != types.DeploymentStatusTypeError &&
 		currentStatus.Type != types.DeploymentStatusTypeProgressing
-}
-
-func shouldNotify(previousStatus *types.DeploymentRevisionStatus, currentStatus types.DeploymentRevisionStatus) bool {
-	return shouldNotifyError(previousStatus, currentStatus) ||
-		shouldNotifyStaleRecovered(previousStatus, currentStatus) ||
-		shouldNotifyErrorRecovered(previousStatus, currentStatus)
 }

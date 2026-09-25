@@ -31,7 +31,7 @@ Distr is the open-source platform to ship self-hosted software. Start simple, sc
 - **Deployment agents:** Prebuilt Docker Compose, Docker Swarm, and Helm agents install and update your application in customer environments and report status, logs, and metrics back.
 - **OCI registry:** Distribute Docker images, Helm charts, Zarf packages, and any OCI artifact, with per-customer tag access control, pull-through caching, and download analytics.
 - **Licensing:** Application and artifact entitlements per customer, plus signed JWT license keys your application verifies offline with no call back to Distr.
-- **Remote diagnostics:** Container logs, live metrics, deployment status history, alerts, and customer-initiated support bundles, without access to their infrastructure.
+- **Remote diagnostics:** Container logs, live metrics, deployment status, alerts, and customer-initiated support bundles, without access to their infrastructure.
 - **Customer portal:** White-labeled install instructions, artifact downloads, credentials, and version control per customer organization.
 - **Air-gapped:** Build a Zarf package in CI, publish it to Distr, transfer it across the gap, deploy offline.
 - **Self-hostable:** Apache-2.0. One Go binary plus Postgres 18+, object storage, and Loki. Paid plans run self-hosted too.

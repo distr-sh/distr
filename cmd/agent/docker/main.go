@@ -26,7 +26,6 @@ import (
 	"github.com/docker/cli/cli/flags"
 	composeapi "github.com/docker/compose/v5/pkg/api"
 	"github.com/docker/compose/v5/pkg/compose"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -183,7 +182,7 @@ loop:
 
 							progressCtx, progressCancel := context.WithCancel(ctx)
 							defer progressCancel()
-							updateStatus := sendProgressInterval(progressCtx, deployment.RevisionID)
+							updateStatus := sendProgressInterval(progressCtx, deployment)
 							agentDeployment, status, err = DockerEngineApply(ctx, deployment, updateStatus)
 							if err == nil {
 								if deployment.ImageCleanupEnabled {
@@ -213,9 +212,9 @@ loop:
 				}
 
 				if err != nil {
-					err = client.StatusWithError(ctx, deployment.RevisionID, err)
+					err = client.StatusWithError(ctx, deployment, err)
 				} else {
-					err = client.Status(ctx, deployment.RevisionID, statusType, status)
+					err = client.Status(ctx, deployment, statusType, status)
 				}
 
 				if err != nil {
@@ -226,12 +225,13 @@ loop:
 	}
 }
 
-func sendProgressInterval(ctx context.Context, revisionID uuid.UUID) func(string) {
+func sendProgressInterval(ctx context.Context, deployment api.AgentDeployment) func(string) {
 	var status atomic.Value
 	status.Store("initializing")
 
 	sendProgress := func() {
-		err := client.Status(ctx, revisionID, types.DeploymentStatusTypeProgressing, status.Load().(string))
+		err := client.Status(ctx,
+			deployment, types.DeploymentStatusTypeProgressing, status.Load().(string))
 		if err != nil {
 			logger.Warn("error updating status", zap.Error(err))
 		}
@@ -273,7 +273,7 @@ func selfUpdateIfRequired(ctx context.Context, resource api.AgentResource) bool 
 				logger.Error("self update failed", zap.Error(err))
 				// TODO: Support status without revision ID?
 				if len(resource.Deployments) > 0 {
-					if err := client.StatusWithError(ctx, resource.Deployments[0].RevisionID, err); err != nil {
+					if err := client.StatusWithError(ctx, resource.Deployments[0], err); err != nil {
 						logger.Error("failed to send status", zap.Error(err))
 					}
 				}
