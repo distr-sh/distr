@@ -140,6 +140,11 @@ CREATE INDEX idx_notification_record_open_warning
     ON NotificationRecord (deployment_revision_id, source_configuration_id)
     WHERE type = 'warning' AND resolved_at IS NULL;
 
+-- A vendor's history includes the records of its customers, so it cannot read the index on
+-- (organization_id, customer_organization_id, created_at) in date order.
+CREATE INDEX idx_notification_record_org_created
+    ON NotificationRecord (organization_id, created_at DESC);
+
 -- Deleting a user account nulls the column, which without an index scans the whole table.
 CREATE INDEX idx_notification_record_user_account_id
     ON NotificationRecord (user_account_id);

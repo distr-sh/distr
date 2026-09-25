@@ -3,6 +3,7 @@ DELETE FROM NotificationRecord WHERE source_type <> 'alert';
 
 DROP INDEX idx_notification_record_user_subject;
 DROP INDEX idx_notification_record_user_account_id;
+DROP INDEX idx_notification_record_org_created;
 DROP INDEX idx_notification_record_open_warning;
 
 ALTER TABLE NotificationRecord
