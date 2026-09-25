@@ -1,5 +1,52 @@
 # Changelog
 
+## [4.2.0](https://github.com/distr-sh/distr/compare/4.1.0...4.2.0) (2026-09-25)
+
+
+### Features
+
+* track distinct current/latest deployment revision ([#3310](https://github.com/distr-sh/distr/issues/3310)) ([8308190](https://github.com/distr-sh/distr/commit/830819089e71ecaadf0d5834375ca6e32c0232fd))
+
+
+### Bug Fixes
+
+* **backend:** restrict invite token access and capabilities ([#3344](https://github.com/distr-sh/distr/issues/3344)) ([9def3d0](https://github.com/distr-sh/distr/commit/9def3d0aa8993de6582d4aaa9d7bbc59ab629a95))
+* **deps:** update kubernetes monorepo to v0.37.1 ([#3341](https://github.com/distr-sh/distr/issues/3341)) ([7326f28](https://github.com/distr-sh/distr/commit/7326f28bd124f8d19c2547c3bbd547e3bdb46c83))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/service/s3 to v1.113.2 ([#3324](https://github.com/distr-sh/distr/issues/3324)) ([515ba84](https://github.com/distr-sh/distr/commit/515ba84e68d31455c9b30edc5fe1c010e1b9a172))
+* **deps:** update website dependencies ([#3323](https://github.com/distr-sh/distr/issues/3323)) ([32aec2a](https://github.com/distr-sh/distr/commit/32aec2a555c5a77fbfdf74f2c34c0608bcab7ea3))
+* **registry:** only count successful requests towards anonymous rate-limit budget and use 401 status for rate-limited requests ([#3328](https://github.com/distr-sh/distr/issues/3328)) ([5872e62](https://github.com/distr-sh/distr/commit/5872e62764db7849a5eb8cedb5a687c362921d67))
+
+
+### Other
+
+* **agent:** send "progressing" status immediately at the start of an operation ([#3329](https://github.com/distr-sh/distr/issues/3329)) ([21d5157](https://github.com/distr-sh/distr/commit/21d5157222163f5a4b062b1d8de99821fe072fa1))
+* **backend:** add entitlement check on application version details endpoint ([#3335](https://github.com/distr-sh/distr/issues/3335)) ([cfeb2d9](https://github.com/distr-sh/distr/commit/cfeb2d937456e963525718246c30115c5a3898c2))
+* **deps:** update angular monorepo to v22.2.0 ([#3346](https://github.com/distr-sh/distr/issues/3346)) ([9f64b27](https://github.com/distr-sh/distr/commit/9f64b27fab93894957173c8c4e2ace91296fa93e))
+* **deps:** update angular-cli monorepo to v22.2.0 ([#3347](https://github.com/distr-sh/distr/issues/3347)) ([b1e8581](https://github.com/distr-sh/distr/commit/b1e8581af04abe6e8a6845e4e01a0fed4a634263))
+* **deps:** update codemirror ([#3320](https://github.com/distr-sh/distr/issues/3320)) ([d769afa](https://github.com/distr-sh/distr/commit/d769afa0b09d4dcb6a3c33bab01edf66c874f2b4))
+* **deps:** update dependency @angular/cdk to v22.2.0 ([#3339](https://github.com/distr-sh/distr/issues/3339)) ([dc713d8](https://github.com/distr-sh/distr/commit/dc713d856477cf9d16486bcbd46a35aa504a0111))
+* **deps:** update dependency @lezer/highlight to v1.2.4 ([#3345](https://github.com/distr-sh/distr/issues/3345)) ([15a82ca](https://github.com/distr-sh/distr/commit/15a82cae31dc31b3d38a948d72bafa59ff19fcc2))
+* **deps:** update dependency jsdom to v30.1.1 ([#3321](https://github.com/distr-sh/distr/issues/3321)) ([fd3664f](https://github.com/distr-sh/distr/commit/fd3664fee50cc951739c80908f29630e2c94190f))
+* **deps:** update dependency marked to v18.0.14 ([#3322](https://github.com/distr-sh/distr/issues/3322)) ([e50f445](https://github.com/distr-sh/distr/commit/e50f4453796d6f8c29edeb216a4f93200780e71c))
+* **deps:** update dependency prettier to v3.9.9 ([#3332](https://github.com/distr-sh/distr/issues/3332)) ([0d92cb4](https://github.com/distr-sh/distr/commit/0d92cb47068c804255bfbc03949ed8d6d0ae3643))
+* **deps:** update dependency stripe to v1.51.1 ([#3317](https://github.com/distr-sh/distr/issues/3317)) ([898d622](https://github.com/distr-sh/distr/commit/898d622c233e4fd2c8ec6237653a89f754826237))
+* **deps:** update golangci-lint to v2.14.0 ([#3348](https://github.com/distr-sh/distr/issues/3348)) ([f444cee](https://github.com/distr-sh/distr/commit/f444ceea94fe52383737a648ccc37488c03eff15))
+* **deps:** update loki docker tag to v18.13.5 ([#3318](https://github.com/distr-sh/distr/issues/3318)) ([90d8d8a](https://github.com/distr-sh/distr/commit/90d8d8a63da1f5713889fa3beb2b9be9496c0565))
+* **deps:** update pnpm to v12.6.0 ([#3331](https://github.com/distr-sh/distr/issues/3331)) ([59ff516](https://github.com/distr-sh/distr/commit/59ff516305c705995997641ca824b03a7db6ff02))
+* **deps:** update postgresql docker tag to v18.12.0 ([#3340](https://github.com/distr-sh/distr/issues/3340)) ([35fde99](https://github.com/distr-sh/distr/commit/35fde994db65bfb55a35c88453403b173b18aa98))
+* improve distr enterprise docker stack config ([#3313](https://github.com/distr-sh/distr/issues/3313)) ([0ea3f19](https://github.com/distr-sh/distr/commit/0ea3f191f8c832dbf5c5de8f7371e0aef44f9f04))
+* only require access token deletion confirmation for non expired access tokens ([#3312](https://github.com/distr-sh/distr/issues/3312)) ([791c9a9](https://github.com/distr-sh/distr/commit/791c9a991fffdfbf0330d7e94c0d590272d60e29))
+* remove deployment status history ([#3334](https://github.com/distr-sh/distr/issues/3334)) ([0f816fe](https://github.com/distr-sh/distr/commit/0f816fec0c2ece2563d149203cbca8a0de1dacf9))
+* show who created an application version ([#3315](https://github.com/distr-sh/distr/issues/3315)) ([cdb0cb6](https://github.com/distr-sh/distr/commit/cdb0cb67ea8e750d496509981bcb0336aa7a0c56))
+
+
+### Docs
+
+* clarify PostgreSQL 18+ requirement ([#3343](https://github.com/distr-sh/distr/issues/3343)) ([83895cd](https://github.com/distr-sh/distr/commit/83895cd49e3be6a378e136ca321a37ffff91b92c))
+* **website:** clarify helm revision skew behavior ([#3333](https://github.com/distr-sh/distr/issues/3333)) ([d50661c](https://github.com/distr-sh/distr/commit/d50661c4cfad26ce4d81bbce40ea7a807e28084f))
+* **website:** update the homepage metrics ([#3325](https://github.com/distr-sh/distr/issues/3325)) ([1495fc3](https://github.com/distr-sh/distr/commit/1495fc3559e1de7c5e9955f51dac41f515008e5d))
+* **website:** update website comparison ([#3316](https://github.com/distr-sh/distr/issues/3316)) ([35646b7](https://github.com/distr-sh/distr/commit/35646b7c3a4f1bf996660b88c29ce14c2c537e8a))
+
 ## [4.1.0](https://github.com/distr-sh/distr/compare/4.0.3...4.1.0) (2026-09-22)
 
 
