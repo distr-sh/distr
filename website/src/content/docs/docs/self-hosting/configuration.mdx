@@ -31,6 +31,8 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 | `DISTR_HOST`                          | yes      | —         | Base URL of your Distr instance. Its scheme is used for every link, callback URL and email.                                                                             |
 | `DISTR_ENV`                           | no       | —         | Path to a dotenv file to load on startup (a matching `.secret` file is also loaded if present).                                                                         |
 | `REGISTRATION`                        | no       | `enabled` | Sign-up mode, see below: `enabled`, `hidden` or `disabled`.                                                                                                             |
+| `BLOCKED_EMAIL_DOMAINS`               | no       | —         | Comma-separated email domains that cannot sign up or log in, see [Blocklists](#blocklists).                                                                             |
+| `BLOCKED_IPS`                         | no       | —         | Comma-separated IP addresses and CIDR ranges that cannot sign up or log in, see [Blocklists](#blocklists).                                                              |
 | `USER_EMAIL_VERIFICATION_REQUIRED`    | no       | `true`    | Whether new users must verify their email address before signing in.                                                                                                    |
 | `SERVER_SHUTDOWN_DELAY_DURATION`      | no       | —         | Delay between receiving a shutdown signal and stopping the server (useful for rolling deploys).                                                                         |
 | `ENABLE_QUERY_LOGGING`                | no       | `false`   | Logs all database queries. Intended for debugging only.                                                                                                                 |
@@ -47,6 +49,20 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
   every visitor.
 - `disabled`: sign-up is rejected, both on `/register` and for OIDC logins with an unknown email address. Existing
   users can still sign in, and new users can still be added through an invitation.
+
+### Blocklists
+
+`BLOCKED_EMAIL_DOMAINS` (e.g. `example.com,spam.io`) refuses registration, password login and login through the
+built-in OIDC providers for addresses of a listed domain or any of its subdomains, so `example.com` also covers
+`mail.example.com`. Matching ignores case. Organizations' own OIDC providers are not affected.
+
+`BLOCKED_IPS` (e.g. `203.0.113.7,198.51.100.0/24,2001:db8::/32`) refuses every request to the sign-up, login and
+password reset endpoints from a listed address or range. When a request carries an `X-Forwarded-For` header, the
+client address is its rightmost entry, so it is only accurate with exactly one reverse proxy in front of Distr.
+A request whose address cannot be determined is not blocked.
+
+Both answer with `403 Forbidden`, except a blocked email domain on a built-in OIDC login, which redirects back to the
+login page and shows the reason there.
 
 ### Maintenance mode
 

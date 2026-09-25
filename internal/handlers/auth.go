@@ -11,6 +11,7 @@ import (
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authjwt"
+	"github.com/distr-sh/distr/internal/blocklist"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/custommail"
 	"github.com/distr-sh/distr/internal/db"
@@ -36,13 +37,16 @@ import (
 
 func AuthRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupHidden(true))
-	r.Use(httprate.LimitBy(
-		10,
-		1*time.Minute,
-		httprate.JoinKeys(func(r *http.Request) (string, error) {
-			return chimiddleware.GetClientIP(r.Context()), nil
-		}, httprate.KeyByEndpoint),
-	))
+	r.Use(
+		middleware.BlockIPs,
+		httprate.LimitBy(
+			10,
+			1*time.Minute,
+			httprate.JoinKeys(func(r *http.Request) (string, error) {
+				return chimiddleware.GetClientIP(r.Context()), nil
+			}, httprate.KeyByEndpoint),
+		),
+	)
 	// The login methods available on a host are part of the host-resolved GET /api/public/v1/portal response.
 	r.Post("/login", authLoginHandler)
 	r.Route("/oidc", AuthOIDCRouter)
@@ -324,6 +328,10 @@ func authLoginHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	if blocklist.EmailBlocked(request.Email) {
+		http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
+		return
+	}
 	err = db.RunTx(ctx, func(ctx context.Context) error {
 		user, err := db.GetUserAccountByEmail(ctx, request.Email)
 		if errors.Is(err, apierrors.ErrNotFound) {
@@ -394,6 +402,9 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if err := request.Validate(); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	} else if blocklist.EmailBlocked(request.Email) {
+		http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
 		return
 	} else if !verifyRegistrationChallenge(w, r, request.TurnstileToken) {
 		return
