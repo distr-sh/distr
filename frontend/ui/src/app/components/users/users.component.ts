@@ -144,8 +144,8 @@ export class UsersComponent {
     userRole: this.fb.control<UserRole>('admin', Validators.required),
   });
 
-  public showInviteDialog(reset?: boolean): void {
-    this.closeInviteDialog(reset);
+  public showInviteDialog(): void {
+    this.closeInviteDialog();
     this.modalRef = this.overlay.showModal(this.inviteUserDialog());
   }
 
@@ -218,7 +218,7 @@ export class UsersComponent {
             partnerOrganizationId: this.partnerOrganizationId(),
           })
         );
-        this.inviteUrl = result.inviteUrl;
+        this.inviteUrl = result.inviteUrl ?? null;
         if (!this.inviteUrl) {
           const label =
             result.user.customerOrganizationId !== undefined
@@ -253,13 +253,8 @@ export class UsersComponent {
 
   protected async resendInvitation(user: UserAccountWithRole) {
     try {
-      const result = await firstValueFrom(this.usersService.resendInvitation(user));
-      this.inviteUrl = result.inviteUrl;
-      if (!this.inviteUrl) {
-        this.toast.success(`Invitation has been resent to ${user.email}`);
-      } else {
-        this.showInviteDialog(false);
-      }
+      await firstValueFrom(this.usersService.resendInvitation(user));
+      this.toast.success(`Invitation has been resent to ${user.email}`);
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {
@@ -286,13 +281,10 @@ export class UsersComponent {
       .subscribe();
   }
 
-  public closeInviteDialog(reset: boolean = true): void {
+  public closeInviteDialog(): void {
     this.modalRef?.close();
-
-    if (reset) {
-      this.inviteUrl = null;
-      this.inviteForm.reset();
-    }
+    this.inviteUrl = null;
+    this.inviteForm.reset();
   }
 
   public copyInviteUrl(): void {

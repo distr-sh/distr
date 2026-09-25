@@ -15,13 +15,14 @@ type CreateUserAccountRequest struct {
 }
 
 type CreateUserAccountResponse struct {
-	User      types.UserAccountWithUserRole `json:"user"`
-	InviteURL string                        `json:"inviteUrl"`
+	User      UserAccountResponse `json:"user"`
+	InviteURL string              `json:"inviteUrl,omitempty"`
 }
 
 type UserAccountResponse struct {
 	types.UserAccountWithUserRole
-	ImageUrl *string `json:"imageUrl,omitempty"`
+	Activated bool    `json:"activated"`
+	ImageUrl  *string `json:"imageUrl,omitempty"`
 }
 
 type UpdateUserAccountRequest struct {

@@ -85,7 +85,7 @@
           }
           <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
             @if ((auth.isVendor() && auth.hasRole('read_write')) || auth.hasRole('admin')) {
-              @if (!user.emailVerified) {
+              @if (!user.activated) {
                 <button
                   *appRequireVendor
                   type="button"
