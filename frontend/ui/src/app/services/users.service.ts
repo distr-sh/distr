@@ -20,7 +20,7 @@ export interface PatchUserAccountRequest {
 
 export interface UserAccountInvitationResponse {
   user: UserAccountWithRole;
-  inviteUrl: string;
+  inviteUrl?: string;
 }
 
 class UserAccountsReactiveList extends ReactiveList<UserAccountWithRole> {

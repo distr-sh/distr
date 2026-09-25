@@ -31,7 +31,8 @@ var (
 		` + userAccountMFASecret.Value("u") + `,
 		u.mfa_enabled,
 		u.mfa_enabled_at,
-		u.is_super_admin`
+		u.is_super_admin,
+		` + userAccountActivatedExpr
 	userAccountWithRoleOutputExpr = userAccountOutputExpr +
 		", j.user_role, j.created_at, j.customer_organization_id, j.partner_organization_id "
 	userAccountWithRoleOutputExprWithAlias = userAccountWithRoleOutputExpr + " as joined_org_at "
@@ -156,24 +157,6 @@ func UpdateUserAccountEmailVerified(ctx context.Context, userAccount *types.User
 const userAccountActivatedExpr = `(u.password_hash IS NOT NULL
 	OR u.last_logged_in_at IS NOT NULL
 	OR EXISTS (SELECT 1 FROM UserAccountOIDCIdentity i WHERE i.user_account_id = u.id))`
-
-func IsUserAccountActivated(ctx context.Context, id uuid.UUID) (bool, error) {
-	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(ctx,
-		"SELECT "+userAccountActivatedExpr+" FROM UserAccount u WHERE u.id = @id",
-		pgx.NamedArgs{"id": id},
-	)
-	if err != nil {
-		return false, fmt.Errorf("could not query user activation: %w", err)
-	}
-	activated, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[bool])
-	if errors.Is(err, pgx.ErrNoRows) {
-		return false, apierrors.ErrNotFound
-	} else if err != nil {
-		return false, fmt.Errorf("could not query user activation: %w", err)
-	}
-	return activated, nil
-}
 
 func SetUserAccountInitialPassword(ctx context.Context, userAccount *types.UserAccount) error {
 	db := internalctx.GetDb(ctx)

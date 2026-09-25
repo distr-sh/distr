@@ -89,13 +89,7 @@ func AuthRouter(r chiopenapi.Router) {
 func authStatusHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
-	if active, err := db.IsUserAccountActivated(ctx, auth.CurrentUserID()); err != nil {
-		internalctx.GetLogger(ctx).Error("could not get user activation", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	} else {
-		RespondJSON(w, map[string]any{"active": active})
-	}
+	RespondJSON(w, map[string]any{"active": auth.CurrentUser().Activated})
 }
 
 func authVerifyRequestHandler(w http.ResponseWriter, r *http.Request) {

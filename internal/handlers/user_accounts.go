@@ -212,15 +212,7 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		activated := false
-		if !created {
-			if activated, err = db.IsUserAccountActivated(ctx, userAccount.ID); err != nil {
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return err
-			}
-		}
-		if !activated {
+		if !userAccount.Activated {
 			if emailInviteURL, err = generateUserInviteUrl(
 				ctx, userAccount, *organization, body.CustomerOrganizationID, true); err != nil {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -256,8 +248,8 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	RespondJSON(w, api.CreateUserAccountResponse{
-		User: userAccount.AsUserAccountWithRole(
-			body.UserRole, body.CustomerOrganizationID, body.PartnerOrganizationID, time.Now()),
+		User: mapping.UserAccountToAPI(userAccount.AsUserAccountWithRole(
+			body.UserRole, body.CustomerOrganizationID, body.PartnerOrganizationID, time.Now())),
 		InviteURL: responseInviteURL,
 	})
 }
@@ -448,11 +440,7 @@ func resendUserInviteHandler() http.HandlerFunc {
 			return
 		}
 
-		if activated, err := db.IsUserAccountActivated(ctx, userAccount.ID); err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		} else if activated {
+		if userAccount.Activated {
 			http.Error(w, "this user has already accepted an invitation", http.StatusBadRequest)
 			return
 		}
@@ -485,7 +473,7 @@ func resendUserInviteHandler() http.HandlerFunc {
 			return
 		}
 
-		RespondJSON(w, api.CreateUserAccountResponse{User: *userAccount})
+		RespondJSON(w, api.CreateUserAccountResponse{User: mapping.UserAccountToAPI(*userAccount)})
 	}
 }
 

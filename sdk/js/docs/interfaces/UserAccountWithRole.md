@@ -12,6 +12,12 @@
 
 ## Properties
 
+### activated
+
+> **activated**: `boolean`
+
+---
+
 ### createdAt?
 
 > `optional` **createdAt?**: `string`
