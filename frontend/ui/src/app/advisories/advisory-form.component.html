@@ -162,31 +162,7 @@
           determine which customers see the advisory and appear in the impact analysis.
         </p>
 
-        <div
-          class="inline-flex p-1 mb-4 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400">
-          <button
-            type="button"
-            (click)="versionsTab.set('applications')"
-            class="cursor-pointer px-3 py-1.5 rounded-md"
-            [class.bg-white]="versionsTab() === 'applications'"
-            [class.dark:bg-gray-600]="versionsTab() === 'applications'"
-            [class.text-gray-900]="versionsTab() === 'applications'"
-            [class.dark:text-white]="versionsTab() === 'applications'"
-            [class.shadow-sm]="versionsTab() === 'applications'">
-            Applications
-          </button>
-          <button
-            type="button"
-            (click)="versionsTab.set('artifacts')"
-            class="cursor-pointer px-3 py-1.5 rounded-md"
-            [class.bg-white]="versionsTab() === 'artifacts'"
-            [class.dark:bg-gray-600]="versionsTab() === 'artifacts'"
-            [class.text-gray-900]="versionsTab() === 'artifacts'"
-            [class.dark:text-white]="versionsTab() === 'artifacts'"
-            [class.shadow-sm]="versionsTab() === 'artifacts'">
-            Artifacts
-          </button>
-        </div>
+        <app-pill-tab-bar class="mb-4" [tabs]="versionsTabs" [(active)]="versionsTab" />
 
         @if (versionsTab() === 'applications') {
           @for (application of applications(); track application.id) {

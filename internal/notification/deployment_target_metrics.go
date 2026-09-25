@@ -174,23 +174,29 @@ func sendMetricNotification(
 	}
 
 	record := types.NotificationRecord{
-		OrganizationID:                   config.OrganizationID,
-		CustomerOrganizationID:           config.CustomerOrganizationID,
-		DeploymentTargetID:               &deploymentTarget.ID,
-		AlertConfigurationID:             &config.ID,
-		Type:                             recordType,
-		MetricType:                       &metricType,
-		CurrentDeploymentTargetMetricsID: &currentMetrics.ID,
+		OrganizationID:         config.OrganizationID,
+		CustomerOrganizationID: config.CustomerOrganizationID,
+		SourceType:             types.NotificationSourceTypeAlert,
+		SourceConfigurationID:  &config.ID,
+		SubjectID:              &deploymentTarget.ID,
+		Type:                   recordType,
+		Details: types.NotificationRecordDetails{
+			Summary:                          metricSummary(metricType, usagePercent),
+			CustomerOrganizationName:         customerOrganizationName(deploymentTarget),
+			DeploymentTargetName:             &deploymentTarget.Name,
+			MetricType:                       &metricType,
+			CurrentDeploymentTargetMetricsID: &currentMetrics.ID,
+		},
 	}
 
 	if diskDevice != "" {
-		record.DiskDevice = &diskDevice
+		record.Details.DiskDevice = &diskDevice
 	}
 	if diskPath != "" {
-		record.DiskPath = &diskPath
+		record.Details.DiskPath = &diskPath
 	}
 	if previousMetrics != nil {
-		record.PreviousDeploymentTargetMetricsID = &previousMetrics.ID
+		record.Details.PreviousDeploymentTargetMetricsID = &previousMetrics.ID
 	}
 	if aggErr != nil {
 		record.DeliveryError = aggErr.Error()
@@ -242,4 +248,17 @@ func usageFunc[T any](p *T, c T, f func(T) float64) (*float64, float64) {
 
 func usagePercent(usage float64) int64 {
 	return int64(math.Round(usage * 100))
+}
+
+func metricSummary(metricType string, usagePercent int64) string {
+	label := metricType
+	switch metricType {
+	case "cpu":
+		label = "CPU"
+	case "memory":
+		label = "Memory"
+	case "disk":
+		label = "Disk"
+	}
+	return fmt.Sprintf("%v utilization is %v%%", label, usagePercent)
 }

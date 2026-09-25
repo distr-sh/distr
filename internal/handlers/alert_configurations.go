@@ -24,6 +24,7 @@ func AlertConfigurationsRouter(r chiopenapi.Router) {
 
 	r.Get("/", getAlertConfigurationsHandler()).
 		With(option.Description("list all alert configurations")).
+		With(option.Request(customerScopeQuery{})).
 		With(option.Response(http.StatusOK, []types.AlertConfiguration{}))
 
 	r.With(middleware.RequireReadWriteOrAdmin).
@@ -48,7 +49,10 @@ func AlertConfigurationsRouter(r chiopenapi.Router) {
 
 			r.Delete("/", deleteAlertConfigurationHandler()).
 				With(option.Description("delete an existing alert configuration")).
-				With(option.Request(IDRequest{}))
+				With(option.Request(struct {
+					IDRequest
+					customerScopeQuery
+				}{}))
 		})
 }
 
@@ -57,11 +61,12 @@ func getAlertConfigurationsHandler() http.HandlerFunc {
 		ctx := r.Context()
 		auth := auth.Authentication.Require(ctx)
 
-		configs, err := db.GetAlertConfigurations(
-			ctx,
-			*auth.CurrentOrgID(),
-			auth.CurrentCustomerOrgID(),
-		)
+		customerOrgID, ok := resolveCustomerScopeFromQuery(w, r)
+		if !ok {
+			return
+		}
+
+		configs, err := db.GetAlertConfigurations(ctx, *auth.CurrentOrgID(), customerOrgID)
 		if err != nil {
 			internalctx.GetLogger(ctx).Error("failed to get alert configurations", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -84,8 +89,13 @@ func createAlertConfigurationHandler() http.HandlerFunc {
 			return
 		}
 
+		customerOrgID, ok := resolveCustomerScope(w, r, config.CustomerOrganizationID)
+		if !ok {
+			return
+		}
+
 		config.OrganizationID = *auth.CurrentOrgID()
-		config.CustomerOrganizationID = auth.CurrentCustomerOrgID()
+		config.CustomerOrganizationID = customerOrgID
 
 		if err := db.CreateAlertConfiguration(ctx, &config); err != nil {
 			internalctx.GetLogger(ctx).Error("failed to create alert configuration", zap.Error(err))
@@ -115,14 +125,23 @@ func updateAlertConfigurationHandler() http.HandlerFunc {
 			return
 		}
 
+		customerOrgID, ok := resolveCustomerScope(w, r, config.CustomerOrganizationID)
+		if !ok {
+			return
+		}
+
 		config.ID = id
 		config.OrganizationID = *auth.CurrentOrgID()
-		config.CustomerOrganizationID = auth.CurrentCustomerOrgID()
+		config.CustomerOrganizationID = customerOrgID
 
 		if err := db.UpdateAlertConfiguration(ctx, &config); err != nil {
-			internalctx.GetLogger(ctx).Error("failed to update alert configuration", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			if errors.Is(err, apierrors.ErrNotFound) {
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			} else {
+				internalctx.GetLogger(ctx).Error("failed to update alert configuration", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			}
 			return
 		}
 
@@ -142,12 +161,12 @@ func deleteAlertConfigurationHandler() http.HandlerFunc {
 			return
 		}
 
-		if err := db.DeleteAlertConfiguration(
-			ctx,
-			id,
-			*auth.CurrentOrgID(),
-			auth.CurrentCustomerOrgID(),
-		); err != nil {
+		customerOrgID, ok := resolveCustomerScopeFromQuery(w, r)
+		if !ok {
+			return
+		}
+
+		if err := db.DeleteAlertConfiguration(ctx, id, *auth.CurrentOrgID(), customerOrgID); err != nil {
 			if errors.Is(err, apierrors.ErrNotFound) {
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			} else {

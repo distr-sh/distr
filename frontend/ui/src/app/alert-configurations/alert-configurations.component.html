@@ -1,114 +1,101 @@
-<app-page>
-  <div class="distr-table-panel">
-    <div class="distr-toolbar p-4">
-      <app-search-bar [control]="filterForm.controls.search" placeholder="Filter alert configurations" />
-      <div class="distr-toolbar-actions">
-        <button
-          type="button"
-          routerLink="/notifications/history"
-          class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-          <fa-icon [icon]="faHistory" class="text-gray-500 dark:text-gray-400 mr-2" />
-          Notification History
-        </button>
-        @if (auth.hasAnyRole('read_write', 'admin')) {
-          <button
-            type="button"
-            (click)="showDrawer()"
-            class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
-            <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
-            Create Alert Configuration
-          </button>
-        }
-      </div>
-    </div>
-    <div class="overflow-x-auto">
-      <table class="distr-table">
-        <thead class="distr-table-head">
-          <tr>
-            <th scope="col" class="p-4">Name</th>
-            <th scope="col" class="p-4">Enabled</th>
-            <th scope="col" class="p-4">Created at</th>
-            <th scope="col" class="p-4">Triggers</th>
-            <th scope="col" class="p-4">Deployment Targets</th>
-            <th scope="col" class="p-4">Users</th>
-            <th scope="col" class="p-4"></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (config of filteredConfigs(); track config.id) {
-            <tr class="distr-table-row">
-              <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ config.name }}</td>
-              <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap align-middle">
-                <label class="inline-flex items-center cursor-pointer my-1">
-                  <input
-                    type="checkbox"
-                    class="sr-only peer"
-                    aria-label="Enabled"
-                    [disabled]="!auth.hasAnyRole('read_write', 'admin')"
-                    [checked]="config.enabled"
-                    (change)="toggleConfigEnabled(config)" />
-                  <div class="distr-toggle peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
-                </label>
-              </td>
-              <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                {{ config.createdAt | date }}
-              </td>
-              <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                {{ getTriggersCount(config) }} enabled
-              </td>
-              <td
-                class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
-                [title]="getNames(config.deploymentTargets)">
-                @for (dt of config.deploymentTargets; track dt.id; let last = $last) {
-                  <ng-container>{{ dt.name }}</ng-container>
-                  @if (!last) {
-                    <ng-container>, </ng-container>
-                  }
-                }
-              </td>
-              <td
-                class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
-                [title]="getNames(config.userAccounts)">
-                @for (user of config.userAccounts; track user.id; let last = $last) {
-                  <ng-container>{{ user.name || user.email }}</ng-container>
-                  @if (!last) {
-                    <ng-container>, </ng-container>
-                  }
-                }
-              </td>
-              <td class="px-4 py-3 flex gap-2 justify-end">
-                @if (auth.hasAnyRole('read_write', 'admin')) {
-                  <button
-                    type="button"
-                    (click)="showDrawer(config)"
-                    class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                    <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Delete"
-                    (click)="deleteConfig(config)"
-                    class="py-2 px-3 distr-btn-danger">
-                    <fa-icon [icon]="faTrash" class="h-4 w-4" />
-                  </button>
-                }
-              </td>
-            </tr>
-          } @empty {
-            <tr class="border-t border-gray-200 dark:border-gray-600">
-              <td
-                colspan="5"
-                class="px-4 py-3 font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap text-center">
-                No configurations found
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+<div class="distr-toolbar p-4">
+  <app-search-bar [control]="filterForm.controls.search" placeholder="Filter alert configurations" />
+  <div class="distr-toolbar-actions">
+    @if (auth.hasAnyRole('read_write', 'admin')) {
+      <button
+        type="button"
+        (click)="showDrawer()"
+        class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+        <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+        Alert Notification
+      </button>
+    }
   </div>
-</app-page>
+</div>
+<div class="overflow-x-auto">
+  <table class="distr-table">
+    <thead class="distr-table-head">
+      <tr>
+        <th scope="col" class="p-4">Name</th>
+        <th scope="col" class="p-4">Enabled</th>
+        <th scope="col" class="p-4">Created at</th>
+        <th scope="col" class="p-4">Triggers</th>
+        <th scope="col" class="p-4">Deployment Targets</th>
+        <th scope="col" class="p-4">Users</th>
+        <th scope="col" class="p-4"></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (config of filteredConfigs(); track config.id) {
+        <tr class="distr-table-row">
+          <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ config.name }}</td>
+          <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap align-middle">
+            <label class="inline-flex items-center cursor-pointer my-1">
+              <input
+                type="checkbox"
+                class="sr-only peer"
+                aria-label="Enabled"
+                [disabled]="!auth.hasAnyRole('read_write', 'admin')"
+                [checked]="config.enabled"
+                (change)="toggleConfigEnabled(config)" />
+              <div class="distr-toggle peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+            </label>
+          </td>
+          <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+            {{ config.createdAt | date }}
+          </td>
+          <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+            {{ getTriggersCount(config) }} enabled
+          </td>
+          <td
+            class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
+            [title]="getNames(config.deploymentTargets)">
+            @for (dt of config.deploymentTargets; track dt.id; let last = $last) {
+              <ng-container>{{ dt.name }}</ng-container>
+              @if (!last) {
+                <ng-container>, </ng-container>
+              }
+            }
+          </td>
+          <td
+            class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
+            [title]="getNames(config.userAccounts)">
+            @for (user of config.userAccounts; track user.id; let last = $last) {
+              <ng-container>{{ user.name || user.email }}</ng-container>
+              @if (!last) {
+                <ng-container>, </ng-container>
+              }
+            }
+          </td>
+          <td class="px-4 py-3 flex gap-2 justify-end">
+            @if (auth.hasAnyRole('read_write', 'admin')) {
+              <button
+                type="button"
+                (click)="showDrawer(config)"
+                class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
+                Edit
+              </button>
+              <button
+                type="button"
+                aria-label="Delete"
+                (click)="deleteConfig(config)"
+                class="py-2 px-3 distr-btn-danger">
+                <fa-icon [icon]="faTrash" class="h-4 w-4" />
+              </button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr class="border-t border-gray-200 dark:border-gray-600">
+          <td colspan="5" class="px-4 py-3 font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap text-center">
+            No configurations found
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
 
 <ng-template #editConfigDrawer>
   <div
@@ -120,11 +107,7 @@
     <h2
       id="drawer-label"
       class="inline-flex items-center mb-2 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
-      @if (editConfigRef(); as config) {
-        Update {{ config.name }}
-      } @else {
-        New Configuration
-      }
+      Alert Notification
     </h2>
     <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
       Receive notifications when deployments change status or when resource usage exceeds configured thresholds.
@@ -298,7 +281,7 @@
           <h3 class="text-sm font-medium text-gray-900 dark:text-white">Users to notify</h3>
           <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-1">
             @for (user of users(); track user.id) {
-              <label class="flex items-center w-full">
+              <label class="flex items-center w-full" [title]="user.email">
                 <input
                   type="checkbox"
                   class="distr-checkbox"

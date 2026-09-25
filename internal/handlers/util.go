@@ -114,6 +114,15 @@ func RespondJSON(w http.ResponseWriter, data any) {
 	RespondJSONWithStatus(w, http.StatusOK, data)
 }
 
+// respondInternalError answers 500 and keeps the cause in the log and in Sentry, where the message
+// describes what failed. The body says nothing, because a 4xx body is what the frontend displays.
+func respondInternalError(w http.ResponseWriter, r *http.Request, err error, message string) {
+	ctx := r.Context()
+	internalctx.GetLogger(ctx).Error(message, zap.Error(err))
+	sentry.GetHubFromContext(ctx).CaptureException(err)
+	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+}
+
 func RespondJSONWithStatus(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

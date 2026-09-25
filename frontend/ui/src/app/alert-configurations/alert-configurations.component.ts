@@ -4,21 +4,20 @@ import {
   Component,
   computed,
   inject,
+  input,
   Signal,
   signal,
   TemplateRef,
   viewChild,
 } from '@angular/core';
-import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, FormControl, ReactiveFormsModule, Validators} from '@angular/forms';
-import {RouterLink} from '@angular/router';
 import {CustomerOrganization, DeploymentTarget, Named} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCheck, faClockRotateLeft, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
+import {faCheck, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {combineLatest, firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {validateRecordAtLeast} from '../../util/validation';
-import {PageComponent} from '../components/page.component';
 import {SearchBarComponent} from '../components/search-bar.component';
 import {AlertConfigurationsService} from '../services/alert-configurations.service';
 import {AuthService} from '../services/auth.service';
@@ -30,11 +29,15 @@ import {UsersService} from '../services/users.service';
 import {AlertConfiguration, CreateUpdateAlertConfigurationRequest} from '../types/alert-configuration';
 
 @Component({
+  selector: 'app-alert-configurations',
   templateUrl: './alert-configurations.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [FaIconComponent, ReactiveFormsModule, DatePipe, RouterLink, PageComponent, SearchBarComponent],
+  imports: [FaIconComponent, ReactiveFormsModule, DatePipe, SearchBarComponent],
 })
 export class AlertConfigurationsComponent {
+  /** customerOrganizationId scopes the page to what one customer is notified about. */
+  public readonly customerOrganizationId = input<string>();
+
   protected readonly auth = inject(AuthService);
   private readonly svc = inject(AlertConfigurationsService);
   private readonly fb = inject(FormBuilder).nonNullable;
@@ -44,7 +47,6 @@ export class AlertConfigurationsComponent {
   private readonly customersService = inject(CustomerOrganizationsService);
   private readonly toast = inject(ToastService);
 
-  protected readonly editConfigRef = signal<AlertConfiguration | undefined>(undefined);
   protected readonly editConfigForm = this.fb.group(
     {
       id: this.fb.control(''),
@@ -97,18 +99,25 @@ export class AlertConfigurationsComponent {
 
   protected readonly enabledToggleLoading = signal(false);
 
+  /** scope is the customer whose users and deployments a configuration of this page reaches. */
+  private readonly scope = computed(() => this.customerOrganizationId() ?? this.auth.getClaims()?.c_org);
+
   private readonly reload$ = new Subject<void>();
   protected readonly configs = toSignal(
-    this.reload$.pipe(
-      startWith(undefined),
-      switchMap(() => this.svc.list())
+    combineLatest([this.reload$.pipe(startWith(undefined)), toObservable(this.customerOrganizationId)]).pipe(
+      switchMap(([, customerOrganizationId]) => this.svc.list(customerOrganizationId))
     )
   );
   private readonly allUsers = toSignal(this.usersService.getUsers());
-  protected readonly users = this.auth.isCustomer()
-    ? this.allUsers
-    : computed(() => this.allUsers()?.filter((it) => it.customerOrganizationId === undefined));
-  private readonly deploymentTargets = toSignal(this.deploymentTargetsService.list());
+  protected readonly users = computed(() =>
+    this.allUsers()?.filter((it) => it.customerOrganizationId === this.scope())
+  );
+  private readonly allDeploymentTargets = toSignal(this.deploymentTargetsService.list());
+  private readonly deploymentTargets = computed(() =>
+    this.customerOrganizationId()
+      ? this.allDeploymentTargets()?.filter((it) => it.customerOrganization?.id === this.customerOrganizationId())
+      : this.allDeploymentTargets()
+  );
   private readonly customers = this.auth.isVendor()
     ? toSignal(this.customersService.getCustomerOrganizations())
     : signal([]).asReadonly();
@@ -116,7 +125,7 @@ export class AlertConfigurationsComponent {
     {customer?: CustomerOrganization; deploymentTargets: DeploymentTarget[]}[]
   > = computed(() => {
     const deploymentTargets = this.deploymentTargets() ?? [];
-    const customers = this.customers();
+    const customers = this.customerOrganizationId() ? [] : this.customers();
     return customers?.length
       ? [
           {deploymentTargets: deploymentTargets.filter((it) => it.customerOrganization === undefined)},
@@ -145,16 +154,13 @@ export class AlertConfigurationsComponent {
   protected readonly faTrash = faTrash;
   protected readonly faCheck = faCheck;
   protected readonly faXmark = faXmark;
-  protected readonly faHistory = faClockRotateLeft;
 
   protected async showDrawer(config?: AlertConfiguration) {
     this.hideDrawer();
-    this.editConfigRef.set(config);
     this.editConfigForm.reset();
 
     this.users()
-      ?.filter((user) => user.customerOrganizationId === this.auth.getClaims()?.c_org)
-      .map((user) => user.id)
+      ?.map((user) => user.id)
       .filter((id) => id !== undefined)
       .forEach((id) => this.editConfigForm.controls.userAccountIds.addControl(id, this.fb.control(false)));
 
@@ -195,6 +201,7 @@ export class AlertConfigurationsComponent {
 
     const formValue = this.editConfigForm.value;
     const requestValue: CreateUpdateAlertConfigurationRequest = {
+      customerOrganizationId: this.customerOrganizationId(),
       name: formValue.name ?? '',
       enabled: formValue.enabled ?? true,
       statusTriggerEnabled: formValue.statusTriggerEnabled ?? false,
@@ -233,7 +240,7 @@ export class AlertConfigurationsComponent {
 
   protected async toggleConfigEnabled(config: AlertConfiguration) {
     try {
-      const request = {...config, enabled: !config.enabled};
+      const request = {...config, enabled: !config.enabled, customerOrganizationId: this.customerOrganizationId()};
       this.enabledToggleLoading.set(true);
       await firstValueFrom(this.svc.update(config.id, request));
       this.toast.success(`Alert configuration ${request.enabled ? 'enabled' : 'disabled'}`);
@@ -249,13 +256,20 @@ export class AlertConfigurationsComponent {
   }
 
   protected async deleteConfig(config: AlertConfiguration) {
-    this.svc.delete(config.id).subscribe({
-      next: () => {
-        this.toast.success('Alert configuration deleted');
-        this.reload$.next();
-      },
-      error: (e) => this.toast.error(e),
-    });
+    if (!(await firstValueFrom(this.overlay.confirm(`Really delete the alert "${config.name}"?`)))) {
+      return;
+    }
+
+    try {
+      await firstValueFrom(this.svc.delete(config.id, this.customerOrganizationId()));
+      this.toast.success('Alert configuration deleted');
+      this.reload$.next();
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    }
   }
 
   protected getTriggersCount(config: AlertConfiguration): number {

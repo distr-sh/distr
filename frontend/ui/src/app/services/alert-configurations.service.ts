@@ -1,6 +1,7 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {AlertConfiguration, CreateUpdateAlertConfigurationRequest} from '../types/alert-configuration';
+import {customerScopeParams} from './customer-scope';
 
 const baseUrl = '/api/v1/alert-configurations';
 
@@ -8,8 +9,8 @@ const baseUrl = '/api/v1/alert-configurations';
 export class AlertConfigurationsService {
   private readonly httpClient = inject(HttpClient);
 
-  public list() {
-    return this.httpClient.get<AlertConfiguration[]>(baseUrl);
+  public list(customerOrganizationId?: string) {
+    return this.httpClient.get<AlertConfiguration[]>(baseUrl, {params: customerScopeParams(customerOrganizationId)});
   }
 
   public create(request: CreateUpdateAlertConfigurationRequest) {
@@ -20,7 +21,7 @@ export class AlertConfigurationsService {
     return this.httpClient.put<AlertConfiguration>(`${baseUrl}/${id}`, request);
   }
 
-  public delete(id: string) {
-    return this.httpClient.delete<void>(`${baseUrl}/${id}`);
+  public delete(id: string, customerOrganizationId?: string) {
+    return this.httpClient.delete<void>(`${baseUrl}/${id}`, {params: customerScopeParams(customerOrganizationId)});
   }
 }

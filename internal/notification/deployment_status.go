@@ -210,9 +210,11 @@ func sendDeploymentStatusNotificationsWithConfig(
 	}
 
 	recordType := types.NotificationRecordTypeResolved
+	summary := status.Message
 	switch kind {
 	case deploymentStatusNotificationStale:
 		recordType = types.NotificationRecordTypeWarning
+		summary = "Stale"
 	case deploymentStatusNotificationError:
 		recordType = types.NotificationRecordTypeAlert
 	}
@@ -220,14 +222,19 @@ func sendDeploymentStatusNotificationsWithConfig(
 	record := types.NotificationRecord{
 		OrganizationID:         config.OrganizationID,
 		CustomerOrganizationID: config.CustomerOrganizationID,
-		DeploymentTargetID:     &deploymentTarget.ID,
-		AlertConfigurationID:   &config.ID,
+		SourceType:             types.NotificationSourceTypeAlert,
+		SourceConfigurationID:  &config.ID,
+		SubjectID:              &deploymentTarget.ID,
 		Type:                   recordType,
 		DeploymentRevisionID:   &status.DeploymentRevisionID,
-	}
-
-	if kind != deploymentStatusNotificationStale {
-		record.DeploymentStatusMessage = &status.Message
+		Details: types.NotificationRecordDetails{
+			Summary:                  summary,
+			CustomerOrganizationName: customerOrganizationName(deploymentTarget),
+			DeploymentTargetName:     &deploymentTarget.Name,
+			ApplicationName:          &deployment.Application.Name,
+			ApplicationType:          &deployment.Application.Type,
+			ApplicationVersionName:   new(statusApplicationVersionName(deployment, status)),
+		},
 	}
 
 	if aggErr != nil {
@@ -239,6 +246,20 @@ func sendDeploymentStatusNotificationsWithConfig(
 	}
 
 	return nil
+}
+
+// statusApplicationVersionName names the version of the revision that reported status, which is the
+// applied one rather than the latest one while a newer revision is still being rolled out.
+func statusApplicationVersionName(
+	deployment types.DeploymentWithLatestRevision,
+	status types.DeploymentRevisionStatus,
+) string {
+	if deployment.CurrentDeploymentRevisionID != nil &&
+		*deployment.CurrentDeploymentRevisionID == status.DeploymentRevisionID &&
+		deployment.CurrentApplicationVersionName != nil {
+		return *deployment.CurrentApplicationVersionName
+	}
+	return deployment.ApplicationVersionName
 }
 
 // deploymentStatusNotificationFor returns which notification currentStatus calls for. staleWarningResolved tells
