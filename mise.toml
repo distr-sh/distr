@@ -5,7 +5,7 @@ task.output = "prefix"
 [tools]
 node = "26"
 go = "1.27.1"
-golangci-lint = "2.13.2"
+golangci-lint = "2.14.0"
 helm = "4.3.0"
 helm-docs = "1.14.2"
 "github:losisin/helm-values-schema-json" = "2.6.0"
