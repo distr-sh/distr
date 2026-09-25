@@ -34,7 +34,7 @@ Distr is the open-source platform to ship self-hosted software. Start simple, sc
 - **Remote diagnostics:** Container logs, live metrics, deployment status history, alerts, and customer-initiated support bundles, without access to their infrastructure.
 - **Customer portal:** White-labeled install instructions, artifact downloads, credentials, and version control per customer organization.
 - **Air-gapped:** Build a Zarf package in CI, publish it to Distr, transfer it across the gap, deploy offline.
-- **Self-hostable:** Apache-2.0. One Go binary plus Postgres, object storage, and Loki. Paid plans run self-hosted too.
+- **Self-hostable:** Apache-2.0. One Go binary plus Postgres 18+, object storage, and Loki. Paid plans run self-hosted too.
 - Automate everything through the [REST API](#distr-api) and the [SDK](#distr-sdk).
 
 Community Edition is free and Apache-2.0. Paid plans start at $80/month on Distr Cloud, or fully self-hosted with a license key. See https://distr.sh/pricing/.
