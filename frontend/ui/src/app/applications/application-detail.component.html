@@ -55,6 +55,12 @@
             </div>
           </li>
         </ol>
+        @if (auth.hasAnyRole('read_write', 'admin')) {
+          <button type="button" (click)="deleteApplication(application)" class="py-2 px-3 distr-btn-danger">
+            <fa-icon [icon]="faTrash" class="h-4 w-4 mr-2" />
+            Delete Application
+          </button>
+        }
       </nav>
 
       <div class="my-4 gap-4 md:my-6 md:gap-12">
@@ -115,18 +121,6 @@
                 }
               </div>
             </div>
-            @if (auth.hasAnyRole('read_write', 'admin')) {
-              <div class="inline-flex self-start items-end justify-end grow">
-                <button
-                  type="button"
-                  aria-label="Delete"
-                  (click)="deleteApplication(application)"
-                  class="py-2 px-3 distr-btn-danger">
-                  <fa-icon [icon]="faTrash" class="h-4 w-4 mr-2" />
-                  Delete Application
-                </button>
-              </div>
-            }
           </div>
         </div>
       </div>

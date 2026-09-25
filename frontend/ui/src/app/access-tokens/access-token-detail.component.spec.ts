@@ -25,6 +25,17 @@ const sibling: AccessToken = {
   label: 'sibling',
 };
 
+const rotatingToken: AccessToken = {
+  id: '33333333-3333-3333-3333-333333333333',
+  keyId: 'distr-2LTMfjV5xU8',
+  createdAt: '2026-01-01T00:00:00Z',
+  label: 'rotating',
+  secrets: [
+    {slot: 1, createdAt: '2026-01-01T00:00:00Z', expiresAt: '2026-02-01T00:00:00Z'},
+    {slot: 2, createdAt: '2026-01-01T00:00:00Z'},
+  ],
+};
+
 const created: AccessTokenWithKey = {...legacyToken, key: 'distr-2LTMfjV5xU8sJfF1M0hIm8_secret'};
 
 describe('AccessTokenDetailComponent', () => {
@@ -52,12 +63,20 @@ describe('AccessTokenDetailComponent', () => {
     return harness.routeNativeElement?.textContent ?? '';
   }
 
-  async function open(token: AccessToken) {
+  async function open(token: AccessToken, tokens: AccessToken[] = [legacyToken, sibling]) {
     await TestBed.inject(Router).navigateByUrl(`/settings/access-tokens/${token.id}`);
     harness.detectChanges();
-    httpTesting.expectOne('/api/v1/settings/tokens').flush([legacyToken, sibling]);
+    httpTesting.expectOne('/api/v1/settings/tokens').flush(tokens);
     await harness.fixture.whenStable();
     return rendered();
+  }
+
+  async function clickDeleteCredential(index: number) {
+    const buttons = harness.routeNativeElement!.querySelectorAll<HTMLButtonElement>(
+      'button[aria-label="Delete token"]'
+    );
+    buttons[index].click();
+    await harness.fixture.whenStable();
   }
 
   it('opens a token that has neither secrets nor an explicit role', async () => {
@@ -77,5 +96,21 @@ describe('AccessTokenDetailComponent', () => {
     await harness.fixture.whenStable();
 
     expect(rendered()).not.toContain(created.key);
+  });
+
+  it('deletes an expired token without confirmation', async () => {
+    await open(rotatingToken, [rotatingToken]);
+
+    await clickDeleteCredential(0);
+
+    httpTesting.expectOne({method: 'DELETE', url: `/api/v1/settings/tokens/${rotatingToken.id}/secrets/1`}).flush(null);
+  });
+
+  it('does not delete a token that still works when the confirmation is declined', async () => {
+    await open(rotatingToken, [rotatingToken]);
+
+    await clickDeleteCredential(1);
+
+    httpTesting.expectNone({method: 'DELETE', url: `/api/v1/settings/tokens/${rotatingToken.id}/secrets/2`});
   });
 });
