@@ -1,12 +1,12 @@
 dependencies:
 - name: postgresql
   repository: oci://registry-1.docker.io/bitnamicharts
-  version: 18.12.0
+  version: 18.12.2
 - name: rustfs
   repository: https://charts.rustfs.com
   version: 1.0.0
 - name: loki
   repository: oci://ghcr.io/grafana-community/helm-charts
   version: 18.13.5
-digest: sha256:5c8e11ad33aa90099e3a19c822999d982246df3da372deab9ae062d104116a73
-generated: "2026-09-24T14:17:56.67777495Z"
+digest: sha256:116b17a8e05a921d8749eab9b8d0225c584c7224d6af6a90573b8cbb90272e9d
+generated: "2026-09-26T17:23:34.853065108Z"
