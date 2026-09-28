@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -31,7 +32,15 @@ func watchStatus(ctx context.Context) {
 	}
 }
 
+// statusReportMu is held by a status report from reading the deployment state until the report is sent, and by
+// an apply while it saves the progressing state. A report therefore never checks a revision whose containers an
+// apply is already replacing.
+var statusReportMu sync.Mutex
+
 func reportStatus(ctx context.Context) {
+	statusReportMu.Lock()
+	defer statusReportMu.Unlock()
+
 	deployments, err := GetExistingDeployments()
 	if err != nil {
 		logger.Error("could not get existing deployments for status check", zap.Error(err))

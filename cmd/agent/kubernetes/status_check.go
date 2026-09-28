@@ -29,11 +29,19 @@ func watchStatus(ctx context.Context) {
 	}
 }
 
+// statusReportMu is held by a status report from reading the deployment state until the report is sent, and by
+// an install or upgrade while it saves the progressing state. A report therefore never checks a revision whose
+// release Helm is already changing.
+var statusReportMu sync.Mutex
+
 func reportStatus(ctx context.Context) {
 	namespace := agentNamespace.Load()
 	if namespace == nil {
 		return
 	}
+
+	statusReportMu.Lock()
+	defer statusReportMu.Unlock()
 
 	deployments, err := GetExistingDeployments(ctx, *namespace)
 	if err != nil {

@@ -132,8 +132,7 @@ func RunHelmInstall(
 	}
 
 	agentDeployment := NewAgentDeployment(deployment, previous)
-	agentDeployment.State = StateProgressing
-	if err := SaveDeployment(ctx, namespace, agentDeployment); err != nil {
+	if err := saveProgressingDeployment(ctx, namespace, &agentDeployment); err != nil {
 		logger.Warn("failed to save deployment before install", zap.Error(err))
 	}
 
@@ -154,6 +153,13 @@ func RunHelmInstall(
 	}
 
 	return &agentDeployment, err
+}
+
+func saveProgressingDeployment(ctx context.Context, namespace string, deployment *AgentDeployment) error {
+	deployment.State = StateProgressing
+	statusReportMu.Lock()
+	defer statusReportMu.Unlock()
+	return SaveDeployment(ctx, namespace, *deployment)
 }
 
 func RunHelmUpgrade(
@@ -194,8 +200,7 @@ func RunHelmUpgrade(
 	}
 
 	agentDeployment := NewAgentDeployment(deployment, &previous)
-	agentDeployment.State = StateProgressing
-	if err := SaveDeployment(ctx, namespace, agentDeployment); err != nil {
+	if err := saveProgressingDeployment(ctx, namespace, &agentDeployment); err != nil {
 		logger.Warn("failed to save deployment before upgrade", zap.Error(err))
 	}
 

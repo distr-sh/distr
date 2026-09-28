@@ -36,7 +36,10 @@ func DockerEngineApply(
 	}
 
 	agentDeployment.State = StateProgressing
-	if err = SaveDeployment(*agentDeployment); err != nil {
+	statusReportMu.Lock()
+	err = SaveDeployment(*agentDeployment)
+	statusReportMu.Unlock()
+	if err != nil {
 		logger.Warn("failed to save deployment before apply", zap.Error(err))
 	}
 
