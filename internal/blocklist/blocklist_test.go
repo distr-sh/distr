@@ -20,6 +20,9 @@ func TestEmailBlocked(t *testing.T) {
 		"User@EXAMPLE.COM",
 		"user@mail.example.com",
 		"user@example.com.",
+		"user@example.com..",
+		"user@.example.com",
+		"user@..example.com",
 		`"a@b"@spam.io`,
 		"user@fqdn.org",
 		"user@example.com@allowed.io",
@@ -37,7 +40,9 @@ func TestEmailBlocked(t *testing.T) {
 	}
 	g.Expect(emailBlocked(nil, "user@example.com")).To(BeFalse())
 
-	for _, invalid := range []string{"example..com", "user@example.com", "exa_mple.com", "-example.com", "example.com/x"} {
+	for _, invalid := range []string{
+		"example..com", ".example.com", "user@example.com", "exa_mple.com", "-example.com", "example.com/x",
+	} {
 		_, err := envparse.EmailDomainList(invalid)
 		g.Expect(err).To(HaveOccurred(), invalid)
 	}

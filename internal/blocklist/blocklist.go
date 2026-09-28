@@ -51,7 +51,7 @@ func emailBlocked(domains []string, email string) bool {
 }
 
 func domainBlocked(domains []string, domain string) bool {
-	domain = strings.TrimSuffix(strings.ToLower(strings.TrimSpace(domain)), ".")
+	domain = strings.TrimRight(strings.ToLower(strings.TrimSpace(domain)), ".")
 	return slices.ContainsFunc(domains, func(blocked string) bool {
 		return domain == blocked || strings.HasSuffix(domain, "."+blocked)
 	})

@@ -75,7 +75,7 @@ func commaSeparated(value string) []string {
 func EmailDomainList(value string) ([]string, error) {
 	domains := commaSeparated(strings.ToLower(value))
 	for i, domain := range domains {
-		domains[i] = strings.TrimSuffix(domain, ".")
+		domains[i] = strings.TrimRight(domain, ".")
 		if err := validation.ValidateHostname(domains[i]); err != nil {
 			return nil, fmt.Errorf("invalid email domain %q: %w", domain, err)
 		}
