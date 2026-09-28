@@ -76,6 +76,7 @@ func SendDeploymentStatusNotifications(
 		if !ok {
 			continue
 		}
+		ctx := internalctx.WithLogger(ctx, log.With(zap.Stringer("configId", config.ID)))
 		if err := sendDeploymentStatusNotificationsWithConfig(
 			ctx, deploymentTarget, deployment, kind, currentStatus, config,
 		); err != nil {
@@ -152,7 +153,7 @@ func sendDeploymentStatusNotificationsWithConfig(
 		return nil
 	}
 
-	log := internalctx.GetLogger(ctx).With(zap.Stringer("configId", config.ID))
+	log := internalctx.GetLogger(ctx)
 
 	if kind == deploymentStatusNotificationStale {
 		if open, err := db.HasOpenStaleWarning(ctx, config.ID, deployment.ID); err != nil {
