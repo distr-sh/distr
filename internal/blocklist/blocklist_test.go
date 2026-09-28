@@ -1,6 +1,8 @@
 package blocklist
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"net/netip"
 	"testing"
 
@@ -60,4 +62,27 @@ func TestIPBlocked(t *testing.T) {
 		_, err := envparse.IPPrefixList(invalid)
 		g.Expect(err).To(HaveOccurred(), invalid)
 	}
+}
+
+func TestRequestBlocked(t *testing.T) {
+	g := NewWithT(t)
+	prefixes, err := envparse.IPPrefixList("203.0.113.0/24")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	request := func(remoteAddr string, xff ...string) *http.Request {
+		r := httptest.NewRequest(http.MethodPost, "/", nil)
+		r.RemoteAddr = remoteAddr
+		for _, value := range xff {
+			r.Header.Add("X-Forwarded-For", value)
+		}
+		return r
+	}
+
+	g.Expect(requestBlocked(prefixes, request("203.0.113.7:1234"))).To(BeTrue())
+	g.Expect(requestBlocked(prefixes, request("203.0.113.7:1234", "198.51.100.1"))).To(BeTrue())
+	g.Expect(requestBlocked(prefixes, request("10.0.0.1:1234", "198.51.100.1, 203.0.113.7"))).To(BeTrue())
+	g.Expect(requestBlocked(prefixes, request("10.0.0.1:1234", "203.0.113.7", "198.51.100.1"))).To(BeTrue())
+	g.Expect(requestBlocked(prefixes, request("10.0.0.1:1234", "garbage, 203.0.113.7"))).To(BeTrue())
+	g.Expect(requestBlocked(prefixes, request("10.0.0.1:1234", "198.51.100.1"))).To(BeFalse())
+	g.Expect(requestBlocked(nil, request("203.0.113.7:1234"))).To(BeFalse())
 }
