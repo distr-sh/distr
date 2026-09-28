@@ -1,9 +1,15 @@
 ---
 import {Icon} from 'astro-icon/components';
 import {metrics} from '~/data/metrics';
+
+interface Props {
+  bgClass?: string;
+}
+
+const {bgClass = 'bg-gray-50 dark:bg-gray-800'} = Astro.props;
 ---
 
-<section class="py-8 md:py-12 lg:py-16 bg-gray-50 dark:bg-gray-800">
+<section class:list={['py-8 md:py-12 lg:py-16', bgClass]}>
   <div class="container mx-auto px-4 max-w-7xl">
     <div class="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
       {
