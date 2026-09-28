@@ -53,7 +53,7 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 ### Blocklists
 
 `BLOCKED_EMAIL_DOMAINS` (e.g. `example.com,spam.io`) refuses registration, password login, password resets,
-invitations and login through the built-in OIDC providers for addresses of a listed domain or any of its subdomains,
+invitations, email changes and login through the built-in OIDC providers for addresses of a listed domain or any of its subdomains,
 so `example.com` also covers `mail.example.com`. Matching ignores case. Organizations' own OIDC providers are not
 affected.
 

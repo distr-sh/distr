@@ -121,6 +121,10 @@ func authVerifyConfirmHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "token does not have verified claim", http.StatusForbidden)
 		return
 	}
+	if blocklist.EmailBlocked(authn.CurrentUserEmail()) {
+		http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
+		return
+	}
 
 	if err := userauth.VerifyUserEmail(ctx, authn.CurrentUser(), authn.CurrentUserEmail()); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
