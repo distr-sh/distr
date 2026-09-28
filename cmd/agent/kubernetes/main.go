@@ -188,6 +188,7 @@ func main() {
 				} else if err := DeleteDeployment(ctx, res.Namespace, existing); err != nil {
 					logger.Warn("could not delete old AgentDeployment resource", zap.Error(err))
 				}
+				registryAuthErrors.Delete(existing.ID)
 			}
 		}
 
@@ -295,12 +296,14 @@ func runInstallOrUpgrade(
 ) {
 	progress := Progress(deployment)
 
-	if _, err := agentauth.EnsureAuth(ctx, agentClient.RawToken(), deployment); err != nil {
-		logger.Error("failed to ensure docker auth", zap.Error(err))
-		pushErrorStatus(ctx, deployment, fmt.Errorf("failed to ensure docker auth: %w", err))
-	} else if err := ensureImagePullSecret(ctx, namespace, deployment); err != nil {
-		logger.Error("failed to ensure image pull secret", zap.Error(err))
-		pushErrorStatus(ctx, deployment, fmt.Errorf("failed to ensure image pull secret: %w", err))
+	authErr := ensureRegistryAuth(ctx, namespace, deployment)
+	registryAuthErrors.Set(deployment, authErr)
+	if authErr != nil {
+		logger.Error("registry auth error", zap.Error(authErr))
+		// The status watcher reports the error for the applied revision, since it would otherwise overwrite it.
+		if currentDeployment == nil || currentDeployment.AppliedRevisionID() != deployment.RevisionID {
+			pushErrorStatus(ctx, deployment, authErr)
+		}
 	}
 
 	if currentDeployment == nil || currentDeployment.HelmRevision == nil {
@@ -395,6 +398,15 @@ func pushErrorStatus(ctx context.Context, deployment api.AgentDeployment, err er
 	if err := agentClient.Status(ctx, deployment, types.DeploymentStatusTypeError, err.Error()); err != nil {
 		logger.Warn("status push failed", zap.Error(err))
 	}
+}
+
+func ensureRegistryAuth(ctx context.Context, namespace string, deployment api.AgentDeployment) error {
+	if _, err := agentauth.EnsureAuth(ctx, agentClient.RawToken(), deployment); err != nil {
+		return fmt.Errorf("failed to ensure docker auth: %w", err)
+	} else if err := ensureImagePullSecret(ctx, namespace, deployment); err != nil {
+		return fmt.Errorf("failed to ensure image pull secret: %w", err)
+	}
+	return nil
 }
 
 func ensureImagePullSecret(ctx context.Context, namespace string, deployment api.AgentDeployment) error {

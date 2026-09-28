@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -47,8 +48,11 @@ func reportStatus(ctx context.Context) {
 		}
 
 		statusType := types.DeploymentStatusTypeHealthy
-		message, err := CheckReleaseStatus(ctx, *namespace, deployment.ReleaseName)
-		if err != nil {
+		var message string
+		if authErr := registryAuthErrors.Get(deployment.ID, revisionID); authErr != nil {
+			statusType = types.DeploymentStatusTypeError
+			message = authErr.Error()
+		} else if message, err = CheckReleaseStatus(ctx, *namespace, deployment.ReleaseName); err != nil {
 			logger.Warn("status check failed", zap.String("releaseName", deployment.ReleaseName), zap.Error(err))
 			statusType = types.DeploymentStatusTypeError
 			message = err.Error()
@@ -58,6 +62,41 @@ func reportStatus(ctx context.Context) {
 			logger.Warn("status push failed", zap.Error(err))
 		}
 	}
+}
+
+var registryAuthErrors = &registryAuthErrorStore{errors: map[uuid.UUID]registryAuthError{}}
+
+// registryAuthErrorStore holds the result of the last registry auth refresh of every deployment. The pull secret
+// has to be refreshed while a revision is running, so a failure is reported for the applied revision as well.
+type registryAuthErrorStore struct {
+	mu     sync.Mutex
+	errors map[uuid.UUID]registryAuthError
+}
+
+type registryAuthError struct {
+	revisionID uuid.UUID
+	err        error
+}
+
+func (s *registryAuthErrorStore) Set(deployment api.AgentDeployment, err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.errors[deployment.ID] = registryAuthError{revisionID: deployment.RevisionID, err: err}
+}
+
+func (s *registryAuthErrorStore) Get(deploymentID, revisionID uuid.UUID) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if e, ok := s.errors[deploymentID]; ok && e.revisionID == revisionID {
+		return e.err
+	}
+	return nil
+}
+
+func (s *registryAuthErrorStore) Delete(deploymentID uuid.UUID) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.errors, deploymentID)
 }
 
 func CheckReleaseStatus(ctx context.Context, namespace, releaseName string) (string, error) {

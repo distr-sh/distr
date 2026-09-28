@@ -159,12 +159,6 @@ loop:
 }
 
 func applyDeployment(ctx context.Context, deployment api.AgentDeployment, existing map[uuid.UUID]AgentDeployment) {
-	if _, err := agentauth.EnsureAuth(ctx, client.RawToken(), deployment); err != nil {
-		logger.Error("docker auth error", zap.Error(err))
-		sendApplyStatus(ctx, deployment, "", err)
-		return
-	}
-
 	if deployment.DockerType == nil {
 		logger.Error("cannot apply deployment because docker type is nil",
 			zap.Any("deploymentRevisionId", deployment.RevisionID))
@@ -185,6 +179,12 @@ func applyDeployment(ctx context.Context, deployment api.AgentDeployment, existi
 				logger.Warn("could not write compose project directory", zap.Error(err))
 			}
 		}
+		return
+	}
+
+	if _, err := agentauth.EnsureAuth(ctx, client.RawToken(), deployment); err != nil {
+		logger.Error("docker auth error", zap.Error(err))
+		sendApplyStatus(ctx, deployment, "", err)
 		return
 	}
 
