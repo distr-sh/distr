@@ -5,7 +5,7 @@ go 1.27.0
 toolchain go1.27.1
 
 require (
-	cloud.google.com/go/kms v1.34.0
+	cloud.google.com/go/kms v1.35.0
 	github.com/Masterminds/semver/v3 v3.5.0
 	github.com/avast/retry-go/v5 v5.0.0
 	github.com/aws/aws-sdk-go-v2 v1.47.0
@@ -46,7 +46,7 @@ require (
 	github.com/oaswrap/spec v0.5.2
 	github.com/oaswrap/spec-ui v0.2.1
 	github.com/oaswrap/spec/adapter/chiopenapi v0.5.2
-	github.com/onsi/gomega v1.43.1
+	github.com/onsi/gomega v1.44.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.161.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
@@ -75,12 +75,12 @@ require (
 	golang.org/x/sync v0.23.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v4 v4.3.0
-	k8s.io/api v0.37.0
-	k8s.io/apimachinery v0.37.0
-	k8s.io/cli-runtime v0.37.0
-	k8s.io/client-go v0.37.0
-	k8s.io/kubectl v0.37.0
-	k8s.io/metrics v0.37.0
+	k8s.io/api v0.37.1
+	k8s.io/apimachinery v0.37.1
+	k8s.io/cli-runtime v0.37.1
+	k8s.io/client-go v0.37.1
+	k8s.io/kubectl v0.37.1
+	k8s.io/metrics v0.37.1
 	oras.land/oras-go/v2 v2.6.2
 )
 
@@ -133,7 +133,7 @@ require (
 	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/containerd/console v1.0.5 // indirect
 	github.com/containerd/containerd/api v1.11.1 // indirect
-	github.com/containerd/containerd/v2 v2.3.5 // indirect
+	github.com/containerd/containerd/v2 v2.3.6 // indirect
 	github.com/containerd/continuity v0.5.0 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
@@ -342,8 +342,8 @@ require (
 	gotest.tools/v3 v3.5.2 // indirect
 	k8s.io/apiextensions-apiserver v0.37.0 // indirect
 	k8s.io/apiserver v0.37.0 // indirect
-	k8s.io/component-base v0.37.0 // indirect
-	k8s.io/component-helpers v0.37.0 // indirect
+	k8s.io/component-base v0.37.1 // indirect
+	k8s.io/component-helpers v0.37.1 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260721132016-d427ff9ee9ad // indirect
 	k8s.io/utils v0.0.0-20260626114624-be93311217bd // indirect
