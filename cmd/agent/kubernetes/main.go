@@ -208,6 +208,8 @@ func main() {
 			if err := verifyLatestHelmRelease(ctx, res.Namespace, deployment, currentDeployment); err != nil {
 				if errors.Is(err, driver.ErrReleaseNotFound) {
 					logger.Info("current helm release does not exist")
+				} else if !requiresInstallOrUpgrade(deployment, currentDeployment) {
+					logger.Warn("helm release differs from the one deployed by the agent", zap.Error(err))
 				} else {
 					logger.Warn("refusing to install or update", zap.Error(err))
 					pushErrorStatus(ctx, deployment, err)
@@ -306,7 +308,9 @@ func runInstallOrUpgrade(
 		}
 	}
 
-	if currentDeployment == nil || currentDeployment.HelmRevision == nil {
+	if !requiresInstallOrUpgrade(deployment, currentDeployment) {
+		logger.Debug("no action required")
+	} else if currentDeployment == nil || currentDeployment.HelmRevision == nil {
 		err := progress.Run(ctx, func() error {
 			if _, err := RunHelmInstall(ctx, namespace, deployment, currentDeployment); err != nil {
 				return fmt.Errorf("helm install failed: %w", err)
@@ -320,7 +324,7 @@ func runInstallOrUpgrade(
 			logger.Info("helm install succeeded")
 			pushRunningStatus(ctx, deployment, "helm install succeeded")
 		}
-	} else if currentDeployment.RevisionID != deployment.RevisionID || currentDeployment.State == StateProgressing {
+	} else {
 		successMessage := "helm upgrade succeeded"
 		err := progress.Run(ctx, func() error {
 			if updatedDeployment, err := RunHelmUpgrade(ctx, namespace, deployment, *currentDeployment); err != nil {
@@ -341,9 +345,14 @@ func runInstallOrUpgrade(
 			logger.Info(successMessage)
 			pushRunningStatus(ctx, deployment, successMessage)
 		}
-	} else {
-		logger.Debug("no action required")
 	}
+}
+
+func requiresInstallOrUpgrade(deployment api.AgentDeployment, currentDeployment *AgentDeployment) bool {
+	return currentDeployment == nil ||
+		currentDeployment.HelmRevision == nil ||
+		currentDeployment.RevisionID != deployment.RevisionID ||
+		currentDeployment.State == StateProgressing
 }
 
 type progressStatusRunner struct {
