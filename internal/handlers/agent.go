@@ -173,6 +173,7 @@ func agentLoginHandler() func(w http.ResponseWriter, r *http.Request) {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 			}
 		} else {
+			recordDeploymentTarget(ctx, deploymentTarget)
 			// TODO maybe even randomize token valid duration
 			if _, token, err := authjwt.GenerateAgentTokenValidFor(
 				deploymentTarget.ID, deploymentTarget.OrganizationID, env.AgentTokenMaxValidDuration()); err != nil {
