@@ -27,11 +27,13 @@ func IPBlocked(addr netip.Addr) bool {
 }
 
 func emailBlocked(domains []string, email string) bool {
-	at := strings.LastIndex(email, "@")
-	if at < 0 {
-		return false
-	}
-	domain := strings.TrimSuffix(strings.ToLower(strings.TrimSpace(email[at+1:])), ".")
+	return slices.ContainsFunc(strings.Split(email, "@")[1:], func(domain string) bool {
+		return domainBlocked(domains, domain)
+	})
+}
+
+func domainBlocked(domains []string, domain string) bool {
+	domain = strings.TrimSuffix(strings.ToLower(strings.TrimSpace(domain)), ".")
 	return slices.ContainsFunc(domains, func(blocked string) bool {
 		return domain == blocked || strings.HasSuffix(domain, "."+blocked)
 	})

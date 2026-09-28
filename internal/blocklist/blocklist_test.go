@@ -20,6 +20,7 @@ func TestEmailBlocked(t *testing.T) {
 		"user@example.com.",
 		`"a@b"@spam.io`,
 		"user@fqdn.org",
+		"user@example.com@allowed.io",
 	} {
 		g.Expect(emailBlocked(domains, email)).To(BeTrue(), email)
 	}

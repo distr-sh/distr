@@ -114,6 +114,10 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	if err := body.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	if err := validateCreateUserAccount(ctx, &body); err != nil {
 		if errors.Is(err, apierrors.ErrBadRequest) {

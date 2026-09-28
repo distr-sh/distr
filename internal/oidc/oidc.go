@@ -271,10 +271,17 @@ func (o *OIDCer) GetIdentityForCode(
 	if err != nil {
 		return Identity{}, err
 	}
+	return validatedIdentity(identity)
+}
+
+func validatedIdentity(identity Identity) (Identity, error) {
 	// The claims come from a provider we do not control, and are not covered by the trimming that
 	// request bodies get. A padded email would miss the account a user already has and provision a
 	// second one for them.
 	validation.TrimStrings(&identity)
+	if err := validation.ValidateEmail(identity.Email); err != nil {
+		return Identity{}, fmt.Errorf("provider returned an invalid email address: %w", err)
+	}
 	return identity, nil
 }
 

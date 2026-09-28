@@ -332,6 +332,10 @@ func authLoginHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	if err := request.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	if blocklist.EmailBlocked(request.Email) {
 		http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
 		return
@@ -500,7 +504,7 @@ func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 	if request, err := JsonBody[api.AuthResetPasswordRequest](w, r); err != nil {
 		return
 	} else if err := request.Validate(); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	} else if blocklist.EmailBlocked(request.Email) {
 		http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
