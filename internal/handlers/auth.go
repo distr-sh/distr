@@ -175,6 +175,10 @@ func setPasswordAndLogin(
 	log := internalctx.GetLogger(ctx)
 	authn := auth.Authentication.Require(ctx)
 	user := authn.CurrentUser()
+	if blocklist.EmailBlocked(user.Email) {
+		http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
+		return
+	}
 
 	var token string
 	err := db.RunTx(ctx, func(ctx context.Context) error {
@@ -497,6 +501,9 @@ func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if err := request.Validate(); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		return
+	} else if blocklist.EmailBlocked(request.Email) {
+		http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
 		return
 	} else if user, err := db.GetUserAccountByEmail(ctx, request.Email); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {

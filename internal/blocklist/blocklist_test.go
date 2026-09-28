@@ -42,13 +42,15 @@ func TestEmailBlocked(t *testing.T) {
 
 func TestIPBlocked(t *testing.T) {
 	g := NewWithT(t)
-	prefixes, err := envparse.IPPrefixList("203.0.113.7, 198.51.100.1/24,2001:db8::/32")
+	prefixes, err := envparse.IPPrefixList("203.0.113.7, 198.51.100.1/24,2001:db8::/32,::ffff:192.0.2.0/120")
 	g.Expect(err).NotTo(HaveOccurred())
 
-	for _, ip := range []string{"203.0.113.7", "::ffff:203.0.113.7", "198.51.100.200", "2001:db8::1"} {
+	for _, ip := range []string{
+		"203.0.113.7", "::ffff:203.0.113.7", "198.51.100.200", "2001:db8::1", "192.0.2.9", "::ffff:192.0.2.9",
+	} {
 		g.Expect(ipBlocked(prefixes, netip.MustParseAddr(ip))).To(BeTrue(), ip)
 	}
-	for _, ip := range []string{"203.0.113.8", "198.51.101.1", "2001:db9::1"} {
+	for _, ip := range []string{"203.0.113.8", "198.51.101.1", "2001:db9::1", "192.0.3.1"} {
 		g.Expect(ipBlocked(prefixes, netip.MustParseAddr(ip))).To(BeFalse(), ip)
 	}
 	g.Expect(ipBlocked(prefixes, netip.Addr{})).To(BeFalse())

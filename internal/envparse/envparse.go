@@ -93,7 +93,11 @@ func IPPrefixList(value string) ([]netip.Prefix, error) {
 			if err != nil {
 				return nil, err
 			}
-			prefixes = append(prefixes, prefix.Masked())
+			// Client addresses are unmapped before matching, so an IPv4-mapped prefix has to be unmapped too.
+			if prefix = prefix.Masked(); prefix.Addr().Is4In6() && prefix.Bits() >= 96 {
+				prefix = netip.PrefixFrom(prefix.Addr().Unmap(), prefix.Bits()-96)
+			}
+			prefixes = append(prefixes, prefix)
 		} else if addr, err := netip.ParseAddr(entry); err != nil {
 			return nil, err
 		} else {
