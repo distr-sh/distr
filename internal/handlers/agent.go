@@ -27,6 +27,7 @@ import (
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/notification"
+	"github.com/distr-sh/distr/internal/requestlog"
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
@@ -613,8 +614,19 @@ func queryAuthDeploymentTargetCtxMiddleware(next http.Handler) http.Handler {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 			}
 		} else {
+			recordDeploymentTarget(ctx, deploymentTarget)
 			ctx = internalctx.WithDeploymentTarget(ctx, deploymentTarget)
 			next.ServeHTTP(w, r.WithContext(ctx))
+		}
+	})
+}
+
+func recordDeploymentTarget(ctx context.Context, deploymentTarget *types.DeploymentTargetFull) {
+	requestlog.FromContext(ctx).Update(func(f *requestlog.Fields) {
+		f.OrganizationID = &deploymentTarget.OrganizationID
+		f.DeploymentTargetID = &deploymentTarget.ID
+		if deploymentTarget.CustomerOrganization != nil {
+			f.CustomerOrganizationID = &deploymentTarget.CustomerOrganization.ID
 		}
 	})
 }
@@ -670,6 +682,7 @@ func agentAuthDeploymentTargetCtxMiddleware(next http.Handler) http.Handler {
 					}
 				}
 			}
+			recordDeploymentTarget(ctx, deploymentTarget)
 			ctx = internalctx.WithDeploymentTarget(ctx, deploymentTarget)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		}

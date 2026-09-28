@@ -13,11 +13,13 @@ import (
 	"github.com/distr-sh/distr/internal/authkey"
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
+	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/prometheus"
+	"github.com/distr-sh/distr/internal/requestlog"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	sentryhttp "github.com/getsentry/sentry-go/http"
@@ -111,15 +113,21 @@ func LoggerCtxMiddleware(logger *zap.Logger) func(next http.Handler) http.Handle
 func LoggingMiddleware(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+		ctx, fields := requestlog.NewContext(r.Context())
 		now := time.Now()
-		handler.ServeHTTP(ww, r)
+		handler.ServeHTTP(ww, r.WithContext(ctx))
 		elapsed := time.Since(now)
-		logger := internalctx.GetLogger(r.Context())
-		logger.Info("handling request",
+		logFields := []zap.Field{
 			zap.String("method", r.Method),
 			zap.String("path", r.URL.Path),
 			zap.Int("status", ww.Status()),
-			zap.String("time", elapsed.String()))
+			zap.String("time", elapsed.String()),
+			zap.String("ip", middleware.GetClientIP(ctx)),
+		}
+		if buildconfig.IsRelease() {
+			logFields = append(logFields, zap.String("userAgent", r.UserAgent()))
+		}
+		internalctx.GetLogger(ctx).Info("handling request", append(logFields, fields.ZapFields()...)...)
 	}
 	return http.HandlerFunc(fn)
 }
