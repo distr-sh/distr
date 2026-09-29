@@ -14,6 +14,10 @@ type CreateUserAccountRequest struct {
 	PartnerOrganizationID  *uuid.UUID     `json:"partnerOrganizationId,omitempty"`
 }
 
+func (r CreateUserAccountRequest) Validate() error {
+	return validation.ValidateEmail(r.Email)
+}
+
 type CreateUserAccountResponse struct {
 	User      UserAccountResponse `json:"user"`
 	InviteURL string              `json:"inviteUrl,omitempty"`
