@@ -244,7 +244,7 @@ func sendProgressInterval(ctx context.Context, deployment api.AgentDeployment) f
 	sendProgress()
 
 	go func() {
-		tick := time.Tick(agentenv.Interval)
+		tick := time.Tick(agentenv.ProgressingInterval)
 		for {
 			select {
 			case <-ctx.Done():

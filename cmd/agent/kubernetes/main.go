@@ -370,7 +370,7 @@ func (psr *progressStatusRunner) Run(ctx context.Context, f func() error) error 
 	pushProgressingStatus(ctx, psr.deployment)
 
 	go func(ctx context.Context) {
-		tick := time.Tick(agentenv.Interval)
+		tick := time.Tick(agentenv.ProgressingInterval)
 		for {
 			select {
 			case <-ctx.Done():
