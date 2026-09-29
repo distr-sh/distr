@@ -26,7 +26,7 @@
     "@astrojs/mdx": "8.0.2",
     "@astrojs/preact": "6.0.5",
     "@astrojs/sitemap": "3.7.4",
-    "@astrojs/starlight": "0.42.3",
+    "@astrojs/starlight": "0.42.4",
     "@astrojs/starlight-tailwind": "5.0.0",
     "@iconify-json/lucide": "^1.2.132",
     "@iconify-json/simple-icons": "^1.2.96",
