@@ -8,7 +8,7 @@ import (
 
 func BlockIPs(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if blocklist.RequestBlocked(r) {
+		if blocklist.ClientIPBlocked(r.Context()) {
 			http.Error(w, blocklist.IPBlockedMessage, http.StatusForbidden)
 			return
 		}

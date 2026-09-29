@@ -1,12 +1,13 @@
 package blocklist
 
 import (
-	"net/http"
+	"context"
 	"net/netip"
 	"slices"
 	"strings"
 
 	"github.com/distr-sh/distr/internal/env"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 )
 
 const (
@@ -20,28 +21,8 @@ func EmailBlocked(email string) bool {
 	return emailBlocked(env.BlockedEmailDomains(), email)
 }
 
-// RequestBlocked reports whether the remote address of the request or any address in its X-Forwarded-For header
-// falls within one of the prefixes in BLOCKED_IPS. A client can prepend forged entries to the header but cannot
-// remove the one a proxy appends, so every entry has to be checked rather than the one taken as the client IP.
-func RequestBlocked(r *http.Request) bool {
-	return requestBlocked(env.BlockedIPs(), r)
-}
-
-func requestBlocked(prefixes []netip.Prefix, r *http.Request) bool {
-	if len(prefixes) == 0 {
-		return false
-	}
-	if addrPort, err := netip.ParseAddrPort(r.RemoteAddr); err == nil && ipBlocked(prefixes, addrPort.Addr()) {
-		return true
-	}
-	for _, header := range r.Header.Values("X-Forwarded-For") {
-		for entry := range strings.SplitSeq(header, ",") {
-			if addr, err := netip.ParseAddr(strings.TrimSpace(entry)); err == nil && ipBlocked(prefixes, addr) {
-				return true
-			}
-		}
-	}
-	return false
+func ClientIPBlocked(ctx context.Context) bool {
+	return ipBlocked(env.BlockedIPs(), chimiddleware.GetClientIPAddr(ctx))
 }
 
 func emailBlocked(domains []string, email string) bool {

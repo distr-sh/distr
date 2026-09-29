@@ -58,8 +58,8 @@ so `example.com` also covers `mail.example.com`. Matching ignores case. Organiza
 affected.
 
 `BLOCKED_IPS` (e.g. `203.0.113.7,198.51.100.0/24,2001:db8::/32`) refuses every request to the sign-up, login and
-password reset endpoints that comes from a listed address or range, or that lists one in its `X-Forwarded-For`
-header.
+password reset endpoints whose client IP is a listed address or lies in a listed range. Behind a reverse proxy,
+the client IP is the rightmost entry of the `X-Forwarded-For` header.
 
 Both answer with `403 Forbidden`, except a blocked email domain on a built-in OIDC login, which redirects back to the
 login page and shows the reason there.
