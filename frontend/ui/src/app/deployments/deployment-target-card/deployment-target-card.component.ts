@@ -687,6 +687,13 @@ export class DeploymentTargetCardComponent {
     });
   }
 
+  protected onDeploymentRowClick(event: MouseEvent, deployment: DeploymentWithLatestRevision) {
+    if (event.target instanceof Element && event.target.closest('a, button')) {
+      return;
+    }
+    this.openRevisionsDrawer(deployment);
+  }
+
   protected openRevisionsDrawer(deployment: DeploymentWithLatestRevision) {
     if (!deployment.id) return;
     this.hideDrawer();

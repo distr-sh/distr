@@ -200,7 +200,9 @@
         @let deploymentIdsWithUpdate1 = deploymentIdsWithUpdate();
         @let autoUpdatableDeploymentIds = deploymentIdsAllowingAutomaticUpdates();
         @for (deployment of deploymentTarget().deployments; track deployment.id) {
-          <li class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-300 dark:border-gray-500">
+          <li
+            class="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-300 dark:border-gray-500"
+            (click)="onDeploymentRowClick($event, deployment)">
             <div class="px-4 py-2">
               <div class="flex flex-col gap-1">
                 <div class="flex items-center justify-between gap-3">
@@ -368,9 +370,7 @@
                 </div>
                 <div class="flex items-center justify-between gap-3">
                   <div class="flex items-center gap-2 min-w-0">
-                    <button type="button" class="flex items-center" (click)="openRevisionsDrawer(deployment)">
-                      <app-deployment-status-text [deployment]="deployment" />
-                    </button>
+                    <app-deployment-status-text [deployment]="deployment" />
                     @if (
                       deployment.automaticApplicationUpdatesEnabled &&
                       deployment.id &&
