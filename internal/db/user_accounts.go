@@ -31,7 +31,8 @@ var (
 		` + userAccountMFASecret.Value("u") + `,
 		u.mfa_enabled,
 		u.mfa_enabled_at,
-		u.is_super_admin`
+		u.is_super_admin,
+		` + userAccountActivatedExpr
 	userAccountWithRoleOutputExpr = userAccountOutputExpr +
 		", j.user_role, j.created_at, j.customer_organization_id, j.partner_organization_id "
 	userAccountWithRoleOutputExprWithAlias = userAccountWithRoleOutputExpr + " as joined_org_at "
@@ -151,6 +152,39 @@ func UpdateUserAccountEmailVerified(ctx context.Context, userAccount *types.User
 		*userAccount = created
 		return nil
 	}
+}
+
+const userAccountActivatedExpr = `(u.password_hash IS NOT NULL
+	OR u.last_logged_in_at IS NOT NULL
+	OR EXISTS (SELECT 1 FROM UserAccountOIDCIdentity i WHERE i.user_account_id = u.id))`
+
+func SetUserAccountInitialPassword(ctx context.Context, userAccount *types.UserAccount) error {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`UPDATE UserAccount AS u
+		SET name = @name,
+			password_hash = @password_hash,
+			password_salt = @password_salt
+		WHERE u.id = @id AND NOT `+userAccountActivatedExpr+`
+		RETURNING `+userAccountOutputExpr,
+		pgx.NamedArgs{
+			"id":            userAccount.ID,
+			"name":          userAccount.Name,
+			"password_hash": userAccount.PasswordHash,
+			"password_salt": userAccount.PasswordSalt,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("could not set initial password: %w", err)
+	}
+	updated, err := pgx.CollectExactlyOneRow[types.UserAccount](rows, pgx.RowToStructByPos)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return apierrors.ErrConflict
+	} else if err != nil {
+		return fmt.Errorf("could not set initial password: %w", err)
+	}
+	*userAccount = updated
+	return nil
 }
 
 func UpdateUserAccountLastUsedOrganizationID(ctx context.Context, userID, orgID uuid.UUID) error {

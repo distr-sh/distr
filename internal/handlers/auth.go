@@ -89,10 +89,7 @@ func AuthRouter(r chiopenapi.Router) {
 func authStatusHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
-	userAccount := auth.CurrentUser()
-	RespondJSON(w, map[string]any{
-		"active": userAccount.PasswordHash != nil,
-	})
+	RespondJSON(w, map[string]any{"active": auth.CurrentUser().Activated})
 }
 
 func authVerifyRequestHandler(w http.ResponseWriter, r *http.Request) {
@@ -143,7 +140,7 @@ func authAcceptInviteHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	setPasswordAndLogin(w, r, body.Password, body.Name, body.MFACode)
+	setPasswordAndLogin(w, r, userauth.SetInitialUserPassword, body.Password, body.Name, body.MFACode)
 }
 
 func authResetConfirmHandler(w http.ResponseWriter, r *http.Request) {
@@ -155,7 +152,7 @@ func authResetConfirmHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	setPasswordAndLogin(w, r, body.Password, nil, body.MFACode)
+	setPasswordAndLogin(w, r, userauth.SetUserPassword, body.Password, nil, body.MFACode)
 }
 
 // setPasswordAndLogin sets (and persists) the given password and optional name for the authenticated user,
@@ -163,7 +160,13 @@ func authResetConfirmHandler(w http.ResponseWriter, r *http.Request) {
 // token so the frontend can log the user in directly. It is shared by the invite-accept and reset-confirm flows.
 // An account with MFA enabled has to pass the same check as on a regular login before any of this happens,
 // since a reset or invitation link only proves control over the mailbox.
-func setPasswordAndLogin(w http.ResponseWriter, r *http.Request, password string, name, mfaCode *string) {
+func setPasswordAndLogin(
+	w http.ResponseWriter,
+	r *http.Request,
+	setPassword func(ctx context.Context, user *types.UserAccount, password string, name *string) error,
+	password string,
+	name, mfaCode *string,
+) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	authn := auth.Authentication.Require(ctx)
@@ -174,7 +177,7 @@ func setPasswordAndLogin(w http.ResponseWriter, r *http.Request, password string
 		if err := userauth.VerifyMFA(ctx, *user, mfaCode); err != nil {
 			return err
 		}
-		if err := userauth.SetUserPassword(ctx, user, password, name); err != nil {
+		if err := setPassword(ctx, user, password, name); err != nil {
 			return err
 		}
 		if authn.CurrentUserEmailVerified() {
@@ -198,6 +201,8 @@ func setPasswordAndLogin(w http.ResponseWriter, r *http.Request, password string
 			http.Error(w, "invalid MFA code or recovery code", http.StatusBadRequest)
 		} else if errors.Is(err, apierrors.ErrNotFound) {
 			http.Error(w, "could not update user", http.StatusBadRequest)
+		} else if errors.Is(err, apierrors.ErrConflict) {
+			http.Error(w, "this invitation has already been accepted, please log in instead", http.StatusBadRequest)
 		} else if errors.Is(err, subscription.ErrGlobalOrganizationLimitReached) {
 			log.Warn("could not set password, global organization limit reached")
 			http.Error(w, subscription.GlobalOrganizationLimitReachedMessage, http.StatusBadRequest)

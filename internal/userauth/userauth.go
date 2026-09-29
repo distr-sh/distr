@@ -25,6 +25,17 @@ func SetUserPassword(ctx context.Context, user *types.UserAccount, password stri
 	return db.UpdateUserAccount(ctx, user)
 }
 
+func SetInitialUserPassword(ctx context.Context, user *types.UserAccount, password string, name *string) error {
+	if name != nil && *name != "" {
+		user.Name = *name
+	}
+	user.Password = password
+	if err := security.HashPassword(user); err != nil {
+		return err
+	}
+	return db.SetUserAccountInitialPassword(ctx, user)
+}
+
 // VerifyUserEmail marks the given email address (the one carried by the verification token) as verified and
 // persists the change. If the token carries a different email address than the user currently has, the email
 // is updated as well (used by the email-change flow). It is a no-op when the email is unchanged and already
