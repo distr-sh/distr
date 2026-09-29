@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/internal/authjwt"
-	internalauthkey "github.com/distr-sh/distr/internal/authkey"
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
 	"github.com/distr-sh/distr/internal/authn/authkey"
@@ -111,9 +110,6 @@ func recordAuthInfo(ctx context.Context, info authinfo.AuthInfo) {
 		} else {
 			f.UserID = new(info.CurrentUserID())
 			f.OrganizationScoped = new(info.OrganizationScoped())
-		}
-		if key, ok := info.Token().(internalauthkey.Key); ok {
-			f.TokenID = new(key.ID())
 		}
 	})
 }

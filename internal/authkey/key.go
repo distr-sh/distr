@@ -137,6 +137,14 @@ func NewToken() (Token, error) {
 
 func (token Token) String() string { return token.Key.String() }
 
+// ID is the [Key.ID] or [Key.LegacyID] of the token's key, whichever form its owner knows it by.
+func (token Token) ID() string {
+	if token.Secret == nil {
+		return token.Key.LegacyID()
+	}
+	return token.Key.ID()
+}
+
 // Serialize renders the token as the client sends it back. A token without a secret is rendered in
 // the hex encoding that predates them, because that is the only form of it that was ever issued.
 func (token Token) Serialize() string {

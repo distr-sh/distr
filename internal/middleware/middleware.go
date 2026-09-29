@@ -122,10 +122,13 @@ func LoggingMiddleware(handler http.Handler) http.Handler {
 			zap.String("path", r.URL.Path),
 			zap.Int("status", ww.Status()),
 			zap.String("time", elapsed.String()),
-			zap.String("ip", middleware.GetClientIP(ctx)),
 		}
 		if buildconfig.IsRelease() {
-			logFields = append(logFields, zap.String("userAgent", r.UserAgent()))
+			logFields = append(
+				logFields,
+				zap.String("userAgent", r.UserAgent()),
+				zap.String("ip", middleware.GetClientIP(ctx)),
+			)
 		}
 		internalctx.GetLogger(ctx).Info("handling request", append(logFields, fields.ZapFields()...)...)
 	}

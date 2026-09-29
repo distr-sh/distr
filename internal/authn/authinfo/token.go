@@ -9,6 +9,7 @@ import (
 	"github.com/distr-sh/distr/internal/authkey"
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/requestlog"
 )
 
 func FromAuthKey(ctx context.Context, token authkey.Token) (AuthInfo, error) {
@@ -19,6 +20,10 @@ func FromAuthKey(ctx context.Context, token authkey.Token) (AuthInfo, error) {
 		}
 		return nil, err
 	}
+
+	requestlog.FromContext(ctx).Update(func(f *requestlog.Fields) {
+		f.TokenID = new(token.ID())
+	})
 
 	role := at.EffectiveUserRole()
 	return &SimpleAuthInfo{

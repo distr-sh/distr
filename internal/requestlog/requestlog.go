@@ -39,19 +39,23 @@ func (f *Fields) Update(fn func(f *Fields)) {
 }
 
 func (f *Fields) ZapFields() []zap.Field {
-	return []zap.Field{
-		uuidField("organizationId", f.OrganizationID),
-		uuidField("customerOrganizationId", f.CustomerOrganizationID),
-		uuidField("userId", f.UserID),
-		uuidField("deploymentTargetId", f.DeploymentTargetID),
-		zap.Stringp("tokenId", f.TokenID),
-		zap.Boolp("organizationScoped", f.OrganizationScoped),
+	var fields []zap.Field
+	fields = appendIfNonNil(fields, "organizationId", f.OrganizationID)
+	fields = appendIfNonNil(fields, "customerOrganizationId", f.CustomerOrganizationID)
+	fields = appendIfNonNil(fields, "userId", f.UserID)
+	fields = appendIfNonNil(fields, "deploymentTargetId", f.DeploymentTargetID)
+	if f.TokenID != nil {
+		fields = append(fields, zap.String("tokenId", *f.TokenID))
 	}
+	if f.OrganizationScoped != nil {
+		fields = append(fields, zap.Bool("organizationScoped", *f.OrganizationScoped))
+	}
+	return fields
 }
 
-func uuidField(key string, value *uuid.UUID) zap.Field {
+func appendIfNonNil(fields []zap.Field, key string, value *uuid.UUID) []zap.Field {
 	if value == nil {
-		return zap.Reflect(key, nil)
+		return fields
 	}
-	return zap.Stringer(key, value)
+	return append(fields, zap.Stringer(key, value))
 }
