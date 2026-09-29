@@ -164,6 +164,7 @@ func main() {
 		logsWatcher.SetLogsAfter(res.DeploymentLogsAfter)
 		logsGoroutine.GoOrCancel(ctx, res.DeploymentLogsEnabled)
 		agentNamespace.Store(&res.Namespace)
+		publishTargetRevisionIDs(res.Deployments)
 		metricsGoroutine.GoOrCancel(ctx, res.MetricsEnabled)
 		deploymentMetricsGoroutine.GoOrCancel(ctx, res.MetricsEnabled)
 
@@ -208,7 +209,7 @@ func main() {
 			if err := verifyLatestHelmRelease(ctx, res.Namespace, deployment, currentDeployment); err != nil {
 				if errors.Is(err, driver.ErrReleaseNotFound) {
 					logger.Info("current helm release does not exist")
-				} else if !requiresInstallOrUpgrade(deployment, currentDeployment) {
+				} else if !requiresInstallOrUpgrade(deployment.RevisionID, currentDeployment) {
 					logger.Warn("helm release differs from the one deployed by the agent", zap.Error(err))
 				} else {
 					logger.Warn("refusing to install or update", zap.Error(err))
@@ -308,7 +309,7 @@ func runInstallOrUpgrade(
 		}
 	}
 
-	if !requiresInstallOrUpgrade(deployment, currentDeployment) {
+	if !requiresInstallOrUpgrade(deployment.RevisionID, currentDeployment) {
 		logger.Debug("no action required")
 	} else if currentDeployment == nil || currentDeployment.HelmRevision == nil {
 		err := progress.Run(ctx, func() error {
@@ -348,11 +349,19 @@ func runInstallOrUpgrade(
 	}
 }
 
-func requiresInstallOrUpgrade(deployment api.AgentDeployment, currentDeployment *AgentDeployment) bool {
+func requiresInstallOrUpgrade(targetRevisionID uuid.UUID, currentDeployment *AgentDeployment) bool {
 	return currentDeployment == nil ||
 		currentDeployment.HelmRevision == nil ||
-		currentDeployment.RevisionID != deployment.RevisionID ||
+		currentDeployment.RevisionID != targetRevisionID ||
 		currentDeployment.State == StateProgressing
+}
+
+func publishTargetRevisionIDs(deployments []api.AgentDeployment) {
+	targets := make(map[uuid.UUID]uuid.UUID, len(deployments))
+	for _, deployment := range deployments {
+		targets[deployment.ID] = deployment.RevisionID
+	}
+	targetRevisionIDs.Store(&targets)
 }
 
 type progressStatusRunner struct {

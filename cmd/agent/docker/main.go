@@ -124,6 +124,8 @@ loop:
 		if resource, err := client.Resource(ctx); err != nil {
 			logger.Error("failed to get resource", zap.Error(err))
 		} else {
+			publishTargetRevisionIDs(resource.Deployments)
+
 			if selfUpdateIfRequired(ctx, *resource) {
 				continue
 			}
@@ -170,10 +172,7 @@ func applyDeployment(ctx context.Context, deployment api.AgentDeployment, existi
 		agentDeployment = &d
 	}
 
-	if agentDeployment != nil &&
-		agentDeployment.RevisionID == deployment.RevisionID &&
-		agentDeployment.State != StateFailed &&
-		agentDeployment.State != StateProgressing {
+	if !requiresApply(deployment.RevisionID, agentDeployment) {
 		if *deployment.DockerType == types.DockerTypeCompose {
 			if err := EnsureComposeProjectDir(deployment); err != nil {
 				logger.Warn("could not write compose project directory", zap.Error(err))
@@ -215,6 +214,21 @@ func applyDeployment(ctx context.Context, deployment api.AgentDeployment, existi
 
 	progressCancel()
 	sendApplyStatus(ctx, deployment, status, err)
+}
+
+func requiresApply(targetRevisionID uuid.UUID, current *AgentDeployment) bool {
+	return current == nil ||
+		current.RevisionID != targetRevisionID ||
+		current.State == StateFailed ||
+		current.State == StateProgressing
+}
+
+func publishTargetRevisionIDs(deployments []api.AgentDeployment) {
+	targets := make(map[uuid.UUID]uuid.UUID, len(deployments))
+	for _, deployment := range deployments {
+		targets[deployment.ID] = deployment.RevisionID
+	}
+	targetRevisionIDs.Store(&targets)
 }
 
 func sendApplyStatus(ctx context.Context, deployment api.AgentDeployment, status string, err error) {

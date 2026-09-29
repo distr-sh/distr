@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -16,7 +17,7 @@ import (
 )
 
 // watchStatus reports the status of the revision that was last applied successfully for every deployment,
-// independently of the main loop, which may be busy applying a newer revision.
+// independently of the main loop, which may be busy applying or retrying a newer revision.
 func watchStatus(ctx context.Context) {
 	tick := time.Tick(agentenv.Interval)
 	for {
@@ -30,9 +31,13 @@ func watchStatus(ctx context.Context) {
 }
 
 // statusReportMu is held by a status report from reading the deployment state until the report is sent, and by
-// an install or upgrade while it saves the progressing state. A report therefore never checks a revision whose
-// release Helm is already changing.
+// an install or upgrade while it saves the progressing state. Helm therefore cannot start changing a release
+// while a report that saw no pending update is still checking it.
 var statusReportMu sync.Mutex
+
+// targetRevisionIDs maps every deployment in the last resource to its target revision. The main loop replaces
+// the whole map and never modifies a published one.
+var targetRevisionIDs atomic.Pointer[map[uuid.UUID]uuid.UUID]
 
 func reportStatus(ctx context.Context) {
 	namespace := agentNamespace.Load()
@@ -49,9 +54,15 @@ func reportStatus(ctx context.Context) {
 		return
 	}
 
+	targets := targetRevisionIDs.Load()
+	if targets == nil {
+		return
+	}
+
 	for _, deployment := range deployments {
 		revisionID := deployment.AppliedRevisionID()
-		if revisionID == uuid.Nil || deployment.State == StateProgressing {
+		targetRevisionID, ok := (*targets)[deployment.ID]
+		if revisionID == uuid.Nil || !ok {
 			continue
 		}
 
@@ -62,8 +73,13 @@ func reportStatus(ctx context.Context) {
 			message = authErr.Error()
 		} else if message, err = CheckReleaseStatus(ctx, *namespace, deployment.ReleaseName); err != nil {
 			logger.Warn("status check failed", zap.String("releaseName", deployment.ReleaseName), zap.Error(err))
-			statusType = types.DeploymentStatusTypeError
 			message = err.Error()
+			// While an upgrade is being applied or retried, Helm is changing the applied revision's workloads.
+			if requiresInstallOrUpgrade(targetRevisionID, &deployment) {
+				statusType = types.DeploymentStatusTypeProgressing
+			} else {
+				statusType = types.DeploymentStatusTypeError
+			}
 		}
 		current := api.AgentDeployment{ID: deployment.ID, RevisionID: revisionID}
 		if err := agentClient.Status(ctx, current, statusType, message); err != nil {

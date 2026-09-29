@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -33,9 +34,13 @@ func watchStatus(ctx context.Context) {
 }
 
 // statusReportMu is held by a status report from reading the deployment state until the report is sent, and by
-// an apply while it saves the progressing state. A report therefore never checks a revision whose containers an
-// apply is already replacing.
+// an apply while it saves the progressing state. An apply therefore cannot start replacing containers while a
+// report that saw no pending update is still checking them.
 var statusReportMu sync.Mutex
+
+// targetRevisionIDs maps every deployment in the last resource to its target revision. The main loop replaces
+// the whole map and never modifies a published one.
+var targetRevisionIDs atomic.Pointer[map[uuid.UUID]uuid.UUID]
 
 func reportStatus(ctx context.Context) {
 	statusReportMu.Lock()
@@ -47,20 +52,29 @@ func reportStatus(ctx context.Context) {
 		return
 	}
 
+	targets := targetRevisionIDs.Load()
+	if targets == nil {
+		return
+	}
+
 	for _, deployment := range deployments {
 		revisionID := deployment.AppliedRevisionID()
-		if revisionID == uuid.Nil || deployment.State == StateProgressing {
+		targetRevisionID, ok := (*targets)[deployment.ID]
+		if revisionID == uuid.Nil || !ok {
 			continue
 		}
 
-		current := api.AgentDeployment{ID: deployment.ID, RevisionID: revisionID}
-		var sendErr error
-		if statusType, message, err := CheckStatus(ctx, deployment); err != nil {
-			sendErr = client.StatusWithError(ctx, current, err)
-		} else {
-			sendErr = client.Status(ctx, current, statusType, message)
+		statusType, message, err := CheckStatus(ctx, deployment)
+		if err != nil {
+			statusType, message = types.DeploymentStatusTypeError, err.Error()
 		}
-		if err := sendErr; err != nil {
+		// While an update is being applied or retried, the applied revision's containers are being replaced.
+		if statusType == types.DeploymentStatusTypeError && requiresApply(targetRevisionID, &deployment) {
+			statusType = types.DeploymentStatusTypeProgressing
+		}
+
+		current := api.AgentDeployment{ID: deployment.ID, RevisionID: revisionID}
+		if err := client.Status(ctx, current, statusType, message); err != nil {
 			logger.Warn("failed to send status", zap.Error(err))
 		}
 	}
