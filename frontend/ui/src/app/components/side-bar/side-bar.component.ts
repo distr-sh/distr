@@ -98,7 +98,7 @@ export class SideBarComponent {
   protected readonly faHandHoldingDollar = faHandHoldingDollar;
   protected readonly faXmark = faXmark;
   protected feedbackAlert = true;
-  protected readonly agentsSubMenuOpen = signal(true);
+  protected readonly controllersSubMenuOpen = signal(true);
   protected readonly registrySubMenuOpen = signal(true);
   protected readonly licenseOverlayOpen = signal(false);
   protected readonly notificationsOverlayOpen = signal(false);

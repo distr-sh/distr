@@ -8,10 +8,10 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/agentconnect"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/controllerconnect"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/security"
@@ -26,7 +26,7 @@ import (
 )
 
 func DeploymentTargetsRouter(r chiopenapi.Router) {
-	r.WithOptions(option.GroupTags("Agents"))
+	r.WithOptions(option.GroupTags("Controllers"))
 	r.Use(middleware.RequireOrgAndRole)
 	r.Get("/", getDeploymentTargets).
 		With(option.Description("List all deployment targets")).
@@ -80,7 +80,7 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 				}{})).
 				With(option.Response(http.StatusOK, api.DeploymentTargetNotes{}))
 		})
-		// These are read-only, agent-pushed logs that are safe to serve from the read-only db.
+		// These are read-only, controller-pushed logs that are safe to serve from the read-only db.
 		r.With(middleware.UseReadonlyDB).Group(func(r chiopenapi.Router) {
 			r.Get("/logs", getDeploymentTargetLogRecordsHandler()).
 				With(option.Description("Get logs for this deployment target")).
@@ -128,12 +128,12 @@ func createDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if err = dt.Validate(); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-	} else if agentVersion, err := db.GetCurrentAgentVersion(ctx); err != nil {
-		log.Warn("could not get current agent version", zap.Error(err))
+	} else if controllerVersion, err := db.GetCurrentControllerVersion(ctx); err != nil {
+		log.Warn("could not get current controller version", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
-		dt.AgentVersionID = &agentVersion.ID
+		dt.ControllerVersionID = &controllerVersion.ID
 		if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
 			if dt.CustomerOrganization == nil || dt.CustomerOrganization.ID == uuid.Nil {
 				http.Error(w, "partner users must assign a deployment target to a customer", http.StatusForbidden)
@@ -208,18 +208,18 @@ func updateDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if dt.AgentVersion.ID != uuid.Nil {
-		dt.AgentVersionID = &dt.AgentVersion.ID
+	if requested := dt.RequestedControllerVersion(); requested.ID != uuid.Nil {
+		dt.ControllerVersionID = &requested.ID
 	} else if dt.AutomaticUpdatesEnabled {
 		// Without this, enabling automatic updates would only take effect on the next restart.
-		agentVersion, err := db.GetCurrentAgentVersion(ctx)
+		controllerVersion, err := db.GetCurrentControllerVersion(ctx)
 		if err != nil {
-			log.Warn("could not get current agent version", zap.Error(err))
+			log.Warn("could not get current controller version", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		dt.AgentVersionID = &agentVersion.ID
+		dt.ControllerVersionID = &controllerVersion.ID
 	}
 
 	existing := internalctx.GetDeploymentTarget(ctx)
@@ -296,7 +296,7 @@ func createAccessForDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	org := auth.CurrentOrgWithBranding()
-	connectUrl, err := agentconnect.BuildConnectURL(ctx, deploymentTarget.ID, *org, targetSecret)
+	connectUrl, err := controllerconnect.BuildConnectURL(ctx, deploymentTarget.ID, *org, targetSecret)
 	if err != nil {
 		log.Error("could not create connecturl", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -304,7 +304,7 @@ func createAccessForDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	connectCommand, err := agentconnect.GenerateConnectCommand(
+	connectCommand, err := controllerconnect.GenerateConnectCommand(
 		ctx,
 		deploymentTarget.DeploymentTarget,
 		*org,

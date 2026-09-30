@@ -21,7 +21,7 @@ func status(
 	}
 }
 
-func TestDeploymentStatusNotificationFor_StaleRecoveryAfterAgentDiedMidApply(t *testing.T) {
+func TestDeploymentStatusNotificationFor_StaleRecoveryAfterControllerDiedMidApply(t *testing.T) {
 	g := NewWithT(t)
 	oldRevision, newRevision := uuid.New(), uuid.New()
 	previous := status(newRevision, types.DeploymentStatusTypeProgressing, 10*time.Minute)

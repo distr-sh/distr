@@ -1,5 +1,5 @@
-import {AgentVersion} from './agent-version';
 import {BaseModel, Named} from './base';
+import {ControllerVersion} from './controller-version';
 import {CustomerOrganization} from './customer-organization';
 import {DeploymentTargetScope, DeploymentType, DeploymentWithLatestRevision} from './deployment';
 
@@ -10,7 +10,11 @@ export interface DeploymentTarget extends BaseModel, Named {
   scope?: DeploymentTargetScope;
   customerOrganization?: CustomerOrganization;
   deployments: DeploymentWithLatestRevision[];
-  agentVersion?: AgentVersion;
+  controllerVersion?: ControllerVersion;
+  reportedControllerVersionId?: string;
+  /** @deprecated Use {@link DeploymentTarget.controllerVersion} instead. */
+  agentVersion?: ControllerVersion;
+  /** @deprecated Use {@link DeploymentTarget.reportedControllerVersionId} instead. */
   reportedAgentVersionId?: string;
   metricsEnabled: boolean;
   imageCleanupEnabled: boolean;

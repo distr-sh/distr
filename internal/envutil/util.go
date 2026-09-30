@@ -22,6 +22,19 @@ func GetEnvOrNil(key string) *string {
 	return nil
 }
 
+// ResolveDeprecatedAlias returns deprecatedAlias instead of key when only the former is set, warning about it,
+// so that the result can be passed on to any other function here.
+func ResolveDeprecatedAlias(key, deprecatedAlias string) string {
+	if _, ok := os.LookupEnv(key); !ok {
+		if _, ok := os.LookupEnv(deprecatedAlias); ok {
+			fmt.Fprintf(os.Stderr, "\nWARNING: use of deprecated variable \"%v\", please use \"%v\" instead\n\n",
+				deprecatedAlias, key)
+			return deprecatedAlias
+		}
+	}
+	return key
+}
+
 func GetEnvOrDefault(key, defaultValue string, opts GetEnvOpts) string {
 	if value := GetEnv(key); value != "" {
 		return value

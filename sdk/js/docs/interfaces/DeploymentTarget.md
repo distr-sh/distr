@@ -12,9 +12,13 @@
 
 ## Properties
 
-### agentVersion?
+### ~~agentVersion?~~
 
-> `optional` **agentVersion?**: [`AgentVersion`](AgentVersion.md)
+> `optional` **agentVersion?**: [`ControllerVersion`](ControllerVersion.md)
+
+#### Deprecated
+
+Use [DeploymentTarget.controllerVersion](#controllerversion) instead.
 
 ---
 
@@ -27,6 +31,12 @@
 ### automaticUpdatesEnabled?
 
 > `optional` **automaticUpdatesEnabled?**: `boolean`
+
+---
+
+### controllerVersion?
+
+> `optional` **controllerVersion?**: [`ControllerVersion`](ControllerVersion.md)
 
 ---
 
@@ -108,9 +118,19 @@
 
 ---
 
-### reportedAgentVersionId?
+### ~~reportedAgentVersionId?~~
 
 > `optional` **reportedAgentVersionId?**: `string`
+
+#### Deprecated
+
+Use [DeploymentTarget.reportedControllerVersionId](#reportedcontrollerversionid) instead.
+
+---
+
+### reportedControllerVersionId?
+
+> `optional` **reportedControllerVersionId?**: `string`
 
 ---
 

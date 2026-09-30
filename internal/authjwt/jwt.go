@@ -35,8 +35,10 @@ const (
 	// for logging.
 	CustomOIDCConfigurationIDKey = "oidc"
 
-	audienceUserValue  = "user"
-	audienceAgentValue = "agent"
+	audienceUserValue = "user"
+	// audienceControllerValue keeps the value from before the rename to controller, so a token issued before
+	// an upgrade still carries the audience of one issued after it.
+	audienceControllerValue = "agent"
 )
 
 // TokenScope identifies the purpose a special, unscoped user token was minted for, so that
@@ -167,14 +169,14 @@ func generateUserToken(
 	return encode(claims)
 }
 
-func GenerateAgentTokenValidFor(targetID, orgID uuid.UUID, validFor time.Duration) (jwt.Token, string, error) {
+func GenerateControllerTokenValidFor(targetID, orgID uuid.UUID, validFor time.Duration) (jwt.Token, string, error) {
 	now := time.Now()
 	claims := map[string]any{
 		jwt.IssuedAtKey:   now,
 		jwt.NotBeforeKey:  now,
 		jwt.ExpirationKey: now.Add(validFor),
 		jwt.SubjectKey:    targetID.String(),
-		jwt.AudienceKey:   audienceAgentValue,
+		jwt.AudienceKey:   audienceControllerValue,
 		OrgIdKey:          orgID.String(),
 	}
 	return encode(claims)

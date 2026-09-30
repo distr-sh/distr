@@ -47,7 +47,7 @@ import dayjs from 'dayjs';
 import {EMPTY, filter, firstValueFrom, lastValueFrom, switchMap} from 'rxjs';
 import {SemVer} from 'semver';
 import {GITHUB_URL, WEBSITE_URL} from '../../../constants';
-import {agentChangelog} from '../../../data';
+import {controllerChangelog} from '../../../data';
 import {dateTimeLocalToISO, isoToDateTimeLocal} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {DOCKER_ENDPOINT_REGEX, RESOURCE_QUANTITY_REGEX} from '../../../util/validation';
@@ -61,10 +61,10 @@ import {ConnectInstructionsComponent} from '../../components/connect-instruction
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
-import {AgentVersionService} from '../../services/agent-version.service';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
 import {AuthService} from '../../services/auth.service';
+import {ControllerVersionService} from '../../services/controller-version.service';
 import {DeploymentLogsService} from '../../services/deployment-logs.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
@@ -115,7 +115,7 @@ export class DeploymentTargetCardComponent {
   private readonly deploymentLogs = inject(DeploymentLogsService);
   private readonly deploymentTargets = inject(DeploymentTargetsService);
   private readonly toast = inject(ToastService);
-  private readonly agentVersionsSvc = inject(AgentVersionService);
+  private readonly controllerVersionsSvc = inject(ControllerVersionService);
   private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
   private readonly applicationsService = inject(ApplicationsService);
   private readonly featureFlags = inject(FeatureFlagService);
@@ -139,8 +139,9 @@ export class DeploymentTargetCardComponent {
   protected readonly deleteDeploymentProgressModal = viewChild.required<TemplateRef<unknown>>(
     'deleteDeploymentProgressModal'
   );
-  protected readonly updateAgentConfirmTemplate =
-    viewChild.required<TemplateRef<unknown>>('updateAgentConfirmTemplate');
+  protected readonly updateControllerConfirmTemplate = viewChild.required<TemplateRef<unknown>>(
+    'updateControllerConfirmTemplate'
+  );
 
   protected readonly faArrowUpRightFromSquare = faArrowUpRightFromSquare;
   protected readonly faCircleExclamation = faCircleExclamation;
@@ -221,25 +222,25 @@ export class DeploymentTargetCardComponent {
   private drawerRef?: DialogRef;
   private revisionDetailsRef?: DialogRef;
 
-  protected readonly agentVersions = resource({
-    loader: () => firstValueFrom(this.agentVersionsSvc.list()),
+  protected readonly controllerVersions = resource({
+    loader: () => firstValueFrom(this.controllerVersionsSvc.list()),
   });
 
-  protected readonly agentUpdateFromVersion = signal<string | undefined>(undefined);
-  protected readonly agentUpdateToVersion = signal<string | undefined>(undefined);
-  protected readonly agentUpdateChangelogReleases = signal<typeof agentChangelog.releases>([]);
-  protected readonly agentUpdateAutomaticUpdatesEnabled = new FormControl<boolean>(false, {nonNullable: true});
+  protected readonly controllerUpdateFromVersion = signal<string | undefined>(undefined);
+  protected readonly controllerUpdateToVersion = signal<string | undefined>(undefined);
+  protected readonly controllerUpdateChangelogReleases = signal<typeof controllerChangelog.releases>([]);
+  protected readonly controllerUpdateAutomaticUpdatesEnabled = new FormControl<boolean>(false, {nonNullable: true});
 
-  protected readonly isUndeploySupported = this.isAgentVersionAtLeast('1.3.0');
-  protected readonly isMultiDeploymentSupported = this.isAgentVersionAtLeast('1.6.0');
-  protected readonly isLoggingSupported = this.isAgentVersionAtLeast('1.9.0');
-  protected readonly isForceRestartSupported = this.isAgentVersionAtLeast('1.12.0');
+  protected readonly isUndeploySupported = this.isControllerVersionAtLeast('1.3.0');
+  protected readonly isMultiDeploymentSupported = this.isControllerVersionAtLeast('1.6.0');
+  protected readonly isLoggingSupported = this.isControllerVersionAtLeast('1.9.0');
+  protected readonly isForceRestartSupported = this.isControllerVersionAtLeast('1.12.0');
 
-  protected readonly agentUpdateAvailable = computed(() => {
-    const agentVersions = this.agentVersions.value() ?? [];
+  protected readonly controllerUpdateAvailable = computed(() => {
+    const controllerVersions = this.controllerVersions.value() ?? [];
     return (
-      agentVersions.length > 0 &&
-      this.deploymentTarget().agentVersion?.id !== agentVersions[agentVersions.length - 1].id
+      controllerVersions.length > 0 &&
+      this.deploymentTarget().controllerVersion?.id !== controllerVersions[controllerVersions.length - 1].id
     );
   });
 
@@ -357,10 +358,10 @@ export class DeploymentTargetCardComponent {
     );
   }
 
-  protected readonly agentUpdatePending = computed(
+  protected readonly controllerUpdatePending = computed(
     () =>
-      this.deploymentTarget().reportedAgentVersionId !== undefined &&
-      this.deploymentTarget().agentVersion?.id !== this.deploymentTarget().reportedAgentVersionId
+      this.deploymentTarget().reportedControllerVersionId !== undefined &&
+      this.deploymentTarget().controllerVersion?.id !== this.deploymentTarget().reportedControllerVersionId
   );
 
   constructor() {
@@ -560,28 +561,30 @@ export class DeploymentTargetCardComponent {
     }
   }
 
-  public async updateDeploymentTargetAgent(): Promise<void> {
+  public async updateDeploymentTargetController(): Promise<void> {
     try {
       const dt = this.deploymentTarget();
-      const agentVersions = this.agentVersions.value();
-      if (agentVersions?.length) {
-        const targetVersion = agentVersions[agentVersions.length - 1];
-        const fromVersion = dt.agentVersion?.name;
-        this.agentUpdateFromVersion.set(fromVersion);
-        this.agentUpdateToVersion.set(targetVersion.name);
-        this.agentUpdateChangelogReleases.set(this.loadChangelogReleases(fromVersion, targetVersion.name, dt.type));
-        this.agentUpdateAutomaticUpdatesEnabled.setValue(dt.automaticUpdatesEnabled ?? false);
+      const controllerVersions = this.controllerVersions.value();
+      if (controllerVersions?.length) {
+        const targetVersion = controllerVersions[controllerVersions.length - 1];
+        const fromVersion = dt.controllerVersion?.name;
+        this.controllerUpdateFromVersion.set(fromVersion);
+        this.controllerUpdateToVersion.set(targetVersion.name);
+        this.controllerUpdateChangelogReleases.set(
+          this.loadChangelogReleases(fromVersion, targetVersion.name, dt.type)
+        );
+        this.controllerUpdateAutomaticUpdatesEnabled.setValue(dt.automaticUpdatesEnabled ?? false);
 
         if (
           await firstValueFrom(
             this.overlay.confirm({
-              customTemplate: this.updateAgentConfirmTemplate(),
-              confirmLabel: 'Update Agent',
+              customTemplate: this.updateControllerConfirmTemplate(),
+              confirmLabel: 'Update Controller',
             })
           )
         ) {
-          dt.agentVersion = targetVersion;
-          dt.automaticUpdatesEnabled = this.agentUpdateAutomaticUpdatesEnabled.value;
+          dt.controllerVersion = targetVersion;
+          dt.automaticUpdatesEnabled = this.controllerUpdateAutomaticUpdatesEnabled.value;
           await firstValueFrom(this.deploymentTargets.update(dt));
         }
       }
@@ -594,8 +597,8 @@ export class DeploymentTargetCardComponent {
   }
 
   private loadChangelogReleases(fromVersion: string | undefined, toVersion: string, type: DeploymentType) {
-    const allowedScopes = new Set(['agent', `${type}-agent`]);
-    return agentChangelog.releases
+    const allowedScopes = new Set(['controller', `${type}-controller`, 'agent', `${type}-agent`]);
+    return controllerChangelog.releases
       .filter((release) => {
         try {
           const released = new SemVer(release.version);
@@ -622,7 +625,7 @@ export class DeploymentTargetCardComponent {
 
   protected async openInstructionsModal() {
     const dt = this.deploymentTarget();
-    if (dt.reportedAgentVersionId !== undefined) {
+    if (dt.reportedControllerVersionId !== undefined) {
       const message = `If you continue, the previous authentication secret for ${dt.name} becomes invalid. Continue?`;
       const alert =
         dt.customerOrganization !== undefined && this.auth.isVendor()
@@ -751,17 +754,17 @@ export class DeploymentTargetCardComponent {
     this.editForm.patchValue({type: 'docker'});
   }
 
-  private isAgentVersionAtLeast(version: string, allowSnapshot = true) {
+  private isControllerVersionAtLeast(version: string, allowSnapshot = true) {
     return computed(() => {
-      if (!this.deploymentTarget().reportedAgentVersionId) {
-        console.warn('reported agent version id is empty');
+      if (!this.deploymentTarget().reportedControllerVersionId) {
+        console.warn('reported controller version id is empty');
         return true;
       }
-      const reported = this.agentVersions
+      const reported = this.controllerVersions
         .value()
-        ?.find((it) => it.id === this.deploymentTarget().reportedAgentVersionId);
+        ?.find((it) => it.id === this.deploymentTarget().reportedControllerVersionId);
       if (!reported) {
-        console.warn('agent version with id not found', this.deploymentTarget().reportedAgentVersionId);
+        console.warn('controller version with id not found', this.deploymentTarget().reportedControllerVersionId);
         return false;
       }
       try {

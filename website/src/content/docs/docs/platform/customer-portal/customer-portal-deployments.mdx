@@ -1,6 +1,6 @@
 ---
 title: Customer Portal Deployments
-description: Guide for end customers on deploying and managing applications with Distr agents from the Customer Portal.
+description: Guide for end customers on deploying and managing applications with Distr controllers from the Customer Portal.
 slug: docs/platform/customer-portal/deployments
 sidebar:
   label: Deployments
@@ -12,9 +12,9 @@ import ThemedImage from '~/components/util/ThemedImage.astro';
 import deploymentsLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-deployments-light.png';
 import deploymentsDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-deployments-dark.png';
 
-As an end customer, you can deploy and manage applications with Distr agents directly from the [Customer Portal](/docs/platform/customer-portal/).
+As an end customer, you can deploy and manage applications with Distr controllers directly from the [Customer Portal](/docs/platform/customer-portal/).
 
-This guide walks you through the deployment agent quickstart from the Customer Portal.
+This guide walks you through the deployment controller quickstart from the Customer Portal.
 
 <ThemedImage
   lightSrc={deploymentsLight}
@@ -22,7 +22,7 @@ This guide walks you through the deployment agent quickstart from the Customer P
   alt="Customer Portal deployments page showing a running deployment"
 />
 
-## Deployment agent quickstart from the Customer Portal
+## Deployment controller quickstart from the Customer Portal
 
 ### Step 1: Select application
 
@@ -38,18 +38,18 @@ For Helm applications, you'll also need to specify the Kubernetes namespace wher
 
 <Aside type="tip">
   You can also enable cluster-scoped permissions for Helm deployments. When
-  enabled, the agent will have cluster-wide access; otherwise, it will be
+  enabled, the controller will have cluster-wide access; otherwise, it will be
   limited to a specific namespace. See [Kubernetes
-  Agent](/docs/agents/kubernetes-agent/) for more details.
+  Controller](/docs/controllers/kubernetes-controller/) for more details.
 </Aside>
 
 ### Step 3: Application configuration
 
 Configure the environment variables for your Docker Compose application. These variables will be passed to the `docker compose` process via the `--env-file` argument.
 
-For more information on how to use them, refer to [our guide on working with environment variables](/docs/agents/docker-env/).
+For more information on how to use them, refer to [our guide on working with environment variables](/docs/controllers/docker-env/).
 
-You can also enable Docker Swarm mode for deployments that should run in swarm mode. See [Docker Swarm](/docs/agents/docker-agent/#docker-swarm) for more details. Additionally, you can enable container log collection to view application logs directly in the portal. Learn more about [Container Logs](/docs/agents/logs-and-metrics/#container-logs).
+You can also enable Docker Swarm mode for deployments that should run in swarm mode. See [Docker Swarm](/docs/controllers/docker-controller/#docker-swarm) for more details. Additionally, you can enable container log collection to view application logs directly in the portal. Learn more about [Container Logs](/docs/controllers/logs-and-metrics/#container-logs).
 
 <Aside type="note">
   For Helm applications, you'll configure the Helm values instead. You can
@@ -62,9 +62,9 @@ You can also enable Docker Swarm mode for deployments that should run in swarm m
 Review your configuration and click **Create Deployment** to proceed to the deployment page.
 
 <Aside type="caution">
-  **Important**: This command will automatically install the Distr agent, which
-  will then automatically install the application. The agent runs in the
-  customer environment and manages the full lifecycle of your application
+  **Important**: This command will automatically install the Distr controller,
+  which will then automatically install the application. The controller runs in
+  the customer environment and manages the full lifecycle of your application
   deployment.
 </Aside>
 
@@ -75,9 +75,9 @@ View real-time updates as your deployment initializes. The status indicator show
 - **Running**: The deployment is running (no healthchecks configured)
 - **Healthy**: The deployment is running and all healthchecks are passing
 - **Error**: Something is wrong, check the logs for details
-- **Stale**: The agent has not reported this deployment's health in the last 60 seconds
+- **Stale**: The controller has not reported this deployment's health in the last 60 seconds
 
-For the full list of statuses, see [Deployment Status](/docs/agents/logs-and-metrics/#deployment-status).
+For the full list of statuses, see [Deployment Status](/docs/controllers/logs-and-metrics/#deployment-status).
 
 ### Step 6: Access environment logs
 
@@ -91,10 +91,10 @@ Click the **Update** button to modify configuration values and update running de
 
 If your vendor has enabled alerts for your organization, you can configure deployment health notifications from the **Alerts** button in the Deployments view. Set up alert rules for deployment status changes and resource usage thresholds, and choose which users in your organization should receive email notifications.
 
-For details on alert types and configuration, see [Alerts](/docs/agents/alerts/).
+For details on alert types and configuration, see [Alerts](/docs/controllers/alerts/).
 
 ## Important notes
 
-- A single agent can manage multiple deployments in the same target environment
+- A single controller can manage multiple deployments in the same target environment
 - To remove a deployment, first **undeploy** it before **deletion**
 - If a deployment target shows **Stale** status, you can reconnect by generating new credentials from the **⋮** menu

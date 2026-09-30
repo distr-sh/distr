@@ -119,24 +119,24 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 	return authn.AuthenticatorFunc[AuthInfo, AuthInfoWithUserAndOrganization](fn)
 }
 
-type agentDBAuthInfo struct {
+type controllerDBAuthInfo struct {
 	AuthInfo
 	org *types.OrganizationWithBranding
 }
 
-func (a agentDBAuthInfo) CurrentOrg() *types.Organization {
+func (a controllerDBAuthInfo) CurrentOrg() *types.Organization {
 	if a.org == nil {
 		return nil
 	}
 	return &a.org.Organization
 }
 
-func (a agentDBAuthInfo) CurrentOrgWithBranding() *types.OrganizationWithBranding {
+func (a controllerDBAuthInfo) CurrentOrgWithBranding() *types.OrganizationWithBranding {
 	return a.org
 }
 
-func AgentDbAuthenticator() authn.Authenticator[AgentAuthInfo, AuthInfoWithOrganization] {
-	fn := func(ctx context.Context, a AgentAuthInfo) (AuthInfoWithOrganization, error) {
+func ControllerDbAuthenticator() authn.Authenticator[ControllerAuthInfo, AuthInfoWithOrganization] {
+	fn := func(ctx context.Context, a ControllerAuthInfo) (AuthInfoWithOrganization, error) {
 		customer, org, err := db.GetCustomerAndOrgForDeploymentTarget(ctx, a.CurrentDeploymentTargetID())
 		if errors.Is(err, apierrors.ErrNotFound) {
 			return nil, authn.ErrBadAuthentication
@@ -152,9 +152,9 @@ func AgentDbAuthenticator() authn.Authenticator[AgentAuthInfo, AuthInfoWithOrgan
 		if customer != nil {
 			info.customerOrganizationID = &customer.ID
 		}
-		return &agentDBAuthInfo{AuthInfo: info, org: org}, nil
+		return &controllerDBAuthInfo{AuthInfo: info, org: org}, nil
 	}
-	return authn.AuthenticatorFunc[AgentAuthInfo, AuthInfoWithOrganization](fn)
+	return authn.AuthenticatorFunc[ControllerAuthInfo, AuthInfoWithOrganization](fn)
 }
 
 func DropUser() authn.Authenticator[AuthInfoWithUserAndOrganization, AuthInfoWithOrganization] {

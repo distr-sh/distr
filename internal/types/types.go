@@ -199,7 +199,7 @@ const (
 	DeploymentStatusTypeError       DeploymentStatusType = "error"
 )
 
-// IsApplied reports whether the status means the agent has the revision up and running, which is
+// IsApplied reports whether the status means the controller has the revision up and running, which is
 // everything a new status type should mean unless it explicitly does not.
 func (t DeploymentStatusType) IsApplied() bool {
 	return t != DeploymentStatusTypeProgressing && t != DeploymentStatusTypeError
@@ -294,8 +294,10 @@ const (
 	DeploymentTargetScopeCluster   DeploymentTargetScope = "cluster"
 	DeploymentTargetScopeNamespace DeploymentTargetScope = "namespace"
 
-	TutorialBranding      Tutorial  = "branding"
-	TutorialAgents        Tutorial  = "agents"
+	TutorialBranding Tutorial = "branding"
+	// TutorialControllers keeps the value from before the rename to controller, since it is stored in the TUTORIAL
+	// enum and is part of the tutorial progress URL.
+	TutorialControllers   Tutorial  = "agents"
 	TutorialRegistry      Tutorial  = "registry"
 	TutorialUsers         Tutorial  = "users"
 	FileScopePlatform     FileScope = "platform"

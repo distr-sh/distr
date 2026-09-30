@@ -13,9 +13,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// UpdateDeploymentRevisionStatus overwrites the status of the given revision. Agents report the
+// UpdateDeploymentRevisionStatus overwrites the status of the given revision. Controllers report the
 // status they observe on every interval, so created_at is bumped even when nothing changed, which
-// is what [types.DeploymentRevisionStatus.IsStale] reads to tell a silent agent from a healthy one.
+// is what [types.DeploymentRevisionStatus.IsStale] reads to tell a silent controller from a healthy one.
 // Any status other than progressing also becomes the revision's settled status, which a progressing
 // status leaves alone (see [GetLatestSettledDeploymentRevisionStatus]).
 func UpdateDeploymentRevisionStatus(
@@ -73,7 +73,7 @@ func UpdateDeploymentRevisionStatus(
 
 // GetLatestSettledDeploymentRevisionStatus returns the newest status other than progressing across all
 // revisions of the deployment, which is what a new status is compared with to decide about error notifications.
-// An agent that retries applying a revision reports progressing between two errors, so comparing with the
+// A controller that retries applying a revision reports progressing between two errors, so comparing with the
 // newest status of any type would alert on every retry. The message of a settled status is not stored.
 func GetLatestSettledDeploymentRevisionStatus(
 	ctx context.Context,

@@ -32,9 +32,9 @@ Distr enables software and AI companies to distribute applications to self-manag
 
 ## Main features
 
-- **Centralized Management:** View & manage all deployments, artifacts, connected agents, self-managed &
+- **Centralized Management:** View & manage all deployments, artifacts, connected controllers, self-managed &
   BYOC customers via the intuitive web UI
-- **Deployment Automation:** Optional prebuilt Helm and Docker agents manage deployments, collect logs and metrics,
+- **Deployment Automation:** Optional prebuilt Helm and Docker controllers manage deployments, collect logs and metrics,
   and allow remote troubleshooting.
 - **White-label customer portal:** Let your customers control their deployments or download your artifacts
 - **License Management:** Distribute specific versions of your application to specific customers
@@ -166,10 +166,11 @@ func ApiRouter(
 						httprate.LimitBy(2000, 1*time.Hour, middleware.RateLimitUserIDKey),
 
 						// TODO (low-prio) in the future, additionally check token audience and require it to be "api"/"user",
-						// such that agents cant access anything here (they also can't now, because their tokens will not
+						// such that controllers cant access anything here (they also can't now, because their tokens will not
 						// pass the Authentication chain (DbAuthenticator can't find the user -> 401)
 					)
-					r.Route("/agent-versions", handlers.AgentVersionsRouter)
+					r.Route("/agent-versions", handlers.DeprecatedAgentVersionsRouter)
+					r.Route("/controller-versions", handlers.ControllerVersionsRouter)
 					r.Route("/application-entitlements", handlers.ApplicationEntitlementsRouter)
 					r.Route("/applications", handlers.ApplicationsRouter)
 					r.Route("/artifact-entitlements", handlers.ArtifactEntitlementsRouter)
@@ -209,14 +210,14 @@ func ApiRouter(
 				})
 			})
 
-			// agent connect and download routes go here (authenticated but with accessKeyId and accessKeySecret)
+			// controller connect and download routes go here (authenticated but with accessKeyId and accessKeySecret)
 			r.Group(func(r chiopenapi.Router) {
 				r.Group(func(r chiopenapi.Router) {
 					r.Use(
-						middleware.OTEL(tracers.Agent()),
+						middleware.OTEL(tracers.Controller()),
 						requestSize50MiB,
 					)
-					r.Route("/", handlers.AgentRouter)
+					r.Route("/", handlers.ControllerRouter)
 				})
 
 				r.Group(func(r chiopenapi.Router) {

@@ -51,7 +51,7 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 ### Maintenance mode
 
 `MAINTENANCE_MODE=true` announces planned downtime instead of stopping the instance. Distr keeps serving the
-frontend, but answers every API request, including the ones from agents, and every request to the OCI registry with
+frontend, but answers every API request, including the ones from controllers, and every request to the OCI registry with
 `503 Service Unavailable`, so that nothing reaches the database while you work on it. The frontend picks that up and
 shows a maintenance page that reconnects on its own once the instance is back.
 
@@ -73,11 +73,11 @@ See [Security & Encryption](/docs/self-hosting/security#key-management-service) 
 
 ## Tokens & Sessions
 
-| Variable                         | Required | Default | Description                                                       |
-| -------------------------------- | -------- | ------- | ----------------------------------------------------------------- |
-| `INVITE_TOKEN_VALID_DURATION`    | no       | `24h`   | How long user invite links remain valid.                          |
-| `RESET_TOKEN_VALID_DURATION`     | no       | `1h`    | How long password reset links remain valid.                       |
-| `AGENT_TOKEN_MAX_VALID_DURATION` | no       | `24h`   | Maximum validity of an agent access token before it is refreshed. |
+| Variable                              | Required | Default | Description                                                                                                                     |
+| ------------------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `INVITE_TOKEN_VALID_DURATION`         | no       | `24h`   | How long user invite links remain valid.                                                                                        |
+| `RESET_TOKEN_VALID_DURATION`          | no       | `1h`    | How long password reset links remain valid.                                                                                     |
+| `CONTROLLER_TOKEN_MAX_VALID_DURATION` | no       | `24h`   | Maximum validity of a controller access token before it is refreshed. Replaces the deprecated `AGENT_TOKEN_MAX_VALID_DURATION`. |
 
 ## Bot Protection
 
@@ -97,13 +97,16 @@ the widget and are not verified; they remain subject to the rate limits of the a
 | `TURNSTILE_SITE_KEY` | if `TURNSTILE_SECRET`   | —       | Public site key of the Turnstile widget, rendered on the registration form.        |
 | `TURNSTILE_SECRET`   | if `TURNSTILE_SITE_KEY` | —       | Secret key used to verify tokens with Cloudflare's siteverify API. Keep it secret. |
 
-## Agents
+## Controllers
 
-| Variable              | Required | Default | Description                                                                                                                                                                                                                                                                                 |
-| --------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AGENT_HOST`          | no       | —       | Host (and optional port, no scheme) agents and connect commands reach this instance at, taking precedence over an organization's custom app domain. Its scheme is taken from `DISTR_HOST`. Unset, agents use the organization's custom app domain if it has one and `DISTR_HOST` otherwise. |
-| `AGENT_INTERVAL`      | no       | `5s`    | Interval at which agents poll Distr for updates.                                                                                                                                                                                                                                            |
-| `AGENT_DOCKER_CONFIG` | no       | —       | Base64-encoded Docker config JSON provided to Docker agents for registry authentication.                                                                                                                                                                                                    |
+Distr still reads every controller variable under its deprecated `AGENT_*` name when the new one is unset, and logs a
+warning on startup for each one it found that way.
+
+| Variable                   | Required | Default | Description                                                                                                                                                                                                                                                                                                                                 |
+| -------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CONTROLLER_HOST`          | no       | —       | Host (and optional port, no scheme) controllers and connect commands reach this instance at, taking precedence over an organization's custom app domain. Its scheme is taken from `DISTR_HOST`. Unset, controllers use the organization's custom app domain if it has one and `DISTR_HOST` otherwise. Replaces the deprecated `AGENT_HOST`. |
+| `CONTROLLER_INTERVAL`      | no       | `5s`    | Interval at which controllers poll Distr for updates. Replaces the deprecated `AGENT_INTERVAL`.                                                                                                                                                                                                                                             |
+| `CONTROLLER_DOCKER_CONFIG` | no       | —       | Base64-encoded Docker config JSON provided to Docker controllers for registry authentication. Replaces the deprecated `AGENT_DOCKER_CONFIG`.                                                                                                                                                                                                |
 
 ## Mailer
 
@@ -167,7 +170,7 @@ Custom domain self-service lets vendor organizations serve Distr under their own
 It requires an edge proxy with on-demand TLS (e.g. Caddy, included in the Helm chart) in front of Distr.
 The feature is only offered in the UI when `CUSTOM_DOMAIN_TARGET` is set.
 
-A domain is only used for links, mails, agent manifests and registry URLs once a CNAME check has
+A domain is only used for links, mails, controller manifests and registry URLs once a CNAME check has
 found it to point at the CNAME target; until then the organization keeps the default host. The check runs
 when a domain is registered, can be triggered from the organization settings and needs to be
 [scheduled](/docs/self-hosting/maintenance#custom-domain-verification) so that domains recover on
@@ -289,17 +292,17 @@ instead.
 Tracing and error reporting via Sentry and OpenTelemetry.
 Sampler variables accept `always_on`, `always_off`, `traceidratio`, `parentbased_always_on`, `parentbased_always_off` or `parentbased_traceidratio`.
 
-| Variable                       | Required | Default | Description                                                                          |
-| ------------------------------ | -------- | ------- | ------------------------------------------------------------------------------------ |
-| `SENTRY_DSN`                   | no       | —       | Sentry DSN for backend error reporting.                                              |
-| `SENTRY_DEBUG`                 | no       | `false` | Enables Sentry debug logging.                                                        |
-| `SENTRY_ENVIRONMENT`           | no       | —       | Environment name reported to Sentry (e.g. `production`).                             |
-| `OTEL_EXPORTER_SENTRY_ENABLED` | no       | `false` | Exports OpenTelemetry traces to Sentry.                                              |
-| `OTEL_EXPORTER_OTLP_ENABLED`   | no       | `false` | Exports OpenTelemetry traces via OTLP (configured with standard `OTEL_*` variables). |
-| `OTEL_AGENT_SAMPLER`           | no       | —       | Trace sampler used for agent requests.                                               |
-| `OTEL_AGENT_SAMPLER_ARG`       | no       | `1.0`   | Argument for the agent sampler (e.g. ratio for `traceidratio`).                      |
-| `OTEL_REGISTRY_SAMPLER`        | no       | —       | Trace sampler used for registry requests.                                            |
-| `OTEL_REGISTRY_SAMPLER_ARG`    | no       | `1.0`   | Argument for the registry sampler.                                                   |
+| Variable                       | Required | Default | Description                                                                                                            |
+| ------------------------------ | -------- | ------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `SENTRY_DSN`                   | no       | —       | Sentry DSN for backend error reporting.                                                                                |
+| `SENTRY_DEBUG`                 | no       | `false` | Enables Sentry debug logging.                                                                                          |
+| `SENTRY_ENVIRONMENT`           | no       | —       | Environment name reported to Sentry (e.g. `production`).                                                               |
+| `OTEL_EXPORTER_SENTRY_ENABLED` | no       | `false` | Exports OpenTelemetry traces to Sentry.                                                                                |
+| `OTEL_EXPORTER_OTLP_ENABLED`   | no       | `false` | Exports OpenTelemetry traces via OTLP (configured with standard `OTEL_*` variables).                                   |
+| `OTEL_CONTROLLER_SAMPLER`      | no       | —       | Trace sampler used for controller requests. Replaces the deprecated `OTEL_AGENT_SAMPLER`.                              |
+| `OTEL_CONTROLLER_SAMPLER_ARG`  | no       | `1.0`   | Argument for the controller sampler (e.g. ratio for `traceidratio`). Replaces the deprecated `OTEL_AGENT_SAMPLER_ARG`. |
+| `OTEL_REGISTRY_SAMPLER`        | no       | —       | Trace sampler used for registry requests.                                                                              |
+| `OTEL_REGISTRY_SAMPLER_ARG`    | no       | `1.0`   | Argument for the registry sampler.                                                                                     |
 
 ## Prometheus Metrics
 

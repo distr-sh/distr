@@ -1,6 +1,6 @@
 <app-page>
   <div class="distr-toolbar mb-4">
-    <app-search-bar [control]="filterForm.controls.search" placeholder="Filter agents" />
+    <app-search-bar [control]="filterForm.controls.search" placeholder="Filter controllers" />
 
     <div class="distr-toolbar-actions">
       @if (isAlertsVisible()) {
@@ -12,7 +12,7 @@
         </a>
       }
       @if (auth.hasAnyRole('read_write', 'admin')) {
-        <app-quota-limit [usage]="count()" [limit]="limit()" label="agents" #quota />
+        <app-quota-limit [usage]="count()" [limit]="limit()" label="controllers" #quota />
         <button
           (click)="openWizard()"
           [disabled]="auth.isCustomer() && quota.isLimitReached()"
@@ -59,7 +59,7 @@
           <app-quota-limit
             [usage]="customerDeploymentTargets.deploymentTargets.length"
             [limit]="limit()"
-            label="agents" />
+            label="controllers" />
         </div>
       </div>
     }
@@ -74,7 +74,7 @@
       </div>
     }
   } @empty {
-    <div class="text-gray-500 dark:text-gray-400">No agents found.</div>
+    <div class="text-gray-500 dark:text-gray-400">No controllers found.</div>
   }
 
   <ng-template #deploymentModal>

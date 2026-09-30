@@ -463,10 +463,10 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 }
 
 // UpdateDeploymentCurrentRevision marks the given revision as the one currently applied on the
-// deployment target. It never moves the current revision back to an older one, because an agent may
+// deployment target. It never moves the current revision back to an older one, because a controller may
 // report a status of the previous revision after the next one has already been applied. Reporting
-// the revision that is already current writes nothing, which is what every agent does once per
-// AGENT_INTERVAL for as long as nothing changes.
+// the revision that is already current writes nothing, which is what every controller does once per
+// CONTROLLER_INTERVAL for as long as nothing changes.
 func UpdateDeploymentCurrentRevision(ctx context.Context, revisionID uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	if _, err := db.Exec(

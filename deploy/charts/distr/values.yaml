@@ -57,8 +57,8 @@ distr:
   env: &defaultDistrEnv
     - name: DISTR_HOST
       value: http://distr.local
-    # - name: AGENT_HOST
-    #   value: agent.distr.local
+    # - name: CONTROLLER_HOST
+    #   value: controller.distr.local
     - name: REGISTRY_ENABLED
       value: 'true'
     # REGISTRY_* variables are only relevant if REGISTRY_ENABLED is true
@@ -227,7 +227,7 @@ distr:
     # caddy.askServerPort itself.
     # - name: CUSTOM_DOMAIN_TARGET
     #   value: whitelabel.example.com
-    # Once a target is set, a registered domain is only used for links, mails, agent manifests and
+    # Once a target is set, a registered domain is only used for links, mails, controller manifests and
     # registry URLs while the custom-domain-verification CronJob below finds its CNAME record
     # pointing at that target, so removing that job leaves every domain unverified. A verified domain
     # is left alone for 12h before it is checked again; failing ones are checked on every run.
@@ -455,7 +455,7 @@ cronJobs:
   #   labels:
   #     distr.sh/job: user-account-cleanup
   #   args: [cleanup, UserAccount, --timeout, 10m]
-  # Keeps the state that decides whether a custom domain is used for links, mails, agent manifests
+  # Keeps the state that decides whether a custom domain is used for links, mails, controller manifests
   # and registry URLs. It is a no-op while no CNAME target is configured, and runs more often than
   # the hourly default so that a domain whose record was just fixed starts being used again quickly.
   - name: custom-domain-verification
@@ -695,11 +695,11 @@ loki:
       max_global_streams_per_user: 25000
       # Truncate oversized log lines instead of rejecting the whole push.
       max_line_size_truncate: true
-      # Accept backfilled logs up to the retention period so an agent that was
+      # Accept backfilled logs up to the retention period so a controller that was
       # offline can still push its backlog.
       reject_old_samples_max_age: 720h
       # Raised moderately from Loki's 4/6 MB defaults to give an organization with
-      # several chatty agents more headroom before pushes are throttled.
+      # several chatty controllers more headroom before pushes are throttled.
       ingestion_rate_mb: 16
       ingestion_burst_size_mb: 32
   # -- Loki's monolithic instance: replica count, volume size and the init container that provisions

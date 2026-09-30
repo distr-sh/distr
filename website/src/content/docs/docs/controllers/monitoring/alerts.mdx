@@ -1,0 +1,114 @@
+---
+title: Alerts
+description: Monitor deployments and receive email notifications when status changes or resource usage exceeds thresholds.
+slug: docs/controllers/alerts
+sidebar:
+  label: Alerts
+  order: 1
+---
+
+import {Aside} from '@astrojs/starlight/components';
+
+Alerts notify selected users by email when a monitored deployment becomes unhealthy or when host resource usage exceeds a configured threshold.
+
+<Aside type="note">
+  Alerts apply only to [controller-based deployments](/docs/controllers/) and
+  are not available for [registry-only usage](/docs/registry/). Alerts are a
+  **Pro feature** and require a [Pro subscription](/pricing/).
+</Aside>
+
+## Vendor Alerts and Customer Alerts
+
+By default, alerts are vendor-managed: you configure alert rules and choose who gets notified.
+
+Under **Customers** in the [Vendor Portal](/docs/vendor-portal/), you can enable alert management per customer organization (see [Customer Management](/docs/platform/customer-management/)). This supports two scenarios:
+
+**Vendor-managed deployments**: You monitor deployments and receive alerts directly, potentially before the customer notices an issue.
+
+**Customer-managed deployments**: Customers configure their own alerts and choose who in their organization gets notified.
+
+![Alerts configuration in the Vendor Portal](../../../../../assets/docs/controllers/monitoring/alerts/alerts-dark.png)
+
+## How to Configure Alerts
+
+In the sidebar, navigate to **Controllers** > **Alerts**.
+
+1. Click **Create alert configuration**.
+2. Enter a name for the configuration.
+3. Enable one or more **triggers** (see [Trigger Types](#trigger-types) below).
+4. Select one or more deployments to monitor.
+5. Select the users who should receive email notifications.
+
+Each configuration can be toggled on or off without deleting it.
+
+The **Notification history** tab shows previously triggered alerts.
+
+<Aside type="tip">
+  If alert management is enabled for a customer organization (under
+  [**Customers**](/docs/platform/customer-management/)), users in that
+  organization follow the same steps from the [Customer
+  Portal](/docs/platform/customer-portal/). See [Customer Portal
+  Deployments](/docs/platform/customer-portal/deployments/#alerts) for the
+  customer-side guide.
+</Aside>
+
+## Trigger Types
+
+Each alert configuration requires at least one trigger. You can combine multiple triggers in a single configuration.
+
+### Deployment status changes
+
+Triggers when a monitored deployment transitions between health states:
+
+| From                       | To                     |
+| -------------------------- | ---------------------- |
+| **Running** or **Healthy** | **Stale** or **Error** |
+
+A recovery notification is also sent when a deployment returns to a healthy state (**Running** or **Healthy**) after being degraded.
+
+For the full list of deployment statuses, see [Deployment Status](/docs/controllers/logs-and-metrics/#deployment-status).
+For details on how **Running** vs. **Healthy** is determined, see [Healthchecks](/docs/controllers/logs-and-metrics/#healthchecks).
+
+### Resource usage thresholds
+
+Triggers when a host metric exceeds a percentage threshold you define. Three resource metrics are available:
+
+| Trigger          | What it monitors                                          |
+| ---------------- | --------------------------------------------------------- |
+| **CPU usage**    | Overall CPU utilization on the host or cluster            |
+| **Memory usage** | Overall memory utilization on the host or cluster         |
+| **Disk usage**   | Disk utilization per mount point (Docker controller only) |
+
+For each trigger, set a threshold between 1% and 100%. When usage crosses above the threshold, an alert email is sent. A recovery email is sent when usage drops back below the threshold.
+
+<Aside type="note">
+  Resource usage alerts require [metrics
+  collection](/docs/controllers/logs-and-metrics/#metrics) to be enabled on the
+  deployment target. If metrics are not enabled, resource triggers will not
+  fire.
+</Aside>
+
+<Aside type="note">
+  Disk usage alerts are only available for Docker controller deployment targets.
+  The alert email includes the device name and mount path that exceeded the
+  threshold.
+</Aside>
+
+## Notification Emails
+
+All alert notifications are sent by email to the users selected in the configuration. Each email includes:
+
+- The affected deployment target and customer organization
+- The trigger type (status change, CPU, memory, or disk)
+- For resource alerts: the configured threshold and the current usage percentage
+- Whether it is an alert or a recovery notification
+
+## Custom alerting with Prometheus
+
+<Aside type="note">
+  The Prometheus integration is an **Enterprise feature** and requires an
+  [Enterprise subscription](/pricing/).
+</Aside>
+
+For more advanced alerting workflows beyond the built-in email notifications, Distr exposes deployment status metrics via a [Prometheus-compatible endpoint](/docs/self-hosting/prometheus/).
+These metrics can be combined with tools like [Alertmanager](https://github.com/prometheus/alertmanager) or [Grafana Alerts](https://grafana.com/docs/grafana/latest/alerting/) to route notifications to Slack, PagerDuty, or other channels.
