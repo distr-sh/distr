@@ -138,21 +138,20 @@ func RunHelmInstall(
 
 	releaser, err := installAction.RunWithContext(ctx, c, deployment.Values)
 	if err != nil {
-		err = fmt.Errorf("helm install failed: %w", err)
 		agentDeployment.State = StateFailed
-	} else if acc, err := release.NewAccessor(releaser); err != nil {
+		if err := SaveDeployment(ctx, namespace, agentDeployment); err != nil {
+			logger.Warn("failed to save deployment after install", zap.Error(err))
+		}
+		return nil, fmt.Errorf("helm install failed: %w", err)
+	}
+
+	acc, err := release.NewAccessor(releaser)
+	if err != nil {
 		return nil, fmt.Errorf("failed to create release accessor: %w", err)
-	} else {
-		agentDeployment.State = StateReady
-		agentDeployment.CurrentRevisionID = agentDeployment.RevisionID
-		agentDeployment.HelmRevision = new(acc.Version())
 	}
 
-	if err := SaveDeployment(ctx, namespace, agentDeployment); err != nil {
-		logger.Warn("failed to save deployment after install", zap.Error(err))
-	}
-
-	return &agentDeployment, err
+	agentDeployment.HelmRevision = new(acc.Version())
+	return &agentDeployment, nil
 }
 
 func saveProgressingDeployment(ctx context.Context, namespace string, deployment *AgentDeployment) error {
@@ -160,6 +159,16 @@ func saveProgressingDeployment(ctx context.Context, namespace string, deployment
 	statusReportMu.Lock()
 	defer statusReportMu.Unlock()
 	return SaveDeployment(ctx, namespace, *deployment)
+}
+
+// saveReadyDeployment saves the outcome of a successful [RunHelmInstall] or [RunHelmUpgrade], which leave the
+// deployment progressing.
+func saveReadyDeployment(ctx context.Context, namespace string, deployment *AgentDeployment) {
+	deployment.State = StateReady
+	deployment.CurrentRevisionID = deployment.RevisionID
+	if err := SaveDeployment(ctx, namespace, *deployment); err != nil {
+		logger.Warn("failed to save deployment after install or upgrade", zap.Error(err))
+	}
 }
 
 func RunHelmUpgrade(
@@ -216,13 +225,7 @@ func RunHelmUpgrade(
 		return nil, fmt.Errorf("failed to create release accessor: %w", err)
 	}
 
-	agentDeployment.State = StateReady
-	agentDeployment.CurrentRevisionID = agentDeployment.RevisionID
 	agentDeployment.HelmRevision = new(acc.Version())
-	if err := SaveDeployment(ctx, namespace, agentDeployment); err != nil {
-		logger.Warn("failed to save deployment after upgrade", zap.Error(err))
-	}
-
 	return &agentDeployment, nil
 }
 

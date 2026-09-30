@@ -312,8 +312,10 @@ func runInstallOrUpgrade(
 	if !requiresInstallOrUpgrade(deployment.RevisionID, currentDeployment) {
 		logger.Debug("no action required")
 	} else if currentDeployment == nil || currentDeployment.HelmRevision == nil {
+		var installed *AgentDeployment
 		err := progress.Run(ctx, func() error {
-			if _, err := RunHelmInstall(ctx, namespace, deployment, currentDeployment); err != nil {
+			var err error
+			if installed, err = RunHelmInstall(ctx, namespace, deployment, currentDeployment); err != nil {
 				return fmt.Errorf("helm install failed: %w", err)
 			}
 			return nil
@@ -324,16 +326,19 @@ func runInstallOrUpgrade(
 		} else {
 			logger.Info("helm install succeeded")
 			pushRunningStatus(ctx, deployment, "helm install succeeded")
+			saveReadyDeployment(ctx, namespace, installed)
 		}
 	} else {
 		successMessage := "helm upgrade succeeded"
+		var upgraded *AgentDeployment
+		var restartErr error
 		err := progress.Run(ctx, func() error {
-			if updatedDeployment, err := RunHelmUpgrade(ctx, namespace, deployment, *currentDeployment); err != nil {
+			var err error
+			if upgraded, err = RunHelmUpgrade(ctx, namespace, deployment, *currentDeployment); err != nil {
 				return fmt.Errorf("helm upgrade failed: %w", err)
-			} else if deployment.ForceRestart {
-				if err := ForceRestart(ctx, namespace, *updatedDeployment); err != nil {
-					pushErrorStatus(ctx, deployment, fmt.Errorf("%v; force restart error: %w", successMessage, err))
-				} else {
+			}
+			if deployment.ForceRestart {
+				if restartErr = ForceRestart(ctx, namespace, *upgraded); restartErr == nil {
 					successMessage += "; force restart succeeded"
 				}
 			}
@@ -342,10 +347,18 @@ func runInstallOrUpgrade(
 		if err != nil {
 			logger.Error("upgrade error", zap.Error(err))
 			pushErrorStatus(ctx, deployment, fmt.Errorf("upgrade error: %w", err))
+			return
+		}
+		// The final report has to arrive before the saved state lets the status watcher report the new revision's
+		// health, which it would overwrite otherwise. A failed restart is not retried, so it does not fail the upgrade.
+		if restartErr != nil {
+			logger.Error("force restart error", zap.Error(restartErr))
+			pushErrorStatus(ctx, deployment, fmt.Errorf("%v; force restart error: %w", successMessage, restartErr))
 		} else {
 			logger.Info(successMessage)
 			pushRunningStatus(ctx, deployment, successMessage)
 		}
+		saveReadyDeployment(ctx, namespace, upgraded)
 	}
 }
 
@@ -372,13 +385,19 @@ func Progress(deployment api.AgentDeployment) *progressStatusRunner {
 	return &progressStatusRunner{deployment: deployment}
 }
 
+// Run reports progressing while f runs and returns only once no further progressing report can be sent.
 func (psr *progressStatusRunner) Run(ctx context.Context, f func() error) error {
 	progressCtx, progressCancel := context.WithCancel(ctx)
-	defer progressCancel()
+	done := make(chan struct{})
+	defer func() {
+		progressCancel()
+		<-done
+	}()
 
 	pushProgressingStatus(ctx, psr.deployment)
 
 	go func(ctx context.Context) {
+		defer close(done)
 		tick := time.Tick(agentenv.ProgressingInterval)
 		for {
 			select {

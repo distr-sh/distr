@@ -57,18 +57,22 @@ func DockerEngineApply(
 		}
 	}
 
-	if err == nil {
+	return agentDeployment, status, err
+}
+
+// SaveAppliedDeployment saves the outcome of [DockerEngineApply], which leaves the deployment progressing.
+func SaveAppliedDeployment(agentDeployment *AgentDeployment, applyErr error) {
+	if applyErr == nil {
 		agentDeployment.State = StateReady
 		agentDeployment.CurrentRevisionID = agentDeployment.RevisionID
 	} else {
 		agentDeployment.State = StateFailed
 	}
 
-	if err1 := SaveDeployment(*agentDeployment); err1 != nil {
-		logger.Warn("failed to save deployment after apply", zap.Error(err1))
+	if err := SaveDeployment(*agentDeployment); err != nil {
+		logger.Warn("failed to save deployment after apply",
+			zap.Stringer("deploymentId", agentDeployment.ID), zap.Error(err))
 	}
-
-	return agentDeployment, status, err
 }
 
 func ApplyComposeFile(ctx context.Context, deployment api.AgentDeployment, updateStatus func(string)) error {

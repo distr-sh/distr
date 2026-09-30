@@ -196,24 +196,28 @@ func applyDeployment(ctx context.Context, deployment api.AgentDeployment, existi
 		}
 	}
 
-	progressCtx, progressCancel := context.WithCancel(ctx)
-	defer progressCancel()
-	updateStatus := sendProgressInterval(progressCtx, deployment)
+	updateStatus, stopProgress := sendProgressInterval(ctx, deployment)
+	defer stopProgress()
 	appliedDeployment, status, err := DockerEngineApply(ctx, deployment, agentDeployment, updateStatus)
-	if err == nil {
-		if deployment.ImageCleanupEnabled {
-			if delErr := DeleteImages(ctx, previousDeploymentImages); delErr != nil {
-				logger.Warn("failed to delete old images", zap.Error(delErr))
-			}
-		}
-
-		if deployment.ForceRestart {
-			err = RunDockerRestart(ctx, *appliedDeployment)
-		}
+	var restartErr error
+	if err == nil && deployment.ForceRestart {
+		restartErr = RunDockerRestart(ctx, *appliedDeployment)
 	}
 
-	progressCancel()
-	sendApplyStatus(ctx, deployment, status, err)
+	// The final report has to arrive before the saved state lets the status watcher report the new revision's
+	// health, which it would overwrite otherwise. A failed restart is not retried, so it does not fail the apply.
+	stopProgress()
+	sendApplyStatus(ctx, deployment, status, errors.Join(err, restartErr))
+	if appliedDeployment == nil {
+		return
+	}
+	SaveAppliedDeployment(appliedDeployment, err)
+
+	if err == nil && deployment.ImageCleanupEnabled {
+		if delErr := DeleteImages(ctx, previousDeploymentImages); delErr != nil {
+			logger.Warn("failed to delete old images", zap.Error(delErr))
+		}
+	}
 }
 
 func requiresApply(targetRevisionID uuid.UUID, current *AgentDeployment) bool {
@@ -243,7 +247,11 @@ func sendApplyStatus(ctx context.Context, deployment api.AgentDeployment, status
 	}
 }
 
-func sendProgressInterval(ctx context.Context, deployment api.AgentDeployment) func(string) {
+// sendProgressInterval reports progressing until the returned stop function is called, which returns only once
+// no further report can be sent.
+func sendProgressInterval(ctx context.Context, deployment api.AgentDeployment) (func(string), func()) {
+	ctx, cancel := context.WithCancel(ctx)
+	done := make(chan struct{})
 	var status atomic.Value
 	status.Store("initializing")
 
@@ -258,6 +266,7 @@ func sendProgressInterval(ctx context.Context, deployment api.AgentDeployment) f
 	sendProgress()
 
 	go func() {
+		defer close(done)
 		tick := time.Tick(agentenv.ProgressingInterval)
 		for {
 			select {
@@ -271,7 +280,11 @@ func sendProgressInterval(ctx context.Context, deployment api.AgentDeployment) f
 		}
 	}()
 
-	return func(s string) { status.Store(s) }
+	stop := func() {
+		cancel()
+		<-done
+	}
+	return func(s string) { status.Store(s) }, stop
 }
 
 func startHealthServer() error {
