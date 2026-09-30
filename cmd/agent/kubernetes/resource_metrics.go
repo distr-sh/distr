@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"sync/atomic"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -12,11 +11,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metricsv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
-
-// deploymentMetricsNamespace is shared by the main loop with the metrics goroutines, which have
-// no access to the resource polling themselves. Deployments are read from the agent's tracking
-// secrets via GetExistingDeployments, like the logs watcher does.
-var deploymentMetricsNamespace atomic.Pointer[string]
 
 func watchDeploymentMetrics(ctx context.Context) {
 	logger.Info("starting deployment metrics watch")
@@ -38,7 +32,7 @@ type podUsage struct {
 }
 
 func reportDeploymentMetrics(ctx context.Context) {
-	namespacePtr := deploymentMetricsNamespace.Load()
+	namespacePtr := agentNamespace.Load()
 	if namespacePtr == nil {
 		return
 	}

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/internal/apierrors"
+	"github.com/distr-sh/distr/internal/blocklist"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
@@ -35,6 +36,7 @@ const (
 	redirectToLoginOIDCUnknownUser          = "/login?reason=oidc-unknown-user"
 	redirectToLoginOIDCUserLimit            = "/login?reason=oidc-user-limit"
 	redirectToLoginOIDCOrgLimit             = "/login?reason=oidc-org-limit"
+	redirectToLoginOIDCEmailBlocked         = "/login?reason=oidc-email-blocked"
 )
 
 func AuthOIDCRouter(r chiopenapi.Router) {
@@ -125,6 +127,11 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		log.Error("OIDC identity extraction failed", zap.Error(err))
 		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
+		return
+	}
+	if blocklist.EmailBlocked(identity.Email) {
+		log.Info("rejecting OIDC login for a blocked email domain")
+		http.Redirect(w, r, redirectToLoginOIDCEmailBlocked, http.StatusFound)
 		return
 	}
 
