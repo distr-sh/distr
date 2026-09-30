@@ -8,6 +8,7 @@ import (
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authjwt"
+	"github.com/distr-sh/distr/internal/blocklist"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/custommail"
 	"github.com/distr-sh/distr/internal/db"
@@ -193,6 +194,10 @@ func userSettingsUpdateEmailHandler() http.HandlerFunc {
 
 		if err := body.Validate(); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if blocklist.EmailBlocked(body.Email) {
+			http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
 			return
 		}
 

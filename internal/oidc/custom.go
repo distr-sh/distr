@@ -62,5 +62,9 @@ func (p *CustomProvider) IdentityForCode(ctx context.Context, code, pkceVerifier
 	if err != nil {
 		return Identity{}, fmt.Errorf("token exchange failed: %w", err)
 	}
-	return identityFromIDToken(ctx, types.OIDCProviderCustom, p.provider, p.verifier, token, nonce)
+	identity, err := identityFromIDToken(ctx, types.OIDCProviderCustom, p.provider, p.verifier, token, nonce)
+	if err != nil {
+		return Identity{}, err
+	}
+	return validatedIdentity(identity)
 }

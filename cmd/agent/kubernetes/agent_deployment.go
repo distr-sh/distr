@@ -23,11 +23,14 @@ const (
 )
 
 type AgentDeployment struct {
-	ID           uuid.UUID `json:"id"`
-	RevisionID   uuid.UUID `json:"revisionId"`
-	ReleaseName  string    `json:"releaseName"`
-	HelmRevision *int      `json:"helmRevision,omitempty"`
-	State        State     `json:"phase"`
+	ID         uuid.UUID `json:"id"`
+	RevisionID uuid.UUID `json:"revisionId"`
+	// CurrentRevisionID is the revision that was last applied successfully. It differs from RevisionID
+	// while a newer revision is being applied or after applying it has failed.
+	CurrentRevisionID uuid.UUID `json:"currentRevisionId,omitzero"`
+	ReleaseName       string    `json:"releaseName"`
+	HelmRevision      *int      `json:"helmRevision,omitempty"`
+	State             State     `json:"phase"`
 }
 
 func (d AgentDeployment) GetDeploymentID() uuid.UUID {
@@ -38,16 +41,34 @@ func (d AgentDeployment) GetDeploymentRevisionID() uuid.UUID {
 	return d.RevisionID
 }
 
+// AppliedRevisionID returns the revision that was last applied successfully or [uuid.Nil] if there is none.
+// State saved by agents that did not know CurrentRevisionID yet only has a RevisionID, which is the applied
+// one unless applying it failed or is still in progress.
+func (d AgentDeployment) AppliedRevisionID() uuid.UUID {
+	if d.CurrentRevisionID != uuid.Nil {
+		return d.CurrentRevisionID
+	}
+	if d.State == StateReady || d.State == StateUnspecified {
+		return d.RevisionID
+	}
+	return uuid.Nil
+}
+
 func (d *AgentDeployment) SecretName() string {
 	return fmt.Sprintf("sh.distr.agent.v1.%v", d.ReleaseName)
 }
 
-func NewAgentDeployment(deployment api.AgentDeployment) AgentDeployment {
-	return AgentDeployment{
+func NewAgentDeployment(deployment api.AgentDeployment, previous *AgentDeployment) AgentDeployment {
+	result := AgentDeployment{
 		ReleaseName: deployment.ReleaseName,
 		ID:          deployment.ID,
 		RevisionID:  deployment.RevisionID,
 	}
+	if previous != nil {
+		result.CurrentRevisionID = previous.AppliedRevisionID()
+		result.HelmRevision = previous.HelmRevision
+	}
+	return result
 }
 
 func PullSecretName(releaseName string) string {

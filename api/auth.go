@@ -11,6 +11,10 @@ type AuthLoginRequest struct {
 	MFACode  *string `json:"mfaCode"`
 }
 
+func (r *AuthLoginRequest) Validate() error {
+	return validation.ValidateEmail(r.Email)
+}
+
 type AuthLoginResponse struct {
 	Token       string  `json:"token,omitempty"`
 	RequiresMFA bool    `json:"requiresMfa"`
@@ -26,8 +30,8 @@ type AuthRegistrationRequest struct {
 }
 
 func (r *AuthRegistrationRequest) Validate() error {
-	if r.Email == "" {
-		return validation.NewValidationFailedError("email is empty")
+	if err := validation.ValidateEmail(r.Email); err != nil {
+		return err
 	} else if err := validation.ValidatePassword(r.Password); err != nil {
 		return err
 	}
@@ -39,10 +43,7 @@ type AuthResetPasswordRequest struct {
 }
 
 func (r *AuthResetPasswordRequest) Validate() error {
-	if r.Email == "" {
-		return validation.NewValidationFailedError("email is empty")
-	}
-	return nil
+	return validation.ValidateEmail(r.Email)
 }
 
 type AuthResetPasswordConfirmRequest struct {
