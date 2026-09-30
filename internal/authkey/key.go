@@ -39,12 +39,25 @@ type Key [16]byte
 
 type Secret [32]byte
 
-// Token is the credential a client sends. Key identifies the AccessToken row and is stored in
-// plain text, Secret is what the row's hashes are verified against. Secret is nil for a token
-// that was issued before secrets existed, which only authenticates a row that has none.
-type Token struct {
-	Key    Key
-	Secret *Secret
+type Token interface {
+	Key() Key
+	// ID is the part of the token that identifies the token to its owner.
+	ID() string
+	Serialize() string
+	String() string
+}
+
+// SecureToken carries an additional secret.
+type SecureToken struct {
+	key    Key
+	secret Secret
+}
+
+// LegacyToken was issued before secrets existed and only authenticates a row that has none.
+//
+// Deprecated: Only tokens issued before secrets existed are parsed into it. Issue a [SecureToken].
+type LegacyToken struct {
+	key Key
 }
 
 var ErrInvalidAccessKey = errors.New("invalid access key")
@@ -52,35 +65,35 @@ var ErrInvalidAccessKey = errors.New("invalid access key")
 func Parse(encoded string) (Token, error) {
 	body, ok := strings.CutPrefix(encoded, keyPrefix)
 	if !ok {
-		return Token{}, ErrInvalidAccessKey
+		return nil, ErrInvalidAccessKey
 	}
 
 	keyPart, rest, hasSecret := strings.Cut(body, secretSeparator)
 	if !hasSecret {
 		key, err := parseLegacyKey(keyPart)
 		if err != nil {
-			return Token{}, err
+			return nil, err
 		}
-		return Token{Key: key}, nil
+		return LegacyToken{key: key}, nil
 	}
 
 	if len(rest) != secretEncodedLen+checksumEncodedLen {
-		return Token{}, ErrInvalidAccessKey
+		return nil, ErrInvalidAccessKey
 	}
 	secretPart, sum := rest[:secretEncodedLen], rest[secretEncodedLen:]
 	if sum != checksum(keyPart+secretSeparator+secretPart) {
-		return Token{}, ErrInvalidAccessKey
+		return nil, ErrInvalidAccessKey
 	}
 
 	key, err := parseKey(keyPart)
 	if err != nil {
-		return Token{}, err
+		return nil, err
 	}
 	secret, err := parseSecret(secretPart)
 	if err != nil {
-		return Token{}, err
+		return nil, err
 	}
-	return Token{Key: key, Secret: &secret}, nil
+	return SecureToken{key: key, secret: secret}, nil
 }
 
 // checksum is what lets a token that was mistyped, truncated or line wrapped be rejected without a
@@ -123,38 +136,43 @@ func base62Decode(encoded string, size int) ([]byte, error) {
 	return number.FillBytes(make([]byte, size)), nil
 }
 
-func NewToken() (Token, error) {
+func NewToken() (SecureToken, error) {
 	key, err := NewKey()
 	if err != nil {
-		return Token{}, err
+		return SecureToken{}, err
 	}
 	secret, err := NewSecret()
 	if err != nil {
-		return Token{}, err
+		return SecureToken{}, err
 	}
-	return Token{Key: key, Secret: &secret}, nil
+	return NewSecureToken(key, secret), nil
 }
 
-func (token Token) String() string { return token.Key.String() }
-
-// ID is the [Key.ID] or [Key.LegacyID] of the token's key, whichever form its owner knows it by.
-func (token Token) ID() string {
-	if token.Secret == nil {
-		return token.Key.LegacyID()
-	}
-	return token.Key.ID()
+func NewSecureToken(key Key, secret Secret) SecureToken {
+	return SecureToken{key: key, secret: secret}
 }
 
-// Serialize renders the token as the client sends it back. A token without a secret is rendered in
-// the hex encoding that predates them, because that is the only form of it that was ever issued.
-func (token Token) Serialize() string {
-	if token.Secret == nil {
-		return keyPrefix + hex.EncodeToString(token.Key[:])
-	}
-	body := base62Encode(token.Key[:], keyEncodedLen) +
-		secretSeparator + base62Encode(token.Secret[:], secretEncodedLen)
+func (token SecureToken) Key() Key { return token.key }
+
+func (token SecureToken) Secret() Secret { return token.secret }
+
+func (token SecureToken) ID() string { return token.key.ID() }
+
+func (token SecureToken) Serialize() string {
+	body := base62Encode(token.key[:], keyEncodedLen) +
+		secretSeparator + base62Encode(token.secret[:], secretEncodedLen)
 	return keyPrefix + body + checksum(body)
 }
+
+func (token SecureToken) String() string { return token.key.String() }
+
+func (token LegacyToken) Key() Key { return token.key }
+
+func (token LegacyToken) ID() string { return token.key.LegacyID() }
+
+func (token LegacyToken) Serialize() string { return keyPrefix + hex.EncodeToString(token.key[:]) }
+
+func (token LegacyToken) String() string { return token.key.String() }
 
 func NewKey() (key Key, err error) {
 	_, err = rand.Read(key[:])

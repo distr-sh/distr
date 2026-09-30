@@ -9,7 +9,6 @@ import (
 	"github.com/distr-sh/distr/internal/authkey"
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/db"
-	"github.com/distr-sh/distr/internal/requestlog"
 )
 
 func FromAuthKey(ctx context.Context, token authkey.Token) (AuthInfo, error) {
@@ -20,10 +19,6 @@ func FromAuthKey(ctx context.Context, token authkey.Token) (AuthInfo, error) {
 		}
 		return nil, err
 	}
-
-	requestlog.FromContext(ctx).Update(func(f *requestlog.Fields) {
-		f.TokenID = new(token.ID())
-	})
 
 	role := at.EffectiveUserRole()
 	return &SimpleAuthInfo{
@@ -36,7 +31,7 @@ func FromAuthKey(ctx context.Context, token authkey.Token) (AuthInfo, error) {
 		userRole:               &role,
 		// Only the key, never the secret: nothing downstream needs to authenticate with the
 		// token again, and a credential that is not carried around cannot be leaked.
-		rawToken: token.Key,
+		rawToken: token.Key(),
 	}, nil
 }
 

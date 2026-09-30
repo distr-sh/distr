@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/internal/authjwt"
+	accesstoken "github.com/distr-sh/distr/internal/authkey"
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
 	"github.com/distr-sh/distr/internal/authn/authkey"
@@ -30,7 +31,7 @@ var Authentication = authn.New(
 	),
 	authn.Chain4(
 		token.NewExtractor(token.WithExtractorFuncs(token.FromHeader("AccessToken"))),
-		authkey.Authenticator(),
+		accessTokenParser(),
 		authinfo.AuthKeyAuthenticator(),
 		authinfo.DbAuthenticator(),
 	),
@@ -62,7 +63,7 @@ var ArtifactsAuthentication = authn.New(
 		authn.Alternative[string, authinfo.AuthInfoWithOrganization](
 			// Authenticate UserAccount with PAT
 			authn.Chain4(
-				authkey.Authenticator(),
+				accessTokenParser(),
 				authinfo.AuthKeyAuthenticator(),
 				authinfo.DbAuthenticator(),
 				authinfo.DropUser(),
@@ -99,6 +100,18 @@ func handleUnknownError(w http.ResponseWriter, r *http.Request, err error) {
 		sentry.GetHubFromContext(r.Context()).CaptureException(err)
 	}
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+}
+
+func accessTokenParser() authn.Authenticator[string, accesstoken.Token] {
+	return authn.AuthenticatorFunc[string, accesstoken.Token](parseAccessToken)
+}
+
+func parseAccessToken(ctx context.Context, encoded string) (accesstoken.Token, error) {
+	token, err := authkey.Authenticator().Authenticate(ctx, encoded)
+	if err == nil {
+		requestlog.FromContext(ctx).Update(func(f *requestlog.Fields) { f.TokenID = new(token.ID()) })
+	}
+	return token, err
 }
 
 func recordAuthInfo(ctx context.Context, info authinfo.AuthInfo) {

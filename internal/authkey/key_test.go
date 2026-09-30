@@ -21,14 +21,12 @@ func TestParse(t *testing.T) {
 
 	parsed, err := Parse(serialized)
 	g.Expect(err).ToNot(HaveOccurred())
-	g.Expect(parsed.Key).To(Equal(token.Key))
-	g.Expect(parsed.Secret).To(HaveValue(Equal(*token.Secret)))
+	g.Expect(parsed).To(Equal(token))
 
 	// Tokens issued before secrets existed carry the key only, hex encoded.
-	legacy, err := Parse(Token{Key: token.Key}.Serialize())
+	legacy, err := Parse(LegacyToken{key: token.key}.Serialize())
 	g.Expect(err).ToNot(HaveOccurred())
-	g.Expect(legacy.Key).To(Equal(token.Key))
-	g.Expect(legacy.Secret).To(BeNil())
+	g.Expect(legacy).To(Equal(LegacyToken{key: token.key}))
 
 	body := strings.TrimPrefix(serialized, keyPrefix)
 	key, secret := body[:keyEncodedLen], body[keyEncodedLen+1:keyEncodedLen+1+secretEncodedLen]
@@ -51,8 +49,8 @@ func TestParse(t *testing.T) {
 		"wrong checksum":       keyPrefix + valid + checksum(valid+"x"),
 		"tampered key":         keyPrefix + tamperedKey + "_" + secret + checksum(valid),
 		"second separator":     keyPrefix + valid + "_" + checksum(valid),
-		"legacy key too short": keyPrefix + hex.EncodeToString(token.Key[1:]),
-		"legacy key not hex":   keyPrefix + "zz" + hex.EncodeToString(token.Key[:])[2:],
+		"legacy key too short": keyPrefix + hex.EncodeToString(token.key[1:]),
+		"legacy key not hex":   keyPrefix + "zz" + hex.EncodeToString(token.key[:])[2:],
 	} {
 		_, err := Parse(encoded)
 		g.Expect(err).To(MatchError(ErrInvalidAccessKey), name)
@@ -68,11 +66,13 @@ func TestKeyID(t *testing.T) {
 	token, err := NewToken()
 	g.Expect(err).ToNot(HaveOccurred())
 
-	g.Expect(token.Serialize()).To(HavePrefix(token.Key.ID()))
-	g.Expect(Token{Key: token.Key}.Serialize()).To(HavePrefix(token.Key.LegacyID()))
+	legacy := LegacyToken{key: token.key}
 
-	g.Expect(token.Key.ID()).To(HaveLen(len(keyPrefix) + keyEncodedLen/2))
-	g.Expect(token.Key.LegacyID()).To(HaveLen(len(keyPrefix) + legacyKeyEncodedLen/2))
+	g.Expect(token.Serialize()).To(HavePrefix(token.ID()))
+	g.Expect(legacy.Serialize()).To(HavePrefix(legacy.ID()))
+
+	g.Expect(token.ID()).To(HaveLen(len(keyPrefix) + keyEncodedLen/2))
+	g.Expect(legacy.ID()).To(HaveLen(len(keyPrefix) + legacyKeyEncodedLen/2))
 }
 
 // TestBase62Widths asserts that the encoded lengths cover the largest value of each size, since
