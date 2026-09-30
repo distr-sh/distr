@@ -209,8 +209,8 @@ importers:
         specifier: ^6.43.6
         version: 6.43.13
       '@distr-sh/distr-sdk':
-        specifier: file:./sdk/js/src
-        version: src@file:sdk/js/src
+        specifier: link:./sdk/js/src
+        version: link:sdk/js/src
       '@fontsource/inter':
         specifier: ^5.3.0
         version: 5.3.0
@@ -2926,9 +2926,6 @@ packages:
     resolution: {integrity: sha512-d8EqvL+k/SOXCreS/SUzg2ciyHqBBLcN/yuRjFsbvVhHTE2pgei7oAhmPM7kWFbkX6OSMQfUq4KbkF3au9lhYQ==}
     engines: {node: '>= 12'}
 
-  src@file:sdk/js/src:
-    resolution: {directory: sdk/js/src, type: directory}
-
   std-env@4.2.0:
     resolution: {integrity: sha512-oCUKSupKTHX53EyjDtuZQ64pjLJ6yYCtpmEw0goYxtjG9KpbRe8KAsl2tBUGU9DyMcJ0RwJ8GqJAFzMXcXW1Rw==}
 
@@ -5514,8 +5511,6 @@ snapshots:
   source-map@0.6.1: {}
 
   source-map@0.8.0: {}
-
-  src@file:sdk/js/src: {}
 
   std-env@4.2.0: {}
 
