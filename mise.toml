@@ -107,6 +107,11 @@ dir = "website"
 run = { tasks = ["lint:go", "lint:frontend", "lint:migrations"] }
 description = 'Lint Distr and the agents, without the website'
 
+[tasks."lint:renovate-config"]
+run = "pnpm dlx --package renovate renovate-config-validator"
+description = "Lint the renovate.json config file"
+sources = ["renovate.json"]
+
 [tasks.lint]
 run = { tasks = ["lint:app", "lint:website"] }
 
