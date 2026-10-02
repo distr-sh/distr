@@ -1,16 +1,31 @@
 import {DatePipe, PercentPipe} from '@angular/common';
-import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
-import {PageComponent} from '../components/page.component';
+import {Component, computed, inject, input} from '@angular/core';
+import {toObservable, toSignal} from '@angular/core/rxjs-interop';
+import {switchMap} from 'rxjs';
 import {NotificationRecordsService} from '../services/notification-records.service';
+import {notificationCustomerNames} from './notification-record-display';
 
 @Component({
+  selector: 'app-notification-records',
   templateUrl: './notification-records.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [DatePipe, PercentPipe, PageComponent],
+  imports: [DatePipe, PercentPipe],
 })
 export class NotificationRecordsComponent {
+  /** customerOrganizationId scopes the page to what one customer was notified about. */
+  public readonly customerOrganizationId = input<string>();
+
   private readonly notificationRecordsService = inject(NotificationRecordsService);
 
-  protected readonly notificationRecords = toSignal(this.notificationRecordsService.list());
+  private readonly notificationRecords = toSignal(
+    toObservable(this.customerOrganizationId).pipe(
+      switchMap((customerOrganizationId) => this.notificationRecordsService.list(customerOrganizationId))
+    )
+  );
+
+  protected readonly rows = computed(() =>
+    (this.notificationRecords() ?? []).map((record) => ({
+      ...record,
+      customerNames: notificationCustomerNames(record).join(', '),
+    }))
+  );
 }

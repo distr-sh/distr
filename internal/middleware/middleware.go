@@ -427,6 +427,30 @@ func FeatureFlagMiddleware(feature types.Feature) func(handler http.Handler) htt
 	}
 }
 
+// CustomerFeatureMiddleware rejects a customer user whose customer organization lacks the feature.
+// Vendor and partner users pass, since they manage the feature on behalf of their customers.
+func CustomerFeatureMiddleware(feature types.CustomerOrganizationFeature) func(handler http.Handler) http.Handler {
+	return func(handler http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+			if auth, err := auth.Authentication.Get(r.Context()); err != nil {
+				http.Error(w, err.Error(), http.StatusForbidden)
+			} else if customerOrg := auth.CurrentCustomerOrg(); customerOrg != nil && !customerOrg.HasFeature(feature) {
+				http.Error(w, fmt.Sprintf("%v not enabled for customer organization", feature), http.StatusForbidden)
+			} else {
+				handler.ServeHTTP(w, r)
+			}
+		}
+		return http.HandlerFunc(fn)
+	}
+}
+
+var (
+	AlertsCustomerFeatureMiddleware              = CustomerFeatureMiddleware(types.CustomerOrganizationFeatureAlerts)
+	UpdateNotificationsCustomerFeatureMiddleware = CustomerFeatureMiddleware(
+		types.CustomerOrganizationFeatureUpdateNotifications,
+	)
+)
+
 var (
 	LicensingFeatureFlagEnabledMiddleware = FeatureFlagMiddleware(types.FeatureLicensing)
 	VendorBillingFeatureMiddleware        = FeatureFlagMiddleware(types.FeatureVendorBilling)

@@ -21,7 +21,7 @@ import {
   DeploymentWithLatestRevision,
 } from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faBullhorn, faChevronDown, faLightbulb, faPlus} from '@fortawesome/free-solid-svg-icons';
+import {faArrowUpRightDots, faBullhorn, faChevronDown, faLightbulb, faPlus} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, combineLatestWith, first, map, Observable, of} from 'rxjs';
 import {compareBy} from '../../util/arrays';
 import {filteredByFormControl} from '../../util/filter';
@@ -86,6 +86,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   protected readonly faChevronDown = faChevronDown;
   protected readonly faLightbulb = faLightbulb;
   protected readonly faBullhorn = faBullhorn;
+  protected readonly faArrowUpRightDots = faArrowUpRightDots;
 
   protected readonly collapsedCustomerIds = signal<string[]>(
     (() => {
@@ -107,6 +108,17 @@ export class DeploymentTargetsComponent implements AfterViewInit {
       map(
         ([enabled, customerOrg]) =>
           enabled && this.auth.isCustomer() && (customerOrg?.features?.includes('alerts') ?? false)
+      )
+    ),
+    {initialValue: false}
+  );
+
+  protected readonly isUpdateNotificationsVisible = toSignal(
+    this.featureFlags.isNotificationsEnabled$.pipe(
+      combineLatestWith(this.context.getCustomerOrganization()),
+      map(
+        ([enabled, customerOrg]) =>
+          enabled && this.auth.isCustomer() && (customerOrg?.features?.includes('update_notifications') ?? false)
       )
     ),
     {initialValue: false}

@@ -10,6 +10,7 @@ import {
   faArrowRightLong,
   faArrowUpRightFromSquare,
   faAsterisk,
+  faBell,
   faBox,
   faBoxesStacked,
   faBuilding,
@@ -87,6 +88,7 @@ export class SideBarComponent {
   protected readonly faAddressBook = faAddressBook;
   protected readonly faBuilding = faBuilding;
   protected readonly faBox = faBox;
+  protected readonly faBell = faBell;
   protected readonly faCreditCard = faCreditCard;
   protected readonly faArrowRightLong = faArrowRightLong;
   protected readonly faArrowUpRightFromSquare = faArrowUpRightFromSquare;
@@ -100,6 +102,7 @@ export class SideBarComponent {
   protected feedbackAlert = true;
   protected readonly agentsSubMenuOpen = signal(true);
   protected readonly registrySubMenuOpen = signal(true);
+  protected readonly notificationsSubMenuOpen = signal(true);
   protected readonly licenseOverlayOpen = signal(false);
   protected readonly notificationsOverlayOpen = signal(false);
   protected readonly supportBundlesOverlayOpen = signal(false);

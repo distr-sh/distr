@@ -1,0 +1,52 @@
+---
+title: Update Notifications
+description: Notify users by email when a new application version or a new artifact version becomes available.
+slug: docs/agents/update-notifications
+sidebar:
+  label: Update Notifications
+  order: 3
+---
+
+import {Aside} from '@astrojs/starlight/components';
+
+Update notifications tell selected users by email that a new version is available: a new version of an application whose deployments are still on an older one, or a new version of an artifact in the registry.
+
+<Aside type="note">
+  Update notifications are a **Pro feature** and require a [Pro
+  subscription](/pricing/).
+</Aside>
+
+## How to Configure Update Notifications
+
+In the sidebar, navigate to **Notifications** > **Updates**.
+
+1. Click **Update Notification**.
+2. Optionally enter a name for the configuration.
+3. Switch between **Applications** and **Artifacts**, and select what to watch. One configuration can watch applications and artifacts together, so an application and the images it is shipped with are announced from a single place.
+4. Select the users who should receive the emails. Your own team, your partners and your customers' users can all be picked.
+
+Each configuration can be toggled on or off without deleting it, and the **History** page lists what has been sent.
+
+## Configuring for a Customer
+
+The page lists what your own organization has configured. **Show customer updates** leads to the same page for one of your customers, where the breadcrumb switches between them, and the **Alerts**, **Updates** and **History** of a customer can be managed the way their users and secrets are.
+
+A configuration created there belongs to the customer: it can only watch what that customer is [entitled](/docs/platform/license-management/) to and only notify users of their organization.
+
+## Letting Customers Configure Their Own
+
+Grant a customer organization the **Update Notifications** feature in **Customers** to let its admins decide who of their own users hears about a new version. They reach the page through the **Updates** button on their deployments and artifacts pages, and can only pick the applications and artifacts they are entitled to and users of their own organization.
+
+## When a Notification Is Sent
+
+An application notification is sent when a new version of a watched application is created, to every selected recipient who can see at least one deployment that runs an older version. Older is decided by the application's versioning strategy: with SemVer, a customer already on 2.1.0 is not told about a 2.0.5 bugfix. A customer is left out while their [entitlement](/docs/platform/license-management/) does not cover the new version, and hears about it once the entitlement is widened.
+
+An artifact notification is sent when a new tag is pushed to a watched artifact. Artifacts that mirror an upstream registry cannot be watched, because all of their versions appear at once when the mirror syncs.
+
+Each recipient hears about a version once, however many deployments are affected and however many configurations cover them. A customer who watches the same application as you do receives one email, not two.
+
+## Notification Emails
+
+Every email names the application or artifact and the new version, and links to Distr.
+
+A recipient from your own team or a partner organization sees every affected customer and deployment in one email. A customer user sees only their own deployments.

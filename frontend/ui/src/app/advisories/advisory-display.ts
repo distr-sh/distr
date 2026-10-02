@@ -1,25 +1,9 @@
-import {
-  AdvisoryApplicationVersion,
-  AdvisoryArtifactVersion,
-  AdvisoryEventType,
-  AdvisoryImpactState,
-  AdvisorySeverity,
-  AdvisoryStatus,
-} from '@distr-sh/distr-sdk';
+import {AdvisoryEventType, AdvisoryImpactState, AdvisorySeverity, AdvisoryStatus} from '@distr-sh/distr-sdk';
 import {firstValueFrom} from 'rxjs';
 import {never} from '../../util/exhaust';
 import {BadgeSelectOption} from '../components/badge-select/badge-select.component';
 import {ConfirmConfig} from '../components/confirm-dialog/confirm-dialog.component';
 import {OverlayService} from '../services/overlay.service';
-
-export function applicationVersionLabel(version: AdvisoryApplicationVersion): string {
-  return `${version.applicationName} ${version.applicationVersionName}`;
-}
-
-export function artifactVersionLabel(version: AdvisoryArtifactVersion): string {
-  const tags = version.artifactVersionTags.join(', ');
-  return [version.artifactName, tags, version.artifactVersionDigest].filter((part) => part).join(' ');
-}
 
 export const advisorySeverities: AdvisorySeverity[] = ['none', 'low', 'medium', 'high', 'critical'];
 
