@@ -9,10 +9,12 @@ on:
     paths:
       - 'mise.toml'
       - '.github/workflows/mise.yaml'
+      - renovate.json
   pull_request:
     paths:
       - 'mise.toml'
       - '.github/workflows/mise.yaml'
+      - renovate.json
 
 jobs:
   install:
@@ -25,3 +27,5 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install mise
         uses: jdx/mise-action@9149ea85001c7435d5a66bb127d6a1b6227cb0a5 # v5.0.0
+      - name: Validate renovate.json
+        run: mise run lint:renovate-config
