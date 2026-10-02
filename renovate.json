@@ -96,6 +96,13 @@
       "matchFileNames": ["website/**"],
       "matchPackageNames": ["!pnpm"],
       "groupName": "website dependencies"
+    },
+    {
+      "description": "Silence dependency lookup warnings for enterprise images, which are not publicly available",
+      "matchPackageNames": [
+        "registry.distr.sh/enterprise/distr-ee"
+      ],
+      "enabled": false
     }
   ],
   "customManagers": [

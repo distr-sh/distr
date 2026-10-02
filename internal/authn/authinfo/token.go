@@ -29,9 +29,7 @@ func FromAuthKey(ctx context.Context, token authkey.Token) (AuthInfo, error) {
 		customerOrganizationID: at.CustomerOrganizationID,
 		isAccessToken:          true,
 		userRole:               &role,
-		// Only the key, never the secret: nothing downstream needs to authenticate with the
-		// token again, and a credential that is not carried around cannot be leaked.
-		rawToken: token.Key,
+		rawToken:               token,
 	}, nil
 }
 
