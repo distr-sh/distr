@@ -181,7 +181,7 @@ func sendMetricNotification(
 		SubjectID:              &deploymentTarget.ID,
 		Type:                   recordType,
 		Details: types.NotificationRecordDetails{
-			Summary:                          metricSummary(metricType, usagePercent),
+			Summary:                          metricSummary(currentMetrics, metricType, diskDevice, diskPath, usagePercent),
 			CustomerOrganizationName:         customerOrganizationName(deploymentTarget),
 			DeploymentTargetName:             &deploymentTarget.Name,
 			MetricType:                       &metricType,
@@ -250,7 +250,11 @@ func usagePercent(usage float64) int64 {
 	return int64(math.Round(usage * 100))
 }
 
-func metricSummary(metricType string, usagePercent int64) string {
+func metricSummary(
+	metrics types.DeploymentTargetMetrics,
+	metricType, diskDevice, diskPath string,
+	usagePercent int64,
+) string {
 	label := metricType
 	switch metricType {
 	case "cpu":
@@ -259,6 +263,12 @@ func metricSummary(metricType string, usagePercent int64) string {
 		label = "Memory"
 	case "disk":
 		label = "Disk"
+		// Usage() reports 0 for a disk without capacity, which is not a utilization.
+		for _, disk := range metrics.DiskMetrics {
+			if disk.Device == diskDevice && disk.Path == diskPath && disk.BytesTotal <= 0 {
+				return fmt.Sprintf("%v utilization is N/A", label)
+			}
+		}
 	}
 	return fmt.Sprintf("%v utilization is %v%%", label, usagePercent)
 }

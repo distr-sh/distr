@@ -92,6 +92,12 @@ type UserAccountWithUserRole struct {
 	// Remember to update AsUserAccount when adding fields!
 }
 
+type OrganizationMembership struct {
+	User                 UserAccountWithUserRole
+	Organization         OrganizationWithBranding
+	CustomerOrganization *CustomerOrganization
+}
+
 func (u *UserAccountWithUserRole) AsUserAccount() UserAccount {
 	return UserAccount{
 		ID:                     u.ID,

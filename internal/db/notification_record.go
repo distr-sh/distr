@@ -151,24 +151,16 @@ func ResolveStaleWarnings(ctx context.Context, deploymentID uuid.UUID) ([]uuid.U
 	return configIDs, nil
 }
 
-func NotificationRecordExists(ctx context.Context, userAccountID, subjectID uuid.UUID) (bool, error) {
+func SetNotificationRecordDeliveryError(ctx context.Context, id uuid.UUID, deliveryError string) error {
 	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(
+	if _, err := db.Exec(
 		ctx,
-		`SELECT EXISTS (
-			SELECT 1 FROM NotificationRecord r
-			WHERE r.user_account_id = @userAccountID AND r.subject_id = @subjectID
-		)`,
-		pgx.NamedArgs{
-			"userAccountID": userAccountID,
-			"subjectID":     subjectID,
-		},
-	)
-	if err != nil {
-		return false, fmt.Errorf("failed to query NotificationRecord: %w", err)
+		`UPDATE NotificationRecord SET delivery_error = @deliveryError WHERE id = @id`,
+		pgx.NamedArgs{"id": id, "deliveryError": deliveryError},
+	); err != nil {
+		return fmt.Errorf("failed to update NotificationRecord: %w", err)
 	}
-
-	return pgx.CollectExactlyOneRow(rows, pgx.RowTo[bool])
+	return nil
 }
 
 func GetNotificationRecords(

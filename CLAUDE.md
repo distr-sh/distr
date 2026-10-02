@@ -170,7 +170,7 @@ Never gate a feature by listing the subscription types allowed to use it. Such a
 
 Plan-specific billing UI (checkout, plan comparison) and upsell banners for one plan are the exceptions, since they are tied to concrete plans.
 
-Gate what a customer organization may configure for itself with a `types.CustomerOrganizationFeature`, the way `alerts` does: the toggle on the customers page, the entry point on the page the feature belongs to rather than in the sidebar, and the rows a customer may link narrowed down in `internal/db` so hiding the UI is not what protects them.
+Gate what a customer organization may configure for itself with a `types.CustomerOrganizationFeature`, the way `alerts` does: the toggle on the customers page, the entry point on the page the feature belongs to rather than in the sidebar, the router guarded with `middleware.CustomerFeatureMiddleware` and the rows a customer may link narrowed down in `internal/db`, so hiding the UI is not what protects them.
 
 Keep the two sources of organization features (`types.Feature`) apart. Only the plan-managed ones, granted by `types.FeaturesForSubscriptionType` and collected in `types.PlanManagedFeatures`, may be revoked when an organization loses its plan. The rest is granted out of band (`vendor_billing` by staff, `pre_post_scripts` and `artifact_version_mutable` by an organization admin in the settings) and has to survive plan changes and edition reconciliation. Remove `types.PlanManagedFeatures` from the `features` array to revoke a plan; never overwrite the whole array.
 

@@ -97,12 +97,16 @@ func requireCustomerOidcProvidersFeature(w http.ResponseWriter, r *http.Request,
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 
-	customerOrg, err := db.GetCustomerOrganizationByID(ctx, customerOrgID)
-	if err != nil {
-		log.Error("failed to get customer organization", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return false
+	customerOrg := auth.Authentication.Require(ctx).CurrentCustomerOrg()
+	if customerOrg == nil || customerOrg.ID != customerOrgID {
+		withUsage, err := db.GetCustomerOrganizationByID(ctx, customerOrgID)
+		if err != nil {
+			log.Error("failed to get customer organization", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return false
+		}
+		customerOrg = &withUsage.CustomerOrganization
 	}
 	if !customerOrg.HasFeature(types.CustomerOrganizationFeatureOidcProviders) {
 		http.Error(w, "this customer is not allowed to configure an identity provider", http.StatusForbidden)

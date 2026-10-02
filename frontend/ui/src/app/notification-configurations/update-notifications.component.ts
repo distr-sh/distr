@@ -1,7 +1,14 @@
 import {DatePipe} from '@angular/common';
 import {Component, computed, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
-import {AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors} from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormControl,
+  FormRecord,
+  ReactiveFormsModule,
+  ValidationErrors,
+} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, firstValueFrom, map, of, shareReplay, startWith, Subject, switchMap} from 'rxjs';
@@ -237,6 +244,7 @@ export class UpdateNotificationsComponent {
   protected async showDrawer(config?: UpdateNotificationConfiguration) {
     this.hideDrawer();
     this.editConfigForm.reset();
+    this.removePicklistControls();
 
     const kinds = this.kinds();
     this.picklistTab.set(this.defaultTab(kinds, config));
@@ -283,7 +291,16 @@ export class UpdateNotificationsComponent {
     );
   }
 
-  /** Adds a checkbox for every entry known now, checked where the edited configuration uses it. */
+  private removePicklistControls() {
+    const {applicationIds, artifactIds, userAccountIds} = this.editConfigForm.controls;
+    const records: FormRecord<FormControl<boolean>>[] = [applicationIds, artifactIds, userAccountIds];
+    for (const record of records) {
+      for (const id of Object.keys(record.controls)) {
+        record.removeControl(id, {emitEvent: false});
+      }
+    }
+  }
+
   private addPicklistControls(config?: UpdateNotificationConfiguration) {
     const checked = new Set([
       ...(config?.applications ?? []).map((it) => it.id),

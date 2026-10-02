@@ -20,7 +20,7 @@ import (
 func AlertConfigurationsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Notifications"))
 
-	r.Use(middleware.ProFeature)
+	r.Use(middleware.ProFeature, middleware.AlertsCustomerFeatureMiddleware)
 
 	r.Get("/", getAlertConfigurationsHandler()).
 		With(option.Description("list all alert configurations")).

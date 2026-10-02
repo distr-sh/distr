@@ -6,6 +6,7 @@ import {of} from 'rxjs';
 import {AuthService} from '../services/auth.service';
 import {ContextService} from '../services/context.service';
 import {OverlayService} from '../services/overlay.service';
+import {UpdateNotificationConfiguration} from '../types/notification-configuration';
 import {UpdateNotificationsComponent} from './update-notifications.component';
 
 describe('UpdateNotificationsComponent', () => {
@@ -37,23 +38,25 @@ describe('UpdateNotificationsComponent', () => {
     TestBed.overrideComponent(UpdateNotificationsComponent, {
       add: {providers: [OverlayService]},
     });
-
     httpTesting = TestBed.inject(HttpTestingController);
-    fixture = TestBed.createComponent(UpdateNotificationsComponent);
-    fixture.detectChanges();
-    httpTesting.expectOne('/api/v1/update-notification-configurations').flush([]);
-    // Everything the drawer shows is prefetched with the page, the customer organizations that
-    // group the recipients included.
-    flushPicklists();
-    httpTesting.expectOne('/api/v1/customer-organizations').flush([]);
-    await fixture.whenStable();
-    fixture.detectChanges();
   });
 
   afterEach(() => {
     fixture.destroy();
     httpTesting.verify();
   });
+
+  async function load(configurations: UpdateNotificationConfiguration[] = []) {
+    fixture = TestBed.createComponent(UpdateNotificationsComponent);
+    fixture.detectChanges();
+    httpTesting.expectOne('/api/v1/update-notification-configurations').flush(configurations);
+    // Everything the drawer shows is prefetched with the page, the customer organizations that
+    // group the recipients included.
+    flushPicklists();
+    httpTesting.expectOne('/api/v1/customer-organizations').flush([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
 
   function flushPicklists() {
     httpTesting
@@ -80,6 +83,7 @@ describe('UpdateNotificationsComponent', () => {
   }
 
   it('opens the drawer from the cache and switches it between applications and artifacts', async () => {
+    await load();
     buttonWithText('Update Notification').click();
     await settle();
 
@@ -101,7 +105,36 @@ describe('UpdateNotificationsComponent', () => {
     expect(document.body.textContent).not.toContain('alpha-app');
   });
 
+  it('opens a new configuration without the selections of the one edited before', async () => {
+    await load([
+      {
+        id: '66666666-6666-6666-6666-666666666666',
+        createdAt: '2026-01-01T00:00:00Z',
+        name: 'existing',
+        enabled: true,
+        applications: [{id: '11111111-1111-1111-1111-111111111111', name: 'alpha-app', type: 'docker'}],
+        artifacts: [],
+        recipients: [{id: '22222222-2222-2222-2222-222222222222', email: 'a@b.c', name: 'Aaa'}],
+      },
+    ]);
+
+    buttonWithText('Edit').click();
+    await settle();
+    flushPicklists();
+    await settle();
+    expect(checkboxBefore('alpha-app').checked).toBe(true);
+    expect(checkboxBefore('Aaa').checked).toBe(true);
+
+    buttonWithText('Update Notification').click();
+    await settle();
+    flushPicklists();
+    await settle();
+    expect(checkboxBefore('alpha-app').checked).toBe(false);
+    expect(checkboxBefore('Aaa').checked).toBe(false);
+  });
+
   it('saves one configuration that watches an application and an artifact', async () => {
+    await load();
     buttonWithText('Update Notification').click();
     await settle();
     flushPicklists();

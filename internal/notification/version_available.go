@@ -103,23 +103,6 @@ func sendApplicationUpdateAvailableWithConfig(
 			continue
 		}
 
-		if sent, err := db.NotificationRecordExists(ctx, recipient.ID, version.ID); err != nil {
-			return fmt.Errorf("failed to check notification record: %w", err)
-		} else if sent {
-			log.Debug("skip recipient that was notified about this version already")
-			continue
-		}
-
-		log.Info("sending update available notification")
-		var deliveryError string
-		if err := mailsending.ApplicationUpdateAvailableNotification(
-			ctx, recipient, *organization, *application, version.Name, visible,
-		); err != nil {
-			log.Warn("update available notification sending failed", zap.Error(err))
-			aggErr = errors.Join(aggErr, err)
-			deliveryError = err.Error()
-		}
-
 		record := types.NotificationRecord{
 			OrganizationID:         config.OrganizationID,
 			CustomerOrganizationID: recipient.CustomerOrganizationID,
@@ -135,10 +118,20 @@ func sendApplicationUpdateAvailableWithConfig(
 				ApplicationVersionName: &version.Name,
 				Deployments:            recordDeployments(visible),
 			},
-			DeliveryError: deliveryError,
 		}
-		if err := saveNotificationRecord(ctx, &record); err != nil {
-			aggErr = errors.Join(aggErr, err)
+		if reserved, err := reserveNotificationRecord(ctx, &record); err != nil {
+			return err
+		} else if !reserved {
+			log.Debug("skip recipient that was notified about this version already")
+			continue
+		}
+
+		log.Info("sending update available notification")
+		if err := mailsending.ApplicationUpdateAvailableNotification(
+			ctx, recipient, *organization, *application, version.Name, visible,
+		); err != nil {
+			log.Warn("update available notification sending failed", zap.Error(err))
+			aggErr = errors.Join(aggErr, err, recordDeliveryError(ctx, record, err))
 		}
 	}
 
@@ -203,23 +196,6 @@ func sendArtifactVersionAvailableWithConfig(
 			continue
 		}
 
-		if sent, err := db.NotificationRecordExists(ctx, recipient.ID, version.ID); err != nil {
-			return fmt.Errorf("failed to check notification record: %w", err)
-		} else if sent {
-			log.Debug("skip recipient that was notified about this version already")
-			continue
-		}
-
-		log.Info("sending new artifact version notification")
-		var deliveryError string
-		if err := mailsending.ArtifactVersionAvailableNotification(
-			ctx, recipient, *organization, *artifact, version.Name,
-		); err != nil {
-			log.Warn("new artifact version notification sending failed", zap.Error(err))
-			aggErr = errors.Join(aggErr, err)
-			deliveryError = err.Error()
-		}
-
 		record := types.NotificationRecord{
 			OrganizationID:         config.OrganizationID,
 			CustomerOrganizationID: recipient.CustomerOrganizationID,
@@ -233,10 +209,20 @@ func sendArtifactVersionAvailableWithConfig(
 				ArtifactName:        &artifact.Name,
 				ArtifactVersionName: &version.Name,
 			},
-			DeliveryError: deliveryError,
 		}
-		if err := saveNotificationRecord(ctx, &record); err != nil {
-			aggErr = errors.Join(aggErr, err)
+		if reserved, err := reserveNotificationRecord(ctx, &record); err != nil {
+			return err
+		} else if !reserved {
+			log.Debug("skip recipient that was notified about this version already")
+			continue
+		}
+
+		log.Info("sending new artifact version notification")
+		if err := mailsending.ArtifactVersionAvailableNotification(
+			ctx, recipient, *organization, *artifact, version.Name,
+		); err != nil {
+			log.Warn("new artifact version notification sending failed", zap.Error(err))
+			aggErr = errors.Join(aggErr, err, recordDeliveryError(ctx, record, err))
 		}
 	}
 
@@ -314,17 +300,20 @@ func recordDeployments(deployments []types.DeploymentPendingUpdate) []types.Noti
 	return records
 }
 
-// saveNotificationRecord tolerates a record another request wrote in the meantime: two pushes of
-// the same tag racing each other must not fail the second send that the unique index rejects.
-func saveNotificationRecord(ctx context.Context, record *types.NotificationRecord) error {
-	if err := db.SaveNotificationRecord(ctx, record); err != nil {
-		if errors.Is(err, db.ErrNotificationRecordExists) {
-			internalctx.GetLogger(ctx).Debug("notification record was written concurrently")
-			return nil
-		}
-		return fmt.Errorf("failed to save notification record: %w", err)
+// reserveNotificationRecord writes the record before the mail is sent, so that the unique index
+// lets only one of two racing sends through to the same recipient. It reports false when another
+// send holds the record already.
+func reserveNotificationRecord(ctx context.Context, record *types.NotificationRecord) (bool, error) {
+	if err := db.SaveNotificationRecord(ctx, record); errors.Is(err, db.ErrNotificationRecordExists) {
+		return false, nil
+	} else if err != nil {
+		return false, fmt.Errorf("failed to save notification record: %w", err)
 	}
-	return nil
+	return true, nil
+}
+
+func recordDeliveryError(ctx context.Context, record types.NotificationRecord, sendErr error) error {
+	return db.SetNotificationRecordDeliveryError(ctx, record.ID, sendErr.Error())
 }
 
 func findApplication(
