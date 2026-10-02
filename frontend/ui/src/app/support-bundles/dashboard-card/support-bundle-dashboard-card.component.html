@@ -20,12 +20,11 @@
               <div class="flex-1 min-w-0 truncate">
                 {{ bundle.title || bundle.id.substring(0, 8) }}
               </div>
-              <div class="flex items-center gap-2 flex-shrink-0">
+              <div class="flex items-center gap-2 shrink-0">
                 <span class="text-xs text-gray-500 dark:text-gray-400">{{ bundle.resourceCount }} resources</span>
-                <div class="flex items-center gap-1">
-                  <div class="size-2.5 rounded-full" [ngClass]="statusDotClass(bundle.status)"></div>
-                  <span class="text-xs text-gray-600 dark:text-gray-300 capitalize">{{ bundle.status }}</span>
-                </div>
+                <span class="distr-status-badge capitalize" [ngClass]="statusBadgeClass(bundle.status)">
+                  {{ bundle.status }}
+                </span>
               </div>
             </div>
           </a>
