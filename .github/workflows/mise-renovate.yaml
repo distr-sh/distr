@@ -8,12 +8,12 @@ on:
       - 'main'
     paths:
       - 'mise.toml'
-      - '.github/workflows/mise.yaml'
+      - '.github/workflows/mise-renovate.yaml'
       - renovate.json
   pull_request:
     paths:
       - 'mise.toml'
-      - '.github/workflows/mise.yaml'
+      - '.github/workflows/mise-renovate.yaml'
       - renovate.json
 
 jobs:
