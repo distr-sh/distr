@@ -273,7 +273,7 @@ func getTokenIdKey(token any, id uuid.UUID) string {
 	switch token.(type) {
 	case jwt.Token:
 		prefix = "jwt"
-	case authkey.Key:
+	case authkey.Token:
 		prefix = "authkey"
 	default:
 		panic("unknown token type")
