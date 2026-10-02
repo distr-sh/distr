@@ -174,29 +174,23 @@ func sendMetricNotification(
 	}
 
 	record := types.NotificationRecord{
-		OrganizationID:         config.OrganizationID,
-		CustomerOrganizationID: config.CustomerOrganizationID,
-		SourceType:             types.NotificationSourceTypeAlert,
-		SourceConfigurationID:  &config.ID,
-		SubjectID:              &deploymentTarget.ID,
-		Type:                   recordType,
-		Details: types.NotificationRecordDetails{
-			Summary:                          metricSummary(currentMetrics, metricType, diskDevice, diskPath, usagePercent),
-			CustomerOrganizationName:         customerOrganizationName(deploymentTarget),
-			DeploymentTargetName:             &deploymentTarget.Name,
-			MetricType:                       &metricType,
-			CurrentDeploymentTargetMetricsID: &currentMetrics.ID,
-		},
+		OrganizationID:                   config.OrganizationID,
+		CustomerOrganizationID:           config.CustomerOrganizationID,
+		DeploymentTargetID:               &deploymentTarget.ID,
+		AlertConfigurationID:             &config.ID,
+		Type:                             recordType,
+		MetricType:                       &metricType,
+		CurrentDeploymentTargetMetricsID: &currentMetrics.ID,
 	}
 
 	if diskDevice != "" {
-		record.Details.DiskDevice = &diskDevice
+		record.DiskDevice = &diskDevice
 	}
 	if diskPath != "" {
-		record.Details.DiskPath = &diskPath
+		record.DiskPath = &diskPath
 	}
 	if previousMetrics != nil {
-		record.Details.PreviousDeploymentTargetMetricsID = &previousMetrics.ID
+		record.PreviousDeploymentTargetMetricsID = &previousMetrics.ID
 	}
 	if aggErr != nil {
 		record.DeliveryError = aggErr.Error()
@@ -248,27 +242,4 @@ func usageFunc[T any](p *T, c T, f func(T) float64) (*float64, float64) {
 
 func usagePercent(usage float64) int64 {
 	return int64(math.Round(usage * 100))
-}
-
-func metricSummary(
-	metrics types.DeploymentTargetMetrics,
-	metricType, diskDevice, diskPath string,
-	usagePercent int64,
-) string {
-	label := metricType
-	switch metricType {
-	case "cpu":
-		label = "CPU"
-	case "memory":
-		label = "Memory"
-	case "disk":
-		label = "Disk"
-		// Usage() reports 0 for a disk without capacity, which is not a utilization.
-		for _, disk := range metrics.DiskMetrics {
-			if disk.Device == diskDevice && disk.Path == diskPath && disk.BytesTotal <= 0 {
-				return fmt.Sprintf("%v utilization is N/A", label)
-			}
-		}
-	}
-	return fmt.Sprintf("%v utilization is %v%%", label, usagePercent)
 }

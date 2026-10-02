@@ -43,6 +43,6 @@ func getNotificationRecordsHandler() http.HandlerFunc {
 			return
 		}
 
-		RespondJSON(w, mapping.List(records, mapping.NotificationRecordToAPI))
+		RespondJSON(w, mapping.List(records, mapping.NotificationRecordWithDetailsToAPI))
 	}
 }

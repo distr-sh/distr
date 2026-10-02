@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
@@ -50,8 +51,9 @@ func SendApplicationUpdateAvailableNotifications(
 	}
 
 	var aggErr error
+	mailed := map[uuid.UUID]struct{}{}
 	for _, config := range configs {
-		if err := sendApplicationUpdateAvailableWithConfig(ctx, config, version, deployments); err != nil {
+		if err := sendApplicationUpdateAvailableWithConfig(ctx, config, version, deployments, mailed); err != nil {
 			aggErr = errors.Join(aggErr, fmt.Errorf("config %v: %w", config.ID, err))
 		}
 	}
@@ -80,6 +82,7 @@ func sendApplicationUpdateAvailableWithConfig(
 	config types.UpdateNotificationConfiguration,
 	version types.ApplicationVersion,
 	deployments []types.DeploymentPendingUpdate,
+	mailed map[uuid.UUID]struct{},
 ) error {
 	log := internalctx.GetLogger(ctx).With(zap.Stringer("configId", config.ID))
 
@@ -94,45 +97,43 @@ func sendApplicationUpdateAvailableWithConfig(
 	}
 
 	var aggErr error
-	for _, recipient := range config.Recipients {
-		log := log.With(zap.Stringer("userId", recipient.ID))
+	for _, group := range recipientsByAudience(config.Recipients) {
+		log := group.audience.logger(log)
 
-		visible := visibleDeployments(deployments, recipient)
+		visible := visibleDeployments(deployments, group.audience)
 		if len(visible) == 0 {
-			log.Debug("skip recipient without visible deployments")
+			log.Debug("skip audience without visible deployments")
 			continue
 		}
 
 		record := types.NotificationRecord{
-			OrganizationID:         config.OrganizationID,
-			CustomerOrganizationID: recipient.CustomerOrganizationID,
-			UserAccountID:          &recipient.ID,
-			SourceType:             types.NotificationSourceTypeApplication,
-			SourceConfigurationID:  &config.ID,
-			SubjectID:              &version.ID,
-			Type:                   types.NotificationRecordTypeUpdateAvailable,
-			Details: types.NotificationRecordDetails{
-				Summary:                fmt.Sprintf("Version %v is available", version.Name),
-				ApplicationName:        &application.Name,
-				ApplicationType:        &application.Type,
-				ApplicationVersionName: &version.Name,
-				Deployments:            recordDeployments(visible),
-			},
+			OrganizationID:                    config.OrganizationID,
+			CustomerOrganizationID:            group.audience.customerOrganizationID,
+			PartnerOrganizationID:             group.audience.partnerOrganizationID,
+			UpdateNotificationConfigurationID: &config.ID,
+			ApplicationVersionID:              &version.ID,
+			Type:                              types.NotificationRecordTypeUpdateAvailable,
+			Deployments:                       recordDeployments(visible),
 		}
 		if reserved, err := reserveNotificationRecord(ctx, &record); err != nil {
 			return err
 		} else if !reserved {
-			log.Debug("skip recipient that was notified about this version already")
+			log.Debug("skip audience that was notified about this version already")
 			continue
 		}
 
 		log.Info("sending update available notification")
-		if err := mailsending.ApplicationUpdateAvailableNotification(
-			ctx, recipient, *organization, *application, version.Name, visible,
-		); err != nil {
-			log.Warn("update available notification sending failed", zap.Error(err))
-			aggErr = errors.Join(aggErr, err, recordDeliveryError(ctx, record, err))
+		var deliveryErr error
+		for _, recipient := range unmailed(group.recipients, mailed) {
+			if err := mailsending.ApplicationUpdateAvailableNotification(
+				ctx, recipient, *organization, *application, version.Name, visible,
+			); err != nil {
+				log.Warn("update available notification sending failed",
+					zap.Stringer("userId", recipient.ID), zap.Error(err))
+				deliveryErr = errors.Join(deliveryErr, err)
+			}
 		}
+		aggErr = errors.Join(aggErr, recordDeliveryError(ctx, record, deliveryErr))
 	}
 
 	return aggErr
@@ -160,8 +161,9 @@ func SendArtifactVersionAvailableNotifications(ctx context.Context, version type
 	}
 
 	var aggErr error
+	mailed := map[uuid.UUID]struct{}{}
 	for _, config := range configs {
-		if err := sendArtifactVersionAvailableWithConfig(ctx, config, version, entitlement); err != nil {
+		if err := sendArtifactVersionAvailableWithConfig(ctx, config, version, entitlement, mailed); err != nil {
 			aggErr = errors.Join(aggErr, fmt.Errorf("config %v: %w", config.ID, err))
 		}
 	}
@@ -173,6 +175,7 @@ func sendArtifactVersionAvailableWithConfig(
 	config types.UpdateNotificationConfiguration,
 	version types.ArtifactVersion,
 	entitlement types.ArtifactVersionEntitlement,
+	mailed map[uuid.UUID]struct{},
 ) error {
 	log := internalctx.GetLogger(ctx).With(zap.Stringer("configId", config.ID))
 
@@ -187,43 +190,42 @@ func sendArtifactVersionAvailableWithConfig(
 	}
 
 	var aggErr error
-	for _, recipient := range config.Recipients {
-		log := log.With(zap.Stringer("userId", recipient.ID))
+	for _, group := range recipientsByAudience(config.Recipients) {
+		log := group.audience.logger(log)
 
-		if customerOrgID := recipient.CustomerOrganizationID; customerOrgID != nil &&
+		if customerOrgID := group.audience.customerOrganizationID; customerOrgID != nil &&
 			!entitlement.Allows(*customerOrgID) {
-			log.Debug("skip recipient whose entitlement does not cover the version")
+			log.Debug("skip audience whose entitlement does not cover the version")
 			continue
 		}
 
 		record := types.NotificationRecord{
-			OrganizationID:         config.OrganizationID,
-			CustomerOrganizationID: recipient.CustomerOrganizationID,
-			UserAccountID:          &recipient.ID,
-			SourceType:             types.NotificationSourceTypeArtifact,
-			SourceConfigurationID:  &config.ID,
-			SubjectID:              &version.ID,
-			Type:                   types.NotificationRecordTypeNewVersion,
-			Details: types.NotificationRecordDetails{
-				Summary:             fmt.Sprintf("Version %v is available", version.Name),
-				ArtifactName:        &artifact.Name,
-				ArtifactVersionName: &version.Name,
-			},
+			OrganizationID:                    config.OrganizationID,
+			CustomerOrganizationID:            group.audience.customerOrganizationID,
+			PartnerOrganizationID:             group.audience.partnerOrganizationID,
+			UpdateNotificationConfigurationID: &config.ID,
+			ArtifactVersionID:                 &version.ID,
+			Type:                              types.NotificationRecordTypeUpdateAvailable,
 		}
 		if reserved, err := reserveNotificationRecord(ctx, &record); err != nil {
 			return err
 		} else if !reserved {
-			log.Debug("skip recipient that was notified about this version already")
+			log.Debug("skip audience that was notified about this version already")
 			continue
 		}
 
 		log.Info("sending new artifact version notification")
-		if err := mailsending.ArtifactVersionAvailableNotification(
-			ctx, recipient, *organization, *artifact, version.Name,
-		); err != nil {
-			log.Warn("new artifact version notification sending failed", zap.Error(err))
-			aggErr = errors.Join(aggErr, err, recordDeliveryError(ctx, record, err))
+		var deliveryErr error
+		for _, recipient := range unmailed(group.recipients, mailed) {
+			if err := mailsending.ArtifactVersionAvailableNotification(
+				ctx, recipient, *organization, *artifact, version.Name,
+			); err != nil {
+				log.Warn("new artifact version notification sending failed",
+					zap.Stringer("userId", recipient.ID), zap.Error(err))
+				deliveryErr = errors.Join(deliveryErr, err)
+			}
 		}
+		aggErr = errors.Join(aggErr, recordDeliveryError(ctx, record, deliveryErr))
 	}
 
 	return aggErr
@@ -253,15 +255,76 @@ func deploymentsBehind(
 	return behind
 }
 
-// visibleDeployments narrows the affected deployments down to what a recipient may see. A customer
-// user sees only their own organization's deployments and only while their entitlement covers the
-// announced version; a partner user sees the deployments of the customers they manage, under the
-// same entitlement rule; everyone else is a member of the vendor organization and sees all of them.
+// audience is who a recipient is notified as: the vendor's own team when both are nil, otherwise
+// one partner or one customer. Everyone in an audience may see the same deployments, so an
+// audience shares one notification record.
+type audience struct {
+	customerOrganizationID *uuid.UUID
+	partnerOrganizationID  *uuid.UUID
+}
+
+func (a audience) logger(log *zap.Logger) *zap.Logger {
+	if a.customerOrganizationID != nil {
+		return log.With(zap.Stringer("customerOrganizationId", a.customerOrganizationID))
+	} else if a.partnerOrganizationID != nil {
+		return log.With(zap.Stringer("partnerOrganizationId", a.partnerOrganizationID))
+	}
+	return log
+}
+
+func (a audience) is(other audience) bool {
+	return equalIDs(a.customerOrganizationID, other.customerOrganizationID) &&
+		equalIDs(a.partnerOrganizationID, other.partnerOrganizationID)
+}
+
+func equalIDs(a, b *uuid.UUID) bool {
+	return (a == nil && b == nil) || (a != nil && b != nil && *a == *b)
+}
+
+type audienceRecipients struct {
+	audience   audience
+	recipients []types.NotificationRecipient
+}
+
+func recipientsByAudience(recipients []types.NotificationRecipient) []audienceRecipients {
+	var groups []audienceRecipients
+	for _, recipient := range recipients {
+		key := audience{
+			customerOrganizationID: recipient.CustomerOrganizationID,
+			partnerOrganizationID:  recipient.PartnerOrganizationID,
+		}
+		index := slices.IndexFunc(groups, func(group audienceRecipients) bool { return group.audience.is(key) })
+		if index < 0 {
+			groups = append(groups, audienceRecipients{audience: key})
+			index = len(groups) - 1
+		}
+		groups[index].recipients = append(groups[index].recipients, recipient)
+	}
+	return groups
+}
+
+// unmailed drops the recipients another configuration has mailed about the same version already
+// and marks the rest as mailed, so a user listed in several configurations receives one email.
+func unmailed(recipients []types.NotificationRecipient, mailed map[uuid.UUID]struct{}) []types.NotificationRecipient {
+	result := make([]types.NotificationRecipient, 0, len(recipients))
+	for _, recipient := range recipients {
+		if _, ok := mailed[recipient.ID]; !ok {
+			mailed[recipient.ID] = struct{}{}
+			result = append(result, recipient)
+		}
+	}
+	return result
+}
+
+// visibleDeployments narrows the affected deployments down to what an audience may see. A customer
+// sees only its own deployments and only while its entitlement covers the announced version; a
+// partner sees the deployments of the customers it manages, under the same entitlement rule; the
+// vendor's own team sees all of them.
 func visibleDeployments(
 	deployments []types.DeploymentPendingUpdate,
-	recipient types.NotificationRecipient,
+	audience audience,
 ) []types.DeploymentPendingUpdate {
-	if recipient.CustomerOrganizationID == nil && recipient.PartnerOrganizationID == nil {
+	if audience.customerOrganizationID == nil && audience.partnerOrganizationID == nil {
 		return deployments
 	}
 
@@ -270,8 +333,8 @@ func visibleDeployments(
 		if !deployment.Entitled {
 			continue
 		}
-		if !belongsTo(deployment.CustomerOrganizationID, recipient.CustomerOrganizationID) &&
-			!belongsTo(deployment.PartnerOrganizationID, recipient.PartnerOrganizationID) {
+		if !belongsTo(deployment.CustomerOrganizationID, audience.customerOrganizationID) &&
+			!belongsTo(deployment.PartnerOrganizationID, audience.partnerOrganizationID) {
 			continue
 		}
 		visible = append(visible, deployment)
@@ -279,29 +342,25 @@ func visibleDeployments(
 	return visible
 }
 
-func belongsTo(deploymentOrgID, recipientOrgID *uuid.UUID) bool {
-	return deploymentOrgID != nil && recipientOrgID != nil && *deploymentOrgID == *recipientOrgID
+func belongsTo(deploymentOrgID, audienceOrgID *uuid.UUID) bool {
+	return deploymentOrgID != nil && audienceOrgID != nil && *deploymentOrgID == *audienceOrgID
 }
 
 func recordDeployments(deployments []types.DeploymentPendingUpdate) []types.NotificationRecordDeployment {
 	records := make([]types.NotificationRecordDeployment, 0, len(deployments))
 	for _, deployment := range deployments {
-		name := ""
-		if deployment.ReleaseName != nil {
-			name = *deployment.ReleaseName
-		}
 		records = append(records, types.NotificationRecordDeployment{
 			CustomerOrganizationName: deployment.CustomerOrganizationName,
 			DeploymentTargetName:     deployment.DeploymentTargetName,
-			DeploymentName:           name,
-			CurrentVersionName:       &deployment.CurrentVersionName,
+			HelmReleaseName:          deployment.HelmReleaseName,
+			CurrentVersionName:       deployment.CurrentVersionName,
 		})
 	}
 	return records
 }
 
-// reserveNotificationRecord writes the record before the mail is sent, so that the unique index
-// lets only one of two racing sends through to the same recipient. It reports false when another
+// reserveNotificationRecord writes the record before the mails are sent, so that the unique index
+// lets only one of two racing sends through to the same audience. It reports false when another
 // send holds the record already.
 func reserveNotificationRecord(ctx context.Context, record *types.NotificationRecord) (bool, error) {
 	if err := db.SaveNotificationRecord(ctx, record); errors.Is(err, db.ErrNotificationRecordExists) {
@@ -312,8 +371,12 @@ func reserveNotificationRecord(ctx context.Context, record *types.NotificationRe
 	return true, nil
 }
 
-func recordDeliveryError(ctx context.Context, record types.NotificationRecord, sendErr error) error {
-	return db.SetNotificationRecordDeliveryError(ctx, record.ID, sendErr.Error())
+// recordDeliveryError returns deliveryErr together with any error of recording it.
+func recordDeliveryError(ctx context.Context, record types.NotificationRecord, deliveryErr error) error {
+	if deliveryErr == nil {
+		return nil
+	}
+	return errors.Join(deliveryErr, db.SetNotificationRecordDeliveryError(ctx, record.ID, deliveryErr.Error()))
 }
 
 func findApplication(

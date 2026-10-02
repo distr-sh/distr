@@ -40,7 +40,7 @@
                   {{ end }}
                   <td>
                     {{ .DeploymentTargetName }}
-                    {{ with .ReleaseName }}({{ . }}){{ end }}
+                    {{ with .HelmReleaseName }}({{ . }}){{ end }}
                   </td>
                   <td>{{ .CurrentVersionName }}</td>
                 </tr>

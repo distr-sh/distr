@@ -33,7 +33,7 @@ type NotificationArtifact struct {
 // DeploymentPendingUpdate is a deployment that does not run the version a notification announces.
 type DeploymentPendingUpdate struct {
 	DeploymentID             uuid.UUID  `db:"deployment_id"`
-	ReleaseName              *string    `db:"release_name"`
+	HelmReleaseName          *string    `db:"release_name"`
 	DeploymentTargetID       uuid.UUID  `db:"deployment_target_id"`
 	DeploymentTargetName     string     `db:"deployment_target_name"`
 	CustomerOrganizationID   *uuid.UUID `db:"customer_organization_id"`

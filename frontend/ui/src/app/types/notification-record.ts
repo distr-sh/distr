@@ -1,36 +1,36 @@
-import {DeploymentType} from '@distr-sh/distr-sdk';
+import {DeploymentTargetLatestMetrics} from './deployment-target-metrics';
 
-export type NotificationRecordType = 'alert' | 'warning' | 'resolved' | 'update_available' | 'new_version';
-export type NotificationSourceType = 'alert' | 'application' | 'artifact';
+export type NotificationRecordType = 'alert' | 'warning' | 'resolved' | 'update_available';
+export type NotificationRecordMetricType = 'cpu' | 'memory' | 'disk';
 
 export interface NotificationRecordDeployment {
   customerOrganizationName?: string;
   deploymentTargetName: string;
-  deploymentName: string;
-  currentVersionName?: string;
-}
-
-/** Everything specific to what triggered a notification, denormalized when it was sent. */
-export interface NotificationRecordDetails {
-  summary?: string;
-  customerOrganizationName?: string;
-  deploymentTargetName?: string;
-  applicationName?: string;
-  applicationType?: DeploymentType;
-  applicationVersionName?: string;
-  artifactName?: string;
-  artifactVersionName?: string;
-  deployments?: NotificationRecordDeployment[];
+  helmReleaseName?: string;
+  currentVersionName: string;
 }
 
 export interface NotificationRecord {
   id: string;
   createdAt: string;
-  userAccountId?: string;
-  sourceType: NotificationSourceType;
-  sourceConfigurationId?: string;
-  subjectId?: string;
+  deploymentTargetId?: string;
+  deploymentTargetName?: string;
+  customerOrganizationName?: string;
+  alertConfigurationId?: string;
+  applicationName?: string;
+  applicationVersionName?: string;
   type: NotificationRecordType;
-  details: NotificationRecordDetails;
+  metricType?: NotificationRecordMetricType;
+  diskDevice?: string;
+  diskPath?: string;
+  deploymentRevisionId?: string;
+  deploymentStatusMessage?: string;
+  updateNotificationConfigurationId?: string;
+  applicationVersionId?: string;
+  artifactVersionId?: string;
+  artifactName?: string;
+  artifactVersionName?: string;
+  deployments?: NotificationRecordDeployment[];
   deliveryError: string;
+  currentDeploymentTargetMetrics?: DeploymentTargetLatestMetrics;
 }

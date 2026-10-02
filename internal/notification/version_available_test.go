@@ -75,37 +75,53 @@ func TestVisibleDeployments(t *testing.T) {
 	all := []types.DeploymentPendingUpdate{internal, ofCustomerA, ofCustomerB, notEntitled}
 
 	tests := []struct {
-		name      string
-		recipient types.NotificationRecipient
-		want      []string
+		name     string
+		audience audience
+		want     []string
 	}{
 		{
-			name:      "a vendor recipient sees every affected deployment",
-			recipient: types.NotificationRecipient{ID: uuid.New()},
-			want:      []string{"internal", "customer-a", "customer-b", "customer-a-old"},
+			name:     "the vendor's team sees every affected deployment",
+			audience: audience{},
+			want:     []string{"internal", "customer-a", "customer-b", "customer-a-old"},
 		},
 		{
-			name: "a customer recipient sees only entitled deployments of their own organization",
-			recipient: types.NotificationRecipient{
-				ID:                     uuid.New(),
-				CustomerOrganizationID: &customerA,
-			},
-			want: []string{"customer-a"},
+			name:     "a customer sees only its own entitled deployments",
+			audience: audience{customerOrganizationID: &customerA},
+			want:     []string{"customer-a"},
 		},
 		{
-			name: "a partner recipient sees the deployments of the customers they manage",
-			recipient: types.NotificationRecipient{
-				ID:                    uuid.New(),
-				PartnerOrganizationID: &partner,
-			},
-			want: []string{"customer-b"},
+			name:     "a partner sees the deployments of the customers it manages",
+			audience: audience{partnerOrganizationID: &partner},
+			want:     []string{"customer-b"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			g := NewWithT(t)
-			g.Expect(targetNames(visibleDeployments(all, tt.recipient))).To(Equal(tt.want))
+			g.Expect(targetNames(visibleDeployments(all, tt.audience))).To(Equal(tt.want))
 		})
 	}
+}
+
+func TestRecipientsByAudience(t *testing.T) {
+	g := NewWithT(t)
+	customerA := uuid.New()
+	partner := uuid.New()
+	vendor1 := types.NotificationRecipient{ID: uuid.New()}
+	customer1 := types.NotificationRecipient{ID: uuid.New(), CustomerOrganizationID: new(customerA)}
+	vendor2 := types.NotificationRecipient{ID: uuid.New()}
+	partner1 := types.NotificationRecipient{ID: uuid.New(), PartnerOrganizationID: &partner}
+	customer2 := types.NotificationRecipient{ID: uuid.New(), CustomerOrganizationID: new(customerA)}
+
+	groups := recipientsByAudience([]types.NotificationRecipient{vendor1, customer1, vendor2, partner1, customer2})
+
+	g.Expect(groups).To(Equal([]audienceRecipients{
+		{audience: audience{}, recipients: []types.NotificationRecipient{vendor1, vendor2}},
+		{
+			audience:   audience{customerOrganizationID: customer1.CustomerOrganizationID},
+			recipients: []types.NotificationRecipient{customer1, customer2},
+		},
+		{audience: audience{partnerOrganizationID: &partner}, recipients: []types.NotificationRecipient{partner1}},
+	}))
 }

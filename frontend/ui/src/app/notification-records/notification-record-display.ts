@@ -1,20 +1,12 @@
-import {never} from '../../util/exhaust';
-import {NotificationSourceType} from '../types/notification-record';
+import {NotificationRecord} from '../types/notification-record';
 
-export function notificationKindLabel(sourceType: NotificationSourceType): string {
-  switch (sourceType) {
-    case 'alert':
-      return 'Alert';
-    case 'application':
-    case 'artifact':
-      return 'Update';
-    default:
-      return never(sourceType);
+/**
+ * notificationCustomerNames lists who a record concerns: the customer of an alert or of a customer's update
+ * notification, otherwise every distinct customer whose deployments are behind.
+ */
+export function notificationCustomerNames(record: NotificationRecord): string[] {
+  if (record.customerOrganizationName) {
+    return [record.customerOrganizationName];
   }
-}
-
-export function notificationKindBadgeClass(sourceType: NotificationSourceType): string {
-  return sourceType === 'alert'
-    ? 'bg-orange-100 text-orange-800 border-orange-400 dark:bg-orange-900 dark:text-orange-300 dark:border-orange-800'
-    : 'bg-blue-100 text-blue-800 border-blue-400 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-800';
+  return [...new Set((record.deployments ?? []).map((d) => d.customerOrganizationName ?? 'Internal'))];
 }
