@@ -1,5 +1,38 @@
 # Changelog
 
+## [4.2.1](https://github.com/distr-sh/distr/compare/4.2.0...4.2.1) (2026-10-05)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @astrojs/starlight to v0.42.5 ([#3387](https://github.com/distr-sh/distr/issues/3387)) ([8592bb7](https://github.com/distr-sh/distr/commit/8592bb7fdcec6b92dc4a6cb5058bbb3a88de6bde))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/service/s3 to v1.114.0 ([#3382](https://github.com/distr-sh/distr/issues/3382)) ([a7b2f3a](https://github.com/distr-sh/distr/commit/a7b2f3acb6452886fe70dba6203176c7e4ec5f94))
+* **deps:** update module github.com/docker/cli to v29.8.2+incompatible ([#3375](https://github.com/distr-sh/distr/issues/3375)) ([4a63bfb](https://github.com/distr-sh/distr/commit/4a63bfbb44826916ef5315810893e3c9b06fa205))
+* **deps:** update module github.com/moby/moby/client to v0.6.1 ([#3393](https://github.com/distr-sh/distr/issues/3393)) ([1068fdb](https://github.com/distr-sh/distr/commit/1068fdb8e76e08bde0ffcd910e3b82b9c8a799be))
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.162.0 ([#3371](https://github.com/distr-sh/distr/issues/3371)) ([9645b47](https://github.com/distr-sh/distr/commit/9645b477522c8fad5118037f47bb6be99de81d5f))
+* **deps:** update module github.com/shirou/gopsutil/v4 to v4.26.9 ([#3384](https://github.com/distr-sh/distr/issues/3384)) ([5aeb6ab](https://github.com/distr-sh/distr/commit/5aeb6aba406c7f08dc51b4f9dca1f41212983479))
+* **deps:** update opentelemetry-go monorepo to v1.47.0 ([#3394](https://github.com/distr-sh/distr/issues/3394)) ([a483bb9](https://github.com/distr-sh/distr/commit/a483bb9fe2336a186494c73d54bf7f7264904590))
+* **registry:** don't check blob ownership for HEAD requests ([#3402](https://github.com/distr-sh/distr/issues/3402)) ([330d106](https://github.com/distr-sh/distr/commit/330d106d692ba3a243e6dc1928999f8b454de9b8))
+
+
+### Other
+
+* **backend:** expand request logging ([#3360](https://github.com/distr-sh/distr/issues/3360)) ([84d7b7e](https://github.com/distr-sh/distr/commit/84d7b7e7e9c8b65698ae67d8923e2b2b46fce0e2))
+* **deps:** update anchore/sbom-action action to v0.24.3 ([#3395](https://github.com/distr-sh/distr/issues/3395)) ([6902c89](https://github.com/distr-sh/distr/commit/6902c895b83c57ed49023e5e1e49b1ad93377076))
+* **deps:** update angular monorepo to v22.2.1 ([#3379](https://github.com/distr-sh/distr/issues/3379)) ([9ed4431](https://github.com/distr-sh/distr/commit/9ed44318af440d91dece2113291649331c356bca))
+* **deps:** update angular-cli monorepo to v22.2.1 ([#3390](https://github.com/distr-sh/distr/issues/3390)) ([150ef38](https://github.com/distr-sh/distr/commit/150ef38d1d64eaae6a669f9fdf594721b308df8f))
+* **deps:** update dependency @angular/cdk to v22.2.1 ([#3377](https://github.com/distr-sh/distr/issues/3377)) ([f81022e](https://github.com/distr-sh/distr/commit/f81022ebb43dde9ca7b8e0b2cb096a05835dac91))
+* **deps:** update dependency @iconify-json/lucide to v1.2.138 ([#3378](https://github.com/distr-sh/distr/issues/3378)) ([2d61a16](https://github.com/distr-sh/distr/commit/2d61a16cee4d23d674dba56d9a435b24dc9fbdce))
+* **deps:** update dependency stripe to v1.53.0 ([#3374](https://github.com/distr-sh/distr/issues/3374)) ([6292a62](https://github.com/distr-sh/distr/commit/6292a62d1598fe33566e9ec8fd7cacaa9fe7e824))
+* **deps:** update dependency vitest to v5.0.3 ([#3380](https://github.com/distr-sh/distr/issues/3380)) ([0dee01a](https://github.com/distr-sh/distr/commit/0dee01a89097497952e5fc63dca8de3ece47b2c4))
+* **deps:** update dependency watchexec to v2.7.4 ([#3396](https://github.com/distr-sh/distr/issues/3396)) ([4243d3d](https://github.com/distr-sh/distr/commit/4243d3d99cf11fa5da7a623adc2a2afdd9e9c530))
+* **deps:** update docker docker tag to v29.8.2 ([#3383](https://github.com/distr-sh/distr/issues/3383)) ([17827ff](https://github.com/distr-sh/distr/commit/17827ffe4b49e1258b9b87e08562b7bf83ab3beb))
+* **deps:** update helm release rustfs to v1.0.1 ([#3398](https://github.com/distr-sh/distr/issues/3398)) ([236e8aa](https://github.com/distr-sh/distr/commit/236e8aae92e715cb04031a2209e509068e4e8540))
+* **deps:** update jdx/mise-action action to v5.0.1 ([#3381](https://github.com/distr-sh/distr/issues/3381)) ([46680f6](https://github.com/distr-sh/distr/commit/46680f6b29bc51db7d2e86c783eb51d5b1d5a9dc))
+* **deps:** update pnpm to v12.8.1 ([#3366](https://github.com/distr-sh/distr/issues/3366)) ([9d3ba1d](https://github.com/distr-sh/distr/commit/9d3ba1d084a1d8f6cd5340110bdcf8e12ff21e53))
+* **frontend:** replace support bundle status dot with badge on dashboard ([#3388](https://github.com/distr-sh/distr/issues/3388)) ([b6daa02](https://github.com/distr-sh/distr/commit/b6daa025485ff69029ac6f380e8cd4fe0e9c6e77))
+* **sdk/js:** bump typescript to v6 ([#3376](https://github.com/distr-sh/distr/issues/3376)) ([b31339c](https://github.com/distr-sh/distr/commit/b31339c37fb3270ad45b44742c06b3745f8cf9a0))
+
 ## [4.2.0](https://github.com/distr-sh/distr/compare/4.1.0...4.2.0) (2026-09-30)
 
 
