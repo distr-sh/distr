@@ -41,6 +41,21 @@ function compareByCreationDate(a: ApplicationVersion, b: ApplicationVersion): nu
 }
 
 /**
+ * Returns a new array ordered by the application's versioning strategy. Pass the full version set
+ * as `allVersions` when sorting a subset so legacy/semver match the backend comparator. Defaults
+ * to descending (newest / highest first) for UI lists.
+ */
+export function sortApplicationVersions(
+  strategy: VersioningStrategy | undefined,
+  versions: ApplicationVersion[],
+  allVersions: ApplicationVersion[] = versions,
+  direction: 'asc' | 'desc' = 'desc'
+): ApplicationVersion[] {
+  const compare = applicationVersionComparator(strategy, allVersions);
+  return [...versions].sort((a, b) => (direction === 'desc' ? compare(b, a) : compare(a, b)));
+}
+
+/**
  * The newest version that is not archived, or undefined when none remains. The ordering comes from
  * applicationVersionComparator, so that a subset (the versions an entitlement covers) is ordered by
  * the ordering of the whole.

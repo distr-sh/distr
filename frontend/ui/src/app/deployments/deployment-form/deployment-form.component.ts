@@ -43,7 +43,12 @@ import {
 import {isArchived} from '../../../util/dates';
 import {toBase64} from '../../../util/encoding';
 import {DURATION_REGEX, HELM_RELEASE_NAME_MAX_LENGTH, HELM_RELEASE_NAME_REGEX} from '../../../util/validation';
-import {allowsAutomaticUpdates, applicationVersionComparator, latestApplicationVersion} from '../../../util/versions';
+import {
+  allowsAutomaticUpdates,
+  applicationVersionComparator,
+  latestApplicationVersion,
+  sortApplicationVersions,
+} from '../../../util/versions';
 import {EditorComponent} from '../../components/editor.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {InnerMarkdownDirective} from '../../directives/inner-markdown.directive';
@@ -290,12 +295,17 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
         versions = application?.versions ?? [];
       }
 
-      return versions.filter((av) => {
+      const filtered = versions.filter((av) => {
         if (av.id === selectedApplicationVersionId) {
           return true;
         }
         return !isArchived(av);
       });
+      return sortApplicationVersions(
+        application?.versioningStrategy,
+        filtered,
+        application?.versions ?? versions
+      );
     }),
     shareReplay(1)
   );
