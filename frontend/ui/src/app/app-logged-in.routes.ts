@@ -279,7 +279,7 @@ export const routes: Routes = [
           {
             path: 'updates',
             component: CustomerUpdateNotificationsPageComponent,
-            canActivate: [notificationsEnabledGuard(), requireCustomerFeature('update_notifications')],
+            canActivate: [notificationsEnabledGuard()],
           },
           {
             path: 'notification-history',

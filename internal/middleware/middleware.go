@@ -427,15 +427,22 @@ func FeatureFlagMiddleware(feature types.Feature) func(handler http.Handler) htt
 	}
 }
 
-// CustomerFeatureMiddleware rejects a customer user whose customer organization lacks the feature.
-// Vendor and partner users pass, since they manage the feature on behalf of their customers.
-func CustomerFeatureMiddleware(feature types.CustomerOrganizationFeature) func(handler http.Handler) http.Handler {
+// CustomerFeatureMiddleware rejects a customer user whose customer organization has none of the
+// features. Vendor and partner users pass, since they manage the features on behalf of their customers.
+func CustomerFeatureMiddleware(features ...types.CustomerOrganizationFeature) func(handler http.Handler) http.Handler {
+	names := make([]string, len(features))
+	for i, feature := range features {
+		names[i] = string(feature)
+	}
+	message := strings.Join(names, " or ") + " not enabled for customer organization"
+
 	return func(handler http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			if auth, err := auth.Authentication.Get(r.Context()); err != nil {
 				http.Error(w, err.Error(), http.StatusForbidden)
-			} else if customerOrg := auth.CurrentCustomerOrg(); customerOrg != nil && !customerOrg.HasFeature(feature) {
-				http.Error(w, fmt.Sprintf("%v not enabled for customer organization", feature), http.StatusForbidden)
+			} else if customerOrg := auth.CurrentCustomerOrg(); customerOrg != nil &&
+				!slices.ContainsFunc(features, customerOrg.HasFeature) {
+				http.Error(w, message, http.StatusForbidden)
 			} else {
 				handler.ServeHTTP(w, r)
 			}
@@ -447,6 +454,10 @@ func CustomerFeatureMiddleware(feature types.CustomerOrganizationFeature) func(h
 var (
 	AlertsCustomerFeatureMiddleware              = CustomerFeatureMiddleware(types.CustomerOrganizationFeatureAlerts)
 	UpdateNotificationsCustomerFeatureMiddleware = CustomerFeatureMiddleware(
+		types.CustomerOrganizationFeatureUpdateNotifications,
+	)
+	NotificationHistoryCustomerFeatureMiddleware = CustomerFeatureMiddleware(
+		types.CustomerOrganizationFeatureAlerts,
 		types.CustomerOrganizationFeatureUpdateNotifications,
 	)
 )
