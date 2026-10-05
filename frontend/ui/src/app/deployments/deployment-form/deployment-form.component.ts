@@ -301,11 +301,7 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
         }
         return !isArchived(av);
       });
-      return sortApplicationVersions(
-        application?.versioningStrategy,
-        filtered,
-        application?.versions ?? versions
-      );
+      return sortApplicationVersions(application?.versioningStrategy, filtered, application?.versions ?? versions);
     }),
     shareReplay(1)
   );
