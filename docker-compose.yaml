@@ -12,12 +12,12 @@ services:
     ports:
       - '5432:5432'
   mailpit:
-    image: 'axllent/mailpit:v1.31.3'
+    image: 'axllent/mailpit:v1.31.4'
     ports:
       - '1025:1025'
       - '8025:8025'
   storage:
-    image: 'rustfs/rustfs:1.0.0'
+    image: 'rustfs/rustfs:1.0.1'
     ports:
       - '127.0.0.1:9000:9000'
       - '127.0.0.1:9001:9001'

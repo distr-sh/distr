@@ -206,10 +206,13 @@ func (a *authorizer) AuthorizeBlob(
 		return NewErrAccessDenied("organization slug does not match reference")
 	}
 
-	if belongs, err := db.ArtifactBlobBelongsToOrg(ctx, org.ID, digest.String()); err != nil {
-		return err
-	} else if !belongs {
-		return apierrors.ErrNotFound
+	// A pushing client stats every blob after uploading it and before any manifest references it.
+	if action != ActionStat {
+		if belongs, err := db.ArtifactBlobBelongsToOrg(ctx, org.ID, digest.String()); err != nil {
+			return err
+		} else if !belongs {
+			return apierrors.ErrNotFound
+		}
 	}
 
 	if principal.CurrentCustomerOrgID() != nil && org.HasFeature(types.FeatureLicensing) {
