@@ -51,13 +51,15 @@ func AdvisoryApplicationVersionToAPI(
 	version types.AdvisoryApplicationVersion,
 ) api.AdvisoryApplicationVersion {
 	return api.AdvisoryApplicationVersion{
-		ApplicationID:          version.ApplicationID,
-		ApplicationName:        version.ApplicationName,
-		ApplicationType:        version.ApplicationType,
-		ApplicationImageURL:    CreateImageURL(version.ApplicationImageID),
-		ApplicationVersionID:   version.ApplicationVersionID,
-		ApplicationVersionName: version.ApplicationVersionName,
-		Relation:               version.Relation,
+		ApplicationID:                 version.ApplicationID,
+		ApplicationName:               version.ApplicationName,
+		ApplicationType:               version.ApplicationType,
+		ApplicationImageURL:           CreateImageURL(version.ApplicationImageID),
+		ApplicationVersioningStrategy: version.ApplicationVersioningStrategy,
+		ApplicationVersionID:          version.ApplicationVersionID,
+		ApplicationVersionName:        version.ApplicationVersionName,
+		ApplicationVersionCreatedAt:   version.ApplicationVersionCreatedAt,
+		Relation:                      version.Relation,
 	}
 }
 

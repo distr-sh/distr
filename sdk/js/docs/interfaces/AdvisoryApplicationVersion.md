@@ -32,9 +32,21 @@
 
 ---
 
+### applicationVersionCreatedAt
+
+> **applicationVersionCreatedAt**: `string`
+
+---
+
 ### applicationVersionId
 
 > **applicationVersionId**: `string`
+
+---
+
+### applicationVersioningStrategy
+
+> **applicationVersioningStrategy**: [`VersioningStrategy`](../type-aliases/VersioningStrategy.md)
 
 ---
 

@@ -612,7 +612,9 @@ func getAdvisoryApplicationVersions(
 		`SELECT vav.advisory_id, vav.relation,
 			a.id AS application_id, a.name AS application_name,
 			a.type AS application_type, a.image_id AS application_image_id,
-			av.id AS application_version_id, av.name AS application_version_name
+			a.versioning_strategy AS application_versioning_strategy,
+			av.id AS application_version_id, av.name AS application_version_name,
+			av.created_at AS application_version_created_at
 		FROM AdvisoryApplicationVersion vav
 			JOIN ApplicationVersion av ON av.id = vav.application_version_id
 			JOIN Application a ON a.id = av.application_id

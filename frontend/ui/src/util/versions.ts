@@ -1,4 +1,10 @@
-import {Application, ApplicationVersion, DeploymentWithLatestRevision, VersioningStrategy} from '@distr-sh/distr-sdk';
+import {
+  AdvisoryApplicationVersion,
+  Application,
+  ApplicationVersion,
+  DeploymentWithLatestRevision,
+  VersioningStrategy,
+} from '@distr-sh/distr-sdk';
 import {SemVer} from 'semver';
 import {isArchived} from './dates';
 
@@ -53,6 +59,29 @@ export function sortApplicationVersions(
 ): ApplicationVersion[] {
   const compare = applicationVersionComparator(strategy, allVersions);
   return [...versions].sort((a, b) => (direction === 'desc' ? compare(b, a) : compare(a, b)));
+}
+
+export function sortAdvisoryApplicationVersions(versions: AdvisoryApplicationVersion[]): AdvisoryApplicationVersion[] {
+  return [...versions].sort((a, b) => {
+    const byApplication =
+      a.applicationName.localeCompare(b.applicationName) || a.applicationId.localeCompare(b.applicationId);
+    if (byApplication !== 0) {
+      return byApplication;
+    }
+    const compare = applicationVersionComparator(
+      a.applicationVersioningStrategy,
+      versions.filter((v) => v.applicationId === a.applicationId).map(toApplicationVersion)
+    );
+    return compare(toApplicationVersion(b), toApplicationVersion(a));
+  });
+}
+
+function toApplicationVersion(version: AdvisoryApplicationVersion): ApplicationVersion {
+  return {
+    id: version.applicationVersionId,
+    name: version.applicationVersionName,
+    createdAt: version.applicationVersionCreatedAt,
+  };
 }
 
 /**
