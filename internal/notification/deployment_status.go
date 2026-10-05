@@ -24,7 +24,7 @@ const (
 
 // SendDeploymentStatusNotifications judges staleness by previousStatus, the newest status of any type, because
 // progressing reports prove the controller alive. Error transitions are judged by settledStatus (see
-// [db.GetLatestSettledDeploymentRevisionStatus]). Any report resolves the open stale warnings of the deployment, and
+// [db.GetPreviousDeploymentRevisionStatus]). Any report resolves the open stale warnings of the deployment, and
 // an alert configuration whose warning it resolved gets a recovery notification unless the report calls for an error
 // notification.
 func SendDeploymentStatusNotifications(
@@ -76,6 +76,7 @@ func SendDeploymentStatusNotifications(
 		if !ok {
 			continue
 		}
+		ctx := internalctx.WithLogger(ctx, log.With(zap.Stringer("configId", config.ID)))
 		if err := sendDeploymentStatusNotificationsWithConfig(
 			ctx, deploymentTarget, deployment, kind, currentStatus, config,
 		); err != nil {
@@ -152,7 +153,7 @@ func sendDeploymentStatusNotificationsWithConfig(
 		return nil
 	}
 
-	log := internalctx.GetLogger(ctx).With(zap.Stringer("configId", config.ID))
+	log := internalctx.GetLogger(ctx)
 
 	if kind == deploymentStatusNotificationStale {
 		if open, err := db.HasOpenStaleWarning(ctx, config.ID, deployment.ID); err != nil {

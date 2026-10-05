@@ -82,7 +82,7 @@ func doReportMetrics(ctx context.Context) {
 // (the controller pod does not override it), the namespace comes from the state shared by the
 // main loop, which is always stored before the metrics goroutine is started.
 func controllerSelfUsage(ctx context.Context) (*podUsage, error) {
-	namespace := deploymentMetricsNamespace.Load()
+	namespace := controllerNamespace.Load()
 	if namespace == nil {
 		return nil, errors.New("namespace is not known yet")
 	}

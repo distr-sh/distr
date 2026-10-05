@@ -22,14 +22,14 @@ export default defineConfig({
     {
       name: 'Inter',
       cssVariable: '--font-inter',
-      provider: fontProviders.fontsource(),
+      provider: fontProviders.npm(),
       weights: [300, 400, 600, 700],
       subsets: ['latin'],
     },
     {
       name: 'Poppins',
       cssVariable: '--font-poppins',
-      provider: fontProviders.fontsource(),
+      provider: fontProviders.npm(),
       weights: [600],
       subsets: ['latin'],
     },

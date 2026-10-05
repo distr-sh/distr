@@ -31,11 +31,14 @@ const (
 )
 
 type ControllerDeployment struct {
-	ID           uuid.UUID `json:"id"`
-	RevisionID   uuid.UUID `json:"revisionId"`
-	ReleaseName  string    `json:"releaseName"`
-	HelmRevision *int      `json:"helmRevision,omitempty"`
-	State        State     `json:"phase"`
+	ID         uuid.UUID `json:"id"`
+	RevisionID uuid.UUID `json:"revisionId"`
+	// CurrentRevisionID is the revision that was last applied successfully. It differs from RevisionID
+	// while a newer revision is being applied or after applying it has failed.
+	CurrentRevisionID uuid.UUID `json:"currentRevisionId,omitzero"`
+	ReleaseName       string    `json:"releaseName"`
+	HelmRevision      *int      `json:"helmRevision,omitempty"`
+	State             State     `json:"phase"`
 }
 
 func (d ControllerDeployment) GetDeploymentID() uuid.UUID {
@@ -46,16 +49,37 @@ func (d ControllerDeployment) GetDeploymentRevisionID() uuid.UUID {
 	return d.RevisionID
 }
 
+// AppliedRevisionID returns the revision that was last applied successfully or [uuid.Nil] if there is none.
+// State saved by controllers that did not know CurrentRevisionID yet only has a RevisionID, which is the applied
+// one unless applying it failed or is still in progress.
+func (d ControllerDeployment) AppliedRevisionID() uuid.UUID {
+	if d.CurrentRevisionID != uuid.Nil {
+		return d.CurrentRevisionID
+	}
+	if d.State == StateReady || d.State == StateUnspecified {
+		return d.RevisionID
+	}
+	return uuid.Nil
+}
+
 func (d *ControllerDeployment) SecretName() string {
 	return secretNamePrefix + d.ReleaseName
 }
 
-func NewControllerDeployment(deployment api.ControllerDeployment) ControllerDeployment {
-	return ControllerDeployment{
+func NewControllerDeployment(
+	deployment api.ControllerDeployment,
+	previous *ControllerDeployment,
+) ControllerDeployment {
+	result := ControllerDeployment{
 		ReleaseName: deployment.ReleaseName,
 		ID:          deployment.ID,
 		RevisionID:  deployment.RevisionID,
 	}
+	if previous != nil {
+		result.CurrentRevisionID = previous.AppliedRevisionID()
+		result.HelmRevision = previous.HelmRevision
+	}
+	return result
 }
 
 func PullSecretName(releaseName string) string {

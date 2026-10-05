@@ -4,13 +4,81 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
 
+	"github.com/distr-sh/distr/api"
+	"github.com/distr-sh/distr/internal/controllerenv"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/docker/cli/cli/compose/convert"
-	"github.com/docker/compose/v5/pkg/api"
+	composeapi "github.com/docker/compose/v5/pkg/api"
+	"github.com/google/uuid"
 	"github.com/moby/moby/api/types/container"
 	mobyClient "github.com/moby/moby/client"
+	"go.uber.org/zap"
 )
+
+// watchStatus reports the status of the revision that was last applied successfully for every deployment,
+// independently of the main loop, which may be busy applying or retrying a newer revision.
+func watchStatus(ctx context.Context) {
+	tick := time.Tick(controllerenv.Interval)
+	for {
+		select {
+		case <-tick:
+			reportStatus(ctx)
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+// statusReportMu is held by a status report from reading the deployment state until the report is sent, and by
+// an apply while it saves the progressing state. An apply therefore cannot start replacing containers while a
+// report that saw no pending update is still checking them.
+var statusReportMu sync.Mutex
+
+// targetRevisionIDs maps every deployment in the last resource to its target revision. The main loop replaces
+// the whole map and never modifies a published one.
+var targetRevisionIDs atomic.Pointer[map[uuid.UUID]uuid.UUID]
+
+func reportStatus(ctx context.Context) {
+	statusReportMu.Lock()
+	defer statusReportMu.Unlock()
+
+	deployments, err := GetExistingDeployments()
+	if err != nil {
+		logger.Error("could not get existing deployments for status check", zap.Error(err))
+		return
+	}
+
+	targets := targetRevisionIDs.Load()
+	if targets == nil {
+		return
+	}
+
+	for _, deployment := range deployments {
+		revisionID := deployment.AppliedRevisionID()
+		targetRevisionID, ok := (*targets)[deployment.ID]
+		if revisionID == uuid.Nil || !ok {
+			continue
+		}
+
+		statusType, message, err := CheckStatus(ctx, deployment)
+		if err != nil {
+			statusType, message = types.DeploymentStatusTypeError, err.Error()
+		}
+		// While an update is being applied or retried, the applied revision's containers are being replaced.
+		if statusType == types.DeploymentStatusTypeError && requiresApply(targetRevisionID, &deployment) {
+			statusType = types.DeploymentStatusTypeProgressing
+		}
+
+		current := api.ControllerDeployment{ID: deployment.ID, RevisionID: revisionID}
+		if err := client.Status(ctx, current, statusType, message); err != nil {
+			logger.Warn("failed to send status", zap.Error(err))
+		}
+	}
+}
 
 func CheckStatus(ctx context.Context, deployment ControllerDeployment) (types.DeploymentStatusType, string, error) {
 	switch deployment.DockerType {
@@ -27,7 +95,7 @@ func CheckDockerComposeStatus(
 	ctx context.Context,
 	deployment ControllerDeployment,
 ) (types.DeploymentStatusType, string, error) {
-	summaries, err := composeService.Ps(ctx, deployment.ProjectName, api.PsOptions{All: true})
+	summaries, err := composeService.Ps(ctx, deployment.ProjectName, composeapi.PsOptions{All: true})
 	if err != nil {
 		return types.DeploymentStatusTypeError, "", err
 	}

@@ -26,16 +26,20 @@ const dockerApplyTimeout = 10 * time.Minute
 func DockerEngineApply(
 	ctx context.Context,
 	deployment api.ControllerDeployment,
+	previous *ControllerDeployment,
 	updateStatus func(string),
 ) (controllerDeployment *ControllerDeployment, status string, err error) {
 	logger := logger.With(zap.Stringer("deploymentId", deployment.ID))
-	controllerDeployment, err = NewControllerDeployment(deployment)
+	controllerDeployment, err = NewControllerDeployment(deployment, previous)
 	if err != nil {
 		return controllerDeployment, status, err
 	}
 
 	controllerDeployment.State = StateProgressing
-	if err = SaveDeployment(*controllerDeployment); err != nil {
+	statusReportMu.Lock()
+	err = SaveDeployment(*controllerDeployment)
+	statusReportMu.Unlock()
+	if err != nil {
 		logger.Warn("failed to save deployment before apply", zap.Error(err))
 	}
 
@@ -53,17 +57,22 @@ func DockerEngineApply(
 		}
 	}
 
-	if err == nil {
+	return controllerDeployment, status, err
+}
+
+// SaveAppliedDeployment saves the outcome of [DockerEngineApply], which leaves the deployment progressing.
+func SaveAppliedDeployment(controllerDeployment *ControllerDeployment, applyErr error) {
+	if applyErr == nil {
 		controllerDeployment.State = StateReady
+		controllerDeployment.CurrentRevisionID = controllerDeployment.RevisionID
 	} else {
 		controllerDeployment.State = StateFailed
 	}
 
-	if err1 := SaveDeployment(*controllerDeployment); err1 != nil {
-		logger.Warn("failed to save deployment after apply", zap.Error(err1))
+	if err := SaveDeployment(*controllerDeployment); err != nil {
+		logger.Warn("failed to save deployment after apply",
+			zap.Stringer("deploymentId", controllerDeployment.ID), zap.Error(err))
 	}
-
-	return controllerDeployment, status, err
 }
 
 func ApplyComposeFile(ctx context.Context, deployment api.ControllerDeployment, updateStatus func(string)) error {

@@ -172,13 +172,14 @@ func AuthenticateAccessToken(ctx context.Context, token authkey.Token) (
 	*types.AccessTokenWithUserAccount, error,
 ) {
 	db := internalctx.GetDb(ctx)
-	args := pgx.NamedArgs{"key": token.Key[:]}
+	key := token.Key()
+	args := pgx.NamedArgs{"key": key[:]}
 	// A key that is a credential of its own is only accepted when no secret is presented for it, and
 	// carries its own expiration and last use, since a secret of the same token has its own.
 	secretExpr := ", key_last_used_at = now()"
 	secretCondition := `tok.key_is_credential
 		AND (tok.expires_at IS NULL OR tok.expires_at > now())`
-	if token.Secret != nil {
+	if secure, ok := token.(authkey.SecureToken); ok {
 		secretExpr = ""
 		matches := make([]string, 0, len(types.AccessTokenSecretSlots))
 		for _, slot := range types.AccessTokenSecretSlots {
@@ -191,7 +192,7 @@ func AuthenticateAccessToken(ctx context.Context, token authkey.Token) (
 				prefix))
 		}
 		secretCondition = strings.Join(matches, " OR ")
-		args["hash"] = token.Secret.Hash()
+		args["hash"] = secure.Secret().Hash()
 	}
 
 	rows, err := db.Query(

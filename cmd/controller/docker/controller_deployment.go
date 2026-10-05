@@ -23,11 +23,14 @@ const (
 )
 
 type ControllerDeployment struct {
-	ID          uuid.UUID        `json:"id"`
-	RevisionID  uuid.UUID        `json:"revisionId"`
-	ProjectName string           `json:"projectName"`
-	DockerType  types.DockerType `json:"docker_type,omitempty"`
-	State       State            `json:"phase"`
+	ID         uuid.UUID `json:"id"`
+	RevisionID uuid.UUID `json:"revisionId"`
+	// CurrentRevisionID is the revision that was last applied successfully. It differs from RevisionID
+	// while a newer revision is being applied or after applying it has failed.
+	CurrentRevisionID uuid.UUID        `json:"currentRevisionId,omitzero"`
+	ProjectName       string           `json:"projectName"`
+	DockerType        types.DockerType `json:"docker_type,omitempty"`
+	State             State            `json:"phase"`
 }
 
 func (d ControllerDeployment) GetDeploymentID() uuid.UUID {
@@ -38,6 +41,19 @@ func (d ControllerDeployment) GetDeploymentRevisionID() uuid.UUID {
 	return d.RevisionID
 }
 
+// AppliedRevisionID returns the revision that was last applied successfully or [uuid.Nil] if there is none.
+// State saved by controllers that did not know CurrentRevisionID yet only has a RevisionID, which is the applied
+// one unless applying it failed or is still in progress.
+func (d ControllerDeployment) AppliedRevisionID() uuid.UUID {
+	if d.CurrentRevisionID != uuid.Nil {
+		return d.CurrentRevisionID
+	}
+	if d.State == StateReady || d.State == StateUnspecified {
+		return d.RevisionID
+	}
+	return uuid.Nil
+}
+
 func (d *ControllerDeployment) FileName() string {
 	return path.Join(controllerDeploymentDir(), d.ID.String())
 }
@@ -46,16 +62,23 @@ func controllerDeploymentDir() string {
 	return path.Join(ScratchDir(), "deployments")
 }
 
-func NewControllerDeployment(deployment api.ControllerDeployment) (*ControllerDeployment, error) {
+func NewControllerDeployment(
+	deployment api.ControllerDeployment,
+	previous *ControllerDeployment,
+) (*ControllerDeployment, error) {
 	if name, err := getProjectName(deployment.ComposeFile); err != nil {
 		return nil, err
 	} else {
-		return &ControllerDeployment{
+		result := &ControllerDeployment{
 			ID:          deployment.ID,
 			RevisionID:  deployment.RevisionID,
 			ProjectName: name,
 			DockerType:  *deployment.DockerType,
-		}, nil
+		}
+		if previous != nil && previous.ID == deployment.ID {
+			result.CurrentRevisionID = previous.AppliedRevisionID()
+		}
+		return result, nil
 	}
 }
 

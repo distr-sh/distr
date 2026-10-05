@@ -25,6 +25,7 @@ package registry
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -34,6 +35,7 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
+	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/registry/audit"
@@ -53,7 +55,6 @@ import (
 )
 
 type registry struct {
-	log              *zap.SugaredLogger
 	blobs            blobs
 	manifests        manifests
 	referrersEnabled bool
@@ -102,14 +103,25 @@ func (r *registry) v2(resp http.ResponseWriter, req *http.Request) *regError {
 
 func (r *registry) root(resp http.ResponseWriter, req *http.Request) {
 	if rerr := r.v2(resp, req); rerr != nil {
-		r.log.Warnf("%s %s %d %s %s", req.Method, req.URL, rerr.Status, rerr.Code, rerr.Message)
-		if rerr.Status == http.StatusInternalServerError && rerr.Error != nil {
-			sentry.GetHubFromContext(req.Context()).CaptureException(rerr.Error)
+		log := internalctx.GetLogger(req.Context()).With(
+			zap.Int("status", rerr.Status),
+			zap.String("code", rerr.Code),
+			zap.String("message", rerr.Message),
+			zap.Error(rerr.Error),
+		)
+		switch {
+		case errors.Is(rerr.Error, context.Canceled):
+			log.Debug("registry request canceled by client")
+		case rerr.Status >= http.StatusInternalServerError:
+			log.Error("registry request failed")
+			if rerr.Status == http.StatusInternalServerError && rerr.Error != nil {
+				sentry.GetHubFromContext(req.Context()).CaptureException(rerr.Error)
+			}
+		default:
+			log.Debug("registry request rejected")
 		}
 		_ = rerr.Write(resp)
-		return
 	}
-	r.log.Infof("%s %s", req.Method, req.URL)
 }
 
 // New returns a handler which implements the docker registry protocol.
@@ -191,10 +203,8 @@ func NewDefault(
 // for creating the registry.
 type Option func(r *registry)
 
-// WithLogger overrides the logger used to record requests to the registry.
 func WithLogger(l *zap.Logger) Option {
 	return func(r *registry) {
-		r.log = l.Sugar()
 		r.manifests.log = l.Sugar()
 		r.blobs.log = l.Sugar()
 	}

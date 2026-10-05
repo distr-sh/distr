@@ -27,6 +27,7 @@ import (
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/notification"
+	"github.com/distr-sh/distr/internal/requestlog"
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
@@ -176,6 +177,7 @@ func controllerLoginHandler() func(w http.ResponseWriter, r *http.Request) {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 			}
 		} else {
+			recordDeploymentTarget(ctx, deploymentTarget)
 			// TODO maybe even randomize token valid duration
 			if _, token, err := authjwt.GenerateControllerTokenValidFor(
 				deploymentTarget.ID, deploymentTarget.OrganizationID, env.ControllerTokenMaxValidDuration()); err != nil {
@@ -460,10 +462,10 @@ func controllerPostStatusHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	previousStatus := deployment.NewestStatus()
-	settledStatus, err := db.GetLatestSettledDeploymentRevisionStatus(ctx, deploymentID)
+	settledStatus, err := db.GetPreviousDeploymentRevisionStatus(ctx, requestBody.RevisionID)
 	if err != nil {
 		sentry.CaptureException(err)
-		log.Error("failed to get latest settled deployment revision status", zap.Error(err))
+		log.Error("failed to get previous deployment revision status", zap.Error(err))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -617,8 +619,19 @@ func queryAuthDeploymentTargetCtxMiddleware(next http.Handler) http.Handler {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 			}
 		} else {
+			recordDeploymentTarget(ctx, deploymentTarget)
 			ctx = internalctx.WithDeploymentTarget(ctx, deploymentTarget)
 			next.ServeHTTP(w, r.WithContext(ctx))
+		}
+	})
+}
+
+func recordDeploymentTarget(ctx context.Context, deploymentTarget *types.DeploymentTargetFull) {
+	requestlog.FromContext(ctx).Update(func(f *requestlog.Fields) {
+		f.OrganizationID = &deploymentTarget.OrganizationID
+		f.DeploymentTargetID = &deploymentTarget.ID
+		if deploymentTarget.CustomerOrganization != nil {
+			f.CustomerOrganizationID = &deploymentTarget.CustomerOrganization.ID
 		}
 	})
 }
@@ -673,6 +686,7 @@ func controllerAuthDeploymentTargetCtxMiddleware(next http.Handler) http.Handler
 					}
 				}
 			}
+			recordDeploymentTarget(ctx, deploymentTarget)
 			ctx = internalctx.WithDeploymentTarget(ctx, deploymentTarget)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		}

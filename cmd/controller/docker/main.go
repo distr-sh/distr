@@ -26,6 +26,7 @@ import (
 	"github.com/docker/cli/cli/flags"
 	composeapi "github.com/docker/compose/v5/pkg/api"
 	"github.com/docker/compose/v5/pkg/compose"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -108,6 +109,8 @@ func mainLoop(ctx context.Context) {
 	deploymentMetricsGoroutine := util.NewToggleableGoroutine(watchDeploymentMetrics)
 	imageDiskUsageGoroutine := util.NewToggleableGoroutine(watchImageDiskUsage)
 
+	go watchStatus(ctx)
+
 loop:
 	for ctx.Err() == nil {
 		select {
@@ -121,6 +124,8 @@ loop:
 		if resource, err := client.Resource(ctx); err != nil {
 			logger.Error("failed to get resource", zap.Error(err))
 		} else {
+			publishTargetRevisionIDs(resource.Deployments)
+
 			if selfUpdateIfRequired(ctx, *resource) {
 				continue
 			}
@@ -149,83 +154,108 @@ loop:
 			}
 
 			for _, deployment := range resource.Deployments {
-				var controllerDeployment *ControllerDeployment
-				var status string
-				statusType := types.DeploymentStatusTypeProgressing
-				_, err = controllerauth.EnsureAuth(ctx, client.RawToken(), deployment)
-				if err != nil {
-					logger.Error("docker auth error", zap.Error(err))
-				} else {
-					if deployment.DockerType == nil {
-						logger.Error("cannot apply deployment because docker type is nil",
-							zap.Any("deploymentRevisionId", deployment.RevisionID))
-						continue
-					}
-
-					if existing, ok := deployments[deployment.ID]; ok {
-						controllerDeployment = &existing
-					}
-
-					if controllerDeployment == nil ||
-						controllerDeployment.RevisionID != deployment.RevisionID ||
-						controllerDeployment.State == StateFailed ||
-						controllerDeployment.State == StateProgressing {
-						func() {
-							var previousDeploymentImages []string
-							if controllerDeployment != nil {
-								if images, err := GetDeploymentImages(ctx, *controllerDeployment); err != nil {
-									logger.Error("failed to get old images", zap.Error(err))
-								} else {
-									previousDeploymentImages = images
-								}
-							}
-
-							progressCtx, progressCancel := context.WithCancel(ctx)
-							defer progressCancel()
-							updateStatus := sendProgressInterval(progressCtx, deployment)
-							controllerDeployment, status, err = DockerEngineApply(ctx, deployment, updateStatus)
-							if err == nil {
-								if deployment.ImageCleanupEnabled {
-									if delErr := DeleteImages(ctx, previousDeploymentImages); delErr != nil {
-										logger.Warn("failed to delete old images", zap.Error(delErr))
-									}
-								}
-
-								if deployment.ForceRestart {
-									err = errors.Join(err, RunDockerRestart(ctx, *controllerDeployment))
-								}
-							}
-						}()
-					} else {
-						if *deployment.DockerType == types.DockerTypeCompose {
-							if err1 := EnsureComposeProjectDir(deployment); err1 != nil {
-								logger.Warn("could not write compose project directory", zap.Error(err1))
-							}
-						}
-						if statusType1, statusMessage, err1 := CheckStatus(ctx, *controllerDeployment); err1 != nil {
-							err = errors.Join(err, err1)
-						} else {
-							status = statusMessage
-							statusType = statusType1
-						}
-					}
-				}
-
-				if err != nil {
-					err = client.StatusWithError(ctx, deployment, err)
-				} else {
-					err = client.Status(ctx, deployment, statusType, status)
-				}
-
-				if err != nil {
-					logger.Error("failed to send status", zap.Error(err))
-				}
+				applyDeployment(ctx, deployment, deployments)
 			}
 		}
 	}
 }
 
-func sendProgressInterval(ctx context.Context, deployment api.ControllerDeployment) func(string) {
+func applyDeployment(
+	ctx context.Context,
+	deployment api.ControllerDeployment,
+	existing map[uuid.UUID]ControllerDeployment,
+) {
+	if deployment.DockerType == nil {
+		logger.Error("cannot apply deployment because docker type is nil",
+			zap.Any("deploymentRevisionId", deployment.RevisionID))
+		return
+	}
+
+	var controllerDeployment *ControllerDeployment
+	if d, ok := existing[deployment.ID]; ok {
+		controllerDeployment = &d
+	}
+
+	if !requiresApply(deployment.RevisionID, controllerDeployment) {
+		if *deployment.DockerType == types.DockerTypeCompose {
+			if err := EnsureComposeProjectDir(deployment); err != nil {
+				logger.Warn("could not write compose project directory", zap.Error(err))
+			}
+		}
+		return
+	}
+
+	if _, err := controllerauth.EnsureAuth(ctx, client.RawToken(), deployment); err != nil {
+		logger.Error("docker auth error", zap.Error(err))
+		sendApplyStatus(ctx, deployment, "", err)
+		return
+	}
+
+	var previousDeploymentImages []string
+	if controllerDeployment != nil {
+		if images, err := GetDeploymentImages(ctx, *controllerDeployment); err != nil {
+			logger.Error("failed to get old images", zap.Error(err))
+		} else {
+			previousDeploymentImages = images
+		}
+	}
+
+	updateStatus, stopProgress := sendProgressInterval(ctx, deployment)
+	defer stopProgress()
+	appliedDeployment, status, err := DockerEngineApply(ctx, deployment, controllerDeployment, updateStatus)
+	var restartErr error
+	if err == nil && deployment.ForceRestart {
+		restartErr = RunDockerRestart(ctx, *appliedDeployment)
+	}
+
+	// The final report has to arrive before the saved state lets the status watcher report the new revision's
+	// health, which it would overwrite otherwise. A failed restart is not retried, so it does not fail the apply.
+	stopProgress()
+	sendApplyStatus(ctx, deployment, status, errors.Join(err, restartErr))
+	if appliedDeployment == nil {
+		return
+	}
+	SaveAppliedDeployment(appliedDeployment, err)
+
+	if err == nil && deployment.ImageCleanupEnabled {
+		if delErr := DeleteImages(ctx, previousDeploymentImages); delErr != nil {
+			logger.Warn("failed to delete old images", zap.Error(delErr))
+		}
+	}
+}
+
+func requiresApply(targetRevisionID uuid.UUID, current *ControllerDeployment) bool {
+	return current == nil ||
+		current.RevisionID != targetRevisionID ||
+		current.State == StateFailed ||
+		current.State == StateProgressing
+}
+
+func publishTargetRevisionIDs(deployments []api.ControllerDeployment) {
+	targets := make(map[uuid.UUID]uuid.UUID, len(deployments))
+	for _, deployment := range deployments {
+		targets[deployment.ID] = deployment.RevisionID
+	}
+	targetRevisionIDs.Store(&targets)
+}
+
+func sendApplyStatus(ctx context.Context, deployment api.ControllerDeployment, status string, err error) {
+	if err != nil {
+		err = client.StatusWithError(ctx, deployment, err)
+	} else {
+		err = client.Status(ctx, deployment, types.DeploymentStatusTypeProgressing, status)
+	}
+
+	if err != nil {
+		logger.Error("failed to send status", zap.Error(err))
+	}
+}
+
+// sendProgressInterval reports progressing until the returned stop function is called, which returns only once
+// no further report can be sent.
+func sendProgressInterval(ctx context.Context, deployment api.ControllerDeployment) (func(string), func()) {
+	ctx, cancel := context.WithCancel(ctx)
+	done := make(chan struct{})
 	var status atomic.Value
 	status.Store("initializing")
 
@@ -240,7 +270,8 @@ func sendProgressInterval(ctx context.Context, deployment api.ControllerDeployme
 	sendProgress()
 
 	go func() {
-		tick := time.Tick(controllerenv.Interval)
+		defer close(done)
+		tick := time.Tick(controllerenv.ProgressingInterval)
 		for {
 			select {
 			case <-ctx.Done():
@@ -253,7 +284,11 @@ func sendProgressInterval(ctx context.Context, deployment api.ControllerDeployme
 		}
 	}()
 
-	return func(s string) { status.Store(s) }
+	stop := func() {
+		cancel()
+		<-done
+	}
+	return func(s string) { status.Store(s) }, stop
 }
 
 func startHealthServer() error {

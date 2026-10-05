@@ -11,6 +11,7 @@ import (
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authjwt"
+	"github.com/distr-sh/distr/internal/blocklist"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/custommail"
 	"github.com/distr-sh/distr/internal/db"
@@ -36,13 +37,16 @@ import (
 
 func AuthRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupHidden(true))
-	r.Use(httprate.LimitBy(
-		10,
-		1*time.Minute,
-		httprate.JoinKeys(func(r *http.Request) (string, error) {
-			return chimiddleware.GetClientIP(r.Context()), nil
-		}, httprate.KeyByEndpoint),
-	))
+	r.Use(
+		middleware.BlockIPs,
+		httprate.LimitBy(
+			10,
+			1*time.Minute,
+			httprate.JoinKeys(func(r *http.Request) (string, error) {
+				return chimiddleware.GetClientIP(r.Context()), nil
+			}, httprate.KeyByEndpoint),
+		),
+	)
 	// The login methods available on a host are part of the host-resolved GET /api/public/v1/portal response.
 	r.Post("/login", authLoginHandler)
 	r.Route("/oidc", AuthOIDCRouter)
@@ -117,6 +121,10 @@ func authVerifyConfirmHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "token does not have verified claim", http.StatusForbidden)
 		return
 	}
+	if blocklist.EmailBlocked(authn.CurrentUserEmail()) {
+		http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
+		return
+	}
 
 	if err := userauth.VerifyUserEmail(ctx, authn.CurrentUser(), authn.CurrentUserEmail()); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
@@ -171,6 +179,10 @@ func setPasswordAndLogin(
 	log := internalctx.GetLogger(ctx)
 	authn := auth.Authentication.Require(ctx)
 	user := authn.CurrentUser()
+	if blocklist.EmailBlocked(user.Email) {
+		http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
+		return
+	}
 
 	var token string
 	err := db.RunTx(ctx, func(ctx context.Context) error {
@@ -324,6 +336,14 @@ func authLoginHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	if err := request.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if blocklist.EmailBlocked(request.Email) {
+		http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
+		return
+	}
 	err = db.RunTx(ctx, func(ctx context.Context) error {
 		user, err := db.GetUserAccountByEmail(ctx, request.Email)
 		if errors.Is(err, apierrors.ErrNotFound) {
@@ -394,6 +414,9 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if err := request.Validate(); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	} else if blocklist.EmailBlocked(request.Email) {
+		http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
 		return
 	} else if !verifyRegistrationChallenge(w, r, request.TurnstileToken) {
 		return
@@ -485,7 +508,10 @@ func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 	if request, err := JsonBody[api.AuthResetPasswordRequest](w, r); err != nil {
 		return
 	} else if err := request.Validate(); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	} else if blocklist.EmailBlocked(request.Email) {
+		http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
 		return
 	} else if user, err := db.GetUserAccountByEmail(ctx, request.Email); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {

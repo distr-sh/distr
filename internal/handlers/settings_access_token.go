@@ -73,9 +73,9 @@ func createAccessTokenHandler() http.HandlerFunc {
 		token := types.AccessToken{
 			Label:         request.Label,
 			UserAccountID: auth.CurrentUserID(),
-			Key:           newToken.Key,
+			Key:           newToken.Key(),
 			Secret1: &types.AccessTokenSecret{
-				Hash:      newToken.Secret.Hash(),
+				Hash:      newToken.Secret().Hash(),
 				ExpiresAt: request.ExpiresAt,
 			},
 			OrganizationID: *auth.CurrentOrgID(),
@@ -197,7 +197,7 @@ func createAccessTokenSecretHandler() http.HandlerFunc {
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
-			rotated := authkey.Token{Key: updated.Key, Secret: &newSecret}
+			rotated := authkey.NewSecureToken(updated.Key, newSecret)
 			RespondJSONWithStatus(
 				w,
 				http.StatusCreated,

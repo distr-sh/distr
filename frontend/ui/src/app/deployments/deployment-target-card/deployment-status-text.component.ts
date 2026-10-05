@@ -1,6 +1,6 @@
 import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, Directive, input} from '@angular/core';
-import {DeploymentRevisionStatus, DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
+import {DeploymentRevisionStatus, DeploymentStatusType, DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {never} from '../../../util/exhaust';
 import {isStale} from '../../../util/model';
 import {AbstractStatusDotDirective} from '../../components/status-dot';
@@ -10,15 +10,20 @@ function currentStatus(deployment: DeploymentWithLatestRevision): DeploymentRevi
   return deployment.currentStatus ?? deployment.latestStatus;
 }
 
-function pendingStatus(deployment: DeploymentWithLatestRevision): DeploymentRevisionStatus | undefined {
+interface PendingUpdate {
+  type: Extract<DeploymentStatusType, 'error' | 'progressing'>;
+  message: string;
+}
+
+function pendingUpdate(deployment: DeploymentWithLatestRevision): PendingUpdate | undefined {
   const {currentDeploymentRevisionId, deploymentRevisionId, latestStatus} = deployment;
   if (!currentDeploymentRevisionId || currentDeploymentRevisionId === deploymentRevisionId) {
     return undefined;
   }
-  if (latestStatus?.type === 'error' || latestStatus?.type === 'progressing') {
-    return latestStatus;
+  if (latestStatus?.type === 'error') {
+    return {type: 'error', message: latestStatus.message};
   }
-  return undefined;
+  return {type: 'progressing', message: latestStatus?.message ?? ''};
 }
 
 @Directive({selector: '[appDeploymentStatusDot]'})
@@ -71,7 +76,7 @@ export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
           @if (pending.type === 'error') {
             Update failed
           } @else {
-            Update in progress
+            Updating
           }
         </app-deployment-status-badge>
       }
@@ -85,5 +90,5 @@ export class DeploymentStatusTextComponent {
     const status = this.status();
     return status !== undefined && isStale(status);
   });
-  protected readonly pending = computed(() => pendingStatus(this.deployment()));
+  protected readonly pending = computed(() => pendingUpdate(this.deployment()));
 }

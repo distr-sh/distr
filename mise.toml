@@ -9,9 +9,9 @@ golangci-lint = "2.14.0"
 helm = "4.3.0"
 helm-docs = "1.14.2"
 "github:losisin/helm-values-schema-json" = "2.6.0"
-watchexec = "2.7.3"
-pnpm = "12.6.0"
-stripe = "1.52.0"
+watchexec = "2.7.4"
+pnpm = "12.8.1"
+stripe = "1.53.0"
 "go:github.com/go-delve/delve/cmd/dlv" = "1.27.2"
 git-lfs = "3.8.0"
 
@@ -106,6 +106,11 @@ dir = "website"
 [tasks."lint:app"]
 run = { tasks = ["lint:go", "lint:frontend", "lint:migrations"] }
 description = 'Lint Distr and the controllers, without the website'
+
+[tasks."lint:renovate-config"]
+run = "pnpm dlx --package renovate renovate-config-validator"
+description = "Lint the renovate.json config file"
+sources = ["renovate.json"]
 
 [tasks.lint]
 run = { tasks = ["lint:app", "lint:website"] }
