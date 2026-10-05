@@ -129,12 +129,16 @@ func createApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err == nil {
-		notifyEntitledVersions(ctx, log, versionIDs(entitlement.Versions))
+		notifyEntitledVersions(ctx, log, entitlement.ApplicationEntitlementBase, versionIDs(entitlement.Versions))
 	}
 }
 
-// notifyEntitledVersions announces a version that the customer of an entitlement can now deploy.
-func notifyEntitledVersions(ctx context.Context, log *zap.Logger, applicationVersionIDs []uuid.UUID) {
+func notifyEntitledVersions(
+	ctx context.Context,
+	log *zap.Logger,
+	entitlement types.ApplicationEntitlementBase,
+	applicationVersionIDs []uuid.UUID,
+) {
 	if len(applicationVersionIDs) == 0 {
 		return
 	}
@@ -143,7 +147,7 @@ func notifyEntitledVersions(ctx context.Context, log *zap.Logger, applicationVer
 		defer cancel()
 
 		if err := notification.SendApplicationEntitlementVersionsNotifications(
-			asyncCtx, applicationVersionIDs,
+			asyncCtx, entitlement.OrganizationID, entitlement.ApplicationID, applicationVersionIDs,
 		); err != nil {
 			sentry.GetHubFromContext(asyncCtx).CaptureException(err)
 			log.Error("failed to dispatch update available notification", zap.Error(err))
@@ -274,7 +278,7 @@ func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err == nil {
-		notifyEntitledVersions(ctx, log, addedVersionIDs)
+		notifyEntitledVersions(ctx, log, entitlement.ApplicationEntitlementBase, addedVersionIDs)
 	}
 }
 

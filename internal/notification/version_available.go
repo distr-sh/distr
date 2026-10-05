@@ -66,15 +66,21 @@ func SendApplicationUpdateAvailableNotifications(
 // it. Recipients who were notified at creation time are held back by their notification records.
 func SendApplicationEntitlementVersionsNotifications(
 	ctx context.Context,
+	organizationID, applicationID uuid.UUID,
 	applicationVersionIDs []uuid.UUID,
 ) error {
-	version, err := db.GetNewestApplicationVersion(ctx, applicationVersionIDs)
+	application, err := db.GetApplication(ctx, applicationID, organizationID)
 	if err != nil {
-		return fmt.Errorf("failed to get newest application version: %w", err)
-	} else if version == nil {
-		return nil
+		return fmt.Errorf("failed to get application: %w", err)
 	}
-	return SendApplicationUpdateAvailableNotifications(ctx, *version)
+	entitled := slices.DeleteFunc(slices.Clone(application.Versions), func(version types.ApplicationVersion) bool {
+		return !slices.Contains(applicationVersionIDs, version.ID)
+	})
+	compare := types.ApplicationVersionComparator(application.VersioningStrategy, application.Versions)
+	if version := types.LatestApplicationVersion(compare, entitled); version != nil {
+		return SendApplicationUpdateAvailableNotifications(ctx, *version)
+	}
+	return nil
 }
 
 func sendApplicationUpdateAvailableWithConfig(

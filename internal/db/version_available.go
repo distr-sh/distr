@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
@@ -66,35 +65,6 @@ func GetDeploymentsPendingUpdate(
 		return nil, fmt.Errorf("failed to query deployments pending update: %w", err)
 	}
 	return pgx.CollectRows(rows, pgx.RowToStructByName[types.DeploymentPendingUpdate])
-}
-
-// GetNewestApplicationVersion returns the most recently created of the given versions, or nil when
-// none of them exist. Version ordering is not defined in the database, so the creation date decides
-// which version an entitlement change announces.
-func GetNewestApplicationVersion(
-	ctx context.Context,
-	ids []uuid.UUID,
-) (*types.ApplicationVersion, error) {
-	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(
-		ctx,
-		`SELECT `+applicationVersionOutputExpr+`
-		FROM ApplicationVersion av`+applicationVersionCreatorJoin+`
-		WHERE av.id = any(@ids) AND av.archived_at IS NULL
-		ORDER BY av.created_at DESC
-		LIMIT 1`,
-		pgx.NamedArgs{"ids": ids},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query ApplicationVersion: %w", err)
-	}
-	version, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ApplicationVersion])
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
-		return nil, fmt.Errorf("failed to collect ApplicationVersion: %w", err)
-	}
-	return &version, nil
 }
 
 // GetArtifactVersionEntitlement returns which customer organizations may know that the given
