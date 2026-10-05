@@ -43,15 +43,12 @@ type DeploymentPendingUpdate struct {
 	CurrentVersionName       string     `db:"current_version_name"`
 }
 
-// ArtifactVersionEntitlement is who may know about an artifact version. An organization that has
-// not configured any artifact entitlement at all gates nothing, in which case every customer is
-// entitled to every version.
-type ArtifactVersionEntitlement struct {
+type GetArtifactVersionEntitlementResult struct {
 	Gated                   bool
 	CustomerOrganizationIDs []uuid.UUID
 }
 
-func (e ArtifactVersionEntitlement) Allows(customerOrganizationID uuid.UUID) bool {
+func (e GetArtifactVersionEntitlementResult) Allows(customerOrganizationID uuid.UUID) bool {
 	if !e.Gated {
 		return true
 	}

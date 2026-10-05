@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"time"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
@@ -14,10 +13,6 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
-
-// SendTimeout bounds a send that is deferred into a goroutine and therefore outlives the request it
-// belongs to.
-const SendTimeout = 30 * time.Second
 
 // SendApplicationUpdateAvailableNotifications tells the recipients of every configuration that
 // watches the version's application that it exists, listing the deployments they may see that do
@@ -180,11 +175,25 @@ func SendArtifactVersionAvailableNotifications(ctx context.Context, version type
 	return aggErr
 }
 
+func SendArtifactEntitlementVersionsNotifications(
+	ctx context.Context,
+	artifactID uuid.UUID,
+	artifactVersionIDs []uuid.UUID,
+) error {
+	version, err := db.GetNewestArtifactTag(ctx, artifactID, artifactVersionIDs)
+	if err != nil {
+		return fmt.Errorf("failed to get newest artifact tag: %w", err)
+	} else if version == nil {
+		return nil
+	}
+	return SendArtifactVersionAvailableNotifications(ctx, *version)
+}
+
 func sendArtifactVersionAvailableWithConfig(
 	ctx context.Context,
 	config types.UpdateNotificationConfiguration,
 	version types.ArtifactVersion,
-	entitlement types.ArtifactVersionEntitlement,
+	entitlement types.GetArtifactVersionEntitlementResult,
 	mailed map[uuid.UUID]struct{},
 ) error {
 	log := internalctx.GetLogger(ctx).With(zap.Stringer("configId", config.ID))

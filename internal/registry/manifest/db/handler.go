@@ -7,16 +7,13 @@ import (
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/notification"
 	"github.com/distr-sh/distr/internal/registry/manifest"
 	"github.com/distr-sh/distr/internal/registry/name"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/opencontainers/go-digest"
-	"go.uber.org/zap"
 )
 
 type handler struct{}
@@ -250,16 +247,9 @@ func (h *handler) Put(
 
 	if created != nil {
 		db.RunAfterTx(ctx, func(ctx context.Context) {
-			log := internalctx.GetLogger(ctx)
-			go func(ctx context.Context) {
-				asyncCtx, cancel := context.WithTimeout(ctx, notification.SendTimeout)
-				defer cancel()
-
-				if err := notification.SendArtifactVersionAvailableNotifications(asyncCtx, *created); err != nil {
-					sentry.GetHubFromContext(asyncCtx).CaptureException(err)
-					log.Error("failed to dispatch new artifact version notification", zap.Error(err))
-				}
-			}(context.WithoutCancel(ctx))
+			notification.Dispatch(ctx, func(ctx context.Context) error {
+				return notification.SendArtifactVersionAvailableNotifications(ctx, *created)
+			})
 		})
 	}
 

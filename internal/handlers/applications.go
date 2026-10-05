@@ -554,17 +554,9 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
 	} else {
-		go func(ctx context.Context) {
-			asyncCtx, cancel := context.WithTimeout(ctx, notification.SendTimeout)
-			defer cancel()
-
-			if err := notification.SendApplicationUpdateAvailableNotifications(
-				asyncCtx, applicationVersion,
-			); err != nil {
-				sentry.GetHubFromContext(asyncCtx).CaptureException(err)
-				log.Error("failed to dispatch update available notification", zap.Error(err))
-			}
-		}(context.WithoutCancel(ctx))
+		notification.Dispatch(ctx, func(ctx context.Context) error {
+			return notification.SendApplicationUpdateAvailableNotifications(ctx, applicationVersion)
+		})
 
 		RespondJSON(w, applicationVersionMapper(ctx)(applicationVersion))
 	}

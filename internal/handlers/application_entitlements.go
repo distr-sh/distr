@@ -129,27 +129,20 @@ func createApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err == nil {
-		notifyEntitledVersions(ctx, log, entitlement.ApplicationEntitlementBase, versionIDs(entitlement.Versions))
+		notifyEntitledVersions(ctx, entitlement.ApplicationEntitlementBase, versionIDs(entitlement.Versions))
 	}
 }
 
 func notifyEntitledVersions(
 	ctx context.Context,
-	log *zap.Logger,
 	entitlement types.ApplicationEntitlementBase,
 	applicationVersionIDs []uuid.UUID,
 ) {
-	go func(ctx context.Context) {
-		asyncCtx, cancel := context.WithTimeout(ctx, notification.SendTimeout)
-		defer cancel()
-
-		if err := notification.SendApplicationEntitlementVersionsNotifications(
-			asyncCtx, entitlement.OrganizationID, entitlement.ApplicationID, applicationVersionIDs,
-		); err != nil {
-			sentry.GetHubFromContext(asyncCtx).CaptureException(err)
-			log.Error("failed to dispatch update available notification", zap.Error(err))
-		}
-	}(context.WithoutCancel(ctx))
+	notification.Dispatch(ctx, func(ctx context.Context) error {
+		return notification.SendApplicationEntitlementVersionsNotifications(
+			ctx, entitlement.OrganizationID, entitlement.ApplicationID, applicationVersionIDs,
+		)
+	})
 }
 
 func versionIDs(versions []types.ApplicationVersion) []uuid.UUID {
@@ -196,18 +189,7 @@ func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// An entitlement without versions covers all of them, so only one that lists versions can be
-	// widened, either to all versions or by adding some.
-	var widened bool
-	var addedVersionIDs []uuid.UUID
-	if len(existing.Versions) > 0 {
-		for _, version := range entitlement.Versions {
-			if !existing.HasVersionWithID(version.ID) {
-				addedVersionIDs = append(addedVersionIDs, version.ID)
-			}
-		}
-		widened = len(entitlement.Versions) == 0 || len(addedVersionIDs) > 0
-	}
+	addedVersionIDs, widened := widenedVersions(versionIDs(existing.Versions), versionIDs(entitlement.Versions))
 
 	err = db.RunTx(ctx, func(ctx context.Context) error {
 		err := db.UpdateApplicationEntitlement(ctx, &entitlement.ApplicationEntitlementBase)
@@ -281,8 +263,20 @@ func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err == nil && widened {
-		notifyEntitledVersions(ctx, log, entitlement.ApplicationEntitlementBase, addedVersionIDs)
+		notifyEntitledVersions(ctx, entitlement.ApplicationEntitlementBase, addedVersionIDs)
 	}
+}
+
+func widenedVersions(existing, updated []uuid.UUID) ([]uuid.UUID, bool) {
+	if len(existing) == 0 {
+		return nil, false
+	} else if len(updated) == 0 {
+		return nil, true
+	}
+	added := slices.DeleteFunc(slices.Clone(updated), func(id uuid.UUID) bool {
+		return slices.Contains(existing, id)
+	})
+	return added, len(added) > 0
 }
 
 func formatVersionConflictError(conflicts []types.DeploymentVersionUsage) string {

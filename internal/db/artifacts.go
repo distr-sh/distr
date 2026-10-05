@@ -802,6 +802,41 @@ func GetArtifactVersion(ctx context.Context, orgName, name, reference string) (*
 	return &result, nil
 }
 
+func GetNewestArtifactTag(
+	ctx context.Context,
+	artifactID uuid.UUID,
+	artifactVersionIDs []uuid.UUID,
+) (*types.ArtifactVersion, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT`+artifactVersionOutputExpr+`
+		FROM ArtifactVersion v
+		WHERE v.artifact_id = @artifactId
+			AND `+artifactVersionIsTagExpr("v")+`
+			AND (@allVersions OR v.manifest_blob_digest IN (
+				SELECT manifest_blob_digest FROM ArtifactVersion WHERE id = any(@artifactVersionIds)
+			))
+		ORDER BY v.created_at DESC
+		LIMIT 1`,
+		pgx.NamedArgs{
+			"artifactId":         artifactID,
+			"allVersions":        len(artifactVersionIDs) == 0,
+			"artifactVersionIds": artifactVersionIDs,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query ArtifactVersion: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ArtifactVersion])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("could not collect ArtifactVersion: %w", err)
+	}
+	return &result, nil
+}
+
 func CreateArtifactVersion(ctx context.Context, av *types.ArtifactVersion) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(

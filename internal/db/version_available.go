@@ -74,10 +74,10 @@ func GetDeploymentsPendingUpdate(
 func GetArtifactVersionEntitlement(
 	ctx context.Context,
 	artifactID, artifactVersionID uuid.UUID,
-) (types.ArtifactVersionEntitlement, error) {
+) (types.GetArtifactVersionEntitlementResult, error) {
 	db := internalctx.GetDb(ctx)
 
-	var result types.ArtifactVersionEntitlement
+	var result types.GetArtifactVersionEntitlementResult
 	gatedRows, err := db.Query(
 		ctx,
 		`SELECT EXISTS (
