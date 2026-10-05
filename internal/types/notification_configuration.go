@@ -41,9 +41,6 @@ type DeploymentPendingUpdate struct {
 	PartnerOrganizationID    *uuid.UUID `db:"partner_organization_id"`
 	CurrentVersionID         uuid.UUID  `db:"current_version_id"`
 	CurrentVersionName       string     `db:"current_version_name"`
-	// Entitled reports whether the entitlement the deployment was created with covers the
-	// announced version. It is always true for a deployment without an entitlement.
-	Entitled bool `db:"entitled"`
 }
 
 // ArtifactVersionEntitlement is who may know about an artifact version. An organization that has

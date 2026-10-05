@@ -317,9 +317,8 @@ func unmailed(recipients []types.NotificationRecipient, mailed map[uuid.UUID]str
 }
 
 // visibleDeployments narrows the affected deployments down to what an audience may see. A customer
-// sees only its own deployments and only while its entitlement covers the announced version; a
-// partner sees the deployments of the customers it manages, under the same entitlement rule; the
-// vendor's own team sees all of them.
+// sees only its own deployments, a partner sees the deployments of the customers it manages and
+// the vendor's own team sees all of them.
 func visibleDeployments(
 	deployments []types.DeploymentPendingUpdate,
 	audience audience,
@@ -330,9 +329,6 @@ func visibleDeployments(
 
 	visible := make([]types.DeploymentPendingUpdate, 0, len(deployments))
 	for _, deployment := range deployments {
-		if !deployment.Entitled {
-			continue
-		}
 		if !belongsTo(deployment.CustomerOrganizationID, audience.customerOrganizationID) &&
 			!belongsTo(deployment.PartnerOrganizationID, audience.partnerOrganizationID) {
 			continue

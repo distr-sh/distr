@@ -12,8 +12,9 @@ import (
 )
 
 // GetDeploymentsPendingUpdate returns the deployments of the given version's application that run
-// a different version of it. Whether that version is older is left to the caller, since the
-// ordering depends on the application's versioning strategy.
+// a different version of it and whose entitlement, if they were created with one, covers the given
+// version. Whether that version is older is left to the caller, since the ordering depends on the
+// application's versioning strategy.
 func GetDeploymentsPendingUpdate(
 	ctx context.Context,
 	applicationVersionID uuid.UUID,
@@ -30,8 +31,19 @@ func GetDeploymentsPendingUpdate(
 			co.name AS customer_organization_name,
 			co.partner_organization_id,
 			av.id AS current_version_id,
-			av.name AS current_version_name,
-			(d.application_entitlement_id IS NULL OR EXISTS (
+			av.name AS current_version_name
+		FROM Deployment d
+			-- The latest revision rather than the current one: an automatic update has already
+			-- created a revision for the new version, and that deployment needs no notification.
+			JOIN DeploymentRevision dr ON dr.id = d.latest_deployment_revision_id
+			JOIN ApplicationVersion av ON av.id = dr.application_version_id
+			JOIN DeploymentTarget dt ON dt.id = d.deployment_target_id
+			LEFT JOIN CustomerOrganization co ON co.id = dt.customer_organization_id
+		WHERE av.application_id = (
+				SELECT application_id FROM ApplicationVersion WHERE id = @applicationVersionID
+			)
+			AND dr.application_version_id <> @applicationVersionID
+			AND (d.application_entitlement_id IS NULL OR EXISTS (
 				SELECT 1 FROM ApplicationEntitlement ae
 				WHERE ae.id = d.application_entitlement_id
 					AND (ae.expires_at IS NULL OR ae.expires_at > now())
@@ -46,18 +58,7 @@ func GetDeploymentsPendingUpdate(
 								AND aeav.application_version_id = @applicationVersionID
 						)
 					)
-			)) AS entitled
-		FROM Deployment d
-			-- The latest revision rather than the current one: an automatic update has already
-			-- created a revision for the new version, and that deployment needs no notification.
-			JOIN DeploymentRevision dr ON dr.id = d.latest_deployment_revision_id
-			JOIN ApplicationVersion av ON av.id = dr.application_version_id
-			JOIN DeploymentTarget dt ON dt.id = d.deployment_target_id
-			LEFT JOIN CustomerOrganization co ON co.id = dt.customer_organization_id
-		WHERE av.application_id = (
-				SELECT application_id FROM ApplicationVersion WHERE id = @applicationVersionID
-			)
-			AND dr.application_version_id <> @applicationVersionID
+			))
 		ORDER BY co.name, dt.name`,
 		pgx.NamedArgs{"applicationVersionID": applicationVersionID},
 	)

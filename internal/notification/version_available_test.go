@@ -55,24 +55,17 @@ func TestVisibleDeployments(t *testing.T) {
 	customerB := uuid.New()
 	partner := uuid.New()
 
-	internal := types.DeploymentPendingUpdate{DeploymentTargetName: "internal", Entitled: true}
+	internal := types.DeploymentPendingUpdate{DeploymentTargetName: "internal"}
 	ofCustomerA := types.DeploymentPendingUpdate{
 		DeploymentTargetName:   "customer-a",
 		CustomerOrganizationID: &customerA,
-		Entitled:               true,
 	}
 	ofCustomerB := types.DeploymentPendingUpdate{
 		DeploymentTargetName:   "customer-b",
 		CustomerOrganizationID: &customerB,
 		PartnerOrganizationID:  &partner,
-		Entitled:               true,
 	}
-	notEntitled := types.DeploymentPendingUpdate{
-		DeploymentTargetName:   "customer-a-old",
-		CustomerOrganizationID: &customerA,
-		Entitled:               false,
-	}
-	all := []types.DeploymentPendingUpdate{internal, ofCustomerA, ofCustomerB, notEntitled}
+	all := []types.DeploymentPendingUpdate{internal, ofCustomerA, ofCustomerB}
 
 	tests := []struct {
 		name     string
@@ -82,10 +75,10 @@ func TestVisibleDeployments(t *testing.T) {
 		{
 			name:     "the vendor's team sees every affected deployment",
 			audience: audience{},
-			want:     []string{"internal", "customer-a", "customer-b", "customer-a-old"},
+			want:     []string{"internal", "customer-a", "customer-b"},
 		},
 		{
-			name:     "a customer sees only its own entitled deployments",
+			name:     "a customer sees only its own deployments",
 			audience: audience{customerOrganizationID: &customerA},
 			want:     []string{"customer-a"},
 		},
