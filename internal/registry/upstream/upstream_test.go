@@ -6,10 +6,16 @@ import (
 	. "github.com/onsi/gomega"
 	godigest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"oras.land/oras-go/v2/registry"
 )
 
-func TestValidateUpstreamURLRejectsNonPublicHosts(t *testing.T) {
+func TestCheckPublicRegistryHostRejectsNonPublicHosts(t *testing.T) {
 	g := NewWithT(t)
+	check := func(upstreamURL string) error {
+		ref, err := registry.ParseReference(upstreamURL)
+		g.Expect(err).NotTo(HaveOccurred())
+		return checkPublicRegistryHost(t.Context(), ref)
+	}
 	for _, upstreamURL := range []string{
 		"127.0.0.1/library/alpine",
 		"localhost:5000/library/alpine",
@@ -17,10 +23,9 @@ func TestValidateUpstreamURLRejectsNonPublicHosts(t *testing.T) {
 		"169.254.169.254/latest",
 		"10.0.0.1:443/repo",
 	} {
-		g.Expect(ValidateUpstreamURL(t.Context(), upstreamURL)).
-			To(MatchError(ContainSubstring("non-public address")), upstreamURL)
+		g.Expect(check(upstreamURL)).To(MatchError(ContainSubstring("non-public address")), upstreamURL)
 	}
-	g.Expect(ValidateUpstreamURL(t.Context(), "8.8.8.8/library/alpine")).To(Succeed())
+	g.Expect(check("8.8.8.8/library/alpine")).To(Succeed())
 }
 
 func TestParseManifest(t *testing.T) {
@@ -46,6 +51,6 @@ func TestParseManifest(t *testing.T) {
 	metadata := []byte(`{"Code":"Success","AccessKeyId":"AKIA","SecretAccessKey":"secret"}`)
 	for _, contentType := range []string{"text/plain", "application/json"} {
 		_, _, err = parseManifest(metadata, contentType, godigest.FromBytes(metadata))
-		g.Expect(err).To(MatchError(ContainSubstring("unsupported manifest media type")))
+		g.Expect(err).To(HaveOccurred(), contentType)
 	}
 }

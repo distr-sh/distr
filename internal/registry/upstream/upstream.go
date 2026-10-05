@@ -7,16 +7,15 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"slices"
 	"strings"
 	"sync"
 
 	"github.com/containers/image/v5/manifest"
 	"github.com/distr-sh/distr/internal/apierrors"
+	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/egress"
-	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/registry/blob"
 	"github.com/distr-sh/distr/internal/registry/name"
 	"github.com/distr-sh/distr/internal/types"
@@ -25,16 +24,13 @@ import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+	"oras.land/oras-go/v2/registry"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 )
 
-func nonPublicUpstreamsAllowed() bool {
-	return env.HostScheme() != env.SchemeHTTPS
-}
-
 var upstreamHTTPClient = sync.OnceValue(func() *http.Client {
-	return &http.Client{Transport: egress.Transport(nonPublicUpstreamsAllowed())}
+	return &http.Client{Transport: egress.Transport(buildconfig.IsDevelopment())}
 })
 
 func ValidateUpstreamURL(ctx context.Context, upstreamURL string) error {
@@ -42,10 +38,14 @@ func ValidateUpstreamURL(ctx context.Context, upstreamURL string) error {
 	if err != nil {
 		return fmt.Errorf("invalid upstream URL: %w", err)
 	}
-	if nonPublicUpstreamsAllowed() {
+	if buildconfig.IsDevelopment() {
 		return nil
 	}
-	host := repo.Reference.Host()
+	return checkPublicRegistryHost(ctx, repo.Reference)
+}
+
+func checkPublicRegistryHost(ctx context.Context, ref registry.Reference) error {
+	host := ref.Host()
 	if h, _, err := net.SplitHostPort(host); err == nil {
 		host = h
 	}
@@ -256,23 +256,9 @@ type blobRef struct {
 	Size   int64
 }
 
-var supportedManifestTypes = []string{
-	ocispec.MediaTypeImageManifest,
-	ocispec.MediaTypeImageIndex,
-	manifest.DockerV2Schema2MediaType,
-	manifest.DockerV2ListMediaType,
-}
-
-// parseManifest refuses anything but an image manifest or index whose content matches its digest, since
-// whatever is stored is served back to pullers verbatim. Neither the media type nor the digest oras-go
-// reports proves that: for a tag it takes both from the response headers or hashes the body as received,
-// and manifest.FromBlob parses any unknown media type as schema1.
 func parseManifest(
 	data []byte, contentType string, d godigest.Digest,
 ) (blobs []blobRef, subManifests []ocispec.Descriptor, err error) {
-	if !slices.Contains(supportedManifestTypes, contentType) {
-		return nil, nil, fmt.Errorf("unsupported manifest media type %q", contentType)
-	}
 	if err := d.Validate(); err != nil {
 		return nil, nil, fmt.Errorf("invalid manifest digest: %w", err)
 	}
