@@ -249,16 +249,18 @@ func (h *handler) Put(
 	}
 
 	if created != nil {
-		log := internalctx.GetLogger(ctx)
-		go func(ctx context.Context) {
-			asyncCtx, cancel := context.WithTimeout(ctx, notification.SendTimeout)
-			defer cancel()
+		db.RunAfterTx(ctx, func(ctx context.Context) {
+			log := internalctx.GetLogger(ctx)
+			go func(ctx context.Context) {
+				asyncCtx, cancel := context.WithTimeout(ctx, notification.SendTimeout)
+				defer cancel()
 
-			if err := notification.SendArtifactVersionAvailableNotifications(asyncCtx, *created); err != nil {
-				sentry.GetHubFromContext(asyncCtx).CaptureException(err)
-				log.Error("failed to dispatch new artifact version notification", zap.Error(err))
-			}
-		}(context.WithoutCancel(ctx))
+				if err := notification.SendArtifactVersionAvailableNotifications(asyncCtx, *created); err != nil {
+					sentry.GetHubFromContext(asyncCtx).CaptureException(err)
+					log.Error("failed to dispatch new artifact version notification", zap.Error(err))
+				}
+			}(context.WithoutCancel(ctx))
+		})
 	}
 
 	return nil
