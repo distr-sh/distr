@@ -269,3 +269,71 @@ func DeleteArtifactEntitlementsWithOrganizationSubscriptionType(
 
 	return cmd.RowsAffected(), nil
 }
+
+// GetArtifactVersionEntitlement returns which customer organizations may know that the given
+// artifact version exists. An entitlement for the whole artifact covers every version, and one
+// for a version that resolves to the same content covers it too, be that a sibling tag or an index
+// the version is part of.
+func GetArtifactVersionEntitlement(
+	ctx context.Context,
+	artifactID, artifactVersionID uuid.UUID,
+) (types.GetArtifactVersionEntitlementResult, error) {
+	db := internalctx.GetDb(ctx)
+
+	var result types.GetArtifactVersionEntitlementResult
+	gatedRows, err := db.Query(
+		ctx,
+		`SELECT EXISTS (
+			SELECT 1 FROM ArtifactEntitlement ae
+			JOIN Artifact a ON a.organization_id = ae.organization_id
+			WHERE a.id = @artifactID
+		)`,
+		pgx.NamedArgs{"artifactID": artifactID},
+	)
+	if err != nil {
+		return result, fmt.Errorf("failed to query artifact entitlement existence: %w", err)
+	}
+	if result.Gated, err = pgx.CollectExactlyOneRow(gatedRows, pgx.RowTo[bool]); err != nil {
+		return result, fmt.Errorf("failed to collect artifact entitlement existence: %w", err)
+	} else if !result.Gated {
+		return result, nil
+	}
+
+	rows, err := db.Query(
+		ctx,
+		`WITH RECURSIVE equivalent (id, manifest_blob_digest) AS (
+			SELECT av.id, av.manifest_blob_digest
+			FROM ArtifactVersion av
+			WHERE av.artifact_id = @artifactID
+				AND av.manifest_blob_digest = (
+					SELECT manifest_blob_digest FROM ArtifactVersion WHERE id = @artifactVersionID
+				)
+
+			UNION
+
+			SELECT av.id, av.manifest_blob_digest
+			FROM ArtifactVersion av
+			JOIN ArtifactVersionPart avp ON avp.artifact_version_id = av.id
+			JOIN equivalent e ON avp.artifact_blob_digest = e.manifest_blob_digest
+		)
+		SELECT DISTINCT ae.customer_organization_id
+		FROM ArtifactEntitlement ae
+		JOIN ArtifactEntitlement_Artifact aea ON aea.artifact_entitlement_id = ae.id
+		WHERE aea.artifact_id = @artifactID
+			AND ae.customer_organization_id IS NOT NULL
+			AND (ae.expires_at IS NULL OR ae.expires_at > now())
+			AND (
+				aea.artifact_version_id IS NULL
+				OR aea.artifact_version_id IN (SELECT id FROM equivalent)
+			)`,
+		pgx.NamedArgs{"artifactID": artifactID, "artifactVersionID": artifactVersionID},
+	)
+	if err != nil {
+		return result, fmt.Errorf("failed to query entitled customer organizations: %w", err)
+	}
+	if result.CustomerOrganizationIDs, err = pgx.CollectRows(rows, pgx.RowTo[uuid.UUID]); err != nil {
+		return result, fmt.Errorf("failed to collect entitled customer organizations: %w", err)
+	}
+
+	return result, nil
+}
