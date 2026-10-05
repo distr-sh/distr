@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"slices"
+	"strings"
 	"sync"
 
 	"github.com/containers/image/v5/manifest"
@@ -27,9 +29,31 @@ import (
 	"oras.land/oras-go/v2/registry/remote/auth"
 )
 
+func nonPublicUpstreamsAllowed() bool {
+	return env.HostScheme() != env.SchemeHTTPS
+}
+
 var upstreamHTTPClient = sync.OnceValue(func() *http.Client {
-	return &http.Client{Transport: egress.Transport(env.HostScheme() != env.SchemeHTTPS)}
+	return &http.Client{Transport: egress.Transport(nonPublicUpstreamsAllowed())}
 })
+
+func ValidateUpstreamURL(ctx context.Context, upstreamURL string) error {
+	repo, err := remote.NewRepository(upstreamURL)
+	if err != nil {
+		return fmt.Errorf("invalid upstream URL: %w", err)
+	}
+	if nonPublicUpstreamsAllowed() {
+		return nil
+	}
+	host := repo.Reference.Host()
+	if h, _, err := net.SplitHostPort(host); err == nil {
+		host = h
+	}
+	if err := egress.CheckPublicHost(ctx, strings.Trim(host, "[]")); err != nil {
+		return fmt.Errorf("upstream registry must be reachable at a public address: %w", err)
+	}
+	return nil
+}
 
 func newUpstreamRepository(artifact *types.Artifact) (*remote.Repository, error) {
 	repo, err := remote.NewRepository(*artifact.UpstreamURL)
