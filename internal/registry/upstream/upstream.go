@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"sync"
 
 	"github.com/containers/image/v5/manifest"
@@ -114,6 +115,11 @@ func syncTag(
 	}
 	d := desc.Digest
 
+	blobs, subManifests, err := parseManifest(data, contentType, d)
+	if err != nil {
+		return fmt.Errorf("parsing manifest: %w", err)
+	}
+
 	tagVersion := &types.ArtifactVersion{
 		Name:                tag,
 		ManifestBlobDigest:  types.Digest(d),
@@ -136,11 +142,6 @@ func syncTag(
 	}
 	if err := db.UpsertArtifactVersionForSync(ctx, digestVersion); err != nil {
 		return err
-	}
-
-	blobs, subManifests, err := extractBlobsAndSubManifests(data, contentType)
-	if err != nil {
-		return fmt.Errorf("parsing manifest: %w", err)
 	}
 
 	parts := make([]types.ArtifactVersionPart, 0, len(blobs)*2)
@@ -198,6 +199,11 @@ func syncSubManifest(
 	}
 	d := godigest.Digest(desc.Digest.String())
 
+	blobs, _, err := parseManifest(data, contentType, d)
+	if err != nil {
+		return fmt.Errorf("parsing sub-manifest: %w", err)
+	}
+
 	version := &types.ArtifactVersion{
 		Name:                d.String(),
 		ManifestBlobDigest:  types.Digest(d),
@@ -208,11 +214,6 @@ func syncSubManifest(
 	}
 	if err := db.UpsertArtifactVersionForSync(ctx, version); err != nil {
 		return err
-	}
-
-	blobs, _, err := extractBlobsAndSubManifests(data, contentType)
-	if err != nil {
-		return fmt.Errorf("parsing sub-manifest: %w", err)
 	}
 
 	parts := make([]types.ArtifactVersionPart, len(blobs))
@@ -229,6 +230,32 @@ func syncSubManifest(
 type blobRef struct {
 	Digest godigest.Digest
 	Size   int64
+}
+
+var supportedManifestTypes = []string{
+	ocispec.MediaTypeImageManifest,
+	ocispec.MediaTypeImageIndex,
+	manifest.DockerV2Schema2MediaType,
+	manifest.DockerV2ListMediaType,
+}
+
+// parseManifest refuses anything but an image manifest or index whose content matches its digest, since
+// whatever is stored is served back to pullers verbatim. Neither the media type nor the digest oras-go
+// reports proves that: for a tag it takes both from the response headers or hashes the body as received,
+// and manifest.FromBlob parses any unknown media type as schema1.
+func parseManifest(
+	data []byte, contentType string, d godigest.Digest,
+) (blobs []blobRef, subManifests []ocispec.Descriptor, err error) {
+	if !slices.Contains(supportedManifestTypes, contentType) {
+		return nil, nil, fmt.Errorf("unsupported manifest media type %q", contentType)
+	}
+	if err := d.Validate(); err != nil {
+		return nil, nil, fmt.Errorf("invalid manifest digest: %w", err)
+	}
+	if d.Algorithm().FromBytes(data) != d {
+		return nil, nil, fmt.Errorf("manifest content does not match its digest %v", d)
+	}
+	return extractBlobsAndSubManifests(data, contentType)
 }
 
 func extractBlobsAndSubManifests(
