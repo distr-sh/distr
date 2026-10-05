@@ -5,15 +5,18 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
+	"sync"
 
 	"github.com/containers/image/v5/manifest"
 	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/egress"
+	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/registry/blob"
 	"github.com/distr-sh/distr/internal/registry/name"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/glasskube/pkg/seekbuf"
 	godigest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -22,6 +25,19 @@ import (
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 )
+
+var upstreamHTTPClient = sync.OnceValue(func() *http.Client {
+	return &http.Client{Transport: egress.Transport(env.HostScheme() != env.SchemeHTTPS)}
+})
+
+func newUpstreamRepository(artifact *types.Artifact) (*remote.Repository, error) {
+	repo, err := remote.NewRepository(*artifact.UpstreamURL)
+	if err != nil {
+		return nil, err
+	}
+	repo.Client = &auth.Client{Client: upstreamHTTPClient(), Credential: credentialForArtifact(artifact)}
+	return repo, nil
+}
 
 type Syncer struct{}
 
@@ -33,12 +49,11 @@ func (s *Syncer) SyncArtifactTags(ctx context.Context, artifact *types.Artifact,
 	log := internalctx.GetLogger(ctx).With(zap.Stringer("artifactId", artifact.ID))
 	log.Debug("upstream sync started")
 
-	repo, err := remote.NewRepository(*artifact.UpstreamURL)
+	repo, err := newUpstreamRepository(artifact)
 	if err != nil {
 		syncErr := fmt.Sprintf("failed to create upstream client: %v", err)
 		return db.UpdateArtifactSyncStatus(ctx, artifact.ID, &syncErr)
 	}
-	repo.Client = &auth.Client{Credential: credentialForArtifact(artifact)}
 
 	g, gCtx := errgroup.WithContext(ctx)
 	g.SetLimit(5)
@@ -65,7 +80,7 @@ func (s *Syncer) SyncArtifactTags(ctx context.Context, artifact *types.Artifact,
 
 	var errStr *string
 	if firstErr != nil {
-		errStr = util.PtrTo(firstErr.Error())
+		errStr = new(firstErr.Error())
 	}
 
 	log.Debug("upstream sync finished")
@@ -272,11 +287,10 @@ func (s *Syncer) FetchAndStoreBlob(
 		return nil, 0, apierrors.ErrNotFound
 	}
 
-	repo, err := remote.NewRepository(*artifact.UpstreamURL)
+	repo, err := newUpstreamRepository(artifact)
 	if err != nil {
 		return nil, 0, fmt.Errorf("upstream client: %w", err)
 	}
-	repo.Client = &auth.Client{Credential: credentialForArtifact(artifact)}
 
 	blobDesc, rc, err := repo.Blobs().FetchReference(ctx, d.String())
 	if err != nil {
