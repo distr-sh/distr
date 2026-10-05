@@ -41,6 +41,7 @@ After a sync, Distr stores the tag list and manifest metadata from the upstream.
 </Aside>
 
 When creating or editing an artifact, set the **Upstream URL** to the fully qualified image reference of the upstream repository. The URL must point to a specific repository, not the entire registry. Each pull-through artifact maps to exactly one upstream repository.
+The upstream registry must be reachable at a public address: Distr rejects hosts that resolve to private, loopback, link-local or other special-purpose addresses.
 
 | Upstream registry         | Example URL                                            |
 | ------------------------- | ------------------------------------------------------ |

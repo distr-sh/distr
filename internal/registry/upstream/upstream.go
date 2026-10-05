@@ -5,23 +5,64 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
+	"net/http"
+	"strings"
+	"sync"
 
 	"github.com/containers/image/v5/manifest"
 	"github.com/distr-sh/distr/internal/apierrors"
+	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/egress"
 	"github.com/distr-sh/distr/internal/registry/blob"
 	"github.com/distr-sh/distr/internal/registry/name"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/glasskube/pkg/seekbuf"
 	godigest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+	"oras.land/oras-go/v2/registry"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 )
+
+var upstreamHTTPClient = sync.OnceValue(func() *http.Client {
+	return &http.Client{Transport: egress.Transport(buildconfig.IsDevelopment())}
+})
+
+func ValidateUpstreamURL(ctx context.Context, upstreamURL string) error {
+	repo, err := remote.NewRepository(upstreamURL)
+	if err != nil {
+		return fmt.Errorf("invalid upstream URL: %w", err)
+	}
+	if buildconfig.IsDevelopment() {
+		return nil
+	}
+	return checkPublicRegistryHost(ctx, repo.Reference)
+}
+
+func checkPublicRegistryHost(ctx context.Context, ref registry.Reference) error {
+	host := ref.Host()
+	if h, _, err := net.SplitHostPort(host); err == nil {
+		host = h
+	}
+	if err := egress.CheckPublicHost(ctx, strings.Trim(host, "[]")); err != nil {
+		return fmt.Errorf("upstream registry must be reachable at a public address: %w", err)
+	}
+	return nil
+}
+
+func newUpstreamRepository(artifact *types.Artifact) (*remote.Repository, error) {
+	repo, err := remote.NewRepository(*artifact.UpstreamURL)
+	if err != nil {
+		return nil, err
+	}
+	repo.Client = &auth.Client{Client: upstreamHTTPClient(), Credential: credentialForArtifact(artifact)}
+	return repo, nil
+}
 
 type Syncer struct{}
 
@@ -33,12 +74,11 @@ func (s *Syncer) SyncArtifactTags(ctx context.Context, artifact *types.Artifact,
 	log := internalctx.GetLogger(ctx).With(zap.Stringer("artifactId", artifact.ID))
 	log.Debug("upstream sync started")
 
-	repo, err := remote.NewRepository(*artifact.UpstreamURL)
+	repo, err := newUpstreamRepository(artifact)
 	if err != nil {
 		syncErr := fmt.Sprintf("failed to create upstream client: %v", err)
 		return db.UpdateArtifactSyncStatus(ctx, artifact.ID, &syncErr)
 	}
-	repo.Client = &auth.Client{Credential: credentialForArtifact(artifact)}
 
 	g, gCtx := errgroup.WithContext(ctx)
 	g.SetLimit(5)
@@ -65,7 +105,7 @@ func (s *Syncer) SyncArtifactTags(ctx context.Context, artifact *types.Artifact,
 
 	var errStr *string
 	if firstErr != nil {
-		errStr = util.PtrTo(firstErr.Error())
+		errStr = new(firstErr.Error())
 	}
 
 	log.Debug("upstream sync finished")
@@ -99,6 +139,11 @@ func syncTag(
 	}
 	d := desc.Digest
 
+	blobs, subManifests, err := parseManifest(data, contentType, d)
+	if err != nil {
+		return fmt.Errorf("parsing manifest: %w", err)
+	}
+
 	tagVersion := &types.ArtifactVersion{
 		Name:                tag,
 		ManifestBlobDigest:  types.Digest(d),
@@ -121,11 +166,6 @@ func syncTag(
 	}
 	if err := db.UpsertArtifactVersionForSync(ctx, digestVersion); err != nil {
 		return err
-	}
-
-	blobs, subManifests, err := extractBlobsAndSubManifests(data, contentType)
-	if err != nil {
-		return fmt.Errorf("parsing manifest: %w", err)
 	}
 
 	parts := make([]types.ArtifactVersionPart, 0, len(blobs)*2)
@@ -183,6 +223,11 @@ func syncSubManifest(
 	}
 	d := godigest.Digest(desc.Digest.String())
 
+	blobs, _, err := parseManifest(data, contentType, d)
+	if err != nil {
+		return fmt.Errorf("parsing sub-manifest: %w", err)
+	}
+
 	version := &types.ArtifactVersion{
 		Name:                d.String(),
 		ManifestBlobDigest:  types.Digest(d),
@@ -193,11 +238,6 @@ func syncSubManifest(
 	}
 	if err := db.UpsertArtifactVersionForSync(ctx, version); err != nil {
 		return err
-	}
-
-	blobs, _, err := extractBlobsAndSubManifests(data, contentType)
-	if err != nil {
-		return fmt.Errorf("parsing sub-manifest: %w", err)
 	}
 
 	parts := make([]types.ArtifactVersionPart, len(blobs))
@@ -214,6 +254,18 @@ func syncSubManifest(
 type blobRef struct {
 	Digest godigest.Digest
 	Size   int64
+}
+
+func parseManifest(
+	data []byte, contentType string, d godigest.Digest,
+) (blobs []blobRef, subManifests []ocispec.Descriptor, err error) {
+	if err := d.Validate(); err != nil {
+		return nil, nil, fmt.Errorf("invalid manifest digest: %w", err)
+	}
+	if d.Algorithm().FromBytes(data) != d {
+		return nil, nil, fmt.Errorf("manifest content does not match its digest %v", d)
+	}
+	return extractBlobsAndSubManifests(data, contentType)
 }
 
 func extractBlobsAndSubManifests(
@@ -272,11 +324,10 @@ func (s *Syncer) FetchAndStoreBlob(
 		return nil, 0, apierrors.ErrNotFound
 	}
 
-	repo, err := remote.NewRepository(*artifact.UpstreamURL)
+	repo, err := newUpstreamRepository(artifact)
 	if err != nil {
 		return nil, 0, fmt.Errorf("upstream client: %w", err)
 	}
-	repo.Client = &auth.Client{Credential: credentialForArtifact(artifact)}
 
 	blobDesc, rc, err := repo.Blobs().FetchReference(ctx, d.String())
 	if err != nil {
