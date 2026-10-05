@@ -116,6 +116,54 @@ func TestApplicationVersionComparatorTreatsEquivalentVersionsAsEqual(t *testing.
 	g.Expect(compare(plain, build)).To(BeZero(), "build metadata does not affect precedence")
 }
 
+func names(versions []ApplicationVersion) []string {
+	result := make([]string, len(versions))
+	for i, v := range versions {
+		result[i] = v.Name
+	}
+	return result
+}
+
+func versionsForSortTests(base time.Time) []ApplicationVersion {
+	return []ApplicationVersion{
+		version("1.0.0", base),
+		version("1.10.0", base.Add(time.Minute)),
+		version("1.9.0", base.Add(2*time.Minute)),
+		version("1.31.1", base.Add(3*time.Minute)),
+		version("1.31.0", base.Add(4*time.Minute)),
+	}
+}
+
+func TestSortApplicationVersionsSemver(t *testing.T) {
+	g := NewWithT(t)
+	versions := versionsForSortTests(time.Now())
+
+	SortApplicationVersions(VersioningStrategySemver, versions)
+	g.Expect(names(versions)).To(Equal([]string{"1.0.0", "1.9.0", "1.10.0", "1.31.0", "1.31.1"}))
+}
+
+func TestSortApplicationVersionsChronological(t *testing.T) {
+	g := NewWithT(t)
+	versions := versionsForSortTests(time.Now())
+
+	SortApplicationVersions(VersioningStrategyChronological, versions)
+	g.Expect(names(versions)).To(Equal([]string{"1.0.0", "1.10.0", "1.9.0", "1.31.1", "1.31.0"}))
+}
+
+func TestSortApplicationVersionsLegacyFallsBackToCreationDate(t *testing.T) {
+	g := NewWithT(t)
+	base := time.Now()
+	versions := []ApplicationVersion{
+		version("2.0.0", base.Add(time.Minute)),
+		version("1.0.0", base),
+		version("nightly", base.Add(2*time.Minute)),
+	}
+
+	SortApplicationVersions(VersioningStrategyLegacy, versions)
+	g.Expect([]string{versions[0].Name, versions[1].Name, versions[2].Name}).
+		To(Equal([]string{"1.0.0", "2.0.0", "nightly"}))
+}
+
 func TestValidateVersionsForStrategy(t *testing.T) {
 	g := NewWithT(t)
 	base := time.Now()

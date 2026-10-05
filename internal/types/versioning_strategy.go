@@ -64,6 +64,12 @@ func compareApplicationVersionsByDate(a, b ApplicationVersion) int {
 	return a.CreatedAt.Compare(b.CreatedAt)
 }
 
+// SortApplicationVersions orders versions ASC by the application's versioning strategy. The
+// comparator is built from the whole slice, matching ApplicationVersionComparator.
+func SortApplicationVersions(strategy VersioningStrategy, versions []ApplicationVersion) {
+	slices.SortStableFunc(versions, ApplicationVersionComparator(strategy, versions))
+}
+
 // LatestApplicationVersion returns the newest of the given versions, ignoring archived ones, or
 // nil when none remain. The ordering comes from ApplicationVersionComparator, so that a subset
 // (the versions an entitlement covers) is ordered by the ordering of the whole.
