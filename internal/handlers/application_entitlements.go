@@ -139,9 +139,6 @@ func notifyEntitledVersions(
 	entitlement types.ApplicationEntitlementBase,
 	applicationVersionIDs []uuid.UUID,
 ) {
-	if len(applicationVersionIDs) == 0 {
-		return
-	}
 	go func(ctx context.Context) {
 		asyncCtx, cancel := context.WithTimeout(ctx, notification.SendTimeout)
 		defer cancel()
@@ -199,11 +196,17 @@ func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addedVersionIDs := make([]uuid.UUID, 0, len(entitlement.Versions))
-	for _, version := range entitlement.Versions {
-		if !existing.HasVersionWithID(version.ID) {
-			addedVersionIDs = append(addedVersionIDs, version.ID)
+	// An entitlement without versions covers all of them, so only one that lists versions can be
+	// widened, either to all versions or by adding some.
+	var widened bool
+	var addedVersionIDs []uuid.UUID
+	if len(existing.Versions) > 0 {
+		for _, version := range entitlement.Versions {
+			if !existing.HasVersionWithID(version.ID) {
+				addedVersionIDs = append(addedVersionIDs, version.ID)
+			}
 		}
+		widened = len(entitlement.Versions) == 0 || len(addedVersionIDs) > 0
 	}
 
 	err = db.RunTx(ctx, func(ctx context.Context) error {
@@ -277,7 +280,7 @@ func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 
-	if err == nil {
+	if err == nil && widened {
 		notifyEntitledVersions(ctx, log, entitlement.ApplicationEntitlementBase, addedVersionIDs)
 	}
 }

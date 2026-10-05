@@ -64,6 +64,7 @@ func SendApplicationUpdateAvailableNotifications(
 // entitlement was just widened to. A customer whose entitlement did not cover a version when it
 // was created is skipped then, so this is the second and last moment at which they can learn about
 // it. Recipients who were notified at creation time are held back by their notification records.
+// No versions stands for all of them, as it does on the entitlement.
 func SendApplicationEntitlementVersionsNotifications(
 	ctx context.Context,
 	organizationID, applicationID uuid.UUID,
@@ -73,9 +74,12 @@ func SendApplicationEntitlementVersionsNotifications(
 	if err != nil {
 		return fmt.Errorf("failed to get application: %w", err)
 	}
-	entitled := slices.DeleteFunc(slices.Clone(application.Versions), func(version types.ApplicationVersion) bool {
-		return !slices.Contains(applicationVersionIDs, version.ID)
-	})
+	entitled := application.Versions
+	if len(applicationVersionIDs) > 0 {
+		entitled = slices.DeleteFunc(slices.Clone(entitled), func(version types.ApplicationVersion) bool {
+			return !slices.Contains(applicationVersionIDs, version.ID)
+		})
+	}
 	compare := types.ApplicationVersionComparator(application.VersioningStrategy, application.Versions)
 	if version := types.LatestApplicationVersion(compare, entitled); version != nil {
 		return SendApplicationUpdateAvailableNotifications(ctx, *version)
