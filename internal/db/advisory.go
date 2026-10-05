@@ -629,6 +629,7 @@ func getAdvisoryApplicationVersions(
 	if err != nil {
 		return nil, fmt.Errorf("could not get advisory application versions: %w", err)
 	}
+	types.SortAdvisoryApplicationVersions(result)
 	return result, nil
 }
 

@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/uuid"
@@ -68,6 +69,37 @@ func compareApplicationVersionsByDate(a, b ApplicationVersion) int {
 // comparator is built from the whole slice, matching ApplicationVersionComparator.
 func SortApplicationVersions(strategy VersioningStrategy, versions []ApplicationVersion) {
 	slices.SortStableFunc(versions, ApplicationVersionComparator(strategy, versions))
+}
+
+// SortAdvisoryApplicationVersions orders advisory version rows by application name, then by each
+// application's versioning strategy (ASC).
+func SortAdvisoryApplicationVersions(versions []AdvisoryApplicationVersion) {
+	slices.SortStableFunc(versions, func(a, b AdvisoryApplicationVersion) int {
+		if c := strings.Compare(a.ApplicationName, b.ApplicationName); c != 0 {
+			return c
+		}
+		if c := strings.Compare(a.ApplicationID.String(), b.ApplicationID.String()); c != 0 {
+			return c
+		}
+		var applicationVersions []ApplicationVersion
+		for _, version := range versions {
+			if version.ApplicationID == a.ApplicationID {
+				applicationVersions = append(applicationVersions, toApplicationVersion(version))
+			}
+		}
+		return ApplicationVersionComparator(a.ApplicationVersioningStrategy, applicationVersions)(
+			toApplicationVersion(a),
+			toApplicationVersion(b),
+		)
+	})
+}
+
+func toApplicationVersion(version AdvisoryApplicationVersion) ApplicationVersion {
+	return ApplicationVersion{
+		ID:        version.ApplicationVersionID,
+		Name:      version.ApplicationVersionName,
+		CreatedAt: version.ApplicationVersionCreatedAt,
+	}
 }
 
 // LatestApplicationVersion returns the newest of the given versions, ignoring archived ones, or

@@ -164,6 +164,35 @@ func TestSortApplicationVersionsLegacyFallsBackToCreationDate(t *testing.T) {
 		To(Equal([]string{"1.0.0", "2.0.0", "nightly"}))
 }
 
+func TestSortAdvisoryApplicationVersionsBySemverWithinApplication(t *testing.T) {
+	g := NewWithT(t)
+	base := time.Now()
+	appA, appB := uuid.New(), uuid.New()
+	versions := []AdvisoryApplicationVersion{
+		{
+			ApplicationID: appB, ApplicationName: "Bravo",
+			ApplicationVersionID: uuid.New(), ApplicationVersionName: "1.0.0",
+			ApplicationVersioningStrategy: VersioningStrategySemver, ApplicationVersionCreatedAt: base,
+		},
+		{
+			ApplicationID: appA, ApplicationName: "Alpha",
+			ApplicationVersionID: uuid.New(), ApplicationVersionName: "1.31.0",
+			ApplicationVersioningStrategy: VersioningStrategySemver, ApplicationVersionCreatedAt: base.Add(time.Minute),
+		},
+		{
+			ApplicationID: appA, ApplicationName: "Alpha",
+			ApplicationVersionID: uuid.New(), ApplicationVersionName: "1.31.1",
+			ApplicationVersioningStrategy: VersioningStrategySemver, ApplicationVersionCreatedAt: base,
+		},
+	}
+
+	SortAdvisoryApplicationVersions(versions)
+	g.Expect(versions[0].ApplicationName).To(Equal("Alpha"))
+	g.Expect(versions[0].ApplicationVersionName).To(Equal("1.31.0"))
+	g.Expect(versions[1].ApplicationVersionName).To(Equal("1.31.1"))
+	g.Expect(versions[2].ApplicationName).To(Equal("Bravo"))
+}
+
 func TestValidateVersionsForStrategy(t *testing.T) {
 	g := NewWithT(t)
 	base := time.Now()
