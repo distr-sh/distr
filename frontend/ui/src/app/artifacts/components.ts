@@ -15,8 +15,8 @@ import {UsersService} from '../services/users.service';
     @if (imageUrl(); as imageUrl) {
       <img class="size-full rounded-sm object-contain" [attr.src]="imageUrl | secureImage | async" alt="" />
     } @else {
-      <span class="flex size-full items-center justify-center text-gray-900 dark:text-gray-400">
-        <fa-icon [icon]="faBox" size="2x" />
+      <span class="@container flex size-full items-center justify-center text-gray-900 dark:text-gray-400">
+        <fa-icon [icon]="faBox" class="text-[80cqi]" />
       </span>
     }
   `,

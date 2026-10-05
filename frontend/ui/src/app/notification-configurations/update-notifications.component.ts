@@ -18,9 +18,7 @@ import {checkedIds, checkedRecord} from '../../util/formRecord';
 import {validateRecordAtLeast} from '../../util/validation';
 import {ApplicationLogoComponent} from '../applications/components';
 import {ArtifactLogoComponent} from '../artifacts/components';
-import {PillTabBarComponent} from '../components/pill-tab-bar.component';
 import {SearchBarComponent} from '../components/search-bar.component';
-import {TabItem} from '../components/tab-bar.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {ApplicationEntitlementsService} from '../services/application-entitlements.service';
 import {ApplicationsService} from '../services/applications.service';
@@ -47,7 +45,6 @@ type NotificationKind = 'application' | 'artifact';
     FaIconComponent,
     ReactiveFormsModule,
     DatePipe,
-    PillTabBarComponent,
     SearchBarComponent,
     AutotrimDirective,
     ApplicationLogoComponent,
@@ -119,10 +116,15 @@ export class UpdateNotificationsComponent {
   );
   private readonly rows = computed(() =>
     this.configs()
-      .map((config) => ({
-        ...config,
-        subjectNames: [...config.applications, ...config.artifacts].map((it) => it.name).join(', '),
-      }))
+      .map((config) => {
+        const recipientNames = config.recipients.map((it) => it.name || it.email);
+        return {
+          ...config,
+          subjectNames: [...config.applications, ...config.artifacts].map((it) => it.name).join(', '),
+          recipientNames: recipientNames.join(', '),
+          recipientNamesTitle: recipientNames.join('\n'),
+        };
+      })
       .sort(compareBy((config) => config.name))
   );
 
@@ -215,21 +217,8 @@ export class UpdateNotificationsComponent {
     {validators: [validateAnyTarget]}
   );
 
-  private readonly editConfigValue = toSignal(this.editConfigForm.valueChanges, {
-    initialValue: this.editConfigForm.value,
-  });
-  protected readonly selectedCounts = computed<Record<string, number>>(() => {
-    const value = this.editConfigValue();
-    return {
-      application: checkedIds(value.applicationIds ?? {}).length,
-      artifact: checkedIds(value.artifactIds ?? {}).length,
-    };
-  });
-
-  protected readonly picklistTab = signal<NotificationKind>('application');
-  protected readonly picklistTabs = computed<TabItem<NotificationKind>[]>(() =>
-    this.kinds().map((kind) => ({id: kind, label: kind === 'application' ? 'Applications' : 'Artifacts'}))
-  );
+  protected readonly watchesApplications = computed(() => this.kinds().includes('application'));
+  protected readonly watchesArtifacts = computed(() => this.kinds().includes('artifact'));
 
   private readonly editConfigDrawerTpl = viewChild.required<TemplateRef<unknown>>('editConfigDrawer');
   private editConfigDrawerRef?: DialogRef;
@@ -247,7 +236,6 @@ export class UpdateNotificationsComponent {
     this.removePicklistControls();
 
     const kinds = this.kinds();
-    this.picklistTab.set(this.defaultTab(kinds, config));
     this.addPicklistControls(config);
 
     if (config) {
@@ -273,22 +261,6 @@ export class UpdateNotificationsComponent {
     if (this.editConfigDrawerRef === drawerRef) {
       this.addPicklistControls(config);
     }
-  }
-
-  /** The section the drawer opens on, which is the one that has something to show. */
-  private defaultTab(kinds: NotificationKind[], config?: UpdateNotificationConfiguration): NotificationKind {
-    if (config && config.applications.length === 0 && config.artifacts.length > 0) {
-      return 'artifact';
-    }
-    return (
-      kinds.find((kind) =>
-        kind === 'application'
-          ? this.applications().length > 0
-          : this.artifacts().some((artifact) => !artifact.upstreamUrl)
-      ) ??
-      kinds[0] ??
-      'application'
-    );
   }
 
   private removePicklistControls() {

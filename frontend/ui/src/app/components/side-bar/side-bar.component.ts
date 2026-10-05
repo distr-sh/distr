@@ -1,9 +1,9 @@
 import {CdkConnectedOverlay, CdkOverlayOrigin} from '@angular/cdk/overlay';
 import {NgTemplateOutlet} from '@angular/common';
-import {ChangeDetectionStrategy, Component, inject, input, signal, WritableSignal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, input, signal, WritableSignal} from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {RouterLink, RouterLinkActive} from '@angular/router';
-import {CustomerOrganization, SidebarLink} from '@distr-sh/distr-sdk';
+import {CustomerOrganization, CustomerOrganizationFeature, SidebarLink} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faAddressBook,
@@ -128,23 +128,24 @@ export class SideBarComponent {
 
   protected readonly hasSubscription = this.organizationService.hasSubscription;
 
-  protected readonly customerOrgFeatures = toSignal(
-    this.contextService.getCustomerOrganization().pipe(
-      map((customerOrg: CustomerOrganization | undefined): string[] => {
-        return customerOrg?.features || [];
-      })
-    ),
-    {initialValue: [] as string[]}
+  private readonly customerOrgFeatures = toSignal(
+    this.contextService
+      .getCustomerOrganization()
+      .pipe(map((customerOrg: CustomerOrganization | undefined) => customerOrg?.features ?? [])),
+    {initialValue: [] as CustomerOrganizationFeature[]}
+  );
+  protected readonly customerFeatures = computed<Partial<Record<CustomerOrganizationFeature, boolean>>>(() =>
+    Object.fromEntries(this.customerOrgFeatures().map((feature) => [feature, true]))
+  );
+  protected readonly isCustomerNotificationsVisible = computed(
+    () =>
+      (this.isNotificationsFeatureEnabled() ?? false) &&
+      (this.customerFeatures().alerts || this.customerFeatures().update_notifications || false)
   );
 
   protected readonly customerOrgLinks = toSignal(this.contextService.getSidebarLinks(), {
     initialValue: [] as SidebarLink[],
   });
-
-  protected hasCustomerOrganizationFeature(feature: string): boolean {
-    const features = this.customerOrgFeatures();
-    return Array.isArray(features) && features.includes(feature);
-  }
 
   protected toggle(signal: WritableSignal<boolean>) {
     signal.update((val) => !val);

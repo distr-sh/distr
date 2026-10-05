@@ -23,9 +23,13 @@ export class NotificationRecordsComponent {
   );
 
   protected readonly rows = computed(() =>
-    (this.notificationRecords() ?? []).map((record) => ({
-      ...record,
-      customerNames: notificationCustomerNames(record).join(', '),
-    }))
+    (this.notificationRecords() ?? []).map((record) => {
+      const customerNames = notificationCustomerNames(record);
+      return {
+        ...record,
+        customerNames: customerNames.join(', '),
+        customerNamesTitle: customerNames.join('\n'),
+      };
+    })
   );
 }

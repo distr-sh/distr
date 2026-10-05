@@ -20,7 +20,7 @@
         <th scope="col" class="p-4">Enabled</th>
         <th scope="col" class="p-4">Created at</th>
         <th scope="col" class="p-4">Applications and artifacts</th>
-        <th scope="col" class="p-4">Recipients</th>
+        <th scope="col" class="p-4">Users</th>
         <th scope="col" class="p-4"></th>
       </tr>
     </thead>
@@ -51,10 +51,9 @@
             {{ config.subjectNames }}
           </td>
           <td
-            class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
-            @for (recipient of config.recipients; track recipient.id; let last = $last) {
-              {{ recipient.name || recipient.email }}{{ last ? '' : ', ' }}
-            }
+            class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
+            [title]="config.recipientNamesTitle">
+            {{ config.recipientNames }}
           </td>
           <td class="px-4 py-3 flex gap-2 justify-end">
             @if (auth.hasAnyRole('read_write', 'admin')) {
@@ -120,16 +119,10 @@
           <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enabled</span>
         </label>
 
-        <div class="space-y-2">
-          <app-pill-tab-bar [tabs]="picklistTabs()" [(active)]="picklistTab">
-            <ng-template #tabSuffix let-tab>
-              @if (selectedCounts()[tab.id] > 0) {
-                <span class="ms-2 distr-tag-badge">{{ selectedCounts()[tab.id] }}</span>
-              }
-            </ng-template>
-          </app-pill-tab-bar>
-          <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-2">
-            @if (picklistTab() === 'application') {
+        @if (watchesApplications()) {
+          <div class="space-y-1">
+            <h3 class="text-sm font-medium text-gray-900 dark:text-white">Applications</h3>
+            <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-2">
               @for (application of applications(); track application.id) {
                 <label class="flex items-center gap-2 w-full text-sm font-medium text-gray-900 dark:text-white">
                   <input
@@ -146,7 +139,14 @@
               } @empty {
                 <p class="text-sm text-gray-500 dark:text-gray-400">No applications to notify about.</p>
               }
-            } @else {
+            </div>
+          </div>
+        }
+
+        @if (watchesArtifacts()) {
+          <div class="space-y-1">
+            <h3 class="text-sm font-medium text-gray-900 dark:text-white">Artifacts</h3>
+            <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-2">
               @for (artifact of artifacts(); track artifact.id) {
                 <label
                   class="flex items-center gap-2 w-full text-sm font-medium text-gray-900 dark:text-white"
@@ -166,12 +166,16 @@
               } @empty {
                 <p class="text-sm text-gray-500 dark:text-gray-400">No artifacts to notify about.</p>
               }
-            }
+            </div>
           </div>
-          @if (editConfigForm.touched && editConfigForm.errors?.['noTargets']) {
-            <div class="text-sm text-red-500">Check at least one application or artifact.</div>
-          }
-        </div>
+        }
+
+        @if (
+          (editConfigForm.controls.applicationIds.touched || editConfigForm.controls.artifactIds.touched) &&
+          editConfigForm.errors?.['noTargets']
+        ) {
+          <div class="text-sm text-red-500">Check at least one application or artifact.</div>
+        }
 
         <div class="space-y-1">
           <h3 class="text-sm font-medium text-gray-900 dark:text-white">Users to notify</h3>

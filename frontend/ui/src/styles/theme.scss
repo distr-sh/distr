@@ -131,6 +131,11 @@
     @apply text-yellow-500 dark:text-yellow-300 not-disabled:hover:bg-yellow-500 not-disabled:hover:text-white dark:not-disabled:hover:bg-yellow-400;
   }
 
+  // the row of a dropdown whose entries are checkboxes, wrapping the checkbox and its label
+  .distr-dropdown-checkbox-item {
+    @apply flex items-center px-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600;
+  }
+
   .distr-dropdown-divider {
     @apply my-1 border-t border-gray-200 dark:border-gray-600;
   }

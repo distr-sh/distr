@@ -11,8 +11,8 @@ interface RecipientGroup {
   users: UserAccountWithRole[];
 }
 
-// Own team first, then partners, then one group per customer, ordered by name.
-const groupOrder = ['Team', 'Partners'];
+// Internal users first, then partners, then one group per customer, ordered by name.
+const groupOrder = ['Internal', 'Partners'];
 
 function groupRank(label: string): number {
   const index = groupOrder.indexOf(label);
@@ -29,7 +29,9 @@ function groupRank(label: string): number {
   template: `
     @for (group of groups(); track group.label) {
       <div class="space-y-1">
-        <h4 class="text-sm dark:text-white font-semibold">{{ group.label }}</h4>
+        @if (showGroupLabels()) {
+          <h4 class="text-sm dark:text-white font-semibold">{{ group.label }}</h4>
+        }
         @for (user of group.users; track user.id) {
           <label class="flex items-center w-full" [title]="user.email">
             <input type="checkbox" class="distr-checkbox" [formControl]="control().controls[user.id!]" />
@@ -66,7 +68,7 @@ export class NotificationRecipientsComponent {
           ? (customerNames.get(user.customerOrganizationId!) ?? 'Customer')
           : organizationKind(user) === 'partner'
             ? 'Partners'
-            : 'Team';
+            : 'Internal';
       byGroup.set(label, [...(byGroup.get(label) ?? []), user]);
     }
 
@@ -74,4 +76,5 @@ export class NotificationRecipientsComponent {
       .map(([label, groupUsers]) => ({label, users: groupUsers}))
       .sort((a, b) => groupRank(a.label) - groupRank(b.label) || a.label.localeCompare(b.label));
   });
+  protected readonly showGroupLabels = computed(() => this.groups().length > 1);
 }

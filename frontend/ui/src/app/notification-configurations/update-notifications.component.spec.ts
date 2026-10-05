@@ -82,7 +82,7 @@ describe('UpdateNotificationsComponent', () => {
     return buttons.find((button) => button.textContent?.trim() === text)!;
   }
 
-  it('opens the drawer from the cache and switches it between applications and artifacts', async () => {
+  it('opens the drawer from the cache with applications and artifacts', async () => {
     await load();
     buttonWithText('Update Notification').click();
     await settle();
@@ -96,13 +96,7 @@ describe('UpdateNotificationsComponent', () => {
     expect(document.body.textContent).toContain('Users to notify');
     expect(document.body.textContent).toContain('alpha-app');
     expect(document.body.textContent).toContain('Aaa');
-    expect(document.body.textContent).not.toContain('beta-artifact');
-
-    buttonWithText('Artifacts').click();
-    await settle();
-
     expect(document.body.textContent).toContain('beta-artifact');
-    expect(document.body.textContent).not.toContain('alpha-app');
   });
 
   it('opens a new configuration without the selections of the one edited before', async () => {
@@ -143,17 +137,10 @@ describe('UpdateNotificationsComponent', () => {
     const nameInput = document.body.querySelector('#name') as HTMLInputElement;
     nameInput.value = 'everything we ship';
     nameInput.dispatchEvent(new Event('input'));
-    expect(tabCount('application')).toBeUndefined();
     checkboxBefore('alpha-app').click();
+    checkboxBefore('beta-artifact').click();
     checkboxBefore('Aaa').click();
     await settle();
-    expect(tabCount('application')).toBe('1');
-
-    buttonWithText('Artifacts').click();
-    await settle();
-    checkboxBefore('beta-artifact').click();
-    await settle();
-    expect(tabCount('artifact')).toBe('1');
 
     const save = buttonWithText('Save');
     expect(save.disabled).toBe(false);
@@ -305,11 +292,6 @@ describe('UpdateNotificationsComponent scoped to a customer', () => {
     return buttons.find((button) => button.textContent?.trim() === text)!;
   }
 });
-
-/** The number of selected entries the given picklist tab shows, if any. */
-function tabCount(tabId: string): string | undefined {
-  return document.body.querySelector(`#tab-${tabId} .distr-tag-badge`)?.textContent?.trim();
-}
 
 /** The checkbox of the row whose label contains the given text. */
 function checkboxBefore(text: string): HTMLInputElement {

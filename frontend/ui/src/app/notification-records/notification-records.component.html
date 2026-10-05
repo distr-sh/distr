@@ -33,7 +33,8 @@
             }
           </td>
           <td
-            class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
+            class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
+            [title]="record.customerNamesTitle">
             @if (record.customerNames) {
               {{ record.customerNames }}
             } @else {

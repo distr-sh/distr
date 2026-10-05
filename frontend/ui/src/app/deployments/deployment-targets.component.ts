@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup} from '@angular/forms';
-import {ActivatedRoute, RouterLink} from '@angular/router';
+import {ActivatedRoute} from '@angular/router';
 import {
   ApplicationVersion,
   CustomerOrganization,
@@ -21,7 +21,7 @@ import {
   DeploymentWithLatestRevision,
 } from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faArrowUpRightDots, faBullhorn, faChevronDown, faLightbulb, faPlus} from '@fortawesome/free-solid-svg-icons';
+import {faChevronDown, faLightbulb, faPlus} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, combineLatestWith, first, map, Observable, of} from 'rxjs';
 import {compareBy} from '../../util/arrays';
 import {filteredByFormControl} from '../../util/filter';
@@ -34,7 +34,6 @@ import {AuthService} from '../services/auth.service';
 import {ContextService} from '../services/context.service';
 import {DeploymentTargetsMetricsService} from '../services/deployment-target-metrics.service';
 import {DeploymentTargetsService} from '../services/deployment-targets.service';
-import {FeatureFlagService} from '../services/feature-flag.service';
 import {OrganizationService} from '../services/organization.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {DeploymentTargetLatestMetrics} from '../types/deployment-target-metrics';
@@ -64,7 +63,6 @@ const localStoragerCollapsedCustomerIds = 'collapsedCustomerIds';
     DeploymentModalComponent,
     SecureImagePipe,
     QuotaLimitComponent,
-    RouterLink,
     PageComponent,
     SearchBarComponent,
   ],
@@ -79,15 +77,11 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   private readonly deploymentTargetMetrics = inject(DeploymentTargetsMetricsService);
   private readonly organizationService = inject(OrganizationService);
   private readonly context = inject(ContextService);
-  private readonly featureFlags = inject(FeatureFlagService);
   private readonly route = inject(ActivatedRoute);
 
   protected readonly plusIcon = faPlus;
   protected readonly faChevronDown = faChevronDown;
   protected readonly faLightbulb = faLightbulb;
-  protected readonly faBullhorn = faBullhorn;
-  protected readonly faArrowUpRightDots = faArrowUpRightDots;
-
   protected readonly collapsedCustomerIds = signal<string[]>(
     (() => {
       const s = localStorage.getItem(localStoragerCollapsedCustomerIds);
@@ -100,28 +94,6 @@ export class DeploymentTargetsComponent implements AfterViewInit {
       }
       return [];
     })()
-  );
-
-  protected readonly isAlertsVisible = toSignal(
-    this.featureFlags.isNotificationsEnabled$.pipe(
-      combineLatestWith(this.context.getCustomerOrganization()),
-      map(
-        ([enabled, customerOrg]) =>
-          enabled && this.auth.isCustomer() && (customerOrg?.features?.includes('alerts') ?? false)
-      )
-    ),
-    {initialValue: false}
-  );
-
-  protected readonly isUpdateNotificationsVisible = toSignal(
-    this.featureFlags.isNotificationsEnabled$.pipe(
-      combineLatestWith(this.context.getCustomerOrganization()),
-      map(
-        ([enabled, customerOrg]) =>
-          enabled && this.auth.isCustomer() && (customerOrg?.features?.includes('update_notifications') ?? false)
-      )
-    ),
-    {initialValue: false}
   );
 
   private modal?: DialogRef;

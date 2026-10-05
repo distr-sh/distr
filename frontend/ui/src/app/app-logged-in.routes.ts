@@ -1,6 +1,6 @@
 import {inject} from '@angular/core';
 import {CanActivateFn, Router, Routes} from '@angular/router';
-import {UserRole} from '@distr-sh/distr-sdk';
+import {CustomerOrganizationFeature, UserRole} from '@distr-sh/distr-sdk';
 import {firstValueFrom, map} from 'rxjs';
 import {getRemoteEnvironment} from '../env/remote';
 import {AccessTokenDetailComponent} from './access-tokens/access-token-detail.component';
@@ -108,18 +108,19 @@ function notificationsEnabledGuard(): CanActivateFn {
   };
 }
 
-// A customer configures update notifications only where the vendor has granted the feature, the
-// way alerts work.
-const requireUpdateNotifications: CanActivateFn = async () => {
-  const auth = inject(AuthService);
-  const context = inject(ContextService);
-  const router = inject(Router);
-  if (!auth.isCustomer()) {
-    return true;
-  }
-  const customerOrganization = await firstValueFrom(context.getCustomerOrganization());
-  return customerOrganization?.features.includes('update_notifications') || router.createUrlTree(['/']);
-};
+/** Lets a customer through only when the vendor has granted any of the features. */
+function requireCustomerFeature(...features: CustomerOrganizationFeature[]): CanActivateFn {
+  return async () => {
+    const auth = inject(AuthService);
+    const context = inject(ContextService);
+    const router = inject(Router);
+    if (!auth.isCustomer()) {
+      return true;
+    }
+    const customerOrganization = await firstValueFrom(context.getCustomerOrganization());
+    return features.some((feature) => customerOrganization?.features.includes(feature)) || router.createUrlTree(['/']);
+  };
+}
 
 function supportBundlesEnabledGuard(): CanActivateFn {
   return async () => {
@@ -278,7 +279,7 @@ export const routes: Routes = [
           {
             path: 'updates',
             component: CustomerUpdateNotificationsPageComponent,
-            canActivate: [notificationsEnabledGuard(), requireUpdateNotifications],
+            canActivate: [notificationsEnabledGuard(), requireCustomerFeature('update_notifications')],
           },
           {
             path: 'notification-history',
@@ -471,15 +472,17 @@ export const routes: Routes = [
         children: [
           {
             path: 'alert-configurations',
+            canActivate: [requireCustomerFeature('alerts')],
             component: AlertConfigurationsPageComponent,
           },
           {
             path: 'updates',
-            canActivate: [requireUpdateNotifications],
+            canActivate: [requireCustomerFeature('update_notifications')],
             component: UpdateNotificationsPageComponent,
           },
           {
             path: 'history',
+            canActivate: [requireCustomerFeature('alerts', 'update_notifications')],
             component: NotificationRecordsPageComponent,
           },
         ],

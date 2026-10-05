@@ -42,6 +42,15 @@ import {PageComponent} from '../page.component';
 import {QuotaLimitComponent} from '../quota-limit.component';
 import {SearchBarComponent} from '../search-bar.component';
 
+const customerFeatureLabels: Record<CustomerOrganizationFeature, string> = {
+  deployment_targets: 'Deployments',
+  artifacts: 'Artifacts',
+  alerts: 'Alerts',
+  update_notifications: 'Update Notifications',
+  support_bundles: 'Support Bundles',
+  oidc_providers: 'Identity Provider',
+};
+
 @Component({
   templateUrl: './customer-organizations.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -131,9 +140,9 @@ export class CustomerOrganizationsComponent {
   // A customer can only bring its own identity provider while the vendor's own plan includes the
   // machinery, so the checkbox is hidden rather than shown as a grantable feature that the API refuses.
   protected readonly allCustomerFeatures = computed(() =>
-    this.allCustomerFeaturesList.filter(
-      (feature) => feature !== 'oidc_providers' || this.featureFlags.isCustomOidcProvidersEnabled()
-    )
+    this.allCustomerFeaturesList
+      .filter((feature) => feature !== 'oidc_providers' || this.featureFlags.isCustomOidcProvidersEnabled())
+      .map((feature) => ({feature, label: customerFeatureLabels[feature], indent: feature === 'alerts'}))
   );
 
   protected readonly openCustomerFeaturesDropdownId = signal<string | void>(undefined);
@@ -257,29 +266,6 @@ export class CustomerOrganizationsComponent {
           }
         },
       });
-  }
-
-  protected getFeatureLabel(feature: CustomerOrganizationFeature): string {
-    switch (feature) {
-      case 'deployment_targets':
-        return 'Deployments';
-      case 'artifacts':
-        return 'Artifacts';
-      case 'alerts':
-        return 'Alerts';
-      case 'update_notifications':
-        return 'Update Notifications';
-      case 'support_bundles':
-        return 'Support Bundles';
-      case 'oidc_providers':
-        return 'Identity Provider';
-      default:
-        return feature;
-    }
-  }
-
-  protected isFeatureIndent(feature: CustomerOrganizationFeature): boolean {
-    return feature === 'alerts';
   }
 
   protected async toggleFeature(customer: CustomerOrganization, feature: CustomerOrganizationFeature) {
