@@ -2,8 +2,8 @@ package types
 
 import (
 	"fmt"
+	"maps"
 	"slices"
-	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/uuid"
@@ -72,26 +72,28 @@ func SortApplicationVersions(strategy VersioningStrategy, versions []Application
 }
 
 // SortAdvisoryApplicationVersions orders advisory version rows by application name, then by each
-// application's versioning strategy (ASC).
+// application's versioning strategy (ASC). The comparator is built once per application from that
+// application's marked versions.
 func SortAdvisoryApplicationVersions(versions []AdvisoryApplicationVersion) {
-	slices.SortStableFunc(versions, func(a, b AdvisoryApplicationVersion) int {
-		if c := strings.Compare(a.ApplicationName, b.ApplicationName); c != 0 {
-			return c
+	grouped := make(map[string][]AdvisoryApplicationVersion)
+	for _, version := range versions {
+		key := version.ApplicationName + version.ApplicationID.String()
+		grouped[key] = append(grouped[key], version)
+	}
+	result := make([]AdvisoryApplicationVersion, 0, len(versions))
+	for _, key := range slices.Sorted(maps.Keys(grouped)) {
+		group := grouped[key]
+		applicationVersions := make([]ApplicationVersion, len(group))
+		for j, version := range group {
+			applicationVersions[j] = version.ApplicationVersion
 		}
-		if c := strings.Compare(a.ApplicationID.String(), b.ApplicationID.String()); c != 0 {
-			return c
-		}
-		var applicationVersions []ApplicationVersion
-		for _, version := range versions {
-			if version.ApplicationID == a.ApplicationID {
-				applicationVersions = append(applicationVersions, version.ApplicationVersion)
-			}
-		}
-		return ApplicationVersionComparator(a.ApplicationVersioningStrategy, applicationVersions)(
-			a.ApplicationVersion,
-			b.ApplicationVersion,
-		)
-	})
+		compare := ApplicationVersionComparator(group[0].ApplicationVersioningStrategy, applicationVersions)
+		slices.SortStableFunc(group, func(a, b AdvisoryApplicationVersion) int {
+			return compare(a.ApplicationVersion, b.ApplicationVersion)
+		})
+		result = append(result, group...)
+	}
+	copy(versions, result)
 }
 
 // LatestApplicationVersion returns the newest of the given versions, ignoring archived ones, or

@@ -61,19 +61,31 @@ export function sortApplicationVersions(
   return [...versions].sort((a, b) => (direction === 'desc' ? compare(b, a) : compare(a, b)));
 }
 
+/**
+ * Orders advisory version rows by application name, then by each application's versioning
+ * strategy (descending, like other UI lists). The comparator is built once per application.
+ */
 export function sortAdvisoryApplicationVersions(versions: AdvisoryApplicationVersion[]): AdvisoryApplicationVersion[] {
-  return [...versions].sort((a, b) => {
-    const byApplication =
-      a.applicationName.localeCompare(b.applicationName) || a.applicationId.localeCompare(b.applicationId);
-    if (byApplication !== 0) {
-      return byApplication;
+  const grouped = new Map<string, AdvisoryApplicationVersion[]>();
+  for (const version of versions) {
+    const key = version.applicationName + version.applicationId;
+    const group = grouped.get(key);
+    if (group) {
+      group.push(version);
+    } else {
+      grouped.set(key, [version]);
     }
-    const compare = applicationVersionComparator(
-      a.applicationVersioningStrategy,
-      versions.filter((v) => v.applicationId === a.applicationId).map((v) => v.applicationVersion)
-    );
-    return compare(b.applicationVersion, a.applicationVersion);
-  });
+  }
+  return [...grouped.keys()]
+    .sort()
+    .flatMap((key) => {
+      const group = grouped.get(key)!;
+      const compare = applicationVersionComparator(
+        group[0].applicationVersioningStrategy,
+        group.map((version) => version.applicationVersion)
+      );
+      return [...group].sort((a, b) => compare(b.applicationVersion, a.applicationVersion));
+    });
 }
 
 /**
