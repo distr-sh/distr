@@ -119,7 +119,7 @@ If you are looking for a more automated and integrated experience in creating ne
 
 ## Versioning Strategy
 
-Every application has a versioning strategy, which decides about sorting and which of its versions is considered the latest one:
+Every application has a versioning strategy, which determines how its versions are sorted and which version is considered the latest:
 
 - **Semantic versioning** orders versions by [SemVer](https://semver.org/) precedence. Every version name has to be a valid SemVer version, so `1.10.0` is newer than `1.9.0` and `2.0.0` is newer than `2.0.0-rc.1`. Distr rejects a version name that is not valid SemVer and one that resolves to a version the application already has, `1.0.0` and `v1.0.0` being the same version.
 - **Chronological versioning** orders versions by the time they were created, whatever they are named. Pick this when your versions are dates, build numbers or channel names.
