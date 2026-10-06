@@ -70,18 +70,10 @@ export function sortAdvisoryApplicationVersions(versions: AdvisoryApplicationVer
     }
     const compare = applicationVersionComparator(
       a.applicationVersioningStrategy,
-      versions.filter((v) => v.applicationId === a.applicationId).map(toApplicationVersion)
+      versions.filter((v) => v.applicationId === a.applicationId).map((v) => v.applicationVersion)
     );
-    return compare(toApplicationVersion(b), toApplicationVersion(a));
+    return compare(b.applicationVersion, a.applicationVersion);
   });
-}
-
-function toApplicationVersion(version: AdvisoryApplicationVersion): ApplicationVersion {
-  return {
-    id: version.applicationVersionId,
-    name: version.applicationVersionName,
-    createdAt: version.applicationVersionCreatedAt,
-  };
 }
 
 /**

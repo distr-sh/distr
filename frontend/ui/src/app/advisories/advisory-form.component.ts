@@ -177,7 +177,7 @@ export class AdvisoryFormComponent {
       }
       this.tags.set([...existing.tags]);
       this.applicationVersionSelection.set(
-        Object.fromEntries(existing.applicationVersions.map((v) => [v.applicationVersionId, v.relation]))
+        Object.fromEntries(existing.applicationVersions.map((v) => [v.applicationVersion.id!, v.relation]))
       );
       this.artifactVersionSelection.set(
         Object.fromEntries(existing.artifactVersions.map((v) => [v.artifactVersionId, v.relation]))

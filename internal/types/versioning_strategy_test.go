@@ -186,16 +186,18 @@ func advisoryVersion(
 		ApplicationID:                 applicationID,
 		ApplicationName:               applicationName,
 		ApplicationVersioningStrategy: strategy,
-		ApplicationVersionID:          uuid.New(),
-		ApplicationVersionName:        name,
-		ApplicationVersionCreatedAt:   createdAt,
+		ApplicationVersion: ApplicationVersion{
+			ID:        uuid.New(),
+			Name:      name,
+			CreatedAt: createdAt,
+		},
 	}
 }
 
 func advisoryNames(versions []AdvisoryApplicationVersion) []string {
 	result := make([]string, len(versions))
 	for i, v := range versions {
-		result[i] = v.ApplicationName + " " + v.ApplicationVersionName
+		result[i] = v.ApplicationName + " " + v.ApplicationVersion.Name
 	}
 	return result
 }

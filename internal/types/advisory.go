@@ -129,9 +129,7 @@ type AdvisoryApplicationVersion struct {
 	ApplicationType               DeploymentType          `db:"application_type"`
 	ApplicationImageID            *uuid.UUID              `db:"application_image_id"`
 	ApplicationVersioningStrategy VersioningStrategy      `db:"application_versioning_strategy"`
-	ApplicationVersionID          uuid.UUID               `db:"application_version_id"`
-	ApplicationVersionName        string                  `db:"application_version_name"`
-	ApplicationVersionCreatedAt   time.Time               `db:"application_version_created_at"`
+	ApplicationVersion            ApplicationVersion      `db:"application_version"`
 	Relation                      AdvisoryVersionRelation `db:"relation"`
 }
 

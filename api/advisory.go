@@ -62,9 +62,7 @@ type AdvisoryApplicationVersion struct {
 	ApplicationType               types.DeploymentType          `json:"applicationType"`
 	ApplicationImageURL           *string                       `json:"applicationImageUrl,omitempty"`
 	ApplicationVersioningStrategy types.VersioningStrategy      `json:"applicationVersioningStrategy"`
-	ApplicationVersionID          uuid.UUID                     `json:"applicationVersionId"`
-	ApplicationVersionName        string                        `json:"applicationVersionName"`
-	ApplicationVersionCreatedAt   time.Time                     `json:"applicationVersionCreatedAt"`
+	ApplicationVersion            ApplicationVersionResponse    `json:"applicationVersion"`
 	Relation                      types.AdvisoryVersionRelation `json:"relation"`
 }
 

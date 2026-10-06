@@ -1,4 +1,4 @@
-import {VersioningStrategy} from './application';
+import {ApplicationVersion, VersioningStrategy} from './application';
 import {DeploymentType} from './deployment';
 
 export type AdvisoryStatus = 'triage' | 'draft' | 'published' | 'resolved' | 'canceled';
@@ -50,9 +50,7 @@ export interface AdvisoryApplicationVersion {
   applicationType: DeploymentType;
   applicationImageUrl?: string;
   applicationVersioningStrategy: VersioningStrategy;
-  applicationVersionId: string;
-  applicationVersionName: string;
-  applicationVersionCreatedAt: string;
+  applicationVersion: ApplicationVersion;
   relation: AdvisoryVersionRelation;
 }
 

@@ -613,11 +613,11 @@ func getAdvisoryApplicationVersions(
 			a.id AS application_id, a.name AS application_name,
 			a.type AS application_type, a.image_id AS application_image_id,
 			a.versioning_strategy AS application_versioning_strategy,
-			av.id AS application_version_id, av.name AS application_version_name,
-			av.created_at AS application_version_created_at
+			`+applicationVersionNestedRowExpr+` AS application_version
 		FROM AdvisoryApplicationVersion vav
 			JOIN ApplicationVersion av ON av.id = vav.application_version_id
-			JOIN Application a ON a.id = av.application_id
+			JOIN Application a ON a.id = av.application_id`+
+			applicationVersionCreatorJoin+`
 		WHERE vav.advisory_id = any(@advisoryIds)
 		ORDER BY a.name, av.created_at`,
 		pgx.NamedArgs{"advisoryIds": advisoryIDs},
@@ -687,7 +687,7 @@ func filterAdvisoryVersionsForCustomer(
 	versions.ApplicationVersions = advisory.FilterVisibleVersions(
 		versions.ApplicationVersions,
 		func(v types.AdvisoryApplicationVersion) advisory.VersionRef {
-			return advisory.VersionRef{VersionID: v.ApplicationVersionID, ParentID: v.ApplicationID}
+			return advisory.VersionRef{VersionID: v.ApplicationVersion.ID, ParentID: v.ApplicationID}
 		},
 		application, now,
 	)

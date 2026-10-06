@@ -13,7 +13,7 @@ import {ConfirmConfig} from '../components/confirm-dialog/confirm-dialog.compone
 import {OverlayService} from '../services/overlay.service';
 
 export function applicationVersionLabel(version: AdvisoryApplicationVersion): string {
-  return `${version.applicationName} ${version.applicationVersionName}`;
+  return `${version.applicationName} ${version.applicationVersion.name}`;
 }
 
 export function artifactVersionLabel(version: AdvisoryArtifactVersion): string {

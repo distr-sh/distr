@@ -48,18 +48,20 @@ func AdvisoryReferenceToAPI(reference types.AdvisoryReference) api.AdvisoryRefer
 }
 
 func AdvisoryApplicationVersionToAPI(
-	version types.AdvisoryApplicationVersion,
-) api.AdvisoryApplicationVersion {
-	return api.AdvisoryApplicationVersion{
-		ApplicationID:                 version.ApplicationID,
-		ApplicationName:               version.ApplicationName,
-		ApplicationType:               version.ApplicationType,
-		ApplicationImageURL:           CreateImageURL(version.ApplicationImageID),
-		ApplicationVersioningStrategy: version.ApplicationVersioningStrategy,
-		ApplicationVersionID:          version.ApplicationVersionID,
-		ApplicationVersionName:        version.ApplicationVersionName,
-		ApplicationVersionCreatedAt:   version.ApplicationVersionCreatedAt,
-		Relation:                      version.Relation,
+	viewerCustomerOrgID *uuid.UUID,
+	viewerPartnerOrgID *uuid.UUID,
+) func(types.AdvisoryApplicationVersion) api.AdvisoryApplicationVersion {
+	versionToAPI := ApplicationVersionToAPI(viewerCustomerOrgID, viewerPartnerOrgID)
+	return func(version types.AdvisoryApplicationVersion) api.AdvisoryApplicationVersion {
+		return api.AdvisoryApplicationVersion{
+			ApplicationID:                 version.ApplicationID,
+			ApplicationName:               version.ApplicationName,
+			ApplicationType:               version.ApplicationType,
+			ApplicationImageURL:           CreateImageURL(version.ApplicationImageID),
+			ApplicationVersioningStrategy: version.ApplicationVersioningStrategy,
+			ApplicationVersion:            versionToAPI(version.ApplicationVersion),
+			Relation:                      version.Relation,
+		}
 	}
 }
 

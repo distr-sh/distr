@@ -84,22 +84,14 @@ func SortAdvisoryApplicationVersions(versions []AdvisoryApplicationVersion) {
 		var applicationVersions []ApplicationVersion
 		for _, version := range versions {
 			if version.ApplicationID == a.ApplicationID {
-				applicationVersions = append(applicationVersions, toApplicationVersion(version))
+				applicationVersions = append(applicationVersions, version.ApplicationVersion)
 			}
 		}
 		return ApplicationVersionComparator(a.ApplicationVersioningStrategy, applicationVersions)(
-			toApplicationVersion(a),
-			toApplicationVersion(b),
+			a.ApplicationVersion,
+			b.ApplicationVersion,
 		)
 	})
-}
-
-func toApplicationVersion(version AdvisoryApplicationVersion) ApplicationVersion {
-	return ApplicationVersion{
-		ID:        version.ApplicationVersionID,
-		Name:      version.ApplicationVersionName,
-		CreatedAt: version.ApplicationVersionCreatedAt,
-	}
 }
 
 // LatestApplicationVersion returns the newest of the given versions, ignoring archived ones, or
