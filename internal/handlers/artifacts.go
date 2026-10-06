@@ -94,9 +94,15 @@ func createArtifactHandler() http.HandlerFunc {
 			http.Error(w, "name is required", http.StatusBadRequest)
 			return
 		}
-		if body.UpstreamURL != nil && *body.UpstreamURL == "" {
-			http.Error(w, "upstreamUrl must not be empty", http.StatusBadRequest)
-			return
+		if body.UpstreamURL != nil {
+			if *body.UpstreamURL == "" {
+				http.Error(w, "upstreamUrl must not be empty", http.StatusBadRequest)
+				return
+			}
+			if err := upstream.ValidateUpstreamURL(ctx, *body.UpstreamURL); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 		}
 
 		orgID := *authentication.CurrentOrgID()
@@ -330,6 +336,10 @@ func patchArtifactHandler(w http.ResponseWriter, r *http.Request) {
 	if body.UpstreamURL != nil {
 		if *body.UpstreamURL == "" {
 			http.Error(w, "upstreamUrl must not be empty", http.StatusBadRequest)
+			return
+		}
+		if err := upstream.ValidateUpstreamURL(ctx, *body.UpstreamURL); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		params.UpdateURL = true
