@@ -76,16 +76,14 @@ export function sortAdvisoryApplicationVersions(versions: AdvisoryApplicationVer
       grouped.set(key, [version]);
     }
   }
-  return [...grouped.keys()]
-    .sort()
-    .flatMap((key) => {
-      const group = grouped.get(key)!;
-      const compare = applicationVersionComparator(
-        group[0].applicationVersioningStrategy,
-        group.map((version) => version.applicationVersion)
-      );
-      return [...group].sort((a, b) => compare(b.applicationVersion, a.applicationVersion));
-    });
+  return [...grouped.keys()].sort().flatMap((key) => {
+    const group = grouped.get(key)!;
+    const compare = applicationVersionComparator(
+      group[0].applicationVersioningStrategy,
+      group.map((version) => version.applicationVersion)
+    );
+    return [...group].sort((a, b) => compare(b.applicationVersion, a.applicationVersion));
+  });
 }
 
 /**
