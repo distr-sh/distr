@@ -94,6 +94,14 @@ const requireVendorOrPartner: CanActivateFn = () => {
   return inject(Router).createUrlTree(['/']);
 };
 
+const requireVendorOrCustomer: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  if (auth.isVendor() || auth.isCustomer()) {
+    return true;
+  }
+  return inject(Router).createUrlTree(['/']);
+};
+
 function licensingEnabledGuard(): CanActivateFn {
   return async () => {
     const featureFlags = inject(FeatureFlagService);
@@ -468,7 +476,7 @@ export const routes: Routes = [
       },
       {
         path: 'notifications',
-        canActivate: [notificationsEnabledGuard()],
+        canActivate: [requireVendorOrCustomer, notificationsEnabledGuard()],
         children: [
           {
             path: 'alert-configurations',
