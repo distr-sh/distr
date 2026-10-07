@@ -247,7 +247,7 @@
           <h3 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Affected</h3>
           @if (affectedApplicationVersions().length > 0 || affectedArtifactVersions().length > 0) {
             <ul class="text-sm text-gray-900 dark:text-white space-y-2 mb-4">
-              @for (version of affectedApplicationVersions(); track version.applicationVersionId) {
+              @for (version of affectedApplicationVersions(); track version.applicationVersion.id) {
                 <ng-container *ngTemplateOutlet="applicationVersionItem; context: {$implicit: version}" />
               }
               @for (version of affectedArtifactVersions(); track version.artifactVersionId) {
@@ -261,7 +261,7 @@
           <h3 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Patched In</h3>
           @if (hasPatchedVersions()) {
             <ul class="text-sm text-gray-900 dark:text-white space-y-2">
-              @for (version of patchedApplicationVersions(); track version.applicationVersionId) {
+              @for (version of patchedApplicationVersions(); track version.applicationVersion.id) {
                 <ng-container *ngTemplateOutlet="applicationVersionItem; context: {$implicit: version}" />
               }
               @for (version of patchedArtifactVersions(); track version.artifactVersionId) {
@@ -316,7 +316,7 @@
       [type]="version.applicationType" />
     <div class="min-w-0">
       <div class="truncate" [title]="applicationVersionLabel(version)">
-        {{ version.applicationName }} {{ version.applicationVersionName }}
+        {{ version.applicationName }} {{ version.applicationVersion.name }}
       </div>
       <span class="distr-deployment-type-badge">{{ version.applicationType }}</span>
     </div>

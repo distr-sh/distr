@@ -571,12 +571,15 @@ func buildAdvisoryDetail(
 	}
 
 	return api.AdvisoryDetail{
-		Advisory:            mapping.AdvisoryToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID())(advisory),
-		Description:         advisory.Description,
-		References:          mapping.List(references, mapping.AdvisoryReferenceToAPI),
-		ApplicationVersions: mapping.List(versions.ApplicationVersions, mapping.AdvisoryApplicationVersionToAPI),
-		ArtifactVersions:    mapping.List(versions.ArtifactVersions, mapping.AdvisoryArtifactVersionToAPI),
-		Events:              mapping.List(events, mapping.AdvisoryEventToAPI),
+		Advisory:    mapping.AdvisoryToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID())(advisory),
+		Description: advisory.Description,
+		References:  mapping.List(references, mapping.AdvisoryReferenceToAPI),
+		ApplicationVersions: mapping.List(
+			versions.ApplicationVersions,
+			mapping.AdvisoryApplicationVersionToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID()),
+		),
+		ArtifactVersions: mapping.List(versions.ArtifactVersions, mapping.AdvisoryArtifactVersionToAPI),
+		Events:           mapping.List(events, mapping.AdvisoryEventToAPI),
 	}, true
 }
 
@@ -649,8 +652,8 @@ func advisoryVersionMarkings(
 	markings := make([]versionMarking, 0, len(applicationVersions)+len(artifactVersions))
 	for _, version := range applicationVersions {
 		markings = append(markings, versionMarking{
-			id:       version.ApplicationVersionID,
-			label:    version.ApplicationName + " " + version.ApplicationVersionName,
+			id:       version.ApplicationVersion.ID,
+			label:    version.ApplicationName + " " + version.ApplicationVersion.Name,
 			relation: version.Relation,
 		})
 	}
