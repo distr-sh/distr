@@ -12,6 +12,7 @@ export interface DeploymentTarget extends BaseModel, Named {
   deployments: DeploymentWithLatestRevision[];
   agentVersion?: AgentVersion;
   reportedAgentVersionId?: string;
+  reconnectPending?: boolean;
   metricsEnabled: boolean;
   imageCleanupEnabled: boolean;
   deploymentLogsEnabled: boolean;

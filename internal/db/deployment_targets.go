@@ -22,6 +22,7 @@ const (
 		dt.access_key_hash,
 		dt.pending_access_key_salt,
 		dt.pending_access_key_hash,
+		dt.access_key_hash IS NOT NULL AND dt.pending_access_key_hash IS NOT NULL,
 		dt.namespace,
 		dt.scope,
 		dt.organization_id,

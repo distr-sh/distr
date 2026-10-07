@@ -11,12 +11,19 @@
             width="199" />
         </div>
         <div class="min-w-0">
-          <div class="flex gap-2">
+          <div class="flex gap-2 items-center">
             <h3 class="font-bold truncate break-all" [title]="deploymentTarget().name">
               <a [routerLink]="['/deployments', deploymentTarget().id]" class="hover:underline">
                 {{ deploymentTarget().name }}
               </a>
             </h3>
+            @if (deploymentTarget().reconnectPending) {
+              <span
+                class="distr-status-badge shrink-0 whitespace-nowrap bg-yellow-100 text-yellow-800 border-yellow-400 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-800"
+                title="The agent secret was rotated, but no agent has connected to Distr with the new secret yet. Until then, the previous secret stays valid and applications continue operating.">
+                Reconnect pending
+              </span>
+            }
           </div>
           <div class="flex flex-col items-start lg:flex-row lg:items-center lg:gap-2">
             <dl class="inline-flex gap-1 text-sm">
