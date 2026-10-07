@@ -1,8 +1,8 @@
 import {Component, computed, inject, input} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {RouterLink} from '@angular/router';
-import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faArrowRight, IconDefinition} from '@fortawesome/free-solid-svg-icons';
+import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
+import {faArrowRight} from '@fortawesome/free-solid-svg-icons';
 import {of} from 'rxjs';
 import {AuthService} from '../services/auth.service';
 import {CustomerOrganizationsService} from '../services/customer-organizations.service';

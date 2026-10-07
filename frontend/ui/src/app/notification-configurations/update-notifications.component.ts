@@ -236,7 +236,7 @@ export class UpdateNotificationsComponent {
     this.removePicklistControls();
 
     const kinds = this.kinds();
-    this.addPicklistControls(config);
+    this.syncPicklistControls(config);
 
     if (config) {
       this.editConfigForm.patchValue({
@@ -252,34 +252,50 @@ export class UpdateNotificationsComponent {
     const drawerRef = (this.editConfigDrawerRef = this.overlay.showDrawer(this.editConfigDrawerTpl()));
 
     // The drawer shows the lists the page has loaded already. The refresh runs behind it and only
-    // adds what is missing, so a box ticked in the meantime survives it.
+    // adds what is missing and drops what is gone, so a box ticked in the meantime survives it.
+    const refreshesEntitlements = !!this.customerOrganizationId() && !this.auth.isCustomer();
     await Promise.all([
       kinds.includes('application') ? this.applicationsService.refresh() : Promise.resolve(),
+      kinds.includes('application') && refreshesEntitlements
+        ? this.applicationEntitlementsService.refresh()
+        : Promise.resolve(),
       kinds.includes('artifact') ? this.artifactsService.refresh() : Promise.resolve(),
+      kinds.includes('artifact') && refreshesEntitlements
+        ? this.artifactEntitlementsService.refresh()
+        : Promise.resolve(),
       this.usersService.refresh(),
     ]);
     if (this.editConfigDrawerRef === drawerRef) {
-      this.addPicklistControls(config);
+      this.syncPicklistControls(config);
     }
   }
 
   private removePicklistControls() {
     const {applicationIds, artifactIds, userAccountIds} = this.editConfigForm.controls;
-    const records: FormRecord<FormControl<boolean>>[] = [applicationIds, artifactIds, userAccountIds];
-    for (const record of records) {
-      for (const id of Object.keys(record.controls)) {
-        record.removeControl(id, {emitEvent: false});
-      }
+    for (const record of [applicationIds, artifactIds, userAccountIds]) {
+      removeControlsExcept(record, []);
     }
   }
 
-  private addPicklistControls(config?: UpdateNotificationConfiguration) {
+  private syncPicklistControls(config?: UpdateNotificationConfiguration) {
     const checked = new Set([
       ...(config?.applications ?? []).map((it) => it.id),
       ...(config?.artifacts ?? []).map((it) => it.id),
       ...(config?.recipients ?? []).map((it) => it.id),
     ]);
     const controls = this.editConfigForm.controls;
+    removeControlsExcept(
+      controls.applicationIds,
+      this.applications().map((it) => it.id!)
+    );
+    removeControlsExcept(
+      controls.artifactIds,
+      this.artifacts().map((it) => it.id)
+    );
+    removeControlsExcept(
+      controls.userAccountIds,
+      this.users().map((it) => it.id!)
+    );
     for (const application of this.applications()) {
       controls.applicationIds.addControl(application.id!, this.fb.control(checked.has(application.id!)));
     }
@@ -374,6 +390,15 @@ export class UpdateNotificationsComponent {
       if (msg) {
         this.toast.error(msg);
       }
+    }
+  }
+}
+
+function removeControlsExcept(record: FormRecord<FormControl<boolean>>, ids: string[]) {
+  const keep = new Set(ids);
+  for (const id of Object.keys(record.controls)) {
+    if (!keep.has(id)) {
+      record.removeControl(id, {emitEvent: false});
     }
   }
 }

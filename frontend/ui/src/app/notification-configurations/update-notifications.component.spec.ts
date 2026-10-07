@@ -237,11 +237,23 @@ describe('UpdateNotificationsComponent scoped to a customer', () => {
     buttonWithText('Update Notification').click();
     await fixture.whenStable();
     fixture.detectChanges();
-    // The refresh behind the drawer answers with what the page already has.
-    httpTesting
-      .expectOne('/api/v1/applications')
-      .flush([{id: entitledApplicationId, name: 'alpha-app', type: 'docker', versions: []}]);
+
+    expect(document.body.textContent).toContain('alpha-app');
+    expect(document.body.textContent).not.toContain('other-app');
+    expect(document.body.textContent).toContain('Customer User');
+    expect(document.body.textContent).not.toContain('Vendor User');
+
+    // The refresh behind the drawer finds an entitlement granted since the page was loaded.
+    httpTesting.expectOne('/api/v1/applications').flush([
+      {id: entitledApplicationId, name: 'alpha-app', type: 'docker', versions: []},
+      {id: '99999999-9999-9999-9999-999999999999', name: 'other-app', type: 'docker', versions: []},
+    ]);
+    httpTesting.expectOne('/api/v1/application-entitlements').flush([
+      {id: 'e1', name: 'entitled', customerOrganizationId, applicationId: entitledApplicationId},
+      {id: 'e3', name: 'granted later', customerOrganizationId, applicationId: '99999999-9999-9999-9999-999999999999'},
+    ]);
     httpTesting.expectOne('/api/v1/artifacts').flush([]);
+    httpTesting.expectOne('/api/v1/artifact-entitlements').flush([]);
     httpTesting
       .expectOne('/api/v1/user-accounts')
       .flush([
@@ -250,10 +262,7 @@ describe('UpdateNotificationsComponent scoped to a customer', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(document.body.textContent).toContain('alpha-app');
-    expect(document.body.textContent).not.toContain('other-app');
-    expect(document.body.textContent).toContain('Customer User');
-    expect(document.body.textContent).not.toContain('Vendor User');
+    expect(document.body.textContent).toContain('other-app');
 
     const nameInput = document.body.querySelector('#name') as HTMLInputElement;
     nameInput.value = 'for the customer';
