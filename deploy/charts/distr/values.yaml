@@ -489,7 +489,7 @@ caddy:
     # storage module for `caddy.storage`.
     repository: caddy
     # -- Caddy image tag.
-    tag: 2.11.4-alpine # @schema type: [string, number]
+    tag: 2.11.7-alpine # @schema type: [string, number]
     # -- Caddy image pull policy.
     pullPolicy: IfNotPresent
   # -- E-mail address used for the ACME account.

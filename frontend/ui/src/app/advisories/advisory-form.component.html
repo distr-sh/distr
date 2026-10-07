@@ -189,7 +189,7 @@
         </div>
 
         @if (versionsTab() === 'applications') {
-          @for (application of applications(); track application.id) {
+          @for (application of applicationsWithSortedVersions(); track application.id) {
             <div class="border border-gray-200 dark:border-gray-600 rounded-lg mb-2">
               <button
                 type="button"

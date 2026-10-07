@@ -1,6 +1,8 @@
 package mapping
 
 import (
+	"slices"
+
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
@@ -15,6 +17,8 @@ func ApplicationToAPI(
 ) func(types.Application) api.ApplicationResponse {
 	versionToAPI := ApplicationVersionToAPI(viewerCustomerOrgID, viewerPartnerOrgID)
 	return func(a types.Application) api.ApplicationResponse {
+		versions := slices.Clone(a.Versions)
+		types.SortApplicationVersions(a.VersioningStrategy, versions)
 		return api.ApplicationResponse{
 			ID:                    a.ID,
 			CreatedAt:             a.CreatedAt,
@@ -24,7 +28,7 @@ func ApplicationToAPI(
 			ImageUrl:              CreateImageURL(a.ImageID),
 			VersioningStrategy:    a.VersioningStrategy,
 			AllowAutomaticUpdates: a.AllowAutomaticUpdates,
-			Versions:              List(a.Versions, versionToAPI),
+			Versions:              List(versions, versionToAPI),
 		}
 	}
 }
