@@ -31,8 +31,8 @@ run = 'go mod tidy'
 run = ['pnpm run build', 'pnpm run docs']
 dir = "sdk/js"
 sources = [
-  "sdk/js/src/**/*",
-  "sdk/js/package.json",
+  "{{config_root}}/sdk/js/src/**/*",
+  "{{config_root}}/sdk/js/package.json",
 ]
 
 [tasks."build:frontend:dev"]
@@ -74,11 +74,11 @@ depends = ["go-tidy", "build:frontend:enterprise"]
 run = 'pnpm build'
 dir = "website"
 sources = [
-  "website/src/**/*",
-  "website/public/**/*",
-  "website/astro.config.mjs",
-  "website/package.json",
-  "CHANGELOG.md",
+  "{{config_root}}/website/src/**/*",
+  "{{config_root}}/website/public/**/*",
+  "{{config_root}}/website/astro.config.mjs",
+  "{{config_root}}/website/package.json",
+  "{{config_root}}/CHANGELOG.md",
 ]
 
 [tasks."build:agent:docker"]
