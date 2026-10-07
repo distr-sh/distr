@@ -10,6 +10,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mailsending"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
@@ -291,15 +292,6 @@ func (a audience) logger(log *zap.Logger) *zap.Logger {
 	return log
 }
 
-func (a audience) is(other audience) bool {
-	return equalIDs(a.customerOrganizationID, other.customerOrganizationID) &&
-		equalIDs(a.partnerOrganizationID, other.partnerOrganizationID)
-}
-
-func equalIDs(a, b *uuid.UUID) bool {
-	return (a == nil && b == nil) || (a != nil && b != nil && *a == *b)
-}
-
 type audienceRecipients struct {
 	audience   audience
 	recipients []types.NotificationRecipient
@@ -308,13 +300,15 @@ type audienceRecipients struct {
 func recipientsByAudience(recipients []types.NotificationRecipient) []audienceRecipients {
 	var groups []audienceRecipients
 	for _, recipient := range recipients {
-		key := audience{
-			customerOrganizationID: recipient.CustomerOrganizationID,
-			partnerOrganizationID:  recipient.PartnerOrganizationID,
-		}
-		index := slices.IndexFunc(groups, func(group audienceRecipients) bool { return group.audience.is(key) })
+		index := slices.IndexFunc(groups, func(group audienceRecipients) bool {
+			return util.PtrEq(group.audience.customerOrganizationID, recipient.CustomerOrganizationID) &&
+				util.PtrEq(group.audience.partnerOrganizationID, recipient.PartnerOrganizationID)
+		})
 		if index < 0 {
-			groups = append(groups, audienceRecipients{audience: key})
+			groups = append(groups, audienceRecipients{audience: audience{
+				customerOrganizationID: recipient.CustomerOrganizationID,
+				partnerOrganizationID:  recipient.PartnerOrganizationID,
+			}})
 			index = len(groups) - 1
 		}
 		groups[index].recipients = append(groups[index].recipients, recipient)
