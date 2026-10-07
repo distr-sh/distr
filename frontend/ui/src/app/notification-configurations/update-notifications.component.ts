@@ -384,9 +384,9 @@ function isExpired(expiresAt?: Date): boolean {
 
 function validateAnyTarget(control: AbstractControl): ValidationErrors | null {
   const value = control.value as {
-    applicationIds: Record<string, boolean>;
-    artifactIds: Record<string, boolean>;
+    applicationIds?: Record<string, boolean>;
+    artifactIds?: Record<string, boolean>;
   };
-  const checked = [...checkedIds(value.applicationIds), ...checkedIds(value.artifactIds)];
+  const checked = [...checkedIds(value.applicationIds ?? {}), ...checkedIds(value.artifactIds ?? {})];
   return checked.length > 0 ? null : {noTargets: 1};
 }
