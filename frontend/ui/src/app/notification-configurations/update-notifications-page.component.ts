@@ -10,8 +10,8 @@ import {UpdateNotificationsComponent} from './update-notifications.component';
       <div class="distr-table-panel">
         <app-organization-scope-nav
           [icon]="faCircleArrowUp"
-          label="Organization Updates"
-          linkLabel="Show customer updates"
+          label="Organization Update Notifications"
+          linkLabel="Show customer update notifications"
           section="updates" />
         <app-update-notifications />
       </div>
