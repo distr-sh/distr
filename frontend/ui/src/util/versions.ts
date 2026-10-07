@@ -68,7 +68,9 @@ export function sortApplicationVersions(
 export function sortAdvisoryApplicationVersions(versions: AdvisoryApplicationVersion[]): AdvisoryApplicationVersion[] {
   const grouped = new Map<string, AdvisoryApplicationVersion[]>();
   for (const version of versions) {
-    const key = version.applicationName + version.applicationId;
+    // NUL sorts before any character of a name (Postgres text cannot contain it), so a name that
+    // is a prefix of another still sorts first.
+    const key = `${version.applicationName}\u0000${version.applicationId}`;
     const group = grouped.get(key);
     if (group) {
       group.push(version);

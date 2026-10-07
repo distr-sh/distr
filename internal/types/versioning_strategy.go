@@ -77,7 +77,9 @@ func SortApplicationVersions(strategy VersioningStrategy, versions []Application
 func SortAdvisoryApplicationVersions(versions []AdvisoryApplicationVersion) {
 	grouped := make(map[string][]AdvisoryApplicationVersion)
 	for _, version := range versions {
-		key := version.ApplicationName + version.ApplicationID.String()
+		// NUL sorts before any character of a name (Postgres text cannot contain it), so a name that
+		// is a prefix of another still sorts first.
+		key := version.ApplicationName + "\x00" + version.ApplicationID.String()
 		grouped[key] = append(grouped[key], version)
 	}
 	result := make([]AdvisoryApplicationVersion, 0, len(versions))

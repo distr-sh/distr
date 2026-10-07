@@ -272,6 +272,39 @@ func TestSortAdvisoryApplicationVersionsUsesEachApplicationsStrategy(t *testing.
 	g.Expect(advisoryNames(versions)).To(Equal([]string{"Alpha 2.0.0", "Alpha 1.0.0", "Bravo 1.9.0", "Bravo 1.10.0"}))
 }
 
+func TestSortAdvisoryApplicationVersionsOrdersApplicationNamesThatArePrefixesOfEachOther(t *testing.T) {
+	g := NewWithT(t)
+	base := time.Now()
+	// "App" gets the highest id, so its name and id concatenated sort after "App 2" and "AppB".
+	app := uuid.MustParse("ffffffff-ffff-ffff-ffff-ffffffffffff")
+	appTwo := uuid.MustParse("00000000-0000-0000-0000-000000000001")
+	appB := uuid.MustParse("00000000-0000-0000-0000-000000000002")
+	versions := []AdvisoryApplicationVersion{
+		advisoryVersion(appB, "AppB", VersioningStrategySemver, "1.0.0", base),
+		advisoryVersion(appTwo, "App 2", VersioningStrategySemver, "1.0.0", base),
+		advisoryVersion(app, "App", VersioningStrategySemver, "1.0.0", base),
+	}
+
+	SortAdvisoryApplicationVersions(versions)
+	g.Expect(advisoryNames(versions)).To(Equal([]string{"App 1.0.0", "App 2 1.0.0", "AppB 1.0.0"}))
+}
+
+func TestSortAdvisoryApplicationVersionsKeepsApplicationsWithTheSameNameApart(t *testing.T) {
+	g := NewWithT(t)
+	base := time.Now()
+	first := uuid.MustParse("11111111-1111-1111-1111-111111111111")
+	second := uuid.MustParse("22222222-2222-2222-2222-222222222222")
+	versions := []AdvisoryApplicationVersion{
+		advisoryVersion(second, "App", VersioningStrategyChronological, "2.0.0", base),
+		advisoryVersion(first, "App", VersioningStrategySemver, "1.10.0", base),
+		advisoryVersion(second, "App", VersioningStrategyChronological, "1.0.0", base.Add(time.Minute)),
+		advisoryVersion(first, "App", VersioningStrategySemver, "1.9.0", base.Add(time.Minute)),
+	}
+
+	SortAdvisoryApplicationVersions(versions)
+	g.Expect(advisoryNames(versions)).To(Equal([]string{"App 1.9.0", "App 1.10.0", "App 2.0.0", "App 1.0.0"}))
+}
+
 func TestValidateVersionsForStrategy(t *testing.T) {
 	g := NewWithT(t)
 	base := time.Now()
