@@ -332,13 +332,21 @@ func DeleteDeploymentTargetWithID(ctx context.Context, id uuid.UUID) error {
 	}
 }
 
-func UpdateDeploymentTargetAccess(ctx context.Context, dt *types.DeploymentTarget, orgID uuid.UUID) error {
+// UpdateDeploymentTargetPendingAccess replaces the pending secret and leaves the active one untouched, so the agent
+// using it keeps working until the new secret is used to log in.
+func UpdateDeploymentTargetPendingAccess(ctx context.Context, dt *types.DeploymentTarget, orgID uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		"UPDATE DeploymentTarget AS dt SET access_key_salt = @accessKeySalt, access_key_hash = @accessKeyHash "+
+		"UPDATE DeploymentTarget AS dt "+
+			"SET pending_access_key_salt = @pendingAccessKeySalt, pending_access_key_hash = @pendingAccessKeyHash "+
 			"WHERE id = @id AND organization_id = @orgId RETURNING "+
 			deploymentTargetOutputExprBase,
-		pgx.NamedArgs{"accessKeySalt": dt.AccessKeySalt, "accessKeyHash": dt.AccessKeyHash, "id": dt.ID, "orgId": orgID})
+		pgx.NamedArgs{
+			"pendingAccessKeySalt": dt.PendingAccessKeySalt,
+			"pendingAccessKeyHash": dt.PendingAccessKeyHash,
+			"id":                   dt.ID,
+			"orgId":                orgID,
+		})
 	if err != nil {
 		return fmt.Errorf("could not update DeploymentTarget: %w", err)
 	} else if updated, err := pgx.CollectExactlyOneRow(
