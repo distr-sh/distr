@@ -158,9 +158,11 @@
                     class="distr-checkbox"
                     [formControl]="editConfigForm.controls.artifactIds.controls[artifact.id]" />
                   <app-artifact-logo class="size-6 shrink-0" [imageUrl]="artifact.imageUrl" />
-                  <span class="truncate">{{ artifact.name }}</span>
                   @if (artifact.upstreamUrl) {
+                    <span class="truncate distr-text-muted">{{ artifact.name }}</span>
                     <span class="distr-tag-badge">pull-through</span>
+                  } @else {
+                    <span class="truncate">{{ artifact.name }}</span>
                   }
                 </label>
               } @empty {
