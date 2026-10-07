@@ -351,6 +351,28 @@ func UpdateDeploymentTargetAccess(ctx context.Context, dt *types.DeploymentTarge
 	}
 }
 
+// PromoteDeploymentTargetPendingAccessKey makes the pending secret the active one. It returns
+// [apierrors.ErrNotFound] if the pending secret no longer has the given hash, i.e. it was replaced after the caller
+// verified it.
+func PromoteDeploymentTargetPendingAccessKey(ctx context.Context, id uuid.UUID, pendingAccessKeyHash []byte) error {
+	db := internalctx.GetDb(ctx)
+	if cmd, err := db.Exec(ctx,
+		`UPDATE DeploymentTarget SET
+			access_key_salt = pending_access_key_salt,
+			access_key_hash = pending_access_key_hash,
+			pending_access_key_salt = NULL,
+			pending_access_key_hash = NULL
+		WHERE id = @id AND pending_access_key_hash = @pendingAccessKeyHash`,
+		pgx.NamedArgs{"id": id, "pendingAccessKeyHash": pendingAccessKeyHash},
+	); err != nil {
+		return fmt.Errorf("could not promote pending access key: %w", err)
+	} else if cmd.RowsAffected() == 0 {
+		return apierrors.ErrNotFound
+	} else {
+		return nil
+	}
+}
+
 func UpdateDeploymentTargetReportedAgentVersionID(
 	ctx context.Context,
 	dt *types.DeploymentTargetFull,
