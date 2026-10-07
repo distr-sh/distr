@@ -240,6 +240,7 @@ func GetApplicationEntitlementsWithOrganizationID(
 	if result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ApplicationEntitlement]); err != nil {
 		return nil, fmt.Errorf("could not collect ApplicationEntitlement: %w", err)
 	} else {
+		sortApplicationEntitlementsVersions(result)
 		return result, nil
 	}
 }
@@ -271,6 +272,7 @@ func GetApplicationEntitlementsWithCustomerOrganizationID(
 	if result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ApplicationEntitlement]); err != nil {
 		return nil, fmt.Errorf("could not collect ApplicationEntitlement: %w", err)
 	} else {
+		sortApplicationEntitlementsVersions(result)
 		return result, nil
 	}
 }
@@ -301,6 +303,7 @@ func GetApplicationEntitlementsByPartnerOrgID(
 	if result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ApplicationEntitlement]); err != nil {
 		return nil, fmt.Errorf("could not collect ApplicationEntitlement: %w", err)
 	} else {
+		sortApplicationEntitlementsVersions(result)
 		return result, nil
 	}
 }
@@ -326,8 +329,19 @@ func GetApplicationEntitlementByID(ctx context.Context, id uuid.UUID) (*types.Ap
 		}
 		return nil, fmt.Errorf("could not collect ApplicationEntitlement: %w", err)
 	} else {
+		sortApplicationEntitlementVersions(&result)
 		return &result, nil
 	}
+}
+
+func sortApplicationEntitlementsVersions(entitlements []types.ApplicationEntitlement) {
+	for i := range entitlements {
+		sortApplicationEntitlementVersions(&entitlements[i])
+	}
+}
+
+func sortApplicationEntitlementVersions(entitlement *types.ApplicationEntitlement) {
+	types.SortApplicationVersions(entitlement.Application.VersioningStrategy, entitlement.Versions)
 }
 
 func SetApplicationEntitlementVersions(ctx context.Context, entitlementID uuid.UUID, versionIDs []uuid.UUID) error {

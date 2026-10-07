@@ -13,6 +13,7 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faArrowLeft, faPen, faUpRightFromSquare} from '@fortawesome/free-solid-svg-icons';
 import {catchError, firstValueFrom, map, of, startWith, Subject, switchMap, take} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {sortAdvisoryApplicationVersions} from '../../util/versions';
 import {ApplicationPreviewComponent} from '../applications/components';
 import {ArtifactPreviewComponent} from '../artifacts/components';
 import {
@@ -113,11 +114,14 @@ export class AdvisoryDetailComponent {
     }))
   );
 
+  private readonly sortedApplicationVersions = computed(() =>
+    sortAdvisoryApplicationVersions(this.advisory()?.applicationVersions ?? [])
+  );
   protected readonly affectedApplicationVersions = computed(() =>
-    (this.advisory()?.applicationVersions ?? []).filter((v) => v.relation === 'affected')
+    this.sortedApplicationVersions().filter((v) => v.relation === 'affected')
   );
   protected readonly patchedApplicationVersions = computed(() =>
-    (this.advisory()?.applicationVersions ?? []).filter((v) => v.relation === 'patched')
+    this.sortedApplicationVersions().filter((v) => v.relation === 'patched')
   );
   protected readonly affectedArtifactVersions = computed(() =>
     (this.advisory()?.artifactVersions ?? []).filter((v) => v.relation === 'affected')

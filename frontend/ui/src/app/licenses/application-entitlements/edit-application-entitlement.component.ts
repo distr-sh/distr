@@ -40,6 +40,7 @@ import {
 import dayjs from 'dayjs';
 import {combineLatestWith, filter, first, firstValueFrom, Subject, switchMap, takeUntil} from 'rxjs';
 import {isArchived} from '../../../util/dates';
+import {sortApplicationVersions} from '../../../util/versions';
 import {ExpiresAtPickerComponent} from '../../components/expires-at-picker/expires-at-picker.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ApplicationsService} from '../../services/applications.service';
@@ -204,7 +205,7 @@ export class EditApplicationEntitlementComponent
         filter((a) => a !== undefined)
       )
       .subscribe((selectedApp) => {
-        const allVersions = selectedApp.versions ?? [];
+        const allVersions = sortApplicationVersions(selectedApp.versioningStrategy, selectedApp.versions ?? []);
         const activeVersions = allVersions.filter((v) => !isArchived(v));
         const archivedVersions = allVersions.filter((v) => isArchived(v));
 

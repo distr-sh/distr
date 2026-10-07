@@ -1,4 +1,10 @@
-import {Application, ApplicationVersion, DeploymentWithLatestRevision, VersioningStrategy} from '@distr-sh/distr-sdk';
+import {
+  AdvisoryApplicationVersion,
+  Application,
+  ApplicationVersion,
+  DeploymentWithLatestRevision,
+  VersioningStrategy,
+} from '@distr-sh/distr-sdk';
 import {SemVer} from 'semver';
 import {isArchived} from './dates';
 
@@ -38,6 +44,48 @@ export function applicationVersionComparator(
 
 function compareByCreationDate(a: ApplicationVersion, b: ApplicationVersion): number {
   return (a.createdAt ?? '').localeCompare(b.createdAt ?? '');
+}
+
+/**
+ * Returns a new array ordered by the application's versioning strategy. Pass the full version set
+ * as `allVersions` when sorting a subset so legacy/semver match the backend comparator. Defaults
+ * to descending (newest / highest first) for UI lists.
+ */
+export function sortApplicationVersions(
+  strategy: VersioningStrategy | undefined,
+  versions: ApplicationVersion[],
+  allVersions: ApplicationVersion[] = versions,
+  direction: 'asc' | 'desc' = 'desc'
+): ApplicationVersion[] {
+  const compare = applicationVersionComparator(strategy, allVersions);
+  return [...versions].sort((a, b) => (direction === 'desc' ? compare(b, a) : compare(a, b)));
+}
+
+/**
+ * Orders advisory version rows by application name, then by each application's versioning
+ * strategy (descending, like other UI lists). The comparator is built once per application.
+ */
+export function sortAdvisoryApplicationVersions(versions: AdvisoryApplicationVersion[]): AdvisoryApplicationVersion[] {
+  const grouped = new Map<string, AdvisoryApplicationVersion[]>();
+  for (const version of versions) {
+    // NUL sorts before any character of a name (Postgres text cannot contain it), so a name that
+    // is a prefix of another still sorts first.
+    const key = `${version.applicationName}\u0000${version.applicationId}`;
+    const group = grouped.get(key);
+    if (group) {
+      group.push(version);
+    } else {
+      grouped.set(key, [version]);
+    }
+  }
+  return [...grouped.keys()].sort().flatMap((key) => {
+    const group = grouped.get(key)!;
+    const compare = applicationVersionComparator(
+      group[0].applicationVersioningStrategy,
+      group.map((version) => version.applicationVersion)
+    );
+    return [...group].sort((a, b) => compare(b.applicationVersion, a.applicationVersion));
+  });
 }
 
 /**

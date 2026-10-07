@@ -32,15 +32,15 @@
 
 ---
 
-### applicationVersionId
+### applicationVersion
 
-> **applicationVersionId**: `string`
+> **applicationVersion**: [`ApplicationVersion`](ApplicationVersion.md)
 
 ---
 
-### applicationVersionName
+### applicationVersioningStrategy
 
-> **applicationVersionName**: `string`
+> **applicationVersioningStrategy**: [`VersioningStrategy`](../type-aliases/VersioningStrategy.md)
 
 ---
 
