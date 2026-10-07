@@ -13,6 +13,7 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, firstValueFrom, map, of, shareReplay, startWith, Subject, switchMap} from 'rxjs';
 import {compareBy} from '../../util/arrays';
+import {isExpired} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {checkedIds, checkedRecord} from '../../util/formRecord';
 import {validateRecordAtLeast} from '../../util/validation';
@@ -171,7 +172,7 @@ export class UpdateNotificationsComponent {
       ? undefined
       : new Set(
           entitlements
-            .filter((it) => it.customerOrganizationId === this.customerOrganizationId() && !isExpired(it.expiresAt))
+            .filter((it) => it.customerOrganizationId === this.customerOrganizationId() && !isExpired(it))
             .map((it) => it.applicationId!)
         );
   });
@@ -181,7 +182,7 @@ export class UpdateNotificationsComponent {
       ? undefined
       : new Set(
           entitlements
-            .filter((it) => it.customerOrganizationId === this.customerOrganizationId() && !isExpired(it.expiresAt))
+            .filter((it) => it.customerOrganizationId === this.customerOrganizationId() && !isExpired(it))
             .flatMap((it) => (it.artifacts ?? []).map((artifact) => artifact.artifactId))
         );
   });
@@ -401,10 +402,6 @@ function removeControlsExcept(record: FormRecord<FormControl<boolean>>, ids: str
       record.removeControl(id, {emitEvent: false});
     }
   }
-}
-
-function isExpired(expiresAt?: Date): boolean {
-  return expiresAt !== undefined && new Date(expiresAt).getTime() <= Date.now();
 }
 
 function validateAnyTarget(control: AbstractControl): ValidationErrors | null {
