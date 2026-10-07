@@ -14,7 +14,7 @@ services:
   # distr app and registry hostnames via ACME. It only joins the "proxy" network
   # and therefore has no route to the loki service.
   caddy:
-    image: 'caddy:2.11.4-alpine'
+    image: 'caddy:2.11.7-alpine'
     depends_on:
       - distr
     environment:
