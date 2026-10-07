@@ -1,6 +1,7 @@
 package notification
 
 import (
+	"slices"
 	"testing"
 	"time"
 
@@ -15,6 +16,8 @@ func TestDeploymentsBehind(t *testing.T) {
 	v210 := types.ApplicationVersion{ID: uuid.New(), Name: "2.1.0", CreatedAt: base.Add(time.Hour)}
 	// A bugfix for the 2.0 line, released after 2.1.0.
 	v205 := types.ApplicationVersion{ID: uuid.New(), Name: "2.0.5", CreatedAt: base.Add(2 * time.Hour)}
+	nightly := types.ApplicationVersion{ID: uuid.New(), Name: "nightly", CreatedAt: base.Add(-time.Hour)}
+	semverOnly := []types.ApplicationVersion{v200, v210, v205}
 
 	deployments := []types.DeploymentPendingUpdate{
 		{DeploymentTargetName: "on-2.0.0", CurrentVersionID: v200.ID},
@@ -22,20 +25,43 @@ func TestDeploymentsBehind(t *testing.T) {
 	}
 
 	tests := []struct {
+		name     string
 		strategy types.VersioningStrategy
+		versions []types.ApplicationVersion
 		want     []string
 	}{
-		{strategy: types.VersioningStrategySemver, want: []string{"on-2.0.0"}},
-		// Under the chronological strategy the bugfix is the newest version, so both are behind it.
-		{strategy: types.VersioningStrategyChronological, want: []string{"on-2.0.0", "on-2.1.0"}},
+		{
+			name:     "semver",
+			strategy: types.VersioningStrategySemver,
+			versions: semverOnly,
+			want:     []string{"on-2.0.0"},
+		},
+		{
+			name:     "the bugfix is the newest version by creation date",
+			strategy: types.VersioningStrategyChronological,
+			versions: semverOnly,
+			want:     []string{"on-2.0.0", "on-2.1.0"},
+		},
+		{
+			name:     "legacy orders by SemVer while every name parses",
+			strategy: types.VersioningStrategyLegacy,
+			versions: semverOnly,
+			want:     []string{"on-2.0.0"},
+		},
+		{
+			name:     "legacy orders by creation date once any name does not parse",
+			strategy: types.VersioningStrategyLegacy,
+			versions: slices.Concat(semverOnly, []types.ApplicationVersion{nightly}),
+			want:     []string{"on-2.0.0", "on-2.1.0"},
+		},
 	}
 
 	for _, tt := range tests {
-		t.Run(string(tt.strategy), func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			g := NewWithT(t)
 			application := types.Application{
 				VersioningStrategy: tt.strategy,
-				Versions:           []types.ApplicationVersion{v200, v210, v205},
+				Versions:           tt.versions,
 			}
 			g.Expect(targetNames(deploymentsBehind(application, v205, deployments))).To(Equal(tt.want))
 		})
