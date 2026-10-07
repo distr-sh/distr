@@ -20,6 +20,8 @@ const (
 		dt.type,
 		dt.access_key_salt,
 		dt.access_key_hash,
+		dt.pending_access_key_salt,
+		dt.pending_access_key_hash,
 		dt.namespace,
 		dt.scope,
 		dt.organization_id,

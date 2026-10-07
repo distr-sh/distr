@@ -21,6 +21,8 @@ type DeploymentTarget struct {
 	Type                    DeploymentType             `db:"type" json:"type"`
 	AccessKeySalt           *[]byte                    `db:"access_key_salt" json:"-"`
 	AccessKeyHash           *[]byte                    `db:"access_key_hash" json:"-"`
+	PendingAccessKeySalt    *[]byte                    `db:"pending_access_key_salt" json:"-"`
+	PendingAccessKeyHash    *[]byte                    `db:"pending_access_key_hash" json:"-"`
 	Namespace               *string                    `db:"namespace" json:"namespace,omitempty"`
 	Scope                   *DeploymentTargetScope     `db:"scope" json:"scope,omitempty"`
 	OrganizationID          uuid.UUID                  `db:"organization_id" json:"-"`
