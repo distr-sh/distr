@@ -271,7 +271,8 @@ func DeleteArtifactEntitlementsWithOrganizationSubscriptionType(
 }
 
 // GetArtifactVersionEntitlement returns which customer organizations may know that the given
-// artifact version exists. An entitlement for the whole artifact covers every version, and one
+// artifact version exists. Every customer may know about a public artifact, as the registry lets
+// them pull it. An entitlement for the whole artifact covers every version, and one
 // for a version that resolves to the same content covers it too, be that a sibling tag or an index
 // the version is part of.
 func GetArtifactVersionEntitlement(
@@ -283,11 +284,11 @@ func GetArtifactVersionEntitlement(
 	var result types.GetArtifactVersionEntitlementResult
 	gatedRows, err := db.Query(
 		ctx,
-		`SELECT EXISTS (
-			SELECT 1 FROM ArtifactEntitlement ae
-			JOIN Artifact a ON a.organization_id = ae.organization_id
-			WHERE a.id = @artifactID
-		)`,
+		`SELECT NOT a.public AND EXISTS (
+			SELECT 1 FROM ArtifactEntitlement ae WHERE ae.organization_id = a.organization_id
+		)
+		FROM Artifact a
+		WHERE a.id = @artifactID`,
 		pgx.NamedArgs{"artifactID": artifactID},
 	)
 	if err != nil {
