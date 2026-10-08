@@ -20,6 +20,7 @@ const (
 var (
 	ErrInvalidPassword  = errors.New("invalid password")
 	ErrInvalidAccessKey = errors.New("invalid accessKey")
+	ErrNoAccessKey      = errors.New("no accessKey")
 )
 
 func HashPassword(userAccount *types.UserAccount) error {
@@ -56,6 +57,23 @@ func VerifyAccessKey(accessKeySalt []byte, accessKeyHash []byte, accessKeySecret
 	} else {
 		return nil
 	}
+}
+
+// VerifyDeploymentTargetAccessKey accepts the active and the pending secret of a deployment target and reports
+// whether the pending one matched.
+func VerifyDeploymentTargetAccessKey(dt types.DeploymentTarget, accessKeySecret string) (pending bool, err error) {
+	hasActive := dt.AccessKeySalt != nil && dt.AccessKeyHash != nil
+	hasPending := dt.PendingAccessKeySalt != nil && dt.PendingAccessKeyHash != nil
+	if !hasActive && !hasPending {
+		return false, ErrNoAccessKey
+	}
+	if hasActive && VerifyAccessKey(*dt.AccessKeySalt, *dt.AccessKeyHash, accessKeySecret) == nil {
+		return false, nil
+	}
+	if hasPending && VerifyAccessKey(*dt.PendingAccessKeySalt, *dt.PendingAccessKeyHash, accessKeySecret) == nil {
+		return true, nil
+	}
+	return false, ErrInvalidAccessKey
 }
 
 func generateHash(password string, salt []byte) []byte {

@@ -108,6 +108,12 @@
 
 ---
 
+### reconnectPending?
+
+> `optional` **reconnectPending?**: `boolean`
+
+---
+
 ### reportedAgentVersionId?
 
 > `optional` **reportedAgentVersionId?**: `string`

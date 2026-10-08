@@ -20,6 +20,9 @@ const (
 		dt.type,
 		dt.access_key_salt,
 		dt.access_key_hash,
+		dt.pending_access_key_salt,
+		dt.pending_access_key_hash,
+		dt.reported_agent_version_id IS NOT NULL AND dt.pending_access_key_hash IS NOT NULL,
 		dt.namespace,
 		dt.scope,
 		dt.organization_id,
@@ -330,13 +333,21 @@ func DeleteDeploymentTargetWithID(ctx context.Context, id uuid.UUID) error {
 	}
 }
 
-func UpdateDeploymentTargetAccess(ctx context.Context, dt *types.DeploymentTarget, orgID uuid.UUID) error {
+// UpdateDeploymentTargetPendingAccess replaces the pending secret and leaves the active one untouched, so the agent
+// using it keeps working until the new secret is used to log in.
+func UpdateDeploymentTargetPendingAccess(ctx context.Context, dt *types.DeploymentTarget, orgID uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		"UPDATE DeploymentTarget AS dt SET access_key_salt = @accessKeySalt, access_key_hash = @accessKeyHash "+
+		"UPDATE DeploymentTarget AS dt "+
+			"SET pending_access_key_salt = @pendingAccessKeySalt, pending_access_key_hash = @pendingAccessKeyHash "+
 			"WHERE id = @id AND organization_id = @orgId RETURNING "+
 			deploymentTargetOutputExprBase,
-		pgx.NamedArgs{"accessKeySalt": dt.AccessKeySalt, "accessKeyHash": dt.AccessKeyHash, "id": dt.ID, "orgId": orgID})
+		pgx.NamedArgs{
+			"pendingAccessKeySalt": dt.PendingAccessKeySalt,
+			"pendingAccessKeyHash": dt.PendingAccessKeyHash,
+			"id":                   dt.ID,
+			"orgId":                orgID,
+		})
 	if err != nil {
 		return fmt.Errorf("could not update DeploymentTarget: %w", err)
 	} else if updated, err := pgx.CollectExactlyOneRow(
@@ -345,6 +356,28 @@ func UpdateDeploymentTargetAccess(ctx context.Context, dt *types.DeploymentTarge
 		return fmt.Errorf("could not get updated DeploymentTarget: %w", err)
 	} else {
 		*dt = updated
+		return nil
+	}
+}
+
+// PromoteDeploymentTargetPendingAccessKey makes the pending secret the active one. It returns
+// [apierrors.ErrNotFound] if the pending secret no longer has the given hash, i.e. it was replaced after the caller
+// verified it.
+func PromoteDeploymentTargetPendingAccessKey(ctx context.Context, id uuid.UUID, pendingAccessKeyHash []byte) error {
+	db := internalctx.GetDb(ctx)
+	if cmd, err := db.Exec(ctx,
+		`UPDATE DeploymentTarget SET
+			access_key_salt = pending_access_key_salt,
+			access_key_hash = pending_access_key_hash,
+			pending_access_key_salt = NULL,
+			pending_access_key_hash = NULL
+		WHERE id = @id AND pending_access_key_hash = @pendingAccessKeyHash`,
+		pgx.NamedArgs{"id": id, "pendingAccessKeyHash": pendingAccessKeyHash},
+	); err != nil {
+		return fmt.Errorf("could not promote pending access key: %w", err)
+	} else if cmd.RowsAffected() == 0 {
+		return apierrors.ErrNotFound
+	} else {
 		return nil
 	}
 }
