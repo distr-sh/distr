@@ -32,8 +32,10 @@ func TestVerifyDeploymentTargetAccessKey(t *testing.T) {
 	t.Run("accepts the active secret when no reconnect is pending", func(t *testing.T) {
 		g := NewWithT(t)
 		dt := types.DeploymentTarget{AccessKeySalt: &activeSalt, AccessKeyHash: &activeHash}
-		g.Expect(security.VerifyDeploymentTargetAccessKey(dt, "active")).To(BeFalse())
-		_, err := security.VerifyDeploymentTargetAccessKey(dt, "pending")
+		pending, err := security.VerifyDeploymentTargetAccessKey(dt, "active")
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(pending).To(BeFalse())
+		_, err = security.VerifyDeploymentTargetAccessKey(dt, "pending")
 		g.Expect(err).To(MatchError(security.ErrInvalidAccessKey))
 	})
 
@@ -43,16 +45,22 @@ func TestVerifyDeploymentTargetAccessKey(t *testing.T) {
 			AccessKeySalt: &activeSalt, AccessKeyHash: &activeHash,
 			PendingAccessKeySalt: &pendingSalt, PendingAccessKeyHash: &pendingHash,
 		}
-		g.Expect(security.VerifyDeploymentTargetAccessKey(dt, "active")).To(BeFalse())
-		g.Expect(security.VerifyDeploymentTargetAccessKey(dt, "pending")).To(BeTrue())
-		_, err := security.VerifyDeploymentTargetAccessKey(dt, "wrong")
+		pending, err := security.VerifyDeploymentTargetAccessKey(dt, "active")
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(pending).To(BeFalse())
+		pending, err = security.VerifyDeploymentTargetAccessKey(dt, "pending")
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(pending).To(BeTrue())
+		_, err = security.VerifyDeploymentTargetAccessKey(dt, "wrong")
 		g.Expect(err).To(MatchError(security.ErrInvalidAccessKey))
 	})
 
 	t.Run("accepts the pending secret of a target that never connected", func(t *testing.T) {
 		g := NewWithT(t)
 		dt := types.DeploymentTarget{PendingAccessKeySalt: &pendingSalt, PendingAccessKeyHash: &pendingHash}
-		g.Expect(security.VerifyDeploymentTargetAccessKey(dt, "pending")).To(BeTrue())
+		pending, err := security.VerifyDeploymentTargetAccessKey(dt, "pending")
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(pending).To(BeTrue())
 	})
 
 	t.Run("rejects every secret of a target without secrets", func(t *testing.T) {
