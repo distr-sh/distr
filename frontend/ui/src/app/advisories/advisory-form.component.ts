@@ -18,6 +18,7 @@ import {getFormDisplayedError} from '../../util/errors';
 import {sortApplicationVersions} from '../../util/versions';
 import {ApplicationLogoComponent} from '../applications/components';
 import {ArtifactLogoComponent, ArtifactsHashComponent} from '../artifacts/components';
+import {PillTabBarComponent} from '../components/pill-tab-bar.component';
 import {TabBarComponent, TabItem} from '../components/tab-bar.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
@@ -73,6 +74,7 @@ export interface AdvisoryFormDraft {
     NgPlural,
     NgPluralCase,
     TabBarComponent,
+    PillTabBarComponent,
   ],
 })
 export class AdvisoryFormComponent {
@@ -139,6 +141,10 @@ export class AdvisoryFormComponent {
   protected readonly expandedArtifactId = signal<string | null>(null);
   protected readonly artifactVersions = signal<Record<string, TaggedArtifactVersion[]>>({});
   protected readonly loadingArtifactIds = signal<ReadonlySet<string>>(new Set());
+  protected readonly versionsTabs: TabItem<'applications' | 'artifacts'>[] = [
+    {id: 'applications', label: 'Applications'},
+    {id: 'artifacts', label: 'Artifacts'},
+  ];
   protected readonly versionsTab = signal<'applications' | 'artifacts'>('applications');
 
   protected readonly selectedCount = computed(

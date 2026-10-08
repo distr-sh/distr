@@ -1,94 +1,113 @@
-<app-page>
-  <div class="distr-table-panel">
-    <div class="overflow-x-auto">
-      <table class="distr-table">
-        <thead class="distr-table-head">
-          <tr>
-            <th scope="col" class="p-4">Date</th>
-            <th scope="col" class="p-4">Customer</th>
-            <th scope="col" class="p-4">Deployment</th>
-            <th scope="col" class="p-4">Application</th>
-            <th scope="col" class="p-4">Trigger</th>
-            <th scope="col" class="p-4">Notification Errors</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (record of notificationRecords(); track record.id) {
-            <tr class="distr-table-row">
-              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                {{ record.createdAt | date: 'short' }}
-              </td>
-              <td
-                class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
-                @if (record.customerOrganizationName) {
-                  {{ record.customerOrganizationName }}
-                } @else {
-                  <span class="text-gray-500">-</span>
-                }
-              </td>
-              <td
-                class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
-                {{ record.deploymentTargetName }}
-              </td>
-              <td
-                class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
-                @if (record.applicationName) {
-                  {{ record.applicationName }}@{{ record.applicationVersionName }}
-                } @else {
-                  <span class="text-gray-500">-</span>
-                }
-              </td>
-              <td
-                class="px-4 py-3 font-medium text-gray-900 whitespace-pre-wrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
-                @switch (record.type) {
-                  @case ('alert') {
-                    <span class="text-red-500">Alert:</span>
-                  }
-                  @case ('warning') {
-                    <span class="text-yellow-500 dark:text-yellow-300">Warning:</span>
-                  }
-                  @case ('resolved') {
-                    <span class="text-green-500">Resolved:</span>
-                  }
-                }
+<div class="overflow-x-auto">
+  <table class="distr-table">
+    <thead class="distr-table-head">
+      <tr>
+        <th scope="col" class="p-4">Date</th>
+        <th scope="col" class="p-4">Type</th>
+        <th scope="col" class="p-4">Customer</th>
+        <th scope="col" class="p-4">Subject</th>
+        <th scope="col" class="p-4">Trigger</th>
+        <th scope="col" class="p-4">Notification Errors</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (record of rows(); track record.id) {
+        <tr class="distr-table-row">
+          <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+            {{ record.createdAt | date: 'short' }}
+          </td>
+          <td class="px-4 py-3 whitespace-nowrap">
+            @switch (record.type) {
+              @case ('update_available') {
+                <span
+                  class="distr-status-badge bg-blue-100 text-blue-800 border-blue-400 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-800">
+                  Update
+                </span>
+              }
+              @default {
+                <span
+                  class="distr-status-badge bg-orange-100 text-orange-800 border-orange-400 dark:bg-orange-900 dark:text-orange-300 dark:border-orange-800">
+                  Alert
+                </span>
+              }
+            }
+          </td>
+          <td
+            class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
+            [title]="record.customerNamesTitle">
+            @if (record.customerNames) {
+              {{ record.customerNames }}
+            } @else {
+              <span class="text-gray-500">-</span>
+            }
+          </td>
+          <td
+            class="px-4 py-3 font-medium text-gray-900 dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
+            @if (record.artifactVersionId) {
+              {{ record.artifactName }}:{{ record.artifactVersionName }}
+            } @else if (record.updateNotificationConfigurationId) {
+              {{ record.applicationName }}@{{ record.applicationVersionName }}
+            } @else {
+              {{ record.deploymentTargetName }}
+              @if (record.applicationName) {
+                &middot; {{ record.applicationName }}@{{ record.applicationVersionName }}
+              }
+            }
+          </td>
+          <td
+            class="px-4 py-3 font-medium text-gray-900 whitespace-pre-wrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
+            @switch (record.type) {
+              @case ('alert') {
+                <span class="text-red-500">Alert:</span>
+              }
+              @case ('warning') {
+                <span class="text-yellow-500 dark:text-yellow-300">Warning:</span>
+              }
+              @case ('resolved') {
+                <span class="text-green-500">Resolved:</span>
+              }
+              @case ('update_available') {
+                <span class="text-primary-600 dark:text-primary-400">Update available:</span>
+              }
+            }
 
-                @if (record.deploymentStatusMessage !== undefined) {
-                  {{ record.deploymentStatusMessage }}
-                } @else if (record.currentDeploymentTargetMetrics; as m) {
-                  @switch (record.metricType) {
-                    @case ('cpu') {
-                      CPU utilization is {{ m.cpuUsage | percent }}
-                    }
-                    @case ('memory') {
-                      Memory utilization is {{ m.memoryUsage | percent }}
-                    }
-                    @case ('disk') {
-                      @for (d of m.diskMetrics; track d.device + ':' + d.path) {
-                        @if (d.device === record.diskDevice && d.path === record.diskPath) {
-                          @if (d.bytesTotal > 0) {
-                            Disk utilization is {{ d.bytesUsed / d.bytesTotal | percent }}
-                          } @else {
-                            Disk utilization is N/A
-                          }
-                        }
+            @if (record.type === 'update_available') {
+              Version {{ record.applicationVersionName ?? record.artifactVersionName }} is available
+            } @else if (record.deploymentStatusMessage !== undefined) {
+              {{ record.deploymentStatusMessage }}
+            } @else if (record.currentDeploymentTargetMetrics; as m) {
+              @switch (record.metricType) {
+                @case ('cpu') {
+                  CPU utilization is {{ m.cpuUsage | percent }}
+                }
+                @case ('memory') {
+                  Memory utilization is {{ m.memoryUsage | percent }}
+                }
+                @case ('disk') {
+                  @for (d of m.diskMetrics; track d.device + ':' + d.path) {
+                    @if (d.device === record.diskDevice && d.path === record.diskPath) {
+                      @if (d.bytesTotal > 0) {
+                        Disk utilization is {{ d.bytesUsed / d.bytesTotal | percent }}
+                      } @else {
+                        Disk utilization is N/A
                       }
                     }
                   }
-                } @else {
-                  Stale
                 }
-              </td>
-              <td class="px-4 py-3 font-medium text-gray-900 whitespace-pre-wrap dark:text-white">
-                @if (record.deliveryError; as m) {
-                  <div>{{ m }}</div>
-                } @else {
-                  <span class="text-gray-500">-</span>
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </div>
-</app-page>
+              }
+            } @else {
+              Stale
+            }
+          </td>
+          <td class="px-4 py-3 font-medium text-gray-900 whitespace-pre-wrap dark:text-white">
+            @if (record.deliveryError; as deliveryError) {
+              <div>{{ deliveryError }}</div>
+            } @else {
+              <span class="text-gray-500">-</span>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

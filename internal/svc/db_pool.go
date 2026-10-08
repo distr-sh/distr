@@ -88,6 +88,7 @@ func (reg *Registry) createDBPoolFor(ctx context.Context, url string, maxConns *
 			"_ADVISORY_SEVERITY",
 			"ADVISORY_VERSION_RELATION",
 			"ADVISORY_EVENT_TYPE",
+			"NOTIFICATION_RECORD_TYPE",
 			"VERSIONING_STRATEGY",
 			"_VERSIONING_STRATEGY",
 		}
