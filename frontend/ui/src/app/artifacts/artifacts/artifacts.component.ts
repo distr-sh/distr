@@ -65,7 +65,6 @@ export class ArtifactsComponent {
   protected readonly faXmark = faXmark;
   protected readonly faLightbulb = faLightbulb;
   protected readonly faUserCircle = faUserCircle;
-
   protected readonly filterForm = new FormGroup({
     search: this.fb.control(''),
   });

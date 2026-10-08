@@ -8,17 +8,21 @@ import (
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/distr-sh/distr/internal/util"
 )
 
 type DbAuthInfo struct {
 	AuthInfo
-	user *types.UserAccount
-	org  *types.OrganizationWithBranding
+	user        *types.UserAccount
+	org         *types.OrganizationWithBranding
+	customerOrg *types.CustomerOrganization
 }
 
 func (a DbAuthInfo) CurrentUser() *types.UserAccount {
 	return a.user
+}
+
+func (a DbAuthInfo) CurrentCustomerOrg() *types.CustomerOrganization {
+	return a.customerOrg
 }
 
 func (a DbAuthInfo) CurrentOrg() *types.Organization {
@@ -69,7 +73,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 			}
 			// Regular users: require org membership and validate role
 			if a.CurrentUserRole() != nil {
-				if u, o, err := db.GetUserAccountAndOrg(
+				if m, err := db.GetOrganizationMembership(
 					ctx,
 					a.CurrentUserID(),
 					*a.CurrentOrgID(),
@@ -77,7 +81,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 					return nil, authn.ErrBadAuthentication
 				} else if err != nil {
 					return nil, err
-				} else if a.CurrentUserRole().GreaterThan(u.UserRole) {
+				} else if a.CurrentUserRole().GreaterThan(m.User.UserRole) {
 					// The role carried by the credential must never exceed the
 					// user's current role in the organization. Equal-or-below is
 					// fine (e.g. a PAT scoped to a lower role); above means the
@@ -89,8 +93,8 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 							userID:                 a.CurrentUserID(),
 							userEmail:              a.CurrentUserEmail(),
 							organizationID:         a.CurrentOrgID(),
-							customerOrganizationID: u.CustomerOrganizationID,
-							partnerOrganizationID:  u.PartnerOrganizationID,
+							customerOrganizationID: m.User.CustomerOrganizationID,
+							partnerOrganizationID:  m.User.PartnerOrganizationID,
 							emailVerified:          a.CurrentUserEmailVerified(),
 							tokenScope:             a.TokenScope(),
 							isAccessToken:          a.IsAccessToken(),
@@ -99,8 +103,9 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 							isSuperAdmin:           false,
 							rawToken:               a.Token(),
 						},
-						user: util.PtrTo(u.AsUserAccount()),
-						org:  o,
+						user:        new(m.User.AsUserAccount()),
+						org:         &m.Organization,
+						customerOrg: m.CustomerOrganization,
 					}, nil
 				}
 			}

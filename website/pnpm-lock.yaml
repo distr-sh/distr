@@ -7,153 +7,153 @@ importers:
     configDependencies: {}
     packageManagerDependencies:
       pnpm:
-        specifier: 12.9.1
-        version: 12.9.1
+        specifier: 12.10.1
+        version: 12.10.1
 
 packages:
 
-  '@pnpm/exe.android-arm64@12.9.1':
-    resolution: {integrity: sha512-Hgm1XdqMTfBC8PdGLL+NjZWv4xyi7D6XNrN9fb24XGYlyTBmUtdCefKnCLmHujShRD8BEO1zqM30SNcKBDLysw==}
+  '@pnpm/exe.android-arm64@12.10.1':
+    resolution: {integrity: sha512-CVTlHPwNvadQCJD9bGSMzWIhFX8QpjtqC2c27dhdnn/9iKzEjZ3qL62o3gHpKbIuo6qn4WxTKRoaokgNdReBig==}
     cpu: [arm64]
     os: [android]
 
-  '@pnpm/exe.android-x64@12.9.1':
-    resolution: {integrity: sha512-WDGCe6jZRVZP3RC/q6hOkZylkPkIQIi1/GcrR/d/YzbihhAHXCczrk+UYnV5TgbsEnAYO7Cx+2rX3nfhHvy24w==}
+  '@pnpm/exe.android-x64@12.10.1':
+    resolution: {integrity: sha512-NFiYLIaodY7da0XIebwcU3JoP7IK/lzF7zgKSSP+9H+QcFnQ1GDfBkuBKCYJzZ+Xu0WH54neIPLBBCaOjaaauA==}
     cpu: [x64]
     os: [android]
 
-  '@pnpm/exe.darwin-arm64@12.9.1':
-    resolution: {integrity: sha512-+7iiEEBgYN9szPWUnAuN6eOVMTI6Hrki5bcuC9n9xl9tTnT53Tpxpo45Hml+W4IrAU0d+Tmd0sPnVIbX59PD6w==}
+  '@pnpm/exe.darwin-arm64@12.10.1':
+    resolution: {integrity: sha512-0O8tdQ8ijlPJudXspLMTcitMkdBEz6uUflazL5uQE0WMs85oQIp0U+5hfEktMFB64QqEhjqlvvujTwbzdr9oMg==}
     cpu: [arm64]
     os: [darwin]
 
-  '@pnpm/exe.darwin-x64@12.9.1':
-    resolution: {integrity: sha512-SK7TxJiR12GbJZGffRFHItkc+Mx+99v6xMMJ9/X//8NwWV1wo17a2bwfGI8qZpl17YwsrmPEFOOqhzE1GIlrtQ==}
+  '@pnpm/exe.darwin-x64@12.10.1':
+    resolution: {integrity: sha512-ud+1/uZOKEo8P/AsPynOJc/LNwfI0j6WwCElibj71rU9l4nIBnsSn+wWTIPZPkZ4BBSH5+82azSnAARMyJ1lNA==}
     cpu: [x64]
     os: [darwin]
 
-  '@pnpm/exe.freebsd-x64@12.9.1':
-    resolution: {integrity: sha512-4AjLk6uvTs2iO6wMit2hcxJ2M32xb7OV5SNFk+w6G8/NzcjcMB7ENEpyeXyLiP0kcnp8uaCGUct2NfrLCJ35eQ==}
+  '@pnpm/exe.freebsd-x64@12.10.1':
+    resolution: {integrity: sha512-mj9PE5rf8uAfQQ2K66HSATMSut+lNiB4eSqFd5+azFVCMnxNSy/32xpZQJT21PhnN3Y4qbK+iKHe5nWAxSuRhw==}
     cpu: [x64]
     os: [freebsd]
 
-  '@pnpm/exe.linux-arm64-musl@12.9.1':
-    resolution: {integrity: sha512-dZL2ES1ckDWM9v+EtxoOklZ0WNdtayooi9iLiDUubopudX3zXPNR2mlrxBRgjbDgECOndQen2SmyxL5eZiBuKw==}
+  '@pnpm/exe.linux-arm64-musl@12.10.1':
+    resolution: {integrity: sha512-xba+00wZJ8Um6rBJJjWl88uJj0tydB8dtomvjlCLvi0uL32vpa9CRP8Vv26FIXvbiZ1bo2RCzYt/eChxJVV52w==}
     cpu: [arm64]
     os: [linux]
     libc: [musl]
 
-  '@pnpm/exe.linux-arm64@12.9.1':
-    resolution: {integrity: sha512-cx+uF6xqwEtm7B8NV+1ve0xBg9gcuzQZ5R+0WgOWvKG/h978UljS6BgWs1ipIGuGgUdeVhm3PKmBltXIcczLXA==}
+  '@pnpm/exe.linux-arm64@12.10.1':
+    resolution: {integrity: sha512-oBdMp69ScC9UnniG4qZAQVr2fBDSXjm4yk/72vkEVyrlwS23yMxcRQl7Qdo3sgXPAygY6TWnPRKm4rXzjoyW7w==}
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  '@pnpm/exe.linux-ppc64@12.9.1':
-    resolution: {integrity: sha512-MpjPsy4XR17zAtLziQZfsN+wveWa/bUJggZtwfo3+SuyRmXnSvVkFD4+v8/3RTWyYaM6mwLUTjZDJ+g3urL+ew==}
+  '@pnpm/exe.linux-ppc64@12.10.1':
+    resolution: {integrity: sha512-Yyb3wu09h3c7mLme270uHFiVaAIUHC411Ru9LIU2BKUIstrGlXa9OqqVWoXaRgYRdFdOFknkwG7GNn6ygwLbnw==}
     cpu: [ppc64]
     os: [linux]
     libc: [glibc]
 
-  '@pnpm/exe.linux-riscv64@12.9.1':
-    resolution: {integrity: sha512-Oo67TKqqH+Bno+L6X7Xyorwp1QG82zKIkL0vbo1x2kcPTDiyPbdM+d6lIs4+hzeB1KHT5FDoGzZj2dad7Ft+eg==}
+  '@pnpm/exe.linux-riscv64@12.10.1':
+    resolution: {integrity: sha512-PdkeUFFkybknnGkWP0H22eMpIiS4OZXL5BcQzF4lh+vmrW3IaC2HOkbANKgot/PKO0Kl77pzA/6PKFxgbgfXIQ==}
     cpu: [riscv64]
     os: [linux]
     libc: [glibc]
 
-  '@pnpm/exe.linux-s390x@12.9.1':
-    resolution: {integrity: sha512-QAD5FRCdW36HfD58BV7DoDm6z8yv+GgSqcUV1+ERwYjpVQuG6ZTpf5o0x3KDas8eTLIW7MLYVdDdlAurWeArEg==}
+  '@pnpm/exe.linux-s390x@12.10.1':
+    resolution: {integrity: sha512-1okKuHKJwJPAbofDxfhZWAUxEWtee4ZSf7Pah8kcvocaJkf2WxFJ5KVTiNIvDml5GLidDQsgf7Pcf/WHbCak7Q==}
     cpu: [s390x]
     os: [linux]
     libc: [glibc]
 
-  '@pnpm/exe.linux-x64-musl@12.9.1':
-    resolution: {integrity: sha512-mQDhBsGqcTkrLQM4q5igmRFcr6EAl4UM/FGawY+0CWGcqPpUmYUvDy9LHy80xxkHIWVJ886gvvso2XOjfav1Jw==}
+  '@pnpm/exe.linux-x64-musl@12.10.1':
+    resolution: {integrity: sha512-e6IqzVNkPa7srFKJKnY23uWJ+qz0LaRWiTUo/sHfFXRRMRzB5uNOr6qWWip/jqhdGwU91n9J7LrEYZ6e0tRczw==}
     cpu: [x64]
     os: [linux]
     libc: [musl]
 
-  '@pnpm/exe.linux-x64@12.9.1':
-    resolution: {integrity: sha512-+M5N74hM4fc87AAckxx/UIW+dUnWf2eko+HchJs/NZUxehLhekNyMI/GNaNXlvd+kWR+97XXBD51XRkkNiUtrA==}
+  '@pnpm/exe.linux-x64@12.10.1':
+    resolution: {integrity: sha512-ZByV0DRgWzGaDSjT5ddRBASdwz+r/qPMYh7o6RGmPQjtRGNFbSl94xY2DcAM8mqCOZJUUDtAXQ+wpBXcdpKlkg==}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
 
-  '@pnpm/exe.win32-arm64@12.9.1':
-    resolution: {integrity: sha512-mI28C2wxobrDi6x1OYhBRyG10hnDq/4sEIyy5RzoX6LB4kLuv6K/d25HOpMwlW20cuM4M72k9NZpOdcmUxMbEA==}
+  '@pnpm/exe.win32-arm64@12.10.1':
+    resolution: {integrity: sha512-I7QZHcjioG7orFeCRUFUHByJ1G0zFPnAlaGGyrUvb6MGkv5oeNwNPl7t+Gp+7zHfnMcgLGJ1a+Wfim0IDw3lOw==}
     cpu: [arm64]
     os: [win32]
 
-  '@pnpm/exe.win32-x64@12.9.1':
-    resolution: {integrity: sha512-SWoDMT0oD7NrDSIoPpkKD09D9fAQKNjwFZ3lezlCUhAfXxMv70zsfrNT2/P+GoCK2kefXF9OysUZkH1l5vvvfA==}
+  '@pnpm/exe.win32-x64@12.10.1':
+    resolution: {integrity: sha512-4WJFdp58EKlCj0zLobrXU0vpszSZIr4X/3y/uNbAQqGW0zE+VdruZB0gFc3L2kzsUzVwTYbaCn+XEhnCYSAlTg==}
     cpu: [x64]
     os: [win32]
 
-  pnpm@12.9.1:
-    resolution: {integrity: sha512-BrBV//XNINwSeB3hc87TMQzglRvy7GICEaFgRdVETVyTpmMhB2TvKaZTphBFm6A2jw50+E2AxUcjz5Wq57wNbQ==}
+  pnpm@12.10.1:
+    resolution: {integrity: sha512-ukCjfrGjcNYP6oxM8dNkwTvMzvUY6YrSvO6VT1OdONo3RY5YJho/pV4GUjRQ6g//+fSXsTW+QfLBXBZCusrObA==}
     engines: {node: '>=18.*'}
     hasBin: true
 
 snapshots:
 
-  '@pnpm/exe.android-arm64@12.9.1':
+  '@pnpm/exe.android-arm64@12.10.1':
     optional: true
 
-  '@pnpm/exe.android-x64@12.9.1':
+  '@pnpm/exe.android-x64@12.10.1':
     optional: true
 
-  '@pnpm/exe.darwin-arm64@12.9.1':
+  '@pnpm/exe.darwin-arm64@12.10.1':
     optional: true
 
-  '@pnpm/exe.darwin-x64@12.9.1':
+  '@pnpm/exe.darwin-x64@12.10.1':
     optional: true
 
-  '@pnpm/exe.freebsd-x64@12.9.1':
+  '@pnpm/exe.freebsd-x64@12.10.1':
     optional: true
 
-  '@pnpm/exe.linux-arm64-musl@12.9.1':
+  '@pnpm/exe.linux-arm64-musl@12.10.1':
     optional: true
 
-  '@pnpm/exe.linux-arm64@12.9.1':
+  '@pnpm/exe.linux-arm64@12.10.1':
     optional: true
 
-  '@pnpm/exe.linux-ppc64@12.9.1':
+  '@pnpm/exe.linux-ppc64@12.10.1':
     optional: true
 
-  '@pnpm/exe.linux-riscv64@12.9.1':
+  '@pnpm/exe.linux-riscv64@12.10.1':
     optional: true
 
-  '@pnpm/exe.linux-s390x@12.9.1':
+  '@pnpm/exe.linux-s390x@12.10.1':
     optional: true
 
-  '@pnpm/exe.linux-x64-musl@12.9.1':
+  '@pnpm/exe.linux-x64-musl@12.10.1':
     optional: true
 
-  '@pnpm/exe.linux-x64@12.9.1':
+  '@pnpm/exe.linux-x64@12.10.1':
     optional: true
 
-  '@pnpm/exe.win32-arm64@12.9.1':
+  '@pnpm/exe.win32-arm64@12.10.1':
     optional: true
 
-  '@pnpm/exe.win32-x64@12.9.1':
+  '@pnpm/exe.win32-x64@12.10.1':
     optional: true
 
-  pnpm@12.9.1:
+  pnpm@12.10.1:
     optionalDependencies:
-      '@pnpm/exe.android-arm64': 12.9.1
-      '@pnpm/exe.android-x64': 12.9.1
-      '@pnpm/exe.darwin-arm64': 12.9.1
-      '@pnpm/exe.darwin-x64': 12.9.1
-      '@pnpm/exe.freebsd-x64': 12.9.1
-      '@pnpm/exe.linux-arm64': 12.9.1
-      '@pnpm/exe.linux-arm64-musl': 12.9.1
-      '@pnpm/exe.linux-ppc64': 12.9.1
-      '@pnpm/exe.linux-riscv64': 12.9.1
-      '@pnpm/exe.linux-s390x': 12.9.1
-      '@pnpm/exe.linux-x64': 12.9.1
-      '@pnpm/exe.linux-x64-musl': 12.9.1
-      '@pnpm/exe.win32-arm64': 12.9.1
-      '@pnpm/exe.win32-x64': 12.9.1
+      '@pnpm/exe.android-arm64': 12.10.1
+      '@pnpm/exe.android-x64': 12.10.1
+      '@pnpm/exe.darwin-arm64': 12.10.1
+      '@pnpm/exe.darwin-x64': 12.10.1
+      '@pnpm/exe.freebsd-x64': 12.10.1
+      '@pnpm/exe.linux-arm64': 12.10.1
+      '@pnpm/exe.linux-arm64-musl': 12.10.1
+      '@pnpm/exe.linux-ppc64': 12.10.1
+      '@pnpm/exe.linux-riscv64': 12.10.1
+      '@pnpm/exe.linux-s390x': 12.10.1
+      '@pnpm/exe.linux-x64': 12.10.1
+      '@pnpm/exe.linux-x64-musl': 12.10.1
+      '@pnpm/exe.win32-arm64': 12.10.1
+      '@pnpm/exe.win32-x64': 12.10.1
 
 ---
 lockfileVersion: '9.0'
@@ -192,10 +192,10 @@ importers:
         version: 5.3.0
       '@iconify-json/lucide':
         specifier: ^1.2.132
-        version: 1.2.138
+        version: 1.2.140
       '@iconify-json/simple-icons':
         specifier: ^1.2.96
-        version: 1.2.98
+        version: 1.2.99
       '@tailwindcss/vite':
         specifier: ^4.3.3
         version: 4.3.3(vite@8.3.0(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
@@ -216,7 +216,7 @@ importers:
         version: 2.33.1
       marked:
         specifier: ^18.0.13
-        version: 18.0.14
+        version: 18.1.0
       mermaid:
         specifier: ^11.17.2
         version: 11.17.2
@@ -253,7 +253,7 @@ importers:
         version: 0.9.10(prettier-plugin-astro@0.14.1)(prettier@3.9.9)(typescript@6.0.3)
       baseline-browser-mapping:
         specifier: ^2.11.23
-        version: 2.11.26
+        version: 2.11.27
       prettier:
         specifier: ^3.9.6
         version: 3.9.9
@@ -803,11 +803,11 @@ packages:
     resolution: {integrity: sha512-JUOtgFW6k9u4Y+xeIaEiLr3+cjoUPiAuLXoyKOJSia6Duzb7pq+A76P9ZdPDoAoxHdHzq6gE9/jKBGXlZT8FbA==}
     engines: {node: '>=6'}
 
-  '@iconify-json/lucide@1.2.138':
-    resolution: {integrity: sha512-+J5+/6HOZsN6sG5PGNxGLcB0UCJtKrH2TPTNeSeXukRzR1C9QRocHaFjLRhoc14zE+XS2ss1i7QWPfunKpYHaQ==}
+  '@iconify-json/lucide@1.2.140':
+    resolution: {integrity: sha512-/br6j8K8IFcZscs7gJ20PWaaonQeA4jcGK0Bdt+4EDra2Zbtpb36RGaGOJr5opz6zJtXaZdMCYCXa0dN/y4c0g==}
 
-  '@iconify-json/simple-icons@1.2.98':
-    resolution: {integrity: sha512-35CEBG1H/3nsohVgJaRWtOZ/P5syRTL++ZXTISdQSC76o1mAFXngFoSm9EOnnBiDApKPu8WN/DY+z69yCycL9A==}
+  '@iconify-json/simple-icons@1.2.99':
+    resolution: {integrity: sha512-kouZhqvUoNdxEe+lZksbJJZMCZv4b4Ob62O1GW3fcpz/I0mVPzM+9/Qf/DUuv5ns8l6c46D8M/ubhJjjbLp9HQ==}
 
   '@iconify/tools@5.0.14':
     resolution: {integrity: sha512-wJ4ZE3/HZh2iBqLwG+8FOMHe7CMJAJqwSXZSpPwMdj1gZM3Z4t2hbQMVw4Vm45oQ985qn0g89PUIcDEdKTheBA==}
@@ -1606,8 +1606,8 @@ packages:
   bail@2.0.2:
     resolution: {integrity: sha512-0xO6mYd7JB2YesxDKplafRpsiOzPt9V02ddPCLbY1xYGPOX24NTyN50qnUxgCPcSoYMhKpAuBTjQoRZCAkUDRw==}
 
-  baseline-browser-mapping@2.11.26:
-    resolution: {integrity: sha512-GLQdD3y6UF8iVuMJl5fHgE4jdn/ua7n+toKfLgNlg3BqQtOZjpy68T8Tup8/wGWZCDlm7KMg7tPb4MPn7oN0TQ==}
+  baseline-browser-mapping@2.11.27:
+    resolution: {integrity: sha512-ElY12DaROGuan+lMmZ8Cvo/ZUbXPe7Enc/9VU/b1T3Kp4dwytRcNdR8DoSJN5SNJT/CuvcCA0DHDVmMOCePdRQ==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -2515,8 +2515,8 @@ packages:
     engines: {node: '>= 20'}
     hasBin: true
 
-  marked@18.0.14:
-    resolution: {integrity: sha512-mBHK6FBHuBAlhgRe88w9F0O1AbwwXJUcQibUbC/QcdTbVGAD7aWza+xt3N6oT/jCZx3/OMeS+8rnuiHZcQ9s7A==}
+  marked@18.1.0:
+    resolution: {integrity: sha512-PamYXWWWg2nboG3oX5Ffzpy3EFZROqZJK9hSlMmUnekp7TxPs5DcT95vwd46m73/exfKCRVMtgXoPMI4FEJL6w==}
     engines: {node: '>= 20'}
     hasBin: true
 
@@ -4134,11 +4134,11 @@ snapshots:
 
   '@fortawesome/fontawesome-free@6.7.2': {}
 
-  '@iconify-json/lucide@1.2.138':
+  '@iconify-json/lucide@1.2.140':
     dependencies:
       '@iconify/types': 2.0.0
 
-  '@iconify-json/simple-icons@1.2.98':
+  '@iconify-json/simple-icons@1.2.99':
     dependencies:
       '@iconify/types': 2.0.0
 
@@ -4962,7 +4962,7 @@ snapshots:
 
   bail@2.0.2: {}
 
-  baseline-browser-mapping@2.11.26: {}
+  baseline-browser-mapping@2.11.27: {}
 
   bcp-47-match@2.0.3: {}
 
@@ -4976,7 +4976,7 @@ snapshots:
 
   browserslist@4.28.9:
     dependencies:
-      baseline-browser-mapping: 2.11.26
+      baseline-browser-mapping: 2.11.27
       caniuse-lite: 1.0.30001810
       electron-to-chromium: 1.5.427
       node-releases: 2.0.55
@@ -5929,7 +5929,7 @@ snapshots:
 
   marked@16.4.2: {}
 
-  marked@18.0.14: {}
+  marked@18.1.0: {}
 
   mdast-util-definitions@6.0.0:
     dependencies:

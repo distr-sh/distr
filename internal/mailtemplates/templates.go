@@ -14,7 +14,6 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 )
 
@@ -61,14 +60,22 @@ func parse(fsys fs.FS, patterns ...string) (*template.Template, error) {
 // BrandingLogoDataURL loads the branding logo file and returns it as a base64 data URL, so it can be
 // embedded directly into e-mails (the file endpoint requires authentication and can not be linked to).
 func BrandingLogoDataURL(ctx context.Context, branding *types.OrganizationBranding) *string {
-	if branding == nil || branding.LogoImageID == nil {
+	if branding == nil {
 		return nil
 	}
-	file, err := db.GetFileWithID(ctx, *branding.LogoImageID)
+	return fileDataURL(ctx, branding.LogoImageID)
+}
+
+func fileDataURL(ctx context.Context, imageID *uuid.UUID) *string {
+	if imageID == nil {
+		return nil
+	}
+	file, err := db.GetFileWithID(ctx, *imageID)
 	if err != nil {
 		return nil
 	}
-	return util.PtrTo(fmt.Sprintf("data:%s;base64,%s", file.ContentType, base64.StdEncoding.EncodeToString(file.Data)))
+	dataURL := fmt.Sprintf("data:%s;base64,%s", file.ContentType, base64.StdEncoding.EncodeToString(file.Data))
+	return &dataURL
 }
 
 func InviteUser(
@@ -217,6 +224,54 @@ func deploymentTargetMetricsNotification(
 		"Threshold":        threshold,
 		"UsagePercent":     usagePercent,
 	}
+}
+
+func ApplicationUpdateAvailableNotification(
+	ctx context.Context,
+	recipient types.NotificationRecipient,
+	organization types.OrganizationWithBranding,
+	application types.NotificationApplication,
+	versionName string,
+	deployments []types.DeploymentPendingUpdate,
+) (*template.Template, any) {
+	return templates.Lookup("application-update-notification.html"), map[string]any{
+		"UserAccount":   recipient,
+		"Organization":  organization,
+		"Host":          notificationHost(ctx, organization, recipient),
+		"LogoDataUrl":   BrandingLogoDataURL(ctx, organization.Branding),
+		"Application":   application,
+		"VersionName":   versionName,
+		"Deployments":   deployments,
+		"ShowCustomers": recipient.CustomerOrganizationID == nil,
+	}
+}
+
+func ArtifactVersionAvailableNotification(
+	ctx context.Context,
+	recipient types.NotificationRecipient,
+	organization types.OrganizationWithBranding,
+	artifact types.NotificationArtifact,
+	versionName string,
+) (*template.Template, any) {
+	return templates.Lookup("artifact-version-notification.html"), map[string]any{
+		"UserAccount":  recipient,
+		"Organization": organization,
+		"Host":         notificationHost(ctx, organization, recipient),
+		"LogoDataUrl":  BrandingLogoDataURL(ctx, organization.Branding),
+		"Artifact":     artifact,
+		"VersionName":  versionName,
+	}
+}
+
+// notificationHost resolves the host a recipient reaches this organization on. A vendor or partner
+// recipient has no customer organization, in which case the resolver falls back to the app domain.
+func notificationHost(
+	ctx context.Context,
+	organization types.OrganizationWithBranding,
+	recipient types.NotificationRecipient,
+) string {
+	return customdomains.CustomerPortalDomainOrDefault(
+		ctx, organization.ID, recipient.CustomerOrganizationID, organization.Branding)
 }
 
 func DeploymentStatusNotificationError(

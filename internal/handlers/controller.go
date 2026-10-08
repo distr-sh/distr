@@ -167,7 +167,7 @@ func controllerLoginHandler() func(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "targetId is not a valid UUID", http.StatusBadRequest)
 		} else if limiter.RespondOnLimit(w, r, targetID) {
 			return
-		} else if deploymentTarget, err := getVerifiedDeploymentTarget(ctx, parsedTargetID, targetSecret); err != nil {
+		} else if deploymentTarget, err := getVerifiedDeploymentTarget(ctx, parsedTargetID, targetSecret, true); err != nil {
 			if errors.Is(err, apierrors.ErrUnauthorized) {
 				log.Info("controller unauthorized", zap.Error(err), zap.String("deploymentTargetId", targetID))
 				http.Error(w, err.Error(), http.StatusUnauthorized)
@@ -609,7 +609,7 @@ func queryAuthDeploymentTargetCtxMiddleware(next http.Handler) http.Handler {
 
 		if limiter.RespondOnLimit(w, r, targetID.String()) {
 			return
-		} else if deploymentTarget, err := getVerifiedDeploymentTarget(ctx, targetID, targetSecret); err != nil {
+		} else if deploymentTarget, err := getVerifiedDeploymentTarget(ctx, targetID, targetSecret, false); err != nil {
 			if errors.Is(err, apierrors.ErrUnauthorized) {
 				log.Info("controller unauthorized", zap.Error(err), zap.Stringer("deploymentTargetId", targetID))
 				http.Error(w, err.Error(), http.StatusUnauthorized)
@@ -697,18 +697,34 @@ func getVerifiedDeploymentTarget(
 	ctx context.Context,
 	targetID uuid.UUID,
 	targetSecret string,
+	promotePendingAccessKey bool,
 ) (*types.DeploymentTargetFull, error) {
-	if deploymentTarget, err := db.GetDeploymentTarget(ctx, targetID, nil, nil); err != nil {
+	deploymentTarget, err := db.GetDeploymentTarget(ctx, targetID, nil, nil)
+	if err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			return nil, fmt.Errorf("%w: %w", apierrors.ErrUnauthorized, err)
 		}
 		return nil, fmt.Errorf("failed to get deployment target from DB: %w", err)
-	} else if deploymentTarget.AccessKeySalt == nil || deploymentTarget.AccessKeyHash == nil {
-		return nil, fmt.Errorf("%w: deployment target does not have key and salt", apierrors.ErrUnauthorized)
-	} else if err := security.VerifyAccessKey(
-		*deploymentTarget.AccessKeySalt, *deploymentTarget.AccessKeyHash, targetSecret); err != nil {
-		return nil, fmt.Errorf("%w: failed to verify access: %w", apierrors.ErrUnauthorized, err)
-	} else {
-		return deploymentTarget, nil
 	}
+
+	pending, err := security.VerifyDeploymentTargetAccessKey(deploymentTarget.DeploymentTarget, targetSecret)
+	if errors.Is(err, security.ErrNoAccessKey) {
+		return nil, fmt.Errorf("%w: deployment target does not have key and salt", apierrors.ErrUnauthorized)
+	} else if err != nil {
+		return nil, fmt.Errorf("%w: failed to verify access: %w", apierrors.ErrUnauthorized, err)
+	}
+
+	if pending && promotePendingAccessKey {
+		if err := db.PromoteDeploymentTargetPendingAccessKey(
+			ctx, deploymentTarget.ID, *deploymentTarget.PendingAccessKeyHash,
+		); errors.Is(err, apierrors.ErrNotFound) {
+			return nil, fmt.Errorf("%w: pending access key was replaced", apierrors.ErrUnauthorized)
+		} else if err != nil {
+			return nil, err
+		}
+		internalctx.GetLogger(ctx).Info("pending access key promoted",
+			zap.Stringer("deploymentTargetId", deploymentTarget.ID))
+	}
+
+	return deploymentTarget, nil
 }

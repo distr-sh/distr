@@ -118,6 +118,12 @@ Use [DeploymentTarget.controllerVersion](#controllerversion) instead.
 
 ---
 
+### reconnectPending?
+
+> `optional` **reconnectPending?**: `boolean`
+
+---
+
 ### ~~reportedAgentVersionId?~~
 
 > `optional` **reportedAgentVersionId?**: `string`

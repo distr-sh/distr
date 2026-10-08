@@ -16,6 +16,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/notification"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/distr-sh/distr/internal/validation"
@@ -553,6 +554,10 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
 	} else {
+		notification.Dispatch(ctx, func(ctx context.Context) error {
+			return notification.SendApplicationUpdateAvailableNotifications(ctx, applicationVersion)
+		})
+
 		RespondJSON(w, applicationVersionMapper(ctx)(applicationVersion))
 	}
 }

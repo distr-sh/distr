@@ -392,6 +392,8 @@ export default defineConfig({
     '/docs/agents/secrets/': '/docs/controllers/secrets/',
     '/docs/agents/alerts/': '/docs/controllers/alerts/',
     '/docs/agents/logs-and-metrics/': '/docs/controllers/logs-and-metrics/',
+    '/docs/agents/update-notifications/':
+      '/docs/controllers/update-notifications/',
 
     // Integration redirects
     '/docs/integrations/mcp/': '/docs/integrations/',

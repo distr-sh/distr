@@ -47,4 +47,6 @@ type AuthInfoWithOrganization interface {
 type AuthInfoWithUserAndOrganization interface {
 	AuthInfoWithOrganization
 	CurrentUser() *types.UserAccount
+	// CurrentCustomerOrg is nil for every member of the vendor or a partner organization.
+	CurrentCustomerOrg() *types.CustomerOrganization
 }

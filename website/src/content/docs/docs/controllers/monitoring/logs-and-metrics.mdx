@@ -178,20 +178,26 @@ Reconnect generates a new connection command for a deployment target. Use it whe
 To reconnect:
 
 1. Click the **⋮** menu on the deployment target and select **Reconnect**.
-2. Review the warning and confirm. **The previous credentials are invalidated the moment you confirm.** There is no undo.
+2. Review the message and confirm. Distr issues a new secret next to the current one.
 3. Copy the new command and run it on the deployment host.
+
+Until a controller connects to Distr with the new secret, the deployment target shows a **Reconnect pending** badge next to its name. The current secret stays valid during that time, so the running controller keeps working. Once a controller has connected with the new secret, the previous one is invalidated and the badge disappears.
+
+If you reconnect again while a reconnect is pending, the new command replaces the unused one, which stops working. The current secret stays valid.
 
 Reconnecting does not affect your running deployments. If your application was running before the reconnect, it continues running. The controller only manages the connection back to Distr, not the application lifecycle.
 
 <Aside type="caution">
-  **The new secret replaces the old one immediately on confirm.** The existing
-  controller will lose its ability to authenticate until the new command is run
-  on the host.
+  **The previous secret stops working once a controller has connected with the
+  new one.** A controller still running with the previous secret keeps working
+  until it restarts or its session expires, which takes at most 24 hours by
+  default. After that, it can no longer authenticate.
 
 If you use an automated bootstrap script (for example, a cloud-init script,
 an EC2 Auto Scaling launch template, or any script that runs the controller
 install command on startup), you must update that script with the new command
-before new instances launch. Instances using the old command will fail to connect.
+before new instances launch. Instances using the old command fail to connect
+once the reconnect is complete.
 
 </Aside>
 
@@ -208,7 +214,7 @@ Open the **⋮** menu on the deployment target and select **Controller Logs**. L
 If you have access to the deployment host:
 
 1. Click **Reconnect** in the **⋮** menu.
-2. Confirm. A new `targetSecret` is generated and the old one is invalidated immediately.
+2. Confirm. A new `targetSecret` is generated. The old one stays valid until a controller connects with the new one.
 3. Run the new install command on the deployment host to re-establish the connection.
 
 If you do not have direct access to the deployment host, ask the customer to reconnect from the [Customer Portal](/docs/platform/customer-portal/deployments/). They will find the same **⋮** menu and **Reconnect** option in their deployment target view.
@@ -217,6 +223,7 @@ If you do not have direct access to the deployment host, ask the customer to rec
   **If you use an automated bootstrap script** (e.g. a cloud-init script, an EC2
   Auto Scaling launch template, or any script that installs the controller on
   startup), make sure to update it with the new command after reconnecting. The
-  old command contains the previous `targetSecret`, which is now invalid. New
-  instances launched with the old command will fail to connect.
+  old command contains the previous `targetSecret`, which stops working once a
+  controller has connected with the new one. New instances launched with the old
+  command then fail to connect.
 </Aside>

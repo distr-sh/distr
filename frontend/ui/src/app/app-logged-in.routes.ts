@@ -1,13 +1,14 @@
 import {inject} from '@angular/core';
 import {CanActivateFn, Router, Routes} from '@angular/router';
-import {UserRole} from '@distr-sh/distr-sdk';
+import {CustomerOrganizationFeature, UserRole} from '@distr-sh/distr-sdk';
 import {firstValueFrom, map} from 'rxjs';
 import {getRemoteEnvironment} from '../env/remote';
 import {AccessTokenDetailComponent} from './access-tokens/access-token-detail.component';
 import {AccessTokensComponent} from './access-tokens/access-tokens.component';
 import {AdvisoryDetailComponent} from './advisories/advisory-detail.component';
 import {AdvisoryListComponent} from './advisories/advisory-list.component';
-import {AlertConfigurationsComponent} from './alert-configurations/alert-configurations.component';
+import {AlertConfigurationsPageComponent} from './alert-configurations/alert-configurations-page.component';
+import {CustomerAlertConfigurationsPageComponent} from './alert-configurations/customer-alert-configurations-page.component';
 import {ApplicationDetailComponent} from './applications/application-detail.component';
 import {ApplicationsPageComponent} from './applications/applications-page.component';
 import {ArtifactPullsComponent} from './artifacts/artifact-pulls/artifact-pulls.component';
@@ -28,7 +29,10 @@ import {DeploymentTargetsComponent} from './deployments/deployment-targets.compo
 import {CustomerLicenseDetailPageComponent} from './licenses/customer-license-detail-page.component';
 import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
 import {VendorLicenseDetailPageComponent} from './licenses/vendor-license-detail-page.component';
-import {NotificationRecordsComponent} from './notification-records/notification-records.component';
+import {CustomerUpdateNotificationsPageComponent} from './notification-configurations/customer-update-notifications-page.component';
+import {UpdateNotificationsPageComponent} from './notification-configurations/update-notifications-page.component';
+import {CustomerNotificationRecordsPageComponent} from './notification-records/customer-notification-records-page.component';
+import {NotificationRecordsPageComponent} from './notification-records/notification-records-page.component';
 import {OrganizationBrandingComponent} from './organization-branding/organization-branding.component';
 import {CustomEmailComponent} from './organization-settings/custom-email.component';
 import {CustomOidcComponent} from './organization-settings/custom-oidc.component';
@@ -90,6 +94,14 @@ const requireVendorOrPartner: CanActivateFn = () => {
   return inject(Router).createUrlTree(['/']);
 };
 
+const requireVendorOrCustomer: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  if (auth.isVendor() || auth.isCustomer()) {
+    return true;
+  }
+  return inject(Router).createUrlTree(['/']);
+};
+
 function licensingEnabledGuard(): CanActivateFn {
   return async () => {
     const featureFlags = inject(FeatureFlagService);
@@ -101,6 +113,20 @@ function notificationsEnabledGuard(): CanActivateFn {
   return async () => {
     const featureFlags = inject(FeatureFlagService);
     return await firstValueFrom(featureFlags.isNotificationsEnabled$);
+  };
+}
+
+/** Lets a customer through only when the vendor has granted any of the features. */
+function requireCustomerFeature(...features: CustomerOrganizationFeature[]): CanActivateFn {
+  return async () => {
+    const auth = inject(AuthService);
+    const context = inject(ContextService);
+    const router = inject(Router);
+    if (!auth.isCustomer()) {
+      return true;
+    }
+    const customerOrganization = await firstValueFrom(context.getCustomerOrganization());
+    return features.some((feature) => customerOrganization?.features.includes(feature)) || router.createUrlTree(['/']);
   };
 }
 
@@ -253,6 +279,21 @@ export const routes: Routes = [
           {path: 'users', component: CustomerUsersComponent},
           {path: 'secrets', component: CustomerSecretsPageComponent},
           {path: 'links', component: SidebarLinksPageComponent},
+          {
+            path: 'alerts',
+            component: CustomerAlertConfigurationsPageComponent,
+            canActivate: [notificationsEnabledGuard()],
+          },
+          {
+            path: 'updates',
+            component: CustomerUpdateNotificationsPageComponent,
+            canActivate: [notificationsEnabledGuard()],
+          },
+          {
+            path: 'notification-history',
+            component: CustomerNotificationRecordsPageComponent,
+            canActivate: [notificationsEnabledGuard()],
+          },
           {
             path: 'settings',
             component: CustomerSettingsComponent,
@@ -439,15 +480,22 @@ export const routes: Routes = [
       },
       {
         path: 'notifications',
-        canActivate: [notificationsEnabledGuard()],
+        canActivate: [requireVendorOrCustomer, notificationsEnabledGuard()],
         children: [
           {
             path: 'alert-configurations',
-            component: AlertConfigurationsComponent,
+            canActivate: [requireCustomerFeature('alerts')],
+            component: AlertConfigurationsPageComponent,
+          },
+          {
+            path: 'updates',
+            canActivate: [requireCustomerFeature('update_notifications')],
+            component: UpdateNotificationsPageComponent,
           },
           {
             path: 'history',
-            component: NotificationRecordsComponent,
+            canActivate: [requireCustomerFeature('alerts', 'update_notifications')],
+            component: NotificationRecordsPageComponent,
           },
         ],
       },

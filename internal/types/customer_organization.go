@@ -17,7 +17,10 @@ const (
 	CustomerOrganizationFeatureDeploymentTargets CustomerOrganizationFeature = "deployment_targets"
 	CustomerOrganizationFeatureArtifacts         CustomerOrganizationFeature = "artifacts"
 	CustomerOrganizationFeatureAlerts            CustomerOrganizationFeature = "alerts"
-	CustomerOrganizationFeatureSupportBundles    CustomerOrganizationFeature = "support_bundles"
+	// CustomerOrganizationFeatureUpdateNotifications lets the customer organization configure who
+	// of its own users hears about a new application or artifact version.
+	CustomerOrganizationFeatureUpdateNotifications CustomerOrganizationFeature = "update_notifications"
+	CustomerOrganizationFeatureSupportBundles      CustomerOrganizationFeature = "support_bundles"
 	// CustomerOrganizationFeatureOidcProviders lets admins of the customer organization
 	// configure their own portal domain and their own OIDC providers on it.
 	CustomerOrganizationFeatureOidcProviders CustomerOrganizationFeature = "oidc_providers"
@@ -31,6 +34,8 @@ func ParseCustomerOrganizationFeature(value string) (CustomerOrganizationFeature
 		return CustomerOrganizationFeatureArtifacts, nil
 	case string(CustomerOrganizationFeatureAlerts):
 		return CustomerOrganizationFeatureAlerts, nil
+	case string(CustomerOrganizationFeatureUpdateNotifications):
+		return CustomerOrganizationFeatureUpdateNotifications, nil
 	case string(CustomerOrganizationFeatureSupportBundles):
 		return CustomerOrganizationFeatureSupportBundles, nil
 	case string(CustomerOrganizationFeatureOidcProviders):

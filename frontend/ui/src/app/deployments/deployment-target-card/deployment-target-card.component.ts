@@ -626,7 +626,11 @@ export class DeploymentTargetCardComponent {
   protected async openInstructionsModal() {
     const dt = this.deploymentTarget();
     if (dt.reportedControllerVersionId !== undefined) {
-      const message = `If you continue, the previous authentication secret for ${dt.name} becomes invalid. Continue?`;
+      const message =
+        `If you continue, a new authentication secret for ${dt.name} is issued. ` +
+        'The current secret stays valid until a controller connects to Distr with the new one.' +
+        (dt.reconnectPending ? ' The connect command issued before becomes invalid.' : '') +
+        ' Continue?';
       const alert =
         dt.customerOrganization !== undefined && this.auth.isVendor()
           ? ({type: 'warning', message: this.customerManagedWarning} as const)

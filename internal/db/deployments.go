@@ -595,3 +595,60 @@ func GetDeploymentIDForRevisionID(ctx context.Context, revisionID uuid.UUID) (uu
 
 	return deploymentID, nil
 }
+
+// GetDeploymentsPendingUpdate returns the deployments of the given version's application that run
+// a different version of it and whose entitlement, if they were created with one, covers the given
+// version. Whether that version is older is left to the caller, since the ordering depends on the
+// application's versioning strategy.
+func GetDeploymentsPendingUpdate(
+	ctx context.Context,
+	applicationVersionID uuid.UUID,
+) ([]types.DeploymentPendingUpdate, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT
+			d.id AS deployment_id,
+			d.release_name,
+			dt.id AS deployment_target_id,
+			dt.name AS deployment_target_name,
+			dt.customer_organization_id,
+			co.name AS customer_organization_name,
+			co.partner_organization_id,
+			av.id AS current_version_id,
+			av.name AS current_version_name
+		FROM Deployment d
+			-- The latest revision rather than the current one: an automatic update has already
+			-- created a revision for the new version, and that deployment needs no notification.
+			JOIN DeploymentRevision dr ON dr.id = d.latest_deployment_revision_id
+			JOIN ApplicationVersion av ON av.id = dr.application_version_id
+			JOIN DeploymentTarget dt ON dt.id = d.deployment_target_id
+			LEFT JOIN CustomerOrganization co ON co.id = dt.customer_organization_id
+		WHERE av.application_id = (
+				SELECT application_id FROM ApplicationVersion WHERE id = @applicationVersionID
+			)
+			AND dr.application_version_id <> @applicationVersionID
+			AND (d.application_entitlement_id IS NULL OR EXISTS (
+				SELECT 1 FROM ApplicationEntitlement ae
+				WHERE ae.id = d.application_entitlement_id
+					AND (ae.expires_at IS NULL OR ae.expires_at > now())
+					AND (
+						NOT EXISTS (
+							SELECT 1 FROM ApplicationEntitlement_ApplicationVersion aeav
+							WHERE aeav.application_entitlement_id = ae.id
+						)
+						OR EXISTS (
+							SELECT 1 FROM ApplicationEntitlement_ApplicationVersion aeav
+							WHERE aeav.application_entitlement_id = ae.id
+								AND aeav.application_version_id = @applicationVersionID
+						)
+					)
+			))
+		ORDER BY co.name, dt.name`,
+		pgx.NamedArgs{"applicationVersionID": applicationVersionID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query deployments pending update: %w", err)
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[types.DeploymentPendingUpdate])
+}

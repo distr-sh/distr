@@ -26,11 +26,14 @@ const (
 	applicationVersionOutputExpr  = `av.id, av.created_at, av.archived_at, av.name, av.link_template, av.application_id,
 		av.chart_type, av.chart_name, av.chart_url, av.chart_version, ` + applicationVersionCreatorOutputExpr + `,
 		av.values_file_data, av.template_file_data, av.compose_file_data`
+	// Nested composites omit the file blobs. Field order must match types.ApplicationVersion
+	// through the creator columns, which pgx scans positionally.
+	applicationVersionNestedRowExpr = `row(av.id, av.created_at, av.archived_at, av.name, av.link_template,
+		av.application_id, av.chart_type, av.chart_name, av.chart_url, av.chart_version,
+		av.created_by_user_account_id, u.name, u.email, u.image_id)`
 	applicationWithVersionsOutputExpr = applicationOutputExpr + `,
 		coalesce((
-			SELECT array_agg(row(av.id, av.created_at, av.archived_at, av.name, av.link_template, av.application_id,
-				av.chart_type, av.chart_name, av.chart_url, av.chart_version, av.created_by_user_account_id,
-				u.name, u.email, u.image_id) ORDER BY av.created_at ASC)
+			SELECT array_agg(` + applicationVersionNestedRowExpr + ` ORDER BY av.created_at ASC)
 			FROM ApplicationVersion av` + applicationVersionCreatorJoin + `
 			WHERE av.application_id = a.id
 		), array[]::record[]) AS versions `

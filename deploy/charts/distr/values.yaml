@@ -268,6 +268,9 @@ distr:
 hub: {} # @schema deprecated
 
 # -- [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)
+# to add to the Distr Deployment, e.g. for controllers that restart it when a referenced Secret changes.
+deploymentAnnotations: {}
+# -- [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)
 # to add to the Distr pods.
 podAnnotations: {}
 # -- [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to
@@ -489,7 +492,7 @@ caddy:
     # storage module for `caddy.storage`.
     repository: caddy
     # -- Caddy image tag.
-    tag: 2.11.4-alpine # @schema type: [string, number]
+    tag: 2.11.7-alpine # @schema type: [string, number]
     # -- Caddy image pull policy.
     pullPolicy: IfNotPresent
   # -- E-mail address used for the ACME account.

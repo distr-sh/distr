@@ -1,0 +1,659 @@
+{
+  "releases": [
+    {
+      "version": "4.2.0",
+      "sections": [
+        {
+          "section": "Other",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "move health checks to a separate goroutine",
+              "commit": "20827bf",
+              "pr": 3337
+            },
+            {
+              "scope": "agent",
+              "description": "send \"progressing\" status immediately at the start of an operation",
+              "commit": "21d5157",
+              "pr": 3329
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "4.1.0",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "docker-agent",
+              "description": "forward docker library logs to distr",
+              "commit": "bfb72a0",
+              "pr": 3309
+            }
+          ]
+        },
+        {
+          "section": "Other",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "change docker/helm action default timeout to 10 minutes",
+              "commit": "e8b0105",
+              "pr": 3314
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "4.0.0",
+      "sections": [
+        {
+          "section": "Features",
+          "changes": [
+            {
+              "scope": "docker-agent",
+              "description": "add collecting container image and log storage usage",
+              "commit": "c873ec2",
+              "pr": 3206
+            }
+          ]
+        },
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "docker-agent",
+              "description": "add running container lifecycle hooks on restart, undeploy",
+              "commit": "b93f95f",
+              "pr": 3228
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "3.2.0",
+      "sections": [
+        {
+          "section": "Features",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "add deployment resource metrics collection",
+              "commit": "eaac4bf",
+              "pr": 3021
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "3.0.1",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "add dropping rejected log records",
+              "commit": "4be32b2",
+              "pr": 2862
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.25.0",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "kubernetes-agent",
+              "description": "fix swapped replica counts in ReplicasError for StatefulSet",
+              "commit": "2b6e458",
+              "pr": 2733
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.24.5",
+      "sections": [
+        {
+          "section": "Other",
+          "changes": [
+            {
+              "scope": "docker-agent",
+              "description": "use MkdirTemp for temporary compose/env files",
+              "commit": "984dddb",
+              "pr": 2723
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.24.3",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "docker-agent",
+              "description": "make self-updates single-flight and more robust",
+              "commit": "76a6e19",
+              "pr": 2678
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.23.0",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "increase default deployment log flush limit to 1000",
+              "commit": "f7bea9a",
+              "pr": 2602
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.22.0",
+      "sections": [
+        {
+          "section": "Features",
+          "changes": [
+            {
+              "scope": "kubernetes-agent",
+              "description": "add agent health probes",
+              "commit": "d331a8b",
+              "pr": 2509
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.21.1",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "kubernetes-agent",
+              "description": "handle Helm revision skew during rollback",
+              "commit": "419e204",
+              "pr": 2434
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.21.0",
+      "sections": [
+        {
+          "section": "Features",
+          "changes": [
+            {
+              "scope": "kubernetes-agent",
+              "description": "add \"force conflicts\" option for helm upgrade",
+              "commit": "acdd327",
+              "pr": 2445
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.17.0",
+      "sections": [
+        {
+          "section": "Features",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "run docker compose up directly instead of using `Exec`",
+              "commit": "ec79ef9",
+              "pr": 2223
+            }
+          ]
+        },
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "prevent resource exhaustion caused by log congestion",
+              "commit": "ac181be",
+              "pr": 2187
+            }
+          ]
+        },
+        {
+          "section": "Other",
+          "changes": [
+            {
+              "scope": "docker-agent",
+              "description": "report error status if a deployment has no containers",
+              "commit": "0d513ec",
+              "pr": 2225
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.16.2",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "docker-agent",
+              "description": "don't mount / if metrics collection is disabled",
+              "commit": "7719c2b",
+              "pr": 2193
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.16.1",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "increase healty timeout for agent autoheal",
+              "commit": "60fdeb5",
+              "pr": 2180
+            },
+            {
+              "scope": "agent",
+              "description": "prevent repeated uninstall after failure",
+              "commit": "31cbbaa",
+              "pr": 2154
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.15.1",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "docker-agent",
+              "description": "do not report disk metrics for SquashFS mounts",
+              "commit": "36ff0bf",
+              "pr": 2123
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.15.0",
+      "sections": [
+        {
+          "section": "Features",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "add disk metrics collection for docker agent",
+              "commit": "c13a7a8",
+              "pr": 2051
+            },
+            {
+              "scope": "docker-agent",
+              "description": "add docker agent healthchecks and autoheal",
+              "commit": "7b3ab65",
+              "pr": 2044
+            },
+            {
+              "scope": "docker-agent",
+              "description": "add pruning of previous container images",
+              "commit": "2242cae",
+              "pr": 2011
+            }
+          ]
+        },
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "add --remove-orphans for compose apply",
+              "commit": "52db269",
+              "pr": 2019
+            },
+            {
+              "scope": "docker-agent",
+              "description": "retry image deletion",
+              "commit": "0107122",
+              "pr": 2045
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.11.8",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "kubernetes-agent",
+              "description": "prevent partial self-update caused by \"context cancelled\" error",
+              "commit": "e735b89",
+              "pr": 1982
+            }
+          ]
+        },
+        {
+          "section": "Other",
+          "changes": [
+            {
+              "scope": "kubernetes-agent",
+              "description": "set helm MaxHistory to 10",
+              "commit": "a4cd99d",
+              "pr": 1980
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.11.6",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "disable credentials cache",
+              "commit": "6a513cd",
+              "pr": 1933
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.11.5",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "prevent agent 401 by logging out before docker login",
+              "commit": "042d0f4",
+              "pr": 1903
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.11.0",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "start log collection before deployment success and remember last logs timestamp",
+              "commit": "e83bea2",
+              "pr": 1828
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.7.0",
+      "sections": [
+        {
+          "section": "Other",
+          "changes": [
+            {
+              "scope": "kubernetes-agent",
+              "description": "use parent resource name for collected logs",
+              "commit": "8e99c99",
+              "pr": 1712
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.2.1",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "kubernetes-agent",
+              "description": "increase memory limit to 256Mi and add memory request",
+              "commit": "fde858e",
+              "pr": 1580
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.14.1",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "disable JWT validation",
+              "commit": "dc70e6a",
+              "pr": 1275
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.12.0",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "get logs with namespace to allow logs collection with namespace-scoped agent",
+              "commit": "536cef8",
+              "pr": 1044
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.10.0",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "fix kubernetes agent sending progressing updates during status check",
+              "commit": "8e153e2",
+              "pr": 948
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.9.0",
+      "sections": [
+        {
+          "section": "Other",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "rename cluster role binding",
+              "commit": "39ecbdf",
+              "pr": 913
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.8.1",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "prevent implicit import of `env` package",
+              "commit": "6eb1be6",
+              "pr": 893
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.7.1",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "kubernetes agent GetLatestHelmRelease supports more than 10 revisions",
+              "commit": "7558784",
+              "pr": 876
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.6.0",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "ensure token after 401 response",
+              "commit": "592b7a8",
+              "pr": 807
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.5.1",
+      "sections": [
+        {
+          "section": "Other",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "kubernetes agent client config reload",
+              "commit": "00b59b6",
+              "pr": 775
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.5.0",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "kubernetes agent sends wrong status type for \"progressing\"",
+              "commit": "ff0a337"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.1.2",
+      "sections": [
+        {
+          "section": "Bug Fixes",
+          "changes": [
+            {
+              "scope": "docker-agent",
+              "description": "keep same docker config after self-update",
+              "commit": "e2619e5",
+              "pr": 440
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.1.0",
+      "sections": [
+        {
+          "section": "Features",
+          "changes": [
+            {
+              "scope": "docker-agent",
+              "description": "add self-updating (existing agents must be re-deployed)",
+              "commit": "bab6934",
+              "pr": 425
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.6.0",
+      "sections": [
+        {
+          "section": "Features",
+          "changes": [
+            {
+              "scope": "agent",
+              "description": "restart cloud agent",
+              "commit": "cf5d667",
+              "pr": 173
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

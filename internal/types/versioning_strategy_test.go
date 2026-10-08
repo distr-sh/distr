@@ -116,6 +116,195 @@ func TestApplicationVersionComparatorTreatsEquivalentVersionsAsEqual(t *testing.
 	g.Expect(compare(plain, build)).To(BeZero(), "build metadata does not affect precedence")
 }
 
+func names(versions []ApplicationVersion) []string {
+	result := make([]string, len(versions))
+	for i, v := range versions {
+		result[i] = v.Name
+	}
+	return result
+}
+
+func versionsForSortTests(base time.Time) []ApplicationVersion {
+	return []ApplicationVersion{
+		version("1.0.0", base),
+		version("1.10.0", base.Add(time.Minute)),
+		version("1.9.0", base.Add(2*time.Minute)),
+		version("1.31.1", base.Add(3*time.Minute)),
+		version("1.31.0", base.Add(4*time.Minute)),
+	}
+}
+
+func TestSortApplicationVersionsSemver(t *testing.T) {
+	g := NewWithT(t)
+	versions := versionsForSortTests(time.Now())
+
+	SortApplicationVersions(VersioningStrategySemver, versions)
+	g.Expect(names(versions)).To(Equal([]string{"1.0.0", "1.9.0", "1.10.0", "1.31.0", "1.31.1"}))
+}
+
+func TestSortApplicationVersionsChronological(t *testing.T) {
+	g := NewWithT(t)
+	versions := versionsForSortTests(time.Now())
+
+	SortApplicationVersions(VersioningStrategyChronological, versions)
+	g.Expect(names(versions)).To(Equal([]string{"1.0.0", "1.10.0", "1.9.0", "1.31.1", "1.31.0"}))
+}
+
+func TestSortApplicationVersionsLegacyUsesSemverWhenEveryNameParses(t *testing.T) {
+	g := NewWithT(t)
+	base := time.Now()
+	versions := []ApplicationVersion{
+		version("2.0.0", base),
+		version("1.0.0", base.Add(time.Minute)),
+	}
+
+	SortApplicationVersions(VersioningStrategyLegacy, versions)
+	g.Expect(names(versions)).To(Equal([]string{"1.0.0", "2.0.0"}))
+}
+
+func TestSortApplicationVersionsLegacyFallsBackToCreationDate(t *testing.T) {
+	g := NewWithT(t)
+	base := time.Now()
+	versions := []ApplicationVersion{
+		version("2.0.0", base.Add(time.Minute)),
+		version("1.0.0", base),
+		version("nightly", base.Add(2*time.Minute)),
+	}
+
+	SortApplicationVersions(VersioningStrategyLegacy, versions)
+	g.Expect(names(versions)).To(Equal([]string{"1.0.0", "2.0.0", "nightly"}))
+}
+
+func advisoryVersion(
+	applicationID uuid.UUID,
+	applicationName string,
+	strategy VersioningStrategy,
+	name string,
+	createdAt time.Time,
+) AdvisoryApplicationVersion {
+	return AdvisoryApplicationVersion{
+		ApplicationID:                 applicationID,
+		ApplicationName:               applicationName,
+		ApplicationVersioningStrategy: strategy,
+		ApplicationVersion: ApplicationVersion{
+			ID:        uuid.New(),
+			Name:      name,
+			CreatedAt: createdAt,
+		},
+	}
+}
+
+func advisoryNames(versions []AdvisoryApplicationVersion) []string {
+	result := make([]string, len(versions))
+	for i, v := range versions {
+		result[i] = v.ApplicationName + " " + v.ApplicationVersion.Name
+	}
+	return result
+}
+
+func TestSortAdvisoryApplicationVersionsBySemverWithinApplication(t *testing.T) {
+	g := NewWithT(t)
+	base := time.Now()
+	alpha, bravo := uuid.New(), uuid.New()
+	versions := []AdvisoryApplicationVersion{
+		advisoryVersion(bravo, "Bravo", VersioningStrategySemver, "1.0.0", base),
+		advisoryVersion(alpha, "Alpha", VersioningStrategySemver, "1.31.0", base.Add(time.Minute)),
+		advisoryVersion(alpha, "Alpha", VersioningStrategySemver, "1.31.1", base),
+	}
+
+	SortAdvisoryApplicationVersions(versions)
+	g.Expect(advisoryNames(versions)).To(Equal([]string{"Alpha 1.31.0", "Alpha 1.31.1", "Bravo 1.0.0"}))
+}
+
+func TestSortAdvisoryApplicationVersionsByChronologicalWithinApplication(t *testing.T) {
+	g := NewWithT(t)
+	base := time.Now()
+	alpha, bravo := uuid.New(), uuid.New()
+	versions := []AdvisoryApplicationVersion{
+		advisoryVersion(bravo, "Bravo", VersioningStrategyChronological, "1.0.0", base),
+		advisoryVersion(alpha, "Alpha", VersioningStrategyChronological, "2.0.0", base),
+		advisoryVersion(alpha, "Alpha", VersioningStrategyChronological, "1.0.0", base.Add(time.Minute)),
+	}
+
+	SortAdvisoryApplicationVersions(versions)
+	g.Expect(advisoryNames(versions)).To(Equal([]string{"Alpha 2.0.0", "Alpha 1.0.0", "Bravo 1.0.0"}))
+}
+
+func TestSortAdvisoryApplicationVersionsLegacyUsesSemverWhenEveryNameParses(t *testing.T) {
+	g := NewWithT(t)
+	base := time.Now()
+	app := uuid.New()
+	versions := []AdvisoryApplicationVersion{
+		advisoryVersion(app, "App", VersioningStrategyLegacy, "2.0.0", base),
+		advisoryVersion(app, "App", VersioningStrategyLegacy, "1.0.0", base.Add(time.Minute)),
+	}
+
+	SortAdvisoryApplicationVersions(versions)
+	g.Expect(advisoryNames(versions)).To(Equal([]string{"App 1.0.0", "App 2.0.0"}))
+}
+
+func TestSortAdvisoryApplicationVersionsLegacyFallsBackToCreationDate(t *testing.T) {
+	g := NewWithT(t)
+	base := time.Now()
+	app := uuid.New()
+	versions := []AdvisoryApplicationVersion{
+		advisoryVersion(app, "App", VersioningStrategyLegacy, "2.0.0", base),
+		advisoryVersion(app, "App", VersioningStrategyLegacy, "1.0.0", base.Add(time.Minute)),
+		advisoryVersion(app, "App", VersioningStrategyLegacy, "nightly", base.Add(2*time.Minute)),
+	}
+
+	SortAdvisoryApplicationVersions(versions)
+	g.Expect(advisoryNames(versions)).To(Equal([]string{"App 2.0.0", "App 1.0.0", "App nightly"}))
+}
+
+func TestSortAdvisoryApplicationVersionsUsesEachApplicationsStrategy(t *testing.T) {
+	g := NewWithT(t)
+	base := time.Now()
+	alpha, bravo := uuid.New(), uuid.New()
+	versions := []AdvisoryApplicationVersion{
+		advisoryVersion(bravo, "Bravo", VersioningStrategySemver, "1.10.0", base),
+		advisoryVersion(alpha, "Alpha", VersioningStrategyChronological, "2.0.0", base),
+		advisoryVersion(bravo, "Bravo", VersioningStrategySemver, "1.9.0", base.Add(time.Minute)),
+		advisoryVersion(alpha, "Alpha", VersioningStrategyChronological, "1.0.0", base.Add(time.Minute)),
+	}
+
+	SortAdvisoryApplicationVersions(versions)
+	g.Expect(advisoryNames(versions)).To(Equal([]string{"Alpha 2.0.0", "Alpha 1.0.0", "Bravo 1.9.0", "Bravo 1.10.0"}))
+}
+
+func TestSortAdvisoryApplicationVersionsOrdersApplicationNamesThatArePrefixesOfEachOther(t *testing.T) {
+	g := NewWithT(t)
+	base := time.Now()
+	// "App" gets the highest id, so its name and id concatenated sort after "App 2" and "AppB".
+	app := uuid.MustParse("ffffffff-ffff-ffff-ffff-ffffffffffff")
+	appTwo := uuid.MustParse("00000000-0000-0000-0000-000000000001")
+	appB := uuid.MustParse("00000000-0000-0000-0000-000000000002")
+	versions := []AdvisoryApplicationVersion{
+		advisoryVersion(appB, "AppB", VersioningStrategySemver, "1.0.0", base),
+		advisoryVersion(appTwo, "App 2", VersioningStrategySemver, "1.0.0", base),
+		advisoryVersion(app, "App", VersioningStrategySemver, "1.0.0", base),
+	}
+
+	SortAdvisoryApplicationVersions(versions)
+	g.Expect(advisoryNames(versions)).To(Equal([]string{"App 1.0.0", "App 2 1.0.0", "AppB 1.0.0"}))
+}
+
+func TestSortAdvisoryApplicationVersionsKeepsApplicationsWithTheSameNameApart(t *testing.T) {
+	g := NewWithT(t)
+	base := time.Now()
+	first := uuid.MustParse("11111111-1111-1111-1111-111111111111")
+	second := uuid.MustParse("22222222-2222-2222-2222-222222222222")
+	versions := []AdvisoryApplicationVersion{
+		advisoryVersion(second, "App", VersioningStrategyChronological, "2.0.0", base),
+		advisoryVersion(first, "App", VersioningStrategySemver, "1.10.0", base),
+		advisoryVersion(second, "App", VersioningStrategyChronological, "1.0.0", base.Add(time.Minute)),
+		advisoryVersion(first, "App", VersioningStrategySemver, "1.9.0", base.Add(time.Minute)),
+	}
+
+	SortAdvisoryApplicationVersions(versions)
+	g.Expect(advisoryNames(versions)).To(Equal([]string{"App 1.9.0", "App 1.10.0", "App 2.0.0", "App 1.0.0"}))
+}
+
 func TestValidateVersionsForStrategy(t *testing.T) {
 	g := NewWithT(t)
 	base := time.Now()

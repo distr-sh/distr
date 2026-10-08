@@ -112,8 +112,8 @@
                         <ul
                           class="w-full mt-1 text-sm font-medium text-gray-900 bg-white border-gray-200 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                           @for (versionCtrl of archivedVersionsArray.controls; track i; let i = $index) {
-                            @let item = selectedApplication()?.versions?.[i];
-                            @let itemLabel = selectedApplication()?.versions?.[i]?.name;
+                            @let item = selectedApplication()?.versions?.[i + activeVersionsArray.length];
+                            @let itemLabel = item?.name;
                             <li class="w-full border-gray-200 dark:border-gray-600">
                               <div class="flex items-center">
                                 <input

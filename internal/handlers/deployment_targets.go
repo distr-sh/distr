@@ -284,11 +284,13 @@ func createAccessForDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	} else {
-		deploymentTarget.AccessKeySalt = &salt
-		deploymentTarget.AccessKeyHash = &hash
+		deploymentTarget.PendingAccessKeySalt = &salt
+		deploymentTarget.PendingAccessKeyHash = &hash
 	}
 
-	if err := db.UpdateDeploymentTargetAccess(ctx, &deploymentTarget.DeploymentTarget, *auth.CurrentOrgID()); err != nil {
+	if err := db.UpdateDeploymentTargetPendingAccess(
+		ctx, &deploymentTarget.DeploymentTarget, *auth.CurrentOrgID(),
+	); err != nil {
 		log.Warn("could not update DeploymentTarget", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		w.WriteHeader(http.StatusInternalServerError)
