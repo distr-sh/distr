@@ -150,15 +150,17 @@
             </li>
 
             @if (auth.hasAnyRole('read_write', 'admin')) {
-              <li>
-                <button
-                  type="button"
-                  (click)="showDeploymentTargetDropdown.set(false); openInstructionsModal()"
-                  class="distr-dropdown-item distr-dropdown-item-warning">
-                  <fa-icon [icon]="faLink" class="w-4" />
-                  Reconnect
-                </button>
-              </li>
+              @if (connected) {
+                <li>
+                  <button
+                    type="button"
+                    (click)="showDeploymentTargetDropdown.set(false); openInstructionsModal()"
+                    class="distr-dropdown-item distr-dropdown-item-warning">
+                    <fa-icon [icon]="faLink" class="w-4" />
+                    Reconnect
+                  </button>
+                </li>
+              }
 
               <li>
                 @let hasDeployments = deploymentTarget().deployments.length > 0;
