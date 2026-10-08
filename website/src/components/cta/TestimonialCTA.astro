@@ -41,29 +41,25 @@ const caseStudyUrl = caseStudy ? `/case-studies/${customer.id}/` : undefined;
     <figure class="mx-auto text-center">
       <div class="flex items-center justify-center gap-2 mb-3">
         <Icon name="lucide:quote" class="h-6 shrink-0 text-white/70" />
-        {
-          outcome && (
-            <p class="text-sm font-semibold uppercase tracking-wide text-accent-700 dark:text-accent-200">
-              {outcome}
-            </p>
-          )
-        }
+        {outcome && (
+          <p class="text-sm font-semibold uppercase tracking-wide text-accent-700 dark:text-accent-200">
+            {outcome}
+          </p>
+        )}
       </div>
       <blockquote>
         <p
           class="text-sm md:text-base font-medium italic"
           style="color: white;">
           "{quote}"{' '}
-          {
-            caseStudyUrl && (
-              <a
-                href={caseStudyUrl}
-                class="text-xs lowercase underline hover:no-underline whitespace-nowrap"
-                style="color: white;">
-                ...read more
-              </a>
-            )
-          }
+          {caseStudyUrl && (
+            <a
+              href={caseStudyUrl}
+              class="text-xs lowercase underline hover:no-underline whitespace-nowrap"
+              style="color: white;">
+              ...read more
+            </a>
+          )}
         </p>
       </blockquote>
       <figcaption class="flex items-center justify-center mt-6 space-x-3">

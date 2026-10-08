@@ -21,8 +21,7 @@ const customers = (await getCollection('customers')).sort((a, b) =>
   <section class="py-8 md:py-12 bg-gray-50 dark:bg-gray-800 text-center">
     <div class="container mx-auto px-4">
       <h1 class="text-4xl md:text-5xl font-bold mb-4">{title}</h1>
-      <p
-        class="text-lg md:text-xl font-semibold text-gray-600 dark:text-gray-300">
+      <p class="text-lg md:text-xl font-semibold text-gray-600 dark:text-gray-300">
         {description}
       </p>
     </div>
@@ -31,69 +30,66 @@ const customers = (await getCollection('customers')).sort((a, b) =>
   <!-- Case Studies & Testimonials Grid -->
   <section class="pb-8 md:pb-16 lg:pb-24 bg-gray-50 dark:bg-gray-800">
     <div class="container mx-auto px-4">
-      <div
-        class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-5xl mx-auto">
-        {
-          customers.map(customer => {
-            const caseStudy = customer.data.caseStudy;
-            const Wrapper = caseStudy ? 'a' : 'div';
-            const cardClass = `bg-white dark:bg-gray-900 rounded-xl p-6 md:p-8 shadow-md flex flex-col h-full border border-gray-200 dark:border-gray-700 transition-all duration-300${caseStudy ? ' hover:shadow-xl hover:-translate-y-1' : ''}`;
-            return (
-              <Wrapper
-                href={caseStudy ? `/case-studies/${customer.id}/` : undefined}
-                class={cardClass}>
-                <div class="mb-4">
-                  <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                    {customer.data.company}
-                  </h3>
-                  <div class="flex flex-col gap-2 text-sm mb-4">
-                    <div>
-                      <span class="text-[#00b5eb] font-semibold uppercase tracking-wide">
-                        Industry:
-                      </span>
-                      <span class="text-gray-700 dark:text-gray-300 ml-2">
-                        {customer.data.industry}
-                      </span>
-                    </div>
-                    <div>
-                      <span class="text-[#00b5eb] font-semibold uppercase tracking-wide">
-                        Use Case:
-                      </span>
-                      <span class="text-gray-700 dark:text-gray-300 ml-2">
-                        {customer.data.useCase}
-                      </span>
-                    </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-5xl mx-auto">
+        {customers.map(customer => {
+          const caseStudy = customer.data.caseStudy;
+          const Wrapper = caseStudy ? 'a' : 'div';
+          const cardClass = `bg-white dark:bg-gray-900 rounded-xl p-6 md:p-8 shadow-md flex flex-col h-full border border-gray-200 dark:border-gray-700 transition-all duration-300${caseStudy ? ' hover:shadow-xl hover:-translate-y-1' : ''}`;
+          return (
+            <Wrapper
+              href={caseStudy ? `/case-studies/${customer.id}/` : undefined}
+              class={cardClass}>
+              <div class="mb-4">
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                  {customer.data.company}
+                </h3>
+                <div class="flex flex-col gap-2 text-sm mb-4">
+                  <div>
+                    <span class="text-[#00b5eb] font-semibold uppercase tracking-wide">
+                      Industry:
+                    </span>
+                    <span class="text-gray-700 dark:text-gray-300 ml-2">
+                      {customer.data.industry}
+                    </span>
+                  </div>
+                  <div>
+                    <span class="text-[#00b5eb] font-semibold uppercase tracking-wide">
+                      Use Case:
+                    </span>
+                    <span class="text-gray-700 dark:text-gray-300 ml-2">
+                      {customer.data.useCase}
+                    </span>
                   </div>
                 </div>
-                <p class="text-base md:text-lg mb-6 italic leading-relaxed text-gray-700 dark:text-gray-300 flex-grow">
-                  "{customer.data.quote}"
-                </p>
-                <div class="flex items-center gap-4 mt-auto">
-                  <Image
-                    src={customer.data.person.image}
-                    alt={customer.data.person.name}
-                    class="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover flex-shrink-0"
-                    width={56}
-                    height={56}
-                  />
-                  <div class="flex-grow">
-                    <p class="font-bold text-gray-900 dark:text-white">
-                      {customer.data.person.name}
-                    </p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">
-                      {customer.data.person.role}, {customer.data.company}
-                    </p>
-                  </div>
-                  {caseStudy && (
-                    <LinkButton icon="lucide:arrow-right" iconPlacement="end">
-                      Read case study
-                    </LinkButton>
-                  )}
+              </div>
+              <p class="text-base md:text-lg mb-6 italic leading-relaxed text-gray-700 dark:text-gray-300 flex-grow">
+                "{customer.data.quote}"
+              </p>
+              <div class="flex items-center gap-4 mt-auto">
+                <Image
+                  src={customer.data.person.image}
+                  alt={customer.data.person.name}
+                  class="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover flex-shrink-0"
+                  width={56}
+                  height={56}
+                />
+                <div class="flex-grow">
+                  <p class="font-bold text-gray-900 dark:text-white">
+                    {customer.data.person.name}
+                  </p>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">
+                    {customer.data.person.role}, {customer.data.company}
+                  </p>
                 </div>
-              </Wrapper>
-            );
-          })
-        }
+                {caseStudy && (
+                  <LinkButton icon="lucide:arrow-right" iconPlacement="end">
+                    Read case study
+                  </LinkButton>
+                )}
+              </div>
+            </Wrapper>
+          );
+        })}
       </div>
     </div>
   </section>

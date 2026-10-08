@@ -49,64 +49,58 @@ const formatDate = (date: Date) => {
 
     <header class="mb-12 text-center">
       <!-- Title -->
-      <h1
-        class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 dark:text-white mb-3 leading-tight">
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 dark:text-white mb-3 leading-tight">
         {post.data.title}
       </h1>
 
       <!-- Authors -->
-      <div
-        class="flex flex-col justify-center items-center gap-2 mt-8 sm:mb-16 mb-8">
-        {
-          post.data.authors.map(author => (
-            <div class="flex items-center gap-3 mt-0">
-              <Image
-                src={author.image}
-                alt={author.name}
-                width={28}
-                height={28}
-                class="w-6 h-6 rounded-full object-cover flex-shrink-0"
-              />
-              <div class="flex items-center gap-2 text-sm h-6 leading-6 mt-0">
-                <span class="font-medium text-gray-900 dark:text-gray-100 h-max">
-                  {author.name}
-                </span>
-                <span class="text-gray-600 dark:text-gray-400">
-                  • {author.role}
-                </span>
-              </div>
-              <div class="flex items-center gap-1.5 h-6 mt-0">
-                <a
-                  href={author.gitHub}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-                  aria-label={`${author.name}'s GitHub`}>
-                  <Icon name="github" class="w-4 h-4" />
-                </a>
-                <a
-                  href={author.linkedIn}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-                  aria-label={`${author.name}'s LinkedIn`}>
-                  <Icon name="linkedin" class="w-4 h-4" />
-                </a>
-              </div>
+      <div class="flex flex-col justify-center items-center gap-2 mt-8 sm:mb-16 mb-8">
+        {post.data.authors.map(author => (
+          <div class="flex items-center gap-3 mt-0">
+            <Image
+              src={author.image}
+              alt={author.name}
+              width={28}
+              height={28}
+              class="w-6 h-6 rounded-full object-cover flex-shrink-0"
+            />
+            <div class="flex items-center gap-2 text-sm h-6 leading-6 mt-0">
+              <span class="font-medium text-gray-900 dark:text-gray-100 h-max">
+                {author.name}
+              </span>
+              <span class="text-gray-600 dark:text-gray-400">
+                • {author.role}
+              </span>
             </div>
-          ))
-        }
+            <div class="flex items-center gap-1.5 h-6 mt-0">
+              <a
+                href={author.gitHub}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                aria-label={`${author.name}'s GitHub`}>
+                <Icon name="github" class="w-4 h-4" />
+              </a>
+              <a
+                href={author.linkedIn}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                aria-label={`${author.name}'s LinkedIn`}>
+                <Icon name="linkedin" class="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+        ))}
       </div>
 
       <!-- Description -->
-      <p
-        class="text-lg sm:text-xl text-gray-600 dark:text-gray-400 sm:mb-16 mb-8 leading-relaxed max-w-3xl mx-auto">
+      <p class="text-lg sm:text-xl text-gray-600 dark:text-gray-400 sm:mb-16 mb-8 leading-relaxed max-w-3xl mx-auto">
         {post.data.description}
       </p>
 
       <!-- Meta information row -->
-      <div
-        class="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm text-gray-600 dark:text-gray-400 pb-8 border-b border-gray-200 dark:border-gray-800 max-w-3xl mx-auto">
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm text-gray-600 dark:text-gray-400 pb-8 border-b border-gray-200 dark:border-gray-800 max-w-3xl mx-auto">
         <!-- Reading time and copy button -->
         <div class="flex items-center gap-3">
           <span class="flex items-center gap-1">
@@ -126,8 +120,7 @@ const formatDate = (date: Date) => {
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-              ></path>
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
             </svg>
             <span>Copy URL</span>
           </a>
@@ -142,24 +135,22 @@ const formatDate = (date: Date) => {
       </div>
 
       <!-- Hero image -->
-      {
-        post.data.image && (
-          <div class="mt-8 -mx-6 sm:-mx-8 lg:-mx-16">
-            <Image
-              src={post.data.image}
-              class="w-full rounded-xl bg-gray-100 dark:bg-gray-800"
-              widths={[400, 800, 1200]}
-              sizes="(max-width: 640px) 400px, (max-width: 1024px) 800px, 1200px"
-              alt={post.data.title}
-              loading="eager"
-              decoding="sync"
-              width={1200}
-              height={675}
-              layout="cover"
-            />
-          </div>
-        )
-      }
+      {post.data.image && (
+        <div class="mt-8 -mx-6 sm:-mx-8 lg:-mx-16">
+          <Image
+            src={post.data.image}
+            class="w-full rounded-xl bg-gray-100 dark:bg-gray-800"
+            widths={[400, 800, 1200]}
+            sizes="(max-width: 640px) 400px, (max-width: 1024px) 800px, 1200px"
+            alt={post.data.title}
+            loading="eager"
+            decoding="sync"
+            width={1200}
+            height={675}
+            layout="cover"
+          />
+        </div>
+      )}
     </header>
 
     <!-- Article content -->

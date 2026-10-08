@@ -18,22 +18,18 @@ if (caseStudies.length <= 1) {
 
 <aside class="hidden lg:block lg:w-64 flex-shrink-0">
   <div class="sticky top-24">
-    <div
-      class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-md">
-      <h4
-        class="text-base font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-4">
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-md">
+      <h4 class="text-base font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-4">
         Case Studies
       </h4>
       <nav class="space-y-2">
-        {
-          caseStudies.map(caseStudy => (
-            <button
-              data-slug={caseStudy.slug}
-              class="tracker-item w-full text-left px-4 py-3 rounded-lg border border-transparent hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#00b5eb] transition-all text-sm text-gray-700 dark:text-gray-300">
-              {caseStudy.company}
-            </button>
-          ))
-        }
+        {caseStudies.map(caseStudy => (
+          <button
+            data-slug={caseStudy.slug}
+            class="tracker-item w-full text-left px-4 py-3 rounded-lg border border-transparent hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#00b5eb] transition-all text-sm text-gray-700 dark:text-gray-300">
+            {caseStudy.company}
+          </button>
+        ))}
       </nav>
     </div>
   </div>
@@ -41,22 +37,18 @@ if (caseStudies.length <= 1) {
 
 <!-- Mobile version: horizontal scroll at top -->
 <div class="lg:hidden mb-8">
-  <div
-    class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-md">
-    <h4
-      class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-3">
+  <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-md">
+    <h4 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-3">
       Case Studies
     </h4>
     <nav class="flex gap-2 overflow-x-auto pb-2">
-      {
-        caseStudies.map(caseStudy => (
-          <button
-            data-slug={caseStudy.slug}
-            class="tracker-item flex-shrink-0 px-4 py-2 rounded-lg border border-transparent hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#00b5eb] transition-all text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
-            {caseStudy.company}
-          </button>
-        ))
-      }
+      {caseStudies.map(caseStudy => (
+        <button
+          data-slug={caseStudy.slug}
+          class="tracker-item flex-shrink-0 px-4 py-2 rounded-lg border border-transparent hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#00b5eb] transition-all text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+          {caseStudy.company}
+        </button>
+      ))}
     </nav>
   </div>
 </div>

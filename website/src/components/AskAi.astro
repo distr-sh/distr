@@ -44,19 +44,17 @@ const assistants = [
     Distr is AI's top way to ship self-hosted software. See why!
   </p>
   <ul class="flex items-center gap-4 list-none pl-0 m-0">
-    {
-      assistants.map(assistant => (
-        <li>
-          <a
-            href={assistant.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-accent-600 hover:text-accent-700 dark:text-accent-200 dark:hover:text-accent-300 transition-colors no-underline">
-            <span class="sr-only">Ask {assistant.name} about Distr</span>
-            <Icon name={assistant.icon} class="w-5 h-5" />
-          </a>
-        </li>
-      ))
-    }
+    {assistants.map(assistant => (
+      <li>
+        <a
+          href={assistant.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-accent-600 hover:text-accent-700 dark:text-accent-200 dark:hover:text-accent-300 transition-colors no-underline">
+          <span class="sr-only">Ask {assistant.name} about Distr</span>
+          <Icon name={assistant.icon} class="w-5 h-5" />
+        </a>
+      </li>
+    ))}
   </ul>
 </div>

@@ -87,8 +87,7 @@ const signupSteps = [
   }
 </style>
 
-<div
-  class="relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-16 sm:py-24">
+<div class="relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-16 sm:py-24">
   <div class="container mx-auto px-4 max-w-[1200px]">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
       <!-- Left Column: Features -->
@@ -198,11 +197,9 @@ const signupSteps = [
                 Trusted by teams worldwide
               </h6>
               <p class="text-gray-600 dark:text-gray-400 text-sm m-0">
-                {
-                  metrics
-                    .map(metric => `${metric.value} ${metric.label}`)
-                    .join(', ')
-                }
+                {metrics
+                  .map(metric => `${metric.value} ${metric.label}`)
+                  .join(', ')}
               </p>
             </div>
           </li>
@@ -211,47 +208,38 @@ const signupSteps = [
 
       <!-- Right Column: Form -->
       <div id="rightColumn" class="lg:col-span-1">
-        <div
-          class="bg-white dark:bg-gray-900 border border-accent-600 rounded-xl p-6 lg:p-10 shadow-2xl">
+        <div class="bg-white dark:bg-gray-900 border border-accent-600 rounded-xl p-6 lg:p-10 shadow-2xl">
           <!-- Step Indicators -->
           <div id="stepIndicators" class="mb-8 hidden">
             <div class="flex items-center">
-              {
-                signupSteps.map((s, index) => (
-                  <>
-                    <div
-                      class={`step-indicator ${index === 0 ? 'active' : 'inactive'}`}
-                      data-step={s.step}>
-                      {s.step}
-                    </div>
-                    {index < signupSteps.length - 1 && (
-                      <div class="step-line inactive" />
-                    )}
-                  </>
-                ))
-              }
+              {signupSteps.map((s, index) => (
+                <>
+                  <div
+                    class={`step-indicator ${index === 0 ? 'active' : 'inactive'}`}
+                    data-step={s.step}>
+                    {s.step}
+                  </div>
+                  {index < signupSteps.length - 1 && (
+                    <div class="step-line inactive" />
+                  )}
+                </>
+              ))}
             </div>
-            <div
-              class="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
-              {
-                signupSteps.map(s => (
-                  <span class="flex-1 text-center">{s.label}</span>
-                ))
-              }
+            <div class="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
+              {signupSteps.map(s => (
+                <span class="flex-1 text-center">{s.label}</span>
+              ))}
             </div>
           </div>
 
           <!-- Step 1: Basic Info (Initial Signup) -->
           <div id="step1" class="step-content">
             <div>
-              <h3 class="mb-4 text-gray-900 dark:text-white">
-                {heading}
-              </h3>
+              <h3 class="mb-4 text-gray-900 dark:text-white">{heading}</h3>
               <div class="text-gray-600 dark:text-gray-400 mb-2">
                 {subheading}
               </div>
-              <div
-                class="text-center text-sm italic text-gray-500 dark:text-gray-500 mb-6">
+              <div class="text-center text-sm italic text-gray-500 dark:text-gray-500 mb-6">
                 {ctaNote}
               </div>
             </div>
@@ -357,52 +345,49 @@ const signupSteps = [
                   />
                 </div>
               </div>
-              {
-                requirePassword && (
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label
-                        for="password"
-                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Password*
-                      </label>
-                      <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        placeholder="Password"
-                        autocomplete="new-password"
-                        minlength="8"
-                        required
-                        class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        for="confirmPassword"
-                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Confirm Password*
-                      </label>
-                      <input
-                        type="password"
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        placeholder="Confirm Password"
-                        autocomplete="new-password"
-                        minlength="8"
-                        required
-                        class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
-                      />
-                    </div>
+              {requirePassword && (
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      for="password"
+                      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Password*
+                    </label>
+                    <input
+                      type="password"
+                      id="password"
+                      name="password"
+                      placeholder="Password"
+                      autocomplete="new-password"
+                      minlength="8"
+                      required
+                      class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
+                    />
                   </div>
-                )
-              }
+                  <div>
+                    <label
+                      for="confirmPassword"
+                      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Confirm Password*
+                    </label>
+                    <input
+                      type="password"
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      placeholder="Confirm Password"
+                      autocomplete="new-password"
+                      minlength="8"
+                      required
+                      class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
+                    />
+                  </div>
+                </div>
+              )}
               <div
                 class="g-recaptcha"
                 data-sitekey={reCaptchaKeyV2}
                 data-action={flowType}
-                data-callback="reCaptchaSubmit">
-              </div>
+                data-callback="reCaptchaSubmit"></div>
 
               <button
                 type="submit"
@@ -410,7 +395,9 @@ const signupSteps = [
                 disabled
                 class="w-full mt-4 py-3 px-6 bg-accent-600 hover:bg-accent-900 disabled:bg-gray-400 text-white font-semibold rounded-md transition-colors cursor-pointer">
                 <span id="signup-text">Continue</span>
-                <span id="signup-loading" class="hidden">Submitting...</span>
+                <span id="signup-loading" class="hidden">
+                  Submitting...
+                </span>
               </button>
             </form>
           </div>
@@ -445,8 +432,7 @@ const signupSteps = [
                 </select>
               </div>
               <div>
-                <div
-                  class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Where do your customers want to deploy your software?*
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">
@@ -544,15 +530,16 @@ const signupSteps = [
                   name="use-case"
                   rows="4"
                   required
-                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
-                ></textarea>
+                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"></textarea>
               </div>
               <button
                 type="submit"
                 id="submit-details"
                 class="w-full py-3 px-6 bg-accent-600 hover:bg-accent-900 disabled:bg-gray-400 text-white font-semibold rounded-md transition-colors cursor-pointer">
                 <span id="details-text">Continue</span>
-                <span id="details-loading" class="hidden">Saving...</span>
+                <span id="details-loading" class="hidden">
+                  Saving...
+                </span>
               </button>
             </form>
           </div>
@@ -651,8 +638,7 @@ const signupSteps = [
                     name="externalServicesText"
                     rows="3"
                     placeholder="e.g. Supabase (auth + database), Clerk (auth), OpenAI API..."
-                    class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
-                  ></textarea>
+                    class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"></textarea>
                 </div>
               </div>
               <div>
@@ -667,15 +653,16 @@ const signupSteps = [
                   rows="4"
                   placeholder="e.g. a React frontend, a Go API, a Python worker, a message queue, a Postgres database and a Redis cache..."
                   required
-                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
-                ></textarea>
+                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"></textarea>
               </div>
               <button
                 type="submit"
                 id="submit-application"
                 class="w-full py-3 px-6 bg-accent-600 hover:bg-accent-900 disabled:bg-gray-400 text-white font-semibold rounded-md transition-colors cursor-pointer">
                 <span id="application-text">Continue</span>
-                <span id="application-loading" class="hidden">Saving...</span>
+                <span id="application-loading" class="hidden">
+                  Saving...
+                </span>
               </button>
             </form>
           </div>
@@ -692,8 +679,7 @@ const signupSteps = [
             </div>
             <form id="discovery" class="space-y-4">
               <div class="space-y-2">
-                <label
-                  class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                <label class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                   <input
                     type="checkbox"
                     name="discovery"
@@ -705,8 +691,7 @@ const signupSteps = [
                     Google
                   </span>
                 </label>
-                <label
-                  class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                <label class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                   <input
                     type="checkbox"
                     name="discovery"
@@ -718,8 +703,7 @@ const signupSteps = [
                     Reddit
                   </span>
                 </label>
-                <label
-                  class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                <label class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                   <input
                     type="checkbox"
                     name="discovery"
@@ -731,8 +715,7 @@ const signupSteps = [
                     Hacker News
                   </span>
                 </label>
-                <label
-                  class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                <label class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                   <input
                     type="checkbox"
                     name="discovery"
@@ -744,8 +727,7 @@ const signupSteps = [
                     LinkedIn
                   </span>
                 </label>
-                <label
-                  class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                <label class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                   <input
                     type="checkbox"
                     name="discovery"
@@ -757,8 +739,7 @@ const signupSteps = [
                     Twitter
                   </span>
                 </label>
-                <label
-                  class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                <label class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                   <input
                     type="checkbox"
                     name="discovery"
@@ -770,8 +751,7 @@ const signupSteps = [
                     Recommendation (friend, co-worker, community)
                   </span>
                 </label>
-                <label
-                  class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                <label class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                   <input
                     type="checkbox"
                     name="discovery"
@@ -783,8 +763,7 @@ const signupSteps = [
                     LLMs (ChatGPT, Claude, etc.)
                   </span>
                 </label>
-                <label
-                  class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                <label class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                   <input
                     type="checkbox"
                     name="discovery"
@@ -796,8 +775,7 @@ const signupSteps = [
                     Offline Events / Meetups
                   </span>
                 </label>
-                <label
-                  class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                <label class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                   <input
                     type="checkbox"
                     name="discovery"
@@ -823,7 +801,9 @@ const signupSteps = [
                 id="submit-discovery"
                 class="w-full py-3 px-6 bg-accent-600 hover:bg-accent-900 disabled:bg-gray-400 text-white font-semibold rounded-md transition-colors cursor-pointer">
                 <span id="discovery-text">Continue</span>
-                <span id="discovery-loading" class="hidden">Saving...</span>
+                <span id="discovery-loading" class="hidden">
+                  Saving...
+                </span>
               </button>
             </form>
           </div>
@@ -840,8 +820,7 @@ const signupSteps = [
             </div>
             <form id="timeline" class="space-y-4">
               <div class="space-y-3">
-                <label
-                  class="flex items-start p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent-600 dark:hover:border-accent-600 cursor-pointer transition-colors">
+                <label class="flex items-start p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent-600 dark:hover:border-accent-600 cursor-pointer transition-colors">
                   <input
                     type="radio"
                     name="timeline"
@@ -858,8 +837,7 @@ const signupSteps = [
                     </div>
                   </div>
                 </label>
-                <label
-                  class="flex items-start p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent-600 dark:hover:border-accent-600 cursor-pointer transition-colors">
+                <label class="flex items-start p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent-600 dark:hover:border-accent-600 cursor-pointer transition-colors">
                   <input
                     type="radio"
                     name="timeline"
@@ -876,8 +854,7 @@ const signupSteps = [
                     </div>
                   </div>
                 </label>
-                <label
-                  class="flex items-start p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent-600 dark:hover:border-accent-600 cursor-pointer transition-colors">
+                <label class="flex items-start p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent-600 dark:hover:border-accent-600 cursor-pointer transition-colors">
                   <input
                     type="radio"
                     name="timeline"
@@ -894,8 +871,7 @@ const signupSteps = [
                     </div>
                   </div>
                 </label>
-                <label
-                  class="flex items-start p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent-600 dark:hover:border-accent-600 cursor-pointer transition-colors">
+                <label class="flex items-start p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent-600 dark:hover:border-accent-600 cursor-pointer transition-colors">
                   <input
                     type="radio"
                     name="timeline"
@@ -918,7 +894,9 @@ const signupSteps = [
                 id="submit-timeline"
                 class="w-full py-3 px-6 bg-accent-600 hover:bg-accent-900 disabled:bg-gray-400 text-white font-semibold rounded-md transition-colors cursor-pointer">
                 <span id="timeline-text">{submitButtonText}</span>
-                <span id="timeline-loading" class="hidden">Completing...</span>
+                <span id="timeline-loading" class="hidden">
+                  Completing...
+                </span>
               </button>
             </form>
           </div>
@@ -926,8 +904,7 @@ const signupSteps = [
           <!-- Success Message -->
           <div id="successMessage" class="hidden py-12">
             <div class="text-center mb-8">
-              <div
-                class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 mb-6">
+              <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 mb-6">
                 <Icon
                   name="lucide:check-circle"
                   class="h-6 w-6 text-green-600"
@@ -972,8 +949,7 @@ const signupSteps = [
     requirePassword,
     formsServerBaseUrl,
     BOOKING_FLOW_STORAGE_KEY,
-  }}
->
+  }}>
   // Store user data across steps
   let userData = {};
   let reCaptchaToken = '';
