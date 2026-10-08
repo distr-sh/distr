@@ -65,13 +65,13 @@ type ControllerDeploymentTargetMetricsRequest struct {
 	ControllerLogBytes       *int64  `json:"controllerLogBytes,omitempty"`
 	// Deprecated: AgentCPUUsageMillis is what controllers released before the rename send instead of
 	// ControllerCPUUsageMillis.
-	AgentCPUUsageMillis *int64 `json:"agentCpuUsageMillis,omitempty"`
+	AgentCPUUsageMillis *int64 `json:"agentCpuUsageMillis,omitempty" deprecated:"true"`
 	// Deprecated: AgentMemoryBytes is what controllers released before the rename send instead of
 	// ControllerMemoryBytes.
-	AgentMemoryBytes *int64 `json:"agentMemoryBytes,omitempty"`
+	AgentMemoryBytes *int64 `json:"agentMemoryBytes,omitempty" deprecated:"true"`
 	// Deprecated: AgentLogBytes is what controllers released before the rename send instead of
 	// ControllerLogBytes.
-	AgentLogBytes *int64                       `json:"agentLogBytes,omitempty"`
+	AgentLogBytes *int64                       `json:"agentLogBytes,omitempty" deprecated:"true"`
 	ImageBytes    *int64                       `json:"imageBytes,omitempty"`
 	DiskMetrics   []DeploymentTargetDiskMetric `json:"diskMetrics,omitempty"`
 }

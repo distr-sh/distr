@@ -44,7 +44,7 @@ type DeploymentTarget struct {
 	Resources               *DeploymentTargetResources `db:"resources" json:"resources,omitempty"`
 	DockerEndpoint          *string                    `db:"docker_endpoint" json:"dockerEndpoint,omitempty"`
 	// Deprecated: ReportedAgentVersionID repeats ReportedControllerVersionID under its former JSON name.
-	ReportedAgentVersionID *uuid.UUID `db:"reported_agent_version_id" json:"reportedAgentVersionId,omitempty"`
+	ReportedAgentVersionID *uuid.UUID `db:"reported_agent_version_id" json:"reportedAgentVersionId,omitempty" deprecated:"true"` //nolint:lll
 }
 
 type DeploymentTargetResources struct {
@@ -155,7 +155,7 @@ type DeploymentTargetFull struct {
 	ControllerVersion    ControllerVersion              `db:"controller_version" json:"controllerVersion"`
 	// Deprecated: AgentVersion repeats ControllerVersion under its former JSON name. A request that sets it
 	// instead of ControllerVersion is still honored.
-	AgentVersion ControllerVersion `db:"agent_version" json:"agentVersion"`
+	AgentVersion ControllerVersion `db:"agent_version" json:"agentVersion" deprecated:"true"`
 }
 
 // RequestedControllerVersion returns the version a request asked for, which older API clients send as
