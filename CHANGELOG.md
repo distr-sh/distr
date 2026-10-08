@@ -1,5 +1,42 @@
 # Changelog
 
+## [4.3.0](https://github.com/distr-sh/distr/compare/4.2.1...4.3.0) (2026-10-08)
+
+
+### Features
+
+* keep the agent connected during a reconnect and show a reconnect pending badge ([#3418](https://github.com/distr-sh/distr/issues/3418)) ([6a8804f](https://github.com/distr-sh/distr/commit/6a8804f1fcec319354f41ea996215447e1e1a28d))
+* update notifications ([#3290](https://github.com/distr-sh/distr/issues/3290)) ([d8d67a6](https://github.com/distr-sh/distr/commit/d8d67a67e2069f8669829a9e961c7e8e7c1a6013))
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([#3425](https://github.com/distr-sh/distr/issues/3425)) ([a1b7e85](https://github.com/distr-sh/distr/commit/a1b7e853aac287c16cb00af69e9facc79a20b6c2))
+* **deps:** update module github.com/aws/smithy-go to v1.28.4 ([#3426](https://github.com/distr-sh/distr/issues/3426)) ([23aea13](https://github.com/distr-sh/distr/commit/23aea13cefdf72edd2468aec1bc81c4ade5ce683))
+* **deps:** update module github.com/exaring/otelpgx to v0.12.1 ([#3416](https://github.com/distr-sh/distr/issues/3416)) ([6d3bf6e](https://github.com/distr-sh/distr/commit/6d3bf6edbb91fe5a52134af77863ba1af0d504e4))
+
+
+### Other
+
+* application version sorting by versioning strategy ([#3411](https://github.com/distr-sh/distr/issues/3411)) ([b51ba6d](https://github.com/distr-sh/distr/commit/b51ba6d490bd961ea4342e5cb87d23644991eb5d))
+* **deploy/chart:** add deploymentAnnotations value ([#3422](https://github.com/distr-sh/distr/issues/3422)) ([0b7e016](https://github.com/distr-sh/distr/commit/0b7e016088cc225c2e99f6b582ca623a5e63c0a4))
+* **deps:** update angular-cli monorepo to v22.2.2 ([#3428](https://github.com/distr-sh/distr/issues/3428)) ([59900fb](https://github.com/distr-sh/distr/commit/59900fb27f3cd7a9188de4503a8f604e195689f6))
+* **deps:** update axllent/mailpit docker tag to v1.31.4 ([#3397](https://github.com/distr-sh/distr/issues/3397)) ([873299a](https://github.com/distr-sh/distr/commit/873299a19f962e4f0988e8bae8863d8b95c7ea7a))
+* **deps:** update caddy docker tag to v2.11.7 ([#3412](https://github.com/distr-sh/distr/issues/3412)) ([2fe39a1](https://github.com/distr-sh/distr/commit/2fe39a1e3038c61b607329bef7d0fa3d968aac36))
+* **deps:** update dependency jsdom to v30.1.2 ([#3403](https://github.com/distr-sh/distr/issues/3403)) ([902a007](https://github.com/distr-sh/distr/commit/902a007fd4cf3e9cd7d60825d6d332dbebfa9078))
+* **deps:** update dependency marked to v18.1.0 ([#3415](https://github.com/distr-sh/distr/issues/3415)) ([94d8eff](https://github.com/distr-sh/distr/commit/94d8effbe600ea50cb2576848ae173f1055e95f5))
+* **deps:** update dependency watchexec to v2.8.0 ([#3423](https://github.com/distr-sh/distr/issues/3423)) ([3a27a67](https://github.com/distr-sh/distr/commit/3a27a673d2e19e31374c4481e8a7610b9cc73ef3))
+* **deps:** update helm/kind-action action to v1.15.1 ([#3417](https://github.com/distr-sh/distr/issues/3417)) ([ea95df1](https://github.com/distr-sh/distr/commit/ea95df14d4f454de0e8aaed22ad5931ddd1588e0))
+* **deps:** update jdx/mise-action action to v5.1.0 ([#3407](https://github.com/distr-sh/distr/issues/3407)) ([6cdff7c](https://github.com/distr-sh/distr/commit/6cdff7c6160b1613006871a60b800b2134f53b06))
+* **deps:** update jdx/mise-action action to v5.1.1 ([#3413](https://github.com/distr-sh/distr/issues/3413)) ([ad11089](https://github.com/distr-sh/distr/commit/ad110897e861ae2e0680bd9be3c931f76e9a1e94))
+* **deps:** update loki docker tag to v18.13.8 ([#3404](https://github.com/distr-sh/distr/issues/3404)) ([2432aaf](https://github.com/distr-sh/distr/commit/2432aafc590c169398a91c8daf96651d92ebb23d))
+* **deps:** update loki docker tag to v18.14.0 ([#3424](https://github.com/distr-sh/distr/issues/3424)) ([ebc6ea6](https://github.com/distr-sh/distr/commit/ebc6ea6c3298b34e0faffdd8d3e848e4d89b56e7))
+* **deps:** update pnpm to v12.10.1 ([#3427](https://github.com/distr-sh/distr/issues/3427)) ([226248f](https://github.com/distr-sh/distr/commit/226248f52c03fe4969a72f20f9a6e4b0f00b42cd))
+* **deps:** update pnpm to v12.9.1 ([#3408](https://github.com/distr-sh/distr/issues/3408)) ([636e312](https://github.com/distr-sh/distr/commit/636e3125aa07887170835fd6aadb23a54a673510))
+* **deps:** update rustfs/rustfs docker tag to v1.0.1 ([#3406](https://github.com/distr-sh/distr/issues/3406)) ([67771af](https://github.com/distr-sh/distr/commit/67771afa5c3bd5897c2890a377fb43e3d8956445))
+* **deps:** update website dependencies ([#3391](https://github.com/distr-sh/distr/issues/3391)) ([b9c6877](https://github.com/distr-sh/distr/commit/b9c68778e15cb0c15f0ceed99e8b8cf59864540a))
+* **registry:** disallow local artifact upstream registries and validate manifest data ([#3401](https://github.com/distr-sh/distr/issues/3401)) ([0fdd3d5](https://github.com/distr-sh/distr/commit/0fdd3d5290217898db7f5b4ce9a4f3c303f012a2))
+
 ## [4.2.1](https://github.com/distr-sh/distr/compare/4.2.0...4.2.1) (2026-10-05)
 
 
