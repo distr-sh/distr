@@ -40,7 +40,7 @@ import {TutorialProgress} from '../../types/tutorials';
 import {TutorialStepperComponent} from '../stepper/tutorial-stepper.component';
 import {getExistingTask, getLastExistingTask} from '../utils';
 
-const tutorialId = 'agents';
+const tutorialId = 'controllers';
 const welcomeStep = 'welcome';
 const welcomeTaskStart = 'start';
 const deployStep = 'deploy';

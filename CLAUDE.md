@@ -6,7 +6,7 @@ Guidance for Claude Code (claude.ai/code) and other agents working in this repos
 
 Distr distributes applications to self-managed customers. The Distr server runs in the cloud, controllers run in customer environments and an OCI-compatible registry serves the artifacts.
 
-The component in customer environments is the Distr Controller, never the agent. The name holds for user-facing text, docs, identifiers, file and folder names. Keep the former agent name only where changing it breaks installed controllers or stored data: the tutorial id `agents`, the JWT audience `agent`, the Kubernetes label `agent.distr.sh/deployment`, the Helm secrets `sh.distr.agent.v1.*`, the field managers `distr-agent*`, the legacy manifest revisions (`LegacyAgentManifest`) and the deprecated `/api/v1/agent*` routes, `AGENT_*` and `DISTR_AGENT_*` env var aliases and `agent*` JSON fields.
+The component in customer environments is the Distr Controller, never the agent. The name holds for user-facing text, docs, identifiers, file and folder names. Keep the former agent name only where changing it breaks installed controllers or stored data: the JWT audience `agent`, the Kubernetes label `agent.distr.sh/deployment`, the Helm secrets `sh.distr.agent.v1.*`, the field managers `distr-agent*`, the legacy manifest revisions (`LegacyAgentManifest`) and the deprecated `/api/v1/agent*` routes, `AGENT_*` and `DISTR_AGENT_*` env var aliases and `agent*` JSON fields.
 
 That server is called Distr, never Hub. The name holds for user-facing text, for identifiers in configuration users write (Helm values, Compose services, Kubernetes labels) and for file, folder and mise task names. Reintroducing "Hub" anywhere is a regression.
 

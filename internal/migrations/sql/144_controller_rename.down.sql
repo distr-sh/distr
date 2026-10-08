@@ -1,3 +1,5 @@
+ALTER TYPE TUTORIAL RENAME VALUE 'controllers' TO 'agents';
+
 ALTER TABLE DeploymentTargetMetrics RENAME COLUMN controller_log_bytes TO agent_log_bytes;
 ALTER TABLE DeploymentTargetMetrics RENAME COLUMN controller_memory_bytes TO agent_memory_bytes;
 ALTER TABLE DeploymentTargetMetrics RENAME COLUMN controller_cpu_usage_millis TO agent_cpu_usage_millis;

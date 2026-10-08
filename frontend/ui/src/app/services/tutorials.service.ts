@@ -44,7 +44,7 @@ export class TutorialsService {
     },
     {
       name: 'Try out Controllers, Applications and Deployments',
-      id: 'agents',
+      id: 'controllers',
       path: 'controllers',
       icon: this.faBoxesStacked,
       description: 'Learn how to integrate, deploy and monitor your applications with Distr.',

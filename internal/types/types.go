@@ -294,10 +294,8 @@ const (
 	DeploymentTargetScopeCluster   DeploymentTargetScope = "cluster"
 	DeploymentTargetScopeNamespace DeploymentTargetScope = "namespace"
 
-	TutorialBranding Tutorial = "branding"
-	// TutorialControllers keeps the value from before the rename to controller, since it is stored in the TUTORIAL
-	// enum and is part of the tutorial progress URL.
-	TutorialControllers   Tutorial  = "agents"
+	TutorialBranding      Tutorial  = "branding"
+	TutorialControllers   Tutorial  = "controllers"
 	TutorialRegistry      Tutorial  = "registry"
 	TutorialUsers         Tutorial  = "users"
 	FileScopePlatform     FileScope = "platform"

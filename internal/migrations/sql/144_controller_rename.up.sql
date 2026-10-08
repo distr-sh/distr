@@ -18,3 +18,5 @@ UPDATE DeploymentTarget SET legacy_agent_manifest = true;
 ALTER TABLE DeploymentTargetMetrics RENAME COLUMN agent_cpu_usage_millis TO controller_cpu_usage_millis;
 ALTER TABLE DeploymentTargetMetrics RENAME COLUMN agent_memory_bytes TO controller_memory_bytes;
 ALTER TABLE DeploymentTargetMetrics RENAME COLUMN agent_log_bytes TO controller_log_bytes;
+
+ALTER TYPE TUTORIAL RENAME VALUE 'agents' TO 'controllers';
