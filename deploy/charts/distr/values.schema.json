@@ -183,6 +183,10 @@
         }
       }
     },
+    "deploymentAnnotations": {
+      "description": "[Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/) to add to the Distr Deployment, e.g. for controllers that restart it when a referenced Secret changes.",
+      "type": "object"
+    },
     "distr": {
       "type": "object",
       "properties": {
