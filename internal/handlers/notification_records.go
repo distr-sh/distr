@@ -18,9 +18,10 @@ import (
 func NotificationRecordsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Notifications"))
 
-	r.Use(middleware.ProFeature)
+	r.Use(middleware.ProFeature, middleware.NotificationHistoryCustomerFeatureMiddleware)
 
 	r.Get("/", getNotificationRecordsHandler()).
+		With(option.Request(customerScopeQuery{})).
 		With(option.Response(http.StatusOK, []api.NotificationRecord{}))
 }
 
@@ -29,7 +30,12 @@ func getNotificationRecordsHandler() http.HandlerFunc {
 		ctx := r.Context()
 		auth := auth.Authentication.Require(ctx)
 
-		records, err := db.GetNotificationRecords(ctx, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID())
+		customerOrgID, ok := resolveCustomerScopeFromQuery(w, r)
+		if !ok {
+			return
+		}
+
+		records, err := db.GetNotificationRecords(ctx, *auth.CurrentOrgID(), customerOrgID)
 		if err != nil {
 			internalctx.GetLogger(ctx).Error("failed to get notification records", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)

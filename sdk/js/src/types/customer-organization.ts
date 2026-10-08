@@ -1,7 +1,7 @@
 import {BaseModel} from './base';
 
 export type CustomerOrganizationFeature =
-  'deployment_targets' | 'artifacts' | 'alerts' | 'support_bundles' | 'oidc_providers';
+  'deployment_targets' | 'artifacts' | 'alerts' | 'update_notifications' | 'support_bundles' | 'oidc_providers';
 
 export interface CustomerOrganization extends Required<BaseModel> {
   name: string;

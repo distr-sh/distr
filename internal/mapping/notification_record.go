@@ -27,6 +27,21 @@ func NotificationRecordWithDetailsToAPI(record types.NotificationRecordWithDetai
 			record.CurrentDeploymentTargetMetrics,
 			DeploymentTargetMetricsToAPI,
 		),
-		DeliveryError: record.DeliveryError,
+		UpdateNotificationConfigurationID: record.UpdateNotificationConfigurationID,
+		ApplicationVersionID:              record.ApplicationVersionID,
+		ArtifactVersionID:                 record.ArtifactVersionID,
+		ArtifactName:                      record.ArtifactName,
+		ArtifactVersionName:               record.ArtifactVersionName,
+		Deployments:                       List(record.Deployments, notificationRecordDeploymentToAPI),
+		DeliveryError:                     record.DeliveryError,
+	}
+}
+
+func notificationRecordDeploymentToAPI(deployment types.NotificationRecordDeployment) api.NotificationRecordDeployment {
+	return api.NotificationRecordDeployment{
+		CustomerOrganizationName: deployment.CustomerOrganizationName,
+		DeploymentTargetName:     deployment.DeploymentTargetName,
+		HelmReleaseName:          deployment.HelmReleaseName,
+		CurrentVersionName:       deployment.CurrentVersionName,
 	}
 }

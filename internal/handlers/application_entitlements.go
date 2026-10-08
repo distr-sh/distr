@@ -14,6 +14,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/notification"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
@@ -94,7 +95,7 @@ func createApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = db.RunTx(ctx, func(ctx context.Context) error {
+	err = db.RunTx(ctx, func(ctx context.Context) error {
 		err := db.CreateApplicationEntitlement(ctx, &entitlement.ApplicationEntitlementBase)
 		if errors.Is(err, apierrors.ErrConflict) {
 			http.Error(w, "An entitlement with this name already exists", http.StatusBadRequest)
@@ -126,6 +127,30 @@ func createApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 
 		return nil
 	})
+
+	if err == nil {
+		notifyEntitledVersions(ctx, entitlement.ApplicationEntitlementBase, versionIDs(entitlement.Versions))
+	}
+}
+
+func notifyEntitledVersions(
+	ctx context.Context,
+	entitlement types.ApplicationEntitlementBase,
+	applicationVersionIDs []uuid.UUID,
+) {
+	notification.Dispatch(ctx, func(ctx context.Context) error {
+		return notification.SendApplicationEntitlementVersionsNotifications(
+			ctx, entitlement.OrganizationID, entitlement.ApplicationID, applicationVersionIDs,
+		)
+	})
+}
+
+func versionIDs(versions []types.ApplicationVersion) []uuid.UUID {
+	ids := make([]uuid.UUID, len(versions))
+	for i, version := range versions {
+		ids[i] = version.ID
+	}
+	return ids
 }
 
 func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
@@ -164,7 +189,9 @@ func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = db.RunTx(ctx, func(ctx context.Context) error {
+	addedVersionIDs, widened := widenedVersions(versionIDs(existing.Versions), versionIDs(entitlement.Versions))
+
+	err = db.RunTx(ctx, func(ctx context.Context) error {
 		err := db.UpdateApplicationEntitlement(ctx, &entitlement.ApplicationEntitlementBase)
 		if errors.Is(err, apierrors.ErrConflict) {
 			http.Error(w, "An entitlement with this name already exists", http.StatusBadRequest)
@@ -234,6 +261,22 @@ func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 
 		return nil
 	})
+
+	if err == nil && widened {
+		notifyEntitledVersions(ctx, entitlement.ApplicationEntitlementBase, addedVersionIDs)
+	}
+}
+
+func widenedVersions(existing, updated []uuid.UUID) ([]uuid.UUID, bool) {
+	if len(existing) == 0 {
+		return nil, false
+	} else if len(updated) == 0 {
+		return nil, true
+	}
+	added := slices.DeleteFunc(slices.Clone(updated), func(id uuid.UUID) bool {
+		return slices.Contains(existing, id)
+	})
+	return added, len(added) > 0
 }
 
 func formatVersionConflictError(conflicts []types.DeploymentVersionUsage) string {

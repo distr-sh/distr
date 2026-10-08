@@ -9,9 +9,10 @@ import (
 type NotificationRecordType string
 
 const (
-	NotificationRecordTypeAlert    NotificationRecordType = "alert"
-	NotificationRecordTypeWarning  NotificationRecordType = "warning"
-	NotificationRecordTypeResolved NotificationRecordType = "resolved"
+	NotificationRecordTypeAlert           NotificationRecordType = "alert"
+	NotificationRecordTypeWarning         NotificationRecordType = "warning"
+	NotificationRecordTypeResolved        NotificationRecordType = "resolved"
+	NotificationRecordTypeUpdateAvailable NotificationRecordType = "update_available"
 )
 
 type NotificationRecord struct {
@@ -34,7 +35,26 @@ type NotificationRecord struct {
 	DiskPath                          *string    `db:"disk_path"`
 	PreviousDeploymentTargetMetricsID *uuid.UUID `db:"previous_deployment_target_metrics_id"`
 	CurrentDeploymentTargetMetricsID  *uuid.UUID `db:"current_deployment_target_metrics_id"`
-	DeliveryError                     string     `db:"delivery_error"`
+
+	// UpdateNotificationConfigurationID is set on the record of an update notification, which is about exactly one
+	// of ApplicationVersionID and ArtifactVersionID. Such a record is written once per audience: CustomerOrganizationID
+	// and PartnerOrganizationID name the customer or partner whose users were notified, and are both nil for the
+	// vendor's own team.
+	UpdateNotificationConfigurationID *uuid.UUID `db:"update_notification_configuration_id"`
+	ApplicationVersionID              *uuid.UUID `db:"application_version_id"`
+	ArtifactVersionID                 *uuid.UUID `db:"artifact_version_id"`
+	PartnerOrganizationID             *uuid.UUID `db:"partner_organization_id"`
+	// Deployments are the ones an update notification listed as behind the announced version when it was sent.
+	Deployments []NotificationRecordDeployment `db:"deployments"`
+
+	DeliveryError string `db:"delivery_error"`
+}
+
+type NotificationRecordDeployment struct {
+	CustomerOrganizationName *string `json:"customerOrganizationName,omitempty"`
+	DeploymentTargetName     string  `json:"deploymentTargetName"`
+	HelmReleaseName          *string `json:"helmReleaseName,omitempty"`
+	CurrentVersionName       string  `json:"currentVersionName"`
 }
 
 type NotificationRecordWithDetails struct {
@@ -43,5 +63,7 @@ type NotificationRecordWithDetails struct {
 	CustomerOrganizationName       *string                  `db:"customer_organization_name"`
 	ApplicationName                *string                  `db:"application_name"`
 	ApplicationVersionName         *string                  `db:"application_version_name"`
+	ArtifactName                   *string                  `db:"artifact_name"`
+	ArtifactVersionName            *string                  `db:"artifact_version_name"`
 	CurrentDeploymentTargetMetrics *DeploymentTargetMetrics `db:"current_deployment_target_metrics"`
 }

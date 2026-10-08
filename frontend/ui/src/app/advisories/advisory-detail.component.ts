@@ -14,8 +14,8 @@ import {faArrowLeft, faPen, faUpRightFromSquare} from '@fortawesome/free-solid-s
 import {catchError, firstValueFrom, map, of, startWith, Subject, switchMap, take} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {sortAdvisoryApplicationVersions} from '../../util/versions';
-import {ApplicationLogoComponent} from '../applications/components';
-import {ArtifactLogoComponent, ArtifactsHashComponent} from '../artifacts/components';
+import {ApplicationPreviewComponent} from '../applications/components';
+import {ArtifactPreviewComponent} from '../artifacts/components';
 import {
   ActivityTimelineComponent,
   ActivityTimelineEntry,
@@ -30,8 +30,6 @@ import {ToastService} from '../services/toast.service';
 import {
   affectedBadgeClass,
   affectedLabel,
-  applicationVersionLabel,
-  artifactVersionLabel,
   confirmAdvisoryVisibilityChange,
   eventLabel,
   impactStateBadgeClass,
@@ -65,9 +63,8 @@ type ImpactState = {state: 'loading'} | {state: 'loaded'; impact: AdvisoryImpact
     InnerMarkdownDirective,
     AdvisoryFormComponent,
     ActivityTimelineComponent,
-    ArtifactsHashComponent,
-    ArtifactLogoComponent,
-    ApplicationLogoComponent,
+    ArtifactPreviewComponent,
+    ApplicationPreviewComponent,
     BadgeSelectComponent,
     PageComponent,
   ],
@@ -89,8 +86,6 @@ export class AdvisoryDetailComponent {
   protected readonly severitySelectOptions = severitySelectOptions;
   protected readonly impactStateBadgeClass = impactStateBadgeClass;
   protected readonly impactStateLabel = impactStateLabel;
-  protected readonly applicationVersionLabel = applicationVersionLabel;
-  protected readonly artifactVersionLabel = artifactVersionLabel;
   protected readonly statusLabel = statusLabel;
   protected readonly affectedLabel = affectedLabel;
   protected readonly affectedBadgeClass = affectedBadgeClass;

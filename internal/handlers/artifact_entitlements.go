@@ -3,13 +3,16 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/notification"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
@@ -106,7 +109,7 @@ func createArtifactEntitlement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = db.RunTx(ctx, func(ctx context.Context) error {
+	err = db.RunTx(ctx, func(ctx context.Context) error {
 		err := db.CreateArtifactEntitlement(ctx, &entitlement.ArtifactEntitlementBase)
 		if errors.Is(err, apierrors.ErrConflict) {
 			http.Error(w, "An artifact entitlement with this name already exists", http.StatusBadRequest)
@@ -125,6 +128,10 @@ func createArtifactEntitlement(w http.ResponseWriter, r *http.Request) {
 		RespondJSON(w, entitlement)
 		return nil
 	})
+
+	if err == nil {
+		notifyEntitledArtifactVersions(ctx, widenedArtifactEntitlement(nil, entitlement.Artifacts))
+	}
 }
 
 func updateArtifactEntitlement(w http.ResponseWriter, r *http.Request) {
@@ -156,7 +163,7 @@ func updateArtifactEntitlement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = db.RunTx(ctx, func(ctx context.Context) error {
+	err = db.RunTx(ctx, func(ctx context.Context) error {
 		err := db.UpdateArtifactEntitlement(ctx, &entitlement.ArtifactEntitlementBase)
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.NotFound(w, r)
@@ -185,6 +192,47 @@ func updateArtifactEntitlement(w http.ResponseWriter, r *http.Request) {
 		RespondJSON(w, entitlement)
 		return nil
 	})
+
+	if err == nil {
+		notifyEntitledArtifactVersions(ctx, widenedArtifactEntitlement(existing.Artifacts, entitlement.Artifacts))
+	}
+}
+
+func notifyEntitledArtifactVersions(ctx context.Context, selections []types.ArtifactEntitlementSelection) {
+	if len(selections) == 0 {
+		return
+	}
+	notification.Dispatch(ctx, func(ctx context.Context) error {
+		var aggErr error
+		for _, selection := range selections {
+			if err := notification.SendArtifactEntitlementVersionsNotifications(
+				ctx, selection.ArtifactID, selection.VersionIDs,
+			); err != nil {
+				aggErr = errors.Join(aggErr, fmt.Errorf("artifact %v: %w", selection.ArtifactID, err))
+			}
+		}
+		return aggErr
+	})
+}
+
+func widenedArtifactEntitlement(
+	existing, updated []types.ArtifactEntitlementSelection,
+) []types.ArtifactEntitlementSelection {
+	var widened []types.ArtifactEntitlementSelection
+	for _, selection := range updated {
+		index := slices.IndexFunc(existing, func(previous types.ArtifactEntitlementSelection) bool {
+			return previous.ArtifactID == selection.ArtifactID
+		})
+		if index < 0 {
+			widened = append(widened, selection)
+		} else if added, ok := widenedVersions(existing[index].VersionIDs, selection.VersionIDs); ok {
+			widened = append(widened, types.ArtifactEntitlementSelection{
+				ArtifactID: selection.ArtifactID,
+				VersionIDs: added,
+			})
+		}
+	}
+	return widened
 }
 
 func validateEntitlementSelections(entitlement types.ArtifactEntitlement) error {

@@ -555,15 +555,28 @@ func GetUserAccountAndOrg(ctx context.Context, userID, orgID uuid.UUID) (
 	*types.OrganizationWithBranding,
 	error,
 ) {
+	membership, err := GetOrganizationMembership(ctx, userID, orgID)
+	if err != nil {
+		return nil, nil, err
+	}
+	return &membership.User, &membership.Organization, nil
+}
+
+// GetOrganizationMembership returns the user's membership in the organization together with the
+// customer organization the membership belongs to, if any, which authentication reads on every
+// request.
+func GetOrganizationMembership(ctx context.Context, userID, orgID uuid.UUID) (*types.OrganizationMembership, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		"SELECT ("+userAccountWithRoleOutputExpr+`),
 					(`+organizationOutputExpr+`),
-					CASE WHEN b.id IS NOT NULL THEN (`+organizationBrandingOutputExpr+`) END AS branding
+					CASE WHEN b.id IS NOT NULL THEN (`+organizationBrandingOutputExpr+`) END AS branding,
+					CASE WHEN co.id IS NOT NULL THEN (`+customerOrganizationOutputExpr+`) END AS customer_organization
 			FROM UserAccount u
 			INNER JOIN Organization_UserAccount j ON u.id = j.user_account_id
 			INNER JOIN Organization o ON o.id = j.organization_id
 			LEFT JOIN OrganizationBranding b ON b.organization_id = o.id
+			LEFT JOIN CustomerOrganization co ON co.id = j.customer_organization_id
 			WHERE u.id = @id
 				AND j.organization_id = @orgId
 				AND o.deleted_at IS NULL`,
@@ -573,22 +586,24 @@ func GetUserAccountAndOrg(ctx context.Context, userID, orgID uuid.UUID) (
 		},
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	res, err := pgx.CollectExactlyOneRow[struct {
-		User     types.UserAccountWithUserRole
-		Org      types.Organization
-		Branding *types.OrganizationBranding
+		User                 types.UserAccountWithUserRole
+		Org                  types.Organization
+		Branding             *types.OrganizationBranding
+		CustomerOrganization *types.CustomerOrganization
 	}](rows, pgx.RowToStructByPos)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil, apierrors.ErrNotFound
-		} else {
-			return nil, nil, fmt.Errorf("could not map user or org: %w", err)
-		}
-	} else {
-		return &res.User, &types.OrganizationWithBranding{Organization: res.Org, Branding: res.Branding}, nil
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, apierrors.ErrNotFound
+	} else if err != nil {
+		return nil, fmt.Errorf("could not map user or org: %w", err)
 	}
+	return &types.OrganizationMembership{
+		User:                 res.User,
+		Organization:         types.OrganizationWithBranding{Organization: res.Org, Branding: res.Branding},
+		CustomerOrganization: res.CustomerOrganization,
+	}, nil
 }
 
 func GetCustomerAndOrgForDeploymentTarget(

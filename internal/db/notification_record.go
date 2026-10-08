@@ -2,12 +2,15 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 const notificationRecordOutputExpr = `
@@ -26,7 +29,16 @@ const notificationRecordOutputExpr = `
 	r.disk_path,
 	r.previous_deployment_target_metrics_id,
 	r.current_deployment_target_metrics_id,
+	r.update_notification_configuration_id,
+	r.application_version_id,
+	r.artifact_version_id,
+	r.partner_organization_id,
+	r.deployments,
 	r.delivery_error `
+
+// ErrNotificationRecordExists is returned when an update notification has been recorded for the same configuration,
+// version and audience already.
+var ErrNotificationRecordExists = errors.New("notification record already exists")
 
 func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecord) error {
 	db := internalctx.GetDb(ctx)
@@ -46,6 +58,11 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 				disk_path,
 				previous_deployment_target_metrics_id,
 				current_deployment_target_metrics_id,
+				update_notification_configuration_id,
+				application_version_id,
+				artifact_version_id,
+				partner_organization_id,
+				deployments,
 				delivery_error
 			)
 			VALUES (
@@ -61,37 +78,62 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 				@diskPath,
 				@previousMetricsID,
 				@currentMetricsID,
+				@updateNotificationConfigurationID,
+				@applicationVersionID,
+				@artifactVersionID,
+				@partnerOrganizationID,
+				@deployments,
 				@deliveryError
 			)
 			RETURNING *
 		)
 		SELECT`+notificationRecordOutputExpr+`FROM inserted r`,
 		pgx.NamedArgs{
-			"organizationID":          record.OrganizationID,
-			"customerOrganizationID":  record.CustomerOrganizationID,
-			"deploymentTargetID":      record.DeploymentTargetID,
-			"alertConfigurationID":    record.AlertConfigurationID,
-			"type":                    record.Type,
-			"deploymentRevisionID":    record.DeploymentRevisionID,
-			"deploymentStatusMessage": record.DeploymentStatusMessage,
-			"metricType":              record.MetricType,
-			"diskDevice":              record.DiskDevice,
-			"diskPath":                record.DiskPath,
-			"previousMetricsID":       record.PreviousDeploymentTargetMetricsID,
-			"currentMetricsID":        record.CurrentDeploymentTargetMetricsID,
-			"deliveryError":           record.DeliveryError,
+			"organizationID":                    record.OrganizationID,
+			"customerOrganizationID":            record.CustomerOrganizationID,
+			"deploymentTargetID":                record.DeploymentTargetID,
+			"alertConfigurationID":              record.AlertConfigurationID,
+			"type":                              record.Type,
+			"deploymentRevisionID":              record.DeploymentRevisionID,
+			"deploymentStatusMessage":           record.DeploymentStatusMessage,
+			"metricType":                        record.MetricType,
+			"diskDevice":                        record.DiskDevice,
+			"diskPath":                          record.DiskPath,
+			"previousMetricsID":                 record.PreviousDeploymentTargetMetricsID,
+			"currentMetricsID":                  record.CurrentDeploymentTargetMetricsID,
+			"updateNotificationConfigurationID": record.UpdateNotificationConfigurationID,
+			"applicationVersionID":              record.ApplicationVersionID,
+			"artifactVersionID":                 record.ArtifactVersionID,
+			"partnerOrganizationID":             record.PartnerOrganizationID,
+			"deployments":                       record.Deployments,
+			"deliveryError":                     record.DeliveryError,
 		},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to save NotificationRecord: %w", err)
 	}
 
-	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.NotificationRecord]); err != nil {
+	// The unique violation surfaces when the row is read, not when the query is sent.
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.NotificationRecord])
+	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation {
+		return ErrNotificationRecordExists
+	} else if err != nil {
 		return fmt.Errorf("failed to collect NotificationRecord: %w", err)
-	} else {
-		*record = result
 	}
+	*record = result
 
+	return nil
+}
+
+func SetNotificationRecordDeliveryError(ctx context.Context, id uuid.UUID, deliveryError string) error {
+	db := internalctx.GetDb(ctx)
+	if _, err := db.Exec(
+		ctx,
+		`UPDATE NotificationRecord SET delivery_error = @deliveryError WHERE id = @id`,
+		pgx.NamedArgs{"id": id, "deliveryError": deliveryError},
+	); err != nil {
+		return fmt.Errorf("failed to update NotificationRecord: %w", err)
+	}
 	return nil
 }
 
@@ -164,6 +206,8 @@ func GetNotificationRecords(
 			co.name AS customer_organization_name,
 			a.name AS application_name,
 			av.name AS application_version_name,
+			ar.name AS artifact_name,
+			arv.name AS artifact_version_name,
 			CASE WHEN dtm.id IS NOT NULL THEN (
 				dtm.id,
 				dtm.created_at,
@@ -179,13 +223,17 @@ func GetNotificationRecords(
 		LEFT JOIN DeploymentTarget dt
 			ON r.deployment_target_id = dt.id
 		LEFT JOIN CustomerOrganization co
-			ON dt.customer_organization_id = co.id
+			ON co.id = coalesce(dt.customer_organization_id, r.customer_organization_id)
 		LEFT JOIN DeploymentRevision dr
 			ON dr.id = r.deployment_revision_id
 		LEFT JOIN ApplicationVersion av
-			ON dr.application_version_id = av.id
+			ON av.id = coalesce(r.application_version_id, dr.application_version_id)
 		LEFT JOIN Application a
 			ON av.application_id = a.id
+		LEFT JOIN ArtifactVersion arv
+			ON arv.id = r.artifact_version_id
+		LEFT JOIN Artifact ar
+			ON ar.id = arv.artifact_id
 		LEFT JOIN DeploymentTargetMetrics dtm
 			ON r.current_deployment_target_metrics_id = dtm.id
 		LEFT JOIN DeploymentTargetDiskMetrics dtdm
@@ -193,7 +241,7 @@ func GetNotificationRecords(
 		WHERE r.organization_id = @organizationID
 			AND ((@isVendor AND r.customer_organization_id IS NULL)
 				OR r.customer_organization_id = @customerOrganizationID)
-		GROUP BY r.id, dt.id, co.id, a.id, av.id, dtm.id
+		GROUP BY r.id, dt.id, co.id, a.id, av.id, ar.id, arv.id, dtm.id
 		ORDER BY r.created_at DESC`,
 		pgx.NamedArgs{
 			"organizationID":         organizationID,

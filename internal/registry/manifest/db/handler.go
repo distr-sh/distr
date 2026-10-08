@@ -8,6 +8,7 @@ import (
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/notification"
 	"github.com/distr-sh/distr/internal/registry/manifest"
 	"github.com/distr-sh/distr/internal/registry/name"
 	"github.com/distr-sh/distr/internal/types"
@@ -186,7 +187,12 @@ func (h *handler) Put(
 	if err != nil {
 		return err
 	}
-	return db.RunTx(ctx, func(ctx context.Context) error {
+
+	// A push of a tag that already exists with the same content leaves this nil, so that only an
+	// actually created version is announced.
+	var created *types.ArtifactVersion
+
+	if err := db.RunTx(ctx, func(ctx context.Context) error {
 		artifact, err := db.GetOrCreateArtifact(ctx, *auth.CurrentOrgID(), name.ArtifactName)
 		if err != nil {
 			return err
@@ -233,6 +239,19 @@ func (h *handler) Put(
 				return err
 			}
 		}
+		created = &version
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+
+	if created != nil {
+		db.RunAfterTx(ctx, func(ctx context.Context) {
+			notification.Dispatch(ctx, func(ctx context.Context) error {
+				return notification.SendArtifactVersionAvailableNotifications(ctx, *created)
+			})
+		})
+	}
+
+	return nil
 }
