@@ -31,8 +31,6 @@ type DeploymentTarget struct {
 	ControllerVersionID    *uuid.UUID             `db:"controller_version_id" json:"-"`
 	//nolint:lll
 	ReportedControllerVersionID *uuid.UUID `db:"reported_controller_version_id" json:"reportedControllerVersionId,omitempty"`
-	// Deprecated: ReportedAgentVersionID repeats ReportedControllerVersionID under its former JSON name.
-	ReportedAgentVersionID *uuid.UUID `db:"reported_agent_version_id" json:"reportedAgentVersionId,omitempty"`
 	// LegacyAgentManifest is set on targets created before the rename to controller. They keep receiving the
 	// manifest revisions that name their resources after the agent, since a controller applies its own
 	// manifest by resource name and would otherwise end up running next to the old one.
@@ -45,6 +43,8 @@ type DeploymentTarget struct {
 	DeploymentLogsAfter     *time.Time                 `db:"deployment_logs_after" json:"deploymentLogsAfter,omitempty"`
 	Resources               *DeploymentTargetResources `db:"resources" json:"resources,omitempty"`
 	DockerEndpoint          *string                    `db:"docker_endpoint" json:"dockerEndpoint,omitempty"`
+	// Deprecated: ReportedAgentVersionID repeats ReportedControllerVersionID under its former JSON name.
+	ReportedAgentVersionID *uuid.UUID `db:"reported_agent_version_id" json:"reportedAgentVersionId,omitempty"`
 }
 
 type DeploymentTargetResources struct {

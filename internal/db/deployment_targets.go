@@ -29,7 +29,6 @@ const (
 		dt.customer_organization_id,
 		dt.controller_version_id,
 		dt.reported_controller_version_id,
-		dt.reported_controller_version_id,
 		dt.legacy_agent_manifest,
 		dt.metrics_enabled,
 		dt.image_cleanup_enabled,
@@ -43,7 +42,8 @@ const (
 			dt.resources_cpu_limit,
 			dt.resources_memory_limit
 		) END,
-		dt.docker_endpoint
+		dt.docker_endpoint,
+		dt.reported_controller_version_id
 	`
 	deploymentTargetOutputExpr = deploymentTargetOutputExprBase +
 		", CASE WHEN co.id IS NOT NULL THEN (" + customerOrganizationOutputExpr + ") END AS customer_organization"
