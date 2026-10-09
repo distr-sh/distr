@@ -39,14 +39,14 @@ func getTemplateData(
 	secret *string,
 ) (map[string]any, error) {
 	var (
-		loginEndpoint             string
-		manifestEndpoint          string
-		resourcesEndpoint         string
-		statusEndpoint            string
-		metricsEndpoint           string
-		deploymentMetricsEndpoint string
-		logsEndpoint              string
-		controllerLogsEndpoint    string
+		loginEndpoint                string
+		manifestEndpoint             string
+		resourcesEndpoint            string
+		statusEndpoint               string
+		metricsEndpoint              string
+		deploymentMetricsEndpoint    string
+		logsEndpoint                 string
+		deploymentTargetLogsEndpoint string
 	)
 
 	if u, err := url.Parse(customdomains.ControllerDomainOrDefault(ctx, org.ID, org.Branding)); err != nil {
@@ -60,30 +60,31 @@ func getTemplateData(
 		metricsEndpoint = u.JoinPath("metrics").String()
 		deploymentMetricsEndpoint = u.JoinPath("deployments").String()
 		logsEndpoint = u.JoinPath("logs").String()
-		controllerLogsEndpoint = u.JoinPath("deployment-target-logs").String()
+		deploymentTargetLogsEndpoint = u.JoinPath("deployment-target-logs").String()
 	}
 
 	result := map[string]any{
-		"controllerDockerConfig":    base64.StdEncoding.EncodeToString(env.ControllerDockerConfig()),
-		"controllerInterval":        env.ControllerInterval(),
-		"controllerVersion":         deploymentTarget.ControllerVersion.Name,
-		"controllerVersionId":       deploymentTarget.ControllerVersion.ID,
-		"autohealAll":               deploymentTarget.AutohealEnabled,
-		"loginEndpoint":             loginEndpoint,
-		"manifestEndpoint":          manifestEndpoint,
-		"metricsEndpoint":           metricsEndpoint,
-		"deploymentMetricsEndpoint": deploymentMetricsEndpoint,
-		"registryEnabled":           env.RegistryEnabled(),
-		"registryHost":              customdomains.RegistryDomainOrDefault(ctx, org.ID, org.Branding),
-		"registryPlainHttp":         buildconfig.IsDevelopment(),
-		"resourcesEndpoint":         resourcesEndpoint,
-		"statusEndpoint":            statusEndpoint,
-		"targetId":                  deploymentTarget.ID,
-		"targetSecret":              secret,
-		"logsEndpoint":              logsEndpoint,
-		"controllerLogsEndpoint":    controllerLogsEndpoint,
-		"metricsEnabled":            deploymentTarget.MetricsEnabled,
-		"dockerSocketPath":          deploymentTarget.DockerSocketPath(),
+		"controllerName":               controllerName(deploymentTarget),
+		"controllerDockerConfig":       base64.StdEncoding.EncodeToString(env.ControllerDockerConfig()),
+		"controllerInterval":           env.ControllerInterval(),
+		"controllerVersion":            deploymentTarget.ControllerVersion.Name,
+		"controllerVersionId":          deploymentTarget.ControllerVersion.ID,
+		"autohealAll":                  deploymentTarget.AutohealEnabled,
+		"loginEndpoint":                loginEndpoint,
+		"manifestEndpoint":             manifestEndpoint,
+		"metricsEndpoint":              metricsEndpoint,
+		"deploymentMetricsEndpoint":    deploymentMetricsEndpoint,
+		"registryEnabled":              env.RegistryEnabled(),
+		"registryHost":                 customdomains.RegistryDomainOrDefault(ctx, org.ID, org.Branding),
+		"registryPlainHttp":            buildconfig.IsDevelopment(),
+		"resourcesEndpoint":            resourcesEndpoint,
+		"statusEndpoint":               statusEndpoint,
+		"targetId":                     deploymentTarget.ID,
+		"targetSecret":                 secret,
+		"logsEndpoint":                 logsEndpoint,
+		"deploymentTargetLogsEndpoint": deploymentTargetLogsEndpoint,
+		"metricsEnabled":               deploymentTarget.MetricsEnabled,
+		"dockerSocketPath":             deploymentTarget.DockerSocketPath(),
 	}
 	if deploymentTarget.Namespace != nil {
 		result["targetNamespace"] = *deploymentTarget.Namespace
@@ -97,20 +98,24 @@ func getTemplateData(
 	return result, nil
 }
 
-func getTemplate(deploymentTarget types.DeploymentTargetFull) (*template.Template, error) {
-	manifestRevision := deploymentTarget.ControllerVersion.ManifestFileRevision
-	composeRevision := deploymentTarget.ControllerVersion.ComposeFileRevision
-	if deploymentTarget.LegacyAgentManifest {
-		if manifestRevision == types.CurrentManifestFileRevision {
-			manifestRevision = types.LegacyManifestFileRevision
-		}
-		if composeRevision == types.CurrentComposeFileRevision {
-			composeRevision = types.LegacyComposeFileRevision
-		}
+// controllerName is the name the controller's own resources and compose service are derived from. A controller
+// applies its manifest by name without pruning, so a target set up as an agent must keep its names or end up
+// running two controllers.
+func controllerName(deploymentTarget types.DeploymentTargetFull) string {
+	if deploymentTarget.LegacyControllerName {
+		return "agent"
 	}
+	return "controller"
+}
+
+func getTemplate(deploymentTarget types.DeploymentTargetFull) (*template.Template, error) {
 	if deploymentTarget.Type == types.DeploymentTypeDocker {
-		return resources.GetTemplate(path.Join("controller/docker", composeRevision, "docker-compose.yaml.tmpl"))
+		return resources.GetTemplate(path.Join(
+			"controller/docker", deploymentTarget.ControllerVersion.ComposeFileRevision, "docker-compose.yaml.tmpl",
+		))
 	} else {
-		return resources.GetTemplate(path.Join("controller/kubernetes", manifestRevision, "manifest.yaml.tmpl"))
+		return resources.GetTemplate(path.Join(
+			"controller/kubernetes", deploymentTarget.ControllerVersion.ManifestFileRevision, "manifest.yaml.tmpl",
+		))
 	}
 }

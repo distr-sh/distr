@@ -4,7 +4,7 @@ ALTER TABLE DeploymentTargetMetrics RENAME COLUMN controller_log_bytes TO agent_
 ALTER TABLE DeploymentTargetMetrics RENAME COLUMN controller_memory_bytes TO agent_memory_bytes;
 ALTER TABLE DeploymentTargetMetrics RENAME COLUMN controller_cpu_usage_millis TO agent_cpu_usage_millis;
 
-ALTER TABLE DeploymentTarget DROP COLUMN legacy_agent_manifest;
+ALTER TABLE DeploymentTarget DROP COLUMN legacy_controller_name;
 
 ALTER INDEX fk_DeploymentTarget_controller_version_id RENAME TO fk_DeploymentTarget_agent_version_id;
 ALTER TABLE DeploymentTarget

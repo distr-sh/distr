@@ -53,8 +53,10 @@ services:
       DISTR_STATUS_ENDPOINT: 'https://<distr-host>/api/v1/controller/status'
       DISTR_METRICS_ENDPOINT: 'https://<distr-host>/api/v1/controller/metrics'
       DISTR_DEPLOYMENT_METRICS_ENDPOINT: 'https://<distr-host>/api/v1/controller/deployments'
+      DISTR_LOGS_ENDPOINT: 'https://<distr-host>/api/v1/controller/logs'
+      DISTR_DEPLOYMENT_TARGET_LOGS_ENDPOINT: 'https://<distr-host>/api/v1/controller/deployment-target-logs'
       # how often the controller fetches deployments
-      DISTR_INTERVAL: '5s'
+      DISTR_CONTROLLER_INTERVAL: '5s'
       # controller versioning information, needed for controller self-updates:
       DISTR_CONTROLLER_VERSION_ID: '<db-id-of-controller-version>'
       DISTR_CONTROLLER_SCRATCH_DIR: /scratch
@@ -73,7 +75,7 @@ All requests to Distr are authenticated with a JWT token obtained by calling `DI
 
 ## Core Logic
 
-The controller runs the following loop at the interval defined by `DISTR_INTERVAL` (default 5 seconds):
+The controller runs the following loop at the interval defined by `DISTR_CONTROLLER_INTERVAL` (default 5 seconds):
 
 1. Fetch the deployments from `DISTR_RESOURCE_ENDPOINT`
 2. Remove Docker Compose projects that are no longer in the list (undeployed), together with their volumes and networks

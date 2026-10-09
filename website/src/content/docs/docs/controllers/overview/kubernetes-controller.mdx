@@ -91,7 +91,7 @@ The `distr-controller-env` ConfigMap contains all controller environment variabl
 
 ## Core Logic
 
-The controller runs the following loop at the interval defined by `DISTR_INTERVAL` (default 5 seconds):
+The controller runs the following loop at the interval defined by `DISTR_CONTROLLER_INTERVAL` (default 5 seconds):
 
 1. Fetch the deployments from `DISTR_RESOURCE_ENDPOINT`
 2. Uninstall Helm releases that are no longer in the list (undeployed)

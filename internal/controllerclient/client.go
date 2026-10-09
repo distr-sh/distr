@@ -336,7 +336,7 @@ func (c *Client) ReloadFromEnv() (changed bool, err error) {
 		return changed, err
 	} else if d.deploymentLogsEndpoint, err = readEnvVar("DISTR_LOGS_ENDPOINT"); err != nil {
 		return changed, err
-	} else if d.deploymentTargetLogsEndpoint, err = readControllerEnvVar("LOGS_ENDPOINT"); err != nil {
+	} else if d.deploymentTargetLogsEndpoint, err = readEnvVar("DISTR_DEPLOYMENT_TARGET_LOGS_ENDPOINT"); err != nil {
 		return changed, err
 	} else {
 		changed = c.clientData != d
@@ -366,18 +366,6 @@ func readEnvVar(key string) (string, error) {
 		return value, nil
 	} else {
 		return "", fmt.Errorf("missing environment variable: %v", key)
-	}
-}
-
-// readControllerEnvVar reads DISTR_CONTROLLER_<name>, falling back to DISTR_AGENT_<name> that manifests of
-// targets created before the rename to controller set instead.
-func readControllerEnvVar(name string) (string, error) {
-	if value, err := readEnvVar("DISTR_CONTROLLER_" + name); err == nil {
-		return value, nil
-	} else if value, ok := os.LookupEnv("DISTR_AGENT_" + name); ok {
-		return value, nil
-	} else {
-		return "", err
 	}
 }
 

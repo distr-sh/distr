@@ -11,11 +11,6 @@ import (
 const (
 	CurrentManifestFileRevision = "v3"
 	CurrentComposeFileRevision  = "v2"
-	// LegacyManifestFileRevision and LegacyComposeFileRevision are the newest revisions that name their resources
-	// after the agent. A controller applies its own manifest by resource name without pruning, so a target set up
-	// with one of them must keep receiving it (see DeploymentTarget.LegacyAgentManifest).
-	LegacyManifestFileRevision = "v2"
-	LegacyComposeFileRevision  = "v1"
 )
 
 var minVersionMultiDeployment = semver.MustParse("1.6.0")

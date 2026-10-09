@@ -30,10 +30,9 @@ type DeploymentTarget struct {
 	CustomerOrganizationID      *uuid.UUID             `db:"customer_organization_id" json:"customerOrganizationId,omitempty"` //nolint:lll
 	ControllerVersionID         *uuid.UUID             `db:"controller_version_id" json:"-"`
 	ReportedControllerVersionID *uuid.UUID             `db:"reported_controller_version_id" json:"reportedControllerVersionId,omitempty"` //nolint:lll
-	// LegacyAgentManifest is set on targets created before the rename to controller. They keep receiving the
-	// manifest revisions that name their resources after the agent, since a controller applies its own
-	// manifest by resource name and would otherwise end up running next to the old one.
-	LegacyAgentManifest     bool                       `db:"legacy_agent_manifest" json:"-"`
+	// LegacyControllerName is set on targets created before the rename to controller, whose manifests keep naming
+	// the controller's resources and compose service after the agent.
+	LegacyControllerName    bool                       `db:"legacy_controller_name" json:"-"`
 	MetricsEnabled          bool                       `db:"metrics_enabled" json:"metricsEnabled"`
 	ImageCleanupEnabled     bool                       `db:"image_cleanup_enabled" json:"imageCleanupEnabled"`
 	AutohealEnabled         bool                       `db:"autoheal_enabled" json:"autohealEnabled"`

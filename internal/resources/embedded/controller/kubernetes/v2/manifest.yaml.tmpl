@@ -12,7 +12,7 @@ data:
   DISTR_METRICS_ENDPOINT: "{{ .metricsEndpoint }}"
   DISTR_DEPLOYMENT_METRICS_ENDPOINT: "{{ .deploymentMetricsEndpoint }}"
   DISTR_LOGS_ENDPOINT: "{{ .logsEndpoint }}"
-  DISTR_AGENT_LOGS_ENDPOINT: "{{ .controllerLogsEndpoint }}"
+  DISTR_AGENT_LOGS_ENDPOINT: "{{ .deploymentTargetLogsEndpoint }}"
   DISTR_INTERVAL: "{{ .controllerInterval }}"
   DISTR_AGENT_VERSION_ID: "{{ .controllerVersionId }}"
   {{- if .registryEnabled }}

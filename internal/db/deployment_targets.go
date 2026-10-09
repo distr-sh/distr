@@ -29,7 +29,7 @@ const (
 		dt.customer_organization_id,
 		dt.controller_version_id,
 		dt.reported_controller_version_id,
-		dt.legacy_agent_manifest,
+		dt.legacy_controller_name,
 		dt.metrics_enabled,
 		dt.image_cleanup_enabled,
 		dt.autoheal_enabled,

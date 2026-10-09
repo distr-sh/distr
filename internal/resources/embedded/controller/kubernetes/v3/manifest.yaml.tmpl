@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: distr-controller-env
+  name: distr-{{ .controllerName }}-env
 data:
   DISTR_TARGET_ID: "{{ .targetId }}"
   DISTR_LOGIN_ENDPOINT: "{{ .loginEndpoint }}"
@@ -12,8 +12,8 @@ data:
   DISTR_METRICS_ENDPOINT: "{{ .metricsEndpoint }}"
   DISTR_DEPLOYMENT_METRICS_ENDPOINT: "{{ .deploymentMetricsEndpoint }}"
   DISTR_LOGS_ENDPOINT: "{{ .logsEndpoint }}"
-  DISTR_CONTROLLER_LOGS_ENDPOINT: "{{ .controllerLogsEndpoint }}"
-  DISTR_INTERVAL: "{{ .controllerInterval }}"
+  DISTR_DEPLOYMENT_TARGET_LOGS_ENDPOINT: "{{ .deploymentTargetLogsEndpoint }}"
+  DISTR_CONTROLLER_INTERVAL: "{{ .controllerInterval }}"
   DISTR_CONTROLLER_VERSION_ID: "{{ .controllerVersionId }}"
   {{- if .registryEnabled }}
   DISTR_REGISTRY_HOST: "{{ .registryHost }}"
@@ -25,7 +25,7 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: distr-controller-auth
+  name: distr-{{ .controllerName }}-auth
 type: Opaque
 stringData:
   DISTR_TARGET_SECRET: "{{ .targetSecret }}"
@@ -36,7 +36,7 @@ stringData:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: distr-controller-dockerconfig
+  name: distr-{{ .controllerName }}-dockerconfig
 type: Opaque
 data:
   config.json: {{ .controllerDockerConfig }}
@@ -46,7 +46,7 @@ data:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: distr-controller
+  name: distr-{{ .controllerName }}
 
 {{ if eq .targetScope "namespace" }}
 ---
@@ -66,10 +66,10 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: distr-controller
+  name: distr-{{ .controllerName }}
 subjects:
   - kind: ServiceAccount
-    name: distr-controller
+    name: distr-{{ .controllerName }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -80,10 +80,10 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: distr-controller-{{ .targetNamespace }}
+  name: distr-{{ .controllerName }}-{{ .targetNamespace }}
 subjects:
   - kind: ServiceAccount
-    name: distr-controller
+    name: distr-{{ .controllerName }}
     namespace: {{ .targetNamespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -95,24 +95,24 @@ roleRef:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: distr-controller
+  name: distr-{{ .controllerName }}
 spec:
   selector:
     matchLabels:
-      app: distr-controller
+      app: distr-{{ .controllerName }}
   replicas: 1
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: distr-controller
+        app: distr-{{ .controllerName }}
     spec:
-      serviceAccountName: distr-controller
+      serviceAccountName: distr-{{ .controllerName }}
       securityContext:
         runAsNonRoot: true
       containers:
-        - name: distr-controller
+        - name: distr-{{ .controllerName }}
           image: "ghcr.io/distr-sh/distr/kubernetes-controller:{{ .controllerVersion }}"
           imagePullPolicy: IfNotPresent
           env:
@@ -124,9 +124,9 @@ spec:
                 /opt/config/.controller/auth
           envFrom:
             - secretRef:
-                name: distr-controller-auth
+                name: distr-{{ .controllerName }}-auth
             - configMapRef:
-                name: distr-controller-env
+                name: distr-{{ .controllerName }}-env
           ports:
             - containerPort: 8765
           livenessProbe:
@@ -170,13 +170,13 @@ spec:
       volumes:
         - name: env
           configMap:
-            name: distr-controller-env
+            name: distr-{{ .controllerName }}-env
         - name: auth
           secret:
-            secretName: distr-controller-auth
+            secretName: distr-{{ .controllerName }}-auth
         - name: dockerconfig
           secret:
-            secretName: distr-controller-dockerconfig
+            secretName: distr-{{ .controllerName }}-dockerconfig
             optional: true
         - name: cache
           emptyDir: {}

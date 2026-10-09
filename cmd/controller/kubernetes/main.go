@@ -21,6 +21,7 @@ import (
 	"github.com/distr-sh/distr/internal/controllerclient"
 	"github.com/distr-sh/distr/internal/controllerenv"
 	"github.com/distr-sh/distr/internal/deploymenttargetlogs"
+	"github.com/distr-sh/distr/internal/envutil"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/fsnotify/fsnotify"
@@ -69,7 +70,7 @@ func init() {
 	if controllerenv.ControllerVersionID == "" {
 		logger.Warn("DISTR_CONTROLLER_VERSION_ID is not set. self updates will be disabled")
 	}
-	if s := controllerenv.Get("CONFIG_DIRS"); s != "" {
+	if s := envutil.GetEnv("DISTR_CONTROLLER_CONFIG_DIRS"); s != "" {
 		controllerConfigDirs = slices.DeleteFunc(
 			strings.Split(s, "\n"),
 			func(s string) bool { return strings.TrimSpace(s) == "" },

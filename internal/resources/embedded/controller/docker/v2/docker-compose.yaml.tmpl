@@ -1,6 +1,6 @@
 name: distr
 services:
-  controller:
+  {{ .controllerName }}:
     network_mode: host
     restart: always
     image: 'ghcr.io/distr-sh/distr/docker-controller:{{ .controllerVersion }}'
@@ -16,8 +16,8 @@ services:
       DISTR_METRICS_ENDPOINT: '{{ .metricsEndpoint }}'
       DISTR_DEPLOYMENT_METRICS_ENDPOINT: '{{ .deploymentMetricsEndpoint }}'
       DISTR_LOGS_ENDPOINT: '{{ .logsEndpoint }}'
-      DISTR_CONTROLLER_LOGS_ENDPOINT: '{{ .controllerLogsEndpoint }}'
-      DISTR_INTERVAL: '{{ .controllerInterval }}'
+      DISTR_DEPLOYMENT_TARGET_LOGS_ENDPOINT: '{{ .deploymentTargetLogsEndpoint }}'
+      DISTR_CONTROLLER_INTERVAL: '{{ .controllerInterval }}'
       DISTR_CONTROLLER_VERSION_ID: '{{ .controllerVersionId }}'
       DISTR_CONTROLLER_SCRATCH_DIR: /scratch
       {{- if .registryEnabled }}
