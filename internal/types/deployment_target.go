@@ -66,6 +66,24 @@ func (dt *DeploymentTarget) Validate() error {
 		if dt.Scope == nil {
 			return validation.NewValidationFailedError("DeploymentTarget with type \"kubernetes\" must not have empty scope")
 		}
+	case DeploymentTypeDocker:
+		if dt.Namespace != nil {
+			return validation.NewValidationFailedError("DeploymentTarget with type \"docker\" must not have a namespace")
+		}
+		if dt.Scope != nil {
+			return validation.NewValidationFailedError("DeploymentTarget with type \"docker\" must not have a scope")
+		}
+	default:
+		return validation.NewValidationFailedError("invalid deployment target type")
+	}
+	return dt.ValidateUpdatableFields(dt.Type)
+}
+
+// ValidateUpdatableFields takes the type as an argument because an update never changes it, so the
+// type a request carries is not the one to validate against.
+func (dt *DeploymentTarget) ValidateUpdatableFields(deploymentType DeploymentType) error {
+	switch deploymentType {
+	case DeploymentTypeKubernetes:
 		if dt.ImageCleanupEnabled {
 			return validation.NewValidationFailedError(
 				"image cleanup is not supported on DeploymentTarget with type \"kubernetes\"")
@@ -88,10 +106,8 @@ func (dt *DeploymentTarget) Validate() error {
 		if dt.Resources != nil {
 			return validation.NewValidationFailedError("DeploymentTarget with type \"docker\" must not have resources")
 		}
-	default:
-		return validation.NewValidationFailedError("invalid deployment target type")
 	}
-	return ValidateDockerEndpoint(dt.DockerEndpoint, dt.Type)
+	return ValidateDockerEndpoint(dt.DockerEndpoint, deploymentType)
 }
 
 const DefaultDockerSocketPath = "/var/run/docker.sock"

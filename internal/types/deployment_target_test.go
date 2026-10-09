@@ -41,6 +41,23 @@ func TestParseDockerEndpoint(t *testing.T) {
 	}
 }
 
+func TestValidateDockerRejectsKubernetesFields(t *testing.T) {
+	invalid := map[string]DeploymentTarget{
+		"namespace":       {Type: DeploymentTypeDocker, Namespace: new("default")},
+		"empty namespace": {Type: DeploymentTypeDocker, Namespace: new("")},
+		"scope":           {Type: DeploymentTypeDocker, Scope: new(DeploymentTargetScopeNamespace)},
+	}
+	for name, dt := range invalid {
+		t.Run(name, func(t *testing.T) {
+			g := NewWithT(t)
+			g.Expect(dt.Validate()).To(HaveOccurred())
+		})
+	}
+
+	g := NewWithT(t)
+	g.Expect((&DeploymentTarget{Type: DeploymentTypeDocker}).Validate()).To(Succeed())
+}
+
 func TestDockerSocketPath(t *testing.T) {
 	g := NewWithT(t)
 
