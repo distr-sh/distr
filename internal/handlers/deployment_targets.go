@@ -146,55 +146,34 @@ func createDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 
 			if dt.CustomerOrganization != nil && dt.CustomerOrganization.ID != uuid.Nil {
 				if err := db.ValidateCustomerOrgBelongsToOrg(ctx, dt.CustomerOrganization.ID, *auth.CurrentOrgID()); err != nil {
-					err = errors.New("customer organization does not belong to organization")
-					http.Error(w, err.Error(), http.StatusForbidden)
-					return err
+					return apierrors.NewForbidden("customer organization does not belong to organization")
 				}
 				if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
 					co, err := db.GetCustomerOrganizationByID(ctx, dt.CustomerOrganization.ID)
 					if err != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-						http.Error(w, "customer is not assigned to your partner organization", http.StatusForbidden)
-						return errors.New("customer not in partner org")
+						return apierrors.NewForbidden("customer is not assigned to your partner organization")
 					}
 				}
 				customerOrgID = &dt.CustomerOrganization.ID
 			}
 
-			limitReached, err := subscription.IsDeploymentTargetLimitReached(
-				ctx, *auth.CurrentOrg(),
-				customerOrgID)
-			if err != nil {
-				log.Warn("could not check deployment target limit", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return err
-			} else if limitReached {
-				err = errors.New("deployment target limit reached")
-				http.Error(w, err.Error(), http.StatusForbidden)
-				return err
-			}
-
-			if err = db.CreateDeploymentTarget(
-				ctx,
-				&dt,
-				*auth.CurrentOrgID(),
-				auth.CurrentUserID(),
-				customerOrgID,
+			if limitReached, err := subscription.IsDeploymentTargetLimitReached(
+				ctx, *auth.CurrentOrg(), customerOrgID,
 			); err != nil {
-				log.Warn("could not create DeploymentTarget", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return err
+				return fmt.Errorf("could not check deployment target limit: %w", err)
+			} else if limitReached {
+				return apierrors.NewForbidden("deployment target limit reached")
 			}
 
-			return nil
+			return db.CreateDeploymentTarget(ctx, &dt, *auth.CurrentOrgID(), auth.CurrentUserID(), customerOrgID)
 		})
 
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		} else {
+		if err == nil {
 			RespondJSON(w, dt)
+		} else if errors.Is(err, apierrors.ErrForbidden) {
+			http.Error(w, err.Error(), http.StatusForbidden)
+		} else {
+			respondInternalError(w, r, err, "could not create DeploymentTarget")
 		}
 	}
 }
