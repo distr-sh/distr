@@ -36,22 +36,20 @@ const slides = [
 <div class="embla" id="heroCarousel">
   <div class="embla__viewport overflow-hidden">
     <div class="embla__container flex">
-      {
-        slides.map(slide => (
-          <div class="embla__slide flex-[0_0_100%] min-w-0">
-            <figure class="m-0">
-              <ThemedImage
-                lightSrc={slide.lightImage}
-                darkSrc={slide.darkImage}
-                alt={slide.alt}
-              />
-              <figcaption class="text-center mt-4 text-sm md:text-base opacity-90">
-                {slide.caption}
-              </figcaption>
-            </figure>
-          </div>
-        ))
-      }
+      {slides.map(slide => (
+        <div class="embla__slide flex-[0_0_100%] min-w-0">
+          <figure class="m-0">
+            <ThemedImage
+              lightSrc={slide.lightImage}
+              darkSrc={slide.darkImage}
+              alt={slide.alt}
+            />
+            <figcaption class="text-center mt-4 text-sm md:text-base opacity-90">
+              {slide.caption}
+            </figcaption>
+          </figure>
+        </div>
+      ))}
     </div>
   </div>
 

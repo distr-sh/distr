@@ -14,15 +14,13 @@ const ogImageUrl = hasOgImage
 
 <Font cssVariable="--font-inter" preload />
 <Font cssVariable="--font-poppins" preload />
-{
-  head.map(({tag: Tag, attrs, content}) =>
-    content !== undefined && content !== null ? (
-      <Tag {...attrs} set:html={content} />
-    ) : (
-      <Tag {...attrs} />
-    ),
-  )
-}
+{head.map(({tag: Tag, attrs, content}) =>
+  content !== undefined && content !== null ? (
+    <Tag {...attrs} set:html={content} />
+  ) : (
+    <Tag {...attrs} />
+  ),
+)}
 {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
 {import.meta.env.PROD && <GoogleTagManager />}
 {import.meta.env.PROD && <PostHog />}

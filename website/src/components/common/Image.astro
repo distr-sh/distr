@@ -44,32 +44,30 @@ const layoutStyles =
           : {objectFit: 'none'};
 ---
 
-{
-  typeof src === 'string' ? (
-    <img
-      src={src}
-      alt={alt}
-      class={className}
-      width={width}
-      height={height}
-      loading={loading}
-      decoding={decoding}
-      style={{...aspectRatioStyles, ...layoutStyles}}
-      {...rest}
-    />
-  ) : (
-    <Image
-      src={src}
-      alt={alt}
-      class={className}
-      width={width || src.width}
-      height={height || src.height}
-      widths={widths}
-      sizes={sizes}
-      loading={loading}
-      decoding={decoding}
-      style={{...aspectRatioStyles, ...layoutStyles}}
-      {...rest}
-    />
-  )
-}
+{typeof src === 'string' ? (
+  <img
+    src={src}
+    alt={alt}
+    class={className}
+    width={width}
+    height={height}
+    loading={loading}
+    decoding={decoding}
+    style={{...aspectRatioStyles, ...layoutStyles}}
+    {...rest}
+  />
+) : (
+  <Image
+    src={src}
+    alt={alt}
+    class={className}
+    width={width || src.width}
+    height={height || src.height}
+    widths={widths}
+    sizes={sizes}
+    loading={loading}
+    decoding={decoding}
+    style={{...aspectRatioStyles, ...layoutStyles}}
+    {...rest}
+  />
+)}
