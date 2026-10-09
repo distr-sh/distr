@@ -64,23 +64,23 @@ func (i *SimpleAuthInfo) IsSuperAdmin() bool { return i.isSuperAdmin }
 // Token implements AuthInfo.
 func (i *SimpleAuthInfo) Token() any { return i.rawToken }
 
-type SimpleAgentAuthInfo struct {
+type SimpleControllerAuthInfo struct {
 	deploymentTargetID uuid.UUID
 	organizationID     uuid.UUID
 	rawToken           any
 }
 
-// CurrentDeploymentTargetID implements AgentAuthInfo.
-func (i *SimpleAgentAuthInfo) CurrentDeploymentTargetID() uuid.UUID {
+// CurrentDeploymentTargetID implements ControllerAuthInfo.
+func (i *SimpleControllerAuthInfo) CurrentDeploymentTargetID() uuid.UUID {
 	return i.deploymentTargetID
 }
 
-// CurrentOrgID implements AgentAuthInfo.
-func (i *SimpleAgentAuthInfo) CurrentOrgID() uuid.UUID {
+// CurrentOrgID implements ControllerAuthInfo.
+func (i *SimpleControllerAuthInfo) CurrentOrgID() uuid.UUID {
 	return i.organizationID
 }
 
-// Token implements AgentAuthInfo.
-func (i *SimpleAgentAuthInfo) Token() any {
+// Token implements ControllerAuthInfo.
+func (i *SimpleControllerAuthInfo) Token() any {
 	return i.rawToken
 }

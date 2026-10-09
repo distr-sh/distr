@@ -7,11 +7,11 @@ export type Product = {
 
 export const products: Product[] = [
   {
-    title: 'Deployment Agents',
+    title: 'Deployment Controllers',
     description:
-      'Standardize your Docker or Helm deployments embedded with agents in Kubernetes, Docker Compose, VM or Bare Metal environments',
+      'Standardize your Docker or Helm deployments embedded with controllers in Kubernetes, Docker Compose, VM or Bare Metal environments',
     value: 'rocket',
-    href: '/docs/agents/',
+    href: '/docs/controllers/',
   },
   {
     title: 'Customer Portal',
@@ -39,14 +39,14 @@ export const products: Product[] = [
     description:
       'Receive notification in realtime when deployments report an error or go stale',
     value: 'bell',
-    href: '/docs/agents/alerts/',
+    href: '/docs/controllers/alerts/',
   },
   {
     title: 'Logs and Metrics',
     description:
       'Collect Logs and Metrics in realtime and directly download them as bundle for better Customer support',
     value: 'chart-line',
-    href: '/docs/agents/logs-and-metrics/',
+    href: '/docs/controllers/logs-and-metrics/',
   },
   {
     title: 'Compatibility Matrix',
@@ -60,7 +60,7 @@ export const products: Product[] = [
     description:
       'New - Determine if needed resources are available or execute custom pre and post installation scripts',
     value: 'clipboard-check',
-    href: '/docs/agents/preflight-checks/',
+    href: '/docs/controllers/preflight-checks/',
   },
   {
     title: 'Vulnerability Scanning',
@@ -74,7 +74,7 @@ export const products: Product[] = [
     description:
       'Securely store and reference sensitive configuration values in deployments using centralized secret management',
     value: 'lock',
-    href: '/docs/agents/secrets/',
+    href: '/docs/controllers/secrets/',
   },
   {
     title: 'Integrations / BYOC',

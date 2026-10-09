@@ -49,7 +49,7 @@ func DeploymentsRouter(r chiopenapi.Router) {
 			With(option.Description("Get deployment revisions")).
 			With(option.Request(DeploymentIDRequest{})).
 			With(option.Response(http.StatusOK, []api.DeploymentRevisionResponse{}))
-		// These are read-only, agent-pushed timeseries that are safe to serve from the read-only db.
+		// These are read-only, controller-pushed timeseries that are safe to serve from the read-only db.
 		r.With(middleware.UseReadonlyDB).Group(func(r chiopenapi.Router) {
 			r.Get("/metrics", getDeploymentMetrics).
 				With(option.Description("Get the latest resource metrics reported for a deployment")).
@@ -608,7 +608,7 @@ func validateDeploymentRequestDeploymentTarget(
 	}
 
 	if request.DeploymentID == nil && len(target.Deployments) > 0 {
-		if err := target.AgentVersion.CheckMultiDeploymentSupported(); err != nil {
+		if err := target.ControllerVersion.CheckMultiDeploymentSupported(); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return err
 		}

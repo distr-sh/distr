@@ -11,7 +11,7 @@ helm-docs = "1.14.2"
 "github:losisin/helm-values-schema-json" = "2.6.0"
 watchexec = "2.8.0"
 pnpm = "12.10.1"
-stripe = "1.53.0"
+stripe = "1.53.1"
 "go:github.com/go-delve/delve/cmd/dlv" = "1.27.2"
 git-lfs = "3.8.0"
 
@@ -81,12 +81,12 @@ sources = [
   "{{config_root}}/CHANGELOG.md",
 ]
 
-[tasks."build:agent:docker"]
-run = 'go build -ldflags="{{vars.ldflags}}" -o dist/docker-agent ./cmd/agent/docker'
+[tasks."build:controller:docker"]
+run = 'go build -ldflags="{{vars.ldflags}}" -o dist/docker-controller ./cmd/controller/docker'
 depends = ["go-tidy"]
 
-[tasks."build:agent:kubernetes"]
-run = 'go build -ldflags="{{vars.ldflags}}" -o dist/kubernetes-agent ./cmd/agent/kubernetes'
+[tasks."build:controller:kubernetes"]
+run = 'go build -ldflags="{{vars.ldflags}}" -o dist/kubernetes-controller ./cmd/controller/kubernetes'
 depends = ["go-tidy"]
 
 [tasks."lint:go"]
@@ -105,7 +105,7 @@ dir = "website"
 
 [tasks."lint:app"]
 run = { tasks = ["lint:go", "lint:frontend", "lint:migrations"] }
-description = 'Lint Distr and the agents, without the website'
+description = 'Lint Distr and the controllers, without the website'
 
 [tasks."lint:renovate-config"]
 run = "pnpm dlx --package renovate renovate-config-validator"
@@ -156,7 +156,7 @@ description = 'Format the website. Also deletes unused images'
 
 [tasks."format:app"]
 run = { tasks = ["format:go", "format:frontend"] }
-description = 'Format Distr and the agents, without the website'
+description = 'Format Distr and the controllers, without the website'
 
 [tasks.format]
 run = { tasks = ["format:app", "format:website"] }
@@ -182,21 +182,21 @@ outputs = []
 run = {tasks = ["distr serve"]}
 description = "Shorthand for 'mise run distr serve'"
 
-[tasks."run:agent:docker"]
-run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/agent/docker/ run'
+[tasks."run:controller:docker"]
+run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/controller/docker/ run'
 
-[tasks."run:agent:kubernetes"]
-run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/agent/kubernetes/ run'
+[tasks."run:controller:kubernetes"]
+run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/controller/kubernetes/ run'
 
 [tasks."docker-build:distr"]
 depends = "build:distr:enterprise"
 run = 'cp dist/distr dist/distr-$(go env GOARCH) && docker build -f Dockerfile.distr --tag ghcr.io/distr-sh/distr:$VERSION .'
 
-[tasks."docker-build:agent:docker"]
-run = 'docker build -f Dockerfile.docker-agent --tag ghcr.io/distr-sh/distr/docker-agent:$VERSION --build-arg VERSION=$VERSION --build-arg COMMIT=$COMMIT --network host .'
+[tasks."docker-build:controller:docker"]
+run = 'docker build -f Dockerfile.docker-controller --tag ghcr.io/distr-sh/distr/docker-controller:$VERSION --build-arg VERSION=$VERSION --build-arg COMMIT=$COMMIT --network host .'
 
-[tasks."docker-build:agent:kubernetes"]
-run = 'docker build -f Dockerfile.kubernetes-agent --tag ghcr.io/distr-sh/distr/kubernetes-agent:$VERSION --build-arg VERSION=$VERSION --build-arg COMMIT=$COMMIT --network host .'
+[tasks."docker-build:controller:kubernetes"]
+run = 'docker build -f Dockerfile.kubernetes-controller --tag ghcr.io/distr-sh/distr/kubernetes-controller:$VERSION --build-arg VERSION=$VERSION --build-arg COMMIT=$COMMIT --network host .'
 
 [tasks."docker-build:docker-autoheal"]
 run = 'docker build --tag ghcr.io/distr-sh/distr/docker-autoheal:$VERSION --network host docker-autoheal'

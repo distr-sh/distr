@@ -35,7 +35,7 @@ This feature simplifies managing environment variables in your Docker Compose se
 
 - **Why it matters:** Managing environment variables can be tricky, especially in complex applications. With this feature, you can centralize and simplify env management, reducing errors and making it easier to maintain consistency across different environments.
 
-- **How to get started:** Check out the [guide](/docs/agents/docker-env/) on how to manage environment variables in Docker Compose files.
+- **How to get started:** Check out the [guide](/docs/controllers/docker-env/) on how to manage environment variables in Docker Compose files.
 
 ![env-management](../../assets/blog/2025-02-17-distr-1-1-release/docker-env-management.png)
 
@@ -45,9 +45,9 @@ Have questions or feedback? [Join the discussion](https://github.com/distr-sh/di
 
 Our hosted version of Distr was already upgraded to the latest v1.1 release.
 
-To take advantage of all new features in Distr v1.1, here's what you need to do **if you're using the previous version of the agents**:
+To take advantage of all new features in Distr v1.1, here's what you need to do **if you're using the previous version of the controllers**:
 
-- If you're running an older agent version, click update agent via the deployment web UI to ensure compatibility with the latest improvements.
+- If you're running an older controller version, click update controller via the deployment web UI to ensure compatibility with the latest improvements.
 
 If you are self-hosting Distr make sure to check out our [changelog](https://github.com/distr-sh/distr/blob/main/CHANGELOG.md).
 
@@ -55,10 +55,10 @@ If you are self-hosting Distr make sure to check out our [changelog](https://git
 
 Based on user feedback and feature requests, we are currently working on licensing and private repository support. Here's how it will look:
 
-- Each license is uniquely named within its organization and can optionally include an expiration date (agent can revoke access to software is if there is now renewal)
+- Each license is uniquely named within its organization and can optionally include an expiration date (the controller can revoke access to the software if there is no renewal)
 - Licenses are tied to a specific application and can apply either to all versions or only to selected ones.
 - Deployments can be linked to a license. If the license is activated, customers see only applications and versions they have a license for
-- For organizations using private container registries, licenses can also include Docker login credentials (such as a registry URL, username, and password) so the agent can authenticate and pull images securely.
+- For organizations using private container registries, licenses can also include Docker login credentials (such as a registry URL, username, and password) so the controller can authenticate and pull images securely.
 
 Would love to get your thoughts on the licensing feature and hear what else you would like us to ship next.
 

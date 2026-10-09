@@ -1,0 +1,22 @@
+ALTER TABLE AgentVersion RENAME TO ControllerVersion;
+ALTER TABLE ControllerVersion RENAME CONSTRAINT agentversion_pkey TO controllerversion_pkey;
+ALTER TABLE ControllerVersion RENAME CONSTRAINT agentversion_name_key TO controllerversion_name_key;
+ALTER INDEX AgentVersion_name RENAME TO ControllerVersion_name;
+
+ALTER TABLE DeploymentTarget RENAME COLUMN agent_version_id TO controller_version_id;
+ALTER TABLE DeploymentTarget RENAME COLUMN reported_agent_version_id TO reported_controller_version_id;
+ALTER TABLE DeploymentTarget
+  RENAME CONSTRAINT deploymenttarget_agent_version_id_fkey TO deploymenttarget_controller_version_id_fkey;
+ALTER TABLE DeploymentTarget
+  RENAME CONSTRAINT deploymenttarget_reported_agent_version_id_fkey
+    TO deploymenttarget_reported_controller_version_id_fkey;
+ALTER INDEX fk_DeploymentTarget_agent_version_id RENAME TO fk_DeploymentTarget_controller_version_id;
+
+ALTER TABLE DeploymentTarget ADD COLUMN legacy_controller_name BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE DeploymentTarget ALTER COLUMN legacy_controller_name SET DEFAULT false;
+
+ALTER TABLE DeploymentTargetMetrics RENAME COLUMN agent_cpu_usage_millis TO controller_cpu_usage_millis;
+ALTER TABLE DeploymentTargetMetrics RENAME COLUMN agent_memory_bytes TO controller_memory_bytes;
+ALTER TABLE DeploymentTargetMetrics RENAME COLUMN agent_log_bytes TO controller_log_bytes;
+
+ALTER TYPE TUTORIAL RENAME VALUE 'agents' TO 'controllers';

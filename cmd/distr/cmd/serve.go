@@ -74,9 +74,9 @@ func runServe(ctx context.Context, opts ServeOptions) {
 
 	dbCtx := internalctx.WithDb(ctx, registry.GetDbPool())
 	dbLogCtx := internalctx.WithLogger(dbCtx, registry.GetLogger())
-	util.Must(db.CreateAgentVersion(dbLogCtx))
-	updatedTargets := util.Require(db.ApplyAutomaticAgentUpdates(dbLogCtx))
-	registry.GetLogger().Info("applied automatic agent updates", zap.Int64("deploymentTargets", updatedTargets))
+	util.Must(db.CreateControllerVersion(dbLogCtx))
+	updatedTargets := util.Require(db.ApplyAutomaticControllerUpdates(dbLogCtx))
+	registry.GetLogger().Info("applied automatic controller updates", zap.Int64("deploymentTargets", updatedTargets))
 	util.Must(subscription.ReconcileEditionFeatures(dbLogCtx))
 
 	if env.DatabaseEncryptionMigrateOnBoot() {

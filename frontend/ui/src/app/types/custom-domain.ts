@@ -7,7 +7,7 @@ export interface CustomDomain {
   domainType: CustomDomainType;
   organizationId: string;
   customerOrganizationId?: string;
-  // Whether the domain is currently used for links, mails, agent manifests and registry URLs. The
+  // Whether the domain is currently used for links, mails, controller manifests and registry URLs. The
   // server decides this, so the rule behind it lives in one place.
   verified: boolean;
   verifiedAt?: string;
