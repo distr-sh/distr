@@ -12,10 +12,6 @@ export interface DeploymentTarget extends BaseModel, Named {
   deployments: DeploymentWithLatestRevision[];
   controllerVersion?: ControllerVersion;
   reportedControllerVersionId?: string;
-  /** @deprecated Use {@link DeploymentTarget.controllerVersion} instead. */
-  agentVersion?: ControllerVersion;
-  /** @deprecated Use {@link DeploymentTarget.reportedControllerVersionId} instead. */
-  reportedAgentVersionId?: string;
   reconnectPending?: boolean;
   metricsEnabled: boolean;
   imageCleanupEnabled: boolean;

@@ -16,12 +16,6 @@ type DeploymentTargetMetrics struct {
 	ControllerCPUUsageMillis *int64    `json:"controllerCpuUsageMillis,omitempty"`
 	ControllerMemoryBytes    *int64    `json:"controllerMemoryBytes,omitempty"`
 	ControllerLogBytes       *int64    `json:"controllerLogBytes,omitempty"`
-	// Deprecated: AgentCPUUsageMillis repeats ControllerCPUUsageMillis under its former JSON name.
-	AgentCPUUsageMillis *int64 `json:"agentCpuUsageMillis,omitempty" deprecated:"true"`
-	// Deprecated: AgentMemoryBytes repeats ControllerMemoryBytes under its former JSON name.
-	AgentMemoryBytes *int64 `json:"agentMemoryBytes,omitempty" deprecated:"true"`
-	// Deprecated: AgentLogBytes repeats ControllerLogBytes under its former JSON name.
-	AgentLogBytes *int64 `json:"agentLogBytes,omitempty" deprecated:"true"`
 	// ImageBytes is the size of the docker image store, with layers shared between images counted
 	// once. It is always nil in kubernetes.
 	ImageBytes  *int64                       `json:"imageBytes,omitempty"`

@@ -37,7 +37,6 @@ func DeploymentTargetDiskMetricToInternal(disk api.DeploymentTargetDiskMetric) t
 	}
 }
 
-//nolint:staticcheck // clients written before the rename read only the deprecated fields
 func DeploymentTargetMetricsToAPI(metrics types.DeploymentTargetMetrics) api.DeploymentTargetMetrics {
 	return api.DeploymentTargetMetrics{
 		DeploymentTargetID:       metrics.DeploymentTargetID,
@@ -49,9 +48,6 @@ func DeploymentTargetMetricsToAPI(metrics types.DeploymentTargetMetrics) api.Dep
 		ControllerCPUUsageMillis: metrics.ControllerCPUUsageMillis,
 		ControllerMemoryBytes:    metrics.ControllerMemoryBytes,
 		ControllerLogBytes:       metrics.ControllerLogBytes,
-		AgentCPUUsageMillis:      metrics.ControllerCPUUsageMillis,
-		AgentMemoryBytes:         metrics.ControllerMemoryBytes,
-		AgentLogBytes:            metrics.ControllerLogBytes,
 		ImageBytes:               metrics.ImageBytes,
 		DiskMetrics:              List(metrics.DiskMetrics, DeploymentTargetDiskMetricToAPI),
 	}

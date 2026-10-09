@@ -208,8 +208,8 @@ func updateDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if requested := dt.RequestedControllerVersion(); requested.ID != uuid.Nil {
-		dt.ControllerVersionID = &requested.ID
+	if dt.ControllerVersion.ID != uuid.Nil {
+		dt.ControllerVersionID = &dt.ControllerVersion.ID
 	} else if dt.AutomaticUpdatesEnabled {
 		// Without this, enabling automatic updates would only take effect on the next restart.
 		controllerVersion, err := db.GetCurrentControllerVersion(ctx)

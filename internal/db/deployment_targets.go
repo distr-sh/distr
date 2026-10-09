@@ -42,8 +42,7 @@ const (
 			dt.resources_cpu_limit,
 			dt.resources_memory_limit
 		) END,
-		dt.docker_endpoint,
-		dt.reported_controller_version_id
+		dt.docker_endpoint
 	`
 	deploymentTargetOutputExpr = deploymentTargetOutputExprBase +
 		", CASE WHEN co.id IS NOT NULL THEN (" + customerOrganizationOutputExpr + ") END AS customer_organization"
@@ -51,8 +50,7 @@ const (
 		CASE WHEN cv.id IS NOT NULL
 			THEN (cv.id, cv.created_at, cv.name, cv.manifest_file_revision, cv.compose_file_revision) END`
 	deploymentTargetFullOutputExpr = deploymentTargetOutputExpr + `,` +
-		controllerVersionOutputExpr + ` AS controller_version,` +
-		controllerVersionOutputExpr + ` AS agent_version
+		controllerVersionOutputExpr + ` AS controller_version
 	`
 	deploymentTargetJoinExpr = `
 		LEFT JOIN ControllerVersion cv

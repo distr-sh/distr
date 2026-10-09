@@ -75,7 +75,6 @@
 - [AdvisorySeverity](type-aliases/AdvisorySeverity.md)
 - [AdvisoryStatus](type-aliases/AdvisoryStatus.md)
 - [AdvisoryVersionRelation](type-aliases/AdvisoryVersionRelation.md)
-- [~~AgentVersion~~](type-aliases/AgentVersion.md)
 - [ApplicationVersionFiles](type-aliases/ApplicationVersionFiles.md)
 - [ClientConfig](type-aliases/ClientConfig.md)
 - [CreateDeploymentParams](type-aliases/CreateDeploymentParams.md)

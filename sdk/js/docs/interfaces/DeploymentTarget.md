@@ -12,16 +12,6 @@
 
 ## Properties
 
-### ~~agentVersion?~~
-
-> `optional` **agentVersion?**: [`ControllerVersion`](ControllerVersion.md)
-
-#### Deprecated
-
-Use [DeploymentTarget.controllerVersion](#controllerversion) instead.
-
----
-
 ### autohealEnabled?
 
 > `optional` **autohealEnabled?**: `boolean`
@@ -121,16 +111,6 @@ Use [DeploymentTarget.controllerVersion](#controllerversion) instead.
 ### reconnectPending?
 
 > `optional` **reconnectPending?**: `boolean`
-
----
-
-### ~~reportedAgentVersionId?~~
-
-> `optional` **reportedAgentVersionId?**: `string`
-
-#### Deprecated
-
-Use [DeploymentTarget.reportedControllerVersionId](#reportedcontrollerversionid) instead.
 
 ---
 

@@ -464,10 +464,6 @@ export const routes: Routes = [
             component: ControllersTutorialComponent,
           },
           {
-            path: 'agents',
-            redirectTo: 'controllers',
-          },
-          {
             path: 'branding',
             component: BrandingTutorialComponent,
           },
