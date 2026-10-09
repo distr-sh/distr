@@ -1,5 +1,21 @@
 # Changelog
 
+## [4.3.1](https://github.com/distr-sh/distr/compare/4.3.0...4.3.1) (2026-10-09)
+
+
+### Other
+
+* **deps:** update actions/download-artifact action to v8.0.2 ([#3430](https://github.com/distr-sh/distr/issues/3430)) ([984d2e0](https://github.com/distr-sh/distr/commit/984d2e0a4d0f92054439e8149fefbfa8b02f4d5a))
+* **deps:** update actions/upload-artifact action to v7.0.2 ([#3431](https://github.com/distr-sh/distr/issues/3431)) ([fbcab6b](https://github.com/distr-sh/distr/commit/fbcab6be7e8a6535761123d10c12ae9b2bcf3108))
+* **deps:** update codemirror ([#3432](https://github.com/distr-sh/distr/issues/3432)) ([f575e67](https://github.com/distr-sh/distr/commit/f575e67af501ec8830d3cfe1167fa03071f7d9a3))
+* **deps:** update dependency stripe to v1.53.1 ([#3435](https://github.com/distr-sh/distr/issues/3435)) ([9e810fd](https://github.com/distr-sh/distr/commit/9e810fdfe5f5dc7d0ee302e88e2eb1b717eb1185))
+* **deps:** update loki docker tag to v18.15.1 ([#3434](https://github.com/distr-sh/distr/issues/3434)) ([4a1d978](https://github.com/distr-sh/distr/commit/4a1d978e0fbb676380ddb7dcd399ffcd5d04c9b9))
+
+
+### Refactoring
+
+* rename distr agent to distr controller ([#3400](https://github.com/distr-sh/distr/issues/3400)) ([d231a12](https://github.com/distr-sh/distr/commit/d231a125396d83e85f2139f85af1de7e4c6fa78b))
+
 ## [4.3.0](https://github.com/distr-sh/distr/compare/4.2.1...4.3.0) (2026-10-08)
 
 
