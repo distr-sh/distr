@@ -82,6 +82,12 @@ func (dt *DeploymentTarget) Validate() error {
 			}
 		}
 	case DeploymentTypeDocker:
+		if dt.Namespace != nil {
+			return validation.NewValidationFailedError("DeploymentTarget with type \"docker\" must not have a namespace")
+		}
+		if dt.Scope != nil {
+			return validation.NewValidationFailedError("DeploymentTarget with type \"docker\" must not have a scope")
+		}
 		if dt.Resources != nil {
 			return validation.NewValidationFailedError("DeploymentTarget with type \"docker\" must not have resources")
 		}
