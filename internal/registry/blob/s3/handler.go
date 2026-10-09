@@ -304,7 +304,7 @@ func (handler *blobHandler) PutChunk(ctx context.Context, id string, r io.Reader
 	uploadKey := path.Join(chunksPrefix, id)
 	var uploadID *string
 	var partNumber int32
-	var size int64
+	var size, lastPartSize int64
 
 	if start == 0 {
 		if _, err := handler.getUploadID(ctx, uploadKey); err == nil {
@@ -334,12 +334,27 @@ func (handler *blobHandler) PutChunk(ctx context.Context, id string, r io.Reader
 			partNumber = int32(len(parts) + 1)
 			for _, part := range parts {
 				size += *part.Size
+				lastPartSize = *part.Size
 			}
 		}
 	}
 
 	if size != start {
 		return 0, blob.NewErrBadUpload("range is not as expected")
+	}
+
+	// S3 rejects completing a multipart upload with a part below the minimum size that is not the last,
+	// so the upload cannot succeed anymore once a chunk follows a smaller one.
+	if start > 0 && lastPartSize < minS3PartSize {
+		if _, err := handler.s3Client.AbortMultipartUpload(context.WithoutCancel(ctx), &s3.AbortMultipartUploadInput{
+			Bucket:   &handler.bucket,
+			Key:      &uploadKey,
+			UploadId: uploadID,
+		}); err != nil {
+			internalctx.GetLogger(ctx).Warn("failed to abort multipart upload", zap.Error(err))
+		}
+		return 0, blob.NewErrBadUpload(fmt.Sprintf(
+			"every chunk except the last must be at least %d bytes (OCI-Chunk-Min-Length)", minS3PartSize))
 	}
 
 	s, err := seekbuf.New(r)
