@@ -72,6 +72,6 @@ jobs:
           DISTR_METRICS_ENDPOINT: http://localhost:8080/api/v1/controller/metrics
           DISTR_DEPLOYMENT_METRICS_ENDPOINT: http://localhost:8080/api/v1/controller/deployments
           DISTR_LOGS_ENDPOINT: http://localhost:8080/api/v1/controller/logs
-          DISTR_CONTROLLER_LOGS_ENDPOINT: http://localhost:8080/api/v1/controller/deployment-target-logs
-          DISTR_INTERVAL: 5s
+          DISTR_DEPLOYMENT_TARGET_LOGS_ENDPOINT: http://localhost:8080/api/v1/controller/deployment-target-logs
+          DISTR_CONTROLLER_INTERVAL: 5s
           DISTR_REGISTRY_HOST: localhost:8585
