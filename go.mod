@@ -23,7 +23,7 @@ require (
 	github.com/docker/compose/v5 v5.5.1
 	github.com/exaring/otelpgx v0.12.1
 	github.com/fsnotify/fsnotify v1.10.1
-	github.com/getsentry/sentry-go v0.49.0
+	github.com/getsentry/sentry-go v0.50.0
 	github.com/getsentry/sentry-go/otel/otlp v0.49.0
 	github.com/glasskube/pkg/crypto v0.2.0
 	github.com/glasskube/pkg/seekbuf v0.1.1
