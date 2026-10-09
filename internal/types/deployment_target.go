@@ -15,22 +15,21 @@ import (
 )
 
 type DeploymentTarget struct {
-	ID                     uuid.UUID              `db:"id" json:"id"`
-	CreatedAt              time.Time              `db:"created_at" json:"createdAt"`
-	Name                   string                 `db:"name" json:"name"`
-	Type                   DeploymentType         `db:"type" json:"type"`
-	AccessKeySalt          *[]byte                `db:"access_key_salt" json:"-"`
-	AccessKeyHash          *[]byte                `db:"access_key_hash" json:"-"`
-	PendingAccessKeySalt   *[]byte                `db:"pending_access_key_salt" json:"-"`
-	PendingAccessKeyHash   *[]byte                `db:"pending_access_key_hash" json:"-"`
-	ReconnectPending       bool                   `db:"reconnect_pending" json:"reconnectPending"`
-	Namespace              *string                `db:"namespace" json:"namespace,omitempty"`
-	Scope                  *DeploymentTargetScope `db:"scope" json:"scope,omitempty"`
-	OrganizationID         uuid.UUID              `db:"organization_id" json:"-"`
-	CustomerOrganizationID *uuid.UUID             `db:"customer_organization_id" json:"customerOrganizationId,omitempty"` //nolint:lll
-	ControllerVersionID    *uuid.UUID             `db:"controller_version_id" json:"-"`
-	//nolint:lll
-	ReportedControllerVersionID *uuid.UUID `db:"reported_controller_version_id" json:"reportedControllerVersionId,omitempty"`
+	ID                          uuid.UUID              `db:"id" json:"id"`
+	CreatedAt                   time.Time              `db:"created_at" json:"createdAt"`
+	Name                        string                 `db:"name" json:"name"`
+	Type                        DeploymentType         `db:"type" json:"type"`
+	AccessKeySalt               *[]byte                `db:"access_key_salt" json:"-"`
+	AccessKeyHash               *[]byte                `db:"access_key_hash" json:"-"`
+	PendingAccessKeySalt        *[]byte                `db:"pending_access_key_salt" json:"-"`
+	PendingAccessKeyHash        *[]byte                `db:"pending_access_key_hash" json:"-"`
+	ReconnectPending            bool                   `db:"reconnect_pending" json:"reconnectPending"`
+	Namespace                   *string                `db:"namespace" json:"namespace,omitempty"`
+	Scope                       *DeploymentTargetScope `db:"scope" json:"scope,omitempty"`
+	OrganizationID              uuid.UUID              `db:"organization_id" json:"-"`
+	CustomerOrganizationID      *uuid.UUID             `db:"customer_organization_id" json:"customerOrganizationId,omitempty"` //nolint:lll
+	ControllerVersionID         *uuid.UUID             `db:"controller_version_id" json:"-"`
+	ReportedControllerVersionID *uuid.UUID             `db:"reported_controller_version_id" json:"reportedControllerVersionId,omitempty"` //nolint:lll
 	// LegacyAgentManifest is set on targets created before the rename to controller. They keep receiving the
 	// manifest revisions that name their resources after the agent, since a controller applies its own
 	// manifest by resource name and would otherwise end up running next to the old one.

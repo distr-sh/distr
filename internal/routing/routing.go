@@ -169,7 +169,6 @@ func ApiRouter(
 						// such that controllers cant access anything here (they also can't now, because their tokens will not
 						// pass the Authentication chain (DbAuthenticator can't find the user -> 401)
 					)
-					r.Route("/agent-versions", handlers.DeprecatedAgentVersionsRouter)
 					r.Route("/controller-versions", handlers.ControllerVersionsRouter)
 					r.Route("/application-entitlements", handlers.ApplicationEntitlementsRouter)
 					r.Route("/applications", handlers.ApplicationsRouter)

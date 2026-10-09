@@ -48,7 +48,7 @@
                 <a
                   class="font-medium text-gray-900 truncate dark:text-white hover:underline hover:text-blue-600 dark:hover:text-blue-500"
                   [routerLink]="
-                    tutorial?.progress?.completedAt ? tutorial.completedRoute : ['/', 'tutorials', tutorial.path]
+                    tutorial?.progress?.completedAt ? tutorial.completedRoute : ['/', 'tutorials', tutorial.id]
                   ">
                   {{ tutorial.name }}
                 </a>
@@ -79,7 +79,7 @@
                   </a>
                 } @else {
                   <a
-                    [routerLink]="['/', 'tutorials', tutorial.path]"
+                    [routerLink]="['/', 'tutorials', tutorial.id]"
                     class="flex-1 sm:flex-none inline-flex items-center justify-center text-white distr-btn-primary">
                     @if (tutorial?.progress?.createdAt) {
                       Resume Tutorial

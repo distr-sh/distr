@@ -12,8 +12,8 @@ ALTER TABLE DeploymentTarget
     TO deploymenttarget_reported_controller_version_id_fkey;
 ALTER INDEX fk_DeploymentTarget_agent_version_id RENAME TO fk_DeploymentTarget_controller_version_id;
 
-ALTER TABLE DeploymentTarget ADD COLUMN legacy_agent_manifest BOOLEAN NOT NULL DEFAULT false;
-UPDATE DeploymentTarget SET legacy_agent_manifest = true;
+ALTER TABLE DeploymentTarget ADD COLUMN legacy_agent_manifest BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE DeploymentTarget ALTER COLUMN legacy_agent_manifest SET DEFAULT false;
 
 ALTER TABLE DeploymentTargetMetrics RENAME COLUMN agent_cpu_usage_millis TO controller_cpu_usage_millis;
 ALTER TABLE DeploymentTargetMetrics RENAME COLUMN agent_memory_bytes TO controller_memory_bytes;

@@ -13,17 +13,9 @@ import (
 )
 
 func ControllerVersionsRouter(r chiopenapi.Router) {
-	r.WithOptions(option.GroupTags("Miscellaneous"))
+	r.WithOptions(option.GroupHidden(true))
 	r.Get("/", getControllerVersionsHandler()).
 		With(option.Description("List all controller versions")).
-		With(option.Response(http.StatusOK, []types.ControllerVersion{}))
-}
-
-func DeprecatedAgentVersionsRouter(r chiopenapi.Router) {
-	r.WithOptions(option.GroupTags("Miscellaneous"))
-	r.Get("/", getControllerVersionsHandler()).
-		With(option.Description("Deprecated alias of /controller-versions")).
-		With(option.Deprecated()).
 		With(option.Response(http.StatusOK, []types.ControllerVersion{}))
 }
 

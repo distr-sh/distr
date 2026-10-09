@@ -8,7 +8,6 @@ import {Tutorial, TutorialProgress, TutorialProgressRequest} from '../types/tuto
 
 interface TutorialView {
   id: Tutorial;
-  path: string;
   name: string;
   icon: IconDefinition;
   description: string;
@@ -29,7 +28,6 @@ export class TutorialsService {
     {
       name: 'Invite your teammates',
       id: 'users',
-      path: 'users',
       icon: this.faUserGroup,
       description: 'Invite your colleagues to collaborate with you in Distr.',
       completedRoute: '/users',
@@ -37,7 +35,6 @@ export class TutorialsService {
     {
       name: 'Setup Your Artifact Registry',
       id: 'registry',
-      path: 'registry',
       icon: this.faBox,
       description: 'Learn how to use the Distr registry to distribute OCI artifacts.',
       completedRoute: '/artifacts',
@@ -45,7 +42,6 @@ export class TutorialsService {
     {
       name: 'Try out Controllers, Applications and Deployments',
       id: 'controllers',
-      path: 'controllers',
       icon: this.faBoxesStacked,
       description: 'Learn how to integrate, deploy and monitor your applications with Distr.',
       completedRoute: '/deployments',
@@ -53,7 +49,6 @@ export class TutorialsService {
     {
       name: 'Customer Portal and Onboarding',
       id: 'branding',
-      path: 'branding',
       icon: this.faPalette,
       description: 'Customize your Customer Portal, then invite a customer.',
       completedRoute: '/customers',

@@ -364,7 +364,7 @@ func Initialize() {
 
 	licenseKey = envutil.GetEnv("LICENSE_KEY")
 	metricsEnabled = envutil.GetEnvParsedOrDefault("METRICS_ENABLED", strconv.ParseBool, false)
-	metricsAddr = envutil.GetEnvOrDefault("METRICS_ADDR", ":3000", envutil.GetEnvOpts{})
+	metricsAddr = envutil.GetEnvOrDefault("METRICS_ADDR", ":3000")
 	metricsBearerToken = envutil.GetEnvOrNil("METRICS_BEARER_TOKEN")
 	supportBundleLogTailLines = envutil.GetEnvParsedOrDefault(
 		"SUPPORT_BUNDLE_LOG_TAIL_LINES", envparse.PositiveNumber, 1000,
@@ -388,7 +388,7 @@ func Initialize() {
 		envparse.PositiveDuration, 4*time.Minute)
 	customDomainVerificationRefreshAfter = envutil.GetEnvParsedOrDefault("CUSTOM_DOMAIN_VERIFICATION_REFRESH_AFTER",
 		envparse.PositiveDuration, 12*time.Hour)
-	internalServerAddr = envutil.GetEnvOrDefault("INTERNAL_SERVER_ADDR", ":8085", envutil.GetEnvOpts{})
+	internalServerAddr = envutil.GetEnvOrDefault("INTERNAL_SERVER_ADDR", ":8085")
 
 	maintenanceMode = envutil.GetEnvParsedOrDefault("MAINTENANCE_MODE", strconv.ParseBool, false)
 }
