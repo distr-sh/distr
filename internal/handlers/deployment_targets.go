@@ -210,7 +210,7 @@ func updateDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := types.ValidateDockerEndpoint(dt.DockerEndpoint, existing.Type); err != nil {
+	if err := dt.ValidateUpdatableFields(existing.Type); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
