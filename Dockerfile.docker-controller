@@ -1,0 +1,32 @@
+FROM golang:1.27.1-alpine3.24 AS builder
+ARG TARGETOS
+ARG TARGETARCH
+ARG VERSION
+ARG COMMIT
+
+WORKDIR /workspace
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN go mod download
+
+COPY api/ api/
+COPY cmd/controller/docker/ cmd/controller/docker/
+# doesn't exist (yet?)
+# COPY pkg/ pkg/
+COPY internal/ internal/
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} \
+  go build -a -o controller \
+  -ldflags="-s -w -X github.com/distr-sh/distr/internal/buildconfig.version=${VERSION:-snapshot} -X github.com/distr-sh/distr/internal/buildconfig.commit=${COMMIT}" \
+  ./cmd/controller/docker/
+
+FROM docker:29.8.2-alpine3.24
+WORKDIR /
+COPY --from=builder /workspace/controller .
+
+RUN apk add --no-cache curl
+
+HEALTHCHECK --interval=10s --timeout=5s \
+  --start-period=1m --start-interval=10s \
+  CMD curl -fsS --max-time 4 http://127.0.0.1:8765 > /dev/null
+
+ENTRYPOINT ["/controller"]

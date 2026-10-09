@@ -66,11 +66,11 @@ The three enterprise stacks run the Enterprise image `registry.distr.sh/enterpri
 It comes from our own registry, so run `docker login registry.distr.sh` with the credentials you received from us before you start the stack.
 
 :::tip[Let Distr manage your own instance]
-The smoothest way to run a paid plan is to deploy the stack with Distr itself, through a [Docker agent](/docs/agents/docker-agent/) on the target VM.
-The agent then handles the rollout of new Distr versions, configures registry credentials and injects the license key for you: the `enterprise`, `enterprise-aws` and `enterprise-gcp` stacks ship `LICENSE_KEY={{ index .LicenseKeys "Distr" }}` in their `.env`, which the agent resolves at deploy time from the [license key](/docs/platform/license-keys/) named `Distr`.
+The smoothest way to run a paid plan is to deploy the stack with Distr itself, through a [Docker controller](/docs/controllers/docker-controller/) on the target VM.
+The controller then handles the rollout of new Distr versions, configures registry credentials and injects the license key for you: the `enterprise`, `enterprise-aws` and `enterprise-gcp` stacks ship `LICENSE_KEY={{ index .LicenseKeys "Distr" }}` in their `.env`, which the controller resolves at deploy time from the [license key](/docs/platform/license-keys/) named `Distr`.
 
-Those three stacks reference their credentials as [Distr Secrets](/docs/agents/secrets/) in the same way, so the file you version and ship holds references and the agent resolves them into the `.env` it writes on the target.
-Create the secrets your stack needs before the first deployment, since the agent fails a deployment that references a secret the organization does not have:
+Those three stacks reference their credentials as [Distr Secrets](/docs/controllers/secrets/) in the same way, so the file you version and ship holds references and the controller resolves them into the `.env` it writes on the target.
+Create the secrets your stack needs before the first deployment, since the controller fails a deployment that references a secret the organization does not have:
 
 | Secret                          | `enterprise` | `enterprise-aws`  | `enterprise-gcp`  |
 | ------------------------------- | ------------ | ----------------- | ----------------- |

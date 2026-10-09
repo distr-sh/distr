@@ -1,4 +1,4 @@
-import * as agentChangelog from './agent-changelog.json';
+import * as controllerChangelog from './controller-changelog.json';
 import * as buildConfig from './version.json';
 
-export {agentChangelog, buildConfig};
+export {buildConfig, controllerChangelog};

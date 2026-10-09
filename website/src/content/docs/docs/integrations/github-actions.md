@@ -18,7 +18,7 @@ By the end of this guide, you'll have:
 
 This is particularly useful for SaaS applications where you want to roll out updates to all customers simultaneously, or for managed services where you control the deployment timing.
 
-Distr can also keep deployments on the latest version by itself, without the pipeline updating them. See [Automatic updates](/docs/agents/deployment/#automatic-updates) for when to prefer that over the `update-deployments` input described below.
+Distr can also keep deployments on the latest version by itself, without the pipeline updating them. See [Automatic updates](/docs/controllers/deployment/#automatic-updates) for when to prefer that over the `update-deployments` input described below.
 
 ## Prerequisites
 
@@ -388,8 +388,8 @@ jobs:
 - **`api-token`** - Your Personal Access Token (from GitHub Secrets)
 - **`application-id`** - Your Application ID (from GitHub Variables)
 - **`version-name`** - The version name (here we use the git tag name)
-- **`link-template`** - Template for generating links to deployments (e.g., `http://{{ .Env.APP_HOST }}`). See [Application Links](/docs/agents/application-links/) for details
-- **`update-deployments: true`** - Updates every deployment of the application from the workflow. Leave it out and use [Distr's automatic updates](/docs/agents/deployment/#automatic-updates) instead when the rollout does not have to be gated by your CI
+- **`link-template`** - Template for generating links to deployments (e.g., `http://{{ .Env.APP_HOST }}`). See [Application Links](/docs/controllers/application-links/) for details
+- **`update-deployments: true`** - Updates every deployment of the application from the workflow. Leave it out and use [Distr's automatic updates](/docs/controllers/deployment/#automatic-updates) instead when the rollout does not have to be gated by your CI
 
 When `update-deployments` is set to `true`, the action will:
 
@@ -517,7 +517,7 @@ The workflow will:
 
 There are two ways to keep customer deployments on the latest version, and you should pick one.
 
-**Distr's own automatic updates** are the better fit for most setups. A deployment set to follow the latest version is updated by Distr whenever that version changes, so it also catches a version created through the API or the web interface, a version brought back from the archive and an entitlement that starts covering a newer version. Both you and your customer can turn it on per deployment, so a customer can stay on a version they chose while everyone else follows along. See [Automatic updates](/docs/agents/deployment/#automatic-updates).
+**Distr's own automatic updates** are the better fit for most setups. A deployment set to follow the latest version is updated by Distr whenever that version changes, so it also catches a version created through the API or the web interface, a version brought back from the archive and an entitlement that starts covering a newer version. Both you and your customer can turn it on per deployment, so a customer can stay on a version they chose while everyone else follows along. See [Automatic updates](/docs/controllers/deployment/#automatic-updates).
 
 **The action's `update-deployments` input** updates every deployment of the application as a step of the workflow, which is what you want when the release pipeline has to decide whether an update happens at all, or when the rollout has to be visible in and gated by your CI.
 
@@ -613,7 +613,7 @@ This is a critical sequencing issue. In summary:
 Now that you have automatic deployments set up, consider:
 
 - **[Application Entitlements](/docs/platform/application-entitlements/)** - Control which customers receive automatic updates
-- **[Application Links](/docs/agents/application-links/)** - Create dynamic links for customers to access their deployments
+- **[Application Links](/docs/controllers/application-links/)** - Create dynamic links for customers to access their deployments
 - **[Air-Gapped Deployments with Zarf](/docs/integrations/zarf/)** - Extend your release pipeline to publish self-contained Zarf packages for air-gapped clusters
 - **[Distr SDK](/docs/integrations/sdk/)** - Build custom automation and integrations
 - **[Distr API](/docs/integrations/api/)** - Explore advanced API capabilities

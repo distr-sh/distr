@@ -23,7 +23,7 @@ services:
       DISTR_REGISTRY_HOSTNAME: ${DISTR_REGISTRY_HOSTNAME}
       CADDY_ACME_EMAIL: ${CADDY_ACME_EMAIL}
     # The Caddyfile is written inline on startup instead of being mounted, because
-    # the distr agent does not support mounting files via volumes. The hostnames and
+    # the Distr controller does not support mounting files via volumes. The hostnames and
     # ACME email remain Caddy env placeholders ({$VAR}) that are resolved at runtime.
     entrypoint:
       - sh
@@ -204,11 +204,11 @@ configs:
         max_global_streams_per_user: 25000
         # Truncate oversized log lines instead of rejecting the whole push.
         max_line_size_truncate: true
-        # Accept backfilled logs up to the retention period so an agent that was
+        # Accept backfilled logs up to the retention period so a controller that was
         # offline can still push its backlog.
         reject_old_samples_max_age: 720h
         # Raised moderately from Loki's 4/6 MB defaults to give an organization with
-        # several chatty agents more headroom before pushes are throttled.
+        # several chatty controllers more headroom before pushes are throttled.
         ingestion_rate_mb: 16
         ingestion_burst_size_mb: 32
 

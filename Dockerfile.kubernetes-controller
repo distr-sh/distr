@@ -1,0 +1,26 @@
+FROM golang:1.27.1-alpine3.24 AS builder
+ARG TARGETOS
+ARG TARGETARCH
+ARG VERSION
+ARG COMMIT
+
+WORKDIR /workspace
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN go mod download
+
+COPY api/ api/
+COPY cmd/controller/kubernetes/ cmd/controller/kubernetes/
+# doesn't exist (yet?)
+# COPY pkg/ pkg/
+COPY internal/ internal/
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} \
+  go build -a -o controller \
+  -ldflags="-s -w -X github.com/distr-sh/distr/internal/buildconfig.version=${VERSION:-snapshot} -X github.com/distr-sh/distr/internal/buildconfig.commit=${COMMIT}" \
+  ./cmd/controller/kubernetes/
+
+FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
+WORKDIR /
+COPY --from=builder /workspace/controller .
+USER 65532:65532
+ENTRYPOINT ["/controller"]
