@@ -105,11 +105,11 @@ func CreateOrganization(ctx context.Context, org *types.Organization) error {
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("could not create orgnization: %w", err)
+		return fmt.Errorf("could not create organization: %w", mapDuplicateSlugError(err))
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[types.Organization])
 	if err != nil {
-		return err
+		return fmt.Errorf("could not create organization: %w", mapDuplicateSlugError(err))
 	}
 
 	RunAfterTx(ctx, func(ctx context.Context) {
@@ -170,18 +170,21 @@ func UpdateOrganization(ctx context.Context, org *types.Organization) error {
 		},
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not update organization: %w", mapDuplicateSlugError(err))
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[types.Organization]); err != nil {
-		var pgError *pgconn.PgError
-		if errors.As(err, &pgError) && pgError.Code == pgerrcode.UniqueViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
-		}
-		return err
+		return fmt.Errorf("could not update organization: %w", mapDuplicateSlugError(err))
 	} else {
 		*org = result
 		return nil
 	}
+}
+
+func mapDuplicateSlugError(err error) error {
+	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation {
+		return fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+	}
+	return err
 }
 
 func UpdateOrganizationSubscriptionType(ctx context.Context, subscriptionType types.SubscriptionType) error {
