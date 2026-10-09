@@ -96,7 +96,7 @@ func CreateArtifactEntitlement(ctx context.Context, entitlement *types.ArtifactE
 		return mapArtifactEntitlementError(fmt.Errorf("could not insert ArtifactEntitlement: %w", err))
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ArtifactEntitlementBase]); err != nil {
-		return mapArtifactEntitlementError(err)
+		return mapArtifactEntitlementError(fmt.Errorf("could not insert ArtifactEntitlement: %w", err))
 	} else {
 		*entitlement = result
 		return nil
@@ -130,7 +130,7 @@ func UpdateArtifactEntitlement(ctx context.Context, entitlement *types.ArtifactE
 		if errors.Is(err, pgx.ErrNoRows) {
 			return apierrors.ErrNotFound
 		}
-		return mapArtifactEntitlementError(err)
+		return mapArtifactEntitlementError(fmt.Errorf("could not update ArtifactEntitlement: %w", err))
 	} else {
 		*entitlement = result
 		return nil
