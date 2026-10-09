@@ -20,7 +20,7 @@
             @if (deploymentTarget().reconnectPending) {
               <span
                 class="distr-status-badge shrink-0 whitespace-nowrap bg-yellow-100 text-yellow-800 border-yellow-400 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-800"
-                title="The agent secret was rotated, but no agent has connected to Distr with the new secret yet. Until then, the previous secret stays valid and applications continue operating.">
+                title="The controller secret was rotated, but no controller has connected to Distr with the new secret yet. Until then, the previous secret stays valid and applications continue operating.">
                 Reconnect pending
               </span>
             }
@@ -38,7 +38,7 @@
     </div>
 
     <div class="flex gap-2 items-center">
-      @let connected = deploymentTarget().reportedAgentVersionId !== undefined;
+      @let connected = deploymentTarget().reportedControllerVersionId !== undefined;
       @let deployEnabled = isMultiDeploymentSupported() || deploymentTarget().deployments.length === 0;
 
       @if (deploymentTarget().metricsEnabled) {
@@ -53,7 +53,9 @@
           class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary disabled:opacity-60 disabled:cursor-not-allowed"
           [disabled]="!deployEnabled"
           [title]="
-            deployEnabled ? '' : 'Multiple deployments require agent version 1.6 or newer. Please consider updating.'
+            deployEnabled
+              ? ''
+              : 'Multiple deployments require controller version 1.6 or newer. Please consider updating.'
           ">
           <fa-icon [icon]="faPlus" class="h-5 w-5 mr-0.5 -ml-1 text-gray-500 dark:text-gray-400" />
           <span class="whitespace-nowrap">Deploy App</span>
@@ -76,7 +78,7 @@
         #dropdownTrigger="cdkOverlayOrigin"
         (click)="showDeploymentTargetDropdown.set(true)">
         <fa-icon [icon]="faEllipsisVertical" class="h-5 w-5 text-gray-500 dark:text-gray-400" />
-        @if (agentUpdateAvailable() || agentUpdatePending()) {
+        @if (controllerUpdateAvailable() || controllerUpdatePending()) {
           <span class="rounded-full size-2 bg-blue-400 absolute -bottom-0.5 -right-0.5"></span>
         }
       </button>
@@ -111,17 +113,17 @@
                 </button>
               </li>
 
-              @if (agentUpdateAvailable()) {
+              @if (controllerUpdateAvailable()) {
                 <li>
                   <button
                     type="button"
-                    (click)="showDeploymentTargetDropdown.set(false); updateDeploymentTargetAgent()"
+                    (click)="showDeploymentTargetDropdown.set(false); updateDeploymentTargetController()"
                     class="distr-dropdown-item">
                     <fa-icon [icon]="faRotate" class="w-4 text-gray-500 dark:text-gray-400" />
-                    Update Agent
+                    Update Controller
                   </button>
                 </li>
-              } @else if (agentUpdatePending()) {
+              } @else if (controllerUpdatePending()) {
                 <li>
                   <span class="distr-dropdown-item pointer-events-none text-gray-500 dark:text-gray-400 select-none">
                     <fa-icon [icon]="faRotate" class="w-4" />
@@ -145,7 +147,7 @@
             <li>
               <a class="distr-dropdown-item" [routerLink]="[deploymentTarget().id]">
                 <fa-icon [icon]="faBinoculars" class="w-4 text-gray-500 dark:text-gray-400" />
-                Agent Logs
+                Controller Logs
               </a>
             </li>
 
@@ -327,7 +329,7 @@
                                 [title]="
                                   isForceRestartSupported()
                                     ? ''
-                                    : 'Agent must have version 1.12.0 or greater. Please update this agent.'
+                                    : 'Controller must have version 1.12.0 or greater. Please update this controller.'
                                 "
                                 [disabled]="!isForceRestartSupported()">
                                 <fa-icon [icon]="faPowerOff" class="w-4" />
@@ -346,7 +348,7 @@
                                 [title]="
                                   isUndeploySupported()
                                     ? ''
-                                    : 'Agent must have version 1.3.0 or greater. Please update this agent.'
+                                    : 'Controller must have version 1.3.0 or greater. Please update this controller.'
                                 "
                                 [disabled]="!isUndeploySupported()">
                                 <fa-icon [icon]="faTriangleExclamation" class="w-4" />
@@ -414,23 +416,24 @@
   }
 </div>
 
-<ng-template #updateAgentConfirmTemplate>
+<ng-template #updateControllerConfirmTemplate>
   <div class="space-y-4 text-sm text-gray-700 dark:text-gray-200">
     <div class="p-4 rounded-lg bg-blue-50 text-blue-800 dark:bg-gray-800 dark:text-blue-300" role="note">
-      Updating the agent is a safe action. It does not trigger any changes or restarts for the deployed application.
+      Updating the controller is a safe action. It does not trigger any changes or restarts for the deployed
+      application.
     </div>
 
     <p>
-      Update {{ deploymentTarget().name }} agent from <code>{{ agentUpdateFromVersion() ?? 'unknown' }}</code> to
-      <code>{{ agentUpdateToVersion() }}</code
+      Update {{ deploymentTarget().name }} controller from
+      <code>{{ controllerUpdateFromVersion() ?? 'unknown' }}</code> to <code>{{ controllerUpdateToVersion() }}</code
       >?
     </p>
 
     <div>
-      <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Agent release notes</h4>
-      @if (agentUpdateChangelogReleases().length > 0) {
+      <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Controller release notes</h4>
+      @if (controllerUpdateChangelogReleases().length > 0) {
         <div class="max-h-72 overflow-y-auto pr-1 space-y-4">
-          @for (release of agentUpdateChangelogReleases(); track release.version) {
+          @for (release of controllerUpdateChangelogReleases(); track release.version) {
             <div>
               <h5 class="font-semibold text-gray-900 dark:text-white">{{ release.version }}</h5>
               @for (section of release.sections; track section.section) {
@@ -454,14 +457,14 @@
     @if (!deploymentTarget().automaticUpdatesEnabled) {
       <div class="flex items-center">
         <input
-          id="agent-update-automatic-updates-checkbox"
+          id="controller-update-automatic-updates-checkbox"
           type="checkbox"
-          [formControl]="agentUpdateAutomaticUpdatesEnabled"
+          [formControl]="controllerUpdateAutomaticUpdatesEnabled"
           class="distr-checkbox" />
         <label
-          for="agent-update-automatic-updates-checkbox"
+          for="controller-update-automatic-updates-checkbox"
           class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-          Update this agent automatically in the future
+          Update this controller automatically in the future
         </label>
       </div>
     }
@@ -499,7 +502,7 @@
     <!-- Modal body -->
     <div class="p-4 md:p-5 space-y-4">
       <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
-        To setup this Deployment, the Distr Agent must be installed on the target server/VM. Simply connect to the
+        To setup this Deployment, the Distr Controller must be installed on the target server/VM. Simply connect to the
         target (e.g. via SSH) and execute the following:
       </p>
       <app-connect-instructions [deploymentTarget]="deploymentTarget()" />
@@ -611,11 +614,12 @@
           </div>
           @if (editForm.controls.metricsEnabled.disabled) {
             <p class="text-xs text-gray-500 dark:text-gray-400">
-              Metrics reporting is not available for a namespace scoped agent.
+              Metrics reporting is not available for a namespace scoped controller.
             </p>
           }
           <p class="text-xs text-gray-500 dark:text-gray-400">
-            Changing metrics reporting requires the agent to reconnect. Metrics reporting is not supported on macOS.
+            Changing metrics reporting requires the controller to reconnect. Metrics reporting is not supported on
+            macOS.
           </p>
         </div>
 
@@ -627,12 +631,12 @@
               formControlName="automaticUpdatesEnabled"
               class="distr-checkbox" />
             <label for="automatic-updates-checkbox" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-              Enable automatic agent updates
+              Enable automatic controller updates
             </label>
           </div>
           <p class="text-xs text-gray-500 dark:text-gray-400">
-            When enabled, the agent is updated to the latest version as soon as one becomes available. Updating the
-            agent does not restart or update the deployed application.
+            When enabled, the controller is updated to the latest version as soon as one becomes available. Updating the
+            controller does not restart or update the deployed application.
           </p>
         </div>
 
@@ -650,7 +654,7 @@
 
           @if (!isLoggingSupported()) {
             <p class="text-xs text-yellow-800 dark:text-yellow-300">
-              Log collection requires Agent version 1.9.0 or later
+              Log collection requires Controller version 1.9.0 or later
             </p>
           }
 
@@ -690,7 +694,7 @@
               </div>
 
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                Only collect application logs with a timestamp greater than specified. Use this if an agent appears
+                Only collect application logs with a timestamp greater than specified. Use this if a controller appears
                 stuck collecting very old logs.
               </p>
             </div>
@@ -735,7 +739,7 @@
               autocomplete="off"
               class="distr-input" />
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              The Docker socket on the host that the agent should use. Defaults to
+              The Docker socket on the host that the controller should use. Defaults to
               <code>unix:///var/run/docker.sock</code>.
             </p>
             @if (editForm.controls.dockerEndpoint.invalid && editForm.controls.dockerEndpoint.touched) {
@@ -756,7 +760,7 @@
           <div class="flex items-center">
             <input id="custom-resources" type="checkbox" formControlName="customResources" class="distr-checkbox" />
             <label for="custom-resources" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-              Set custom resource requirements for the Distr agent
+              Set custom resource requirements for the Distr controller
             </label>
           </div>
         }

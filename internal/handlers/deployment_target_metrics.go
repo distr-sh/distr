@@ -16,7 +16,7 @@ import (
 )
 
 func DeploymentTargetMetricsRouter(r chiopenapi.Router) {
-	r.WithOptions(option.GroupTags("Agents"))
+	r.WithOptions(option.GroupTags("Controllers"))
 	r.Use(middleware.RequireOrgAndRole)
 	r.Get("/", getLatestDeploymentTargetMetrics).
 		With(option.Description("Get latest deployment target metrics")).

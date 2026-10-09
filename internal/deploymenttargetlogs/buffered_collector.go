@@ -87,7 +87,7 @@ func (bc *BufferedCollector) Sync() error {
 	bc.resetBuffer()
 	bc.mu.Unlock()
 
-	// The delegate must not be called with the lock held: it logs, the agent's logger writes into
+	// The delegate must not be called with the lock held: it logs, the controller's logger writes into
 	// this collector and the lock is not reentrant, so that would deadlock the logging goroutine.
 	err := bc.Delegate.ExportDeploymentTargetLogs(batch...)
 

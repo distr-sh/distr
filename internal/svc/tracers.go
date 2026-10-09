@@ -48,8 +48,8 @@ func (reg *Registry) createTracer(ctx context.Context) (*tracers.Tracers, error)
 	otel.SetTracerProvider(tracers.DefaultProvider)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(tmps...))
 
-	if cfg := env.OtelAgentSampler(); cfg != nil {
-		tracers.AgentProvider = trace.NewTracerProvider(append(
+	if cfg := env.OtelControllerSampler(); cfg != nil {
+		tracers.ControllerProvider = trace.NewTracerProvider(append(
 			tpopts,
 			trace.WithSampler(samplerFromConfig(cfg)),
 		)...)

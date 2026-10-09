@@ -75,7 +75,7 @@ func saveTutorialProgress(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = db.RunTx(ctx, func(ctx context.Context) error {
-		if tutorial == types.TutorialAgents && req.StepID == "welcome" && req.TaskID == "start" {
+		if tutorial == types.TutorialControllers && req.StepID == "welcome" && req.TaskID == "start" {
 			if dt, err := createSampleAppAndDeployment(ctx); err != nil {
 				log.Warn("could not create sample app and deployment", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -167,10 +167,10 @@ func createHelloDistrDeploymentTarget(ctx context.Context) (*types.DeploymentTar
 			AutomaticUpdatesEnabled: true,
 		},
 	}
-	if agentVersion, err := db.GetCurrentAgentVersion(ctx); err != nil {
+	if controllerVersion, err := db.GetCurrentControllerVersion(ctx); err != nil {
 		return nil, err
 	} else {
-		dt.AgentVersionID = &agentVersion.ID
+		dt.ControllerVersionID = &controllerVersion.ID
 		if err := db.CreateDeploymentTarget(
 			ctx,
 			&dt,

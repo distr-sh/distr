@@ -1,6 +1,6 @@
 ---
 title: Fully Self-Managed Deployments
-description: In fully self-managed deployments, customers use access tokens to pull artifacts directly from Distr’s private OCI-compliant registry, with a built-in UI in the Customer Portal that displays all available artifacts, no agents or external dependencies required.
+description: In fully self-managed deployments, customers use access tokens to pull artifacts directly from Distr’s private OCI-compliant registry, with a built-in UI in the Customer Portal that displays all available artifacts, no controllers or external dependencies required.
 slug: docs/use-cases/fully-self-managed
 sidebar:
   label: Fully Self-Managed
@@ -13,7 +13,7 @@ import fullySelfManagedLight from '~/assets/docs/getting-started/distribution-sc
 import fullySelfManagedDark from '~/assets/docs/getting-started/distribution-scenarios/fully-self-managed/fully-self-managed-dark.webp';
 
 The Fully [Self-Managed](/glossary/self-hosted-software/) deployment model is the customer-operated end of the [self-hosted spectrum](/blog/self-hosted-spectrum/) (short of true air-gapped): third-party access is not an option.
-It is best suited for customers wanting to have full control over their infrastructure and don't want to use external agents.
+It is best suited for customers wanting to have full control over their infrastructure and don't want to use external controllers.
 For this deployment model, Distr provides a private [artifact registry](/glossary/oci-container-artifact-registry/).
 It comes with an [optimized UI](/docs/registry/#artifact-registry-ui) that enables customers
 to create access tokens, fetch the latest images and build custom automations on top of the registry.
@@ -40,7 +40,7 @@ to create access tokens, fetch the latest images and build custom automations on
 {/* steps can't be indented due to prettier */}
 
 1. Set Up Your [Registry](/docs/registry/configuration/)
-2. Create Your [Application](/docs/agents/application/)
+2. Create Your [Application](/docs/controllers/application/)
 3. White-label the [Customer portal](/docs/platform/branding/)
 4. Onboard your first [customer](/docs/platform/rbac/#inviting-customer-organization-users)
 5. Customer creates a [Personal Access token](/docs/integrations/personal-access-token/)

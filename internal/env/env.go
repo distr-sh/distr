@@ -30,23 +30,23 @@ var (
 	databaseEncryptionMigrateOnBoot       bool
 	jwtSecret                             []byte
 	host                                  string
-	agentHost                             *string
+	controllerHost                        *string
 	registryHost                          string
 	mailerConfig                          MailerConfig
 	inviteTokenValidDuration              time.Duration
 	resetTokenValidDuration               time.Duration
-	agentTokenMaxValidDuration            time.Duration
-	agentInterval                         time.Duration
+	controllerTokenMaxValidDuration       time.Duration
+	controllerInterval                    time.Duration
 	metricsEntriesMaxAge                  *time.Duration
 	sentryDSN                             string
 	sentryDebug                           bool
 	sentryEnvironment                     string
-	otelAgentSampler                      *SamplerConfig
+	otelControllerSampler                 *SamplerConfig
 	otelRegistrySampler                   *SamplerConfig
 	otelExporterSentryEnabled             bool
 	otelExporterOtlpEnabled               bool
 	enableQueryLogging                    bool
-	agentDockerConfig                     []byte
+	controllerDockerConfig                []byte
 	frontendSentryDSN                     *string
 	frontendSentryTraceSampleRate         *float64
 	frontendPosthogToken                  *string
@@ -163,8 +163,12 @@ func Initialize() {
 	jwtSecret = util.Require(envutil.ParseValue("JWT_SECRET",
 		requireEnvResolved(ctx, resolver, "JWT_SECRET"), base64.StdEncoding.DecodeString))
 	host = envutil.RequireEnv("DISTR_HOST")
-	agentHost = envutil.GetEnvParsedOrNil("AGENT_HOST", envparse.Host)
-	agentInterval = envutil.GetEnvParsedOrDefault("AGENT_INTERVAL", envparse.PositiveDuration, 5*time.Second)
+	controllerHost = envutil.GetEnvParsedOrNil(
+		envutil.ResolveDeprecatedAlias("CONTROLLER_HOST", "AGENT_HOST"), envparse.Host,
+	)
+	controllerInterval = envutil.GetEnvParsedOrDefault(
+		envutil.ResolveDeprecatedAlias("CONTROLLER_INTERVAL", "AGENT_INTERVAL"), envparse.PositiveDuration, 5*time.Second,
+	)
 	metricsEntriesMaxAge = envutil.GetEnvParsedOrNil("METRICS_ENTRIES_MAX_AGE", envparse.PositiveDuration)
 	enableQueryLogging = envutil.GetEnvParsedOrDefault("ENABLE_QUERY_LOGGING", strconv.ParseBool, false)
 	userEmailVerificationRequired = envutil.GetEnvParsedOrDefault(
@@ -193,8 +197,9 @@ func Initialize() {
 	resetTokenValidDuration = envutil.GetEnvParsedOrDefault(
 		"RESET_TOKEN_VALID_DURATION", envparse.PositiveDuration, 1*time.Hour,
 	)
-	agentTokenMaxValidDuration = envutil.GetEnvParsedOrDefault(
-		"AGENT_TOKEN_MAX_VALID_DURATION", envparse.PositiveDuration, 24*time.Hour,
+	controllerTokenMaxValidDuration = envutil.GetEnvParsedOrDefault(
+		envutil.ResolveDeprecatedAlias("CONTROLLER_TOKEN_MAX_VALID_DURATION", "AGENT_TOKEN_MAX_VALID_DURATION"),
+		envparse.PositiveDuration, 24*time.Hour,
 	)
 
 	mailerConfig.Type = envutil.GetEnvParsedOrDefault("MAILER_TYPE", parseMailerType, MailerTypeUnspecified)
@@ -260,10 +265,14 @@ func Initialize() {
 	sentryEnvironment = envutil.GetEnv("SENTRY_ENVIRONMENT")
 	otelExporterSentryEnabled = envutil.GetEnvParsedOrDefault("OTEL_EXPORTER_SENTRY_ENABLED", strconv.ParseBool, false)
 	otelExporterOtlpEnabled = envutil.GetEnvParsedOrDefault("OTEL_EXPORTER_OTLP_ENABLED", strconv.ParseBool, false)
-	if s := envutil.GetEnvParsedOrNil("OTEL_AGENT_SAMPLER", parseSamplerType); s != nil {
-		otelAgentSampler = &SamplerConfig{
+	if s := envutil.GetEnvParsedOrNil(
+		envutil.ResolveDeprecatedAlias("OTEL_CONTROLLER_SAMPLER", "OTEL_AGENT_SAMPLER"), parseSamplerType,
+	); s != nil {
+		otelControllerSampler = &SamplerConfig{
 			Sampler: *s,
-			Arg:     envutil.GetEnvParsedOrDefault("OTEL_AGENT_SAMPLER_ARG", envparse.Float, 1.0),
+			Arg: envutil.GetEnvParsedOrDefault(
+				envutil.ResolveDeprecatedAlias("OTEL_CONTROLLER_SAMPLER_ARG", "OTEL_AGENT_SAMPLER_ARG"), envparse.Float, 1.0,
+			),
 		}
 	}
 	if s := envutil.GetEnvParsedOrNil("OTEL_REGISTRY_SAMPLER", parseSamplerType); s != nil {
@@ -273,7 +282,9 @@ func Initialize() {
 		}
 	}
 
-	agentDockerConfig = envutil.GetEnvParsedOrDefault("AGENT_DOCKER_CONFIG", envparse.ByteSlice, nil)
+	controllerDockerConfig = envutil.GetEnvParsedOrDefault(
+		envutil.ResolveDeprecatedAlias("CONTROLLER_DOCKER_CONFIG", "AGENT_DOCKER_CONFIG"), envparse.ByteSlice, nil,
+	)
 	frontendSentryDSN = envutil.GetEnvOrNil("FRONTEND_SENTRY_DSN")
 	frontendSentryTraceSampleRate = envutil.GetEnvParsedOrNil("FRONTEND_SENTRY_TRACE_SAMPLE_RATE", envparse.Float)
 	frontendPosthogToken = envutil.GetEnvOrNil("FRONTEND_POSTHOG_TOKEN")
@@ -353,7 +364,7 @@ func Initialize() {
 
 	licenseKey = envutil.GetEnv("LICENSE_KEY")
 	metricsEnabled = envutil.GetEnvParsedOrDefault("METRICS_ENABLED", strconv.ParseBool, false)
-	metricsAddr = envutil.GetEnvOrDefault("METRICS_ADDR", ":3000", envutil.GetEnvOpts{})
+	metricsAddr = envutil.GetEnvOrDefault("METRICS_ADDR", ":3000")
 	metricsBearerToken = envutil.GetEnvOrNil("METRICS_BEARER_TOKEN")
 	supportBundleLogTailLines = envutil.GetEnvParsedOrDefault(
 		"SUPPORT_BUNDLE_LOG_TAIL_LINES", envparse.PositiveNumber, 1000,
@@ -377,7 +388,7 @@ func Initialize() {
 		envparse.PositiveDuration, 4*time.Minute)
 	customDomainVerificationRefreshAfter = envutil.GetEnvParsedOrDefault("CUSTOM_DOMAIN_VERIFICATION_REFRESH_AFTER",
 		envparse.PositiveDuration, 12*time.Hour)
-	internalServerAddr = envutil.GetEnvOrDefault("INTERNAL_SERVER_ADDR", ":8085", envutil.GetEnvOpts{})
+	internalServerAddr = envutil.GetEnvOrDefault("INTERNAL_SERVER_ADDR", ":8085")
 
 	maintenanceMode = envutil.GetEnvParsedOrDefault("MAINTENANCE_MODE", strconv.ParseBool, false)
 }
@@ -450,7 +461,7 @@ func HostScheme() URLScheme {
 	return SchemeHTTPS
 }
 
-func AgentHost() *string { return agentHost }
+func ControllerHost() *string { return controllerHost }
 
 func RegistryHost() string { return registryHost }
 
@@ -477,12 +488,12 @@ func ResetTokenValidDuration() time.Duration {
 	return resetTokenValidDuration
 }
 
-func AgentTokenMaxValidDuration() time.Duration {
-	return agentTokenMaxValidDuration
+func ControllerTokenMaxValidDuration() time.Duration {
+	return controllerTokenMaxValidDuration
 }
 
-func AgentInterval() time.Duration {
-	return agentInterval
+func ControllerInterval() time.Duration {
+	return controllerInterval
 }
 
 func SentryDSN() string {
@@ -505,8 +516,8 @@ func MetricsEntriesMaxAge() *time.Duration {
 	return metricsEntriesMaxAge
 }
 
-func AgentDockerConfig() []byte {
-	return agentDockerConfig
+func ControllerDockerConfig() []byte {
+	return controllerDockerConfig
 }
 
 func FrontendSentryDSN() *string {
@@ -585,8 +596,8 @@ func RegistryUpstreamSyncTimeout() time.Duration {
 	return registryUpstreamSyncTimeout
 }
 
-func OtelAgentSampler() *SamplerConfig {
-	return otelAgentSampler
+func OtelControllerSampler() *SamplerConfig {
+	return otelControllerSampler
 }
 
 func OtelRegistrySampler() *SamplerConfig {

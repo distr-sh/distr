@@ -52,7 +52,7 @@ export const RESOURCE_QUANTITY_REGEX =
 
 /**
  * A Docker endpoint URI pointing at a unix socket, e.g. `unix:///var/run/docker.sock`. Only unix
- * sockets are supported because the socket is mounted into the agent container, and the path is
+ * sockets are supported because the socket is mounted into the controller container, and the path is
  * rendered into Compose's short `SOURCE:TARGET` volume syntax, so it must not contain a colon.
  */
 export const DOCKER_ENDPOINT_REGEX = /^unix:\/\/\/[^:\s]+$/;

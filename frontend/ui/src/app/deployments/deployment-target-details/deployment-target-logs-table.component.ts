@@ -43,7 +43,7 @@ export class DeploymentTargetLogsTableComponent {
         before: this.before(),
         filter: this.filter(),
       }),
-    getFileName: () => 'agent.log',
+    getFileName: () => 'controller.log',
   };
 
   private readonly table = viewChild.required(TimeseriesTableComponent);
