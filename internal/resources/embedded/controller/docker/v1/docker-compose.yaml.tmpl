@@ -1,0 +1,56 @@
+name: distr
+services:
+  agent:
+    network_mode: host
+    restart: always
+    image: 'ghcr.io/distr-sh/distr/docker-controller:{{ .controllerVersion }}'
+    labels:
+      - sh.distr.autoheal=true
+    environment:
+      DISTR_TARGET_ID: '{{ .targetId }}'
+      DISTR_TARGET_SECRET: '{{ .targetSecret }}'
+      DISTR_LOGIN_ENDPOINT: '{{ .loginEndpoint }}'
+      DISTR_MANIFEST_ENDPOINT: '{{ .manifestEndpoint }}'
+      DISTR_RESOURCE_ENDPOINT: '{{ .resourcesEndpoint }}'
+      DISTR_STATUS_ENDPOINT: '{{ .statusEndpoint }}'
+      DISTR_METRICS_ENDPOINT: '{{ .metricsEndpoint }}'
+      DISTR_DEPLOYMENT_METRICS_ENDPOINT: '{{ .deploymentMetricsEndpoint }}'
+      DISTR_LOGS_ENDPOINT: '{{ .logsEndpoint }}'
+      DISTR_AGENT_LOGS_ENDPOINT: '{{ .deploymentTargetLogsEndpoint }}'
+      DISTR_INTERVAL: '{{ .controllerInterval }}'
+      DISTR_AGENT_VERSION_ID: '{{ .controllerVersionId }}'
+      DISTR_AGENT_SCRATCH_DIR: /scratch
+      {{- if .registryEnabled }}
+      DISTR_REGISTRY_HOST: '{{ .registryHost }}'
+      DISTR_REGISTRY_PLAIN_HTTP: '{{ .registryPlainHttp }}'
+      {{- end }}
+      HOST_DOCKER_CONFIG_DIR: ${HOST_DOCKER_CONFIG_DIR-${HOME}/.docker}
+      # Overrides the Docker context of the mounted config, whose endpoint may be a host path that
+      # does not exist in this container.
+      DOCKER_HOST: 'unix:///var/run/docker.sock'
+      {{- if .metricsEnabled }}
+      HOST_ROOT_DIR: /hostfs
+      {{- end }}
+    volumes:
+      - {{ .dockerSocketPath }}:/var/run/docker.sock
+      - scratch:/scratch
+      - ${HOST_DOCKER_CONFIG_DIR-${HOME}/.docker}:/root/.docker:ro
+      {{- if .metricsEnabled }}
+      - /:/hostfs:ro,rslave
+      {{- end }}
+
+  autoheal:
+    environment:
+      {{- if .autohealAll }}
+      AUTOHEAL_CONTAINER_LABEL: all
+      {{- else }}
+      AUTOHEAL_CONTAINER_LABEL: sh.distr.autoheal
+      {{- end }}
+    image: 'ghcr.io/distr-sh/distr/docker-autoheal:{{ .controllerVersion }}'
+    network_mode: none
+    restart: always
+    volumes:
+      - {{ .dockerSocketPath }}:/var/run/docker.sock
+
+volumes:
+  scratch:

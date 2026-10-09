@@ -226,11 +226,11 @@
 
                 <!-- Deployment Name -->
                 <div>
-                  <label for="agent-name" class="distr-label mb-2"> Deployment Name </label>
+                  <label for="controller-name" class="distr-label mb-2"> Deployment Name </label>
                   <input
                     [formControl]="deploymentTargetForm.controls.name"
                     type="text"
-                    id="agent-name"
+                    id="controller-name"
                     class="distr-input"
                     required
                     autotrim
@@ -297,7 +297,7 @@
                         autotrim
                         autocomplete="off" />
                       <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        The Docker socket on the host that the agent should use. Defaults to
+                        The Docker socket on the host that the controller should use. Defaults to
                         <code>unix:///var/run/docker.sock</code>.
                       </div>
                       @if (
@@ -326,7 +326,7 @@
                       autotrim
                       autocomplete="off" />
                     <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      The namespace where the agent and application will be deployed
+                      The namespace where the controller and application will be deployed
                     </div>
                     @if (
                       deploymentTargetForm.controls.namespace.invalid && deploymentTargetForm.controls.namespace.touched
@@ -349,7 +349,7 @@
                   </div>
                   @if (!deploymentTargetForm.controls.clusterScope.value) {
                     <p class="text-xs text-gray-500 dark:text-gray-400">
-                      Note: Metrics reporting will not be available for namespace-scoped agents.
+                      Note: Metrics reporting will not be available for namespace-scoped controllers.
                     </p>
                   }
 
@@ -360,7 +360,7 @@
                       [formControl]="deploymentTargetForm.controls.customResources"
                       class="distr-checkbox" />
                     <label for="custom-resources" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                      Set custom resource requirements for the Distr agent
+                      Set custom resource requirements for the Distr controller
                     </label>
                   </div>
 
@@ -461,7 +461,7 @@
                   </label>
                 </div>
 
-                <!-- Automatic Agent Updates (all deployment types) -->
+                <!-- Automatic Controller Updates (all deployment types) -->
                 <div>
                   <div class="flex items-center">
                     <input
@@ -472,12 +472,12 @@
                     <label
                       for="automatic-updates-enabled"
                       class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                      Enable automatic agent updates
+                      Enable automatic controller updates
                     </label>
                   </div>
                   <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    When enabled, the agent is updated to the latest version as soon as one becomes available. Updating
-                    the agent does not restart or update the deployed application.
+                    When enabled, the controller is updated to the latest version as soon as one becomes available.
+                    Updating the controller does not restart or update the deployed application.
                   </p>
                 </div>
               </div>

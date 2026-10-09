@@ -12,7 +12,7 @@ faqs:
     answer: |
       <p>Distr provides a guided installation workflow.</p>
       <p>The vendor defines the required configuration fields in the application template. The customer sees only those fields, enters the values for its environment and receives a generated installation command.</p>
-      <p>The customer does not need to edit the vendor's Docker Compose file or Helm chart. The Distr agent handles registry authentication, application configuration, deployment, updates, status reporting, logs and health information.</p>
+      <p>The customer does not need to edit the vendor's Docker Compose file or Helm chart. The Distr controller handles registry authentication, application configuration, deployment, updates, status reporting, logs and health information.</p>
   - question: Does Distr provide a customer portal?
     answer: |
       <p>Yes. Distr provides a simplified, white-labeled Customer Portal.</p>
@@ -32,7 +32,7 @@ faqs:
       <p>If the application depends on Kubernetes, Replicated Embedded Cluster remains a valid option for customers that do not already operate a cluster.</p>
   - question: Does Distr fully support Kubernetes?
     answer: |
-      <p>Yes. Distr installs and updates Helm applications through its Kubernetes agent. It supports cluster-scoped and namespace-scoped agents, application versions, release automation, registry authentication, customer entitlements, deployment history, logs, metrics, air-gapped distribution and compatibility reports.</p>
+      <p>Yes. Distr installs and updates Helm applications through its Kubernetes controller. It supports cluster-scoped and namespace-scoped controllers, application versions, release automation, registry authentication, customer entitlements, deployment history, logs, metrics, air-gapped distribution and compatibility reports.</p>
   - question: Does Distr fit into enterprise CI/CD pipelines?
     answer: |
       <p>Yes. Enterprise customers can pull Helm charts, container images and other artifacts from Distr's OCI registry and incorporate them into their existing CI/CD and deployment workflows.</p>
@@ -99,7 +99,7 @@ chart or understand the application's complete internal configuration.
 After entering the required values, the customer receives a generated command
 that connects the environment to Distr and installs the application.
 
-The Distr agent then handles:
+The Distr controller then handles:
 
 - Registry authentication
 - Application configuration
@@ -113,7 +113,7 @@ This gives vendors a reusable installation workflow and gives customers a guided
 path from configuration to a running application.
 
 <LinkButton
-  href="/docs/agents/deployment/"
+  href="/docs/controllers/deployment/"
   variant="secondary"
   icon="lucide:arrow-right"
   iconPlacement="end">
@@ -170,18 +170,18 @@ Distr manages installation, configuration, updates, deployment status, logs,
 metrics and application versions across both deployment environments.
 
 <LinkButton
-  href="/docs/agents/"
+  href="/docs/controllers/"
   variant="secondary"
   icon="lucide:arrow-right"
   iconPlacement="end">
-  Deployment Agents
+  Deployment Controllers
 </LinkButton>
 
 ### Full Kubernetes Application Distribution
 
 Distr does not treat Kubernetes as a secondary distribution option.
 
-The Kubernetes agent installs and updates Helm releases in existing clusters. It
+The Kubernetes controller installs and updates Helm releases in existing clusters. It
 can run with cluster-scoped or namespace-scoped permissions, depending on the
 customer's security requirements.
 
@@ -199,11 +199,11 @@ Distr also supports:
 - Customer-visible resources and installation information
 
 <LinkButton
-  href="/docs/agents/kubernetes-agent/"
+  href="/docs/controllers/kubernetes-controller/"
   variant="secondary"
   icon="lucide:arrow-right"
   iconPlacement="end">
-  Kubernetes Agent
+  Kubernetes Controller
 </LinkButton>
 
 ### Get POCs Live Faster Without Provisioning Kubernetes
@@ -243,18 +243,18 @@ cluster, Replicated Embedded Cluster can be the better fit because it provisions
 Kubernetes together with the application.
 
 <LinkButton
-  href="/docs/agents/docker-agent/"
+  href="/docs/controllers/docker-controller/"
   variant="secondary"
   icon="lucide:arrow-right"
   iconPlacement="end">
-  Docker Agent
+  Docker Controller
 </LinkButton>
 
 <TestimonialCTA name="sophris" />
 
 ### Open-Source and Self-Hosted
 
-The Distr platform and its deployment agents are open source under the Apache
+The Distr platform and its deployment controllers are open source under the Apache
 2.0 license.
 
 Vendors can use Distr Cloud or run the platform inside their own environment
@@ -326,7 +326,7 @@ longer and has greater existing market recognition.
 
 Distr is newer, but its architecture reflects a different distribution model.
 
-Distr manages Docker Compose and Helm applications through lightweight agents.
+Distr manages Docker Compose and Helm applications through lightweight controllers.
 Vendors do not need separate distribution products for single-server, Docker
 Swarm and Kubernetes customers.
 

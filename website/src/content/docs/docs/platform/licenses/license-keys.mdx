@@ -155,7 +155,7 @@ To delete: open the license key and click the **delete** (trash) icon, then conf
 
 ## Referencing license keys in deployments
 
-When you deploy via Distr agents (Docker or Kubernetes), license keys assigned to the customer are automatically available as template variables in deployment environment files and Helm values. You don't need to copy or distribute tokens manually. Distr generates and injects them at deploy time.
+When you deploy via Distr controllers (Docker or Kubernetes), license keys assigned to the customer are automatically available as template variables in deployment environment files and Helm values. You don't need to copy or distribute tokens manually. Distr generates and injects them at deploy time.
 
 ### Finding the reference syntax
 
@@ -196,7 +196,7 @@ The resolved token is passed into the chart at deploy time.
 
 ### Registry-only deployments
 
-For customers who pull artifacts directly from your Distr registry without using deployment agents, provide them with the token out-of-band. The customer is responsible for injecting it into their own deployment pipeline, typically as an environment variable, a mounted secret file, or a Kubernetes secret.
+For customers who pull artifacts directly from your Distr registry without using deployment controllers, provide them with the token out-of-band. The customer is responsible for injecting it into their own deployment pipeline, typically as an environment variable, a mounted secret file, or a Kubernetes secret.
 
 ## Customer portal view
 

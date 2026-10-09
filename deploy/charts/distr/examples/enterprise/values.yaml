@@ -25,8 +25,8 @@ distr:
   # Helm replaces the whole list rather than merging it, so every variable Distr needs has to be
   # in this one.
   env:
-    # When this release is deployed by a Distr agent, use the template reference of the license key
-    # instead of a secret, and the agent resolves it at deploy time:
+    # When this release is deployed by a Distr controller, use the template reference of the license key
+    # instead of a secret, and the controller resolves it at deploy time:
     #   value: '{{ index .LicenseKeys "Distr" }}'
     - name: LICENSE_KEY
       valueFrom:

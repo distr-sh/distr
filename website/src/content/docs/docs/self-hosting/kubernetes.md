@@ -81,8 +81,8 @@ Paid plans run the Enterprise image `registry.distr.sh/enterprise/distr-ee`.
 It comes from our own registry, so create a pull secret from the credentials you received from us and reference it in `imagePullSecrets`.
 
 :::tip[Let Distr manage your own instance]
-The smoothest way to run a paid plan is to deploy the chart with Distr itself, through a [Kubernetes agent](/docs/agents/kubernetes-agent/) in the target cluster.
-The agent then handles the rollout of new Distr versions and injects the license key for you: put `value: '{{ index .LicenseKeys "Distr" }}'` on the `LICENSE_KEY` entry of your Helm values and it is resolved at deploy time from the [license key](/docs/platform/license-keys/) named `Distr`, so the token is never stored in the release.
+The smoothest way to run a paid plan is to deploy the chart with Distr itself, through a [Kubernetes controller](/docs/controllers/kubernetes-controller/) in the target cluster.
+The controller then handles the rollout of new Distr versions and injects the license key for you: put `value: '{{ index .LicenseKeys "Distr" }}'` on the `LICENSE_KEY` entry of your Helm values and it is resolved at deploy time from the [license key](/docs/platform/license-keys/) named `Distr`, so the token is never stored in the release.
 :::
 
 ```yaml

@@ -40,8 +40,8 @@ export class TutorialsService {
       completedRoute: '/artifacts',
     },
     {
-      name: 'Try out Agents, Applications and Deployments',
-      id: 'agents',
+      name: 'Try out Controllers, Applications and Deployments',
+      id: 'controllers',
       icon: this.faBoxesStacked,
       description: 'Learn how to integrate, deploy and monitor your applications with Distr.',
       completedRoute: '/deployments',
