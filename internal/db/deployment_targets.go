@@ -22,13 +22,14 @@ const (
 		dt.access_key_hash,
 		dt.pending_access_key_salt,
 		dt.pending_access_key_hash,
-		dt.reported_agent_version_id IS NOT NULL AND dt.pending_access_key_hash IS NOT NULL,
+		dt.reported_controller_version_id IS NOT NULL AND dt.pending_access_key_hash IS NOT NULL,
 		dt.namespace,
 		dt.scope,
 		dt.organization_id,
 		dt.customer_organization_id,
-		dt.agent_version_id,
-		dt.reported_agent_version_id,
+		dt.controller_version_id,
+		dt.reported_controller_version_id,
+		dt.legacy_controller_name,
 		dt.metrics_enabled,
 		dt.image_cleanup_enabled,
 		dt.autoheal_enabled,
@@ -45,14 +46,15 @@ const (
 	`
 	deploymentTargetOutputExpr = deploymentTargetOutputExprBase +
 		", CASE WHEN co.id IS NOT NULL THEN (" + customerOrganizationOutputExpr + ") END AS customer_organization"
-	deploymentTargetFullOutputExpr = deploymentTargetOutputExpr + `,
-		CASE WHEN agv.id IS NOT NULL
-			THEN (agv.id, agv.created_at, agv.name, agv.manifest_file_revision, agv.compose_file_revision) END
-			AS agent_version
+	controllerVersionOutputExpr = `
+		CASE WHEN cv.id IS NOT NULL
+			THEN (cv.id, cv.created_at, cv.name, cv.manifest_file_revision, cv.compose_file_revision) END`
+	deploymentTargetFullOutputExpr = deploymentTargetOutputExpr + `,` +
+		controllerVersionOutputExpr + ` AS controller_version
 	`
 	deploymentTargetJoinExpr = `
-		LEFT JOIN AgentVersion agv
-			ON dt.agent_version_id = agv.id
+		LEFT JOIN ControllerVersion cv
+			ON dt.controller_version_id = cv.id
 		LEFT JOIN CustomerOrganization co
 			ON dt.customer_organization_id = co.id
 		JOIN Organization o
@@ -221,7 +223,7 @@ func CreateDeploymentTarget(
 		"orgId":                 dt.OrganizationID,
 		"namespace":             dt.Namespace,
 		"scope":                 dt.Scope,
-		"agentVersionId":        dt.AgentVersionID,
+		"controllerVersionId":   dt.ControllerVersionID,
 		"metricsEnabled":        dt.MetricsEnabled,
 		"imageCleanupEnabled":   dt.ImageCleanupEnabled,
 		"deploymentLogsEnabled": dt.DeploymentLogsEnabled,
@@ -243,11 +245,11 @@ func CreateDeploymentTarget(
 		ctx,
 		`WITH inserted AS (
 			INSERT INTO DeploymentTarget
-			(name, type, organization_id, namespace, scope, agent_version_id, metrics_enabled, image_cleanup_enabled,
-				deployment_logs_enabled, deployment_logs_after, autoheal_enabled, automatic_updates_enabled,
-				customer_organization_id, resources_cpu_request, resources_memory_request, resources_cpu_limit,
-				resources_memory_limit, docker_endpoint)
-			VALUES (@name, @type, @orgId, @namespace, @scope, @agentVersionId, @metricsEnabled, @imageCleanupEnabled,
+			(name, type, organization_id, namespace, scope, controller_version_id, metrics_enabled,
+				image_cleanup_enabled, deployment_logs_enabled, deployment_logs_after, autoheal_enabled,
+				automatic_updates_enabled, customer_organization_id, resources_cpu_request, resources_memory_request,
+				resources_cpu_limit, resources_memory_limit, docker_endpoint)
+			VALUES (@name, @type, @orgId, @namespace, @scope, @controllerVersionId, @metricsEnabled, @imageCleanupEnabled,
 				@deploymentLogsEnabled, @deploymentLogsAfter, @autohealEnabled, @automaticUpdates,
 				@customerOrgId, @resourcesCpuRequest, @resourcesMemoryRequest, @resourcesCpuLimit,
 				@resourcesMemoryLimit, @dockerEndpoint)
@@ -269,7 +271,7 @@ func CreateDeploymentTarget(
 }
 
 func UpdateDeploymentTarget(ctx context.Context, dt *types.DeploymentTargetFull, orgID uuid.UUID) error {
-	agentUpdateStr := ""
+	controllerUpdateStr := ""
 	db := internalctx.GetDb(ctx)
 	args := pgx.NamedArgs{
 		"id":                    dt.ID,
@@ -282,9 +284,9 @@ func UpdateDeploymentTarget(ctx context.Context, dt *types.DeploymentTargetFull,
 		"automaticUpdates":      dt.AutomaticUpdatesEnabled,
 		"dockerEndpoint":        dt.DockerEndpoint,
 	}
-	if dt.AgentVersionID != nil {
-		args["agentVersionId"] = dt.AgentVersionID
-		agentUpdateStr = ", agent_version_id = @agentVersionId "
+	if dt.ControllerVersionID != nil {
+		args["controllerVersionId"] = dt.ControllerVersionID
+		controllerUpdateStr = ", controller_version_id = @controllerVersionId "
 	}
 	if dt.Resources != nil {
 		args["cpuRequest"] = dt.Resources.CPURequest
@@ -305,7 +307,7 @@ func UpdateDeploymentTarget(ctx context.Context, dt *types.DeploymentTargetFull,
 				resources_cpu_limit = @cpuLimit,
 				resources_memory_request = @memoryRequest,
 				resources_memory_limit = @memoryLimit,
-				docker_endpoint = @dockerEndpoint `+agentUpdateStr+`
+				docker_endpoint = @dockerEndpoint `+controllerUpdateStr+`
 			WHERE id = @id AND organization_id = @orgId RETURNING *
 		)
 		SELECT `+deploymentTargetFullOutputExpr+` FROM updated dt`+deploymentTargetJoinExpr,
@@ -333,8 +335,8 @@ func DeleteDeploymentTargetWithID(ctx context.Context, id uuid.UUID) error {
 	}
 }
 
-// UpdateDeploymentTargetPendingAccess replaces the pending secret and leaves the active one untouched, so the agent
-// using it keeps working until the new secret is used to log in.
+// UpdateDeploymentTargetPendingAccess replaces the pending secret and leaves the active one untouched, so the
+// controller using it keeps working until the new secret is used to log in.
 func UpdateDeploymentTargetPendingAccess(ctx context.Context, dt *types.DeploymentTarget, orgID uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
@@ -382,22 +384,22 @@ func PromoteDeploymentTargetPendingAccessKey(ctx context.Context, id uuid.UUID, 
 	}
 }
 
-func UpdateDeploymentTargetReportedAgentVersionID(
+func UpdateDeploymentTargetReportedControllerVersionID(
 	ctx context.Context,
 	dt *types.DeploymentTargetFull,
-	agentVersionID uuid.UUID,
+	controllerVersionID uuid.UUID,
 ) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
 		`WITH updated AS (
 			UPDATE DeploymentTarget AS dt
-			SET reported_agent_version_id = @agentVersionId
+			SET reported_controller_version_id = @controllerVersionId
 			WHERE id = @id
 			RETURNING *
 		)
 		SELECT`+deploymentTargetFullOutputExpr+`FROM updated dt`+deploymentTargetJoinExpr,
-		pgx.NamedArgs{"id": dt.ID, "agentVersionId": agentVersionID},
+		pgx.NamedArgs{"id": dt.ID, "controllerVersionId": controllerVersionID},
 	)
 	if err != nil {
 		return fmt.Errorf("could not update DeploymentTarget: %w", err)

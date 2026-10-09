@@ -51,7 +51,7 @@ func Check(ctx context.Context, domain types.CustomDomain) (verificationError *s
 
 // CheckAndStore runs a check and persists its outcome. An inconclusive lookup only records that the
 // check ran: it says nothing about the record, so a domain that was working keeps working through a
-// resolver outage instead of dropping out of every link, mail and agent manifest at once.
+// resolver outage instead of dropping out of every link, mail and controller manifest at once.
 func CheckAndStore(
 	ctx context.Context,
 	domain types.CustomDomain,

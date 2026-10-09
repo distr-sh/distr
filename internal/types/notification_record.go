@@ -27,7 +27,7 @@ type NotificationRecord struct {
 	// DeploymentStatusMessage is a copy of the status message at the time of the notification, since the revision
 	// only keeps its latest status. Stale warnings have none.
 	DeploymentStatusMessage *string `db:"deployment_status_message"`
-	// ResolvedAt is set on a stale warning once the agent reports again. An unresolved warning suppresses further
+	// ResolvedAt is set on a stale warning once the controller reports again. An unresolved warning suppresses further
 	// warnings for the same deployment and alert configuration.
 	ResolvedAt                        *time.Time `db:"resolved_at"`
 	MetricType                        *string    `db:"metric_type"`

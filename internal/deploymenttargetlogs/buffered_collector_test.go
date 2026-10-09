@@ -67,8 +67,8 @@ func TestBufferedCollectorNeverWedgesOnRejection(t *testing.T) {
 	}
 }
 
-// loggingDelegate is an exporter that logs while exporting, like the agent client does when it
-// refreshes its token. The agent's logger writes into the collector the export came from.
+// loggingDelegate is an exporter that logs while exporting, like the controller client does when it
+// refreshes its token. The controller's logger writes into the collector the export came from.
 type loggingDelegate struct {
 	collector *BufferedCollector
 	calls     int
@@ -96,7 +96,7 @@ func TestBufferedCollectorDelegateMayLogWhileExporting(t *testing.T) {
 }
 
 // blockingDelegate is an exporter whose first export blocks, like an HTTP request that is still in
-// flight when the agent shuts down.
+// flight when the controller shuts down.
 type blockingDelegate struct {
 	release chan struct{}
 	mu      sync.Mutex

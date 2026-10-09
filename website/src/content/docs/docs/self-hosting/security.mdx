@@ -70,14 +70,14 @@ their reads of those values fail until the rollout finishes:
 
 ## JWT Signing Secret
 
-`JWT_SECRET` signs every token Distr issues, with HS256: user sessions, the access tokens agents call the API with
+`JWT_SECRET` signs every token Distr issues, with HS256: user sessions, the access tokens controllers call the API with
 and the invite, password reset and email verification links it sends out. Generate it with
 `openssl rand -base64 32` and wrap it with a [key management service](#key-management-service) to keep it out of your
 configuration as well.
 
 There is no keyring for this secret, so replacing it invalidates everything signed with the previous one at once: users
 are signed out and have to sign in again, and invite and password reset links that have been sent but not used stop
-working. Agents recover on their own, because their manifest carries the access key of their deployment target, which
+working. Controllers recover on their own, because their manifest carries the access key of their deployment target, which
 they exchange for a new token.
 
 ## License Signing Key

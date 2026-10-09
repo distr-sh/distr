@@ -174,7 +174,7 @@ Tags are still fetched on demand when a client pulls an image, but the tag list 
 
 When [custom domains](/docs/self-hosting/configuration#custom-domains) are enabled, a job checks that
 each registered domain still points at your CNAME target. A domain is only used for links, mails,
-agent manifests and registry URLs while that check succeeds.
+controller manifests and registry URLs while that check succeeds.
 
 ```shell
 distr maintenance verify-custom-domains --timeout 10m
@@ -260,9 +260,9 @@ version would start encrypting while replicas of the previous one are still serv
 
 ### Deployment Revision Status Cleanup (removed in v4.2.0)
 
-Prior to v4.2.0, every status an agent reported was appended to a `DeploymentRevisionStatus`
-table, which the portal showed as a status history per deployment. Since agents report once per
-`AGENT_INTERVAL` that table grew continuously, and the `DeploymentRevisionStatus` cleanup target
+Prior to v4.2.0, every status a controller reported was appended to a `DeploymentRevisionStatus`
+table, which the portal showed as a status history per deployment. Since controllers report once per
+`CONTROLLER_INTERVAL` that table grew continuously, and the `DeploymentRevisionStatus` cleanup target
 pruned entries older than `STATUS_ENTRIES_MAX_AGE`, always keeping the newest one per deployment.
 
 Distr now stores only the latest status, on the deployment revision itself, so there is nothing
@@ -273,7 +273,7 @@ and `GET /api/v1/deployments/{id}/status/export` endpoints. Remove the
 `deployment-revision-status-cleanup` CronJob from your Helm values and the variables from your
 environment; Distr ignores them.
 
-What an agent reports is now written to the agent logs instead, which you reach from the menu of a
+What a controller reports is now written to the controller logs instead, which you reach from the menu of a
 deployment target in the portal. Their retention is the Loki retention described below.
 
 ### Deployment & Deployment Target Log Cleanup (removed in v3.0.0)

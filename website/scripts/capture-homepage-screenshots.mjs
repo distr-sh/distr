@@ -110,8 +110,8 @@ const screenshots = [
     persona: 'vendor',
     route: '/dashboard',
     description:
-      'Vendor dashboard with support bundles, agent/deployment cards, health states, customer names, and current navigation.',
-    checks: [/Support Bundles/, /Agents/, /BYOC Global/, /Healthy/],
+      'Vendor dashboard with support bundles, controller/deployment cards, health states, customer names and current navigation.',
+    checks: [/Support Bundles/, /Controllers/, /BYOC Global/, /Healthy/],
   },
   {
     id: 'distr-customer-portal',
@@ -137,9 +137,9 @@ const screenshots = [
     persona: 'vendor',
     route: '/deployments/2ad1125e-1d38-4457-80bf-5c8d043686a8',
     description:
-      'Vendor deployment-target Agent Logs view with timestamps, log levels, source files, metric records, filters, sort, and export controls.',
+      'Vendor deployment-target Controller Logs view with timestamps, log levels, source files, metric records, filters, sort and export controls.',
     checks: [
-      /Agent Logs/,
+      /Controller Logs/,
       /docker\/metrics\.go|docker\/main\.go/,
       /Export all/,
     ],
