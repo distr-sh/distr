@@ -93,14 +93,10 @@ func CreateArtifactEntitlement(ctx context.Context, entitlement *types.ArtifactE
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("could not insert ArtifactEntitlement: %w", err)
+		return artifactEntitlementWriteError(err, "could not insert ArtifactEntitlement")
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ArtifactEntitlementBase]); err != nil {
-		var pgError *pgconn.PgError
-		if errors.As(err, &pgError) && pgError.Code == pgerrcode.UniqueViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
-		}
-		return err
+		return artifactEntitlementWriteError(err, "")
 	} else {
 		*entitlement = result
 		return nil
@@ -128,15 +124,13 @@ func UpdateArtifactEntitlement(ctx context.Context, entitlement *types.ArtifactE
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("could not update ArtifactEntitlement: %w", err)
+		return artifactEntitlementWriteError(err, "could not update ArtifactEntitlement")
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ArtifactEntitlementBase]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
-		} else if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			return apierrors.ErrNotFound
 		}
-		return err
+		return artifactEntitlementWriteError(err, "")
 	} else {
 		*entitlement = result
 		return nil
@@ -182,9 +176,34 @@ func AddArtifactToArtifactEntitlement(
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("could not insert relation: %w", err)
+		return artifactEntitlementWriteError(err, "could not insert relation")
 	}
 	return nil
+}
+
+// artifactEntitlementWriteError maps constraint failures a caller can cause. The organization
+// and entitlement foreign keys are filled from the authenticated context and a row just written
+// in the same transaction, so a violation there stays an internal error.
+func artifactEntitlementWriteError(err error, wrap string) error {
+	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok {
+		switch pgErr.Code {
+		case pgerrcode.ForeignKeyViolation:
+			switch pgErr.ConstraintName {
+			case "artifactentitlement_customer_organization_id_fkey":
+				return apierrors.NewBadRequest("invalid customer organization ID")
+			case "artifactlicense_artifact_artifact_id_fkey":
+				return apierrors.NewBadRequest("invalid artifact ID")
+			case "artifactlicense_artifact_artifact_version_id_fkey":
+				return apierrors.NewBadRequest("invalid artifact version ID")
+			}
+		case pgerrcode.UniqueViolation:
+			return fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+		}
+	}
+	if wrap == "" {
+		return err
+	}
+	return fmt.Errorf("%s: %w", wrap, err)
 }
 
 func GetArtifactEntitlementByID(ctx context.Context, id uuid.UUID) (*types.ArtifactEntitlement, error) {
