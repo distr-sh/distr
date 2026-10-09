@@ -215,11 +215,10 @@ func updateDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := db.UpdateDeploymentTarget(ctx, &dt, *auth.CurrentOrgID()); err != nil {
-		log.Warn("could not update DeploymentTarget", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, err)
+	if err := db.UpdateDeploymentTarget(ctx, &dt, *auth.CurrentOrgID()); errors.Is(err, apierrors.ErrBadRequest) {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	} else if err != nil {
+		respondInternalError(w, r, err, "could not update DeploymentTarget")
 	} else if err = json.NewEncoder(w).Encode(dt); err != nil {
 		log.Error("failed to encode json", zap.Error(err))
 	}
