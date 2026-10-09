@@ -71,8 +71,8 @@ let deploymentTargetId;
 let applicationId;
 
 try {
-  step('Trigger tutorial (agents/welcome/start)');
-  const tutorialResult = await request('PUT', '/api/v1/tutorial-progress/agents', {
+  step('Trigger tutorial (controllers/welcome/start)');
+  const tutorialResult = await request('PUT', '/api/v1/tutorial-progress/controllers', {
     token,
     body: {stepId: 'welcome', taskId: 'start'},
   });

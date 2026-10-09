@@ -36,7 +36,7 @@ type DeploymentWithLatestRevision struct {
 	ForceRestart            bool                      `db:"force_restart" json:"forceRestart"`
 	IgnoreRevisionSkew      bool                      `db:"ignore_revision_skew" json:"ignoreRevisionSkew"`
 	HelmOptions             *HelmOptions              `db:"helm_options" json:"helmOptions,omitempty"`
-	// CurrentDeploymentRevisionID is the revision an agent last reported as applied, which differs
+	// CurrentDeploymentRevisionID is the revision a controller last reported as applied, which differs
 	// from DeploymentRevisionID while a newer revision is being rolled out or has failed.
 	CurrentDeploymentRevisionID *uuid.UUID                `db:"current_deployment_revision_id" json:"currentDeploymentRevisionId,omitempty"` //nolint:lll
 	CurrentStatus               *DeploymentRevisionStatus `db:"current_status" json:"currentStatus,omitempty"`
@@ -45,7 +45,7 @@ type DeploymentWithLatestRevision struct {
 	CurrentApplicationVersionName *string `db:"current_application_version_name" json:"currentApplicationVersionName,omitempty"`
 }
 
-// NewestStatus returns the status the agent reported last, no matter which revision it belongs to.
+// NewestStatus returns the status the controller reported last, no matter which revision it belongs to.
 func (d *DeploymentWithLatestRevision) NewestStatus() *DeploymentRevisionStatus {
 	if d.LatestStatus == nil {
 		return d.CurrentStatus

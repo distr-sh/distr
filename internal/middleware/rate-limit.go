@@ -21,7 +21,7 @@ func RateLimitPathValueKey(name string) func(r *http.Request) (string, error) {
 }
 
 func RateLimitCurrentDeploymentTargetIdKeyFunc(r *http.Request) (string, error) {
-	if auth, err := auth.AgentAuthentication.Get(r.Context()); err != nil {
+	if auth, err := auth.ControllerAuthentication.Get(r.Context()); err != nil {
 		return "", err
 	} else {
 		return getTokenIdKey(auth.Token(), auth.CurrentDeploymentTargetID()), nil

@@ -1,0 +1,161 @@
+---
+title: Docker Controller
+description: 'How the Distr Docker Compose controller works: installation, core loop, OCI registry authentication, self-updates, Docker Swarm support, and uninstallation.'
+slug: docs/controllers/docker-controller
+sidebar:
+  label: Docker Controller
+  order: 2
+---
+
+import {Aside} from '@astrojs/starlight/components';
+
+The Docker Compose controller manages container-based deployments, handling both single- and multi-container applications. It performs application updates with minimal downtime, collects container health metrics and logs, and supports environment variable templating for flexible configuration.
+
+<Aside type="note">
+  Unless you're using Distr to deploy your own applications internally, the
+  Distr controller will always be configured and deployed by the end customer.
+  Head over to the [end-customer controller
+  guide](/docs/platform/customer-portal/deployments/#deployment-controller-quickstart-from-the-customer-portal)
+  to learn how it should be installed.
+</Aside>
+
+## Requirements
+
+The host system must have Docker and Docker Compose installed.
+
+## Installation and Environment
+
+The controller is installed by running a single command that fetches a Docker Compose file from Distr and starts it:
+
+```
+curl "https://<distr-host>/api/v1/connect?targetId=<targetId>&targetSecret=<targetSecret>" | docker compose -f - up -d
+```
+
+The `targetId` and `targetSecret` ensure the controller can only fetch deployments for one specific deployment target. The secret is shown once and never stored by Distr. It can only be verified.
+
+The fetched Compose file runs the controller container:
+
+```yaml
+name: distr
+services:
+  controller:
+    network_mode: host
+    restart: unless-stopped
+    image: 'ghcr.io/distr-sh/distr/docker-controller'
+    environment:
+      # Authentication with Distr, see above
+      DISTR_TARGET_ID: '<targetId>'
+      DISTR_TARGET_SECRET: '<targetSecret>'
+      # various endpoints of Distr:
+      DISTR_LOGIN_ENDPOINT: 'https://<distr-host>/api/v1/controller/login'
+      DISTR_MANIFEST_ENDPOINT: 'https://<distr-host>/api/v1/controller/manifest'
+      DISTR_RESOURCE_ENDPOINT: 'https://<distr-host>/api/v1/controller/resources'
+      DISTR_STATUS_ENDPOINT: 'https://<distr-host>/api/v1/controller/status'
+      DISTR_METRICS_ENDPOINT: 'https://<distr-host>/api/v1/controller/metrics'
+      DISTR_DEPLOYMENT_METRICS_ENDPOINT: 'https://<distr-host>/api/v1/controller/deployments'
+      DISTR_LOGS_ENDPOINT: 'https://<distr-host>/api/v1/controller/logs'
+      DISTR_DEPLOYMENT_TARGET_LOGS_ENDPOINT: 'https://<distr-host>/api/v1/controller/deployment-target-logs'
+      # how often the controller fetches deployments
+      DISTR_CONTROLLER_INTERVAL: '5s'
+      # controller versioning information, needed for controller self-updates:
+      DISTR_CONTROLLER_VERSION_ID: '<db-id-of-controller-version>'
+      DISTR_CONTROLLER_SCRATCH_DIR: /scratch
+      DISTR_REGISTRY_HOST: 'localhost:8585'
+      HOST_DOCKER_CONFIG_DIR: ${HOST_DOCKER_CONFIG_DIR-${HOME}/.docker}
+    volumes:
+      # the host's docker socket is mounted into the controller container
+      - /var/run/docker.sock:/var/run/docker.sock
+      - scratch:/scratch
+      - ${HOST_DOCKER_CONFIG_DIR-${HOME}/.docker}:/root/.docker:ro
+volumes:
+  scratch:
+```
+
+All requests to Distr are authenticated with a JWT token obtained by calling `DISTR_LOGIN_ENDPOINT` with the `targetId` and `targetSecret` credentials. The Docker socket is mounted so the controller can manage containers on the host. Which socket that is can be configured per deployment target, see [Custom Docker Endpoint](#custom-docker-endpoint).
+
+## Core Logic
+
+The controller runs the following loop at the interval defined by `DISTR_CONTROLLER_INTERVAL` (default 5 seconds):
+
+1. Fetch the deployments from `DISTR_RESOURCE_ENDPOINT`
+2. Remove Docker Compose projects that are no longer in the list (undeployed), together with their volumes and networks
+3. Start Docker Compose projects that are in the list. If images need pulling, the controller reports status `PROGRESSING`.
+4. Send each Docker Compose output to `DISTR_STATUS_ENDPOINT`, reporting the deployment's status.
+
+An apply that has not finished after 10 minutes is reported as an error rather than left in `PROGRESSING`, and is retried on the next cycle.
+
+Each deployment maps to one Docker Compose project on the host, named `distr-<short-deployment-id>`.
+
+## Authentication with OCI Registries
+
+If a deployment uses images from the Distr registry, the controller authenticates automatically, so the customer needs no extra steps. The authentication secret is stored in a temporary directory inside the controller container.
+
+For any other authenticated OCI registry, the controller mounts the host's Docker config directory so existing credentials are reused. Any registry accessible from the host is also accessible to the controller.
+
+You can also provide credentials via an [application entitlement](/docs/platform/application-entitlements/#oci-registry-authentication) (Pro feature). When a deployment is created with that entitlement, the controller logs in to the specified registry using the provided credentials.
+
+## Controller Self Updates
+
+When the controller version for a deployment target is updated in Distr, the controller updates itself on the next cycle. It fetches the new manifest from `DISTR_MANIFEST_ENDPOINT` and restarts. The `DISTR_CONTROLLER_SCRATCH_DIR` environment variable and `scratch` volume mount are required for this to work.
+
+## Autoheal
+
+Distr deploys an autoheal service alongside every Docker controller. This service monitors container health and automatically restarts containers that become unhealthy.
+
+When autoheal is enabled for **all containers**, the underlying `docker-autoheal` service targets every unhealthy container visible to the Docker engine on that host, not just containers from a specific Distr deployment. This means your application containers are automatically restarted if they fail their healthchecks. For this to work, your application must define [Docker healthchecks](https://docs.docker.com/reference/compose-file/services/#healthcheck) in its Compose file. Containers without healthchecks are not monitored.
+
+The autoheal setting is configured when creating a deployment target. In the deployment wizard, the **Enable autoheal for all containers** checkbox is enabled by default for Docker deployments. When disabled, the autoheal service still runs but only monitors the Distr controller itself. To prevent unrelated containers on the same host from being auto-healed, label those containers with `autoheal=False`.
+
+<Aside type="note">
+  Autoheal is only available for Docker deployments. This setting can only be
+  configured during deployment target creation and cannot be changed afterward.
+  To change it, delete the deployment target and create a new one.
+</Aside>
+
+## Image Cleanup
+
+By default, when the controller updates a deployment to a new version, the previous container images remain on the host. Over time this can consume significant disk space.
+
+When **Enable container image cleanup** is checked, the controller automatically removes the previous version's container images after a successful deployment update. This setting is enabled by default for new Docker deployment targets.
+
+To toggle image cleanup on an existing deployment target:
+
+1. Navigate to the deployment target in the Deployments view.
+2. Click the **⋮** menu and select **Edit**.
+3. Toggle **Enable container image cleanup**.
+
+Image cleanup only runs after a successful update. If a deployment fails, the previous images are kept so a rollback remains possible.
+
+<Aside type="note">
+  Image cleanup is only available for Docker deployments.
+</Aside>
+
+## Custom Docker Endpoint
+
+By default the controller uses the host's standard Docker socket, `unix:///var/run/docker.sock`. If the Docker daemon on the target host listens on a different socket, check **Use a custom Docker endpoint** and enter its URI, for example `unix:///Users/you/.docker/run/docker.sock`.
+
+The generated Compose file then mounts that socket into the controller and autoheal containers as `/var/run/docker.sock` instead of the default one. The controller always addresses the socket through `DOCKER_HOST=unix:///var/run/docker.sock`, so the Docker context selected in the host's Docker config, which is mounted into the controller container, cannot send it to a host path that does not exist inside the container.
+
+The setting is available both in the deployment wizard and when editing an existing deployment target. Changes only take effect after the customer re-applies the generated Compose file.
+
+Only unix socket URIs are supported. Remote endpoints such as `tcp://` cannot be used, because the endpoint is applied by mounting the socket into the controller container. For the same reason the socket path may contain neither whitespace nor a colon.
+
+<Aside type="note">
+  A custom Docker endpoint is only available for Docker deployments.
+</Aside>
+
+## Docker Swarm
+
+A deployment can run in Swarm mode. The host must have Docker Swarm enabled and initialized. Instead of `docker compose up`, the controller uses `docker stack deploy`. Unlike regular Compose mode, `docker stack deploy` is only called when the deployment has changed, not on every cycle.
+
+## Uninstalling
+
+Before removing the controller, undeploy all managed deployments via the UI or API.
+
+Then stop and remove the controller container:
+
+```shell
+docker stop distr-controller-1 && docker rm distr-controller-1
+```
+
+Deployment targets connected with Distr 4.2 or earlier run the controller as the `agent` Compose service, in the container `distr-agent-1`.

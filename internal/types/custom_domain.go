@@ -34,7 +34,7 @@ type CustomDomain struct {
 	VerificationError *string `db:"verification_error"`
 }
 
-// Verified reports whether the domain may be used for links, mails, agent manifests and registry
+// Verified reports whether the domain may be used for links, mails, controller manifests and registry
 // URLs. It is deliberately not a freshness check on VerifiedAt: a domain is dropped on evidence that
 // its record is wrong, never because verification merely stopped happening.
 func (d CustomDomain) Verified() bool {

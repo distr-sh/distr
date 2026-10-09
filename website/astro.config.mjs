@@ -139,24 +139,30 @@ export default defineConfig({
               ],
             },
             {
-              label: 'Deployment Agents',
-              link: '/docs/agents/',
+              label: 'Deployment Controllers',
+              link: '/docs/controllers/',
               icon: 'random',
               items: [
                 {
                   label: 'Overview & Setup',
-                  items: [{autogenerate: {directory: 'docs/agents/overview'}}],
+                  items: [
+                    {autogenerate: {directory: 'docs/controllers/overview'}},
+                  ],
                 },
                 {
                   label: 'Configuration',
                   items: [
-                    {autogenerate: {directory: 'docs/agents/configuration'}},
+                    {
+                      autogenerate: {
+                        directory: 'docs/controllers/configuration',
+                      },
+                    },
                   ],
                 },
                 {
                   label: 'Monitoring',
                   items: [
-                    {autogenerate: {directory: 'docs/agents/monitoring'}},
+                    {autogenerate: {directory: 'docs/controllers/monitoring'}},
                   ],
                 },
               ],
@@ -325,8 +331,8 @@ export default defineConfig({
 
     // product/ redirects
     '/docs/product/vendor-portal/': '/docs/vendor-portal/',
-    '/docs/product/agents/': '/docs/agents/',
-    '/docs/product/alerts/': '/docs/agents/alerts/',
+    '/docs/product/agents/': '/docs/controllers/',
+    '/docs/product/alerts/': '/docs/controllers/alerts/',
     '/docs/product/registry/': '/docs/registry/',
     '/docs/product/support-bundles/': '/docs/platform/support-bundles/',
     '/docs/product/customer-portal/': '/docs/platform/customer-portal/',
@@ -344,9 +350,9 @@ export default defineConfig({
 
     // guides/ redirects (slugs that existed on main)
     '/docs/guides/': '/docs/quickstart/',
-    '/docs/guides/secrets/': '/docs/agents/secrets/',
-    '/docs/guides/application-links/': '/docs/agents/application-links/',
-    '/docs/guides/preflight-checks/': '/docs/agents/preflight-checks/',
+    '/docs/guides/secrets/': '/docs/controllers/secrets/',
+    '/docs/guides/application-links/': '/docs/controllers/application-links/',
+    '/docs/guides/preflight-checks/': '/docs/controllers/preflight-checks/',
     '/docs/guides/application-entitlements/':
       '/docs/platform/application-entitlements/',
     '/docs/guides/artifact-entitlements/':
@@ -355,7 +361,7 @@ export default defineConfig({
     '/docs/guides/vulnerability-scanning/':
       '/docs/platform/vulnerability-scanning/',
     '/docs/guides/container-registry/': '/docs/registry/configuration/',
-    '/docs/guides/docker-secrets/': '/docs/agents/docker-compose-secrets/',
+    '/docs/guides/docker-secrets/': '/docs/controllers/docker-compose-secrets/',
     '/docs/guides/container-registry-for-end-customers/':
       '/docs/platform/customer-portal/registry/',
     '/docs/guides/license-mgmt/': '/docs/platform/application-entitlements/',
@@ -363,9 +369,31 @@ export default defineConfig({
       '/docs/platform/application-entitlements/',
     '/docs/guides/artifact-licenses/': '/docs/platform/artifact-entitlements/',
     '/docs/guides/onboarding-a-new-customer/': '/docs/platform/rbac/',
-    '/docs/guides/onboarding-a-docker-app/': '/docs/agents/application/',
-    '/docs/guides/onboarding-a-helm-app/': '/docs/agents/application/',
-    '/docs/guides/distr-on-macos/': '/docs/agents/distr-on-macos/',
+    '/docs/guides/onboarding-a-docker-app/': '/docs/controllers/application/',
+    '/docs/guides/onboarding-a-helm-app/': '/docs/controllers/application/',
+    '/docs/guides/distr-on-macos/': '/docs/controllers/distr-on-macos/',
+
+    // agents/ was renamed to controllers/
+    '/docs/agents/': '/docs/controllers/',
+    '/docs/agents/application/': '/docs/controllers/application/',
+    '/docs/agents/deployment/': '/docs/controllers/deployment/',
+    '/docs/agents/docker-agent/': '/docs/controllers/docker-controller/',
+    '/docs/agents/kubernetes-agent/':
+      '/docs/controllers/kubernetes-controller/',
+    '/docs/agents/distr-on-macos/': '/docs/controllers/distr-on-macos/',
+    '/docs/agents/distr-on-windows-wsl/':
+      '/docs/controllers/distr-on-windows-wsl/',
+    '/docs/agents/application-links/': '/docs/controllers/application-links/',
+    '/docs/agents/docker-compose-secrets/':
+      '/docs/controllers/docker-compose-secrets/',
+    '/docs/agents/docker-env/': '/docs/controllers/docker-env/',
+    '/docs/agents/helm-registry-auth/': '/docs/controllers/helm-registry-auth/',
+    '/docs/agents/preflight-checks/': '/docs/controllers/preflight-checks/',
+    '/docs/agents/secrets/': '/docs/controllers/secrets/',
+    '/docs/agents/alerts/': '/docs/controllers/alerts/',
+    '/docs/agents/logs-and-metrics/': '/docs/controllers/logs-and-metrics/',
+    '/docs/agents/update-notifications/':
+      '/docs/controllers/update-notifications/',
 
     // Integration redirects
     '/docs/integrations/mcp/': '/docs/integrations/',

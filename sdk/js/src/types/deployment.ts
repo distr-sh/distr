@@ -7,7 +7,7 @@ export interface Deployment extends BaseModel {
   dockerType?: DockerType;
   /**
    * Whether this deployment is rolled forward to the application's latest version automatically.
-   * Unrelated to DeploymentTarget.automaticUpdatesEnabled, which is the agent updating itself.
+   * Unrelated to DeploymentTarget.automaticUpdatesEnabled, which is the controller updating itself.
    */
   automaticApplicationUpdatesEnabled?: boolean;
 }
@@ -60,7 +60,7 @@ export interface DeploymentWithLatestRevision extends Deployment {
   deploymentRevisionCreatedAt?: string;
   latestStatus?: DeploymentRevisionStatus;
   /**
-   * The revision an agent last reported as applied, which differs from deploymentRevisionId while a
+   * The revision a controller last reported as applied, which differs from deploymentRevisionId while a
    * newer revision is being rolled out or has failed.
    */
   currentDeploymentRevisionId?: string;

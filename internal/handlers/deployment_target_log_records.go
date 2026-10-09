@@ -84,7 +84,7 @@ func exportDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 			return
 		}
 
-		filename := fmt.Sprintf("%s_agent.log", time.Now().Format("2006-01-02"))
+		filename := fmt.Sprintf("%s_controller.log", time.Now().Format("2006-01-02"))
 		export := newExportWriter(w, log, filename)
 
 		if queryRange.IsEmpty() {

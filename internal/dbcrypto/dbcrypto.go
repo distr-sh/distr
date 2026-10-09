@@ -32,7 +32,7 @@ var keys *crypto.Keyring
 // Init parses the given DATABASE_ENCRYPTION_KEY value into the keyring of this instance. Every
 // command that reads or writes an encrypted column has to call it before it does, so that a
 // malformed key aborts startup instead of failing the first query that touches such a column. The
-// key is passed in because internal/types imports this package, and through it every agent binary,
+// key is passed in because internal/types imports this package, and through it every controller binary,
 // which has no internal/env.
 func Init(spec string) error {
 	keyring, err := crypto.ParseKeyring(spec)

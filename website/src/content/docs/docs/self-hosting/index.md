@@ -32,7 +32,7 @@ place to look up what a setting does and when it is required.
 
 ## Semantic Versioning
 
-We are using [semantic versioning](https://semver.org/) for the releases of Distr, the Distr Agents and the Distr SDKs.
+We are using [semantic versioning](https://semver.org/) for the releases of Distr, the Distr Controllers and the Distr SDKs.
 
 ## Changelog
 
