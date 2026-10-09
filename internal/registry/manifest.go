@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path"
 	"strconv"
 	"strings"
 
@@ -148,6 +149,12 @@ func (m *manifests) handleTags(resp http.ResponseWriter, req *http.Request) *reg
 					Status:  http.StatusBadRequest,
 					Code:    "BAD_REQUEST",
 					Message: fmt.Sprintf("parsing n: %v", err),
+				}
+			} else if parsed < 0 {
+				return &regError{
+					Status:  http.StatusBadRequest,
+					Code:    "BAD_REQUEST",
+					Message: "n must not be negative",
 				}
 			} else {
 				n = parsed
@@ -395,15 +402,16 @@ func (handler *manifests) handlePut(resp http.ResponseWriter, req *http.Request,
 		return regErrInternal(err)
 	}
 
+	algorithm := digest.Canonical
+	if d, err := digest.Parse(target); err == nil {
+		algorithm = d.Algorithm()
+	}
+
 	mf := imanifest.Manifest{
 		ContentType: req.Header.Get("Content-Type"),
-		BlobWithData: imanifest.BlobWithData{
-			Data: buf.Bytes(),
-			Blob: imanifest.Blob{
-				Digest: digest.FromBytes(buf.Bytes()),
-				Size:   int64(buf.Len()),
-			},
-		},
+		Data:        buf.Bytes(),
+		Digest:      algorithm.FromBytes(buf.Bytes()),
+		Size:        int64(buf.Len()),
 	}
 
 	// A reference containing a colon cannot be a tag, so it has to be this manifest's own digest.
@@ -438,8 +446,9 @@ func (handler *manifests) handlePut(resp http.ResponseWriter, req *http.Request,
 		}
 	}
 
-	if err := checkIncompatibleManifest(buf.Bytes()); err != nil {
-		return err
+	subject, rerr := checkIncompatibleManifest(buf.Bytes())
+	if rerr != nil {
+		return rerr
 	}
 
 	// Allow future references by target (tag) and immutable digest.
@@ -459,8 +468,10 @@ func (handler *manifests) handlePut(resp http.ResponseWriter, req *http.Request,
 	}
 
 	resp.Header().Set("Docker-Content-Digest", mf.Digest.String())
-	resp.Header().Set("OCI-Subject", mf.Digest.String())
-	resp.Header().Set("Location", req.URL.JoinPath(mf.Blob.Digest.String()).Path)
+	if subject != nil {
+		resp.Header().Set("OCI-Subject", subject.Digest.String())
+	}
+	resp.Header().Set("Location", "/"+path.Join("v2", repo, "manifests", mf.Digest.String()))
 	resp.WriteHeader(http.StatusCreated)
 	return nil
 }
@@ -487,14 +498,16 @@ func (handler *manifests) handleDelete(resp http.ResponseWriter, req *http.Reque
 	return nil
 }
 
-func checkIncompatibleManifest(data []byte) *regError {
+// checkIncompatibleManifest rejects a manifest Distr cannot store and returns its subject, if any.
+func checkIncompatibleManifest(data []byte) (*imgspecv1.Descriptor, *regError) {
 	var mf struct {
-		Blobs []any `json:"blobs"`
+		Blobs   []any                 `json:"blobs"`
+		Subject *imgspecv1.Descriptor `json:"subject"`
 	}
 	if err := json.Unmarshal(data, &mf); err != nil {
-		return regErrManifestInvalid(err)
+		return nil, regErrManifestInvalid(err)
 	} else if len(mf.Blobs) > 0 {
-		return regErrManifestInvalid(errors.New("non-compliant manifest with blobs entry detected"))
+		return nil, regErrManifestInvalid(errors.New("non-compliant manifest with blobs entry detected"))
 	}
-	return nil
+	return mf.Subject, nil
 }
