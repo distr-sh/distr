@@ -22,6 +22,7 @@ import (
 	"io"
 	"net/http"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/distr-sh/distr/internal/apierrors"
@@ -135,14 +136,9 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 			return regErrBlobAuthz(err)
 		}
 		return b.handlePut(resp, req, service, repo, target, digestFromQuery, contentRange)
-	// case http.MethodDelete:
-	// 	if err := b.authz.AuthorizeBlob(req.Context(), targetHash, authz.ActionWrite); err != nil {
-	// 		if errors.Is(err, authz.ErrAccessDenied) {
-	// 			return regErrDenied
-	// 		}
-	// 		return regErrInternal(err)
-	// 	}
-	// 	return b.handleDelete(resp, req, repo, target)
+	case http.MethodDelete:
+		// Blobs are shared between artifacts and organizations and are removed by the ArtifactBlob cleanup.
+		return regErrUnsupported
 	default:
 		return regErrMethodUnknown
 	}
@@ -222,7 +218,7 @@ func (b *blobs) handleGet(resp http.ResponseWriter, req *http.Request, repo, tar
 			return regErrInternal(err)
 		} else {
 			resp.Header().Set("Location", "/"+path.Join("v2", repo, "blobs/uploads", target))
-			resp.Header().Set("Range", fmt.Sprintf("0-%v", uploaded-1))
+			resp.Header().Set("Range", fmt.Sprintf("0-%v", max(uploaded-1, 0)))
 			resp.WriteHeader(http.StatusNoContent)
 			return nil
 		}
@@ -399,7 +395,7 @@ func (b *blobs) handlePost(resp http.ResponseWriter, req *http.Request, repo, ta
 		defer vrc.Close()
 
 		if err = bph.Put(req.Context(), repo, h, "", vrc); err != nil {
-			if errors.As(err, &verify.Error{}) {
+			if _, ok := errors.AsType[verify.Error](err); ok {
 				log := internalctx.GetLogger(req.Context())
 				log.Warn("Digest mismatch detected", zap.Error(err))
 				return regErrDigestMismatch
@@ -415,6 +411,9 @@ func (b *blobs) handlePost(resp http.ResponseWriter, req *http.Request, repo, ta
 	if id, err := bph.StartSession(req.Context(), repo); err != nil {
 		return regErrInternal(err)
 	} else {
+		if cmh, ok := b.blobHandler.(blob.BlobChunkMinLengthHandler); ok {
+			resp.Header().Set("OCI-Chunk-Min-Length", strconv.FormatInt(cmh.ChunkMinLength(), 10))
+		}
 		resp.Header().Set("Location", req.URL.JoinPath(id).Path)
 		resp.Header().Set("Range", "0-0")
 		resp.WriteHeader(http.StatusAccepted)
@@ -519,7 +518,7 @@ func (b *blobs) handlePut(
 			}
 		} else if err != nil {
 			return regErrInternal(err)
-		} else if contentRange != "" && size != end {
+		} else if contentRange != "" && size != end+1 {
 			return &regError{
 				Status:  http.StatusRequestedRangeNotSatisfiable,
 				Code:    "BLOB_UPLOAD_INVALID",
@@ -529,29 +528,21 @@ func (b *blobs) handlePut(
 	}
 
 	err = bph.CompleteSession(req.Context(), repo, target, h)
-	if err != nil {
+	if errors.Is(err, blob.ErrBadUpload) && h == h.Algorithm().FromBytes(nil) {
+		// A session that never received a chunk has no upload to complete.
+		err = bph.Put(req.Context(), repo, h, "", bytes.NewReader(nil))
+	}
+	if _, ok := errors.AsType[verify.Error](err); ok {
+		internalctx.GetLogger(req.Context()).Warn("Digest mismatch detected", zap.Error(err))
+		return regErrDigestMismatch
+	} else if errors.Is(err, blob.ErrBadUpload) {
+		return regErrBlobUploadUnknown
+	} else if err != nil {
 		return regErrInternal(err)
 	}
 
 	resp.Header().Set("Docker-Content-Digest", h.String())
-	resp.Header().Set("Location", req.URL.JoinPath("..", h.String()).Path)
+	resp.Header().Set("Location", "/"+path.Join("v2", repo, "blobs", h.String()))
 	resp.WriteHeader(http.StatusCreated)
 	return nil
 }
-
-// func (b *blobs) handleDelete(resp http.ResponseWriter, req *http.Request, repo, target string) *regError {
-// 	bdh, ok := b.blobHandler.(blob.BlobDeleteHandler)
-// 	if !ok {
-// 		return regErrUnsupported
-// 	}
-
-// 	h, err := v1.NewHash(target)
-// 	if err != nil {
-// 		return regErrDigestInvalid
-// 	}
-// 	if err := bdh.Delete(req.Context(), repo, h); err != nil {
-// 		return regErrInternal(err)
-// 	}
-// 	resp.WriteHeader(http.StatusAccepted)
-// 	return nil
-// }

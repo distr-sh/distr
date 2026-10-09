@@ -39,6 +39,7 @@ func (r *regError) Write(resp http.ResponseWriter) error {
 			resp.Header().Add(key, value)
 		}
 	}
+	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteHeader(r.Status)
 
 	type err struct {
@@ -93,6 +94,12 @@ var regErrDigestMismatch = &regError{
 	Status:  http.StatusBadRequest,
 	Code:    "DIGEST_INVALID",
 	Message: "digest does not match contents",
+}
+
+var regErrBlobUploadUnknown = &regError{
+	Status:  http.StatusNotFound,
+	Code:    "BLOB_UPLOAD_UNKNOWN",
+	Message: "Unknown upload session",
 }
 
 var regErrDigestInvalid = &regError{

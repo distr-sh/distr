@@ -14,6 +14,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/registry/blob"
+	"github.com/distr-sh/distr/internal/registry/verify"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/glasskube/pkg/seekbuf"
 	"github.com/google/uuid"
@@ -23,6 +24,7 @@ import (
 
 const (
 	chunksPrefix  = "chunks"
+	minS3PartSize = int64(5) * 1024 * 1024        // S3 minimum size of every part but the last is 5 MiB
 	maxS3PartSize = int64(5) * 1024 * 1024 * 1024 // S3 maximum per-part size is 5 GiB
 	splitPartSize = int64(1) * 1024 * 1024 * 1024 // target size per UploadPart call
 )
@@ -35,10 +37,11 @@ type blobHandler struct {
 }
 
 var (
-	_ blob.BlobHandler       = &blobHandler{}
-	_ blob.BlobStatHandler   = &blobHandler{}
-	_ blob.BlobPutHandler    = &blobHandler{}
-	_ blob.BlobDeleteHandler = &blobHandler{}
+	_ blob.BlobHandler               = &blobHandler{}
+	_ blob.BlobStatHandler           = &blobHandler{}
+	_ blob.BlobPutHandler            = &blobHandler{}
+	_ blob.BlobDeleteHandler         = &blobHandler{}
+	_ blob.BlobChunkMinLengthHandler = &blobHandler{}
 )
 
 func NewBlobHandler(ctx context.Context, s3Client *s3.Client) (blob.BlobHandler, error) {
@@ -301,7 +304,7 @@ func (handler *blobHandler) PutChunk(ctx context.Context, id string, r io.Reader
 	uploadKey := path.Join(chunksPrefix, id)
 	var uploadID *string
 	var partNumber int32
-	var size int64
+	var size, lastPartSize int64
 
 	if start == 0 {
 		if _, err := handler.getUploadID(ctx, uploadKey); err == nil {
@@ -331,12 +334,27 @@ func (handler *blobHandler) PutChunk(ctx context.Context, id string, r io.Reader
 			partNumber = int32(len(parts) + 1)
 			for _, part := range parts {
 				size += *part.Size
+				lastPartSize = *part.Size
 			}
 		}
 	}
 
 	if size != start {
 		return 0, blob.NewErrBadUpload("range is not as expected")
+	}
+
+	// S3 rejects completing a multipart upload with a part below the minimum size that is not the last,
+	// so the upload cannot succeed anymore once a chunk follows a smaller one.
+	if start > 0 && lastPartSize < minS3PartSize {
+		if _, err := handler.s3Client.AbortMultipartUpload(context.WithoutCancel(ctx), &s3.AbortMultipartUploadInput{
+			Bucket:   &handler.bucket,
+			Key:      &uploadKey,
+			UploadId: uploadID,
+		}); err != nil {
+			internalctx.GetLogger(ctx).Warn("failed to abort multipart upload", zap.Error(err))
+		}
+		return 0, blob.NewErrBadUpload(fmt.Sprintf(
+			"every chunk except the last must be at least %d bytes (OCI-Chunk-Min-Length)", minS3PartSize))
 	}
 
 	s, err := seekbuf.New(r)
@@ -372,7 +390,10 @@ func (handler *blobHandler) GetUploadedPartsSize(ctx context.Context, id string)
 	uploadKey := path.Join(chunksPrefix, id)
 	var size int64
 
-	if uploadID, err := handler.getUploadID(ctx, uploadKey); err != nil {
+	if uploadID, err := handler.getUploadID(ctx, uploadKey); errors.Is(err, blob.ErrBadUpload) {
+		// The multipart upload is only created with the first chunk, so a new session has none yet.
+		return 0, nil
+	} else if err != nil {
 		return 0, err
 	} else if parts, err := handler.getExistingParts(ctx, uploadKey, uploadID); err != nil {
 		return 0, err
@@ -396,11 +417,6 @@ func (handler *blobHandler) CompleteSession(ctx context.Context, repo, id string
 			completionParts[i] = s3types.CompletedPart{PartNumber: part.PartNumber, ETag: part.ETag}
 		}
 
-		// TODO:
-		//   CompleteSession should check if the completed object has the correct digest before copying it to the
-		//   final location. AWS supports calculating checksums automatically, but we would need a SHA256 for the
-		//   complete object which, unfortunately, is explicitly not supported.
-		//   https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html#Full-object-checksums
 		if _, err := handler.s3Client.CompleteMultipartUpload(ctx, &s3.CompleteMultipartUploadInput{
 			Bucket:          &handler.bucket,
 			Key:             &uploadKey,
@@ -410,8 +426,14 @@ func (handler *blobHandler) CompleteSession(ctx context.Context, repo, id string
 			return err
 		}
 
-		finalKey := digest.String()
-		copyErr := handler.copyObject(ctx, uploadKey, finalKey)
+		// Blobs of all organizations share one key per digest, so an object stored under a digest it
+		// does not match would replace the blob of every artifact referencing that digest. S3 cannot
+		// compute a SHA256 of a whole multipart object, so it is read back once here.
+		// https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html#Full-object-checksums
+		copyErr := handler.verifyObject(ctx, uploadKey, digest)
+		if copyErr == nil {
+			copyErr = handler.copyObject(ctx, uploadKey, digest.String())
+		}
 
 		// ArtifactBlob cleanup only deletes digest-shaped keys, so a chunk left behind here is
 		// never collected, not even when the copy above failed.
@@ -424,6 +446,26 @@ func (handler *blobHandler) CompleteSession(ctx context.Context, repo, id string
 
 		return copyErr
 	}
+}
+
+func (handler *blobHandler) verifyObject(ctx context.Context, key string, h digest.Digest) error {
+	obj, err := handler.s3Client.GetObject(ctx, &s3.GetObjectInput{Bucket: &handler.bucket, Key: &key})
+	if err != nil {
+		return err
+	}
+	vrc, err := verify.ReadCloser(obj.Body, verify.SizeUnknown, h)
+	if err != nil {
+		_ = obj.Body.Close()
+		return err
+	}
+	defer vrc.Close()
+	_, err = io.Copy(io.Discard, vrc)
+	return err
+}
+
+// ChunkMinLength implements blob.BlobChunkMinLengthHandler.
+func (handler *blobHandler) ChunkMinLength() int64 {
+	return minS3PartSize
 }
 
 // copyObject copies srcKey to dstKey within the same bucket. For objects larger than the 5 GB CopyObject limit,
