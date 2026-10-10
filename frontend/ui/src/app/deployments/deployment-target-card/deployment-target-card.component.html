@@ -640,9 +640,7 @@
           </div>
 
           @if (!isLoggingSupported()) {
-            <p class="text-xs text-yellow-800 dark:text-yellow-300">
-              Log collection requires Controller version 1.9.0 or later
-            </p>
+            <p class="distr-hint-warning">Log collection requires Controller version 1.9.0 or later.</p>
           }
 
           @if (editForm.controls.deploymentLogsEnabled.value && isDeploymentLogsAfterEnabled()) {

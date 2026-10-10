@@ -254,11 +254,11 @@
         Add identity provider
       </button>
       @if (!domain) {
-        <p class="text-xs font-normal text-yellow-700 dark:text-yellow-300">
+        <p class="distr-hint-warning">
           Identity providers only work on custom domains. Configure and verify one first.
         </p>
       } @else if (viewerIsVendor() && !configurable()) {
-        <p class="text-xs font-normal text-yellow-700 dark:text-yellow-300">
+        <p class="distr-hint-warning">
           An organization slug is required. Set one on the
           <a routerLink="/settings/organization/general" class="font-semibold underline">General tab</a> first.
         </p>

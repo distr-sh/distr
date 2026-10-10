@@ -21,7 +21,7 @@ export type AlertType = 'success' | 'info' | 'warning' | 'error';
   imports: [FaIconComponent],
   host: {
     '[class]': 'typeClass()',
-    '[attr.role]': 'role()',
+    role: 'status',
   },
 })
 export class AlertComponent {
@@ -37,5 +37,4 @@ export class AlertComponent {
   protected readonly faXmark = faXmark;
 
   protected readonly typeClass = computed(() => `alert-${this.type()}`);
-  protected readonly role = computed(() => (this.type() === 'warning' || this.type() === 'error' ? 'alert' : 'status'));
 }

@@ -72,7 +72,7 @@
                           <!-- Selection Indicator -->
                           @if (isSelected) {
                             <div class="absolute top-2 left-2 text-primary-600 dark:text-primary-400">
-                              <fa-icon [icon]="faCheckCircle" class="w-6 h-6" />
+                              <fa-icon [icon]="faCircleCheck" class="w-6 h-6" />
                             </div>
                           }
                         </button>
@@ -123,7 +123,7 @@
                         <!-- Selection Indicator -->
                         @if (customerForm.value.customerOrganizationId === customer.id) {
                           <div class="absolute top-2 left-2 text-primary-600 dark:text-primary-400">
-                            <fa-icon [icon]="faCheckCircle" class="w-6 h-6" />
+                            <fa-icon [icon]="faCircleCheck" class="w-6 h-6" />
                           </div>
                         }
                       </button>
@@ -191,7 +191,7 @@
                       <!-- Selection Indicator -->
                       @if (applicationForm.value.applicationId === app.id) {
                         <div class="absolute top-2 left-2 text-primary-600 dark:text-primary-400">
-                          <fa-icon [icon]="faCheckCircle" class="w-6 h-6" />
+                          <fa-icon [icon]="faCircleCheck" class="w-6 h-6" />
                         </div>
                       }
                     </button>
@@ -507,7 +507,7 @@
             <div class="space-y-6 mt-12">
               <div class="space-y-6">
                 <div class="flex flex-col items-center text-center space-y-4">
-                  <fa-icon [icon]="faCheckCircle" class="text-green-600 dark:text-green-500 text-6xl mt-4" />
+                  <fa-icon [icon]="faCircleCheck" class="text-green-600 dark:text-green-500 text-6xl mt-4" />
                   <h3 class="text-2xl font-semibold text-gray-900 dark:text-white">Deployment Created Successfully</h3>
                   <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400 max-w-2xl">
                     Your deployment has been created successfully. To deploy it, please copy and paste the following
