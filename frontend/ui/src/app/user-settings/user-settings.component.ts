@@ -1,9 +1,8 @@
 import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, NavigationEnd, Router, RouterOutlet} from '@angular/router';
-import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCircleExclamation} from '@fortawesome/free-solid-svg-icons';
 import {filter} from 'rxjs';
+import {AlertComponent} from '../components/alert/alert.component';
 import {PageComponent} from '../components/page.component';
 import {TabBarComponent, TabItem} from '../components/tab-bar.component';
 import {AuthService} from '../services/auth.service';
@@ -16,11 +15,9 @@ type UserSettingsTab = (typeof userSettingsTabs)[number];
 @Component({
   templateUrl: './user-settings.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [FaIconComponent, TabBarComponent, RouterOutlet, PageComponent],
+  imports: [AlertComponent, TabBarComponent, RouterOutlet, PageComponent],
 })
 export class UserSettingsComponent {
-  protected readonly faCircleExclamation = faCircleExclamation;
-
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);

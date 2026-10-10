@@ -2,9 +2,10 @@ import {ChangeDetectionStrategy, Component, inject, signal, TemplateRef, viewChi
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCheck, faCircleExclamation, faExclamationTriangle, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faCheck, faTriangleExclamation, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {AlertComponent} from '../components/alert/alert.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
 import {ContextService} from '../services/context.service';
@@ -16,13 +17,12 @@ import {ToastService} from '../services/toast.service';
   selector: 'app-user-security-settings',
   templateUrl: './user-security-settings.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective],
+  imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, AlertComponent],
 })
 export class UserSecuritySettingsComponent {
   protected readonly faCheck = faCheck;
   protected readonly faXmark = faXmark;
-  protected readonly faCircleExclamation = faCircleExclamation;
-  protected readonly faExclamationTriangle = faExclamationTriangle;
+  protected readonly faTriangleExclamation = faTriangleExclamation;
 
   private readonly fb = inject(FormBuilder);
   private readonly ctx = inject(ContextService);

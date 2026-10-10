@@ -1,22 +1,17 @@
-import {ChangeDetectionStrategy, Component, computed, input} from '@angular/core';
+import {Component, computed, input} from '@angular/core';
 import {UNLIMITED_QTY} from '../types/subscription';
 
 @Component({
   selector: 'app-quota-limit',
-  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     @if (shouldShow()) {
-      <span
-        class="text-sm"
-        [class]="
-          isLimitReached()
-            ? ['text-red-700', 'dark:text-red-500']
-            : isLimitAlmostReached()
-              ? ['text-yellow-800', 'dark:text-yellow-300']
-              : ['text-gray-500', 'dark:text-gray-400']
-        ">
-        {{ remainingCount() }}{{ label() ? ' ' + label() : '' }} remaining
-      </span>
+      @if (isLimitReached()) {
+        <span class="text-sm text-red-800 dark:text-red-400">{{ text() }}</span>
+      } @else if (isLimitAlmostReached()) {
+        <span class="text-sm text-yellow-800 dark:text-yellow-300">{{ text() }}</span>
+      } @else {
+        <span class="text-sm text-gray-500 dark:text-gray-400">{{ text() }}</span>
+      }
     }
   `,
 })
@@ -41,6 +36,11 @@ export class QuotaLimitComponent {
       return false;
     }
     return r / l <= 0.5 || r <= 3;
+  });
+
+  protected readonly text = computed(() => {
+    const label = this.label();
+    return `${this.remainingCount()}${label ? ' ' + label : ''} remaining`;
   });
 
   public isLimitAlmostReached = computed(() => this.remainingCount() === 1);

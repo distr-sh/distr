@@ -6,7 +6,15 @@ import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
 import {UserRole} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faClipboard, faPen, faPlus, faTrash, faTriangleExclamation, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {
+  faCircleXmark,
+  faClipboard,
+  faPen,
+  faPlus,
+  faTrash,
+  faTriangleExclamation,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {firstValueFrom} from 'rxjs';
 import {isExpired, RelativeDatePipe} from '../../util/dates';
@@ -63,6 +71,7 @@ export class AccessTokensComponent {
   protected readonly faXmark = faXmark;
   protected readonly faClipboard = faClipboard;
   protected readonly faTriangleExclamation = faTriangleExclamation;
+  protected readonly faCircleXmark = faCircleXmark;
 
   private readonly accessTokensService = inject(AccessTokensService);
   private readonly auth = inject(AuthService);

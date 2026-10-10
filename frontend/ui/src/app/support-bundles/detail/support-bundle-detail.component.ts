@@ -1,4 +1,4 @@
-import {DatePipe, NgClass} from '@angular/common';
+import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, viewChild} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
@@ -27,13 +27,22 @@ import {OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService, supportBundleZipFileName} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
 import {SupportBundleDetail} from '../../types/support-bundle';
-import {supportBundleDeleteConfirm, supportBundleStatusBadgeClass} from '../support-bundle-display';
+import {supportBundleDeleteConfirm} from '../support-bundle-display';
+import {SupportBundleStatusBadgeComponent} from '../support-bundle-status-badge.component';
 
 @Component({
   selector: 'app-support-bundle-detail',
   templateUrl: './support-bundle-detail.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [DatePipe, NgClass, RouterLink, FaIconComponent, ClipComponent, ActivityTimelineComponent, PageComponent],
+  imports: [
+    DatePipe,
+    RouterLink,
+    FaIconComponent,
+    ClipComponent,
+    ActivityTimelineComponent,
+    PageComponent,
+    SupportBundleStatusBadgeComponent,
+  ],
 })
 export class SupportBundleDetailComponent {
   private readonly route = inject(ActivatedRoute);
@@ -51,8 +60,6 @@ export class SupportBundleDetailComponent {
   protected readonly faDownload = faDownload;
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
-  protected readonly statusBadgeClass = supportBundleStatusBadgeClass;
-
   private readonly timeline = viewChild(ActivityTimelineComponent);
 
   protected readonly bundle = signal<SupportBundleDetail | undefined>(undefined);

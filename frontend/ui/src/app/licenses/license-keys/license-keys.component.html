@@ -74,7 +74,10 @@
               [title]="license.expiresAt | date: 'medium'">
               {{ license.expiresAt | date }}
               @if (isExpired(license)) {
-                <span class="text-red-600 dark:text-red-400">(expired)</span>
+                <span class="ml-1 distr-badge distr-badge-error">
+                  <fa-icon [icon]="faCircleXmark" />
+                  Expired
+                </span>
               }
             </td>
             <td
@@ -148,19 +151,13 @@
       <div class="flex flex-col gap-4">
         <app-edit-license-key formControlName="license" />
         @if (affectedDeployments().length > 0) {
-          <div
-            class="flex items-start p-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-600"
-            role="alert">
-            <fa-icon [icon]="faCircleExclamation" class="mt-0.5 shrink-0" />
-            <div class="ms-3 text-sm">
-              <p class="font-medium mb-2">Saving will trigger a redeployment on the following deployment targets:</p>
-              <ul class="list-disc list-inside space-y-1">
-                @for (d of affectedDeployments(); track d.deploymentId) {
-                  <li>{{ d.deploymentTargetName }} ({{ d.applicationName }})</li>
-                }
-              </ul>
-            </div>
-          </div>
+          <app-alert type="warning" heading="Saving will trigger a redeployment on the following deployment targets:">
+            <ul class="mt-2 list-disc list-inside space-y-1">
+              @for (d of affectedDeployments(); track d.deploymentId) {
+                <li>{{ d.deploymentTargetName }} ({{ d.applicationName }})</li>
+              }
+            </ul>
+          </app-alert>
         }
         <div class="flex justify-center w-full pb-4 space-x-4 sm:mt-0">
           <button

@@ -1,9 +1,6 @@
 <app-page>
   @if (auth.hasAnyRole('admin') && (!hasSubscription() || hasNoArtifact())) {
-    <div
-      class="flex p-4 mb-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400"
-      role="alert">
-      <fa-icon [icon]="faLightbulb" class="me-4" />
+    <app-alert type="info" class="mb-4">
       <div>
         @if (registrySlug$ | async; as slug) {
           @if (registryHost$ | async; as host) {
@@ -60,7 +57,7 @@
           </ng-container>
         }
       </div>
-    </div>
+    </app-alert>
   }
 
   <div class="distr-toolbar mb-4">
@@ -107,7 +104,7 @@
                 <p class="flex items-center gap-1 text-sm text-gray-500 truncate dark:text-gray-400 mt-1">
                   <app-uuid [uuid]="artifact.id" [small]="true" />
                   @if (auth.isVendor() && artifact.upstreamUrl) {
-                    <span class="distr-tag-badge">pull-through</span>
+                    <span class="distr-badge distr-badge-neutral">pull-through</span>
                   }
                   @if (artifact.public) {
                     <app-artifact-public-badge />

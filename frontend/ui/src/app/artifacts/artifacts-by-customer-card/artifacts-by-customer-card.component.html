@@ -41,10 +41,7 @@
 
           <div class="leading-tight break-all grow">
             {{ artifact.artifact.name }}
-            <span
-              class="bg-blue-100 text-blue-800 text-xs font-medium px-1.5 py-0.5 rounded-md dark:bg-gray-700 dark:text-blue-400 border border-blue-400">
-              {{ artifact.latestPulledVersion }}
-            </span>
+            <span class="distr-badge">{{ artifact.latestPulledVersion }}</span>
           </div>
 
           <div class="flex items-center gap-1">

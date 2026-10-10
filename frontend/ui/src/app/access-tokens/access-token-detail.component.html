@@ -135,15 +135,10 @@
         }
 
         @if (legacy()) {
-          <div
-            class="mx-4 mb-4 flex items-start gap-3 p-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-transparent dark:text-yellow-300 dark:border dark:border-yellow-300"
-            role="alert">
-            <fa-icon [icon]="faTriangleExclamation" class="mt-0.5" />
-            <span>
-              Please migrate this access token to the new, more secure format. Add a token, roll it out everywhere the
-              legacy one is in use, then delete the legacy one. It keeps working until you do.
-            </span>
-          </div>
+          <app-alert type="warning" class="mx-4 mb-4">
+            Please migrate this access token to the new, more secure format. Add a token, roll it out everywhere the
+            legacy one is in use, then delete the legacy one. It keeps working until you do.
+          </app-alert>
         }
 
         <div class="overflow-x-auto">
@@ -165,12 +160,9 @@
                 <tr class="distr-table-row">
                   <td class="px-4 py-3">
                     @if (credential.slot) {
-                      <span class="distr-tag-badge">{{ credential.label }}</span>
+                      <span class="distr-badge distr-badge-neutral">{{ credential.label }}</span>
                     } @else {
-                      <span
-                        class="distr-status-badge bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-700">
-                        {{ credential.label }}
-                      </span>
+                      <span class="distr-badge distr-badge-warning">{{ credential.label }}</span>
                     }
                   </td>
                   @if (legacy()) {
@@ -189,9 +181,9 @@
                     @if (credential.expiresAt; as expiresAt) {
                       <span [title]="expiresAt | date: 'medium'">{{ expiresAt | date: 'shortDate' }}</span>
                       @if (credential.expired) {
-                        <span class="ml-1 text-red-600 dark:text-red-500">
-                          <fa-icon [icon]="faTriangleExclamation" />
-                          expired
+                        <span class="ml-1 distr-badge distr-badge-error">
+                          <fa-icon [icon]="faCircleXmark" />
+                          Expired
                         </span>
                       }
                     } @else {

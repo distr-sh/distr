@@ -1,0 +1,34 @@
+@switch (type()) {
+  @case ('success') {
+    <fa-icon [icon]="faCircleCheck" class="shrink-0" />
+    <span class="sr-only">Success</span>
+  }
+  @case ('info') {
+    <fa-icon [icon]="faCircleInfo" class="shrink-0" />
+    <span class="sr-only">Info</span>
+  }
+  @case ('warning') {
+    <fa-icon [icon]="faTriangleExclamation" class="shrink-0" />
+    <span class="sr-only">Warning</span>
+  }
+  @case ('error') {
+    <fa-icon [icon]="faCircleXmark" class="shrink-0" />
+    <span class="sr-only">Error</span>
+  }
+}
+<div class="grow min-w-0">
+  @if (heading(); as heading) {
+    <p class="font-bold">{{ heading }}</p>
+  }
+  <ng-content />
+</div>
+<ng-content select="[alertActions]" />
+@if (dismissible()) {
+  <button
+    type="button"
+    aria-label="Dismiss"
+    (click)="dismissed.emit()"
+    class="shrink-0 -m-1.5 size-8 rounded-lg inline-flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10">
+    <fa-icon [icon]="faXmark" class="flex" />
+  </button>
+}

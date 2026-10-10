@@ -36,7 +36,7 @@ export class ApplicationLogoComponent {
     <app-application-logo class="size-10 shrink-0" [imageUrl]="imageUrl()" [type]="type()" />
     <div class="min-w-0">
       <div class="truncate" [title]="label()">{{ label() }}</div>
-      <span class="distr-deployment-type-badge capitalize">{{ type() }}</span>
+      <span class="distr-badge capitalize">{{ type() }}</span>
     </div>
   `,
   host: {class: 'flex items-center gap-2'},

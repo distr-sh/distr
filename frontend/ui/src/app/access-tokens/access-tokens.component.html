@@ -50,9 +50,9 @@
                   @if (credential.expiresAt; as d) {
                     <span [title]="d | date: 'medium'">{{ d | date: 'shortDate' }}</span>
                     @if (credential.expired) {
-                      <span class="ml-1 text-red-600 dark:text-red-500">
-                        <fa-icon [icon]="faTriangleExclamation" />
-                        expired
+                      <span class="ml-1 distr-badge distr-badge-error">
+                        <fa-icon [icon]="faCircleXmark" />
+                        Expired
                       </span>
                     }
                   } @else {
@@ -73,8 +73,7 @@
               <td class="px-4 py-3 truncate">
                 {{ row.credentials.length }}
                 @if (row.legacy) {
-                  <span
-                    class="ml-1 distr-status-badge bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-700">
+                  <span class="ml-1 distr-badge distr-badge-warning">
                     <fa-icon [icon]="faTriangleExclamation" />
                     Legacy
                   </span>

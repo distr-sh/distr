@@ -2,9 +2,10 @@ import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
 import {faGithub, faGoogle, faMicrosoft} from '@fortawesome/free-brands-svg-icons';
-import {faArrowRightToBracket, faCircleExclamation, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faArrowRightToBracket, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {AlertComponent} from '../components/alert/alert.component';
 import {AuthService} from '../services/auth.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {OIDCIdentity, OIDCProvider, SettingsService} from '../services/settings.service';
@@ -30,11 +31,10 @@ const oidcProviderIcons: Record<OIDCProvider, IconDefinition> = {
   selector: 'app-user-identities',
   templateUrl: './user-identities.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [FaIconComponent, DatePipe],
+  imports: [FaIconComponent, DatePipe, AlertComponent],
 })
 export class UserIdentitiesComponent {
   protected readonly faXmark = faXmark;
-  protected readonly faCircleExclamation = faCircleExclamation;
 
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);

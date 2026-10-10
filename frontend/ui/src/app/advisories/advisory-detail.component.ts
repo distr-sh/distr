@@ -1,4 +1,4 @@
-import {DatePipe, NgClass, NgPlural, NgPluralCase, NgTemplateOutlet} from '@angular/common';
+import {DatePipe, NgPlural, NgPluralCase, NgTemplateOutlet} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, RouterLink} from '@angular/router';
@@ -20,6 +20,7 @@ import {
   ActivityTimelineComponent,
   ActivityTimelineEntry,
 } from '../components/activity-timeline/activity-timeline.component';
+import {AlertComponent} from '../components/alert/alert.component';
 import {BadgeSelectComponent} from '../components/badge-select/badge-select.component';
 import {PageComponent} from '../components/page.component';
 import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
@@ -28,16 +29,15 @@ import {AuthService} from '../services/auth.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 import {
-  affectedBadgeClass,
-  affectedLabel,
+  AdvisoryAffectedBadgeComponent,
+  AdvisoryImpactStateBadgeComponent,
+  AdvisorySeverityBadgeComponent,
+  AdvisoryStatusBadgeComponent,
+} from './advisory-badges';
+import {
   confirmAdvisoryVisibilityChange,
   eventLabel,
-  impactStateBadgeClass,
-  impactStateLabel,
-  severityBadgeClass,
   severitySelectOptions,
-  statusBadgeClass,
-  statusLabel,
   statusSelectOptions,
 } from './advisory-display';
 import {AdvisoryFormComponent, AdvisoryFormDraft} from './advisory-form.component';
@@ -54,7 +54,6 @@ type ImpactState = {state: 'loading'} | {state: 'loaded'; impact: AdvisoryImpact
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     DatePipe,
-    NgClass,
     NgPlural,
     NgPluralCase,
     NgTemplateOutlet,
@@ -67,6 +66,11 @@ type ImpactState = {state: 'loading'} | {state: 'loaded'; impact: AdvisoryImpact
     ApplicationPreviewComponent,
     BadgeSelectComponent,
     PageComponent,
+    AdvisorySeverityBadgeComponent,
+    AdvisoryStatusBadgeComponent,
+    AdvisoryAffectedBadgeComponent,
+    AdvisoryImpactStateBadgeComponent,
+    AlertComponent,
   ],
 })
 export class AdvisoryDetailComponent {
@@ -80,15 +84,8 @@ export class AdvisoryDetailComponent {
   protected readonly faPen = faPen;
   protected readonly faUpRightFromSquare = faUpRightFromSquare;
 
-  protected readonly severityBadgeClass = severityBadgeClass;
-  protected readonly statusBadgeClass = statusBadgeClass;
   protected readonly statusSelectOptions = statusSelectOptions;
   protected readonly severitySelectOptions = severitySelectOptions;
-  protected readonly impactStateBadgeClass = impactStateBadgeClass;
-  protected readonly impactStateLabel = impactStateLabel;
-  protected readonly statusLabel = statusLabel;
-  protected readonly affectedLabel = affectedLabel;
-  protected readonly affectedBadgeClass = affectedBadgeClass;
 
   protected readonly showsAffectedState = this.auth.isCustomer() || this.auth.isPartner();
 

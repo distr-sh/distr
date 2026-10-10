@@ -18,8 +18,8 @@
             </h3>
           </div>
           @if (countExpired(license); as expiredCount) {
-            <span
-              class="text-xs font-medium px-2.5 py-0.5 rounded-sm bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
+            <span class="distr-badge distr-badge-error">
+              <fa-icon [icon]="faCircleXmark" />
               {{ expiredCount }} expired
             </span>
           }

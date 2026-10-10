@@ -86,29 +86,40 @@
     @apply text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800;
   }
 
-  .distr-plan-badge {
-    @apply bg-gray-200 text-gray-600 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-gray-500 dark:text-gray-100;
+  // a one-line caution under a form field, in the colors of a warning `app-alert`
+  .distr-hint-warning {
+    @apply text-xs font-normal text-yellow-800 dark:text-yellow-300;
   }
 
-  .distr-deployment-type-badge {
-    @apply inline-flex items-center capitalize bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-sm border border-blue-400 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700;
+  // blue unless one of the `distr-badge-<BadgeVariant>` classes below overrides the colors, which
+  // only works as long as they come after it
+  .distr-badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-sm text-xs font-medium border bg-blue-100 text-blue-800 border-blue-400 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700;
   }
 
-  .distr-artifact-tag {
-    @apply bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-md border border-blue-400 dark:bg-gray-700 dark:text-blue-400;
+  .distr-badge-neutral {
+    @apply bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500;
   }
 
-  .distr-artifact-tag-latest {
-    @apply bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-md border border-green-400 dark:bg-gray-700 dark:text-green-400;
+  .distr-badge-muted {
+    @apply bg-gray-200 text-gray-500 border-gray-400 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600;
   }
 
-  // the badge shape, with the colors of the state it shows, border included, set by the caller
-  .distr-status-badge {
-    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-sm text-xs font-medium border;
+  .distr-badge-success {
+    @apply bg-green-100 text-green-800 border-green-400 dark:bg-green-900 dark:text-green-300 dark:border-green-700;
   }
 
-  .distr-tag-badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-sm text-xs font-medium bg-gray-100 text-gray-800 border border-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500;
+  .distr-badge-warning {
+    @apply bg-yellow-100 text-yellow-800 border-yellow-400 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-700;
+  }
+
+  // between warning and error, for a scale that needs one more step (advisory severity "high")
+  .distr-badge-severe {
+    @apply bg-orange-100 text-orange-800 border-orange-400 dark:bg-orange-900 dark:text-orange-300 dark:border-orange-700;
+  }
+
+  .distr-badge-error {
+    @apply bg-red-100 text-red-800 border-red-400 dark:bg-red-900 dark:text-red-300 dark:border-red-700;
   }
 
   // the overlay panel of a dropdown menu, wrapping a `<ul>` of `distr-dropdown-item`s
@@ -155,6 +166,11 @@
 
   .distr-table-panel {
     @apply relative overflow-hidden bg-white rounded-lg shadow-md dark:bg-gray-800;
+  }
+
+  // the panel holding the rows of destructive actions at the end of a settings page
+  .distr-danger-zone {
+    @apply flex flex-col rounded-lg border border-red-700 dark:border-red-500 bg-red-50 dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600;
   }
 
   .distr-card-grid {

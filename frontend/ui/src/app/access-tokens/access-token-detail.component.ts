@@ -5,12 +5,13 @@ import {rxResource, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faChevronDown, faKey, faPlus, faTrash, faTriangleExclamation, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faChevronDown, faCircleXmark, faKey, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {catchError, firstValueFrom, Observable, of, tap} from 'rxjs';
 import {isExpired, RelativeDatePipe} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {USER_ROLE_LABELS} from '../../util/user-role';
+import {AlertComponent} from '../components/alert/alert.component';
 import {CreatedAccessTokenComponent} from '../components/created-access-token.component';
 import {
   EXPIRES_AT_DATE_FORMAT,
@@ -52,6 +53,7 @@ interface CredentialRow {
     ExpiresAtPickerComponent,
     InlineEditComponent,
     PageComponent,
+    AlertComponent,
   ],
   templateUrl: './access-token-detail.component.html',
 })
@@ -60,7 +62,7 @@ export class AccessTokenDetailComponent {
   protected readonly faKey = faKey;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
-  protected readonly faTriangleExclamation = faTriangleExclamation;
+  protected readonly faCircleXmark = faCircleXmark;
   protected readonly faXmark = faXmark;
 
   private readonly accessTokensService = inject(AccessTokensService);

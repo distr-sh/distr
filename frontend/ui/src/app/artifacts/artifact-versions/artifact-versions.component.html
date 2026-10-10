@@ -114,16 +114,10 @@
                 @if (artifact.upstreamAuthType) {
                   @switch (artifact.upstreamAuthType) {
                     @case ('aws_ecr') {
-                      <span
-                        class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-yellow-900 dark:text-yellow-300">
-                        AWS ECR
-                      </span>
+                      <span class="distr-badge distr-badge-neutral">AWS ECR</span>
                     }
                     @case ('basic') {
-                      <span
-                        class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-blue-900 dark:text-blue-300">
-                        Basic Auth
-                      </span>
+                      <span class="distr-badge distr-badge-neutral">Basic Auth</span>
                     }
                   }
                 }
@@ -137,7 +131,7 @@
                     <fa-icon [icon]="faCheck" class="text-green-600 dark:text-green-400" />
                     Last synced {{ artifact.lastSyncedAt | relativeDate }}
                   } @else if (artifact.lastSyncError) {
-                    <fa-icon [icon]="faExclamationTriangle" class="text-red-500" />
+                    <fa-icon [icon]="faCircleXmark" class="text-red-500" />
                     Sync error
                   } @else {
                     Not synced yet
@@ -156,9 +150,10 @@
               </div>
 
               @if (syncing()) {
-                <span class="p-2 text-xs text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
-                  >Do not close this window while syncing</span
-                >
+                <span class="distr-badge distr-badge-warning">
+                  <fa-icon [icon]="faTriangleExclamation" />
+                  Do not close this window while syncing
+                </span>
               }
             </div>
           }
@@ -232,8 +227,7 @@
                 <div class="flex-1 min-w-0">
                   <div class="flex flex-row gap-1 flex-wrap items-center">
                     @for (label of version.tags; track label.name) {
-                      <span
-                        class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-md dark:bg-gray-700 dark:text-blue-400 border border-blue-400 flex items-center gap-1">
+                      <span class="distr-badge" [class.distr-badge-success]="label.name === 'latest'">
                         {{ label.name }}
                         @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
                           <button

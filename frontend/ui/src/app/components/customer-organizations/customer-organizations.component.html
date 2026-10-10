@@ -193,22 +193,16 @@
       <section class="antialiased">
         <div class="mx-auto max-w-screen-xl px-4 2xl:px-0">
           @if (featureFlags.isLicensingEnabled$ | async) {
-            <div
-              class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
-              role="alert">
-              <fa-icon [icon]="faCircleExclamation" />
-              <span class="sr-only">Info</span>
-              <div class="ms-3 text-sm font-medium">
-                <p>
-                  As long as no entitlements for application or artifacts is created,<br />
-                  customers will see all artifacts & applications.
-                </p>
-                <p>
-                  Afterwards, please make sure to assign a license to the new customer afterwards,<br />
-                  so that the customer will see the desired artifacts & applications.
-                </p>
-              </div>
-            </div>
+            <app-alert type="warning" class="mb-4">
+              <p>
+                As long as no entitlements for applications or artifacts are created,<br />
+                customers will see all artifacts & applications.
+              </p>
+              <p>
+                Afterwards, please make sure to assign a license to the new customer,<br />
+                so that the customer will see the desired artifacts & applications.
+              </p>
+            </app-alert>
           }
 
           <form class="mx-auto" (ngSubmit)="submitCreateForm()" [formGroup]="createForm">

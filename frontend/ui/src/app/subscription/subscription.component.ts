@@ -18,6 +18,7 @@ import {firstValueFrom} from 'rxjs';
 import {WEBSITE_URL} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
 import {BytesPipe} from '../../util/units';
+import {AlertComponent} from '../components/alert/alert.component';
 import {DeleteOrganizationComponent} from '../components/delete-organization/delete-organization.component';
 import {PageComponent} from '../components/page.component';
 import {AuthService} from '../services/auth.service';
@@ -48,6 +49,7 @@ import {PendingSubscriptionUpdate, SubscriptionUpdateModalComponent} from './sub
     DeleteOrganizationComponent,
     BytesPipe,
     PageComponent,
+    AlertComponent,
   ],
 })
 export class SubscriptionComponent implements OnInit {

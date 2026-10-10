@@ -92,7 +92,7 @@
                 @if (application.id) {
                   <app-uuid [uuid]="application.id" [small]="true" />
                 }
-                <span class="distr-deployment-type-badge">{{ application.type }}</span>
+                <span class="distr-badge capitalize">{{ application.type }}</span>
                 @if (auth.hasAnyRole('read_write', 'admin')) {
                   <app-badge-select
                     ariaLabel="Change versioning strategy"
@@ -110,13 +110,15 @@
                     [disabledHint]="autoUpdatesLocked() ? autoUpdatesHint : undefined"
                     (selected)="updateAllowAutomaticUpdates($event)" />
                 } @else {
-                  <span class="distr-status-badge" [ngClass]="versioningStrategyBadgeClass">
+                  <span class="distr-badge distr-badge-neutral">
                     {{ versioningStrategyLabel() }}
                   </span>
                   @if (isAutoUpdatesEnabled()) {
-                    <span class="distr-status-badge" [ngClass]="allowAutomaticUpdatesBadgeClass()">
-                      {{ allowAutomaticUpdatesLabel() }}
-                    </span>
+                    @if (allowAutomaticUpdatesValue() === 'allowed') {
+                      <span class="distr-badge distr-badge-success">Auto-Updates allowed</span>
+                    } @else {
+                      <span class="distr-badge distr-badge-neutral">Auto-Updates disallowed</span>
+                    }
                   }
                 }
               </div>
@@ -126,17 +128,12 @@
       </div>
 
       @if (versioningStrategy() === 'legacy' && auth.hasAnyRole('read_write', 'admin')) {
-        <div
-          class="mb-4 flex items-start gap-3 p-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-transparent dark:text-yellow-300 dark:border dark:border-yellow-300"
-          role="alert">
-          <fa-icon [icon]="faTriangleExclamation" class="mt-0.5" />
-          <span>
-            This application still uses the legacy versioning strategy, which orders versions by SemVer for as long as
-            every name is a valid SemVer version and switches to ordering by creation date as soon as one is not.
-            Picking semantic versioning or chronological versioning above gives you one order that always applies, so
-            which version is the latest cannot change with the next name you add.
-          </span>
-        </div>
+        <app-alert type="warning" class="mb-4">
+          This application still uses the legacy versioning strategy, which orders versions by SemVer for as long as
+          every name is a valid SemVer version and switches to ordering by creation date as soon as one is not. Picking
+          semantic versioning or chronological versioning above gives you one order that always applies, so which
+          version is the latest cannot change with the next name you add.
+        </app-alert>
       }
 
       <div>

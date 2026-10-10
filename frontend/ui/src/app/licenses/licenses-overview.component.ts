@@ -14,7 +14,7 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faAddressBook, faCopy, faKey, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faAddressBook, faCircleXmark, faCopy, faKey, faXmark} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {firstValueFrom, forkJoin, startWith} from 'rxjs';
 import {isExpired} from '../../util/dates';
@@ -61,6 +61,7 @@ export class LicensesOverviewComponent {
   protected readonly faKey = faKey;
   protected readonly faCopy = faCopy;
   protected readonly faXmark = faXmark;
+  protected readonly faCircleXmark = faCircleXmark;
 
   protected readonly filterForm = new FormGroup({
     search: new FormControl(''),

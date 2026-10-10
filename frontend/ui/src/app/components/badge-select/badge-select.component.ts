@@ -1,14 +1,14 @@
 import {OverlayModule} from '@angular/cdk/overlay';
-import {NgClass, NgTemplateOutlet} from '@angular/common';
+import {NgTemplateOutlet} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, input, output, signal, TemplateRef} from '@angular/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faChevronDown} from '@fortawesome/free-solid-svg-icons';
+import {BadgeVariant} from '../badge';
 
 export interface BadgeSelectOption<T extends string = string> {
   value: T;
   label: string;
-  /** The colors of the badge, in the shape the `distr-status-badge` helpers return. */
-  badgeClass: string;
+  variant: BadgeVariant;
 }
 
 /**
@@ -21,7 +21,7 @@ export interface BadgeSelectOption<T extends string = string> {
   templateUrl: './badge-select.component.html',
   host: {class: 'flex'},
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [OverlayModule, NgClass, NgTemplateOutlet, FaIconComponent],
+  imports: [OverlayModule, NgTemplateOutlet, FaIconComponent],
 })
 export class BadgeSelectComponent<T extends string = string> {
   public readonly options = input.required<BadgeSelectOption<T>[]>();
@@ -40,6 +40,7 @@ export class BadgeSelectComponent<T extends string = string> {
   protected readonly open = signal(false);
 
   protected readonly current = computed(() => this.options().find((option) => option.value === this.value()));
+  protected readonly currentVariantClass = computed(() => `distr-badge-${this.current()?.variant ?? 'neutral'}`);
 
   protected readonly interactive = computed(() => !this.disabled() || this.disabledHint() !== undefined);
 

@@ -24,11 +24,11 @@ import {
   faClipboardCheck,
   faLightbulb,
   faPalette,
-  faWarning,
 } from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, lastValueFrom, switchMap, tap} from 'rxjs';
 import {GITHUB_URL, WEBSITE_URL} from '../../../constants';
 import {getFormDisplayedError} from '../../../util/errors';
+import {AlertComponent} from '../../components/alert/alert.component';
 import {ClipComponent} from '../../components/clip.component';
 import {PageComponent} from '../../components/page.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
@@ -64,6 +64,7 @@ const releaseStepTaskRelease = 'release';
     AutotrimDirective,
     RouterLink,
     PageComponent,
+    AlertComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './controllers-tutorial.component.html',
@@ -272,5 +273,4 @@ export class ControllersTutorialComponent implements OnInit, AfterViewInit {
   protected readonly faClipboard = faClipboard;
   protected readonly faClipboardCheck = faClipboardCheck;
   protected readonly faCircleCheck = faCircleCheck;
-  protected readonly faWarning = faWarning;
 }

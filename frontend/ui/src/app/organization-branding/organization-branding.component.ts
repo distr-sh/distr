@@ -3,6 +3,7 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faFloppyDisk} from '@fortawesome/free-solid-svg-icons';
+import {AlertComponent} from '../components/alert/alert.component';
 import {BrandingFormComponent} from '../components/branding/branding-form.component';
 import {PageComponent} from '../components/page.component';
 import {AuthService} from '../services/auth.service';
@@ -13,7 +14,7 @@ import {OrganizationService} from '../services/organization.service';
   selector: 'app-organization-branding',
   templateUrl: './organization-branding.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [BrandingFormComponent, FaIconComponent, RouterLink, PageComponent],
+  imports: [BrandingFormComponent, FaIconComponent, RouterLink, PageComponent, AlertComponent],
 })
 export class OrganizationBrandingComponent {
   protected readonly faFloppyDisk = faFloppyDisk;

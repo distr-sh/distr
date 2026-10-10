@@ -9,8 +9,7 @@
     </p>
 
     @if (customDomainsSelfService() || showCustomDomainsUpsell()) {
-      <div
-        class="mb-6 p-4 text-sm rounded-lg border border-primary-200 bg-primary-50 text-primary-800 dark:border-primary-800 dark:bg-gray-700 dark:text-primary-300">
+      <app-alert type="info" class="mb-6">
         @if (customDomainsSelfService()) {
           Admins can configure custom domains for your app, registry and customer portal in the
           <a routerLink="/settings/organization" class="font-semibold underline">organization settings</a>.
@@ -18,7 +17,7 @@
           Upgrade to the <a routerLink="/subscription" class="font-semibold underline">Distr Business plan</a> to
           configure custom domains for your app, registry and customer portal.
         }
-      </div>
+      </app-alert>
     }
 
     <form (submit)="$event.preventDefault(); save()">

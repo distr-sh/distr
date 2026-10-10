@@ -23,7 +23,7 @@ import {
 } from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faDocker} from '@fortawesome/free-brands-svg-icons';
-import {faAddressBook, faCheckCircle, faDharmachakra, faShip, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faAddressBook, faCircleCheck, faDharmachakra, faShip, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, distinctUntilChanged, firstValueFrom, map, of, switchMap, take} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
@@ -69,7 +69,7 @@ export class DeploymentWizardComponent implements OnInit {
   protected readonly faDocker = faDocker;
   protected readonly faDharmachakra = faDharmachakra;
   protected readonly faAddressBook = faAddressBook;
-  protected readonly faCheckCircle = faCheckCircle;
+  protected readonly faCircleCheck = faCircleCheck;
 
   private readonly toast = inject(ToastService);
   private readonly applications = inject(ApplicationsService);

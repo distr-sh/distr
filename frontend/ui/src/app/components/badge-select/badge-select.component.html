@@ -5,9 +5,9 @@
   (click)="toggleOpen($event)"
   [disabled]="!interactive()"
   [attr.aria-label]="ariaLabel()"
-  class="distr-status-badge cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+  class="distr-badge cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
   [class.opacity-60]="disabled()"
-  [ngClass]="current()?.badgeClass">
+  [class]="currentVariantClass()">
   {{ current()?.label ?? value() }}
   <fa-icon
     [icon]="faChevronDown"
@@ -32,7 +32,9 @@
             @if (plainOptions()) {
               <span class="whitespace-nowrap">{{ option.label }}</span>
             } @else {
-              <span class="distr-status-badge whitespace-nowrap" [ngClass]="option.badgeClass">{{ option.label }}</span>
+              <span class="distr-badge whitespace-nowrap" [class]="'distr-badge-' + option.variant">{{
+                option.label
+              }}</span>
             }
             @if (option.value === value()) {
               <fa-icon [icon]="faCheck" class="ms-auto text-xs text-gray-500 dark:text-gray-400" />

@@ -68,7 +68,10 @@
               @if (entitlement.expiresAt; as d) {
                 {{ d | date }}
                 @if (isExpired(entitlement)) {
-                  (expired)
+                  <span class="ml-1 distr-badge distr-badge-error">
+                    <fa-icon [icon]="faCircleXmark" />
+                    Expired
+                  </span>
                 }
               } @else {
                 never
@@ -127,21 +130,13 @@
     </button>
 
     @if ((entitlements$ | async)?.length === 0) {
-      <div
-        class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300 border border-yellow-8000 dark:border-yellow-3000 rounded-lg"
-        role="alert">
-        <fa-icon [icon]="faCircleExclamation" />
-        <span class="sr-only">Info</span>
-        <div class="ms-3 text-sm font-medium">
-          <p>
-            <strong>Creating your first entitlement will restrict what all your customers see.</strong>
-          </p>
-          <p>
-            After you created your first entitlement your customers will only see applications which they have a valid
-            entitlement for. Without any entitlement your customers will see all applications and versions.
-          </p>
-        </div>
-      </div>
+      <app-alert
+        type="warning"
+        heading="Creating your first entitlement will restrict what all your customers see."
+        class="mb-4">
+        After you created your first entitlement your customers will only see applications which they have a valid
+        entitlement for. Without any entitlement your customers will see all applications and versions.
+      </app-alert>
     }
 
     <form [formGroup]="editForm" (ngSubmit)="saveEntitlement()">

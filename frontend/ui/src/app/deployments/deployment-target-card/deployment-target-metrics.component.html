@@ -53,7 +53,7 @@
   <div class="distr-tooltip mt-1 px-3 py-2 text-xs whitespace-nowrap">
     <div class="flex flex-col gap-2">
       @if (outdated()) {
-        <div class="flex items-center gap-1.5 text-yellow-600 dark:text-yellow-300">
+        <div class="flex items-center gap-1.5 text-yellow-800 dark:text-yellow-300">
           <fa-icon [icon]="faTriangleExclamation" />
           <span>Outdated metrics, last reported {{ metrics().createdAt | relativeDate }}</span>
         </div>

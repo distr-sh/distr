@@ -2,7 +2,7 @@ import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, inject, input} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCircleInfo, faExclamationTriangle} from '@fortawesome/free-solid-svg-icons';
+import {faCircleInfo, faCircleXmark} from '@fortawesome/free-solid-svg-icons';
 import {WEBSITE_URL} from '../../../../constants';
 import {AuthService} from '../../../services/auth.service';
 import {Organization} from '../../../types/organization';
@@ -20,7 +20,7 @@ export class NavBarSubscriptionBannerComponent {
   isTrial = input.required<boolean>();
   isSubscriptionExpired = input.required<boolean>();
 
-  protected readonly faExclamationTriangle = faExclamationTriangle;
+  protected readonly faCircleXmark = faCircleXmark;
   protected readonly faCircleInfo = faCircleInfo;
   protected readonly websiteUrl = WEBSITE_URL;
 

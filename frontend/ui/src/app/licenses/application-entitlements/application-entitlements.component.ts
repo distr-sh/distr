@@ -3,11 +3,12 @@ import {ChangeDetectionStrategy, Component, inject, input, TemplateRef} from '@a
 import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCircleExclamation, faEye, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faCircleXmark, faEye, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
+import {AlertComponent} from '../../components/alert/alert.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
@@ -28,6 +29,7 @@ import {EditApplicationEntitlementComponent} from './edit-application-entitlemen
     DatePipe,
     EditApplicationEntitlementComponent,
     SearchBarComponent,
+    AlertComponent,
   ],
 })
 export class ApplicationEntitlementsComponent {
@@ -68,7 +70,7 @@ export class ApplicationEntitlementsComponent {
 
   private manageEntitlementDrawerRef?: DialogRef;
 
-  protected readonly faCircleExclamation = faCircleExclamation;
+  protected readonly faCircleXmark = faCircleXmark;
   protected readonly faEye = faEye;
   protected readonly faPen = faPen;
   protected readonly faPlus = faPlus;

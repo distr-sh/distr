@@ -28,21 +28,17 @@
       </div>
       <div class="mt-2 flex items-center gap-2">
         @if (domain.verified) {
-          <span class="distr-status-badge bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+          <span class="distr-badge distr-badge-success">
             <fa-icon [icon]="faCircleCheck" />
             Verified
           </span>
         } @else if (domain.verificationError) {
-          <span
-            class="distr-status-badge bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
-            [title]="domain.verificationError">
-            <fa-icon [icon]="faTriangleExclamation" />
+          <span class="distr-badge distr-badge-error" [title]="domain.verificationError">
+            <fa-icon [icon]="faCircleXmark" />
             Verification failed
           </span>
         } @else {
-          <span class="distr-status-badge bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-            Not checked yet
-          </span>
+          <span class="distr-badge distr-badge-neutral">Not checked yet</span>
         }
         <button
           type="button"
@@ -72,7 +68,7 @@
       </div>
 
       @if (!domain.verified) {
-        <p class="mt-1 text-xs font-normal text-yellow-700 dark:text-yellow-300">
+        <p class="mt-1 distr-hint-warning">
           Links and mails keep using the default host until the CNAME record points here.
         </p>
       }

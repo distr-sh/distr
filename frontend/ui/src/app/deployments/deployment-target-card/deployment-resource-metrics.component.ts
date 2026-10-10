@@ -3,12 +3,13 @@ import {PercentPipe} from '@angular/common';
 import {Component, computed, inject, input, signal} from '@angular/core';
 import {rxResource} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCircleQuestion, faTriangleExclamation} from '@fortawesome/free-solid-svg-icons';
+import {faCircleQuestion} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {switchMap, timer} from 'rxjs';
 import {RelativeDatePipe} from '../../../util/dates';
 import {isStale} from '../../../util/model';
 import {BytesPipe} from '../../../util/units';
+import {AlertComponent} from '../../components/alert/alert.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {DeploymentTargetsMetricsService} from '../../services/deployment-target-metrics.service';
 import {DeploymentResourceMetric} from '../../types/deployment-target-metrics';
@@ -29,13 +30,12 @@ const staleThreshold = dayjs.duration(2, 'minutes');
 @Component({
   selector: 'app-deployment-resource-metrics',
   templateUrl: './deployment-resource-metrics.component.html',
-  imports: [OverlayModule, PercentPipe, BytesPipe, SpinnerComponent, FaIconComponent, RelativeDatePipe],
+  imports: [OverlayModule, PercentPipe, BytesPipe, SpinnerComponent, FaIconComponent, RelativeDatePipe, AlertComponent],
 })
 export class DeploymentResourceMetricsComponent {
   public readonly deploymentId = input.required<string>();
 
   protected readonly faCircleQuestion = faCircleQuestion;
-  protected readonly faTriangleExclamation = faTriangleExclamation;
   protected readonly cpuHelpHovered = signal(false);
 
   private readonly metricsService = inject(DeploymentTargetsMetricsService);

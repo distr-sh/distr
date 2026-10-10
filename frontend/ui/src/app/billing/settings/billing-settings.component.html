@@ -31,17 +31,12 @@
     <div class="flex items-center gap-2 mb-4">
       <span class="text-sm text-gray-700 dark:text-gray-300 font-medium">Webhook secret:</span>
       @if (organization()?.stripeWebhookSecretConfigured) {
-        <span
-          class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-green-900 dark:text-green-300">
-          <fa-icon [icon]="faCheck" />
+        <span class="distr-badge distr-badge-success">
+          <fa-icon [icon]="faCircleCheck" />
           Configured
         </span>
       } @else {
-        <span
-          class="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-gray-700 dark:text-gray-300">
-          <fa-icon [icon]="faCircleXmark" />
-          Not configured
-        </span>
+        <span class="distr-badge distr-badge-neutral">Not configured</span>
       }
     </div>
 
@@ -78,8 +73,7 @@
 
     @if (auth.hasRole('admin') && organization()?.stripeWebhookSecretConfigured) {
       <h3 class="text-base font-semibold text-gray-900 dark:text-white mt-6 mb-2">Danger Zone</h3>
-      <div
-        class="flex flex-col rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
+      <div class="distr-danger-zone">
         <div class="p-4 flex items-center justify-between dark:text-white">
           <div>
             <div>Remove webhook secret</div>
