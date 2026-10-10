@@ -1,7 +1,7 @@
 import {Component, computed, effect, inject, input, output, signal} from '@angular/core';
 import {FormBuilder, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCircleCheck, faRotate, faTrash, faTriangleExclamation} from '@fortawesome/free-solid-svg-icons';
+import {faCircleCheck, faCircleXmark, faRotate, faTrash} from '@fortawesome/free-solid-svg-icons';
 import {RelativeDatePipe} from '../../util/dates';
 import {HOSTNAME_MAX_LENGTH, HOSTNAME_REGEX} from '../../util/validation';
 import {ClipComponent} from '../components/clip.component';
@@ -20,7 +20,7 @@ export class DomainFieldComponent {
   protected readonly faTrash = faTrash;
   protected readonly faRotate = faRotate;
   protected readonly faCircleCheck = faCircleCheck;
-  protected readonly faTriangleExclamation = faTriangleExclamation;
+  protected readonly faCircleXmark = faCircleXmark;
 
   private readonly fb = inject(FormBuilder).nonNullable;
 

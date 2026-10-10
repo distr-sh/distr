@@ -1,6 +1,6 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {TextFieldModule} from '@angular/cdk/text-field';
-import {DatePipe, NgClass, NgOptimizedImage} from '@angular/common';
+import {DatePipe, NgOptimizedImage} from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -28,7 +28,6 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faArrowUpRightFromSquare,
   faBinoculars,
-  faCircleExclamation,
   faClockRotateLeft,
   faComment,
   faEllipsisVertical,
@@ -53,10 +52,10 @@ import {getFormDisplayedError} from '../../../util/errors';
 import {DOCKER_ENDPOINT_REGEX, RESOURCE_QUANTITY_REGEX} from '../../../util/validation';
 import {
   applicationVersionComparator,
-  automaticUpdatesBadgeClass,
   deploymentIdsAllowingAutomaticUpdates,
   latestApplicationVersion,
 } from '../../../util/versions';
+import {AlertComponent} from '../../components/alert/alert.component';
 import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {UuidComponent} from '../../components/uuid';
@@ -102,7 +101,7 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
     AutotrimDirective,
     RouterLink,
     SpinnerComponent,
-    NgClass,
+    AlertComponent,
   ],
 })
 export class DeploymentTargetCardComponent {
@@ -122,7 +121,7 @@ export class DeploymentTargetCardComponent {
   protected readonly isDeploymentLogsAfterEnabled = this.featureFlags.isDeploymentLogsAfterEnabled;
   protected readonly isAutoUpdatesEnabled = this.featureFlags.isAutoUpdatesEnabled;
 
-  protected readonly customerManagedWarning = `
+  protected readonly customerManagedNotice = `
     You are about to make changes to a customer-managed deployment.
     Ensure this is done in coordination with the customer.`;
 
@@ -144,7 +143,6 @@ export class DeploymentTargetCardComponent {
   );
 
   protected readonly faArrowUpRightFromSquare = faArrowUpRightFromSquare;
-  protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faComment = faComment;
   protected readonly faBinoculars = faBinoculars;
   protected readonly faClockRotateLeft = faClockRotateLeft;
@@ -159,7 +157,6 @@ export class DeploymentTargetCardComponent {
   protected readonly faTrash = faTrash;
   protected readonly faTriangleExclamation = faTriangleExclamation;
   protected readonly faXmark = faXmark;
-  protected readonly automaticUpdatesBadgeClass = automaticUpdatesBadgeClass(true);
 
   protected readonly githubUrl = GITHUB_URL;
   protected readonly websiteUrl = WEBSITE_URL;
@@ -498,7 +495,7 @@ export class DeploymentTargetCardComponent {
     const dt = this.deploymentTarget();
     const alert =
       dt.customerOrganization !== undefined && this.auth.isVendor()
-        ? ({type: 'warning', message: this.customerManagedWarning} as const)
+        ? ({type: 'info', message: this.customerManagedNotice} as const)
         : undefined;
     this.overlay
       .confirm({
@@ -527,7 +524,7 @@ export class DeploymentTargetCardComponent {
     const dt = this.deploymentTarget();
     const alert =
       dt.customerOrganization !== undefined && this.auth.isVendor()
-        ? ({type: 'warning', message: this.customerManagedWarning} as const)
+        ? ({type: 'info', message: this.customerManagedNotice} as const)
         : undefined;
     if (d.id) {
       if (
@@ -633,7 +630,7 @@ export class DeploymentTargetCardComponent {
         ' Continue?';
       const alert =
         dt.customerOrganization !== undefined && this.auth.isVendor()
-          ? ({type: 'warning', message: this.customerManagedWarning} as const)
+          ? ({type: 'info', message: this.customerManagedNotice} as const)
           : undefined;
       if (!(await firstValueFrom(this.overlay.confirm({message: {message, alert}})))) {
         return;

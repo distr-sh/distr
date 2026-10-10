@@ -211,28 +211,15 @@
             </form>
           } @else {
             <div class="flex flex-col">
-              <div
-                class="flex items-center p-4 mb-4 text-sm text-green-800 border border-green-300 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400 dark:border-green-800"
-                role="alert">
-                <div class="flex flex-col w-full">
-                  <div class="font-medium">
-                    @if (auth.isVendor() && customerOrganizationId() !== undefined) {
-                      Customer has been invited to the organization
-                    } @else {
-                      User has been invited to the organization
-                    }
-                  </div>
-                  <div>
-                    They can finalize their account using this link:
-                    <div class="flex">
-                      <pre class="overflow-x-auto text-ellipsis">{{ inviteUrl }}</pre>
-                      <button type="button" class="text-gray-900 dark:text-white" (click)="copyInviteUrl()">
-                        <fa-icon [icon]="faClipboard" />
-                      </button>
-                    </div>
-                  </div>
+              <app-alert type="success" [heading]="inviteHeading()" class="mb-4">
+                They can finalize their account using this link:
+                <div class="flex">
+                  <pre class="overflow-x-auto text-ellipsis">{{ inviteUrl }}</pre>
+                  <button type="button" class="text-gray-900 dark:text-white" (click)="copyInviteUrl()">
+                    <fa-icon [icon]="faClipboard" />
+                  </button>
                 </div>
-              </div>
+              </app-alert>
               <button
                 type="button"
                 class="self-end text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"

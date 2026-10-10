@@ -23,12 +23,12 @@ import {
   faFilterCircleXmark,
   faPlay,
   faServer,
-  faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {combineLatest, debounceTime, firstValueFrom, map, of, switchMap, timer} from 'rxjs';
 import {MAX_LOG_EXPORT_LINES} from '../../../constants';
 import {dateTimeLocalToISO, isoToDateTimeLocal} from '../../../util/dates';
+import {AlertComponent} from '../../components/alert/alert.component';
 import {ConfirmConfig} from '../../components/confirm-dialog/confirm-dialog.component';
 import {PageComponent} from '../../components/page.component';
 import {AuthService} from '../../services/auth.service';
@@ -57,6 +57,7 @@ const BUSINESS_LOG_BANNER_DISMISSED_KEY = 'logViewer.businessLogBannerDismissed'
     ReactiveFormsModule,
     RouterLink,
     PageComponent,
+    AlertComponent,
   ],
   providers: [DecimalPipe],
 })
@@ -78,7 +79,6 @@ export class DeploymentTargetDetailComponent {
   protected readonly faPlay = faPlay;
   protected readonly faArrowDownWideShort = faArrowDownWideShort;
   protected readonly faArrowUpShortWide = faArrowUpShortWide;
-  protected readonly faXmark = faXmark;
   protected readonly orderDirection = signal<OrderDirection>(
     (localStorage.getItem(ORDER_DIRECTION_KEY) as OrderDirection) || 'DESC'
   );

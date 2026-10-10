@@ -40,25 +40,17 @@
       </div>
 
       @if (recoveryCodes(); as codes) {
-        <div class="p-4 mb-4 bg-yellow-50 border border-yellow-300 rounded-lg dark:bg-gray-800 dark:border-yellow-800">
-          <div class="flex items-start">
-            <fa-icon class="text-yellow-400" [icon]="faCircleExclamation" />
-            <div class="ml-3 text-sm">
-              <h3 class="font-semibold text-yellow-800 dark:text-yellow-300">Save Your Recovery Codes</h3>
-              <div class="mt-2 text-yellow-700 dark:text-yellow-400">
-                <p class="mb-2">
-                  These recovery codes can be used to access your account if you lose access to your authenticator app.
-                  Each code can only be used once.
-                </p>
-                <p class="font-semibold">Store these codes in a safe place. You won't be able to see them again.</p>
-              </div>
-            </div>
-          </div>
+        <app-alert type="warning" heading="Save Your Recovery Codes" class="mb-4">
+          <p class="mt-2 mb-2">
+            These recovery codes can be used to access your account if you lose access to your authenticator app. Each
+            code can only be used once.
+          </p>
+          <p class="font-semibold">Store these codes in a safe place. You won't be able to see them again.</p>
 
           <div class="mt-4">
-            <div class="grid grid-cols-2 gap-2 font-mono text-sm">
+            <div class="grid grid-cols-2 gap-2 font-mono text-sm text-gray-900 dark:text-white">
               @for (code of codes; track code) {
-                <div class="p-2 border border-gray-200 dark:border-gray-700 rounded-md dark:text-white">
+                <div class="p-2 border border-gray-200 dark:border-gray-700 rounded-md">
                   {{ code }}
                 </div>
               }
@@ -85,19 +77,19 @@
               I've Saved My Codes
             </button>
           </div>
-        </div>
+        </app-alert>
       } @else {
         <div class="mt-4 bg-gray-50 dark:bg-gray-800 rounded-lg flex items-center">
           <div class="grow">
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Recovery Codes</h3>
             <div class="text-sm text-gray-700 dark:text-gray-300 mb-4">
               @if (recoveryCodesCount() === 0) {
-                <fa-icon class="text-red-500 me-1" [icon]="faExclamationTriangle" />
+                <fa-icon class="text-yellow-500 me-1" [icon]="faTriangleExclamation" />
                 You have no unused recovery codes remaining. It is recommended to regenerate your recovery codes to
                 ensure you have backup access to your account.
               } @else {
                 @if (recoveryCodesCount() < 3) {
-                  <fa-icon class="text-yellow-500 me-1" [icon]="faExclamationTriangle" />
+                  <fa-icon class="text-yellow-500 me-1" [icon]="faTriangleExclamation" />
                 }
                 You have {{ recoveryCodesCount() }} unused recovery codes remaining.
               }
@@ -182,18 +174,10 @@
     </div>
     <!-- Modal body -->
     <div class="p-4 md:p-5 space-y-4">
-      <div
-        class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
-        role="alert">
-        <fa-icon [icon]="faCircleExclamation" />
-        <span class="sr-only">Info</span>
-        <div class="ms-3 text-sm font-medium">
-          <p>
-            Disabling multi-factor authentication will reduce the security of your account. Are you sure you want to
-            proceed?
-          </p>
-        </div>
-      </div>
+      <app-alert type="warning" class="mb-4">
+        Disabling multi-factor authentication will reduce the security of your account. Are you sure you want to
+        proceed?
+      </app-alert>
 
       <form (ngSubmit)="disableMfaFinish()" [formGroup]="disableMfaForm">
         <div class="flex flex-col space-y-5">
@@ -240,15 +224,9 @@
     </div>
 
     <div class="p-4 md:p-5 space-y-4">
-      <div
-        class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
-        role="alert">
-        <fa-icon [icon]="faCircleExclamation" />
-        <span class="sr-only">Warning</span>
-        <div class="ml-3 text-sm font-medium">
-          This will invalidate all your existing recovery codes and generate new ones. Make sure to save the new codes.
-        </div>
-      </div>
+      <app-alert type="warning" class="mb-4">
+        This will invalidate all your existing recovery codes and generate new ones. Make sure to save the new codes.
+      </app-alert>
 
       <form [formGroup]="regenerateRecoveryCodesForm" (ngSubmit)="regenerateRecoveryCodes()">
         <div class="space-y-4">

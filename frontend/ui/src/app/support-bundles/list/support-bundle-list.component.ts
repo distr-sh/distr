@@ -1,4 +1,4 @@
-import {DatePipe, NgClass} from '@angular/common';
+import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
@@ -9,6 +9,7 @@ import {firstValueFrom, map, of, startWith, Subject, switchMap, take} from 'rxjs
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
+import {AlertComponent} from '../../components/alert/alert.component';
 import {ClipComponent} from '../../components/clip.component';
 import {PageComponent} from '../../components/page.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
@@ -18,7 +19,8 @@ import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService, supportBundleZipFileName} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
 import {SupportBundle} from '../../types/support-bundle';
-import {supportBundleDeleteConfirm, supportBundleStatusBadgeClass} from '../support-bundle-display';
+import {supportBundleDeleteConfirm} from '../support-bundle-display';
+import {SupportBundleStatusBadgeComponent} from '../support-bundle-status-badge.component';
 
 @Component({
   selector: 'app-support-bundle-list',
@@ -26,7 +28,6 @@ import {supportBundleDeleteConfirm, supportBundleStatusBadgeClass} from '../supp
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     DatePipe,
-    NgClass,
     ReactiveFormsModule,
     RouterLink,
     FaIconComponent,
@@ -34,6 +35,8 @@ import {supportBundleDeleteConfirm, supportBundleStatusBadgeClass} from '../supp
     AutotrimDirective,
     PageComponent,
     SearchBarComponent,
+    SupportBundleStatusBadgeComponent,
+    AlertComponent,
   ],
 })
 export class SupportBundleListComponent {
@@ -47,8 +50,6 @@ export class SupportBundleListComponent {
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
-  protected readonly statusBadgeClass = supportBundleStatusBadgeClass;
-
   protected readonly routePrefix = this.auth.isCustomer() ? '/support' : '/support-bundles';
 
   protected readonly configExists = toSignal(

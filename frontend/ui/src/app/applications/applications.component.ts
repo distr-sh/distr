@@ -1,5 +1,5 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
-import {AsyncPipe, DatePipe, NgClass} from '@angular/common';
+import {AsyncPipe, DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, inject, input, OnDestroy, TemplateRef} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
@@ -9,7 +9,7 @@ import {faBox, faBoxArchive, faPen, faPlus, faTrash, faXmark} from '@fortawesome
 import {lastValueFrom, Observable, Subject, takeUntil} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {filteredByFormControl} from '../../util/filter';
-import {automaticUpdatesBadgeClass, SelectableVersioningStrategy} from '../../util/versions';
+import {SelectableVersioningStrategy} from '../../util/versions';
 import {SearchBarComponent} from '../components/search-bar.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {
@@ -38,7 +38,6 @@ import {ApplicationLogoComponent} from './components';
     RouterLink,
     ApplicationLogoComponent,
     SearchBarComponent,
-    NgClass,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './applications.component.html',
@@ -70,8 +69,6 @@ export class ApplicationsComponent implements OnDestroy {
   });
   createApplicationFormLoading = false;
   protected readonly isAutoUpdatesEnabled = inject(FeatureFlagService).isAutoUpdatesEnabled;
-  protected readonly automaticUpdatesBadgeClass = automaticUpdatesBadgeClass(true);
-
   private applicationCreateModalRef?: DialogRef;
 
   private readonly overlay = inject(OverlayService);

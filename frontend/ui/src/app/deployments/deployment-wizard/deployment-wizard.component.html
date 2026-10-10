@@ -173,13 +173,12 @@
                       </div>
 
                       <!-- Deployment Type Badge -->
-                      <div
-                        class="px-2 py-1 rounded-md text-xs font-medium mb-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                      <div class="distr-badge mb-1">
                         @if (app.type === 'docker') {
-                          <fa-icon [icon]="faDocker" class="mr-1" />
+                          <fa-icon [icon]="faDocker" />
                           Docker
                         } @else {
-                          <fa-icon [icon]="faDharmachakra" class="mr-1" />
+                          <fa-icon [icon]="faDharmachakra" />
                           Kubernetes
                         }
                       </div>

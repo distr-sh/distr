@@ -19,16 +19,16 @@
           <td class="px-4 py-3 whitespace-nowrap">
             @switch (record.type) {
               @case ('update_available') {
-                <span
-                  class="distr-status-badge bg-blue-100 text-blue-800 border-blue-400 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-800">
-                  Update
-                </span>
+                <span class="distr-badge">Update</span>
+              }
+              @case ('warning') {
+                <span class="distr-badge distr-badge-warning">Warning</span>
+              }
+              @case ('resolved') {
+                <span class="distr-badge distr-badge-success">Resolved</span>
               }
               @default {
-                <span
-                  class="distr-status-badge bg-orange-100 text-orange-800 border-orange-400 dark:bg-orange-900 dark:text-orange-300 dark:border-orange-800">
-                  Alert
-                </span>
+                <span class="distr-badge distr-badge-error">Alert</span>
               }
             }
           </td>

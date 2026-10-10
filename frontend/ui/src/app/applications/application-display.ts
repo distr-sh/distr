@@ -1,10 +1,5 @@
 import {VersioningStrategy} from '@distr-sh/distr-sdk';
-import {
-  automaticUpdatesBadgeClass,
-  SelectableVersioningStrategy,
-  versioningStrategyBadgeClass,
-  versioningStrategyLabel,
-} from '../../util/versions';
+import {SelectableVersioningStrategy, versioningStrategyLabel} from '../../util/versions';
 import {BadgeSelectOption} from '../components/badge-select/badge-select.component';
 
 const selectableVersioningStrategies: SelectableVersioningStrategy[] = ['semver', 'chronological'];
@@ -23,13 +18,13 @@ export function versioningStrategySelectOptions(
   return strategies.map((strategy) => ({
     value: strategy,
     label: versioningStrategyLabel(strategy),
-    badgeClass: versioningStrategyBadgeClass(),
+    variant: 'neutral',
   }));
 }
 
 export type AllowAutomaticUpdates = 'allowed' | 'disallowed';
 
 export const allowAutomaticUpdatesSelectOptions: BadgeSelectOption<AllowAutomaticUpdates>[] = [
-  {value: 'allowed', label: 'Auto-Updates allowed', badgeClass: automaticUpdatesBadgeClass(true)},
-  {value: 'disallowed', label: 'Auto-Updates disallowed', badgeClass: automaticUpdatesBadgeClass(false)},
+  {value: 'allowed', label: 'Auto-Updates allowed', variant: 'success'},
+  {value: 'disallowed', label: 'Auto-Updates disallowed', variant: 'neutral'},
 ];

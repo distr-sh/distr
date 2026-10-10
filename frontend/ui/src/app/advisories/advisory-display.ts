@@ -1,6 +1,7 @@
 import {AdvisoryEventType, AdvisoryImpactState, AdvisorySeverity, AdvisoryStatus} from '@distr-sh/distr-sdk';
 import {firstValueFrom} from 'rxjs';
 import {never} from '../../util/exhaust';
+import {BadgeVariant} from '../components/badge';
 import {BadgeSelectOption} from '../components/badge-select/badge-select.component';
 import {ConfirmConfig} from '../components/confirm-dialog/confirm-dialog.component';
 import {OverlayService} from '../services/overlay.service';
@@ -40,10 +41,8 @@ export function affectedLabel(affected: boolean | undefined): string {
   return affected ? 'Affected' : 'Not affected';
 }
 
-export function affectedBadgeClass(affected: boolean | undefined): string {
-  return affected
-    ? 'bg-red-100 text-red-800 border-red-400 dark:bg-red-900 dark:text-red-300 dark:border-red-800'
-    : 'bg-green-100 text-green-800 border-green-400 dark:bg-green-900 dark:text-green-300 dark:border-green-800';
+export function affectedVariant(affected: boolean | undefined): BadgeVariant {
+  return affected ? 'error' : 'success';
 }
 
 export function severityLabel(severity: AdvisorySeverity): string {
@@ -63,35 +62,35 @@ export function severityLabel(severity: AdvisorySeverity): string {
   }
 }
 
-export function statusBadgeClass(status: AdvisoryStatus): string {
+export function statusVariant(status: AdvisoryStatus): BadgeVariant {
   switch (status) {
     case 'triage':
-      return 'bg-gray-100 text-gray-800 border-gray-400 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600';
+      return 'neutral';
     case 'draft':
-      return 'bg-blue-100 text-blue-800 border-blue-400 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-800';
+      return 'info';
     case 'published':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-400 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-800';
+      return 'warning';
     case 'resolved':
-      return 'bg-green-100 text-green-800 border-green-400 dark:bg-green-900 dark:text-green-300 dark:border-green-800';
+      return 'success';
     case 'canceled':
-      return 'bg-gray-200 text-gray-500 border-gray-400 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600';
+      return 'muted';
     default:
       return never(status);
   }
 }
 
-export function severityBadgeClass(severity: AdvisorySeverity): string {
+export function severityVariant(severity: AdvisorySeverity): BadgeVariant {
   switch (severity) {
     case 'none':
-      return 'bg-gray-100 text-gray-800 border-gray-400 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600';
+      return 'neutral';
     case 'low':
-      return 'bg-sky-100 text-sky-800 border-sky-400 dark:bg-sky-900 dark:text-sky-300 dark:border-sky-800';
+      return 'info';
     case 'medium':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-400 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-800';
+      return 'warning';
     case 'high':
-      return 'bg-orange-100 text-orange-800 border-orange-400 dark:bg-orange-900 dark:text-orange-300 dark:border-orange-800';
+      return 'severe';
     case 'critical':
-      return 'bg-red-100 text-red-800 border-red-400 dark:bg-red-900 dark:text-red-300 dark:border-red-800';
+      return 'error';
     default:
       return never(severity);
   }
@@ -110,14 +109,14 @@ export function impactStateLabel(state: AdvisoryImpactState): string {
   }
 }
 
-export function impactStateBadgeClass(state: AdvisoryImpactState): string {
+export function impactStateVariant(state: AdvisoryImpactState): BadgeVariant {
   switch (state) {
     case 'affected':
-      return 'bg-red-100 text-red-800 border-red-400 dark:bg-red-900 dark:text-red-300 dark:border-red-800';
+      return 'error';
     case 'patched':
-      return 'bg-green-100 text-green-800 border-green-400 dark:bg-green-900 dark:text-green-300 dark:border-green-800';
+      return 'success';
     case 'not_affected':
-      return 'bg-gray-100 text-gray-800 border-gray-400 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500';
+      return 'neutral';
     default:
       return never(state);
   }
@@ -126,13 +125,13 @@ export function impactStateBadgeClass(state: AdvisoryImpactState): string {
 export const statusSelectOptions: BadgeSelectOption<AdvisoryStatus>[] = advisoryStatuses.map((status) => ({
   value: status,
   label: statusLabel(status),
-  badgeClass: statusBadgeClass(status),
+  variant: statusVariant(status),
 }));
 
 export const severitySelectOptions: BadgeSelectOption<AdvisorySeverity>[] = advisorySeverities.map((severity) => ({
   value: severity,
   label: severityLabel(severity),
-  badgeClass: severityBadgeClass(severity),
+  variant: severityVariant(severity),
 }));
 
 function isCustomerVisibleStatus(status: AdvisoryStatus): boolean {

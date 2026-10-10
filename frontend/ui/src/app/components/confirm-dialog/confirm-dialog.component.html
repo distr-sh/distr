@@ -20,19 +20,7 @@
       <!-- Modal body -->
       <div class="p-4 md:p-5 space-y-4">
         @if (data.message?.alert; as alert) {
-          <div [class]="alertClass" role="alert">
-            <span class="font-semibold me-1">
-              @switch (alert.type) {
-                @case ('warning') {
-                  WARNING!
-                }
-                @case ('danger') {
-                  DANGER!
-                }
-              }
-            </span>
-            {{ alert.message }}
-          </div>
+          <app-alert [type]="alert.type">{{ alert.message }}</app-alert>
         }
 
         @if (data.customTemplate) {

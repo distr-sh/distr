@@ -19,7 +19,7 @@
             </h3>
             @if (deploymentTarget().reconnectPending) {
               <span
-                class="distr-status-badge shrink-0 whitespace-nowrap bg-yellow-100 text-yellow-800 border-yellow-400 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-800"
+                class="distr-badge distr-badge-warning shrink-0 whitespace-nowrap"
                 title="The controller secret was rotated, but no controller has connected to Distr with the new secret yet. Until then, the previous secret stays valid and applications continue operating.">
                 Reconnect pending
               </span>
@@ -177,12 +177,9 @@
                   Delete
                 </button>
                 <ng-template #deleteConfirmModal>
-                  <div
-                    class="p-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
-                    role="alert">
-                    <span class="font-semibold me-1">WARNING!</span>
-                    You are about to delete the deployment with name {{ deploymentTarget().name }}
-                    This will also delete all:
+                  <app-alert type="warning">
+                    You are about to delete the deployment with name {{ deploymentTarget().name }}. This will also
+                    delete all:
                     <ul class="my-1.5 list-disc list-inside">
                       <li>associated configuration</li>
                       <li>revision history</li>
@@ -195,7 +192,7 @@
 
                     This action can not be undone. If you want to continue, please type <code>DELETE</code> into the
                     text box and confirm.
-                  </div>
+                  </app-alert>
                 </ng-template>
               </li>
             }
@@ -355,10 +352,7 @@
                                 Undeploy
                               </button>
                               <ng-template #undeployConfirmTemplate>
-                                <div
-                                  class="p-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
-                                  role="alert">
-                                  <span class="font-semibold me-1">WARNING!</span>
+                                <app-alert type="warning">
                                   You are about to uninstall
                                   {{ deployment.application.name }}@{{ deployment.applicationVersionName }} on
                                   {{ deploymentTarget().name }}. This will also delete all:
@@ -370,7 +364,7 @@
 
                                   This action can not be undone. If you want to continue, please type
                                   <code>UNDEPLOY</code> into the text box and confirm.
-                                </div>
+                                </app-alert>
                               </ng-template>
                             </li>
                           }
@@ -388,8 +382,7 @@
                       autoUpdatableDeploymentIds.has(deployment.id)
                     ) {
                       <span
-                        class="distr-status-badge whitespace-nowrap"
-                        [ngClass]="automaticUpdatesBadgeClass"
+                        class="distr-badge distr-badge-success whitespace-nowrap"
                         title="This deployment is updated to the latest version automatically.">
                         Auto-Updates
                       </span>
@@ -418,10 +411,10 @@
 
 <ng-template #updateControllerConfirmTemplate>
   <div class="space-y-4 text-sm text-gray-700 dark:text-gray-200">
-    <div class="p-4 rounded-lg bg-blue-50 text-blue-800 dark:bg-gray-800 dark:text-blue-300" role="note">
+    <app-alert type="info">
       Updating the controller is a safe action. It does not trigger any changes or restarts for the deployed
       application.
-    </div>
+    </app-alert>
 
     <p>
       Update {{ deploymentTarget().name }} controller from
@@ -563,13 +556,7 @@
     <form [formGroup]="editForm" (ngSubmit)="saveDeploymentTarget()">
       <div class="mb-4 space-y-4">
         @if (deploymentTarget().customerOrganization !== undefined && auth.isVendor()) {
-          <div
-            class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
-            role="alert">
-            <fa-icon [icon]="faCircleExclamation" />
-            <span class="sr-only">Info</span>
-            <div class="ms-3 text-sm font-medium">{{ customerManagedWarning }}</div>
-          </div>
+          <app-alert type="info" class="mb-4">{{ customerManagedNotice }}</app-alert>
         }
         <div>
           <label for="name" class="distr-label mb-2">Name *</label>
@@ -750,9 +737,7 @@
           </div>
 
           @if (editForm.controls.dockerEndpoint.dirty) {
-            <div class="text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400" role="alert">
-              Changes to the Docker endpoint are only applied after a reconnect!
-            </div>
+            <app-alert type="info">Changes to the Docker endpoint are only applied after a reconnect!</app-alert>
           }
         }
 
@@ -821,9 +806,7 @@
           </ng-container>
 
           @if (editForm.controls.resources.dirty) {
-            <div class="text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400" role="alert">
-              Changes in the resource requirements are only applied after a reconnect!
-            </div>
+            <app-alert type="info">Changes in the resource requirements are only applied after a reconnect!</app-alert>
           }
         }
       </div>

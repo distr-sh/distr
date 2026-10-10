@@ -5,10 +5,11 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faBox, faLightbulb, faPlus, faTrash, faUserCircle, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faBox, faPlus, faTrash, faUserCircle, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, lastValueFrom, map, startWith} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
+import {AlertComponent} from '../../components/alert/alert.component';
 import {PageComponent} from '../../components/page.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
@@ -47,6 +48,7 @@ import {
     SpinnerComponent,
     PageComponent,
     SearchBarComponent,
+    AlertComponent,
   ],
   templateUrl: './artifacts.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -63,7 +65,6 @@ export class ArtifactsComponent {
   protected readonly faTrash = faTrash;
   protected readonly faPlus = faPlus;
   protected readonly faXmark = faXmark;
-  protected readonly faLightbulb = faLightbulb;
   protected readonly faUserCircle = faUserCircle;
   protected readonly filterForm = new FormGroup({
     search: this.fb.control(''),
