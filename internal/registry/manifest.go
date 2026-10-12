@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"path"
 	"strconv"
 	"strings"
@@ -166,6 +167,14 @@ func (m *manifests) handleTags(resp http.ResponseWriter, req *http.Request) *reg
 			return regErrNameUnknown
 		} else if err != nil {
 			return regErrInternal(err)
+		}
+
+		if n > 0 && len(references) == n {
+			next := url.URL{
+				Path:     req.URL.Path,
+				RawQuery: url.Values{"n": {strconv.Itoa(n)}, "last": {references[n-1]}}.Encode(),
+			}
+			resp.Header().Set("Link", fmt.Sprintf(`<%s>; rel="next"`, next.String()))
 		}
 
 		tagsToList := listTags{
