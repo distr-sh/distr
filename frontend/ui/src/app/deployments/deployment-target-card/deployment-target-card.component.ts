@@ -653,7 +653,7 @@ export class DeploymentTargetCardComponent {
       'stops working. The current secret stays valid, so the running controller keeps working. Continue?';
     const alert =
       dt.customerOrganization !== undefined && this.auth.isVendor()
-        ? ({type: 'warning', message: this.customerManagedWarning} as const)
+        ? ({type: 'info', message: this.customerManagedNotice} as const)
         : undefined;
     if (
       !(await firstValueFrom(
