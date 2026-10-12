@@ -417,12 +417,13 @@ func (handler *blobHandler) CompleteSession(ctx context.Context, repo, id string
 			completionParts[i] = s3types.CompletedPart{PartNumber: part.PartNumber, ETag: part.ETag}
 		}
 
-		if _, err := handler.s3Client.CompleteMultipartUpload(ctx, &s3.CompleteMultipartUploadInput{
+		completed, err := handler.s3Client.CompleteMultipartUpload(ctx, &s3.CompleteMultipartUploadInput{
 			Bucket:          &handler.bucket,
 			Key:             &uploadKey,
 			UploadId:        &uploadID,
 			MultipartUpload: &s3types.CompletedMultipartUpload{Parts: completionParts},
-		}); err != nil {
+		})
+		if err != nil {
 			return err
 		}
 
@@ -430,9 +431,14 @@ func (handler *blobHandler) CompleteSession(ctx context.Context, repo, id string
 		// does not match would replace the blob of every artifact referencing that digest. S3 cannot
 		// compute a SHA256 of a whole multipart object, so it is read back once here.
 		// https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html#Full-object-checksums
-		copyErr := handler.verifyObject(ctx, uploadKey, digest)
-		if copyErr == nil {
-			copyErr = handler.copyObject(ctx, uploadKey, digest.String())
+		// The upload id stays usable after completion, so a concurrent completion of the same id can
+		// replace the object between verifying and copying it. Every read is therefore pinned to the
+		// ETag of the object completed here.
+		var copyErr error
+		if completed.ETag == nil {
+			copyErr = errors.New("completed multipart upload has no ETag")
+		} else if copyErr = handler.verifyObject(ctx, uploadKey, *completed.ETag, digest); copyErr == nil {
+			copyErr = handler.copyObject(ctx, uploadKey, *completed.ETag, digest.String())
 		}
 
 		// ArtifactBlob cleanup only deletes digest-shaped keys, so a chunk left behind here is
@@ -448,8 +454,8 @@ func (handler *blobHandler) CompleteSession(ctx context.Context, repo, id string
 	}
 }
 
-func (handler *blobHandler) verifyObject(ctx context.Context, key string, h digest.Digest) error {
-	obj, err := handler.s3Client.GetObject(ctx, &s3.GetObjectInput{Bucket: &handler.bucket, Key: &key})
+func (handler *blobHandler) verifyObject(ctx context.Context, key, etag string, h digest.Digest) error {
+	obj, err := handler.s3Client.GetObject(ctx, &s3.GetObjectInput{Bucket: &handler.bucket, Key: &key, IfMatch: &etag})
 	if err != nil {
 		return err
 	}
@@ -468,13 +474,14 @@ func (handler *blobHandler) ChunkMinLength() int64 {
 	return minS3PartSize
 }
 
-// copyObject copies srcKey to dstKey within the same bucket. For objects larger than the 5 GB CopyObject limit,
-// it falls back to a multipart copy using UploadPartCopy, and for backends that do not implement that operation
-// to copyObjectWithoutPartCopy.
-func (handler *blobHandler) copyObject(ctx context.Context, srcKey, dstKey string) error {
+// copyObject copies srcKey to dstKey within the same bucket and fails if srcKey no longer has srcETag. For objects
+// larger than the 5 GB CopyObject limit, it falls back to a multipart copy using UploadPartCopy, and for backends
+// that do not implement that operation to copyObjectWithoutPartCopy.
+func (handler *blobHandler) copyObject(ctx context.Context, srcKey, srcETag, dstKey string) error {
 	head, err := handler.s3Client.HeadObject(ctx, &s3.HeadObjectInput{
-		Bucket: &handler.bucket,
-		Key:    &srcKey,
+		Bucket:  &handler.bucket,
+		Key:     &srcKey,
+		IfMatch: &srcETag,
 	})
 	if err != nil {
 		return err
@@ -484,9 +491,10 @@ func (handler *blobHandler) copyObject(ctx context.Context, srcKey, dstKey strin
 
 	if objectSize <= maxS3PartSize {
 		_, err = handler.s3Client.CopyObject(ctx, &s3.CopyObjectInput{
-			Bucket:     &handler.bucket,
-			Key:        &dstKey,
-			CopySource: &copySource,
+			Bucket:            &handler.bucket,
+			Key:               &dstKey,
+			CopySource:        &copySource,
+			CopySourceIfMatch: &srcETag,
 		})
 		return err
 	}
@@ -517,19 +525,20 @@ func (handler *blobHandler) copyObject(ctx context.Context, srcKey, dstKey strin
 		copySourceRange := fmt.Sprintf("bytes=%d-%d", rangeStart, rangeEnd)
 
 		result, err := handler.s3Client.UploadPartCopy(ctx, &s3.UploadPartCopyInput{
-			Bucket:          &handler.bucket,
-			Key:             &dstKey,
-			UploadId:        upload.UploadId,
-			PartNumber:      &partNumber,
-			CopySource:      &copySource,
-			CopySourceRange: &copySourceRange,
+			Bucket:            &handler.bucket,
+			Key:               &dstKey,
+			UploadId:          upload.UploadId,
+			PartNumber:        &partNumber,
+			CopySource:        &copySource,
+			CopySourceRange:   &copySourceRange,
+			CopySourceIfMatch: &srcETag,
 		})
 		if err != nil {
 			abort()
 			// GCS implements the multipart upload API but not UploadPartCopy: it documents
 			// x-amz-copy-source-range as not applicable and answers NotImplemented.
 			if apiErr, ok := errors.AsType[smithy.APIError](err); ok && apiErr.ErrorCode() == "NotImplemented" {
-				return handler.copyObjectWithoutPartCopy(ctx, srcKey, dstKey, objectSize)
+				return handler.copyObjectWithoutPartCopy(ctx, srcKey, srcETag, dstKey, objectSize)
 			}
 			return err
 		}
@@ -554,14 +563,15 @@ func (handler *blobHandler) copyObject(ctx context.Context, srcKey, dstKey strin
 // magnitude cheaper than moving the whole blob through the registry.
 func (handler *blobHandler) copyObjectWithoutPartCopy(
 	ctx context.Context,
-	srcKey, dstKey string,
+	srcKey, srcETag, dstKey string,
 	objectSize int64,
 ) error {
 	copySource := handler.bucket + "/" + srcKey
 	if _, err := handler.s3Client.CopyObject(ctx, &s3.CopyObjectInput{
-		Bucket:     &handler.bucket,
-		Key:        &dstKey,
-		CopySource: &copySource,
+		Bucket:            &handler.bucket,
+		Key:               &dstKey,
+		CopySource:        &copySource,
+		CopySourceIfMatch: &srcETag,
 	}); err == nil {
 		return nil
 	} else {
@@ -569,12 +579,16 @@ func (handler *blobHandler) copyObjectWithoutPartCopy(
 			zap.Int64("objectSize", objectSize), zap.Error(err))
 	}
 
-	return handler.copyObjectViaUpload(ctx, srcKey, dstKey, objectSize)
+	return handler.copyObjectViaUpload(ctx, srcKey, srcETag, dstKey, objectSize)
 }
 
 // copyObjectViaUpload copies an object by downloading it range by range and uploading each range as a
 // destination multipart part, so that no range is buffered in memory.
-func (handler *blobHandler) copyObjectViaUpload(ctx context.Context, srcKey, dstKey string, objectSize int64) error {
+func (handler *blobHandler) copyObjectViaUpload(
+	ctx context.Context,
+	srcKey, srcETag, dstKey string,
+	objectSize int64,
+) error {
 	upload, err := handler.s3Client.CreateMultipartUpload(ctx, &s3.CreateMultipartUploadInput{
 		Bucket: &handler.bucket,
 		Key:    &dstKey,
@@ -611,9 +625,10 @@ func (handler *blobHandler) copyObjectViaUpload(ctx context.Context, srcKey, dst
 		objectRange := fmt.Sprintf("bytes=%d-%d", rangeStart, rangeEnd)
 
 		result, err := handler.s3Client.GetObject(ctx, &s3.GetObjectInput{
-			Bucket: &handler.bucket,
-			Key:    &srcKey,
-			Range:  &objectRange,
+			Bucket:  &handler.bucket,
+			Key:     &srcKey,
+			Range:   &objectRange,
+			IfMatch: &srcETag,
 		})
 		if err != nil {
 			abort()
