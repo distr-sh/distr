@@ -399,7 +399,7 @@ export default function PricingCalculator() {
             </p>
             <ul class="list-none px-6 pt-5 mt-0 mb-0">
               <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                Docker + Kubernetes deployment agents
+                Docker + Kubernetes deployment controllers
               </li>
               <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
                 Customer Portal with installation instructions

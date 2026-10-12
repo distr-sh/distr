@@ -23,7 +23,7 @@ const (
 )
 
 // SendDeploymentStatusNotifications judges staleness by previousStatus, the newest status of any type, because
-// progressing reports prove the agent alive. Error transitions are judged by settledStatus (see
+// progressing reports prove the controller alive. Error transitions are judged by settledStatus (see
 // [db.GetPreviousDeploymentRevisionStatus]). Any report resolves the open stale warnings of the deployment, and
 // an alert configuration whose warning it resolved gets a recovery notification unless the report calls for an error
 // notification.

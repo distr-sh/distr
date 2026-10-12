@@ -15,21 +15,24 @@ import (
 )
 
 type DeploymentTarget struct {
-	ID                      uuid.UUID                  `db:"id" json:"id"`
-	CreatedAt               time.Time                  `db:"created_at" json:"createdAt"`
-	Name                    string                     `db:"name" json:"name"`
-	Type                    DeploymentType             `db:"type" json:"type"`
-	AccessKeySalt           *[]byte                    `db:"access_key_salt" json:"-"`
-	AccessKeyHash           *[]byte                    `db:"access_key_hash" json:"-"`
-	PendingAccessKeySalt    *[]byte                    `db:"pending_access_key_salt" json:"-"`
-	PendingAccessKeyHash    *[]byte                    `db:"pending_access_key_hash" json:"-"`
-	ReconnectPending        bool                       `db:"reconnect_pending" json:"reconnectPending"`
-	Namespace               *string                    `db:"namespace" json:"namespace,omitempty"`
-	Scope                   *DeploymentTargetScope     `db:"scope" json:"scope,omitempty"`
-	OrganizationID          uuid.UUID                  `db:"organization_id" json:"-"`
-	CustomerOrganizationID  *uuid.UUID                 `db:"customer_organization_id" json:"customerOrganizationId,omitempty"` //nolint:lll
-	AgentVersionID          *uuid.UUID                 `db:"agent_version_id" json:"-"`
-	ReportedAgentVersionID  *uuid.UUID                 `db:"reported_agent_version_id" json:"reportedAgentVersionId,omitempty"` //nolint:lll
+	ID                          uuid.UUID              `db:"id" json:"id"`
+	CreatedAt                   time.Time              `db:"created_at" json:"createdAt"`
+	Name                        string                 `db:"name" json:"name"`
+	Type                        DeploymentType         `db:"type" json:"type"`
+	AccessKeySalt               *[]byte                `db:"access_key_salt" json:"-"`
+	AccessKeyHash               *[]byte                `db:"access_key_hash" json:"-"`
+	PendingAccessKeySalt        *[]byte                `db:"pending_access_key_salt" json:"-"`
+	PendingAccessKeyHash        *[]byte                `db:"pending_access_key_hash" json:"-"`
+	ReconnectPending            bool                   `db:"reconnect_pending" json:"reconnectPending"`
+	Namespace                   *string                `db:"namespace" json:"namespace,omitempty"`
+	Scope                       *DeploymentTargetScope `db:"scope" json:"scope,omitempty"`
+	OrganizationID              uuid.UUID              `db:"organization_id" json:"-"`
+	CustomerOrganizationID      *uuid.UUID             `db:"customer_organization_id" json:"customerOrganizationId,omitempty"` //nolint:lll
+	ControllerVersionID         *uuid.UUID             `db:"controller_version_id" json:"-"`
+	ReportedControllerVersionID *uuid.UUID             `db:"reported_controller_version_id" json:"reportedControllerVersionId,omitempty"` //nolint:lll
+	// LegacyControllerName is set on targets created before the rename to controller, whose manifests keep naming
+	// the controller's resources and compose service after the agent.
+	LegacyControllerName    bool                       `db:"legacy_controller_name" json:"-"`
 	MetricsEnabled          bool                       `db:"metrics_enabled" json:"metricsEnabled"`
 	ImageCleanupEnabled     bool                       `db:"image_cleanup_enabled" json:"imageCleanupEnabled"`
 	AutohealEnabled         bool                       `db:"autoheal_enabled" json:"autohealEnabled"`
@@ -94,7 +97,7 @@ func (dt *DeploymentTarget) Validate() error {
 const DefaultDockerSocketPath = "/var/run/docker.sock"
 
 // ParseDockerEndpoint only supports unix sockets because the endpoint is applied by bind-mounting
-// the socket into the agent container.
+// the socket into the controller container.
 func ParseDockerEndpoint(endpoint string) (string, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
@@ -145,5 +148,5 @@ type DeploymentTargetFull struct {
 	DeploymentTarget
 	CustomerOrganization *CustomerOrganization          `db:"customer_organization" json:"customerOrganization,omitempty"`
 	Deployments          []DeploymentWithLatestRevision `db:"-" json:"deployments"`
-	AgentVersion         AgentVersion                   `db:"agent_version" json:"agentVersion"`
+	ControllerVersion    ControllerVersion              `db:"controller_version" json:"controllerVersion"`
 }

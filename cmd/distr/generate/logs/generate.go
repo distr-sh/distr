@@ -94,7 +94,7 @@ func newestExistingTimestamp(
 }
 
 // saveWithRetry backs off and retries when the log store throttles the write, since the
-// generator pushes far faster than real agents and easily exceeds Loki's per-tenant
+// generator pushes far faster than real controllers and easily exceeds Loki's per-tenant
 // ingestion rate limit.
 func saveWithRetry(
 	ctx context.Context,

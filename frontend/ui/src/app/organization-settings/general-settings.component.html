@@ -1,6 +1,6 @@
 <ng-template #preflightConfirmTemplate>
   <p class="text-base leading-relaxed text-gray-500 dark:text-gray-200">
-    Enabling pre-flight checks changes how Docker agents are installed. All customers will receive a shell script
+    Enabling pre-flight checks changes how Docker controllers are installed. All customers will receive a shell script
     instead of a plain docker compose command. The install command will change from
     <code class="px-1 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-600 text-sm font-mono"
       >curl ... | docker compose -f - up -d</code
@@ -70,7 +70,7 @@
     </div>
 
     <div class="space-y-4">
-      <h2 class="text-xl font-bold dark:text-white">Agents</h2>
+      <h2 class="text-xl font-bold dark:text-white">Controllers</h2>
       <div>
         <input
           formControlName="prePostScriptsEnabled"
@@ -81,8 +81,8 @@
           Enable Pre- and Post-Connect Scripts (Pre-Flight Checks)
         </label>
         <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
-          When enabled, Docker agent install commands use a shell script that wraps docker compose, so that pre- and
-          post-connect scripts can run during agent setup.
+          When enabled, Docker controller install commands use a shell script that wraps docker compose, so that pre-
+          and post-connect scripts can run during controller setup.
         </p>
       </div>
     </div>

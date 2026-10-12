@@ -8,8 +8,8 @@
 
 ## Extended by
 
-- [`AgentVersion`](AgentVersion.md)
 - [`Application`](Application.md)
+- [`ControllerVersion`](ControllerVersion.md)
 - [`Deployment`](Deployment.md)
 - [`DeploymentTarget`](DeploymentTarget.md)
 - [`OrganizationBranding`](OrganizationBranding.md)

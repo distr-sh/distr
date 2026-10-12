@@ -12,12 +12,6 @@
 
 ## Properties
 
-### agentVersion?
-
-> `optional` **agentVersion?**: [`AgentVersion`](AgentVersion.md)
-
----
-
 ### autohealEnabled?
 
 > `optional` **autohealEnabled?**: `boolean`
@@ -27,6 +21,12 @@
 ### automaticUpdatesEnabled?
 
 > `optional` **automaticUpdatesEnabled?**: `boolean`
+
+---
+
+### controllerVersion?
+
+> `optional` **controllerVersion?**: [`ControllerVersion`](ControllerVersion.md)
 
 ---
 
@@ -114,9 +114,9 @@
 
 ---
 
-### reportedAgentVersionId?
+### reportedControllerVersionId?
 
-> `optional` **reportedAgentVersionId?**: `string`
+> `optional` **reportedControllerVersionId?**: `string`
 
 ---
 

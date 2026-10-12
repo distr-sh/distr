@@ -34,7 +34,7 @@ Nobody outside the team ever used the word the way we meant it. When you open Di
 So we removed the word. The pieces now have one name each and none of them overlap:
 
 - **Distr** is the server you run, in the cloud or in your own infrastructure.
-- **[Distr Agents](/docs/agents/)** run in customer environments and do the deploying.
+- **[Distr Controllers](/docs/controllers/)** run in customer environments and do the deploying.
 - **[Distr Registry](/docs/registry/)** serves the artifacts.
 - The **Vendor Portal** and the **Customer Portal** are the two UIs Distr serves.
 
@@ -46,7 +46,7 @@ This is the kind of change that is never urgent and gets more expensive every mo
 
 ## Encrypting sensitive columns at rest
 
-Distr now encrypts the sensitive columns of its database with AES-256-GCM before it writes them. That covers the things you would not want in a database dump: [secret values](/docs/agents/secrets/) shared with customer deployments, deployment value and env files, SMTP credentials, [pull-through cache](/docs/registry/pull-through-cache/) credentials, OIDC client secrets, MFA secrets and support bundle contents.
+Distr now encrypts the sensitive columns of its database with AES-256-GCM before it writes them. That covers the things you would not want in a database dump: [secret values](/docs/controllers/secrets/) shared with customer deployments, deployment value and env files, SMTP credentials, [pull-through cache](/docs/registry/pull-through-cache/) credentials, OIDC client secrets, MFA secrets and support bundle contents.
 
 Encryption is transparent, so nothing in the API, the SDK or the UI behaves differently. For self-hosters it adds one required variable: `DATABASE_ENCRYPTION_KEY`, which Distr refuses to start without. Generate it with `openssl rand -base64 32`.
 
@@ -75,12 +75,12 @@ Existing tokens keep working and are marked **Legacy** in the UI. One caveat if 
 Distr follows [Conventional Commits](https://www.conventionalcommits.org/) and derives its version from them, so a feature bumps the minor version and only a breaking change makes a major one. The 3.x series ran for five minor releases, and the theme running through it was making a Distr instance look like it belongs to you rather than to us:
 
 - [3.1](https://github.com/distr-sh/distr/releases/tag/3.1.0): [custom domains](/docs/platform/branding/#custom-domains) for vendors, with DNS verification and certificates issued on demand
-- [3.2](https://github.com/distr-sh/distr/releases/tag/3.2.0): a [custom identity provider](/docs/platform/custom-identity-provider/) for single sign-on, your own SMTP server for [transactional mail](/docs/platform/branding/#custom-email), custom domains for the Customer Portal, [automatic agent updates](/docs/agents/#agent-updates) and per-resource [deployment metrics](/docs/agents/logs-and-metrics/)
+- [3.2](https://github.com/distr-sh/distr/releases/tag/3.2.0): a [custom identity provider](/docs/platform/custom-identity-provider/) for single sign-on, your own SMTP server for [transactional mail](/docs/platform/branding/#custom-email), custom domains for the Customer Portal, [automatic controller updates](/docs/controllers/#controller-updates) and per-resource [deployment metrics](/docs/controllers/logs-and-metrics/)
 - [3.3](https://github.com/distr-sh/distr/releases/tag/3.3.0): custom domain verification that stores its result and falls back to the default domain when it fails, plus the subscription type in the [license key](/docs/platform/license-keys/) payload
 - [3.4](https://github.com/distr-sh/distr/releases/tag/3.4.0): vendor-defined collection scripts in [support bundles](/docs/platform/support-bundles/), so you decide what a customer's diagnostics contain
 - [3.5](https://github.com/distr-sh/distr/releases/tag/3.5.0): [Vulnerability Management](/docs/platform/vulnerability-management/), which tracks a security issue from triage to a published advisory and tells you which customers deployed an affected version
 
-Two more things landed in 4.0 next to the three changes above. Config secrets other than the encryption key can be wrapped with a key management service as well, and the [Docker Agent](/docs/agents/docker-agent/) now reports how much disk its container images and logs occupy, which is the number that actually fills up a customer's VM.
+Two more things landed in 4.0 next to the three changes above. Config secrets other than the encryption key can be wrapped with a key management service as well, and the [Docker Controller](/docs/controllers/docker-controller/) now reports how much disk its container images and logs occupy, which is the number that actually fills up a customer's VM.
 
 <TestimonialCTA name="sophris" />
 

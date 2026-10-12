@@ -67,7 +67,7 @@ Use application.name instead
 > `optional` **automaticApplicationUpdatesEnabled?**: `boolean`
 
 Whether this deployment is rolled forward to the application's latest version automatically.
-Unrelated to DeploymentTarget.automaticUpdatesEnabled, which is the agent updating itself.
+Unrelated to DeploymentTarget.automaticUpdatesEnabled, which is the controller updating itself.
 
 #### Inherited from
 
@@ -101,7 +101,7 @@ Unrelated to DeploymentTarget.automaticUpdatesEnabled, which is the agent updati
 
 > `optional` **currentDeploymentRevisionId?**: `string`
 
-The revision an agent last reported as applied, which differs from deploymentRevisionId while a
+The revision a controller last reported as applied, which differs from deploymentRevisionId while a
 newer revision is being rolled out or has failed.
 
 ---

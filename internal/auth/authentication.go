@@ -37,13 +37,13 @@ var Authentication = authn.New(
 	),
 )
 
-// AgentAuthentication supports only Bearer JWT tokens
-var AgentAuthentication = authn.New(
+// ControllerAuthentication supports only Bearer JWT tokens
+var ControllerAuthentication = authn.New(
 	authn.Chain3(
 		token.NewExtractor(token.WithExtractorFuncs(token.FromHeader("Bearer"))),
 		jwt.Authenticator(authjwt.VerifyToken),
-		authinfo.AgentJWTAuthenticator(),
-		// for agents, db check is done in the agent auth middleware, therefore no DbAuthenticator here
+		authinfo.ControllerJWTAuthenticator(),
+		// for controllers, db check is done in the controller auth middleware, therefore no DbAuthenticator here
 	),
 )
 
@@ -68,11 +68,11 @@ var ArtifactsAuthentication = authn.New(
 				authinfo.DbAuthenticator(),
 				authinfo.DropUser(),
 			),
-			// Authenticate with Agent JWT
+			// Authenticate with controller JWT
 			authn.Chain3(
 				jwt.Authenticator(authjwt.VerifyToken),
-				authinfo.AgentJWTAuthenticator(),
-				authinfo.AgentDbAuthenticator(),
+				authinfo.ControllerJWTAuthenticator(),
+				authinfo.ControllerDbAuthenticator(),
 			),
 		),
 	),
@@ -120,7 +120,7 @@ func recordAuthInfo(ctx context.Context, info authinfo.AuthInfo) {
 
 func init() {
 	Authentication.SetUnknownErrorHandler(handleUnknownError)
-	AgentAuthentication.SetUnknownErrorHandler(handleUnknownError)
+	ControllerAuthentication.SetUnknownErrorHandler(handleUnknownError)
 	ArtifactsAuthentication.SetUnknownErrorHandler(handleUnknownError)
 	SupportBundleAuthentication.SetUnknownErrorHandler(handleUnknownError)
 
@@ -130,7 +130,7 @@ func init() {
 	ArtifactsAuthentication.SetAuthenticatedHook(func(ctx context.Context, info authinfo.AuthInfoWithOrganization) {
 		recordAuthInfo(ctx, info)
 	})
-	AgentAuthentication.SetAuthenticatedHook(func(ctx context.Context, info authinfo.AgentAuthInfo) {
+	ControllerAuthentication.SetAuthenticatedHook(func(ctx context.Context, info authinfo.ControllerAuthInfo) {
 		requestlog.FromContext(ctx).Update(func(f *requestlog.Fields) {
 			f.OrganizationID = new(info.CurrentOrgID())
 			f.DeploymentTargetID = new(info.CurrentDeploymentTargetID())

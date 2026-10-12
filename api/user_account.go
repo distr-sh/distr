@@ -15,7 +15,13 @@ type CreateUserAccountRequest struct {
 }
 
 func (r CreateUserAccountRequest) Validate() error {
-	return validation.ValidateEmail(r.Email)
+	if err := validation.ValidateEmail(r.Email); err != nil {
+		return err
+	}
+	if r.UserRole == "" {
+		return validation.NewValidationFailedError("userRole is required")
+	}
+	return nil
 }
 
 type CreateUserAccountResponse struct {

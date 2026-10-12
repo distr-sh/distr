@@ -1,0 +1,156 @@
+---
+title: Application
+description: Learn how to create Docker and Helm applications in Distr, add versions, and manage your application templates.
+slug: docs/controllers/application
+sidebar:
+  label: Application
+  order: 4
+---
+
+import {Tabs, TabItem} from '@astrojs/starlight/components';
+
+This guide walks you through creating applications in Distr. You can create two types of applications: **Docker** applications (using Docker Compose) and **Helm** applications (using Kubernetes Helm charts).
+
+## Creating a new Application
+
+In the Distr web interface, navigate to the **Applications** section in the sidebar and click on the **Add application** button in the top right corner.
+
+You will be asked to enter a name and select the type of the application (Docker or Kubernetes/Helm).
+
+<Tabs>
+  <TabItem label="Docker">
+
+### Prerequisites
+
+In Distr, a Docker app consists of versions, each defined by a [Docker Compose](https://docs.docker.com/compose/) file.
+Therefore, if you want to onboard a new Docker App, you need to have a Docker Compose file of your software ready.
+
+### Creating a new Docker App
+
+In the Distr web interface, navigate to the **Applications** section in the sidebar and click on the **Add application** button in the top right corner.
+
+You will be asked to enter a name and select the type of the application:
+
+![Add application](../../../../../assets/docs/controllers/overview/application/docker_add_application.png)
+
+After you have clicked on the **Create Application** button, you will be redirected to the detailed view of this application.
+In this view you can manage the versions of the application.
+
+![Application Detail View](../../../../../assets/docs/controllers/overview/application/docker_add_application.png)
+
+### Creating a first version
+
+To add a first version to your Docker App, enter the version name and your Docker Compose file in the "New Version" form.
+In this example we will upload a file containing Gitea and a Postgres database,
+whose source can be found [here](https://github.com/docker/awesome-compose/blob/master/gitea-postgres/compose.yaml) (we additionally pin the version to `1.23.1`
+and make the password an environment variable).
+
+You can optionally add a template for the environment variables that your Docker Compose file uses.
+The template will be shown to the user when they deploy this version to a deployment environment.
+In this example we enter a reminder for the user to set the database password, as the deployment would fail otherwise.
+
+![Add version](../../../../../assets/docs/controllers/overview/application/docker_add_version.png)
+
+Click on the **Create New Version** button to add the version to your Docker App.
+
+### Adding further versions
+
+After you have created the version, you can see it in the list of versions:
+
+![Version list](../../../../../assets/docs/controllers/overview/application/docker_manage_versions_copy.png)
+
+You can use the **Copy from** button to create a new version based on the existing one.
+
+If you are looking for a more automated and integrated experience in creating new versions,
+take a look at our [GitHub Action](/docs/integrations/gh-action/) or [SDKs](/docs/integrations/sdk/).
+
+  </TabItem>
+  <TabItem label="Helm">
+
+### Prerequisites
+
+In Distr, a Helm app consists of versions, each defined by a publicly available [Helm chart](/glossary/helm-chart/).
+Therefore, if you want to onboard a new Helm App, you need to have a Helm chart of your software ready.
+
+You should also have access to a [Kubernetes](/glossary/kubernetes/) cluster and a namespace where you can deploy the Helm chart.
+
+### Creating a new Helm App
+
+In the Distr web interface, navigate to the **Applications** section in the sidebar and click on the **Add application** button in the top right corner.
+
+You will be asked to enter a name. Change the type of the application **Kubernetes**:
+
+![Add application](../../../../../assets/docs/controllers/overview/application/kubernetes_create.png)
+
+After you have clicked on the **Create** button, the list of applications will show your new app.
+
+### Creating a first version
+
+To add a new version to your Helm App, click on the **Manage versions** button in the application list.
+
+A modal will open where you can add a new version by entering a name and the corresponding data about the Helm chart:
+
+![Add version](../../../../../assets/docs/controllers/overview/application/kubernetes_version.png)
+
+**Base Values and Template**
+
+You can provide a base values file and a template file for the [Helm chart](/glossary/helm-chart/).
+The base values file is a YAML file that contains the default values for the Helm chart.
+The template file is a file that contains the template for the Helm chart.
+
+The template will also be shown later on in the deployment process, so the user can adjust the values before deploying the Helm chart.
+
+Both files are optional.
+
+Click on the **Create** button to add the version to your Helm App.
+
+### Adding a new version
+
+After you have created the version, you can see it in the list of versions:
+
+![Version list](../../../../../assets/docs/controllers/overview/application/kubernetes_version_manage.png)
+
+You can use the **Copy from** button to create a new version based on the existing one.
+
+If you are looking for a more automated and integrated experience in creating new versions, take a look at our [SDKs](/docs/integrations/sdk/).
+
+  </TabItem>
+</Tabs>
+
+## Versioning Strategy
+
+Every application has a versioning strategy, which determines how its versions are sorted and which version is considered the latest:
+
+- **Semantic versioning** orders versions by [SemVer](https://semver.org/) precedence. Every version name has to be a valid SemVer version, so `1.10.0` is newer than `1.9.0` and `2.0.0` is newer than `2.0.0-rc.1`. Distr rejects a version name that is not valid SemVer and one that resolves to a version the application already has, `1.0.0` and `v1.0.0` being the same version.
+- **Chronological versioning** orders versions by the time they were created, whatever they are named. Pick this when your versions are dates, build numbers or channel names.
+
+You pick the strategy when creating an application and can change it later on the application detail page. Switching to semantic versioning is only possible while every existing version name, including the archived ones, is a valid SemVer version.
+
+Applications created before strategies existed keep **Legacy versioning**, which orders by SemVer while every name happens to parse and by creation date otherwise. It cannot be selected, and an application has to move off it to use automatic updates.
+
+## Automatic Updates
+
+With **Allow automatic updates** enabled on an application, a deployment of it can be set to follow the application's latest version instead of being updated by hand or by a release pipeline. See [Automatic updates](/docs/controllers/deployment/#automatic-updates) for what this does to a deployment.
+
+The setting only makes the feature available. Whether an individual deployment follows the latest version is decided per deployment, by you or by the customer.
+
+Automatic updates are part of the Business plan and need a versioning strategy other than legacy versioning.
+
+## Additional Resources
+
+Each application version can include additional resources: named markdown documents such as release notes, upgrade instructions, or troubleshooting tips.
+To attach them, use the **Add Resource** button in the "New Version" form and provide a name and the markdown content for each resource.
+
+Resources marked as **Visible to customers** are shown to your customers in the Customer Portal when they select that version in the deployment form, so they always see the information matching the version they are deploying.
+
+Additional resources can also be attached automatically as part of your release pipeline when creating versions with the [GitHub Action](/docs/integrations/gh-action/#attaching-additional-resources).
+
+## Renaming Applications and Versions
+
+You can rename an application or any of its versions at any time from the application detail page. Click the edit icon next to the application name, or click a version name in the versions table, to edit it inline and save.
+
+Renaming only changes the display name shown in Distr - it does not affect existing deployments or the underlying artifacts.
+
+## Next Steps
+
+Once you've created your application and added versions, you're ready to create deployments. See the [Create Deployment](/docs/controllers/deployment/) guide for instructions on deploying your applications to customer environments.

@@ -252,14 +252,14 @@ func SetSentryUserFromUserAuth(h http.Handler) http.Handler {
 	})
 }
 
-// SetSentryUserFromAgentAuth sets the authenticated agent's identity on the Sentry scope. It
-// must run after auth.AgentAuthentication.Middleware so the agent is available in the context;
-// if there is no authenticated agent it panics, since that is a wiring bug.
-func SetSentryUserFromAgentAuth(h http.Handler) http.Handler {
+// SetSentryUserFromControllerAuth sets the authenticated controller's identity on the Sentry scope. It
+// must run after auth.ControllerAuthentication.Middleware so the controller is available in the context;
+// if there is no authenticated controller it panics, since that is a wiring bug.
+func SetSentryUserFromControllerAuth(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if hub := sentry.GetHubFromContext(ctx); hub != nil {
-			auth := auth.AgentAuthentication.Require(ctx)
+			auth := auth.ControllerAuthentication.Require(ctx)
 			hub.Scope().SetUser(sentry.User{
 				ID: auth.CurrentDeploymentTargetID().String(),
 			})
@@ -299,7 +299,7 @@ var RequireOrgAndRole = auth.Authentication.ValidatorMiddleware(
 
 // RequireTokenScope rejects the request unless the authenticated credential was minted with the
 // given token scope. It restricts the password-setting endpoints to their dedicated special tokens:
-// regular login tokens, PATs and agent tokens carry the empty scope and are therefore rejected.
+// regular login tokens, PATs and controller tokens carry the empty scope and are therefore rejected.
 func RequireTokenScope(scope authjwt.TokenScope) func(http.Handler) http.Handler {
 	return auth.Authentication.ValidatorMiddleware(
 		func(value authinfo.AuthInfoWithUserAndOrganization) error {

@@ -13,12 +13,12 @@ type AuthInfo interface {
 	CurrentOrgID() *uuid.UUID
 	CurrentCustomerOrgID() *uuid.UUID
 	CurrentPartnerOrgID() *uuid.UUID
-	// CurrentDeploymentTargetID returns the deployment target an agent token was issued for, and nil for
-	// every credential that does not belong to an agent.
+	// CurrentDeploymentTargetID returns the deployment target a controller token was issued for, and nil for
+	// every credential that does not belong to a controller.
 	CurrentDeploymentTargetID() *uuid.UUID
 	CurrentUserEmailVerified() bool
 	// TokenScope returns the purpose a special, unscoped token was minted for, or the empty
-	// scope for regular login tokens, PATs and agent tokens.
+	// scope for regular login tokens, PATs and controller tokens.
 	TokenScope() authjwt.TokenScope
 	IsAccessToken() bool
 	// IsCustomOIDCSession reports whether an organization's own identity provider authenticated the
@@ -32,7 +32,7 @@ type AuthInfo interface {
 	Token() any
 }
 
-type AgentAuthInfo interface {
+type ControllerAuthInfo interface {
 	CurrentDeploymentTargetID() uuid.UUID
 	CurrentOrgID() uuid.UUID
 	Token() any

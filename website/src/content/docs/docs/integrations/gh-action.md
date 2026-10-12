@@ -15,7 +15,7 @@ It supports both Docker and Helm applications.
 ### Key Features
 
 - **Automatic Version Creation** - Create new application versions in Distr on every release
-- **Automatic Deployment Updates** - Optionally update all customer deployments to the new version, for a rollout your CI has to gate. Distr's own [automatic updates](/docs/agents/deployment/#automatic-updates) do this without the workflow, per deployment and for every way a version can be created
+- **Automatic Deployment Updates** - Optionally update all customer deployments to the new version, for a rollout your CI has to gate. Distr's own [automatic updates](/docs/controllers/deployment/#automatic-updates) do this without the workflow, per deployment and for every way a version can be created
 - **Docker Support** - Upload Docker Compose files with environment variable templates
 - **Helm Support** - Reference Helm charts from OCI or traditional repositories
 - **Multi-Organization** - Deploy to multiple Distr instances or organizations in parallel
@@ -47,7 +47,7 @@ jobs:
 
 ### Attaching Additional Resources
 
-The action can attach [additional resources](/docs/agents/application/#additional-resources) (markdown documents such as release notes or upgrade instructions) to the created version via the `resources` input.
+The action can attach [additional resources](/docs/controllers/application/#additional-resources) (markdown documents such as release notes or upgrade instructions) to the created version via the `resources` input.
 It takes a JSON array where each resource has a `name` and either inline `content` or a `path` to a file on the runner.
 With `visibleToCustomers` (defaults to `true`) you control whether a resource is shown to your customers.
 

@@ -51,8 +51,8 @@ import {SubscriptionComponent} from './subscription/subscription.component';
 import {SupportBundleDetailComponent} from './support-bundles/detail/support-bundle-detail.component';
 import {SupportBundleListComponent} from './support-bundles/list/support-bundle-list.component';
 import {SupportBundleSettingsComponent} from './support-bundles/vendor/support-bundle-settings.component';
-import {AgentsTutorialComponent} from './tutorials/agents/agents-tutorial.component';
 import {BrandingTutorialComponent} from './tutorials/branding/branding-tutorial.component';
+import {ControllersTutorialComponent} from './tutorials/controllers/controllers-tutorial.component';
 import {RegistryTutorialComponent} from './tutorials/registry/registry-tutorial.component';
 import {TutorialsComponent} from './tutorials/tutorials.component';
 import {UsersTutorialComponent} from './tutorials/users/users-tutorial.component';
@@ -460,8 +460,8 @@ export const routes: Routes = [
             component: UsersTutorialComponent,
           },
           {
-            path: 'agents',
-            component: AgentsTutorialComponent,
+            path: 'controllers',
+            component: ControllersTutorialComponent,
           },
           {
             path: 'branding',

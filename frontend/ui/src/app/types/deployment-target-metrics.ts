@@ -5,9 +5,9 @@ export interface DeploymentTargetLatestMetrics {
   cpuUsage: number;
   memoryBytes: number;
   memoryUsage: number;
-  agentCpuUsageMillis?: number;
-  agentMemoryBytes?: number;
-  agentLogBytes?: number;
+  controllerCpuUsageMillis?: number;
+  controllerMemoryBytes?: number;
+  controllerLogBytes?: number;
   imageBytes?: number;
   diskMetrics?: DeploymentTargetDiskMetric[];
 }

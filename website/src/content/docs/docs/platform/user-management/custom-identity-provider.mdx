@@ -29,7 +29,7 @@ Every domain carries its own set of providers. Nothing is inherited between them
 
 All three are configured under **Settings → Organization → Custom Domains & Identity Provider**, which is also where the domains themselves are registered. A customer's own domain additionally needs the **Custom Identity Provider** feature, which you grant per customer in the customer list.
 
-Domains added anywhere show a status panel next to them — green once the CNAME resolves to the expected target, red with the reason otherwise — so you can tell without leaving the page whether a provider is actually reachable yet. A domain is only used for links, mails, agent manifests and registry URLs once that check has succeeded; sign-in on the domain itself works as soon as it resolves here.
+Domains added anywhere show a status panel next to them — green once the CNAME resolves to the expected target, red with the reason otherwise — so you can tell without leaving the page whether a provider is actually reachable yet. A domain is only used for links, mails, controller manifests and registry URLs once that check has succeeded; sign-in on the domain itself works as soon as it resolves here.
 
 ## Requirements
 
@@ -78,7 +78,7 @@ Issuer URLs for the most common providers:
 
 A customer portal domain (e.g. `portal.your-company.com`) is the host all of your customers sign in on. Tick **Use a customer portal domain** in the **Customer Portal** section of the Custom Domains & Identity Provider tab, register it and create the shown CNAME record.
 
-Once it exists, it replaces your Vendor Portal domain in everything sent to a customer user: invitation links, password resets, email verification and notification mails. Your own team keeps the Vendor Portal domain, and agent manifests, connect commands and the artifact registry keep using it as well.
+Once it exists, it replaces your Vendor Portal domain in everything sent to a customer user: invitation links, password resets, email verification and notification mails. Your own team keeps the Vendor Portal domain, and controller manifests, connect commands and the artifact registry keep using it as well.
 
 Providers you attach to this domain apply to every customer at once. You cannot single out one customer here; a customer that needs its own provider gets its own domain instead.
 

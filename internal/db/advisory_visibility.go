@@ -46,7 +46,7 @@ func GetCustomerView(
 // ever exposed, which decides visibility, while this answers whether they still are, which is
 // what advisory.IsStillAffected reports.
 //
-// A deployment whose agent has not reported the newest revision as applied still runs the
+// A deployment whose controller has not reported the newest revision as applied still runs the
 // revision before it, so an upgrade away from an affected version clears the advisory only
 // once it has actually been applied. The current revision is NULL until the first applied
 // status arrives and for deployments whose last one has aged out, which falls back to the

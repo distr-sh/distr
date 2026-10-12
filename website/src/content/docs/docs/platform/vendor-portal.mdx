@@ -11,7 +11,7 @@ import ThemedImage from '~/components/util/ThemedImage.astro';
 import vendorPortalLight from '~/assets/docs/product/vendor-portal/vendor-portal-light.png';
 import vendorPortalDark from '~/assets/docs/product/vendor-portal/vendor-portal-dark.png';
 
-The Vendor Portal is the Distr UI for vendors. It gives you access to all Distr features, including [application creation](/docs/agents/application/), [artifact registry](/docs/registry/configuration/) management, and monitoring of end-customer deployment states. The [Customer Portal](/docs/platform/customer-portal/) gives end customers a simpler interface where they configure and manage their deployments. It also centralizes release information and instructions for operating the vendor's software.
+The Vendor Portal is the Distr UI for vendors. It gives you access to all Distr features, including [application creation](/docs/controllers/application/), [artifact registry](/docs/registry/configuration/) management, and monitoring of end-customer deployment states. The [Customer Portal](/docs/platform/customer-portal/) gives end customers a simpler interface where they configure and manage their deployments. It also centralizes release information and instructions for operating the vendor's software.
 
 <ThemedImage
   lightSrc={vendorPortalLight}
@@ -21,8 +21,8 @@ The Vendor Portal is the Distr UI for vendors. It gives you access to all Distr 
 
 ## Key Features
 
-1. **Dashboard**: View health status for agents and artifacts across all deployments at a glance.
-2. **Agents**: Add applications, create and manage deployments, set up [alerts](/docs/agents/alerts/), monitor deployment health, and view deployment logs. See the [Agents](/docs/agents/) section for details.
+1. **Dashboard**: View health status for controllers and artifacts across all deployments at a glance.
+2. **Controllers**: Add applications, create and manage deployments, set up [alerts](/docs/controllers/alerts/), monitor deployment health, and view deployment logs. See the [Controllers](/docs/controllers/) section for details.
 3. **Registry**: Browse and view consumption metrics of your [artifacts](/docs/registry/) in the _Registry_ section.
 4. **Licenses**: Manage entitlements and license keys per customer. Application Entitlements control which application versions customers can deploy, Artifact Entitlements control registry access, and License Keys let you issue signed tokens your application can use to enforce usage limits and feature access.
 5. **Customers**: Create and manage customer organizations, invite users, manage secrets, and control features per customer. See the [Customer Management](/docs/platform/customer-management/) guide for a detailed walkthrough; to invite users and assign roles, see [RBAC: Inviting Customer Organization Users](/docs/platform/rbac/#inviting-customer-organization-users).

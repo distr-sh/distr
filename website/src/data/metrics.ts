@@ -6,7 +6,7 @@ export type Metric = {
 
 export const metrics: Metric[] = [
   {value: '200+', label: 'Organizations', icon: 'lucide:building-2'},
-  {value: '15k+', label: 'Agent Downloads', icon: 'lucide:download'},
+  {value: '15k+', label: 'Controller Downloads', icon: 'lucide:download'},
   {value: '1200+', label: 'GitHub Stars', icon: 'lucide:star'},
   {value: '20+', label: 'Contributors', icon: 'lucide:git-pull-request'},
 ];

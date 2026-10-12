@@ -32,9 +32,9 @@ From the Customers page you can:
 
 - **Create customers** and give them a name
 - **Invite customer users** (name, email, and [role](/docs/platform/rbac/)) and manage access per customer
-- **Manage secrets** for a specific customer. See [Manage Secrets](/docs/agents/secrets/) for how secrets work
+- **Manage secrets** for a specific customer. See [Manage Secrets](/docs/controllers/secrets/) for how secrets work
 - **Manage links** that appear in that customer's [Customer Portal](/docs/platform/customer-portal/) sidebar
-- **Enable or disable features** per customer: Deployments, [Alerts](/docs/agents/alerts/), Artifacts, [Update Notifications](/docs/agents/update-notifications/), and [Support Bundles](/docs/platform/support-bundles/)
+- **Enable or disable features** per customer: Deployments, [Alerts](/docs/controllers/alerts/), Artifacts, [Update Notifications](/docs/controllers/update-notifications/) and [Support Bundles](/docs/platform/support-bundles/)
 
 Use the **Filter customers** search bar to find customers, and **+ Create Customer** to add a new one.
 
@@ -70,7 +70,7 @@ For each customer you can manage secrets that are only available to that custome
 1. In the **Customers** list, find the customer.
 2. Click **Manage secrets** for that customer.
 
-For how to create, edit, and use secrets (including customer-specific secrets), see [Manage Secrets](/docs/agents/secrets/).
+For how to create, edit, and use secrets (including customer-specific secrets), see [Manage Secrets](/docs/controllers/secrets/).
 
 ## Managing links per customer
 
@@ -100,7 +100,7 @@ Existing links can be edited or deleted at any time, and changes are visible to 
 
 You can control which features are available to each customer organization. The available features are:
 
-- **Deployments**: access to agent-based deployments
+- **Deployments**: access to controller-based deployments
 - **Alerts**: deployment health notifications (requires Deployments)
 - **Artifacts**: access to the artifact registry
 - **Update Notifications**: deciding which of their own users hears about a new application or artifact version

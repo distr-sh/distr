@@ -7,10 +7,6 @@ import (
 	"github.com/distr-sh/distr/internal/util"
 )
 
-type GetEnvOpts struct {
-	DeprecatedAlias string
-}
-
 func GetEnv(key string) string {
 	return os.Getenv(key)
 }
@@ -22,15 +18,22 @@ func GetEnvOrNil(key string) *string {
 	return nil
 }
 
-func GetEnvOrDefault(key, defaultValue string, opts GetEnvOpts) string {
+// ResolveDeprecatedAlias returns deprecatedAlias instead of key when only the former is set, warning about it,
+// so that the result can be passed on to any other function here.
+func ResolveDeprecatedAlias(key, deprecatedAlias string) string {
+	if _, ok := os.LookupEnv(key); !ok {
+		if _, ok := os.LookupEnv(deprecatedAlias); ok {
+			fmt.Fprintf(os.Stderr, "\nWARNING: use of deprecated variable \"%v\", please use \"%v\" instead\n\n",
+				deprecatedAlias, key)
+			return deprecatedAlias
+		}
+	}
+	return key
+}
+
+func GetEnvOrDefault(key, defaultValue string) string {
 	if value := GetEnv(key); value != "" {
 		return value
-	} else if opts.DeprecatedAlias != "" {
-		if value := GetEnv(opts.DeprecatedAlias); value != "" {
-			fmt.Fprintf(os.Stderr, "\nWARNING: use of deprecated variable \"%v\", please use \"%v\" instead\n\n",
-				opts.DeprecatedAlias, key)
-			return value
-		}
 	}
 	return defaultValue
 }

@@ -67,7 +67,7 @@
               @if (selectedDeployment(); as deployment) {
                 {{ deployment.application.name }}@{{ deployment.applicationVersionName }}
               } @else {
-                Agent Logs
+                Controller Logs
               }
               <fa-icon
                 class="transition duration-150 ease-in-out"
@@ -88,7 +88,7 @@
                 animate.leave="animate-flip-out-top">
                 <ul>
                   <li>
-                    <button class="distr-dropdown-item" (click)="selectDeployment(undefined)">Agent Logs</button>
+                    <button class="distr-dropdown-item" (click)="selectDeployment(undefined)">Controller Logs</button>
                   </li>
                   @for (deployment of selectedDeploymentTarget()?.deployments; track deployment.id) {
                     <li>
@@ -136,7 +136,7 @@
                   animate.leave="animate-flip-out-top">
                   <ul>
                     <li>
-                      <button class="distr-dropdown-item" (click)="selectDeployment(undefined)">Agent Logs</button>
+                      <button class="distr-dropdown-item" (click)="selectDeployment(undefined)">Controller Logs</button>
                     </li>
                     @if (visibleResources().length > 1) {
                       <li class="w-full border-t border-gray-100 dark:border-gray-600">

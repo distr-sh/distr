@@ -16,6 +16,7 @@ import {
   faBuilding,
   faChevronDown,
   faCreditCard,
+  faCube,
   faDashboard,
   faGear,
   faHandHoldingDollar,
@@ -48,7 +49,6 @@ import {PlanFeatureHintComponent} from '../plan-feature-hint.component';
 
 @Component({
   selector: 'app-side-bar',
-  standalone: true,
   templateUrl: './side-bar.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
@@ -80,6 +80,7 @@ export class SideBarComponent {
 
   protected readonly faDashboard = faDashboard;
   protected readonly faBoxesStacked = faBoxesStacked;
+  protected readonly faCube = faCube;
   protected readonly faLightbulb = faLightbulb;
   protected readonly faKey = faKey;
   protected readonly faGear = faGear;
@@ -100,7 +101,6 @@ export class SideBarComponent {
   protected readonly faHandHoldingDollar = faHandHoldingDollar;
   protected readonly faXmark = faXmark;
   protected feedbackAlert = true;
-  protected readonly agentsSubMenuOpen = signal(true);
   protected readonly registrySubMenuOpen = signal(true);
   protected readonly notificationsSubMenuOpen = signal(true);
   protected readonly licenseOverlayOpen = signal(false);

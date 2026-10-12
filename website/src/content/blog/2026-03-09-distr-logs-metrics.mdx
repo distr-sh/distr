@@ -38,17 +38,17 @@ From the vendor portal you can:
 - See CPU and memory utilization for each deployment target
 - Export logs as plain text for deeper analysis or support tickets
 
-Two log streams are available. Deployment logs are the actual stdout/stderr from your running containers, the same data you'd get from `docker logs` or `kubectl logs` if you had direct access. Agent logs capture what the Distr agent itself is doing, which is useful when you're debugging connectivity or update issues at the infrastructure level.
+Two log streams are available. Deployment logs are the actual stdout/stderr from your running containers, the same data you'd get from `docker logs` or `kubectl logs` if you had direct access. Controller logs capture what the Distr controller itself is doing, which is useful when you're debugging connectivity or update issues at the infrastructure level.
 
 Logs are batched every 30 seconds. Secrets you've configured in Distr are automatically redacted before anything is stored or displayed, so deployment credentials won't surface in a log line.
 
 ## How Distr collects Docker and Kubernetes logs without direct access
 
-The agent is already running inside the customer environment managing deployments. Logs and metrics collect on top of that, with no new footprint, no firewall rules, and nothing extra for your customer to configure.
+The controller is already running inside the customer environment managing deployments. Logs and metrics collect on top of that, with no new footprint, no firewall rules, and nothing extra for your customer to configure.
 
-For Docker and Docker Swarm, the agent pulls per-service logs via the Docker API and collects host CPU and memory using OpenTelemetry's host metrics receiver. For Kubernetes, it reads pod logs through the Kubernetes API and aggregates node-level resource data across the cluster via the metrics-server.
+For Docker and Docker Swarm, the controller pulls per-service logs via the Docker API and collects host CPU and memory using OpenTelemetry's host metrics receiver. For Kubernetes, it reads pod logs through the Kubernetes API and aggregates node-level resource data across the cluster via the metrics-server.
 
-Data flows from the agent directly to your vendor portal. You don't need network access to their environment. Your customer doesn't need to expose any ports or install anything additional.
+Data flows from the controller directly to your vendor portal. You don't need network access to their environment. Your customer doesn't need to expose any ports or install anything additional.
 
 ## What it looks like to debug a deployment you can't SSH into
 
@@ -64,9 +64,9 @@ We've seen it compress to a two-minute conversation. Customer reports an issue, 
 
 ## Getting started with logs and metrics in Distr
 
-If you're already running the Distr agent in customer environments, this is live. Open any deployment in your vendor portal, and the logs tab and resource metrics are there now.
+If you're already running the Distr controller in customer environments, this is live. Open any deployment in your vendor portal, and the logs tab and resource metrics are there now.
 
-The details (resource labeling, time-range filtering, log export format, Kubernetes metrics-server requirements) are all in the [agents documentation](/docs/agents/).
+The details (resource labeling, time-range filtering, log export format, Kubernetes metrics-server requirements) are all in the [controllers documentation](/docs/controllers/).
 
 If you're not using Distr yet and you ship software to [on-prem](/glossary/on-premises-definition/) or [self-hosted](/glossary/self-hosted-software/) environments, this is a good place to start. [Try it here](https://distr.sh/onboarding).
 

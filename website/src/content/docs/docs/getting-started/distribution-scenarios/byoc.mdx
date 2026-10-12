@@ -1,6 +1,6 @@
 ---
 title: Bring Your Own Cloud (BYOC)
-description: In BYOC deployments the Distr Docker agent deploys an infrastructure application onto a management VM in the end customer's cloud account, where it provisions and reconciles their infrastructure. The Distr Helm agent then deploys, manages and updates your application in the cluster that infrastructure application creates.
+description: In BYOC deployments the Distr Docker controller deploys an infrastructure application onto a management VM in the end customer's cloud account, where it provisions and reconciles their infrastructure. The Distr Kubernetes controller then deploys, manages and updates your application in the cluster that infrastructure application creates.
 slug: docs/use-cases/byoc-bring-your-own-cloud
 sidebar:
   label: BYOC
@@ -22,11 +22,11 @@ It suits organizations with strict data residency or compliance requirements tha
 
 BYOC runs on two independent Distr applications.
 
-The first is an infrastructure application: a Docker Compose application that the [Docker agent](/docs/agents/docker-agent/)
+The first is an infrastructure application: a Docker Compose application that the [Docker controller](/docs/controllers/docker-controller/)
 deploys onto a small management VM in the end customer's cloud account. It reconciles their infrastructure on a loop and
 creates the cluster and the resources your product needs. Its cloud credentials and its state stay in the customer's account.
 
-The second is your application. The [Kubernetes agent](/docs/agents/kubernetes-agent/) manages it in the cluster the
+The second is your application. The [Kubernetes controller](/docs/controllers/kubernetes-controller/) manages it in the cluster the
 infrastructure application created.
 
 Both are versioned Distr applications, so an infrastructure change ships like any application update: publish a new version
@@ -54,10 +54,10 @@ and roll it out. This keeps every managed BYOC customer on the same infrastructu
 {/* steps can't be indented due to prettier */}
 
 1. Set Up Your [Registry](/docs/registry/configuration/)
-2. Create Your [Application](/docs/agents/application/)
+2. Create Your [Application](/docs/controllers/application/)
 3. White-label the [Customer portal](/docs/platform/branding/)
 4. Onboard your first [customer](/docs/platform/rbac/#inviting-customer-organization-users)
 5. Reach out to the Distr team to connect the customer's target environment _(We are working hard on automating this step)_
-6. Manage deployments and updates of your app directly for the customer using the [Distr agents](/docs/agents/)
+6. Manage deployments and updates of your app directly for the customer using the [Distr controllers](/docs/controllers/)
 
 </Steps>

@@ -4,7 +4,9 @@ Guidance for Claude Code (claude.ai/code) and other agents working in this repos
 
 ## Project
 
-Distr distributes applications to self-managed customers. The Distr server runs in the cloud, agents run in customer environments and an OCI-compatible registry serves the artifacts.
+Distr distributes applications to self-managed customers. The Distr server runs in the cloud, controllers run in customer environments and an OCI-compatible registry serves the artifacts.
+
+The component in customer environments is the Distr Controller, never the agent. The name holds for user-facing text, docs, identifiers, file and folder names. Keep the former agent name only where installed controllers or self-hosted configurations depend on it: the deprecated `/api/v1/agent*` routes and the `agent*` fields controllers send to them, the JWT audience `agent`, the Kubernetes label `agent.distr.sh/deployment`, the Helm secrets `sh.distr.agent.v1.*`, the field managers `distr-agent*`, the manifest revisions older than the current one, the resource names and compose service of targets with `LegacyControllerName` (the `controllerName` template variable) and the `AGENT_*` env var aliases of Distr itself. Never add an `agent*` alias to the user-facing API or the SDK.
 
 That server is called Distr, never Hub. The name holds for user-facing text, for identifiers in configuration users write (Helm values, Compose services, Kubernetes labels) and for file, folder and mise task names. Reintroducing "Hub" anywhere is a regression.
 
@@ -13,7 +15,7 @@ That server is called Distr, never Hub. The name holds for user-facing text, for
 ## Repository layout
 
 - `cmd/distr/`: Distr itself, a Go backend on chi/v5 serving the REST API on `/api/v1` and the compiled frontend on `/`.
-- `cmd/agent/docker/`, `cmd/agent/kubernetes/`: the agents that run Docker Compose and Helm deployments in customer environments and report logs and metrics back.
+- `cmd/controller/docker/`, `cmd/controller/kubernetes/`: the controllers that run Docker Compose and Helm deployments in customer environments and report logs and metrics back.
 - `frontend/ui/`: the Angular app (standalone components, TailwindCSS 4, SCSS, Flowbite), built into `internal/frontend/dist/ui/`.
 - `sdk/js/`: `@distr-sh/distr-sdk`, a standalone pnpm project. Prefer its high-level `DistrService` over the low-level `Client`, and run its examples against the config in `src/examples/config.ts`.
 - `website/`: the docs and marketing site, a standalone pnpm project with a Prettier config of its own.
@@ -27,8 +29,8 @@ Build, test, lint and format through mise. Never invoke `go build`, `go test`, `
 
 ```sh
 mise run build:distr:community # includes the frontend
-mise run build:agent:docker
-mise run build:agent:kubernetes
+mise run build:controller:docker
+mise run build:controller:kubernetes
 mise run build:sdk             # after every SDK change
 mise run build:website
 mise run test:go
@@ -47,7 +49,7 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 - Pass dependencies into HTTP handlers via closure.
 - Return API errors through `internal/apierrors` so they carry a status code.
 - Log with zap: `logger.Info("message", zap.String("key", value))`.
-- Route what a dependency logs in an agent into the agent's zap logger with `agentlogging.Redirect`, which covers logrus and the standard library logger. Only what passes through zap reaches Distr, so anything else ends up in the agent's container output alone.
+- Route what a dependency logs in a controller into the controller's zap logger with `controllerlogging.Redirect`, which covers logrus and the standard library logger. Only what passes through zap reaches Distr, so anything else ends up in the controller's container output alone.
 - Report exceptions with `sentry.GetHubFromContext(ctx).CaptureException(err)`. Use `sentry.CurrentHub()` in a background job, since a job context carries no hub and taking one from it panics.
 - Give types in `internal/types` `db:` tags only. Never serialize one into a response and never embed one in an `api` type. `api.OrganizationResponse` and `api.LicenseKeyRevision` do embed one; they are legacy, do not copy them.
 - Give every endpoint its own struct in `api/` and put both conversion directions in `internal/mapping`: `XToAPI` for model to response, `XToInternal` for request to model, with `mapping.List(...)` for slices. Never assemble an `api.*` or `types.*` struct field by field in a handler.
@@ -186,7 +188,7 @@ Never trim a single request field by hand. `validation.TrimStrings` in `handlers
 
 ## API Routes
 
-Define routes in `internal/routing/`, grouped by what they authenticate with: public, user (JWT), admin, agent token and the OCI registry's own scheme.
+Define routes in `internal/routing/`, grouped by what they authenticate with: public, user (JWT), admin, controller token and the OCI registry's own scheme.
 
 Keep the OpenAPI spec valid, which the `chiopenapi` router generates from the route definitions. Declare path parameters, query parameters and request bodies with `option.Request()` and a struct using `path:`, `query:` and `json:` tags, composing path param structs with body request structs by embedding as the existing routes do. An endpoint with neither parameters nor a body needs no `option.Request()`.
 
@@ -227,7 +229,7 @@ Only write a test that could fail for a real reason. Every test is code that has
 - Do not write a test whose assertion is trivially true because the dependency it needs is not configured in tests.
 - Do test what is hard to get right and expensive to get wrong: wire formats sent to third parties, fail-closed security behavior, parsing, gating whose rule is more than one condition and non-trivial query or business logic. A single condition deciding who sees a field needs no test, however security relevant it is.
 - Prefer a few focused tests over an exhaustive matrix of near-duplicates.
-- Do not put a test in the agent `main` packages under `cmd/agent/`. They build their clients in package-level variables through `util.Require`, which panics before `TestMain` can set the agent's environment variables. Extract the part that needs no Docker or Kubernetes client into a package under `internal/` and test it there.
+- Do not put a test in the controller `main` packages under `cmd/controller/`. They build their clients in package-level variables through `util.Require`, which panics before `TestMain` can set the controller's environment variables. Extract the part that needs no Docker or Kubernetes client into a package under `internal/` and test it there.
 
 ## General rules
 
@@ -240,7 +242,7 @@ Only write a test that could fail for a real reason. Every test is code that has
 - Update `website/src/content/docs/docs/self-hosting/configuration.mdx` in the same change whenever you add, remove or change an environment variable in `internal/env/env.go`, including its default, whether it is required and the values it accepts.
 - Run `mise run build:helm-schema` after every change to `deploy/charts/distr/values.yaml`, since CI rejects a stale `values.schema.json`. Annotate a value with `# @schema` where the type inferred from the default is too narrow, an IntOrString field or an override a user sets to null being the cases, and render every file under `deploy/charts/distr/examples/` to confirm the schema still accepts them.
 - Use the GitHub CLI (`gh`) rather than the web interface to fetch data from GitHub.
-- Write shell for anything from a one-off command to a checked-in script (like `hack/validate-migrations.sh`), and Node once a task outgrows shell (like `hack/agent-changelog.mjs`). Avoid Python and never use Perl (e.g. `perl -pi -e`). Edit files directly rather than piping them through a stream editor.
+- Write shell for anything from a one-off command to a checked-in script (like `hack/validate-migrations.sh`), and Node once a task outgrows shell (like `hack/controller-changelog.mjs`). Avoid Python and never use Perl (e.g. `perl -pi -e`). Edit files directly rather than piping them through a stream editor.
 
 ## Code Review Instructions
 

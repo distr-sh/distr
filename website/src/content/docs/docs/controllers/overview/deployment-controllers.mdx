@@ -1,0 +1,82 @@
+---
+title: Deployment Controllers
+description: 'Overview of Distr deployment controllers: what they are, how they work, and how to manage them from the Vendor Portal.'
+slug: docs/controllers
+sidebar:
+  label: Deployment Controllers
+  order: 1
+---
+
+import {Aside} from '@astrojs/starlight/components';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import controllerApplicationsLight from '~/assets/docs/controllers/overview/deployment-controllers/controller-applications-light.png';
+import controllerApplicationsDark from '~/assets/docs/controllers/overview/deployment-controllers/controller-applications-dark.png';
+import controllerDeploymentLight from '~/assets/docs/controllers/overview/deployment-controllers/controller-deployment-light.png';
+import controllerDeploymentDark from '~/assets/docs/controllers/overview/deployment-controllers/controller-deployment-dark.png';
+
+Deployment controllers run inside customer environments alongside vendor applications. They connect Distr to deployment targets and manage the full deployment lifecycle while requiring minimal access to customer infrastructure.
+
+<Aside type="note">
+  Deployment controllers are the key components that enable the [Assisted
+  Self-Managed Customer](/docs/use-cases/assisted-self-managed/) and
+  [BYOC](/glossary/byoc-definition/) use cases.
+</Aside>
+
+Distr provides two deployment controllers:
+
+- **[Docker Controller](/docs/controllers/docker-controller/)**: manages Docker Compose deployments on any Linux host. Handles updates, environment variables, container health, and supports Docker Swarm mode.
+- **[Kubernetes Controller](/docs/controllers/kubernetes-controller/)**: manages Helm chart deployments in Kubernetes clusters. Supports cluster- and namespace-scoped permissions, value overrides, and migration of existing releases.
+
+[BYOC](/docs/use-cases/byoc-bring-your-own-cloud/) does not need a third controller type. You ship the infrastructure as an ordinary Compose application, and the Docker controller deploys it onto a management VM in the customer's cloud account.
+
+<Aside>
+  We are also working on a read-only version of the Distr controller that will
+  monitor deployment status and report logs and metrics without being able to
+  alter deployments.
+</Aside>
+
+## Controller Section in the Vendor Portal
+
+The Controllers section of the Vendor Portal has two parts.
+
+### Applications
+
+<ThemedImage
+  lightSrc={controllerApplicationsLight}
+  darkSrc={controllerApplicationsDark}
+  alt="Applications interface"
+/>
+
+The Applications section is where you define your software offerings: Docker Compose files or Helm charts, environment variable templates, and application versions. This is the foundation for all deployments.
+
+- [Create an Application](/docs/controllers/application/): set up Docker and Helm applications
+- [Create a Deployment](/docs/controllers/deployment/): deploy applications to customer environments
+
+### Deployments
+
+<ThemedImage
+  lightSrc={controllerDeploymentLight}
+  darkSrc={controllerDeploymentDark}
+  alt="Deployments interface"
+/>
+
+The Deployments section is the central health and management dashboard for all deployment targets. Use it to monitor real-time deployment status, view logs, and track state across all customer environments.
+
+For status indicators, log collection, and metrics, see [Logs & Metrics](/docs/controllers/logs-and-metrics/).
+
+### Deployment Target Menu
+
+Each deployment target card has a **⋮** (vertical ellipsis) menu in its top-right corner:
+
+- **Edit**: rename the target or change its configuration
+- **Update Controller**: apply a pending controller version update (only shown when an update is available). See [Controller Updates](#controller-updates) for details.
+- **Notes**: add internal notes visible to your team
+- **Controller Logs**: open the controller log viewer. See [Logs & Metrics](/docs/controllers/logs-and-metrics/#controller-logs) for details.
+- **Reconnect**: generate a new connection command (only shown when the controller has connected at least once). See [Reconnect](/docs/controllers/logs-and-metrics/#reconnect) for details.
+- **Delete**: remove the deployment target
+
+### Controller Updates
+
+Every deployment target runs a specific controller version, and each Distr instance ships the controller version that matches it. When a target is on an older version, the **Update Controller** action assigns it the version of that instance. The controller notices the change the next time it polls Distr and updates itself. Updating a controller does not restart the deployed application.
+
+Controllers can also update themselves without any interaction. When **automatic controller updates** are enabled for a target, Distr assigns it the current controller version on every start, so upgrading Distr updates those controllers along with it. The option can be set per target when creating a deployment, in the target settings, and in the **Update Controller** dialog. It is enabled by default for new deployment targets and disabled for targets that existed before the option was introduced.

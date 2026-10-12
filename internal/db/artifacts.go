@@ -56,7 +56,7 @@ const (
 			AS downloaded_by_customer_organizations `
 
 	// artifactPullOfCustomerOrgExpr matches pulls of the customer organization given as
-	// @customerOrganizationId, including those of its agents, which have no user account.
+	// @customerOrganizationId, including those of its controllers, which have no user account.
 	// Pulls that predate the customer_organization_id column are attributed via the puller's membership.
 	artifactPullOfCustomerOrgExpr = `
 		(avpl.customer_organization_id = @customerOrganizationId

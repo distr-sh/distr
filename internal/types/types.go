@@ -199,7 +199,7 @@ const (
 	DeploymentStatusTypeError       DeploymentStatusType = "error"
 )
 
-// IsApplied reports whether the status means the agent has the revision up and running, which is
+// IsApplied reports whether the status means the controller has the revision up and running, which is
 // everything a new status type should mean unless it explicitly does not.
 func (t DeploymentStatusType) IsApplied() bool {
 	return t != DeploymentStatusTypeProgressing && t != DeploymentStatusTypeError
@@ -295,7 +295,7 @@ const (
 	DeploymentTargetScopeNamespace DeploymentTargetScope = "namespace"
 
 	TutorialBranding      Tutorial  = "branding"
-	TutorialAgents        Tutorial  = "agents"
+	TutorialControllers   Tutorial  = "controllers"
 	TutorialRegistry      Tutorial  = "registry"
 	TutorialUsers         Tutorial  = "users"
 	FileScopePlatform     FileScope = "platform"

@@ -60,7 +60,7 @@ export class SubscriptionComponent implements OnInit {
 
   // Feature lists mirroring the pricing cards on https://distr.sh/pricing/
   protected readonly proPlanFeatures = [
-    'Docker + Kubernetes deployment agents',
+    'Docker + Kubernetes deployment controllers',
     'Customer Portal with installation instructions',
     'RBAC + Login with Google, GitHub & Microsoft',
     'License Management',

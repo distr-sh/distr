@@ -29,19 +29,19 @@ The team was looking for:
 
 ## Solution
 
-Basedash chose Distr to run their self-hosted distribution. Distr supports every deployment use case out of the box, from fully-managed agent-based deployments where you can push updates directly into customer infrastructure to teams who pull images from the registry themselves. It works for self-hosted customers at every level. Most importantly, it gives Basedash one central place for all their self-hosted customers. Distr is the "dedicated space" their team and customers use every day.
+Basedash chose Distr to run their self-hosted distribution. Distr supports every deployment use case out of the box, from fully-managed controller-based deployments where you can push updates directly into customer infrastructure to teams who pull images from the registry themselves. It works for self-hosted customers at every level. Most importantly, it gives Basedash one central place for all their self-hosted customers. Distr is the "dedicated space" their team and customers use every day.
 
 **How they use it:**
 
-- **Agent deployment (recommended):** Customers install the Distr agent with a single command from the customer portal. The agent pulls images, runs Docker Compose, and reports status. Basedash gets automatic updates and health visibility without touching customer servers.
+- **Controller deployment (recommended):** Customers install the Distr controller with a single command from the customer portal. The controller pulls images, runs Docker Compose, and reports status. Basedash gets automatic updates and health visibility without touching customer servers.
 - **Container deployment:** Teams that already have a setup for deploying self-hosted apps can pull images from the Distr registry using a PAT. They get full control over when and how to deploy.
-- **One place for all self-hosted customers:** Whether a customer uses the agent or pulls images themselves, every self-hosted deployment is visible and manageable from the same platform.
+- **One place for all self-hosted customers:** Whether a customer uses the controller or pulls images themselves, every self-hosted deployment is visible and manageable from the same platform.
 
-Basedash documents the full flow (agent install, registry auth, and machine specs) in their [self-hosting deploy guide](https://docs.basedash.com/self-hosting/deploy), so customers can get up and running without back-and-forth.
+Basedash documents the full flow (controller install, registry auth, and machine specs) in their [self-hosting deploy guide](https://docs.basedash.com/self-hosting/deploy), so customers can get up and running without back-and-forth.
 
 ## Result
 
-Basedash's self-hosted offering now runs through Distr. Customers get a clear path to deploy (agent or registry), and the team has a single place to manage self-hosted customers.
+Basedash's self-hosted offering now runs through Distr. Customers get a clear path to deploy (controller or registry), and the team has a single place to manage self-hosted customers.
 
 - **Less manual work:** No more ad-hoc token generation or credential spreadsheets. The Distr platform handles it.
 - **Better security:** Each target has its own credentials. Revoking access or rotating secrets is straightforward.

@@ -202,6 +202,6 @@ For most B2B vendors shipping to enterprise customers, compiled binaries, minima
 
 [Distr](/glossary/software-distribution-platform/) is built around this exact problem. You bring your Docker Compose or [Helm chart](/glossary/helm-chart/), upload it, and control which customers see which versions through [entitlements and license keys](/blog/license-key/). Everything goes through a private [OCI registry](/glossary/oci-container-artifact-registry/) that customers authenticate against. Nobody sees anything you have not explicitly granted them.
 
-On the customer side, our deployment agents handle installation with a single command. You get visibility into which version each customer is running, deployment logs, and health status from your vendor portal. Need to rotate images, push an update, or revoke access? One place.
+On the customer side, our deployment controllers handle installation with a single command. You get visibility into which version each customer is running, deployment logs, and health status from your vendor portal. Need to rotate images, push an update, or revoke access? One place.
 
 If you are shipping software to [self-hosted](/glossary/self-hosted-software/) customers and do not want to build the distribution plumbing yourself, [try Distr free for 30 days](https://distr.sh/onboarding/).

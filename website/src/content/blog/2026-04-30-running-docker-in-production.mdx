@@ -36,7 +36,7 @@ Most of the production incidents I have seen on Docker Compose hosts come from t
 
 Before the list of quirks, a quick word on the audience. Docker Compose is a declarative way to wire up a multi-container application: one YAML file describes the services, the networks between them, the volumes they share, the environment they need, and, through [the patterns for overwriting or patching service configuration](/blog/docker-compose-mount-config-files/), the on-disk configuration each application expects. `docker compose up` reconciles the host to that file. The sweet spot in production is the single-node deployment built around exactly that: a vendor pushing a multi-container application into a customer environment, an internal team running a long-tail service that does not justify a Kubernetes cluster, an edge box in a retail location. The footprint is small, the operational overhead is low, and a competent operator can reason about the whole stack from one `docker-compose.yaml`. There is no control plane behind Compose itself: no scheduler watching the host, no reconciler reapplying state, no operator pushing updates from somewhere else. `docker compose up` runs once and exits.
 
-That architectural simplicity is exactly why the quirks bite. Compose assumes you, or whoever runs the host, will do the operational work nothing else is doing, and if you ship Compose files to customers the safe assumption is that the customer will not. The rest of this post is about closing the gap between what Compose does and what a production host actually needs, either by hand or with an [agent](/docs/agents/docker-agent) that does it for you. If you have already concluded that the gap is too wide and want to compare with the next step up, read our [Docker Compose vs Kubernetes](/blog/docker-compose-vs-kubernetes/) breakdown.
+That architectural simplicity is exactly why the quirks bite. Compose assumes you, or whoever runs the host, will do the operational work nothing else is doing, and if you ship Compose files to customers the safe assumption is that the customer will not. The rest of this post is about closing the gap between what Compose does and what a production host actually needs, either by hand or with a [controller](/docs/controllers/docker-controller) that does it for you. If you have already concluded that the gap is too wide and want to compare with the next step up, read our [Docker Compose vs Kubernetes](/blog/docker-compose-vs-kubernetes/) breakdown.
 
 ## Docker Compose Orphan Containers and `--remove-orphans`
 
@@ -61,7 +61,7 @@ docker ps -a --filter label=com.docker.compose.project=<name>
   bounded to containers Compose itself created earlier under this project name.
 </Aside>
 
-Distr's Docker agent passes `RemoveOrphans: true` on every Compose `Up` call, so customer hosts never accumulate orphans across deployment updates. That single flag has eliminated a recurring class of "the old version is still answering on port 8080" support tickets.
+Distr's Docker controller passes `RemoveOrphans: true` on every Compose `Up` call, so customer hosts never accumulate orphans across deployment updates. That single flag has eliminated a recurring class of "the old version is still answering on port 8080" support tickets.
 
 ## Pruning Docker Images and Capping Container Logs
 
@@ -109,7 +109,7 @@ After `systemctl restart docker`, every new container will rotate its logs at 10
 
 This is one of the topics worth getting right before you ship.
 
-In Distr's Docker agent the cleanup is built in: each deployment target has an opt-out **container image cleanup** setting that removes the previous version's images automatically after a successful update, with retries on failure. It only fires on success, so the previous image stays on disk if something goes wrong and you need to roll back.
+In Distr's Docker controller the cleanup is built in: each deployment target has an opt-out **container image cleanup** setting that removes the previous version's images automatically after a successful update, with retries on failure. It only fires on success, so the previous image stays on disk if something goes wrong and you need to roll back.
 
 ## Docker Health Checks Don't Restart Unhealthy Containers
 
@@ -127,7 +127,7 @@ There are three answers to this:
 
 1. **Run an autoheal sidecar.** The community standard is [`willfarrell/docker-autoheal`](https://github.com/willfarrell/docker-autoheal): a tiny container that mounts the Docker socket, watches for `unhealthy` events, and restarts the offending container. You opt containers in by labeling them `autoheal=true` (or set `AUTOHEAL_CONTAINER_LABEL=all` to monitor everything).
 2. **Run on Docker Swarm.** Swarm restarts unhealthy tasks by default. If you are already considering Swarm, this is one of the better reasons.
-3. **Use Distr.** Every Distr Docker agent deploys an adapted autoheal service alongside it. The "Enable autoheal for all containers" toggle is on by default at deployment-target creation, so customer-side restarts of unhealthy containers happen without anyone configuring it.
+3. **Use Distr.** Every Distr Docker controller deploys an adapted autoheal service alongside it. The "Enable autoheal for all containers" toggle is on by default at deployment-target creation, so customer-side restarts of unhealthy containers happen without anyone configuring it.
 
 <Aside type="note">
   In Distr the autoheal setting is fixed at deployment-target creation and
@@ -188,7 +188,7 @@ Practical hygiene:
 - **Consider socket-proxy.** Projects like Tecnativa's `docker-socket-proxy` expose a filtered subset of the API to the container that needs it (e.g. read-only `containers` and `events` for monitoring) instead of the full socket.
 - **Keep socket-mounting images minimal.** Smaller surface, fewer libraries, fewer ways in.
 
-The Distr Docker agent does mount the socket. It has to, in order to orchestrate Compose and Swarm on the host. We document that boundary openly in the [Docker agent docs](/docs/agents/docker-agent) so customer security teams can review it before installation. The agent authenticates to Distr with a JWT, and the install secret is shown once and never stored.
+The Distr Docker controller does mount the socket. It has to, in order to orchestrate Compose and Swarm on the host. We document that boundary openly in the [Docker controller docs](/docs/controllers/docker-controller) so customer security teams can review it before installation. The controller authenticates to Distr with a JWT, and the install secret is shown once and never stored.
 
 ## Updating Docker Compose Deployments Across Customer Hosts
 
@@ -198,7 +198,7 @@ The usual workarounds and what they cost:
 
 - **[Watchtower](https://github.com/containrrr/watchtower):** Polls the registry on a schedule, pulls new images, recreates containers. Easy to set up, hard to control. No staged rollout, no rollback path, limited visibility from your side: you find out a customer updated when they file a ticket.
 - **Bastion + SSH + Ansible/scripts:** Works for ten customers. Falls apart at fifty, especially when three of them are air-gapped and four run their own change-control cadence. Every operator has to live with shared keys and a maintenance window calendar.
-- **A pull-based agent.** This is the shape Distr lands on. The agent runs on the customer host, polls a known endpoint every 5 seconds, and reconciles the local Compose state against what Distr says it should be. The agent reports status back, so you can see in your dashboard which customers are on which version. When the agent itself needs to update, it spawns a separate container to perform the swap so it is not trying to replace itself while running.
+- **A pull-based agent.** This is the shape Distr lands on. The Distr controller runs on the customer host, polls a known endpoint every 5 seconds, and reconciles the local Compose state against what Distr says it should be. The controller reports status back, so you can see in your dashboard which customers are on which version. When the controller itself needs to update, it spawns a separate container to perform the swap so it is not trying to replace itself while running.
 
 The pattern is not unique, Kubernetes operators and GitOps tools do the same thing, but Compose users routinely re-invent it badly. If you find yourself building one, at least give it rollback, status reporting, and a way to pin versions, or you will end up with a fleet that drifts in ways you cannot see.
 
@@ -220,7 +220,7 @@ Docker Swarm is the other option. It reuses the Compose YAML format, ships in th
   is the safer long-term bet.
 </Aside>
 
-The Distr agent supports both. Distr records whether a deployment is Compose or Swarm, and the agent runs the matching `docker compose up` or `docker stack deploy`. If you do choose Swarm, read our [routing and Traefik guide for Docker Swarm](/blog/docker-swarm-load-balancing-routing/) and the [product walkthrough for distributing applications to Swarm](/blog/distr-docker-swarm/) for the details.
+The Distr controller supports both. Distr records whether a deployment is Compose or Swarm, and the controller runs the matching `docker compose up` or `docker stack deploy`. If you do choose Swarm, read our [routing and Traefik guide for Docker Swarm](/blog/docker-swarm-load-balancing-routing/) and the [product walkthrough for distributing applications to Swarm](/blog/distr-docker-swarm/) for the details.
 
 ## So, should you run plain Docker Compose in production?
 
@@ -236,4 +236,4 @@ Yes, plain Docker Compose still runs a lot of real production workloads in 2026,
 - Updates need an agent of some kind. Watchtower is fine for one host; not for a fleet.
 - When Compose stops being enough, Kubernetes is usually the right next step. Swarm is a narrower fit and worth picking eyes-open.
 
-If you ship software to self-hosted customers and you would rather not rebuild this list yourself, the Distr Docker agent handles all of the above on the customer side. The [Docker agent documentation](/docs/agents/docker-agent) walks through the install, the socket model, the autoheal and image-cleanup defaults, and how the agent self-updates. The repository is on [GitHub](https://github.com/distr-sh/distr).
+If you ship software to self-hosted customers and you would rather not rebuild this list yourself, the Distr Docker controller handles all of the above on the customer side. The [Docker controller documentation](/docs/controllers/docker-controller) walks through the install, the socket model, the autoheal and image-cleanup defaults, and how the controller self-updates. The repository is on [GitHub](https://github.com/distr-sh/distr).

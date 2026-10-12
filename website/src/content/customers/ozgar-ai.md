@@ -36,26 +36,26 @@ For a team focused on product velocity, that time had to go somewhere else. The 
 
 ## Solution
 
-Ozgar AI adopted Distr to standardize how it delivers its on-prem offering. Instead of treating each install as a custom project, Distr gives Ozgar AI one workflow for creating deployment targets, connecting agents, shipping updates and checking customer environments after rollout.
+Ozgar AI adopted Distr to standardize how it delivers its on-prem offering. Instead of treating each install as a custom project, Distr gives Ozgar AI one workflow for creating deployment targets, connecting controllers, shipping updates and checking customer environments after rollout.
 
-The team packages Ozgar AI as a Docker Compose deployment and ships it through Distr. When a new enterprise customer is ready to go live, they log into the Distr customer portal, configure the application and set their environment variables through the UI. From there, they get a single setup command that handles the full installation. The Distr agent connects their environment back to Ozgar AI's platform, and the team has the visibility it needs from that point on without ever requiring direct access to the customer's infrastructure.
+The team packages Ozgar AI as a Docker Compose deployment and ships it through Distr. When a new enterprise customer is ready to go live, they log into the Distr customer portal, configure the application and set their environment variables through the UI. From there, they get a single setup command that handles the full installation. The Distr controller connects their environment back to Ozgar AI's platform, and the team has the visibility it needs from that point on without ever requiring direct access to the customer's infrastructure.
 
 **How they use Distr:**
 
 - **Guided onboarding via the customer portal:** Customers configure their application and environment variables through the Distr Customer Portal, then run a single command that sets everything up. No scheduled call required.
-- **Deployment agents:** Distr agents connect customer environments back to Ozgar AI's deployment workflow, so the team can manage releases without needing direct access to the customer's infrastructure.
+- **Deployment controllers:** Distr controllers connect customer environments back to Ozgar AI's deployment workflow, so the team can manage releases without needing direct access to the customer's infrastructure.
 - **Logs and health visibility:** The team can see whether deployments are healthy and inspect logs when something needs attention, without asking the customer to dig through their own infrastructure.
 - **Support bundles:** When a customer needs help, support data can be collected through Distr instead of relying on long back-and-forth debugging sessions across environment boundaries.
 - **Versioned updates:** Ozgar AI can keep deployments current with a consistent release process while customers stay in control of the version they run.
 
-Distr gave Ozgar AI the operational tooling out of the box, from deployment agents to logs and support bundles, so the team could keep supporting self-hosted deployments without turning every account into a custom operations project.
+Distr gave Ozgar AI the operational tooling out of the box, from deployment controllers to logs and support bundles, so the team could keep supporting self-hosted deployments without turning every account into a custom operations project.
 
 ## Result
 
 The shift was most visible in what no longer had to happen: setup calls scheduled around environment differences, debugging sessions that required customers to dig through their own servers, manual tracking of which version each customer was running.
 
 - **Up and running in minutes, supported at scale:** The guided install path is repeatable across customers, so onboarding no longer depends on a bespoke call for every deployment.
-- **Full visibility without direct access:** Deployment agents, logs, support bundles and release controls give the team what it needs to operate and support every customer environment.
+- **Full visibility without direct access:** Deployment controllers, logs, support bundles and release controls give the team what it needs to operate and support every customer environment.
 - **On-prem delivery that scales:** The same platform covers the first install, updates and ongoing support, so the customer base can grow without operational overhead growing with it.
 
 The result is a self-hosted offering that behaves like a managed product: customers get a clean, guided install path and can run Ozgar AI in their environment, while the team retains the visibility it needs to keep every deployment healthy.
