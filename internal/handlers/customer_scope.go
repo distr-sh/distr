@@ -38,8 +38,7 @@ func resolveCustomerScopeFromQuery(w http.ResponseWriter, r *http.Request) (*uui
 	if value := r.URL.Query().Get("customerOrganizationId"); value != "" {
 		id, err := uuid.Parse(value)
 		if err != nil {
-			http.Error(w, "invalid customer organization ID", http.StatusBadRequest)
-			return nil, false
+			return respondInvalidCustomerScope(w)
 		}
 		requested = &id
 	}
@@ -49,39 +48,37 @@ func resolveCustomerScopeFromQuery(w http.ResponseWriter, r *http.Request) (*uui
 // resolveCustomerScope returns the customer a request operates on, or nil for the vendor's own
 // organization. It answers the request and returns false when the caller may not reach it.
 func resolveCustomerScope(w http.ResponseWriter, r *http.Request, requested *uuid.UUID) (*uuid.UUID, bool) {
-	a := auth.Authentication.Require(r.Context())
+	ctx := r.Context()
+	a := auth.Authentication.Require(ctx)
 
 	if customerOrgID := a.CurrentCustomerOrgID(); customerOrgID != nil {
 		if requested != nil && *requested != *customerOrgID {
-			http.Error(w, "invalid customer organization ID", http.StatusBadRequest)
-			return nil, false
+			return respondInvalidCustomerScope(w)
 		}
 		return customerOrgID, true
-	}
-
-	partnerOrgID := a.CurrentPartnerOrgID()
-
-	if requested == nil && partnerOrgID != nil {
-		http.Error(w, "customer organization ID is required", http.StatusBadRequest)
-		return nil, false
-	}
-
-	if requested == nil {
-		return nil, true
-	}
-
-	ctx := r.Context()
-	var err error
-	if partnerOrgID != nil {
-		err = db.ValidateCustomerOrgBelongsToPartnerOrg(ctx, *requested, *partnerOrgID)
+	} else if partnerOrgID := a.CurrentPartnerOrgID(); partnerOrgID != nil {
+		if requested == nil {
+			http.Error(w, "customer organization ID is required", http.StatusBadRequest)
+			return nil, false
+		}
+		if err := db.ValidateCustomerOrgBelongsToPartnerOrg(ctx, *requested, *partnerOrgID); err != nil {
+			return respondInvalidCustomerScope(w)
+		}
+		return requested, true
 	} else {
-		err = db.ValidateCustomerOrgBelongsToOrg(ctx, *requested, *a.CurrentOrgID())
+		if requested == nil {
+			return nil, true
+		}
+		if err := db.ValidateCustomerOrgBelongsToOrg(ctx, *requested, *a.CurrentOrgID()); err != nil {
+			return respondInvalidCustomerScope(w)
+		}
+		return requested, true
 	}
-	if err != nil {
-		http.Error(w, "invalid customer organization ID", http.StatusBadRequest)
-		return nil, false
-	}
-	return requested, true
+}
+
+func respondInvalidCustomerScope(w http.ResponseWriter) (*uuid.UUID, bool) {
+	http.Error(w, "invalid customer organization ID", http.StatusBadRequest)
+	return nil, false
 }
 
 func requireCustomerOidcProvidersFeature(w http.ResponseWriter, r *http.Request, customerOrgID uuid.UUID) bool {
