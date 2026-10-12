@@ -38,23 +38,21 @@ const features = [
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 mt-8 md:mt-16">
-      {
-        features.map(feature => (
-          <div class="text-center px-4 md:px-6">
-            <div class="relative inline-flex items-center justify-center w-20 h-20 md:w-24 md:h-24 mb-6 rounded-full bg-gradient-to-br from-[#00b5eb] to-[#63c5e3] p-1">
-              <div class="w-full h-full rounded-full bg-white dark:bg-gray-900 flex items-center justify-center">
-                <Icon name={feature.icon} class="text-4xl" />
-              </div>
+      {features.map(feature => (
+        <div class="text-center px-4 md:px-6">
+          <div class="relative inline-flex items-center justify-center w-20 h-20 md:w-24 md:h-24 mb-6 rounded-full bg-gradient-to-br from-[#00b5eb] to-[#63c5e3] p-1">
+            <div class="w-full h-full rounded-full bg-white dark:bg-gray-900 flex items-center justify-center">
+              <Icon name={feature.icon} class="text-4xl" />
             </div>
-            <h3 class="text-xl md:text-2xl font-bold mb-3 md:mb-4">
-              {feature.title}
-            </h3>
-            <p class="text-base md:text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-              {feature.description}
-            </p>
           </div>
-        ))
-      }
+          <h3 class="text-xl md:text-2xl font-bold mb-3 md:mb-4">
+            {feature.title}
+          </h3>
+          <p class="text-base md:text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
+            {feature.description}
+          </p>
+        </div>
+      ))}
     </div>
   </div>
 </section>

@@ -12,20 +12,18 @@ const currentYear = new Date().getFullYear();
 ---
 
 <footer class="sl-flex">
-  {
-    !isSplashTemplate && (
-      <>
-        <div class="meta sl-flex">
-          <EditLink />
-          <LastUpdated />
-        </div>
-        <Pagination />
-        <DocsCta />
-        <AskAi class="items-center text-center" />
-        <div class="kudos sl-flex">© {currentYear} Glasskube, Inc.</div>
-      </>
-    )
-  }
+  {!isSplashTemplate && (
+    <>
+      <div class="meta sl-flex">
+        <EditLink />
+        <LastUpdated />
+      </div>
+      <Pagination />
+      <DocsCta />
+      <AskAi class="items-center text-center" />
+      <div class="kudos sl-flex">© {currentYear} Glasskube, Inc.</div>
+    </>
+  )}
   {isSplashTemplate && <DistrFooter />}
 </footer>
 
