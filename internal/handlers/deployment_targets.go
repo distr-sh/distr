@@ -137,10 +137,7 @@ func createDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 	} else {
 		dt := mapping.CreateDeploymentTargetToInternal(request)
 		dt.ControllerVersionID = &controllerVersion.ID
-		var requestedCustomerOrgID *uuid.UUID
-		if request.CustomerOrganization != nil && request.CustomerOrganization.ID != uuid.Nil {
-			requestedCustomerOrgID = &request.CustomerOrganization.ID
-		}
+		requestedCustomerOrgID := dt.CustomerOrganizationID
 		if auth.CurrentPartnerOrgID() != nil && requestedCustomerOrgID == nil {
 			http.Error(w, "partner users must assign a deployment target to a customer", http.StatusForbidden)
 			return

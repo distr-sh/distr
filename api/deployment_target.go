@@ -10,8 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-// EntityReference has the shape of the nested object in a response, since clients send back the
-// deployment target they received.
+// EntityReference is the shape of the deprecated nested references that clients written against the
+// response model send instead of a flat id.
 type EntityReference struct {
 	ID uuid.UUID `json:"id"`
 }
@@ -77,11 +77,13 @@ func (s *DeploymentTargetSettings) Validate(deploymentType types.DeploymentType)
 
 type CreateDeploymentTargetRequest struct {
 	DeploymentTargetSettings
-	Type                 types.DeploymentType         `json:"type"`
-	Namespace            *string                      `json:"namespace,omitempty"`
-	Scope                *types.DeploymentTargetScope `json:"scope,omitempty"`
-	AutohealEnabled      bool                         `json:"autohealEnabled"`
-	CustomerOrganization *EntityReference             `json:"customerOrganization,omitempty"`
+	Type                   types.DeploymentType         `json:"type"`
+	Namespace              *string                      `json:"namespace,omitempty"`
+	Scope                  *types.DeploymentTargetScope `json:"scope,omitempty"`
+	AutohealEnabled        bool                         `json:"autohealEnabled"`
+	CustomerOrganizationID *uuid.UUID                   `json:"customerOrganizationId,omitempty"`
+	// Deprecated: CustomerOrganization is what clients sent before CustomerOrganizationID existed.
+	CustomerOrganization *EntityReference `json:"customerOrganization,omitempty" deprecated:"true"`
 }
 
 func (r *CreateDeploymentTargetRequest) Validate() error {
@@ -115,7 +117,9 @@ func (r *CreateDeploymentTargetRequest) Validate() error {
 
 type UpdateDeploymentTargetRequest struct {
 	DeploymentTargetSettings
-	ControllerVersion *EntityReference `json:"controllerVersion,omitempty"`
+	ControllerVersionID *uuid.UUID `json:"controllerVersionId,omitempty"`
+	// Deprecated: ControllerVersion is what clients sent before ControllerVersionID existed.
+	ControllerVersion *EntityReference `json:"controllerVersion,omitempty" deprecated:"true"`
 }
 
 type DeploymentTargetAccessTokenResponse struct {
