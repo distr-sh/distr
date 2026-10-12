@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/internal/contenttype"
@@ -100,8 +101,17 @@ func runTxOrRespond(ctx context.Context, w http.ResponseWriter, f func(ctx conte
 }
 
 func JsonBody[T any](w http.ResponseWriter, r *http.Request) (T, error) {
+	return decodeJson[T](w, r.Body)
+}
+
+// JsonFormValue reads the JSON that a multipart request carries in a form field next to its files.
+func JsonFormValue[T any](w http.ResponseWriter, r *http.Request, key string) (T, error) {
+	return decodeJson[T](w, strings.NewReader(r.FormValue(key)))
+}
+
+func decodeJson[T any](w http.ResponseWriter, reader io.Reader) (T, error) {
 	var t T
-	err := json.NewDecoder(r.Body).Decode(&t)
+	err := json.NewDecoder(reader).Decode(&t)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	} else {

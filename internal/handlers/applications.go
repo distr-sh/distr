@@ -2,12 +2,10 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"slices"
-	"strings"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
@@ -19,7 +17,6 @@ import (
 	"github.com/distr-sh/distr/internal/notification"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
-	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -186,8 +183,8 @@ func createApplication(w http.ResponseWriter, r *http.Request) {
 	request, err := JsonBody[api.CreateApplicationRequest](w, r)
 	if err != nil {
 		return
-	} else if request.Name == "" {
-		http.Error(w, "name is required", http.StatusBadRequest)
+	} else if err := request.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -269,6 +266,10 @@ func patchApplicationHandler() http.HandlerFunc {
 		previousStrategy := existing.VersioningStrategy
 		patched := *existing
 		if patch.Name != nil {
+			if *patch.Name == "" {
+				http.Error(w, "name is required", http.StatusBadRequest)
+				return
+			}
 			patched.Name = *patch.Name
 		}
 		if patch.VersioningStrategy != nil {
@@ -469,14 +470,13 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 
-	body := r.FormValue("applicationversion")
-	var request api.CreateApplicationVersionRequest
-	if err := json.NewDecoder(strings.NewReader(body)).Decode(&request); err != nil {
-		log.Error("failed to decode version", zap.Error(err))
-		w.WriteHeader(http.StatusBadRequest)
+	request, err := JsonFormValue[api.CreateApplicationVersionRequest](w, r, "applicationversion")
+	if err != nil {
+		return
+	} else if err := request.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	validation.TrimStrings(&request)
 
 	application := internalctx.GetApplication(ctx)
 	applicationVersion := mapping.CreateApplicationVersionToInternal(request)
@@ -517,7 +517,6 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := applicationVersion.Validate(application.Type); err != nil {
-		log.Error("invalid application version", zap.Error(err))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
