@@ -12,25 +12,9 @@ import (
 )
 
 const (
-	overviewActivityLimit = 50
+	overviewActivityLimit = 25
 	overviewActivityDays  = 90
 )
-
-// overviewCustomerPullsExpr is a CTE of the pulls of the customer organization given as
-// @customerOrganizationId. It matches the same pulls as artifactPullOfCustomerOrgExpr, split into two
-// branches so that each can use an index instead of evaluating the OR for every pull.
-const overviewCustomerPullsExpr = `
-	customer_pull AS (
-		SELECT avpl.id, avpl.created_at, avpl.artifact_version_id, avpl.useraccount_id, avpl.deployment_target_id
-		FROM ArtifactVersionPull avpl
-		WHERE avpl.customer_organization_id = @customerOrganizationId
-		UNION ALL
-		SELECT avpl.id, avpl.created_at, avpl.artifact_version_id, avpl.useraccount_id, avpl.deployment_target_id
-		FROM Organization_UserAccount oua
-			JOIN ArtifactVersionPull avpl
-				ON avpl.useraccount_id = oua.user_account_id AND avpl.customer_organization_id IS NULL
-		WHERE oua.customer_organization_id = @customerOrganizationId
-	)`
 
 // overviewCustomerMemberJoin joins oua for the user u only when that user is a member of the customer
 // organization, which decides whether a customer may see who did something.
@@ -74,50 +58,14 @@ func GetOverviewDeployments(
 	return result, nil
 }
 
-// GetOverviewLatestArtifactPulls returns the most recent pull of the customer organization for each of
-// the given artifacts that it has pulled at all.
-func GetOverviewLatestArtifactPulls(
-	ctx context.Context,
-	orgID, customerOrgID uuid.UUID,
-	artifactIDs []uuid.UUID,
-) ([]types.OverviewArtifactPull, error) {
-	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(ctx,
-		`WITH `+overviewCustomerPullsExpr+`
-		SELECT DISTINCT ON (v.artifact_id)
-			v.artifact_id,
-			v.name AS version_name,
-			v.manifest_blob_digest,
-			p.created_at,
-			u.name AS user_name,
-			u.image_id AS user_image_id,
-			dt.name AS deployment_target_name
-		FROM customer_pull p
-			JOIN ArtifactVersion v ON v.id = p.artifact_version_id
-			JOIN Artifact a ON a.id = v.artifact_id
-			LEFT JOIN UserAccount u ON u.id = p.useraccount_id
-			LEFT JOIN DeploymentTarget dt ON dt.id = p.deployment_target_id
-		WHERE a.organization_id = @orgId AND v.artifact_id = any(@artifactIds)
-		ORDER BY v.artifact_id, p.created_at DESC`,
-		pgx.NamedArgs{"orgId": orgID, "customerOrganizationId": customerOrgID, "artifactIds": artifactIDs},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query overview artifact pulls: %w", err)
-	}
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.OverviewArtifactPull])
-	if err != nil {
-		return nil, fmt.Errorf("failed to collect overview artifact pulls: %w", err)
-	}
-	return result, nil
-}
-
 func GetOverviewChecklist(
 	ctx context.Context,
 	orgID, customerOrgID, userID uuid.UUID,
 ) (*types.OverviewChecklist, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		`SELECT
+		`WITH `+customerOrgPullsExpr+`
+		SELECT
 			EXISTS (
 				SELECT 1 FROM UserAccount u WHERE u.id = @userId AND (u.image_id IS NOT NULL OR u.mfa_enabled)
 			) AS profile_completed,
@@ -137,12 +85,10 @@ func GetOverviewChecklist(
 				SELECT 1 FROM AccessToken t WHERE t.user_account_id = @userId AND t.organization_id = @orgId
 			) AS access_token_created,
 			EXISTS (
-				SELECT 1 FROM ArtifactVersionPull avpl WHERE avpl.customer_organization_id = @customerOrganizationId
-			) OR EXISTS (
-				SELECT 1 FROM Organization_UserAccount oua
-					JOIN ArtifactVersionPull avpl
-						ON avpl.useraccount_id = oua.user_account_id AND avpl.customer_organization_id IS NULL
-				WHERE oua.customer_organization_id = @customerOrganizationId
+				SELECT 1 FROM customer_pull p
+					JOIN ArtifactVersion v ON v.id = p.artifact_version_id
+					JOIN Artifact a ON a.id = v.artifact_id
+				WHERE a.organization_id = @orgId
 			) AS artifact_pulled`,
 		pgx.NamedArgs{"orgId": orgID, "customerOrganizationId": customerOrgID, "userId": userID},
 	)
@@ -233,27 +179,57 @@ func GetOverviewAlertSummary(
 	return &result, nil
 }
 
+// GetOverviewSupportBundles returns the support bundles of the customer organization, most recently updated
+// first. A bundle is updated by whoever last changed its status, or else by its creator.
+func GetOverviewSupportBundles(
+	ctx context.Context,
+	orgID, customerOrgID uuid.UUID,
+) ([]types.OverviewSupportBundle, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT sb.id, sb.title, sb.status, coalesce(sb.status_changed_at, sb.created_at) AS updated_at,
+			CASE WHEN oua.user_account_id IS NOT NULL THEN u.name END AS user_name,
+			CASE WHEN oua.user_account_id IS NOT NULL THEN u.image_id END AS user_image_id
+		FROM SupportBundle sb
+			LEFT JOIN UserAccount u ON u.id = CASE
+				WHEN sb.status_changed_at IS NOT NULL THEN sb.status_changed_by_user_account_id
+				ELSE sb.created_by_user_account_id
+			END
+			`+overviewCustomerMemberJoin+`
+		WHERE sb.organization_id = @orgId AND sb.customer_organization_id = @customerOrganizationId
+		ORDER BY updated_at DESC`,
+		pgx.NamedArgs{"orgId": orgID, "customerOrganizationId": customerOrgID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query overview support bundles: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.OverviewSupportBundle])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect overview support bundles: %w", err)
+	}
+	return result, nil
+}
+
 // GetOverviewActivity returns the most recent events a customer organization is shown on its overview.
 // Each branch is limited on its own, so that it can stop early on its created_at index, before the union
-// is limited as a whole.
+// is limited as a whole. A branch the filter excludes returns nothing.
 //
-// Versions of applications and artifacts are restricted to those the customer is entitled to when
-// entitledApplicationsOnly and entitledArtifactsOnly are set, which mirrors the visibility of the
-// application and artifact lists: an artifact entitlement for specific versions covers every tag that
-// points to the same manifest as one of them.
+// An artifact entitlement for specific versions covers every tag that points to the same manifest as one
+// of them.
 func GetOverviewActivity(
 	ctx context.Context,
 	orgID, customerOrgID uuid.UUID,
-	entitledApplicationsOnly, entitledArtifactsOnly bool,
+	filter types.OverviewActivityFilter,
 ) ([]types.OverviewActivity, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		`WITH
 		application_version_created AS (
-			SELECT av.id, av.created_at, a.name AS subject, av.name AS detail
+			SELECT av.id, av.created_at, a.id AS resource_id, a.name AS subject, av.name AS detail
 			FROM Application a
 				JOIN ApplicationVersion av ON av.application_id = a.id
-			WHERE a.organization_id = @orgId
+			WHERE @includeDeployments
+				AND a.organization_id = @orgId
 				AND av.created_at > now() - make_interval(days => @days::INT)
 				AND av.archived_at IS NULL
 				AND (NOT @entitledApplicationsOnly OR EXISTS (
@@ -275,10 +251,11 @@ func GetOverviewActivity(
 			LIMIT @limit
 		),
 		artifact_version_created AS (
-			SELECT v.id, v.created_at, ar.name AS subject, v.name AS detail
+			SELECT v.id, v.created_at, ar.id AS resource_id, ar.name AS subject, v.name AS detail
 			FROM Artifact ar
 				JOIN ArtifactVersion v ON v.artifact_id = ar.id
-			WHERE ar.organization_id = @orgId
+			WHERE @includeArtifacts
+				AND ar.organization_id = @orgId
 				AND v.created_at > now() - make_interval(days => @days::INT)
 				AND `+artifactVersionIsReleaseTagExpr("v")+`
 				AND (NOT @entitledArtifactsOnly OR ar.public OR EXISTS (
@@ -296,7 +273,8 @@ func GetOverviewActivity(
 			LIMIT @limit
 		),
 		artifact_version_first_pulled AS (
-			SELECT fp.id, fp.created_at, avc.subject, avc.detail, u.name AS user_name, u.image_id AS user_image_id
+			SELECT fp.id, fp.created_at, avc.resource_id, avc.subject, avc.detail,
+				u.name AS user_name, u.image_id AS user_image_id
 			FROM artifact_version_created avc
 				CROSS JOIN LATERAL (
 					SELECT DISTINCT ON (avpl.useraccount_id) avpl.id, avpl.created_at, avpl.useraccount_id
@@ -309,7 +287,8 @@ func GetOverviewActivity(
 				JOIN UserAccount u ON u.id = fp.useraccount_id
 		),
 		deployment_revision_created AS (
-			SELECT dr.id, dr.created_at, a.name AS subject, av.name || ' on ' || dt.name AS detail,
+			SELECT dr.id, dr.created_at, dt.id AS resource_id, a.name AS subject,
+				av.name || ' on ' || dt.name AS detail,
 				CASE WHEN oua.user_account_id IS NOT NULL THEN u.name END AS user_name,
 				CASE WHEN oua.user_account_id IS NOT NULL THEN u.image_id END AS user_image_id
 			FROM DeploymentTarget dt
@@ -319,70 +298,83 @@ func GetOverviewActivity(
 				JOIN Application a ON a.id = av.application_id
 				LEFT JOIN UserAccount u ON u.id = dr.created_by_user_account_id
 				`+overviewCustomerMemberJoin+`
-			WHERE dt.organization_id = @orgId
+			WHERE @includeDeployments
+				AND dt.organization_id = @orgId
 				AND dt.customer_organization_id = @customerOrganizationId
 				AND dr.created_at > now() - make_interval(days => @days::INT)
 			ORDER BY dr.created_at DESC
 			LIMIT @limit
 		),
 		license_key_revision AS (
-			SELECT lr.id, lr.created_at, lk.name AS subject,
+			SELECT lr.id, lr.created_at, lk.id AS resource_id, lk.name AS subject,
 				EXISTS (
 					SELECT 1 FROM LicenseKeyRevision prev
 					WHERE prev.license_key_id = lr.license_key_id AND prev.created_at < lr.created_at
 				) AS is_update
 			FROM LicenseKey lk
 				JOIN LicenseKeyRevision lr ON lr.license_key_id = lk.id
-			WHERE lk.organization_id = @orgId
+			WHERE @includeLicensing
+				AND lk.organization_id = @orgId
 				AND lk.customer_organization_id = @customerOrganizationId
 				AND lr.created_at > now() - make_interval(days => @days::INT)
 			ORDER BY lr.created_at DESC
 			LIMIT @limit
 		),
 		support_bundle_created AS (
-			SELECT sb.id, sb.created_at, sb.title AS subject, u.name AS user_name, u.image_id AS user_image_id
+			SELECT sb.id, sb.created_at, sb.id AS resource_id, sb.title AS subject,
+				CASE WHEN oua.user_account_id IS NOT NULL THEN u.name END AS user_name,
+				CASE WHEN oua.user_account_id IS NOT NULL THEN u.image_id END AS user_image_id
 			FROM SupportBundle sb
 				LEFT JOIN UserAccount u ON u.id = sb.created_by_user_account_id
-			WHERE sb.organization_id = @orgId
+				`+overviewCustomerMemberJoin+`
+			WHERE @includeSupportBundles
+				AND sb.organization_id = @orgId
 				AND sb.customer_organization_id = @customerOrganizationId
 				AND sb.created_at > now() - make_interval(days => @days::INT)
 			ORDER BY sb.created_at DESC
 			LIMIT @limit
 		),
 		support_bundle_status_changed AS (
-			SELECT sb.id, sb.status_changed_at AS created_at, sb.title AS subject, sb.status::TEXT AS detail,
-				u.name AS user_name, u.image_id AS user_image_id
+			SELECT sb.id, sb.status_changed_at AS created_at, sb.id AS resource_id, sb.title AS subject,
+				sb.status::TEXT AS detail,
+				CASE WHEN oua.user_account_id IS NOT NULL THEN u.name END AS user_name,
+				CASE WHEN oua.user_account_id IS NOT NULL THEN u.image_id END AS user_image_id
 			FROM SupportBundle sb
 				LEFT JOIN UserAccount u ON u.id = sb.status_changed_by_user_account_id
-			WHERE sb.organization_id = @orgId
+				`+overviewCustomerMemberJoin+`
+			WHERE @includeSupportBundles
+				AND sb.organization_id = @orgId
 				AND sb.customer_organization_id = @customerOrganizationId
 				AND sb.status_changed_at > now() - make_interval(days => @days::INT)
 			ORDER BY sb.status_changed_at DESC
 			LIMIT @limit
 		)
 		SELECT * FROM (
-			SELECT id, created_at, 'application_version_created' AS type, subject, detail,
+			SELECT id, created_at, 'application_version_created' AS type, resource_id, subject, detail,
 				NULL::TEXT AS user_name, NULL::UUID AS user_image_id
 			FROM application_version_created
 			UNION ALL
-			SELECT id, created_at, 'artifact_version_created', subject, detail, NULL::TEXT, NULL::UUID
+			SELECT id, created_at, 'artifact_version_created', resource_id, subject, detail, NULL::TEXT, NULL::UUID
 			FROM artifact_version_created
 			UNION ALL
-			SELECT id, created_at, 'artifact_version_first_pulled', subject, detail, user_name, user_image_id
+			SELECT id, created_at, 'artifact_version_first_pulled', resource_id, subject, detail,
+				user_name, user_image_id
 			FROM artifact_version_first_pulled
 			UNION ALL
-			SELECT id, created_at, 'deployment_revision_created', subject, detail, user_name, user_image_id
+			SELECT id, created_at, 'deployment_revision_created', resource_id, subject, detail,
+				user_name, user_image_id
 			FROM deployment_revision_created
 			UNION ALL
 			SELECT id, created_at,
 				CASE WHEN is_update THEN 'license_key_updated' ELSE 'license_key_created' END,
-				subject, NULL::TEXT AS detail, NULL::TEXT AS user_name, NULL::UUID AS user_image_id
+				resource_id, subject, NULL::TEXT AS detail, NULL::TEXT AS user_name, NULL::UUID AS user_image_id
 			FROM license_key_revision
 			UNION ALL
-			SELECT id, created_at, 'support_bundle_created', subject, NULL, user_name, user_image_id
+			SELECT id, created_at, 'support_bundle_created', resource_id, subject, NULL, user_name, user_image_id
 			FROM support_bundle_created
 			UNION ALL
-			SELECT id, created_at, 'support_bundle_status_changed', subject, detail, user_name, user_image_id
+			SELECT id, created_at, 'support_bundle_status_changed', resource_id, subject, detail,
+				user_name, user_image_id
 			FROM support_bundle_status_changed
 		) activity
 		ORDER BY created_at DESC
@@ -390,8 +382,12 @@ func GetOverviewActivity(
 		pgx.NamedArgs{
 			"orgId":                    orgID,
 			"customerOrganizationId":   customerOrgID,
-			"entitledApplicationsOnly": entitledApplicationsOnly,
-			"entitledArtifactsOnly":    entitledArtifactsOnly,
+			"includeDeployments":       filter.Deployments,
+			"includeArtifacts":         filter.Artifacts,
+			"includeLicensing":         filter.Licensing,
+			"includeSupportBundles":    filter.SupportBundles,
+			"entitledApplicationsOnly": filter.EntitledApplicationsOnly,
+			"entitledArtifactsOnly":    filter.EntitledArtifactsOnly,
 			"days":                     overviewActivityDays,
 			"limit":                    overviewActivityLimit,
 		},

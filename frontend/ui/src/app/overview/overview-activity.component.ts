@@ -50,6 +50,7 @@ export class OverviewActivityComponent {
         userImageIsLogo: byVendor,
         action: action(activity),
         icon: icon(activity),
+        ...link(activity),
       };
     })
   );
@@ -74,6 +75,26 @@ function icon({type}: OverviewActivity): IconDefinition {
     case 'support_bundle_created':
     case 'support_bundle_status_changed':
       return faLifeRing;
+    default:
+      return never(type);
+  }
+}
+
+function link({type, resourceId, subject}: OverviewActivity): Pick<ActivityTimelineEntry, 'link' | 'queryParams'> {
+  switch (type) {
+    case 'application_version_created':
+      return {link: '/deployments', queryParams: {search: subject}};
+    case 'artifact_version_created':
+    case 'artifact_version_first_pulled':
+      return {link: `/artifacts/${resourceId}`};
+    case 'deployment_revision_created':
+      return {link: `/deployments/${resourceId}`};
+    case 'license_key_created':
+    case 'license_key_updated':
+      return {link: '/license-keys'};
+    case 'support_bundle_created':
+    case 'support_bundle_status_changed':
+      return {link: `/support/${resourceId}`};
     default:
       return never(type);
   }

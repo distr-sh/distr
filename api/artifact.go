@@ -22,17 +22,17 @@ type CreateArtifactRequest struct {
 // PatchArtifactRequest supports partial updates: omitted fields are left unchanged.
 // For auth, explicit null clears the credentials.
 type PatchArtifactRequest struct {
-	UpstreamURL *string                        `json:"upstreamUrl,omitempty"`
-	Auth        Nullable[ArtifactUpstreamAuth] `json:"auth"`
-	Public      *bool                          `json:"public,omitempty"`
-	// HiddenInCustomerOverview leaves the artifact out of the artifact list on a customer's overview page.
-	HiddenInCustomerOverview *bool `json:"hiddenInCustomerOverview,omitempty"`
+	UpstreamURL              *string                        `json:"upstreamUrl,omitempty"`
+	Auth                     Nullable[ArtifactUpstreamAuth] `json:"auth"`
+	Public                   *bool                          `json:"public,omitempty"`
+	HiddenInCustomerOverview *bool                          `json:"hiddenInCustomerOverview,omitempty"`
 }
 
 type ArtifactResponse struct {
 	types.ArtifactWithTaggedVersion
-	ImageUrl      *string `json:"imageUrl,omitempty"`
-	TitleImageUrl *string `json:"titleImageUrl,omitempty"`
+	ImageUrl                 *string `json:"imageUrl,omitempty"`
+	TitleImageUrl            *string `json:"titleImageUrl,omitempty"`
+	HiddenInCustomerOverview bool    `json:"hiddenInCustomerOverview"`
 }
 
 type ArtifactPullStatusResponse struct {
@@ -41,8 +41,9 @@ type ArtifactPullStatusResponse struct {
 
 type ArtifactsResponse struct {
 	types.ArtifactWithDownloads
-	ImageUrl      *string `json:"imageUrl,omitempty"`
-	TitleImageUrl *string `json:"titleImageUrl,omitempty"`
+	ImageUrl                 *string `json:"imageUrl,omitempty"`
+	TitleImageUrl            *string `json:"titleImageUrl,omitempty"`
+	HiddenInCustomerOverview bool    `json:"hiddenInCustomerOverview"`
 }
 
 type ArtifactVersionPullResponse struct {

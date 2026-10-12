@@ -106,6 +106,7 @@ export interface OverviewActivity {
   id: string;
   createdAt: string;
   type: OverviewActivityType;
+  resourceId: string;
   subject: string;
   detail?: string;
   user?: OverviewUser;

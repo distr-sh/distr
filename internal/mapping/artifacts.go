@@ -10,13 +10,15 @@ func ArtifactToAPI(a types.ArtifactWithTaggedVersion) api.ArtifactResponse {
 		ArtifactWithTaggedVersion: a,
 		ImageUrl:                  CreateImageURL(a.ImageID),
 		TitleImageUrl:             CreateImageURL(a.TitleImageID),
+		HiddenInCustomerOverview:  a.HiddenInCustomerOverview,
 	}
 }
 
 func ArtifactsWithDownloadsToAPI(a types.ArtifactWithDownloads) api.ArtifactsResponse {
 	return api.ArtifactsResponse{
-		ArtifactWithDownloads: a,
-		ImageUrl:              CreateImageURL(a.ImageID),
-		TitleImageUrl:         CreateImageURL(a.TitleImageID),
+		ArtifactWithDownloads:    a,
+		ImageUrl:                 CreateImageURL(a.ImageID),
+		TitleImageUrl:            CreateImageURL(a.TitleImageID),
+		HiddenInCustomerOverview: a.HiddenInCustomerOverview,
 	}
 }

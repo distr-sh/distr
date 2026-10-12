@@ -43,8 +43,7 @@ type OverviewDeployment struct {
 
 type OverviewArtifactsResponse struct {
 	Artifacts []OverviewArtifact `json:"artifacts"`
-	// HasPulled includes the artifacts hidden in the overview, which Artifacts leaves out.
-	HasPulled bool `json:"hasPulled"`
+	HasPulled bool               `json:"hasPulled"`
 }
 
 type OverviewArtifact struct {
@@ -99,10 +98,11 @@ type OverviewSupportBundle struct {
 }
 
 type OverviewActivity struct {
-	ID        uuid.UUID                  `json:"id"`
-	CreatedAt time.Time                  `json:"createdAt"`
-	Type      types.OverviewActivityType `json:"type"`
-	Subject   string                     `json:"subject"`
-	Detail    *string                    `json:"detail,omitempty"`
-	User      *OverviewUser              `json:"user,omitempty"`
+	ID         uuid.UUID                  `json:"id"`
+	CreatedAt  time.Time                  `json:"createdAt"`
+	Type       types.OverviewActivityType `json:"type"`
+	ResourceID uuid.UUID                  `json:"resourceId"`
+	Subject    string                     `json:"subject"`
+	Detail     *string                    `json:"detail,omitempty"`
+	User       *OverviewUser              `json:"user,omitempty"`
 }

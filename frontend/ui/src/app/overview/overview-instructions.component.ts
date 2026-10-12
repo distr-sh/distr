@@ -10,6 +10,7 @@ import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
 })
 export class OverviewInstructionsComponent {
   public readonly description = input.required<string>();
+  public readonly dismissible = input(true);
   public readonly dismissed = output<void>();
 
   protected readonly faChevronDown = faChevronDown;

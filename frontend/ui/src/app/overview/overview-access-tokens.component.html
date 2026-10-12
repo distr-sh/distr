@@ -1,27 +1,33 @@
-<a routerLink="/settings/access-tokens" class="distr-card block p-6 hover:shadow-md transition-shadow">
+<div class="distr-card relative block p-6 hover:shadow-md transition-shadow">
   <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-    <fa-icon [icon]="faCode" class="me-2 text-gray-500 dark:text-gray-400" />
-    Access tokens
+    <a routerLink="/settings/access-tokens" class="after:absolute after:inset-0">
+      <fa-icon [icon]="faCode" class="me-2 text-gray-500 dark:text-gray-400" />
+      Access tokens
+    </a>
   </h2>
 
-  <ul class="flex flex-col gap-2 text-sm">
+  <ul class="flex flex-col gap-1 -mx-2 text-sm">
     @for (token of tokens(); track token.id) {
-      <li class="flex items-center justify-between gap-4">
-        <span class="truncate font-medium text-gray-900 dark:text-white">{{ token.label || 'Unnamed token' }}</span>
-        @if (token.expired) {
-          <span
-            class="distr-status-badge bg-red-100 text-red-800 border-red-400 dark:bg-red-900 dark:text-red-300 dark:border-red-800"
-            [title]="token.expiresAt | date: 'medium'">
-            Expired {{ token.expiresAt | relativeDate }}
-          </span>
-        } @else {
-          <span
-            class="distr-status-badge bg-yellow-100 text-yellow-800 border-yellow-400 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-800"
-            [title]="token.expiresAt | date: 'medium'">
-            Expires {{ token.expiresAt | relativeDate }}
-          </span>
-        }
+      <li>
+        <a
+          [routerLink]="['/settings/access-tokens', token.id]"
+          class="relative z-10 flex items-center justify-between gap-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+          <span class="truncate font-medium text-gray-900 dark:text-white">{{ token.label || 'Unnamed token' }}</span>
+          @if (token.expired) {
+            <span
+              class="distr-status-badge bg-red-100 text-red-800 border-red-400 dark:bg-red-900 dark:text-red-300 dark:border-red-800"
+              [title]="token.expiresAt | date: 'medium'">
+              Expired {{ token.expiresAt | relativeDate }}
+            </span>
+          } @else {
+            <span
+              class="distr-status-badge bg-yellow-100 text-yellow-800 border-yellow-400 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-800"
+              [title]="token.expiresAt | date: 'medium'">
+              Expires {{ token.expiresAt | relativeDate }}
+            </span>
+          }
+        </a>
       </li>
     }
   </ul>
-</a>
+</div>

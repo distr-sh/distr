@@ -67,8 +67,9 @@ func OverviewDeploymentToAPI(
 
 func OverviewArtifactToAPI(
 	a types.ArtifactWithDownloads,
-	latest *types.ArtifactVersion,
-	pull *types.OverviewArtifactPull,
+	latestTag string,
+	pull *types.CustomerArtifactPull,
+	pullIsLatest bool,
 ) api.OverviewArtifact {
 	result := api.OverviewArtifact{
 		ID:            a.ID,
@@ -76,8 +77,8 @@ func OverviewArtifactToAPI(
 		ImageURL:      CreateImageURL(a.ImageID),
 		TitleImageURL: CreateImageURL(a.TitleImageID),
 	}
-	if latest != nil {
-		result.LatestVersionName = &latest.Name
+	if latestTag != "" {
+		result.LatestVersionName = &latestTag
 	}
 	if pull != nil {
 		result.LastPull = &api.OverviewArtifactPull{
@@ -85,7 +86,7 @@ func OverviewArtifactToAPI(
 			CreatedAt:            pull.CreatedAt,
 			PulledBy:             overviewUserToAPI(pull.UserName, pull.UserImageID),
 			DeploymentTargetName: pull.DeploymentTargetName,
-			IsLatest:             latest == nil || latest.ManifestBlobDigest == pull.ManifestBlobDigest,
+			IsLatest:             pullIsLatest,
 		}
 	}
 	return result
@@ -117,28 +118,24 @@ func OverviewAccessTokenToAPI(t types.AccessToken, expiresAt time.Time) api.Over
 	return api.OverviewAccessToken{ID: t.ID, Label: t.Label, ExpiresAt: expiresAt}
 }
 
-func OverviewSupportBundleToAPI(b types.SupportBundleWithDetails) api.OverviewSupportBundle {
-	result := api.OverviewSupportBundle{
+func OverviewSupportBundleToAPI(b types.OverviewSupportBundle) api.OverviewSupportBundle {
+	return api.OverviewSupportBundle{
 		ID:        b.ID,
 		Title:     b.Title,
 		Status:    b.Status,
-		UpdatedAt: b.CreatedAt,
-		UpdatedBy: overviewUserToAPI(b.CreatedByUserName, b.CreatedByImageID),
+		UpdatedAt: b.UpdatedAt,
+		UpdatedBy: overviewUserToAPI(b.UserName, b.UserImageID),
 	}
-	if b.StatusChangedAt != nil {
-		result.UpdatedAt = *b.StatusChangedAt
-		result.UpdatedBy = overviewUserToAPI(b.StatusChangedByUserName, b.StatusChangedByImageID)
-	}
-	return result
 }
 
 func OverviewActivityToAPI(a types.OverviewActivity) api.OverviewActivity {
 	return api.OverviewActivity{
-		ID:        a.ID,
-		CreatedAt: a.CreatedAt,
-		Type:      a.Type,
-		Subject:   a.Subject,
-		Detail:    a.Detail,
-		User:      overviewUserToAPI(a.UserName, a.UserImageID),
+		ID:         a.ID,
+		CreatedAt:  a.CreatedAt,
+		Type:       a.Type,
+		ResourceID: a.ResourceID,
+		Subject:    a.Subject,
+		Detail:     a.Detail,
+		User:       overviewUserToAPI(a.UserName, a.UserImageID),
 	}
 }

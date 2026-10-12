@@ -1,6 +1,7 @@
-import {DatePipe} from '@angular/common';
+import {DatePipe, NgTemplateOutlet} from '@angular/common';
 import {ChangeDetectionStrategy, Component, input, output} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {Params, RouterLink} from '@angular/router';
 import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
 import {faPaperPlane} from '@fortawesome/free-solid-svg-icons';
 import {AvatarComponent} from '../avatar.component';
@@ -21,6 +22,9 @@ export interface ActivityTimelineEntry {
   /** Represents the action. The action then leads the entry and the user follows below it. */
   icon?: IconDefinition;
   body?: string;
+  /** Makes the entry a link to the page that shows what it is about. */
+  link?: string;
+  queryParams?: Params;
 }
 
 @Component({
@@ -30,7 +34,7 @@ export interface ActivityTimelineEntry {
   // Without an explicit display the host stays inline, which silently drops the vertical
   // margins that the surrounding space-y and mb utilities put on it.
   host: {class: 'block'},
-  imports: [DatePipe, ReactiveFormsModule, FaIconComponent, AvatarComponent],
+  imports: [DatePipe, NgTemplateOutlet, ReactiveFormsModule, RouterLink, FaIconComponent, AvatarComponent],
 })
 export class ActivityTimelineComponent {
   public readonly entries = input.required<ActivityTimelineEntry[]>();

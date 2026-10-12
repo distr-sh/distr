@@ -1,7 +1,9 @@
+import {NgTemplateOutlet} from '@angular/common';
 import {HttpErrorResponse} from '@angular/common/http';
-import {Component, computed, inject, signal} from '@angular/core';
+import {Component, computed, inject, linkedSignal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {CustomerOrganizationFeature} from '@distr-sh/distr-sdk';
+import {faClockRotateLeft} from '@fortawesome/free-solid-svg-icons';
 import {
   catchError,
   combineLatest,
@@ -16,6 +18,7 @@ import {
   take,
 } from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {LoadingCardComponent} from '../components/loading-card/loading-card.component';
 import {PageComponent} from '../components/page.component';
 import {ApplicationsService} from '../services/applications.service';
 import {AuthService} from '../services/auth.service';
@@ -34,12 +37,17 @@ import {OverviewInstructionsComponent} from './overview-instructions.component';
 import {OverviewLicenseComponent} from './overview-license.component';
 import {OverviewSupportBundlesComponent} from './overview-support-bundles.component';
 
-const instructionsHiddenKey = 'overview.instructionsHidden';
+function storedInstructionsHidden(key: string | undefined): boolean | undefined {
+  const stored = key ? sessionStorage.getItem(key) : null;
+  return stored === null ? undefined : stored === 'true';
+}
 
 @Component({
   selector: 'app-overview-page',
   templateUrl: './overview-page.component.html',
   imports: [
+    NgTemplateOutlet,
+    LoadingCardComponent,
     PageComponent,
     OverviewInstructionsComponent,
     OverviewDeploymentsComponent,
@@ -61,15 +69,23 @@ export class OverviewPageComponent {
   private readonly organizationService = inject(OrganizationService);
   private readonly toast = inject(ToastService);
 
+  protected readonly faClockRotateLeft = faClockRotateLeft;
+
   protected readonly canWrite = this.auth.hasAnyRole('read_write', 'admin');
   protected readonly isAdmin = this.auth.hasRole('admin');
 
-  private readonly features$ = this.context.getCustomerOrganization().pipe(
-    map((customerOrganization) => customerOrganization?.features ?? []),
-    take(1),
-    shareReplay(1)
+  private readonly customerOrganization$ = this.context.getCustomerOrganization().pipe(take(1), shareReplay(1));
+  private readonly features$ = this.customerOrganization$.pipe(
+    map((customerOrganization) => customerOrganization?.features ?? [])
   );
   private readonly features = toSignal(this.features$);
+  // Session storage outlives a logout, so the key is per customer to keep one account's choice from leaking
+  // into the next one signed in in the same tab.
+  private readonly instructionsHiddenKey = toSignal(
+    this.customerOrganization$.pipe(
+      map((customerOrganization) => `overview.instructionsHidden.${customerOrganization?.id ?? 'none'}`)
+    )
+  );
   private readonly deploymentsEnabled = computed(() => this.features()?.includes('deployment_targets') ?? false);
   private readonly artifactsEnabled = computed(() => this.features()?.includes('artifacts') ?? false);
 
@@ -118,7 +134,7 @@ export class OverviewPageComponent {
     if (this.canDeploy()) {
       return 'deployments';
     }
-    if (this.artifactsEnabled()) {
+    if (this.artifactsEnabled() && !artifacts.hasPulled && artifacts.artifacts.length > 0) {
       return 'artifacts';
     }
     return 'none';
@@ -135,18 +151,25 @@ export class OverviewPageComponent {
     )
   );
   protected readonly vendorLogo = computed(() => this.branding()?.logoImageId);
-  protected readonly instructions = computed(() => {
-    const description = this.branding()?.description || undefined;
-    const targets = this.deploymentTargets();
-    const artifacts = this.artifacts();
-    if (!description || !targets || !artifacts) {
-      return undefined;
-    }
-    return targets.some((target) => target.deployments.length > 0) || artifacts.hasPulled ? undefined : description;
-  });
-  protected readonly instructionsHidden = signal(sessionStorage.getItem(instructionsHiddenKey) === 'true');
+  protected readonly instructions = computed(() => this.branding()?.description || undefined);
+  private readonly instructionsHiddenChoice = linkedSignal(() =>
+    storedInstructionsHidden(this.instructionsHiddenKey())
+  );
+  private readonly instructionsHiddenByDefault = computed(
+    () => !!(this.deploymentTargets()?.some((target) => target.deployments.length > 0) || this.artifacts()?.hasPulled)
+  );
+  private readonly instructionsHidden = computed(
+    () => this.instructionsHiddenChoice() ?? this.instructionsHiddenByDefault()
+  );
+  // Without a primary section the instructions are all the page has to show.
+  protected readonly instructionsDismissible = computed(() => this.primarySection() !== 'none');
+  protected readonly visibleInstructions = computed(() =>
+    this.primarySection() === undefined || (this.instructionsHidden() && this.instructionsDismissible())
+      ? undefined
+      : this.instructions()
+  );
   protected readonly instructionsRestorable = computed(
-    () => this.instructions() !== undefined && this.instructionsHidden()
+    () => this.instructions() !== undefined && this.instructionsHidden() && this.instructionsDismissible()
   );
 
   protected readonly checklistSection = computed<OverviewPrimarySection | undefined>(() => {
@@ -159,12 +182,12 @@ export class OverviewPageComponent {
     return this.artifactsEnabled() ? 'artifacts' : 'none';
   });
 
-  protected readonly checklist = toSignal(this.overview.getChecklist().pipe(this.recover(undefined)));
+  protected readonly checklist = toSignal(this.overview.getChecklist().pipe(this.recover(null)));
   protected readonly checklistCompleted = computed(() => {
     const checklist = this.checklist();
     const section = this.checklistSection();
     return (
-      checklist !== undefined &&
+      !!checklist &&
       checklist.profileCompleted &&
       checklist.teamMembersInvited &&
       (section !== 'deployments' || (checklist.deploymentCreated && checklist.secretCreated)) &&
@@ -205,16 +228,28 @@ export class OverviewPageComponent {
     )
   );
 
+  // The checklist is requested for every customer, so until it has loaded the panels next to the activity
+  // are assumed to exist, which keeps the activity from moving out of the full width once they appear.
+  protected readonly hasPanels = computed(
+    () =>
+      this.checklist() === undefined ||
+      (!!this.checklist() && this.checklistSection() !== undefined && !this.checklistCompleted()) ||
+      this.license() !== undefined ||
+      this.alerts() !== undefined ||
+      this.accessTokens().length > 0 ||
+      this.supportBundles() !== undefined
+  );
+
   protected readonly activity = toSignal(this.overview.getActivity().pipe(this.recover([])));
+  protected readonly activityShown = computed(() => this.activity()?.length !== 0);
   protected readonly vendorName = toSignal(this.organizationService.get().pipe(map((org) => org.name)));
 
   protected setInstructionsHidden(hidden: boolean) {
-    if (hidden) {
-      sessionStorage.setItem(instructionsHiddenKey, 'true');
-    } else {
-      sessionStorage.removeItem(instructionsHiddenKey);
+    const key = this.instructionsHiddenKey();
+    if (key) {
+      sessionStorage.setItem(key, String(hidden));
     }
-    this.instructionsHidden.set(hidden);
+    this.instructionsHiddenChoice.set(hidden);
   }
 
   protected reloadDeploymentTargets() {

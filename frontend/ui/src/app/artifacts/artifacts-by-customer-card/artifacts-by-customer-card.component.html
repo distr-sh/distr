@@ -48,7 +48,7 @@
           </div>
 
           <div class="flex items-center gap-1">
-            @if (isOnLatest(artifact)) {
+            @if (artifact.isLatest) {
               <div class="size-3 rounded-full bg-lime-600"></div>
               Latest
             } @else {

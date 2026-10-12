@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"slices"
-	"time"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
@@ -222,43 +220,42 @@ func syncArtifactHandler() http.HandlerFunc {
 }
 
 func getArtifacts(w http.ResponseWriter, r *http.Request) {
-	if artifacts, _, err := visibleArtifacts(r.Context()); err != nil {
+	if artifacts, err := visibleArtifacts(r.Context()); err != nil {
 		respondInternalError(w, r, err, "failed to get artifacts")
 	} else {
 		RespondJSON(w, mapping.List(artifacts, mapping.ArtifactsWithDownloadsToAPI))
 	}
 }
 
-// visibleArtifacts returns the artifacts the current user may see, along with the active artifact
-// entitlements of the customer organization. The entitlements are nil when they do not restrict what
-// the user sees and a non-nil, possibly empty slice when they do.
-func visibleArtifacts(ctx context.Context) ([]types.ArtifactWithDownloads, []types.ArtifactEntitlement, error) {
+// visibleArtifacts returns the artifacts the current user may see. Entitlements restrict a customer only
+// once the vendor has created any.
+func visibleArtifacts(ctx context.Context) ([]types.ArtifactWithDownloads, error) {
 	auth := auth.Authentication.Require(ctx)
 	orgID := *auth.CurrentOrgID()
 	customerOrgID := auth.CurrentCustomerOrgID()
 	if !auth.CurrentOrg().HasFeature(types.FeatureLicensing) || customerOrgID == nil {
-		artifacts, err := db.GetArtifactsByOrgID(ctx, orgID)
-		return artifacts, nil, err
+		return db.GetArtifactsByOrgID(ctx, orgID)
 	}
-	entitlements, err := db.GetArtifactEntitlements(ctx, orgID)
-	if err != nil {
-		return nil, nil, err
+	if entitlements, err := db.GetArtifactEntitlements(ctx, orgID); err != nil {
+		return nil, err
 	} else if len(entitlements) == 0 {
-		artifacts, err := db.GetArtifactsByOrgID(ctx, orgID)
-		return artifacts, nil, err
+		return db.GetArtifactsByOrgID(ctx, orgID)
 	}
-	artifacts, err := db.GetArtifactsByEntitlementOwnerID(ctx, orgID, *customerOrgID)
-	if err != nil {
-		return nil, nil, err
+	return db.GetArtifactsByEntitlementOwnerID(ctx, orgID, *customerOrgID)
+}
+
+// customerArtifactVersions returns the versions of the artifact that the customer organization may pull,
+// which are restricted by entitlements only when licensing is enabled.
+func customerArtifactVersions(
+	ctx context.Context,
+	artifactID, customerOrgID uuid.UUID,
+	licensing bool,
+) ([]types.TaggedArtifactVersion, error) {
+	var licenseOwnerID *uuid.UUID
+	if licensing {
+		licenseOwnerID = &customerOrgID
 	}
-	customerEntitlements := slices.DeleteFunc(entitlements, func(e types.ArtifactEntitlement) bool {
-		return e.CustomerOrganizationID == nil || *e.CustomerOrganizationID != *customerOrgID ||
-			(e.ExpiresAt != nil && !e.ExpiresAt.After(time.Now()))
-	})
-	if customerEntitlements == nil {
-		customerEntitlements = []types.ArtifactEntitlement{}
-	}
-	return artifacts, customerEntitlements, nil
+	return db.GetVersionsForArtifact(ctx, artifactID, licenseOwnerID)
 }
 
 func getArtifact(w http.ResponseWriter, r *http.Request) {

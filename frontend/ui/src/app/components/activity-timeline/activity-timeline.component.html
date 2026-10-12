@@ -21,44 +21,60 @@
               class="absolute -start-4 flex items-center justify-center size-8 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
               <fa-icon [icon]="icon" class="text-xl" />
             </span>
-            <div class="text-sm font-semibold text-gray-900 dark:text-white first-letter:uppercase">
-              {{ entry.action }}
-            </div>
-            <div class="mt-1 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-              <app-avatar
-                [image]="entry.userImageUrl"
-                [name]="entry.userName"
-                [logo]="entry.userImageIsLogo ?? false"
-                initialsClass="text-[0.5rem]"
-                class="size-5 rounded-full bg-gray-100 dark:bg-gray-700" />
-              <span class="font-medium text-gray-700 dark:text-gray-300">{{ entry.userName || 'Someone' }}</span>
-              <span aria-hidden="true">&middot;</span>
-              <time>{{ entry.createdAt | date: 'medium' }}</time>
-            </div>
           } @else {
             <app-avatar
               [image]="entry.userImageUrl"
               [name]="entry.userName"
               [logo]="entry.userImageIsLogo ?? false"
               class="absolute -start-4 size-8 rounded-full ring-8 ring-white dark:ring-gray-800 bg-gray-100 dark:bg-gray-700" />
-            <div class="text-sm text-gray-900 dark:text-white">
-              <span class="font-medium">{{ entry.userName || 'Someone' }}</span>
-              {{ entry.action }}
-            </div>
-            <time class="block text-xs text-gray-500 dark:text-gray-400">
-              {{ entry.createdAt | date: 'medium' }}
-            </time>
           }
-          @if (entry.body) {
-            <div
-              class="mt-2 p-3 text-sm text-gray-700 bg-gray-50 rounded-lg dark:bg-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-              {{ entry.body }}
-            </div>
+          @if (entry.link; as link) {
+            <a
+              [routerLink]="link"
+              [queryParams]="entry.queryParams"
+              class="block -m-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+              <ng-container [ngTemplateOutlet]="entryContent" [ngTemplateOutletContext]="{$implicit: entry}" />
+            </a>
+          } @else {
+            <ng-container [ngTemplateOutlet]="entryContent" [ngTemplateOutletContext]="{$implicit: entry}" />
           }
         </li>
       }
     </ol>
   }
+
+  <ng-template #entryContent let-entry>
+    @if (entry.icon) {
+      <div class="text-sm font-semibold text-gray-900 dark:text-white first-letter:uppercase">
+        {{ entry.action }}
+      </div>
+      <div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+        <app-avatar
+          [image]="entry.userImageUrl"
+          [name]="entry.userName"
+          [logo]="entry.userImageIsLogo ?? false"
+          initialsClass="text-[0.5rem]"
+          class="size-5 rounded-full bg-gray-100 dark:bg-gray-700" />
+        <span class="font-medium text-gray-700 dark:text-gray-300">{{ entry.userName || 'Someone' }}</span>
+        <span aria-hidden="true">&middot;</span>
+        <time>{{ entry.createdAt | date: 'medium' }}</time>
+      </div>
+    } @else {
+      <div class="text-sm text-gray-900 dark:text-white">
+        <span class="font-medium">{{ entry.userName || 'Someone' }}</span>
+        {{ entry.action }}
+      </div>
+      <time class="block text-xs text-gray-500 dark:text-gray-400">
+        {{ entry.createdAt | date: 'medium' }}
+      </time>
+    }
+    @if (entry.body) {
+      <div
+        class="mt-2 p-3 text-sm text-gray-700 bg-gray-50 rounded-lg dark:bg-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+        {{ entry.body }}
+      </div>
+    }
+  </ng-template>
 
   <ng-content />
 

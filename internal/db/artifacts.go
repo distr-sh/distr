@@ -68,6 +68,23 @@ const (
 					AND oua.customer_organization_id = @customerOrganizationId
 			))) `
 
+	// customerOrgPullsExpr is a CTE of the pulls of the customer organization given as
+	// @customerOrganizationId. It matches the same pulls as artifactPullOfCustomerOrgExpr, split into two
+	// branches so that each can use an index instead of evaluating the OR for every pull. Neither branch
+	// is limited to an organization, so a query has to scope the pulled artifact to one.
+	customerOrgPullsExpr = `
+	customer_pull AS (
+		SELECT avpl.id, avpl.created_at, avpl.artifact_version_id, avpl.useraccount_id, avpl.deployment_target_id
+		FROM ArtifactVersionPull avpl
+		WHERE avpl.customer_organization_id = @customerOrganizationId
+		UNION ALL
+		SELECT avpl.id, avpl.created_at, avpl.artifact_version_id, avpl.useraccount_id, avpl.deployment_target_id
+		FROM Organization_UserAccount oua
+			JOIN ArtifactVersionPull avpl
+				ON avpl.useraccount_id = oua.user_account_id AND avpl.customer_organization_id IS NULL
+		WHERE oua.customer_organization_id = @customerOrganizationId
+	)`
+
 	artifactVersionOutputExpr = `
 		v.id,
 		v.created_at,
@@ -89,11 +106,9 @@ func artifactVersionIsTagExpr(alias string) string {
 	return alias + ".name <> " + alias + ".manifest_blob_digest"
 }
 
-// artifactVersionIsReleaseTagExpr matches tags except the ones clients push for signatures and attestations,
-// the OCI referrers fallback tag "sha256-<digest>" and the cosign tags "sha256-<digest>.sig", ".att" and
-// ".sbom", so that these are not mistaken for releases.
+// artifactVersionIsReleaseTagExpr matches tags except those matching types.NonReleaseTagPattern.
 func artifactVersionIsReleaseTagExpr(alias string) string {
-	return artifactVersionIsTagExpr(alias) + " AND " + alias + `.name !~ '^sha256-[0-9a-f]{64}(\.[a-z]+)?$'`
+	return artifactVersionIsTagExpr(alias) + " AND " + alias + `.name !~ '` + types.NonReleaseTagPattern + `'`
 }
 
 func artifactVersionIsDigestExpr(alias string) string {
@@ -970,6 +985,46 @@ func BulkUpsertArtifactVersionParts(ctx context.Context, parts []types.ArtifactV
 		return fmt.Errorf("could not bulk upsert ArtifactVersionParts: %w", err)
 	}
 	return nil
+}
+
+// GetLatestArtifactPullsOfCustomerOrganization returns the most recent pull of a release tag by the customer
+// organization for each of the given artifacts that it has pulled at all. Pulls of a manifest by digest are
+// left out: a client pulling by tag always resolves the tag first, which is recorded as well, and the child
+// manifests of an index are only ever pulled by digest.
+func GetLatestArtifactPullsOfCustomerOrganization(
+	ctx context.Context,
+	orgID, customerOrgID uuid.UUID,
+	artifactIDs []uuid.UUID,
+) ([]types.CustomerArtifactPull, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`WITH `+customerOrgPullsExpr+`
+		SELECT DISTINCT ON (v.artifact_id)
+			v.artifact_id,
+			v.name AS version_name,
+			p.created_at,
+			u.name AS user_name,
+			u.image_id AS user_image_id,
+			dt.name AS deployment_target_name
+		FROM customer_pull p
+			JOIN ArtifactVersion v ON v.id = p.artifact_version_id
+			JOIN Artifact a ON a.id = v.artifact_id
+			LEFT JOIN UserAccount u ON u.id = p.useraccount_id
+			LEFT JOIN DeploymentTarget dt ON dt.id = p.deployment_target_id
+		WHERE a.organization_id = @orgId
+			AND v.artifact_id = any(@artifactIds)
+			AND `+artifactVersionIsReleaseTagExpr("v")+`
+		ORDER BY v.artifact_id, p.created_at DESC`,
+		pgx.NamedArgs{"orgId": orgID, "customerOrganizationId": customerOrgID, "artifactIds": artifactIDs},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query latest artifact pulls: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.CustomerArtifactPull])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect latest artifact pulls: %w", err)
+	}
+	return result, nil
 }
 
 func HasUserPulledArtifact(ctx context.Context, userID, orgID uuid.UUID) (bool, error) {

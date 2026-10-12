@@ -1,9 +1,4 @@
-<app-activity-timeline
-  [entries]="visibleEntries()"
-  variant="card"
-  heading="Activity"
-  [icon]="faClockRotateLeft"
-  emptyText="Nothing happened in the last 90 days.">
+<app-activity-timeline [entries]="visibleEntries()" variant="card" heading="Activity" [icon]="faClockRotateLeft">
   @if (entries().length > collapsedEntryCount) {
     <div class="flex justify-center">
       <button

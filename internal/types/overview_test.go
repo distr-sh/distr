@@ -4,29 +4,45 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	. "github.com/onsi/gomega"
 )
 
-func TestLatestEntitledApplicationVersionOrdersSubsetByWholeSet(t *testing.T) {
+func TestLatestDeploymentApplicationVersion(t *testing.T) {
 	g := NewWithT(t)
-	base := time.Now()
-	v2 := version("2.0.0", base)
-	v1 := version("1.0.0", base.Add(time.Minute))
-	nightly := version("nightly", base.Add(2*time.Minute))
+	now := time.Now()
+	past := now.Add(-time.Hour)
+	v2 := version("2.0.0", now)
+	v1 := version("1.0.0", now.Add(time.Minute))
+	nightly := version("nightly", now.Add(2*time.Minute))
 	application := Application{
+		ID:                 uuid.New(),
 		VersioningStrategy: VersioningStrategyLegacy,
 		Versions:           []ApplicationVersion{v2, v1, nightly},
 	}
+	entitlement := func(expiresAt *time.Time, versions ...ApplicationVersion) ApplicationEntitlement {
+		return ApplicationEntitlement{ApplicationEntitlementWithVersions: ApplicationEntitlementWithVersions{
+			ApplicationEntitlementBase: ApplicationEntitlementBase{
+				ID: uuid.New(), ApplicationID: application.ID, ExpiresAt: expiresAt,
+			},
+			Versions: versions,
+		}}
+	}
+	limited, all, expired := entitlement(nil, v2, v1), entitlement(nil), entitlement(&past)
+	latestOf := func(deploymentEntitlementID *uuid.UUID, entitlements ...ApplicationEntitlement) *ApplicationVersion {
+		return LatestDeploymentApplicationVersion(application, deploymentEntitlementID, entitlements, now)
+	}
 
 	// The unparseable name outside the entitlement still makes the legacy strategy order by date.
-	entitlement := &ApplicationEntitlementWithVersions{Versions: []ApplicationVersion{v2, v1}}
-	latest := LatestEntitledApplicationVersion(application, entitlement)
-	g.Expect(latest).NotTo(BeNil())
-	g.Expect(latest.ID).To(Equal(v1.ID))
-
-	latest = LatestEntitledApplicationVersion(application, &ApplicationEntitlementWithVersions{})
-	g.Expect(latest).NotTo(BeNil())
-	g.Expect(latest.ID).To(Equal(nightly.ID), "an entitlement without versions covers every version")
+	g.Expect(latestOf(&limited.ID, limited, all)).To(HaveField("ID", v1.ID),
+		"a bound deployment ignores the customer's other entitlements")
+	g.Expect(latestOf(nil, limited, all)).To(HaveField("ID", nightly.ID),
+		"an entitlement without versions covers every version")
+	g.Expect(latestOf(&expired.ID, expired, all)).To(BeNil(), "an expired entitlement covers nothing")
+	g.Expect(latestOf(new(uuid.New()), all)).To(BeNil(), "a missing entitlement covers nothing")
+	g.Expect(latestOf(nil, expired)).To(BeNil())
+	g.Expect(LatestDeploymentApplicationVersion(application, nil, nil, now)).To(HaveField("ID", nightly.ID),
+		"without restricting entitlements every version is a candidate")
 }
 
 func TestApplicationUpdateAvailable(t *testing.T) {

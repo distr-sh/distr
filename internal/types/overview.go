@@ -15,16 +15,6 @@ type OverviewDeployment struct {
 	CreatedByImageID *uuid.UUID `db:"created_by_image_id"`
 }
 
-type OverviewArtifactPull struct {
-	ArtifactID           uuid.UUID  `db:"artifact_id"`
-	VersionName          string     `db:"version_name"`
-	ManifestBlobDigest   Digest     `db:"manifest_blob_digest"`
-	CreatedAt            time.Time  `db:"created_at"`
-	UserName             *string    `db:"user_name"`
-	UserImageID          *uuid.UUID `db:"user_image_id"`
-	DeploymentTargetName *string    `db:"deployment_target_name"`
-}
-
 type OverviewChecklist struct {
 	ProfileCompleted   bool `db:"profile_completed"`
 	TeamMembersInvited bool `db:"team_members_invited"`
@@ -47,6 +37,30 @@ type OverviewAlertSummary struct {
 	NotificationCount       int64 `db:"notification_count"`
 }
 
+type OverviewSupportBundle struct {
+	ID        uuid.UUID           `db:"id"`
+	Title     string              `db:"title"`
+	Status    SupportBundleStatus `db:"status"`
+	UpdatedAt time.Time           `db:"updated_at"`
+	// UserName and UserImageID are only set for a member of the customer organization, like the creator
+	// of an OverviewDeployment.
+	UserName    *string    `db:"user_name"`
+	UserImageID *uuid.UUID `db:"user_image_id"`
+}
+
+// OverviewActivityFilter selects the categories of events a customer organization is shown, which have to
+// follow the features that gate the corresponding sections.
+type OverviewActivityFilter struct {
+	Deployments    bool
+	Artifacts      bool
+	Licensing      bool
+	SupportBundles bool
+	// EntitledApplicationsOnly and EntitledArtifactsOnly restrict versions to those the customer is
+	// entitled to, which mirrors the visibility of the application and artifact lists.
+	EntitledApplicationsOnly bool
+	EntitledArtifactsOnly    bool
+}
+
 type OverviewActivityType string
 
 const (
@@ -61,29 +75,52 @@ const (
 )
 
 type OverviewActivity struct {
-	ID          uuid.UUID            `db:"id"`
-	CreatedAt   time.Time            `db:"created_at"`
-	Type        OverviewActivityType `db:"type"`
-	Subject     string               `db:"subject"`
-	Detail      *string              `db:"detail"`
-	UserName    *string              `db:"user_name"`
-	UserImageID *uuid.UUID           `db:"user_image_id"`
+	ID        uuid.UUID            `db:"id"`
+	CreatedAt time.Time            `db:"created_at"`
+	Type      OverviewActivityType `db:"type"`
+	// ResourceID is the application, artifact, deployment target, license key or support bundle the
+	// event is about, depending on its type.
+	ResourceID  uuid.UUID  `db:"resource_id"`
+	Subject     string     `db:"subject"`
+	Detail      *string    `db:"detail"`
+	UserName    *string    `db:"user_name"`
+	UserImageID *uuid.UUID `db:"user_image_id"`
 }
 
-// LatestEntitledApplicationVersion returns the newest version of the application that the entitlement
-// covers, or of the whole application when there is no entitlement or it covers every version. The
-// ordering is derived from all versions of the application, see ApplicationVersionComparator.
-func LatestEntitledApplicationVersion(
+// LatestDeploymentApplicationVersion returns the newest version of the application that a deployment can
+// be updated to. Entitlements are nil when they do not restrict the customer, which makes every version a
+// candidate. Otherwise, a deployment bound to an entitlement is limited to that one, since the binding
+// cannot be changed, and an unbound deployment to the union of the customer's entitlements for the
+// application, any of which it can still be bound to. An expired or missing entitlement covers nothing
+// and one without versions covers every version. The ordering is derived from all versions of the
+// application, see ApplicationVersionComparator.
+func LatestDeploymentApplicationVersion(
 	application Application,
-	entitlement *ApplicationEntitlementWithVersions,
+	deploymentEntitlementID *uuid.UUID,
+	entitlements []ApplicationEntitlement,
+	now time.Time,
 ) *ApplicationVersion {
 	compare := ApplicationVersionComparator(application.VersioningStrategy, application.Versions)
-	candidates := application.Versions
-	if entitlement != nil && len(entitlement.Versions) > 0 {
-		candidates = slices.DeleteFunc(slices.Clone(application.Versions), func(v ApplicationVersion) bool {
-			return !entitlement.HasVersionWithID(v.ID)
-		})
+	if entitlements == nil {
+		return LatestApplicationVersion(compare, application.Versions)
 	}
+	versionIDs := make(map[uuid.UUID]struct{})
+	for _, entitlement := range entitlements {
+		if entitlement.ApplicationID != application.ID ||
+			(deploymentEntitlementID != nil && entitlement.ID != *deploymentEntitlementID) ||
+			(entitlement.ExpiresAt != nil && !entitlement.ExpiresAt.After(now)) {
+			continue
+		} else if len(entitlement.Versions) == 0 {
+			return LatestApplicationVersion(compare, application.Versions)
+		}
+		for _, version := range entitlement.Versions {
+			versionIDs[version.ID] = struct{}{}
+		}
+	}
+	candidates := slices.DeleteFunc(slices.Clone(application.Versions), func(v ApplicationVersion) bool {
+		_, ok := versionIDs[v.ID]
+		return !ok
+	})
 	return LatestApplicationVersion(compare, candidates)
 }
 
