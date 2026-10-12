@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"context"
+	"errors"
 	"net/http"
 
 	"github.com/distr-sh/distr/internal/auth"
@@ -61,16 +63,22 @@ func resolveCustomerScope(w http.ResponseWriter, r *http.Request, requested *uui
 			http.Error(w, "customer organization ID is required", http.StatusBadRequest)
 			return nil, false
 		}
-		if err := db.ValidateCustomerOrgBelongsToPartnerOrg(ctx, *requested, *partnerOrgID); err != nil {
+		err := db.ValidateCustomerOrgBelongsToPartnerOrg(ctx, *requested, *partnerOrgID)
+		if errors.Is(err, db.ErrCustomerOrgNotInPartnerOrg) {
 			return respondInvalidCustomerScope(w)
+		} else if err != nil {
+			return respondCustomerScopeFailure(ctx, w, err)
 		}
 		return requested, true
 	} else {
 		if requested == nil {
 			return nil, true
 		}
-		if err := db.ValidateCustomerOrgBelongsToOrg(ctx, *requested, *a.CurrentOrgID()); err != nil {
+		err := db.ValidateCustomerOrgBelongsToOrg(ctx, *requested, *a.CurrentOrgID())
+		if errors.Is(err, db.ErrCustomerOrgNotInOrg) {
 			return respondInvalidCustomerScope(w)
+		} else if err != nil {
+			return respondCustomerScopeFailure(ctx, w, err)
 		}
 		return requested, true
 	}
@@ -78,6 +86,13 @@ func resolveCustomerScope(w http.ResponseWriter, r *http.Request, requested *uui
 
 func respondInvalidCustomerScope(w http.ResponseWriter) (*uuid.UUID, bool) {
 	http.Error(w, "invalid customer organization ID", http.StatusBadRequest)
+	return nil, false
+}
+
+func respondCustomerScopeFailure(ctx context.Context, w http.ResponseWriter, err error) (*uuid.UUID, bool) {
+	internalctx.GetLogger(ctx).Error("failed to validate customer organization scope", zap.Error(err))
+	sentry.GetHubFromContext(ctx).CaptureException(err)
+	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	return nil, false
 }
 
