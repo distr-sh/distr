@@ -421,21 +421,19 @@ export class DeploymentWizardComponent implements OnInit {
 
       const customerOrgId = this.selectedCustomerOrganizationId();
 
-      // Create deployment target
       try {
-        createdDeploymentTarget = (await firstValueFrom(
+        createdDeploymentTarget = await firstValueFrom(
           this.deploymentTargets.create({
             name: this.deploymentTargetForm.value.name!,
             type: app.type,
             namespace: this.deploymentTargetForm.value.namespace || undefined,
             scope: this.deploymentTargetForm.value.scope,
-            deployments: [],
             metricsEnabled: this.deploymentTargetForm.value.scope !== 'namespace',
             imageCleanupEnabled: app.type === 'docker' && this.deploymentTargetForm.controls.imageCleanupEnabled.value,
             deploymentLogsEnabled: this.deploymentTargetForm.controls.deploymentLogsEnabled.value,
             automaticUpdatesEnabled: this.deploymentTargetForm.controls.automaticUpdatesEnabled.value,
             autohealEnabled: app.type === 'docker' ? (this.deploymentTargetForm.value.autohealEnabled ?? true) : false,
-            customerOrganization: customerOrgId ? ({id: customerOrgId} as CustomerOrganization) : undefined,
+            customerOrganizationId: customerOrgId,
             resources: this.deploymentTargetForm.value.customResources
               ? {
                   cpuLimit: this.deploymentTargetForm.value.resources?.cpuLimit!,
@@ -448,7 +446,7 @@ export class DeploymentWizardComponent implements OnInit {
               ? this.deploymentTargetForm.value.dockerEndpoint
               : undefined,
           })
-        )) as DeploymentTarget;
+        );
       } catch (e) {
         const msg = getFormDisplayedError(e);
         this.toast.error(msg || 'Failed to create deployment target');

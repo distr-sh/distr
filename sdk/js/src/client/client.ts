@@ -8,6 +8,7 @@ import {
   ApplicationVersion,
   ApplicationVersionResource,
   CreateAdvisoryCommentRequest,
+  CreateDeploymentTargetRequest,
   CreateUpdateAdvisoryRequest,
   DeploymentRequest,
   DeploymentTarget,
@@ -104,8 +105,13 @@ export class Client {
     return this.get<DeploymentTarget>(`deployment-targets/${deploymentTargetId}`);
   }
 
-  public async createDeploymentTarget(deploymentTarget: DeploymentTarget): Promise<DeploymentTarget> {
-    return this.post<DeploymentTarget>('deployment-targets', deploymentTarget);
+  public createDeploymentTarget(request: CreateDeploymentTargetRequest): Promise<DeploymentTarget>;
+  /** @deprecated Pass a {@link CreateDeploymentTargetRequest} instead. */
+  public createDeploymentTarget(deploymentTarget: DeploymentTarget): Promise<DeploymentTarget>;
+  public async createDeploymentTarget(
+    request: CreateDeploymentTargetRequest | DeploymentTarget
+  ): Promise<DeploymentTarget> {
+    return this.post<DeploymentTarget, CreateDeploymentTargetRequest>('deployment-targets', request);
   }
 
   public async createOrUpdateDeployment(deploymentRequest: DeploymentRequest): Promise<DeploymentRequest> {

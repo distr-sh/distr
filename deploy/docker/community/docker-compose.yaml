@@ -141,7 +141,7 @@ services:
       storage:
         condition: service_healthy
     pre_start:
-      - image: 'rclone/rclone:1.75.1'
+      - image: 'rclone/rclone:1.75.2'
         environment:
           RCLONE_CONFIG_STORAGE_TYPE: s3
           RCLONE_CONFIG_STORAGE_PROVIDER: Other

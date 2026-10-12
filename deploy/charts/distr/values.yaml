@@ -715,7 +715,7 @@ loki:
       size: 5Gi
     initContainers:
       - name: create-loki-bucket
-        image: rclone/rclone:1.75.1
+        image: rclone/rclone:1.75.2
         command: [rclone, mkdir, 'storage:loki']
         env:
           - name: RCLONE_CONFIG_STORAGE_TYPE

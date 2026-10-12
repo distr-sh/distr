@@ -30,6 +30,8 @@ const (
 	`
 )
 
+var ErrCustomerOrgNotInOrg = errors.New("customer organization does not belong to organization")
+
 func ValidateCustomerOrgBelongsToOrg(ctx context.Context, customerOrgID uuid.UUID, orgID uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
@@ -47,7 +49,7 @@ func ValidateCustomerOrgBelongsToOrg(ctx context.Context, customerOrgID uuid.UUI
 		return fmt.Errorf("could not collect result: %w", err)
 	}
 	if !exists {
-		return fmt.Errorf("customer organization does not belong to organization")
+		return ErrCustomerOrgNotInOrg
 	}
 	return nil
 }

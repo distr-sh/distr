@@ -29,3 +29,26 @@ export interface DeploymentTargetResources {
   cpuLimit: string;
   memoryLimit: string;
 }
+
+export interface DeploymentTargetSettings {
+  name: string;
+  metricsEnabled: boolean;
+  imageCleanupEnabled: boolean;
+  deploymentLogsEnabled: boolean;
+  deploymentLogsAfter?: string;
+  automaticUpdatesEnabled?: boolean;
+  resources?: DeploymentTargetResources;
+  dockerEndpoint?: string;
+}
+
+export interface CreateDeploymentTargetRequest extends DeploymentTargetSettings {
+  type: DeploymentType;
+  namespace?: string;
+  scope?: DeploymentTargetScope;
+  autohealEnabled?: boolean;
+  customerOrganizationId?: string;
+}
+
+export interface UpdateDeploymentTargetRequest extends DeploymentTargetSettings {
+  controllerVersionId?: string;
+}

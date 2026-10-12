@@ -23,6 +23,7 @@ import {
   DeploymentTargetScope,
   DeploymentType,
   DeploymentWithLatestRevision,
+  UpdateDeploymentTargetRequest,
 } from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
@@ -175,7 +176,6 @@ export class DeploymentTargetCardComponent {
   protected readonly metricsOpened = signal(false);
 
   protected readonly editForm = new FormGroup({
-    id: new FormControl<string | undefined>(undefined),
     name: new FormControl('', Validators.required),
     type: new FormControl<DeploymentType | undefined>({value: undefined, disabled: true}, Validators.required),
     namespace: new FormControl<string | undefined>({value: undefined, disabled: true}),
@@ -399,11 +399,8 @@ export class DeploymentTargetCardComponent {
     if (this.editForm.valid) {
       this.editFormLoading = true;
       const val = this.editForm.value;
-      const dt: DeploymentTarget = {
-        id: val.id!,
+      const request: UpdateDeploymentTargetRequest = {
         name: val.name!,
-        type: val.type!,
-        deployments: [],
         metricsEnabled: val.metricsEnabled ?? false,
         imageCleanupEnabled: this.editForm.controls.imageCleanupEnabled.value,
         deploymentLogsEnabled: this.editForm.controls.deploymentLogsEnabled.value,
@@ -420,9 +417,9 @@ export class DeploymentTargetCardComponent {
 
       try {
         this.loadDeploymentTarget(
-          await lastValueFrom(val.id ? this.deploymentTargets.update(dt) : this.deploymentTargets.create(dt))
+          await lastValueFrom(this.deploymentTargets.update(this.deploymentTarget().id!, request))
         );
-        this.toast.success(`${dt.name} saved successfully`);
+        this.toast.success(`${request.name} saved successfully`);
         this.hideDrawer();
       } catch (e) {
         const msg = getFormDisplayedError(e);
@@ -585,9 +582,19 @@ export class DeploymentTargetCardComponent {
             })
           )
         ) {
-          dt.controllerVersion = targetVersion;
-          dt.automaticUpdatesEnabled = this.controllerUpdateAutomaticUpdatesEnabled.value;
-          await firstValueFrom(this.deploymentTargets.update(dt));
+          await firstValueFrom(
+            this.deploymentTargets.update(dt.id!, {
+              name: dt.name,
+              metricsEnabled: dt.metricsEnabled,
+              imageCleanupEnabled: dt.imageCleanupEnabled,
+              deploymentLogsEnabled: dt.deploymentLogsEnabled,
+              deploymentLogsAfter: dt.deploymentLogsAfter,
+              automaticUpdatesEnabled: this.controllerUpdateAutomaticUpdatesEnabled.value,
+              resources: dt.resources,
+              dockerEndpoint: dt.dockerEndpoint,
+              controllerVersionId: targetVersion.id,
+            })
+          );
         }
       }
     } catch (e) {

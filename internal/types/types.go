@@ -305,6 +305,31 @@ const (
 	SubscriptionPeriodYearly  SubscriptionPeriod = "yearly"
 )
 
+var ErrInvalidDeploymentTargetScope = errors.New("invalid deployment target scope")
+
+func ParseDeploymentTargetScope(value string) (DeploymentTargetScope, error) {
+	switch value {
+	case string(DeploymentTargetScopeCluster):
+		return DeploymentTargetScopeCluster, nil
+	case string(DeploymentTargetScopeNamespace):
+		return DeploymentTargetScopeNamespace, nil
+	default:
+		return "", fmt.Errorf("%w: %v", ErrInvalidDeploymentTargetScope, value)
+	}
+}
+
+func (ref *DeploymentTargetScope) UnmarshalJSON(data []byte) error {
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	} else if scope, err := ParseDeploymentTargetScope(value); err != nil {
+		return err
+	} else {
+		*ref = scope
+		return nil
+	}
+}
+
 type Base struct {
 	ID        uuid.UUID `db:"id" json:"id"`
 	CreatedAt time.Time `db:"created_at" json:"createdAt"`

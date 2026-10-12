@@ -157,3 +157,22 @@ func TestDeploymentTypeParsing(t *testing.T) {
 	err = json.Unmarshal([]byte(`{"type": "swarm"}`), &target)
 	g.Expect(err).To(MatchError(ErrInvalidDeploymentType))
 }
+
+func TestDeploymentTargetScopeParsing(t *testing.T) {
+	g := NewWithT(t)
+
+	var target struct {
+		Scope DeploymentTargetScope `json:"scope"`
+	}
+
+	err := json.Unmarshal([]byte(`{"scope": "cluster"}`), &target)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(target.Scope).To(Equal(DeploymentTargetScopeCluster))
+
+	err = json.Unmarshal([]byte(`{"scope": "namespace"}`), &target)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(target.Scope).To(Equal(DeploymentTargetScopeNamespace))
+
+	err = json.Unmarshal([]byte(`{"scope": "foo"}`), &target)
+	g.Expect(err).To(MatchError(ErrInvalidDeploymentTargetScope))
+}
