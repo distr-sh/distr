@@ -71,7 +71,9 @@ const (
 	OverviewActivityTypeLicenseKeyCreated          OverviewActivityType = "license_key_created"
 	OverviewActivityTypeLicenseKeyUpdated          OverviewActivityType = "license_key_updated"
 	OverviewActivityTypeSupportBundleCreated       OverviewActivityType = "support_bundle_created"
-	OverviewActivityTypeSupportBundleStatusChanged OverviewActivityType = "support_bundle_status_changed"
+	OverviewActivityTypeSupportBundleUploaded      OverviewActivityType = "support_bundle_uploaded"
+	OverviewActivityTypeSupportBundleResolved      OverviewActivityType = "support_bundle_resolved"
+	OverviewActivityTypeSupportBundleCanceled      OverviewActivityType = "support_bundle_canceled"
 )
 
 type OverviewActivity struct {

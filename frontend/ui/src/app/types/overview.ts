@@ -100,7 +100,9 @@ export type OverviewActivityType =
   | 'license_key_created'
   | 'license_key_updated'
   | 'support_bundle_created'
-  | 'support_bundle_status_changed';
+  | 'support_bundle_uploaded'
+  | 'support_bundle_resolved'
+  | 'support_bundle_canceled';
 
 export interface OverviewActivity {
   id: string;

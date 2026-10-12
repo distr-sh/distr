@@ -335,8 +335,7 @@ func GetOverviewActivity(
 			LIMIT @limit
 		),
 		support_bundle_status_changed AS (
-			SELECT sb.id, sb.status_changed_at AS created_at, sb.id AS resource_id, sb.title AS subject,
-				sb.status::TEXT AS detail,
+			SELECT sb.id, sb.status_changed_at AS created_at, sb.id AS resource_id, sb.title AS subject, sb.status,
 				CASE WHEN oua.user_account_id IS NOT NULL THEN u.name END AS user_name,
 				CASE WHEN oua.user_account_id IS NOT NULL THEN u.image_id END AS user_image_id
 			FROM SupportBundle sb
@@ -350,31 +349,38 @@ func GetOverviewActivity(
 			LIMIT @limit
 		)
 		SELECT * FROM (
-			SELECT id, created_at, 'application_version_created' AS type, resource_id, subject, detail,
+			SELECT id, created_at, @typeApplicationVersionCreated::TEXT AS type, resource_id, subject, detail,
 				NULL::TEXT AS user_name, NULL::UUID AS user_image_id
 			FROM application_version_created
 			UNION ALL
-			SELECT id, created_at, 'artifact_version_created', resource_id, subject, detail, NULL::TEXT, NULL::UUID
+			SELECT id, created_at, @typeArtifactVersionCreated::TEXT, resource_id, subject, detail,
+				NULL::TEXT, NULL::UUID
 			FROM artifact_version_created
 			UNION ALL
-			SELECT id, created_at, 'artifact_version_first_pulled', resource_id, subject, detail,
+			SELECT id, created_at, @typeArtifactVersionFirstPulled::TEXT, resource_id, subject, detail,
 				user_name, user_image_id
 			FROM artifact_version_first_pulled
 			UNION ALL
-			SELECT id, created_at, 'deployment_revision_created', resource_id, subject, detail,
+			SELECT id, created_at, @typeDeploymentRevisionCreated::TEXT, resource_id, subject, detail,
 				user_name, user_image_id
 			FROM deployment_revision_created
 			UNION ALL
 			SELECT id, created_at,
-				CASE WHEN is_update THEN 'license_key_updated' ELSE 'license_key_created' END,
+				CASE WHEN is_update THEN @typeLicenseKeyUpdated::TEXT ELSE @typeLicenseKeyCreated::TEXT END,
 				resource_id, subject, NULL::TEXT AS detail, NULL::TEXT AS user_name, NULL::UUID AS user_image_id
 			FROM license_key_revision
 			UNION ALL
-			SELECT id, created_at, 'support_bundle_created', resource_id, subject, NULL, user_name, user_image_id
+			SELECT id, created_at, @typeSupportBundleCreated::TEXT, resource_id, subject, NULL,
+				user_name, user_image_id
 			FROM support_bundle_created
 			UNION ALL
-			SELECT id, created_at, 'support_bundle_status_changed', resource_id, subject, detail,
-				user_name, user_image_id
+			SELECT id, created_at,
+				CASE status::TEXT
+					WHEN @supportBundleStatusCreated::TEXT THEN @typeSupportBundleUploaded::TEXT
+					WHEN @supportBundleStatusResolved::TEXT THEN @typeSupportBundleResolved::TEXT
+					WHEN @supportBundleStatusCanceled::TEXT THEN @typeSupportBundleCanceled::TEXT
+				END,
+				resource_id, subject, NULL, user_name, user_image_id
 			FROM support_bundle_status_changed
 		) activity
 		ORDER BY created_at DESC
@@ -390,6 +396,20 @@ func GetOverviewActivity(
 			"entitledArtifactsOnly":    filter.EntitledArtifactsOnly,
 			"days":                     overviewActivityDays,
 			"limit":                    overviewActivityLimit,
+
+			"typeApplicationVersionCreated":  types.OverviewActivityTypeApplicationVersionCreated,
+			"typeArtifactVersionCreated":     types.OverviewActivityTypeArtifactVersionCreated,
+			"typeArtifactVersionFirstPulled": types.OverviewActivityTypeArtifactVersionFirstPulled,
+			"typeDeploymentRevisionCreated":  types.OverviewActivityTypeDeploymentRevisionCreated,
+			"typeLicenseKeyCreated":          types.OverviewActivityTypeLicenseKeyCreated,
+			"typeLicenseKeyUpdated":          types.OverviewActivityTypeLicenseKeyUpdated,
+			"typeSupportBundleCreated":       types.OverviewActivityTypeSupportBundleCreated,
+			"typeSupportBundleUploaded":      types.OverviewActivityTypeSupportBundleUploaded,
+			"typeSupportBundleResolved":      types.OverviewActivityTypeSupportBundleResolved,
+			"typeSupportBundleCanceled":      types.OverviewActivityTypeSupportBundleCanceled,
+			"supportBundleStatusCreated":     types.SupportBundleStatusCreated,
+			"supportBundleStatusResolved":    types.SupportBundleStatusResolved,
+			"supportBundleStatusCanceled":    types.SupportBundleStatusCanceled,
 		},
 	)
 	if err != nil {

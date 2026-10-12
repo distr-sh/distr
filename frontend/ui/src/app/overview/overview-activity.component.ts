@@ -73,7 +73,9 @@ function icon({type}: OverviewActivity): IconDefinition {
     case 'license_key_updated':
       return faKey;
     case 'support_bundle_created':
-    case 'support_bundle_status_changed':
+    case 'support_bundle_uploaded':
+    case 'support_bundle_resolved':
+    case 'support_bundle_canceled':
       return faLifeRing;
     default:
       return never(type);
@@ -93,7 +95,9 @@ function link({type, resourceId, subject}: OverviewActivity): Pick<ActivityTimel
     case 'license_key_updated':
       return {link: '/license-keys'};
     case 'support_bundle_created':
-    case 'support_bundle_status_changed':
+    case 'support_bundle_uploaded':
+    case 'support_bundle_resolved':
+    case 'support_bundle_canceled':
       return {link: `/support/${resourceId}`};
     default:
       return never(type);
@@ -116,17 +120,12 @@ function action({type, subject, detail}: OverviewActivity): string {
       return `updated the license key ${subject}`;
     case 'support_bundle_created':
       return `created the support bundle ${subject}`;
-    case 'support_bundle_status_changed':
-      switch (detail) {
-        case 'resolved':
-          return `resolved the support bundle ${subject}`;
-        case 'canceled':
-          return `canceled the support bundle ${subject}`;
-        case 'created':
-          return `uploaded the support bundle ${subject}`;
-        default:
-          return `changed the status of the support bundle ${subject} to ${detail}`;
-      }
+    case 'support_bundle_uploaded':
+      return `uploaded the support bundle ${subject}`;
+    case 'support_bundle_resolved':
+      return `resolved the support bundle ${subject}`;
+    case 'support_bundle_canceled':
+      return `canceled the support bundle ${subject}`;
     default:
       return never(type);
   }
