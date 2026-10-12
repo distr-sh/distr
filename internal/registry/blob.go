@@ -97,7 +97,11 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 	digestFromQuery := req.URL.Query().Get("digest")
 	contentRange := req.Header.Get("Content-Range")
 	rangeHeader := req.Header.Get("Range")
-	repo := req.URL.Host + path.Join(elem[1:len(elem)-2]...)
+	repoEnd := len(elem) - 2
+	if service == uploads {
+		repoEnd--
+	}
+	repo := req.URL.Host + path.Join(elem[1:repoEnd]...)
 
 	switch req.Method {
 	case http.MethodHead:
