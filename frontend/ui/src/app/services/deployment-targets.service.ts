@@ -1,15 +1,16 @@
 import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {
+  CreateDeploymentTargetRequest,
   DeploymentRequest,
   DeploymentRevisionResponse,
   DeploymentTarget,
   DeploymentTargetAccessResponse,
   PatchDeploymentRequest,
+  UpdateDeploymentTargetRequest,
 } from '@distr-sh/distr-sdk';
 import {EMPTY, merge, Observable, retry, shareReplay, Subject, switchMap, tap, timer} from 'rxjs';
 import {ReactiveList} from './cache';
-import {CrudService} from './interfaces';
 
 class DeploymentTargetsReactiveList extends ReactiveList<DeploymentTarget> {
   protected override identify = (dt: DeploymentTarget) => dt.id;
@@ -19,7 +20,7 @@ class DeploymentTargetsReactiveList extends ReactiveList<DeploymentTarget> {
 @Injectable({
   providedIn: 'root',
 })
-export class DeploymentTargetsService implements CrudService<DeploymentTarget> {
+export class DeploymentTargetsService {
   private readonly deploymentTargetsBaseUrl = '/api/v1/deployment-targets';
   private readonly deploymentsBaseUrl = '/api/v1/deployments';
   private readonly httpClient = inject(HttpClient);
@@ -51,7 +52,7 @@ export class DeploymentTargetsService implements CrudService<DeploymentTarget> {
     return this.sharedPolling$;
   }
 
-  create(request: DeploymentTarget): Observable<DeploymentTarget> {
+  create(request: CreateDeploymentTargetRequest): Observable<DeploymentTarget> {
     return this.httpClient.post<DeploymentTarget>(this.deploymentTargetsBaseUrl, request).pipe(
       tap((it) => {
         this.cache.save(it);
@@ -60,8 +61,8 @@ export class DeploymentTargetsService implements CrudService<DeploymentTarget> {
     );
   }
 
-  update(request: DeploymentTarget): Observable<DeploymentTarget> {
-    return this.httpClient.put<DeploymentTarget>(`${this.deploymentTargetsBaseUrl}/${request.id}`, request).pipe(
+  update(id: string, request: UpdateDeploymentTargetRequest): Observable<DeploymentTarget> {
+    return this.httpClient.put<DeploymentTarget>(`${this.deploymentTargetsBaseUrl}/${id}`, request).pipe(
       tap((it) => {
         this.cache.save(it);
         this.pollRefresh$.next();
@@ -81,6 +82,12 @@ export class DeploymentTargetsService implements CrudService<DeploymentTarget> {
   requestAccess(deploymentTargetId: string) {
     return this.httpClient
       .post<DeploymentTargetAccessResponse>(`${this.deploymentTargetsBaseUrl}/${deploymentTargetId}/access-request`, {})
+      .pipe(tap(() => this.pollRefresh$.next()));
+  }
+
+  cancelReconnect(deploymentTargetId: string): Observable<void> {
+    return this.httpClient
+      .delete<void>(`${this.deploymentTargetsBaseUrl}/${deploymentTargetId}/access-request`)
       .pipe(tap(() => this.pollRefresh$.next()));
   }
 

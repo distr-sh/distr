@@ -138,13 +138,3 @@ export function versioningStrategyLabel(strategy: VersioningStrategy | undefined
       return 'Legacy versioning';
   }
 }
-
-export function versioningStrategyBadgeClass(): string {
-  return 'bg-gray-100 text-gray-800 border-gray-400 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500';
-}
-
-export function automaticUpdatesBadgeClass(enabled: boolean): string {
-  return enabled
-    ? 'bg-green-100 text-green-800 border-green-400 dark:bg-green-900 dark:text-green-300 dark:border-green-800'
-    : 'bg-gray-100 text-gray-800 border-gray-400 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500';
-}

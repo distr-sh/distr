@@ -21,17 +21,11 @@
       </div>
       <!-- Modal body -->
       <form class="p-5" [formGroup]="deployFormWrapper" (ngSubmit)="saveDeployment()">
-        @if (customerManagedWarningVisible()) {
-          <div
-            class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
-            role="alert">
-            <fa-icon [icon]="faCircleExclamation" />
-            <span class="sr-only">Info</span>
-            <div class="ms-3 text-sm font-medium">
-              Warning: You are about to overwrite a customer-managed deployment. Ensure this is done in coordination
-              with the customer.
-            </div>
-          </div>
+        @if (customerManagedNoticeVisible()) {
+          <app-alert type="info" class="mb-4">
+            You are about to overwrite a customer-managed deployment. Ensure this is done in coordination with the
+            customer.
+          </app-alert>
         }
         @if (dataLoaded()) {
           <app-deployment-form

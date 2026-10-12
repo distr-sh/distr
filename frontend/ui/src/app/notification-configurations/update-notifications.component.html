@@ -134,7 +134,7 @@
                     [imageUrl]="application.imageUrl"
                     [type]="application.type!" />
                   <span class="truncate">{{ application.name }}</span>
-                  <span class="distr-deployment-type-badge">{{ application.type }}</span>
+                  <span class="distr-badge capitalize">{{ application.type }}</span>
                 </label>
               } @empty {
                 <p class="text-sm text-gray-500 dark:text-gray-400">No applications to notify about.</p>
@@ -160,7 +160,7 @@
                   <app-artifact-logo class="size-6 shrink-0" [imageUrl]="artifact.imageUrl" />
                   @if (artifact.upstreamUrl) {
                     <span class="truncate distr-text-muted">{{ artifact.name }}</span>
-                    <span class="distr-tag-badge">pull-through</span>
+                    <span class="distr-badge distr-badge-neutral">pull-through</span>
                   } @else {
                     <span class="truncate">{{ artifact.name }}</span>
                   }

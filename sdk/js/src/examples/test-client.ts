@@ -53,7 +53,6 @@ try {
   const newDockerDeploymentTarget = await client.createDeploymentTarget({
     name: 'A Docker Deployment Target',
     type: 'docker',
-    deployments: [],
     metricsEnabled: false,
     imageCleanupEnabled: false,
     deploymentLogsEnabled: false,
@@ -63,7 +62,6 @@ try {
   const newKubernetesDeploymentTarget = await client.createDeploymentTarget({
     name: 'A Kubernetes Deployment Target ',
     type: 'kubernetes',
-    deployments: [],
     metricsEnabled: false,
     imageCleanupEnabled: false,
     deploymentLogsEnabled: false,

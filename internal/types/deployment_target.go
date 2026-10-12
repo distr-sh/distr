@@ -9,9 +9,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/distr-sh/distr/internal/validation"
 	"github.com/google/uuid"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 type DeploymentTarget struct {
@@ -50,50 +48,6 @@ type DeploymentTargetResources struct {
 	MemoryLimit   string `json:"memoryLimit"`
 }
 
-func (dt *DeploymentTarget) Validate() error {
-	switch dt.Type {
-	case DeploymentTypeKubernetes:
-		if dt.AutohealEnabled {
-			return validation.NewValidationFailedError(
-				"DeploymentTarget with type \"kubernetes\" must not have autoheal enabled",
-			)
-		}
-		if dt.Namespace == nil || *dt.Namespace == "" {
-			return validation.NewValidationFailedError(
-				"DeploymentTarget with type \"kubernetes\" must not have empty namespace",
-			)
-		}
-		if dt.Scope == nil {
-			return validation.NewValidationFailedError("DeploymentTarget with type \"kubernetes\" must not have empty scope")
-		}
-		if dt.ImageCleanupEnabled {
-			return validation.NewValidationFailedError(
-				"image cleanup is not supported on DeploymentTarget with type \"kubernetes\"")
-		}
-		if dt.Resources != nil {
-			if _, err := resource.ParseQuantity(dt.Resources.CPULimit); err != nil {
-				return validation.NewValidationFailedError(fmt.Sprintf("failed to parse CPU limit: %s", err))
-			}
-			if _, err := resource.ParseQuantity(dt.Resources.MemoryLimit); err != nil {
-				return validation.NewValidationFailedError(fmt.Sprintf("failed to parse memory limit: %s", err))
-			}
-			if _, err := resource.ParseQuantity(dt.Resources.CPURequest); err != nil {
-				return validation.NewValidationFailedError(fmt.Sprintf("failed to parse CPU request: %s", err))
-			}
-			if _, err := resource.ParseQuantity(dt.Resources.MemoryRequest); err != nil {
-				return validation.NewValidationFailedError(fmt.Sprintf("failed to parse memory request: %s", err))
-			}
-		}
-	case DeploymentTypeDocker:
-		if dt.Resources != nil {
-			return validation.NewValidationFailedError("DeploymentTarget with type \"docker\" must not have resources")
-		}
-	default:
-		return validation.NewValidationFailedError("invalid deployment target type")
-	}
-	return ValidateDockerEndpoint(dt.DockerEndpoint, dt.Type)
-}
-
 const DefaultDockerSocketPath = "/var/run/docker.sock"
 
 // ParseDockerEndpoint only supports unix sockets because the endpoint is applied by bind-mounting
@@ -126,22 +80,6 @@ func (dt *DeploymentTarget) DockerSocketPath() string {
 		}
 	}
 	return DefaultDockerSocketPath
-}
-
-// ValidateDockerEndpoint takes the type separately because updates do not carry it in the body.
-func ValidateDockerEndpoint(endpoint *string, deploymentType DeploymentType) error {
-	if endpoint == nil {
-		return nil
-	}
-	if deploymentType != DeploymentTypeDocker {
-		return validation.NewValidationFailedError(
-			fmt.Sprintf("DeploymentTarget with type %q must not have a docker endpoint", deploymentType),
-		)
-	}
-	if _, err := ParseDockerEndpoint(*endpoint); err != nil {
-		return validation.NewValidationFailedError(err.Error())
-	}
-	return nil
 }
 
 type DeploymentTargetFull struct {

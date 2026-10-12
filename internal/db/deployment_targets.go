@@ -9,7 +9,9 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 const (
@@ -317,6 +319,11 @@ func UpdateDeploymentTarget(ctx context.Context, dt *types.DeploymentTargetFull,
 	} else if updated, err := pgx.CollectExactlyOneRow(
 		rows, pgx.RowToStructByPos[types.DeploymentTargetFull],
 	); err != nil {
+		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok &&
+			pgErr.Code == pgerrcode.ForeignKeyViolation &&
+			pgErr.ConstraintName == "deploymenttarget_agent_version_id_fkey" {
+			return apierrors.NewBadRequest("unknown agent version")
+		}
 		return fmt.Errorf("could not get updated DeploymentTarget: %w", err)
 	} else {
 		*dt = updated
@@ -358,6 +365,26 @@ func UpdateDeploymentTargetPendingAccess(ctx context.Context, dt *types.Deployme
 		return fmt.Errorf("could not get updated DeploymentTarget: %w", err)
 	} else {
 		*dt = updated
+		return nil
+	}
+}
+
+func DeleteDeploymentTargetPendingAccess(ctx context.Context, id uuid.UUID, orgID uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	if cmd, err := db.Exec(ctx,
+		`UPDATE DeploymentTarget SET
+			pending_access_key_salt = NULL,
+			pending_access_key_hash = NULL
+		WHERE id = @id
+			AND organization_id = @orgId
+			AND pending_access_key_hash IS NOT NULL
+			AND access_key_hash IS NOT NULL`,
+		pgx.NamedArgs{"id": id, "orgId": orgID},
+	); err != nil {
+		return fmt.Errorf("could not delete pending access key: %w", err)
+	} else if cmd.RowsAffected() == 0 {
+		return apierrors.ErrNotFound
+	} else {
 		return nil
 	}
 }

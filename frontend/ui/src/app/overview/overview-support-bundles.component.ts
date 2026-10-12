@@ -6,6 +6,7 @@ import {faLifeRing, faPlus} from '@fortawesome/free-solid-svg-icons';
 import {RelativeDatePipe} from '../../util/dates';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {SupportBundleCreateDialogComponent} from '../support-bundles/create-dialog/support-bundle-create-dialog.component';
+import {SupportBundleStatusBadgeComponent} from '../support-bundles/support-bundle-status-badge.component';
 import {OverviewSupportBundle} from '../types/overview';
 
 const maxSupportBundles = 5;
@@ -13,7 +14,14 @@ const maxSupportBundles = 5;
 @Component({
   selector: 'app-overview-support-bundles',
   templateUrl: './overview-support-bundles.component.html',
-  imports: [DatePipe, RouterLink, FaIconComponent, RelativeDatePipe, SupportBundleCreateDialogComponent],
+  imports: [
+    DatePipe,
+    RouterLink,
+    FaIconComponent,
+    RelativeDatePipe,
+    SupportBundleCreateDialogComponent,
+    SupportBundleStatusBadgeComponent,
+  ],
 })
 export class OverviewSupportBundlesComponent {
   private readonly overlay = inject(OverlayService);

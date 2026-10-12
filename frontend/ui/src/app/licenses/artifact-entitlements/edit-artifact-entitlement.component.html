@@ -115,10 +115,7 @@
                                 <div class="flex-1 min-w-0">
                                   <div class="flex flex-row gap-1">
                                     @for (label of tag?.tags; track label.name) {
-                                      <span
-                                        [class]="
-                                          label.name === 'latest' ? 'distr-artifact-tag-latest' : 'distr-artifact-tag'
-                                        ">
+                                      <span class="distr-badge" [class.distr-badge-success]="label.name === 'latest'">
                                         {{ label.name }}
                                       </span>
                                     }

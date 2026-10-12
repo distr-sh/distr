@@ -95,35 +95,15 @@ func createSecretHandler() http.HandlerFunc {
 			return
 		}
 
-		if customerOrganizationID := auth.CurrentCustomerOrgID(); customerOrganizationID != nil {
-			if body.CustomerOrganizationID != nil && *body.CustomerOrganizationID != *customerOrganizationID {
-				http.Error(w, "invalid customer organization ID", http.StatusBadRequest)
-				return
-			}
-			body.CustomerOrganizationID = customerOrganizationID
-		} else if partnerOrganizationID := auth.CurrentPartnerOrgID(); partnerOrganizationID != nil {
-			if body.CustomerOrganizationID == nil {
-				http.Error(w, "customer organization ID is required", http.StatusBadRequest)
-				return
-			}
-
-			err := db.ValidateCustomerOrgBelongsToPartnerOrg(ctx, *body.CustomerOrganizationID, *partnerOrganizationID)
-			if err != nil {
-				if errors.Is(err, db.ErrCustomerOrgNotInPartnerOrg) {
-					http.Error(w, "invalid customer organization ID", http.StatusBadRequest)
-				} else {
-					internalctx.GetLogger(ctx).Error("failed to check customer visibility", zap.Error(err))
-					sentry.GetHubFromContext(ctx).CaptureException(err)
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				}
-				return
-			}
+		customerOrganizationID, ok := resolveCustomerScope(w, r, body.CustomerOrganizationID)
+		if !ok {
+			return
 		}
 
 		secret, err := db.CreateSecret(
 			ctx,
 			*auth.CurrentOrgID(),
-			body.CustomerOrganizationID,
+			customerOrganizationID,
 			auth.CurrentUserID(),
 			body.Key,
 			dbcrypto.String(body.Value),

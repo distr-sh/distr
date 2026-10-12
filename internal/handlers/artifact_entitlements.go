@@ -114,6 +114,9 @@ func createArtifactEntitlement(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, apierrors.ErrConflict) {
 			http.Error(w, "An artifact entitlement with this name already exists", http.StatusBadRequest)
 			return err
+		} else if errors.Is(err, apierrors.ErrBadRequest) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return err
 		} else if err != nil {
 			log.Warn("could not create artifact entitlement", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -170,6 +173,9 @@ func updateArtifactEntitlement(w http.ResponseWriter, r *http.Request) {
 			return err
 		} else if errors.Is(err, apierrors.ErrConflict) {
 			http.Error(w, "An artifact entitlement with this name already exists", http.StatusBadRequest)
+			return err
+		} else if errors.Is(err, apierrors.ErrBadRequest) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return err
 		} else if err != nil {
 			log.Warn("could not update artifact entitlement", zap.Error(err))
@@ -256,20 +262,28 @@ func validateEntitlementSelections(entitlement types.ArtifactEntitlement) error 
 func addArtifacts(
 	ctx context.Context, entitlement types.ArtifactEntitlement, log *zap.Logger, w http.ResponseWriter,
 ) error {
+	add := func(artifactID uuid.UUID, versionID *uuid.UUID) error {
+		err := db.AddArtifactToArtifactEntitlement(ctx, entitlement.ID, artifactID, versionID)
+		if errors.Is(err, apierrors.ErrBadRequest) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return err
+		} else if err != nil {
+			log.Warn("could not add version to entitlement", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return err
+		}
+		return nil
+	}
+
 	for _, selection := range entitlement.Artifacts {
 		if len(selection.VersionIDs) == 0 {
-			if err := db.AddArtifactToArtifactEntitlement(ctx, entitlement.ID, selection.ArtifactID, nil); err != nil {
-				log.Warn("could not add version to entitlement", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+			if err := add(selection.ArtifactID, nil); err != nil {
 				return err
 			}
 		}
 		for _, versionID := range selection.VersionIDs {
-			if err := db.AddArtifactToArtifactEntitlement(ctx, entitlement.ID, selection.ArtifactID, &versionID); err != nil {
-				log.Warn("could not add version to entitlement", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+			if err := add(selection.ArtifactID, &versionID); err != nil {
 				return err
 			}
 		}

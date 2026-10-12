@@ -1,0 +1,47 @@
+@reference '../../../styles/tailwind.css';
+
+// Tailwind's `dark` variant, spelled out, for the same reason as in `subscription-badge.component.scss`
+@mixin dark {
+  &:where(.dark, .dark *) {
+    @content;
+  }
+}
+
+// The border is plain CSS in the text color, since the `border` utility pulls a
+// `@property --tw-border-style` block into the component stylesheet.
+:host {
+  @apply flex items-center gap-3 p-4 rounded-lg text-sm font-medium;
+  border: 1px solid currentcolor;
+}
+
+:host(.alert-success) {
+  @apply bg-green-50 text-green-800;
+
+  @include dark {
+    @apply bg-transparent text-green-400;
+  }
+}
+
+:host(.alert-info) {
+  @apply bg-blue-50 text-blue-800;
+
+  @include dark {
+    @apply bg-transparent text-blue-400;
+  }
+}
+
+:host(.alert-warning) {
+  @apply bg-yellow-50 text-yellow-800;
+
+  @include dark {
+    @apply bg-transparent text-yellow-300;
+  }
+}
+
+:host(.alert-error) {
+  @apply bg-red-50 text-red-800;
+
+  @include dark {
+    @apply bg-transparent text-red-400;
+  }
+}

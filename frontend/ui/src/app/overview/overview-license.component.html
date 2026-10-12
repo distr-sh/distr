@@ -6,64 +6,24 @@
 
   @let s = state();
   @if (s.type === 'expired') {
-    <div
-      class="flex items-center gap-4 p-4 rounded-lg border bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800">
-      <span
-        class="flex shrink-0 items-center justify-center size-10 rounded-full bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300">
-        <fa-icon [icon]="faCircleXmark" size="lg" />
-      </span>
-      <div class="min-w-0">
-        <p class="font-semibold text-red-800 dark:text-red-300">Expired</p>
-        <p class="text-sm text-red-700 dark:text-red-400">
-          {{ s.name }} expired on {{ s.expiresAt | date: 'mediumDate' }}
-        </p>
-      </div>
-    </div>
+    <app-alert type="error" heading="Expired">
+      {{ s.name }} expired on {{ s.expiresAt | date: 'mediumDate' }}
+    </app-alert>
   } @else if (s.type === 'not_yet_valid') {
-    <div
-      class="flex items-center gap-4 p-4 rounded-lg border bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800">
-      <span
-        class="flex shrink-0 items-center justify-center size-10 rounded-full bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300">
-        <fa-icon [icon]="faCircleXmark" size="lg" />
-      </span>
-      <div class="min-w-0">
-        <p class="font-semibold text-red-800 dark:text-red-300">Not yet valid</p>
-        <p class="text-sm text-red-700 dark:text-red-400">
-          {{ s.name }} becomes valid on {{ s.notBefore | date: 'mediumDate' }}
-        </p>
-      </div>
-    </div>
+    <app-alert type="error" heading="Not yet valid">
+      {{ s.name }} becomes valid on {{ s.notBefore | date: 'mediumDate' }}
+    </app-alert>
   } @else if (s.type === 'expiring') {
-    <div
-      class="flex items-center gap-4 p-4 rounded-lg border bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800">
-      <span
-        class="flex shrink-0 items-center justify-center size-10 rounded-full bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-300">
-        <fa-icon [icon]="faTriangleExclamation" size="lg" />
-      </span>
-      <div class="min-w-0">
-        <p class="font-semibold text-yellow-800 dark:text-yellow-300">Expires {{ s.expiresAt | relativeDate }}</p>
-        <p class="text-sm text-yellow-700 dark:text-yellow-400">
-          {{ s.name }} on {{ s.expiresAt | date: 'mediumDate' }}
-        </p>
-      </div>
-    </div>
+    <app-alert type="warning" [heading]="'Expires ' + (s.expiresAt | relativeDate)">
+      {{ s.name }} on {{ s.expiresAt | date: 'mediumDate' }}
+    </app-alert>
   } @else {
-    <div
-      class="flex items-center gap-4 p-4 rounded-lg border bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800">
-      <span
-        class="flex shrink-0 items-center justify-center size-10 rounded-full bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300">
-        <fa-icon [icon]="faCircleCheck" size="lg" />
-      </span>
-      <div class="min-w-0">
-        <p class="font-semibold text-green-800 dark:text-green-300">Active</p>
-        <p class="text-sm text-green-700 dark:text-green-400">
-          @if (s.type === 'valid_until') {
-            Valid until {{ s.expiresAt | date: 'mediumDate' }}
-          } @else {
-            No expiration date
-          }
-        </p>
-      </div>
-    </div>
+    <app-alert type="success" heading="Active">
+      @if (s.type === 'valid_until') {
+        Valid until {{ s.expiresAt | date: 'mediumDate' }}
+      } @else {
+        No expiration date
+      }
+    </app-alert>
   }
 </a>

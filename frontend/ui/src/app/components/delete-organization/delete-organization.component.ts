@@ -29,7 +29,7 @@ export class DeleteOrganizationComponent {
                 'Afterwards, all user sessions (including the current one) will be invalidated ' +
                 'and users will be redirected to the login page.',
               alert: {
-                type: 'danger',
+                type: 'warning',
                 message: 'This is a destructive action and cannot be undone!',
               },
             },

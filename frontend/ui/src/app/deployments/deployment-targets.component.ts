@@ -21,7 +21,7 @@ import {
   DeploymentWithLatestRevision,
 } from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faChevronDown, faLightbulb, faPlus} from '@fortawesome/free-solid-svg-icons';
+import {faChevronDown, faPlus} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, combineLatestWith, first, map, Observable, of} from 'rxjs';
 import {compareBy} from '../../util/arrays';
 import {filteredByFormControl} from '../../util/filter';
@@ -81,7 +81,6 @@ export class DeploymentTargetsComponent implements AfterViewInit {
 
   protected readonly plusIcon = faPlus;
   protected readonly faChevronDown = faChevronDown;
-  protected readonly faLightbulb = faLightbulb;
   protected readonly collapsedCustomerIds = signal<string[]>(
     (() => {
       const s = localStorage.getItem(localStoragerCollapsedCustomerIds);

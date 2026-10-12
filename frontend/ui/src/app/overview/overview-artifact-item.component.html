@@ -22,15 +22,9 @@
       <dd class="flex flex-wrap items-center gap-2 text-gray-900 dark:text-white">
         {{ pull.versionName }}
         @if (pull.isLatest) {
-          <span
-            class="distr-status-badge bg-green-100 text-green-800 border-green-400 dark:bg-green-900 dark:text-green-300 dark:border-green-800">
-            Latest
-          </span>
+          <span class="distr-badge distr-badge-success">Latest</span>
         } @else {
-          <span
-            class="distr-status-badge bg-yellow-100 text-yellow-800 border-yellow-400 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-800">
-            Outdated
-          </span>
+          <span class="distr-badge distr-badge-warning">Outdated</span>
           @if (a.latestVersionName) {
             <span class="distr-text-muted">Latest: {{ a.latestVersionName }}</span>
           }

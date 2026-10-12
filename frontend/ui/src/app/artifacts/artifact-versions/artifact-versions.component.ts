@@ -8,8 +8,8 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faBox,
   faCheck,
+  faCircleExclamation,
   faEllipsisVertical,
-  faExclamationTriangle,
   faEye,
   faEyeSlash,
   faFileSignature,
@@ -19,6 +19,7 @@ import {
   faPen,
   faRotate,
   faTrash,
+  faTriangleExclamation,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import {
@@ -119,7 +120,8 @@ export class ArtifactVersionsComponent {
   protected readonly faGlobe = faGlobe;
   protected readonly faLock = faLock;
   protected readonly faCheck = faCheck;
-  protected readonly faExclamationTriangle = faExclamationTriangle;
+  protected readonly faCircleExclamation = faCircleExclamation;
+  protected readonly faTriangleExclamation = faTriangleExclamation;
   protected readonly faEye = faEye;
   protected readonly faEyeSlash = faEyeSlash;
 
@@ -419,7 +421,7 @@ export class ArtifactVersionsComponent {
                 }
               : {
                   type: 'warning',
-                  message: `Since this is its only tag, the digest ${digest} may be deleted as well, unless  it is still referenced by a multi-arch index.`,
+                  message: `Since this is its only tag, the digest ${digest} may be deleted as well, unless it is still referenced by a multi-arch index.`,
                 },
         },
       })

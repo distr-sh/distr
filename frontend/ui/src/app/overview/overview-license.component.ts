@@ -2,9 +2,10 @@ import {DatePipe} from '@angular/common';
 import {Component, computed, input} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCircleCheck, faCircleXmark, faKey, faTriangleExclamation} from '@fortawesome/free-solid-svg-icons';
+import {faKey} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {RelativeDatePipe} from '../../util/dates';
+import {AlertComponent} from '../components/alert/alert.component';
 import {OverviewLicense} from '../types/overview';
 
 const expiringSoonDays = 30;
@@ -17,15 +18,12 @@ type LicenseState =
 @Component({
   selector: 'app-overview-license',
   templateUrl: './overview-license.component.html',
-  imports: [DatePipe, RouterLink, FaIconComponent, RelativeDatePipe],
+  imports: [DatePipe, RouterLink, FaIconComponent, RelativeDatePipe, AlertComponent],
 })
 export class OverviewLicenseComponent {
   public readonly license = input.required<OverviewLicense>();
 
-  protected readonly faCircleCheck = faCircleCheck;
-  protected readonly faCircleXmark = faCircleXmark;
   protected readonly faKey = faKey;
-  protected readonly faTriangleExclamation = faTriangleExclamation;
 
   protected readonly state = computed<LicenseState>(() => {
     const {name, notBefore, expiresAt} = this.license();

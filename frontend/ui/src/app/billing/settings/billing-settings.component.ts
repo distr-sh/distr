@@ -3,7 +3,7 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faArrowLeft, faCheck, faCircleXmark, faCopy} from '@fortawesome/free-solid-svg-icons';
+import {faArrowLeft, faCheck, faCircleCheck, faCopy} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {ClipDirective} from '../../components/clip.component';
@@ -28,7 +28,7 @@ export class BillingSettingsComponent {
 
   protected readonly faArrowLeft = faArrowLeft;
   protected readonly faCheck = faCheck;
-  protected readonly faCircleXmark = faCircleXmark;
+  protected readonly faCircleCheck = faCircleCheck;
   protected readonly faCopy = faCopy;
 
   protected readonly organization = toSignal(this.organizationService.get());

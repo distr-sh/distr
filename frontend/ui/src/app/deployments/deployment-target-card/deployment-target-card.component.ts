@@ -1,6 +1,6 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {TextFieldModule} from '@angular/cdk/text-field';
-import {DatePipe, NgClass, NgOptimizedImage} from '@angular/common';
+import {DatePipe, NgOptimizedImage} from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -23,18 +23,19 @@ import {
   DeploymentTargetScope,
   DeploymentType,
   DeploymentWithLatestRevision,
+  UpdateDeploymentTargetRequest,
 } from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faArrowUpRightFromSquare,
   faBinoculars,
-  faCircleExclamation,
   faClockRotateLeft,
   faComment,
   faEllipsisVertical,
   faGauge,
   faGear,
   faLink,
+  faLinkSlash,
   faPen,
   faPlus,
   faPowerOff,
@@ -53,10 +54,10 @@ import {getFormDisplayedError} from '../../../util/errors';
 import {DOCKER_ENDPOINT_REGEX, RESOURCE_QUANTITY_REGEX} from '../../../util/validation';
 import {
   applicationVersionComparator,
-  automaticUpdatesBadgeClass,
   deploymentIdsAllowingAutomaticUpdates,
   latestApplicationVersion,
 } from '../../../util/versions';
+import {AlertComponent} from '../../components/alert/alert.component';
 import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {UuidComponent} from '../../components/uuid';
@@ -102,7 +103,7 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
     AutotrimDirective,
     RouterLink,
     SpinnerComponent,
-    NgClass,
+    AlertComponent,
   ],
 })
 export class DeploymentTargetCardComponent {
@@ -122,7 +123,7 @@ export class DeploymentTargetCardComponent {
   protected readonly isDeploymentLogsAfterEnabled = this.featureFlags.isDeploymentLogsAfterEnabled;
   protected readonly isAutoUpdatesEnabled = this.featureFlags.isAutoUpdatesEnabled;
 
-  protected readonly customerManagedWarning = `
+  protected readonly customerManagedNotice = `
     You are about to make changes to a customer-managed deployment.
     Ensure this is done in coordination with the customer.`;
 
@@ -144,7 +145,6 @@ export class DeploymentTargetCardComponent {
   );
 
   protected readonly faArrowUpRightFromSquare = faArrowUpRightFromSquare;
-  protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faComment = faComment;
   protected readonly faBinoculars = faBinoculars;
   protected readonly faClockRotateLeft = faClockRotateLeft;
@@ -152,6 +152,7 @@ export class DeploymentTargetCardComponent {
   protected readonly faGauge = faGauge;
   protected readonly faGear = faGear;
   protected readonly faLink = faLink;
+  protected readonly faLinkSlash = faLinkSlash;
   protected readonly faPen = faPen;
   protected readonly faPlus = faPlus;
   protected readonly faPowerOff = faPowerOff;
@@ -159,7 +160,6 @@ export class DeploymentTargetCardComponent {
   protected readonly faTrash = faTrash;
   protected readonly faTriangleExclamation = faTriangleExclamation;
   protected readonly faXmark = faXmark;
-  protected readonly automaticUpdatesBadgeClass = automaticUpdatesBadgeClass(true);
 
   protected readonly githubUrl = GITHUB_URL;
   protected readonly websiteUrl = WEBSITE_URL;
@@ -173,7 +173,6 @@ export class DeploymentTargetCardComponent {
   protected readonly metricsOpened = signal(false);
 
   protected readonly editForm = new FormGroup({
-    id: new FormControl<string | undefined>(undefined),
     name: new FormControl('', Validators.required),
     type: new FormControl<DeploymentType | undefined>({value: undefined, disabled: true}, Validators.required),
     namespace: new FormControl<string | undefined>({value: undefined, disabled: true}),
@@ -397,11 +396,8 @@ export class DeploymentTargetCardComponent {
     if (this.editForm.valid) {
       this.editFormLoading = true;
       const val = this.editForm.value;
-      const dt: DeploymentTarget = {
-        id: val.id!,
+      const request: UpdateDeploymentTargetRequest = {
         name: val.name!,
-        type: val.type!,
-        deployments: [],
         metricsEnabled: val.metricsEnabled ?? false,
         imageCleanupEnabled: this.editForm.controls.imageCleanupEnabled.value,
         deploymentLogsEnabled: this.editForm.controls.deploymentLogsEnabled.value,
@@ -418,9 +414,9 @@ export class DeploymentTargetCardComponent {
 
       try {
         this.loadDeploymentTarget(
-          await lastValueFrom(val.id ? this.deploymentTargets.update(dt) : this.deploymentTargets.create(dt))
+          await lastValueFrom(this.deploymentTargets.update(this.deploymentTarget().id!, request))
         );
-        this.toast.success(`${dt.name} saved successfully`);
+        this.toast.success(`${request.name} saved successfully`);
         this.hideDrawer();
       } catch (e) {
         const msg = getFormDisplayedError(e);
@@ -498,7 +494,7 @@ export class DeploymentTargetCardComponent {
     const dt = this.deploymentTarget();
     const alert =
       dt.customerOrganization !== undefined && this.auth.isVendor()
-        ? ({type: 'warning', message: this.customerManagedWarning} as const)
+        ? ({type: 'info', message: this.customerManagedNotice} as const)
         : undefined;
     this.overlay
       .confirm({
@@ -527,7 +523,7 @@ export class DeploymentTargetCardComponent {
     const dt = this.deploymentTarget();
     const alert =
       dt.customerOrganization !== undefined && this.auth.isVendor()
-        ? ({type: 'warning', message: this.customerManagedWarning} as const)
+        ? ({type: 'info', message: this.customerManagedNotice} as const)
         : undefined;
     if (d.id) {
       if (
@@ -583,9 +579,19 @@ export class DeploymentTargetCardComponent {
             })
           )
         ) {
-          dt.controllerVersion = targetVersion;
-          dt.automaticUpdatesEnabled = this.controllerUpdateAutomaticUpdatesEnabled.value;
-          await firstValueFrom(this.deploymentTargets.update(dt));
+          await firstValueFrom(
+            this.deploymentTargets.update(dt.id!, {
+              name: dt.name,
+              metricsEnabled: dt.metricsEnabled,
+              imageCleanupEnabled: dt.imageCleanupEnabled,
+              deploymentLogsEnabled: dt.deploymentLogsEnabled,
+              deploymentLogsAfter: dt.deploymentLogsAfter,
+              automaticUpdatesEnabled: this.controllerUpdateAutomaticUpdatesEnabled.value,
+              resources: dt.resources,
+              dockerEndpoint: dt.dockerEndpoint,
+              controllerVersionId: targetVersion.id,
+            })
+          );
         }
       }
     } catch (e) {
@@ -628,18 +634,47 @@ export class DeploymentTargetCardComponent {
     if (dt.reportedControllerVersionId !== undefined) {
       const message =
         `If you continue, a new authentication secret for ${dt.name} is issued. ` +
-        'The current secret stays valid until a controller connects to Distr with the new one.' +
-        (dt.reconnectPending ? ' The connect command issued before becomes invalid.' : '') +
-        ' Continue?';
+        'The current secret stays valid until a controller connects to Distr with the new one. Continue?';
       const alert =
         dt.customerOrganization !== undefined && this.auth.isVendor()
-          ? ({type: 'warning', message: this.customerManagedWarning} as const)
+          ? ({type: 'info', message: this.customerManagedNotice} as const)
           : undefined;
       if (!(await firstValueFrom(this.overlay.confirm({message: {message, alert}})))) {
         return;
       }
     }
     this.showModal(this.instructionsModal());
+  }
+
+  protected async cancelReconnect() {
+    const dt = this.deploymentTarget();
+    const message =
+      `If you continue, the pending secret for ${dt.name} is deleted and the connect command issued with it ` +
+      'stops working. The current secret stays valid, so the running controller keeps working. Continue?';
+    const alert =
+      dt.customerOrganization !== undefined && this.auth.isVendor()
+        ? ({type: 'info', message: this.customerManagedNotice} as const)
+        : undefined;
+    if (
+      !(await firstValueFrom(
+        this.overlay.confirm({
+          message: {message, alert},
+          confirmLabel: 'Cancel reconnect',
+          cancelLabel: 'Keep reconnect',
+        })
+      ))
+    ) {
+      return;
+    }
+    try {
+      await firstValueFrom(this.deploymentTargets.cancelReconnect(dt.id!));
+      this.toast.success(`The reconnect of ${dt.name} has been canceled`);
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    }
   }
 
   protected showModal(templateRef: TemplateRef<unknown>) {

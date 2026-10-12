@@ -31,8 +31,7 @@ export class ArtifactLogoComponent {
 @Component({
   selector: 'app-artifact-public-badge',
   host: {
-    class:
-      'distr-status-badge bg-blue-100 text-blue-800 border-blue-400 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-800',
+    class: 'distr-badge',
     title: 'Anyone who knows the name can pull this artifact without credentials',
   },
   template: `
@@ -189,8 +188,8 @@ export class ArtifactsHashComponent {
         <div class="flex flex-row flex-wrap gap-1 mt-1">
           @for (tag of tags(); track tag) {
             <span
-              class="inline-block max-w-40 truncate"
-              [class]="tag === 'latest' ? 'distr-artifact-tag-latest' : 'distr-artifact-tag'"
+              class="distr-badge inline-block max-w-40 truncate"
+              [class.distr-badge-success]="tag === 'latest'"
               [title]="tag">
               {{ tag }}
             </span>

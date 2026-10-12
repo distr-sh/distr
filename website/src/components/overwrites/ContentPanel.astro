@@ -3,15 +3,13 @@ const {starlightRoute} = Astro.locals;
 const isSplashTemplate = starlightRoute.entry.data.template === 'splash';
 ---
 
-{
-  !isSplashTemplate && (
-    <div class="content-panel" class:list={[{'no-border': isSplashTemplate}]}>
-      <div class="sl-container">
-        <slot />
-      </div>
+{!isSplashTemplate && (
+  <div class="content-panel" class:list={[{'no-border': isSplashTemplate}]}>
+    <div class="sl-container">
+      <slot />
     </div>
-  )
-}
+  </div>
+)}
 {isSplashTemplate && <slot />}
 
 <style>

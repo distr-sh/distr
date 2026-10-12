@@ -16,7 +16,7 @@
     <app-tab-bar [tabs]="tabs" [(active)]="activeTab">
       <ng-template #tabSuffix let-tab>
         @if (tab.id === 'versions' && selectedCount() > 0) {
-          <span class="ms-2 distr-tag-badge">{{ selectedCount() }}</span>
+          <span class="ms-2 distr-badge distr-badge-neutral">{{ selectedCount() }}</span>
         }
       </ng-template>
     </app-tab-bar>
@@ -93,7 +93,7 @@
             @if (tags().length > 0) {
               <div class="flex flex-wrap gap-2 mb-2">
                 @for (tag of tags(); track tag) {
-                  <span class="distr-tag-badge gap-1">
+                  <span class="distr-badge distr-badge-neutral">
                     {{ tag }}
                     <button type="button" (click)="removeTag(tag)" class="hover:text-red-600">
                       <fa-icon [icon]="faXmark" />
@@ -177,7 +177,7 @@
                     [imageUrl]="application.imageUrl"
                     [type]="application.type" />
                   <span class="truncate">{{ application.name }}</span>
-                  <span class="distr-deployment-type-badge">{{ application.type }}</span>
+                  <span class="distr-badge capitalize">{{ application.type }}</span>
                 </span>
                 @let versionCount = application.versions?.length ?? 0;
                 <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">
@@ -221,7 +221,7 @@
                   <app-artifact-logo class="size-6 shrink-0" [imageUrl]="artifact.imageUrl" />
                   <span class="truncate">{{ artifact.name }}</span>
                   @if (artifact.upstreamUrl) {
-                    <span class="distr-tag-badge">pull-through</span>
+                    <span class="distr-badge distr-badge-neutral">pull-through</span>
                   }
                 </span>
                 @let tagCount = artifactTagCount(artifact);
@@ -247,8 +247,7 @@
                           @if (version.tags.length > 0) {
                             <div class="flex flex-row flex-wrap gap-1">
                               @for (tag of version.tags; track tag.name) {
-                                <span
-                                  [class]="tag.name === 'latest' ? 'distr-artifact-tag-latest' : 'distr-artifact-tag'">
+                                <span class="distr-badge" [class.distr-badge-success]="tag.name === 'latest'">
                                   {{ tag.name }}
                                 </span>
                               }

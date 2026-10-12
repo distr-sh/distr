@@ -21,11 +21,10 @@ import {
   Validator,
   Validators,
 } from '@angular/forms';
-import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCircleInfo} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {of, switchMap} from 'rxjs';
 import {jsonObjectValidator} from '../../../util/validation';
+import {AlertComponent} from '../../components/alert/alert.component';
 import {EditorComponent} from '../../components/editor.component';
 import {ExpiresAtPickerComponent} from '../../components/expires-at-picker/expires-at-picker.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
@@ -37,7 +36,7 @@ import {LicenseKey} from '../../types/license-key';
 @Component({
   selector: 'app-edit-license-key',
   templateUrl: './edit-license-key.component.html',
-  imports: [AutotrimDirective, EditorComponent, ExpiresAtPickerComponent, ReactiveFormsModule, FaIconComponent],
+  imports: [AutotrimDirective, EditorComponent, ExpiresAtPickerComponent, ReactiveFormsModule, AlertComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   providers: [
     {
@@ -64,8 +63,6 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
     ),
     {initialValue: []}
   );
-
-  protected readonly faCircleInfo = faCircleInfo;
 
   private readonly today = dayjs().startOf('day').format('YYYY-MM-DD');
   private readonly inOneYear = dayjs().add(1, 'year').startOf('day').format('YYYY-MM-DD');

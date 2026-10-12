@@ -1,7 +1,7 @@
 import {ChangeDetectionStrategy, Component, inject, input} from '@angular/core';
 import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCheck, faCircleExclamation, faCircleInfo, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faCircleCheck, faCircleExclamation, faCircleInfo, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, filter, timer} from 'rxjs';
 import {ToastService} from '../services/toast.service';
 
@@ -30,9 +30,9 @@ const autoCloseDuration = 5000;
         }
         @case ('success') {
           <fa-icon
-            [icon]="faCheck"
+            [icon]="faCircleCheck"
             size="lg"
-            class="inline-flex items-center justify-center shrink-0 w-8 h-8 rounded-lg text-green-500 dark:text-green-800" />
+            class="inline-flex items-center justify-center shrink-0 w-8 h-8 rounded-lg text-green-500 dark:bg-green-800 bg-green-100 dark:text-green-200" />
         }
         @case ('info') {
           <fa-icon
@@ -63,7 +63,7 @@ export class ToastComponent {
   readonly message = input.required<string>();
   readonly autoClose = input(false);
 
-  protected readonly faCheck = faCheck;
+  protected readonly faCircleCheck = faCircleCheck;
   protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faCircleInfo = faCircleInfo;
   protected readonly faXmark = faXmark;

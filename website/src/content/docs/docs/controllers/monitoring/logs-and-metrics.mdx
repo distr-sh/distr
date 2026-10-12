@@ -183,7 +183,7 @@ To reconnect:
 
 Until a controller connects to Distr with the new secret, the deployment target shows a **Reconnect pending** badge next to its name. The current secret stays valid during that time, so the running controller keeps working. Once a controller has connected with the new secret, the previous one is invalidated and the badge disappears.
 
-If you reconnect again while a reconnect is pending, the new command replaces the unused one, which stops working. The current secret stays valid.
+While a reconnect is pending, the **⋮** menu shows **Cancel reconnect** instead of **Reconnect**. To get a new command, for example because you lost the previous one, [cancel the pending reconnect](#cancel-a-pending-reconnect) and reconnect again.
 
 Reconnecting does not affect your running deployments. If your application was running before the reconnect, it continues running. The controller only manages the connection back to Distr, not the application lifecycle.
 
@@ -201,6 +201,15 @@ once the reconnect is complete.
 
 </Aside>
 
+### Cancel a pending reconnect
+
+If you no longer need the new command, for example because it was shared with the wrong person or the controller recovered on its own, cancel the reconnect:
+
+1. Click the **⋮** menu on the deployment target and select **Cancel reconnect**. The entry is only shown while a reconnect is pending.
+2. Review the message and confirm.
+
+Distr deletes the pending secret, so the command issued with it stops working, and the **Reconnect pending** badge disappears. The current secret stays valid, so the running controller keeps working.
+
 ## Troubleshooting: Stale Status
 
 A **Stale** deployment target means the controller was previously connected but has not reported its health in the last 60 seconds. It does **not** mean your deployment is broken. Your application may still be running normally. Distr has simply lost contact with the controller.
@@ -213,7 +222,7 @@ Open the **⋮** menu on the deployment target and select **Controller Logs**. L
 
 If you have access to the deployment host:
 
-1. Click **Reconnect** in the **⋮** menu.
+1. Click **Reconnect** in the **⋮** menu. If the menu shows **Cancel reconnect** instead, a reconnect is already pending: cancel it first.
 2. Confirm. A new `targetSecret` is generated. The old one stays valid until a controller connects with the new one.
 3. Run the new install command on the deployment host to re-establish the connection.
 

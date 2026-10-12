@@ -777,12 +777,9 @@
       </ul>
 
       @if (!auth.isSuperAdmin() && !hasSubscription() && feedbackAlert) {
-        <div id="alert-update" class="p-4 bg-gray-50 rounded-lg dark:bg-gray-700" role="alert" *appRequireVendor>
+        <div id="alert-update" class="p-4 bg-gray-50 rounded-lg dark:bg-gray-700" *appRequireVendor>
           <div class="flex justify-between items-center mb-3">
-            <span
-              class="bg-gray-100 text-gray-600 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-sm dark:bg-gray-600 dark:text-gray-200"
-              >Talk to founders</span
-            >
+            <span class="distr-badge distr-badge-neutral mr-2">Talk to founders</span>
             <button
               type="button"
               class="inline-flex items-center justify-center p-1 w-6 h-6 text-gray-500 bg-gray-50 rounded-lg focus:ring-2 focus:ring-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"

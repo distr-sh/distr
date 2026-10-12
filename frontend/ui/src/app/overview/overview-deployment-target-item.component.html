@@ -36,15 +36,9 @@
         <dd class="flex flex-wrap items-center gap-2 text-gray-900 dark:text-white">
           {{ deployment.currentApplicationVersionName ?? deployment.applicationVersionName }}
           @if (deployment.updateAvailable) {
-            <span
-              class="distr-status-badge bg-blue-100 text-blue-800 border-blue-400 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-800">
-              Update available: {{ deployment.latestApplicationVersionName }}
-            </span>
+            <span class="distr-badge">Update available: {{ deployment.latestApplicationVersionName }}</span>
           } @else {
-            <span
-              class="distr-status-badge bg-green-100 text-green-800 border-green-400 dark:bg-green-900 dark:text-green-300 dark:border-green-800">
-              Latest
-            </span>
+            <span class="distr-badge distr-badge-success">Latest</span>
           }
         </dd>
 

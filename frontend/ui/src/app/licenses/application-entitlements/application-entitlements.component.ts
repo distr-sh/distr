@@ -8,6 +8,7 @@ import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observabl
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
+import {AlertComponent} from '../../components/alert/alert.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
@@ -28,6 +29,7 @@ import {EditApplicationEntitlementComponent} from './edit-application-entitlemen
     DatePipe,
     EditApplicationEntitlementComponent,
     SearchBarComponent,
+    AlertComponent,
   ],
 })
 export class ApplicationEntitlementsComponent {

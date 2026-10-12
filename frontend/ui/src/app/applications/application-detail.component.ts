@@ -1,5 +1,5 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
-import {AsyncPipe, DatePipe, NgClass, NgOptimizedImage} from '@angular/common';
+import {AsyncPipe, DatePipe, NgOptimizedImage} from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -32,7 +32,6 @@ import {
   faEye,
   faPlus,
   faTrash,
-  faTriangleExclamation,
 } from '@fortawesome/free-solid-svg-icons';
 import {
   catchError,
@@ -54,12 +53,8 @@ import {isArchived} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {disableControlsWithoutEvent, enableControlsWithoutEvent} from '../../util/forms';
 import {SecureImagePipe} from '../../util/secureImage';
-import {
-  SelectableVersioningStrategy,
-  sortApplicationVersions,
-  versioningStrategyBadgeClass,
-  versioningStrategyLabel,
-} from '../../util/versions';
+import {SelectableVersioningStrategy, sortApplicationVersions, versioningStrategyLabel} from '../../util/versions';
+import {AlertComponent} from '../components/alert/alert.component';
 import {AvatarComponent} from '../components/avatar.component';
 import {BadgeSelectComponent} from '../components/badge-select/badge-select.component';
 import {EditorComponent} from '../components/editor.component';
@@ -104,11 +99,11 @@ import {
     ApplicationVersionDetailModalComponent,
     InnerMarkdownDirective,
     PageComponent,
-    NgClass,
     BadgeSelectComponent,
     PlanFeatureHintComponent,
     AvatarComponent,
     TitleImagePickerComponent,
+    AlertComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './application-detail.component.html',
@@ -204,8 +199,6 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   protected readonly faBox = faBox;
   protected readonly faEye = faEye;
   protected readonly faPlus = faPlus;
-  protected readonly faTriangleExclamation = faTriangleExclamation;
-
   protected readonly resourcePreviewIndices = signal(new Set<number>());
 
   protected readonly isArchived = isArchived;
@@ -249,7 +242,6 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
 
   protected readonly versioningStrategy = computed(() => this.application()?.versioningStrategy ?? 'legacy');
   protected readonly versioningStrategyLabel = computed(() => versioningStrategyLabel(this.versioningStrategy()));
-  protected readonly versioningStrategyBadgeClass = versioningStrategyBadgeClass();
   protected readonly versioningStrategyOptions = computed(() =>
     versioningStrategySelectOptions(this.versioningStrategy())
   );
@@ -260,12 +252,6 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   protected readonly allowAutomaticUpdatesValue = computed<AllowAutomaticUpdates>(() =>
     this.application()?.allowAutomaticUpdates ? 'allowed' : 'disallowed'
   );
-  private readonly allowAutomaticUpdatesOption = computed(() =>
-    allowAutomaticUpdatesSelectOptions.find((option) => option.value === this.allowAutomaticUpdatesValue())
-  );
-  protected readonly allowAutomaticUpdatesLabel = computed(() => this.allowAutomaticUpdatesOption()?.label);
-  protected readonly allowAutomaticUpdatesBadgeClass = computed(() => this.allowAutomaticUpdatesOption()?.badgeClass);
-
   protected updateVersioningStrategy(versioningStrategy: VersioningStrategy): void {
     this.patchVersioning({versioningStrategy: versioningStrategy as SelectableVersioningStrategy});
   }

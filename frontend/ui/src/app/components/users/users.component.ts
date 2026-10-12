@@ -18,7 +18,6 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faBox,
   faCheck,
-  faCircleExclamation,
   faClipboard,
   faPen,
   faPlus,
@@ -41,6 +40,7 @@ import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
 import {isProSubscription} from '../../types/subscription';
+import {AlertComponent} from '../alert/alert.component';
 import {AvatarComponent} from '../avatar.component';
 import {InlineEditComponent} from '../inline-edit.component';
 import {QuotaLimitComponent} from '../quota-limit.component';
@@ -63,6 +63,7 @@ import {UserRoleSelectComponent} from '../user-role-select.component';
     UserRoleLabelPipe,
     InlineEditComponent,
     SearchBarComponent,
+    AlertComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './users.component.html',
@@ -84,7 +85,6 @@ export class UsersComponent {
 
   protected readonly faBox = faBox;
   protected readonly faCheck = faCheck;
-  protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faClipboard = faClipboard;
   protected readonly faPen = faPen;
   protected readonly faPlus = faPlus;
@@ -92,6 +92,12 @@ export class UsersComponent {
   protected readonly faTrash = faTrash;
   protected readonly faUser = faUser;
   protected readonly faXmark = faXmark;
+
+  protected readonly inviteHeading = computed(() =>
+    this.auth.isVendor() && this.customerOrganizationId() !== undefined
+      ? 'Customer has been invited to the organization'
+      : 'User has been invited to the organization'
+  );
 
   protected readonly filterForm = this.fb.group({
     search: this.fb.control(''),

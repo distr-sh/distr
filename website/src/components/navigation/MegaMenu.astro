@@ -28,21 +28,19 @@ const menuWidth = numericWidth * columns + gap * (columns - 1) + padding;
 ---
 
 <div class="mega-menu-wrapper">
-  {
-    href ? (
-      <a href={href} class="menu-trigger menu-trigger-link">
-        {title}
-      </a>
-    ) : (
-      <button
-        class="menu-trigger"
-        type="button"
-        aria-haspopup="true"
-        aria-expanded="false">
-        {title}
-      </button>
-    )
-  }
+  {href ? (
+    <a href={href} class="menu-trigger menu-trigger-link">
+      {title}
+    </a>
+  ) : (
+    <button
+      class="menu-trigger"
+      type="button"
+      aria-haspopup="true"
+      aria-expanded="false">
+      {title}
+    </button>
+  )}
 
   <div
     class="mega-menu"
@@ -51,21 +49,19 @@ const menuWidth = numericWidth * columns + gap * (columns - 1) + padding;
     <div
       class="menu-grid"
       style={`grid-template-columns: repeat(${columns}, ${itemWidth});`}>
-      {
-        items.map((item, index) => (
-          <a
-            href={item.href}
-            class="menu-item"
-            data-index={index}
-            data-menu-id={menuId}
-            data-description={item.description}>
-            <div class="menu-icon">
-              <Icon name={`lucide:${item.value}`} class="icon-size" />
-            </div>
-            <div class="menu-item-title">{item.title}</div>
-          </a>
-        ))
-      }
+      {items.map((item, index) => (
+        <a
+          href={item.href}
+          class="menu-item"
+          data-index={index}
+          data-menu-id={menuId}
+          data-description={item.description}>
+          <div class="menu-icon">
+            <Icon name={`lucide:${item.value}`} class="icon-size" />
+          </div>
+          <div class="menu-item-title">{item.title}</div>
+        </a>
+      ))}
     </div>
 
     <div class="menu-description-container">

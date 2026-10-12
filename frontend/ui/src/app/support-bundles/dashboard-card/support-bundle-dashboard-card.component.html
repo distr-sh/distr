@@ -22,9 +22,7 @@
               </div>
               <div class="flex items-center gap-2 shrink-0">
                 <span class="text-xs text-gray-500 dark:text-gray-400">{{ bundle.resourceCount }} resources</span>
-                <span class="distr-status-badge capitalize" [ngClass]="statusBadgeClass(bundle.status)">
-                  {{ bundle.status }}
-                </span>
+                <app-support-bundle-status-badge [status]="bundle.status" />
               </div>
             </div>
           </a>

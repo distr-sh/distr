@@ -49,23 +49,13 @@
                   </span>
                   <h3 class="text-lg font-medium leading-tight">Deploy hello-distr</h3>
                   @if (showMacOsWarning) {
-                    <div
-                      class="flex p-4 mb-2 mt-2 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-red-300 dark:text-red-600"
-                      role="alert">
-                      <fa-icon [icon]="faWarning" class="me-4" />
-                      <div>
-                        <p class="text-sm">
-                          If you are on Mac, please make sure to check
-                          <a
-                            [href]="websiteUrl + '/docs/controllers/distr-on-macos/'"
-                            class="text-primary-600 underline"
-                            target="_blank"
-                            >this guide</a
-                          >
-                          first!
-                        </p>
-                      </div>
-                    </div>
+                    <app-alert type="warning" class="mb-2 mt-2">
+                      If you are on Mac, please make sure to check
+                      <a [href]="websiteUrl + '/docs/controllers/distr-on-macos/'" class="underline" target="_blank"
+                        >this guide</a
+                      >
+                      first!
+                    </app-alert>
                   }
                 </li>
                 <li class="mb-10 ms-8">
