@@ -152,7 +152,17 @@
             </li>
 
             @if (auth.hasAnyRole('read_write', 'admin')) {
-              @if (connected) {
+              @if (deploymentTarget().reconnectPending) {
+                <li>
+                  <button
+                    type="button"
+                    (click)="showDeploymentTargetDropdown.set(false); cancelReconnect()"
+                    class="distr-dropdown-item distr-dropdown-item-warning">
+                    <fa-icon [icon]="faLinkSlash" class="w-4" />
+                    Cancel reconnect
+                  </button>
+                </li>
+              } @else if (connected) {
                 <li>
                   <button
                     type="button"
@@ -162,17 +172,6 @@
                     Reconnect
                   </button>
                 </li>
-                @if (deploymentTarget().reconnectPending) {
-                  <li>
-                    <button
-                      type="button"
-                      (click)="showDeploymentTargetDropdown.set(false); cancelReconnect()"
-                      class="distr-dropdown-item distr-dropdown-item-warning">
-                      <fa-icon [icon]="faLinkSlash" class="w-4" />
-                      Cancel reconnect
-                    </button>
-                  </li>
-                }
               }
 
               <li>

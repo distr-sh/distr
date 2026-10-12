@@ -635,12 +635,9 @@ export class DeploymentTargetCardComponent {
   protected async openInstructionsModal() {
     const dt = this.deploymentTarget();
     if (dt.reportedControllerVersionId !== undefined) {
-      const message = dt.reconnectPending
-        ? `A reconnect of ${dt.name} is already pending. If you continue, a new secret replaces the pending one ` +
-          'and the connect command issued with it stops working. ' +
-          'The current secret stays valid until a controller connects to Distr with the new one. Continue?'
-        : `If you continue, a new authentication secret for ${dt.name} is issued. ` +
-          'The current secret stays valid until a controller connects to Distr with the new one. Continue?';
+      const message =
+        `If you continue, a new authentication secret for ${dt.name} is issued. ` +
+        'The current secret stays valid until a controller connects to Distr with the new one. Continue?';
       const alert =
         dt.customerOrganization !== undefined && this.auth.isVendor()
           ? ({type: 'warning', message: this.customerManagedWarning} as const)
