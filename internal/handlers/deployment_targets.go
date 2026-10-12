@@ -65,6 +65,12 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 				With(option.Description("Create access token for deployment target")).
 				With(option.Request(DeploymentTargetIDRequest{})).
 				With(option.Response(http.StatusOK, api.DeploymentTargetAccessTokenResponse{}))
+			r.Delete("/access-request", deleteAccessRequestForDeploymentTarget).
+				With(option.Description(
+					"Cancel a pending reconnect of a deployment target. " +
+						"The pending secret is deleted and the active one stays valid.",
+				)).
+				With(option.Request(DeploymentTargetIDRequest{}))
 		})
 		r.Route("/notes", func(r chiopenapi.Router) {
 			r.Get("/", getDeploymentTargetNotesHandler()).
@@ -326,6 +332,25 @@ func createAccessForDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 		ConnectCommand: connectCommand,
 	}); err != nil {
 		log.Error("failed to encode json", zap.Error(err))
+	}
+}
+
+func deleteAccessRequestForDeploymentTarget(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+	deploymentTarget := internalctx.GetDeploymentTarget(ctx)
+	auth := auth.Authentication.Require(ctx)
+
+	if err := db.DeleteDeploymentTargetPendingAccess(
+		ctx, deploymentTarget.ID, *auth.CurrentOrgID(),
+	); errors.Is(err, apierrors.ErrNotFound) {
+		http.Error(w, "This deployment target has no pending reconnect.", http.StatusConflict)
+	} else if err != nil {
+		log.Warn("could not delete pending access of DeploymentTarget", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	} else {
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 

@@ -201,6 +201,15 @@ once the reconnect is complete.
 
 </Aside>
 
+### Cancel a pending reconnect
+
+If you no longer need the new command, for example because it was shared with the wrong person or the controller recovered on its own, cancel the reconnect:
+
+1. Click the **⋮** menu on the deployment target and select **Cancel reconnect**. The entry is only shown while a reconnect is pending.
+2. Review the message and confirm.
+
+Distr deletes the pending secret, so the command issued with it stops working, and the **Reconnect pending** badge disappears. The current secret stays valid, so the running controller keeps working.
+
 ## Troubleshooting: Stale Status
 
 A **Stale** deployment target means the controller was previously connected but has not reported its health in the last 60 seconds. It does **not** mean your deployment is broken. Your application may still be running normally. Distr has simply lost contact with the controller.

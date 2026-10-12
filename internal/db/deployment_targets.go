@@ -362,6 +362,26 @@ func UpdateDeploymentTargetPendingAccess(ctx context.Context, dt *types.Deployme
 	}
 }
 
+func DeleteDeploymentTargetPendingAccess(ctx context.Context, id uuid.UUID, orgID uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	if cmd, err := db.Exec(ctx,
+		`UPDATE DeploymentTarget SET
+			pending_access_key_salt = NULL,
+			pending_access_key_hash = NULL
+		WHERE id = @id
+			AND organization_id = @orgId
+			AND pending_access_key_hash IS NOT NULL
+			AND access_key_hash IS NOT NULL`,
+		pgx.NamedArgs{"id": id, "orgId": orgID},
+	); err != nil {
+		return fmt.Errorf("could not delete pending access key: %w", err)
+	} else if cmd.RowsAffected() == 0 {
+		return apierrors.ErrNotFound
+	} else {
+		return nil
+	}
+}
+
 // PromoteDeploymentTargetPendingAccessKey makes the pending secret the active one. It returns
 // [apierrors.ErrNotFound] if the pending secret no longer has the given hash, i.e. it was replaced after the caller
 // verified it.

@@ -26,6 +26,22 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 ## Methods
 
+### cancelReconnectForDeploymentTarget()
+
+> **cancelReconnectForDeploymentTarget**(`deploymentTargetId`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### deploymentTargetId
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+---
+
 ### createAccessForDeploymentTarget()
 
 > **createAccessForDeploymentTarget**(`deploymentTargetId`): `Promise`\<[`DeploymentTargetAccessResponse`](../interfaces/DeploymentTargetAccessResponse.md)\>

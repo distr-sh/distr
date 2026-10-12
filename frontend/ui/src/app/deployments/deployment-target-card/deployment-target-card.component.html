@@ -162,6 +162,17 @@
                     Reconnect
                   </button>
                 </li>
+                @if (deploymentTarget().reconnectPending) {
+                  <li>
+                    <button
+                      type="button"
+                      (click)="showDeploymentTargetDropdown.set(false); cancelReconnect()"
+                      class="distr-dropdown-item distr-dropdown-item-warning">
+                      <fa-icon [icon]="faLinkSlash" class="w-4" />
+                      Cancel reconnect
+                    </button>
+                  </li>
+                }
               }
 
               <li>

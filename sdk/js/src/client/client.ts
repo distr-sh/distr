@@ -116,6 +116,10 @@ export class Client {
     return this.post<DeploymentTargetAccessResponse>(`deployment-targets/${deploymentTargetId}/access-request`);
   }
 
+  public async cancelReconnectForDeploymentTarget(deploymentTargetId: string): Promise<void> {
+    await this.send<void, undefined>('DELETE', `deployment-targets/${deploymentTargetId}/access-request`);
+  }
+
   public async getAdvisories(filter: AdvisoryFilter = {}): Promise<Advisory[]> {
     const params = new URLSearchParams();
     for (const status of filter.status ?? []) {

@@ -84,6 +84,12 @@ export class DeploymentTargetsService implements CrudService<DeploymentTarget> {
       .pipe(tap(() => this.pollRefresh$.next()));
   }
 
+  cancelReconnect(deploymentTargetId: string): Observable<void> {
+    return this.httpClient
+      .delete<void>(`${this.deploymentTargetsBaseUrl}/${deploymentTargetId}/access-request`)
+      .pipe(tap(() => this.pollRefresh$.next()));
+  }
+
   deploy(request: DeploymentRequest): Observable<void> {
     return this.httpClient.put<void>(this.deploymentsBaseUrl, request).pipe(tap(() => this.pollRefresh$.next()));
   }
