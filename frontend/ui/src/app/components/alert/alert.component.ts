@@ -2,8 +2,8 @@ import {Component, computed, input, output} from '@angular/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faCircleCheck,
+  faCircleExclamation,
   faCircleInfo,
-  faCircleXmark,
   faTriangleExclamation,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
@@ -32,7 +32,7 @@ export class AlertComponent {
 
   protected readonly faCircleCheck = faCircleCheck;
   protected readonly faCircleInfo = faCircleInfo;
-  protected readonly faCircleXmark = faCircleXmark;
+  protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faTriangleExclamation = faTriangleExclamation;
   protected readonly faXmark = faXmark;
 

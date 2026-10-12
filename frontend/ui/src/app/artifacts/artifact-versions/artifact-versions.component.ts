@@ -8,7 +8,7 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faBox,
   faCheck,
-  faCircleXmark,
+  faCircleExclamation,
   faEllipsisVertical,
   faFileSignature,
   faGlobe,
@@ -116,7 +116,7 @@ export class ArtifactVersionsComponent {
   protected readonly faGlobe = faGlobe;
   protected readonly faLock = faLock;
   protected readonly faCheck = faCheck;
-  protected readonly faCircleXmark = faCircleXmark;
+  protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faTriangleExclamation = faTriangleExclamation;
 
   protected readonly syncing = signal(false);

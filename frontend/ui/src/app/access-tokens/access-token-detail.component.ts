@@ -5,7 +5,15 @@ import {rxResource, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faChevronDown, faCircleXmark, faKey, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {
+  faChevronDown,
+  faCircleExclamation,
+  faKey,
+  faPlus,
+  faTrash,
+  faTriangleExclamation,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {catchError, firstValueFrom, Observable, of, tap} from 'rxjs';
 import {isExpired, RelativeDatePipe} from '../../util/dates';
@@ -62,7 +70,8 @@ export class AccessTokenDetailComponent {
   protected readonly faKey = faKey;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
-  protected readonly faCircleXmark = faCircleXmark;
+  protected readonly faCircleExclamation = faCircleExclamation;
+  protected readonly faTriangleExclamation = faTriangleExclamation;
   protected readonly faXmark = faXmark;
 
   private readonly accessTokensService = inject(AccessTokensService);

@@ -19,7 +19,7 @@
           </div>
           @if (countExpired(license); as expiredCount) {
             <span class="distr-badge distr-badge-error">
-              <fa-icon [icon]="faCircleXmark" />
+              <fa-icon [icon]="faCircleExclamation" />
               {{ expiredCount }} expired
             </span>
           }

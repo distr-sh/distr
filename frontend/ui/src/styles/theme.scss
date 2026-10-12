@@ -94,7 +94,7 @@
   // blue unless one of the `distr-badge-<BadgeVariant>` classes below overrides the colors, which
   // only works as long as they come after it
   .distr-badge {
-    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-sm text-xs font-medium border bg-blue-100 text-blue-800 border-blue-400 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700;
+    @apply inline-flex items-center gap-1 px-2 has-[>fa-icon:first-child]:ps-1.5 py-0.5 rounded-sm text-xs font-medium border bg-blue-100 text-blue-800 border-blue-400 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700;
   }
 
   .distr-badge-neutral {

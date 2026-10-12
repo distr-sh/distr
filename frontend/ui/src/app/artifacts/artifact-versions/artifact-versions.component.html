@@ -131,7 +131,7 @@
                     <fa-icon [icon]="faCheck" class="text-green-600 dark:text-green-400" />
                     Last synced {{ artifact.lastSyncedAt | relativeDate }}
                   } @else if (artifact.lastSyncError) {
-                    <fa-icon [icon]="faCircleXmark" class="text-red-500" />
+                    <fa-icon [icon]="faCircleExclamation" class="text-red-500" />
                     Sync error
                   } @else {
                     Not synced yet

@@ -5,7 +5,7 @@ import {ChangeDetectionStrategy, Component, inject, input, signal, TemplateRef, 
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCircleXmark, faCopy, faEye, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faCircleExclamation, faCopy, faEye, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, shareReplay, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
@@ -58,7 +58,7 @@ export class LicenseKeysComponent {
   protected readonly faXmark = faXmark;
   protected readonly faCopy = faCopy;
   protected readonly faEye = faEye;
-  protected readonly faCircleXmark = faCircleXmark;
+  protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly isExpired = isExpired;
 
   protected readonly selectedLicense = signal<LicenseKey | undefined>(undefined);

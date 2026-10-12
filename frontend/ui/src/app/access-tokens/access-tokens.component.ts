@@ -7,7 +7,7 @@ import {Router, RouterLink} from '@angular/router';
 import {UserRole} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
-  faCircleXmark,
+  faCircleExclamation,
   faClipboard,
   faPen,
   faPlus,
@@ -71,7 +71,7 @@ export class AccessTokensComponent {
   protected readonly faXmark = faXmark;
   protected readonly faClipboard = faClipboard;
   protected readonly faTriangleExclamation = faTriangleExclamation;
-  protected readonly faCircleXmark = faCircleXmark;
+  protected readonly faCircleExclamation = faCircleExclamation;
 
   private readonly accessTokensService = inject(AccessTokensService);
   private readonly auth = inject(AuthService);

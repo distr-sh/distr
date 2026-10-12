@@ -162,7 +162,10 @@
                     @if (credential.slot) {
                       <span class="distr-badge distr-badge-neutral">{{ credential.label }}</span>
                     } @else {
-                      <span class="distr-badge distr-badge-warning">{{ credential.label }}</span>
+                      <span class="distr-badge distr-badge-warning">
+                        <fa-icon [icon]="faTriangleExclamation" />
+                        {{ credential.label }}
+                      </span>
                     }
                   </td>
                   @if (legacy()) {
@@ -182,7 +185,7 @@
                       <span [title]="expiresAt | date: 'medium'">{{ expiresAt | date: 'shortDate' }}</span>
                       @if (credential.expired) {
                         <span class="ml-1 distr-badge distr-badge-error">
-                          <fa-icon [icon]="faCircleXmark" />
+                          <fa-icon [icon]="faCircleExclamation" />
                           Expired
                         </span>
                       }

@@ -51,7 +51,7 @@
                     <span [title]="d | date: 'medium'">{{ d | date: 'shortDate' }}</span>
                     @if (credential.expired) {
                       <span class="ml-1 distr-badge distr-badge-error">
-                        <fa-icon [icon]="faCircleXmark" />
+                        <fa-icon [icon]="faCircleExclamation" />
                         Expired
                       </span>
                     }

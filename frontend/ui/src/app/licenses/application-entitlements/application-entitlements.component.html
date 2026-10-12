@@ -69,7 +69,7 @@
                 {{ d | date }}
                 @if (isExpired(entitlement)) {
                   <span class="ml-1 distr-badge distr-badge-error">
-                    <fa-icon [icon]="faCircleXmark" />
+                    <fa-icon [icon]="faCircleExclamation" />
                     Expired
                   </span>
                 }
