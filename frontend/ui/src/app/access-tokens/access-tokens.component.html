@@ -29,10 +29,8 @@
         </thead>
         <tbody>
           @for (row of filteredRows(); track row.token.id) {
-            <tr class="distr-table-row">
-              <td
-                class="px-4 py-3 font-medium text-gray-900 dark:text-white max-w-48 xl:max-w-64 2xl:max-w-96 truncate"
-                [title]="row.token.label">
+            <tr [routerLink]="['/', 'settings', 'access-tokens', row.token.id]" class="distr-table-row cursor-pointer">
+              <td class="distr-table-cell max-w-48 xl:max-w-64 2xl:max-w-96 truncate" [title]="row.token.label">
                 {{ row.token.label }}
               </td>
               <td class="px-4 py-3 truncate">
@@ -79,18 +77,11 @@
                   </span>
                 }
               </td>
-              <td
-                class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
-                <a
-                  [routerLink]="['/', 'settings', 'access-tokens', row.token.id]"
-                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                  <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
-                  Details / Edit
-                </a>
+              <td class="px-4 py-3 text-end">
                 <button
                   type="button"
                   aria-label="Delete"
-                  (click)="deleteAccessToken(row)"
+                  (click)="deleteAccessToken(row, $event)"
                   class="py-2 px-3 distr-btn-danger">
                   <fa-icon [icon]="faTrash" class="h-4 w-4" />
                 </button>
