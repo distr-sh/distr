@@ -58,10 +58,8 @@
             </thead>
             <tbody>
               @for (bundle of filteredBundles(); track bundle.id) {
-                <tr
-                  [routerLink]="routePrefix + '/' + bundle.id"
-                  class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
-                  <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                <tr [routerLink]="routePrefix + '/' + bundle.id" class="distr-table-row cursor-pointer">
+                  <td class="distr-table-cell">
                     {{ bundle.title || bundle.id.substring(0, 8) }}
                   </td>
                   @if (auth.isVendor() || auth.isPartner()) {

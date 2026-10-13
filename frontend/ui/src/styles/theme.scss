@@ -207,4 +207,8 @@
   .distr-table-row {
     @apply border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700;
   }
+
+  .distr-table-cell {
+    @apply px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white;
+  }
 }
