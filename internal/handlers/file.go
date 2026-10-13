@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
@@ -22,7 +24,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// cache it indefinitely without ever revalidating.
+// A file cannot change after its upload, so clients cache it indefinitely without ever revalidating.
 const (
 	cacheControlPrivateFile = "max-age=31536000, private, immutable"
 	cacheControlPublicFile  = "max-age=31536000, public, immutable"
@@ -31,7 +33,7 @@ const (
 func FileRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Files"))
 	r.With(middleware.RequireOrgAndRole).Group(func(r chiopenapi.Router) {
-		r.Post("/", createFileHandler).
+		r.Post("/", respond.Handler(createFileHandler)).
 			With(option.Description("Upload a new file")).
 			With(option.Request(nil, option.ContentType("multipart/formdata"))).
 			With(option.Response(http.StatusOK, uuid.Nil))
@@ -41,11 +43,11 @@ func FileRouter(r chiopenapi.Router) {
 			}
 
 			r.Use(fileMiddleware)
-			r.Get("/", getFileHandler).
+			r.Get("/", respond.Handler(getFileHandler)).
 				With(option.Description("Get a file by ID")).
 				With(option.Request(FileIDRequest{})).
 				With(option.Response(http.StatusOK, nil))
-			r.Delete("/", deleteFileHandler).
+			r.Delete("/", respond.Handler(deleteFileHandler)).
 				With(option.Description("Delete a file")).
 				With(option.Request(FileIDRequest{}))
 		})
@@ -57,40 +59,35 @@ func PublicFileRouter(r chiopenapi.Router) {
 	type FileIDRequest struct {
 		FileID uuid.UUID `path:"fileId"`
 	}
-	r.Get("/{fileId}", getPublicFileHandler).
+	r.Get("/{fileId}", respond.Handler(getPublicFileHandler)).
 		With(option.Description("Get a public file by ID")).
 		With(option.Request(FileIDRequest{})).
 		With(option.Response(http.StatusOK, nil))
 }
 
-func getPublicFileHandler(w http.ResponseWriter, r *http.Request) {
+func getPublicFileHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 
 	if fileID, err := uuid.Parse(r.PathValue("fileId")); err != nil {
-		http.NotFound(w, r)
+		return nil, apierrors.ErrNotFound
 	} else if file, err := db.GetFileWithID(ctx, fileID); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
+			return nil, apierrors.ErrNotFound
 		} else {
-			log.Error("error getting public file", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return nil, fmt.Errorf("error getting public file: %w", err)
 		}
 	} else if !file.Public {
-		http.NotFound(w, r)
+		return nil, apierrors.ErrNotFound
 	} else if !isServableImageContentType(file.ContentType) {
 		// Only serve image types publicly to avoid hosting executable content (e.g. text/html) on the
 		// application's own origin. SVGs are allowed but served with script-blocking headers below.
-		http.NotFound(w, r)
+		return nil, apierrors.ErrNotFound
 	} else {
 		// SVGs are served with a sandboxing CSP so embedded scripts cannot execute in the app's origin.
-		writeSafeImageHeaders(w, file.ContentType)
-		w.Header().Set("Cache-Control", cacheControlPublicFile)
-		if _, err := w.Write(file.Data); err != nil {
-			log.Warn("failed to write file to response", zap.Error(err))
-			http.Error(w, "failed to write file to response", http.StatusInternalServerError)
-		}
+		header := http.Header{}
+		writeSafeImageHeaders(header, file.ContentType)
+		header.Set("Cache-Control", cacheControlPublicFile)
+		return respond.StreamResponse{ContentType: file.ContentType, Header: header, Body: bytes.NewReader(file.Data)}, nil
 	}
 }
 
@@ -111,57 +108,47 @@ func isServableImageContentType(contentType string) bool {
 // writeSafeImageHeaders sets the content type and hardening headers for serving a (potentially untrusted) image.
 // For SVGs it adds a sandboxing Content-Security-Policy so any embedded scripts cannot run when the file is opened
 // as a top-level document; scripts never run when the image is loaded via <img>, which is how logos are displayed.
-func writeSafeImageHeaders(w http.ResponseWriter, contentType string) {
-	w.Header().Set("Content-Type", contentType)
-	w.Header().Set("X-Content-Type-Options", "nosniff")
+func writeSafeImageHeaders(header http.Header, contentType string) {
+	header.Set("Content-Type", contentType)
+	header.Set("X-Content-Type-Options", "nosniff")
 	if parseMediaType(contentType) == mediaTypeSVG {
-		w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
+		header.Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
 	}
 }
 
-func getFileHandler(w http.ResponseWriter, r *http.Request) {
+func getFileHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	file := internalctx.GetFile(ctx)
 
-	w.Header().Set("Content-Type", file.ContentType)
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", file.FileName))
-	w.Header().Set("Cache-Control", cacheControlPrivateFile)
-
-	// Write file data to response
-	if _, err := w.Write(file.Data); err != nil {
-		internalctx.GetLogger(ctx).Warn("failed to write file to response", zap.Error(err))
-		http.Error(w, "failed to write file to response", http.StatusInternalServerError)
-	}
+	return respond.Stream(file.ContentType, bytes.NewReader(file.Data)).
+		WithHeader("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", file.FileName)).
+		WithHeader("Cache-Control", cacheControlPrivateFile), nil
 }
 
-func deleteFileHandler(w http.ResponseWriter, r *http.Request) {
+func deleteFileHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	file := internalctx.GetFile(ctx)
 
 	if err := db.DeleteFileWithID(ctx, file.ID); err != nil {
-		log.Warn("error deleting file", zap.Error(err))
 		if errors.Is(err, apierrors.ErrNotFound) {
-			w.WriteHeader(http.StatusNoContent)
+			return respond.NoContent(), nil
 		} else if errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			return nil, apierrors.NewBadRequest("file is still in use")
 		} else {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return nil, fmt.Errorf("error deleting file: %w", err)
 		}
 	} else {
-		w.WriteHeader(http.StatusNoContent)
+		return respond.NoContent(), nil
 	}
 }
 
-func createFileHandler(w http.ResponseWriter, r *http.Request) {
+func createFileHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 
 	auth := auth.Authentication.Require(ctx)
 
 	if file, err := getFileFromRequest(r); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		return nil, apierrors.NewBadRequest(err.Error())
 	} else {
 		var orgID *uuid.UUID
 		scope := r.FormValue("scope")
@@ -169,11 +156,9 @@ func createFileHandler(w http.ResponseWriter, r *http.Request) {
 			orgID = auth.CurrentOrgID()
 		}
 		if err := db.CreateFile(ctx, orgID, file); err != nil {
-			log.Warn("error uploading file", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return nil, fmt.Errorf("error uploading file: %w", err)
 		} else {
-			RespondJSON(w, file.ID)
+			return respond.JSON(file.ID), nil
 		}
 	}
 }
@@ -236,32 +221,27 @@ func fileMiddleware(h http.Handler) http.Handler {
 }
 
 func patchImageHandler(patchImage func(ctx context.Context, body api.PatchImageRequest) (any, error)) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return respond.Handler(func(r *http.Request) (respond.Responder, error) {
 		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
 
-		body, err := JsonBody[api.PatchImageRequest](w, r)
+		body, err := decodeJSON[api.PatchImageRequest](r)
 
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+			return nil, err
 		} else if body.ImageID == uuid.Nil {
-			http.Error(w, "imageId can not be empty", http.StatusBadRequest)
-			return
+			return nil, apierrors.NewBadRequest("imageId can not be empty")
 		}
 
 		if result, err := patchImage(ctx, body); err != nil {
-			log.Warn("error patching image id", zap.Error(err))
 			if errors.Is(err, apierrors.ErrNotFound) {
-				w.WriteHeader(http.StatusNoContent)
+				return respond.NoContent(), nil
 			} else if errors.Is(err, apierrors.ErrConflict) {
-				http.Error(w, err.Error(), http.StatusBadRequest)
+				return nil, apierrors.NewBadRequest(err.Error())
 			} else {
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return nil, fmt.Errorf("error patching image id: %w", err)
 			}
 		} else {
-			RespondJSON(w, result)
+			return respond.JSON(result), nil
 		}
-	}
+	})
 }
