@@ -161,11 +161,11 @@
   // No `overflow-hidden` here, unlike `distr-table-panel`: a padded panel has nothing to clip at its
   // rounded corners, and clipping would break `position: sticky` for its children.
   .distr-panel {
-    @apply relative p-6 bg-white rounded-lg shadow-md dark:bg-gray-800;
+    @apply relative p-6 bg-white border border-gray-200 rounded-lg shadow-md dark:border-gray-700 dark:bg-gray-800;
   }
 
   .distr-table-panel {
-    @apply relative overflow-hidden bg-white rounded-lg shadow-md dark:bg-gray-800;
+    @apply relative overflow-hidden bg-white border border-gray-200 rounded-lg shadow-md dark:border-gray-700 dark:bg-gray-800;
   }
 
   // the panel holding the rows of destructive actions at the end of a settings page
