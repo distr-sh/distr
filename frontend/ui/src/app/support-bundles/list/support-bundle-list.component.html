@@ -74,29 +74,31 @@
                   <td class="px-4 py-3">
                     {{ bundle.lastCommentAt ? (bundle.lastCommentAt | date: 'medium') : '-' }}
                   </td>
-                  <td class="px-4 py-3 flex gap-2 justify-end">
-                    @if (bundle.resourceCount > 0) {
-                      <button
-                        type="button"
-                        (click)="downloadResources(bundle, $event)"
-                        [disabled]="downloadingBundleId() !== null"
-                        title="Download resources"
-                        class="py-1.5 px-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
-                        <fa-icon [icon]="faDownload" />
-                        <span class="sr-only">Download resources</span>
-                      </button>
-                    }
-                    @if (auth.hasAnyRole('read_write', 'admin')) {
-                      <button
-                        type="button"
-                        (click)="deleteBundle(bundle, $event)"
-                        [disabled]="deletingBundleId() !== null"
-                        title="Delete support bundle"
-                        class="py-1.5 px-3 distr-btn-danger">
-                        <fa-icon [icon]="faTrash" />
-                        <span class="sr-only">Delete support bundle</span>
-                      </button>
-                    }
+                  <td class="px-4 py-3">
+                    <div class="flex gap-2 justify-end">
+                      @if (bundle.resourceCount > 0) {
+                        <button
+                          type="button"
+                          (click)="downloadResources(bundle, $event)"
+                          [disabled]="downloadingBundleId() !== null"
+                          title="Download resources"
+                          class="py-2 px-3 text-sm distr-btn-secondary">
+                          <fa-icon [icon]="faDownload" class="h-4 w-4" />
+                          <span class="sr-only">Download resources</span>
+                        </button>
+                      }
+                      @if (auth.hasAnyRole('read_write', 'admin')) {
+                        <button
+                          type="button"
+                          (click)="deleteBundle(bundle, $event)"
+                          [disabled]="deletingBundleId() !== null"
+                          title="Delete support bundle"
+                          class="py-2 px-3 distr-btn-danger">
+                          <fa-icon [icon]="faTrash" class="h-4 w-4" />
+                          <span class="sr-only">Delete support bundle</span>
+                        </button>
+                      }
+                    </div>
                   </td>
                 </tr>
               }
