@@ -15,6 +15,7 @@ import (
 	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
@@ -30,7 +31,7 @@ func OrganizationRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Organizations"))
 	r.Use(middleware.RequireOrgAndRole)
 
-	r.Get("/", getOrganization).
+	r.Get("/", respond.Handler(getOrganization)).
 		With(option.Description("Get current organization")).
 		With(option.Response(http.StatusOK, api.OrganizationResponse{}))
 
@@ -53,7 +54,7 @@ func OrganizationRouter(r chiopenapi.Router) {
 		middleware.BlockCrossOrganizationAction,
 		middleware.BlockSuperAdminUnlessOrganizationExpired,
 	).
-		Delete("/", deleteOrganizationHandler()).
+		Delete("/", respond.Handler(deleteOrganizationHandler)).
 		With(option.Description("Delete current organization"))
 
 	r.Route("/branding", OrganizationBrandingRouter)
@@ -61,37 +62,28 @@ func OrganizationRouter(r chiopenapi.Router) {
 	r.Route("/webhook", func(r chiopenapi.Router) {
 		r.Use(middleware.RequireVendor, middleware.VendorBillingFeatureMiddleware)
 
-		r.Get("/", getOrganizationWebhook).
+		r.Get("/", respond.Handler(getOrganizationWebhook)).
 			With(option.Description("Get vendor webhook configuration status")).
 			With(option.Response(http.StatusOK, api.OrganizationWebhookResponse{}))
 
 		r.With(middleware.RequireAdmin, middleware.BlockSuperAdmin).
-			Put("/", updateOrganizationWebhook).
+			Put("/", respond.Handler(updateOrganizationWebhook)).
 			With(option.Description("Set vendor Stripe webhook secret")).
 			With(option.Request(api.UpdateOrganizationWebhookRequest{}))
 	})
 }
 
-func getOrganization(w http.ResponseWriter, r *http.Request) {
+func getOrganization(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 	orgID := *auth.CurrentOrgID()
-	billableUserCount, err := db.CountBillableUserAccountsByOrgID(ctx, orgID)
-	if err != nil {
-		log.Error("failed to count billable user accounts", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+	if billableUserCount, err := db.CountBillableUserAccountsByOrgID(ctx, orgID); err != nil {
+		return nil, fmt.Errorf("failed to count billable user accounts: %w", err)
+	} else if customerOrgCount, err := db.CountCustomerOrganizationsByOrganizationID(ctx, orgID); err != nil {
+		return nil, fmt.Errorf("failed to count customer organizations: %w", err)
+	} else {
+		return respond.JSON(mapping.OrganizationToAPI(*auth.CurrentOrg(), billableUserCount, customerOrgCount)), nil
 	}
-	customerOrgCount, err := db.CountCustomerOrganizationsByOrganizationID(ctx, orgID)
-	if err != nil {
-		log.Error("failed to count customer organizations", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	RespondJSON(w, mapping.OrganizationToAPI(*auth.CurrentOrg(), billableUserCount, customerOrgCount))
 }
 
 func updateOrganization(w http.ResponseWriter, r *http.Request) {
@@ -279,51 +271,38 @@ func handleUpdateOrganization(
 	return org, nil
 }
 
-func deleteOrganizationHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		auth := auth.Authentication.Require(ctx)
-		log := internalctx.GetLogger(ctx)
+func deleteOrganizationHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
 
-		if err := db.SetOrganizationDeletedAtNow(ctx, *auth.CurrentOrgID()); err != nil {
-			log.Error("could not soft-delete organization", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusNoContent)
+	if err := db.SetOrganizationDeletedAtNow(ctx, *auth.CurrentOrgID()); err != nil {
+		return nil, fmt.Errorf("could not soft-delete organization: %w", err)
+	} else {
+		return respond.NoContent(), nil
 	}
 }
 
-func getOrganizationWebhook(w http.ResponseWriter, r *http.Request) {
+func getOrganizationWebhook(r *http.Request) (respond.Responder, error) {
 	authCtx := auth.Authentication.Require(r.Context())
-	RespondJSON(w, api.OrganizationWebhookResponse{
+	return respond.JSON(api.OrganizationWebhookResponse{
 		Configured: authCtx.CurrentOrg().StripeWebhookSecretConfigured,
-	})
+	}), nil
 }
 
-func updateOrganizationWebhook(w http.ResponseWriter, r *http.Request) {
+func updateOrganizationWebhook(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	authCtx := auth.Authentication.Require(ctx)
 
-	body, err := JsonBody[api.UpdateOrganizationWebhookRequest](w, r)
-	if err != nil {
-		return
+	if body, resp := decodeJSON[api.UpdateOrganizationWebhookRequest](r); resp != nil {
+		return resp, nil
+	} else if err := body.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else {
+		secret := dbcrypto.StringPtr(body.WebhookSecret)
+		if err := db.SetOrganizationStripeWebhookSecret(ctx, *authCtx.CurrentOrgID(), secret); err != nil {
+			return nil, fmt.Errorf("failed to update stripe webhook secret: %w", err)
+		} else {
+			return respond.NoContent(), nil
+		}
 	}
-
-	if err := body.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	secret := dbcrypto.StringPtr(body.WebhookSecret)
-	if err := db.SetOrganizationStripeWebhookSecret(ctx, *authCtx.CurrentOrgID(), secret); err != nil {
-		log.Error("failed to update stripe webhook secret", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
 }

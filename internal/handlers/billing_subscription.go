@@ -13,6 +13,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/handlerutil"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
@@ -21,53 +22,34 @@ import (
 	"go.uber.org/zap"
 )
 
-func GetSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
+func GetSubscriptionHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 	org := auth.CurrentOrg()
 
-	info, err := buildSubscriptionInfo(ctx, org)
-	if err != nil {
-		http.Error(w, "failed to build subscription info", http.StatusInternalServerError)
-		return
+	if info, err := buildSubscriptionInfo(ctx, org); err != nil {
+		return nil, fmt.Errorf("failed to build subscription info: %w", err)
+	} else {
+		return respond.JSON(info), nil
 	}
-
-	RespondJSON(w, info)
 }
 
-func CreateSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
+func CreateSubscriptionHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 
-	var body api.CreateSubscriptionRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		log.Debug("bad json payload", zap.Error(err))
-		http.Error(w, "bad json payload", http.StatusBadRequest)
-		return
-	}
-
-	// Get current usage counts
-	usage, err := getCurrentUsageCounts(ctx, *auth.CurrentOrgID())
-	if err != nil {
-		log.Error("failed to get current usage counts", zap.Error(err))
-		http.Error(w, "failed to get current usage counts", http.StatusInternalServerError)
-		return
-	}
-
-	// Validate subscription quantities
-	if err := validateSubscriptionQuantities(
+	if body, resp := decodeJSON[api.CreateSubscriptionRequest](r); resp != nil {
+		return resp, nil
+	} else if usage, err := getCurrentUsageCounts(ctx, *auth.CurrentOrgID()); err != nil {
+		return nil, fmt.Errorf("failed to get current usage counts: %w", err)
+	} else if err := validateSubscriptionQuantities(
 		body.SubscriptionType,
 		body.CustomerOrganizationQty,
 		body.UserAccountQty,
 		usage,
 	); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	session, err := billing.CreateCheckoutSession(ctx, billing.CheckoutSessionParams{
+		return respond.BadRequest(err.Error()), nil
+	} else if session, err := billing.CreateCheckoutSession(ctx, billing.CheckoutSessionParams{
 		OrganizationID:          auth.CurrentOrgID().String(),
 		TrialEndsAt:             auth.CurrentOrg().SubscriptionEndsAt,
 		SubscriptionType:        body.SubscriptionType,
@@ -76,18 +58,14 @@ func CreateSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 		UserAccountQty:          body.UserAccountQty,
 		Currency:                "usd",
 		SuccessURL:              fmt.Sprintf("%v/subscription/callback", handlerutil.GetRequestSchemeAndHost(r)),
-	})
-	if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("failed to create checkout session", zap.Error(err))
-		http.Error(w, "failed to create checkout session", http.StatusInternalServerError)
-		return
+	}); err != nil {
+		return nil, fmt.Errorf("failed to create checkout session: %w", err)
+	} else {
+		return respond.JSON(api.CheckoutResponse{
+			SessionID: session.ID,
+			URL:       session.URL,
+		}), nil
 	}
-
-	RespondJSON(w, api.CheckoutResponse{
-		SessionID: session.ID,
-		URL:       session.URL,
-	})
 }
 
 func UpdateSubscriptionHandler(w http.ResponseWriter, r *http.Request) {

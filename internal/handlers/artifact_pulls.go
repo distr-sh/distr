@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/csv"
 	"errors"
 	"fmt"
@@ -17,6 +16,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
@@ -33,7 +33,7 @@ func ArtifactPullsRouter(r chiopenapi.Router) {
 		middleware.RequireOrgAndRole,
 		middleware.RequireVendorOrPartner,
 	)
-	r.Get("/", getArtifactPullsHandler()).
+	r.Get("/", respond.Handler(getArtifactPullsHandler)).
 		With(option.Description("List artifact version pulls")).
 		With(option.Request(struct {
 			Before                 *time.Time `query:"before"`
@@ -48,10 +48,10 @@ func ArtifactPullsRouter(r chiopenapi.Router) {
 			DeploymentTargetID     *string    `query:"deploymentTargetId"`
 		}{})).
 		With(option.Response(http.StatusOK, []api.ArtifactVersionPullResponse{}))
-	r.Get("/filter-options", getArtifactPullFilterOptionsHandler()).
+	r.Get("/filter-options", respond.Handler(getArtifactPullFilterOptionsHandler)).
 		With(option.Description("Get available filter options for artifact pulls")).
 		With(option.Response(http.StatusOK, api.ArtifactVersionPullFilterOptions{}))
-	r.Get("/filter-options/versions", getArtifactPullVersionOptionsHandler()).
+	r.Get("/filter-options/versions", respond.Handler(getArtifactPullVersionOptionsHandler)).
 		With(option.Description("Get available version filter options for a specific artifact")).
 		With(option.Request(struct {
 			ArtifactID string `query:"artifactId"`
@@ -62,7 +62,17 @@ func ArtifactPullsRouter(r chiopenapi.Router) {
 		With(option.Response(http.StatusOK, []byte{}))
 }
 
+// parseArtifactPullFilters is artifactPullFilter for handlers that write to w themselves.
 func parseArtifactPullFilters(w http.ResponseWriter, r *http.Request) (types.ArtifactVersionPullFilter, error) {
+	filter, err := artifactPullFilter(r)
+	if err != nil {
+		resp, respErr := artifactPullFilterError(err)
+		respond.Write(w, r, resp, respErr)
+	}
+	return filter, err
+}
+
+func artifactPullFilter(r *http.Request) (types.ArtifactVersionPullFilter, error) {
 	ctx := r.Context()
 	authInfo := auth.Authentication.Require(ctx)
 	filter := types.ArtifactVersionPullFilter{
@@ -70,15 +80,11 @@ func parseArtifactPullFilters(w http.ResponseWriter, r *http.Request) (types.Art
 		Before: time.Now(),
 		Count:  50,
 	}
-	fail := func(err error) (types.ArtifactVersionPullFilter, error) {
-		respondArtifactPullFilterError(w, ctx, err)
-		return filter, err
-	}
 
 	if before, err := QueryParam(r, "before", ParseTimeFunc(time.RFC3339Nano)); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return fail(apierrors.NewBadRequest("before must be a valid date"))
+		return filter, apierrors.NewBadRequest("before must be a valid date")
 	} else {
 		filter.Before = before
 	}
@@ -86,7 +92,7 @@ func parseArtifactPullFilters(w http.ResponseWriter, r *http.Request) (types.Art
 	if after, err := QueryParam(r, "after", ParseTimeFunc(time.RFC3339Nano)); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return fail(apierrors.NewBadRequest("after must be a valid date"))
+		return filter, apierrors.NewBadRequest("after must be a valid date")
 	} else {
 		filter.After = after
 	}
@@ -94,9 +100,9 @@ func parseArtifactPullFilters(w http.ResponseWriter, r *http.Request) (types.Art
 	if count, err := QueryParam(r, "count", strconv.Atoi); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return fail(apierrors.NewBadRequest("count must be a number"))
+		return filter, apierrors.NewBadRequest("count must be a number")
 	} else if count < 1 || count > 1000 {
-		return fail(apierrors.NewBadRequest("count must be between 1 and 1000"))
+		return filter, apierrors.NewBadRequest("count must be between 1 and 1000")
 	} else {
 		filter.Count = count
 	}
@@ -104,7 +110,7 @@ func parseArtifactPullFilters(w http.ResponseWriter, r *http.Request) (types.Art
 	if id, err := QueryParam(r, "customerOrganizationId", uuid.Parse); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return fail(apierrors.NewBadRequest("customerOrganizationId must be a valid UUID"))
+		return filter, apierrors.NewBadRequest("customerOrganizationId must be a valid UUID")
 	} else {
 		filter.CustomerOrganizationID = &id
 	}
@@ -112,7 +118,7 @@ func parseArtifactPullFilters(w http.ResponseWriter, r *http.Request) (types.Art
 	if id, err := QueryParam(r, "userAccountId", uuid.Parse); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return fail(apierrors.NewBadRequest("userAccountId must be a valid UUID"))
+		return filter, apierrors.NewBadRequest("userAccountId must be a valid UUID")
 	} else {
 		filter.UserAccountID = &id
 	}
@@ -120,7 +126,7 @@ func parseArtifactPullFilters(w http.ResponseWriter, r *http.Request) (types.Art
 	if anonymous, err := QueryParam(r, "anonymous", strconv.ParseBool); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return fail(apierrors.NewBadRequest("anonymous must be true or false"))
+		return filter, apierrors.NewBadRequest("anonymous must be true or false")
 	} else {
 		filter.Anonymous = anonymous
 	}
@@ -132,7 +138,7 @@ func parseArtifactPullFilters(w http.ResponseWriter, r *http.Request) (types.Art
 	if id, err := QueryParam(r, "artifactId", uuid.Parse); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return fail(apierrors.NewBadRequest("artifactId must be a valid UUID"))
+		return filter, apierrors.NewBadRequest("artifactId must be a valid UUID")
 	} else {
 		filter.ArtifactID = &id
 	}
@@ -140,7 +146,7 @@ func parseArtifactPullFilters(w http.ResponseWriter, r *http.Request) (types.Art
 	if id, err := QueryParam(r, "artifactVersionId", uuid.Parse); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return fail(apierrors.NewBadRequest("artifactVersionId must be a valid UUID"))
+		return filter, apierrors.NewBadRequest("artifactVersionId must be a valid UUID")
 	} else {
 		filter.ArtifactVersionID = &id
 	}
@@ -148,7 +154,7 @@ func parseArtifactPullFilters(w http.ResponseWriter, r *http.Request) (types.Art
 	if id, err := QueryParam(r, "deploymentTargetId", uuid.Parse); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return fail(apierrors.NewBadRequest("deploymentTargetId must be a valid UUID"))
+		return filter, apierrors.NewBadRequest("deploymentTargetId must be a valid UUID")
 	} else {
 		filter.DeploymentTargetID = &id
 	}
@@ -159,12 +165,12 @@ func parseArtifactPullFilters(w http.ResponseWriter, r *http.Request) (types.Art
 			co, err := db.GetCustomerOrganizationByID(ctx, *filter.CustomerOrganizationID)
 			if err != nil {
 				if errors.Is(err, apierrors.ErrNotFound) {
-					return fail(apierrors.NewForbidden("customer is not assigned to your partner organization"))
+					return filter, apierrors.NewForbidden("customer is not assigned to your partner organization")
 				}
-				return fail(err)
+				return filter, err
 			}
 			if !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-				return fail(apierrors.NewForbidden("customer is not assigned to your partner organization"))
+				return filter, apierrors.NewForbidden("customer is not assigned to your partner organization")
 			}
 		}
 	}
@@ -172,86 +178,57 @@ func parseArtifactPullFilters(w http.ResponseWriter, r *http.Request) (types.Art
 	return filter, nil
 }
 
-func respondArtifactPullFilterError(w http.ResponseWriter, ctx context.Context, err error) {
-	log := internalctx.GetLogger(ctx)
+func artifactPullFilterError(err error) (respond.Responder, error) {
 	switch {
 	case errors.Is(err, apierrors.ErrBadRequest):
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		return respond.BadRequest(err.Error()), nil
 	case errors.Is(err, apierrors.ErrForbidden):
-		http.Error(w, err.Error(), http.StatusForbidden)
+		return respond.Forbidden(err.Error()), nil
 	default:
-		log.Warn("could not parse artifact pull filters", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return nil, fmt.Errorf("could not parse artifact pull filters: %w", err)
 	}
 }
 
-func getArtifactPullsHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
+func getArtifactPullsHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
 
-		filter, err := parseArtifactPullFilters(w, r)
-		if err != nil {
-			return
-		}
-
-		pulls, err := db.GetArtifactVersionPulls(ctx, filter)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Warn("could not get pulls", zap.Error(err))
-			return
-		}
-
-		RespondJSON(w, mapping.List(pulls, mapping.ArtifactVersionPullToAPI))
+	if filter, err := artifactPullFilter(r); err != nil {
+		return artifactPullFilterError(err)
+	} else if pulls, err := db.GetArtifactVersionPulls(ctx, filter); err != nil {
+		return nil, fmt.Errorf("could not get pulls: %w", err)
+	} else {
+		return respond.JSON(mapping.List(pulls, mapping.ArtifactVersionPullToAPI)), nil
 	}
 }
 
-func getArtifactPullFilterOptionsHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		authInfo := auth.Authentication.Require(ctx)
+func getArtifactPullFilterOptionsHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	authInfo := auth.Authentication.Require(ctx)
 
-		opts, err := db.GetArtifactVersionPullFilterOptions(ctx, *authInfo.CurrentOrgID(), authInfo.CurrentPartnerOrgID())
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Warn("could not get pull filter options", zap.Error(err))
-			return
-		}
-
-		RespondJSON(w, mapping.ArtifactVersionPullFilterOptionsToAPI(opts))
+	if opts, err := db.GetArtifactVersionPullFilterOptions(
+		ctx, *authInfo.CurrentOrgID(), authInfo.CurrentPartnerOrgID(),
+	); err != nil {
+		return nil, fmt.Errorf("could not get pull filter options: %w", err)
+	} else {
+		return respond.JSON(mapping.ArtifactVersionPullFilterOptionsToAPI(opts)), nil
 	}
 }
 
-func getArtifactPullVersionOptionsHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		authInfo := auth.Authentication.Require(ctx)
+func getArtifactPullVersionOptionsHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	authInfo := auth.Authentication.Require(ctx)
 
-		artifactID, err := QueryParam(r, "artifactId", uuid.Parse)
-		if err != nil {
-			http.Error(w, "artifactId is required and must be a valid UUID", http.StatusBadRequest)
-			return
-		}
-
-		versions, err := db.GetArtifactVersionPullVersionOptions(
-			ctx,
-			*authInfo.CurrentOrgID(),
-			artifactID,
-			authInfo.CurrentPartnerOrgID(),
-		)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Warn("could not get version filter options", zap.Error(err))
-			return
-		}
-
-		RespondJSON(w, mapping.List(versions, mapping.FilterOptionToAPI))
+	if artifactID, err := QueryParam(r, "artifactId", uuid.Parse); err != nil {
+		return respond.BadRequest("artifactId is required and must be a valid UUID"), nil
+	} else if versions, err := db.GetArtifactVersionPullVersionOptions(
+		ctx,
+		*authInfo.CurrentOrgID(),
+		artifactID,
+		authInfo.CurrentPartnerOrgID(),
+	); err != nil {
+		return nil, fmt.Errorf("could not get version filter options: %w", err)
+	} else {
+		return respond.JSON(mapping.List(versions, mapping.FilterOptionToAPI)), nil
 	}
 }
 

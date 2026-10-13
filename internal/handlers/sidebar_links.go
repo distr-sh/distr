@@ -3,21 +3,20 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/util"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 func SidebarLinksRouter(r chiopenapi.Router) {
@@ -28,7 +27,7 @@ func SidebarLinksRouter(r chiopenapi.Router) {
 		CustomerOrganizationID uuid.UUID `path:"customerOrganizationId"`
 	}
 
-	r.Get("/", getSidebarLinksHandler()).
+	r.Get("/", respond.Handler(getSidebarLinksHandler)).
 		With(option.Description("List all sidebar links for a customer organization")).
 		With(option.Request(customerOrganizationIDRequest{})).
 		With(option.Response(http.StatusOK, []api.SidebarLink{}))
@@ -36,7 +35,7 @@ func SidebarLinksRouter(r chiopenapi.Router) {
 	r.Group(func(r chiopenapi.Router) {
 		r.Use(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin)
 
-		r.Post("/", createSidebarLinkHandler()).
+		r.Post("/", respond.Handler(createSidebarLinkHandler)).
 			With(option.Description("Create a sidebar link for a customer organization")).
 			With(option.Request(struct {
 				customerOrganizationIDRequest
@@ -50,7 +49,7 @@ func SidebarLinksRouter(r chiopenapi.Router) {
 				LinkID uuid.UUID `path:"linkId"`
 			}
 
-			r.Put("/", updateSidebarLinkHandler()).
+			r.Put("/", respond.Handler(updateSidebarLinkHandler)).
 				With(option.Description("Update a sidebar link")).
 				With(option.Request(struct {
 					linkIDRequest
@@ -58,12 +57,17 @@ func SidebarLinksRouter(r chiopenapi.Router) {
 				}{})).
 				With(option.Response(http.StatusOK, api.SidebarLink{}))
 
-			r.Delete("/", deleteSidebarLinkHandler()).
+			r.Delete("/", respond.Handler(deleteSidebarLinkHandler)).
 				With(option.Description("Delete a sidebar link")).
 				With(option.Request(linkIDRequest{}))
 		})
 	})
 }
+
+var (
+	sidebarLinkCustomerNotFound = respond.NotFound("customer not found")
+	sidebarLinkNotFound         = respond.NotFound("sidebar link not found")
+)
 
 func validatePartnerAccessToCustomer(ctx context.Context, customerOrgID uuid.UUID) (bool, error) {
 	a := auth.Authentication.Require(ctx)
@@ -78,201 +82,104 @@ func validatePartnerAccessToCustomer(ctx context.Context, customerOrgID uuid.UUI
 	return util.PtrEq(co.PartnerOrganizationID, partnerOrgID), nil
 }
 
-func getSidebarLinksHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
+func getSidebarLinksHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
 
-		customerOrgID, err := uuid.Parse(r.PathValue("customerOrganizationId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-
-		if err := db.ValidateCustomerOrgBelongsToOrg(ctx, customerOrgID, *auth.CurrentOrgID()); err != nil {
-			http.NotFound(w, r)
-			return
-		}
-		if ok, err := validatePartnerAccessToCustomer(ctx, customerOrgID); err != nil {
-			log.Error("failed to validate partner access", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		} else if !ok {
-			http.NotFound(w, r)
-			return
-		}
-
-		links, err := db.GetSidebarLinks(ctx, customerOrgID)
-		if err != nil {
-			log.Error("failed to get sidebar links", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		} else {
-			RespondJSON(w, mapping.List(links, mapping.SidebarLinkToAPI))
-		}
+	if customerOrgID, err := uuid.Parse(r.PathValue("customerOrganizationId")); err != nil {
+		return sidebarLinkCustomerNotFound, nil
+	} else if err := db.ValidateCustomerOrgBelongsToOrg(ctx, customerOrgID, *auth.CurrentOrgID()); err != nil {
+		return sidebarLinkCustomerNotFound, nil
+	} else if ok, err := validatePartnerAccessToCustomer(ctx, customerOrgID); err != nil {
+		return nil, fmt.Errorf("failed to validate partner access: %w", err)
+	} else if !ok {
+		return sidebarLinkCustomerNotFound, nil
+	} else if links, err := db.GetSidebarLinks(ctx, customerOrgID); err != nil {
+		return nil, fmt.Errorf("failed to get sidebar links: %w", err)
+	} else {
+		return respond.JSON(mapping.List(links, mapping.SidebarLinkToAPI)), nil
 	}
 }
 
-func createSidebarLinkHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
+func createSidebarLinkHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
 
-		customerOrgID, err := uuid.Parse(r.PathValue("customerOrganizationId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-
-		if err := db.ValidateCustomerOrgBelongsToOrg(ctx, customerOrgID, *auth.CurrentOrgID()); err != nil {
-			http.NotFound(w, r)
-			return
-		}
-		if ok, err := validatePartnerAccessToCustomer(ctx, customerOrgID); err != nil {
-			log.Error("failed to validate partner access", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		} else if !ok {
-			http.NotFound(w, r)
-			return
-		}
-
-		body, err := JsonBody[api.CreateUpdateSidebarLinkRequest](w, r)
-		if err != nil {
-			return
-		}
-
-		if body.Name == "" {
-			http.Error(w, "name is required", http.StatusBadRequest)
-			return
-		}
-
-		if body.Link == "" {
-			http.Error(w, "link is required", http.StatusBadRequest)
-			return
-		}
-
-		link, err := db.CreateSidebarLink(ctx, *auth.CurrentOrgID(), customerOrgID, body.Name, body.Link)
-		if err != nil {
-			log.Error("failed to create sidebar link", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		} else {
-			w.WriteHeader(http.StatusCreated)
-			RespondJSON(w, mapping.SidebarLinkToAPI(*link))
-		}
+	if customerOrgID, err := uuid.Parse(r.PathValue("customerOrganizationId")); err != nil {
+		return sidebarLinkCustomerNotFound, nil
+	} else if err := db.ValidateCustomerOrgBelongsToOrg(ctx, customerOrgID, *auth.CurrentOrgID()); err != nil {
+		return sidebarLinkCustomerNotFound, nil
+	} else if ok, err := validatePartnerAccessToCustomer(ctx, customerOrgID); err != nil {
+		return nil, fmt.Errorf("failed to validate partner access: %w", err)
+	} else if !ok {
+		return sidebarLinkCustomerNotFound, nil
+	} else if body, resp := decodeJSON[api.CreateUpdateSidebarLinkRequest](r); resp != nil {
+		return resp, nil
+	} else if body.Name == "" {
+		return respond.BadRequest("name is required"), nil
+	} else if body.Link == "" {
+		return respond.BadRequest("link is required"), nil
+	} else if link, err := db.CreateSidebarLink(
+		ctx, *auth.CurrentOrgID(), customerOrgID, body.Name, body.Link,
+	); err != nil {
+		return nil, fmt.Errorf("failed to create sidebar link: %w", err)
+	} else {
+		return respond.JSON(mapping.SidebarLinkToAPI(*link)).WithStatus(http.StatusCreated), nil
 	}
 }
 
-func updateSidebarLinkHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
+func updateSidebarLinkHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
 
-		customerOrgID, err := uuid.Parse(r.PathValue("customerOrganizationId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-
-		linkID, err := uuid.Parse(r.PathValue("linkId"))
-		if err != nil {
-			http.Error(w, "invalid link ID", http.StatusBadRequest)
-			return
-		}
-
-		if err := db.ValidateCustomerOrgBelongsToOrg(ctx, customerOrgID, *auth.CurrentOrgID()); err != nil {
-			http.NotFound(w, r)
-			return
-		}
-		if ok, err := validatePartnerAccessToCustomer(ctx, customerOrgID); err != nil {
-			log.Error("failed to validate partner access", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		} else if !ok {
-			http.NotFound(w, r)
-			return
-		}
-
-		body, err := JsonBody[api.CreateUpdateSidebarLinkRequest](w, r)
-		if err != nil {
-			return
-		}
-
-		if body.Name == "" {
-			http.Error(w, "name is required", http.StatusBadRequest)
-			return
-		}
-
-		if body.Link == "" {
-			http.Error(w, "link is required", http.StatusBadRequest)
-			return
-		}
-
-		link, err := db.UpdateSidebarLink(ctx, linkID, customerOrgID, body.Name, body.Link)
-		if err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
-				http.NotFound(w, r)
-			} else {
-				log.Error("failed to update sidebar link", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			}
+	if customerOrgID, err := uuid.Parse(r.PathValue("customerOrganizationId")); err != nil {
+		return sidebarLinkCustomerNotFound, nil
+	} else if linkID, err := uuid.Parse(r.PathValue("linkId")); err != nil {
+		return respond.BadRequest("invalid link ID"), nil
+	} else if err := db.ValidateCustomerOrgBelongsToOrg(ctx, customerOrgID, *auth.CurrentOrgID()); err != nil {
+		return sidebarLinkCustomerNotFound, nil
+	} else if ok, err := validatePartnerAccessToCustomer(ctx, customerOrgID); err != nil {
+		return nil, fmt.Errorf("failed to validate partner access: %w", err)
+	} else if !ok {
+		return sidebarLinkCustomerNotFound, nil
+	} else if body, resp := decodeJSON[api.CreateUpdateSidebarLinkRequest](r); resp != nil {
+		return resp, nil
+	} else if body.Name == "" {
+		return respond.BadRequest("name is required"), nil
+	} else if body.Link == "" {
+		return respond.BadRequest("link is required"), nil
+	} else if link, err := db.UpdateSidebarLink(ctx, linkID, customerOrgID, body.Name, body.Link); err != nil {
+		if errors.Is(err, apierrors.ErrNotFound) {
+			return sidebarLinkNotFound, nil
 		} else {
-			RespondJSON(w, mapping.SidebarLinkToAPI(*link))
+			return nil, fmt.Errorf("failed to update sidebar link: %w", err)
 		}
+	} else {
+		return respond.JSON(mapping.SidebarLinkToAPI(*link)), nil
 	}
 }
 
-func deleteSidebarLinkHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
+func deleteSidebarLinkHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
 
-		customerOrgID, err := uuid.Parse(r.PathValue("customerOrganizationId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-
-		linkID, err := uuid.Parse(r.PathValue("linkId"))
-		if err != nil {
-			http.Error(w, "invalid link ID", http.StatusBadRequest)
-			return
-		}
-
-		if err := db.ValidateCustomerOrgBelongsToOrg(ctx, customerOrgID, *auth.CurrentOrgID()); err != nil {
-			http.NotFound(w, r)
-			return
-		}
-		if ok, err := validatePartnerAccessToCustomer(ctx, customerOrgID); err != nil {
-			log.Error("failed to validate partner access", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		} else if !ok {
-			http.NotFound(w, r)
-			return
-		}
-
-		err = db.DeleteSidebarLink(ctx, linkID, customerOrgID)
-		if err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
-				http.NotFound(w, r)
-			} else {
-				log.Error("failed to delete sidebar link", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			}
+	if customerOrgID, err := uuid.Parse(r.PathValue("customerOrganizationId")); err != nil {
+		return sidebarLinkCustomerNotFound, nil
+	} else if linkID, err := uuid.Parse(r.PathValue("linkId")); err != nil {
+		return respond.BadRequest("invalid link ID"), nil
+	} else if err := db.ValidateCustomerOrgBelongsToOrg(ctx, customerOrgID, *auth.CurrentOrgID()); err != nil {
+		return sidebarLinkCustomerNotFound, nil
+	} else if ok, err := validatePartnerAccessToCustomer(ctx, customerOrgID); err != nil {
+		return nil, fmt.Errorf("failed to validate partner access: %w", err)
+	} else if !ok {
+		return sidebarLinkCustomerNotFound, nil
+	} else if err := db.DeleteSidebarLink(ctx, linkID, customerOrgID); err != nil {
+		if errors.Is(err, apierrors.ErrNotFound) {
+			return sidebarLinkNotFound, nil
 		} else {
-			w.WriteHeader(http.StatusNoContent)
+			return nil, fmt.Errorf("failed to delete sidebar link: %w", err)
 		}
+	} else {
+		return respond.NoContent(), nil
 	}
 }

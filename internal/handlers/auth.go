@@ -19,6 +19,7 @@ import (
 	"github.com/distr-sh/distr/internal/mailsending"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/turnstile"
@@ -51,14 +52,14 @@ func AuthRouter(r chiopenapi.Router) {
 	r.Post("/login", authLoginHandler)
 	r.Route("/oidc", AuthOIDCRouter)
 	r.Post("/register", authRegisterHandler)
-	r.Post("/reset", authResetPasswordHandler)
+	r.Post("/reset", respond.Handler(authResetPasswordHandler))
 	r.With(
 		auth.Authentication.Middleware,
 		middleware.SetSentryUserFromUserAuth,
 		middleware.RequireEmailVerified,
 		middleware.RequireOrgAndRole,
 		middleware.BlockCrossOrganizationAction,
-	).Post("/switch-context", authSwitchContextHandler())
+	).Post("/switch-context", respond.Handler(authSwitchContextHandler))
 	r.Group(func(r chiopenapi.Router) {
 		r.Use(auth.Authentication.Middleware, middleware.SetSentryUserFromUserAuth)
 
@@ -68,9 +69,9 @@ func AuthRouter(r chiopenapi.Router) {
 		// can log the user in directly. RequireTokenScope pins each endpoint to its dedicated special token,
 		// so an org-scoped login token or a PAT cannot be used to change an account's password.
 		r.With(middleware.RequireTokenScope(authjwt.TokenScopeInvite)).
-			Post("/invite/accept", authAcceptInviteHandler)
+			Post("/invite/accept", respond.Handler(authAcceptInviteHandler))
 		r.With(middleware.RequireTokenScope(authjwt.TokenScopePasswordReset)).
-			Post("/reset/confirm", authResetConfirmHandler)
+			Post("/reset/confirm", respond.Handler(authResetConfirmHandler))
 
 		r.Route("/verify", func(r chiopenapi.Router) {
 			requestVerificationMailRateLimitPerUser := httprate.LimitBy(
@@ -82,85 +83,70 @@ func AuthRouter(r chiopenapi.Router) {
 				requestVerificationMailRateLimitPerUser,
 				middleware.BlockSuperAdmin,
 				middleware.RequireOrgAndRole,
-			).Post("/request", authVerifyRequestHandler)
-			r.Post("/confirm", authVerifyConfirmHandler)
+			).Post("/request", respond.Handler(authVerifyRequestHandler))
+			r.Post("/confirm", respond.Handler(authVerifyConfirmHandler))
 		})
 
-		r.Get("/status", authStatusHandler).With(option.Hidden(true))
+		r.Get("/status", respond.Handler(authStatusHandler)).With(option.Hidden(true))
 	})
 }
 
-func authStatusHandler(w http.ResponseWriter, r *http.Request) {
+func authStatusHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
-	RespondJSON(w, map[string]any{"active": auth.CurrentUser().Activated})
+	return respond.JSON(map[string]any{"active": auth.CurrentUser().Activated}), nil
 }
 
-func authVerifyRequestHandler(w http.ResponseWriter, r *http.Request) {
+func authVerifyRequestHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 	userAccount := auth.CurrentUser()
 	if userAccount.EmailVerifiedAt != nil {
-		w.WriteHeader(http.StatusNoContent)
+		return respond.NoContent(), nil
 	} else if err := mailsending.SendUserVerificationMail(
 		ctx, *userAccount, *auth.CurrentOrg(), auth.CurrentCustomerOrgID(), true); err != nil {
-		log.Error("failed to send verification mail", zap.Error(err))
-		w.WriteHeader(http.StatusInternalServerError)
-		sentry.GetHubFromContext(ctx).CaptureException(err)
+		return nil, fmt.Errorf("failed to send verification mail: %w", err)
 	} else {
-		w.WriteHeader(http.StatusNoContent)
+		return respond.NoContent(), nil
 	}
 }
 
-func authVerifyConfirmHandler(w http.ResponseWriter, r *http.Request) {
+func authVerifyConfirmHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	authn := auth.Authentication.Require(ctx)
 	if !authn.CurrentUserEmailVerified() {
-		http.Error(w, "token does not have verified claim", http.StatusForbidden)
-		return
-	}
-	if blocklist.EmailBlocked(authn.CurrentUserEmail()) {
-		http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
-		return
-	}
-
-	if err := userauth.VerifyUserEmail(ctx, authn.CurrentUser(), authn.CurrentUserEmail()); err != nil {
+		return respond.Forbidden("token does not have verified claim"), nil
+	} else if blocklist.EmailBlocked(authn.CurrentUserEmail()) {
+		return respond.Forbidden(blocklist.EmailBlockedMessage), nil
+	} else if err := userauth.VerifyUserEmail(ctx, authn.CurrentUser(), authn.CurrentUserEmail()); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
-			http.Error(w, "could not update user", http.StatusBadRequest)
+			return respond.BadRequest("could not update user"), nil
 		} else {
-			log.Error("could not update user", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, "could not update user", http.StatusInternalServerError)
+			return nil, fmt.Errorf("could not update user: %w", err)
 		}
 	} else {
-		w.WriteHeader(http.StatusNoContent)
+		return respond.NoContent(), nil
 	}
 }
 
-func authAcceptInviteHandler(w http.ResponseWriter, r *http.Request) {
-	body, err := JsonBody[api.AuthAcceptInviteRequest](w, r)
-	if err != nil {
-		return
+func authAcceptInviteHandler(r *http.Request) (respond.Responder, error) {
+	if body, resp := decodeJSON[api.AuthAcceptInviteRequest](r); resp != nil {
+		return resp, nil
+	} else if err := body.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else {
+		return setPasswordAndLogin(r, userauth.SetInitialUserPassword, body.Password, body.Name, body.MFACode)
 	}
-	if err := body.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	setPasswordAndLogin(w, r, userauth.SetInitialUserPassword, body.Password, body.Name, body.MFACode)
 }
 
-func authResetConfirmHandler(w http.ResponseWriter, r *http.Request) {
-	body, err := JsonBody[api.AuthResetPasswordConfirmRequest](w, r)
-	if err != nil {
-		return
+func authResetConfirmHandler(r *http.Request) (respond.Responder, error) {
+	if body, resp := decodeJSON[api.AuthResetPasswordConfirmRequest](r); resp != nil {
+		return resp, nil
+	} else if err := body.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else {
+		return setPasswordAndLogin(r, userauth.SetUserPassword, body.Password, nil, body.MFACode)
 	}
-	if err := body.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	setPasswordAndLogin(w, r, userauth.SetUserPassword, body.Password, nil, body.MFACode)
 }
 
 // setPasswordAndLogin sets (and persists) the given password and optional name for the authenticated user,
@@ -169,23 +155,20 @@ func authResetConfirmHandler(w http.ResponseWriter, r *http.Request) {
 // An account with MFA enabled has to pass the same check as on a regular login before any of this happens,
 // since a reset or invitation link only proves control over the mailbox.
 func setPasswordAndLogin(
-	w http.ResponseWriter,
 	r *http.Request,
 	setPassword func(ctx context.Context, user *types.UserAccount, password string, name *string) error,
 	password string,
 	name, mfaCode *string,
-) {
+) (respond.Responder, error) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	authn := auth.Authentication.Require(ctx)
 	user := authn.CurrentUser()
-	if blocklist.EmailBlocked(user.Email) {
-		http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
-		return
-	}
 
 	var token string
-	err := db.RunTx(ctx, func(ctx context.Context) error {
+	if blocklist.EmailBlocked(user.Email) {
+		return respond.Forbidden(blocklist.EmailBlockedMessage), nil
+	} else if err := db.RunTx(ctx, func(ctx context.Context) error {
 		if err := userauth.VerifyMFA(ctx, *user, mfaCode); err != nil {
 			return err
 		}
@@ -203,128 +186,88 @@ func setPasswordAndLogin(
 		var err error
 		token, err = userauth.GenerateLoginToken(ctx, *user)
 		return err
-	})
-	if err != nil {
+	}); err != nil {
 		if errors.Is(err, userauth.ErrMFARequired) {
-			RespondJSON(w, api.AuthLoginResponse{RequiresMFA: true})
+			return respond.JSON(api.AuthLoginResponse{RequiresMFA: true}), nil
 		} else if errors.Is(err, userauth.ErrMFACodeInvalid) {
 			// A 401 would make the frontend discard the invite or reset token and send the user back to the
 			// "link expired" page, so a wrong code must not be answered with one.
-			http.Error(w, "invalid MFA code or recovery code", http.StatusBadRequest)
+			return respond.BadRequest("invalid MFA code or recovery code"), nil
 		} else if errors.Is(err, apierrors.ErrNotFound) {
-			http.Error(w, "could not update user", http.StatusBadRequest)
+			return respond.BadRequest("could not update user"), nil
 		} else if errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, "this invitation has already been accepted, please log in instead", http.StatusBadRequest)
+			return respond.BadRequest("this invitation has already been accepted, please log in instead"), nil
 		} else if errors.Is(err, subscription.ErrGlobalOrganizationLimitReached) {
 			log.Warn("could not set password, global organization limit reached")
-			http.Error(w, subscription.GlobalOrganizationLimitReachedMessage, http.StatusBadRequest)
+			return respond.BadRequest(subscription.GlobalOrganizationLimitReachedMessage), nil
 		} else {
-			log.Error("failed to set password", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return nil, fmt.Errorf("failed to set password: %w", err)
 		}
-		return
-	}
-
-	// When the email could not be verified from the token (e.g. an invitation link shared manually instead of
-	// delivered via email) and verification is required, send the verification mail so the user receives it
-	// without having to request it manually after being redirected to the verification page.
-	if user.EmailVerifiedAt == nil && env.UserEmailVerificationRequired() {
-		if org, err := userauth.PrimaryOrganization(ctx, *user); err != nil {
-			log.Warn("could not resolve organization for verification mail", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-		} else if err := mailsending.SendUserVerificationMail(
-			ctx, *user, org.Organization, org.CustomerOrganizationID, true); err != nil {
-			log.Warn("could not send verification mail", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
+	} else {
+		// When the email could not be verified from the token (e.g. an invitation link shared manually instead of
+		// delivered via email) and verification is required, send the verification mail so the user receives it
+		// without having to request it manually after being redirected to the verification page.
+		if user.EmailVerifiedAt == nil && env.UserEmailVerificationRequired() {
+			if org, err := userauth.PrimaryOrganization(ctx, *user); err != nil {
+				log.Warn("could not resolve organization for verification mail", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+			} else if err := mailsending.SendUserVerificationMail(
+				ctx, *user, org.Organization, org.CustomerOrganizationID, true); err != nil {
+				log.Warn("could not send verification mail", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+			}
 		}
-	}
 
-	RespondJSON(w, api.AuthLoginResponse{Token: token})
+		return respond.JSON(api.AuthLoginResponse{Token: token}), nil
+	}
 }
 
-func authSwitchContextHandler() func(writer http.ResponseWriter, request *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		request, err := JsonBody[api.AuthSwitchContextRequest](w, r)
-		if err != nil {
-			return
-		} else if request.OrganizationID == uuid.Nil {
-			http.Error(w, "bad request", http.StatusBadRequest)
-			return
-		}
-		auth := auth.Authentication.Require(ctx)
-		if *auth.CurrentOrgID() == request.OrganizationID {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-
+func authSwitchContextHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	if request, resp := decodeJSON[api.AuthSwitchContextRequest](r); resp != nil {
+		return resp, nil
+	} else if request.OrganizationID == uuid.Nil {
+		return respond.BadRequest("bad request"), nil
+	} else if *auth.CurrentOrgID() == request.OrganizationID {
+		return respond.NoContent(), nil
+	} else if auth.IsSuperAdmin() {
 		// Super admins can switch to any organization
-		if auth.IsSuperAdmin() {
-			user, err := db.GetUserAccountByID(ctx, auth.CurrentUserID())
-			if err != nil {
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				log.Error("failed to get user account", zap.Error(err))
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			org, err := db.GetOrganizationByID(ctx, request.OrganizationID)
-			if errors.Is(err, apierrors.ErrNotFound) {
-				http.Error(w, "organization not found", http.StatusNotFound)
-				return
-			} else if err != nil {
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				log.Error("failed to get organization", zap.Error(err))
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			_, tokenString, err := authjwt.GenerateDefaultToken(*user, types.OrganizationWithUserRole{
-				Organization:           *org,
-				UserRole:               types.UserRole(""), // Super admins don't have a role
-				CustomerOrganizationID: nil,
-			})
-			if err != nil {
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				log.Error("failed to generate token", zap.Error(err))
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			if err := db.UpdateUserAccountLastUsedOrganizationID(ctx, user.ID, request.OrganizationID); err != nil {
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				log.Error("failed to update last used organization ID", zap.Error(err))
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			RespondJSON(w, api.AuthLoginResponse{Token: tokenString})
-			return
+		if user, err := db.GetUserAccountByID(ctx, auth.CurrentUserID()); err != nil {
+			return nil, fmt.Errorf("failed to get user account: %w", err)
+		} else if org, err := db.GetOrganizationByID(ctx, request.OrganizationID); errors.Is(err, apierrors.ErrNotFound) {
+			return respond.NotFound("organization not found"), nil
+		} else if err != nil {
+			return nil, fmt.Errorf("failed to get organization: %w", err)
+		} else if _, tokenString, err := authjwt.GenerateDefaultToken(*user, types.OrganizationWithUserRole{
+			Organization:           *org,
+			UserRole:               types.UserRole(""), // Super admins don't have a role
+			CustomerOrganizationID: nil,
+		}); err != nil {
+			return nil, fmt.Errorf("failed to generate token: %w", err)
+		} else if err := db.UpdateUserAccountLastUsedOrganizationID(ctx, user.ID, request.OrganizationID); err != nil {
+			return nil, fmt.Errorf("failed to update last used organization ID: %w", err)
+		} else {
+			return respond.JSON(api.AuthLoginResponse{Token: tokenString}), nil
 		}
-
+	} else {
 		// Regular users: validate membership
 		if user, org, err := db.GetUserAccountAndOrg(
 			ctx, auth.CurrentUserID(), request.OrganizationID); errors.Is(err, apierrors.ErrNotFound) {
-			http.Error(w, "bad request", http.StatusBadRequest)
-			return
+			return respond.BadRequest("bad request"), nil
 		} else if err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("context switch failed", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return nil, fmt.Errorf("context switch failed: %w", err)
 		} else if _, tokenString, err := authjwt.GenerateDefaultToken(user.AsUserAccount(), types.OrganizationWithUserRole{
 			Organization:           org.Organization,
 			UserRole:               user.UserRole,
 			CustomerOrganizationID: user.CustomerOrganizationID,
 			PartnerOrganizationID:  user.PartnerOrganizationID,
 		}); err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to generate token", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return nil, fmt.Errorf("failed to generate token: %w", err)
 		} else if err := db.UpdateUserAccountLastUsedOrganizationID(ctx, user.ID, request.OrganizationID); err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to update last used organization ID", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
+			return nil, fmt.Errorf("failed to update last used organization ID: %w", err)
 		} else {
-			RespondJSON(w, api.AuthLoginResponse{Token: tokenString})
+			return respond.JSON(api.AuthLoginResponse{Token: tokenString}), nil
 		}
 	}
 }
@@ -502,34 +445,26 @@ func verifyRegistrationChallenge(w http.ResponseWriter, r *http.Request, token s
 	return true
 }
 
-func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
+func authResetPasswordHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
-	if request, err := JsonBody[api.AuthResetPasswordRequest](w, r); err != nil {
-		return
+	if request, resp := decodeJSON[api.AuthResetPasswordRequest](r); resp != nil {
+		return resp, nil
 	} else if err := request.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return respond.BadRequest(err.Error()), nil
 	} else if blocklist.EmailBlocked(request.Email) {
-		http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
-		return
+		return respond.Forbidden(blocklist.EmailBlockedMessage), nil
 	} else if user, err := db.GetUserAccountByEmail(ctx, request.Email); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			log.Info("password reset for non-existing user", zap.String("email", request.Email))
-			w.WriteHeader(http.StatusNoContent)
+			return respond.NoContent(), nil
 		} else {
-			log.Warn("could not send reset mail", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, "something went wrong", http.StatusInternalServerError)
+			return nil, fmt.Errorf("could not send reset mail: %w", err)
 		}
 	} else if orgs, err := db.GetOrganizationsForUser(ctx, user.ID); err != nil {
-		log.Error("could not send reset mail", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, "something went wrong", http.StatusInternalServerError)
+		return nil, fmt.Errorf("could not send reset mail: %w", err)
 	} else if _, token, err := authjwt.GenerateResetToken(*user); err != nil {
-		log.Error("could not send reset mail", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, "something went wrong", http.StatusInternalServerError)
+		return nil, fmt.Errorf("could not send reset mail: %w", err)
 	} else {
 		var organization *types.OrganizationWithBranding
 		var customerOrgID *uuid.UUID
@@ -541,10 +476,7 @@ func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		if len(orgs) > 0 {
 			customerOrgID = orgs[0].CustomerOrganizationID
 			if result, err := db.GetOrganizationWithBranding(ctx, orgs[0].ID); err != nil {
-				err = fmt.Errorf("failed to get org with branding: %w", err)
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
+				return nil, fmt.Errorf("failed to get org with branding: %w", err)
 			} else {
 				organization = result
 			}
@@ -552,10 +484,7 @@ func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 			// The mail is sent through the organization of the user's first membership: the reset
 			// request is unauthenticated, so there is no current organization to resolve.
 			if result, err := custommail.MailerForOrganization(ctx, organization.ID); err != nil {
-				log.Error("could not send reset mail", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, "something went wrong", http.StatusInternalServerError)
-				return
+				return nil, fmt.Errorf("could not send reset mail: %w", err)
 			} else {
 				mailer = result
 			}
@@ -569,11 +498,9 @@ func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		mailOpts = append(mailOpts,
 			mailx.HtmlBodyTemplate(mailtemplates.PasswordReset(ctx, *user, organization, customerOrgID, token)))
 		if err := mailer.Send(ctx, mailOpts...); err != nil {
-			log.Warn("could not send reset mail", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, "something went wrong", http.StatusInternalServerError)
+			return nil, fmt.Errorf("could not send reset mail: %w", err)
 		} else {
-			w.WriteHeader(http.StatusNoContent)
+			return respond.NoContent(), nil
 		}
 	}
 }

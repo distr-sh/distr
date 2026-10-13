@@ -172,6 +172,10 @@ func BadRequest(message string) ErrorResponse {
 	return Error(http.StatusBadRequest, message)
 }
 
+func Unauthorized(message string) ErrorResponse {
+	return Error(http.StatusUnauthorized, message)
+}
+
 func Forbidden(message string) ErrorResponse {
 	return Error(http.StatusForbidden, message)
 }

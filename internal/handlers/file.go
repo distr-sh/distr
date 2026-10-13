@@ -226,15 +226,11 @@ func patchImageHandler(patchImage func(ctx context.Context, body api.PatchImageR
 	return respond.Handler(func(r *http.Request) (respond.Responder, error) {
 		ctx := r.Context()
 
-		body, resp := decodeJSON[api.PatchImageRequest](r)
-
-		if resp != nil {
+		if body, resp := decodeJSON[api.PatchImageRequest](r); resp != nil {
 			return resp, nil
 		} else if body.ImageID == uuid.Nil {
 			return respond.BadRequest("imageId can not be empty"), nil
-		}
-
-		if result, err := patchImage(ctx, body); err != nil {
+		} else if result, err := patchImage(ctx, body); err != nil {
 			if errors.Is(err, apierrors.ErrNotFound) {
 				return respond.NoContent(), nil
 			} else if errors.Is(err, apierrors.ErrConflict) {

@@ -15,6 +15,7 @@ import (
 	"github.com/distr-sh/distr/internal/deploymentvalues"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
@@ -45,24 +46,24 @@ func DeploymentsRouter(r chiopenapi.Router) {
 			Resource string `query:"resource"`
 		}
 
-		r.Get("/revisions", getDeploymentRevisions).
+		r.Get("/revisions", respond.Handler(getDeploymentRevisions)).
 			With(option.Description("Get deployment revisions")).
 			With(option.Request(DeploymentIDRequest{})).
 			With(option.Response(http.StatusOK, []api.DeploymentRevisionResponse{}))
 		// These are read-only, controller-pushed timeseries that are safe to serve from the read-only db.
 		r.With(middleware.UseReadonlyDB).Group(func(r chiopenapi.Router) {
-			r.Get("/metrics", getDeploymentMetrics).
+			r.Get("/metrics", respond.Handler(getDeploymentMetrics)).
 				With(option.Description("Get the latest resource metrics reported for a deployment")).
 				With(option.Request(DeploymentIDRequest{})).
 				With(option.Response(http.StatusOK, api.DeploymentResourceMetrics{}))
-			r.Get("/logs", getDeploymentLogsHandler()).
+			r.Get("/logs", respond.Handler(getDeploymentLogsHandler)).
 				With(option.Description("Get deployment logs")).
 				With(option.Request(struct {
 					DeploymentTimeseriesRequest
 					ResourceRequest
 				}{})).
 				With(option.Response(http.StatusOK, []api.DeploymentLogRecord{}))
-			r.Get("/logs/resources", getDeploymentLogsResourcesHandler()).
+			r.Get("/logs/resources", respond.Handler(getDeploymentLogsResourcesHandler)).
 				With(option.Description("Get deployment log resources")).
 				With(option.Request(DeploymentIDRequest{})).
 				With(option.Response(http.StatusOK, api.DeploymentLogRecordResourcesResponse{}))
@@ -653,33 +654,29 @@ func deploymentValuesError(ctx context.Context, w http.ResponseWriter, err error
 	return err
 }
 
-func getDeploymentRevisions(w http.ResponseWriter, r *http.Request) {
+func getDeploymentRevisions(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	deployment := internalctx.GetDeployment(ctx)
 	authInfo := auth.Authentication.Require(ctx)
 	if revisions, err := db.GetDeploymentRevisions(ctx, deployment.ID); err != nil {
-		internalctx.GetLogger(ctx).Error("failed to get deployment revisions", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return nil, fmt.Errorf("failed to get deployment revisions: %w", err)
 	} else {
-		RespondJSON(w, mapping.List(revisions, mapping.DeploymentRevisionToAPI(
+		return respond.JSON(mapping.List(revisions, mapping.DeploymentRevisionToAPI(
 			authInfo.CurrentCustomerOrgID(),
 			authInfo.CurrentPartnerOrgID(),
-		)))
+		))), nil
 	}
 }
 
-func getDeploymentMetrics(w http.ResponseWriter, r *http.Request) {
+func getDeploymentMetrics(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	deployment := internalctx.GetDeployment(ctx)
 	if metrics, err := db.GetLatestDeploymentMetricsForDeploymentID(ctx, deployment.ID); err != nil {
-		internalctx.GetLogger(ctx).Error("failed to get deployment resource metrics", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return nil, fmt.Errorf("failed to get deployment resource metrics: %w", err)
 	} else if metrics == nil {
-		w.WriteHeader(http.StatusNoContent)
+		return respond.NoContent(), nil
 	} else {
-		RespondJSON(w, mapping.DeploymentMetricsToAPI(*metrics))
+		return respond.JSON(mapping.DeploymentMetricsToAPI(*metrics)), nil
 	}
 }
 

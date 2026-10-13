@@ -14,6 +14,7 @@ import (
 	"github.com/distr-sh/distr/internal/deploymentvalues"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/resources"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
@@ -26,40 +27,34 @@ import (
 func TutorialsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupHidden(true))
 	r.Use(middleware.RequireOrgAndRole, middleware.RequireVendor, middleware.RequireAdmin)
-	r.Get("/", getTutorialProgresses)
+	r.Get("/", respond.Handler(getTutorialProgresses))
 	r.Route("/{tutorial}", func(r chiopenapi.Router) {
-		r.Get("/", getTutorialProgress)
+		r.Get("/", respond.Handler(getTutorialProgress))
 		r.With(middleware.BlockSuperAdmin).Put("/", saveTutorialProgress)
 	})
 }
 
-func getTutorialProgresses(w http.ResponseWriter, r *http.Request) {
+func getTutorialProgresses(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 	if progresses, err := db.GetTutorialProgresses(ctx, auth.CurrentUserID(), *auth.CurrentOrgID()); err != nil {
-		log.Warn("could not get tutorial progresses", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil, fmt.Errorf("could not get tutorial progresses: %w", err)
 	} else {
-		RespondJSON(w, progresses)
+		return respond.JSON(progresses), nil
 	}
 }
 
-func getTutorialProgress(w http.ResponseWriter, r *http.Request) {
+func getTutorialProgress(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 	tutorial := r.PathValue("tutorial")
 	if progress, err := db.GetTutorialProgress(ctx, auth.CurrentUserID(), *auth.CurrentOrgID(),
 		types.Tutorial(tutorial)); errors.Is(err, apierrors.ErrNotFound) {
-		http.NotFound(w, r)
+		return respond.NotFound("tutorial progress not found"), nil
 	} else if err != nil {
-		log.Warn("could not get tutorial progress", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil, fmt.Errorf("could not get tutorial progress: %w", err)
 	} else {
-		RespondJSON(w, progress)
+		return respond.JSON(progress), nil
 	}
 }
 

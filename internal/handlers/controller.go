@@ -28,6 +28,7 @@ import (
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/notification"
 	"github.com/distr-sh/distr/internal/requestlog"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
@@ -57,7 +58,7 @@ func ControllerRouter(r chiopenapi.Router) {
 			TargetSecret string    `query:"targetSecret"`
 		}
 
-		r.Get("/pre-connect", preConnectHandler()).
+		r.Get("/pre-connect", respond.Handler(preConnectHandler)).
 			With(option.Request(ControllerConnectRequest{})).
 			With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
 		r.Get("/connect", connectHandler()).
@@ -80,12 +81,12 @@ func ControllerRouter(r chiopenapi.Router) {
 			// manifest and resources are read-only and served from the read-only db. The auth
 			// middleware above (which may write the reported controller version) stays on the primary.
 			r.With(middleware.UseReadonlyDB).Get("/manifest", controllerManifestHandler())
-			r.With(middleware.UseReadonlyDB).Get("/resources", controllerResourcesHandler)
-			r.Post("/status", controllerPostStatusHandler)
-			r.Post("/metrics", controllerPostMetricsHander)
-			r.Post("/deployments/{deploymentId}/metrics", controllerPostDeploymentMetricsHandler)
-			r.Put("/logs", controllerPutDeploymentLogsHandler())
-			r.Put("/deployment-target-logs", controllerPutDeploymentTargetLogsHandler())
+			r.With(middleware.UseReadonlyDB).Get("/resources", respond.Handler(controllerResourcesHandler))
+			r.Post("/status", respond.Handler(controllerPostStatusHandler))
+			r.Post("/metrics", respond.Handler(controllerPostMetricsHander))
+			r.Post("/deployments/{deploymentId}/metrics", respond.Handler(controllerPostDeploymentMetricsHandler))
+			r.Put("/logs", respond.Handler(controllerPutDeploymentLogsHandler))
+			r.Put("/deployment-target-logs", respond.Handler(controllerPutDeploymentTargetLogsHandler))
 		})
 	}
 	r.Route("/controller", controllerRoutes)
@@ -123,33 +124,17 @@ func connectHandler() http.HandlerFunc {
 }
 
 // optionally wraps the connect request in a shell script
-func preConnectHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		deploymentTarget := internalctx.GetDeploymentTarget(ctx)
+func preConnectHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	deploymentTarget := internalctx.GetDeploymentTarget(ctx)
+	secret := r.URL.Query().Get("targetSecret")
 
-		org, err := db.GetOrganizationWithBranding(ctx, deploymentTarget.OrganizationID)
-		if err != nil {
-			log.Error("could not get organization for deployment target", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		secret := r.URL.Query().Get("targetSecret")
-		script, err := controllerconnect.GenerateConnectScript(ctx, deploymentTarget.ID, *org, secret)
-		if err != nil {
-			log.Error("could not generate connect script", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		if _, err := w.Write([]byte(script)); err != nil {
-			log.Warn("writing to client failed", zap.Error(err))
-		}
+	if org, err := db.GetOrganizationWithBranding(ctx, deploymentTarget.OrganizationID); err != nil {
+		return nil, fmt.Errorf("could not get organization for deployment target: %w", err)
+	} else if script, err := controllerconnect.GenerateConnectScript(ctx, deploymentTarget.ID, *org, secret); err != nil {
+		return nil, fmt.Errorf("could not generate connect script: %w", err)
+	} else {
+		return respond.Stream("text/plain; charset=utf-8", strings.NewReader(script)), nil
 	}
 }
 
@@ -193,16 +178,12 @@ func controllerLoginHandler() func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func controllerResourcesHandler(w http.ResponseWriter, r *http.Request) {
+func controllerResourcesHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	deploymentTarget := internalctx.GetDeploymentTarget(ctx)
-	log := internalctx.GetLogger(ctx).With(zap.String("deploymentTargetId", deploymentTarget.ID.String()))
 
-	deployments, err := db.GetDeploymentsForDeploymentTarget(ctx, deploymentTarget.ID)
-	if err != nil {
-		log.Error("failed to get latest Deployment from DB", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	if deployments, err := db.GetDeploymentsForDeploymentTarget(ctx, deploymentTarget.ID); err != nil {
+		return nil, fmt.Errorf("failed to get latest Deployment from DB: %w", err)
 	} else {
 		controllerResource := api.ControllerResource{
 			Version:               deploymentTarget.ControllerVersion,
@@ -217,9 +198,7 @@ func controllerResourcesHandler(w http.ResponseWriter, r *http.Request) {
 		for _, deployment := range deployments {
 			appVersion, err := db.GetApplicationVersion(ctx, deployment.ApplicationVersionID)
 			if err != nil {
-				log.Error("failed to get ApplicationVersion from DB", zap.Error(err))
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
+				return nil, fmt.Errorf("failed to get ApplicationVersion from DB: %w", err)
 			}
 
 			controllerDeployment := api.ControllerDeployment{
@@ -233,9 +212,7 @@ func controllerResourcesHandler(w http.ResponseWriter, r *http.Request) {
 
 			if deployment.ApplicationEntitlementID != nil {
 				if entitlement, err := db.GetApplicationEntitlementByID(ctx, *deployment.ApplicationEntitlementID); err != nil {
-					log.Error("failed to get ApplicationEntitlement from DB", zap.Error(err))
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
+					return nil, fmt.Errorf("failed to get ApplicationEntitlement from DB: %w", err)
 				} else if entitlement.RegistryURL != nil {
 					controllerDeployment.RegistryAuth = map[string]api.ControllerRegistryAuth{
 						*entitlement.RegistryURL: {
@@ -246,33 +223,19 @@ func controllerResourcesHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			var secrets []types.SecretWithUpdatedBy
-			if secrets, err = db.GetSecretsForDeploymentTarget(ctx, deploymentTarget.DeploymentTarget); err != nil {
-				log.Error("failed to get secrets from DB", zap.Error(err))
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			licenseKeys, err := db.GetLicenseKeysForDeploymentTarget(ctx, deploymentTarget.DeploymentTarget)
-			if err != nil {
-				log.Error("failed to get license keys from DB", zap.Error(err))
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			if deploymentTarget.Type == types.DeploymentTypeDocker {
+			if secrets, err := db.GetSecretsForDeploymentTarget(ctx, deploymentTarget.DeploymentTarget); err != nil {
+				return nil, fmt.Errorf("failed to get secrets from DB: %w", err)
+			} else if licenseKeys, err := db.GetLicenseKeysForDeploymentTarget(
+				ctx, deploymentTarget.DeploymentTarget,
+			); err != nil {
+				return nil, fmt.Errorf("failed to get license keys from DB: %w", err)
+			} else if deploymentTarget.Type == types.DeploymentTypeDocker {
 				if composeYaml, err := appVersion.ParsedComposeFile(); err != nil {
-					log.Warn("parse error", zap.Error(err))
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
+					return nil, fmt.Errorf("parse error: %w", err)
 				} else if patchedComposeFile, err := patchProjectName(composeYaml, deployment.ID); err != nil {
-					log.Warn("failed to patch project name", zap.Error(err))
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
+					return nil, fmt.Errorf("failed to patch project name: %w", err)
 				} else if envFile, err := deploymentvalues.EnvFileReplaceSecrets(&deployment, secrets, licenseKeys); err != nil {
-					log.Warn("failed to replace secrets", zap.Error(err))
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
+					return nil, fmt.Errorf("failed to replace secrets: %w", err)
 				} else {
 					controllerDeployment.ComposeFile = patchedComposeFile
 					controllerDeployment.EnvFile = envFile
@@ -284,21 +247,15 @@ func controllerResourcesHandler(w http.ResponseWriter, r *http.Request) {
 				controllerDeployment.ChartUrl = *appVersion.ChartUrl
 				controllerDeployment.ChartVersion = *appVersion.ChartVersion
 				if versionValues, err := appVersion.ParsedValuesFile(); err != nil {
-					log.Warn("parse error", zap.Error(err))
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
+					return nil, fmt.Errorf("parse error: %w", err)
 				} else if deploymentValues, err := deploymentvalues.ParsedValuesFileReplaceSecrets(
 					&deployment,
 					secrets,
 					licenseKeys,
 				); err != nil {
-					log.Warn("parse error", zap.Error(err))
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
+					return nil, fmt.Errorf("parse error: %w", err)
 				} else if merged, err := util.MergeAllRecursive(versionValues, deploymentValues); err != nil {
-					log.Warn("merge error", zap.Error(err))
-					http.Error(w, fmt.Sprintf("error merging values files: %v", err), http.StatusInternalServerError)
-					return
+					return nil, fmt.Errorf("error merging values files: %w", err)
 				} else {
 					controllerDeployment.Values = merged
 				}
@@ -318,55 +275,46 @@ func controllerResourcesHandler(w http.ResponseWriter, r *http.Request) {
 			controllerResource.Deployments = append(controllerResource.Deployments, controllerDeployment)
 		}
 
-		RespondJSON(w, controllerResource)
+		return respond.JSON(controllerResource), nil
 	}
 }
 
-func controllerPutDeploymentLogsHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.ControllerAuthentication.Require(ctx)
-		records, err := JsonBody[[]api.DeploymentLogRecord](w, r)
-		if err != nil {
-			return
-		}
+func controllerPutDeploymentLogsHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+	auth := auth.ControllerAuthentication.Require(ctx)
 
+	if records, resp := decodeJSON[[]api.DeploymentLogRecord](r); resp != nil {
+		return resp, nil
+	} else {
 		records = sanitizeLogRecords(records)
 
 		// Drop records referencing unknown deployment/revision tuples instead of rejecting the
 		// whole batch: the controller buffers records for many deployments together, so a single
 		// stale reference must not discard the other deployments' valid logs.
-		if valid, err := db.FilterValidDeploymentLogRecords(ctx, auth.CurrentDeploymentTargetID(), records); err != nil {
-			log.Error("error filtering valid deployment log records", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
+		if valid, err := db.FilterValidDeploymentLogRecords(
+			ctx, auth.CurrentDeploymentTargetID(), records,
+		); err != nil {
+			return nil, fmt.Errorf("error filtering valid deployment log records: %w", err)
 		} else {
 			if len(valid) < len(records) {
 				log.Warn("dropping deployment log records referencing unknown deployment revisions",
 					zap.Int("dropped", len(records)-len(valid)), zap.Int("total", len(records)))
 			}
-			records = valid
-		}
 
-		logStore := logstore.FromContext(ctx)
-		if err := logStore.SaveDeploymentLogRecords(ctx, auth.CurrentOrgID(), records); err != nil {
-			if errors.Is(err, apierrors.ErrBadRequest) {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
+			logStore := logstore.FromContext(ctx)
+			if err := logStore.SaveDeploymentLogRecords(ctx, auth.CurrentOrgID(), valid); err != nil {
+				if errors.Is(err, apierrors.ErrBadRequest) {
+					return respond.BadRequest(err.Error()), nil
+				} else if errors.Is(err, logstore.ErrRateLimitExceeded) {
+					return respond.Error(http.StatusTooManyRequests, err.Error()), nil
+				} else {
+					return nil, fmt.Errorf("error saving deployment log records: %w", err)
+				}
+			} else {
+				return respond.NoContent(), nil
 			}
-			if errors.Is(err, logstore.ErrRateLimitExceeded) {
-				http.Error(w, err.Error(), http.StatusTooManyRequests)
-				return
-			}
-			log.Error("error saving deployment log records", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
 		}
-
-		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
@@ -381,36 +329,24 @@ func sanitizeLogRecords(records []api.DeploymentLogRecord) []api.DeploymentLogRe
 	return filteredRecords
 }
 
-func controllerPutDeploymentTargetLogsHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		deploymentTarget := internalctx.GetDeploymentTarget(ctx)
-		records, err := JsonBody[[]api.DeploymentTargetLogRecordRequest](w, r)
-		if err != nil {
-			return
+func controllerPutDeploymentTargetLogsHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	deploymentTarget := internalctx.GetDeploymentTarget(ctx)
+
+	if records, resp := decodeJSON[[]api.DeploymentTargetLogRecordRequest](r); resp != nil {
+		return resp, nil
+	} else if err := logstore.FromContext(ctx).SaveDeploymentTargetLogRecords(
+		ctx, deploymentTarget.OrganizationID, deploymentTarget.ID, records,
+	); err != nil {
+		if errors.Is(err, apierrors.ErrBadRequest) {
+			return respond.BadRequest(err.Error()), nil
+		} else if errors.Is(err, logstore.ErrRateLimitExceeded) {
+			return respond.Error(http.StatusTooManyRequests, err.Error()), nil
+		} else {
+			return nil, fmt.Errorf("error saving deployment target log records: %w", err)
 		}
-
-		logStore := logstore.FromContext(ctx)
-		if err := logStore.SaveDeploymentTargetLogRecords(
-			ctx, deploymentTarget.OrganizationID, deploymentTarget.ID, records,
-		); err != nil {
-			if errors.Is(err, apierrors.ErrBadRequest) {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-			if errors.Is(err, logstore.ErrRateLimitExceeded) {
-				http.Error(w, err.Error(), http.StatusTooManyRequests)
-				return
-			}
-
-			log.Error("error saving deployment target log records", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusNoContent)
+	} else {
+		return respond.NoContent(), nil
 	}
 }
 
@@ -427,171 +363,131 @@ func patchProjectName(data map[string]any, deploymentID uuid.UUID) ([]byte, erro
 	return buf.Bytes(), nil
 }
 
-func controllerPostStatusHandler(w http.ResponseWriter, r *http.Request) {
-	requestBody, err := JsonBody[api.ControllerDeploymentStatus](w, r)
-	if err != nil {
-		return
-	}
-
+func controllerPostStatusHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx).With(zap.Any("status", requestBody))
-	sentry := sentry.GetHubFromContext(ctx)
-
-	deploymentID, err := db.GetDeploymentIDForRevisionID(ctx, requestBody.RevisionID)
-	if err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else {
-			sentry.CaptureException(err)
-			log.Error("failed to get deployment ID", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
-		return
-	}
-
 	deploymentTarget := internalctx.GetDeploymentTarget(ctx)
-	var deployment types.DeploymentWithLatestRevision
-	if i := slices.IndexFunc(
+
+	if requestBody, resp := decodeJSON[api.ControllerDeploymentStatus](r); resp != nil {
+		return resp, nil
+	} else if deploymentID, err := db.GetDeploymentIDForRevisionID(ctx, requestBody.RevisionID); err != nil {
+		if errors.Is(err, apierrors.ErrNotFound) {
+			return respond.BadRequest(err.Error()), nil
+		} else {
+			return nil, fmt.Errorf("failed to get deployment ID: %w", err)
+		}
+	} else if i := slices.IndexFunc(
 		deploymentTarget.Deployments,
 		func(d types.DeploymentWithLatestRevision) bool { return d.ID == deploymentID },
 	); i < 0 {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
+		return respond.BadRequest(http.StatusText(http.StatusBadRequest)), nil
+	} else if settledStatus, err := db.GetPreviousDeploymentRevisionStatus(ctx, requestBody.RevisionID); err != nil {
+		return nil, fmt.Errorf("failed to get previous deployment revision status: %w", err)
 	} else {
-		deployment = deploymentTarget.Deployments[i]
-	}
+		log := internalctx.GetLogger(ctx).With(zap.Any("status", requestBody))
+		sentry := sentry.GetHubFromContext(ctx)
+		deployment := deploymentTarget.Deployments[i]
+		previousStatus := deployment.NewestStatus()
 
-	previousStatus := deployment.NewestStatus()
-	settledStatus, err := db.GetPreviousDeploymentRevisionStatus(ctx, requestBody.RevisionID)
-	if err != nil {
-		sentry.CaptureException(err)
-		log.Error("failed to get previous deployment revision status", zap.Error(err))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	var status *types.DeploymentRevisionStatus
-	if err := db.RunTx(ctx, func(ctx context.Context) error {
-		var err error
-		if status, err = db.UpdateDeploymentRevisionStatus(
-			ctx, requestBody.RevisionID, requestBody.Type, requestBody.Message,
-		); err != nil {
-			return err
-		}
-		if status.Type.IsApplied() {
-			return db.UpdateDeploymentCurrentRevision(ctx, status.DeploymentRevisionID)
-		}
-		return nil
-	}); err != nil {
-		if errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		var status *types.DeploymentRevisionStatus
+		if err := db.RunTx(ctx, func(ctx context.Context) error {
+			var err error
+			if status, err = db.UpdateDeploymentRevisionStatus(
+				ctx, requestBody.RevisionID, requestBody.Type, requestBody.Message,
+			); err != nil {
+				return err
+			}
+			if status.Type.IsApplied() {
+				return db.UpdateDeploymentCurrentRevision(ctx, status.DeploymentRevisionID)
+			}
+			return nil
+		}); err != nil {
+			if errors.Is(err, apierrors.ErrConflict) {
+				return respond.BadRequest(http.StatusText(http.StatusBadRequest)), nil
+			} else {
+				return nil, fmt.Errorf("failed to update deployment revision status: %w", err)
+			}
 		} else {
-			log.Error("failed to update deployment revision status", zap.Error(err))
-			sentry.CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			go func(ctx context.Context) {
+				asyncCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+				defer cancel()
+
+				if err := notification.SendDeploymentStatusNotifications(
+					asyncCtx,
+					*deploymentTarget,
+					deployment,
+					previousStatus,
+					settledStatus,
+					*status,
+				); err != nil {
+					sentry.CaptureException(err)
+					log.Error("failed to dispatch deployment status notification", zap.Error(err))
+				}
+			}(context.WithoutCancel(ctx))
+
+			return respond.Status(http.StatusOK), nil
 		}
-		return
 	}
-
-	go func(ctx context.Context) {
-		asyncCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-		defer cancel()
-
-		if err := notification.SendDeploymentStatusNotifications(
-			asyncCtx,
-			*deploymentTarget,
-			deployment,
-			previousStatus,
-			settledStatus,
-			*status,
-		); err != nil {
-			sentry.CaptureException(err)
-			log.Error("failed to dispatch deployment status notification", zap.Error(err))
-		}
-	}(context.WithoutCancel(ctx))
-
-	w.WriteHeader(http.StatusOK)
 }
 
-func controllerPostMetricsHander(w http.ResponseWriter, r *http.Request) {
+func controllerPostMetricsHander(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 
 	dt := internalctx.GetDeploymentTarget(ctx)
 
-	body, err := JsonBody[api.ControllerDeploymentTargetMetricsRequest](w, r)
-	if err != nil {
-		return
-	}
+	if body, resp := decodeJSON[api.ControllerDeploymentTargetMetricsRequest](r); resp != nil {
+		return resp, nil
+	} else if previousMetrics, err := db.GetLatestDeploymentTargetMetricsForID(ctx, dt.ID); err != nil {
+		return nil, fmt.Errorf("failed to get previous deployment target metrics: %w", err)
+	} else {
+		metrics := mapping.DeploymentTargetMetricsRequestToInternal(dt.ID, body)
 
-	previousMetrics, err := db.GetLatestDeploymentTargetMetricsForID(ctx, dt.ID)
-	if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("failed to get previous deployment target metrics", zap.Error(err))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	metrics := mapping.DeploymentTargetMetricsRequestToInternal(dt.ID, body)
-
-	if err := db.CreateDeploymentTargetMetrics(ctx, &metrics); err != nil {
-		if errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		if err := db.CreateDeploymentTargetMetrics(ctx, &metrics); err != nil {
+			if errors.Is(err, apierrors.ErrConflict) {
+				return respond.BadRequest(http.StatusText(http.StatusBadRequest)), nil
+			} else {
+				return nil, fmt.Errorf("failed to create deployment target metrics: %w", err)
+			}
 		} else {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to create deployment target metrics", zap.Error(err), zap.Any("metrics", body))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			go func(ctx context.Context) {
+				asyncCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+				defer cancel()
+
+				if err := notification.SendDeploymentTargetMetricsNotifications(
+					asyncCtx, *dt, previousMetrics, metrics,
+				); err != nil {
+					sentry.GetHubFromContext(asyncCtx).CaptureException(err)
+					log.Error("send metrics alerts failed", zap.Error(err))
+				}
+			}(context.WithoutCancel(ctx))
+
+			return respond.Status(http.StatusOK), nil
 		}
-		return
 	}
-
-	go func(ctx context.Context) {
-		asyncCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-		defer cancel()
-
-		if err := notification.SendDeploymentTargetMetricsNotifications(asyncCtx, *dt, previousMetrics, metrics); err != nil {
-			sentry.GetHubFromContext(asyncCtx).CaptureException(err)
-			log.Error("send metrics alerts failed", zap.Error(err))
-		}
-	}(context.WithoutCancel(ctx))
-
-	w.WriteHeader(http.StatusOK)
 }
 
-func controllerPostDeploymentMetricsHandler(w http.ResponseWriter, r *http.Request) {
+func controllerPostDeploymentMetricsHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
-
-	deploymentID, err := uuid.Parse(r.PathValue("deploymentId"))
-	if err != nil {
-		http.Error(w, "deploymentId is not a valid UUID", http.StatusBadRequest)
-		return
-	}
-
 	dt := internalctx.GetDeploymentTarget(ctx)
-	if !slices.ContainsFunc(
+
+	if deploymentID, err := uuid.Parse(r.PathValue("deploymentId")); err != nil {
+		return respond.BadRequest("deploymentId is not a valid UUID"), nil
+	} else if !slices.ContainsFunc(
 		dt.Deployments,
 		func(d types.DeploymentWithLatestRevision) bool { return d.ID == deploymentID },
 	) {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
+		return respond.NotFound(http.StatusText(http.StatusNotFound)), nil
+	} else if body, resp := decodeJSON[api.ControllerDeploymentResourceMetricsRequest](r); resp != nil {
+		return resp, nil
+	} else {
+		metrics := mapping.DeploymentResourceMetricsRequestToInternal(deploymentID, body)
+
+		if err := db.CreateDeploymentMetrics(ctx, &metrics); err != nil {
+			return nil, fmt.Errorf("failed to create deployment metrics: %w", err)
+		} else {
+			return respond.Status(http.StatusOK), nil
+		}
 	}
-
-	body, err := JsonBody[api.ControllerDeploymentResourceMetricsRequest](w, r)
-	if err != nil {
-		return
-	}
-
-	metrics := mapping.DeploymentResourceMetricsRequestToInternal(deploymentID, body)
-
-	if err := db.CreateDeploymentMetrics(ctx, &metrics); err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("failed to create deployment metrics", zap.Error(err), zap.Any("metrics", body))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 func queryAuthDeploymentTargetCtxMiddleware(next http.Handler) http.Handler {

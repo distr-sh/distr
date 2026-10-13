@@ -2,39 +2,34 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
-	"github.com/getsentry/sentry-go"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
-func getOIDCIdentitiesHandler(w http.ResponseWriter, r *http.Request) {
+var oidcIdentityNotFound = respond.NotFound("identity provider account not found")
+
+func getOIDCIdentitiesHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
-	identities, err := db.GetUserAccountOIDCIdentities(ctx, auth.CurrentUserID())
-	if err != nil {
-		log.Warn("error getting OIDC identities", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if identities, err := db.GetUserAccountOIDCIdentities(ctx, auth.CurrentUserID()); err != nil {
+		return nil, fmt.Errorf("error getting OIDC identities: %w", err)
 	} else {
-		RespondJSON(w, mapping.List(identities, mapping.UserAccountOIDCIdentityToAPI))
+		return respond.JSON(mapping.List(identities, mapping.UserAccountOIDCIdentityToAPI)), nil
 	}
 }
 
-func deleteOIDCIdentityHandler(w http.ResponseWriter, r *http.Request) {
+func deleteOIDCIdentityHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	identityID, err := uuid.Parse(r.PathValue("oidcIdentityId"))
 	if err != nil {
-		http.NotFound(w, r)
-		return
+		return oidcIdentityNotFound, nil
 	}
 
 	auth := auth.Authentication.Require(ctx)
@@ -44,27 +39,19 @@ func deleteOIDCIdentityHandler(w http.ResponseWriter, r *http.Request) {
 	// would leave the user without any way to sign in.
 	if len(user.PasswordHash) == 0 {
 		if count, err := db.CountUserAccountOIDCIdentities(ctx, user.ID); err != nil {
-			log.Warn("error counting OIDC identities", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return nil, fmt.Errorf("error counting OIDC identities: %w", err)
 		} else if count <= 1 {
-			http.Error(w,
+			return respond.Conflict(
 				"this is the only way to sign in to your account. Set a password before disconnecting it",
-				http.StatusConflict)
-			return
+			), nil
 		}
 	}
 
-	if err := db.DeleteUserAccountOIDCIdentity(ctx, user.ID, identityID); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
-			return
-		}
-		log.Warn("error deleting OIDC identity", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := db.DeleteUserAccountOIDCIdentity(ctx, user.ID, identityID); errors.Is(err, apierrors.ErrNotFound) {
+		return oidcIdentityNotFound, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("error deleting OIDC identity: %w", err)
 	} else {
-		w.WriteHeader(http.StatusNoContent)
+		return respond.NoContent(), nil
 	}
 }

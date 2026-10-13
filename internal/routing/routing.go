@@ -14,6 +14,7 @@ import (
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/prometheus"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/tracers"
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
@@ -252,7 +253,7 @@ func CaddyAskRouter(logger *zap.Logger, db *pgxpool.Pool) http.Handler {
 		middleware.LoggerCtxMiddleware(logger),
 		middleware.ContextInjectorMiddleware(db, nil, nil, nil, nil, nil),
 	)
-	router.Get("/internal/webhook/tls/ask", handlers.TLSAskHandler())
+	router.Get("/internal/webhook/tls/ask", respond.Handler(handlers.TLSAskHandler))
 	return router
 }
 

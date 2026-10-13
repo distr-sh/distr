@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/licensekey"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
@@ -29,12 +31,12 @@ func LicenseKeysRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Licensing"))
 	r.Use(middleware.RequireOrgAndRole, middleware.LicensingFeatureFlagEnabledMiddleware)
 
-	r.Get("/", getLicenseKeys).
+	r.Get("/", respond.Handler(getLicenseKeys)).
 		With(option.Description("List all license keys")).
 		With(option.Response(http.StatusOK, []types.LicenseKey{}))
 
 	r.With(middleware.RequireVendorOrPartner, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
-		Post("/", createLicenseKey).
+		Post("/", respond.Handler(createLicenseKey)).
 		With(option.Description("Create a new license key")).
 		With(option.Request(api.CreateLicenseKeyRequest{})).
 		With(option.Response(http.StatusOK, types.LicenseKey{}))
@@ -44,12 +46,12 @@ func LicenseKeysRouter(r chiopenapi.Router) {
 			LicenseKeyID uuid.UUID `path:"licenseKeyId"`
 		}
 
-		r.Get("/token", getLicenseKeyToken).
+		r.Get("/token", respond.Handler(getLicenseKeyToken)).
 			With(option.Description("Generate and retrieve the license key token")).
 			With(option.Request(LicenseKeyIDRequest{})).
 			With(option.Response(http.StatusOK, map[string]string{}))
 
-		r.Get("/revisions", getLicenseKeyRevisions).
+		r.Get("/revisions", respond.Handler(getLicenseKeyRevisions)).
 			With(option.Description("List all revisions of a license key")).
 			With(option.Request(LicenseKeyIDRequest{})).
 			With(option.Response(http.StatusOK, []api.LicenseKeyRevision{}))
@@ -64,7 +66,7 @@ func LicenseKeysRouter(r chiopenapi.Router) {
 					}{})).
 					With(option.Response(http.StatusOK, api.UpdateLicenseKeyResponse{})).
 					With(option.Response(http.StatusConflict, api.AffectedDeploymentsConflictResponse{}))
-				r.Delete("/", deleteLicenseKey).
+				r.Delete("/", respond.Handler(deleteLicenseKey)).
 					With(option.Description("Delete a license key")).
 					With(option.Request(LicenseKeyIDRequest{})).
 					With(option.Response(http.StatusConflict, api.AffectedDeploymentsConflictResponse{}))
@@ -72,9 +74,8 @@ func LicenseKeysRouter(r chiopenapi.Router) {
 	})
 }
 
-func getLicenseKeys(w http.ResponseWriter, r *http.Request) {
+func getLicenseKeys(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	authCtx := auth.Authentication.Require(ctx)
 
 	var (
@@ -89,140 +90,99 @@ func getLicenseKeys(w http.ResponseWriter, r *http.Request) {
 		licenseKeys, err = db.GetLicenseKeys(ctx, *authCtx.CurrentOrgID())
 	}
 	if err != nil {
-		log.Error("failed to get license keys", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to get license keys: %w", err)
 	}
-	RespondJSON(w, licenseKeys)
+	return respond.JSON(licenseKeys), nil
 }
 
-func createLicenseKey(w http.ResponseWriter, r *http.Request) {
+func createLicenseKey(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	authCtx := auth.Authentication.Require(ctx)
 
-	body, err := JsonBody[api.CreateLicenseKeyRequest](w, r)
-	if err != nil {
-		return
-	}
-
-	if body.Name == "" {
-		http.Error(w, "name is required", http.StatusBadRequest)
-		return
-	}
-
-	licenseKey := types.LicenseKey{
-		Name:                   body.Name,
-		Description:            body.Description,
-		OrganizationID:         *authCtx.CurrentOrgID(),
-		CustomerOrganizationID: body.CustomerOrganizationID,
-		LicenseTemplateID:      body.LicenseTemplateID,
-	}
-
-	if body.LicenseTemplateID != nil {
-		_, err := db.GetLicenseTemplateByID(ctx, *body.LicenseTemplateID, *authCtx.CurrentOrgID())
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.Error(w, "license template not found", http.StatusBadRequest)
-			return
-		} else if err != nil {
-			log.Warn("could not get license template", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+	if body, resp := decodeJSON[api.CreateLicenseKeyRequest](r); resp != nil {
+		return resp, nil
+	} else if body.Name == "" {
+		return respond.BadRequest("name is required"), nil
 	} else {
-		if body.NotBefore.IsZero() {
-			http.Error(w, "notBefore is required", http.StatusBadRequest)
-			return
+		licenseKey := types.LicenseKey{
+			Name:                   body.Name,
+			Description:            body.Description,
+			OrganizationID:         *authCtx.CurrentOrgID(),
+			CustomerOrganizationID: body.CustomerOrganizationID,
+			LicenseTemplateID:      body.LicenseTemplateID,
 		}
-		if body.ExpiresAt.IsZero() {
-			http.Error(w, "expiresAt is required", http.StatusBadRequest)
-			return
-		}
-		if !body.ExpiresAt.After(body.NotBefore) {
-			http.Error(w, "expiresAt must be after notBefore", http.StatusBadRequest)
-			return
-		}
-		if err := licensekey.ValidatePayload(body.Payload); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		licenseKey.Payload = body.Payload
-		licenseKey.NotBefore = &body.NotBefore
-		licenseKey.ExpiresAt = &body.ExpiresAt
-	}
 
-	if partnerOrgID := authCtx.CurrentPartnerOrgID(); partnerOrgID != nil {
-		if body.CustomerOrganizationID == nil {
-			http.Error(w, "customer organization is required", http.StatusBadRequest)
-			return
+		if body.LicenseTemplateID != nil {
+			if _, err := db.GetLicenseTemplateByID(
+				ctx, *body.LicenseTemplateID, *authCtx.CurrentOrgID(),
+			); errors.Is(err, apierrors.ErrNotFound) {
+				return respond.BadRequest("license template not found"), nil
+			} else if err != nil {
+				return nil, fmt.Errorf("could not get license template: %w", err)
+			}
+		} else if body.NotBefore.IsZero() {
+			return respond.BadRequest("notBefore is required"), nil
+		} else if body.ExpiresAt.IsZero() {
+			return respond.BadRequest("expiresAt is required"), nil
+		} else if !body.ExpiresAt.After(body.NotBefore) {
+			return respond.BadRequest("expiresAt must be after notBefore"), nil
+		} else if err := licensekey.ValidatePayload(body.Payload); err != nil {
+			return respond.BadRequest(err.Error()), nil
+		} else {
+			licenseKey.Payload = body.Payload
+			licenseKey.NotBefore = &body.NotBefore
+			licenseKey.ExpiresAt = &body.ExpiresAt
 		}
-		co, coErr := db.GetCustomerOrganizationByID(ctx, *body.CustomerOrganizationID)
-		if coErr != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-			http.Error(w, "customer is not assigned to your partner organization", http.StatusForbidden)
-			return
-		}
-	}
 
-	if err := db.CreateLicenseKey(ctx, &licenseKey); errors.Is(err, apierrors.ErrConflict) {
-		http.Error(w, "A license key with this name already exists", http.StatusBadRequest)
-		return
-	} else if err != nil {
-		log.Warn("could not create license key", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		if partnerOrgID := authCtx.CurrentPartnerOrgID(); partnerOrgID != nil {
+			if body.CustomerOrganizationID == nil {
+				return respond.BadRequest("customer organization is required"), nil
+			} else if co, coErr := db.GetCustomerOrganizationByID(ctx, *body.CustomerOrganizationID); coErr != nil ||
+				!util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
+				return respond.Forbidden("customer is not assigned to your partner organization"), nil
+			}
+		}
+
+		if err := db.CreateLicenseKey(ctx, &licenseKey); errors.Is(err, apierrors.ErrConflict) {
+			return respond.BadRequest("A license key with this name already exists"), nil
+		} else if err != nil {
+			return nil, fmt.Errorf("could not create license key: %w", err)
+		} else {
+			return respond.JSON(licenseKey), nil
+		}
 	}
-	RespondJSON(w, licenseKey)
 }
 
-func getLicenseKeyToken(w http.ResponseWriter, r *http.Request) {
+func getLicenseKeyToken(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	lk := internalctx.GetLicenseKey(ctx)
 
 	if lk.Payload == nil {
-		http.Error(w, "license key has no revision yet", http.StatusUnprocessableEntity)
-		return
+		return respond.Error(http.StatusUnprocessableEntity, "license key has no revision yet"), nil
+	} else if token, err := licensekey.GenerateToken(licensekey.FromLicenseKey(*lk), env.Host()); err != nil {
+		return nil, fmt.Errorf("failed to generate license key token: %w", err)
+	} else {
+		return respond.JSON(map[string]string{"token": token}), nil
 	}
-
-	token, err := licensekey.GenerateToken(licensekey.FromLicenseKey(*lk), env.Host())
-	if err != nil {
-		log.Error("failed to generate license key token", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, "failed to generate license key token", http.StatusInternalServerError)
-		return
-	}
-	RespondJSON(w, map[string]string{"token": token})
 }
 
-func getLicenseKeyRevisions(w http.ResponseWriter, r *http.Request) {
+func getLicenseKeyRevisions(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	lk := internalctx.GetLicenseKey(ctx)
 
-	revisions, err := db.GetLicenseKeyRevisions(ctx, lk.ID)
-	if err != nil {
-		log.Error("failed to get license key revisions", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	result := make([]api.LicenseKeyRevision, len(revisions))
-	for i, r := range revisions {
-		t, err := licensekey.GenerateToken(licensekey.FromLicenseKeyAndRevision(*lk, r), env.Host())
-		if err != nil {
-			log.Error("failed to generate license key token", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, "failed to generate license key token", http.StatusInternalServerError)
-			return
+	if revisions, err := db.GetLicenseKeyRevisions(ctx, lk.ID); err != nil {
+		return nil, fmt.Errorf("failed to get license key revisions: %w", err)
+	} else {
+		result := make([]api.LicenseKeyRevision, len(revisions))
+		for i, r := range revisions {
+			if t, err := licensekey.GenerateToken(licensekey.FromLicenseKeyAndRevision(*lk, r), env.Host()); err != nil {
+				return nil, fmt.Errorf("failed to generate license key token: %w", err)
+			} else {
+				result[i] = api.LicenseKeyRevision{LicenseKeyRevision: r, Token: t}
+			}
 		}
-		result[i] = api.LicenseKeyRevision{LicenseKeyRevision: r, Token: t}
+		return respond.JSON(result), nil
 	}
-
-	RespondJSON(w, result)
 }
 
 func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
@@ -424,33 +384,26 @@ func updatedLicenseKeyForRequest(
 	return result, nil
 }
 
-func deleteLicenseKey(w http.ResponseWriter, r *http.Request) {
+func deleteLicenseKey(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	authCtx := auth.Authentication.Require(ctx)
 	licenseKey := internalctx.GetLicenseKey(ctx)
 
 	if licenseKey.CustomerOrganizationID != nil {
-		referencing, err := findDeploymentsReferencingLicenseKey(
-			ctx, *authCtx.CurrentOrgID(), *licenseKey.CustomerOrganizationID, licenseKey.ID)
-		if err != nil {
-			log.Error("failed to check deployment references for license key", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-		if len(referencing) > 0 {
-			RespondJSONWithStatus(w, http.StatusConflict,
-				api.AffectedDeploymentsConflictResponse{AffectedDeployments: referencing})
-			return
+		if referencing, err := findDeploymentsReferencingLicenseKey(
+			ctx, *authCtx.CurrentOrgID(), *licenseKey.CustomerOrganizationID, licenseKey.ID,
+		); err != nil {
+			return nil, fmt.Errorf("failed to check deployment references for license key: %w", err)
+		} else if len(referencing) > 0 {
+			return respond.JSON(api.AffectedDeploymentsConflictResponse{AffectedDeployments: referencing}).
+				WithStatus(http.StatusConflict), nil
 		}
 	}
 
 	if err := db.DeleteLicenseKeyWithID(ctx, licenseKey.ID); err != nil {
-		log.Warn("error deleting license key", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil, fmt.Errorf("error deleting license key: %w", err)
 	} else {
-		w.WriteHeader(http.StatusNoContent)
+		return respond.NoContent(), nil
 	}
 }
 

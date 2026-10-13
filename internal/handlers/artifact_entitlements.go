@@ -13,6 +13,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/notification"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
@@ -26,7 +27,7 @@ func ArtifactEntitlementsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Artifacts", "Licensing"))
 	r.Use(middleware.RequireOrgAndRole, middleware.RequireVendorOrPartner,
 		middleware.LicensingFeatureFlagEnabledMiddleware)
-	r.Get("/", getArtifactEntitlements).
+	r.Get("/", respond.Handler(getArtifactEntitlements)).
 		With(option.Description("List all artifact entitlements")).
 		With(option.Response(http.StatusOK, []types.ArtifactEntitlement{}))
 	r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
@@ -46,16 +47,15 @@ func ArtifactEntitlementsRouter(r chiopenapi.Router) {
 					types.ArtifactEntitlement
 				}{})).
 				With(option.Response(http.StatusOK, types.ArtifactEntitlement{}))
-			r.Delete("/", deleteArtifactEntitlement).
+			r.Delete("/", respond.Handler(deleteArtifactEntitlement)).
 				With(option.Description("Delete an artifact entitlement")).
 				With(option.Request(ArtifactEntitlementRequest{}))
 		})
 	})
 }
 
-func getArtifactEntitlements(w http.ResponseWriter, r *http.Request) {
+func getArtifactEntitlements(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	authCtx := auth.Authentication.Require(ctx)
 
 	var (
@@ -68,12 +68,10 @@ func getArtifactEntitlements(w http.ResponseWriter, r *http.Request) {
 		entitlements, err = db.GetArtifactEntitlements(ctx, *authCtx.CurrentOrgID())
 	}
 	if err != nil {
-		log.Error("failed to get artifact entitlements", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to get artifact entitlements: %w", err)
+	} else {
+		return respond.JSON(entitlements), nil
 	}
-	RespondJSON(w, entitlements)
 }
 
 func createArtifactEntitlement(w http.ResponseWriter, r *http.Request) {
@@ -291,20 +289,18 @@ func addArtifacts(
 	return nil
 }
 
-func deleteArtifactEntitlement(w http.ResponseWriter, r *http.Request) {
+func deleteArtifactEntitlement(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	entitlement := internalctx.GetArtifactEntitlement(ctx)
 	auth := auth.Authentication.Require(ctx)
 	if entitlement.OrganizationID != *auth.CurrentOrgID() {
-		http.NotFound(w, r)
+		return respond.NotFound("artifact entitlement not found"), nil
 	} else if err := db.DeleteArtifactEntitlementWithID(ctx, entitlement.ID); errors.Is(err, apierrors.ErrConflict) {
-		http.Error(w, "could not delete entitlement because it is still in use", http.StatusBadRequest)
+		return respond.BadRequest("could not delete entitlement because it is still in use"), nil
 	} else if err != nil {
-		log.Warn("error deleting entitlement", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil, fmt.Errorf("error deleting entitlement: %w", err)
 	} else {
-		w.WriteHeader(http.StatusNoContent)
+		return respond.NoContent(), nil
 	}
 }
 

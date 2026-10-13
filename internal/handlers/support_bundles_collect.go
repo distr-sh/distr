@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mapping"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/supportbundle"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
@@ -35,7 +37,7 @@ func SupportBundleScriptRouter(r chiopenapi.Router) {
 			BundleID uuid.UUID `path:"bundleId"`
 		}
 
-		r.Get("/collect-script", getCollectScriptHandler()).
+		r.Get("/collect-script", respond.Handler(getCollectScriptHandler)).
 			With(option.Description("Get support bundle collect script")).
 			With(option.Request(BundleIDRequest{})).
 			With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
@@ -49,47 +51,30 @@ func SupportBundleScriptRouter(r chiopenapi.Router) {
 			}{}, option.ContentType("multipart/form-data"))).
 			With(option.Response(http.StatusOK, api.SupportBundleResourceSummary{}))
 
-		r.Post("/finalize", finalizeSupportBundleHandler()).
+		r.Post("/finalize", respond.Handler(finalizeSupportBundleHandler)).
 			With(option.Description("Finalize a support bundle")).
 			With(option.Request(BundleIDRequest{}))
 	})
 }
 
-func getCollectScriptHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		bundle := auth.SupportBundleAuthentication.Require(ctx)
+func getCollectScriptHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	bundle := auth.SupportBundleAuthentication.Require(ctx)
 
-		bundleSecret := r.URL.Query().Get("bundleSecret")
+	bundleSecret := r.URL.Query().Get("bundleSecret")
 
-		org, err := db.GetOrganizationWithBranding(ctx, bundle.OrganizationID)
-		if err != nil {
-			log.Error("failed to get organization", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
+	if org, err := db.GetOrganizationWithBranding(ctx, bundle.OrganizationID); err != nil {
+		return nil, fmt.Errorf("failed to get organization: %w", err)
+	} else {
 		baseURL := customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding)
 
-		envVars, err := db.GetSupportBundleConfigurationEnvVars(ctx, bundle.OrganizationID)
-		if err != nil {
-			log.Error("failed to get support bundle config env vars", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		scripts, err := db.GetEnabledSupportBundleConfigurationScripts(ctx, bundle.OrganizationID)
-		if err != nil {
-			log.Error("failed to get support bundle config scripts", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		script, err := supportbundle.GenerateCollectScript(supportbundle.CollectScriptParams{
+		if envVars, err := db.GetSupportBundleConfigurationEnvVars(ctx, bundle.OrganizationID); err != nil {
+			return nil, fmt.Errorf("failed to get support bundle config env vars: %w", err)
+		} else if scripts, err := db.GetEnabledSupportBundleConfigurationScripts(
+			ctx, bundle.OrganizationID,
+		); err != nil {
+			return nil, fmt.Errorf("failed to get support bundle config scripts: %w", err)
+		} else if script, err := supportbundle.GenerateCollectScript(supportbundle.CollectScriptParams{
 			BaseURL:          baseURL,
 			BundleID:         bundle.ID,
 			BundleSecret:     bundleSecret,
@@ -98,17 +83,10 @@ func getCollectScriptHandler() http.HandlerFunc {
 			LogTailLines:     env.SupportBundleLogTailLines(),
 			ResourceMaxBytes: env.SupportBundleResourceMaxBytes(),
 			ScriptTimeout:    env.SupportBundleScriptTimeout(),
-		})
-		if err != nil {
-			log.Error("failed to generate collect script", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		if _, err := w.Write([]byte(script)); err != nil {
-			log.Warn("failed to write collect script", zap.Error(err))
+		}); err != nil {
+			return nil, fmt.Errorf("failed to generate collect script: %w", err)
+		} else {
+			return respond.Stream("text/plain; charset=utf-8", strings.NewReader(script)), nil
 		}
 	}
 }
@@ -166,33 +144,23 @@ func uploadSupportBundleResourceHandler() http.HandlerFunc {
 	}
 }
 
-func finalizeSupportBundleHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		bundle := auth.SupportBundleAuthentication.Require(ctx)
+func finalizeSupportBundleHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	bundle := auth.SupportBundleAuthentication.Require(ctx)
 
-		if bundle.Status != types.SupportBundleStatusInitialized {
-			http.Error(w, "support bundle is not in initialized state", http.StatusBadRequest)
-			return
+	if bundle.Status != types.SupportBundleStatusInitialized {
+		return respond.BadRequest("support bundle is not in initialized state"), nil
+	} else if err := db.RunTxRR(ctx, func(ctx context.Context) error {
+		if err := db.UpdateSupportBundleStatus(
+			ctx, bundle.ID, bundle.OrganizationID, types.SupportBundleStatusCreated, nil,
+		); err != nil {
+			return err
 		}
 
-		err := db.RunTxRR(ctx, func(ctx context.Context) error {
-			if err := db.UpdateSupportBundleStatus(
-				ctx, bundle.ID, bundle.OrganizationID, types.SupportBundleStatusCreated, nil,
-			); err != nil {
-				return err
-			}
-
-			return db.ClearSupportBundleBundleSecret(ctx, bundle.ID)
-		})
-		if err != nil {
-			log.Error("failed to finalize support bundle", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusNoContent)
+		return db.ClearSupportBundleBundleSecret(ctx, bundle.ID)
+	}); err != nil {
+		return nil, fmt.Errorf("failed to finalize support bundle: %w", err)
+	} else {
+		return respond.NoContent(), nil
 	}
 }

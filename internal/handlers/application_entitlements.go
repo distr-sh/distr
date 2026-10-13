@@ -15,6 +15,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/notification"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
@@ -27,7 +28,7 @@ import (
 func ApplicationEntitlementsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Applications", "Licensing"))
 	r.Use(middleware.RequireOrgAndRole, middleware.LicensingFeatureFlagEnabledMiddleware)
-	r.Get("/", getApplicationEntitlements).
+	r.Get("/", respond.Handler(getApplicationEntitlements)).
 		With(option.Description("List all application entitlements")).
 		With(option.Response(http.StatusOK, []types.ApplicationEntitlement{}))
 	r.With(middleware.RequireVendorOrPartner, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
@@ -39,13 +40,13 @@ func ApplicationEntitlementsRouter(r chiopenapi.Router) {
 			ApplicationEntitlementId string `path:"applicationEntitlementId"`
 		}
 
-		r.Get("/", getApplicationEntitlement).
+		r.Get("/", respond.Handler(getApplicationEntitlement)).
 			With(option.Description("Get an application entitlement")).
 			With(option.Request(ApplicationEntitlementRequest{})).
 			With(option.Response(http.StatusOK, types.ApplicationEntitlement{}))
 		r.With(middleware.RequireVendorOrPartner, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 			Group(func(r chiopenapi.Router) {
-				r.Delete("/", deleteApplicationEntitlement).
+				r.Delete("/", respond.Handler(deleteApplicationEntitlement)).
 					With(option.Description("Delete an application entitlement")).
 					With(option.Request(ApplicationEntitlementRequest{}))
 				r.Put("/", updateApplicationEntitlement).
@@ -314,14 +315,13 @@ func checkRegistryInput(entitlement *types.ApplicationEntitlementWithVersions) e
 	return nil
 }
 
-func getApplicationEntitlements(w http.ResponseWriter, r *http.Request) {
+func getApplicationEntitlements(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 	var applicationId *uuid.UUID
 	if applicationidParam := r.URL.Query().Get("applicationId"); applicationidParam != "" {
 		if id, err := uuid.Parse(applicationidParam); err != nil {
-			http.Error(w, "applicationId is not a valid UUID", http.StatusBadRequest)
-			return
+			return respond.BadRequest("applicationId is not a valid UUID"), nil
 		} else {
 			applicationId = &id
 		}
@@ -342,33 +342,29 @@ func getApplicationEntitlements(w http.ResponseWriter, r *http.Request) {
 		entitlements, err = db.GetApplicationEntitlementsWithOrganizationID(ctx, *auth.CurrentOrgID(), applicationId)
 	}
 	if err != nil {
-		internalctx.GetLogger(ctx).Error("failed to get entitlements", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to get entitlements: %w", err)
+	} else {
+		return respond.JSON(entitlements), nil
 	}
-	RespondJSON(w, entitlements)
 }
 
-func getApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
+func getApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 	entitlement := internalctx.GetApplicationEntitlement(r.Context())
-	RespondJSON(w, entitlement)
+	return respond.JSON(entitlement), nil
 }
 
-func deleteApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
+func deleteApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	entitlement := internalctx.GetApplicationEntitlement(ctx)
 	auth := auth.Authentication.Require(ctx)
 	if entitlement.OrganizationID != *auth.CurrentOrgID() {
-		http.NotFound(w, r)
+		return respond.NotFound("application entitlement not found"), nil
 	} else if err := db.DeleteApplicationEntitlementWithID(ctx, entitlement.ID); errors.Is(err, apierrors.ErrConflict) {
-		http.Error(w, "could not delete entitlement because it is still in use", http.StatusBadRequest)
+		return respond.BadRequest("could not delete entitlement because it is still in use"), nil
 	} else if err != nil {
-		log.Warn("error deleting entitlement", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil, fmt.Errorf("error deleting entitlement: %w", err)
 	} else {
-		w.WriteHeader(http.StatusNoContent)
+		return respond.NoContent(), nil
 	}
 }
 

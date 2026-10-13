@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
@@ -15,8 +16,8 @@ import (
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/getsentry/sentry-go"
 	"github.com/go-mailx/mailx"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -27,120 +28,98 @@ import (
 func CustomEmailsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Custom Email"))
 	r.Use(middleware.RequireVendor, middleware.RequireOrgAndRole, middleware.RequireAdmin)
-	r.Get("/", getCustomEmailConfigurationHandler).
+	r.Get("/", respond.Handler(getCustomEmailConfigurationHandler)).
 		With(option.Description("Get the email configuration of the current organization")).
 		With(option.Response(http.StatusOK, api.CustomEmailConfiguration{}))
 	r.With(middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
-		r.Put("/", updateCustomEmailConfigurationHandler).
+		r.Put("/", respond.Handler(updateCustomEmailConfigurationHandler)).
 			With(option.Description("Create or update the email configuration of the current organization")).
 			With(option.Request(api.UpdateCustomEmailConfigurationRequest{})).
 			With(option.Response(http.StatusOK, api.CustomEmailConfiguration{}))
-		r.Delete("/", deleteCustomEmailConfigurationHandler).
+		r.Delete("/", respond.Handler(deleteCustomEmailConfigurationHandler)).
 			With(option.Description("Delete the email configuration of the current organization"))
-		r.Post("/test", testCustomEmailConfigurationHandler).
+		r.Post("/test", respond.Handler(testCustomEmailConfigurationHandler)).
 			With(option.Description("Send a test email to the current user with the given email configuration")).
 			With(option.Request(api.TestCustomEmailConfigurationRequest{}))
 	})
 }
 
-func getCustomEmailConfigurationHandler(w http.ResponseWriter, r *http.Request) {
+var customEmailConfigurationNotFound = respond.NotFound("email configuration not found")
+
+func getCustomEmailConfigurationHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 	config, err := db.GetCustomEmailConfiguration(ctx, *auth.CurrentOrgID())
 	if errors.Is(err, apierrors.ErrNotFound) {
-		http.NotFound(w, r)
+		return customEmailConfigurationNotFound, nil
 	} else if err != nil {
-		log.Error("failed to get custom email configuration", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil, fmt.Errorf("failed to get custom email configuration: %w", err)
 	} else {
-		RespondJSON(w, mapping.CustomEmailConfigurationToAPI(*config))
+		return respond.JSON(mapping.CustomEmailConfigurationToAPI(*config)), nil
 	}
 }
 
-func updateCustomEmailConfigurationHandler(w http.ResponseWriter, r *http.Request) {
+func updateCustomEmailConfigurationHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 
-	request, err := JsonBody[api.UpdateCustomEmailConfigurationRequest](w, r)
-	if err != nil {
-		return
+	request, resp := decodeJSON[api.UpdateCustomEmailConfigurationRequest](r)
+	if resp != nil {
+		return resp, nil
 	}
 	request.Normalize()
 	if err := request.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	config, err := customEmailConfigurationFromRequest(ctx, request.CustomEmailSettings, *auth.CurrentOrgID())
-	if err != nil {
-		log.Error("failed to get stored custom email configuration", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	config.Enabled = request.Enabled
-	config.UpdatedByUserAccountID = &auth.CurrentUser().ID
-
-	if err := db.UpsertCustomEmailConfiguration(ctx, &config); err != nil {
-		log.Error("failed to update custom email configuration", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return respond.BadRequest(err.Error()), nil
+	} else if config, err := customEmailConfigurationFromRequest(
+		ctx, request.CustomEmailSettings, *auth.CurrentOrgID(),
+	); err != nil {
+		return nil, fmt.Errorf("failed to get stored custom email configuration: %w", err)
 	} else {
-		RespondJSON(w, mapping.CustomEmailConfigurationToAPI(config))
+		config.Enabled = request.Enabled
+		config.UpdatedByUserAccountID = &auth.CurrentUser().ID
+
+		if err := db.UpsertCustomEmailConfiguration(ctx, &config); err != nil {
+			return nil, fmt.Errorf("failed to update custom email configuration: %w", err)
+		} else {
+			return respond.JSON(mapping.CustomEmailConfigurationToAPI(config)), nil
+		}
 	}
 }
 
-func deleteCustomEmailConfigurationHandler(w http.ResponseWriter, r *http.Request) {
+func deleteCustomEmailConfigurationHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 
 	if err := db.DeleteCustomEmailConfiguration(ctx, *auth.CurrentOrgID()); errors.Is(err, apierrors.ErrNotFound) {
-		http.NotFound(w, r)
+		return customEmailConfigurationNotFound, nil
 	} else if err != nil {
-		log.Error("failed to delete custom email configuration", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil, fmt.Errorf("failed to delete custom email configuration: %w", err)
 	} else {
-		w.WriteHeader(http.StatusNoContent)
+		return respond.NoContent(), nil
 	}
 }
 
 // Sending is the only real validation of a configuration, so the provider error is reported
 // verbatim to tell the admin what to fix.
-func testCustomEmailConfigurationHandler(w http.ResponseWriter, r *http.Request) {
+func testCustomEmailConfigurationHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 
-	request, err := JsonBody[api.TestCustomEmailConfigurationRequest](w, r)
-	if err != nil {
-		return
+	request, resp := decodeJSON[api.TestCustomEmailConfigurationRequest](r)
+	if resp != nil {
+		return resp, nil
 	}
 	request.Normalize()
 	if err := request.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	config, err := customEmailConfigurationFromRequest(ctx, request.CustomEmailSettings, *auth.CurrentOrgID())
-	if err != nil {
-		log.Error("failed to get stored custom email configuration", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	mailer, err := custommail.MailerForConfiguration(config)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if err := mailer.Send(ctx,
+		return respond.BadRequest(err.Error()), nil
+	} else if config, err := customEmailConfigurationFromRequest(
+		ctx, request.CustomEmailSettings, *auth.CurrentOrgID(),
+	); err != nil {
+		return nil, fmt.Errorf("failed to get stored custom email configuration: %w", err)
+	} else if mailer, err := custommail.MailerForConfiguration(config); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else if err := mailer.Send(ctx,
 		mailx.To(auth.CurrentUser().Email),
 		mailx.Subject("Distr email configuration test"),
 		mailx.HtmlBodyTemplate(
@@ -148,9 +127,9 @@ func testCustomEmailConfigurationHandler(w http.ResponseWriter, r *http.Request)
 		),
 	); err != nil {
 		log.Info("custom email configuration test failed", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		return respond.BadRequest(err.Error()), nil
 	} else {
-		w.WriteHeader(http.StatusNoContent)
+		return respond.NoContent(), nil
 	}
 }
 

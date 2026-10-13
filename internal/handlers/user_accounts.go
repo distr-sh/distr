@@ -20,6 +20,7 @@ import (
 	"github.com/distr-sh/distr/internal/mailsending"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
@@ -34,7 +35,7 @@ import (
 func UserAccountsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Users"))
 	r.With(middleware.RequireOrgAndRole).Group(func(r chiopenapi.Router) {
-		r.Get("/", getUserAccountsHandler).
+		r.Get("/", respond.Handler(getUserAccountsHandler)).
 			With(option.Description("List all user accounts")).
 			With(option.Response(http.StatusOK, []api.UserAccountResponse{}))
 		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
@@ -55,14 +56,14 @@ func UserAccountsRouter(r chiopenapi.Router) {
 
 			r.Use(userAccountMiddleware)
 			r.With(middleware.ProFeature).
-				Patch("/", patchUserAccountHandler()).
+				Patch("/", respond.Handler(patchUserAccountHandler)).
 				With(option.Description("Partially update a user account")).
 				With(option.Request(struct {
 					UserAccountRequest
 					api.PatchUserAccountRequest
 				}{})).
 				With(option.Response(http.StatusOK, api.UserAccountResponse{}))
-			r.Delete("/", deleteUserAccountHandler).
+			r.Delete("/", respond.Handler(deleteUserAccountHandler)).
 				With(option.Description("Delete a user account")).
 				With(option.Request(UserAccountRequest{}))
 			r.Patch("/image", patchImageUserAccount).
@@ -73,7 +74,7 @@ func UserAccountsRouter(r chiopenapi.Router) {
 				}{})).
 				With(option.Response(http.StatusOK, api.UserAccountResponse{}))
 			r.With(inviteUserRateLimiter).
-				Post("/invite", resendUserInviteHandler()).
+				Post("/invite", respond.Handler(resendUserInviteHandler)).
 				With(option.Description("Resend user invite")).
 				With(option.Request(UserAccountRequest{})).
 				With(option.Response(http.StatusOK, api.CreateUserAccountResponse{}))
@@ -81,9 +82,10 @@ func UserAccountsRouter(r chiopenapi.Router) {
 	})
 }
 
-func getUserAccountsHandler(w http.ResponseWriter, r *http.Request) {
+var userAccountNotFound = respond.NotFound("user not found")
+
+func getUserAccountsHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 
 	var userAccounts []types.UserAccountWithUserRole
@@ -98,11 +100,9 @@ func getUserAccountsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		log.Error("failed to get user accounts", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil, fmt.Errorf("failed to get user accounts: %w", err)
 	} else {
-		RespondJSON(w, mapping.List(userAccounts, mapping.UserAccountToAPI))
+		return respond.JSON(mapping.List(userAccounts, mapping.UserAccountToAPI)), nil
 	}
 }
 
@@ -349,30 +349,20 @@ func checkUserCreationLimits(
 	return limitReached, nil
 }
 
-func patchUserAccountHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
-		userAccount := internalctx.GetUserAccount(ctx)
+func patchUserAccountHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	userAccount := internalctx.GetUserAccount(ctx)
 
-		body, err := JsonBody[api.PatchUserAccountRequest](w, r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+	if body, resp := decodeJSON[api.PatchUserAccountRequest](r); resp != nil {
+		return resp, nil
+	} else if err := checkUserAccountWritability(ctx, *userAccount); err != nil {
+		if errors.Is(err, apierrors.ErrForbidden) {
+			return respond.Forbidden(err.Error()), nil
+		} else {
+			return nil, fmt.Errorf("failed to check user account writability: %w", err)
 		}
-
-		if err := checkUserAccountWritability(ctx, *userAccount); err != nil {
-			if errors.Is(err, apierrors.ErrForbidden) {
-				http.Error(w, err.Error(), http.StatusForbidden)
-			} else {
-				log.Error("failed to check user account writability", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			}
-			return
-		}
-
+	} else {
 		isUpdateNeeded := false
 
 		if body.Name != nil && *body.Name != userAccount.Name {
@@ -382,25 +372,18 @@ func patchUserAccountHandler() http.HandlerFunc {
 
 		if body.UserRole != nil && *body.UserRole != userAccount.UserRole {
 			if userAccount.ID == auth.CurrentUserID() {
-				http.Error(w, "users cannot change their own role", http.StatusForbidden)
-				return
-			}
-			err = db.UpdateUserAccountOrganizationAssignment(
+				return respond.Forbidden("users cannot change their own role"), nil
+			} else if err := db.UpdateUserAccountOrganizationAssignment(
 				ctx,
 				userAccount.ID,
 				*auth.CurrentOrgID(),
 				*body.UserRole,
 				userAccount.CustomerOrganizationID,
 				userAccount.PartnerOrganizationID,
-			)
-			if errors.Is(err, apierrors.ErrNotFound) {
-				http.NotFound(w, r)
-				return
+			); errors.Is(err, apierrors.ErrNotFound) {
+				return userAccountNotFound, nil
 			} else if err != nil {
-				log.Info("user update failed", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
+				return nil, fmt.Errorf("user update failed: %w", err)
 			} else {
 				userAccount.UserRole = *body.UserRole
 			}
@@ -409,106 +392,69 @@ func patchUserAccountHandler() http.HandlerFunc {
 		if isUpdateNeeded {
 			user := userAccount.AsUserAccount()
 			if err := db.UpdateUserAccount(ctx, &user); err != nil {
-				log.Info("user update failed", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
+				return nil, fmt.Errorf("user update failed: %w", err)
+			} else {
+				*userAccount = user.AsUserAccountWithRole(
+					userAccount.UserRole,
+					userAccount.CustomerOrganizationID,
+					userAccount.PartnerOrganizationID,
+					userAccount.JoinedOrgAt,
+				)
 			}
-			*userAccount = user.AsUserAccountWithRole(
-				userAccount.UserRole,
-				userAccount.CustomerOrganizationID,
-				userAccount.PartnerOrganizationID,
-				userAccount.JoinedOrgAt,
-			)
 		}
 
-		RespondJSON(w, mapping.UserAccountToAPI(*userAccount))
+		return respond.JSON(mapping.UserAccountToAPI(*userAccount)), nil
 	}
 }
 
-func resendUserInviteHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		auth := auth.Authentication.Require(ctx)
-		userAccountIDStr := r.PathValue("userId")
-		userAccountID, err := uuid.Parse(userAccountIDStr)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-
-		userAccount, err := db.GetUserAccountWithRole(
-			ctx, userAccountID, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
-			return
-		} else if err != nil {
-			err = fmt.Errorf("failed to get user account: %w", err)
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		if userAccount.Activated {
-			http.Error(w, "this user has already accepted an invitation", http.StatusBadRequest)
-			return
-		}
-
-		organization, err := db.GetOrganizationWithBranding(ctx, *auth.CurrentOrgID())
-		if err != nil {
-			err = fmt.Errorf("failed to get org with branding: %w", err)
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		emailInviteURL, err := generateUserInviteUrl(
-			ctx, userAccount.AsUserAccount(), *organization, userAccount.CustomerOrganizationID, true)
-		if err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		if err := mailsending.SendUserInviteMail(
-			ctx,
-			userAccount.AsUserAccount(),
-			*organization,
-			userAccount.CustomerOrganizationID,
-			emailInviteURL,
-		); err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		RespondJSON(w, api.CreateUserAccountResponse{User: mapping.UserAccountToAPI(*userAccount)})
-	}
-}
-
-func deleteUserAccountHandler(w http.ResponseWriter, r *http.Request) {
+func resendUserInviteHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
+	auth := auth.Authentication.Require(ctx)
+	if userAccountID, err := uuid.Parse(r.PathValue("userId")); err != nil {
+		return respond.BadRequest(http.StatusText(http.StatusBadRequest)), nil
+	} else if userAccount, err := db.GetUserAccountWithRole(
+		ctx, userAccountID, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID(),
+	); errors.Is(err, apierrors.ErrNotFound) {
+		return userAccountNotFound, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to get user account: %w", err)
+	} else if userAccount.Activated {
+		return respond.BadRequest("this user has already accepted an invitation"), nil
+	} else if organization, err := db.GetOrganizationWithBranding(ctx, *auth.CurrentOrgID()); err != nil {
+		return nil, fmt.Errorf("failed to get org with branding: %w", err)
+	} else if emailInviteURL, err := generateUserInviteUrl(
+		ctx, userAccount.AsUserAccount(), *organization, userAccount.CustomerOrganizationID, true,
+	); err != nil {
+		return nil, err
+	} else if err := mailsending.SendUserInviteMail(
+		ctx,
+		userAccount.AsUserAccount(),
+		*organization,
+		userAccount.CustomerOrganizationID,
+		emailInviteURL,
+	); err != nil {
+		return nil, fmt.Errorf("failed to send user invite mail: %w", err)
+	} else {
+		return respond.JSON(api.CreateUserAccountResponse{User: mapping.UserAccountToAPI(*userAccount)}), nil
+	}
+}
+
+func deleteUserAccountHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
 	userAccount := internalctx.GetUserAccount(ctx)
 	auth := auth.Authentication.Require(ctx)
 
 	if err := checkUserAccountWritability(ctx, *userAccount); err != nil {
 		if errors.Is(err, apierrors.ErrForbidden) {
-			http.Error(w, err.Error(), http.StatusForbidden)
+			return respond.Forbidden(err.Error()), nil
 		} else {
-			log.Error("failed to check user account writability", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return nil, fmt.Errorf("failed to check user account writability: %w", err)
 		}
-		return
-	}
-
-	if userAccount.ID == auth.CurrentUserID() {
-		http.Error(w, "UserAccount deleting themselves is not allowed", http.StatusForbidden)
+	} else if userAccount.ID == auth.CurrentUserID() {
+		return respond.Forbidden("UserAccount deleting themselves is not allowed"), nil
 	} else if err := db.RunTx(ctx, func(ctx context.Context) error {
 		if err := db.DeleteUserAccountFromOrganization(ctx, userAccount.ID, *auth.CurrentOrgID()); err != nil {
 			if errors.Is(err, apierrors.ErrNotFound) {
-				w.WriteHeader(http.StatusNoContent)
 				return nil
 			} else {
 				return err
@@ -521,13 +467,12 @@ func deleteUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 			ctx, userAccount.ID, *auth.CurrentOrgID()); err != nil {
 			return err
 		} else {
-			w.WriteHeader(http.StatusNoContent)
 			return nil
 		}
 	}); err != nil {
-		log.Error("error removing user from org", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return nil, fmt.Errorf("error removing user from org: %w", err)
+	} else {
+		return respond.NoContent(), nil
 	}
 }
 
