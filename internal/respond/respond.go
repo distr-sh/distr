@@ -15,15 +15,28 @@ import (
 	"go.uber.org/zap"
 )
 
-// Responder writes a complete response.
+// Responder writes a complete response. Errors are only logged, except notWrittenError.
 type Responder interface {
 	WriteResponse(w http.ResponseWriter, r *http.Request) error
 }
 
-// Handler adapts fn to an [http.HandlerFunc]. A returned error replaces the response:
+// notWrittenError is a failure before writing, so it can still be answered.
+type notWrittenError struct {
+	err error
+}
+
+func (e *notWrittenError) Error() string {
+	return e.err.Error()
+}
+
+func (e *notWrittenError) Unwrap() error {
+	return e.err
+}
+
+// Handler adapts fn to an [http.HandlerFunc]. Errors are answered as:
 //
 //   - [*apierrors.Error]: its status and message
-//   - wrapped apierrors sentinel: its status with the generic text, as it may carry internals
+//   - wrapped sentinel: its status, generic text (may carry internals)
 //   - client cancellation: nothing
 //   - anything else: 500, logged and reported to Sentry
 func Handler(fn func(r *http.Request) (Responder, error)) http.HandlerFunc {
@@ -37,12 +50,11 @@ func Handler(fn func(r *http.Request) (Responder, error)) http.HandlerFunc {
 			return
 		}
 
-		tw := &trackingWriter{ResponseWriter: w}
-		if err := resp.WriteResponse(tw, r); err != nil {
-			if tw.written {
-				internalctx.GetLogger(r.Context()).Warn("failed to write response", zap.Error(err))
+		if err := resp.WriteResponse(w, r); err != nil {
+			if notWritten, ok := errors.AsType[*notWrittenError](err); ok {
+				Error(w, r, notWritten.err)
 			} else {
-				Error(w, r, err)
+				internalctx.GetLogger(r.Context()).Warn("failed to write response", zap.Error(err))
 			}
 		}
 	}
@@ -65,26 +77,6 @@ func Error(w http.ResponseWriter, r *http.Request, err error) {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
-}
-
-// trackingWriter records whether the response has started.
-type trackingWriter struct {
-	http.ResponseWriter
-	written bool
-}
-
-func (w *trackingWriter) WriteHeader(status int) {
-	w.written = true
-	w.ResponseWriter.WriteHeader(status)
-}
-
-func (w *trackingWriter) Write(b []byte) (int, error) {
-	w.written = true
-	return w.ResponseWriter.Write(b)
-}
-
-func (w *trackingWriter) Unwrap() http.ResponseWriter {
-	return w.ResponseWriter
 }
 
 func writeHeader(w http.ResponseWriter, header http.Header, status int) {
@@ -126,10 +118,10 @@ func (resp JSONResponse[T]) WithHeader(key, value string) JSONResponse[T] {
 }
 
 func (resp JSONResponse[T]) WriteResponse(w http.ResponseWriter, r *http.Request) error {
-	// Encode first, so an encoding error can still become a 500.
+	// Encode first, so a failure can still become a 500.
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(resp.Body); err != nil {
-		return err
+		return &notWrittenError{err}
 	}
 	w.Header().Set("Content-Type", "application/json")
 	writeHeader(w, resp.Header, resp.Status)
@@ -137,8 +129,7 @@ func (resp JSONResponse[T]) WriteResponse(w http.ResponseWriter, r *http.Request
 	return err
 }
 
-// StreamResponse copies Body and closes it if it is an [io.Closer]. Defaults: 200,
-// application/octet-stream.
+// StreamResponse copies Body and closes it if possible. Defaults: 200, application/octet-stream.
 type StreamResponse struct {
 	Status      int
 	ContentType string
