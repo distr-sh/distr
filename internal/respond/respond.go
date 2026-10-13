@@ -89,27 +89,27 @@ func withHeader(header http.Header, key, value string) http.Header {
 }
 
 // JSONResponse sends Body as JSON. Status defaults to 200.
-type JSONResponse[T any] struct {
+type JSONResponse struct {
 	Status int
 	Header http.Header
-	Body   T
+	Body   any
 }
 
-func JSON[T any](body T) JSONResponse[T] {
-	return JSONResponse[T]{Body: body}
+func JSON(body any) JSONResponse {
+	return JSONResponse{Body: body}
 }
 
-func (resp JSONResponse[T]) WithStatus(status int) JSONResponse[T] {
+func (resp JSONResponse) WithStatus(status int) JSONResponse {
 	resp.Status = status
 	return resp
 }
 
-func (resp JSONResponse[T]) WithHeader(key, value string) JSONResponse[T] {
+func (resp JSONResponse) WithHeader(key, value string) JSONResponse {
 	resp.Header = withHeader(resp.Header, key, value)
 	return resp
 }
 
-func (resp JSONResponse[T]) WriteResponse(w http.ResponseWriter, r *http.Request) error {
+func (resp JSONResponse) WriteResponse(w http.ResponseWriter, r *http.Request) error {
 	// Encode first, so a failure can still become a 500.
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(resp.Body); err != nil {
