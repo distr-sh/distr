@@ -23,16 +23,15 @@
           <th scope="col" class="p-4">Versions</th>
           @if (fullVersion()) {
             <th scope="col" class="p-4">Creation Date</th>
-            <th scope="col" class="p-4"></th>
           }
         </tr>
       </thead>
       <tbody>
         @for (application of applications$ | async; track application.id) {
-          <tr class="distr-table-row">
-            <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+          <tr [routerLink]="['/', 'applications', application.id]" class="distr-table-row cursor-pointer">
+            <td class="distr-table-cell">
               <div class="flex flex-wrap items-center gap-2">
-                <a [routerLink]="['/', 'applications', application.id]" class="flex items-center">
+                <div class="flex items-center">
                   <app-application-logo
                     class="size-8 mr-3 shrink-0"
                     [imageUrl]="application.imageUrl"
@@ -40,34 +39,23 @@
                   <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
                     {{ application.name }}
                   </span>
-                </a>
+                </div>
                 <span class="distr-badge capitalize">{{ application.type }}</span>
                 @if (isAutoUpdatesEnabled() && application.allowAutomaticUpdates) {
                   <span class="distr-badge distr-badge-success whitespace-nowrap"> Auto-Updates allowed </span>
                 }
               </div>
             </td>
-            <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+            <td class="distr-table-cell">
               <div class="flex items-center">
                 {{ application.versions?.length || 0 }}
               </div>
             </td>
             @if (fullVersion()) {
-              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+              <td class="distr-table-cell">
                 <div class="flex items-center">
                   {{ application.createdAt | date: 'short' }}
                 </div>
-              </td>
-              <td
-                class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
-                <a
-                  *appRequireVendor
-                  [routerLink]="['/', 'applications', application.id]"
-                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                  <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
-                  Details
-                  <ng-template [appRequiredRole]="['admin', 'read_write']">/ Edit</ng-template>
-                </a>
               </td>
             }
           </tr>
