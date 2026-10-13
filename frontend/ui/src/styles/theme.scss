@@ -170,7 +170,7 @@
 
   // the panel holding the rows of destructive actions at the end of a settings page
   .distr-danger-zone {
-    @apply flex flex-col rounded-lg border border-red-700 dark:border-red-500 bg-red-50 dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600;
+    @apply flex flex-col rounded-lg border border-red-700 dark:border-red-500 divide-y divide-gray-200 dark:divide-gray-600;
   }
 
   .distr-card-grid {
