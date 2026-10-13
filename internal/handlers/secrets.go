@@ -3,23 +3,22 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 func SecretsRouter(r chiopenapi.Router) {
@@ -27,26 +26,26 @@ func SecretsRouter(r chiopenapi.Router) {
 
 	r.Use(middleware.RequireOrgAndRole)
 
-	r.Get("/", getSecretsHandler()).
+	r.Get("/", respond.Handler(getSecrets)).
 		With(option.Description("List all secrets")).
 		With(option.Response(http.StatusOK, []api.SecretWithoutValue{}))
 
 	r.Group(func(r chiopenapi.Router) {
 		r.Use(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin)
 
-		r.Post("/", createSecretHandler()).
+		r.Post("/", respond.Handler(createSecret)).
 			With(option.Description("Create a secret")).
 			With(option.Request(api.CreateSecretRequest{})).
 			With(option.Response(http.StatusCreated, api.SecretWithoutValue{}))
 
 		r.Route("/{secretId}", func(r chiopenapi.Router) {
-			r.Put("/", updateSecretHandler()).
+			r.Put("/", respond.Handler(updateSecret)).
 				With(option.Description("Update a secret")).
 				With(option.Request(api.UpdateSecretRequest{})).
 				With(option.Response(http.StatusOK, api.UpdateSecretResponse{})).
 				With(option.Response(http.StatusConflict, api.AffectedDeploymentsConflictResponse{}))
 
-			r.Delete("/", deleteSecretHandler()).
+			r.Delete("/", respond.Handler(deleteSecret)).
 				With(option.Description("Delete a secret")).
 				With(option.Request(api.DeleteSecretRequest{})).
 				With(option.Response(http.StatusConflict, api.AffectedDeploymentsConflictResponse{}))
@@ -54,206 +53,162 @@ func SecretsRouter(r chiopenapi.Router) {
 	})
 }
 
-func getSecretsHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		auth := auth.Authentication.Require(ctx)
+var (
+	secretKeyPattern  = regexp.MustCompile(`^[a-zA-Z][\w_]*$`)
+	errSecretNotFound = apierrors.NewNotFound("secret not found")
+	errInvalidSecret  = apierrors.NewBadRequest("invalid secret ID")
+)
 
-		secrets, err := db.GetSecrets(ctx, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
-		if err != nil {
-			internalctx.GetLogger(ctx).Error("failed to get secrets", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		} else {
-			RespondJSON(w, mapping.List(secrets, mapping.SecretToAPI))
-		}
+func getSecrets(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+
+	secrets, err := db.GetSecrets(ctx, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get secrets: %w", err)
 	}
+	return respond.JSON(mapping.List(secrets, mapping.SecretToAPI)), nil
 }
 
-func createSecretHandler() http.HandlerFunc {
-	secretKeyPattern := regexp.MustCompile(`^[a-zA-Z][\w_]*$`)
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		auth := auth.Authentication.Require(ctx)
-		body, err := JsonBody[api.CreateSecretRequest](w, r)
-		if err != nil {
-			return
-		}
-
-		if body.Key == "" {
-			http.Error(w, "key is required", http.StatusBadRequest)
-			return
-		}
-
-		if !secretKeyPattern.MatchString(body.Key) {
-			http.Error(w, "invalid key format", http.StatusBadRequest)
-			return
-		}
-
-		if body.Value == "" {
-			http.Error(w, "value is required", http.StatusBadRequest)
-			return
-		}
-
-		customerOrganizationID, ok := resolveCustomerScope(w, r, body.CustomerOrganizationID)
-		if !ok {
-			return
-		}
-
-		secret, err := db.CreateSecret(
-			ctx,
-			*auth.CurrentOrgID(),
-			customerOrganizationID,
-			auth.CurrentUserID(),
-			body.Key,
-			dbcrypto.String(body.Value),
-		)
-
-		if err != nil {
-			if errors.Is(err, apierrors.ErrConflict) {
-				http.Error(w, "secret with this key already exists", http.StatusConflict)
-			} else {
-				internalctx.GetLogger(ctx).Error("failed to create secret", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			}
-		} else {
-			w.WriteHeader(http.StatusCreated)
-			RespondJSON(w, mapping.SecretToAPI(*secret))
-		}
+func createSecret(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	body, err := decodeJSON[api.CreateSecretRequest](r)
+	if err != nil {
+		return nil, err
 	}
+
+	if body.Key == "" {
+		return nil, apierrors.NewBadRequest("key is required")
+	}
+	if !secretKeyPattern.MatchString(body.Key) {
+		return nil, apierrors.NewBadRequest("invalid key format")
+	}
+	if body.Value == "" {
+		return nil, apierrors.NewBadRequest("value is required")
+	}
+
+	customerOrganizationID, err := customerScope(ctx, body.CustomerOrganizationID)
+	if err != nil {
+		return nil, err
+	}
+
+	secret, err := db.CreateSecret(
+		ctx,
+		*auth.CurrentOrgID(),
+		customerOrganizationID,
+		auth.CurrentUserID(),
+		body.Key,
+		dbcrypto.String(body.Value),
+	)
+	if errors.Is(err, apierrors.ErrConflict) {
+		return nil, apierrors.NewConflict("secret with this key already exists")
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to create secret: %w", err)
+	}
+	return respond.JSON(mapping.SecretToAPI(*secret)).WithStatus(http.StatusCreated), nil
 }
 
-func updateSecretHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		auth := auth.Authentication.Require(ctx)
-		id, err := uuid.Parse(r.PathValue("secretId"))
-		if err != nil {
-			http.Error(w, "invalid secret ID", http.StatusBadRequest)
-			return
-		}
+func updateSecret(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	id, err := uuid.Parse(r.PathValue("secretId"))
+	if err != nil {
+		return nil, errInvalidSecret
+	}
 
-		body, err := JsonBody[api.UpdateSecretRequest](w, r)
-		if err != nil {
-			return
-		}
+	body, err := decodeJSON[api.UpdateSecretRequest](r)
+	if err != nil {
+		return nil, err
+	}
 
-		existing, err := db.GetSecretByID(
+	existing, err := db.GetSecretByID(
+		ctx,
+		id,
+		*auth.CurrentOrgID(),
+		auth.CurrentCustomerOrgID(),
+		auth.CurrentPartnerOrgID(),
+	)
+	if errors.Is(err, apierrors.ErrNotFound) {
+		return nil, errSecretNotFound
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to get secret: %w", err)
+	}
+
+	affected, err := findAffectedDeploymentsBySecret(
+		ctx,
+		*auth.CurrentOrgID(),
+		existing.Key,
+		dbcrypto.String(body.Value),
+		existing.CustomerOrganizationID,
+	)
+	if err != nil {
+		return nil, wrapDeploymentValuesError(err, "invalid deployment values")
+	}
+
+	confirm := r.URL.Query().Get("confirm") == "true"
+	if !confirm && len(affected) > 0 {
+		return respond.JSON(api.AffectedDeploymentsConflictResponse{AffectedDeployments: affected}).
+			WithStatus(http.StatusConflict), nil
+	}
+
+	var secret *types.SecretWithUpdatedBy
+	err = db.RunTx(ctx, func(ctx context.Context) error {
+		secret, err = db.UpdateSecret(
 			ctx,
 			id,
-			*auth.CurrentOrgID(),
-			auth.CurrentCustomerOrgID(),
-			auth.CurrentPartnerOrgID(),
-		)
-		if err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
-				http.Error(w, "secret not found", http.StatusNotFound)
-				return
-			}
-			internalctx.GetLogger(ctx).Error("failed to get secret", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		affected, err := findAffectedDeploymentsBySecret(
-			ctx,
-			*auth.CurrentOrgID(),
-			existing.Key,
-			dbcrypto.String(body.Value),
+			existing.OrganizationID,
 			existing.CustomerOrganizationID,
+			auth.CurrentUserID(),
+			dbcrypto.String(body.Value),
 		)
 		if err != nil {
-			_ = deploymentValuesError(ctx, w, err, "invalid deployment values")
-			return
+			return err
 		}
-
-		confirm := r.URL.Query().Get("confirm") == "true"
-		if !confirm && len(affected) > 0 {
-			RespondJSONWithStatus(w, http.StatusConflict,
-				api.AffectedDeploymentsConflictResponse{AffectedDeployments: affected})
-			return
-		}
-
-		var secret *types.SecretWithUpdatedBy
-		err = db.RunTx(ctx, func(ctx context.Context) error {
-			secret, err = db.UpdateSecret(
-				ctx,
-				id,
-				existing.OrganizationID,
-				existing.CustomerOrganizationID,
-				auth.CurrentUserID(),
-				dbcrypto.String(body.Value),
-			)
-			if err != nil {
-				return err
-			}
-			return triggerAffectedDeployments(
-				ctx, affected, new(auth.CurrentUserID()), types.DeploymentRevisionTriggerSecretChange,
-			)
-		})
-		if err != nil {
-			internalctx.GetLogger(ctx).Error("failed to update secret", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		RespondJSON(w, api.UpdateSecretResponse{
-			SecretWithoutValue:  *mapping.SecretToAPI(*secret),
-			AffectedDeployments: affected,
-		})
+		return triggerAffectedDeployments(
+			ctx, affected, new(auth.CurrentUserID()), types.DeploymentRevisionTriggerSecretChange,
+		)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to update secret: %w", err)
 	}
+
+	return respond.JSON(api.UpdateSecretResponse{
+		SecretWithoutValue:  *mapping.SecretToAPI(*secret),
+		AffectedDeployments: affected,
+	}), nil
 }
 
-func deleteSecretHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		auth := auth.Authentication.Require(ctx)
-		id, err := uuid.Parse(r.PathValue("secretId"))
-		if err != nil {
-			http.Error(w, "invalid secret ID", http.StatusBadRequest)
-			return
-		}
-
-		existing, err := db.GetSecretByID(
-			ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
-		if err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
-				http.Error(w, "secret not found", http.StatusNotFound)
-			} else {
-				internalctx.GetLogger(ctx).Error("failed to get secret", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			}
-			return
-		}
-
-		referencing, err := findDeploymentsReferencingSecret(ctx, *auth.CurrentOrgID(), id, existing.CustomerOrganizationID)
-		if err != nil {
-			internalctx.GetLogger(ctx).Error("failed to check deployment references for secret", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-		if len(referencing) > 0 {
-			RespondJSONWithStatus(w, http.StatusConflict,
-				api.AffectedDeploymentsConflictResponse{AffectedDeployments: referencing})
-			return
-		}
-
-		err = db.DeleteSecret(ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
-		if err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
-				http.Error(w, "secret not found", http.StatusNotFound)
-			} else {
-				internalctx.GetLogger(ctx).Error("failed to delete secret", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			}
-		} else {
-			w.WriteHeader(http.StatusNoContent)
-		}
+func deleteSecret(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	id, err := uuid.Parse(r.PathValue("secretId"))
+	if err != nil {
+		return nil, errInvalidSecret
 	}
+
+	existing, err := db.GetSecretByID(
+		ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
+	if errors.Is(err, apierrors.ErrNotFound) {
+		return nil, errSecretNotFound
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to get secret: %w", err)
+	}
+
+	referencing, err := findDeploymentsReferencingSecret(ctx, *auth.CurrentOrgID(), id, existing.CustomerOrganizationID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check deployment references for secret: %w", err)
+	}
+	if len(referencing) > 0 {
+		return respond.JSON(api.AffectedDeploymentsConflictResponse{AffectedDeployments: referencing}).
+			WithStatus(http.StatusConflict), nil
+	}
+
+	err = db.DeleteSecret(ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
+	if errors.Is(err, apierrors.ErrNotFound) {
+		return nil, errSecretNotFound
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to delete secret: %w", err)
+	}
+	return respond.NoContent(), nil
 }

@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/contenttype"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
@@ -97,6 +98,21 @@ func runTxOrRespond(ctx context.Context, w http.ResponseWriter, f func(ctx conte
 		return false
 	}
 	return true
+}
+
+// decodeJSON decodes and trims the body. Errors are ready to return from a [respond.Handler].
+func decodeJSON[T any](r *http.Request) (T, error) {
+	var t T
+	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
+		if errors.Is(err, io.EOF) {
+			return t, apierrors.NewBadRequest("request body is required")
+		} else if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
+			return t, apierrors.New(http.StatusRequestEntityTooLarge, "request body too large")
+		}
+		return t, apierrors.NewBadRequest(err.Error())
+	}
+	validation.TrimStrings(&t)
+	return t, nil
 }
 
 func JsonBody[T any](w http.ResponseWriter, r *http.Request) (T, error) {

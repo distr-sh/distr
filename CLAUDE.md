@@ -19,7 +19,7 @@ That server is called Distr, never Hub. The name holds for user-facing text, for
 - `frontend/ui/`: the Angular app (standalone components, TailwindCSS 4, SCSS, Flowbite), built into `internal/frontend/dist/ui/`.
 - `sdk/js/`: `@distr-sh/distr-sdk`, a standalone pnpm project. Prefer its high-level `DistrService` over the low-level `Client`, and run its examples against the config in `src/examples/config.ts`.
 - `website/`: the docs and marketing site, a standalone pnpm project with a Prettier config of its own.
-- `internal/`: the backend. `db/` holds every query, `handlers/` the HTTP handlers, `api/` their request and response structs, `routing/` the routes and middleware, `mapping/` the conversions between `api` and `types`, `types/` the database models, `svc/` the services, `authn/` the authentication providers, `logstore/` the Loki-backed log records, `registry/` the OCI registry, `advisory/` the advisory visibility rules and `migrations/sql/` the schema.
+- `internal/`: the backend. `db/` holds every query, `handlers/` the HTTP handlers, `respond/` their adapter and response types, `api/` their request and response structs, `routing/` the routes and middleware, `mapping/` the conversions between `api` and `types`, `types/` the database models, `svc/` the services, `authn/` the authentication providers, `logstore/` the Loki-backed log records, `registry/` the OCI registry, `advisory/` the advisory visibility rules and `migrations/sql/` the schema.
 
 PostgreSQL is reached through pgx/v5, registry blobs and Loki chunks live in S3-compatible object storage and deployment logs live in Loki rather than in the database. Timestamp columns are `TIMESTAMP`, never `TIMESTAMPTZ`.
 
@@ -47,7 +47,8 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 - Do not add new accessors to `internal/context`. They belong in the package that defines the stored type (e.g. `logstore.NewContext`/`logstore.FromContext`), which also avoids import cycles.
 - Query through the `internal/db/queryable.Queryable` interface, which covers both `*pgxpool.Pool` and `pgx.Tx`, and collect rows with `pgx.CollectRows`, which closes them itself. Only a query iterated manually needs `defer rows.Close()`.
 - Pass dependencies into HTTP handlers via closure.
-- Return API errors through `internal/apierrors` so they carry a status code.
+- Write an HTTP handler as `func(*http.Request) (respond.Responder, error)` wrapped in `respond.Handler`, decode its body with `decodeJSON` and convert a handler you touch that still writes to the `http.ResponseWriter` itself.
+- Return a 4xx as `apierrors.New*`, wrap every other error with context (`fmt.Errorf("failed to get secrets: %w", err)`) and leave logging, Sentry and the 500 to `respond.Handler`. Never call `http.Error` or `CaptureException` in a handler; see the doc comment of `respond.Handler` for how each error is answered.
 - Log with zap: `logger.Info("message", zap.String("key", value))`.
 - Route what a dependency logs in a controller into the controller's zap logger with `controllerlogging.Redirect`, which covers logrus and the standard library logger. Only what passes through zap reaches Distr, so anything else ends up in the controller's container output alone.
 - Report exceptions with `sentry.GetHubFromContext(ctx).CaptureException(err)`. Use `sentry.CurrentHub()` in a background job, since a job context carries no hub and taking one from it panics.
