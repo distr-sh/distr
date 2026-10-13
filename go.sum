@@ -256,8 +256,8 @@ github.com/fxamacker/cbor/v2 v2.9.4 h1:xwjVlxEMR3S605oUlgBjKLTTeGFciYPGYCtF/35LK
 github.com/fxamacker/cbor/v2 v2.9.4/go.mod h1:vM4b+DJCtHn+zz7h3FFp/hDAI9WNWCsZj23V5ytsSxQ=
 github.com/getsentry/sentry-go v0.50.0 h1:gkO59rn/i0RCAXUUTflC5QVbTQGPXbaFabs2olVzc9g=
 github.com/getsentry/sentry-go v0.50.0/go.mod h1:+xsDuN+SoRN/xfs1hdq78wnrE3omIZf+FCuh9FOW1C8=
-github.com/getsentry/sentry-go/otel/otlp v0.49.0 h1:gZgeRBzBQ2utfwno7MqSGXXRLdxX+48pBjp1WDAcb00=
-github.com/getsentry/sentry-go/otel/otlp v0.49.0/go.mod h1:xq+r0C0F5T6JZwNOud7168JZLXXfPJ6jT0Y0vkrhAds=
+github.com/getsentry/sentry-go/otel/otlp v0.50.0 h1:mmKr7wsrSnleAabOTYzlNWrOzN5pdkl2IPV6as+W8iU=
+github.com/getsentry/sentry-go/otel/otlp v0.50.0/go.mod h1:3SLOxr/akXyaI5Qlb7aqhLIU4W3efiQTqINKORTVqDA=
 github.com/glasskube/pkg/crypto v0.2.0 h1:vaI2WjPNWtP3LRqc4SoF/PMcEflPmAhUcAAHF+rryQU=
 github.com/glasskube/pkg/crypto v0.2.0/go.mod h1:lp/XKaha7EYH2ZkRKya+fp0VLz84/hZA48ujO5iQQzU=
 github.com/glasskube/pkg/seekbuf v0.1.1 h1:nUdyZS6XEkjkjploYIsmtGD60o/giGUI7Kiz9jqBFHM=
