@@ -11,11 +11,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/contenttype"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/handlerutil"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	"go.uber.org/zap"
@@ -100,16 +100,17 @@ func runTxOrRespond(ctx context.Context, w http.ResponseWriter, f func(ctx conte
 	return true
 }
 
-// decodeJSON decodes and trims the body. Errors are ready to return from a [respond.Handler].
-func decodeJSON[T any](r *http.Request) (T, error) {
+// decodeJSON decodes and trims the body. A body that cannot be decoded is answered by the returned Responder.
+func decodeJSON[T any](r *http.Request) (T, respond.Responder) {
 	var t T
 	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
 		if errors.Is(err, io.EOF) {
-			return t, apierrors.NewBadRequest("request body is required")
+			return t, respond.BadRequest("request body is required")
 		} else if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
-			return t, apierrors.New(http.StatusRequestEntityTooLarge, "request body too large")
+			return t, respond.Error(http.StatusRequestEntityTooLarge, "request body too large")
+		} else {
+			return t, respond.BadRequest(err.Error())
 		}
-		return t, apierrors.NewBadRequest(err.Error())
 	}
 	validation.TrimStrings(&t)
 	return t, nil

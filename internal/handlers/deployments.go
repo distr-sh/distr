@@ -643,17 +643,9 @@ func validateDeploymentRequestValues(
 	return nil
 }
 
-// wrapDeploymentValuesError makes an invalid template a bad request prefixed with clientMsg.
-func wrapDeploymentValuesError(err error, clientMsg string) error {
-	if errors.Is(err, deploymentvalues.ErrInvalidTemplate) {
-		return apierrors.NewBadRequest(fmt.Sprintf("%s: %v", clientMsg, err.Error()))
-	}
-	return fmt.Errorf("deployment values error: %w", err)
-}
-
 func deploymentValuesError(ctx context.Context, w http.ResponseWriter, err error, clientMsg string) error {
 	if errors.Is(err, deploymentvalues.ErrInvalidTemplate) {
-		return badRequestError(w, wrapDeploymentValuesError(err, clientMsg).Error())
+		return badRequestError(w, fmt.Sprintf("%s: %v", clientMsg, err.Error()))
 	}
 	internalctx.GetLogger(ctx).Warn("deployment values error", zap.Error(err))
 	sentry.GetHubFromContext(ctx).CaptureException(err)

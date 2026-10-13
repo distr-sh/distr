@@ -65,23 +65,25 @@ func PublicFileRouter(r chiopenapi.Router) {
 		With(option.Response(http.StatusOK, nil))
 }
 
+var fileNotFound = respond.NotFound("file not found")
+
 func getPublicFileHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 
 	if fileID, err := uuid.Parse(r.PathValue("fileId")); err != nil {
-		return nil, apierrors.ErrNotFound
+		return fileNotFound, nil
 	} else if file, err := db.GetFileWithID(ctx, fileID); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
-			return nil, apierrors.ErrNotFound
+			return fileNotFound, nil
 		} else {
 			return nil, fmt.Errorf("error getting public file: %w", err)
 		}
 	} else if !file.Public {
-		return nil, apierrors.ErrNotFound
+		return fileNotFound, nil
 	} else if !isServableImageContentType(file.ContentType) {
 		// Only serve image types publicly to avoid hosting executable content (e.g. text/html) on the
 		// application's own origin. SVGs are allowed but served with script-blocking headers below.
-		return nil, apierrors.ErrNotFound
+		return fileNotFound, nil
 	} else {
 		// SVGs are served with a sandboxing CSP so embedded scripts cannot execute in the app's origin.
 		header := http.Header{}
@@ -133,7 +135,7 @@ func deleteFileHandler(r *http.Request) (respond.Responder, error) {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			return respond.NoContent(), nil
 		} else if errors.Is(err, apierrors.ErrConflict) {
-			return nil, apierrors.NewBadRequest("file is still in use")
+			return respond.BadRequest("file is still in use"), nil
 		} else {
 			return nil, fmt.Errorf("error deleting file: %w", err)
 		}
@@ -148,7 +150,7 @@ func createFileHandler(r *http.Request) (respond.Responder, error) {
 	auth := auth.Authentication.Require(ctx)
 
 	if file, err := getFileFromRequest(r); err != nil {
-		return nil, apierrors.NewBadRequest(err.Error())
+		return respond.BadRequest(err.Error()), nil
 	} else {
 		var orgID *uuid.UUID
 		scope := r.FormValue("scope")
@@ -224,19 +226,19 @@ func patchImageHandler(patchImage func(ctx context.Context, body api.PatchImageR
 	return respond.Handler(func(r *http.Request) (respond.Responder, error) {
 		ctx := r.Context()
 
-		body, err := decodeJSON[api.PatchImageRequest](r)
+		body, resp := decodeJSON[api.PatchImageRequest](r)
 
-		if err != nil {
-			return nil, err
+		if resp != nil {
+			return resp, nil
 		} else if body.ImageID == uuid.Nil {
-			return nil, apierrors.NewBadRequest("imageId can not be empty")
+			return respond.BadRequest("imageId can not be empty"), nil
 		}
 
 		if result, err := patchImage(ctx, body); err != nil {
 			if errors.Is(err, apierrors.ErrNotFound) {
 				return respond.NoContent(), nil
 			} else if errors.Is(err, apierrors.ErrConflict) {
-				return nil, apierrors.NewBadRequest(err.Error())
+				return respond.BadRequest(err.Error()), nil
 			} else {
 				return nil, fmt.Errorf("error patching image id: %w", err)
 			}

@@ -9,7 +9,6 @@ import (
 	"maps"
 	"net/http"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/getsentry/sentry-go"
 	"go.uber.org/zap"
@@ -33,44 +32,37 @@ func (e *notWrittenError) Unwrap() error {
 	return e.err
 }
 
-// Handler adapts fn to an [http.HandlerFunc]. Errors are answered as:
-//
-//   - [*apierrors.Error]: its status and message
-//   - wrapped sentinel: its status, generic text (may carry internals)
-//   - client cancellation: nothing
-//   - anything else: 500, logged and reported to Sentry
+// Handler adapts fn to an [http.HandlerFunc]. Expected failures are a Responder such as
+// [ErrorResponse]; every error is unexpected and answered with a 500, logged and reported to
+// Sentry, unless the client cancelled the request.
 func Handler(fn func(r *http.Request) (Responder, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		resp, err := fn(r)
-		if err == nil && resp == nil {
-			err = errors.New("handler returned neither a response nor an error")
-		}
-		if err != nil {
-			Error(w, r, err)
-			return
-		}
+		Write(w, r, resp, err)
+	}
+}
 
-		if err := resp.WriteResponse(w, r); err != nil {
-			if notWritten, ok := errors.AsType[*notWrittenError](err); ok {
-				Error(w, r, notWritten.err)
-			} else {
-				internalctx.GetLogger(r.Context()).Warn("failed to write response", zap.Error(err))
-			}
+// Write answers like [Handler], for code that writes to w itself.
+func Write(w http.ResponseWriter, r *http.Request, resp Responder, err error) {
+	if err == nil && resp == nil {
+		err = errors.New("handler returned neither a response nor an error")
+	}
+	if err != nil {
+		internalError(w, r, err)
+	} else if err := resp.WriteResponse(w, r); err != nil {
+		if notWritten, ok := errors.AsType[*notWrittenError](err); ok {
+			internalError(w, r, notWritten.err)
+		} else {
+			internalctx.GetLogger(r.Context()).Warn("failed to write response", zap.Error(err))
 		}
 	}
 }
 
-// Error answers err like [Handler], for code that writes to w itself.
-func Error(w http.ResponseWriter, r *http.Request, err error) {
+func internalError(w http.ResponseWriter, r *http.Request, err error) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 
-	if apiErr, ok := errors.AsType[*apierrors.Error](err); ok {
-		http.Error(w, apiErr.Message, apiErr.Status)
-	} else if status, ok := apierrors.SentinelStatus(err); ok {
-		log.Debug("request rejected", zap.Int("status", status), zap.Error(err))
-		http.Error(w, http.StatusText(status), status)
-	} else if errors.Is(err, context.Canceled) && ctx.Err() != nil {
+	if errors.Is(err, context.Canceled) && ctx.Err() != nil {
 		log.Debug("request canceled", zap.Error(err))
 	} else {
 		log.Error("request failed", zap.String("method", r.Method), zap.String("path", r.URL.Path), zap.Error(err))
@@ -163,6 +155,38 @@ func (resp StreamResponse) WriteResponse(w http.ResponseWriter, r *http.Request)
 	writeHeader(w, resp.Header, resp.Status)
 	_, err := io.Copy(w, resp.Body)
 	return err
+}
+
+// ErrorResponse sends Message as plain text. The frontend displays it verbatim, so write it for
+// the end user. It is deliberately no error: an error returned from a handler is always a 500.
+type ErrorResponse struct {
+	Status  int
+	Message string
+}
+
+func Error(status int, message string) ErrorResponse {
+	return ErrorResponse{Status: status, Message: message}
+}
+
+func BadRequest(message string) ErrorResponse {
+	return Error(http.StatusBadRequest, message)
+}
+
+func Forbidden(message string) ErrorResponse {
+	return Error(http.StatusForbidden, message)
+}
+
+func NotFound(message string) ErrorResponse {
+	return Error(http.StatusNotFound, message)
+}
+
+func Conflict(message string) ErrorResponse {
+	return Error(http.StatusConflict, message)
+}
+
+func (resp ErrorResponse) WriteResponse(w http.ResponseWriter, r *http.Request) error {
+	http.Error(w, resp.Message, resp.Status)
+	return nil
 }
 
 // StatusResponse sends a status without a body.

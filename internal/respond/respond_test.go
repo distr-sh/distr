@@ -2,7 +2,6 @@ package respond
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -37,31 +36,13 @@ func serve(t *testing.T, ctx context.Context, resp Responder, err error) (*httpt
 }
 
 func TestHandlerErrors(t *testing.T) {
-	t.Run("unexpected error is reported and its cause stays out of the body", func(t *testing.T) {
+	t.Run("unhandled sentinel is a reported 500 and its cause stays out of the body", func(t *testing.T) {
 		g := NewWithT(t)
-		rec, events := serve(t, t.Context(), JSON("ignored"), errors.New("connection to 10.0.0.1 refused"))
+		err := fmt.Errorf("get target at 10.0.0.1: %w", apierrors.ErrNotFound)
+		rec, events := serve(t, t.Context(), JSON("ignored"), err)
 		g.Expect(rec.Code).To(Equal(http.StatusInternalServerError))
 		g.Expect(rec.Body.String()).To(Equal("Internal Server Error\n"))
 		g.Expect(events).To(HaveLen(1))
-	})
-
-	t.Run("wrapped sentinel answers with its status but not its details", func(t *testing.T) {
-		g := NewWithT(t)
-		err := fmt.Errorf("%w: key of target 1234 does not match", apierrors.ErrUnauthorized)
-		rec, events := serve(t, t.Context(), nil, err)
-		g.Expect(rec.Code).To(Equal(http.StatusUnauthorized))
-		g.Expect(rec.Body.String()).To(Equal("Unauthorized\n"))
-		g.Expect(events).To(BeEmpty())
-	})
-
-	t.Run("wrapped api error answers with its own message only", func(t *testing.T) {
-		g := NewWithT(t)
-		err := fmt.Errorf("create secret: %w", apierrors.NewConflict("secret with this key already exists"))
-		rec, events := serve(t, t.Context(), nil, err)
-		g.Expect(rec.Code).To(Equal(http.StatusConflict))
-		g.Expect(rec.Body.String()).To(Equal("secret with this key already exists\n"))
-		g.Expect(errors.Is(err, apierrors.ErrConflict)).To(BeTrue())
-		g.Expect(events).To(BeEmpty())
 	})
 
 	t.Run("cancellation by the client is not reported", func(t *testing.T) {

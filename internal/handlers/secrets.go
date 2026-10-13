@@ -12,6 +12,7 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/deploymentvalues"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
@@ -54,9 +55,9 @@ func SecretsRouter(r chiopenapi.Router) {
 }
 
 var (
-	secretKeyPattern  = regexp.MustCompile(`^[a-zA-Z][\w_]*$`)
-	errSecretNotFound = apierrors.NewNotFound("secret not found")
-	errInvalidSecret  = apierrors.NewBadRequest("invalid secret ID")
+	secretKeyPattern = regexp.MustCompile(`^[a-zA-Z][\w_]*$`)
+	secretNotFound   = respond.NotFound("secret not found")
+	invalidSecretID  = respond.BadRequest("invalid secret ID")
 )
 
 func getSecrets(r *http.Request) (respond.Responder, error) {
@@ -73,24 +74,24 @@ func getSecrets(r *http.Request) (respond.Responder, error) {
 func createSecret(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
-	body, err := decodeJSON[api.CreateSecretRequest](r)
-	if err != nil {
-		return nil, err
+	body, resp := decodeJSON[api.CreateSecretRequest](r)
+	if resp != nil {
+		return resp, nil
 	}
 
 	if body.Key == "" {
-		return nil, apierrors.NewBadRequest("key is required")
+		return respond.BadRequest("key is required"), nil
 	}
 	if !secretKeyPattern.MatchString(body.Key) {
-		return nil, apierrors.NewBadRequest("invalid key format")
+		return respond.BadRequest("invalid key format"), nil
 	}
 	if body.Value == "" {
-		return nil, apierrors.NewBadRequest("value is required")
+		return respond.BadRequest("value is required"), nil
 	}
 
-	customerOrganizationID, err := customerScope(ctx, body.CustomerOrganizationID)
-	if err != nil {
-		return nil, err
+	customerOrganizationID, resp, err := customerScope(ctx, body.CustomerOrganizationID)
+	if resp != nil || err != nil {
+		return resp, err
 	}
 
 	secret, err := db.CreateSecret(
@@ -102,7 +103,7 @@ func createSecret(r *http.Request) (respond.Responder, error) {
 		dbcrypto.String(body.Value),
 	)
 	if errors.Is(err, apierrors.ErrConflict) {
-		return nil, apierrors.NewConflict("secret with this key already exists")
+		return respond.Conflict("secret with this key already exists"), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to create secret: %w", err)
 	}
@@ -114,12 +115,12 @@ func updateSecret(r *http.Request) (respond.Responder, error) {
 	auth := auth.Authentication.Require(ctx)
 	id, err := uuid.Parse(r.PathValue("secretId"))
 	if err != nil {
-		return nil, errInvalidSecret
+		return invalidSecretID, nil
 	}
 
-	body, err := decodeJSON[api.UpdateSecretRequest](r)
-	if err != nil {
-		return nil, err
+	body, resp := decodeJSON[api.UpdateSecretRequest](r)
+	if resp != nil {
+		return resp, nil
 	}
 
 	existing, err := db.GetSecretByID(
@@ -130,7 +131,7 @@ func updateSecret(r *http.Request) (respond.Responder, error) {
 		auth.CurrentPartnerOrgID(),
 	)
 	if errors.Is(err, apierrors.ErrNotFound) {
-		return nil, errSecretNotFound
+		return secretNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get secret: %w", err)
 	}
@@ -142,8 +143,10 @@ func updateSecret(r *http.Request) (respond.Responder, error) {
 		dbcrypto.String(body.Value),
 		existing.CustomerOrganizationID,
 	)
-	if err != nil {
-		return nil, wrapDeploymentValuesError(err, "invalid deployment values")
+	if errors.Is(err, deploymentvalues.ErrInvalidTemplate) {
+		return respond.BadRequest(fmt.Sprintf("invalid deployment values: %v", err)), nil
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to find deployments affected by secret: %w", err)
 	}
 
 	confirm := r.URL.Query().Get("confirm") == "true"
@@ -184,13 +187,13 @@ func deleteSecret(r *http.Request) (respond.Responder, error) {
 	auth := auth.Authentication.Require(ctx)
 	id, err := uuid.Parse(r.PathValue("secretId"))
 	if err != nil {
-		return nil, errInvalidSecret
+		return invalidSecretID, nil
 	}
 
 	existing, err := db.GetSecretByID(
 		ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
 	if errors.Is(err, apierrors.ErrNotFound) {
-		return nil, errSecretNotFound
+		return secretNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get secret: %w", err)
 	}
@@ -206,7 +209,7 @@ func deleteSecret(r *http.Request) (respond.Responder, error) {
 
 	err = db.DeleteSecret(ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
 	if errors.Is(err, apierrors.ErrNotFound) {
-		return nil, errSecretNotFound
+		return secretNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to delete secret: %w", err)
 	}

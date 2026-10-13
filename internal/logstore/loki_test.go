@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
@@ -171,7 +170,7 @@ func TestSaveDeploymentLogRecordsBadRequest(t *testing.T) {
 		http.Error(w, "entry too far behind", http.StatusBadRequest)
 	}))
 	err := store.SaveDeploymentLogRecords(testContext(t), testOrgID, []api.DeploymentLogRecord{{Body: "x"}})
-	g.Expect(err).To(MatchError(apierrors.ErrBadRequest))
+	g.Expect(err).To(MatchError(ContainSubstring("bad request")))
 	g.Expect(err).To(MatchError(ContainSubstring("entry too far behind")))
 }
 
