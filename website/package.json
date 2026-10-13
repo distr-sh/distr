@@ -40,7 +40,7 @@
     "github-buttons": "^2.33.0",
     "marked": "^18.0.13",
     "mermaid": "^11.17.2",
-    "node-html-parser": "^8.0.4",
+    "node-html-parser": "^9.0.0",
     "playwright": "^1.63.0",
     "preact": "^10.29.8",
     "rehype-external-links": "^3.0.0",
