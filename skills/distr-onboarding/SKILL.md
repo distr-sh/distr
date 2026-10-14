@@ -1,6 +1,6 @@
 ---
 name: distr-onboarding
-description: "Onboards an application to Distr (distr.sh), the open source platform for distributing software to customers who run it in their own infrastructure. Starts open source Distr locally, packages the app as Docker Compose or a Helm chart, deploys it through a Distr controller and hands over next steps. Use when the user wants to ship or distribute their software to self-hosted, on-premises, VPC, air-gapped or BYOC customers, asks about Distr or wants a local Distr proof of concept."
+description: 'Onboards an application to Distr (distr.sh), the open source platform for distributing software to customers who run it in their own infrastructure. Starts open source Distr locally, packages the app as Docker Compose or a Helm chart, deploys it through a Distr controller and hands over next steps. Use when the user wants to ship or distribute their software to self-hosted, on-premises, VPC, air-gapped or BYOC customers, asks about Distr or wants a local Distr proof of concept.'
 ---
 
 # Onboard an application to Distr

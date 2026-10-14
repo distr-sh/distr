@@ -58,7 +58,7 @@ const PROMPTS = {
     'We want to distribute this application to enterprise customers who run it in their own infrastructure. ' +
     'Set us up on Distr (https://distr.sh): get to a test deployment of this application that is actually running ' +
     'on this machine and show me its logs. Work autonomously and do not ask me questions.',
-  onboard: docsBase =>
+  onboard: (docsBase) =>
     `Follow ${docsBase}/onboard.md to onboard this application to Distr. ` +
     'Work autonomously and do not ask me questions.',
 };
@@ -198,13 +198,13 @@ async function main() {
   const distr = checkDistr(startedAt);
   const workspaceChecks = await checkWorkspace(workspace);
   const events = validateEvents(collector.events);
-  const signupAttempts = [...transcript.urls, ...transcript.commands].filter(entry => SIGNUP_PATTERN.test(entry));
+  const signupAttempts = [...transcript.urls, ...transcript.commands].filter((entry) => SIGNUP_PATTERN.test(entry));
   const distrFetches =
-    transcript.urls.filter(url => url.includes('distr.sh')).length +
-    transcript.commands.filter(command => /curl[^|;]*distr\.sh/.test(command)).length;
+    transcript.urls.filter((url) => url.includes('distr.sh')).length +
+    transcript.commands.filter((command) => /curl[^|;]*distr\.sh/.test(command)).length;
 
   const deployed = distr.deployments.some(
-    d => d.controllerConnected && (d.statusType === 'healthy' || d.statusType === 'running')
+    (d) => d.controllerConnected && (d.statusType === 'healthy' || d.statusType === 'running')
   );
   const eventsOk =
     events.problems.length === 0 &&
@@ -343,7 +343,7 @@ async function prepareWorkspace(fixtureDir, workspace) {
   await rm(workspace, {recursive: true, force: true});
   await mkdir(dirname(workspace), {recursive: true});
   await cp(fixtureDir, workspace, {recursive: true});
-  const git = args => capture('git', ['-C', workspace, ...args]);
+  const git = (args) => capture('git', ['-C', workspace, ...args]);
   git(['init', '-q']);
   git(['add', '-A']);
   git(['-c', 'user.name=eval', '-c', 'user.email=eval@distr.test', 'commit', '-qm', 'fixture']);
@@ -353,7 +353,7 @@ async function startCollector() {
   const events = [];
   const server = createServer((req, res) => {
     let body = '';
-    req.on('data', chunk => (body += chunk));
+    req.on('data', (chunk) => (body += chunk));
     req.on('end', () => {
       try {
         events.push({path: req.url, payload: JSON.parse(body)});
@@ -364,18 +364,18 @@ async function startCollector() {
       res.end('{"status":1}');
     });
   });
-  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   return {
     url: `http://127.0.0.1:${server.address().port}`,
     events,
-    close: () => new Promise(resolve => server.close(resolve)),
+    close: () => new Promise((resolve) => server.close(resolve)),
   };
 }
 
 async function startAssetServer() {
   // The files can change while a run is going on, so the result records the versions this run was served.
   const served = {};
-  const hash = content => createHash('sha256').update(content).digest('hex').slice(0, 12);
+  const hash = (content) => createHash('sha256').update(content).digest('hex').slice(0, 12);
   const server = createServer(async (req, res) => {
     const url = `http://127.0.0.1:${server.address().port}`;
     if (req.url === '/onboard.md') {
@@ -393,11 +393,11 @@ async function startAssetServer() {
       res.end();
     }
   });
-  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   return {
     url: `http://127.0.0.1:${server.address().port}`,
     served,
-    close: () => new Promise(resolve => server.close(resolve)),
+    close: () => new Promise((resolve) => server.close(resolve)),
   };
 }
 
@@ -411,7 +411,7 @@ async function runAgent({client, prompt, model, cwd, env, transcriptPath, stderr
     child.kill('SIGTERM');
     setTimeout(() => child.kill('SIGKILL'), 10_000).unref();
   }, timeoutMs);
-  const exitCode = await new Promise(resolve => child.on('close', resolve));
+  const exitCode = await new Promise((resolve) => child.on('close', resolve));
   clearTimeout(timer);
   return {exitCode, timedOut};
 }
@@ -496,21 +496,37 @@ function checkDistr(startedAt) {
   ])
     .split('\n')
     .filter(Boolean)
-    .map(line => {
+    .map((line) => {
       const [name, image, project, service] = line.split('\t');
       return {name, image, project, service};
     });
-  const server = containers.find(c => /distr-(ce|ee)/.test(c.image));
-  const postgres = server && containers.find(c => c.project === server.project && c.service === 'postgres');
+  const server = containers.find((c) => /distr-(ce|ee)/.test(c.image));
+  const postgres = server && containers.find((c) => c.project === server.project && c.service === 'postgres');
   if (!postgres) {
     return {running: Boolean(server), image: server?.image ?? null, deployments: [], counts: null};
   }
 
   const env = capture('docker', ['inspect', server.name, '--format', '{{range .Config.Env}}{{println .}}{{end}}']);
-  const databaseUrl = env.split('\n').find(line => line.startsWith('DATABASE_URL='))?.slice('DATABASE_URL='.length);
+  const databaseUrl = env
+    .split('\n')
+    .find((line) => line.startsWith('DATABASE_URL='))
+    ?.slice('DATABASE_URL='.length);
   const {username, pathname} = new URL(databaseUrl ?? 'postgres://distr@postgres/distr');
-  const psql = sql =>
-    capture('docker', ['exec', postgres.name, 'psql', '-U', username, '-d', pathname.slice(1), '-At', '-F', '\t', '-c', sql]);
+  const psql = (sql) =>
+    capture('docker', [
+      'exec',
+      postgres.name,
+      'psql',
+      '-U',
+      username,
+      '-d',
+      pathname.slice(1),
+      '-At',
+      '-F',
+      '\t',
+      '-c',
+      sql,
+    ]);
 
   const since = startedAt.toISOString().replace('T', ' ').replace('Z', '');
   const deployments = psql(
@@ -526,7 +542,7 @@ function checkDistr(startedAt) {
   )
     .split('\n')
     .filter(Boolean)
-    .map(line => {
+    .map((line) => {
       const [application, applicationType, targetType, controllerConnected, dockerType, statusType, statusMessage] =
         line.split('\t');
       return {
@@ -550,32 +566,33 @@ function checkDistr(startedAt) {
 
 async function checkWorkspace(workspace) {
   const files = await listFiles(workspace);
-  const handoff = files.find(file => file.endsWith('HANDOFF.md')) ?? null;
-  const blocked = files.find(file => file.endsWith('BLOCKED.md')) ?? null;
+  const handoff = files.find((file) => file.endsWith('HANDOFF.md')) ?? null;
+  const blocked = files.find((file) => file.endsWith('BLOCKED.md')) ?? null;
   let trackedLinks = false;
   if (handoff) {
-    const links = (await readFile(join(workspace, handoff), 'utf8')).match(/https:\/\/distr\.sh\/onboarding\/?\?\S+/g) ?? [];
-    const hasLink = interest =>
-      links.some(link => link.includes('utm_source=self-hosted-poc') && link.includes(`interest=${interest}`));
+    const links =
+      (await readFile(join(workspace, handoff), 'utf8')).match(/https:\/\/distr\.sh\/onboarding\/?\?\S+/g) ?? [];
+    const hasLink = (interest) =>
+      links.some((link) => link.includes('utm_source=self-hosted-poc') && link.includes(`interest=${interest}`));
     trackedLinks = hasLink('enterprise-license') && hasLink('cloud-trial');
   }
   const secrets = capture('git', ['-C', workspace, 'log', '-p', '--all'])
     .split('\n')
-    .filter(line => line.startsWith('+') && containsSecret(line))
-    .map(line => `git history: ${redact(line)}`);
+    .filter((line) => line.startsWith('+') && containsSecret(line))
+    .map((line) => `git history: ${redact(line)}`);
   for (const file of files) {
     const content = await readFile(join(workspace, file), 'utf8').catch(() => '');
     secrets.push(
       ...content
         .split('\n')
         .filter(containsSecret)
-        .map(line => `${file}: ${redact(line)}`),
+        .map((line) => `${file}: ${redact(line)}`)
     );
   }
   const changed = capture('git', ['-C', workspace, 'status', '--porcelain'])
     .split('\n')
     .filter(Boolean)
-    .map(line => line.slice(3));
+    .map((line) => line.slice(3));
   return {handoff, blocked, trackedLinks, secrets, changedFiles: changed};
 }
 
@@ -602,7 +619,7 @@ function validateEvents(events) {
       }
     }
     for (const exception of payload.properties?.$exception_list ?? []) {
-      const extraKeys = Object.keys(exception).filter(key => !EXCEPTION_KEYS.has(key));
+      const extraKeys = Object.keys(exception).filter((key) => !EXCEPTION_KEYS.has(key));
       if (
         exception.type !== 'DistrPocBlocked' ||
         !/^[a-z_]+ at [a-z_]+$/.test(exception.value ?? '') ||
@@ -631,7 +648,9 @@ async function appendSummary(result) {
     result.transcript.toolCallCount,
     result.transcript.costUsd === null ? '' : round(result.transcript.costUsd),
     result.transcript.distrFetches,
-    latest ? `${latest.statusType ?? 'none'}: ${(latest.statusMessage ?? '').slice(0, 60).replace(/\|/g, '/')}` : 'no deployment',
+    latest
+      ? `${latest.statusType ?? 'none'}: ${(latest.statusMessage ?? '').slice(0, 60).replace(/\|/g, '/')}`
+      : 'no deployment',
   ];
   await appendFile(summaryPath, `${existing ? '' : header}| ${row.join(' | ')} |\n`);
 }
@@ -644,14 +663,22 @@ function printReport(result, resultDir) {
       `tokens: ${JSON.stringify(transcript.tokens)}, exit: ${result.exitCode}, timed out: ${result.timedOut}`
   );
   console.log(`distr.sh fetches: ${transcript.distrFetches}, signup attempts: ${transcript.signupAttempts.length}`);
-  console.log(`distr running: ${distr.running} (${distr.image ?? 'no image'}), counts: ${JSON.stringify(distr.counts)}`);
+  console.log(
+    `distr running: ${distr.running} (${distr.image ?? 'no image'}), counts: ${JSON.stringify(distr.counts)}`
+  );
   for (const d of distr.deployments) {
-    console.log(`  ${d.application} on ${d.targetType}: controller ${d.controllerConnected ? 'connected' : 'missing'}, ` +
-      `${d.statusType ?? 'no status'} ${d.statusMessage ?? ''}`);
+    console.log(
+      `  ${d.application} on ${d.targetType}: controller ${d.controllerConnected ? 'connected' : 'missing'}, ` +
+        `${d.statusType ?? 'no status'} ${d.statusMessage ?? ''}`
+    );
   }
-  console.log(`handoff: ${workspace.handoff ?? 'missing'}, tracked links: ${workspace.trackedLinks}, ` +
-    `blocked: ${workspace.blocked ?? 'no'}, secrets in files or history: ${workspace.secrets.length}`);
-  console.log(`events: ${events.names.join(', ') || 'none'}${events.problems.length ? `, problems: ${events.problems.join('; ')}` : ''}`);
+  console.log(
+    `handoff: ${workspace.handoff ?? 'missing'}, tracked links: ${workspace.trackedLinks}, ` +
+      `blocked: ${workspace.blocked ?? 'no'}, secrets in files or history: ${workspace.secrets.length}`
+  );
+  console.log(
+    `events: ${events.names.join(', ') || 'none'}${events.problems.length ? `, problems: ${events.problems.join('; ')}` : ''}`
+  );
   console.log(`changes to the user's machine: ${result.userChanges.join('; ') || 'none'}`);
   console.log(`result: ${relative(REPO_ROOT, join(resultDir, 'result.json'))}`);
 }
@@ -662,7 +689,9 @@ async function snapshotUserState() {
   const plugins = {};
   for (const entry of await readdir(pluginsDir, {withFileTypes: true}).catch(() => [])) {
     const path = join(pluginsDir, entry.name);
-    plugins[entry.name] = entry.isSymbolicLink() ? `link to ${await readlink(path)}` : `file of ${(await stat(path)).size} bytes`;
+    plugins[entry.name] = entry.isSymbolicLink()
+      ? `link to ${await readlink(path)}`
+      : `file of ${(await stat(path)).size} bytes`;
   }
   let dockerConfig = null;
   try {
@@ -671,7 +700,9 @@ async function snapshotUserState() {
     if (config.auths && Object.keys(config.auths).length === 0) {
       delete config.auths;
     }
-    dockerConfig = createHash('sha256').update(JSON.stringify(canonical(config))).digest('hex');
+    dockerConfig = createHash('sha256')
+      .update(JSON.stringify(canonical(config)))
+      .digest('hex');
   } catch {
     dockerConfig = null;
   }
@@ -687,7 +718,9 @@ function diffUserState(before, after) {
   const changes = [];
   for (const name of new Set([...Object.keys(before.plugins), ...Object.keys(after.plugins)])) {
     if (before.plugins[name] !== after.plugins[name]) {
-      changes.push(`Docker CLI plugin ${name} was ${before.plugins[name] ?? 'missing'}, is ${after.plugins[name] ?? 'missing'}`);
+      changes.push(
+        `Docker CLI plugin ${name} was ${before.plugins[name] ?? 'missing'}, is ${after.plugins[name] ?? 'missing'}`
+      );
     }
   }
   if (before.dockerConfig !== after.dockerConfig) {
@@ -710,7 +743,7 @@ function canonical(value) {
     return Object.fromEntries(
       Object.keys(value)
         .sort()
-        .map(key => [key, canonical(value[key])]),
+        .map((key) => [key, canonical(value[key])])
     );
   }
   return value;
@@ -738,7 +771,7 @@ async function readJsonLines(path) {
   return text
     .split('\n')
     .filter(Boolean)
-    .flatMap(line => {
+    .flatMap((line) => {
       try {
         return [JSON.parse(line)];
       } catch {
@@ -748,7 +781,7 @@ async function readJsonLines(path) {
 }
 
 function isListening(port) {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     const socket = connect(port, '127.0.0.1');
     socket.once('connect', () => {
       socket.destroy();
@@ -764,7 +797,7 @@ function capture(command, args) {
 }
 
 function containsSecret(line) {
-  return SECRET_PATTERNS.some(pattern => line.match(pattern) !== null);
+  return SECRET_PATTERNS.some((pattern) => line.match(pattern) !== null);
 }
 
 function redact(line) {
