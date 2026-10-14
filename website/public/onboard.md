@@ -44,16 +44,18 @@ sh /tmp/distr-try.sh --client <your client, for example claude-code> --kubernete
 
 The script starts the open source Distr quickstart as the Docker Compose project `distr-poc`, creates an admin user,
 an API token and the registry slug `poc`, and prints JSON with everything else. It is safe to run again. If it fails,
-fix what the error names (usually Docker) and rerun it.
+fix what the error names (usually Docker) and rerun it. If port 8080 is taken, do not stop what holds it: rerun with
+`DISTR_PORT=<free port>` in front of `sh`, which later runs remember. Distr is then at the `distrUrl` from the JSON
+instead of http://localhost:8080.
 
 Your shell may not keep variables from one command to the next, so start every command below with
 `. ~/.distr/poc/api.env`. It sets `DISTR_API`, loads `DISTR_TOKEN` from its file without printing it, puts the
 tools `try.sh` installed on `PATH` and loads the IDs you saved to `~/.distr/poc/ids.env`, which the commands below
 append to.
 
-Every API call sends `Authorization: AccessToken $DISTR_TOKEN`. The API reference is at
-http://localhost:8080/docs and the OpenAPI spec at http://localhost:8080/docs/openapi.json. `jq` makes the responses
-easier to read; without it, read the IDs from the JSON.
+Every API call sends `Authorization: AccessToken $DISTR_TOKEN`. The API reference is at `/docs` and the OpenAPI
+spec at `/docs/openapi.json` of the `distrUrl`. `jq` makes the responses easier to read; without it, read the IDs
+from the JSON.
 
 ## 3. Package the application
 
@@ -234,7 +236,7 @@ curl -fsS -X POST "$DISTR_API/user-accounts" -H "Authorization: AccessToken $DIS
 
 Write `distr/HANDOFF.md` and print it. It covers:
 
-- what runs where: Distr at http://localhost:8080 (log in as `poc@example.com`, the password is in
+- what runs where: Distr at the `distrUrl` (log in as `poc@example.com`, the password is in
   `~/.distr/poc/credentials`), the application and how to reach it
 - what you created in Distr and every file you wrote
 - how to stop everything: `curl -fsSL https://distr.sh/try.sh | sh -s -- --down` removes Distr, the Distr

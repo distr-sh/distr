@@ -38,4 +38,5 @@ deploys it through a local Distr controller, verifies status and logs and ends w
 ## Reference
 
 - Docs index for agents: https://distr.sh/llms.txt
-- API reference of the local instance: http://localhost:8080/docs and http://localhost:8080/docs/openapi.json
+- API reference of the local instance: `/docs` and `/docs/openapi.json` of the `distrUrl` that `try.sh` prints
+  (http://localhost:8080 unless `DISTR_PORT` is set)

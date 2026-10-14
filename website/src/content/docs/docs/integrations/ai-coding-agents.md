@@ -34,6 +34,7 @@ npx skills add distr-sh/distr --skill distr-onboarding
 4. It checks the deployment status and logs, fixes the packaging if needed and writes `distr/HANDOFF.md`.
 
 Log in at `http://localhost:8080` as `poc@example.com` to look around; the password is in `~/.distr/poc/credentials`.
+If port 8080 is taken, the agent starts Distr on another port with `DISTR_PORT` and tells you where it runs.
 Stop and remove the proof of concept with `curl -fsSL https://distr.sh/try.sh | sh -s -- --down`.
 
 ## Anonymous progress events

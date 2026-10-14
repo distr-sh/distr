@@ -8,6 +8,9 @@
 # --kubernetes also starts the minikube profile distr-poc (installing minikube, kubectl and helm when they are
 # missing) and points Distr at it. Everything else lives in ~/.distr/poc (DISTR_POC_HOME).
 #
+# Distr listens on http://localhost:8080 and its registry on localhost:8585. DISTR_PORT moves Distr to another port
+# when 8080 is taken; later runs and --down remember it.
+#
 # The script and ~/.distr/poc/event.sh send anonymous progress events (started, distr_ready, packaged, deployed,
 # completed, blocked) that carry no application, repository or personal data. Set DO_NOT_TRACK=1 or
 # DISTR_TELEMETRY=0 to turn them off.
@@ -19,8 +22,6 @@ POC_HOME="${DISTR_POC_HOME:-$HOME/.distr/poc}"
 QUICKSTART="$POC_HOME/quickstart"
 PROJECT="distr-poc"
 MINIKUBE_PROFILE="distr-poc"
-DISTR_URL="http://localhost:8080"
-API="$DISTR_URL/api/v1"
 ADMIN_EMAIL="poc@example.com"
 REGISTRY_SLUG="poc"
 
@@ -94,6 +95,7 @@ init_poc_home() {
     printf 'ARCH=%s\n' "$(uname -m)"
     printf 'DISTR_VERSION=%s\n' "$DISTR_VERSION"
     printf 'SCRIPT_VERSION=%s\n' "$SCRIPT_VERSION"
+    printf 'DISTR_PORT=%s\n' "$DISTR_PORT"
   } > "$POC_HOME/poc.env"
   write_event_helper
 }
@@ -188,11 +190,12 @@ check_docker() {
     log "warning: Docker has $((memory / 1000000000)) GB of memory, Distr needs about $((needed / 1000000000)) GB in $MODE mode."
   fi
   if [ -z "$(compose ps -q distr 2>/dev/null || true)" ]; then
-    for port in 8080 8585; do
-      if port_in_use "$port"; then
-        fail preflight port_in_use "Port $port is already in use, stop whatever listens there first."
-      fi
-    done
+    if port_in_use "$DISTR_PORT"; then
+      fail preflight port_in_use "Port $DISTR_PORT is already in use. Run try.sh again with DISTR_PORT set to a free port, for example DISTR_PORT=$((DISTR_PORT + 1))."
+    fi
+    if port_in_use 8585; then
+      fail preflight port_in_use "Port 8585 is already in use by something else. The local Distr registry needs it, so stop whatever listens there first."
+    fi
   fi
 }
 
@@ -275,15 +278,20 @@ prepare_quickstart() {
     version_at_least "$compose_version" 5 3 ||
       fail preflight compose_outdated "Distr $DISTR_VERSION needs Docker Compose 5.3 or later, update Docker Desktop or the Compose plugin."
   fi
-  if [ -n "${DISTR_IMAGE:-}" ]; then
-    printf 'services:\n  distr:\n    image: %s\n' "$DISTR_IMAGE" > "$QUICKSTART/compose.override.yaml"
-  else
-    rm -f "$QUICKSTART/compose.override.yaml"
+  rm -f "$QUICKSTART/compose.override.yaml"
+  if [ -n "${DISTR_IMAGE:-}" ] || [ "$DISTR_PORT" != 8080 ]; then
+    printf 'services:\n  distr:\n' > "$QUICKSTART/compose.override.yaml"
+    if [ -n "${DISTR_IMAGE:-}" ]; then
+      printf '    image: %s\n' "$DISTR_IMAGE" >> "$QUICKSTART/compose.override.yaml"
+    fi
+    if [ "$DISTR_PORT" != 8080 ]; then
+      printf "    ports: !override\n      - '%s:8080'\n      - '8585:8585'\n" "$DISTR_PORT" >> "$QUICKSTART/compose.override.yaml"
+    fi
   fi
   before="$(cksum < "$QUICKSTART/.env")"
   set_env DISTR_HOST "$DISTR_URL"
   if [ "$MODE" = kubernetes ]; then
-    set_env CONTROLLER_HOST "host.minikube.internal:8080"
+    set_env CONTROLLER_HOST "host.minikube.internal:$DISTR_PORT"
     set_env REGISTRY_HOST "host.minikube.internal:8585"
   else
     unset_env CONTROLLER_HOST
@@ -482,6 +490,18 @@ while [ $# -gt 0 ]; do
 done
 [ -n "$CLIENT" ] || CLIENT="$(detect_client)"
 PATH="$POC_HOME/bin:$PATH"
+if [ -z "${DISTR_PORT:-}" ] && [ -f "$POC_HOME/poc.env" ]; then
+  DISTR_PORT="$(sed -n 's/^DISTR_PORT=//p' "$POC_HOME/poc.env")"
+fi
+DISTR_PORT="${DISTR_PORT:-8080}"
+case "$DISTR_PORT" in
+  '' | *[!0-9]* | 8585)
+    log "error: DISTR_PORT must be a port number other than 8585, which the registry uses."
+    exit 2
+    ;;
+esac
+DISTR_URL="http://localhost:$DISTR_PORT"
+API="$DISTR_URL/api/v1"
 
 if [ "$DOWN" = true ]; then
   teardown
