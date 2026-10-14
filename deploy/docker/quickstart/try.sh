@@ -351,6 +351,8 @@ write_api_env() {
   cat > "$POC_HOME/api.env" <<EOF
 DISTR_API='$API'
 DISTR_TOKEN="\$(cat '$POC_HOME/token')"
+PATH='$POC_HOME/bin':"\$PATH"
+export PATH
 if [ -f '$POC_HOME/ids.env' ]; then . '$POC_HOME/ids.env'; fi
 EOF
 }
@@ -420,15 +422,15 @@ remove_docker_controllers() {
     log "Distr is not reachable, so a Distr controller from this proof of concept may keep running (docker compose -p distr down)."
     return 0
   }
-  for container in $(docker ps -q --filter label=com.docker.compose.service=controller) \
-    $(docker ps -q --filter label=com.docker.compose.service=agent); do
+  for container in $(docker ps -aq --filter label=com.docker.compose.service=controller) \
+    $(docker ps -aq --filter label=com.docker.compose.service=agent); do
     target_id="$(docker inspect "$container" --format '{{range .Config.Env}}{{println .}}{{end}}' |
       sed -n 's/^DISTR_TARGET_ID=//p')"
     case "$target_id" in "") continue ;; esac
     case "$targets" in *"\"$target_id\""*) ;; *) continue ;; esac
-    for project in $(docker exec "$container" sh -c \
-      'grep -ho "\"projectName\": *\"[^\"]*\"" /scratch/deployments/* 2>/dev/null' |
-      sed 's/.*"\([^"]*\)"$/\1/'); do
+    # docker cp also reads the scratch volume of a stopped controller, which docker exec cannot.
+    for project in $(docker cp "$container:/scratch/deployments" - 2>/dev/null | tar -xOf - 2>/dev/null |
+      grep -o '"projectName": *"[^"]*"' | sed 's/.*"\([^"]*\)"$/\1/'); do
       compose_down "$project"
     done
     compose_down "$(docker inspect "$container" --format '{{index .Config.Labels "com.docker.compose.project"}}')"

@@ -47,8 +47,9 @@ an API token and the registry slug `poc`, and prints JSON with everything else. 
 fix what the error names (usually Docker) and rerun it.
 
 Your shell may not keep variables from one command to the next, so start every command below with
-`. ~/.distr/poc/api.env`. It sets `DISTR_API`, loads `DISTR_TOKEN` from its file without printing it and loads the
-IDs you saved to `~/.distr/poc/ids.env`, which the commands below append to.
+`. ~/.distr/poc/api.env`. It sets `DISTR_API`, loads `DISTR_TOKEN` from its file without printing it, puts the
+tools `try.sh` installed on `PATH` and loads the IDs you saved to `~/.distr/poc/ids.env`, which the commands below
+append to.
 
 Every API call sends `Authorization: AccessToken $DISTR_TOKEN`. The API reference is at
 http://localhost:8080/docs and the OpenAPI spec at http://localhost:8080/docs/openapi.json. `jq` makes the responses
