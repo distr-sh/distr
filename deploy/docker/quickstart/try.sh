@@ -16,7 +16,7 @@
 # DISTR_TELEMETRY=0 to turn them off.
 set -eu
 
-DISTR_VERSION="4.4.0" # x-release-please-version
+DISTR_VERSION="4.4.1" # x-release-please-version
 SCRIPT_VERSION="1"
 POC_HOME="${DISTR_POC_HOME:-$HOME/.distr/poc}"
 QUICKSTART="$POC_HOME/quickstart"
