@@ -48,7 +48,7 @@ func ArtifactsRouter(r chiopenapi.Router) {
 			With(option.Response(http.StatusOK, []api.ArtifactResponse{}))
 		r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 			Group(func(r chiopenapi.Router) {
-				r.Patch("/image", patchImageArtifactHandler).
+				r.Patch("/image", respond.Handler(patchImageArtifactHandler)).
 					With(option.Description("Update artifact image")).
 					With(option.Request(struct {
 						ArtifactRequest
@@ -181,14 +181,16 @@ func getArtifact(r *http.Request) (respond.Responder, error) {
 	return respond.JSON(mapping.ArtifactToAPI(*internalctx.GetArtifact(ctx))), nil
 }
 
-var patchImageArtifactHandler = patchImageHandler(func(ctx context.Context, body api.PatchImageRequest) (any, error) {
-	artifact := internalctx.GetArtifact(ctx)
-	if err := db.UpdateArtifactImage(ctx, artifact, body.ImageID); err != nil {
-		return nil, err
-	} else {
-		return mapping.ArtifactToAPI(*artifact), nil
-	}
-})
+func patchImageArtifactHandler(r *http.Request) (respond.Responder, error) {
+	return patchImage(r, func(ctx context.Context, body api.PatchImageRequest) (any, error) {
+		artifact := internalctx.GetArtifact(ctx)
+		if err := db.UpdateArtifactImage(ctx, artifact, body.ImageID); err != nil {
+			return nil, err
+		} else {
+			return mapping.ArtifactToAPI(*artifact), nil
+		}
+	})
+}
 
 func deleteArtifactHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()

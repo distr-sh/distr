@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -49,7 +48,11 @@ func ControllerRouter(r chiopenapi.Router) {
 
 	// pre-connect and connect only read (org + deployment target) to render the controller manifest. The
 	// query-auth middleware runs first on the primary, then reads are served from the read-only db.
-	r.With(queryAuthDeploymentTargetCtxMiddleware, middleware.UseReadonlyDB).Group(func(r chiopenapi.Router) {
+	r.With(
+		httprate.LimitBy(5, time.Minute, middleware.RateLimitQueryDeploymentTargetIDKey),
+		respond.Middleware(queryAuthDeploymentTargetCtxMiddleware),
+		middleware.UseReadonlyDB,
+	).Group(func(r chiopenapi.Router) {
 		r.WithOptions(option.GroupTags("Controllers"))
 
 		type ControllerConnectRequest struct {
@@ -68,7 +71,8 @@ func ControllerRouter(r chiopenapi.Router) {
 	controllerRoutes := func(r chiopenapi.Router) {
 		r.WithOptions(option.GroupHidden(true))
 		// controller login (from basic auth to token)
-		r.Post("/login", controllerLoginHandler())
+		r.With(httprate.LimitBy(5, time.Minute, middleware.RateLimitBasicAuthDeploymentTargetIDKey)).
+			Post("/login", respond.Handler(controllerLoginHandler))
 
 		r.With(
 			auth.ControllerAuthentication.Middleware,
@@ -123,42 +127,26 @@ func preConnectHandler(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-func controllerLoginHandler() func(w http.ResponseWriter, r *http.Request) {
-	limiter := httprate.NewRateLimiter(5, time.Minute)
+func controllerLoginHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
 
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-
-		if targetID, targetSecret, ok := r.BasicAuth(); !ok {
-			log.Info("invalid Basic Auth")
-			w.WriteHeader(http.StatusUnauthorized)
-		} else if parsedTargetID, err := uuid.Parse(targetID); err != nil {
-			http.Error(w, "targetId is not a valid UUID", http.StatusBadRequest)
-		} else if limiter.RespondOnLimit(w, r, targetID) {
-			return
-		} else if deploymentTarget, err := getVerifiedDeploymentTarget(ctx, parsedTargetID, targetSecret, true); err != nil {
-			if errors.Is(err, apierrors.ErrUnauthorized) {
-				log.Info("controller unauthorized", zap.Error(err), zap.String("deploymentTargetId", targetID))
-				http.Error(w, err.Error(), http.StatusUnauthorized)
-			} else {
-				log.Error("failed to get deployment target from basic auth", zap.Error(err))
-				w.WriteHeader(http.StatusInternalServerError)
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-			}
+	if targetID, targetSecret, ok := r.BasicAuth(); !ok {
+		internalctx.GetLogger(ctx).Info("invalid Basic Auth")
+		return respond.Status(http.StatusUnauthorized), nil
+	} else if parsedTargetID, err := uuid.Parse(targetID); err != nil {
+		return respond.BadRequest("targetId is not a valid UUID"), nil
+	} else if deploymentTarget, resp, err := getVerifiedDeploymentTarget(
+		ctx, parsedTargetID, targetSecret, true,
+	); resp != nil || err != nil {
+		return resp, err
+	} else {
+		recordDeploymentTarget(ctx, deploymentTarget)
+		// TODO maybe even randomize token valid duration
+		if _, token, err := authjwt.GenerateControllerTokenValidFor(
+			deploymentTarget.ID, deploymentTarget.OrganizationID, env.ControllerTokenMaxValidDuration()); err != nil {
+			return nil, fmt.Errorf("failed to create controller token: %w", err)
 		} else {
-			recordDeploymentTarget(ctx, deploymentTarget)
-			// TODO maybe even randomize token valid duration
-			if _, token, err := authjwt.GenerateControllerTokenValidFor(
-				deploymentTarget.ID, deploymentTarget.OrganizationID, env.ControllerTokenMaxValidDuration()); err != nil {
-				log.Error("failed to create controller token", zap.Error(err))
-				w.WriteHeader(http.StatusInternalServerError)
-			} else {
-				if err := json.NewEncoder(w).Encode(api.AuthLoginResponse{Token: token}); err != nil {
-					log.Error("failed to write response", zap.Error(err))
-					w.WriteHeader(http.StatusInternalServerError)
-				}
-			}
+			return respond.JSON(api.AuthLoginResponse{Token: token}), nil
 		}
 	}
 }
@@ -475,36 +463,19 @@ func controllerPostDeploymentMetricsHandler(r *http.Request) (respond.Responder,
 	}
 }
 
-func queryAuthDeploymentTargetCtxMiddleware(next http.Handler) http.Handler {
-	limiter := httprate.NewRateLimiter(5, time.Minute)
+func queryAuthDeploymentTargetCtxMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
+	ctx := r.Context()
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		targetID, err := uuid.Parse(r.URL.Query().Get("targetId"))
-		if err != nil {
-			http.Error(w, "targetId is not a valid UUID", http.StatusBadRequest)
-			return
-		}
-		targetSecret := r.URL.Query().Get("targetSecret")
-
-		if limiter.RespondOnLimit(w, r, targetID.String()) {
-			return
-		} else if deploymentTarget, err := getVerifiedDeploymentTarget(ctx, targetID, targetSecret, false); err != nil {
-			if errors.Is(err, apierrors.ErrUnauthorized) {
-				log.Info("controller unauthorized", zap.Error(err), zap.Stringer("deploymentTargetId", targetID))
-				http.Error(w, err.Error(), http.StatusUnauthorized)
-			} else {
-				log.Error("failed to get deployment target from query auth", zap.Error(err))
-				w.WriteHeader(http.StatusInternalServerError)
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-			}
-		} else {
-			recordDeploymentTarget(ctx, deploymentTarget)
-			ctx = internalctx.WithDeploymentTarget(ctx, deploymentTarget)
-			next.ServeHTTP(w, r.WithContext(ctx))
-		}
-	})
+	if targetID, err := uuid.Parse(r.URL.Query().Get("targetId")); err != nil {
+		return nil, respond.BadRequest("targetId is not a valid UUID"), nil
+	} else if deploymentTarget, resp, err := getVerifiedDeploymentTarget(
+		ctx, targetID, r.URL.Query().Get("targetSecret"), false,
+	); resp != nil || err != nil {
+		return nil, resp, err
+	} else {
+		recordDeploymentTarget(ctx, deploymentTarget)
+		return r.WithContext(internalctx.WithDeploymentTarget(ctx, deploymentTarget)), nil, nil
+	}
 }
 
 func recordDeploymentTarget(ctx context.Context, deploymentTarget *types.DeploymentTargetFull) {
@@ -566,33 +537,36 @@ func getVerifiedDeploymentTarget(
 	targetID uuid.UUID,
 	targetSecret string,
 	promotePendingAccessKey bool,
-) (*types.DeploymentTargetFull, error) {
+) (*types.DeploymentTargetFull, respond.Responder, error) {
+	log := internalctx.GetLogger(ctx).With(zap.Stringer("deploymentTargetId", targetID))
+
 	deploymentTarget, err := db.GetDeploymentTarget(ctx, targetID, nil, nil)
-	if err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
-			return nil, fmt.Errorf("%w: %w", apierrors.ErrUnauthorized, err)
-		}
-		return nil, fmt.Errorf("failed to get deployment target from DB: %w", err)
+	if errors.Is(err, apierrors.ErrNotFound) {
+		log.Info("controller unauthorized: deployment target not found")
+		return nil, invalidDeploymentTargetCredentials, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get deployment target from DB: %w", err)
 	}
 
 	pending, err := security.VerifyDeploymentTargetAccessKey(deploymentTarget.DeploymentTarget, targetSecret)
-	if errors.Is(err, security.ErrNoAccessKey) {
-		return nil, fmt.Errorf("%w: deployment target does not have key and salt", apierrors.ErrUnauthorized)
-	} else if err != nil {
-		return nil, fmt.Errorf("%w: failed to verify access: %w", apierrors.ErrUnauthorized, err)
+	if err != nil {
+		log.Info("controller unauthorized", zap.Error(err))
+		return nil, invalidDeploymentTargetCredentials, nil
 	}
 
 	if pending && promotePendingAccessKey {
 		if err := db.PromoteDeploymentTargetPendingAccessKey(
 			ctx, deploymentTarget.ID, *deploymentTarget.PendingAccessKeyHash,
 		); errors.Is(err, apierrors.ErrNotFound) {
-			return nil, fmt.Errorf("%w: pending access key was replaced", apierrors.ErrUnauthorized)
+			log.Info("controller unauthorized: pending access key was replaced")
+			return nil, invalidDeploymentTargetCredentials, nil
 		} else if err != nil {
-			return nil, err
+			return nil, nil, fmt.Errorf("failed to promote pending access key: %w", err)
 		}
-		internalctx.GetLogger(ctx).Info("pending access key promoted",
-			zap.Stringer("deploymentTargetId", deploymentTarget.ID))
+		log.Info("pending access key promoted")
 	}
 
-	return deploymentTarget, nil
+	return deploymentTarget, nil, nil
 }
+
+var invalidDeploymentTargetCredentials = respond.Unauthorized("invalid deployment target credentials")

@@ -1,30 +1,20 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 
+	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/env"
-	"github.com/distr-sh/distr/internal/util"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/go-chi/chi/v5"
 )
 
 func InternalRouter(r chi.Router) {
-	r.Handle("/environment", getFrontendEnvironmentHandler())
+	r.Handle("/environment", respond.Handler(getFrontendEnvironmentHandler))
 }
 
-func getFrontendEnvironmentHandler() http.HandlerFunc {
-	// precompute the json response
-	frontendEnvJSON := util.Require(json.Marshal(struct {
-		SentryDSN             *string  `json:"sentryDsn,omitempty"`
-		SentryEnvironment     string   `json:"sentryEnvironment,omitzero"`
-		SentryTraceSampleRate *float64 `json:"sentryTraceSampleRate,omitempty"`
-		PosthogToken          *string  `json:"posthogToken,omitempty"`
-		PosthogAPIHost        *string  `json:"posthogApiHost,omitempty"`
-		PosthogUIHost         *string  `json:"posthogUiHost,omitempty"`
-		RegistryHost          string   `json:"registryHost"`
-		CustomDomainTarget    *string  `json:"customDomainTarget,omitempty"`
-	}{
+func getFrontendEnvironmentHandler(r *http.Request) (respond.Responder, error) {
+	return respond.JSON(api.FrontendEnvironmentResponse{
 		SentryDSN:             env.FrontendSentryDSN(),
 		SentryEnvironment:     env.SentryEnvironment(),
 		SentryTraceSampleRate: env.FrontendSentryTraceSampleRate(),
@@ -33,9 +23,5 @@ func getFrontendEnvironmentHandler() http.HandlerFunc {
 		PosthogUIHost:         env.FrontendPosthogUIHost(),
 		RegistryHost:          env.RegistryHost(),
 		CustomDomainTarget:    env.CustomDomainTarget(),
-	}))
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write(frontendEnvJSON)
-	}
+	}), nil
 }

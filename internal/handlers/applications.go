@@ -70,7 +70,7 @@ func ApplicationsRouter(r chiopenapi.Router) {
 							api.PatchApplicationRequest
 						}{})).
 						With(option.Response(http.StatusOK, api.ApplicationResponse{}))
-					r.Patch("/image", patchImageApplication).
+					r.Patch("/image", respond.Handler(patchImageApplication)).
 						With(option.Description("Update application image")).
 						With(option.Request(struct {
 							ApplicationRequest
@@ -119,15 +119,15 @@ func ApplicationsRouter(r chiopenapi.Router) {
 						api.UpdateApplicationVersionRequest
 					}{})).
 					With(option.Response(http.StatusOK, api.ApplicationVersionResponse{}))
-				r.Get("/compose-file", getApplicationVersionComposeFile).
+				r.Get("/compose-file", respond.Handler(getApplicationVersionComposeFile)).
 					With(option.Description("Get application version compose file")).
 					With(option.Request(ApplicationVersionRequest{})).
 					With(option.Response(http.StatusOK, map[string]any{}, option.ContentType("application/yaml")))
-				r.Get("/template-file", getApplicationVersionTemplateFile).
+				r.Get("/template-file", respond.Handler(getApplicationVersionTemplateFile)).
 					With(option.Description("Get application version template file")).
 					With(option.Request(ApplicationVersionRequest{})).
 					With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
-				r.Get("/values-file", getApplicationVersionValuesFile).
+				r.Get("/values-file", respond.Handler(getApplicationVersionValuesFile)).
 					With(option.Description("Get application version values file")).
 					With(option.Request(ApplicationVersionRequest{})).
 					With(option.Response(http.StatusOK, map[string]any{}, option.ContentType("application/yaml")))
@@ -542,28 +542,25 @@ func updateApplicationVersion(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-var (
-	getApplicationVersionComposeFile = getApplicationVersionFileHandler(func(av types.ApplicationVersion) []byte {
-		return av.ComposeFileData
-	})
+func getApplicationVersionComposeFile(r *http.Request) (respond.Responder, error) {
+	return applicationVersionFile(r, func(av types.ApplicationVersion) []byte { return av.ComposeFileData })
+}
 
-	getApplicationVersionValuesFile = getApplicationVersionFileHandler(func(av types.ApplicationVersion) []byte {
-		return av.ValuesFileData
-	})
-	getApplicationVersionTemplateFile = getApplicationVersionFileHandler(func(av types.ApplicationVersion) []byte {
-		return av.TemplateFileData
-	})
-)
+func getApplicationVersionValuesFile(r *http.Request) (respond.Responder, error) {
+	return applicationVersionFile(r, func(av types.ApplicationVersion) []byte { return av.ValuesFileData })
+}
 
-func getApplicationVersionFileHandler(fileAccessor func(types.ApplicationVersion) []byte) http.HandlerFunc {
-	return respond.Handler(func(r *http.Request) (respond.Responder, error) {
-		if v, resp, err := getAccessibleApplicationVersion(r); resp != nil || err != nil {
-			return resp, err
-		} else {
-			return respond.Stream("application/yaml", bytes.NewReader(fileAccessor(*v))).
-				WithHeader("Cache-Control", "max-age=300, private"), nil
-		}
-	})
+func getApplicationVersionTemplateFile(r *http.Request) (respond.Responder, error) {
+	return applicationVersionFile(r, func(av types.ApplicationVersion) []byte { return av.TemplateFileData })
+}
+
+func applicationVersionFile(r *http.Request, file func(types.ApplicationVersion) []byte) (respond.Responder, error) {
+	if v, resp, err := getAccessibleApplicationVersion(r); resp != nil || err != nil {
+		return resp, err
+	} else {
+		return respond.Stream("application/yaml", bytes.NewReader(file(*v))).
+			WithHeader("Cache-Control", "max-age=300, private"), nil
+	}
 }
 
 func getApplicationVersionResources(r *http.Request) (respond.Responder, error) {
@@ -603,14 +600,16 @@ func deleteApplication(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-var patchImageApplication = patchImageHandler(func(ctx context.Context, body api.PatchImageRequest) (any, error) {
-	application := internalctx.GetApplication(ctx)
-	if err := db.UpdateApplicationImage(ctx, application, body.ImageID); err != nil {
-		return nil, err
-	} else {
-		return applicationMapper(ctx)(*application), nil
-	}
-})
+func patchImageApplication(r *http.Request) (respond.Responder, error) {
+	return patchImage(r, func(ctx context.Context, body api.PatchImageRequest) (any, error) {
+		application := internalctx.GetApplication(ctx)
+		if err := db.UpdateApplicationImage(ctx, application, body.ImageID); err != nil {
+			return nil, err
+		} else {
+			return applicationMapper(ctx)(*application), nil
+		}
+	})
+}
 
 func applicationMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
 	ctx := r.Context()

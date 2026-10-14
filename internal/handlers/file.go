@@ -211,24 +211,21 @@ func fileMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
 	}
 }
 
-func patchImageHandler(patchImage func(ctx context.Context, body api.PatchImageRequest) (any, error)) http.HandlerFunc {
-	return respond.Handler(func(r *http.Request) (respond.Responder, error) {
-		ctx := r.Context()
-
-		if body, resp := decodeJSON[api.PatchImageRequest](r); resp != nil {
-			return resp, nil
-		} else if body.ImageID == uuid.Nil {
-			return respond.BadRequest("imageId can not be empty"), nil
-		} else if result, err := patchImage(ctx, body); err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
-				return respond.NoContent(), nil
-			} else if errors.Is(err, apierrors.ErrConflict) {
-				return respond.BadRequest(err.Error()), nil
-			} else {
-				return nil, fmt.Errorf("error patching image id: %w", err)
-			}
-		} else {
-			return respond.JSON(result), nil
-		}
-	})
+func patchImage(
+	r *http.Request,
+	update func(ctx context.Context, body api.PatchImageRequest) (any, error),
+) (respond.Responder, error) {
+	if body, resp := decodeJSON[api.PatchImageRequest](r); resp != nil {
+		return resp, nil
+	} else if body.ImageID == uuid.Nil {
+		return respond.BadRequest("imageId can not be empty"), nil
+	} else if result, err := update(r.Context(), body); errors.Is(err, apierrors.ErrNotFound) {
+		return respond.NoContent(), nil
+	} else if errors.Is(err, apierrors.ErrConflict) {
+		return respond.BadRequest(err.Error()), nil
+	} else if err != nil {
+		return nil, fmt.Errorf("error patching image id: %w", err)
+	} else {
+		return respond.JSON(result), nil
+	}
 }

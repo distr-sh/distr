@@ -64,7 +64,7 @@ func UserAccountsRouter(r chiopenapi.Router) {
 			r.Delete("/", respond.Handler(deleteUserAccountHandler)).
 				With(option.Description("Delete a user account")).
 				With(option.Request(UserAccountRequest{}))
-			r.Patch("/image", patchImageUserAccount).
+			r.Patch("/image", respond.Handler(patchImageUserAccount)).
 				With(option.Description("Update user account image")).
 				With(option.Request(struct {
 					UserAccountRequest
@@ -429,14 +429,16 @@ func deleteUserAccountHandler(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-var patchImageUserAccount = patchImageHandler(func(ctx context.Context, body api.PatchImageRequest) (any, error) {
-	user := internalctx.GetUserAccount(ctx)
-	if err := db.UpdateUserAccountImage(ctx, user, body.ImageID); err != nil {
-		return nil, err
-	} else {
-		return mapping.UserAccountToAPI(*user), nil
-	}
-})
+func patchImageUserAccount(r *http.Request) (respond.Responder, error) {
+	return patchImage(r, func(ctx context.Context, body api.PatchImageRequest) (any, error) {
+		user := internalctx.GetUserAccount(ctx)
+		if err := db.UpdateUserAccountImage(ctx, user, body.ImageID); err != nil {
+			return nil, err
+		} else {
+			return mapping.UserAccountToAPI(*user), nil
+		}
+	})
+}
 
 func userAccountMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
 	ctx := r.Context()
