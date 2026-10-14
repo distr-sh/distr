@@ -9,7 +9,6 @@ import (
 	"path"
 	"text/template"
 
-	"github.com/distr-sh/distr/internal/buildconfig"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/resources"
@@ -76,7 +75,7 @@ func getTemplateData(
 		"deploymentMetricsEndpoint":    deploymentMetricsEndpoint,
 		"registryEnabled":              env.RegistryEnabled(),
 		"registryHost":                 customdomains.RegistryDomainOrDefault(ctx, org.ID, org.Branding),
-		"registryPlainHttp":            buildconfig.IsDevelopment(),
+		"registryPlainHttp":            env.HostScheme() == env.SchemeHTTP,
 		"resourcesEndpoint":            resourcesEndpoint,
 		"statusEndpoint":               statusEndpoint,
 		"targetId":                     deploymentTarget.ID,

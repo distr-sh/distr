@@ -2,7 +2,12 @@
 import {Font} from 'astro:assets';
 import GoogleTagManager from '~/components/telemetry/GoogleTagManager.astro';
 import PostHog from '~/components/telemetry/PostHog.astro';
-const {head} = Astro.locals.starlightRoute;
+const {head, entry} = Astro.locals.starlightRoute;
+
+const markdownAlternate =
+  entry.id === 'docs' || entry.id.startsWith('docs/')
+    ? new URL(`/${entry.id}.md`, Astro.site).href
+    : undefined;
 
 const hasOgImage = head.some(
   ({tag, attrs}) => tag === 'meta' && attrs?.property === 'og:image',
@@ -22,5 +27,8 @@ const ogImageUrl = hasOgImage
   ),
 )}
 {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
+{markdownAlternate && (
+  <link rel="alternate" type="text/markdown" href={markdownAlternate} />
+)}
 {import.meta.env.PROD && <GoogleTagManager />}
 {import.meta.env.PROD && <PostHog />}

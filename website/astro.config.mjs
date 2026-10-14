@@ -228,6 +228,15 @@ export default defineConfig({
               icon: 'rocket',
               items: [
                 {
+                  label: 'AI Coding Agents',
+                  items: [
+                    {
+                      label: 'Onboard with an AI Coding Agent',
+                      link: '/docs/integrations/ai-coding-agents/',
+                    },
+                  ],
+                },
+                {
                   label: 'GitHub Actions',
                   items: [
                     {

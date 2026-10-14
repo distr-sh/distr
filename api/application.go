@@ -94,6 +94,15 @@ func (r CreateApplicationVersionRequest) Validate() error {
 	return nil
 }
 
+// CreateApplicationVersionFormRequest describes the multipart form the create application version endpoint accepts.
+// The handler reads the parts itself, so this type only feeds the OpenAPI specification.
+type CreateApplicationVersionFormRequest struct {
+	ApplicationVersion string `form:"applicationversion" required:"true" description:"The version metadata as JSON"`
+	ComposeFile        []byte `form:"composefile" format:"binary" description:"Docker Compose file (docker only)"`
+	ValuesFile         []byte `form:"valuesfile" format:"binary" description:"Helm values file (kubernetes only)"`
+	TemplateFile       []byte `form:"templatefile" format:"binary" description:"Template customers start from"`
+}
+
 type ApplicationVersionResourceRequest struct {
 	Name string `json:"name"`
 	// The content is rendered as markdown, where leading whitespace is syntax.

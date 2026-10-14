@@ -9,6 +9,8 @@ x-logging: &default-logging
 # Self-contained community edition stack for local use. It brings its own postgres and
 # object storage and publishes the app and registry on localhost without TLS. To serve
 # public hostnames, use deploy/docker/community, which puts caddy in front of distr.
+# Unlike the other stacks it uses one-shot init services instead of pre_start hooks, so it
+# also starts on the Docker Compose versions before 5.3 that Docker Desktop still ships.
 services:
   postgres:
     image: 'postgres:18.6-alpine3.23'
@@ -37,12 +39,8 @@ services:
         condition: service_healthy
       loki:
         condition: service_started
-    # Distr runs as a nonroot user (UID 65532), but a freshly created named volume
-    # is owned by root, so this init container fixes ownership of the scratch volume
-    # before Distr starts. It requires Docker Compose >= 5.3.0.
-    pre_start:
-      - image: 'busybox:1.38.0'
-        command: ['chown', '65532:65532', '/scratch']
+      scratch-init:
+        condition: service_completed_successfully
     env_file:
       - .env
     ports:
@@ -76,8 +74,7 @@ services:
 
   # Loki stores deployment and deployment target log records (30 days retention).
   # It runs in monolithic (single-binary) mode and persists chunks + TSDB index in the
-  # "loki" bucket of the storage (rustfs) service. The bucket is created by a pre_start
-  # init container, which requires Docker Compose >= 5.3.0.
+  # "loki" bucket of the storage (rustfs) service, which loki-bucket-init creates.
   loki:
     image: 'grafana/loki:3.7.8'
     command: ['-config.file=/etc/loki/distr-config.yaml']
@@ -89,16 +86,34 @@ services:
     depends_on:
       storage:
         condition: service_healthy
-    pre_start:
-      - image: 'rclone/rclone:1.75.2'
-        environment:
-          RCLONE_CONFIG_STORAGE_TYPE: s3
-          RCLONE_CONFIG_STORAGE_PROVIDER: Other
-          RCLONE_CONFIG_STORAGE_ENDPOINT: 'http://storage:9000'
-          RCLONE_CONFIG_STORAGE_ACCESS_KEY_ID: '${LOKI_S3_ACCESS_KEY_ID}'
-          RCLONE_CONFIG_STORAGE_SECRET_ACCESS_KEY: '${LOKI_S3_SECRET_ACCESS_KEY}'
-        command: ['mkdir', 'storage:loki']
+      loki-bucket-init:
+        condition: service_completed_successfully
     restart: always
+    logging: *default-logging
+
+  # Distr runs as a nonroot user (UID 65532), but a freshly created named volume
+  # is owned by root, so this fixes ownership of the scratch volume before Distr starts.
+  scratch-init:
+    image: 'busybox:1.38.0'
+    command: ['chown', '65532:65532', '/scratch']
+    volumes:
+      - 'scratch:/scratch'
+    restart: 'no'
+    logging: *default-logging
+
+  loki-bucket-init:
+    image: 'rclone/rclone:1.75.2'
+    environment:
+      RCLONE_CONFIG_STORAGE_TYPE: s3
+      RCLONE_CONFIG_STORAGE_PROVIDER: Other
+      RCLONE_CONFIG_STORAGE_ENDPOINT: 'http://storage:9000'
+      RCLONE_CONFIG_STORAGE_ACCESS_KEY_ID: '${LOKI_S3_ACCESS_KEY_ID}'
+      RCLONE_CONFIG_STORAGE_SECRET_ACCESS_KEY: '${LOKI_S3_SECRET_ACCESS_KEY}'
+    command: ['mkdir', 'storage:loki']
+    depends_on:
+      storage:
+        condition: service_healthy
+    restart: 'no'
     logging: *default-logging
 
 configs:

@@ -1,0 +1,12 @@
+services:
+  web:
+    image: ghcr.io/stefanprodan/podinfo:6.15.0
+    command: ['./podinfo', '--port=9898', '--cache-server=tcp://cache:6379']
+    ports:
+      - '9898:9898'
+    environment:
+      PODINFO_UI_MESSAGE: ${UI_MESSAGE:-Acme Notes}
+    depends_on:
+      - cache
+  cache:
+    image: redis:8-alpine

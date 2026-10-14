@@ -7,7 +7,8 @@ sidebar:
 ---
 
 The easiest way to host your own Distr instance is Docker Compose.
-You need Docker Engine 29 or later and the Docker Compose plugin 5.3 or later.
+You need Docker Engine 29 or later.
+The `quickstart` stack runs on any current Docker Compose plugin, while the four production stacks need version 5.3 or later for their `pre_start` hooks.
 
 All five Compose stacks under [`deploy/docker`](https://github.com/distr-sh/distr/tree/main/deploy/docker) run Distr and [Loki](/docs/self-hosting/configuration/#log-processing-loki) for log processing.
 They differ in the edition they run and in what they bring along:
@@ -40,6 +41,9 @@ docker compose up -d --remove-orphans
 Open [`http://localhost:8080`](http://localhost:8080) to access Distr.
 
 Use the same command to apply later changes. `--remove-orphans` drops containers that the stack no longer defines, which a plain `up` would leave running and holding on to their published ports.
+
+If you also connect a Distr controller on the same machine, for example while following the in-app tutorial, start the stack under its own project name with `docker compose -p distr-local up -d --remove-orphans`.
+The controller's compose file uses the project name `distr` as well, so otherwise each side treats the other's containers as orphans and `--remove-orphans` deletes them.
 
 ## Running in production
 

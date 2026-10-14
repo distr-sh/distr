@@ -10,6 +10,7 @@
       "extra-files": [
         "README.md",
         "deploy/docker/quickstart/docker-compose.yaml",
+        "deploy/docker/quickstart/try.sh",
         "deploy/docker/community/docker-compose.yaml",
         "deploy/docker/enterprise/docker-compose.yaml",
         "deploy/docker/enterprise-aws/docker-compose.yaml",

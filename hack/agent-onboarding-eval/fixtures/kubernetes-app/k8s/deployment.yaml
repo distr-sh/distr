@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: acme-search
+  labels:
+    app: acme-search
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: acme-search
+  template:
+    metadata:
+      labels:
+        app: acme-search
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/stefanprodan/podinfo:6.15.0
+          ports:
+            - containerPort: 9898
+          env:
+            - name: PODINFO_UI_MESSAGE
+              value: Acme Search
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 9898

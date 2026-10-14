@@ -113,8 +113,19 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: >-
           aws s3 sync dist s3://distr.sh/
+          --exclude "*.md" --exclude "*.txt" --exclude "*.sh"
           --cache-control "max-age=60, public, must-revalidate"
           --acl=public-read
+      # The AWS CLI guesses content types from the runner's MIME database, which has no reliable entry for Markdown.
+      - name: Deploy Markdown, text and shell files
+        if: github.ref == 'refs/heads/main'
+        run: |
+          aws s3 sync dist s3://distr.sh/ --exclude "*" --include "*.md" \
+            --content-type "text/markdown; charset=utf-8" \
+            --cache-control "max-age=60, public, must-revalidate" --acl=public-read
+          aws s3 sync dist s3://distr.sh/ --exclude "*" --include "*.txt" --include "*.sh" \
+            --content-type "text/plain; charset=utf-8" \
+            --cache-control "max-age=60, public, must-revalidate" --acl=public-read
       - name: Invalidate cache
         if: github.ref == 'refs/heads/main'
         run: >-

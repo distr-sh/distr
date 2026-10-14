@@ -236,7 +236,9 @@ const signupSteps = [
           <div id="step1" class="step-content">
             <div>
               <h3 class="mb-4 text-gray-900 dark:text-white">{heading}</h3>
-              <div class="text-gray-600 dark:text-gray-400 mb-2">
+              <div
+                id="signupSubheading"
+                class="text-gray-600 dark:text-gray-400 mb-2">
                 {subheading}
               </div>
               <div class="text-center text-sm italic text-gray-500 dark:text-gray-500 mb-6">
@@ -954,6 +956,41 @@ const signupSteps = [
   let userData = {};
   let reCaptchaToken = '';
 
+  // Links from a local Distr proof of concept carry these, and the later steps no longer have them in the URL.
+  const ATTRIBUTION_KEYS = [
+    'poc_id',
+    'utm_source',
+    'utm_medium',
+    'utm_campaign',
+    'utm_content',
+    'interest',
+    'client',
+  ];
+  const ATTRIBUTION_STORAGE_KEY = 'distr_signup_attribution';
+  function readAttribution() {
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = Object.fromEntries(
+      ATTRIBUTION_KEYS.map(key => [key, params.get(key)]).filter(
+        ([, value]) => value,
+      ),
+    );
+    try {
+      if (Object.keys(fromUrl).length > 0) {
+        sessionStorage.setItem(
+          ATTRIBUTION_STORAGE_KEY,
+          JSON.stringify(fromUrl),
+        );
+        return fromUrl;
+      }
+      return JSON.parse(
+        sessionStorage.getItem(ATTRIBUTION_STORAGE_KEY) ?? '{}',
+      );
+    } catch {
+      return fromUrl;
+    }
+  }
+  const attribution = readAttribution();
+
   // Determine API endpoints based on flowType
   const apiPath = `/distr/${flowType}`;
   const submitEndpoint = `${formsServerBaseUrl}${apiPath}/submit`;
@@ -1122,6 +1159,22 @@ const signupSteps = [
   document.addEventListener('DOMContentLoaded', () => {
     initializeFromURL();
 
+    if (attribution.interest === 'enterprise-license') {
+      const subheading = document.getElementById('signupSubheading');
+      if (subheading) {
+        subheading.textContent =
+          'Get an Enterprise license for your self-hosted Distr in a short onboarding call.';
+      }
+    }
+    if (attribution.utm_medium === 'ai-agent') {
+      const llmsOption = document.querySelector(
+        'input[name="discovery"][value="llms"]',
+      );
+      if (llmsOption) {
+        llmsOption.checked = true;
+      }
+    }
+
     // Step 1: Basic signup
     const signupForm = document.getElementById('signup');
     signupForm?.addEventListener('submit', async e => {
@@ -1169,6 +1222,7 @@ const signupSteps = [
         phone: formData.get('phone')?.trim(),
         ...(requirePassword && {password: formData.get('password')}),
         type: formData.get('type'),
+        ...(Object.keys(attribution).length > 0 && {attribution}),
         // reCaptchaToken: reCaptchaToken,
       };
 

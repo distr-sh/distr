@@ -1,0 +1,15 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: acme-search-warm-cache
+spec:
+  schedule: '*/15 * * * *'
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: warm
+              image: busybox:1.38.0
+              command: ['wget', '-qO-', 'http://acme-search/api/info']
