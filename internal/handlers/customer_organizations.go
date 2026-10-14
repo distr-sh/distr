@@ -144,7 +144,7 @@ func updateCustomerOrganizationHandler(r *http.Request) (respond.Responder, erro
 			if co, coErr := db.GetCustomerOrganizationByID(ctx, id); errors.Is(coErr, distrerr.ErrNotFound) {
 				return customerOrganizationNotFound, nil
 			} else if coErr != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-				return respond.Forbidden("customer is not assigned to your partner organization"), nil
+				return notAssignedToPartner, nil
 			}
 		}
 

@@ -58,28 +58,14 @@ func upsertOrganizationBranding(r *http.Request) (respond.Responder, error) {
 		organizationBranding.UpdatedByUserAccountID = new(auth.CurrentUserID())
 
 		orgID := organizationBranding.OrganizationID
-		if err := verifyPublicImageBelongsToOrganization(
-			ctx,
-			organizationBranding.LogoImageID,
-			orgID,
-			"logo",
-		); err != nil {
-			if errors.Is(err, distrerr.ErrBadRequest) {
-				return respond.BadRequest(err.Error()), nil
-			} else {
-				return nil, fmt.Errorf("could not verify logo image: %w", err)
-			}
-		} else if err := verifyPublicImageBelongsToOrganization(
-			ctx,
-			organizationBranding.FaviconImageID,
-			orgID,
-			"favicon",
-		); err != nil {
-			if errors.Is(err, distrerr.ErrBadRequest) {
-				return respond.BadRequest(err.Error()), nil
-			} else {
-				return nil, fmt.Errorf("could not verify favicon image: %w", err)
-			}
+		if resp, err := verifyPublicImageBelongsToOrganization(
+			ctx, organizationBranding.LogoImageID, orgID, "logo",
+		); resp != nil || err != nil {
+			return resp, err
+		} else if resp, err := verifyPublicImageBelongsToOrganization(
+			ctx, organizationBranding.FaviconImageID, orgID, "favicon",
+		); resp != nil || err != nil {
+			return resp, err
 		} else if err = db.UpsertOrganizationBranding(ctx, &organizationBranding); err != nil {
 			return nil, fmt.Errorf("could not save organizationBranding: %w", err)
 		} else {
@@ -91,29 +77,29 @@ func upsertOrganizationBranding(r *http.Request) (respond.Responder, error) {
 // verifyPublicImageBelongsToOrganization ensures the referenced branding image (logo or favicon) belongs to the
 // given organization and is a public, servable image, since these images are served unauthenticated via the
 // public file API. A nil imageID is valid (image not set). The imageType (e.g. "logo" or "favicon") is included
-// in validation messages so clients can tell which image failed. Validation failures are returned as ErrBadRequest.
+// in validation messages so clients can tell which image failed.
 func verifyPublicImageBelongsToOrganization(
 	ctx context.Context,
 	imageID *uuid.UUID,
 	organizationID uuid.UUID,
 	imageType string,
-) error {
+) (respond.Responder, error) {
 	if imageID == nil {
-		return nil
+		return nil, nil
 	}
 
 	fileMeta, err := db.GetFileMetadataWithID(ctx, *imageID)
 	if errors.Is(err, distrerr.ErrNotFound) {
-		return distrerr.NewBadRequest(fmt.Sprintf("%s file does not exist", imageType))
+		return respond.BadRequest(fmt.Sprintf("%s file does not exist", imageType)), nil
 	} else if err != nil {
-		return err
+		return nil, fmt.Errorf("could not verify %s image: %w", imageType, err)
 	} else if fileMeta.OrganizationID == nil || *fileMeta.OrganizationID != organizationID {
-		return distrerr.NewBadRequest(fmt.Sprintf("%s file does not exist", imageType))
+		return respond.BadRequest(fmt.Sprintf("%s file does not exist", imageType)), nil
 	} else if !fileMeta.Public {
-		return distrerr.NewBadRequest(fmt.Sprintf("%s file must be public", imageType))
+		return respond.BadRequest(fmt.Sprintf("%s file must be public", imageType)), nil
 	} else if !isServableImageContentType(fileMeta.ContentType) {
-		return distrerr.NewBadRequest(fmt.Sprintf("%s file must be an image", imageType))
+		return respond.BadRequest(fmt.Sprintf("%s file must be an image", imageType)), nil
 	}
 
-	return nil
+	return nil, nil
 }

@@ -67,6 +67,8 @@ linters:
           msg: return a respond.Responder from a handler registered with respond.Handler
         - pattern: ^http\.Error$
           msg: return a respond.ErrorResponse such as respond.BadRequest
+        - pattern: ^distrerr\.New
+          msg: return a respond.ErrorResponse such as respond.BadRequest instead of an error the caller maps back
     gocritic:
       disabled-checks:
         - ifElseChain

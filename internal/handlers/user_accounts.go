@@ -309,12 +309,8 @@ func patchUserAccountHandler(r *http.Request) (respond.Responder, error) {
 
 	if body, resp := decodeJSON[api.PatchUserAccountRequest](r); resp != nil {
 		return resp, nil
-	} else if err := checkUserAccountWritability(ctx, *userAccount); err != nil {
-		if errors.Is(err, distrerr.ErrForbidden) {
-			return respond.Forbidden(err.Error()), nil
-		} else {
-			return nil, fmt.Errorf("failed to check user account writability: %w", err)
-		}
+	} else if resp := checkUserAccountWritability(ctx, *userAccount); resp != nil {
+		return resp, nil
 	} else {
 		isUpdateNeeded := false
 
@@ -397,12 +393,8 @@ func deleteUserAccountHandler(r *http.Request) (respond.Responder, error) {
 	userAccount := internalctx.GetUserAccount(ctx)
 	auth := auth.Authentication.Require(ctx)
 
-	if err := checkUserAccountWritability(ctx, *userAccount); err != nil {
-		if errors.Is(err, distrerr.ErrForbidden) {
-			return respond.Forbidden(err.Error()), nil
-		} else {
-			return nil, fmt.Errorf("failed to check user account writability: %w", err)
-		}
+	if resp := checkUserAccountWritability(ctx, *userAccount); resp != nil {
+		return resp, nil
 	} else if userAccount.ID == auth.CurrentUserID() {
 		return respond.Forbidden("UserAccount deleting themselves is not allowed"), nil
 	} else if err := db.RunTx(ctx, func(ctx context.Context) error {
@@ -460,13 +452,13 @@ func userAccountMiddleware(r *http.Request) (*http.Request, respond.Responder, e
 	}
 }
 
-func checkUserAccountWritability(ctx context.Context, userAccount types.UserAccountWithUserRole) error {
+func checkUserAccountWritability(ctx context.Context, userAccount types.UserAccountWithUserRole) respond.Responder {
 	auth := auth.Authentication.Require(ctx)
 
 	if *auth.CurrentUserRole() != types.UserRoleAdmin && (auth.CurrentCustomerOrgID() != nil ||
 		(auth.CurrentPartnerOrgID() != nil && userAccount.CustomerOrganizationID == nil) ||
 		(userAccount.CustomerOrganizationID == nil && userAccount.PartnerOrganizationID == nil)) {
-		return distrerr.NewForbidden("admin role needed to patch user in the given scope")
+		return respond.Forbidden("admin role needed to patch user in the given scope")
 	}
 
 	return nil

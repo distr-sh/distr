@@ -19,6 +19,7 @@ import (
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/userauth"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/distr-sh/distr/internal/validation"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -616,36 +617,25 @@ func oidcCallbackCode(r *http.Request, log *zap.Logger) (string, respond.Respond
 }
 
 func consumeOIDCState(r *http.Request, customOIDCConfigurationID *uuid.UUID) (db.OIDCState, respond.Responder, error) {
-	if state, err := verifyOIDCState(r, customOIDCConfigurationID); errors.Is(err, distrerr.ErrBadRequest) {
-		internalctx.GetLogger(r.Context()).Warn("could not verify OIDC state", zap.Error(err))
-		return db.OIDCState{}, oidcRedirect(redirectToLoginOIDCExpired), nil
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+	expired := oidcRedirect(redirectToLoginOIDCExpired)
+
+	if id, err := uuid.Parse(r.URL.Query().Get("state")); err != nil {
+		log.Warn("got an invalid OIDC state", zap.Error(err))
+		return db.OIDCState{}, expired, nil
+	} else if state, err := db.DeleteOIDCState(ctx, id); errors.Is(err, distrerr.ErrNotFound) {
+		log.Warn("got an unknown OIDC state", zap.Stringer("state", id))
+		return db.OIDCState{}, expired, nil
 	} else if err != nil {
-		return db.OIDCState{}, nil, fmt.Errorf("could not verify OIDC state: %w", err)
+		return db.OIDCState{}, nil, fmt.Errorf("could not delete OIDC state: %w", err)
+	} else if state.Expired() {
+		log.Warn("got an OIDC state that is too old", zap.Stringer("state", id), zap.Time("createdAt", state.CreatedAt))
+		return db.OIDCState{}, expired, nil
+	} else if !util.PtrEq(state.CustomOIDCConfigurationID, customOIDCConfigurationID) {
+		log.Warn("got an OIDC state that belongs to a different provider", zap.Stringer("state", id))
+		return db.OIDCState{}, expired, nil
 	} else {
 		return state, nil, nil
 	}
-}
-
-func verifyOIDCState(r *http.Request, customOIDCConfigurationID *uuid.UUID) (db.OIDCState, error) {
-	id, err := uuid.Parse(r.URL.Query().Get("state"))
-	if err != nil {
-		return db.OIDCState{}, fmt.Errorf("%w: %w", distrerr.ErrBadRequest, err)
-	}
-	state, err := db.DeleteOIDCState(r.Context(), id)
-	if err != nil {
-		if errors.Is(err, distrerr.ErrNotFound) {
-			return db.OIDCState{}, distrerr.ErrBadRequest
-		}
-		return db.OIDCState{}, err
-	}
-	if state.Expired() {
-		return db.OIDCState{}, fmt.Errorf("%w: got an OIDC state that is too old: %v, created_at: %v, now: %v",
-			distrerr.ErrBadRequest, id, state.CreatedAt, time.Now().UTC())
-	}
-	if (state.CustomOIDCConfigurationID == nil) != (customOIDCConfigurationID == nil) ||
-		(state.CustomOIDCConfigurationID != nil && *state.CustomOIDCConfigurationID != *customOIDCConfigurationID) {
-		return db.OIDCState{}, fmt.Errorf("%w: OIDC state %v belongs to a different provider",
-			distrerr.ErrBadRequest, id)
-	}
-	return state, nil
 }

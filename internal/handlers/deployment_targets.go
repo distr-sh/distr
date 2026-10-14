@@ -140,17 +140,17 @@ func createDeploymentTarget(r *http.Request) (respond.Responder, error) {
 			return respond.Forbidden("partner users must assign a deployment target to a customer"), nil
 		}
 
-		err = db.RunTx(ctx, func(ctx context.Context) error {
+		if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 			customerOrgID := auth.CurrentCustomerOrgID()
 
 			if requestedCustomerOrgID != nil {
 				if err := db.ValidateCustomerOrgBelongsToOrg(ctx, *requestedCustomerOrgID, *auth.CurrentOrgID()); err != nil {
-					return distrerr.NewForbidden("customer organization does not belong to organization")
+					return respond.Forbidden("customer organization does not belong to organization"), nil
 				}
 				if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
 					co, err := db.GetCustomerOrganizationByID(ctx, *requestedCustomerOrgID)
 					if err != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-						return distrerr.NewForbidden("customer is not assigned to your partner organization")
+						return notAssignedToPartner, nil
 					}
 				}
 				customerOrgID = requestedCustomerOrgID
@@ -159,20 +159,20 @@ func createDeploymentTarget(r *http.Request) (respond.Responder, error) {
 			if limitReached, err := subscription.IsDeploymentTargetLimitReached(
 				ctx, *auth.CurrentOrg(), customerOrgID,
 			); err != nil {
-				return fmt.Errorf("could not check deployment target limit: %w", err)
+				return nil, fmt.Errorf("could not check deployment target limit: %w", err)
 			} else if limitReached {
-				return distrerr.NewForbidden("deployment target limit reached")
+				return respond.Forbidden("deployment target limit reached"), nil
+			} else if err := db.CreateDeploymentTarget(
+				ctx, &dt, *auth.CurrentOrgID(), auth.CurrentUserID(), customerOrgID,
+			); err != nil {
+				return nil, fmt.Errorf("could not create DeploymentTarget: %w", err)
+			} else {
+				return nil, nil
 			}
-
-			return db.CreateDeploymentTarget(ctx, &dt, *auth.CurrentOrgID(), auth.CurrentUserID(), customerOrgID)
-		})
-
-		if err == nil {
-			return respond.JSON(dt), nil
-		} else if errors.Is(err, distrerr.ErrForbidden) {
-			return respond.Forbidden(err.Error()), nil
+		}); resp != nil || err != nil {
+			return resp, err
 		} else {
-			return nil, fmt.Errorf("could not create DeploymentTarget: %w", err)
+			return respond.JSON(dt), nil
 		}
 	}
 }

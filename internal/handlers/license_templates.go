@@ -155,7 +155,7 @@ func deleteLicenseTemplate(r *http.Request) (respond.Responder, error) {
 func validatePayloadTemplate(template types.LicenseTemplate) error {
 	_, err := licensetemplate.RenderPayload(template, stripe.Subscription{})
 	if err != nil {
-		return fmt.Errorf("%w: invalid payload template: %w", distrerr.ErrBadRequest, err)
+		return fmt.Errorf("invalid payload template: %w", err)
 	}
 
 	return nil

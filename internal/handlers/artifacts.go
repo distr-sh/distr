@@ -196,22 +196,20 @@ func deleteArtifactHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	artifact := internalctx.GetArtifact(ctx)
 
-	if err := db.RunTx(ctx, func(ctx context.Context) error {
+	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 		if isReferenced, err := db.ArtifactIsReferencedInEntitlements(ctx, artifact.ID); err != nil {
-			return err
+			return nil, fmt.Errorf("failed to check artifact entitlements: %w", err)
 		} else if isReferenced {
-			return distrerr.NewBadRequest("Cannot delete artifact: it is referenced in one or more entitlements.")
-		} else if err := db.DeleteArtifactWithID(ctx, artifact.ID); err != nil {
-			return err
+			return respond.BadRequest("Cannot delete artifact: it is referenced in one or more entitlements."), nil
+		} else if err := db.DeleteArtifactWithID(ctx, artifact.ID); errors.Is(err, distrerr.ErrNotFound) {
+			return artifactNotFound, nil
+		} else if err != nil {
+			return nil, fmt.Errorf("error deleting artifact: %w", err)
 		} else {
-			return nil
+			return nil, nil
 		}
-	}); errors.Is(err, distrerr.ErrNotFound) {
-		return artifactNotFound, nil
-	} else if errors.Is(err, distrerr.ErrBadRequest) {
-		return respond.BadRequest(err.Error()), nil
-	} else if err != nil {
-		return nil, fmt.Errorf("error deleting artifact: %w", err)
+	}); resp != nil || err != nil {
+		return resp, err
 	} else {
 		return respond.NoContent(), nil
 	}
