@@ -98,6 +98,10 @@ You can also provide credentials via an [application entitlement](/docs/platform
 
 When the controller version for a deployment target is updated in Distr, the controller updates itself on the next cycle. It fetches the new manifest from `DISTR_MANIFEST_ENDPOINT` and restarts. The `DISTR_CONTROLLER_SCRATCH_DIR` environment variable and `scratch` volume mount are required for this to work.
 
+## Controller Image Registry
+
+The controller and autoheal images are pulled from `ghcr.io/distr-sh/distr` by default. You can have them pulled from your own registry instead, for all of your customers or for a single one, as described in [Controller Image Registry](/docs/platform/branding/#controller-image-registry).
+
 ## Autoheal
 
 Distr deploys an autoheal service alongside every Docker controller. This service monitors container health and automatically restarts containers that become unhealthy.

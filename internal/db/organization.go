@@ -37,7 +37,8 @@ var (
 		o.post_connect_script,
 		o.connect_script_is_sudo,
 		` + organizationStripeSecret.Value("o") + `,
-		` + organizationStripeSecret.IsSetValue("o") + `
+		` + organizationStripeSecret.IsSetValue("o") + `,
+		o.controller_image_registry
 	`
 	organizationWithUserRoleOutputExpr = organizationOutputExpr + `,
 		j.user_role,
@@ -392,6 +393,20 @@ func SetOrganizationStripeWebhookSecret(ctx context.Context, orgID uuid.UUID, se
 	)
 	if err != nil {
 		return fmt.Errorf("could not update Organization stripe webhook secret: %w", err)
+	}
+	return nil
+}
+
+func SetOrganizationControllerImageRegistry(ctx context.Context, orgID uuid.UUID, value *string) error {
+	db := internalctx.GetDb(ctx)
+	cmd, err := db.Exec(ctx,
+		`UPDATE Organization SET controller_image_registry = @value WHERE id = @id AND deleted_at IS NULL`,
+		pgx.NamedArgs{"id": orgID, "value": value},
+	)
+	if err != nil {
+		return fmt.Errorf("could not update Organization controller image registry: %w", err)
+	} else if cmd.RowsAffected() == 0 {
+		return apierrors.ErrNotFound
 	}
 	return nil
 }

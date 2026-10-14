@@ -152,6 +152,10 @@
           (recheck)="verifyDomain(registryDomain()!)" />
       </section>
     }
+
+    @if (domainsEnabled()) {
+      <app-controller-image-registry [customerOrganizationId]="customerOrganizationId()" />
+    }
   </div>
 }
 

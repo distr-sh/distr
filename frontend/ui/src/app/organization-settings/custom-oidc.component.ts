@@ -22,6 +22,7 @@ import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 import {CustomDomain, CustomDomainType, CustomDomainVerification} from '../types/custom-domain';
 import {CustomOidcConfiguration, CustomOidcConfigurationsResponse} from '../types/custom-oidc';
+import {ControllerImageRegistryComponent} from './controller-image-registry.component';
 import {DomainFieldComponent} from './domain-field.component';
 
 const BUSINESS_OIDC_BANNER_DISMISSED_KEY = 'customOidc.businessOidcBannerDismissed';
@@ -40,6 +41,7 @@ const DEFAULT_SCOPES = ['openid', 'profile', 'email'];
     DomainFieldComponent,
     RouterLink,
     AlertComponent,
+    ControllerImageRegistryComponent,
   ],
 })
 export class CustomOidcComponent {
