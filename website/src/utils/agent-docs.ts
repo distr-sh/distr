@@ -67,7 +67,7 @@ export function toAgentMarkdown(
     return `\`\`\`${language}\n${code.content.trimEnd()}\n\`\`\``;
   });
   body = body.replace(/<(ThemedImage|Image)\b[^>]*\/>/g, '');
-  body = body.replace(/<iframe[\s\S]*?<\/iframe>/g, '');
+  body = removeRepeatedly(body, /<iframe[\s\S]*?<\/iframe>/g);
   body = body.replace(/!\[[^\]]*\]\([^)]*\)/g, '');
   body = body.replace(
     /\]\((\/docs(?:\/[^)#\s]*)?)(#[^)\s]*)?\)/g,
@@ -127,6 +127,16 @@ function dedent(content: string): string {
   return lines
     .map(line => line.slice(Number.isFinite(indent) ? indent : 0))
     .join('\n');
+}
+
+// A single pass can join the remains of two matches into a new one.
+function removeRepeatedly(value: string, pattern: RegExp): string {
+  let previous: string;
+  do {
+    previous = value;
+    value = value.replace(pattern, '');
+  } while (value !== previous);
+  return value;
 }
 
 function capitalize(value: string): string {
