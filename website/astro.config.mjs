@@ -269,6 +269,17 @@ export default defineConfig({
               ],
             },
             {
+              label: 'Guides',
+              link: '/docs/guides/',
+              icon: 'notes',
+              items: [
+                {
+                  label: 'Deployment Guides',
+                  items: [{autogenerate: {directory: 'docs/guides'}}],
+                },
+              ],
+            },
+            {
               label: 'Self-Hosting',
               link: '/docs/self-hosting/',
               icon: 'laptop',
@@ -349,7 +360,6 @@ export default defineConfig({
     '/docs/use-cases/air-gapped/': '/docs/use-cases/air-gapped-deployments/',
 
     // guides/ redirects (slugs that existed on main)
-    '/docs/guides/': '/docs/quickstart/',
     '/docs/guides/secrets/': '/docs/controllers/secrets/',
     '/docs/guides/application-links/': '/docs/controllers/application-links/',
     '/docs/guides/preflight-checks/': '/docs/controllers/preflight-checks/',
