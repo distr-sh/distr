@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
@@ -164,11 +165,17 @@ func (h *handler) ListTags(ctx context.Context, nameStr string, n int, last stri
 		); err != nil {
 			return nil, err
 		} else {
-			var result []string
+			result := []string{}
 			for _, version := range versions {
 				for _, tag := range version.Tags {
-					result = append(result, tag.Name)
+					if tag.Name > last {
+						result = append(result, tag.Name)
+					}
 				}
+			}
+			slices.Sort(result)
+			if len(result) > n {
+				result = result[:n]
 			}
 			return result, nil
 		}
@@ -216,7 +223,8 @@ func (h *handler) Put(
 			} else if !quotaOk {
 				return apierrors.ErrQuotaExceeded
 			}
-		} else if existingVersion.ManifestBlobDigest == types.Digest(reference) {
+		} else if existingVersion.ManifestBlobDigest == version.ManifestBlobDigest &&
+			existingVersion.ManifestContentType == version.ManifestContentType {
 			// Tag already exists with the same content: nothing to do
 			return nil
 		} else if !auth.CurrentOrg().HasFeature(types.FeatureArtifactVersionMutable) {
