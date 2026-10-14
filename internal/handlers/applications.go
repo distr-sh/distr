@@ -434,7 +434,9 @@ func createApplicationVersion(r *http.Request) (respond.Responder, error) {
 	applicationVersion.CreatedByUserAccountID = new(auth.CurrentUserID())
 	resources := applicationVersion.Resources
 
-	if resp, err := readApplicationVersionFiles(r, application.Type, &applicationVersion); resp != nil || err != nil {
+	if resp, err := readTemplateFile(r, &applicationVersion); resp != nil || err != nil {
+		return resp, err
+	} else if resp, err := readDeploymentFile(r, application.Type, &applicationVersion); resp != nil || err != nil {
 		return resp, err
 	} else if err := applicationVersion.Validate(application.Type); err != nil {
 		return respond.BadRequest(err.Error()), nil
@@ -469,38 +471,39 @@ func createApplicationVersion(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-func readApplicationVersionFiles(
+// readTemplateFile takes the template file without parsing on purpose, since some use a non-YAML template.
+func readTemplateFile(r *http.Request, version *types.ApplicationVersion) (respond.Responder, error) {
+	data, resp, err := readMultipartFile(r, "templatefile")
+	version.TemplateFileData = data
+	return resp, err
+}
+
+// readDeploymentFile reads the compose file of a Docker application or the values file of a Helm one.
+func readDeploymentFile(
 	r *http.Request,
 	deploymentType types.DeploymentType,
 	version *types.ApplicationVersion,
 ) (respond.Responder, error) {
 	if deploymentType == types.DeploymentTypeDocker {
-		if data, resp, err := readMultipartFile(r, "composefile"); resp != nil || err != nil {
+		data, resp, err := readMultipartFile(r, "composefile")
+		if resp != nil || err != nil {
 			return resp, err
-		} else {
-			version.ComposeFileData = data
 		}
+		version.ComposeFileData = data
 		if _, err := version.ParsedComposeFile(); err != nil {
 			return respond.BadRequest(err.Error()), nil
 		}
 	} else {
-		if data, resp, err := readMultipartFile(r, "valuesfile"); resp != nil || err != nil {
+		data, resp, err := readMultipartFile(r, "valuesfile")
+		if resp != nil || err != nil {
 			return resp, err
-		} else {
-			version.ValuesFileData = data
 		}
+		version.ValuesFileData = data
 		if _, err := version.ParsedValuesFile(); err != nil {
 			return respond.BadRequest(err.Error()), nil
 		}
 	}
-
-	// The template file is taken without parsing on purpose, since some use a non-YAML template.
-	if data, resp, err := readMultipartFile(r, "templatefile"); resp != nil || err != nil {
-		return resp, err
-	} else {
-		version.TemplateFileData = data
-		return nil, nil
-	}
+	return nil, nil
 }
 
 func updateApplicationVersion(r *http.Request) (respond.Responder, error) {
