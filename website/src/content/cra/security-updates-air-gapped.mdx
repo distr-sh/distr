@@ -20,6 +20,9 @@ faq:
 ---
 
 import CraCta from '~/components/cta/CraCta.astro';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import craSecurityUpdatesLight from '~/assets/cra/security-updates-air-gapped/cra-security-updates-light.webp';
+import craSecurityUpdatesDark from '~/assets/cra/security-updates-air-gapped/cra-security-updates-dark.webp';
 
 _Last verified: July 2026. Based on Regulation (EU) 2024/2847 and the European
 Commission's March 2026 draft guidance. The draft guidance can still change._
@@ -76,20 +79,12 @@ your customer's.
 
 ## The patch flow, end to end
 
-```mermaid
-flowchart TD
-    cve[Vulnerability identified] --> fix[Build and test the security patch]
-    fix --> sign[Sign the release artifacts]
-    sign --> publish[Publish to your distribution channel]
-    publish --> advisory[Send advisory message to affected customers]
-    advisory --> connected{Customer connectivity}
-    connected -->|Connected on-prem| pull[Customer pulls signed update from registry or repo]
-    connected -->|Air-gapped| bundle[Customer transfers signed offline bundle across the gap]
-    pull --> verify[Customer verifies signature and installs]
-    bundle --> verify
-    verify --> evidence[You record availability and delivery evidence]
-    evidence --> report[Final report to ENISA if the vulnerability was actively exploited]
-```
+<ThemedImage
+  lightSrc={craSecurityUpdatesLight}
+  darkSrc={craSecurityUpdatesDark}
+  alt="Security update flow for connected and air-gapped customers"
+  dropShadow={false}
+/>
 
 Two boxes in that chart do most of the compliance work and most vendors have
 neither: the advisory message and the delivery evidence.
