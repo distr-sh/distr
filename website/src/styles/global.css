@@ -70,7 +70,7 @@
 
   .sl-markdown-content {
     ul,
-    ol {
+    ol:not(.sl-steps) {
       @apply space-y-1;
 
       li {
@@ -83,7 +83,7 @@
       @apply list-disc;
     }
 
-    ol {
+    ol:not(.sl-steps) {
       @apply list-decimal;
     }
   }
