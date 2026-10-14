@@ -1,6 +1,9 @@
 package api
 
-import "github.com/distr-sh/distr/internal/types"
+import (
+	"github.com/distr-sh/distr/internal/types"
+	"github.com/google/uuid"
+)
 
 type ContextResponse struct {
 	User                 UserAccountResponse              `json:"user"`
@@ -13,4 +16,21 @@ type ContextResponse struct {
 	// domains and legacy branding domains, falling back to the instance default.
 	RegistryHost          string `json:"registryHost,omitzero"`
 	CanCreateOrganization bool   `json:"canCreateOrganization"`
+}
+
+type ContextSwitchTargetsResponse struct {
+	Organizations []ContextSwitchOrganization `json:"organizations"`
+}
+
+type ContextSwitchOrganization struct {
+	ID                    uuid.UUID             `json:"id"`
+	LogoURL               *string               `json:"logoUrl,omitempty"`
+	CustomerOrganizations []ContextSwitchPortal `json:"customerOrganizations"`
+	PartnerOrganizations  []ContextSwitchPortal `json:"partnerOrganizations"`
+}
+
+type ContextSwitchPortal struct {
+	ID       uuid.UUID `json:"id"`
+	Name     string    `json:"name"`
+	ImageURL *string   `json:"imageUrl,omitempty"`
 }

@@ -199,12 +199,7 @@ var ProFeature = ForbidSubscriptionTypes(types.NonProSubscriptionTypes...)
 
 func RequireVendor(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		if isSuperAdmin(ctx) {
-			handler.ServeHTTP(w, r)
-			return
-		}
-		if auth, err := auth.Authentication.Get(ctx); err != nil {
+		if auth, err := auth.Authentication.Get(r.Context()); err != nil {
 			http.Error(w, err.Error(), http.StatusForbidden)
 		} else if auth.CurrentCustomerOrgID() != nil || auth.CurrentPartnerOrgID() != nil {
 			http.Error(w, "insufficient permissions", http.StatusForbidden)
@@ -217,12 +212,7 @@ func RequireVendor(handler http.Handler) http.Handler {
 
 func RequireVendorOrPartner(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		if isSuperAdmin(ctx) {
-			handler.ServeHTTP(w, r)
-			return
-		}
-		if auth, err := auth.Authentication.Get(ctx); err != nil {
+		if auth, err := auth.Authentication.Get(r.Context()); err != nil {
 			http.Error(w, err.Error(), http.StatusForbidden)
 		} else if auth.CurrentCustomerOrgID() != nil {
 			http.Error(w, "insufficient permissions", http.StatusForbidden)
@@ -317,10 +307,7 @@ func RequireTokenScope(scope authjwt.TokenScope) func(http.Handler) http.Handler
 func BlockCrossOrganizationAction(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		if auth.Authentication.Require(r.Context()).OrganizationScoped() {
-			http.Error(w,
-				"you are signed in with a credential that belongs to a single organization and can "+
-					"therefore only act within that organization",
-				http.StatusForbidden)
+			http.Error(w, CrossOrganizationBlockedMessage, http.StatusForbidden)
 			return
 		}
 		handler.ServeHTTP(w, r)
@@ -333,7 +320,9 @@ func BlockCrossOrganizationAction(handler http.Handler) http.Handler {
 const (
 	OidcSessionBlockedMessage = "operation not permitted in SSO session. " +
 		"Request a password reset to receive a link to your email address that lets you change them."
-	AccessTokenBlockedMessage = "this cannot be done with an access token. Sign in to Distr to do it."
+	AccessTokenBlockedMessage       = "this cannot be done with an access token. Sign in to Distr to do it."
+	CrossOrganizationBlockedMessage = "you are signed in with a credential that belongs to a single " +
+		"organization and can therefore only act within that organization"
 )
 
 func RequireNonOidcToken(handler http.Handler) http.Handler {
@@ -351,6 +340,22 @@ func RequireNonAccessToken(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		if auth.Authentication.Require(r.Context()).IsAccessToken() {
 			http.Error(w, AccessTokenBlockedMessage, http.StatusForbidden)
+			return
+		}
+		handler.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
+
+// RequireOwnContext rejects a session in a foreign context, a customer or partner portal its user is not a
+// member of, for what belongs to the user's membership rather than to the portal, such as personal access tokens.
+func RequireOwnContext(handler http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		if auth.Authentication.Require(r.Context()).IsForeignContext() {
+			http.Error(w,
+				"this cannot be done while you are switched to a customer or partner portal. "+
+					"Return to your own portal to do it.",
+				http.StatusForbidden)
 			return
 		}
 		handler.ServeHTTP(w, r)

@@ -29,6 +29,11 @@ type AuthInfo interface {
 	// account belongs to, or create one.
 	OrganizationScoped() bool
 	IsSuperAdmin() bool
+	// IsForeignContext reports whether the session operates in a customer or partner portal its user is not a
+	// member of (see EnterPortal). CurrentCustomerOrgID and CurrentPartnerOrgID name that portal, so a handler
+	// reading them treats the session like one of a member of it. Only authentication against the database sets
+	// this.
+	IsForeignContext() bool
 	Token() any
 }
 
@@ -47,6 +52,7 @@ type AuthInfoWithOrganization interface {
 type AuthInfoWithUserAndOrganization interface {
 	AuthInfoWithOrganization
 	CurrentUser() *types.UserAccount
-	// CurrentCustomerOrg is nil for every member of the vendor or a partner organization.
+	// CurrentCustomerOrg is the customer organization of the portal the session operates in, nil in the vendor
+	// and in a partner portal.
 	CurrentCustomerOrg() *types.CustomerOrganization
 }

@@ -5,14 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/authn/authinfo"
+	"github.com/distr-sh/distr/internal/blocklist"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/subscription"
@@ -34,18 +36,17 @@ func OrganizationRouter(r chiopenapi.Router) {
 		With(option.Description("Get current organization")).
 		With(option.Response(http.StatusOK, api.OrganizationResponse{}))
 
-	r.With(middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
-		r.With(middleware.BlockCrossOrganizationAction).Post("/", createOrganization).
-			With(option.Description("Create a new organization")).
-			With(option.Request(api.CreateUpdateOrganizationRequest{})).
-			With(option.Response(http.StatusOK, types.OrganizationWithUserRole{}))
+	r.With(middleware.BlockCrossOrganizationAction).
+		Post("/", createOrganization).
+		With(option.Description("Create a new organization")).
+		With(option.Request(api.CreateOrganizationRequest{})).
+		With(option.Response(http.StatusOK, api.CreateOrganizationResponse{}))
 
-		r.With(middleware.RequireVendor, middleware.RequireAdmin).
-			Put("/", updateOrganization).
-			With(option.Description("Update current organization")).
-			With(option.Request(api.CreateUpdateOrganizationRequest{})).
-			With(option.Response(http.StatusOK, types.Organization{}))
-	})
+	r.With(middleware.BlockSuperAdmin, middleware.RequireVendor, middleware.RequireAdmin).
+		Put("/", updateOrganization).
+		With(option.Description("Update current organization")).
+		With(option.Request(api.CreateUpdateOrganizationRequest{})).
+		With(option.Response(http.StatusOK, types.Organization{}))
 
 	r.With(
 		middleware.RequireVendor,
@@ -121,25 +122,36 @@ func updateOrganization(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// mayCreateOrganization keeps vendors from creating organizations while registration is hidden or disabled, since
+// another organization is what a sign-up would get them. Super admins may create one regardless.
+func mayCreateOrganization(
+	auth authinfo.AuthInfo,
+	hasVendorMembership bool,
+	registration env.RegistrationMode,
+) bool {
+	return !auth.OrganizationScoped() &&
+		(auth.IsSuperAdmin() || (hasVendorMembership && registration == env.RegistrationEnabled))
+}
+
 func createOrganization(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 	log := internalctx.GetLogger(ctx)
 
-	if ok, err := db.ExistsVendorOrganizationWithUserID(ctx, auth.CurrentUserID()); err != nil {
-		log.Error("failed to check if user is vendor", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	if hasVendorMembership, err := db.ExistsVendorOrganizationWithUserID(ctx, auth.CurrentUserID()); err != nil {
+		respondInternalError(w, r, err, "failed to check if user is vendor")
 		return
-	} else if !ok {
-		http.Error(w, "only vendors can create organizations", http.StatusForbidden)
+	} else if !mayCreateOrganization(auth, hasVendorMembership, env.Registration()) {
+		http.Error(w, "you are not allowed to create organizations", http.StatusForbidden)
 		return
 	}
 
-	body, err := JsonBody[api.CreateUpdateOrganizationRequest](w, r)
+	body, err := JsonBody[api.CreateOrganizationRequest](w, r)
 	if err != nil {
 		return
-	} else if ok := validateOrganizationRequest(w, body); !ok {
+	} else if ok := validateOrganizationRequest(w, body.CreateUpdateOrganizationRequest); !ok {
+		return
+	} else if ok := validateOrganizationAdmin(w, auth, body.AdminEmail); !ok {
 		return
 	}
 
@@ -153,38 +165,51 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	organization := types.Organization{
-		Name:                body.Name,
-		Slug:                body.Slug,
-		PreConnectScript:    body.PreConnectScript,
-		PostConnectScript:   body.PostConnectScript,
-		ConnectScriptIsSudo: body.ConnectScriptIsSudo,
-	}
+	organization := mapping.CreateOrganizationRequestToInternal(body)
+	var inviteURL string
 
 	if err := db.RunTx(ctx, func(ctx context.Context) error {
 		if err := db.CreateOrganization(ctx, &organization); err != nil {
 			return err
-		}
-		if err := db.CreateUserAccountOrganizationAssignment(
-			ctx, auth.CurrentUserID(), organization.ID, types.UserRoleAdmin, nil, nil); err != nil {
+		} else if !auth.IsSuperAdmin() {
+			return db.CreateUserAccountOrganizationAssignment(
+				ctx, auth.CurrentUserID(), organization.ID, types.UserRoleAdmin, nil, nil)
+		} else if orgWithBranding, err := db.GetOrganizationWithBranding(ctx, organization.ID); err != nil {
+			return err
+		} else {
+			// Super admins hand the organization over instead of joining it, since their sessions stay read-only.
+			_, inviteURL, err = inviteUserAccount(
+				ctx, *orgWithBranding, body.AdminEmail, "", types.UserRoleAdmin, nil, nil)
 			return err
 		}
-		return nil
-	}); err != nil {
-		if errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, "Slug is not available", http.StatusBadRequest)
-		} else {
-			log.Error("could not create organization", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+	}); errors.Is(err, apierrors.ErrConflict) {
+		http.Error(w, "Slug is not available", http.StatusBadRequest)
+	} else if err != nil {
+		log.Error("could not create organization", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	} else {
-		RespondJSON(w, types.OrganizationWithUserRole{
-			Organization: organization,
-			UserRole:     types.UserRoleAdmin,
-			JoinedOrgAt:  time.Now(),
-		})
+		RespondJSON(w, mapping.OrganizationToCreateResponse(organization, inviteURL))
 	}
+}
+
+func validateOrganizationAdmin(w http.ResponseWriter, auth authinfo.AuthInfo, adminEmail string) bool {
+	if !auth.IsSuperAdmin() {
+		if adminEmail != "" {
+			http.Error(w, "only super admins can choose the admin of a new organization", http.StatusBadRequest)
+			return false
+		}
+	} else if adminEmail == "" {
+		http.Error(w, "the email address of the organization's admin is required", http.StatusBadRequest)
+		return false
+	} else if err := validation.ValidateEmail(adminEmail); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return false
+	} else if blocklist.EmailBlocked(adminEmail) {
+		http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
+		return false
+	}
+	return true
 }
 
 func validateOrganizationRequest(w http.ResponseWriter, organization api.CreateUpdateOrganizationRequest) bool {

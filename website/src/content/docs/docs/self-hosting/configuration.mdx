@@ -50,6 +50,10 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 - `disabled`: sign-up is rejected, both on `/register` and for OIDC logins with an unknown email address. Existing
   users can still sign in, and new users can still be added through an invitation.
 
+Vendor users can create further organizations from the organization switcher only while registration is `enabled`.
+With `hidden` or `disabled`, only super admins can create organizations. A super admin does not join the organization
+they create but enters the email address of its admin, whom Distr invites.
+
 ### Blocklists
 
 `BLOCKED_EMAIL_DOMAINS` (e.g. `example.com,spam.io`) refuses registration, password login, password resets,

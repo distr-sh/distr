@@ -11,6 +11,7 @@ import (
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authjwt"
+	"github.com/distr-sh/distr/internal/authn/authinfo"
 	"github.com/distr-sh/distr/internal/blocklist"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/custommail"
@@ -24,12 +25,14 @@ import (
 	"github.com/distr-sh/distr/internal/turnstile"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/userauth"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httprate"
 	"github.com/go-mailx/mailx"
 	"github.com/google/uuid"
+	"github.com/lestrrat-go/jwx/v4/jwt"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
 	"go.uber.org/zap"
@@ -57,7 +60,7 @@ func AuthRouter(r chiopenapi.Router) {
 		middleware.SetSentryUserFromUserAuth,
 		middleware.RequireEmailVerified,
 		middleware.RequireOrgAndRole,
-		middleware.BlockCrossOrganizationAction,
+		middleware.RequireNonAccessToken,
 	).Post("/switch-context", authSwitchContextHandler())
 	r.Group(func(r chiopenapi.Router) {
 		r.Use(auth.Authentication.Middleware, middleware.SetSentryUserFromUserAuth)
@@ -246,7 +249,6 @@ func setPasswordAndLogin(
 func authSwitchContextHandler() func(writer http.ResponseWriter, request *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
 		request, err := JsonBody[api.AuthSwitchContextRequest](w, r)
 		if err != nil {
 			return
@@ -255,77 +257,85 @@ func authSwitchContextHandler() func(writer http.ResponseWriter, request *http.R
 			return
 		}
 		auth := auth.Authentication.Require(ctx)
-		if *auth.CurrentOrgID() == request.OrganizationID {
-			w.WriteHeader(http.StatusNoContent)
+		if auth.OrganizationScoped() && request.OrganizationID != *auth.CurrentOrgID() {
+			http.Error(w, middleware.CrossOrganizationBlockedMessage, http.StatusForbidden)
 			return
 		}
 
-		// Super admins can switch to any organization
+		target := types.OrganizationWithUserRole{}
+		var membership authinfo.Portal
 		if auth.IsSuperAdmin() {
-			user, err := db.GetUserAccountByID(ctx, auth.CurrentUserID())
-			if err != nil {
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				log.Error("failed to get user account", zap.Error(err))
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			org, err := db.GetOrganizationByID(ctx, request.OrganizationID)
-			if errors.Is(err, apierrors.ErrNotFound) {
+			// Super admins can switch to any organization, where they have no role and no membership
+			if org, err := db.GetOrganizationByID(ctx, request.OrganizationID); errors.Is(err, apierrors.ErrNotFound) {
 				http.Error(w, "organization not found", http.StatusNotFound)
 				return
 			} else if err != nil {
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				log.Error("failed to get organization", zap.Error(err))
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				respondInternalError(w, r, err, "failed to get organization")
 				return
+			} else {
+				target.Organization = *org
 			}
-			_, tokenString, err := authjwt.GenerateDefaultToken(*user, types.OrganizationWithUserRole{
-				Organization:           *org,
-				UserRole:               types.UserRole(""), // Super admins don't have a role
-				CustomerOrganizationID: nil,
-			})
-			if err != nil {
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				log.Error("failed to generate token", zap.Error(err))
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			if err := db.UpdateUserAccountLastUsedOrganizationID(ctx, user.ID, request.OrganizationID); err != nil {
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				log.Error("failed to update last used organization ID", zap.Error(err))
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			RespondJSON(w, api.AuthLoginResponse{Token: tokenString})
-			return
-		}
-
-		// Regular users: validate membership
-		if user, org, err := db.GetUserAccountAndOrg(
+		} else if user, org, err := db.GetUserAccountAndOrg(
 			ctx, auth.CurrentUserID(), request.OrganizationID); errors.Is(err, apierrors.ErrNotFound) {
 			http.Error(w, "bad request", http.StatusBadRequest)
 			return
 		} else if err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("context switch failed", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		} else if _, tokenString, err := authjwt.GenerateDefaultToken(user.AsUserAccount(), types.OrganizationWithUserRole{
-			Organization:           org.Organization,
-			UserRole:               user.UserRole,
-			CustomerOrganizationID: user.CustomerOrganizationID,
-			PartnerOrganizationID:  user.PartnerOrganizationID,
-		}); err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to generate token", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		} else if err := db.UpdateUserAccountLastUsedOrganizationID(ctx, user.ID, request.OrganizationID); err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to update last used organization ID", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			respondInternalError(w, r, err, "context switch failed")
 			return
 		} else {
-			RespondJSON(w, api.AuthLoginResponse{Token: tokenString})
+			target.Organization = org.Organization
+			target.UserRole = user.UserRole
+			membership = authinfo.Portal{
+				CustomerOrganizationID: user.CustomerOrganizationID,
+				PartnerOrganizationID:  user.PartnerOrganizationID,
+			}
 		}
+
+		portal := membership
+		requested := authinfo.Portal{
+			CustomerOrganizationID: request.CustomerOrganizationID,
+			PartnerOrganizationID:  request.PartnerOrganizationID,
+		}
+		foreignContext := !authinfo.IsOwnPortal(membership, requested)
+		if foreignContext {
+			if _, err := authinfo.EnterPortal(
+				ctx, target.ID, membership, auth.IsSuperAdmin(), requested,
+			); errors.Is(err, authinfo.ErrPortalForbidden) {
+				http.Error(w, err.Error(), http.StatusForbidden)
+				return
+			} else if err != nil {
+				respondInternalError(w, r, err, "failed to check the requested portal")
+				return
+			}
+			portal = requested
+		}
+		target.CustomerOrganizationID = portal.CustomerOrganizationID
+		target.PartnerOrganizationID = portal.PartnerOrganizationID
+
+		orgChanged := target.ID != *auth.CurrentOrgID()
+		if !orgChanged && util.PtrEq(portal.CustomerOrganizationID, auth.CurrentCustomerOrgID()) &&
+			util.PtrEq(portal.PartnerOrganizationID, auth.CurrentPartnerOrgID()) {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		currentToken, ok := auth.Token().(jwt.Token)
+		if !ok {
+			respondInternalError(w, r, errors.New("session is not authenticated by a JWT"), "failed to generate token")
+			return
+		}
+		_, tokenString, err := authjwt.GenerateContextToken(currentToken, *auth.CurrentUser(), target, foreignContext)
+		if err != nil {
+			respondInternalError(w, r, err, "failed to generate token")
+			return
+		}
+		if orgChanged {
+			if err := db.UpdateUserAccountLastUsedOrganizationID(ctx, auth.CurrentUserID(), target.ID); err != nil {
+				respondInternalError(w, r, err, "failed to update last used organization ID")
+				return
+			}
+		}
+		RespondJSON(w, api.AuthLoginResponse{Token: tokenString})
 	}
 }
 

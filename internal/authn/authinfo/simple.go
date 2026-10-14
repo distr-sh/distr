@@ -19,6 +19,7 @@ type SimpleAuthInfo struct {
 	isCustomOIDCSession    bool
 	userRole               *types.UserRole
 	isSuperAdmin           bool
+	isForeignContext       bool
 	rawToken               any
 }
 
@@ -60,6 +61,9 @@ func (i *SimpleAuthInfo) CurrentUserRole() *types.UserRole { return i.userRole }
 
 // IsSuperAdmin implements AuthInfo.
 func (i *SimpleAuthInfo) IsSuperAdmin() bool { return i.isSuperAdmin }
+
+// IsForeignContext implements AuthInfo.
+func (i *SimpleAuthInfo) IsForeignContext() bool { return i.isForeignContext }
 
 // Token implements AuthInfo.
 func (i *SimpleAuthInfo) Token() any { return i.rawToken }

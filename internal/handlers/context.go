@@ -1,20 +1,22 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"net/http"
-	"time"
+	"slices"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/authn/authinfo"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -25,6 +27,8 @@ import (
 func ContextRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupHidden(true))
 	r.With(middleware.RequireOrgAndRole).Get("/", getContextHandler)
+	r.With(middleware.RequireOrgAndRole, middleware.RequireNonAccessToken).
+		Get("/switch-targets", getContextSwitchTargetsHandler)
 }
 
 func getContextHandler(w http.ResponseWriter, r *http.Request) {
@@ -32,16 +36,7 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 
-	var orgs []types.OrganizationWithUserRole
-	var err error
-
-	// Super admins get all organizations
-	if auth.IsSuperAdmin() {
-		orgs, err = db.GetAllOrganizationsForSuperAdmin(ctx)
-	} else {
-		orgs, err = db.GetOrganizationsForUser(ctx, auth.CurrentUserID())
-	}
-
+	orgs, err := contextOrganizations(ctx, auth)
 	if err != nil {
 		log.Error("failed to get organizations", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -49,42 +44,24 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var joinDate time.Time
-	var userRole *types.UserRole
-	var customerOrgID *uuid.UUID
-	var partnerOrgID *uuid.UUID
-
-	if auth.IsSuperAdmin() {
-		// Super admins: use current org's creation time as join date, no role
-		joinDate = auth.CurrentOrg().CreatedAt
-		userRole = util.PtrTo(types.UserRoleAdmin)
-	} else {
-		// Regular users: find their actual join date and role
+	// Super admins have no role and no membership, so they are shown as admins who joined with the organization
+	userRole := types.UserRoleAdmin
+	joinDate := auth.CurrentOrg().CreatedAt
+	if !auth.IsSuperAdmin() {
+		userRole = *auth.CurrentUserRole()
 		for _, org := range orgs {
 			if org.ID == *auth.CurrentOrgID() {
 				joinDate = org.JoinedOrgAt
-				userRole = &org.UserRole
-				customerOrgID = org.CustomerOrganizationID
-				partnerOrgID = org.PartnerOrganizationID
 				break
 			}
-		}
-		if userRole == nil {
-			userRole = auth.CurrentUserRole()
 		}
 	}
 
 	var customerOrg *api.CustomerOrganization
 	var sidebarLinks []api.SidebarLink
-	if customerOrgID != nil {
-		if co, err := db.GetCustomerOrganizationByID(ctx, *customerOrgID); err != nil {
-			log.Error("failed to get customer organization", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-		} else {
-			mapped := mapping.CustomerOrganizationToAPI(co.CustomerOrganization)
-			customerOrg = &mapped
-		}
-		if links, err := db.GetSidebarLinks(ctx, *customerOrgID); err != nil {
+	if co := auth.CurrentCustomerOrg(); co != nil {
+		customerOrg = new(mapping.CustomerOrganizationToAPI(*co))
+		if links, err := db.GetSidebarLinks(ctx, co.ID); err != nil {
 			log.Error("failed to get sidebar links", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 		} else {
@@ -93,13 +70,12 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var partnerOrg *api.PartnerOrganization
-	if partnerOrgID != nil {
+	if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
 		if po, err := db.GetPartnerOrganizationByID(ctx, *partnerOrgID); err != nil {
 			log.Error("failed to get partner organization", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 		} else {
-			mapped := mapping.PartnerOrganizationToAPI(po.PartnerOrganization)
-			partnerOrg = &mapped
+			partnerOrg = new(mapping.PartnerOrganizationToAPI(po.PartnerOrganization))
 		}
 	}
 
@@ -129,14 +105,110 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 
 	RespondJSON(w, api.ContextResponse{
 		User: mapping.UserAccountToAPI(
-			auth.CurrentUser().AsUserAccountWithRole(*userRole, customerOrgID, auth.CurrentPartnerOrgID(), joinDate),
+			auth.CurrentUser().AsUserAccountWithRole(
+				userRole, auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID(), joinDate,
+			),
 		),
-		Organization:          mapping.OrganizationToAPI(*auth.CurrentOrg(), billableUserCount, customerOrgCount),
-		CustomerOrganization:  customerOrg,
-		PartnerOrganization:   partnerOrg,
-		SidebarLinks:          sidebarLinks,
-		AvailableContexts:     visibleOrganizations(auth, orgs),
-		RegistryHost:          registryHost,
-		CanCreateOrganization: !auth.OrganizationScoped(),
+		Organization:         mapping.OrganizationToAPI(*auth.CurrentOrg(), billableUserCount, customerOrgCount),
+		CustomerOrganization: customerOrg,
+		PartnerOrganization:  partnerOrg,
+		SidebarLinks:         sidebarLinks,
+		AvailableContexts:    orgs,
+		RegistryHost:         registryHost,
+		CanCreateOrganization: mayCreateOrganization(
+			auth, slices.ContainsFunc(orgs, isVendorMembership), env.Registration(),
+		),
 	})
+}
+
+// getContextSwitchTargetsHandler lists, for the organizations the user may switch to, their logos and the
+// customer and partner portals the user may enter there. The memberships decide which portals, not the portal
+// the session operates in right now, so the list stays the same while the session is in a foreign context.
+func getContextSwitchTargetsHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+
+	orgs, err := contextOrganizations(ctx, auth)
+	if err != nil {
+		respondInternalError(w, r, err, "failed to get organizations")
+		return
+	}
+
+	orgIDs := make([]uuid.UUID, 0, len(orgs))
+	memberships := make(map[uuid.UUID]authinfo.Portal, len(orgs))
+	var portalOrgIDs, partnerOrgIDs []uuid.UUID
+	for _, org := range orgs {
+		orgIDs = append(orgIDs, org.ID)
+		memberships[org.ID] = authinfo.Portal{
+			CustomerOrganizationID: org.CustomerOrganizationID,
+			PartnerOrganizationID:  org.PartnerOrganizationID,
+		}
+		if auth.IsSuperAdmin() || org.CustomerOrganizationID == nil {
+			portalOrgIDs = append(portalOrgIDs, org.ID)
+			if org.HasFeature(types.FeaturePartnerManagement) {
+				partnerOrgIDs = append(partnerOrgIDs, org.ID)
+			}
+		}
+	}
+
+	logoImageIDs, err := db.GetOrganizationLogoImageIDs(ctx, orgIDs)
+	if err != nil {
+		respondInternalError(w, r, err, "failed to get organization logos")
+		return
+	}
+	customerOrgs, err := db.GetCustomerOrganizationsByOrganizationIDs(ctx, portalOrgIDs)
+	if err != nil {
+		respondInternalError(w, r, err, "failed to get customer organizations")
+		return
+	}
+	partnerOrgs, err := db.GetPartnerOrganizationsByOrganizationIDs(ctx, partnerOrgIDs)
+	if err != nil {
+		respondInternalError(w, r, err, "failed to get partner organizations")
+		return
+	}
+
+	enterableCustomerOrgs := make(map[uuid.UUID][]types.CustomerOrganization)
+	for _, co := range customerOrgs {
+		requested := authinfo.Portal{CustomerOrganizationID: &co.ID}
+		if authinfo.MayEnter(memberships[co.OrganizationID], auth.IsSuperAdmin(), requested, co.PartnerOrganizationID) {
+			enterableCustomerOrgs[co.OrganizationID] = append(enterableCustomerOrgs[co.OrganizationID], co)
+		}
+	}
+	enterablePartnerOrgs := make(map[uuid.UUID][]types.PartnerOrganization)
+	for _, po := range partnerOrgs {
+		requested := authinfo.Portal{PartnerOrganizationID: &po.ID}
+		if authinfo.MayEnter(memberships[po.OrganizationID], auth.IsSuperAdmin(), requested, nil) {
+			enterablePartnerOrgs[po.OrganizationID] = append(enterablePartnerOrgs[po.OrganizationID], po)
+		}
+	}
+
+	response := api.ContextSwitchTargetsResponse{Organizations: []api.ContextSwitchOrganization{}}
+	for _, org := range orgs {
+		customers, partners := enterableCustomerOrgs[org.ID], enterablePartnerOrgs[org.ID]
+		if logoImageIDs[org.ID] != nil || len(customers) > 0 || len(partners) > 0 {
+			response.Organizations = append(response.Organizations,
+				mapping.ContextSwitchOrganizationToAPI(org.ID, logoImageIDs[org.ID], customers, partners))
+		}
+	}
+	RespondJSON(w, response)
+}
+
+// contextOrganizations lists the organizations the user may switch to: every organization for a super admin and
+// the memberships for everyone else, as far as the credential may reveal them.
+func contextOrganizations(ctx context.Context, auth authinfo.AuthInfo) ([]types.OrganizationWithUserRole, error) {
+	var orgs []types.OrganizationWithUserRole
+	var err error
+	if auth.IsSuperAdmin() {
+		orgs, err = db.GetAllOrganizationsForSuperAdmin(ctx)
+	} else {
+		orgs, err = db.GetOrganizationsForUser(ctx, auth.CurrentUserID())
+	}
+	if err != nil {
+		return nil, err
+	}
+	return visibleOrganizations(auth, orgs), nil
+}
+
+func isVendorMembership(org types.OrganizationWithUserRole) bool {
+	return org.CustomerOrganizationID == nil && org.PartnerOrganizationID == nil
 }

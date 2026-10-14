@@ -1,21 +1,23 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
 import {HttpErrorResponse} from '@angular/common/http';
-import {Component, computed, inject, input, OnInit, signal, TemplateRef, viewChild} from '@angular/core';
+import {Component, computed, inject, input, linkedSignal, OnInit, signal, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
+  faAddressBook,
   faArrowLeft,
   faBarsStaggered,
+  faBuilding,
+  faCheck,
   faChevronDown,
   faPlus,
-  faShuffle,
   faUserCircle,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import {catchError, EMPTY, lastValueFrom, map, of} from 'rxjs';
+import {catchError, EMPTY, firstValueFrom, lastValueFrom, map, of, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {MembershipLabelPipe, organizationKind} from '../../../util/organization-kind';
 import {SecureImagePipe} from '../../../util/secureImage';
@@ -29,15 +31,39 @@ import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SidebarService} from '../../services/sidebar.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
-import {Organization} from '../../types/organization';
+import {ContextSwitchPortal, ContextSwitchTargets, SwitchContextRequest} from '../../types/context-switch';
+import {CreateOrganizationResponse, Organization, OrganizationWithUserRole} from '../../types/organization';
 import {subscriptionRank} from '../../types/subscription';
+import {AlertComponent} from '../alert/alert.component';
+import {AvatarComponent} from '../avatar.component';
+import {ClipComponent} from '../clip.component';
 import {ColorSchemeSwitcherComponent} from '../color-scheme-switcher/color-scheme-switcher.component';
 import {SearchBarComponent} from '../search-bar.component';
 import {SubscriptionBadgeComponent} from '../subscription-badge.component';
+import {NavBarForeignContextBannerComponent} from './nav-bar-foreign-context-banner/nav-bar-foreign-context-banner.component';
 import {NavBarSubscriptionBannerComponent} from './nav-bar-subscription-banner/nav-bar-subscription-banner.component';
 
-// above this many switchable organizations the dropdown gets a search field
+// above this many entries the dropdown gets a search field
 const ORGANIZATION_SEARCH_THRESHOLD = 4;
+
+const NO_SWITCH_TARGETS: ContextSwitchTargets = {organizations: []};
+
+interface SwitcherPortal extends ContextSwitchPortal {
+  kind: 'customer' | 'partner';
+  current: boolean;
+}
+
+interface SwitcherOrganization {
+  org: OrganizationWithUserRole;
+  logoUrl?: string;
+  current: boolean;
+  portals: SwitcherPortal[];
+}
+
+interface SwitcherEntry extends SwitcherOrganization {
+  collapsible: boolean;
+  expanded: boolean;
+}
 
 @Component({
   selector: 'app-nav-bar',
@@ -48,7 +74,11 @@ const ORGANIZATION_SEARCH_THRESHOLD = 4;
     '(document:keydown.escape)': 'organizationsOpened.set(false)',
   },
   imports: [
+    AlertComponent,
+    AvatarComponent,
+    ClipComponent,
     ColorSchemeSwitcherComponent,
+    NavBarForeignContextBannerComponent,
     NavBarSubscriptionBannerComponent,
     OverlayModule,
     FaIconComponent,
@@ -90,16 +120,6 @@ export class NavBarComponent implements OnInit {
   );
 
   protected readonly allOrgs = toSignal(this.ctx.getAvailableOrganizations(), {initialValue: []});
-  protected readonly availableOrgs = computed(() => {
-    const current = this.currentOrg();
-    return this.allOrgs()
-      .filter((org) => org.id !== current?.id)
-      .sort(
-        (a, b) =>
-          subscriptionRank(a.subscriptionType, a.subscriptionEndsAt) -
-            subscriptionRank(b.subscriptionType, b.subscriptionEndsAt) || a.name.localeCompare(b.name)
-      );
-  });
   protected readonly currentOrg = toSignal(this.ctx.getOrganization());
   protected readonly isVendorSomewhere = computed(() =>
     this.allOrgs().some((org) => organizationKind(org) === 'vendor')
@@ -111,22 +131,115 @@ export class NavBarComponent implements OnInit {
   protected readonly isTrial = computed(() => this.currentOrg()?.subscriptionType === 'trial');
   protected readonly isSubscriptionExpired = this.organizationService.isSubscriptionExpired;
 
+  protected readonly isForeignContext = this.auth.isForeignContext();
+  protected readonly isSuperAdmin = this.auth.isSuperAdmin();
+  protected readonly ownPortalKind = computed(() => {
+    const membership = this.allOrgs().find((org) => org.id === this.currentOrg()?.id);
+    return membership ? organizationKind(membership) : 'vendor';
+  });
+
+  private readonly switchTargetsRefresh$ = new Subject<void>();
+  private readonly switchTargets = toSignal(
+    this.switchTargetsRefresh$.pipe(
+      startWith(undefined),
+      switchMap(() => this.ctx.getSwitchTargets().pipe(catchError(() => EMPTY)))
+    ),
+    {initialValue: NO_SWITCH_TARGETS}
+  );
+  // The current organization comes first since it holds the portal the session operates in, if any.
+  protected readonly switcherTree = computed<SwitcherOrganization[]>(() => {
+    const current = this.currentOrg();
+    const targets = new Map(this.switchTargets().organizations.map((it) => [it.id, it]));
+    return [...this.allOrgs()]
+      .sort(
+        (a, b) =>
+          Number(b.id === current?.id) - Number(a.id === current?.id) ||
+          subscriptionRank(a.subscriptionType, a.subscriptionEndsAt) -
+            subscriptionRank(b.subscriptionType, b.subscriptionEndsAt) ||
+          a.name.localeCompare(b.name)
+      )
+      .map((org) => {
+        const target = targets.get(org.id!);
+        const isCurrentOrg = org.id === current?.id;
+        return {
+          org,
+          logoUrl: target?.logoUrl,
+          current: isCurrentOrg && !this.isForeignContext,
+          portals: [
+            ...(target?.partnerOrganizations ?? []).map((portal) => ({
+              ...portal,
+              kind: 'partner' as const,
+              current: isCurrentOrg && portal.id === current?.partnerOrganizationId,
+            })),
+            ...(target?.customerOrganizations ?? []).map((portal) => ({
+              ...portal,
+              kind: 'customer' as const,
+              current: isCurrentOrg && portal.id === current?.customerOrganizationId,
+            })),
+          ],
+        };
+      });
+  });
+  protected readonly switchEntryCount = computed(() =>
+    this.switcherTree().reduce(
+      (count, entry) => count + Number(!entry.current) + entry.portals.filter((portal) => !portal.current).length,
+      0
+    )
+  );
+
   protected readonly userOpened = signal(false);
   protected readonly organizationsOpened = signal(false);
   protected readonly isOrganizationSwitcherVisible = computed(
-    () => this.isVendorSomewhere() || this.availableOrgs().length > 0
+    () => this.isVendorSomewhere() || this.isForeignContext || this.switchEntryCount() > 0
   );
   protected readonly switcherShortcut = navigator.userAgent.includes('Mac') ? '⌘K' : 'Ctrl+K';
 
   protected readonly organizationSearch = new FormControl<string>('', {nonNullable: true});
-  private readonly organizationSearchTerm = toSignal(this.organizationSearch.valueChanges, {initialValue: ''});
-  protected readonly isOrganizationSearchVisible = computed(
-    () => this.availableOrgs().length > ORGANIZATION_SEARCH_THRESHOLD
+  private readonly organizationSearchTerm = toSignal(
+    this.organizationSearch.valueChanges.pipe(map((term) => term.trim().toLowerCase())),
+    {initialValue: ''}
   );
-  protected readonly matchingOrgs = computed(() => {
-    const term = this.organizationSearchTerm().trim().toLowerCase();
-    const orgs = this.availableOrgs();
-    return term ? orgs.filter((org) => org.name.toLowerCase().includes(term)) : orgs;
+  protected readonly isOrganizationSearchVisible = computed(
+    () => this.switchEntryCount() > ORGANIZATION_SEARCH_THRESHOLD
+  );
+  // What the user expanded or collapsed, which a new filter discards since it changes what is expanded by default.
+  private readonly switcherExpansion = linkedSignal<string, ReadonlyMap<string, boolean>>({
+    source: this.organizationSearchTerm,
+    computation: () => new Map(),
+  });
+  // With several organizations their portals start collapsed, except for the organization of the portal the session
+  // operates in. A filter shows the matching portals expanded below their organization and all portals collapsed
+  // below an organization that matches by name alone.
+  protected readonly switcherEntries = computed<SwitcherEntry[]>(() => {
+    const tree = this.switcherTree();
+    const term = this.organizationSearchTerm();
+    const expansion = this.switcherExpansion();
+    const collapsible = tree.length > 1;
+    return tree.flatMap((entry) => {
+      let portals = entry.portals;
+      let expandedByDefault = portals.some((portal) => portal.current);
+      if (term) {
+        const matchingPortals = portals.filter((portal) => portal.name.toLowerCase().includes(term));
+        if (matchingPortals.length > 0) {
+          portals = matchingPortals;
+          expandedByDefault = true;
+        } else if (entry.org.name.toLowerCase().includes(term)) {
+          portals = collapsible ? portals : [];
+          expandedByDefault = false;
+        } else {
+          return [];
+        }
+      }
+      const hasToggle = collapsible && portals.length > 0;
+      return [
+        {
+          ...entry,
+          portals,
+          collapsible: hasToggle,
+          expanded: !hasToggle || (expansion.get(entry.org.id!) ?? expandedByDefault),
+        },
+      ];
+    });
   });
 
   // Derived from the branding service's reactive stream so the navbar updates live when the logo/title is saved.
@@ -143,9 +256,16 @@ export class NavBarComponent implements OnInit {
 
   private readonly createOrgModal = viewChild.required<TemplateRef<unknown>>('createOrgModal');
   private modalRef?: DialogRef;
+  // Super admins do not join an organization they create, so they name its admin instead.
   protected readonly createOrgForm = new FormGroup({
     name: new FormControl<string>('', Validators.required),
+    adminEmail: new FormControl(
+      {value: '', disabled: !this.isSuperAdmin},
+      {nonNullable: true, validators: [Validators.required, Validators.email]}
+    ),
   });
+  protected readonly createOrgFormLoading = signal(false);
+  protected readonly createdOrganization = signal<Required<CreateOrganizationResponse> | undefined>(undefined);
 
   public async ngOnInit() {
     // Trigger the initial load; the template updates reactively via the branding service's stream.
@@ -161,6 +281,9 @@ export class NavBarComponent implements OnInit {
 
   protected toggleOrganizations() {
     this.organizationSearch.setValue('');
+    if (!this.organizationsOpened()) {
+      this.switchTargetsRefresh$.next();
+    }
     this.organizationsOpened.update((opened) => !opened);
   }
 
@@ -173,13 +296,25 @@ export class NavBarComponent implements OnInit {
     this.toggleOrganizations();
   }
 
-  async switchContext(org: Organization, targetPath = '/') {
+  protected toggleSwitcherEntry(entry: SwitcherEntry) {
+    this.switcherExpansion.update((expansion) => new Map(expansion).set(entry.org.id!, !entry.expanded));
+  }
+
+  protected async switchOrganization(org: Organization) {
+    await this.switchContext({organizationId: org.id!});
+  }
+
+  protected async switchPortal(org: Organization, portal: SwitcherPortal) {
+    await this.switchContext({
+      organizationId: org.id!,
+      ...(portal.kind === 'partner' ? {partnerOrganizationId: portal.id} : {customerOrganizationId: portal.id}),
+    });
+  }
+
+  private async switchContext(request: SwitchContextRequest, targetPath = '/') {
     this.organizationsOpened.set(false);
     try {
-      const switched = await lastValueFrom(this.auth.switchContext(org));
-      if (switched) {
-        location.assign(targetPath);
-      }
+      await this.auth.switchContext(request, targetPath);
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {
@@ -198,21 +333,35 @@ export class NavBarComponent implements OnInit {
   closeCreateOrgModal() {
     this.modalRef?.close();
     this.createOrgForm.reset();
+    this.createdOrganization.set(undefined);
   }
 
   async submitCreateOrgForm() {
     this.createOrgForm.markAllAsTouched();
     if (this.createOrgForm.valid) {
+      this.createOrgFormLoading.set(true);
       try {
-        const created = await lastValueFrom(this.organizationService.create(this.createOrgForm.value.name!));
-        await this.switchContext(created, '/dashboard?from=new-org');
+        const {name, adminEmail} = this.createOrgForm.value;
+        const {id, inviteUrl} = await firstValueFrom(this.organizationService.create({name: name!, adminEmail}));
+        if (inviteUrl) {
+          this.createdOrganization.set({id, inviteUrl});
+          this.ctx.reload();
+        } else {
+          await this.openCreatedOrganization(id);
+        }
       } catch (e) {
         const msg = getFormDisplayedError(e);
         if (msg) {
           this.toast.error(msg);
         }
+      } finally {
+        this.createOrgFormLoading.set(false);
       }
     }
+  }
+
+  protected async openCreatedOrganization(organizationId: string) {
+    await this.switchContext({organizationId}, '/dashboard?from=new-org');
   }
 
   async logout() {
@@ -222,8 +371,10 @@ export class NavBarComponent implements OnInit {
     location.assign('/login');
   }
 
+  protected readonly faAddressBook = faAddressBook;
   protected readonly faArrowLeft = faArrowLeft;
-  protected readonly faShuffle = faShuffle;
+  protected readonly faBuilding = faBuilding;
+  protected readonly faCheck = faCheck;
   protected readonly faChevronDown = faChevronDown;
   protected readonly faPlus = faPlus;
   protected readonly faXmark = faXmark;

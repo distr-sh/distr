@@ -27,13 +27,13 @@ func AlertConfigurationsRouter(r chiopenapi.Router) {
 		With(option.Request(customerScopeQuery{})).
 		With(option.Response(http.StatusOK, []types.AlertConfiguration{}))
 
-	r.With(middleware.RequireReadWriteOrAdmin).
+	r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 		Post("/", createAlertConfigurationHandler()).
 		With(option.Description("create a new alert configuration")).
 		With(option.Request(types.AlertConfiguration{})).
 		With(option.Response(http.StatusOK, types.AlertConfiguration{}))
 
-	r.With(middleware.RequireReadWriteOrAdmin).
+	r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 		Route("/{id}", func(r chiopenapi.Router) {
 			type IDRequest struct {
 				ID string `path:"id"`

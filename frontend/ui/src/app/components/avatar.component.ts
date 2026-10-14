@@ -1,5 +1,5 @@
 import {AsyncPipe} from '@angular/common';
-import {ChangeDetectionStrategy, Component, computed, input} from '@angular/core';
+import {Component, computed, input} from '@angular/core';
 import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
 import {SecureImagePipe} from '../../util/secureImage';
 
@@ -11,7 +11,6 @@ import {SecureImagePipe} from '../../util/secureImage';
  */
 @Component({
   selector: 'app-avatar',
-  changeDetection: ChangeDetectionStrategy.Eager,
   host: {class: 'inline-block shrink-0'},
   imports: [AsyncPipe, SecureImagePipe, FaIconComponent],
   template: `
