@@ -36,9 +36,16 @@ func (e *notWrittenError) Unwrap() error {
 // [ErrorResponse]; every error is unexpected and answered with a 500, logged and reported to
 // Sentry, unless the client cancelled the request.
 func Handler(fn func(r *http.Request) (Responder, error)) http.HandlerFunc {
+	return HandlerWithFallback(fn, nil)
+}
+
+// HandlerWithFallback is [Handler] for a browser navigation such as an OIDC callback, where a bare
+// 500 strands the user: an unexpected error is logged and reported the same way but answered with
+// fallback.
+func HandlerWithFallback(fn func(r *http.Request) (Responder, error), fallback Responder) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		resp, err := fn(r)
-		Write(w, r, resp, err)
+		write(w, r, resp, err, fallback)
 	}
 }
 
@@ -58,30 +65,39 @@ func Middleware(fn func(r *http.Request) (*http.Request, Responder, error)) func
 
 // Write answers like [Handler], for code that writes to w itself.
 func Write(w http.ResponseWriter, r *http.Request, resp Responder, err error) {
+	write(w, r, resp, err, nil)
+}
+
+func write(w http.ResponseWriter, r *http.Request, resp Responder, err error, fallback Responder) {
 	if err == nil && resp == nil {
 		err = errors.New("handler returned neither a response nor an error")
 	}
 	if err != nil {
-		internalError(w, r, err)
+		internalError(w, r, err, fallback)
 	} else if err := resp.WriteResponse(w, r); err != nil {
 		if notWritten, ok := errors.AsType[*notWrittenError](err); ok {
-			internalError(w, r, notWritten.err)
+			internalError(w, r, notWritten.err, fallback)
 		} else {
 			internalctx.GetLogger(r.Context()).Warn("failed to write response", zap.Error(err))
 		}
 	}
 }
 
-func internalError(w http.ResponseWriter, r *http.Request, err error) {
+func internalError(w http.ResponseWriter, r *http.Request, err error, fallback Responder) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 
 	if errors.Is(err, context.Canceled) && ctx.Err() != nil {
 		log.Debug("request canceled", zap.Error(err))
-	} else {
-		log.Error("request failed", zap.String("method", r.Method), zap.String("path", r.URL.Path), zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
+		return
+	}
+
+	log.Error("request failed", zap.String("method", r.Method), zap.String("path", r.URL.Path), zap.Error(err))
+	sentry.GetHubFromContext(ctx).CaptureException(err)
+	if fallback == nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	} else if err := fallback.WriteResponse(w, r); err != nil {
+		log.Warn("failed to write fallback response", zap.Error(err))
 	}
 }
 

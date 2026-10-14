@@ -10,6 +10,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/handlerutil"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/validation"
 	"go.uber.org/zap"
@@ -58,12 +59,18 @@ func loginAppDomainRedirect(ctx context.Context, r *http.Request, user types.Use
 	return new(fmt.Sprintf("%v://%v/login?jwt=%v", env.HostScheme(), *domain, token))
 }
 
-func redirectLoginToAppDomain(w http.ResponseWriter, r *http.Request, user types.UserAccount, token string) {
+// loginRedirect completes a browser login on the domain of loginAppDomainRedirect, or on the current
+// host without one.
+func loginRedirect(r *http.Request, user types.UserAccount, token string) respond.Responder {
 	if redirect := loginAppDomainRedirect(r.Context(), r, user, token); redirect != nil {
-		http.Redirect(w, r, *redirect, http.StatusFound)
-		return
+		return respond.Redirect(*redirect, http.StatusFound)
+	} else {
+		return loginPageRedirect(r, token)
 	}
-	http.Redirect(w, r,
-		fmt.Sprintf("%v/login?jwt=%v", handlerutil.GetRequestSchemeAndHost(r), token),
-		http.StatusFound)
+}
+
+// loginPageRedirect completes a browser login on the current host.
+func loginPageRedirect(r *http.Request, token string) respond.Responder {
+	url := fmt.Sprintf("%v/login?jwt=%v", handlerutil.GetRequestSchemeAndHost(r), token)
+	return respond.Redirect(url, http.StatusFound)
 }

@@ -14,13 +14,12 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
-	"github.com/distr-sh/distr/internal/handlerutil"
 	"github.com/distr-sh/distr/internal/oidc"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/userauth"
 	"github.com/distr-sh/distr/internal/validation"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
@@ -52,223 +51,171 @@ func AuthOIDCRouter(r chiopenapi.Router) {
 		ProviderSlug     string `path:"providerSlug"`
 	}
 
-	r.Get("/custom/{organizationSlug}/{providerSlug}", authLoginCustomOidcHandler).
+	r.Get("/custom/{organizationSlug}/{providerSlug}",
+		respond.HandlerWithFallback(authLoginCustomOidcHandler, oidcFailed)).
 		With(option.Request(CustomOIDCRequest{}))
-	r.Get("/custom/{organizationSlug}/{providerSlug}/callback", authLoginCustomOidcCallbackHandler).
+	r.Get("/custom/{organizationSlug}/{providerSlug}/callback",
+		respond.HandlerWithFallback(authLoginCustomOidcCallbackHandler, oidcFailed)).
 		With(option.Request(CustomOIDCRequest{}))
-	r.Get("/{oidcProvider}", authLoginOidcHandler).
+	r.Get("/{oidcProvider}", respond.HandlerWithFallback(authLoginOidcHandler, oidcFailed)).
 		With(option.Request(OIDCLoginRequest{}))
-	r.Get("/{oidcProvider}/callback", authLoginOidcCallbackHandler).
+	r.Get("/{oidcProvider}/callback", respond.HandlerWithFallback(authLoginOidcCallbackHandler, oidcFailed)).
 		With(option.Request(OIDCRequest{}))
 }
 
-func authLoginOidcHandler(w http.ResponseWriter, r *http.Request) {
-	provider := types.OIDCProvider(r.PathValue("oidcProvider"))
+var oidcFailed = oidcRedirect(redirectToLoginOIDCFailed)
+
+func oidcRedirect(url string) respond.Responder {
+	return respond.Redirect(url, http.StatusFound)
+}
+
+func authLoginOidcHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
+	provider := types.OIDCProvider(r.PathValue("oidcProvider"))
+	log := internalctx.GetLogger(ctx).With(zap.String("provider", string(provider)))
+	flow := types.ParseOIDCFlow(r.URL.Query().Get("flow"))
 
 	host, err := resolvePortalHost(ctx, validation.NormalizeHostname(r.Host))
 	if !host.instanceAuthAllowed() {
-		log.Info("rejecting instance OIDC login on custom domain",
-			zap.String("provider", string(provider)), zap.String("host", r.Host))
-		http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
-		return
+		log.Info("rejecting instance OIDC login on custom domain", zap.String("host", r.Host))
+		return oidcRedirect(redirectToLoginOIDCUnavailable), nil
 	} else if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("could not resolve host for OIDC login", zap.Error(err))
-		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-		return
-	}
-
-	flow := types.ParseOIDCFlow(r.URL.Query().Get("flow"))
-	if flow == types.OIDCFlowRegistration && !host.registrationAllowed() {
-		log.Info("rejecting instance OIDC registration on custom domain",
-			zap.String("provider", string(provider)), zap.String("host", r.Host))
-		http.Redirect(w, r, redirectToLoginOIDCRegistrationDisabled, http.StatusFound)
-		return
-	}
-
-	if state, err := db.CreateOIDCState(ctx, nil, flow); err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("OIDC state creation failed", zap.Error(err))
-		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-		return
+		return nil, fmt.Errorf("could not resolve host for OIDC login: %w", err)
+	} else if flow == types.OIDCFlowRegistration && !host.registrationAllowed() {
+		log.Info("rejecting instance OIDC registration on custom domain", zap.String("host", r.Host))
+		return oidcRedirect(redirectToLoginOIDCRegistrationDisabled), nil
+	} else if state, err := db.CreateOIDCState(ctx, nil, flow); err != nil {
+		return nil, fmt.Errorf("OIDC state creation failed: %w", err)
+	} else if redirectURL, err := internalctx.GetOIDCer(ctx).GetAuthCodeURL(
+		r, provider, state.ID.String(), state.PKCECodeVerifier, state.Nonce,
+	); err != nil {
+		log.Info("could not get OIDC auth code URL", zap.Error(err))
+		return oidcFailed, nil
 	} else {
-		oidcer := internalctx.GetOIDCer(ctx)
-		redirectURL, err := oidcer.GetAuthCodeURL(r, provider, state.ID.String(), state.PKCECodeVerifier, state.Nonce)
-		if err != nil {
-			http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-			return
-		}
-		http.Redirect(w, r, redirectURL, http.StatusFound)
+		return oidcRedirect(redirectURL), nil
 	}
 }
 
-func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
+func authLoginOidcCallbackHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
-
-	state, ok := consumeOIDCState(w, r, nil)
-	if !ok {
-		return
-	}
-
 	provider := types.OIDCProvider(r.PathValue("oidcProvider"))
-	log = log.With(zap.String("provider", string(provider)))
+	log := internalctx.GetLogger(ctx).With(zap.String("provider", string(provider)))
 
-	code, ok := oidcCallbackCode(w, r, log)
-	if !ok {
-		return
-	}
-
-	oidcer := internalctx.GetOIDCer(ctx)
-	identity, err := oidcer.GetIdentityForCode(ctx, provider, code, state.PKCECodeVerifier, state.Nonce, r)
-	if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("OIDC identity extraction failed", zap.Error(err))
-		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-		return
-	}
-	if blocklist.EmailBlocked(identity.Email) {
+	var loggedIn respond.Responder
+	if state, resp, err := consumeOIDCState(r, nil); resp != nil || err != nil {
+		return resp, err
+	} else if code, resp := oidcCallbackCode(r, log); resp != nil {
+		return resp, nil
+	} else if identity, err := internalctx.GetOIDCer(ctx).GetIdentityForCode(
+		ctx, provider, code, state.PKCECodeVerifier, state.Nonce, r,
+	); err != nil {
+		return nil, fmt.Errorf("OIDC identity extraction failed: %w", err)
+	} else if blocklist.EmailBlocked(identity.Email) {
 		log.Info("rejecting OIDC login for a blocked email domain")
-		http.Redirect(w, r, redirectToLoginOIDCEmailBlocked, http.StatusFound)
-		return
-	}
-
-	err = db.RunTx(ctx, func(ctx context.Context) error {
-		user, redirect, err := resolveOIDCUser(ctx, log, identity, state.Flow)
+		return oidcRedirect(redirectToLoginOIDCEmailBlocked), nil
+	} else if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
+		user, failure, err := resolveOIDCUser(ctx, log, identity, state.Flow)
 		if err != nil {
-			return err
+			return nil, fmt.Errorf("failed to resolve OIDC user: %w", err)
+		} else if failure != "" {
+			return oidcRedirect(failure), nil
 		}
-
-		if redirect != "" {
-			http.Redirect(w, r, redirect, http.StatusFound)
-			return nil
-		}
-
-		log = log.With(zap.Any("userId", user.ID))
-
-		if user.EmailVerifiedAt == nil && identity.EmailVerified {
-			if err = db.UpdateUserAccountEmailVerified(ctx, user); err != nil {
-				return err
-			}
-		}
-
-		if tokenString, err := userauth.GenerateLoginToken(ctx, *user); err != nil {
-			return fmt.Errorf("token creation failed: %w", err)
-		} else if err = db.UpdateUserAccountLastLoggedIn(ctx, user.ID); err != nil {
-			return err
-		} else {
-			redirectLoginToAppDomain(w, r, *user, tokenString)
-			return nil
-		}
-	})
-	if errors.Is(err, subscription.ErrGlobalOrganizationLimitReached) {
-		log.Info("rejecting OIDC login, global organization limit reached")
-		http.Redirect(w, r, redirectToLoginOIDCOrgLimit, http.StatusFound)
-	} else if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Warn("user login failed", zap.Error(err))
-		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-	}
-}
-
-func authLoginCustomOidcHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
-
-	login, ok := resolveCustomOIDCConfigurationForHost(w, r)
-	if !ok {
-		return
-	}
-	configuration := login.configuration
-	log = log.With(zap.Any("customOidcConfigurationId", configuration.ID))
-
-	provider, err := oidc.ProviderForConfiguration(ctx, configuration, login.redirectURL)
-	if err != nil {
-		log.Warn("could not build custom OIDC provider", zap.Error(err))
-		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-		return
-	}
-
-	// A custom provider gates account creation through CreateUnknownUsers instead of the flow.
-	state, err := db.CreateOIDCState(ctx, &configuration.ID, types.OIDCFlowLogin)
-	if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("OIDC state creation failed", zap.Error(err))
-		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-		return
-	}
-	http.Redirect(w, r, provider.AuthCodeURL(state.ID.String(), state.PKCECodeVerifier, state.Nonce),
-		http.StatusFound)
-}
-
-func authLoginCustomOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
-
-	login, ok := resolveCustomOIDCConfigurationForHost(w, r)
-	if !ok {
-		return
-	}
-	configuration := login.configuration
-	log = log.With(zap.Any("customOidcConfigurationId", configuration.ID))
-
-	state, ok := consumeOIDCState(w, r, &configuration.ID)
-	if !ok {
-		return
-	}
-	code, ok := oidcCallbackCode(w, r, log)
-	if !ok {
-		return
-	}
-
-	provider, err := oidc.ProviderForConfiguration(ctx, configuration, login.redirectURL)
-	if err != nil {
-		log.Warn("could not build custom OIDC provider", zap.Error(err))
-		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-		return
-	}
-	identity, err := provider.IdentityForCode(ctx, code, state.PKCECodeVerifier, state.Nonce)
-	if err != nil {
-		log.Warn("custom OIDC identity extraction failed", zap.Error(err))
-		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-		return
-	}
-
-	err = db.RunTx(ctx, func(ctx context.Context) error {
-		user, failure, err := resolveCustomOIDCUser(ctx, log, login, identity)
-		if err != nil {
-			return err
-		}
-		if user == nil {
-			log.Info("custom OIDC login refused", zap.String("redirect", failure))
-			http.Redirect(w, r, failure, http.StatusFound)
-			return nil
-		}
-		log = log.With(zap.Any("userId", user.ID))
 
 		if user.EmailVerifiedAt == nil && identity.EmailVerified {
 			if err := db.UpdateUserAccountEmailVerified(ctx, user); err != nil {
-				return err
+				return nil, fmt.Errorf("failed to verify email: %w", err)
 			}
 		}
-		tokenString, err := userauth.GenerateCustomOIDCLoginToken(ctx, *user, configuration)
+
+		if token, err := userauth.GenerateLoginToken(ctx, *user); errors.Is(
+			err, subscription.ErrGlobalOrganizationLimitReached,
+		) {
+			log.Info("rejecting OIDC login, global organization limit reached", zap.Any("userId", user.ID))
+			return oidcRedirect(redirectToLoginOIDCOrgLimit), nil
+		} else if err != nil {
+			return nil, fmt.Errorf("token creation failed: %w", err)
+		} else if err := db.UpdateUserAccountLastLoggedIn(ctx, user.ID); err != nil {
+			return nil, fmt.Errorf("failed to update last login: %w", err)
+		} else {
+			loggedIn = loginRedirect(r, *user, token)
+			return nil, nil
+		}
+	}); resp != nil || err != nil {
+		return resp, err
+	} else {
+		return loggedIn, nil
+	}
+}
+
+func authLoginCustomOidcHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+
+	login, resp, err := resolveCustomOIDCConfigurationForHost(r)
+	if resp != nil || err != nil {
+		return resp, err
+	}
+	configuration := login.configuration
+	log := internalctx.GetLogger(ctx).With(zap.Any("customOidcConfigurationId", configuration.ID))
+
+	// A custom provider gates account creation through CreateUnknownUsers instead of the flow.
+	if provider, err := oidc.ProviderForConfiguration(ctx, configuration, login.redirectURL); err != nil {
+		log.Warn("could not build custom OIDC provider", zap.Error(err))
+		return oidcFailed, nil
+	} else if state, err := db.CreateOIDCState(ctx, &configuration.ID, types.OIDCFlowLogin); err != nil {
+		return nil, fmt.Errorf("OIDC state creation failed: %w", err)
+	} else {
+		return oidcRedirect(provider.AuthCodeURL(state.ID.String(), state.PKCECodeVerifier, state.Nonce)), nil
+	}
+}
+
+func authLoginCustomOidcCallbackHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+
+	login, resp, err := resolveCustomOIDCConfigurationForHost(r)
+	if resp != nil || err != nil {
+		return resp, err
+	}
+	configuration := login.configuration
+	log := internalctx.GetLogger(ctx).With(zap.Any("customOidcConfigurationId", configuration.ID))
+
+	var loggedIn respond.Responder
+	if state, resp, err := consumeOIDCState(r, &configuration.ID); resp != nil || err != nil {
+		return resp, err
+	} else if code, resp := oidcCallbackCode(r, log); resp != nil {
+		return resp, nil
+	} else if provider, err := oidc.ProviderForConfiguration(ctx, configuration, login.redirectURL); err != nil {
+		log.Warn("could not build custom OIDC provider", zap.Error(err))
+		return oidcFailed, nil
+	} else if identity, err := provider.IdentityForCode(ctx, code, state.PKCECodeVerifier, state.Nonce); err != nil {
+		log.Warn("custom OIDC identity extraction failed", zap.Error(err))
+		return oidcFailed, nil
+	} else if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
+		user, failure, err := resolveCustomOIDCUser(ctx, log, login, identity)
 		if err != nil {
-			return fmt.Errorf("token creation failed: %w", err)
+			return nil, fmt.Errorf("failed to resolve custom OIDC user: %w", err)
+		} else if user == nil {
+			log.Info("custom OIDC login refused", zap.String("redirect", failure))
+			return oidcRedirect(failure), nil
 		}
-		if err := db.UpdateUserAccountLastLoggedIn(ctx, user.ID); err != nil {
-			return err
+
+		if user.EmailVerifiedAt == nil && identity.EmailVerified {
+			if err := db.UpdateUserAccountEmailVerified(ctx, user); err != nil {
+				return nil, fmt.Errorf("failed to verify email: %w", err)
+			}
 		}
-		http.Redirect(w, r,
-			fmt.Sprintf("%v/login?jwt=%v", handlerutil.GetRequestSchemeAndHost(r), tokenString),
-			http.StatusFound)
-		return nil
-	})
-	if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Warn("custom OIDC login failed", zap.Error(err))
-		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
+
+		if token, err := userauth.GenerateCustomOIDCLoginToken(ctx, *user, configuration); err != nil {
+			return nil, fmt.Errorf("token creation failed: %w", err)
+		} else if err := db.UpdateUserAccountLastLoggedIn(ctx, user.ID); err != nil {
+			return nil, fmt.Errorf("failed to update last login: %w", err)
+		} else {
+			loggedIn = loginPageRedirect(r, token)
+			return nil, nil
+		}
+	}); resp != nil || err != nil {
+		return resp, err
+	} else {
+		return loggedIn, nil
 	}
 }
 
@@ -290,10 +237,9 @@ func (l customOIDCLogin) sharedCustomerPortal() bool {
 	return l.domain.Type == types.DomainTypeCustomerPortal && l.domain.CustomerOrganizationID == nil
 }
 
-func resolveCustomOIDCConfigurationForHost(
-	w http.ResponseWriter,
-	r *http.Request,
-) (customOIDCLogin, bool) {
+var oidcUnavailable = oidcRedirect(redirectToLoginOIDCUnavailable)
+
+func resolveCustomOIDCConfigurationForHost(r *http.Request) (customOIDCLogin, respond.Responder, error) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 
@@ -302,67 +248,43 @@ func resolveCustomOIDCConfigurationForHost(
 
 	host, err := resolvePortalHost(ctx, validation.NormalizeHostname(r.Host))
 	if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("could not resolve host for custom OIDC login", zap.Error(err))
-		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-		return customOIDCLogin{}, false
-	}
-
-	if host.customDomainRow == nil {
+		return customOIDCLogin{}, nil, fmt.Errorf("could not resolve host for custom OIDC login: %w", err)
+	} else if host.customDomainRow == nil {
 		log.Info("rejecting custom OIDC login on a host without a custom domain", zap.String("host", r.Host))
-		http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
-		return customOIDCLogin{}, false
+		return customOIDCLogin{}, oidcUnavailable, nil
 	}
 
 	configuration, err := db.GetCustomOIDCConfigurationForHost(
 		ctx, host.customDomainRow.ID, organizationSlug, providerSlug)
 	if errors.Is(err, apierrors.ErrNotFound) {
-		http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
-		return customOIDCLogin{}, false
+		return customOIDCLogin{}, oidcUnavailable, nil
 	} else if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("could not get custom OIDC configuration", zap.Error(err))
-		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-		return customOIDCLogin{}, false
-	}
-
-	if !configuration.Enabled {
+		return customOIDCLogin{}, nil, fmt.Errorf("could not get custom OIDC configuration: %w", err)
+	} else if !configuration.Enabled {
 		log.Info("rejecting custom OIDC login for a disabled provider",
 			zap.Any("customOidcConfigurationId", configuration.ID))
-		http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
-		return customOIDCLogin{}, false
+		return customOIDCLogin{}, oidcUnavailable, nil
 	}
 
-	organization, err := db.GetOrganizationByID(ctx, configuration.OrganizationID)
-	if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("could not get organization of custom OIDC configuration", zap.Error(err))
-		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-		return customOIDCLogin{}, false
-	}
-	if !organization.HasFeature(types.FeatureCustomOidcProviders) {
+	if organization, err := db.GetOrganizationByID(ctx, configuration.OrganizationID); err != nil {
+		return customOIDCLogin{}, nil, fmt.Errorf("could not get organization of custom OIDC configuration: %w", err)
+	} else if !organization.HasFeature(types.FeatureCustomOidcProviders) {
 		log.Info("rejecting custom OIDC login without the feature",
 			zap.Any("organizationId", organization.ID))
-		http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
-		return customOIDCLogin{}, false
+		return customOIDCLogin{}, oidcUnavailable, nil
 	}
 
 	// A customer's provider stops working the moment the vendor revokes the feature, so a login is
 	// refused for an identity that outlives the grant, the same way it is for one that outlives a
 	// membership.
 	if customerOrgID := host.customDomainRow.CustomerOrganizationID; customerOrgID != nil {
-		customerOrganization, err := db.GetCustomerOrganizationByID(ctx, *customerOrgID)
-		if err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("could not get customer organization of custom OIDC configuration", zap.Error(err))
-			http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-			return customOIDCLogin{}, false
-		}
-		if !customerOrganization.HasFeature(types.CustomerOrganizationFeatureOidcProviders) {
+		if customerOrganization, err := db.GetCustomerOrganizationByID(ctx, *customerOrgID); err != nil {
+			return customOIDCLogin{}, nil,
+				fmt.Errorf("could not get customer organization of custom OIDC configuration: %w", err)
+		} else if !customerOrganization.HasFeature(types.CustomerOrganizationFeatureOidcProviders) {
 			log.Info("rejecting custom OIDC login without the customer feature",
 				zap.Any("customerOrganizationId", *customerOrgID))
-			http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
-			return customOIDCLogin{}, false
+			return customOIDCLogin{}, oidcUnavailable, nil
 		}
 	}
 
@@ -370,7 +292,7 @@ func resolveCustomOIDCConfigurationForHost(
 		configuration: *configuration,
 		domain:        *host.customDomainRow,
 		redirectURL:   oidc.CustomRedirectURL(r, organizationSlug, configuration.Slug),
-	}, true
+	}, nil, nil
 }
 
 func resolveCustomOIDCUser(
@@ -679,43 +601,29 @@ func registerOIDCUser(ctx context.Context, log *zap.Logger, email string) (*type
 	return &userAccount, "", nil
 }
 
-func oidcCallbackCode(w http.ResponseWriter, r *http.Request, log *zap.Logger) (string, bool) {
+func oidcCallbackCode(r *http.Request, log *zap.Logger) (string, respond.Responder) {
 	if oidcError := r.URL.Query().Get("error"); oidcError != "" {
 		log.Warn("OIDC provider returned error",
 			zap.String("error", oidcError),
 			zap.String("error_description", r.URL.Query().Get("error_description")))
-		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-		return "", false
-	}
-	code := r.URL.Query().Get("code")
-	if code == "" {
+		return "", oidcFailed
+	} else if code := r.URL.Query().Get("code"); code == "" {
 		log.Warn("OIDC callback missing code parameter")
-		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-		return "", false
+		return "", oidcFailed
+	} else {
+		return code, nil
 	}
-	return code, true
 }
 
-func consumeOIDCState(
-	w http.ResponseWriter,
-	r *http.Request,
-	customOIDCConfigurationID *uuid.UUID,
-) (db.OIDCState, bool) {
-	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
-
-	state, err := verifyOIDCState(r, customOIDCConfigurationID)
-	if err != nil {
-		log.Warn("could not verify OIDC state", zap.Error(err))
-		if errors.Is(err, apierrors.ErrBadRequest) {
-			http.Redirect(w, r, redirectToLoginOIDCExpired, http.StatusFound)
-			return db.OIDCState{}, false
-		}
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-		return db.OIDCState{}, false
+func consumeOIDCState(r *http.Request, customOIDCConfigurationID *uuid.UUID) (db.OIDCState, respond.Responder, error) {
+	if state, err := verifyOIDCState(r, customOIDCConfigurationID); errors.Is(err, apierrors.ErrBadRequest) {
+		internalctx.GetLogger(r.Context()).Warn("could not verify OIDC state", zap.Error(err))
+		return db.OIDCState{}, oidcRedirect(redirectToLoginOIDCExpired), nil
+	} else if err != nil {
+		return db.OIDCState{}, nil, fmt.Errorf("could not verify OIDC state: %w", err)
+	} else {
+		return state, nil, nil
 	}
-	return state, true
 }
 
 func verifyOIDCState(r *http.Request, customOIDCConfigurationID *uuid.UUID) (db.OIDCState, error) {
