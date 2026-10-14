@@ -102,7 +102,7 @@ ACME_DATABASE_NAME=acme
 ACME_LOG_LEVEL=info
 ```
 
-Pass these values as secrets:
+Store these values in AWS Secrets Manager and pass them through the `secrets` of the task definition:
 
 - `ACME_DATABASE_PASSWORD`: the password of your PostgreSQL user
 - `ACME_LICENSE_TOKEN`: your license token from the Licenses page
@@ -154,7 +154,7 @@ aws secretsmanager create-secret \
 
 Note the `ARN` in the output: the task definition references it.
 
-### 3. Store the license token and other secrets
+### 3. Store the license token and other secrets in AWS Secrets Manager
 
 Copy the license token from the **Licenses** page of the [Customer Portal](/docs/platform/customer-portal/licenses/) and store it in its own secret, together with any other secret your vendor lists:
 
