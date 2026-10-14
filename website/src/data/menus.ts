@@ -44,7 +44,7 @@ export const docsMenu: MenuItem[] = [
   {
     title: 'Guides',
     description:
-      'Step-by-step guides for deploying your application onto platforms like Amazon ECS',
+      'Step-by-step guides for Amazon ECS, blue-green deployments and more',
     value: 'map',
     href: '/docs/guides/',
   },
