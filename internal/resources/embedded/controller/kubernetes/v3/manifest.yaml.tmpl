@@ -15,6 +15,7 @@ data:
   DISTR_DEPLOYMENT_TARGET_LOGS_ENDPOINT: "{{ .deploymentTargetLogsEndpoint }}"
   DISTR_CONTROLLER_INTERVAL: "{{ .controllerInterval }}"
   DISTR_CONTROLLER_VERSION_ID: "{{ .controllerVersionId }}"
+  DISTR_CONTROLLER_NAME: "{{ .controllerName }}"
   {{- if .registryEnabled }}
   DISTR_REGISTRY_HOST: "{{ .registryHost }}"
   DISTR_REGISTRY_PLAIN_HTTP: "{{ .registryPlainHttp }}"
