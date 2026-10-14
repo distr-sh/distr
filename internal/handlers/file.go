@@ -219,11 +219,7 @@ func patchImage(
 		return resp, nil
 	} else if body.ImageID == uuid.Nil {
 		return respond.BadRequest("imageId can not be empty"), nil
-	} else if result, err := update(r.Context(), body); errors.Is(err, distrerr.ErrNotFound) {
-		return respond.NoContent(), nil
-	} else if errors.Is(err, distrerr.ErrConflict) {
-		return respond.BadRequest(err.Error()), nil
-	} else if err != nil {
+	} else if result, err := update(r.Context(), body); err != nil {
 		return nil, fmt.Errorf("error patching image id: %w", err)
 	} else {
 		return respond.JSON(result), nil
