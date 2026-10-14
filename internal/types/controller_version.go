@@ -8,8 +8,11 @@ import (
 	"github.com/google/uuid"
 )
 
+// A released revision must never change. During a rolling deployment, Distr already points targets at the new
+// controller version while a replica of the previous release still serves manifests. Only a new revision, which
+// that replica does not know, keeps it from rendering its own template for the new controller.
 const (
-	CurrentManifestFileRevision = "v3"
+	CurrentManifestFileRevision = "v4"
 	CurrentComposeFileRevision  = "v2"
 )
 

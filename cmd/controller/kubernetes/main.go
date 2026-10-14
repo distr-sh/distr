@@ -214,7 +214,7 @@ func main() {
 				if errors.Is(err, driver.ErrReleaseNotFound) {
 					logger.Info("current helm release does not exist")
 				} else if !requiresInstallOrUpgrade(deployment.RevisionID, currentDeployment) {
-					logger.Warn("helm release differs from the one deployed by the agent", zap.Error(err))
+					logger.Warn("helm release differs from the one deployed by the controller", zap.Error(err))
 				} else {
 					logger.Warn("refusing to install or update", zap.Error(err))
 					pushErrorStatus(ctx, deployment, err)
