@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/google/uuid"
@@ -47,7 +47,7 @@ func deleteOIDCIdentityHandler(r *http.Request) (respond.Responder, error) {
 		}
 	}
 
-	if err := db.DeleteUserAccountOIDCIdentity(ctx, user.ID, identityID); errors.Is(err, apierrors.ErrNotFound) {
+	if err := db.DeleteUserAccountOIDCIdentity(ctx, user.ID, identityID); errors.Is(err, distrerr.ErrNotFound) {
 		return oidcIdentityNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("error deleting OIDC identity: %w", err)

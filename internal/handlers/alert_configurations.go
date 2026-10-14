@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
@@ -108,7 +108,7 @@ func updateAlertConfigurationHandler(r *http.Request) (respond.Responder, error)
 		config.CustomerOrganizationID = customerOrgID
 
 		if err := db.UpdateAlertConfiguration(ctx, &config); err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
+			if errors.Is(err, distrerr.ErrNotFound) {
 				return alertConfigurationNotFound, nil
 			} else {
 				return nil, fmt.Errorf("failed to update alert configuration: %w", err)
@@ -129,7 +129,7 @@ func deleteAlertConfigurationHandler(r *http.Request) (respond.Responder, error)
 	} else if customerOrgID, resp, err := customerScopeFromQuery(r); resp != nil || err != nil {
 		return resp, err
 	} else if err := db.DeleteAlertConfiguration(ctx, id, *auth.CurrentOrgID(), customerOrgID); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return alertConfigurationNotFound, nil
 		} else {
 			return nil, fmt.Errorf("failed to delete alert configuration: %w", err)

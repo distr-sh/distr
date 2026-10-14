@@ -10,10 +10,10 @@ import (
 	"strings"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
@@ -71,7 +71,7 @@ func getPublicFileHandler(r *http.Request) (respond.Responder, error) {
 	if fileID, err := uuid.Parse(r.PathValue("fileId")); err != nil {
 		return fileNotFound, nil
 	} else if file, err := db.GetFileWithID(ctx, fileID); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return fileNotFound, nil
 		} else {
 			return nil, fmt.Errorf("error getting public file: %w", err)
@@ -130,9 +130,9 @@ func deleteFileHandler(r *http.Request) (respond.Responder, error) {
 	file := internalctx.GetFile(ctx)
 
 	if err := db.DeleteFileWithID(ctx, file.ID); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return respond.NoContent(), nil
-		} else if errors.Is(err, apierrors.ErrConflict) {
+		} else if errors.Is(err, distrerr.ErrConflict) {
 			return respond.BadRequest("file is still in use"), nil
 		} else {
 			return nil, fmt.Errorf("error deleting file: %w", err)
@@ -200,7 +200,7 @@ func fileMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
 
 	if fileID, err := uuid.Parse(r.PathValue("fileId")); err != nil {
 		return nil, fileNotFound, nil
-	} else if file, err := db.GetFileWithID(ctx, fileID); errors.Is(err, apierrors.ErrNotFound) {
+	} else if file, err := db.GetFileWithID(ctx, fileID); errors.Is(err, distrerr.ErrNotFound) {
 		return nil, fileNotFound, nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get file: %w", err)
@@ -219,9 +219,9 @@ func patchImage(
 		return resp, nil
 	} else if body.ImageID == uuid.Nil {
 		return respond.BadRequest("imageId can not be empty"), nil
-	} else if result, err := update(r.Context(), body); errors.Is(err, apierrors.ErrNotFound) {
+	} else if result, err := update(r.Context(), body); errors.Is(err, distrerr.ErrNotFound) {
 		return respond.NoContent(), nil
-	} else if errors.Is(err, apierrors.ErrConflict) {
+	} else if errors.Is(err, distrerr.ErrConflict) {
 		return respond.BadRequest(err.Error()), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("error patching image id: %w", err)

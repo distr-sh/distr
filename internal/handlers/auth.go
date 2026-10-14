@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authjwt"
 	"github.com/distr-sh/distr/internal/blocklist"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/custommail"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mailsending"
 	"github.com/distr-sh/distr/internal/mailtemplates"
@@ -119,7 +119,7 @@ func authVerifyConfirmHandler(r *http.Request) (respond.Responder, error) {
 	} else if blocklist.EmailBlocked(authn.CurrentUserEmail()) {
 		return respond.Forbidden(blocklist.EmailBlockedMessage), nil
 	} else if err := userauth.VerifyUserEmail(ctx, authn.CurrentUser(), authn.CurrentUserEmail()); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return respond.BadRequest("could not update user"), nil
 		} else {
 			return nil, fmt.Errorf("could not update user: %w", err)
@@ -193,9 +193,9 @@ func setPasswordAndLogin(
 			// A 401 would make the frontend discard the invite or reset token and send the user back to the
 			// "link expired" page, so a wrong code must not be answered with one.
 			return respond.BadRequest("invalid MFA code or recovery code"), nil
-		} else if errors.Is(err, apierrors.ErrNotFound) {
+		} else if errors.Is(err, distrerr.ErrNotFound) {
 			return respond.BadRequest("could not update user"), nil
-		} else if errors.Is(err, apierrors.ErrConflict) {
+		} else if errors.Is(err, distrerr.ErrConflict) {
 			return respond.BadRequest("this invitation has already been accepted, please log in instead"), nil
 		} else if errors.Is(err, subscription.ErrGlobalOrganizationLimitReached) {
 			log.Warn("could not set password, global organization limit reached")
@@ -235,7 +235,7 @@ func authSwitchContextHandler(r *http.Request) (respond.Responder, error) {
 		// Super admins can switch to any organization
 		if user, err := db.GetUserAccountByID(ctx, auth.CurrentUserID()); err != nil {
 			return nil, fmt.Errorf("failed to get user account: %w", err)
-		} else if org, err := db.GetOrganizationByID(ctx, request.OrganizationID); errors.Is(err, apierrors.ErrNotFound) {
+		} else if org, err := db.GetOrganizationByID(ctx, request.OrganizationID); errors.Is(err, distrerr.ErrNotFound) {
 			return respond.NotFound("organization not found"), nil
 		} else if err != nil {
 			return nil, fmt.Errorf("failed to get organization: %w", err)
@@ -253,7 +253,7 @@ func authSwitchContextHandler(r *http.Request) (respond.Responder, error) {
 	} else {
 		// Regular users: validate membership
 		if user, org, err := db.GetUserAccountAndOrg(
-			ctx, auth.CurrentUserID(), request.OrganizationID); errors.Is(err, apierrors.ErrNotFound) {
+			ctx, auth.CurrentUserID(), request.OrganizationID); errors.Is(err, distrerr.ErrNotFound) {
 			return respond.BadRequest("bad request"), nil
 		} else if err != nil {
 			return nil, fmt.Errorf("context switch failed: %w", err)
@@ -289,7 +289,7 @@ func authLoginHandler(r *http.Request) (respond.Responder, error) {
 
 	var response api.AuthLoginResponse
 	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
-		if user, err := db.GetUserAccountByEmail(ctx, request.Email); errors.Is(err, apierrors.ErrNotFound) {
+		if user, err := db.GetUserAccountByEmail(ctx, request.Email); errors.Is(err, distrerr.ErrNotFound) {
 			return invalidCredentials, nil
 		} else if err != nil {
 			return nil, fmt.Errorf("failed to get user account: %w", err)
@@ -365,7 +365,7 @@ func authRegisterHandler(r *http.Request) (respond.Responder, error) {
 		} else if err := security.HashPassword(&userAccount); err != nil {
 			return nil, fmt.Errorf("failed to hash password: %w", err)
 		} else if err := db.CreateUserAccountWithOrganization(ctx, &userAccount, &org); errors.Is(
-			err, apierrors.ErrAlreadyExists,
+			err, distrerr.ErrAlreadyExists,
 		) {
 			return respond.BadRequest("an account with this email address already exists, please log in instead"), nil
 		} else if err != nil {
@@ -414,7 +414,7 @@ func authResetPasswordHandler(r *http.Request) (respond.Responder, error) {
 	} else if blocklist.EmailBlocked(request.Email) {
 		return respond.Forbidden(blocklist.EmailBlockedMessage), nil
 	} else if user, err := db.GetUserAccountByEmail(ctx, request.Email); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			log.Info("password reset for non-existing user", zap.String("email", request.Email))
 			return respond.NoContent(), nil
 		} else {

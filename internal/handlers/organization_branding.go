@@ -7,9 +7,9 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
@@ -37,7 +37,7 @@ func getOrganizationBranding(r *http.Request) (respond.Responder, error) {
 
 	if organizationBranding, err := db.GetOrganizationBranding(
 		r.Context(), *auth.CurrentOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return respond.NotFound("organization branding not found"), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get organizationBranding: %w", err)
@@ -64,7 +64,7 @@ func upsertOrganizationBranding(r *http.Request) (respond.Responder, error) {
 			orgID,
 			"logo",
 		); err != nil {
-			if errors.Is(err, apierrors.ErrBadRequest) {
+			if errors.Is(err, distrerr.ErrBadRequest) {
 				return respond.BadRequest(err.Error()), nil
 			} else {
 				return nil, fmt.Errorf("could not verify logo image: %w", err)
@@ -75,7 +75,7 @@ func upsertOrganizationBranding(r *http.Request) (respond.Responder, error) {
 			orgID,
 			"favicon",
 		); err != nil {
-			if errors.Is(err, apierrors.ErrBadRequest) {
+			if errors.Is(err, distrerr.ErrBadRequest) {
 				return respond.BadRequest(err.Error()), nil
 			} else {
 				return nil, fmt.Errorf("could not verify favicon image: %w", err)
@@ -103,16 +103,16 @@ func verifyPublicImageBelongsToOrganization(
 	}
 
 	fileMeta, err := db.GetFileMetadataWithID(ctx, *imageID)
-	if errors.Is(err, apierrors.ErrNotFound) {
-		return apierrors.NewBadRequest(fmt.Sprintf("%s file does not exist", imageType))
+	if errors.Is(err, distrerr.ErrNotFound) {
+		return distrerr.NewBadRequest(fmt.Sprintf("%s file does not exist", imageType))
 	} else if err != nil {
 		return err
 	} else if fileMeta.OrganizationID == nil || *fileMeta.OrganizationID != organizationID {
-		return apierrors.NewBadRequest(fmt.Sprintf("%s file does not exist", imageType))
+		return distrerr.NewBadRequest(fmt.Sprintf("%s file does not exist", imageType))
 	} else if !fileMeta.Public {
-		return apierrors.NewBadRequest(fmt.Sprintf("%s file must be public", imageType))
+		return distrerr.NewBadRequest(fmt.Sprintf("%s file must be public", imageType))
 	} else if !isServableImageContentType(fileMeta.ContentType) {
-		return apierrors.NewBadRequest(fmt.Sprintf("%s file must be an image", imageType))
+		return distrerr.NewBadRequest(fmt.Sprintf("%s file must be an image", imageType))
 	}
 
 	return nil

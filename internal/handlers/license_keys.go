@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/licensekey"
 	"github.com/distr-sh/distr/internal/middleware"
@@ -113,7 +113,7 @@ func createLicenseKey(r *http.Request) (respond.Responder, error) {
 		if body.LicenseTemplateID != nil {
 			if _, err := db.GetLicenseTemplateByID(
 				ctx, *body.LicenseTemplateID, *authCtx.CurrentOrgID(),
-			); errors.Is(err, apierrors.ErrNotFound) {
+			); errors.Is(err, distrerr.ErrNotFound) {
 				return respond.BadRequest("license template not found"), nil
 			} else if err != nil {
 				return nil, fmt.Errorf("could not get license template: %w", err)
@@ -138,7 +138,7 @@ func createLicenseKey(r *http.Request) (respond.Responder, error) {
 			ctx, body.CustomerOrganizationID, notAssignedToPartner,
 		); resp != nil || err != nil {
 			return resp, err
-		} else if err := db.CreateLicenseKey(ctx, &licenseKey); errors.Is(err, apierrors.ErrConflict) {
+		} else if err := db.CreateLicenseKey(ctx, &licenseKey); errors.Is(err, distrerr.ErrConflict) {
 			return respond.BadRequest("A license key with this name already exists"), nil
 		} else if err != nil {
 			return nil, fmt.Errorf("could not create license key: %w", err)
@@ -193,7 +193,7 @@ func updateLicenseKey(r *http.Request) (respond.Responder, error) {
 	if body.LicenseTemplateID != nil {
 		if _, err := db.GetLicenseTemplateByID(
 			ctx, *body.LicenseTemplateID, *authCtx.CurrentOrgID(),
-		); errors.Is(err, apierrors.ErrNotFound) {
+		); errors.Is(err, distrerr.ErrNotFound) {
 			return respond.BadRequest("license template not found"), nil
 		} else if err != nil {
 			return nil, fmt.Errorf("could not get license template: %w", err)
@@ -376,7 +376,7 @@ func licenseKeyMiddleware(r *http.Request) (*http.Request, respond.Responder, er
 	authCtx := auth.Authentication.Require(ctx)
 	if licenseKeyID, err := uuid.Parse(r.PathValue("licenseKeyId")); err != nil {
 		return nil, respond.BadRequest("licenseKeyId is not a valid UUID"), nil
-	} else if licenseKey, err := db.GetLicenseKeyByID(ctx, licenseKeyID); errors.Is(err, apierrors.ErrNotFound) {
+	} else if licenseKey, err := db.GetLicenseKeyByID(ctx, licenseKeyID); errors.Is(err, distrerr.ErrNotFound) {
 		return nil, licenseKeyNotFound, nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get license key: %w", err)

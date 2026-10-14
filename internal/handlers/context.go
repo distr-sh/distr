@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
@@ -110,7 +110,7 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 		// The registry host is best-effort: without branding it still resolves custom domains
 		// and falls back to the instance default.
 		branding, err := db.GetOrganizationBranding(ctx, orgID)
-		if err != nil && !errors.Is(err, apierrors.ErrNotFound) {
+		if err != nil && !errors.Is(err, distrerr.ErrNotFound) {
 			log.Warn("failed to get organization branding", zap.Error(err))
 		}
 		registryHost := customdomains.RegistryDomainOrDefault(ctx, orgID, branding)

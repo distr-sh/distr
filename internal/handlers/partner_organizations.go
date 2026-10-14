@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
@@ -101,7 +101,7 @@ func updatePartnerOrganizationHandler(r *http.Request) (respond.Responder, error
 			OrganizationID: *auth.CurrentOrgID(),
 			Name:           request.Name,
 		}
-		if err := db.UpdatePartnerOrganization(ctx, &partnerOrg); errors.Is(err, apierrors.ErrNotFound) {
+		if err := db.UpdatePartnerOrganization(ctx, &partnerOrg); errors.Is(err, distrerr.ErrNotFound) {
 			return partnerOrganizationNotFound, nil
 		} else if err != nil {
 			return nil, fmt.Errorf("failed to update partner org: %w", err)
@@ -120,9 +120,9 @@ func deletePartnerOrganizationHandler(r *http.Request) (respond.Responder, error
 		return partnerOrganizationNotFound, nil
 	} else if err := db.DeletePartnerOrganizationWithID(
 		ctx, id, *auth.CurrentOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return partnerOrganizationNotFound, nil
-	} else if errors.Is(err, apierrors.ErrConflict) {
+	} else if errors.Is(err, distrerr.ErrConflict) {
 		return respond.Conflict("partner organization is not empty"), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to delete partner org: %w", err)

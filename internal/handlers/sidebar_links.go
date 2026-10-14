@@ -7,9 +7,9 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
@@ -149,7 +149,7 @@ func updateSidebarLinkHandler(r *http.Request) (respond.Responder, error) {
 	} else if body.Link == "" {
 		return respond.BadRequest("link is required"), nil
 	} else if link, err := db.UpdateSidebarLink(ctx, linkID, customerOrgID, body.Name, body.Link); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return sidebarLinkNotFound, nil
 		} else {
 			return nil, fmt.Errorf("failed to update sidebar link: %w", err)
@@ -174,7 +174,7 @@ func deleteSidebarLinkHandler(r *http.Request) (respond.Responder, error) {
 	} else if !ok {
 		return sidebarLinkCustomerNotFound, nil
 	} else if err := db.DeleteSidebarLink(ctx, linkID, customerOrgID); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return sidebarLinkNotFound, nil
 		} else {
 			return nil, fmt.Errorf("failed to delete sidebar link: %w", err)

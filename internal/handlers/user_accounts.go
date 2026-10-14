@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authjwt"
 	"github.com/distr-sh/distr/internal/blocklist"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mailsending"
 	"github.com/distr-sh/distr/internal/mapping"
@@ -152,7 +152,7 @@ func createUserAccountHandler(r *http.Request) (respond.Responder, error) {
 		}
 
 		created := false
-		if existingUA, err := db.GetUserAccountByEmail(ctx, body.Email); errors.Is(err, apierrors.ErrNotFound) {
+		if existingUA, err := db.GetUserAccountByEmail(ctx, body.Email); errors.Is(err, distrerr.ErrNotFound) {
 			created = true
 			if err := db.CreateUserAccount(ctx, &userAccount); err != nil {
 				return nil, fmt.Errorf("failed to create user account: %w", err)
@@ -170,7 +170,7 @@ func createUserAccountHandler(r *http.Request) (respond.Responder, error) {
 			body.UserRole,
 			body.CustomerOrganizationID,
 			body.PartnerOrganizationID,
-		); errors.Is(err, apierrors.ErrAlreadyExists) {
+		); errors.Is(err, distrerr.ErrAlreadyExists) {
 			return respond.BadRequest("user is already part of this organization"), nil
 		} else if err != nil {
 			return nil, fmt.Errorf("failed to create user org assignment: %w", err)
@@ -265,7 +265,7 @@ func getVerifiedCustomerOrganization(
 	auth := auth.Authentication.Require(ctx)
 
 	co, err := db.GetCustomerOrganizationByID(ctx, id)
-	if errors.Is(err, apierrors.ErrNotFound) {
+	if errors.Is(err, distrerr.ErrNotFound) {
 		return nil, customerDoesNotExist, nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get customer: %w", err)
@@ -310,7 +310,7 @@ func patchUserAccountHandler(r *http.Request) (respond.Responder, error) {
 	if body, resp := decodeJSON[api.PatchUserAccountRequest](r); resp != nil {
 		return resp, nil
 	} else if err := checkUserAccountWritability(ctx, *userAccount); err != nil {
-		if errors.Is(err, apierrors.ErrForbidden) {
+		if errors.Is(err, distrerr.ErrForbidden) {
 			return respond.Forbidden(err.Error()), nil
 		} else {
 			return nil, fmt.Errorf("failed to check user account writability: %w", err)
@@ -333,7 +333,7 @@ func patchUserAccountHandler(r *http.Request) (respond.Responder, error) {
 				*body.UserRole,
 				userAccount.CustomerOrganizationID,
 				userAccount.PartnerOrganizationID,
-			); errors.Is(err, apierrors.ErrNotFound) {
+			); errors.Is(err, distrerr.ErrNotFound) {
 				return userAccountNotFound, nil
 			} else if err != nil {
 				return nil, fmt.Errorf("user update failed: %w", err)
@@ -367,7 +367,7 @@ func resendUserInviteHandler(r *http.Request) (respond.Responder, error) {
 		return respond.BadRequest(http.StatusText(http.StatusBadRequest)), nil
 	} else if userAccount, err := db.GetUserAccountWithRole(
 		ctx, userAccountID, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return userAccountNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get user account: %w", err)
@@ -398,7 +398,7 @@ func deleteUserAccountHandler(r *http.Request) (respond.Responder, error) {
 	auth := auth.Authentication.Require(ctx)
 
 	if err := checkUserAccountWritability(ctx, *userAccount); err != nil {
-		if errors.Is(err, apierrors.ErrForbidden) {
+		if errors.Is(err, distrerr.ErrForbidden) {
 			return respond.Forbidden(err.Error()), nil
 		} else {
 			return nil, fmt.Errorf("failed to check user account writability: %w", err)
@@ -407,7 +407,7 @@ func deleteUserAccountHandler(r *http.Request) (respond.Responder, error) {
 		return respond.Forbidden("UserAccount deleting themselves is not allowed"), nil
 	} else if err := db.RunTx(ctx, func(ctx context.Context) error {
 		if err := db.DeleteUserAccountFromOrganization(ctx, userAccount.ID, *auth.CurrentOrgID()); err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
+			if errors.Is(err, distrerr.ErrNotFound) {
 				return nil
 			} else {
 				return err
@@ -451,7 +451,7 @@ func userAccountMiddleware(r *http.Request) (*http.Request, respond.Responder, e
 		*auth.CurrentOrgID(),
 		auth.CurrentCustomerOrgID(),
 		auth.CurrentPartnerOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return nil, userAccountNotFound, nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get user: %w", err)
@@ -466,7 +466,7 @@ func checkUserAccountWritability(ctx context.Context, userAccount types.UserAcco
 	if *auth.CurrentUserRole() != types.UserRoleAdmin && (auth.CurrentCustomerOrgID() != nil ||
 		(auth.CurrentPartnerOrgID() != nil && userAccount.CustomerOrganizationID == nil) ||
 		(userAccount.CustomerOrganizationID == nil && userAccount.PartnerOrganizationID == nil)) {
-		return apierrors.NewForbidden("admin role needed to patch user in the given scope")
+		return distrerr.NewForbidden("admin role needed to patch user in the given scope")
 	}
 
 	return nil

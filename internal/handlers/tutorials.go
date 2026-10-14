@@ -7,11 +7,11 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/deploymentvalues"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/resources"
 	"github.com/distr-sh/distr/internal/respond"
@@ -48,7 +48,7 @@ func getTutorialProgress(r *http.Request) (respond.Responder, error) {
 	auth := auth.Authentication.Require(ctx)
 	tutorial := r.PathValue("tutorial")
 	if progress, err := db.GetTutorialProgress(ctx, auth.CurrentUserID(), *auth.CurrentOrgID(),
-		types.Tutorial(tutorial)); errors.Is(err, apierrors.ErrNotFound) {
+		types.Tutorial(tutorial)); errors.Is(err, distrerr.ErrNotFound) {
 		return respond.NotFound("tutorial progress not found"), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("could not get tutorial progress: %w", err)

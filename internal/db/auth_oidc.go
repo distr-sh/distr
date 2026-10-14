@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -72,7 +72,7 @@ func DeleteOIDCState(ctx context.Context, id uuid.UUID) (OIDCState, error) {
 	}
 	state, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[OIDCState])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return OIDCState{}, apierrors.ErrNotFound
+		return OIDCState{}, distrerr.ErrNotFound
 	} else if err != nil {
 		return OIDCState{}, fmt.Errorf("could not delete OIDCState: %w", err)
 	}

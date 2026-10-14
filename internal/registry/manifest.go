@@ -26,9 +26,9 @@ import (
 	"strings"
 
 	"github.com/containers/image/v5/manifest"
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/registry/audit"
 	"github.com/distr-sh/distr/internal/registry/authz"
 	"github.com/distr-sh/distr/internal/registry/blob"
@@ -450,7 +450,7 @@ func (handler *manifests) handlePut(resp http.ResponseWriter, req *http.Request,
 			handler.manifestHandler.Put(ctx, repo, target, mf, blobs),
 		)
 	})
-	if errors.Is(err, apierrors.ErrQuotaExceeded) {
+	if errors.Is(err, distrerr.ErrQuotaExceeded) {
 		return regErrDeniedQuotaExceeded
 	} else if errors.Is(err, imanifest.ErrTagAlreadyExists) {
 		return regErrTagAlreadyExists
@@ -474,10 +474,10 @@ func (handler *manifests) handleDelete(resp http.ResponseWriter, req *http.Reque
 		if errors.Is(err, imanifest.ErrManifestUnknown) {
 			return regErrManifestUnknown
 		}
-		if errors.Is(err, apierrors.ErrConflict) {
+		if errors.Is(err, distrerr.ErrConflict) {
 			return regErrConflict
 		}
-		if errors.Is(err, apierrors.ErrBadRequest) {
+		if errors.Is(err, distrerr.ErrBadRequest) {
 			return regErrBadRequest
 		}
 		return regErrInternal(err)

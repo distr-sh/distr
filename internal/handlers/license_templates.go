@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/licensetemplate"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
@@ -86,7 +86,7 @@ func createLicenseTemplate(r *http.Request) (respond.Responder, error) {
 
 		if err := validatePayloadTemplate(t); err != nil {
 			return respond.BadRequest(err.Error()), nil
-		} else if err := db.CreateLicenseTemplate(ctx, &t); errors.Is(err, apierrors.ErrConflict) {
+		} else if err := db.CreateLicenseTemplate(ctx, &t); errors.Is(err, distrerr.ErrConflict) {
 			return respond.BadRequest("a license template with this name already exists"), nil
 		} else if err != nil {
 			return nil, fmt.Errorf("failed to create license template: %w", err)
@@ -123,9 +123,9 @@ func updateLicenseTemplate(r *http.Request) (respond.Responder, error) {
 
 		if err := validatePayloadTemplate(t); err != nil {
 			return respond.BadRequest(err.Error()), nil
-		} else if err := db.UpdateLicenseTemplate(ctx, &t); errors.Is(err, apierrors.ErrNotFound) {
+		} else if err := db.UpdateLicenseTemplate(ctx, &t); errors.Is(err, distrerr.ErrNotFound) {
 			return licenseTemplateNotFound, nil
-		} else if errors.Is(err, apierrors.ErrConflict) {
+		} else if errors.Is(err, distrerr.ErrConflict) {
 			return respond.BadRequest("a license template with this name already exists"), nil
 		} else if err != nil {
 			return nil, fmt.Errorf("failed to update license template: %w", err)
@@ -143,7 +143,7 @@ func deleteLicenseTemplate(r *http.Request) (respond.Responder, error) {
 		return respond.BadRequest("licenseTemplateId is not a valid UUID"), nil
 	} else if err := db.DeleteLicenseTemplateByID(
 		ctx, templateID, *authCtx.CurrentOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return licenseTemplateNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to delete license template: %w", err)
@@ -155,7 +155,7 @@ func deleteLicenseTemplate(r *http.Request) (respond.Responder, error) {
 func validatePayloadTemplate(template types.LicenseTemplate) error {
 	_, err := licensetemplate.RenderPayload(template, stripe.Subscription{})
 	if err != nil {
-		return fmt.Errorf("%w: invalid payload template: %w", apierrors.ErrBadRequest, err)
+		return fmt.Errorf("%w: invalid payload template: %w", distrerr.ErrBadRequest, err)
 	}
 
 	return nil

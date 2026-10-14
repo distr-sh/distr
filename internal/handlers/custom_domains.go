@@ -8,11 +8,11 @@ import (
 	"strings"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
@@ -100,7 +100,7 @@ func customDomainOfCaller(r *http.Request) (*types.CustomDomain, respond.Respond
 		return nil, customDomainNotFound, nil
 	} else if domain, err := db.GetCustomDomainOfOrganization(
 		ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return nil, customDomainNotFound, nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get custom domain: %w", err)
@@ -140,7 +140,7 @@ func createCustomDomainsHandler(r *http.Request) (respond.Responder, error) {
 			}
 		}
 
-		if created, err := db.CreateCustomDomains(ctx, customDomains); errors.Is(err, apierrors.ErrConflict) {
+		if created, err := db.CreateCustomDomains(ctx, customDomains); errors.Is(err, distrerr.ErrConflict) {
 			return respond.Conflict("this domain is already in use"), nil
 		} else if err != nil {
 			return nil, fmt.Errorf("failed to create custom domains: %w", err)
@@ -172,9 +172,9 @@ func deleteCustomDomainHandler(r *http.Request) (respond.Responder, error) {
 		return customDomainNotFound, nil
 	} else if err := db.DeleteCustomDomain(
 		ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return customDomainNotFound, nil
-	} else if errors.Is(err, apierrors.ErrConflict) {
+	} else if errors.Is(err, distrerr.ErrConflict) {
 		return respond.Conflict(
 			"this domain still has an identity provider configured, please delete it on the " +
 				"Custom Domains & Identity Provider tab first"), nil

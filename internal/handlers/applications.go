@@ -11,10 +11,10 @@ import (
 	"strings"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/notification"
@@ -362,7 +362,7 @@ func getApplication(r *http.Request) (respond.Responder, error) {
 			return nil, fmt.Errorf("failed to get application entitlements: %w", err)
 		} else if len(entitlements) > 0 {
 			application, err := db.GetApplicationWithEntitlementOwnerID(ctx, *auth.CurrentCustomerOrgID(), applicationID)
-			if errors.Is(err, apierrors.ErrNotFound) {
+			if errors.Is(err, distrerr.ErrNotFound) {
 				return applicationNotFound, nil
 			} else if err != nil {
 				return nil, fmt.Errorf("failed to get application: %w", err)
@@ -400,7 +400,7 @@ func getAccessibleApplicationVersion(r *http.Request) (*types.ApplicationVersion
 
 		if version, err := db.GetApplicationVersionOfApplication(
 			ctx, applicationVersionID, applicationID, *auth.CurrentOrgID(), entitledCustomerOrgID,
-		); errors.Is(err, apierrors.ErrNotFound) {
+		); errors.Is(err, distrerr.ErrNotFound) {
 			return nil, applicationVersionNotFound, nil
 		} else if err != nil {
 			return nil, nil, fmt.Errorf("failed to get application version: %w", err)
@@ -452,9 +452,9 @@ func createApplicationVersion(r *http.Request) (respond.Responder, error) {
 		}
 		return triggerAutomaticApplicationUpdates(
 			ctx, auth.CurrentOrg(), application.ID, new(auth.CurrentUserID()))
-	}); errors.Is(err, apierrors.ErrNotFound) {
+	}); errors.Is(err, distrerr.ErrNotFound) {
 		return applicationNotFound, nil
-	} else if errors.Is(err, apierrors.ErrAlreadyExists) {
+	} else if errors.Is(err, distrerr.ErrAlreadyExists) {
 		return respond.BadRequest(
 			"Application version cannot be created because a version with this name already exists.",
 		), nil
@@ -530,7 +530,7 @@ func updateApplicationVersion(r *http.Request) (respond.Responder, error) {
 			}
 			return triggerAutomaticApplicationUpdates(
 				ctx, auth.CurrentOrg(), existing.ID, new(auth.CurrentUserID()))
-		}); errors.Is(err, apierrors.ErrAlreadyExists) {
+		}); errors.Is(err, distrerr.ErrAlreadyExists) {
 			return respond.BadRequest(
 				"Application version cannot be updated because a version with this name already exists.",
 			), nil
@@ -590,7 +590,7 @@ func deleteApplication(r *http.Request) (respond.Responder, error) {
 	if application.OrganizationID != *auth.CurrentOrgID() {
 		return applicationNotFound, nil
 	} else if err := db.DeleteApplicationWithID(ctx, application.ID); err != nil {
-		if errors.Is(err, apierrors.ErrConflict) {
+		if errors.Is(err, distrerr.ErrConflict) {
 			return respond.BadRequest("could not delete Application because it is still in use"), nil
 		} else {
 			return nil, fmt.Errorf("error deleting application: %w", err)
@@ -618,7 +618,7 @@ func applicationMiddleware(r *http.Request) (*http.Request, respond.Responder, e
 		return nil, applicationNotFound, nil
 	} else if application, err := db.GetApplication(
 		ctx, applicationID, *auth.CurrentOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return nil, applicationNotFound, nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get application: %w", err)

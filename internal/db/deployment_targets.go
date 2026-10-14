@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -178,7 +178,7 @@ func GetDeploymentTarget(
 	}
 	result, err := pgx.CollectOneRow(rows, pgx.RowToStructByPos[types.DeploymentTargetFull])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, apierrors.ErrNotFound
+		return nil, distrerr.ErrNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get DeploymentTarget: %w", err)
 	} else {
@@ -202,7 +202,7 @@ func GetDeploymentTargetForDeploymentID(
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[types.DeploymentTargetFull])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, apierrors.ErrNotFound
+		return nil, distrerr.ErrNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get DeploymentTarget: %w", err)
 	} else {
@@ -322,7 +322,7 @@ func UpdateDeploymentTarget(ctx context.Context, dt *types.DeploymentTargetFull,
 		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok &&
 			pgErr.Code == pgerrcode.ForeignKeyViolation &&
 			pgErr.ConstraintName == "deploymenttarget_agent_version_id_fkey" {
-			return apierrors.NewBadRequest("unknown agent version")
+			return distrerr.NewBadRequest("unknown agent version")
 		}
 		return fmt.Errorf("could not get updated DeploymentTarget: %w", err)
 	} else {
@@ -336,7 +336,7 @@ func DeleteDeploymentTargetWithID(ctx context.Context, id uuid.UUID) error {
 	if cmd, err := db.Exec(ctx, `DELETE FROM DeploymentTarget WHERE id = @id`, pgx.NamedArgs{"id": id}); err != nil {
 		return err
 	} else if cmd.RowsAffected() == 0 {
-		return apierrors.ErrNotFound
+		return distrerr.ErrNotFound
 	} else {
 		return nil
 	}
@@ -383,14 +383,14 @@ func DeleteDeploymentTargetPendingAccess(ctx context.Context, id uuid.UUID, orgI
 	); err != nil {
 		return fmt.Errorf("could not delete pending access key: %w", err)
 	} else if cmd.RowsAffected() == 0 {
-		return apierrors.ErrNotFound
+		return distrerr.ErrNotFound
 	} else {
 		return nil
 	}
 }
 
 // PromoteDeploymentTargetPendingAccessKey makes the pending secret the active one. It returns
-// [apierrors.ErrNotFound] if the pending secret no longer has the given hash, i.e. it was replaced after the caller
+// [distrerr.ErrNotFound] if the pending secret no longer has the given hash, i.e. it was replaced after the caller
 // verified it.
 func PromoteDeploymentTargetPendingAccessKey(ctx context.Context, id uuid.UUID, pendingAccessKeyHash []byte) error {
 	db := internalctx.GetDb(ctx)
@@ -405,7 +405,7 @@ func PromoteDeploymentTargetPendingAccessKey(ctx context.Context, id uuid.UUID, 
 	); err != nil {
 		return fmt.Errorf("could not promote pending access key: %w", err)
 	} else if cmd.RowsAffected() == 0 {
-		return apierrors.ErrNotFound
+		return distrerr.ErrNotFound
 	} else {
 		return nil
 	}
@@ -441,7 +441,7 @@ func UpdateDeploymentTargetReportedControllerVersionID(
 }
 
 func addDeploymentsToTarget(ctx context.Context, dt *types.DeploymentTargetFull) error {
-	if d, err := GetDeploymentsForDeploymentTarget(ctx, dt.ID); errors.Is(err, apierrors.ErrNotFound) {
+	if d, err := GetDeploymentsForDeploymentTarget(ctx, dt.ID); errors.Is(err, distrerr.ErrNotFound) {
 		return nil
 	} else if err != nil {
 		return err

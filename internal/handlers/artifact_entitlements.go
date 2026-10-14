@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"slices"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/notification"
 	"github.com/distr-sh/distr/internal/respond"
@@ -96,10 +96,10 @@ func createArtifactEntitlement(r *http.Request) (respond.Responder, error) {
 		return respond.BadRequest(err.Error()), nil
 	} else if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 		if err := db.CreateArtifactEntitlement(ctx, &entitlement.ArtifactEntitlementBase); errors.Is(
-			err, apierrors.ErrConflict,
+			err, distrerr.ErrConflict,
 		) {
 			return artifactEntitlementNameTaken, nil
-		} else if errors.Is(err, apierrors.ErrBadRequest) {
+		} else if errors.Is(err, distrerr.ErrBadRequest) {
 			return respond.BadRequest(err.Error()), nil
 		} else if err != nil {
 			return nil, fmt.Errorf("could not create artifact entitlement: %w", err)
@@ -136,12 +136,12 @@ func updateArtifactEntitlement(r *http.Request) (respond.Responder, error) {
 		return respond.BadRequest("entitlement ID does not match the URL"), nil
 	} else if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 		if err := db.UpdateArtifactEntitlement(ctx, &entitlement.ArtifactEntitlementBase); errors.Is(
-			err, apierrors.ErrNotFound,
+			err, distrerr.ErrNotFound,
 		) {
 			return artifactEntitlementNotFound, nil
-		} else if errors.Is(err, apierrors.ErrConflict) {
+		} else if errors.Is(err, distrerr.ErrConflict) {
 			return artifactEntitlementNameTaken, nil
-		} else if errors.Is(err, apierrors.ErrBadRequest) {
+		} else if errors.Is(err, distrerr.ErrBadRequest) {
 			return respond.BadRequest(err.Error()), nil
 		} else if err != nil {
 			return nil, fmt.Errorf("could not update artifact entitlement: %w", err)
@@ -217,7 +217,7 @@ func addArtifacts(ctx context.Context, entitlement types.ArtifactEntitlement) (r
 	add := func(artifactID uuid.UUID, versionID *uuid.UUID) (respond.Responder, error) {
 		if err := db.AddArtifactToArtifactEntitlement(
 			ctx, entitlement.ID, artifactID, versionID,
-		); errors.Is(err, apierrors.ErrBadRequest) {
+		); errors.Is(err, distrerr.ErrBadRequest) {
 			return respond.BadRequest(err.Error()), nil
 		} else if err != nil {
 			return nil, fmt.Errorf("could not add version to entitlement: %w", err)
@@ -247,7 +247,7 @@ func deleteArtifactEntitlement(r *http.Request) (respond.Responder, error) {
 	auth := auth.Authentication.Require(ctx)
 	if entitlement.OrganizationID != *auth.CurrentOrgID() {
 		return artifactEntitlementNotFound, nil
-	} else if err := db.DeleteArtifactEntitlementWithID(ctx, entitlement.ID); errors.Is(err, apierrors.ErrConflict) {
+	} else if err := db.DeleteArtifactEntitlementWithID(ctx, entitlement.ID); errors.Is(err, distrerr.ErrConflict) {
 		return respond.BadRequest("could not delete entitlement because it is still in use"), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("error deleting entitlement: %w", err)
@@ -264,7 +264,7 @@ func artifactEntitlementMiddleware(r *http.Request) (*http.Request, respond.Resp
 	if entitlementId, err := uuid.Parse(r.PathValue("artifactEntitlementId")); err != nil {
 		return nil, respond.BadRequest("artifactEntitlementId is not a valid UUID"), nil
 	} else if entitlement, err := db.GetArtifactEntitlementByID(ctx, entitlementId); errors.Is(
-		err, apierrors.ErrNotFound,
+		err, distrerr.ErrNotFound,
 	) {
 		return nil, artifactEntitlementNotFound, nil
 	} else if err != nil {

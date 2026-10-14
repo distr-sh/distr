@@ -6,10 +6,10 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
@@ -53,7 +53,7 @@ func getArtifactsByCustomer(r *http.Request) (respond.Responder, error) {
 					artifact.ID,
 					customer.ID,
 				); err != nil {
-					if errors.Is(err, apierrors.ErrNotFound) {
+					if errors.Is(err, distrerr.ErrNotFound) {
 						continue
 					} else {
 						log.Error("failed to get latest artifact pull by user", zap.Error(err),

@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/blocklist"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/respond"
@@ -256,7 +256,7 @@ func resolveCustomOIDCConfigurationForHost(r *http.Request) (customOIDCLogin, re
 
 	configuration, err := db.GetCustomOIDCConfigurationForHost(
 		ctx, host.customDomainRow.ID, organizationSlug, providerSlug)
-	if errors.Is(err, apierrors.ErrNotFound) {
+	if errors.Is(err, distrerr.ErrNotFound) {
 		return customOIDCLogin{}, oidcUnavailable, nil
 	} else if err != nil {
 		return customOIDCLogin{}, nil, fmt.Errorf("could not get custom OIDC configuration: %w", err)
@@ -311,12 +311,12 @@ func resolveCustomOIDCUser(
 			return nil, failure, nil
 		}
 		return user, "", db.UpdateUserAccountOIDCIdentityOnLogin(ctx, existingIdentity.ID, new(identity.Email))
-	} else if !errors.Is(err, apierrors.ErrNotFound) {
+	} else if !errors.Is(err, distrerr.ErrNotFound) {
 		return nil, "", err
 	}
 
 	user, err = db.GetUserAccountByEmail(ctx, identity.Email)
-	if errors.Is(err, apierrors.ErrNotFound) {
+	if errors.Is(err, distrerr.ErrNotFound) {
 		if user, failure, err := provisionCustomOIDCUser(ctx, log, login, identity); err != nil {
 			return nil, "", err
 		} else if user == nil {
@@ -368,7 +368,7 @@ func admitExistingCustomOIDCUser(
 	// One assignment exists per user and organization, so a user already in another scope of it cannot get
 	// the provider's scope on top. Re-scoping instead would hand a customer's provider a member of the
 	// vendor or of another customer.
-	if errors.Is(err, apierrors.ErrAlreadyExists) {
+	if errors.Is(err, distrerr.ErrAlreadyExists) {
 		log.Info("rejecting custom OIDC login for a user assigned to another scope of the organization",
 			zap.Stringer("userId", user.ID))
 		return redirectToLoginOIDCNoAccount, nil
@@ -508,7 +508,7 @@ func linkCustomOIDCIdentity(
 func isOrganizationMember(ctx context.Context, user types.UserAccount, login customOIDCLogin) (bool, error) {
 	member, err := db.GetUserAccountWithRole(
 		ctx, user.ID, login.configuration.OrganizationID, login.customerOrgID(), nil)
-	if errors.Is(err, apierrors.ErrNotFound) {
+	if errors.Is(err, distrerr.ErrNotFound) {
 		return false, nil
 	} else if err != nil {
 		return false, err
@@ -540,12 +540,12 @@ func resolveOIDCUser(
 	user, existingIdentity, err := db.GetUserAccountWithOIDCIdentity(ctx, nil, identity.Issuer, identity.Subject)
 	if err == nil {
 		return user, "", db.UpdateUserAccountOIDCIdentityOnLogin(ctx, existingIdentity.ID, new(identity.Email))
-	} else if !errors.Is(err, apierrors.ErrNotFound) {
+	} else if !errors.Is(err, distrerr.ErrNotFound) {
 		return nil, "", err
 	}
 
 	user, err = db.GetUserAccountByEmail(ctx, identity.Email)
-	if errors.Is(err, apierrors.ErrNotFound) {
+	if errors.Is(err, distrerr.ErrNotFound) {
 		if flow != types.OIDCFlowRegistration {
 			log.Info("rejecting OIDC login for an unknown user")
 			return nil, redirectToLoginOIDCUnknownUser, nil
@@ -616,7 +616,7 @@ func oidcCallbackCode(r *http.Request, log *zap.Logger) (string, respond.Respond
 }
 
 func consumeOIDCState(r *http.Request, customOIDCConfigurationID *uuid.UUID) (db.OIDCState, respond.Responder, error) {
-	if state, err := verifyOIDCState(r, customOIDCConfigurationID); errors.Is(err, apierrors.ErrBadRequest) {
+	if state, err := verifyOIDCState(r, customOIDCConfigurationID); errors.Is(err, distrerr.ErrBadRequest) {
 		internalctx.GetLogger(r.Context()).Warn("could not verify OIDC state", zap.Error(err))
 		return db.OIDCState{}, oidcRedirect(redirectToLoginOIDCExpired), nil
 	} else if err != nil {
@@ -629,23 +629,23 @@ func consumeOIDCState(r *http.Request, customOIDCConfigurationID *uuid.UUID) (db
 func verifyOIDCState(r *http.Request, customOIDCConfigurationID *uuid.UUID) (db.OIDCState, error) {
 	id, err := uuid.Parse(r.URL.Query().Get("state"))
 	if err != nil {
-		return db.OIDCState{}, fmt.Errorf("%w: %w", apierrors.ErrBadRequest, err)
+		return db.OIDCState{}, fmt.Errorf("%w: %w", distrerr.ErrBadRequest, err)
 	}
 	state, err := db.DeleteOIDCState(r.Context(), id)
 	if err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
-			return db.OIDCState{}, apierrors.ErrBadRequest
+		if errors.Is(err, distrerr.ErrNotFound) {
+			return db.OIDCState{}, distrerr.ErrBadRequest
 		}
 		return db.OIDCState{}, err
 	}
 	if state.Expired() {
 		return db.OIDCState{}, fmt.Errorf("%w: got an OIDC state that is too old: %v, created_at: %v, now: %v",
-			apierrors.ErrBadRequest, id, state.CreatedAt, time.Now().UTC())
+			distrerr.ErrBadRequest, id, state.CreatedAt, time.Now().UTC())
 	}
 	if (state.CustomOIDCConfigurationID == nil) != (customOIDCConfigurationID == nil) ||
 		(state.CustomOIDCConfigurationID != nil && *state.CustomOIDCConfigurationID != *customOIDCConfigurationID) {
 		return db.OIDCState{}, fmt.Errorf("%w: OIDC state %v belongs to a different provider",
-			apierrors.ErrBadRequest, id)
+			distrerr.ErrBadRequest, id)
 	}
 	return state, nil
 }

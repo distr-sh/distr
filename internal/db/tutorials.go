@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -58,7 +58,7 @@ func GetTutorialProgress(ctx context.Context, userID, orgID uuid.UUID, tutorial 
 	}
 	if res, err := pgx.CollectExactlyOneRow[types.TutorialProgress](rows, pgx.RowToStructByName); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		}
 		return nil, err
 	} else {

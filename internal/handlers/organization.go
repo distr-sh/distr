@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
@@ -99,7 +99,7 @@ func updateOrganization(r *http.Request) (respond.Responder, error) {
 			return nil, fmt.Errorf("failed to get organization: %w", err)
 		} else if org.Slug != nil && *org.Slug != "" && (body.Slug == nil || *body.Slug == "") {
 			return respond.BadRequest("slug can not get unset"), nil
-		} else if err := applyOrganizationUpdate(ctx, org, body); errors.Is(err, apierrors.ErrConflict) {
+		} else if err := applyOrganizationUpdate(ctx, org, body); errors.Is(err, distrerr.ErrConflict) {
 			return slugNotAvailable, nil
 		} else if err != nil {
 			return nil, fmt.Errorf("failed to update organization: %w", err)
@@ -144,7 +144,7 @@ func createOrganization(r *http.Request) (respond.Responder, error) {
 			}
 			return db.CreateUserAccountOrganizationAssignment(
 				ctx, auth.CurrentUserID(), organization.ID, types.UserRoleAdmin, nil, nil)
-		}); errors.Is(err, apierrors.ErrConflict) {
+		}); errors.Is(err, distrerr.ErrConflict) {
 			return slugNotAvailable, nil
 		} else if err != nil {
 			return nil, fmt.Errorf("could not create organization: %w", err)

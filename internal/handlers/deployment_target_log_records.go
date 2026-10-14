@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/mapping"
@@ -43,7 +43,7 @@ func getDeploymentTargetLogRecordsHandler(r *http.Request) (respond.Responder, e
 			Direction:          types.EffectiveOrderDirection(order, queryRange.StartExplicit),
 		},
 	)); err != nil {
-		if errors.Is(err, apierrors.ErrBadRequest) {
+		if errors.Is(err, distrerr.ErrBadRequest) {
 			return respond.BadRequest(err.Error()), nil
 		} else {
 			return nil, fmt.Errorf("failed to get deployment target log records: %w", err)

@@ -7,12 +7,12 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/custommail"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
@@ -50,7 +50,7 @@ func getCustomEmailConfigurationHandler(r *http.Request) (respond.Responder, err
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 	config, err := db.GetCustomEmailConfiguration(ctx, *auth.CurrentOrgID())
-	if errors.Is(err, apierrors.ErrNotFound) {
+	if errors.Is(err, distrerr.ErrNotFound) {
 		return customEmailConfigurationNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get custom email configuration: %w", err)
@@ -90,7 +90,7 @@ func deleteCustomEmailConfigurationHandler(r *http.Request) (respond.Responder, 
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 
-	if err := db.DeleteCustomEmailConfiguration(ctx, *auth.CurrentOrgID()); errors.Is(err, apierrors.ErrNotFound) {
+	if err := db.DeleteCustomEmailConfiguration(ctx, *auth.CurrentOrgID()); errors.Is(err, distrerr.ErrNotFound) {
 		return customEmailConfigurationNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to delete custom email configuration: %w", err)
@@ -153,7 +153,7 @@ func customEmailConfigurationFromRequest(
 		return config, nil
 	}
 	stored, err := db.GetCustomEmailConfiguration(ctx, orgID)
-	if errors.Is(err, apierrors.ErrNotFound) {
+	if errors.Is(err, distrerr.ErrNotFound) {
 		return config, nil
 	} else if err != nil {
 		return config, err

@@ -12,11 +12,11 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
@@ -233,9 +233,9 @@ func deleteSupportBundleConfigurationScriptHandler(r *http.Request) (respond.Res
 }
 
 func respondSupportBundleConfigurationScriptError(err error) (respond.Responder, error) {
-	if errors.Is(err, apierrors.ErrNotFound) {
+	if errors.Is(err, distrerr.ErrNotFound) {
 		return supportBundleScriptNotFound, nil
-	} else if errors.Is(err, apierrors.ErrConflict) {
+	} else if errors.Is(err, distrerr.ErrConflict) {
 		return respond.Conflict("a script with this name already exists"), nil
 	} else {
 		return nil, fmt.Errorf("failed to save support bundle config script: %w", err)
@@ -311,7 +311,7 @@ func getSupportBundleDetailHandler(r *http.Request) (respond.Responder, error) {
 	a := auth.Authentication.Require(ctx)
 
 	bundle, err := db.GetSupportBundleByID(ctx, id, *a.CurrentOrgID())
-	if errors.Is(err, apierrors.ErrNotFound) {
+	if errors.Is(err, distrerr.ErrNotFound) {
 		return supportBundleNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get support bundle: %w", err)
@@ -510,7 +510,7 @@ func updateSupportBundleStatusHandler(r *http.Request) (respond.Responder, error
 		return respond.BadRequest("only 'resolved' or 'canceled' status is allowed"), nil
 	}
 
-	if errors.Is(err, apierrors.ErrNotFound) {
+	if errors.Is(err, distrerr.ErrNotFound) {
 		return supportBundleNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to update support bundle status: %w", err)
@@ -526,7 +526,7 @@ func deleteSupportBundleHandler(r *http.Request) (respond.Responder, error) {
 		return resp, err
 	} else if err := db.DeleteSupportBundle(
 		ctx, bundle.ID, bundle.OrganizationID,
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return supportBundleNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to delete support bundle: %w", err)
@@ -543,7 +543,7 @@ func requireSupportBundle(r *http.Request) (*types.SupportBundleWithDetails, res
 
 	if id, err := uuid.Parse(r.PathValue("bundleId")); err != nil {
 		return nil, supportBundleNotFound, nil
-	} else if bundle, err := db.GetSupportBundleByID(ctx, id, *a.CurrentOrgID()); errors.Is(err, apierrors.ErrNotFound) {
+	} else if bundle, err := db.GetSupportBundleByID(ctx, id, *a.CurrentOrgID()); errors.Is(err, distrerr.ErrNotFound) {
 		return nil, supportBundleNotFound, nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get support bundle: %w", err)

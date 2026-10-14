@@ -19,8 +19,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/registry/authz"
 	registryerror "github.com/distr-sh/distr/internal/registry/error"
 )
@@ -184,7 +184,7 @@ func regErrAuthz(err error) *regError {
 // regErrBlobAuthz is regErrAuthz for the blob routes, where a digest the caller may not see is
 // reported as an unknown blob.
 func regErrBlobAuthz(err error) *regError {
-	if errors.Is(err, apierrors.ErrNotFound) {
+	if errors.Is(err, distrerr.ErrNotFound) {
 		return regErrBlobUnknown
 	}
 	return regErrAuthz(err)

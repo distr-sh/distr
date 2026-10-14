@@ -8,11 +8,11 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/notification"
 	"github.com/distr-sh/distr/internal/respond"
@@ -86,7 +86,7 @@ func createApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 	} else if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 		if err := db.CreateApplicationEntitlement(
 			ctx, &entitlement.ApplicationEntitlementBase,
-		); errors.Is(err, apierrors.ErrConflict) {
+		); errors.Is(err, distrerr.ErrConflict) {
 			return applicationEntitlementNameTaken, nil
 		} else if err != nil {
 			return nil, fmt.Errorf("could not create entitlement: %w", err)
@@ -164,7 +164,7 @@ func updateApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 		if err := db.UpdateApplicationEntitlement(
 			ctx, &entitlement.ApplicationEntitlementBase,
-		); errors.Is(err, apierrors.ErrConflict) {
+		); errors.Is(err, distrerr.ErrConflict) {
 			return applicationEntitlementNameTaken, nil
 		} else if err != nil {
 			return nil, fmt.Errorf("could not update entitlement: %w", err)
@@ -313,7 +313,7 @@ func deleteApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 	auth := auth.Authentication.Require(ctx)
 	if entitlement.OrganizationID != *auth.CurrentOrgID() {
 		return applicationEntitlementNotFound, nil
-	} else if err := db.DeleteApplicationEntitlementWithID(ctx, entitlement.ID); errors.Is(err, apierrors.ErrConflict) {
+	} else if err := db.DeleteApplicationEntitlementWithID(ctx, entitlement.ID); errors.Is(err, distrerr.ErrConflict) {
 		return respond.BadRequest("could not delete entitlement because it is still in use"), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("error deleting entitlement: %w", err)
@@ -330,7 +330,7 @@ func applicationEntitlementMiddleware(r *http.Request) (*http.Request, respond.R
 	if entitlementId, err := uuid.Parse(r.PathValue("applicationEntitlementId")); err != nil {
 		return nil, respond.BadRequest("applicationEntitlementId is not a valid UUID"), nil
 	} else if entitlement, err := db.GetApplicationEntitlementByID(ctx, entitlementId); errors.Is(
-		err, apierrors.ErrNotFound,
+		err, distrerr.ErrNotFound,
 	) {
 		return nil, applicationEntitlementNotFound, nil
 	} else if err != nil {

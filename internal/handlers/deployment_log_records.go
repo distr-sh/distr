@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/mapping"
@@ -115,7 +115,7 @@ func getDeploymentLogsHandler(r *http.Request) (respond.Responder, error) {
 			Direction:    types.EffectiveOrderDirection(order, queryRange.StartExplicit),
 		},
 	)); err != nil {
-		if errors.Is(err, apierrors.ErrBadRequest) {
+		if errors.Is(err, distrerr.ErrBadRequest) {
 			return respond.BadRequest(err.Error()), nil
 		} else {
 			return nil, fmt.Errorf("failed to get log records: %w", err)

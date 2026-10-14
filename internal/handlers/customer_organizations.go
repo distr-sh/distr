@@ -8,9 +8,9 @@ import (
 	"slices"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
@@ -112,7 +112,7 @@ func createCustomerOrganizationHandler(r *http.Request) (respond.Responder, erro
 				return nil, fmt.Errorf("failed to check customer limit: %w", err)
 			} else if limitReached {
 				return respond.Forbidden("customer limit reached"), nil
-			} else if err := db.CreateCustomerOrganization(ctx, &customerOrganization); errors.Is(err, apierrors.ErrBadRequest) {
+			} else if err := db.CreateCustomerOrganization(ctx, &customerOrganization); errors.Is(err, distrerr.ErrBadRequest) {
 				return respond.BadRequest(err.Error()), nil
 			} else if err != nil {
 				return nil, fmt.Errorf("failed to create customer org: %w", err)
@@ -141,7 +141,7 @@ func updateCustomerOrganizationHandler(r *http.Request) (respond.Responder, erro
 		return respond.BadRequest(err.Error()), nil
 	} else {
 		if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
-			if co, coErr := db.GetCustomerOrganizationByID(ctx, id); errors.Is(coErr, apierrors.ErrNotFound) {
+			if co, coErr := db.GetCustomerOrganizationByID(ctx, id); errors.Is(coErr, distrerr.ErrNotFound) {
 				return customerOrganizationNotFound, nil
 			} else if coErr != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
 				return respond.Forbidden("customer is not assigned to your partner organization"), nil
@@ -205,7 +205,7 @@ func assignCustomerToPartnerHandler(r *http.Request) (respond.Responder, error) 
 
 		if err := db.SetCustomerOrganizationPartner(
 			ctx, id, *auth.CurrentOrgID(), request.PartnerOrganizationID,
-		); errors.Is(err, apierrors.ErrNotFound) {
+		); errors.Is(err, distrerr.ErrNotFound) {
 			return customerOrganizationNotFound, nil
 		} else if err != nil {
 			return nil, fmt.Errorf("failed to assign partner to customer org: %w", err)
@@ -227,7 +227,7 @@ func deleteCustomerOrganizationHandler(r *http.Request) (respond.Responder, erro
 	} else {
 		if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
 			if co, err := db.GetCustomerOrganizationByID(ctx, id); err != nil {
-				if errors.Is(err, apierrors.ErrNotFound) {
+				if errors.Is(err, distrerr.ErrNotFound) {
 					return customerOrganizationNotFound, nil
 				} else {
 					return nil, fmt.Errorf("failed to get customer org: %w", err)
@@ -239,9 +239,9 @@ func deleteCustomerOrganizationHandler(r *http.Request) (respond.Responder, erro
 
 		if err := db.DeleteCustomerOrganizationWithID(
 			ctx, id, *auth.CurrentOrgID(),
-		); errors.Is(err, apierrors.ErrNotFound) {
+		); errors.Is(err, distrerr.ErrNotFound) {
 			return customerOrganizationNotFound, nil
-		} else if errors.Is(err, apierrors.ErrConflict) {
+		} else if errors.Is(err, distrerr.ErrConflict) {
 			return respond.Conflict("customer is not empty"), nil
 		} else if err != nil {
 			return nil, fmt.Errorf("failed to delete customer org: %w", err)

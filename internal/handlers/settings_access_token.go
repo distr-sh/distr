@@ -8,10 +8,10 @@ import (
 	"strconv"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authkey"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
@@ -82,7 +82,7 @@ func patchAccessTokenHandler(r *http.Request) (respond.Responder, error) {
 		return resp, nil
 	} else if updated, err := db.UpdateAccessTokenLabel(
 		ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(), patch.Label,
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return accessTokenNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("error updating token: %w", err)
@@ -114,7 +114,7 @@ func createAccessTokenSecretHandler(r *http.Request) (respond.Responder, error) 
 		return respond.BadRequest(err.Error()), nil
 	} else if token, err := db.GetAccessToken(
 		ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return accessTokenNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("error getting token: %w", err)
@@ -126,7 +126,7 @@ func createAccessTokenSecretHandler(r *http.Request) (respond.Responder, error) 
 		secret := types.AccessTokenSecret{Hash: newSecret.Hash(), ExpiresAt: request.ExpiresAt}
 		if updated, err := db.CreateAccessTokenSecret(
 			ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(), *slot, secret,
-		); errors.Is(err, apierrors.ErrConflict) {
+		); errors.Is(err, distrerr.ErrConflict) {
 			return respond.BadRequest(accessTokenCredentialsExhaustedMessage), nil
 		} else if err != nil {
 			return nil, fmt.Errorf("error creating token secret: %w", err)
@@ -149,7 +149,7 @@ func deleteAccessTokenSecretHandler(r *http.Request) (respond.Responder, error) 
 		return accessTokenSecretNotFound, nil
 	} else if token, err := db.GetAccessToken(
 		ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return accessTokenNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("error getting token: %w", err)
@@ -159,7 +159,7 @@ func deleteAccessTokenSecretHandler(r *http.Request) (respond.Responder, error) 
 		return respond.BadRequest(accessTokenLastCredentialMessage), nil
 	} else if err := db.DeleteAccessTokenSecret(
 		ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(), slot,
-	); errors.Is(err, apierrors.ErrConflict) {
+	); errors.Is(err, distrerr.ErrConflict) {
 		return respond.BadRequest(accessTokenLastCredentialMessage), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("error deleting token secret: %w", err)
@@ -177,7 +177,7 @@ func deleteAccessTokenKeyHandler(r *http.Request) (respond.Responder, error) {
 		return accessTokenNotFound, nil
 	} else if token, err := db.GetAccessToken(
 		ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) || (err == nil && !token.KeyIsCredential) {
+	); errors.Is(err, distrerr.ErrNotFound) || (err == nil && !token.KeyIsCredential) {
 		return accessTokenNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("error getting token: %w", err)
@@ -185,7 +185,7 @@ func deleteAccessTokenKeyHandler(r *http.Request) (respond.Responder, error) {
 		return respond.BadRequest(accessTokenLastCredentialMessage), nil
 	} else if err := db.RetireAccessTokenKeyCredential(
 		ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(),
-	); errors.Is(err, apierrors.ErrConflict) {
+	); errors.Is(err, distrerr.ErrConflict) {
 		return respond.BadRequest(accessTokenLastCredentialMessage), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("error retiring token key: %w", err)

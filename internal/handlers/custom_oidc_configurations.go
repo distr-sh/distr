@@ -7,10 +7,10 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/oidc"
@@ -138,7 +138,7 @@ func updateCustomOIDCConfigurationHandler(r *http.Request) (respond.Responder, e
 		return resp, err
 	} else if existing, err := db.GetCustomOIDCConfigurationOfOrganization(
 		ctx, id, orgID, customerOrgID, partnerOrgID,
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return customOIDCConfigurationNotFound, nil
 	} else if err != nil {
 		return customOIDCConfigurationError(err)
@@ -158,7 +158,7 @@ func updateCustomOIDCConfigurationHandler(r *http.Request) (respond.Responder, e
 			}
 		}
 
-		if err := db.UpdateCustomOIDCConfiguration(ctx, &configuration); errors.Is(err, apierrors.ErrNotFound) {
+		if err := db.UpdateCustomOIDCConfiguration(ctx, &configuration); errors.Is(err, distrerr.ErrNotFound) {
 			return customOIDCConfigurationNotFound, nil
 		} else if err != nil {
 			return customOIDCConfigurationError(err)
@@ -177,7 +177,7 @@ func deleteCustomOIDCConfigurationHandler(r *http.Request) (respond.Responder, e
 		return customOIDCConfigurationNotFound, nil
 	} else if err := db.DeleteCustomOIDCConfiguration(
 		ctx, id, orgID, auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return customOIDCConfigurationNotFound, nil
 	} else if err != nil {
 		return customOIDCConfigurationError(err)
@@ -195,7 +195,7 @@ func testCustomOIDCConfigurationHandler(r *http.Request) (respond.Responder, err
 		return customOIDCConfigurationNotFound, nil
 	} else if configuration, err := db.GetCustomOIDCConfigurationOfOrganization(
 		ctx, id, orgID, auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return customOIDCConfigurationNotFound, nil
 	} else if err != nil {
 		return customOIDCConfigurationError(err)
@@ -287,10 +287,10 @@ func customOIDCConfigurationResponse(
 
 func customOIDCConfigurationError(err error) (respond.Responder, error) {
 	switch {
-	case errors.Is(err, apierrors.ErrConflict):
+	case errors.Is(err, distrerr.ErrConflict):
 		return respond.Conflict("this domain already has a provider with this name or slug, " +
 			"or another one is already its default"), nil
-	case errors.Is(err, apierrors.ErrBadRequest):
+	case errors.Is(err, distrerr.ErrBadRequest):
 		return respond.BadRequest("invalid custom OIDC configuration"), nil
 	default:
 		return nil, fmt.Errorf("custom OIDC configuration request failed: %w", err)

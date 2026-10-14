@@ -10,10 +10,10 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/types"
@@ -28,7 +28,7 @@ func mfaSetupHandler(r *http.Request) (respond.Responder, error) {
 
 	var buf bytes.Buffer
 	if user, err := db.GetUserAccountByID(ctx, userID); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return userAccountNotFound, nil
 		} else {
 			return nil, fmt.Errorf("failed to get user: %w", err)
@@ -67,7 +67,7 @@ func mfaEnableHandler(r *http.Request) (respond.Responder, error) {
 	if request, resp := decodeJSON[api.EnableMFARequest](r); resp != nil {
 		return resp, nil
 	} else if user, err := db.GetUserAccountByID(ctx, userID); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return userAccountNotFound, nil
 		} else {
 			return nil, fmt.Errorf("failed to get user: %w", err)
@@ -125,7 +125,7 @@ func mfaDisableHandler(r *http.Request) (respond.Responder, error) {
 	if request, resp := decodeJSON[api.DisableMFARequest](r); resp != nil {
 		return resp, nil
 	} else if user, err := db.GetUserAccountByID(ctx, userID); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return userAccountNotFound, nil
 		} else {
 			return nil, fmt.Errorf("failed to get user: %w", err)
@@ -154,7 +154,7 @@ func mfaRegenerateRecoveryCodesHandler(r *http.Request) (respond.Responder, erro
 	if request, resp := decodeJSON[api.RegenerateMFARecoveryCodesRequest](r); resp != nil {
 		return resp, nil
 	} else if user, err := db.GetUserAccountByID(ctx, userID); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return userAccountNotFound, nil
 		} else {
 			return nil, fmt.Errorf("failed to get user: %w", err)
@@ -208,7 +208,7 @@ func mfaRecoveryCodesStatusHandler(r *http.Request) (respond.Responder, error) {
 	userID := authInfo.CurrentUserID()
 
 	if user, err := db.GetUserAccountByID(ctx, userID); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return userAccountNotFound, nil
 		} else {
 			return nil, fmt.Errorf("failed to get user: %w", err)

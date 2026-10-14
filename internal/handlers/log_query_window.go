@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/distr-sh/distr/internal/apierrors"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 )
@@ -66,7 +66,7 @@ func resolveLogQueryStart(subscriptionType types.SubscriptionType, after time.Ti
 	// Explicit values get the timezone slack so any timezone's 00:00 of the
 	// first day inside the window is accepted.
 	if after.Before(windowStart.Add(-subscription.LogQueryWindowTimezoneSlack)) {
-		return time.Time{}, apierrors.NewBadRequest(
+		return time.Time{}, distrerr.NewBadRequest(
 			fmt.Sprintf("after must not be older than %v", subscription.GetLogQueryWindow(subscriptionType)),
 		)
 	}

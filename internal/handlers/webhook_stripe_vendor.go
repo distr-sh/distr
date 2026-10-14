@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/billing"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/licensekey"
 	"github.com/distr-sh/distr/internal/licensetemplate"
@@ -38,7 +38,7 @@ func vendorStripeWebhookHandler(r *http.Request) (respond.Responder, error) {
 	}
 
 	org, err := db.GetOrganizationByID(ctx, orgID)
-	if errors.Is(err, apierrors.ErrNotFound) {
+	if errors.Is(err, distrerr.ErrNotFound) {
 		return respond.Status(http.StatusNotFound), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get organization for vendor webhook: %w", err)
@@ -96,7 +96,7 @@ func handleVendorStripeSubscription(ctx context.Context, orgID uuid.UUID, sub st
 	}
 
 	licenseKey, err := db.GetLicenseKeyByID(ctx, licenseKeyID)
-	if errors.Is(err, apierrors.ErrNotFound) {
+	if errors.Is(err, distrerr.ErrNotFound) {
 		log.Info("license key not found for vendor subscription event", zap.Stringer("licenseKeyId", licenseKeyID))
 		return nil
 	} else if err != nil {

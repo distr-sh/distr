@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/notification"
 	"github.com/distr-sh/distr/internal/registry/manifest"
 	"github.com/distr-sh/distr/internal/registry/name"
@@ -38,7 +38,7 @@ func entitlementCustomerOrgID(ctx context.Context) *uuid.UUID {
 // Delete removes a manifest by tag reference.
 func (h *handler) Delete(ctx context.Context, nameStr string, reference string) error {
 	if _, err := digest.Parse(reference); err == nil {
-		return apierrors.NewBadRequest("digest-based deletion is not supported, delete by tag instead")
+		return distrerr.NewBadRequest("digest-based deletion is not supported, delete by tag instead")
 	}
 
 	n, err := name.Parse(nameStr)
@@ -48,14 +48,14 @@ func (h *handler) Delete(ctx context.Context, nameStr string, reference string) 
 
 	artifact, err := db.GetArtifactByName(ctx, n.OrgName, n.ArtifactName)
 	if err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return fmt.Errorf("%w: %w", manifest.ErrNameUnknown, err)
 		}
 		return err
 	}
 
 	if err := db.DeleteArtifactTag(ctx, artifact.ID, reference); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return fmt.Errorf("%w: %w", manifest.ErrManifestUnknown, err)
 		}
 		return err
@@ -68,7 +68,7 @@ func (h *handler) Get(ctx context.Context, nameStr string, reference string) (*m
 	if name, err := name.Parse(nameStr); err != nil {
 		return nil, fmt.Errorf("%w: %w", manifest.ErrNameUnknown, err)
 	} else if av, err := db.GetArtifactVersion(ctx, name.OrgName, name.ArtifactName, reference); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return nil, fmt.Errorf("%w: %w", manifest.ErrNameUnknown, err)
 		}
 		return nil, err
@@ -123,7 +123,7 @@ func (h *handler) ListDigests(ctx context.Context, nameStr string) ([]digest.Dig
 		return nil, fmt.Errorf("%w: %w", manifest.ErrNameUnknown, err)
 	} else {
 		if artifact, err := db.GetArtifactByName(ctx, name.OrgName, name.ArtifactName); err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
+			if errors.Is(err, distrerr.ErrNotFound) {
 				return nil, fmt.Errorf("%w: %w", manifest.ErrNameUnknown, err)
 			}
 			return nil, err
@@ -153,7 +153,7 @@ func (h *handler) ListTags(ctx context.Context, nameStr string, n int, last stri
 		return nil, fmt.Errorf("%w: %w", manifest.ErrNameUnknown, err)
 	} else {
 		if artifact, err := db.GetArtifactByName(ctx, name.OrgName, name.ArtifactName); err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
+			if errors.Is(err, distrerr.ErrNotFound) {
 				return nil, fmt.Errorf("%w: %w", manifest.ErrNameUnknown, err)
 			}
 			return nil, err
@@ -209,12 +209,12 @@ func (h *handler) Put(
 		}
 
 		if existingVersion, err := db.GetArtifactVersion(ctx, name.OrgName, name.ArtifactName, reference); err != nil {
-			if !errors.Is(err, apierrors.ErrNotFound) {
+			if !errors.Is(err, distrerr.ErrNotFound) {
 				return err
 			} else if quotaOk, err := db.EnsureArtifactTagLimitForInsert(ctx, *auth.CurrentOrgID()); err != nil {
 				return err
 			} else if !quotaOk {
-				return apierrors.ErrQuotaExceeded
+				return distrerr.ErrQuotaExceeded
 			}
 		} else if existingVersion.ManifestBlobDigest == types.Digest(reference) {
 			// Tag already exists with the same content: nothing to do

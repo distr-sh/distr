@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/respond"
@@ -166,7 +166,7 @@ func resolvePortalHost(ctx context.Context, host string) (portalHost, error) {
 	if customDomain != nil {
 		resolved := portalHost{source: portalHostCustomDomain, customDomainRow: customDomain}
 		branding, err := db.GetOrganizationBranding(ctx, customDomain.OrganizationID)
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return resolved, nil
 		} else if err != nil {
 			return resolved, err

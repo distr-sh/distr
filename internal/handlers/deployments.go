@@ -8,11 +8,11 @@ import (
 	"slices"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/deploymentvalues"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
@@ -132,7 +132,7 @@ func createOrUpdateDeployment(
 	authInfo := auth.Authentication.Require(ctx)
 	if request.DeploymentID == nil {
 		request.AutomaticApplicationUpdatesEnabled = &automaticUpdates
-		if err := db.CreateDeployment(ctx, request); errors.Is(err, apierrors.ErrConflict) {
+		if err := db.CreateDeployment(ctx, request); errors.Is(err, distrerr.ErrConflict) {
 			return respond.BadRequest("release name must be unique per deployment target"), nil
 		} else if err != nil {
 			return nil, fmt.Errorf("failed to create deployment: %w", err)
@@ -264,13 +264,13 @@ func validateDeploymentRequest(
 
 	if app, err = db.GetApplicationForApplicationVersionID(
 		ctx, request.ApplicationVersionID, orgId,
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return nil, respond.BadRequest("Application does not exist"), nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get application: %w", err)
 	}
 
-	if version, err = db.GetApplicationVersion(ctx, request.ApplicationVersionID); errors.Is(err, apierrors.ErrNotFound) {
+	if version, err = db.GetApplicationVersion(ctx, request.ApplicationVersionID); errors.Is(err, distrerr.ErrNotFound) {
 		return nil, respond.BadRequest("ApplicationVersion does not exist"), nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get application version: %w", err)
@@ -281,7 +281,7 @@ func validateDeploymentRequest(
 		request.DeploymentTargetID,
 		&orgId,
 		auth.CurrentPartnerOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return nil, respond.BadRequest("DeploymentTarget does not exist"), nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get deployment target: %w", err)
@@ -430,7 +430,7 @@ func resolveDeploymentEntitlement(
 	if request.ApplicationEntitlementID != nil {
 		if entitlement, err := db.GetApplicationEntitlementByID(
 			ctx, *request.ApplicationEntitlementID,
-		); errors.Is(err, apierrors.ErrNotFound) {
+		); errors.Is(err, distrerr.ErrNotFound) {
 			return nil, entitlementDoesNotExist, nil
 		} else if err != nil {
 			return nil, nil, fmt.Errorf("failed to get application entitlement: %w", err)
@@ -597,7 +597,7 @@ func deploymentMiddleware(r *http.Request) (*http.Request, respond.Responder, er
 		*auth.CurrentOrgID(),
 		auth.CurrentCustomerOrgID(),
 		auth.CurrentPartnerOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return nil, deploymentNotFound, nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get deployment: %w", err)

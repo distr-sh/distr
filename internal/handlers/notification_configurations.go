@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
@@ -105,7 +105,7 @@ func updateUpdateNotificationConfigurationHandler(r *http.Request) (respond.Resp
 		config := mapping.UpdateNotificationConfigurationToInternal(request, *auth.CurrentOrgID(), customerOrgID)
 		config.ID = id
 		if err := db.UpdateUpdateNotificationConfiguration(ctx, &config); err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
+			if errors.Is(err, distrerr.ErrNotFound) {
 				return updateNotificationConfigurationNotFound, nil
 			} else {
 				return nil, fmt.Errorf("failed to save update notification configuration: %w", err)
@@ -125,7 +125,7 @@ func deleteUpdateNotificationConfigurationHandler(r *http.Request) (respond.Resp
 	} else if customerOrgID, resp, err := customerScopeFromQuery(r); resp != nil || err != nil {
 		return resp, err
 	} else if err := db.DeleteUpdateNotificationConfiguration(ctx, id, *auth.CurrentOrgID(), customerOrgID); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return updateNotificationConfigurationNotFound, nil
 		} else {
 			return nil, fmt.Errorf("failed to delete update notification configuration: %w", err)

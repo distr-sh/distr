@@ -7,11 +7,11 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/controllerconnect"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
@@ -145,12 +145,12 @@ func createDeploymentTarget(r *http.Request) (respond.Responder, error) {
 
 			if requestedCustomerOrgID != nil {
 				if err := db.ValidateCustomerOrgBelongsToOrg(ctx, *requestedCustomerOrgID, *auth.CurrentOrgID()); err != nil {
-					return apierrors.NewForbidden("customer organization does not belong to organization")
+					return distrerr.NewForbidden("customer organization does not belong to organization")
 				}
 				if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
 					co, err := db.GetCustomerOrganizationByID(ctx, *requestedCustomerOrgID)
 					if err != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-						return apierrors.NewForbidden("customer is not assigned to your partner organization")
+						return distrerr.NewForbidden("customer is not assigned to your partner organization")
 					}
 				}
 				customerOrgID = requestedCustomerOrgID
@@ -161,7 +161,7 @@ func createDeploymentTarget(r *http.Request) (respond.Responder, error) {
 			); err != nil {
 				return fmt.Errorf("could not check deployment target limit: %w", err)
 			} else if limitReached {
-				return apierrors.NewForbidden("deployment target limit reached")
+				return distrerr.NewForbidden("deployment target limit reached")
 			}
 
 			return db.CreateDeploymentTarget(ctx, &dt, *auth.CurrentOrgID(), auth.CurrentUserID(), customerOrgID)
@@ -169,7 +169,7 @@ func createDeploymentTarget(r *http.Request) (respond.Responder, error) {
 
 		if err == nil {
 			return respond.JSON(dt), nil
-		} else if errors.Is(err, apierrors.ErrForbidden) {
+		} else if errors.Is(err, distrerr.ErrForbidden) {
 			return respond.Forbidden(err.Error()), nil
 		} else {
 			return nil, fmt.Errorf("could not create DeploymentTarget: %w", err)
@@ -197,7 +197,7 @@ func updateDeploymentTarget(r *http.Request) (respond.Responder, error) {
 			}
 		}
 
-		if err := db.UpdateDeploymentTarget(ctx, &dt, *auth.CurrentOrgID()); errors.Is(err, apierrors.ErrBadRequest) {
+		if err := db.UpdateDeploymentTarget(ctx, &dt, *auth.CurrentOrgID()); errors.Is(err, distrerr.ErrBadRequest) {
 			return respond.BadRequest(err.Error()), nil
 		} else if err != nil {
 			return nil, fmt.Errorf("could not update DeploymentTarget: %w", err)
@@ -269,7 +269,7 @@ func deleteAccessRequestForDeploymentTarget(r *http.Request) (respond.Responder,
 
 	if err := db.DeleteDeploymentTargetPendingAccess(
 		ctx, deploymentTarget.ID, *auth.CurrentOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return respond.Conflict("This deployment target has no pending reconnect."), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("could not delete pending access of DeploymentTarget: %w", err)
@@ -287,7 +287,7 @@ func deploymentTargetMiddleware(r *http.Request) (*http.Request, respond.Respond
 		return nil, deploymentTargetNotFound, nil
 	} else if deploymentTarget, err := db.GetDeploymentTarget(
 		ctx, id, auth.CurrentOrgID(), auth.CurrentPartnerOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return nil, deploymentTargetNotFound, nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get deployment target: %w", err)

@@ -9,8 +9,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/getsentry/sentry-go"
 	. "github.com/onsi/gomega"
 	"go.uber.org/zap"
@@ -40,7 +40,7 @@ func serve(t *testing.T, ctx context.Context, resp Responder, err error) (*httpt
 func TestHandlerErrors(t *testing.T) {
 	t.Run("unhandled sentinel is a reported 500 and its cause stays out of the body", func(t *testing.T) {
 		g := NewWithT(t)
-		err := fmt.Errorf("get target at 10.0.0.1: %w", apierrors.ErrNotFound)
+		err := fmt.Errorf("get target at 10.0.0.1: %w", distrerr.ErrNotFound)
 		rec, events := serve(t, t.Context(), JSON("ignored"), err)
 		g.Expect(rec.Code).To(Equal(http.StatusInternalServerError))
 		g.Expect(rec.Body.String()).To(Equal("Internal Server Error\n"))

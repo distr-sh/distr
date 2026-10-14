@@ -7,11 +7,11 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/registry/upstream"
@@ -122,7 +122,7 @@ func createArtifactHandler(r *http.Request) (respond.Responder, error) {
 			}
 			if err := upstream.ValidateUpstreamCredentials(ctx, artifact); err != nil {
 				return respond.BadRequest(err.Error()), nil
-			} else if err := db.CreateArtifact(ctx, artifact); errors.Is(err, apierrors.ErrConflict) {
+			} else if err := db.CreateArtifact(ctx, artifact); errors.Is(err, distrerr.ErrConflict) {
 				return respond.Conflict("artifact name already exists"), nil
 			} else if err != nil {
 				return nil, fmt.Errorf("failed to create artifact: %w", err)
@@ -200,15 +200,15 @@ func deleteArtifactHandler(r *http.Request) (respond.Responder, error) {
 		if isReferenced, err := db.ArtifactIsReferencedInEntitlements(ctx, artifact.ID); err != nil {
 			return err
 		} else if isReferenced {
-			return apierrors.NewBadRequest("Cannot delete artifact: it is referenced in one or more entitlements.")
+			return distrerr.NewBadRequest("Cannot delete artifact: it is referenced in one or more entitlements.")
 		} else if err := db.DeleteArtifactWithID(ctx, artifact.ID); err != nil {
 			return err
 		} else {
 			return nil
 		}
-	}); errors.Is(err, apierrors.ErrNotFound) {
+	}); errors.Is(err, distrerr.ErrNotFound) {
 		return artifactNotFound, nil
-	} else if errors.Is(err, apierrors.ErrBadRequest) {
+	} else if errors.Is(err, distrerr.ErrBadRequest) {
 		return respond.BadRequest(err.Error()), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("error deleting artifact: %w", err)
@@ -223,11 +223,11 @@ func deleteArtifactTagHandler(r *http.Request) (respond.Responder, error) {
 
 	if tagName := r.PathValue("tagName"); tagName == "" {
 		return respond.NotFound("artifact tag not found"), nil
-	} else if err := db.DeleteArtifactTag(ctx, artifact.ID, tagName); errors.Is(err, apierrors.ErrNotFound) {
+	} else if err := db.DeleteArtifactTag(ctx, artifact.ID, tagName); errors.Is(err, distrerr.ErrNotFound) {
 		return respond.NotFound("artifact tag not found"), nil
-	} else if errors.Is(err, apierrors.ErrBadRequest) {
+	} else if errors.Is(err, distrerr.ErrBadRequest) {
 		return respond.BadRequest(err.Error()), nil
-	} else if errors.Is(err, apierrors.ErrConflict) {
+	} else if errors.Is(err, distrerr.ErrConflict) {
 		return respond.Conflict(err.Error()), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("error deleting artifact tag: %w", err)
@@ -325,7 +325,7 @@ func artifactMiddleware(r *http.Request) (*http.Request, respond.Responder, erro
 		return nil, artifactNotFound, nil
 	} else if artifact, err := db.GetArtifactByID(
 		ctx, *auth.CurrentOrgID(), artifactId, entitledCustomerOrgID,
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return nil, artifactNotFound, nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get artifact: %w", err)

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authjwt"
 	internalctx "github.com/distr-sh/distr/internal/context"
@@ -20,6 +19,7 @@ import (
 	"github.com/distr-sh/distr/internal/controllermanifest"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/deploymentvalues"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/mapping"
@@ -277,7 +277,7 @@ func controllerPutDeploymentLogsHandler(r *http.Request) (respond.Responder, err
 
 			logStore := logstore.FromContext(ctx)
 			if err := logStore.SaveDeploymentLogRecords(ctx, auth.CurrentOrgID(), valid); err != nil {
-				if errors.Is(err, apierrors.ErrBadRequest) {
+				if errors.Is(err, distrerr.ErrBadRequest) {
 					return respond.BadRequest(err.Error()), nil
 				} else if errors.Is(err, logstore.ErrRateLimitExceeded) {
 					return respond.Error(http.StatusTooManyRequests, err.Error()), nil
@@ -311,7 +311,7 @@ func controllerPutDeploymentTargetLogsHandler(r *http.Request) (respond.Responde
 	} else if err := logstore.FromContext(ctx).SaveDeploymentTargetLogRecords(
 		ctx, deploymentTarget.OrganizationID, deploymentTarget.ID, records,
 	); err != nil {
-		if errors.Is(err, apierrors.ErrBadRequest) {
+		if errors.Is(err, distrerr.ErrBadRequest) {
 			return respond.BadRequest(err.Error()), nil
 		} else if errors.Is(err, logstore.ErrRateLimitExceeded) {
 			return respond.Error(http.StatusTooManyRequests, err.Error()), nil
@@ -343,7 +343,7 @@ func controllerPostStatusHandler(r *http.Request) (respond.Responder, error) {
 	if requestBody, resp := decodeJSON[api.ControllerDeploymentStatus](r); resp != nil {
 		return resp, nil
 	} else if deploymentID, err := db.GetDeploymentIDForRevisionID(ctx, requestBody.RevisionID); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return respond.BadRequest(err.Error()), nil
 		} else {
 			return nil, fmt.Errorf("failed to get deployment ID: %w", err)
@@ -374,7 +374,7 @@ func controllerPostStatusHandler(r *http.Request) (respond.Responder, error) {
 			}
 			return nil
 		}); err != nil {
-			if errors.Is(err, apierrors.ErrConflict) {
+			if errors.Is(err, distrerr.ErrConflict) {
 				return respond.BadRequest(http.StatusText(http.StatusBadRequest)), nil
 			} else {
 				return nil, fmt.Errorf("failed to update deployment revision status: %w", err)
@@ -416,7 +416,7 @@ func controllerPostMetricsHander(r *http.Request) (respond.Responder, error) {
 		metrics := mapping.DeploymentTargetMetricsRequestToInternal(dt.ID, body)
 
 		if err := db.CreateDeploymentTargetMetrics(ctx, &metrics); err != nil {
-			if errors.Is(err, apierrors.ErrConflict) {
+			if errors.Is(err, distrerr.ErrConflict) {
 				return respond.BadRequest(http.StatusText(http.StatusBadRequest)), nil
 			} else {
 				return nil, fmt.Errorf("failed to create deployment target metrics: %w", err)
@@ -509,7 +509,7 @@ func controllerAuthDeploymentTargetCtxMiddleware(r *http.Request) (*http.Request
 
 	if deploymentTarget, err := db.GetDeploymentTarget(
 		ctx, auth.CurrentDeploymentTargetID(), &orgId, nil,
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return nil, respond.Unauthorized("deployment target not found"), nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get deployment target: %w", err)
@@ -541,7 +541,7 @@ func getVerifiedDeploymentTarget(
 	log := internalctx.GetLogger(ctx).With(zap.Stringer("deploymentTargetId", targetID))
 
 	deploymentTarget, err := db.GetDeploymentTarget(ctx, targetID, nil, nil)
-	if errors.Is(err, apierrors.ErrNotFound) {
+	if errors.Is(err, distrerr.ErrNotFound) {
 		log.Info("controller unauthorized: deployment target not found")
 		return nil, invalidDeploymentTargetCredentials, nil
 	} else if err != nil {
@@ -557,7 +557,7 @@ func getVerifiedDeploymentTarget(
 	if pending && promotePendingAccessKey {
 		if err := db.PromoteDeploymentTargetPendingAccessKey(
 			ctx, deploymentTarget.ID, *deploymentTarget.PendingAccessKeyHash,
-		); errors.Is(err, apierrors.ErrNotFound) {
+		); errors.Is(err, distrerr.ErrNotFound) {
 			log.Info("controller unauthorized: pending access key was replaced")
 			return nil, invalidDeploymentTargetCredentials, nil
 		} else if err != nil {

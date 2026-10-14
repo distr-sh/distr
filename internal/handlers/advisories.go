@@ -9,10 +9,10 @@ import (
 	"strings"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
@@ -185,7 +185,7 @@ func createAdvisoryHandler(r *http.Request) (respond.Responder, error) {
 			}
 			return recordAdvisoryPublication(ctx, &advisory, userID)
 		})
-		if errors.Is(err, apierrors.ErrConflict) {
+		if errors.Is(err, distrerr.ErrConflict) {
 			return respond.Conflict(duplicateCveIDMessage), nil
 		} else if err != nil {
 			return nil, fmt.Errorf("failed to create advisory: %w", err)
@@ -285,9 +285,9 @@ func updateAdvisoryHandler(r *http.Request) (respond.Responder, error) {
 		}
 		return nil
 	})
-	if errors.Is(err, apierrors.ErrNotFound) {
+	if errors.Is(err, distrerr.ErrNotFound) {
 		return advisoryNotFound, nil
-	} else if errors.Is(err, apierrors.ErrConflict) {
+	} else if errors.Is(err, distrerr.ErrConflict) {
 		return respond.Conflict(duplicateCveIDMessage), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to update advisory: %w", err)
@@ -340,7 +340,7 @@ func patchAdvisoryHandler(r *http.Request) (respond.Responder, error) {
 		}
 		return nil
 	})
-	if errors.Is(err, apierrors.ErrNotFound) {
+	if errors.Is(err, distrerr.ErrNotFound) {
 		return advisoryNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to patch advisory: %w", err)
@@ -420,7 +420,7 @@ func requireAdvisory(r *http.Request) (*types.AdvisoryWithDetails, respond.Respo
 		return nil, advisoryNotFound, nil
 	} else if advisory, err := db.GetAdvisoryByID(
 		ctx, id, *a.CurrentOrgID(), advisoryScope(a),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return nil, advisoryNotFound, nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get advisory: %w", err)

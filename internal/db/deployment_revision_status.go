@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -50,7 +50,7 @@ func UpdateDeploymentRevisionStatus(
 
 	status, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.DeploymentRevisionStatus])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, fmt.Errorf("%w: unknown deployment revision", apierrors.ErrConflict)
+		return nil, fmt.Errorf("%w: unknown deployment revision", distrerr.ErrConflict)
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to collect DeploymentRevision status: %w", err)
 	}

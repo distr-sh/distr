@@ -8,11 +8,11 @@ import (
 	"regexp"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/deploymentvalues"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
@@ -95,7 +95,7 @@ func createSecret(r *http.Request) (respond.Responder, error) {
 		auth.CurrentUserID(),
 		body.Key,
 		dbcrypto.String(body.Value),
-	); errors.Is(err, apierrors.ErrConflict) {
+	); errors.Is(err, distrerr.ErrConflict) {
 		return respond.Conflict("secret with this key already exists"), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to create secret: %w", err)
@@ -117,7 +117,7 @@ func updateSecret(r *http.Request) (respond.Responder, error) {
 		*auth.CurrentOrgID(),
 		auth.CurrentCustomerOrgID(),
 		auth.CurrentPartnerOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return secretNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get secret: %w", err)
@@ -170,7 +170,7 @@ func deleteSecret(r *http.Request) (respond.Responder, error) {
 		return invalidSecretID, nil
 	} else if existing, err := db.GetSecretByID(
 		ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return secretNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get secret: %w", err)
@@ -183,7 +183,7 @@ func deleteSecret(r *http.Request) (respond.Responder, error) {
 			WithStatus(http.StatusConflict), nil
 	} else if err := db.DeleteSecret(
 		ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return secretNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to delete secret: %w", err)

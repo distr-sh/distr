@@ -6,12 +6,12 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authjwt"
 	"github.com/distr-sh/distr/internal/blocklist"
 	"github.com/distr-sh/distr/internal/custommail"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
@@ -150,7 +150,7 @@ func userSettingsUpdateHandler(r *http.Request) (respond.Responder, error) {
 
 		if isUpdateNeeded {
 			if err := db.UpdateUserAccount(ctx, user); err != nil {
-				if errors.Is(err, apierrors.ErrNotFound) {
+				if errors.Is(err, distrerr.ErrNotFound) {
 					return respond.BadRequest(err.Error()), nil
 				} else {
 					return nil, fmt.Errorf("failed to update user: %w", err)

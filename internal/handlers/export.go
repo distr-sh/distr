@@ -6,7 +6,7 @@ import (
 	"io"
 	"iter"
 
-	"github.com/distr-sh/distr/internal/apierrors"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/subscription"
 )
@@ -37,7 +37,7 @@ func logExport[T any](filename string, records iter.Seq2[T, error], line func(T)
 			if err != nil && count > 0 {
 				_, _ = io.WriteString(w, exportTruncationNotice)
 				return nil, fmt.Errorf("failed to export log records: %w", err)
-			} else if errors.Is(err, apierrors.ErrBadRequest) {
+			} else if errors.Is(err, distrerr.ErrBadRequest) {
 				return respond.BadRequest(err.Error()), nil
 			} else if err != nil {
 				return nil, fmt.Errorf("failed to export log records: %w", err)
