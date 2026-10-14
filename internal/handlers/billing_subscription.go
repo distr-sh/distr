@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -10,16 +9,13 @@ import (
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/billing"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/handlerutil"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v86"
-	"go.uber.org/zap"
 )
 
 func GetSubscriptionHandler(r *http.Request) (respond.Responder, error) {
@@ -68,29 +64,20 @@ func CreateSubscriptionHandler(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-func UpdateSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
+func UpdateSubscriptionHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 	org := auth.CurrentOrg()
 
-	// Check if organization has an active subscription
 	if org.SubscriptionType == types.SubscriptionTypeTrial {
-		http.Error(w, "cannot update trial subscription, please create a new subscription", http.StatusBadRequest)
-		return
+		return respond.BadRequest("cannot update trial subscription, please create a new subscription"), nil
+	} else if org.StripeSubscriptionID == nil || *org.StripeSubscriptionID == "" {
+		return respond.BadRequest("no active subscription found"), nil
 	}
 
-	if org.StripeSubscriptionID == nil || *org.StripeSubscriptionID == "" {
-		http.Error(w, "no active subscription found", http.StatusBadRequest)
-		return
-	}
-
-	var body api.UpdateSubscriptionRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		log.Debug("bad json payload", zap.Error(err))
-		http.Error(w, "bad json payload", http.StatusBadRequest)
-		return
+	body, resp := decodeJSON[api.UpdateSubscriptionRequest](r)
+	if resp != nil {
+		return resp, nil
 	}
 
 	// Requesting the current type is a no-op quantity update
@@ -98,31 +85,21 @@ func UpdateSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 		body.SubscriptionType = nil
 	}
 
-	// Plan switching is currently limited to the pro → business upgrade
+	var info *api.SubscriptionInfo
 	if body.SubscriptionType != nil &&
 		(org.SubscriptionType != types.SubscriptionTypePro ||
 			*body.SubscriptionType != types.SubscriptionTypeBusiness) {
-		http.Error(w, "only upgrading from the pro to the business plan is supported", http.StatusBadRequest)
-		return
-	}
-
-	var info *api.SubscriptionInfo
-	shouldRespond := false
-	err := db.RunTxRR(ctx, func(ctx context.Context) error {
+		// Plan switching is currently limited to the pro → business upgrade
+		return respond.BadRequest("only upgrading from the pro to the business plan is supported"), nil
+	} else if resp, err := runTxRR(ctx, func(ctx context.Context) (respond.Responder, error) {
 		org, err := db.GetOrganizationByID(ctx, org.ID)
 		if err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to get organization", zap.Error(err))
-			http.Error(w, "failed to get organization", http.StatusInternalServerError)
-			return err
+			return nil, fmt.Errorf("failed to get organization: %w", err)
 		}
 
 		usage, err := getCurrentUsageCounts(ctx, org.ID)
 		if err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to get current usage counts", zap.Error(err))
-			http.Error(w, "failed to get current usage counts", http.StatusInternalServerError)
-			return err
+			return nil, fmt.Errorf("failed to get current usage counts: %w", err)
 		}
 
 		// Quantities are validated against the target plan when switching plans
@@ -137,8 +114,7 @@ func UpdateSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 			body.UserAccountQty,
 			usage,
 		); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return err
+			return respond.BadRequest(err.Error()), nil
 		}
 
 		updatedSub, err := billing.UpdateSubscription(ctx, billing.SubscriptionUpdateParams{
@@ -148,40 +124,24 @@ func UpdateSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 			SubscriptionType:        body.SubscriptionType,
 			ReturnURL:               fmt.Sprintf("%v/subscription", handlerutil.GetRequestSchemeAndHost(r)),
 		})
-		if err != nil {
-			log.Error("failed to update subscription", zap.Error(err))
-
-			if stripeErr := new(stripe.Error); errors.As(err, &stripeErr) {
-				if stripeErr.Type == stripe.ErrorTypeInvalidRequest {
-					if stripeErr.Code == stripe.ErrorCodeResourceMissing {
-						http.Error(w, "stripe error: subscription not found", http.StatusBadRequest)
-						return err
-					} else {
-						http.Error(w, "stripe error: invalid request (has the subscription been canceled?)", http.StatusBadRequest)
-						return err
-					}
-				}
+		if stripeErr, ok := errors.AsType[*stripe.Error](err); ok && stripeErr.Type == stripe.ErrorTypeInvalidRequest {
+			if stripeErr.Code == stripe.ErrorCodeResourceMissing {
+				return respond.BadRequest("stripe error: subscription not found"), nil
+			} else {
+				return respond.BadRequest("stripe error: invalid request (has the subscription been canceled?)"), nil
 			}
-
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, "failed to update subscription", http.StatusInternalServerError)
-			return err
+		} else if err != nil {
+			return nil, fmt.Errorf("failed to update subscription: %w", err)
 		}
 
 		customerOrgQty, err := billing.GetCustomerOrganizationQty(*updatedSub)
 		if err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to get customer quantity from updated subscription", zap.Error(err))
-			http.Error(w, "failed to get customer quantity", http.StatusInternalServerError)
-			return err
+			return nil, fmt.Errorf("failed to get customer quantity from updated subscription: %w", err)
 		}
 
 		userAccountQty, err := billing.GetUserAccountQty(*updatedSub)
 		if err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to get user account quantity from updated subscription", zap.Error(err))
-			http.Error(w, "failed to get user account quantity", http.StatusInternalServerError)
-			return err
+			return nil, fmt.Errorf("failed to get user account quantity from updated subscription: %w", err)
 		}
 
 		// The subscription type and plan-managed features are intentionally NOT updated here.
@@ -193,33 +153,17 @@ func UpdateSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 		org.SubscriptionUserAccountQty = userAccountQty
 
 		if err := db.UpdateOrganization(ctx, org); err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to update organization", zap.Error(err))
-			http.Error(w, "failed to update organization", http.StatusInternalServerError)
-			return err
+			return nil, fmt.Errorf("failed to update organization: %w", err)
 		}
 
-		info, err = buildSubscriptionInfo(ctx, org)
-		if err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to build subscription info", zap.Error(err))
-			http.Error(w, "failed to build subscription info", http.StatusInternalServerError)
-			return err
+		if info, err = buildSubscriptionInfo(ctx, org); err != nil {
+			return nil, fmt.Errorf("failed to build subscription info: %w", err)
 		}
-
-		shouldRespond = true
-
-		return nil
-	})
-
-	if err != nil {
-		log.Error("update subscription failed", zap.Error(err))
-		if shouldRespond {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		return nil, nil
+	}); resp != nil || err != nil {
+		return resp, err
 	} else {
-		RespondJSON(w, info)
+		return respond.JSON(info), nil
 	}
 }
 

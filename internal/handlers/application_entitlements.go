@@ -18,11 +18,9 @@ import (
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 func ApplicationEntitlementsRouter(r chiopenapi.Router) {
@@ -32,7 +30,7 @@ func ApplicationEntitlementsRouter(r chiopenapi.Router) {
 		With(option.Description("List all application entitlements")).
 		With(option.Response(http.StatusOK, []types.ApplicationEntitlement{}))
 	r.With(middleware.RequireVendorOrPartner, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
-		Post("/", createApplicationEntitlement).
+		Post("/", respond.Handler(createApplicationEntitlement)).
 		With(option.Description("Create a new application entitlement")).
 		With(option.Request(types.ApplicationEntitlementWithVersions{}))
 	r.With(respond.Middleware(applicationEntitlementMiddleware)).
@@ -50,7 +48,7 @@ func ApplicationEntitlementsRouter(r chiopenapi.Router) {
 					r.Delete("/", respond.Handler(deleteApplicationEntitlement)).
 						With(option.Description("Delete an application entitlement")).
 						With(option.Request(ApplicationEntitlementRequest{}))
-					r.Put("/", updateApplicationEntitlement).
+					r.Put("/", respond.Handler(updateApplicationEntitlement)).
 						With(option.Description("Update an application entitlement")).
 						With(option.Request(struct {
 							ApplicationEntitlementRequest
@@ -61,77 +59,56 @@ func ApplicationEntitlementsRouter(r chiopenapi.Router) {
 		})
 }
 
-func createApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
+var applicationEntitlementNameTaken = respond.BadRequest("An entitlement with this name already exists")
+
+func createApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
-	entitlement, err := JsonBody[types.ApplicationEntitlementWithVersions](w, r)
-	if err != nil {
-		return
+	entitlement, resp := decodeJSON[types.ApplicationEntitlementWithVersions](r)
+	if resp != nil {
+		return resp, nil
 	}
 	entitlement.OrganizationID = *auth.CurrentOrgID()
 
+	var created *types.ApplicationEntitlement
 	if entitlement.Name == "" {
-		http.Error(w, "name is required", http.StatusBadRequest)
-		return
-	}
-	if entitlement.ApplicationID == uuid.Nil {
-		http.Error(w, "application is required", http.StatusBadRequest)
-		return
-	}
-
-	if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
-		if entitlement.CustomerOrganizationID == nil {
-			http.Error(w, "customer organization is required", http.StatusBadRequest)
-			return
-		}
-		co, coErr := db.GetCustomerOrganizationByID(ctx, *entitlement.CustomerOrganizationID)
-		if coErr != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-			http.Error(w, "customer is not assigned to your partner organization", http.StatusForbidden)
-			return
-		}
-	}
-
-	if err := checkRegistryInput(&entitlement); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	err = db.RunTx(ctx, func(ctx context.Context) error {
-		err := db.CreateApplicationEntitlement(ctx, &entitlement.ApplicationEntitlementBase)
-		if errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, "An entitlement with this name already exists", http.StatusBadRequest)
-			return err
+		return respond.BadRequest("name is required"), nil
+	} else if entitlement.ApplicationID == uuid.Nil {
+		return respond.BadRequest("application is required"), nil
+	} else if auth.CurrentPartnerOrgID() != nil && entitlement.CustomerOrganizationID == nil {
+		return respond.BadRequest("customer organization is required"), nil
+	} else if resp, err := checkReachableByPartner(
+		ctx, entitlement.CustomerOrganizationID, notAssignedToPartner,
+	); resp != nil || err != nil {
+		return resp, err
+	} else if err := checkRegistryInput(&entitlement); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
+		if err := db.CreateApplicationEntitlement(
+			ctx, &entitlement.ApplicationEntitlementBase,
+		); errors.Is(err, apierrors.ErrConflict) {
+			return applicationEntitlementNameTaken, nil
 		} else if err != nil {
-			log.Warn("could not create entitlement", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return err
+			return nil, fmt.Errorf("could not create entitlement: %w", err)
 		}
 		for _, version := range entitlement.Versions {
 			if err := db.AddVersionToApplicationEntitlement(
 				ctx, &entitlement.ApplicationEntitlementBase, version.ID,
 			); err != nil {
-				log.Warn("could not add version to entitlement", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return err
+				return nil, fmt.Errorf("could not add version to entitlement: %w", err)
 			}
 		}
 
-		if createdEntitlement, err := db.GetApplicationEntitlementByID(ctx, entitlement.ID); err != nil {
-			log.Warn("could not read previously created entitlement", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			return err
-		} else {
-			RespondJSON(w, createdEntitlement)
+		var err error
+		if created, err = db.GetApplicationEntitlementByID(ctx, entitlement.ID); err != nil {
+			return nil, fmt.Errorf("could not read previously created entitlement: %w", err)
 		}
-
-		return nil
-	})
-
-	if err == nil {
+		return nil, nil
+	}); resp != nil || err != nil {
+		return resp, err
+	} else {
 		notifyEntitledVersions(ctx, entitlement.ApplicationEntitlementBase, versionIDs(entitlement.Versions))
+		return respond.JSON(created), nil
 	}
 }
 
@@ -155,60 +132,45 @@ func versionIDs(versions []types.ApplicationVersion) []uuid.UUID {
 	return ids
 }
 
-func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
+func updateApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
-	entitlement, err := JsonBody[types.ApplicationEntitlementWithVersions](w, r)
-	if err != nil {
-		return
-	}
-	entitlement.OrganizationID = *auth.CurrentOrgID()
-
-	if entitlement.Name == "" {
-		http.Error(w, "name is required", http.StatusBadRequest)
-		return
-	}
-
 	existing := internalctx.GetApplicationEntitlement(ctx)
+	entitlement, resp := decodeJSON[types.ApplicationEntitlementWithVersions](r)
+	if resp != nil {
+		return resp, nil
+	}
 	entitlement.OrganizationID = existing.OrganizationID
 	if entitlement.ID == uuid.Nil {
 		entitlement.ID = existing.ID
-	} else if entitlement.ID != existing.ID {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	} else if existing.CustomerOrganizationID != nil &&
-		(entitlement.CustomerOrganizationID == nil ||
-			*existing.CustomerOrganizationID != *entitlement.CustomerOrganizationID) {
-		http.Error(w, "Changing the entitlement owner is not allowed", http.StatusBadRequest)
-		return
-	} else if existing.ApplicationID != entitlement.ApplicationID {
-		http.Error(w, "Changing the application is not allowed", http.StatusBadRequest)
-		return
 	}
-	if err := checkRegistryInput(&entitlement); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+
+	if entitlement.Name == "" {
+		return respond.BadRequest("name is required"), nil
+	} else if entitlement.ID != existing.ID {
+		return respond.BadRequest("entitlement ID does not match the URL"), nil
+	} else if existing.CustomerOrganizationID != nil &&
+		!util.PtrEq(existing.CustomerOrganizationID, entitlement.CustomerOrganizationID) {
+		return respond.BadRequest("Changing the entitlement owner is not allowed"), nil
+	} else if existing.ApplicationID != entitlement.ApplicationID {
+		return respond.BadRequest("Changing the application is not allowed"), nil
+	} else if err := checkRegistryInput(&entitlement); err != nil {
+		return respond.BadRequest(err.Error()), nil
 	}
 
 	addedVersionIDs, widened := widenedVersions(versionIDs(existing.Versions), versionIDs(entitlement.Versions))
 
-	err = db.RunTx(ctx, func(ctx context.Context) error {
-		err := db.UpdateApplicationEntitlement(ctx, &entitlement.ApplicationEntitlementBase)
-		if errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, "An entitlement with this name already exists", http.StatusBadRequest)
-			return err
+	var updated *types.ApplicationEntitlement
+	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
+		if err := db.UpdateApplicationEntitlement(
+			ctx, &entitlement.ApplicationEntitlementBase,
+		); errors.Is(err, apierrors.ErrConflict) {
+			return applicationEntitlementNameTaken, nil
 		} else if err != nil {
-			log.Warn("could not update entitlement", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return err
+			return nil, fmt.Errorf("could not update entitlement: %w", err)
 		}
 
-		newVersionIDs := make([]uuid.UUID, len(entitlement.Versions))
-		for i, v := range entitlement.Versions {
-			newVersionIDs[i] = v.ID
-		}
+		newVersionIDs := versionIDs(entitlement.Versions)
 
 		isNarrowing := false
 		if len(entitlement.Versions) > 0 {
@@ -228,44 +190,35 @@ func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 
 		if isNarrowing {
 			if conflicts, err := db.GetDeploymentsUsingVersionsNotInList(ctx, entitlement.ID, newVersionIDs); err != nil {
-				log.Warn("could not check deployment version usage", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return err
+				return nil, fmt.Errorf("could not check deployment version usage: %w", err)
 			} else if len(conflicts) > 0 {
-				msg := formatVersionConflictError(conflicts)
-				http.Error(w, msg, http.StatusConflict)
-				return errors.New(msg)
+				return respond.Conflict(formatVersionConflictError(conflicts)), nil
 			}
 		}
 
 		if err := db.SetApplicationEntitlementVersions(ctx, entitlement.ID, newVersionIDs); err != nil {
-			log.Warn("could not update entitlement versions", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return err
+			return nil, fmt.Errorf("could not update entitlement versions: %w", err)
 		}
 
 		// Widening the entitlement can make a newer version available to the customer.
 		if err := triggerAutomaticApplicationUpdates(
 			ctx, auth.CurrentOrg(), entitlement.ApplicationID, new(auth.CurrentUserID()),
 		); err != nil {
-			return automaticUpdateError(ctx, w, err)
+			return nil, fmt.Errorf("failed to trigger automatic application updates: %w", err)
 		}
 
-		if updatedEntitlement, err := db.GetApplicationEntitlementByID(ctx, entitlement.ID); err != nil {
-			log.Warn("could not read previously updated entitlement", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			return err
-		} else {
-			RespondJSON(w, updatedEntitlement)
+		var err error
+		if updated, err = db.GetApplicationEntitlementByID(ctx, entitlement.ID); err != nil {
+			return nil, fmt.Errorf("could not read previously updated entitlement: %w", err)
 		}
-
-		return nil
-	})
-
-	if err == nil && widened {
-		notifyEntitledVersions(ctx, entitlement.ApplicationEntitlementBase, addedVersionIDs)
+		return nil, nil
+	}); resp != nil || err != nil {
+		return resp, err
+	} else {
+		if widened {
+			notifyEntitledVersions(ctx, entitlement.ApplicationEntitlementBase, addedVersionIDs)
+		}
+		return respond.JSON(updated), nil
 	}
 }
 

@@ -10,7 +10,6 @@ import (
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/mapping"
@@ -20,11 +19,8 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/distr-sh/distr/internal/validation"
-	"github.com/getsentry/sentry-go"
-	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 func OrganizationRouter(r chiopenapi.Router) {
@@ -36,13 +32,13 @@ func OrganizationRouter(r chiopenapi.Router) {
 		With(option.Response(http.StatusOK, api.OrganizationResponse{}))
 
 	r.With(middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
-		r.With(middleware.BlockCrossOrganizationAction).Post("/", createOrganization).
+		r.With(middleware.BlockCrossOrganizationAction).Post("/", respond.Handler(createOrganization)).
 			With(option.Description("Create a new organization")).
 			With(option.Request(api.CreateUpdateOrganizationRequest{})).
 			With(option.Response(http.StatusOK, types.OrganizationWithUserRole{}))
 
 		r.With(middleware.RequireVendor, middleware.RequireAdmin).
-			Put("/", updateOrganization).
+			Put("/", respond.Handler(updateOrganization)).
 			With(option.Description("Update current organization")).
 			With(option.Request(api.CreateUpdateOrganizationRequest{})).
 			With(option.Response(http.StatusOK, types.Organization{}))
@@ -86,189 +82,141 @@ func getOrganization(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-func updateOrganization(w http.ResponseWriter, r *http.Request) {
+var slugNotAvailable = respond.BadRequest("Slug is not available")
+
+func updateOrganization(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 
-	body, err := JsonBody[api.CreateUpdateOrganizationRequest](w, r)
-	if err != nil {
-		return
-	} else if ok := validateOrganizationRequest(w, body); !ok {
-		return
-	}
-
-	if org, err := handleUpdateOrganization(ctx, *auth.CurrentOrgID(), body); err != nil {
-		switch {
-		case errors.Is(err, apierrors.ErrBadRequest):
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		case errors.Is(err, apierrors.ErrConflict):
-			http.Error(w, "Slug is not available", http.StatusBadRequest)
-		default:
-			internalctx.GetLogger(ctx).Error("failed to update organization", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
+	var org *types.Organization
+	if body, resp := decodeJSON[api.CreateUpdateOrganizationRequest](r); resp != nil {
+		return resp, nil
+	} else if resp := validateOrganizationRequest(body); resp != nil {
+		return resp, nil
+	} else if resp, err := runTxRR(ctx, func(ctx context.Context) (respond.Responder, error) {
+		var err error
+		if org, err = db.GetOrganizationByID(ctx, *auth.CurrentOrgID()); err != nil {
+			return nil, fmt.Errorf("failed to get organization: %w", err)
+		} else if org.Slug != nil && *org.Slug != "" && (body.Slug == nil || *body.Slug == "") {
+			return respond.BadRequest("slug can not get unset"), nil
+		} else if err := applyOrganizationUpdate(ctx, org, body); errors.Is(err, apierrors.ErrConflict) {
+			return slugNotAvailable, nil
+		} else if err != nil {
+			return nil, fmt.Errorf("failed to update organization: %w", err)
+		} else {
+			return nil, nil
 		}
+	}); resp != nil || err != nil {
+		return resp, err
 	} else {
-		RespondJSON(w, org)
+		return respond.JSON(org), nil
 	}
 }
 
-func createOrganization(w http.ResponseWriter, r *http.Request) {
+func createOrganization(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
-	log := internalctx.GetLogger(ctx)
 
 	if ok, err := db.ExistsVendorOrganizationWithUserID(ctx, auth.CurrentUserID()); err != nil {
-		log.Error("failed to check if user is vendor", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to check if user is vendor: %w", err)
 	} else if !ok {
-		http.Error(w, "only vendors can create organizations", http.StatusForbidden)
-		return
-	}
-
-	body, err := JsonBody[api.CreateUpdateOrganizationRequest](w, r)
-	if err != nil {
-		return
-	} else if ok := validateOrganizationRequest(w, body); !ok {
-		return
-	}
-
-	if reached, err := subscription.IsGlobalOrganizationLimitReached(ctx); err != nil {
-		log.Error("could not check global organization limit", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return respond.Forbidden("only vendors can create organizations"), nil
+	} else if body, resp := decodeJSON[api.CreateUpdateOrganizationRequest](r); resp != nil {
+		return resp, nil
+	} else if resp := validateOrganizationRequest(body); resp != nil {
+		return resp, nil
+	} else if reached, err := subscription.IsGlobalOrganizationLimitReached(ctx); err != nil {
+		return nil, fmt.Errorf("could not check global organization limit: %w", err)
 	} else if reached {
-		http.Error(w, subscription.GlobalOrganizationLimitReachedMessage, http.StatusBadRequest)
-		return
-	}
-
-	organization := types.Organization{
-		Name:                body.Name,
-		Slug:                body.Slug,
-		PreConnectScript:    body.PreConnectScript,
-		PostConnectScript:   body.PostConnectScript,
-		ConnectScriptIsSudo: body.ConnectScriptIsSudo,
-	}
-
-	if err := db.RunTx(ctx, func(ctx context.Context) error {
-		if err := db.CreateOrganization(ctx, &organization); err != nil {
-			return err
-		}
-		if err := db.CreateUserAccountOrganizationAssignment(
-			ctx, auth.CurrentUserID(), organization.ID, types.UserRoleAdmin, nil, nil); err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
-		if errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, "Slug is not available", http.StatusBadRequest)
-		} else {
-			log.Error("could not create organization", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		return respond.BadRequest(subscription.GlobalOrganizationLimitReachedMessage), nil
 	} else {
-		RespondJSON(w, types.OrganizationWithUserRole{
-			Organization: organization,
-			UserRole:     types.UserRoleAdmin,
-			JoinedOrgAt:  time.Now(),
-		})
+		organization := types.Organization{
+			Name:                body.Name,
+			Slug:                body.Slug,
+			PreConnectScript:    body.PreConnectScript,
+			PostConnectScript:   body.PostConnectScript,
+			ConnectScriptIsSudo: body.ConnectScriptIsSudo,
+		}
+
+		if err := db.RunTx(ctx, func(ctx context.Context) error {
+			if err := db.CreateOrganization(ctx, &organization); err != nil {
+				return err
+			}
+			return db.CreateUserAccountOrganizationAssignment(
+				ctx, auth.CurrentUserID(), organization.ID, types.UserRoleAdmin, nil, nil)
+		}); errors.Is(err, apierrors.ErrConflict) {
+			return slugNotAvailable, nil
+		} else if err != nil {
+			return nil, fmt.Errorf("could not create organization: %w", err)
+		} else {
+			return respond.JSON(types.OrganizationWithUserRole{
+				Organization: organization,
+				UserRole:     types.UserRoleAdmin,
+				JoinedOrgAt:  time.Now(),
+			}), nil
+		}
 	}
 }
 
-func validateOrganizationRequest(w http.ResponseWriter, organization api.CreateUpdateOrganizationRequest) bool {
+func validateOrganizationRequest(organization api.CreateUpdateOrganizationRequest) respond.Responder {
 	if organization.Name == "" {
-		http.Error(w, "name is required", http.StatusBadRequest)
-		return false
+		return respond.BadRequest("name is required")
 	}
 	if organization.Slug != nil {
 		if err := validation.ValidateSlug(*organization.Slug); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return false
+			return respond.BadRequest(err.Error())
 		}
 	}
-	return true
-}
-
-func validateOrganizationUpdate(body api.CreateUpdateOrganizationRequest, org types.Organization) error {
-	if org.Slug != nil && *org.Slug != "" {
-		if body.Slug == nil || *body.Slug == "" {
-			return fmt.Errorf("%w: slug can not get unset", apierrors.ErrBadRequest)
-		}
-	}
-
 	return nil
 }
 
-func handleUpdateOrganization(
+func applyOrganizationUpdate(
 	ctx context.Context,
-	id uuid.UUID,
+	org *types.Organization,
 	request api.CreateUpdateOrganizationRequest,
-) (*types.Organization, error) {
-	var org *types.Organization
+) error {
+	needsUpdate := false
 
-	err := db.RunTxRR(ctx, func(ctx context.Context) error {
-		var err error
-		org, err = db.GetOrganizationByID(ctx, id)
-		if err != nil {
-			return err
-		}
-
-		if err := validateOrganizationUpdate(request, *org); err != nil {
-			return err
-		}
-
-		needsUpdate := false
-
-		if org.Name != request.Name {
-			org.Name = request.Name
-			needsUpdate = true
-		}
-
-		if !util.PtrEq(org.Slug, request.Slug) {
-			org.Slug = request.Slug
-			needsUpdate = true
-		}
-
-		if !util.PtrEq(org.PreConnectScript, request.PreConnectScript) {
-			org.PreConnectScript = request.PreConnectScript
-			needsUpdate = true
-		}
-
-		if !util.PtrEq(org.PostConnectScript, request.PostConnectScript) {
-			org.PostConnectScript = request.PostConnectScript
-			needsUpdate = true
-		}
-
-		if request.ConnectScriptIsSudo != org.ConnectScriptIsSudo {
-			org.ConnectScriptIsSudo = request.ConnectScriptIsSudo
-			needsUpdate = true
-		}
-
-		if request.ArtifactVersionMutable != org.HasFeature(types.FeatureArtifactVersionMutable) {
-			org.SetFeature(types.FeatureArtifactVersionMutable, request.ArtifactVersionMutable)
-			needsUpdate = true
-		}
-
-		if request.PrePostScriptsEnabled != org.HasFeature(types.FeaturePrePostScripts) {
-			org.SetFeature(types.FeaturePrePostScripts, request.PrePostScriptsEnabled)
-			needsUpdate = true
-		}
-
-		if needsUpdate {
-			return db.UpdateOrganization(ctx, org)
-		}
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
+	if org.Name != request.Name {
+		org.Name = request.Name
+		needsUpdate = true
 	}
 
-	return org, nil
+	if !util.PtrEq(org.Slug, request.Slug) {
+		org.Slug = request.Slug
+		needsUpdate = true
+	}
+
+	if !util.PtrEq(org.PreConnectScript, request.PreConnectScript) {
+		org.PreConnectScript = request.PreConnectScript
+		needsUpdate = true
+	}
+
+	if !util.PtrEq(org.PostConnectScript, request.PostConnectScript) {
+		org.PostConnectScript = request.PostConnectScript
+		needsUpdate = true
+	}
+
+	if request.ConnectScriptIsSudo != org.ConnectScriptIsSudo {
+		org.ConnectScriptIsSudo = request.ConnectScriptIsSudo
+		needsUpdate = true
+	}
+
+	if request.ArtifactVersionMutable != org.HasFeature(types.FeatureArtifactVersionMutable) {
+		org.SetFeature(types.FeatureArtifactVersionMutable, request.ArtifactVersionMutable)
+		needsUpdate = true
+	}
+
+	if request.PrePostScriptsEnabled != org.HasFeature(types.FeaturePrePostScripts) {
+		org.SetFeature(types.FeaturePrePostScripts, request.PrePostScriptsEnabled)
+		needsUpdate = true
+	}
+
+	if needsUpdate {
+		return db.UpdateOrganization(ctx, org)
+	}
+
+	return nil
 }
 
 func deleteOrganizationHandler(r *http.Request) (respond.Responder, error) {

@@ -10,7 +10,6 @@ import (
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
@@ -18,11 +17,9 @@ import (
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 func CustomerOrganizationsRouter(r chiopenapi.Router) {
@@ -68,7 +65,7 @@ func CustomerOrganizationsRouter(r chiopenapi.Router) {
 		})
 
 		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
-			Post("/", createCustomerOrganizationHandler()).
+			Post("/", respond.Handler(createCustomerOrganizationHandler)).
 			With(option.Description("Create a new customer organization")).
 			With(option.Request(api.CreateUpdateCustomerOrganizationRequest{})).
 			With(option.Response(http.StatusOK, api.CustomerOrganization{}))
@@ -94,19 +91,15 @@ func getCustomerOrganizationsHandler(r *http.Request) (respond.Responder, error)
 	}
 }
 
-func createCustomerOrganizationHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
-		request, err := JsonBody[api.CreateUpdateCustomerOrganizationRequest](w, r)
-		if err != nil {
-			return
-		} else if err := request.Validate(); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
+func createCustomerOrganizationHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
 
+	if request, resp := decodeJSON[api.CreateUpdateCustomerOrganizationRequest](r); resp != nil {
+		return resp, nil
+	} else if err := request.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else {
 		customerOrganization := types.CustomerOrganization{
 			OrganizationID:        *auth.CurrentOrgID(),
 			Name:                  request.Name,
@@ -114,25 +107,22 @@ func createCustomerOrganizationHandler() http.HandlerFunc {
 			PartnerOrganizationID: auth.CurrentPartnerOrgID(),
 		}
 
-		err = db.RunTx(ctx, func(ctx context.Context) error {
+		if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 			if limitReached, err := subscription.IsCustomerOrganizationLimitReached(ctx, *auth.CurrentOrg()); err != nil {
-				return err
+				return nil, fmt.Errorf("failed to check customer limit: %w", err)
 			} else if limitReached {
-				return apierrors.NewForbidden("customer limit reached")
+				return respond.Forbidden("customer limit reached"), nil
+			} else if err := db.CreateCustomerOrganization(ctx, &customerOrganization); errors.Is(err, apierrors.ErrBadRequest) {
+				return respond.BadRequest(err.Error()), nil
+			} else if err != nil {
+				return nil, fmt.Errorf("failed to create customer org: %w", err)
+			} else {
+				return nil, nil
 			}
-			return db.CreateCustomerOrganization(ctx, &customerOrganization)
-		})
-
-		if err == nil {
-			RespondJSON(w, mapping.CustomerOrganizationToAPI(customerOrganization))
-		} else if errors.Is(err, apierrors.ErrBadRequest) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else if errors.Is(err, apierrors.ErrForbidden) {
-			http.Error(w, err.Error(), http.StatusForbidden)
+		}); resp != nil || err != nil {
+			return resp, err
 		} else {
-			log.Error("failed to create customer org", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return respond.JSON(mapping.CustomerOrganizationToAPI(customerOrganization)), nil
 		}
 	}
 }

@@ -15,7 +15,7 @@ func BillingRouter(r chiopenapi.Router) {
 		r.Group(func(r chiopenapi.Router) {
 			r.Use(middleware.RequireAdmin, middleware.BlockSuperAdmin)
 			r.Post("/", respond.Handler(CreateSubscriptionHandler))
-			r.Put("/", UpdateSubscriptionHandler)
+			r.Put("/", respond.Handler(UpdateSubscriptionHandler))
 		})
 	})
 	r.Group(func(r chiopenapi.Router) {

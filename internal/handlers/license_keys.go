@@ -20,11 +20,9 @@ import (
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 func LicenseKeysRouter(r chiopenapi.Router) {
@@ -58,7 +56,7 @@ func LicenseKeysRouter(r chiopenapi.Router) {
 
 		r.With(middleware.RequireVendorOrPartner, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 			Group(func(r chiopenapi.Router) {
-				r.Put("/", updateLicenseKey).
+				r.Put("/", respond.Handler(updateLicenseKey)).
 					With(option.Description("Update license key metadata and optionally create a new revision")).
 					With(option.Request(struct {
 						LicenseKeyIDRequest
@@ -134,16 +132,13 @@ func createLicenseKey(r *http.Request) (respond.Responder, error) {
 			licenseKey.ExpiresAt = &body.ExpiresAt
 		}
 
-		if partnerOrgID := authCtx.CurrentPartnerOrgID(); partnerOrgID != nil {
-			if body.CustomerOrganizationID == nil {
-				return respond.BadRequest("customer organization is required"), nil
-			} else if co, coErr := db.GetCustomerOrganizationByID(ctx, *body.CustomerOrganizationID); coErr != nil ||
-				!util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-				return respond.Forbidden("customer is not assigned to your partner organization"), nil
-			}
-		}
-
-		if err := db.CreateLicenseKey(ctx, &licenseKey); errors.Is(err, apierrors.ErrConflict) {
+		if authCtx.CurrentPartnerOrgID() != nil && body.CustomerOrganizationID == nil {
+			return respond.BadRequest("customer organization is required"), nil
+		} else if resp, err := checkReachableByPartner(
+			ctx, body.CustomerOrganizationID, notAssignedToPartner,
+		); resp != nil || err != nil {
+			return resp, err
+		} else if err := db.CreateLicenseKey(ctx, &licenseKey); errors.Is(err, apierrors.ErrConflict) {
 			return respond.BadRequest("A license key with this name already exists"), nil
 		} else if err != nil {
 			return nil, fmt.Errorf("could not create license key: %w", err)
@@ -185,35 +180,29 @@ func getLicenseKeyRevisions(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
+func updateLicenseKey(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	existing := internalctx.GetLicenseKey(ctx)
-
-	body, err := JsonBody[api.UpdateLicenseKeyRequest](w, r)
-	if err != nil {
-		return
-	}
-
 	authCtx := auth.Authentication.Require(ctx)
 
+	body, resp := decodeJSON[api.UpdateLicenseKeyRequest](r)
+	if resp != nil {
+		return resp, nil
+	}
+
 	if body.LicenseTemplateID != nil {
-		_, err := db.GetLicenseTemplateByID(ctx, *body.LicenseTemplateID, *authCtx.CurrentOrgID())
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.Error(w, "license template not found", http.StatusBadRequest)
-			return
+		if _, err := db.GetLicenseTemplateByID(
+			ctx, *body.LicenseTemplateID, *authCtx.CurrentOrgID(),
+		); errors.Is(err, apierrors.ErrNotFound) {
+			return respond.BadRequest("license template not found"), nil
 		} else if err != nil {
-			log.Warn("could not get license template", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return nil, fmt.Errorf("could not get license template: %w", err)
 		}
 	}
 
 	if body.Payload != nil {
 		if err := licensekey.ValidatePayload(*body.Payload); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+			return respond.BadRequest(err.Error()), nil
 		}
 	}
 
@@ -226,93 +215,70 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 		effectiveExpiresAt = existing.ExpiresAt
 	}
 	if effectiveExpiresAt != nil && effectiveNotBefore != nil && !effectiveExpiresAt.After(*effectiveNotBefore) {
-		http.Error(w, "expiresAt must be after notBefore", http.StatusBadRequest)
-		return
+		return respond.BadRequest("expiresAt must be after notBefore"), nil
 	}
 
 	needsRevision, err := licenseKeyRevisionChanged(existing, body)
 	if err != nil {
-		log.Warn("could not compare license key revision", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("could not compare license key revision: %w", err)
 	}
 
 	affected := []api.AffectedDeployment{}
 	if needsRevision && existing.CustomerOrganizationID != nil {
-		hypotheticalLicenseKey, err := updatedLicenseKeyForRequest(existing, body)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		affected, err = findAffectedDeploymentsByLicenseKey(
+		if hypotheticalLicenseKey, err := updatedLicenseKeyForRequest(existing, body); err != nil {
+			return respond.BadRequest(err.Error()), nil
+		} else if affected, err = findAffectedDeploymentsByLicenseKey(
 			ctx,
 			*authCtx.CurrentOrgID(),
 			*existing.CustomerOrganizationID,
 			hypotheticalLicenseKey,
-		)
-		if err != nil {
-			_ = deploymentValuesError(ctx, w, err, "invalid deployment values")
-			return
+		); err != nil {
+			return deploymentValuesError(err, "invalid deployment values")
 		}
 	}
 
-	confirm := r.URL.Query().Get("confirm") == "true"
-	if !confirm && len(affected) > 0 {
-		RespondJSONWithStatus(w, http.StatusConflict,
-			api.AffectedDeploymentsConflictResponse{AffectedDeployments: affected})
-		return
+	if confirm := r.URL.Query().Get("confirm") == "true"; !confirm && len(affected) > 0 {
+		return respond.JSON(api.AffectedDeploymentsConflictResponse{AffectedDeployments: affected}).
+			WithStatus(http.StatusConflict), nil
 	}
 
 	var result *types.LicenseKey
-	var errorHandled bool
-	err = db.RunTx(ctx, func(ctx context.Context) error {
-		if r, err := db.UpdateLicenseKeyMetadata(
+	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
+		var err error
+		if result, err = db.UpdateLicenseKeyMetadata(
 			ctx, existing.ID, body.Description, body.LicenseTemplateID,
 		); err != nil {
-			log.Warn("could not update license key", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			errorHandled = true
-			return err
-		} else {
-			result = r
+			return nil, fmt.Errorf("could not update license key: %w", err)
 		}
 
 		if needsRevision {
-			var handled bool
-			if handled, err = applyLicenseKeyRevision(ctx, w, log, existing, body, result); err != nil {
-				errorHandled = handled
-				return err
+			if resp, err := applyLicenseKeyRevision(ctx, existing, body, result); resp != nil || err != nil {
+				return resp, err
 			}
 		}
 
-		return triggerAffectedDeployments(
+		if err := triggerAffectedDeployments(
 			ctx, affected, new(authCtx.CurrentUserID()), types.DeploymentRevisionTriggerLicenseKeyChange,
-		)
-	})
-
-	if err != nil {
-		if !errorHandled {
-			log.Warn("update license key error", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		); err != nil {
+			return nil, fmt.Errorf("could not trigger affected deployments: %w", err)
 		}
+		return nil, nil
+	}); resp != nil || err != nil {
+		return resp, err
 	} else {
-		RespondJSON(w, api.UpdateLicenseKeyResponse{
+		return respond.JSON(api.UpdateLicenseKeyResponse{
 			LicenseKey:          *result,
 			AffectedDeployments: affected,
-		})
+		}), nil
 	}
 }
 
 func applyLicenseKeyRevision(
 	ctx context.Context,
-	w http.ResponseWriter,
-	log *zap.Logger,
 	existing *types.LicenseKey,
 	body api.UpdateLicenseKeyRequest,
 	result *types.LicenseKey,
-) (errorHandled bool, err error) {
+) (respond.Responder, error) {
 	notBefore := body.NotBefore
 	if notBefore == nil {
 		notBefore = existing.NotBefore
@@ -328,8 +294,7 @@ func applyLicenseKeyRevision(
 		payload = existing.Payload
 	}
 	if notBefore == nil || expiresAt == nil || payload == nil {
-		http.Error(w, "notBefore, expiresAt and payload are required to create a revision", http.StatusBadRequest)
-		return true, errors.New("missing revision fields")
+		return respond.BadRequest("notBefore, expiresAt and payload are required to create a revision"), nil
 	}
 	revision := types.LicenseKeyRevision{
 		LicenseKeyID: existing.ID,
@@ -338,16 +303,13 @@ func applyLicenseKeyRevision(
 		Payload:      payload,
 	}
 	if err := db.CreateLicenseKeyRevision(ctx, &revision); err != nil {
-		log.Warn("could not create license key revision", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return true, err
+		return nil, fmt.Errorf("could not create license key revision: %w", err)
 	}
 	result.NotBefore = &revision.NotBefore
 	result.ExpiresAt = &revision.ExpiresAt
 	result.Payload = revision.Payload
 	result.LastRevisedAt = &revision.CreatedAt
-	return false, nil
+	return nil, nil
 }
 
 func updatedLicenseKeyForRequest(

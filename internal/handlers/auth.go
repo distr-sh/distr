@@ -49,9 +49,9 @@ func AuthRouter(r chiopenapi.Router) {
 		),
 	)
 	// The login methods available on a host are part of the host-resolved GET /api/public/v1/portal response.
-	r.Post("/login", authLoginHandler)
+	r.Post("/login", respond.Handler(authLoginHandler))
 	r.Route("/oidc", AuthOIDCRouter)
-	r.Post("/register", authRegisterHandler)
+	r.Post("/register", respond.Handler(authRegisterHandler))
 	r.Post("/reset", respond.Handler(authResetPasswordHandler))
 	r.With(
 		auth.Authentication.Middleware,
@@ -272,177 +272,136 @@ func authSwitchContextHandler(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-func authLoginHandler(w http.ResponseWriter, r *http.Request) {
+var invalidCredentials = respond.BadRequest("invalid username or password")
+
+func authLoginHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
-	request, err := JsonBody[api.AuthLoginRequest](w, r)
-	if err != nil {
-		return
+
+	request, resp := decodeJSON[api.AuthLoginRequest](r)
+	if resp != nil {
+		return resp, nil
+	} else if err := request.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else if blocklist.EmailBlocked(request.Email) {
+		return respond.Forbidden(blocklist.EmailBlockedMessage), nil
 	}
-	if err := request.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	if blocklist.EmailBlocked(request.Email) {
-		http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
-		return
-	}
-	err = db.RunTx(ctx, func(ctx context.Context) error {
-		user, err := db.GetUserAccountByEmail(ctx, request.Email)
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.Error(w, "invalid username or password", http.StatusBadRequest)
-			return nil
+
+	var response api.AuthLoginResponse
+	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
+		if user, err := db.GetUserAccountByEmail(ctx, request.Email); errors.Is(err, apierrors.ErrNotFound) {
+			return invalidCredentials, nil
 		} else if err != nil {
-			return err
-		}
-		log = log.With(zap.Any("userId", user.ID))
-		if err = security.VerifyPassword(*user, request.Password); err != nil {
-			http.Error(w, "invalid username or password", http.StatusBadRequest)
-			return nil
-		}
-
-		switch err := userauth.VerifyMFA(ctx, *user, request.MFACode); {
-		case errors.Is(err, userauth.ErrMFARequired):
-			RespondJSON(w, api.AuthLoginResponse{RequiresMFA: true})
-			return nil
-		case errors.Is(err, userauth.ErrMFACodeInvalid):
-			http.Error(w, "invalid MFA code or recovery code", http.StatusUnauthorized)
-			return nil
-		case err != nil:
-			return err
-		}
-
-		if tokenString, err := userauth.GenerateLoginToken(ctx, *user); err != nil {
-			return fmt.Errorf("token creation failed: %w", err)
-		} else if err = db.UpdateUserAccountLastLoggedIn(ctx, user.ID); err != nil {
-			return err
+			return nil, fmt.Errorf("failed to get user account: %w", err)
+		} else if err := security.VerifyPassword(*user, request.Password); err != nil {
+			return invalidCredentials, nil
+		} else if err := userauth.VerifyMFA(ctx, *user, request.MFACode); errors.Is(err, userauth.ErrMFARequired) {
+			return respond.JSON(api.AuthLoginResponse{RequiresMFA: true}), nil
+		} else if errors.Is(err, userauth.ErrMFACodeInvalid) {
+			return respond.Unauthorized("invalid MFA code or recovery code"), nil
+		} else if err != nil {
+			return nil, fmt.Errorf("failed to verify MFA: %w", err)
+		} else if token, err := userauth.GenerateLoginToken(ctx, *user); errors.Is(
+			err, subscription.ErrGlobalOrganizationLimitReached,
+		) {
+			log.Warn("user login rejected, global organization limit reached", zap.Any("userId", user.ID))
+			return respond.BadRequest(subscription.GlobalOrganizationLimitReachedMessage), nil
+		} else if err != nil {
+			return nil, fmt.Errorf("token creation failed: %w", err)
+		} else if err := db.UpdateUserAccountLastLoggedIn(ctx, user.ID); err != nil {
+			return nil, fmt.Errorf("failed to update last login: %w", err)
 		} else {
-			RespondJSON(w, api.AuthLoginResponse{
-				Token:       tokenString,
-				RedirectURL: loginAppDomainRedirect(ctx, r, *user, tokenString),
-			})
-			return nil
+			response = api.AuthLoginResponse{Token: token, RedirectURL: loginAppDomainRedirect(ctx, r, *user, token)}
+			return nil, nil
 		}
-	})
-	if errors.Is(err, subscription.ErrGlobalOrganizationLimitReached) {
-		log.Warn("user login rejected, global organization limit reached")
-		http.Error(w, subscription.GlobalOrganizationLimitReachedMessage, http.StatusBadRequest)
-	} else if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Warn("user login failed", zap.Error(err))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}); resp != nil || err != nil {
+		return resp, err
+	} else {
+		return respond.JSON(response), nil
 	}
 }
 
-func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
+func authRegisterHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 
 	if env.Registration() == env.RegistrationDisabled {
-		http.Error(w, "registration is disabled", http.StatusForbidden)
-		return
+		return respond.Forbidden("registration is disabled"), nil
 	}
 
-	if host, err := resolvePortalHost(ctx, validation.NormalizeHostname(r.Host)); err != nil {
-		log.Error("could not resolve host for registration", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, "registration is not available on this domain", http.StatusForbidden)
-		return
-	} else if !host.registrationAllowed() {
-		http.Error(w, "registration is not available on this domain", http.StatusForbidden)
-		return
-	}
-
-	if request, err := JsonBody[api.AuthRegistrationRequest](w, r); err != nil {
-		return
-	} else if err := request.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	} else if blocklist.EmailBlocked(request.Email) {
-		http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
-		return
-	} else if !verifyRegistrationChallenge(w, r, request.TurnstileToken) {
-		return
-	} else {
-		userAccount := types.UserAccount{
-			Name:     request.Name,
-			Email:    request.Email,
-			Password: request.Password,
-		}
-		org := types.Organization{
-			Name: request.OrganizationName,
-		}
-		var token string
-
-		if err := db.RunTx(ctx, func(ctx context.Context) error {
-			if reached, err := subscription.IsGlobalOrganizationLimitReached(ctx); err != nil {
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return err
-			} else if reached {
-				http.Error(w, subscription.GlobalOrganizationLimitReachedMessage, http.StatusBadRequest)
-				return subscription.ErrGlobalOrganizationLimitReached
-			} else if err := security.HashPassword(&userAccount); err != nil {
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return err
-			} else if err = db.CreateUserAccountWithOrganization(ctx, &userAccount, &org); err != nil {
-				if errors.Is(err, apierrors.ErrAlreadyExists) {
-					http.Error(w, "an account with this email address already exists, please log in instead",
-						http.StatusBadRequest)
-				} else {
-					sentry.GetHubFromContext(ctx).CaptureException(err)
-					w.WriteHeader(http.StatusInternalServerError)
-				}
-				return err
-			} else if token, err = userauth.GenerateLoginToken(ctx, userAccount); err != nil {
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return err
-			}
-			return nil
-		}); err != nil {
-			log.Warn("user registration failed", zap.Error(err))
-			return
-		}
-
-		// When email verification is required the user is redirected to the verification page after logging in,
-		// so they need the verification mail. When it is disabled they are logged in directly and the mail would
-		// be pointless.
-		if env.UserEmailVerificationRequired() {
-			if err := mailsending.SendUserVerificationMail(ctx, userAccount, org, nil, false); err != nil {
-				log.Warn("could not send verification mail", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-			}
-		}
-
-		RespondJSON(w, api.AuthLoginResponse{Token: token})
-	}
-}
-
-func verifyRegistrationChallenge(w http.ResponseWriter, r *http.Request, token string) bool {
-	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
-
-	// Resolution is best-effort in the same way as in the portal endpoint: a failed lookup leaves the default
-	// host, which is the one that requires a challenge.
 	host, err := resolvePortalHost(ctx, validation.NormalizeHostname(r.Host))
 	if err != nil {
-		log.Warn("failed to resolve host for challenge verification", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-	}
-	if host.turnstileSiteKey() == nil {
-		return true
+		return nil, fmt.Errorf("could not resolve host for registration: %w", err)
+	} else if !host.registrationAllowed() {
+		return respond.Forbidden("registration is not available on this domain"), nil
 	}
 
-	if err := turnstile.Verify(ctx, token, chimiddleware.GetClientIP(ctx)); err != nil {
-		log.Info("turnstile verification failed", zap.Error(err))
-		// The frontend shows the message of a 4xx response as-is, so it has to be one a user can act on.
-		http.Error(w, "could not verify that you are human, please reload the page and try again",
-			http.StatusForbidden)
-		return false
+	request, resp := decodeJSON[api.AuthRegistrationRequest](r)
+	if resp != nil {
+		return resp, nil
+	} else if err := request.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else if blocklist.EmailBlocked(request.Email) {
+		return respond.Forbidden(blocklist.EmailBlockedMessage), nil
+	} else if resp := verifyRegistrationChallenge(ctx, host, request.TurnstileToken); resp != nil {
+		return resp, nil
 	}
-	return true
+
+	userAccount := types.UserAccount{
+		Name:     request.Name,
+		Email:    request.Email,
+		Password: request.Password,
+	}
+	org := types.Organization{
+		Name: request.OrganizationName,
+	}
+	var token string
+
+	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
+		if reached, err := subscription.IsGlobalOrganizationLimitReached(ctx); err != nil {
+			return nil, fmt.Errorf("could not check global organization limit: %w", err)
+		} else if reached {
+			return respond.BadRequest(subscription.GlobalOrganizationLimitReachedMessage), nil
+		} else if err := security.HashPassword(&userAccount); err != nil {
+			return nil, fmt.Errorf("failed to hash password: %w", err)
+		} else if err := db.CreateUserAccountWithOrganization(ctx, &userAccount, &org); errors.Is(
+			err, apierrors.ErrAlreadyExists,
+		) {
+			return respond.BadRequest("an account with this email address already exists, please log in instead"), nil
+		} else if err != nil {
+			return nil, fmt.Errorf("failed to create user account: %w", err)
+		} else if token, err = userauth.GenerateLoginToken(ctx, userAccount); err != nil {
+			return nil, fmt.Errorf("failed to generate login token: %w", err)
+		} else {
+			return nil, nil
+		}
+	}); resp != nil || err != nil {
+		return resp, err
+	}
+
+	// When email verification is required the user is redirected to the verification page after logging in,
+	// so they need the verification mail. When it is disabled they are logged in directly and the mail would
+	// be pointless.
+	if env.UserEmailVerificationRequired() {
+		if err := mailsending.SendUserVerificationMail(ctx, userAccount, org, nil, false); err != nil {
+			log.Warn("could not send verification mail", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+		}
+	}
+
+	return respond.JSON(api.AuthLoginResponse{Token: token}), nil
+}
+
+func verifyRegistrationChallenge(ctx context.Context, host portalHost, token string) respond.Responder {
+	if host.turnstileSiteKey() == nil {
+		return nil
+	} else if err := turnstile.Verify(ctx, token, chimiddleware.GetClientIP(ctx)); err != nil {
+		internalctx.GetLogger(ctx).Info("turnstile verification failed", zap.Error(err))
+		// The frontend shows the message of a 4xx response as-is, so it has to be one a user can act on.
+		return respond.Forbidden("could not verify that you are human, please reload the page and try again")
+	} else {
+		return nil
+	}
 }
 
 func authResetPasswordHandler(r *http.Request) (respond.Responder, error) {

@@ -24,12 +24,10 @@ import (
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
-	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/httprate"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 func UserAccountsRouter(r chiopenapi.Router) {
@@ -39,7 +37,7 @@ func UserAccountsRouter(r chiopenapi.Router) {
 			With(option.Description("List all user accounts")).
 			With(option.Response(http.StatusOK, []api.UserAccountResponse{}))
 		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
-			Post("/", createUserAccountHandler).
+			Post("/", respond.Handler(createUserAccountHandler)).
 			With(option.Description("Create a new user account")).
 			With(option.Request(api.CreateUserAccountRequest{})).
 			With(option.Response(http.StatusOK, api.CreateUserAccountResponse{}))
@@ -106,49 +104,28 @@ func getUserAccountsHandler(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
+func createUserAccountHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 
-	body, err := JsonBody[api.CreateUserAccountRequest](w, r)
-	if err != nil {
-		return
-	}
-	if err := body.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	if blocklist.EmailBlocked(body.Email) {
-		http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
-		return
-	}
-
-	if err := validateCreateUserAccount(ctx, &body); err != nil {
-		if errors.Is(err, apierrors.ErrBadRequest) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else if errors.Is(err, apierrors.ErrForbidden) {
-			http.Error(w, err.Error(), http.StatusForbidden)
-		} else {
-			log.Error("create user validation error", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
-		return
+	body, resp := decodeJSON[api.CreateUserAccountRequest](r)
+	if resp != nil {
+		return resp, nil
+	} else if err := body.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else if blocklist.EmailBlocked(body.Email) {
+		return respond.Forbidden(blocklist.EmailBlockedMessage), nil
+	} else if resp, err := validateCreateUserAccount(ctx, &body); resp != nil || err != nil {
+		return resp, err
 	}
 
 	var customerOrganization *types.CustomerOrganizationWithUsage
 	if body.CustomerOrganizationID != nil {
-		customerOrganization, err = getVerifiedCustomerOrganization(ctx, *body.CustomerOrganizationID)
-		if err != nil {
-			if errors.Is(err, apierrors.ErrBadRequest) {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-			} else {
-				log.Error("create user getting customer organization error", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			}
-			return
+		var err error
+		if customerOrganization, resp, err = getVerifiedCustomerOrganization(
+			ctx, *body.CustomerOrganizationID,
+		); resp != nil || err != nil {
+			return resp, err
 		}
 	}
 
@@ -160,46 +137,28 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 	// created here.
 	var emailInviteURL, responseInviteURL string
 
-	if err := db.RunTx(ctx, func(ctx context.Context) error {
+	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 		organization, err := db.GetOrganizationWithBranding(ctx, *auth.CurrentOrgID())
 		if err != nil {
-			err = fmt.Errorf("failed to get org with branding: %w", err)
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return err
-		}
-
-		if body.UserRole != types.UserRoleAdmin && !organization.SubscriptionType.IsPro() {
-			err = errors.New("creating non-admin users requires a pro subscription")
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return err
-		}
-
-		if limitReached, err := checkUserCreationLimits(ctx, organization.Organization, customerOrganization); err != nil {
-			log.Error("limit check error", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return err
+			return nil, fmt.Errorf("failed to get org with branding: %w", err)
+		} else if body.UserRole != types.UserRoleAdmin && !organization.SubscriptionType.IsPro() {
+			return respond.Forbidden("creating non-admin users requires a pro subscription"), nil
+		} else if limitReached, err := checkUserCreationLimits(
+			ctx, organization.Organization, customerOrganization,
+		); err != nil {
+			return nil, err
 		} else if limitReached {
-			err = errors.New("user limit reached")
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return err
+			return respond.Forbidden("user limit reached"), nil
 		}
 
 		created := false
 		if existingUA, err := db.GetUserAccountByEmail(ctx, body.Email); errors.Is(err, apierrors.ErrNotFound) {
 			created = true
 			if err := db.CreateUserAccount(ctx, &userAccount); err != nil {
-				err = fmt.Errorf("failed to create user account: %w", err)
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return err
+				return nil, fmt.Errorf("failed to create user account: %w", err)
 			}
 		} else if err != nil {
-			err = fmt.Errorf("failed to get existing user account: %w", err)
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return err
+			return nil, fmt.Errorf("failed to get existing user account: %w", err)
 		} else {
 			userAccount = *existingUA
 		}
@@ -212,29 +171,21 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 			body.CustomerOrganizationID,
 			body.PartnerOrganizationID,
 		); errors.Is(err, apierrors.ErrAlreadyExists) {
-			http.Error(w, "user is already part of this organization", http.StatusBadRequest)
-			return err
+			return respond.BadRequest("user is already part of this organization"), nil
 		} else if err != nil {
-			err = fmt.Errorf("failed to create user org assignment: %w", err)
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return err
+			return nil, fmt.Errorf("failed to create user org assignment: %w", err)
 		}
 
 		if !userAccount.Activated {
 			if emailInviteURL, err = generateUserInviteUrl(
 				ctx, userAccount, *organization, body.CustomerOrganizationID, true); err != nil {
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return err
+				return nil, err
 			}
 		}
 		if created && !env.UserEmailVerificationRequired() {
 			if responseInviteURL, err = generateUserInviteUrl(
 				ctx, userAccount, *organization, body.CustomerOrganizationID, false); err != nil {
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return err
+				return nil, err
 			}
 		}
 
@@ -245,88 +196,90 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 			body.CustomerOrganizationID,
 			emailInviteURL,
 		); err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return err
+			return nil, fmt.Errorf("failed to send user invite mail: %w", err)
 		}
 
-		return nil
-	}); err != nil {
-		log.Warn("could not create user", zap.Error(err))
-		return
+		return nil, nil
+	}); resp != nil || err != nil {
+		return resp, err
+	} else {
+		return respond.JSON(api.CreateUserAccountResponse{
+			User: mapping.UserAccountToAPI(userAccount.AsUserAccountWithRole(
+				body.UserRole, body.CustomerOrganizationID, body.PartnerOrganizationID, time.Now())),
+			InviteURL: responseInviteURL,
+		}), nil
 	}
-
-	RespondJSON(w, api.CreateUserAccountResponse{
-		User: mapping.UserAccountToAPI(userAccount.AsUserAccountWithRole(
-			body.UserRole, body.CustomerOrganizationID, body.PartnerOrganizationID, time.Now())),
-		InviteURL: responseInviteURL,
-	})
 }
 
-func validateCreateUserAccount(ctx context.Context, body *api.CreateUserAccountRequest) error {
+func validateCreateUserAccount(ctx context.Context, body *api.CreateUserAccountRequest) (respond.Responder, error) {
 	auth := auth.Authentication.Require(ctx)
 
 	if customerOrgID := auth.CurrentCustomerOrgID(); customerOrgID != nil {
 		if *auth.CurrentUserRole() != types.UserRoleAdmin {
-			return apierrors.NewForbidden("must be admin to create users")
+			return respond.Forbidden("must be admin to create users"), nil
 		}
 		body.CustomerOrganizationID = customerOrgID
 	} else if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
 		// Partners can only create users in their own partner org or their assigned customers.
 		if body.PartnerOrganizationID != nil {
 			if *auth.CurrentUserRole() != types.UserRoleAdmin {
-				return apierrors.NewForbidden("must be admin to create users in the given scope")
+				return respond.Forbidden("must be admin to create users in the given scope"), nil
 			}
 			if *body.PartnerOrganizationID != *partnerOrgID {
-				return apierrors.NewForbidden("cannot create users for a different partner organization")
+				return respond.Forbidden("cannot create users for a different partner organization"), nil
 			}
 		}
 		if body.CustomerOrganizationID == nil {
 			if *auth.CurrentUserRole() != types.UserRoleAdmin {
-				return apierrors.NewForbidden("must be admin to create users in the given scope")
+				return respond.Forbidden("must be admin to create users in the given scope"), nil
 			}
 			body.PartnerOrganizationID = partnerOrgID
 		}
 	} else if *auth.CurrentUserRole() != types.UserRoleAdmin &&
 		body.CustomerOrganizationID == nil && body.PartnerOrganizationID == nil {
-		return apierrors.NewForbidden("must be admin to create users in the given scope")
+		return respond.Forbidden("must be admin to create users in the given scope"), nil
 	}
 
 	if body.CustomerOrganizationID != nil && body.PartnerOrganizationID != nil {
-		return apierrors.NewBadRequest("cannot assign user to both a customer and a partner organization")
+		return respond.BadRequest("cannot assign user to both a customer and a partner organization"), nil
 	}
 
 	if body.PartnerOrganizationID != nil && auth.CurrentPartnerOrgID() == nil {
 		err := db.ValidatePartnerOrgBelongsToOrg(ctx, *body.PartnerOrganizationID, *auth.CurrentOrgID())
 		if errors.Is(err, db.ErrPartnerOrgNotInOrg) {
-			return apierrors.NewBadRequest("partner organization does not exist")
+			return respond.BadRequest("partner organization does not exist"), nil
 		} else if err != nil {
-			return fmt.Errorf("failed to validate partner org: %w", err)
+			return nil, fmt.Errorf("failed to validate partner org: %w", err)
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
-func getVerifiedCustomerOrganization(ctx context.Context, id uuid.UUID) (*types.CustomerOrganizationWithUsage, error) {
+var customerDoesNotExist = respond.BadRequest("customer does not exist")
+
+func getVerifiedCustomerOrganization(
+	ctx context.Context,
+	id uuid.UUID,
+) (*types.CustomerOrganizationWithUsage, respond.Responder, error) {
 	auth := auth.Authentication.Require(ctx)
 
 	co, err := db.GetCustomerOrganizationByID(ctx, id)
 	if errors.Is(err, apierrors.ErrNotFound) {
-		return nil, apierrors.NewBadRequest("customer does not exist")
+		return nil, customerDoesNotExist, nil
 	} else if err != nil {
-		return nil, fmt.Errorf("failed to get customer: %w", err)
+		return nil, nil, fmt.Errorf("failed to get customer: %w", err)
 	} else if co.OrganizationID != *auth.CurrentOrgID() {
-		return nil, apierrors.NewBadRequest("customer does not exist")
+		return nil, customerDoesNotExist, nil
 	}
 
 	// Partner users can only create users in customers assigned to their partner org.
 	partnerOrgID := auth.CurrentPartnerOrgID()
 	if partnerOrgID != nil && !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-		return nil, apierrors.NewForbidden("customer is not assigned to your partner organization")
+		return nil, notAssignedToPartner, nil
 	}
 
-	return co, nil
+	return co, nil, nil
 }
 
 func checkUserCreationLimits(

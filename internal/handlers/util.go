@@ -81,23 +81,39 @@ func parseTimeseriesRange(r *http.Request) (timeseriesRange, error) {
 	return timeseriesRange{Before: before, After: after, Filter: filter}, nil
 }
 
-// runTxOrRespond runs f in a transaction and reports whether that transaction committed. Failing to
-// begin or to commit it is answered with status 500, an error returned from f is not, since f has
-// already written the response for it.
-func runTxOrRespond(ctx context.Context, w http.ResponseWriter, f func(ctx context.Context) error) bool {
-	var fErr error
-	if err := db.RunTx(ctx, func(ctx context.Context) error {
-		fErr = f(ctx)
-		return fErr
-	}); err != nil {
-		if fErr == nil {
-			internalctx.GetLogger(ctx).Warn("could not run db transaction", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+var errRollback = errors.New("transaction rolled back")
+
+// runTx runs f in a transaction. A Responder returned from f rolls it back and answers the request,
+// so f rejects a request the way a handler does. Nil for both means f succeeded and it committed.
+func runTx(ctx context.Context, f func(ctx context.Context) (respond.Responder, error)) (respond.Responder, error) {
+	return runTxWith(ctx, db.RunTx, f)
+}
+
+// runTxRR is runTx with isolation level RepeatableRead.
+func runTxRR(ctx context.Context, f func(ctx context.Context) (respond.Responder, error)) (respond.Responder, error) {
+	return runTxWith(ctx, db.RunTxRR, f)
+}
+
+func runTxWith(
+	ctx context.Context,
+	run func(ctx context.Context, f func(ctx context.Context) error) error,
+	f func(ctx context.Context) (respond.Responder, error),
+) (respond.Responder, error) {
+	var resp respond.Responder
+	if err := run(ctx, func(ctx context.Context) error {
+		var err error
+		if resp, err = f(ctx); err != nil {
+			return err
+		} else if resp != nil {
+			return errRollback
+		} else {
+			return nil
 		}
-		return false
+	}); err != nil && !errors.Is(err, errRollback) {
+		return nil, err
+	} else {
+		return resp, nil
 	}
-	return true
 }
 
 // decodeJSON decodes and trims the body. A body that cannot be decoded is answered by the returned Responder.
