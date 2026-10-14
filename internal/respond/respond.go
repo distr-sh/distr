@@ -57,15 +57,10 @@ func Middleware(fn func(r *http.Request) (*http.Request, Responder, error)) func
 			if nextReq, resp, err := fn(r); nextReq != nil && resp == nil && err == nil {
 				next.ServeHTTP(w, nextReq)
 			} else {
-				Write(w, r, resp, err)
+				write(w, r, resp, err, nil)
 			}
 		})
 	}
-}
-
-// Write answers like [Handler], for code that writes to w itself.
-func Write(w http.ResponseWriter, r *http.Request, resp Responder, err error) {
-	write(w, r, resp, err, nil)
 }
 
 func write(w http.ResponseWriter, r *http.Request, resp Responder, err error, fallback Responder) {

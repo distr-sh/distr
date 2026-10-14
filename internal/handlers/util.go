@@ -128,29 +128,6 @@ func decodeJSON[T any](r *http.Request) (T, respond.Responder) {
 	return t, nil
 }
 
-func JsonBody[T any](w http.ResponseWriter, r *http.Request) (T, error) {
-	var t T
-	err := json.NewDecoder(r.Body).Decode(&t)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-	} else {
-		validation.TrimStrings(&t)
-	}
-	return t, err
-}
-
-func RespondJSON(w http.ResponseWriter, data any) {
-	RespondJSONWithStatus(w, http.StatusOK, data)
-}
-
-func RespondJSONWithStatus(w http.ResponseWriter, status int, data any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(data); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-	}
-}
-
 // attachment is the Content-Disposition value that makes a browser download the response as filename.
 func attachment(filename string) string {
 	return fmt.Sprintf("attachment; filename=\"%s\"", filename)
