@@ -9,6 +9,8 @@ on:
     paths:
       - 'website/**'
       - 'CHANGELOG.md'
+      - 'deploy/docker/quickstart/try.sh'
+      - 'skills/distr-onboarding/**'
       - '.github/workflows/website.yaml'
   pull_request:
     branches:
@@ -16,6 +18,8 @@ on:
     paths:
       - 'website/**'
       - 'CHANGELOG.md'
+      - 'deploy/docker/quickstart/try.sh'
+      - 'skills/distr-onboarding/**'
       - '.github/workflows/website.yaml'
 
 permissions:
@@ -39,6 +43,8 @@ jobs:
           sparse-checkout: |
             website
             CHANGELOG.md
+            deploy/docker/quickstart/try.sh
+            skills/distr-onboarding
           sparse-checkout-cone-mode: false
           # Starlight's lastUpdated reads each page's git history. At depth 1
           # every docs page is stamped with the deploy commit, which misinforms
