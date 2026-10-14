@@ -55,7 +55,11 @@ linters:
     rules:
       - linters:
           - forbidigo
-        path-except: ^internal/handlers/
+        path-except: ^internal/(handlers|middleware)/
+      - linters:
+          - forbidigo
+        path: ^internal/middleware/
+        text: http\.ResponseWriter
   settings:
     forbidigo:
       forbid:
