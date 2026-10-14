@@ -8,6 +8,9 @@ sidebar:
 ---
 
 import {Aside} from '@astrojs/starlight/components';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import awsEcsLight from '~/assets/docs/guides/aws-ecs/aws-ecs-light.webp';
+import awsEcsDark from '~/assets/docs/guides/aws-ecs/aws-ecs-dark.webp';
 
 Many enterprise customers standardize on [Amazon Elastic Container Service (ECS)](https://aws.amazon.com/ecs/) and want to run your application on the clusters they already operate.
 Distr supports this through its [artifact registry](/docs/registry/): you publish your container images to Distr and decide per customer which images and tags they are entitled to, and the customer's ECS tasks pull those images directly from Distr with a Personal Access Token.
@@ -22,6 +25,13 @@ You, the vendor, push your images to the Distr registry, grant them to a custome
 
 Your customer creates a Personal Access Token in the Customer Portal, stores it in AWS Secrets Manager and references it from the ECS task definition.
 ECS then authenticates against the Distr registry whenever it pulls the image to start a task.
+
+<ThemedImage
+  lightSrc={awsEcsLight}
+  darkSrc={awsEcsDark}
+  alt="Diagram of Amazon ECS tasks in the customer's AWS account pulling images from the Distr registry with an access token, with secrets from AWS Secrets Manager and an env file from S3 read at task start"
+  dropShadow={false}
+/>
 
 | What                                | Where it lives                              |
 | ----------------------------------- | ------------------------------------------- |
