@@ -161,14 +161,73 @@ func (resp StreamResponse) WriteResponse(w http.ResponseWriter, r *http.Request)
 	if closer, ok := resp.Body.(io.Closer); ok {
 		defer closer.Close()
 	}
-	contentType := resp.ContentType
+	writeStreamHeader(w, resp.ContentType, resp.Header, resp.Status)
+	_, err := io.Copy(w, resp.Body)
+	return err
+}
+
+func writeStreamHeader(w http.ResponseWriter, contentType string, header http.Header, status int) {
 	if contentType == "" {
 		contentType = "application/octet-stream"
 	}
 	w.Header().Set("Content-Type", contentType)
-	writeHeader(w, resp.Header, resp.Status)
-	_, err := io.Copy(w, resp.Body)
-	return err
+	writeHeader(w, header, status)
+}
+
+// WriterResponse lets WriteBody write the body while producing it. Status and headers are sent with
+// the first write, so until then WriteBody can answer in its place like a [Handler]. After it, an
+// error is only logged and a Responder is ignored. Defaults: 200, application/octet-stream.
+type WriterResponse struct {
+	Status      int
+	ContentType string
+	Header      http.Header
+	WriteBody   func(w io.Writer) (Responder, error)
+}
+
+func Writer(contentType string, writeBody func(w io.Writer) (Responder, error)) WriterResponse {
+	return WriterResponse{ContentType: contentType, WriteBody: writeBody}
+}
+
+func (resp WriterResponse) WithStatus(status int) WriterResponse {
+	resp.Status = status
+	return resp
+}
+
+func (resp WriterResponse) WithHeader(key, value string) WriterResponse {
+	resp.Header = withHeader(resp.Header, key, value)
+	return resp
+}
+
+func (resp WriterResponse) WriteResponse(w http.ResponseWriter, r *http.Request) error {
+	body := &deferredHeaderWriter{w: w, resp: resp}
+	if answer, err := resp.WriteBody(body); body.started {
+		return err
+	} else if err != nil {
+		return &notWrittenError{err}
+	} else if answer != nil {
+		return answer.WriteResponse(w, r)
+	} else {
+		body.start()
+		return nil
+	}
+}
+
+type deferredHeaderWriter struct {
+	w       http.ResponseWriter
+	resp    WriterResponse
+	started bool
+}
+
+func (d *deferredHeaderWriter) Write(p []byte) (int, error) {
+	if !d.started {
+		d.start()
+	}
+	return d.w.Write(p)
+}
+
+func (d *deferredHeaderWriter) start() {
+	d.started = true
+	writeStreamHeader(d.w, d.resp.ContentType, d.resp.Header, d.resp.Status)
 }
 
 // ErrorResponse sends Message as plain text. The frontend displays it verbatim, so write it for

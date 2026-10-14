@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"slices"
 	"strings"
@@ -61,7 +60,7 @@ func ControllerRouter(r chiopenapi.Router) {
 		r.Get("/pre-connect", respond.Handler(preConnectHandler)).
 			With(option.Request(ControllerConnectRequest{})).
 			With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
-		r.Get("/connect", connectHandler()).
+		r.Get("/connect", respond.Handler(connectHandler)).
 			With(option.Request(ControllerConnectRequest{})).
 			With(option.Response(http.StatusOK, map[string]any{}, option.ContentType("application/yaml")))
 	})
@@ -80,7 +79,7 @@ func ControllerRouter(r chiopenapi.Router) {
 			// controller routes, authenticated via token.
 			// manifest and resources are read-only and served from the read-only db. The auth
 			// middleware above (which may write the reported controller version) stays on the primary.
-			r.With(middleware.UseReadonlyDB).Get("/manifest", controllerManifestHandler())
+			r.With(middleware.UseReadonlyDB).Get("/manifest", respond.Handler(controllerManifestHandler))
 			r.With(middleware.UseReadonlyDB).Get("/resources", respond.Handler(controllerResourcesHandler))
 			r.Post("/status", respond.Handler(controllerPostStatusHandler))
 			r.Post("/metrics", respond.Handler(controllerPostMetricsHander))
@@ -95,31 +94,17 @@ func ControllerRouter(r chiopenapi.Router) {
 	r.Route("/agent", controllerRoutes)
 }
 
-func connectHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		deploymentTarget := internalctx.GetDeploymentTarget(ctx)
+func connectHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	deploymentTarget := internalctx.GetDeploymentTarget(ctx)
+	secret := r.URL.Query().Get("targetSecret")
 
-		org, err := db.GetOrganizationWithBranding(ctx, deploymentTarget.OrganizationID)
-		if err != nil {
-			log.Error("could not get organization for deployment target", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		secret := r.URL.Query().Get("targetSecret")
-		if manifest, err := controllermanifest.Get(ctx, *deploymentTarget, *org, &secret); err != nil {
-			log.Error("could not get controller manifest", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			w.Header().Add("Content-Type", "application/yaml")
-			if _, err := io.Copy(w, manifest); err != nil {
-				log.Warn("writing to client failed", zap.Error(err))
-			}
-		}
+	if org, err := db.GetOrganizationWithBranding(ctx, deploymentTarget.OrganizationID); err != nil {
+		return nil, fmt.Errorf("could not get organization for deployment target: %w", err)
+	} else if manifest, err := controllermanifest.Get(ctx, *deploymentTarget, *org, &secret); err != nil {
+		return nil, fmt.Errorf("could not get controller manifest: %w", err)
+	} else {
+		return respond.Stream("application/yaml", manifest), nil
 	}
 }
 
@@ -532,25 +517,16 @@ func recordDeploymentTarget(ctx context.Context, deploymentTarget *types.Deploym
 	})
 }
 
-func controllerManifestHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		deploymentTarget := internalctx.GetDeploymentTarget(ctx)
-		log := internalctx.GetLogger(ctx).With(zap.String("deploymentTargetId", deploymentTarget.ID.String()))
-		if org, err := db.GetOrganizationWithBranding(ctx, deploymentTarget.OrganizationID); err != nil {
-			log.Error("could not get org for deployment target", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else if manifest, err := controllermanifest.Get(ctx, *deploymentTarget, *org, nil); err != nil {
-			log.Error("could not get controller manifest", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			w.Header().Add("Content-Type", "application/yaml")
-			if _, err := io.Copy(w, manifest); err != nil {
-				log.Warn("writing to client failed", zap.Error(err))
-			}
-		}
+func controllerManifestHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	deploymentTarget := internalctx.GetDeploymentTarget(ctx)
+
+	if org, err := db.GetOrganizationWithBranding(ctx, deploymentTarget.OrganizationID); err != nil {
+		return nil, fmt.Errorf("could not get org for deployment target %v: %w", deploymentTarget.ID, err)
+	} else if manifest, err := controllermanifest.Get(ctx, *deploymentTarget, *org, nil); err != nil {
+		return nil, fmt.Errorf("could not get controller manifest for deployment target %v: %w", deploymentTarget.ID, err)
+	} else {
+		return respond.Stream("application/yaml", manifest), nil
 	}
 }
 

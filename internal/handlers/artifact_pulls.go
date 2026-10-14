@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,7 +13,6 @@ import (
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
@@ -20,11 +20,9 @@ import (
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 func ArtifactPullsRouter(r chiopenapi.Router) {
@@ -57,19 +55,9 @@ func ArtifactPullsRouter(r chiopenapi.Router) {
 			ArtifactID string `query:"artifactId"`
 		}{})).
 		With(option.Response(http.StatusOK, []api.ArtifactPullFilterOption{}))
-	r.Get("/export", exportArtifactPullsHandler()).
+	r.Get("/export", respond.Handler(exportArtifactPullsHandler)).
 		With(option.Description("Export artifact version pulls as CSV")).
 		With(option.Response(http.StatusOK, []byte{}))
-}
-
-// parseArtifactPullFilters is artifactPullFilter for handlers that write to w themselves.
-func parseArtifactPullFilters(w http.ResponseWriter, r *http.Request) (types.ArtifactVersionPullFilter, error) {
-	filter, err := artifactPullFilter(r)
-	if err != nil {
-		resp, respErr := artifactPullFilterError(err)
-		respond.Write(w, r, resp, respErr)
-	}
-	return filter, err
 }
 
 func artifactPullFilter(r *http.Request) (types.ArtifactVersionPullFilter, error) {
@@ -232,61 +220,50 @@ func getArtifactPullVersionOptionsHandler(r *http.Request) (respond.Responder, e
 	}
 }
 
-func exportArtifactPullsHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
+func exportArtifactPullsHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
 
-		filter, err := parseArtifactPullFilters(w, r)
-		if err != nil {
-			return
-		}
-
+	if filter, err := artifactPullFilter(r); err != nil {
+		return artifactPullFilterError(err)
+	} else {
 		filter.Count = int(subscription.MaxArtifactPullExportRows)
-
-		pulls, err := db.GetArtifactVersionPulls(ctx, filter)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Warn("could not get pulls for export", zap.Error(err))
-			return
-		}
-
-		filename := fmt.Sprintf("%s_artifact_pulls.csv", time.Now().Format("2006-01-02"))
-		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
-
-		csvWriter := csv.NewWriter(w)
-		header := []string{
-			"Date", "Customer", "User", "Email", "Deployment Target", "Anonymous", "Address",
-			"Artifact", "Version",
-		}
-		if err := csvWriter.Write(header); err != nil {
-			log.Warn("could not write CSV header", zap.Error(err))
-			return
-		}
-
-		for _, pull := range pulls {
-			apiPull := mapping.ArtifactVersionPullToAPI(pull)
-			if err := csvWriter.Write([]string{
-				apiPull.CreatedAt.Format(time.RFC3339),
-				util.PtrDerefOrDefault(apiPull.CustomerOrganizationName),
-				util.PtrDerefOrDefault(apiPull.UserAccountName),
-				util.PtrDerefOrDefault(apiPull.UserAccountEmail),
-				util.PtrDerefOrDefault(apiPull.DeploymentTargetName),
-				strconv.FormatBool(apiPull.Anonymous),
-				util.PtrDerefOrDefault(apiPull.RemoteAddress),
-				apiPull.Artifact.Name,
-				apiPull.ArtifactVersion.Name,
-			}); err != nil {
-				log.Warn("could not write CSV row", zap.Error(err))
-				return
-			}
-		}
-
-		csvWriter.Flush()
-		if err := csvWriter.Error(); err != nil {
-			log.Warn("CSV flush error", zap.Error(err))
+		if pulls, err := db.GetArtifactVersionPulls(ctx, filter); err != nil {
+			return nil, fmt.Errorf("could not get pulls for export: %w", err)
+		} else {
+			filename := fmt.Sprintf("%s_artifact_pulls.csv", time.Now().Format("2006-01-02"))
+			return respond.Writer("text/csv; charset=utf-8", func(w io.Writer) (respond.Responder, error) {
+				return nil, writeArtifactPullsCSV(w, pulls)
+			}).WithHeader("Content-Disposition", attachment(filename)), nil
 		}
 	}
+}
+
+func writeArtifactPullsCSV(w io.Writer, pulls []types.ArtifactVersionPull) error {
+	csvWriter := csv.NewWriter(w)
+	if err := csvWriter.Write([]string{
+		"Date", "Customer", "User", "Email", "Deployment Target", "Anonymous", "Address",
+		"Artifact", "Version",
+	}); err != nil {
+		return fmt.Errorf("could not write CSV header: %w", err)
+	}
+
+	for _, pull := range pulls {
+		apiPull := mapping.ArtifactVersionPullToAPI(pull)
+		if err := csvWriter.Write([]string{
+			apiPull.CreatedAt.Format(time.RFC3339),
+			util.PtrDerefOrDefault(apiPull.CustomerOrganizationName),
+			util.PtrDerefOrDefault(apiPull.UserAccountName),
+			util.PtrDerefOrDefault(apiPull.UserAccountEmail),
+			util.PtrDerefOrDefault(apiPull.DeploymentTargetName),
+			strconv.FormatBool(apiPull.Anonymous),
+			util.PtrDerefOrDefault(apiPull.RemoteAddress),
+			apiPull.Artifact.Name,
+			apiPull.ArtifactVersion.Name,
+		}); err != nil {
+			return fmt.Errorf("could not write CSV row: %w", err)
+		}
+	}
+
+	csvWriter.Flush()
+	return csvWriter.Error()
 }

@@ -368,7 +368,7 @@ func downloadSupportBundleResourcesHandler(r *http.Request) (respond.Responder, 
 	} else {
 		filename := supportBundleZipFileName(bundle)
 		return respond.Stream("application/zip", &buffer).
-			WithHeader("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename)), nil
+			WithHeader("Content-Disposition", attachment(filename)), nil
 	}
 }
 

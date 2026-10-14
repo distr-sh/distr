@@ -92,7 +92,7 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 				With(option.Description("Get logs for this deployment target")).
 				With(option.Request(DeploymentTargetTimeseriesRequest{})).
 				With(option.Response(http.StatusOK, []api.DeploymentTargetLogRecord{}))
-			r.Get("/logs/export", exportDeploymentTargetLogRecordsHandler()).
+			r.Get("/logs/export", respond.Handler(exportDeploymentTargetLogRecordsHandler)).
 				With(option.Description("Export logs for this deployment target")).
 				With(option.Request(struct {
 					DeploymentTargetIDRequest

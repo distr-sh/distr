@@ -5,20 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html"
 	"io"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/distr-sh/distr/internal/contenttype"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/handlerutil"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/validation"
-	"github.com/getsentry/sentry-go"
-	"go.uber.org/zap"
 )
 
 type TimeseriesRequest struct {
@@ -155,41 +151,24 @@ func RespondJSONWithStatus(w http.ResponseWriter, status int, data any) {
 	}
 }
 
-func SetFileDownloadHeaders(w http.ResponseWriter, filename string) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+// attachment is the Content-Disposition value that makes a browser download the response as filename.
+func attachment(filename string) string {
+	return fmt.Sprintf("attachment; filename=\"%s\"", filename)
 }
 
-func readMultipartFile(w http.ResponseWriter, r *http.Request, formKey string) ([]byte, bool) {
-	log := internalctx.GetLogger(r.Context())
-	if file, head, err := r.FormFile(formKey); err != nil {
-		if !errors.Is(err, http.ErrMissingFile) {
-			log.Error("failed to get file from upload", zap.Error(err))
-			sentry.GetHubFromContext(r.Context()).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return nil, false
-		} else {
-			return nil, true
-		}
+// readMultipartFile reads the optional YAML file formKey of at most 100 KiB from a multipart form.
+func readMultipartFile(r *http.Request, formKey string) ([]byte, respond.Responder, error) {
+	if file, head, err := r.FormFile(formKey); errors.Is(err, http.ErrMissingFile) {
+		return nil, nil, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get file %v from upload: %w", formKey, err)
+	} else if head.Size > 102400 {
+		return nil, respond.Error(http.StatusRequestEntityTooLarge, "file too large (max 100 KiB)"), nil
+	} else if err := contenttype.IsYaml(head.Header); err != nil {
+		return nil, respond.Error(http.StatusUnsupportedMediaType, err.Error()), nil
+	} else if data, err := io.ReadAll(file); err != nil {
+		return nil, nil, fmt.Errorf("failed to read file %v from upload: %w", formKey, err)
 	} else {
-		log.Sugar().Debugf("got file %v with type %v and size %v", head.Filename, head.Header, head.Size)
-		// max file size is 100KiB
-		if head.Size > 102400 {
-			log.Debug("large body was rejected")
-			w.WriteHeader(http.StatusRequestEntityTooLarge)
-			fmt.Fprintln(w, "file too large (max 100 KiB)")
-			return nil, false
-		} else if err := contenttype.IsYaml(head.Header); err != nil {
-			w.WriteHeader(http.StatusUnsupportedMediaType)
-			fmt.Fprint(w, html.EscapeString(err.Error()))
-			return nil, false
-		} else if data, err := io.ReadAll(file); err != nil {
-			log.Error("failed to read file from upload", zap.Error(err))
-			sentry.GetHubFromContext(r.Context()).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return nil, false
-		} else {
-			return data, true
-		}
+		return data, nil, nil
 	}
 }

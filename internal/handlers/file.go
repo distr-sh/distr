@@ -121,7 +121,7 @@ func getFileHandler(r *http.Request) (respond.Responder, error) {
 	file := internalctx.GetFile(ctx)
 
 	return respond.Stream(file.ContentType, bytes.NewReader(file.Data)).
-		WithHeader("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", file.FileName)).
+		WithHeader("Content-Disposition", attachment(file.FileName)).
 		WithHeader("Cache-Control", cacheControlPrivateFile), nil
 }
 

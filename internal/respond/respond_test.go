@@ -2,7 +2,9 @@ package respond
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -51,6 +53,33 @@ func TestHandlerErrors(t *testing.T) {
 		cancel()
 		rec, events := serve(t, ctx, nil, fmt.Errorf("query: %w", context.Canceled))
 		g.Expect(rec.Body.Len()).To(BeZero())
+		g.Expect(events).To(BeEmpty())
+	})
+
+	t.Run("writer answers in its place until the first write", func(t *testing.T) {
+		g := NewWithT(t)
+		rec, _ := serve(t, t.Context(), Writer("text/csv", func(io.Writer) (Responder, error) {
+			return BadRequest("invalid filter"), nil
+		}), nil)
+		g.Expect(rec.Code).To(Equal(http.StatusBadRequest))
+		g.Expect(rec.Header().Get("Content-Type")).NotTo(Equal("text/csv"))
+
+		rec, events := serve(t, t.Context(), Writer("text/csv", func(io.Writer) (Responder, error) {
+			return nil, errors.New("query failed")
+		}), nil)
+		g.Expect(rec.Code).To(Equal(http.StatusInternalServerError))
+		g.Expect(events).To(HaveLen(1))
+	})
+
+	t.Run("writer keeps what it wrote when failing afterwards", func(t *testing.T) {
+		g := NewWithT(t)
+		rec, events := serve(t, t.Context(), Writer("text/csv", func(w io.Writer) (Responder, error) {
+			_, _ = io.WriteString(w, "a,b\n")
+			return BadRequest("ignored"), errors.New("query failed")
+		}), nil)
+		g.Expect(rec.Code).To(Equal(http.StatusOK))
+		g.Expect(rec.Header().Get("Content-Type")).To(Equal("text/csv"))
+		g.Expect(rec.Body.String()).To(Equal("a,b\n"))
 		g.Expect(events).To(BeEmpty())
 	})
 

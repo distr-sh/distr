@@ -22,11 +22,9 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/distr-sh/distr/internal/validation"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 func ApplicationsRouter(r chiopenapi.Router) {
@@ -91,7 +89,7 @@ func ApplicationsRouter(r chiopenapi.Router) {
 					r.With(middleware.RequireVendor).
 						With(middleware.RequireReadWriteOrAdmin).
 						With(middleware.BlockSuperAdmin).
-						Post("/", createApplicationVersion).
+						Post("/", respond.Handler(createApplicationVersion)).
 						With(option.Description("Create a new application version")).
 						With(option.Request(struct {
 							ApplicationRequest
@@ -420,75 +418,32 @@ func getApplicationVersion(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
+func createApplicationVersion(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
+	auth := auth.Authentication.Require(ctx)
+	application := internalctx.GetApplication(ctx)
 
-	body := r.FormValue("applicationversion")
 	var request api.CreateApplicationVersionRequest
-	if err := json.NewDecoder(strings.NewReader(body)).Decode(&request); err != nil {
-		log.Error("failed to decode version", zap.Error(err))
-		w.WriteHeader(http.StatusBadRequest)
-		return
+	if err := json.NewDecoder(strings.NewReader(r.FormValue("applicationversion"))).Decode(&request); err != nil {
+		return respond.BadRequest(err.Error()), nil
 	}
 	validation.TrimStrings(&request)
 
-	application := internalctx.GetApplication(ctx)
 	applicationVersion := mapping.CreateApplicationVersionToInternal(request)
 	applicationVersion.ApplicationID = application.ID
+	applicationVersion.CreatedByUserAccountID = new(auth.CurrentUserID())
+	resources := applicationVersion.Resources
 
-	if application.Type == types.DeploymentTypeDocker {
-		if data, ok := readMultipartFile(w, r, "composefile"); !ok {
-			return
-		} else {
-			applicationVersion.ComposeFileData = data
-			if _, err := applicationVersion.ParsedComposeFile(); err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-		}
-		if data, ok := readMultipartFile(w, r, "templatefile"); !ok {
-			return
-		} else {
-			applicationVersion.TemplateFileData = data
-		}
-	} else {
-		if data, ok := readMultipartFile(w, r, "valuesfile"); !ok {
-			return
-		} else {
-			applicationVersion.ValuesFileData = data
-			if _, err := applicationVersion.ParsedValuesFile(); err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-		}
-		if data, ok := readMultipartFile(w, r, "templatefile"); !ok {
-			return
-		} else {
-			// Template file is taken without parsing on purpose.
-			// Some uses might use a non-yaml template here.
-			applicationVersion.TemplateFileData = data
-		}
-	}
-
-	if err := applicationVersion.Validate(application.Type); err != nil {
-		log.Error("invalid application version", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if err := types.ValidateVersionsForStrategy(
+	if resp, err := readApplicationVersionFiles(r, application.Type, &applicationVersion); resp != nil || err != nil {
+		return resp, err
+	} else if err := applicationVersion.Validate(application.Type); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else if err := types.ValidateVersionsForStrategy(
 		application.VersioningStrategy,
 		append(slices.Clone(application.Versions), applicationVersion),
 	); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	auth := auth.Authentication.Require(ctx)
-	applicationVersion.CreatedByUserAccountID = new(auth.CurrentUserID())
-	resources := applicationVersion.Resources
-	if err := db.RunTx(ctx, func(ctx context.Context) error {
+		return respond.BadRequest(err.Error()), nil
+	} else if err := db.RunTx(ctx, func(ctx context.Context) error {
 		if err := db.CreateApplicationVersion(ctx, &applicationVersion); err != nil {
 			return err
 		}
@@ -497,23 +452,54 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 		}
 		return triggerAutomaticApplicationUpdates(
 			ctx, auth.CurrentOrg(), application.ID, new(auth.CurrentUserID()))
-	}); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
-		} else if errors.Is(err, apierrors.ErrAlreadyExists) {
-			http.Error(w, "Application version cannot be created because a version with this name already exists.",
-				http.StatusBadRequest)
-		} else {
-			log.Warn("could not create applicationversion", zap.Error(err))
-			sentry.GetHubFromContext(r.Context()).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+	}); errors.Is(err, apierrors.ErrNotFound) {
+		return applicationNotFound, nil
+	} else if errors.Is(err, apierrors.ErrAlreadyExists) {
+		return respond.BadRequest(
+			"Application version cannot be created because a version with this name already exists.",
+		), nil
+	} else if err != nil {
+		return nil, fmt.Errorf("could not create applicationversion: %w", err)
 	} else {
 		notification.Dispatch(ctx, func(ctx context.Context) error {
 			return notification.SendApplicationUpdateAvailableNotifications(ctx, applicationVersion)
 		})
 
-		RespondJSON(w, applicationVersionMapper(ctx)(applicationVersion))
+		return respond.JSON(applicationVersionMapper(ctx)(applicationVersion)), nil
+	}
+}
+
+func readApplicationVersionFiles(
+	r *http.Request,
+	deploymentType types.DeploymentType,
+	version *types.ApplicationVersion,
+) (respond.Responder, error) {
+	if deploymentType == types.DeploymentTypeDocker {
+		if data, resp, err := readMultipartFile(r, "composefile"); resp != nil || err != nil {
+			return resp, err
+		} else {
+			version.ComposeFileData = data
+		}
+		if _, err := version.ParsedComposeFile(); err != nil {
+			return respond.BadRequest(err.Error()), nil
+		}
+	} else {
+		if data, resp, err := readMultipartFile(r, "valuesfile"); resp != nil || err != nil {
+			return resp, err
+		} else {
+			version.ValuesFileData = data
+		}
+		if _, err := version.ParsedValuesFile(); err != nil {
+			return respond.BadRequest(err.Error()), nil
+		}
+	}
+
+	// The template file is taken without parsing on purpose, since some use a non-YAML template.
+	if data, resp, err := readMultipartFile(r, "templatefile"); resp != nil || err != nil {
+		return resp, err
+	} else {
+		version.TemplateFileData = data
+		return nil, nil
 	}
 }
 

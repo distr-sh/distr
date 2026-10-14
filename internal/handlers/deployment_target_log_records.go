@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"iter"
 	"net/http"
 	"strings"
 	"time"
@@ -52,49 +53,32 @@ func getDeploymentTargetLogRecordsHandler(r *http.Request) (respond.Responder, e
 	}
 }
 
-func exportDeploymentTargetLogRecordsHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		deploymentTarget := internalctx.GetDeploymentTarget(ctx)
-		authInfo := auth.Authentication.Require(ctx)
-		org := authInfo.CurrentOrg()
+func exportDeploymentTargetLogRecordsHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	deploymentTarget := internalctx.GetDeploymentTarget(ctx)
+	org := auth.Authentication.Require(ctx).CurrentOrg()
 
-		queryRange, err := parseLogQueryRange(r, org.SubscriptionType)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+	if queryRange, err := parseLogQueryRange(r, org.SubscriptionType); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else {
+		var records iter.Seq2[logstore.DeploymentTargetLogRecord, error] = noRecords
+		if !queryRange.IsEmpty() {
+			records = logstore.FromContext(ctx).QueryDeploymentTargetLogRecords(
+				ctx, org.ID, logstore.DeploymentTargetLogQuery{
+					DeploymentTargetID: deploymentTarget.ID,
+					Start:              queryRange.Start,
+					End:                queryRange.End,
+					Filter:             queryRange.Filter,
+					Limit:              subscription.MaxLogExportRows,
+					Direction:          types.OrderDirectionDesc,
+				},
+			)
 		}
 
 		filename := fmt.Sprintf("%s_controller.log", time.Now().Format("2006-01-02"))
-		export := newExportWriter(w, log, filename)
-
-		if queryRange.IsEmpty() {
-			export.finish()
-			return
-		}
-
-		logStore := logstore.FromContext(ctx)
-		records := logStore.QueryDeploymentTargetLogRecords(ctx, org.ID, logstore.DeploymentTargetLogQuery{
-			DeploymentTargetID: deploymentTarget.ID,
-			Start:              queryRange.Start,
-			End:                queryRange.End,
-			Filter:             queryRange.Filter,
-			Limit:              subscription.MaxLogExportRows,
-			Direction:          types.OrderDirectionDesc,
-		})
-		for record, err := range records {
-			if err != nil {
-				export.fail(ctx, "failed to export deployment target log records", err)
-				return
-			}
-			if err := export.writeLine("%s\t%s\t%s\n",
-				record.Timestamp.Format(time.RFC3339),
-				record.Severity,
-				strings.TrimSpace(record.Body)); err != nil {
-				return
-			}
-		}
-		export.finish()
+		return logExport(filename, records, func(record logstore.DeploymentTargetLogRecord) string {
+			return fmt.Sprintf("%s\t%s\t%s\n",
+				record.Timestamp.Format(time.RFC3339), record.Severity, strings.TrimSpace(record.Body))
+		}), nil
 	}
 }

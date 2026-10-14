@@ -9,7 +9,6 @@ import (
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
@@ -18,11 +17,9 @@ import (
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/supportbundle"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 // SupportBundleScriptRouter handles endpoints called by the collect script.
@@ -42,7 +39,7 @@ func SupportBundleScriptRouter(r chiopenapi.Router) {
 			With(option.Request(BundleIDRequest{})).
 			With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
 
-		r.Post("/resources", uploadSupportBundleResourceHandler()).
+		r.Post("/resources", respond.Handler(uploadSupportBundleResourceHandler)).
 			With(option.Description("Upload a support bundle resource")).
 			With(option.Request(struct {
 				BundleIDRequest
@@ -91,56 +88,36 @@ func getCollectScriptHandler(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-func uploadSupportBundleResourceHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		bundle := auth.SupportBundleAuthentication.Require(ctx)
+func uploadSupportBundleResourceHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	bundle := auth.SupportBundleAuthentication.Require(ctx)
 
-		if bundle.Status != types.SupportBundleStatusInitialized {
-			http.Error(w, "support bundle is not accepting data", http.StatusBadRequest)
-			return
-		}
-
-		// The request body size is limited by the requestSize middleware on the route.
-		if err := r.ParseMultipartForm(1 << 20); err != nil {
-			http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
-			return
-		}
-
-		// A multipart form value does not go through JsonBody, so it is not trimmed generically.
-		name := strings.TrimSpace(r.FormValue("name"))
-		if name == "" {
-			http.Error(w, "name is required", http.StatusBadRequest)
-			return
-		}
-
-		file, _, err := r.FormFile("content")
-		if err != nil {
-			http.Error(w, "content file is required", http.StatusBadRequest)
-			return
-		}
+	// The request body size is limited by the requestSize middleware on the route. A multipart form
+	// value does not go through decodeJSON, so it is not trimmed generically.
+	if bundle.Status != types.SupportBundleStatusInitialized {
+		return respond.BadRequest("support bundle is not accepting data"), nil
+	} else if err := r.ParseMultipartForm(1 << 20); err != nil {
+		return respond.Error(http.StatusRequestEntityTooLarge, "request body too large"), nil
+	} else if name := strings.TrimSpace(r.FormValue("name")); name == "" {
+		return respond.BadRequest("name is required"), nil
+	} else if file, _, err := r.FormFile("content"); err != nil {
+		return respond.BadRequest("content file is required"), nil
+	} else {
 		defer file.Close()
-
-		contentBytes, err := io.ReadAll(file)
-		if err != nil {
-			http.Error(w, "failed to read content", http.StatusBadRequest)
-			return
+		if contentBytes, err := io.ReadAll(file); err != nil {
+			return respond.BadRequest("failed to read content"), nil
+		} else {
+			resource := types.SupportBundleResource{
+				SupportBundleID: bundle.ID,
+				Name:            name,
+				Content:         dbcrypto.String(contentBytes),
+			}
+			if err := db.CreateSupportBundleResource(ctx, &resource); err != nil {
+				return nil, fmt.Errorf("failed to create support bundle resource: %w", err)
+			} else {
+				return respond.JSON(mapping.SupportBundleResourceToSummaryAPI(resource)), nil
+			}
 		}
-
-		resource := types.SupportBundleResource{
-			SupportBundleID: bundle.ID,
-			Name:            name,
-			Content:         dbcrypto.String(contentBytes),
-		}
-		if err := db.CreateSupportBundleResource(ctx, &resource); err != nil {
-			log.Error("failed to create support bundle resource", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		RespondJSON(w, mapping.SupportBundleResourceToSummaryAPI(resource))
 	}
 }
 
