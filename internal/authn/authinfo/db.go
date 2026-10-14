@@ -46,6 +46,9 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 					return nil, authn.ErrBadAuthentication
 				} else if err != nil {
 					return nil, err
+				} else if !user.IsSuperAdmin {
+					// A token issued before the flag was revoked still carries the claim.
+					return nil, authn.ErrBadAuthentication
 				}
 				org, err := db.GetOrganizationWithBranding(ctx, *a.CurrentOrgID())
 				if errors.Is(err, apierrors.ErrNotFound) {
@@ -53,22 +56,29 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 				} else if err != nil {
 					return nil, err
 				}
+				portal, customerOrg, foreignContext, err := sessionPortal(ctx, a, Portal{}, nil)
+				if err != nil {
+					return nil, err
+				}
 				return &DbAuthInfo{
 					AuthInfo: &SimpleAuthInfo{
 						userID:                 a.CurrentUserID(),
 						userEmail:              a.CurrentUserEmail(),
 						organizationID:         a.CurrentOrgID(),
-						customerOrganizationID: nil,
+						customerOrganizationID: portal.CustomerOrganizationID,
+						partnerOrganizationID:  portal.PartnerOrganizationID,
 						emailVerified:          a.CurrentUserEmailVerified(),
 						tokenScope:             a.TokenScope(),
 						isAccessToken:          a.IsAccessToken(),
 						isCustomOIDCSession:    a.IsCustomOIDCSession(),
 						userRole:               nil, // Super admins don't have a role
 						isSuperAdmin:           true,
+						isForeignContext:       foreignContext,
 						rawToken:               a.Token(),
 					},
-					user: user,
-					org:  org,
+					user:        user,
+					org:         org,
+					customerOrg: customerOrg,
 				}, nil
 			}
 			// Regular users: require org membership and validate role
@@ -87,25 +97,36 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 					// fine (e.g. a PAT scoped to a lower role); above means the
 					// user was demoted after the credential was issued.
 					return nil, authn.ErrBadAuthentication
+				} else if portal, customerOrg, foreignContext, err := sessionPortal(
+					ctx,
+					a,
+					Portal{
+						CustomerOrganizationID: m.User.CustomerOrganizationID,
+						PartnerOrganizationID:  m.User.PartnerOrganizationID,
+					},
+					m.CustomerOrganization,
+				); err != nil {
+					return nil, err
 				} else {
 					return &DbAuthInfo{
 						AuthInfo: &SimpleAuthInfo{
 							userID:                 a.CurrentUserID(),
 							userEmail:              a.CurrentUserEmail(),
 							organizationID:         a.CurrentOrgID(),
-							customerOrganizationID: m.User.CustomerOrganizationID,
-							partnerOrganizationID:  m.User.PartnerOrganizationID,
+							customerOrganizationID: portal.CustomerOrganizationID,
+							partnerOrganizationID:  portal.PartnerOrganizationID,
 							emailVerified:          a.CurrentUserEmailVerified(),
 							tokenScope:             a.TokenScope(),
 							isAccessToken:          a.IsAccessToken(),
 							isCustomOIDCSession:    a.IsCustomOIDCSession(),
 							userRole:               a.CurrentUserRole(),
 							isSuperAdmin:           false,
+							isForeignContext:       foreignContext,
 							rawToken:               a.Token(),
 						},
 						user:        new(m.User.AsUserAccount()),
 						org:         &m.Organization,
-						customerOrg: m.CustomerOrganization,
+						customerOrg: customerOrg,
 					}, nil
 				}
 			}
@@ -122,6 +143,29 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 		}
 	}
 	return authn.AuthenticatorFunc[AuthInfo, AuthInfoWithUserAndOrganization](fn)
+}
+
+// sessionPortal returns the portal a session operates in, the customer organization of that portal and
+// whether that portal is a foreign context, one the session operates in without being a member. A personal
+// access token always operates in its membership's portal: only a login session switches, through the
+// switch-context endpoint.
+func sessionPortal(
+	ctx context.Context,
+	a AuthInfo,
+	membership Portal,
+	membershipCustomerOrg *types.CustomerOrganization,
+) (Portal, *types.CustomerOrganization, bool, error) {
+	requested := Portal{CustomerOrganizationID: a.CurrentCustomerOrgID(), PartnerOrganizationID: a.CurrentPartnerOrgID()}
+	if a.IsAccessToken() || IsOwnPortal(membership, requested) {
+		return membership, membershipCustomerOrg, false, nil
+	}
+	customerOrg, err := EnterPortal(ctx, *a.CurrentOrgID(), membership, a.IsSuperAdmin(), requested)
+	if errors.Is(err, ErrPortalForbidden) {
+		return Portal{}, nil, false, authn.ErrBadAuthentication
+	} else if err != nil {
+		return Portal{}, nil, false, err
+	}
+	return requested, customerOrg, true, nil
 }
 
 type controllerDBAuthInfo struct {

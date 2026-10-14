@@ -5,7 +5,7 @@ import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {PartnerOrganizationWithUsage} from '@distr-sh/distr-sdk';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
-import {faBuilding, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faBuilding, faPlus, faShuffle, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {filter, firstValueFrom, map, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {AuthService} from '../../services/auth.service';
@@ -36,6 +36,7 @@ export class PartnerOrganizationsComponent {
   protected readonly faBuilding = faBuilding;
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
+  protected readonly faShuffle = faShuffle;
 
   protected readonly auth = inject(AuthService);
   private readonly partnerOrganizationsService = inject(PartnerOrganizationsService);
@@ -124,6 +125,17 @@ export class PartnerOrganizationsComponent {
         },
       })
       .add(() => this.savingPartnerId.set(undefined));
+  }
+
+  protected async openPortal(partner: PartnerOrganizationWithUsage) {
+    try {
+      await this.auth.switchPortal({partnerOrganizationId: partner.id});
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    }
   }
 
   protected delete(partner: PartnerOrganizationWithUsage) {

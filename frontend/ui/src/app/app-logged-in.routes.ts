@@ -102,6 +102,13 @@ const requireVendorOrCustomer: CanActivateFn = () => {
   return inject(Router).createUrlTree(['/']);
 };
 
+const requireOwnContext: CanActivateFn = () => {
+  if (!inject(AuthService).isForeignContext()) {
+    return true;
+  }
+  return inject(Router).createUrlTree(['/']);
+};
+
 function licensingEnabledGuard(): CanActivateFn {
   return async () => {
     const featureFlags = inject(FeatureFlagService);
@@ -432,6 +439,7 @@ export const routes: Routes = [
           },
           {
             path: 'access-tokens',
+            canActivate: [requireOwnContext],
             children: [
               {
                 path: '',

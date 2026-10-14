@@ -46,6 +46,14 @@
               </td>
               <td
                 class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
+                <button
+                  type="button"
+                  (click)="openPortal(partner)"
+                  title="Switch to this partner's portal"
+                  class="py-2 px-3 flex items-center gap-2 text-sm font-medium text-center distr-btn-secondary">
+                  <fa-icon [icon]="faShuffle" />
+                  Open Portal
+                </button>
                 <a
                   [routerLink]="[partner.id, 'users']"
                   class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">

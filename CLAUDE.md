@@ -57,6 +57,7 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 - Use `new(value)` to obtain a `*T` from a typed value (e.g. `new(types.UserRoleReadOnly)`). Do not use `util.PtrTo`.
 - Use `errors.AsType[E](err)` where the target type is known at the call site, since it needs no pre-declared variable: `if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation`. Keep `errors.As` where the target is an interface a caller passes in.
 - Write 4xx bodies for the end user. The frontend forms display them verbatim (`getFormDisplayedError`), so put anything only a developer can use into the log instead.
+- Scope what a request reads and writes by the customer and partner organization of its auth info (`CurrentCustomerOrgID`, `CurrentPartnerOrgID`, `CurrentCustomerOrg`), never by the user's membership (`db.GetOrganizationMembership`), since a vendor or partner member can be switched into another portal (see `authinfo.EnterPortal`). Guard what belongs to the membership itself, personal access tokens being the example, with `middleware.RequireOwnContext`.
 - Hash a credential that is CSPRNG output, an access token secret being the example, with the digest in `internal/authkey`, and have the statement that looks it up also check the expiration and record the use (`db.AuthenticateAccessToken`). Never read the row, compare in Go and write it back, which authenticates a credential revoked in between. Keep the argon2id hashing in `internal/security` for what a human chose (passwords) and for long-lived shared secrets (deployment target keys).
 
 ## Frontend Code
@@ -191,6 +192,8 @@ Never trim a single request field by hand. `validation.TrimStrings` in `handlers
 ## API Routes
 
 Define routes in `internal/routing/`, grouped by what they authenticate with: public, user (JWT), admin, controller token and the OCI registry's own scheme.
+
+Guard every route that writes with a role middleware (`RequireReadWriteOrAdmin`, `RequireAdmin`) and with `middleware.BlockSuperAdmin`, since super admins pass every role check but must stay read-only. Creating an organization is the exception, which super admins may do (see `mayCreateOrganization`).
 
 Keep the OpenAPI spec valid, which the `chiopenapi` router generates from the route definitions. Declare path parameters, query parameters and request bodies with `option.Request()` and a struct using `path:`, `query:` and `json:` tags, composing path param structs with body request structs by embedding as the existing routes do. An endpoint with neither parameters nor a body needs no `option.Request()`.
 

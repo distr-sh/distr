@@ -35,6 +35,11 @@ const (
 	// for logging.
 	CustomOIDCConfigurationIDKey = "oidc"
 
+	// ForeignContextKey marks a session in a foreign context, a customer or partner portal its user is not a
+	// member of. It is meant for the frontend only: authentication decides this against the database on every
+	// request.
+	ForeignContextKey = "foreign"
+
 	audienceUserValue = "user"
 	// audienceControllerValue keeps the value from before the rename to controller, so a token issued before
 	// an upgrade still carries the audience of one issued after it.
@@ -104,6 +109,25 @@ func GenerateCustomOIDCToken(
 	return generateUserToken(user, &org, defaultTokenExpiration, map[string]any{
 		CustomOIDCConfigurationIDKey: customOIDCConfigurationID.String(),
 	})
+}
+
+// GenerateContextToken generates the token that switches the session of current to another organization or
+// portal. foreignContext marks a session that operates in a portal its user is not a member of. A session of a
+// custom OIDC provider stays one, so that switching cannot lift the confinement GenerateCustomOIDCToken describes.
+func GenerateContextToken(
+	current jwt.Token,
+	user types.UserAccount,
+	org types.OrganizationWithUserRole,
+	foreignContext bool,
+) (jwt.Token, string, error) {
+	extraClaims := map[string]any{}
+	if foreignContext {
+		extraClaims[ForeignContextKey] = true
+	}
+	if customOIDCConfigurationID, ok := current.Field(CustomOIDCConfigurationIDKey); ok {
+		extraClaims[CustomOIDCConfigurationIDKey] = customOIDCConfigurationID
+	}
+	return generateUserToken(user, &org, defaultTokenExpiration, extraClaims)
 }
 
 func GenerateResetToken(user types.UserAccount) (jwt.Token, string, error) {

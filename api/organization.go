@@ -5,6 +5,7 @@ import (
 
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/validation"
+	"github.com/google/uuid"
 )
 
 type CreateUpdateOrganizationRequest struct {
@@ -15,6 +16,16 @@ type CreateUpdateOrganizationRequest struct {
 	ConnectScriptIsSudo    bool    `json:"connectScriptIsSudo"`
 	ArtifactVersionMutable bool    `json:"artifactVersionMutable"`
 	PrePostScriptsEnabled  bool    `json:"prePostScriptsEnabled"`
+}
+
+type CreateOrganizationRequest struct {
+	CreateUpdateOrganizationRequest
+	AdminEmail string `json:"adminEmail,omitempty"`
+}
+
+type CreateOrganizationResponse struct {
+	ID        uuid.UUID `json:"id"`
+	InviteURL string    `json:"inviteUrl,omitempty"`
 }
 
 type OrganizationResponse struct {

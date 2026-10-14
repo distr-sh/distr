@@ -33,6 +33,16 @@ export interface CreateUpdateOrganizationRequest {
   prePostScriptsEnabled: boolean;
 }
 
+export interface CreateOrganizationRequest {
+  name: string;
+  adminEmail?: string;
+}
+
+export interface CreateOrganizationResponse {
+  id: string;
+  inviteUrl?: string;
+}
+
 export interface Organization extends BaseModel, Named {
   name: string;
   slug?: string;

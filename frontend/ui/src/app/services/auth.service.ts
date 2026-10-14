@@ -3,8 +3,8 @@ import {inject, Injectable} from '@angular/core';
 import {LoginResponse, TokenResponse, UserRole} from '@distr-sh/distr-sdk';
 import dayjs from 'dayjs';
 import {jwtDecode} from 'jwt-decode';
-import {map, Observable, of, tap, throwError} from 'rxjs';
-import {Organization} from '../types/organization';
+import {firstValueFrom, map, Observable, of, tap, throwError} from 'rxjs';
+import {Portal, SwitchContextRequest} from '../types/context-switch';
 
 const tokenStorageKey = 'cloud_token';
 const actionTokenStorageKey = 'distr_action_token';
@@ -21,6 +21,8 @@ export interface JWTClaims {
   scope?: 'password_reset' | 'invite';
   // The custom OIDC configuration that authenticated the session; absent on every other login.
   oidc?: string;
+  // Present while the session is in a foreign context, a customer or partner portal its user is not a member of.
+  foreign?: boolean;
   email_verified: boolean;
   name: string;
   exp: string;
@@ -91,12 +93,10 @@ export class AuthService {
     return this.getClaims()?.is_super_admin === true;
   }
 
-  /**
-   * Whether the session was authenticated by an organization's own identity provider. Such a session stays inside
-   * that organization and cannot change the account's sign-in methods, because the provider is controlled by the
-   * organization rather than by the account's owner. The server enforces both; this only keeps the UI from
-   * offering actions that would be rejected.
-   */
+  public isForeignContext(): boolean {
+    return this.getClaims()?.foreign === true;
+  }
+
   public isCustomOidcSession(): boolean {
     return this.getClaims()?.oidc !== undefined;
   }
@@ -228,19 +228,22 @@ export class AuthService {
     return this.httpClient.get<{active: boolean}>(`${authBaseUrl}/status`);
   }
 
-  public switchContext(org: Organization): Observable<boolean> {
-    return this.httpClient
-      .post<TokenResponse | undefined>(`${authBaseUrl}/switch-context`, {organizationId: org.id})
-      .pipe(
-        map((r) => {
-          if (r) {
-            this.token = r.token;
-            this.actionToken = null;
-            return true;
-          }
-          return false;
-        })
-      );
+  public async switchContext(request: SwitchContextRequest, targetPath = '/'): Promise<void> {
+    const response = await firstValueFrom(
+      this.httpClient.post<TokenResponse | null>(`${authBaseUrl}/switch-context`, request)
+    );
+    if (response) {
+      this.token = response.token;
+      this.actionToken = null;
+      location.assign(targetPath);
+    }
+  }
+
+  public async switchPortal(portal: Portal): Promise<void> {
+    const organizationId = this.getClaims()?.org;
+    if (organizationId !== undefined) {
+      await this.switchContext({...portal, organizationId});
+    }
   }
 
   public logout(): Observable<void> {

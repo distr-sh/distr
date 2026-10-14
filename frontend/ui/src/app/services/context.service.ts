@@ -3,6 +3,7 @@ import {inject, Injectable} from '@angular/core';
 import {CustomerOrganization, PartnerOrganization, SidebarLink, UserAccountWithRole} from '@distr-sh/distr-sdk';
 import posthog from 'posthog-js';
 import {map, Observable, shareReplay, startWith, Subject, switchMap, tap} from 'rxjs';
+import {ContextSwitchTargets} from '../types/context-switch';
 import {Organization, OrganizationWithUserRole} from '../types/organization';
 
 interface ContextResponse {
@@ -73,6 +74,10 @@ export class ContextService {
 
   public canCreateOrganization(): Observable<boolean> {
     return this.cache.pipe(map((ctx) => ctx.canCreateOrganization));
+  }
+
+  public getSwitchTargets(): Observable<ContextSwitchTargets> {
+    return this.httpClient.get<ContextSwitchTargets>(`${this.baseUrl}/switch-targets`);
   }
 
   public reload() {

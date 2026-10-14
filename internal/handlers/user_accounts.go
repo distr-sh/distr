@@ -152,13 +152,8 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	userAccount := types.UserAccount{
-		Email: body.Email,
-		Name:  body.Name,
-	}
-	// An invite link lets its holder set the account's password, so the one in the response is only for an account
-	// created here.
-	var emailInviteURL, responseInviteURL string
+	var userAccount types.UserAccount
+	var inviteURL string
 
 	if err := db.RunTx(ctx, func(ctx context.Context) error {
 		organization, err := db.GetOrganizationWithBranding(ctx, *auth.CurrentOrgID())
@@ -186,28 +181,11 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		created := false
-		if existingUA, err := db.GetUserAccountByEmail(ctx, body.Email); errors.Is(err, apierrors.ErrNotFound) {
-			created = true
-			if err := db.CreateUserAccount(ctx, &userAccount); err != nil {
-				err = fmt.Errorf("failed to create user account: %w", err)
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return err
-			}
-		} else if err != nil {
-			err = fmt.Errorf("failed to get existing user account: %w", err)
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return err
-		} else {
-			userAccount = *existingUA
-		}
-
-		if err := db.CreateUserAccountOrganizationAssignment(
+		if userAccount, inviteURL, err = inviteUserAccount(
 			ctx,
-			userAccount.ID,
-			organization.ID,
+			*organization,
+			body.Email,
+			body.Name,
 			body.UserRole,
 			body.CustomerOrganizationID,
 			body.PartnerOrganizationID,
@@ -215,41 +193,10 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "user is already part of this organization", http.StatusBadRequest)
 			return err
 		} else if err != nil {
-			err = fmt.Errorf("failed to create user org assignment: %w", err)
 			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return err
 		}
-
-		if !userAccount.Activated {
-			if emailInviteURL, err = generateUserInviteUrl(
-				ctx, userAccount, *organization, body.CustomerOrganizationID, true); err != nil {
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return err
-			}
-		}
-		if created && !env.UserEmailVerificationRequired() {
-			if responseInviteURL, err = generateUserInviteUrl(
-				ctx, userAccount, *organization, body.CustomerOrganizationID, false); err != nil {
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return err
-			}
-		}
-
-		if err := mailsending.SendUserInviteMail(
-			ctx,
-			userAccount,
-			*organization,
-			body.CustomerOrganizationID,
-			emailInviteURL,
-		); err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return err
-		}
-
 		return nil
 	}); err != nil {
 		log.Warn("could not create user", zap.Error(err))
@@ -259,8 +206,55 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 	RespondJSON(w, api.CreateUserAccountResponse{
 		User: mapping.UserAccountToAPI(userAccount.AsUserAccountWithRole(
 			body.UserRole, body.CustomerOrganizationID, body.PartnerOrganizationID, time.Now())),
-		InviteURL: responseInviteURL,
+		InviteURL: inviteURL,
 	})
+}
+
+// inviteUserAccount adds the user with the given email address to the organization, creating their account where there
+// is none, and mails them an invitation. The invite link it returns lets its holder set the account's password, so
+// there is one only for an account created here and only where email addresses need no verification.
+func inviteUserAccount(
+	ctx context.Context,
+	organization types.OrganizationWithBranding,
+	email, name string,
+	role types.UserRole,
+	customerOrgID, partnerOrgID *uuid.UUID,
+) (types.UserAccount, string, error) {
+	userAccount := types.UserAccount{Email: email, Name: name}
+	created := false
+	if existingUA, err := db.GetUserAccountByEmail(ctx, email); errors.Is(err, apierrors.ErrNotFound) {
+		if err := db.CreateUserAccount(ctx, &userAccount); err != nil {
+			return userAccount, "", fmt.Errorf("failed to create user account: %w", err)
+		}
+		created = true
+	} else if err != nil {
+		return userAccount, "", fmt.Errorf("failed to get existing user account: %w", err)
+	} else {
+		userAccount = *existingUA
+	}
+
+	if err := db.CreateUserAccountOrganizationAssignment(
+		ctx, userAccount.ID, organization.ID, role, customerOrgID, partnerOrgID,
+	); err != nil {
+		return userAccount, "", fmt.Errorf("failed to create user org assignment: %w", err)
+	}
+
+	var emailInviteURL, responseInviteURL string
+	var err error
+	if !userAccount.Activated {
+		if emailInviteURL, err = generateUserInviteUrl(ctx, userAccount, organization, customerOrgID, true); err != nil {
+			return userAccount, "", err
+		}
+	}
+	if created && !env.UserEmailVerificationRequired() {
+		if responseInviteURL, err = generateUserInviteUrl(ctx, userAccount, organization, customerOrgID, false); err != nil {
+			return userAccount, "", err
+		}
+	}
+	if err := mailsending.SendUserInviteMail(ctx, userAccount, organization, customerOrgID, emailInviteURL); err != nil {
+		return userAccount, "", err
+	}
+	return userAccount, responseInviteURL, nil
 }
 
 func validateCreateUserAccount(ctx context.Context, body *api.CreateUserAccountRequest) error {

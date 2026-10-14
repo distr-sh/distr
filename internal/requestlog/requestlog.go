@@ -13,10 +13,12 @@ import (
 type Fields struct {
 	OrganizationID         *uuid.UUID
 	CustomerOrganizationID *uuid.UUID
+	PartnerOrganizationID  *uuid.UUID
 	UserID                 *uuid.UUID
 	DeploymentTargetID     *uuid.UUID
 	TokenID                *string
 	OrganizationScoped     *bool
+	ForeignContext         bool
 }
 
 type contextKey struct{}
@@ -42,6 +44,7 @@ func (f *Fields) ZapFields() []zap.Field {
 	var fields []zap.Field
 	fields = appendIfNonNil(fields, "organizationId", f.OrganizationID)
 	fields = appendIfNonNil(fields, "customerOrganizationId", f.CustomerOrganizationID)
+	fields = appendIfNonNil(fields, "partnerOrganizationId", f.PartnerOrganizationID)
 	fields = appendIfNonNil(fields, "userId", f.UserID)
 	fields = appendIfNonNil(fields, "deploymentTargetId", f.DeploymentTargetID)
 	if f.TokenID != nil {
@@ -49,6 +52,9 @@ func (f *Fields) ZapFields() []zap.Field {
 	}
 	if f.OrganizationScoped != nil {
 		fields = append(fields, zap.Bool("organizationScoped", *f.OrganizationScoped))
+	}
+	if f.ForeignContext {
+		fields = append(fields, zap.Bool("foreignContext", true))
 	}
 	return fields
 }

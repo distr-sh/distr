@@ -56,7 +56,9 @@ func (r *AuthResetPasswordConfirmRequest) Validate() error {
 }
 
 type AuthSwitchContextRequest struct {
-	OrganizationID uuid.UUID `json:"organizationId"`
+	OrganizationID         uuid.UUID  `json:"organizationId"`
+	CustomerOrganizationID *uuid.UUID `json:"customerOrganizationId,omitempty"`
+	PartnerOrganizationID  *uuid.UUID `json:"partnerOrganizationId,omitempty"`
 }
 
 type AuthAcceptInviteRequest struct {

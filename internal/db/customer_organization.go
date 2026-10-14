@@ -114,6 +114,48 @@ func GetCustomerOrganizationByID(
 	return &result, nil
 }
 
+func GetCustomerOrganization(ctx context.Context, id, orgID uuid.UUID) (*types.CustomerOrganization, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		"SELECT "+customerOrganizationOutputExpr+`
+		FROM CustomerOrganization co
+		WHERE co.id = @id AND co.organization_id = @orgId`,
+		pgx.NamedArgs{"id": id, "orgId": orgID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query CustomerOrganization: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.CustomerOrganization])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, apierrors.ErrNotFound
+	} else if err != nil {
+		return nil, fmt.Errorf("could not collect CustomerOrganization: %w", err)
+	}
+	return &result, nil
+}
+
+func GetCustomerOrganizationsByOrganizationIDs(
+	ctx context.Context,
+	orgIDs []uuid.UUID,
+) ([]types.CustomerOrganization, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		"SELECT "+customerOrganizationOutputExpr+`
+		FROM CustomerOrganization co
+		WHERE co.organization_id = ANY(@orgIds)
+		ORDER BY co.name`,
+		pgx.NamedArgs{"orgIds": orgIDs},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query CustomerOrganization: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.CustomerOrganization])
+	if err != nil {
+		return nil, fmt.Errorf("could not collect CustomerOrganization: %w", err)
+	}
+	return result, nil
+}
+
 func GetCustomerOrganizationsByOrganizationID(
 	ctx context.Context,
 	orgID uuid.UUID,
@@ -268,11 +310,8 @@ func DeleteCustomerOrganizationWithID(ctx context.Context, id uuid.UUID, organiz
 		}
 		return nil
 	})
-	if err != nil {
-		var pgError *pgconn.PgError
-		if errors.As(err, &pgError) && pgError.Code == pgerrcode.ForeignKeyViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
-		}
+	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.ForeignKeyViolation {
+		err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
 	}
 	return err
 }

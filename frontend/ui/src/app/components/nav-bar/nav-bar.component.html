@@ -1,6 +1,11 @@
 <nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
   @let organization = currentOrg();
-  @if (isSubscriptionBannerVisible() && organization) {
+  @if (isForeignContext && organization) {
+    <app-nav-bar-foreign-context-banner
+      [organization]="organization"
+      [ownPortalKind]="ownPortalKind()"
+      (returnToOwnPortal)="switchOrganization(organization)" />
+  } @else if (isSubscriptionBannerVisible() && organization) {
     <app-nav-bar-subscription-banner
       [organization]="organization"
       [isTrial]="isTrial()"
@@ -75,13 +80,23 @@
                   <span class="flex flex-col text-end text-sm font-medium text-gray-900 dark:text-gray-300" role="none">
                     <span class="flex items-center justify-end gap-2" role="none">
                       {{ organization?.name }}
-                      @if (organization && auth.isSuperAdmin()) {
+                      @if (organization && isSuperAdmin) {
                         <app-subscription-badge
                           [plan]="organization.subscriptionType"
                           [endsAt]="organization.subscriptionEndsAt" />
                       }
                     </span>
-                    @if (auth.isSuperAdmin()) {
+                    @if (isForeignContext && organization) {
+                      <span class="text-xs font-light text-amber-600 dark:text-amber-400" role="none">
+                        {{ organization | membershipLabel }}
+                        &bull;
+                        @if (isSuperAdmin) {
+                          Super Admin (Read-Only)
+                        } @else {
+                          {{ user.userRole | userRoleLabel }}
+                        }
+                      </span>
+                    } @else if (isSuperAdmin) {
                       <span class="text-xs font-light text-amber-600 dark:text-amber-400" role="none">
                         Super Admin (Read-Only)
                       </span>
@@ -120,39 +135,99 @@
                         [autofocus]="true" />
                     </div>
                   }
-                  @if (availableOrgs().length > 0) {
+                  @if (switchEntryCount() > 0) {
                     <ul class="overflow-y-auto min-h-0" role="none">
-                      @for (org of matchingOrgs(); track org.id) {
-                        <li>
+                      @for (entry of switcherEntries(); track entry.org.id) {
+                        <li class="flex items-center gap-1">
                           <button
-                            (click)="switchContext(org)"
-                            [title]="'Switch to this organization'"
+                            type="button"
+                            (click)="switchOrganization(entry.org)"
+                            [attr.aria-current]="entry.current"
                             class="distr-dropdown-item focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
                             role="menuitem">
-                            <fa-icon class="w-4" [icon]="faShuffle" />
+                            @if (entry.logoUrl) {
+                              <img [src]="entry.logoUrl" alt="" loading="lazy" class="size-6 shrink-0 object-contain" />
+                            } @else {
+                              <app-avatar [name]="entry.org.name" class="size-6 rounded-sm" />
+                            }
                             <span
-                              class="flex flex-col text-start text-sm font-medium text-gray-900 dark:text-gray-300"
+                              class="grow flex flex-col text-start text-sm font-medium text-gray-900 dark:text-gray-300"
                               role="none">
                               <span class="flex items-center gap-2" role="none">
-                                {{ org.name }}
-                                @if (auth.isSuperAdmin()) {
+                                {{ entry.org.name }}
+                                @if (isSuperAdmin) {
                                   <app-subscription-badge
-                                    [plan]="org.subscriptionType"
-                                    [endsAt]="org.subscriptionEndsAt" />
+                                    [plan]="entry.org.subscriptionType"
+                                    [endsAt]="entry.org.subscriptionEndsAt" />
                                 }
                               </span>
-                              <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
-                                @if (!auth.isSuperAdmin()) {
+                              @if (!isSuperAdmin) {
+                                <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
                                   @if (isDifferentOrganizationKind()) {
-                                    {{ org | membershipLabel }}
+                                    {{ entry.org | membershipLabel }}
                                     &bull;
                                   }
-                                  {{ org.userRole | userRoleLabel }}
-                                }
-                              </span>
+                                  {{ entry.org.userRole | userRoleLabel }}
+                                </span>
+                              }
                             </span>
+                            @if (entry.current) {
+                              <fa-icon [icon]="faCheck" class="ps-2 text-primary-600 dark:text-primary-400" />
+                            }
                           </button>
+                          @if (entry.collapsible) {
+                            <button
+                              type="button"
+                              (click)="toggleSwitcherEntry(entry)"
+                              [attr.aria-expanded]="entry.expanded"
+                              [attr.aria-label]="(entry.expanded ? 'Collapse ' : 'Expand ') + entry.org.name"
+                              class="shrink-0 self-stretch flex items-center gap-1.5 px-2 rounded-md text-xs text-gray-500 hover:bg-gray-100 focus:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white dark:focus:bg-gray-600 dark:focus:text-white">
+                              {{ entry.portals.length }}
+                              <fa-icon
+                                [icon]="faChevronDown"
+                                [class.rotate-x-180]="entry.expanded"
+                                class="transition duration-150 ease-in-out" />
+                            </button>
+                          }
                         </li>
+                        @if (entry.expanded) {
+                          @for (portal of entry.portals; track portal.id) {
+                            <li class="ps-4">
+                              <button
+                                type="button"
+                                (click)="switchPortal(entry.org, portal)"
+                                [attr.aria-current]="portal.current"
+                                class="distr-dropdown-item ps-3 focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
+                                role="menuitem">
+                                @switch (portal.kind) {
+                                  @case ('partner') {
+                                    <app-avatar
+                                      [name]="portal.name"
+                                      [icon]="faBuilding"
+                                      iconClass="text-[0.625rem]"
+                                      class="size-5 rounded-sm" />
+                                    <span class="grow" role="none">{{ portal.name }}</span>
+                                    <span class="ps-2 text-xs font-light text-gray-500 dark:text-gray-400" role="none">
+                                      Partner
+                                    </span>
+                                  }
+                                  @default {
+                                    <app-avatar
+                                      [image]="portal.imageUrl"
+                                      [name]="portal.name"
+                                      [icon]="faAddressBook"
+                                      iconClass="text-[0.625rem]"
+                                      class="size-5 rounded-sm" />
+                                    <span class="grow" role="none">{{ portal.name }}</span>
+                                  }
+                                }
+                                @if (portal.current) {
+                                  <fa-icon [icon]="faCheck" class="ps-2 text-primary-600 dark:text-primary-400" />
+                                }
+                              </button>
+                            </li>
+                          }
+                        }
                       } @empty {
                         <li>
                           <div class="px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300" role="menuitem">
@@ -178,7 +253,7 @@
                       </li>
                     </ul>
                   }
-                  @if (!auth.isSuperAdmin() && isVendorSomewhere() && canCreateOrganization()) {
+                  @if (canCreateOrganization()) {
                     <ul class="shrink-0" role="none">
                       <li class="distr-dropdown-divider"></li>
                       <li>
@@ -243,7 +318,7 @@
                       Edit Your Profile
                     </a>
                   </li>
-                  @if (!auth.isSuperAdmin()) {
+                  @if (!isSuperAdmin && !isForeignContext) {
                     <li>
                       <a
                         (click)="userOpened.set(false)"
@@ -275,8 +350,7 @@
     class="p-4 w-full mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900"
     animate.enter="animate-fly-in-top"
     animate.leave="animate-fly-out-top">
-    <!-- Modal header -->
-    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+    <div class="flex items-center justify-between p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
       <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Create Organization</h2>
       <button
         type="button"
@@ -286,29 +360,56 @@
         <span class="sr-only">Close modal</span>
       </button>
     </div>
-    <!-- Modal body -->
-    <div class="p-4 md:p-5 space-y-4">
-      <section class="antialiased">
-        <div class="mx-auto max-w-7xl px-4 2xl:px-0">
-          <form class="mx-auto" (ngSubmit)="submitCreateOrgForm()" [formGroup]="createOrgForm">
-            <div class="flex flex-col space-y-5">
-              <div class="space-y-2">
-                <label for="name" class="distr-label"> Organization Name </label>
-                <input type="text" id="name" formControlName="name" autotrim autocomplete="off" class="distr-input" />
-                @if (createOrgForm.controls.name.invalid && createOrgForm.controls.name.touched) {
-                  <div class="text-sm text-red-600 dark:text-red-500">Field is required.</div>
-                }
-              </div>
-
-              <button
-                type="submit"
-                class="self-end text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                Submit
-              </button>
+    <div class="p-5">
+      @if (createdOrganization(); as created) {
+        <div class="flex flex-col gap-4">
+          <app-alert type="success" heading="Organization created">
+            Its admin can finalize their account using this link:
+            <div class="flex items-center gap-2 mt-1">
+              <code class="break-all select-all">{{ created.inviteUrl }}</code>
+              <app-clip [clip]="created.inviteUrl" />
             </div>
-          </form>
+          </app-alert>
+          <button type="button" class="self-end distr-btn-primary" (click)="openCreatedOrganization(created.id)">
+            Open Organization
+          </button>
         </div>
-      </section>
+      } @else {
+        <form class="flex flex-col gap-5" (ngSubmit)="submitCreateOrgForm()" [formGroup]="createOrgForm">
+          <div class="space-y-2">
+            <label for="name" class="distr-label">Organization Name</label>
+            <input type="text" id="name" formControlName="name" autotrim autocomplete="off" class="distr-input" />
+            @if (createOrgForm.controls.name.invalid && createOrgForm.controls.name.touched) {
+              <div class="text-sm text-red-600 dark:text-red-500">Field is required.</div>
+            }
+          </div>
+          @if (isSuperAdmin) {
+            <div class="space-y-2">
+              <label for="adminEmail" class="distr-label">Admin Email Address</label>
+              <input
+                type="email"
+                id="adminEmail"
+                formControlName="adminEmail"
+                autotrim
+                autocomplete="off"
+                class="distr-input" />
+              @if (createOrgForm.controls.adminEmail.invalid && createOrgForm.controls.adminEmail.touched) {
+                <div class="text-sm text-red-600 dark:text-red-500">
+                  @if (createOrgForm.controls.adminEmail.errors?.['email']) {
+                    Please enter a valid email address.
+                  } @else {
+                    Field is required.
+                  }
+                </div>
+              }
+              <p class="distr-hint">
+                Distr invites this user as the organization's admin. You do not become a member yourself.
+              </p>
+            </div>
+          }
+          <button type="submit" [disabled]="createOrgFormLoading()" class="self-end distr-btn-primary">Submit</button>
+        </form>
+      }
     </div>
   </div>
 </ng-template>
