@@ -27,7 +27,7 @@ require (
 	github.com/getsentry/sentry-go/otel/otlp v0.50.0
 	github.com/glasskube/pkg/crypto v0.2.0
 	github.com/glasskube/pkg/seekbuf v0.1.1
-	github.com/go-chi/chi/v5 v5.3.2
+	github.com/go-chi/chi/v5 v5.4.0
 	github.com/go-chi/httprate v0.16.1
 	github.com/go-co-op/gocron/v2 v2.22.0
 	github.com/go-logr/zapr v1.3.0
@@ -81,7 +81,7 @@ require (
 	k8s.io/client-go v0.37.1
 	k8s.io/kubectl v0.37.1
 	k8s.io/metrics v0.37.1
-	oras.land/oras-go/v2 v2.6.2
+	oras.land/oras-go/v2 v2.6.3
 )
 
 require (
