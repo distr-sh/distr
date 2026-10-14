@@ -85,6 +85,26 @@ func customerScope(ctx context.Context, requested *uuid.UUID) (*uuid.UUID, respo
 	}
 }
 
+// checkReachableByPartner answers notFound for a partner user when a resource belongs to no
+// customer or to one that is not assigned to the partner organization.
+func checkReachableByPartner(
+	ctx context.Context, customerOrgID *uuid.UUID, notFound respond.Responder,
+) (respond.Responder, error) {
+	if partnerOrgID := auth.Authentication.Require(ctx).CurrentPartnerOrgID(); partnerOrgID == nil {
+		return nil, nil
+	} else if customerOrgID == nil {
+		return notFound, nil
+	} else if err := db.ValidateCustomerOrgBelongsToPartnerOrg(
+		ctx, *customerOrgID, *partnerOrgID,
+	); errors.Is(err, db.ErrCustomerOrgNotInPartnerOrg) {
+		return notFound, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to validate customer organization of partner: %w", err)
+	} else {
+		return nil, nil
+	}
+}
+
 func checkCustomerOidcProvidersFeature(ctx context.Context, customerOrgID uuid.UUID) (respond.Responder, error) {
 	customerOrg := auth.Authentication.Require(ctx).CurrentCustomerOrg()
 	if customerOrg == nil || customerOrg.ID != customerOrgID {

@@ -48,7 +48,7 @@ func ApplicationsRouter(r chiopenapi.Router) {
 			ApplicationID string `path:"applicationId"`
 		}
 
-		r.With(applicationMiddleware).Group(func(r chiopenapi.Router) {
+		r.With(respond.Middleware(applicationMiddleware)).Group(func(r chiopenapi.Router) {
 			r.Get("/", respond.Handler(getApplication)).
 				With(option.Description("Get an application by ID")).
 				With(option.Request(ApplicationRequest{})).
@@ -86,7 +86,7 @@ func ApplicationsRouter(r chiopenapi.Router) {
 			// note that it would not be necessary to use the applicationMiddleware for the versions endpoints
 			// it loads the application from the db including all versions, but I guess for now this is easier
 			// when performance becomes more important, we should avoid this and do the request on the database layer
-			r.With(applicationMiddleware).
+			r.With(respond.Middleware(applicationMiddleware)).
 				Group(func(r chiopenapi.Router) {
 					r.With(middleware.RequireVendor).
 						With(middleware.RequireReadWriteOrAdmin).
@@ -105,7 +105,7 @@ func ApplicationsRouter(r chiopenapi.Router) {
 					ApplicationVersionId string `path:"applicationVersionId"`
 				}
 
-				r.With(applicationMiddleware).
+				r.With(respond.Middleware(applicationMiddleware)).
 					Get("/", respond.Handler(getApplicationVersion)).
 					With(option.Description("Get an application version")).
 					With(option.Request(ApplicationVersionRequest{})).
@@ -113,7 +113,7 @@ func ApplicationsRouter(r chiopenapi.Router) {
 				r.With(middleware.RequireVendor).
 					With(middleware.RequireReadWriteOrAdmin).
 					With(middleware.BlockSuperAdmin).
-					With(applicationMiddleware).
+					With(respond.Middleware(applicationMiddleware)).
 					Put("/", respond.Handler(updateApplicationVersion)).
 					With(option.Description("Update an application version")).
 					With(option.Request(struct {
@@ -656,24 +656,18 @@ var patchImageApplication = patchImageHandler(func(ctx context.Context, body api
 	}
 })
 
-func applicationMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		applicationID, err := uuid.Parse(r.PathValue("applicationId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-		auth := auth.Authentication.Require(ctx)
-		application, err := db.GetApplication(ctx, applicationID, *auth.CurrentOrgID())
-		if errors.Is(err, apierrors.ErrNotFound) {
-			w.WriteHeader(http.StatusNotFound)
-		} else if err != nil {
-			internalctx.GetLogger(r.Context()).Error("failed to get application", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-		} else {
-			ctx = internalctx.WithApplication(ctx, application)
-			next.ServeHTTP(w, r.WithContext(ctx))
-		}
-	})
+func applicationMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	if applicationID, err := uuid.Parse(r.PathValue("applicationId")); err != nil {
+		return nil, applicationNotFound, nil
+	} else if application, err := db.GetApplication(
+		ctx, applicationID, *auth.CurrentOrgID(),
+	); errors.Is(err, apierrors.ErrNotFound) {
+		return nil, applicationNotFound, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get application: %w", err)
+	} else {
+		return r.WithContext(internalctx.WithApplication(ctx, application)), nil, nil
+	}
 }

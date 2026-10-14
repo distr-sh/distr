@@ -17,11 +17,9 @@ import (
 	"github.com/distr-sh/distr/internal/registry/upstream"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 type UpstreamTagSyncer interface {
@@ -39,7 +37,7 @@ func ArtifactsRouter(r chiopenapi.Router) {
 		With(option.Description("Create an artifact")).
 		With(option.Request(api.CreateArtifactRequest{})).
 		With(option.Response(http.StatusCreated, api.ArtifactResponse{}))
-	r.With(artifactMiddleware).Route("/{artifactId}", func(r chiopenapi.Router) {
+	r.With(respond.Middleware(artifactMiddleware)).Route("/{artifactId}", func(r chiopenapi.Router) {
 		type ArtifactRequest struct {
 			ArtifactID uuid.UUID `path:"artifactId"`
 		}
@@ -207,7 +205,7 @@ func deleteArtifactHandler(r *http.Request) (respond.Responder, error) {
 			return nil
 		}
 	}); errors.Is(err, apierrors.ErrNotFound) {
-		return respond.NotFound("artifact not found"), nil
+		return artifactNotFound, nil
 	} else if errors.Is(err, apierrors.ErrBadRequest) {
 		return respond.BadRequest(err.Error()), nil
 	} else if err != nil {
@@ -310,34 +308,26 @@ func patchArtifactHandler(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-func artifactMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
+var artifactNotFound = respond.NotFound("artifact not found")
 
-		var artifact *types.ArtifactWithTaggedVersion
-		var err error
+func artifactMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
 
-		if artifactId, parseErr := uuid.Parse(r.PathValue("artifactId")); parseErr != nil {
-			http.NotFound(w, r)
-			return
-		} else if auth.CurrentOrg().HasFeature(types.FeatureLicensing) && auth.CurrentCustomerOrgID() != nil {
-			artifact, err = db.GetArtifactByID(ctx, *auth.CurrentOrgID(), artifactId, auth.CurrentCustomerOrgID())
-		} else {
-			artifact, err = db.GetArtifactByID(ctx, *auth.CurrentOrgID(), artifactId, nil)
-		}
+	var entitledCustomerOrgID *uuid.UUID
+	if auth.CurrentOrg().HasFeature(types.FeatureLicensing) {
+		entitledCustomerOrgID = auth.CurrentCustomerOrgID()
+	}
 
-		if err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
-				http.NotFound(w, r)
-			} else {
-				log.Error("failed to get artifact", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			}
-		} else {
-			h.ServeHTTP(w, r.WithContext(internalctx.WithArtifact(ctx, artifact)))
-		}
-	})
+	if artifactId, err := uuid.Parse(r.PathValue("artifactId")); err != nil {
+		return nil, artifactNotFound, nil
+	} else if artifact, err := db.GetArtifactByID(
+		ctx, *auth.CurrentOrgID(), artifactId, entitledCustomerOrgID,
+	); errors.Is(err, apierrors.ErrNotFound) {
+		return nil, artifactNotFound, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get artifact: %w", err)
+	} else {
+		return r.WithContext(internalctx.WithArtifact(ctx, artifact)), nil, nil
+	}
 }

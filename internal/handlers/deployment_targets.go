@@ -19,11 +19,9 @@ import (
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 func DeploymentTargetsRouter(r chiopenapi.Router) {
@@ -47,7 +45,7 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 			TimeseriesRequest
 		}
 
-		r.Use(deploymentTargetMiddleware)
+		r.Use(respond.Middleware(deploymentTargetMiddleware))
 		r.Get("/", respond.Handler(getDeploymentTarget)).
 			With(option.Description("Get a deployment target")).
 			With(option.Request(DeploymentTargetIDRequest{})).
@@ -214,7 +212,7 @@ func deleteDeploymentTarget(r *http.Request) (respond.Responder, error) {
 	dt := internalctx.GetDeploymentTarget(ctx)
 	auth := auth.Authentication.Require(ctx)
 	if dt.OrganizationID != *auth.CurrentOrgID() {
-		return respond.NotFound("deployment target not found"), nil
+		return deploymentTargetNotFound, nil
 	} else if !isDeploymentTargetVisible(ctx, dt) {
 		return respond.Forbidden("must be vendor or creator"), nil
 	} else if err := db.DeleteDeploymentTargetWithID(ctx, dt.ID); err != nil {
@@ -280,30 +278,24 @@ func deleteAccessRequestForDeploymentTarget(r *http.Request) (respond.Responder,
 	}
 }
 
-func deploymentTargetMiddleware(wh http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		id, err := uuid.Parse(r.PathValue("deploymentTargetId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-		auth := auth.Authentication.Require(ctx)
-		orgId := auth.CurrentOrgID()
-		deploymentTarget, err := db.GetDeploymentTarget(ctx, id, orgId, auth.CurrentPartnerOrgID())
-		if errors.Is(err, apierrors.ErrNotFound) {
-			w.WriteHeader(http.StatusNotFound)
-		} else if err != nil {
-			internalctx.GetLogger(ctx).Error("failed to get DeploymentTarget", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		} else if !isDeploymentTargetVisible(ctx, deploymentTarget) {
-			http.NotFound(w, r)
-		} else {
-			ctx = internalctx.WithDeploymentTarget(ctx, deploymentTarget)
-			wh.ServeHTTP(w, r.WithContext(ctx))
-		}
-	})
+var deploymentTargetNotFound = respond.NotFound("deployment target not found")
+
+func deploymentTargetMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	if id, err := uuid.Parse(r.PathValue("deploymentTargetId")); err != nil {
+		return nil, deploymentTargetNotFound, nil
+	} else if deploymentTarget, err := db.GetDeploymentTarget(
+		ctx, id, auth.CurrentOrgID(), auth.CurrentPartnerOrgID(),
+	); errors.Is(err, apierrors.ErrNotFound) {
+		return nil, deploymentTargetNotFound, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get deployment target: %w", err)
+	} else if !isDeploymentTargetVisible(ctx, deploymentTarget) {
+		return nil, deploymentTargetNotFound, nil
+	} else {
+		return r.WithContext(internalctx.WithDeploymentTarget(ctx, deploymentTarget)), nil, nil
+	}
 }
 
 func isDeploymentTargetVisible(ctx context.Context, target *types.DeploymentTargetFull) bool {

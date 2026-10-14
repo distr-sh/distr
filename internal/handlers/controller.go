@@ -74,7 +74,7 @@ func ControllerRouter(r chiopenapi.Router) {
 		r.With(
 			auth.ControllerAuthentication.Middleware,
 			middleware.SetSentryUserFromControllerAuth,
-			controllerAuthDeploymentTargetCtxMiddleware,
+			respond.Middleware(controllerAuthDeploymentTargetCtxMiddleware),
 			rateLimitPerDeploymentTargetID,
 		).Group(func(r chiopenapi.Router) {
 			// controller routes, authenticated via token.
@@ -554,39 +554,35 @@ func controllerManifestHandler() http.HandlerFunc {
 	}
 }
 
-func controllerAuthDeploymentTargetCtxMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.ControllerAuthentication.Require(ctx)
-		orgId := auth.CurrentOrgID()
-		targetId := auth.CurrentDeploymentTargetID()
+func controllerAuthDeploymentTargetCtxMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+	auth := auth.ControllerAuthentication.Require(ctx)
+	orgId := auth.CurrentOrgID()
 
-		deploymentTarget, err := db.GetDeploymentTarget(ctx, targetId, &orgId, nil)
-		if errors.Is(err, apierrors.ErrNotFound) {
-			w.WriteHeader(http.StatusUnauthorized)
-		} else if err != nil {
-			log.Error("failed to get DeploymentTarget", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-		} else {
-			if reportedVersionName, ok := useragent.ReportedVersion(r.UserAgent()); ok {
-				if reportedVersion, err := db.GetControllerVersionWithName(ctx, reportedVersionName); err != nil {
-					log.Error("could not get reported controller version", zap.Error(err))
+	if deploymentTarget, err := db.GetDeploymentTarget(
+		ctx, auth.CurrentDeploymentTargetID(), &orgId, nil,
+	); errors.Is(err, apierrors.ErrNotFound) {
+		return nil, respond.Unauthorized("deployment target not found"), nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get deployment target: %w", err)
+	} else {
+		if reportedVersionName, ok := useragent.ReportedVersion(r.UserAgent()); ok {
+			if reportedVersion, err := db.GetControllerVersionWithName(ctx, reportedVersionName); err != nil {
+				log.Error("could not get reported controller version", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+			} else if deploymentTarget.ReportedControllerVersionID == nil ||
+				reportedVersion.ID != *deploymentTarget.ReportedControllerVersionID {
+				if err := db.UpdateDeploymentTargetReportedControllerVersionID(
+					ctx, deploymentTarget, reportedVersion.ID); err != nil {
+					log.Error("could not update reported controller version", zap.Error(err))
 					sentry.GetHubFromContext(ctx).CaptureException(err)
-				} else if deploymentTarget.ReportedControllerVersionID == nil ||
-					reportedVersion.ID != *deploymentTarget.ReportedControllerVersionID {
-					if err := db.UpdateDeploymentTargetReportedControllerVersionID(
-						ctx, deploymentTarget, reportedVersion.ID); err != nil {
-						log.Error("could not update reported controller version", zap.Error(err))
-						sentry.GetHubFromContext(ctx).CaptureException(err)
-					}
 				}
 			}
-			recordDeploymentTarget(ctx, deploymentTarget)
-			ctx = internalctx.WithDeploymentTarget(ctx, deploymentTarget)
-			next.ServeHTTP(w, r.WithContext(ctx))
 		}
-	})
+		recordDeploymentTarget(ctx, deploymentTarget)
+		return r.WithContext(internalctx.WithDeploymentTarget(ctx, deploymentTarget)), nil, nil
+	}
 }
 
 func getVerifiedDeploymentTarget(

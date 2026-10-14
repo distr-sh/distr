@@ -54,7 +54,7 @@ func UserAccountsRouter(r chiopenapi.Router) {
 				httprate.JoinKeys(middleware.RateLimitUserIDKey, middleware.RateLimitPathValueKey("userId")),
 			)
 
-			r.Use(userAccountMiddleware)
+			r.Use(respond.Middleware(userAccountMiddleware))
 			r.With(middleware.ProFeature).
 				Patch("/", respond.Handler(patchUserAccountHandler)).
 				With(option.Description("Partially update a user account")).
@@ -485,31 +485,24 @@ var patchImageUserAccount = patchImageHandler(func(ctx context.Context, body api
 	}
 })
 
-func userAccountMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		auth := auth.Authentication.Require(ctx)
-		log := internalctx.GetLogger(ctx)
-		if userId, err := uuid.Parse(r.PathValue("userId")); err != nil {
-			http.NotFound(w, r)
-		} else if userAccount, err := db.GetUserAccountWithRole(
-			ctx,
-			userId,
-			*auth.CurrentOrgID(),
-			auth.CurrentCustomerOrgID(),
-			auth.CurrentPartnerOrgID(),
-		); err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
-				http.NotFound(w, r)
-			} else {
-				log.Warn("error getting user", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
-		} else {
-			h.ServeHTTP(w, r.WithContext(internalctx.WithUserAccount(ctx, userAccount)))
-		}
-	})
+func userAccountMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	if userId, err := uuid.Parse(r.PathValue("userId")); err != nil {
+		return nil, userAccountNotFound, nil
+	} else if userAccount, err := db.GetUserAccountWithRole(
+		ctx,
+		userId,
+		*auth.CurrentOrgID(),
+		auth.CurrentCustomerOrgID(),
+		auth.CurrentPartnerOrgID(),
+	); errors.Is(err, apierrors.ErrNotFound) {
+		return nil, userAccountNotFound, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get user: %w", err)
+	} else {
+		return r.WithContext(internalctx.WithUserAccount(ctx, userAccount)), nil, nil
+	}
 }
 
 func checkUserAccountWritability(ctx context.Context, userAccount types.UserAccountWithUserRole) error {

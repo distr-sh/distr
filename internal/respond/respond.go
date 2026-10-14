@@ -42,6 +42,20 @@ func Handler(fn func(r *http.Request) (Responder, error)) http.HandlerFunc {
 	}
 }
 
+// Middleware adapts fn to a middleware. fn returns the request to serve the next handler with, or
+// answers in its place like [Handler].
+func Middleware(fn func(r *http.Request) (*http.Request, Responder, error)) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if nextReq, resp, err := fn(r); nextReq != nil && resp == nil && err == nil {
+				next.ServeHTTP(w, nextReq)
+			} else {
+				Write(w, r, resp, err)
+			}
+		})
+	}
+}
+
 // Write answers like [Handler], for code that writes to w itself.
 func Write(w http.ResponseWriter, r *http.Request, resp Responder, err error) {
 	if err == nil && resp == nil {

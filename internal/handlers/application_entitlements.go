@@ -35,29 +35,30 @@ func ApplicationEntitlementsRouter(r chiopenapi.Router) {
 		Post("/", createApplicationEntitlement).
 		With(option.Description("Create a new application entitlement")).
 		With(option.Request(types.ApplicationEntitlementWithVersions{}))
-	r.With(applicationEntitlementMiddleware).Route("/{applicationEntitlementId}", func(r chiopenapi.Router) {
-		type ApplicationEntitlementRequest struct {
-			ApplicationEntitlementId string `path:"applicationEntitlementId"`
-		}
+	r.With(respond.Middleware(applicationEntitlementMiddleware)).
+		Route("/{applicationEntitlementId}", func(r chiopenapi.Router) {
+			type ApplicationEntitlementRequest struct {
+				ApplicationEntitlementId string `path:"applicationEntitlementId"`
+			}
 
-		r.Get("/", respond.Handler(getApplicationEntitlement)).
-			With(option.Description("Get an application entitlement")).
-			With(option.Request(ApplicationEntitlementRequest{})).
-			With(option.Response(http.StatusOK, types.ApplicationEntitlement{}))
-		r.With(middleware.RequireVendorOrPartner, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
-			Group(func(r chiopenapi.Router) {
-				r.Delete("/", respond.Handler(deleteApplicationEntitlement)).
-					With(option.Description("Delete an application entitlement")).
-					With(option.Request(ApplicationEntitlementRequest{}))
-				r.Put("/", updateApplicationEntitlement).
-					With(option.Description("Update an application entitlement")).
-					With(option.Request(struct {
-						ApplicationEntitlementRequest
-						types.ApplicationEntitlementWithVersions
-					}{})).
-					With(option.Response(http.StatusOK, types.ApplicationEntitlement{}))
-			})
-	})
+			r.Get("/", respond.Handler(getApplicationEntitlement)).
+				With(option.Description("Get an application entitlement")).
+				With(option.Request(ApplicationEntitlementRequest{})).
+				With(option.Response(http.StatusOK, types.ApplicationEntitlement{}))
+			r.With(middleware.RequireVendorOrPartner, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
+				Group(func(r chiopenapi.Router) {
+					r.Delete("/", respond.Handler(deleteApplicationEntitlement)).
+						With(option.Description("Delete an application entitlement")).
+						With(option.Request(ApplicationEntitlementRequest{}))
+					r.Put("/", updateApplicationEntitlement).
+						With(option.Description("Update an application entitlement")).
+						With(option.Request(struct {
+							ApplicationEntitlementRequest
+							types.ApplicationEntitlementWithVersions
+						}{})).
+						With(option.Response(http.StatusOK, types.ApplicationEntitlement{}))
+				})
+		})
 }
 
 func createApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
@@ -358,7 +359,7 @@ func deleteApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 	entitlement := internalctx.GetApplicationEntitlement(ctx)
 	auth := auth.Authentication.Require(ctx)
 	if entitlement.OrganizationID != *auth.CurrentOrgID() {
-		return respond.NotFound("application entitlement not found"), nil
+		return applicationEntitlementNotFound, nil
 	} else if err := db.DeleteApplicationEntitlementWithID(ctx, entitlement.ID); errors.Is(err, apierrors.ErrConflict) {
 		return respond.BadRequest("could not delete entitlement because it is still in use"), nil
 	} else if err != nil {
@@ -368,27 +369,24 @@ func deleteApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-func applicationEntitlementMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		auth := auth.Authentication.Require(ctx)
-		if entitlementId, err := uuid.Parse(r.PathValue("applicationEntitlementId")); err != nil {
-			http.Error(w, "applicationEntitlementId is not a valid UUID", http.StatusBadRequest)
-		} else if entitlement, err := db.GetApplicationEntitlementByID(ctx, entitlementId); errors.Is(
-			err, apierrors.ErrNotFound,
-		) {
-			w.WriteHeader(http.StatusNotFound)
-		} else if err != nil {
-			internalctx.GetLogger(ctx).Error("failed to get entitlement", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
-		} else if !canSeeEntitlement(auth, entitlement) {
-			w.WriteHeader(http.StatusForbidden)
-		} else {
-			ctx = internalctx.WithApplicationEntitlement(ctx, entitlement)
-			next.ServeHTTP(w, r.WithContext(ctx))
-		}
-	})
+var applicationEntitlementNotFound = respond.NotFound("application entitlement not found")
+
+func applicationEntitlementMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	if entitlementId, err := uuid.Parse(r.PathValue("applicationEntitlementId")); err != nil {
+		return nil, respond.BadRequest("applicationEntitlementId is not a valid UUID"), nil
+	} else if entitlement, err := db.GetApplicationEntitlementByID(ctx, entitlementId); errors.Is(
+		err, apierrors.ErrNotFound,
+	) {
+		return nil, applicationEntitlementNotFound, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get entitlement: %w", err)
+	} else if !canSeeEntitlement(auth, entitlement) {
+		return nil, respond.Forbidden("you cannot access this application entitlement"), nil
+	} else {
+		return r.WithContext(internalctx.WithApplicationEntitlement(ctx, entitlement)), nil, nil
+	}
 }
 
 func canSeeEntitlement(auth authinfo.AuthInfo, entitlement *types.ApplicationEntitlement) bool {

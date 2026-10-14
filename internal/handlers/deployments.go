@@ -32,7 +32,7 @@ func DeploymentsRouter(r chiopenapi.Router) {
 		Put("/", putDeployment).
 		With(option.Description("Create or update a deployment")).
 		With(option.Request(api.DeploymentRequest{}))
-	r.With(deploymentMiddleware).Route("/{deploymentId}", func(r chiopenapi.Router) {
+	r.With(respond.Middleware(deploymentMiddleware)).Route("/{deploymentId}", func(r chiopenapi.Router) {
 		type DeploymentIDRequest struct {
 			DeploymentID uuid.UUID `path:"deploymentId"`
 		}
@@ -680,32 +680,25 @@ func getDeploymentMetrics(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-func deploymentMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		auth := auth.Authentication.Require(ctx)
-		deploymentId, err := uuid.Parse(r.PathValue("deploymentId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
+var deploymentNotFound = respond.NotFound("deployment not found")
 
-		if deployment, err := db.GetDeployment(
-			ctx,
-			deploymentId,
-			auth.CurrentUserID(),
-			*auth.CurrentOrgID(),
-			auth.CurrentCustomerOrgID(),
-			auth.CurrentPartnerOrgID(),
-		); errors.Is(err, apierrors.ErrNotFound) {
-			w.WriteHeader(http.StatusNotFound)
-		} else if err != nil {
-			internalctx.GetLogger(ctx).Error("failed to get deployment", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
-		} else {
-			ctx = internalctx.WithDeployment(ctx, deployment)
-			next.ServeHTTP(w, r.WithContext(ctx))
-		}
-	})
+func deploymentMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	if deploymentId, err := uuid.Parse(r.PathValue("deploymentId")); err != nil {
+		return nil, deploymentNotFound, nil
+	} else if deployment, err := db.GetDeployment(
+		ctx,
+		deploymentId,
+		auth.CurrentUserID(),
+		*auth.CurrentOrgID(),
+		auth.CurrentCustomerOrgID(),
+		auth.CurrentPartnerOrgID(),
+	); errors.Is(err, apierrors.ErrNotFound) {
+		return nil, deploymentNotFound, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get deployment: %w", err)
+	} else {
+		return r.WithContext(internalctx.WithDeployment(ctx, deployment)), nil, nil
+	}
 }

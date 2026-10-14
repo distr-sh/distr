@@ -35,22 +35,23 @@ func ArtifactEntitlementsRouter(r chiopenapi.Router) {
 			With(option.Description("Create a new artifact entitlement")).
 			With(option.Request(types.ArtifactEntitlement{})).
 			With(option.Response(http.StatusOK, types.ArtifactEntitlement{}))
-		r.With(artifactEntitlementMiddleware).Route("/{artifactEntitlementId}", func(r chiopenapi.Router) {
-			type ArtifactEntitlementRequest struct {
-				ArtifactEntitlementID uuid.UUID `path:"artifactEntitlementId"`
-			}
+		r.With(respond.Middleware(artifactEntitlementMiddleware)).
+			Route("/{artifactEntitlementId}", func(r chiopenapi.Router) {
+				type ArtifactEntitlementRequest struct {
+					ArtifactEntitlementID uuid.UUID `path:"artifactEntitlementId"`
+				}
 
-			r.Put("/", updateArtifactEntitlement).
-				With(option.Description("Update an artifact entitlement")).
-				With(option.Request(struct {
-					ArtifactEntitlementRequest
-					types.ArtifactEntitlement
-				}{})).
-				With(option.Response(http.StatusOK, types.ArtifactEntitlement{}))
-			r.Delete("/", respond.Handler(deleteArtifactEntitlement)).
-				With(option.Description("Delete an artifact entitlement")).
-				With(option.Request(ArtifactEntitlementRequest{}))
-		})
+				r.Put("/", updateArtifactEntitlement).
+					With(option.Description("Update an artifact entitlement")).
+					With(option.Request(struct {
+						ArtifactEntitlementRequest
+						types.ArtifactEntitlement
+					}{})).
+					With(option.Response(http.StatusOK, types.ArtifactEntitlement{}))
+				r.Delete("/", respond.Handler(deleteArtifactEntitlement)).
+					With(option.Description("Delete an artifact entitlement")).
+					With(option.Request(ArtifactEntitlementRequest{}))
+			})
 	})
 }
 
@@ -294,7 +295,7 @@ func deleteArtifactEntitlement(r *http.Request) (respond.Responder, error) {
 	entitlement := internalctx.GetArtifactEntitlement(ctx)
 	auth := auth.Authentication.Require(ctx)
 	if entitlement.OrganizationID != *auth.CurrentOrgID() {
-		return respond.NotFound("artifact entitlement not found"), nil
+		return artifactEntitlementNotFound, nil
 	} else if err := db.DeleteArtifactEntitlementWithID(ctx, entitlement.ID); errors.Is(err, apierrors.ErrConflict) {
 		return respond.BadRequest("could not delete entitlement because it is still in use"), nil
 	} else if err != nil {
@@ -304,41 +305,26 @@ func deleteArtifactEntitlement(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-func artifactEntitlementMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		authCtx := auth.Authentication.Require(ctx)
-		entitlementId, err := uuid.Parse(r.PathValue("artifactEntitlementId"))
-		if err != nil {
-			http.Error(w, "artifactEntitlementId is not a valid UUID", http.StatusBadRequest)
-			return
-		}
-		entitlement, err := db.GetArtifactEntitlementByID(ctx, entitlementId)
-		if errors.Is(err, apierrors.ErrNotFound) {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		} else if err != nil {
-			internalctx.GetLogger(ctx).Error("failed to get entitlement", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		if entitlement.OrganizationID != *authCtx.CurrentOrgID() {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		if partnerOrgID := authCtx.CurrentPartnerOrgID(); partnerOrgID != nil {
-			if entitlement.CustomerOrganizationID == nil {
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-			co, coErr := db.GetCustomerOrganizationByID(ctx, *entitlement.CustomerOrganizationID)
-			if coErr != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-		}
-		ctx = internalctx.WithArtifactEntitlement(ctx, entitlement)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+var artifactEntitlementNotFound = respond.NotFound("artifact entitlement not found")
+
+func artifactEntitlementMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
+	ctx := r.Context()
+	authCtx := auth.Authentication.Require(ctx)
+	if entitlementId, err := uuid.Parse(r.PathValue("artifactEntitlementId")); err != nil {
+		return nil, respond.BadRequest("artifactEntitlementId is not a valid UUID"), nil
+	} else if entitlement, err := db.GetArtifactEntitlementByID(ctx, entitlementId); errors.Is(
+		err, apierrors.ErrNotFound,
+	) {
+		return nil, artifactEntitlementNotFound, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get entitlement: %w", err)
+	} else if entitlement.OrganizationID != *authCtx.CurrentOrgID() {
+		return nil, artifactEntitlementNotFound, nil
+	} else if resp, err := checkReachableByPartner(
+		ctx, entitlement.CustomerOrganizationID, artifactEntitlementNotFound,
+	); resp != nil || err != nil {
+		return nil, resp, err
+	} else {
+		return r.WithContext(internalctx.WithArtifactEntitlement(ctx, entitlement)), nil, nil
+	}
 }

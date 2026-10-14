@@ -41,7 +41,7 @@ func LicenseKeysRouter(r chiopenapi.Router) {
 		With(option.Request(api.CreateLicenseKeyRequest{})).
 		With(option.Response(http.StatusOK, types.LicenseKey{}))
 
-	r.With(licenseKeyMiddleware).Route("/{licenseKeyId}", func(r chiopenapi.Router) {
+	r.With(respond.Middleware(licenseKeyMiddleware)).Route("/{licenseKeyId}", func(r chiopenapi.Router) {
 		type LicenseKeyIDRequest struct {
 			LicenseKeyID uuid.UUID `path:"licenseKeyId"`
 		}
@@ -407,48 +407,29 @@ func deleteLicenseKey(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-func licenseKeyMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		authCtx := auth.Authentication.Require(ctx)
-		licenseKeyID, err := uuid.Parse(r.PathValue("licenseKeyId"))
-		if err != nil {
-			http.Error(w, "licenseKeyId is not a valid UUID", http.StatusBadRequest)
-			return
-		}
-		licenseKey, err := db.GetLicenseKeyByID(ctx, licenseKeyID)
-		if errors.Is(err, apierrors.ErrNotFound) {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		} else if err != nil {
-			internalctx.GetLogger(ctx).Error("failed to get license key", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		if licenseKey.OrganizationID != *authCtx.CurrentOrgID() {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		if authCtx.CurrentCustomerOrgID() != nil &&
-			(licenseKey.CustomerOrganizationID == nil || *licenseKey.CustomerOrganizationID != *authCtx.CurrentCustomerOrgID()) {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		if partnerOrgID := authCtx.CurrentPartnerOrgID(); partnerOrgID != nil {
-			if licenseKey.CustomerOrganizationID == nil {
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-			co, coErr := db.GetCustomerOrganizationByID(ctx, *licenseKey.CustomerOrganizationID)
-			if coErr != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-		}
-		ctx = internalctx.WithLicenseKey(ctx, licenseKey)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+var licenseKeyNotFound = respond.NotFound("license key not found")
+
+func licenseKeyMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
+	ctx := r.Context()
+	authCtx := auth.Authentication.Require(ctx)
+	if licenseKeyID, err := uuid.Parse(r.PathValue("licenseKeyId")); err != nil {
+		return nil, respond.BadRequest("licenseKeyId is not a valid UUID"), nil
+	} else if licenseKey, err := db.GetLicenseKeyByID(ctx, licenseKeyID); errors.Is(err, apierrors.ErrNotFound) {
+		return nil, licenseKeyNotFound, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get license key: %w", err)
+	} else if licenseKey.OrganizationID != *authCtx.CurrentOrgID() {
+		return nil, licenseKeyNotFound, nil
+	} else if customerOrgID := authCtx.CurrentCustomerOrgID(); customerOrgID != nil &&
+		!util.PtrEq(licenseKey.CustomerOrganizationID, customerOrgID) {
+		return nil, licenseKeyNotFound, nil
+	} else if resp, err := checkReachableByPartner(
+		ctx, licenseKey.CustomerOrganizationID, licenseKeyNotFound,
+	); resp != nil || err != nil {
+		return nil, resp, err
+	} else {
+		return r.WithContext(internalctx.WithLicenseKey(ctx, licenseKey)), nil, nil
+	}
 }
 
 // licenseKeyRevisionChanged returns true if any of the revision fields differ

@@ -17,11 +17,9 @@ import (
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 // A file cannot change after its upload, so clients cache it indefinitely without ever revalidating.
@@ -42,7 +40,7 @@ func FileRouter(r chiopenapi.Router) {
 				FileID uuid.UUID `path:"fileId"`
 			}
 
-			r.Use(fileMiddleware)
+			r.Use(respond.Middleware(fileMiddleware))
 			r.Get("/", respond.Handler(getFileHandler)).
 				With(option.Description("Get a file by ID")).
 				With(option.Request(FileIDRequest{})).
@@ -196,30 +194,21 @@ func getFileFromRequest(r *http.Request) (*types.File, error) {
 	return &file, nil
 }
 
-func fileMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
+func fileMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
 
-		if fileID, err := uuid.Parse(r.PathValue("fileId")); err != nil {
-			http.NotFound(w, r)
-		} else if file, err := db.GetFileWithID(ctx, fileID); err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
-				http.NotFound(w, r)
-			} else {
-				log.Error("error getting file", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			}
-		} else {
-			if file.OrganizationID != nil && *file.OrganizationID != *auth.CurrentOrgID() {
-				http.NotFound(w, r)
-			} else {
-				h.ServeHTTP(w, r.WithContext(internalctx.WithFile(ctx, file)))
-			}
-		}
-	})
+	if fileID, err := uuid.Parse(r.PathValue("fileId")); err != nil {
+		return nil, fileNotFound, nil
+	} else if file, err := db.GetFileWithID(ctx, fileID); errors.Is(err, apierrors.ErrNotFound) {
+		return nil, fileNotFound, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get file: %w", err)
+	} else if file.OrganizationID != nil && *file.OrganizationID != *auth.CurrentOrgID() {
+		return nil, fileNotFound, nil
+	} else {
+		return r.WithContext(internalctx.WithFile(ctx, file)), nil, nil
+	}
 }
 
 func patchImageHandler(patchImage func(ctx context.Context, body api.PatchImageRequest) (any, error)) http.HandlerFunc {
