@@ -18,7 +18,6 @@ import {BillingComponent} from './billing/billing.component';
 import {BillingSettingsComponent} from './billing/settings/billing-settings.component';
 import {CustomerOrganizationsComponent} from './components/customer-organizations/customer-organizations.component';
 import {DashboardComponent} from './components/dashboard/dashboard.component';
-import {HomeComponent} from './components/home/home.component';
 import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
 import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
 import {PartnerUsersComponent} from './components/users/partners/partner-users.component';
@@ -38,6 +37,7 @@ import {CustomEmailComponent} from './organization-settings/custom-email.compone
 import {CustomOidcComponent} from './organization-settings/custom-oidc.component';
 import {GeneralSettingsComponent} from './organization-settings/general-settings.component';
 import {OrganizationSettingsComponent} from './organization-settings/organization-settings.component';
+import {OverviewPageComponent} from './overview/overview-page.component';
 import {CustomerSecretsPageComponent} from './secrets/customer-secrets-page.component';
 import {SecretsPage} from './secrets/secrets-page.component';
 import {AuthService} from './services/auth.service';
@@ -229,10 +229,11 @@ export const routes: Routes = [
         canActivate: [requireVendorOrPartner],
       },
       {
-        path: 'home',
-        component: HomeComponent,
+        path: 'overview',
+        component: OverviewPageComponent,
         canActivate: [requireCustomer],
       },
+      {path: 'home', pathMatch: 'full', redirectTo: 'overview'},
       {
         path: 'applications',
         canActivate: [requireVendor],

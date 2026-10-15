@@ -567,13 +567,13 @@
           <a
             (click)="sidebar.hide()"
             routerLinkActive="bg-gray-100 dark:bg-gray-700"
-            routerLink="/home"
+            routerLink="/overview"
             class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
             <fa-icon
               [icon]="faHome"
               size="lg"
               class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-            <span class="ms-3">Home</span>
+            <span class="ms-3">Overview</span>
           </a>
         </li>
 
@@ -677,7 +677,7 @@
             }
           </li>
         }
-        @if (customerFeatures().support_bundles) {
+        @if (isSupportBundlesFeatureEnabled() && customerFeatures().support_bundles) {
           <li>
             <a
               (click)="sidebar.hide()"

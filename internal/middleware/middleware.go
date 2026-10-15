@@ -233,6 +233,19 @@ func RequireVendorOrPartner(handler http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+func RequireCustomer(handler http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		if auth, err := auth.Authentication.Get(r.Context()); err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
+		} else if auth.CurrentCustomerOrgID() == nil {
+			http.Error(w, "insufficient permissions", http.StatusForbidden)
+		} else {
+			handler.ServeHTTP(w, r)
+		}
+	}
+	return http.HandlerFunc(fn)
+}
+
 var Sentry = sentryhttp.New(sentryhttp.Options{Repanic: true}).Handle
 
 // SetSentryUserFromUserAuth sets the authenticated user's identity on the Sentry scope. It

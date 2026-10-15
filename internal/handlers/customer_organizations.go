@@ -189,6 +189,31 @@ func updateCustomerOrganizationHandler() http.HandlerFunc {
 			return
 		}
 
+		// Features granted before a downgrade may stay, so that the customer can still be edited.
+		if !auth.CurrentOrg().SubscriptionType.IsPro() &&
+			slices.ContainsFunc(features, func(f types.CustomerOrganizationFeature) bool {
+				return slices.Contains(types.ProCustomerOrganizationFeatures, f)
+			}) {
+			existing, err := db.GetCustomerOrganizationByID(ctx, id)
+			if errors.Is(err, apierrors.ErrNotFound) ||
+				(err == nil && existing.OrganizationID != *auth.CurrentOrgID()) {
+				http.NotFound(w, r)
+				return
+			} else if err != nil {
+				log.Error("failed to get customer org", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			for _, feature := range features {
+				if slices.Contains(types.ProCustomerOrganizationFeatures, feature) && !existing.HasFeature(feature) {
+					http.Error(w, "alerts, update notifications and support bundles require the Pro plan",
+						http.StatusForbidden)
+					return
+				}
+			}
+		}
+
 		customerOrganization := types.CustomerOrganization{
 			ID:             id,
 			OrganizationID: *auth.CurrentOrgID(),

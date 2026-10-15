@@ -16,7 +16,11 @@ import {SecureImagePipe} from '../../util/secureImage';
   imports: [AsyncPipe, SecureImagePipe, FaIconComponent],
   template: `
     @if (image()) {
-      <img [attr.src]="image()! | secureImage | async" [alt]="name() ?? ''" class="size-full rounded-[inherit]" />
+      <img
+        [attr.src]="image()! | secureImage | async"
+        [alt]="name() ?? ''"
+        class="size-full rounded-[inherit]"
+        [class.object-contain]="logo()" />
     } @else if (icon(); as fallbackIcon) {
       <span
         class="size-full rounded-[inherit] bg-gray-400 text-white dark:text-gray-800 flex items-center justify-center">
@@ -35,6 +39,8 @@ export class AvatarComponent {
   /** Image UUID or URL. The secureImage pipe resolves a bare UUID to the files endpoint. */
   public readonly image = input<string>();
   public readonly name = input<string | undefined>();
+  /** Fits a non-square image such as an organization logo inside the shape instead of stretching it. */
+  public readonly logo = input(false);
   /** Fallback icon. Without it the initials of the name are shown. */
   public readonly icon = input<IconDefinition>();
   public readonly iconClass = input<string>('text-lg');

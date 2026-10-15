@@ -123,6 +123,11 @@
                 }
               </div>
             </div>
+            <app-title-image-picker
+              class="ms-auto! self-start"
+              [imageUrl]="application.titleImageUrl"
+              [editable]="auth.hasAnyRole('read_write', 'admin')"
+              (picked)="updateTitleImage(application, $event)" />
           </div>
         </div>
       </div>

@@ -1,0 +1,22 @@
+DROP INDEX fk_AlertConfiguration_customer_organization_id;
+
+CREATE INDEX fk_ArtifactVersionPull_customer_organization_id ON ArtifactVersionPull (customer_organization_id);
+DROP INDEX idx_artifactversionpull_customer_organization_id_created_at;
+
+DROP INDEX fk_ArtifactVersionPull_useraccount_id;
+
+CREATE INDEX fk_ArtifactVersionPull_artifact_version_id ON ArtifactVersionPull (artifact_version_id);
+DROP INDEX idx_artifactversionpull_version_user_created_at;
+
+CREATE INDEX fk_ArtifactVersion_artifact_id ON ArtifactVersion (artifact_id);
+DROP INDEX idx_artifactversion_artifact_id_created_at;
+
+CREATE INDEX fk_ApplicationVersion_application_id ON ApplicationVersion (application_id);
+DROP INDEX idx_applicationversion_application_id_created_at;
+
+CREATE INDEX fk_DeploymentRevision_deployment_id ON DeploymentRevision (deployment_id);
+DROP INDEX idx_deploymentrevision_deployment_id_created_at;
+
+ALTER TABLE Artifact DROP COLUMN hidden_in_customer_overview;
+ALTER TABLE Artifact DROP COLUMN title_image_id;
+ALTER TABLE Application DROP COLUMN title_image_id;

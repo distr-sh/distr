@@ -1,12 +1,12 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
-import {ChangeDetectionStrategy, Component, inject, TemplateRef} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faBox, faPlus, faTrash, faUserCircle, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, lastValueFrom, map, startWith} from 'rxjs';
+import {catchError, combineLatest, lastValueFrom, map, of, startWith} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {AlertComponent} from '../../components/alert/alert.component';
@@ -97,7 +97,18 @@ export class ArtifactsComponent {
   protected readonly registryHost$ = this.contextService.getRegistryHost();
 
   protected readonly auth = inject(AuthService);
-  protected readonly hasSubscription = this.organizationService.hasSubscription;
+  private readonly hasPulled = toSignal(
+    this.artifactsService.getPullStatus().pipe(
+      map((status) => status.hasPulled),
+      catchError(() => of(true))
+    )
+  );
+  private readonly isAdmin = this.auth.hasRole('admin');
+  protected readonly showRegistryHint = computed(
+    () =>
+      this.hasPulled() === false ||
+      (this.isAdmin && (!this.organizationService.hasSubscription() || this.hasNoArtifact() === true))
+  );
 
   constructor() {
     this.createForm.controls.upstreamAuthType.valueChanges

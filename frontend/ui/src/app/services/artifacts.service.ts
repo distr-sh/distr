@@ -20,6 +20,7 @@ export interface BaseArtifact {
   id: string;
   name: string;
   imageUrl?: string;
+  titleImageUrl?: string;
 }
 
 export interface BaseArtifactVersion {
@@ -37,6 +38,7 @@ export interface ArtifactUpstreamAuth {
 
 export interface Artifact extends BaseArtifact, HasDownloads {
   public: boolean;
+  hiddenInCustomerOverview: boolean;
   upstreamUrl?: string;
   lastSyncedAt?: string;
   lastSyncError?: string;
@@ -57,10 +59,15 @@ export interface ArtifactWithTags extends Artifact {
   versions?: TaggedArtifactVersion[];
 }
 
+export interface ArtifactPullStatus {
+  hasPulled: boolean;
+}
+
 export interface PatchArtifactRequest {
   upstreamUrl?: string | null;
   auth?: ArtifactUpstreamAuth | null;
   public?: boolean;
+  hiddenInCustomerOverview?: boolean;
 }
 
 class ArtifactsReactiveList extends ReactiveList<ArtifactWithTags> {
@@ -77,6 +84,10 @@ export class ArtifactsService {
 
   public list(): Observable<ArtifactWithTags[]> {
     return this.cache.get();
+  }
+
+  public getPullStatus(): Observable<ArtifactPullStatus> {
+    return this.http.get<ArtifactPullStatus>(`${this.artifactsUrl}/pull-status`);
   }
 
   public refresh(): Promise<ArtifactWithTags[]> {
@@ -103,6 +114,12 @@ export class ArtifactsService {
   public patchImage(artifactsId: string, imageId: string) {
     return this.http
       .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactsId}/image`, {imageId})
+      .pipe(tap((it) => this.cache.save(it)));
+  }
+
+  public patchTitleImage(artifactId: string, imageId: string) {
+    return this.http
+      .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}/title-image`, {imageId})
       .pipe(tap((it) => this.cache.save(it)));
   }
 

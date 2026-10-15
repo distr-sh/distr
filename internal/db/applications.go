@@ -18,7 +18,7 @@ import (
 const (
 	// The column order is part of the contract with types.Application: this expression is also
 	// selected as a composite row, which pgx scans positionally.
-	applicationOutputExpr = `a.id, a.created_at, a.organization_id, a.name, a.type, a.image_id,
+	applicationOutputExpr = `a.id, a.created_at, a.organization_id, a.name, a.type, a.image_id, a.title_image_id,
 		a.versioning_strategy, a.allow_automatic_updates`
 	applicationVersionCreatorOutputExpr = `av.created_by_user_account_id, u.name AS created_by_name,
 		u.email AS created_by_email, u.image_id AS created_by_image_id`
@@ -422,6 +422,18 @@ func UpdateApplicationImage(ctx context.Context, application *types.Application,
 	)
 	if err := row.Scan(&application.ImageID); err != nil {
 		return fmt.Errorf("could not save image id to application: %w", err)
+	}
+	return nil
+}
+
+func UpdateApplicationTitleImage(ctx context.Context, application *types.Application, imageID uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	row := db.QueryRow(ctx,
+		`UPDATE Application SET title_image_id = @imageId WHERE id = @id RETURNING title_image_id`,
+		pgx.NamedArgs{"imageId": imageID, "id": application.ID},
+	)
+	if err := row.Scan(&application.TitleImageID); err != nil {
+		return fmt.Errorf("could not save title image id to application: %w", err)
 	}
 	return nil
 }

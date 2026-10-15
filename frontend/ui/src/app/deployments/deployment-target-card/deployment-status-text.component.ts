@@ -1,12 +1,17 @@
 import {DatePipe} from '@angular/common';
-import {ChangeDetectionStrategy, Component, computed, Directive, input} from '@angular/core';
+import {Component, computed, Directive, input} from '@angular/core';
 import {DeploymentRevisionStatus, DeploymentStatusType, DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {never} from '../../../util/exhaust';
 import {isStale} from '../../../util/model';
 import {AbstractStatusDotDirective} from '../../components/status-dot';
 import {DeploymentStatusBadgeComponent} from '../deployment-status-badge.component';
 
-function currentStatus(deployment: DeploymentWithLatestRevision): DeploymentRevisionStatus | undefined {
+export type DeploymentStatusSource = Pick<
+  DeploymentWithLatestRevision,
+  'deploymentRevisionId' | 'currentDeploymentRevisionId' | 'latestStatus' | 'currentStatus'
+>;
+
+function currentStatus(deployment: DeploymentStatusSource): DeploymentRevisionStatus | undefined {
   return deployment.currentStatus ?? deployment.latestStatus;
 }
 
@@ -15,7 +20,7 @@ interface PendingUpdate {
   message: string;
 }
 
-function pendingUpdate(deployment: DeploymentWithLatestRevision): PendingUpdate | undefined {
+function pendingUpdate(deployment: DeploymentStatusSource): PendingUpdate | undefined {
   const {currentDeploymentRevisionId, deploymentRevisionId, latestStatus} = deployment;
   if (!currentDeploymentRevisionId || currentDeploymentRevisionId === deploymentRevisionId) {
     return undefined;
@@ -28,7 +33,7 @@ function pendingUpdate(deployment: DeploymentWithLatestRevision): PendingUpdate 
 
 @Directive({selector: '[appDeploymentStatusDot]'})
 export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
-  public readonly deployment = input.required<DeploymentWithLatestRevision>();
+  public readonly deployment = input.required<DeploymentStatusSource>();
   protected override style = computed(() => {
     const s = currentStatus(this.deployment());
     if (s === undefined) {
@@ -52,7 +57,6 @@ export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
 @Component({
   selector: 'app-deployment-status-text',
   imports: [DeploymentStatusDotDirective, DatePipe, DeploymentStatusBadgeComponent],
-  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="flex gap-1 items-center" [title]="(status()?.createdAt | date: 'short') ?? ''">
       <div class="size-3" appDeploymentStatusDot [deployment]="deployment()"></div>
@@ -84,7 +88,7 @@ export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
   `,
 })
 export class DeploymentStatusTextComponent {
-  public readonly deployment = input.required<DeploymentWithLatestRevision>();
+  public readonly deployment = input.required<DeploymentStatusSource>();
   protected readonly status = computed(() => currentStatus(this.deployment()));
   protected readonly stale = computed(() => {
     const status = this.status();

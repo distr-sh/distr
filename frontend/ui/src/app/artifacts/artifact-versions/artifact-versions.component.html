@@ -28,8 +28,19 @@
                 @if (artifact.public) {
                   <app-artifact-public-badge />
                 }
+                @if (auth.isVendor() && artifact.hiddenInCustomerOverview) {
+                  <span class="distr-badge distr-badge-neutral">Hidden in customer overview</span>
+                }
               </p>
             </div>
+
+            @if (auth.isVendor()) {
+              <app-title-image-picker
+                class="me-4 self-start"
+                [imageUrl]="artifact.titleImageUrl"
+                [editable]="auth.hasAnyRole('read_write', 'admin')"
+                (picked)="updateTitleImage(artifact, $event)" />
+            }
 
             @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
               <button
@@ -90,6 +101,19 @@
                         }
                       </li>
                     }
+                    <li>
+                      <button
+                        class="distr-dropdown-item"
+                        (click)="setHiddenInCustomerOverview(artifact, !artifact.hiddenInCustomerOverview)">
+                        @if (artifact.hiddenInCustomerOverview) {
+                          <fa-icon [icon]="faEye" />
+                          Show in customer overview
+                        } @else {
+                          <fa-icon [icon]="faEyeSlash" />
+                          Hide in customer overview
+                        }
+                      </button>
+                    </li>
                     <li>
                       <button class="distr-dropdown-item distr-dropdown-item-danger" (click)="deleteArtifact(artifact)">
                         <fa-icon [icon]="faTrash" />

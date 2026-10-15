@@ -30,7 +30,8 @@ var (
 )
 
 func artifactOutputExprWith(upstreamCredential func(EncryptedColumn, string) string) string {
-	return ` a.id, a.created_at, a.organization_id, a.name, a.image_id, a.public, ` +
+	return ` a.id, a.created_at, a.organization_id, a.name, a.image_id, a.title_image_id, a.public, ` +
+		`a.hidden_in_customer_overview, ` +
 		`a.upstream_url, a.last_synced_at, a.last_sync_error, a.upstream_auth_type, ` +
 		upstreamCredential(artifactUpstreamUsername, "a") + `, ` +
 		upstreamCredential(artifactUpstreamPassword, "a") + ` `
@@ -67,6 +68,23 @@ const (
 					AND oua.customer_organization_id = @customerOrganizationId
 			))) `
 
+	// customerOrgPullsExpr is a CTE of the pulls of the customer organization given as
+	// @customerOrganizationId. It matches the same pulls as artifactPullOfCustomerOrgExpr, split into two
+	// branches so that each can use an index instead of evaluating the OR for every pull. Neither branch
+	// is limited to an organization, so a query has to scope the pulled artifact to one.
+	customerOrgPullsExpr = `
+	customer_pull AS (
+		SELECT avpl.id, avpl.created_at, avpl.artifact_version_id, avpl.useraccount_id, avpl.deployment_target_id
+		FROM ArtifactVersionPull avpl
+		WHERE avpl.customer_organization_id = @customerOrganizationId
+		UNION ALL
+		SELECT avpl.id, avpl.created_at, avpl.artifact_version_id, avpl.useraccount_id, avpl.deployment_target_id
+		FROM Organization_UserAccount oua
+			JOIN ArtifactVersionPull avpl
+				ON avpl.useraccount_id = oua.user_account_id AND avpl.customer_organization_id IS NULL
+		WHERE oua.customer_organization_id = @customerOrganizationId
+	)`
+
 	artifactVersionOutputExpr = `
 		v.id,
 		v.created_at,
@@ -86,6 +104,11 @@ const (
 // place that tells the two apart.
 func artifactVersionIsTagExpr(alias string) string {
 	return alias + ".name <> " + alias + ".manifest_blob_digest"
+}
+
+// artifactVersionIsReleaseTagExpr matches tags except those matching types.NonReleaseTagPattern.
+func artifactVersionIsReleaseTagExpr(alias string) string {
+	return artifactVersionIsTagExpr(alias) + " AND " + alias + `.name !~ '` + types.NonReleaseTagPattern + `'`
 }
 
 func artifactVersionIsDigestExpr(alias string) string {
@@ -556,6 +579,22 @@ func UpdateArtifactPublic(ctx context.Context, artifactID, organizationID uuid.U
 	return nil
 }
 
+func UpdateArtifactHiddenInCustomerOverview(
+	ctx context.Context,
+	artifactID, organizationID uuid.UUID,
+	hidden bool,
+) error {
+	db := internalctx.GetDb(ctx)
+	_, err := db.Exec(ctx,
+		`UPDATE Artifact SET hidden_in_customer_overview = @hidden WHERE id = @id AND organization_id = @organizationId`,
+		pgx.NamedArgs{"id": artifactID, "organizationId": organizationID, "hidden": hidden},
+	)
+	if err != nil {
+		return fmt.Errorf("could not update artifact overview visibility: %w", err)
+	}
+	return nil
+}
+
 func GetArtifactsWithUpstreamURL(ctx context.Context) ([]types.Artifact, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `SELECT`+artifactOutputExpr+`FROM Artifact a WHERE a.upstream_url IS NOT NULL`)
@@ -813,7 +852,7 @@ func GetNewestArtifactTag(
 		`SELECT`+artifactVersionOutputExpr+`
 		FROM ArtifactVersion v
 		WHERE v.artifact_id = @artifactId
-			AND `+artifactVersionIsTagExpr("v")+`
+			AND `+artifactVersionIsReleaseTagExpr("v")+`
 			AND (@allVersions OR v.manifest_blob_digest IN (
 				SELECT manifest_blob_digest FROM ArtifactVersion WHERE id = any(@artifactVersionIds)
 			))
@@ -946,6 +985,67 @@ func BulkUpsertArtifactVersionParts(ctx context.Context, parts []types.ArtifactV
 		return fmt.Errorf("could not bulk upsert ArtifactVersionParts: %w", err)
 	}
 	return nil
+}
+
+// GetLatestArtifactPullsOfCustomerOrganization returns the most recent pull of a release tag by the customer
+// organization for each of the given artifacts that it has pulled at all. Pulls of a manifest by digest are
+// left out: a client pulling by tag always resolves the tag first, which is recorded as well, and the child
+// manifests of an index are only ever pulled by digest.
+func GetLatestArtifactPullsOfCustomerOrganization(
+	ctx context.Context,
+	orgID, customerOrgID uuid.UUID,
+	artifactIDs []uuid.UUID,
+) ([]types.CustomerArtifactPull, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`WITH `+customerOrgPullsExpr+`
+		SELECT DISTINCT ON (v.artifact_id)
+			v.artifact_id,
+			v.name AS version_name,
+			p.created_at,
+			u.name AS user_name,
+			u.image_id AS user_image_id,
+			dt.name AS deployment_target_name
+		FROM customer_pull p
+			JOIN ArtifactVersion v ON v.id = p.artifact_version_id
+			JOIN Artifact a ON a.id = v.artifact_id
+			LEFT JOIN UserAccount u ON u.id = p.useraccount_id
+			LEFT JOIN DeploymentTarget dt ON dt.id = p.deployment_target_id
+		WHERE a.organization_id = @orgId
+			AND v.artifact_id = any(@artifactIds)
+			AND `+artifactVersionIsReleaseTagExpr("v")+`
+		ORDER BY v.artifact_id, p.created_at DESC`,
+		pgx.NamedArgs{"orgId": orgID, "customerOrganizationId": customerOrgID, "artifactIds": artifactIDs},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query latest artifact pulls: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.CustomerArtifactPull])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect latest artifact pulls: %w", err)
+	}
+	return result, nil
+}
+
+func HasUserPulledArtifact(ctx context.Context, userID, orgID uuid.UUID) (bool, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT EXISTS (
+			SELECT 1 FROM ArtifactVersionPull avpl
+				JOIN ArtifactVersion av ON av.id = avpl.artifact_version_id
+				JOIN Artifact a ON a.id = av.artifact_id
+			WHERE avpl.useraccount_id = @userId AND a.organization_id = @orgId
+		)`,
+		pgx.NamedArgs{"userId": userID, "orgId": orgID},
+	)
+	if err != nil {
+		return false, fmt.Errorf("failed to query artifact pulls of user: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[bool])
+	if err != nil {
+		return false, fmt.Errorf("failed to collect artifact pulls of user: %w", err)
+	}
+	return result, nil
 }
 
 func CreateArtifactPullLogEntry(
@@ -1262,6 +1362,18 @@ func UpdateArtifactImage(ctx context.Context, artifact *types.ArtifactWithTagged
 	)
 	if err := row.Scan(&artifact.ImageID); err != nil {
 		return fmt.Errorf("could not save image id to artifact: %w", err)
+	}
+	return nil
+}
+
+func UpdateArtifactTitleImage(ctx context.Context, artifact *types.ArtifactWithTaggedVersion, imageID uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	row := db.QueryRow(ctx,
+		`UPDATE Artifact SET title_image_id = @imageId WHERE id = @id RETURNING title_image_id`,
+		pgx.NamedArgs{"imageId": imageID, "id": artifact.ID},
+	)
+	if err := row.Scan(&artifact.TitleImageID); err != nil {
+		return fmt.Errorf("could not save title image id to artifact: %w", err)
 	}
 	return nil
 }

@@ -61,6 +61,7 @@ import {EditorComponent} from '../components/editor.component';
 import {InlineEditComponent} from '../components/inline-edit.component';
 import {PageComponent} from '../components/page.component';
 import {PlanFeatureHintComponent} from '../components/plan-feature-hint.component';
+import {TitleImagePickerComponent} from '../components/title-image-picker/title-image-picker.component';
 import {UuidComponent} from '../components/uuid';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
@@ -101,6 +102,7 @@ import {
     BadgeSelectComponent,
     PlanFeatureHintComponent,
     AvatarComponent,
+    TitleImagePickerComponent,
     AlertComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -545,6 +547,17 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
       return;
     }
     await firstValueFrom(this.applicationService.patchImage(data.id!, fileId));
+  }
+
+  protected async updateTitleImage(application: Application, fileId: string) {
+    try {
+      await firstValueFrom(this.applicationService.patchTitleImage(application.id!, fileId));
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    }
   }
 
   protected toggleVersionSelected(version: ApplicationVersion): void {

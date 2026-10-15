@@ -26,6 +26,7 @@ func ApplicationToAPI(
 			Type:                  a.Type,
 			ImageID:               a.ImageID,
 			ImageUrl:              CreateImageURL(a.ImageID),
+			TitleImageUrl:         CreateImageURL(a.TitleImageID),
 			VersioningStrategy:    a.VersioningStrategy,
 			AllowAutomaticUpdates: a.AllowAutomaticUpdates,
 			Versions:              List(versions, versionToAPI),

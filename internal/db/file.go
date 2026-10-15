@@ -116,8 +116,8 @@ func DeleteUnreferencedFilesOlderThan(ctx context.Context, minAge time.Duration)
 		`DELETE FROM File AS f
 		WHERE now() - f.created_at > @minAge
 			AND NOT EXISTS (SELECT 1 FROM UserAccount u WHERE u.image_id = f.id)
-			AND NOT EXISTS (SELECT 1 FROM Application a WHERE a.image_id = f.id)
-			AND NOT EXISTS (SELECT 1 FROM Artifact a WHERE a.image_id = f.id)
+			AND NOT EXISTS (SELECT 1 FROM Application a WHERE a.image_id = f.id OR a.title_image_id = f.id)
+			AND NOT EXISTS (SELECT 1 FROM Artifact a WHERE a.image_id = f.id OR a.title_image_id = f.id)
 			AND NOT EXISTS (SELECT 1 FROM CustomerOrganization c WHERE c.image_id = f.id)
 			AND NOT EXISTS (
 				SELECT 1 FROM OrganizationBranding b

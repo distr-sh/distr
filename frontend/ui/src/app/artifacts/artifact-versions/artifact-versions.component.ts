@@ -10,6 +10,8 @@ import {
   faCheck,
   faCircleExclamation,
   faEllipsisVertical,
+  faEye,
+  faEyeSlash,
   faFileSignature,
   faGlobe,
   faKey,
@@ -42,6 +44,7 @@ import {PageComponent} from '../../components/page.component';
 import {PaginationComponent} from '../../components/pagination.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
+import {TitleImagePickerComponent} from '../../components/title-image-picker/title-image-picker.component';
 import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {RequireVendorDirective} from '../../directives/required-role.directive';
@@ -89,6 +92,7 @@ import {
     PageComponent,
     SearchBarComponent,
     PaginationComponent,
+    TitleImagePickerComponent,
   ],
   templateUrl: './artifact-versions.component.html',
   providers: [CustomerOrganizationsCache],
@@ -118,6 +122,8 @@ export class ArtifactVersionsComponent {
   protected readonly faCheck = faCheck;
   protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faTriangleExclamation = faTriangleExclamation;
+  protected readonly faEye = faEye;
+  protected readonly faEyeSlash = faEyeSlash;
 
   protected readonly syncing = signal(false);
 
@@ -356,6 +362,28 @@ export class ArtifactVersionsComponent {
       return;
     }
     await firstValueFrom(this.artifacts.patchImage(data.id!, fileId));
+  }
+
+  protected async updateTitleImage(artifact: ArtifactWithTags, fileId: string) {
+    try {
+      await firstValueFrom(this.artifacts.patchTitleImage(artifact.id, fileId));
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) this.toast.error(msg);
+    }
+  }
+
+  protected async setHiddenInCustomerOverview(artifact: ArtifactWithTags, hidden: boolean) {
+    this.showDropdown.set(false);
+    try {
+      await firstValueFrom(this.artifacts.patchArtifact(artifact.id, {hiddenInCustomerOverview: hidden}));
+      this.toast.success(
+        hidden ? 'Artifact is hidden in the customer overview' : 'Artifact is shown in the customer overview'
+      );
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) this.toast.error(msg);
+    }
   }
 
   public deleteArtifact(artifact: ArtifactWithTags): void {

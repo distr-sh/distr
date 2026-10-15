@@ -1,0 +1,17 @@
+<app-activity-timeline [entries]="visibleEntries()" variant="card" heading="Activity" [icon]="faClockRotateLeft">
+  @if (entries().length > collapsedEntryCount) {
+    <div class="flex justify-center">
+      <button
+        type="button"
+        (click)="expanded.set(!expanded())"
+        class="py-1.5 px-3 text-sm distr-btn-secondary hover:text-gray-900 dark:hover:text-white">
+        <fa-icon [icon]="expanded() ? faChevronUp : faChevronDown" class="me-1" />
+        @if (expanded()) {
+          Show less
+        } @else {
+          Show more
+        }
+      </button>
+    </div>
+  }
+</app-activity-timeline>

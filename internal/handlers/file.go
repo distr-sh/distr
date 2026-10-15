@@ -178,8 +178,10 @@ func createFileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+const maxFileSize = 1024 * 1024
+
 func getFileFromRequest(r *http.Request) (*types.File, error) {
-	if err := r.ParseMultipartForm(102400); err != nil {
+	if err := r.ParseMultipartForm(maxFileSize); err != nil {
 		return nil, fmt.Errorf("failed to parse form: %w", err)
 	}
 
@@ -187,8 +189,8 @@ func getFileFromRequest(r *http.Request) (*types.File, error) {
 
 	if multiPartFile, fileHeader, err := r.FormFile("file"); err != nil {
 		return nil, errors.New("file not found")
-	} else if fileHeader.Size > 102400 {
-		return nil, errors.New("file too large (max 100 KiB)")
+	} else if fileHeader.Size > maxFileSize {
+		return nil, errors.New("file too large (max 1 MiB)")
 	} else if data, err := io.ReadAll(multiPartFile); err != nil {
 		return nil, err
 	} else {

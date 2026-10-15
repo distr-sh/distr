@@ -74,6 +74,13 @@ func ApplicationsRouter(r chiopenapi.Router) {
 							api.PatchImageRequest
 						}{})).
 						With(option.Response(http.StatusOK, api.ApplicationResponse{}))
+					r.Patch("/title-image", patchTitleImageApplication).
+						With(option.Description("Update the application title image shown in the customer overview")).
+						With(option.Request(struct {
+							ApplicationRequest
+							api.PatchImageRequest
+						}{})).
+						With(option.Response(http.StatusOK, api.ApplicationResponse{}))
 				})
 		})
 
@@ -698,6 +705,17 @@ var patchImageApplication = patchImageHandler(func(ctx context.Context, body api
 		return applicationMapper(ctx)(*application), nil
 	}
 })
+
+var patchTitleImageApplication = patchImageHandler(
+	func(ctx context.Context, body api.PatchImageRequest) (any, error) {
+		application := internalctx.GetApplication(ctx)
+		if err := db.UpdateApplicationTitleImage(ctx, application, body.ImageID); err != nil {
+			return nil, err
+		} else {
+			return applicationMapper(ctx)(*application), nil
+		}
+	},
+)
 
 func applicationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

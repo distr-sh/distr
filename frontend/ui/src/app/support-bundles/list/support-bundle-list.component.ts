@@ -1,24 +1,23 @@
 import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
-import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faDownload, faGear, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faDownload, faGear, faPlus, faTrash} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, map, of, startWith, Subject, switchMap, take} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {AlertComponent} from '../../components/alert/alert.component';
-import {ClipComponent} from '../../components/clip.component';
 import {PageComponent} from '../../components/page.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
-import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AuthService} from '../../services/auth.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService, supportBundleZipFileName} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
 import {SupportBundle} from '../../types/support-bundle';
+import {SupportBundleCreateDialogComponent} from '../create-dialog/support-bundle-create-dialog.component';
 import {supportBundleDeleteConfirm} from '../support-bundle-display';
 import {SupportBundleStatusBadgeComponent} from '../support-bundle-status-badge.component';
 
@@ -31,10 +30,9 @@ import {SupportBundleStatusBadgeComponent} from '../support-bundle-status-badge.
     ReactiveFormsModule,
     RouterLink,
     FaIconComponent,
-    ClipComponent,
-    AutotrimDirective,
     PageComponent,
     SearchBarComponent,
+    SupportBundleCreateDialogComponent,
     SupportBundleStatusBadgeComponent,
     AlertComponent,
   ],
@@ -49,7 +47,6 @@ export class SupportBundleListComponent {
   protected readonly faGear = faGear;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
-  protected readonly faXmark = faXmark;
   protected readonly routePrefix = this.auth.isCustomer() ? '/support' : '/support-bundles';
 
   protected readonly configExists = toSignal(
@@ -84,24 +81,15 @@ export class SupportBundleListComponent {
   protected readonly bundles = computed(() => this.bundlesResult() ?? []);
   protected readonly loading = computed(() => this.bundlesResult() === undefined);
 
-  // Create dialog (customer only)
-  protected readonly createForm = new FormGroup({
-    title: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
-    description: new FormControl('', {nonNullable: true}),
-  });
-  protected createFormLoading = false;
-  protected collectCommand = signal<string | null>(null);
   private dialogRef: DialogRef | null = null;
 
   openDialog(templateRef: TemplateRef<unknown>) {
     this.closeDialog();
-    this.createForm.reset();
-    this.collectCommand.set(null);
     this.dialogRef = this.overlay.showModal(templateRef);
     this.dialogRef
       .result()
       .pipe(take(1))
-      .subscribe(() => this.refresh$.next());
+      .subscribe(() => this.refresh());
   }
 
   closeDialog() {
@@ -109,29 +97,8 @@ export class SupportBundleListComponent {
     this.dialogRef = null;
   }
 
-  async createBundle() {
-    if (this.createForm.invalid) {
-      return;
-    }
-    this.createFormLoading = true;
-    try {
-      const response = await firstValueFrom(
-        this.svc.create({
-          title: this.createForm.value.title!,
-          description: this.createForm.value.description || undefined,
-        })
-      );
-      this.collectCommand.set(response.collectCommand);
-      this.toast.success('Support bundle created');
-      this.refresh$.next();
-    } catch (e) {
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
-      }
-    } finally {
-      this.createFormLoading = false;
-    }
+  protected refresh() {
+    this.refresh$.next();
   }
 
   protected readonly downloadingBundleId = signal<string | null>(null);

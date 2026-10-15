@@ -1,0 +1,70 @@
+@let targets = deploymentTargets();
+<section>
+  @if (section() === 'deployments' && targets.length > 0) {
+    <div class="distr-card relative p-6 gap-3">
+      <ng-container [ngTemplateOutlet]="menu" />
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white pe-8">
+        <fa-icon [icon]="faDashboard" class="me-2 text-gray-500 dark:text-gray-400" />
+        Deployments
+      </h2>
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-1 -mx-3">
+        @for (target of targets; track target.id) {
+          <app-overview-deployment-target-item [deploymentTarget]="target" />
+        }
+      </div>
+    </div>
+  } @else if (section() === 'artifacts' && artifacts().hasPulled && artifacts().artifacts.length > 0) {
+    <div class="distr-card relative p-6 gap-3">
+      <ng-container [ngTemplateOutlet]="menu" />
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white pe-8">
+        <fa-icon [icon]="faBox" class="me-2 text-gray-500 dark:text-gray-400" />
+        Artifacts
+      </h2>
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-1 -mx-3">
+        @for (artifact of artifacts().artifacts; track artifact.id) {
+          <app-overview-artifact-item [artifact]="artifact" />
+        }
+      </div>
+    </div>
+  } @else if (section() === 'deployments') {
+    <div class="distr-card relative p-6 items-center gap-4 text-center">
+      <ng-container [ngTemplateOutlet]="menu" />
+      <p class="text-gray-900 dark:text-white font-medium">Create your first deployment</p>
+      <button
+        type="button"
+        (click)="openWizard()"
+        class="flex items-center py-2 px-4 text-sm distr-btn-secondary hover:text-gray-900 dark:hover:text-white">
+        <fa-icon [icon]="faPlus" class="me-2 text-gray-500 dark:text-gray-400" />
+        Deployment
+      </button>
+    </div>
+  } @else if (section() === 'artifacts') {
+    <div class="distr-card relative p-6 items-center gap-4 text-center">
+      <ng-container [ngTemplateOutlet]="menu" />
+      <p class="text-gray-900 dark:text-white font-medium">You have not pulled any artifacts yet.</p>
+      <a
+        routerLink="/artifacts"
+        class="flex items-center py-2 px-4 text-sm distr-btn-secondary hover:text-gray-900 dark:hover:text-white">
+        <fa-icon [icon]="faDownload" class="me-2 text-gray-500 dark:text-gray-400" />
+        Pull your first artifact
+      </a>
+    </div>
+  } @else if (instructionsHidden()) {
+    <div class="flex justify-end">
+      <app-overview-menu (showInstructions)="showInstructions.emit()" />
+    </div>
+  }
+</section>
+
+<ng-template #menu>
+  @if (instructionsHidden()) {
+    <app-overview-menu class="absolute top-3 end-3" (showInstructions)="showInstructions.emit()" />
+  }
+</ng-template>
+
+<ng-template #deploymentWizard>
+  <app-deployment-wizard
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top"
+    (closed)="closeWizard()" />
+</ng-template>

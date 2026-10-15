@@ -32,6 +32,9 @@ func ArtifactsRouter(r chiopenapi.Router) {
 	r.Get("/", getArtifacts).
 		With(option.Description("List all artifacts")).
 		With(option.Response(http.StatusOK, []api.ArtifactsResponse{}))
+	r.Get("/pull-status", getArtifactPullStatus).
+		With(option.Description("Get whether the current user has pulled an artifact of the organization")).
+		With(option.Response(http.StatusOK, api.ArtifactPullStatusResponse{}))
 	r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 		Post("/", createArtifactHandler()).
 		With(option.Description("Create an artifact")).
@@ -55,9 +58,17 @@ func ArtifactsRouter(r chiopenapi.Router) {
 						api.PatchImageRequest
 					}{})).
 					With(option.Response(http.StatusOK, []api.ArtifactResponse{}))
+				r.Patch("/title-image", patchTitleImageArtifactHandler).
+					With(option.Description("Update the artifact title image shown in the customer overview")).
+					With(option.Request(struct {
+						ArtifactRequest
+						api.PatchImageRequest
+					}{})).
+					With(option.Response(http.StatusOK, api.ArtifactResponse{}))
 				r.Patch("/", patchArtifactHandler).
 					With(option.Description(
-						"Update artifact upstream URL and/or authentication, or its public visibility")).
+						"Update artifact upstream URL and/or authentication, its public visibility " +
+							"or whether it is hidden in the customer overview")).
 					With(option.Request(struct {
 						ArtifactRequest
 						api.PatchArtifactRequest
@@ -78,6 +89,16 @@ func ArtifactsRouter(r chiopenapi.Router) {
 					}{}))
 			})
 	})
+}
+
+func getArtifactPullStatus(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	if hasPulled, err := db.HasUserPulledArtifact(ctx, auth.CurrentUserID(), *auth.CurrentOrgID()); err != nil {
+		respondInternalError(w, r, err, "failed to get artifact pull status")
+	} else {
+		RespondJSON(w, api.ArtifactPullStatusResponse{HasPulled: hasPulled})
+	}
 }
 
 func createArtifactHandler() http.HandlerFunc {
@@ -199,34 +220,42 @@ func syncArtifactHandler() http.HandlerFunc {
 }
 
 func getArtifacts(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
-	auth := auth.Authentication.Require(ctx)
-
-	var artifacts []types.ArtifactWithDownloads
-	var err error
-	if auth.CurrentOrg().HasFeature(types.FeatureLicensing) && auth.CurrentCustomerOrgID() != nil {
-		if entitlements, err1 := db.GetArtifactEntitlements(ctx, *auth.CurrentOrgID()); err1 != nil {
-			log.Error("failed to get artifact entitlements", zap.Error(err1))
-			sentry.GetHubFromContext(ctx).CaptureException(err1)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		} else if len(entitlements) > 0 {
-			artifacts, err = db.GetArtifactsByEntitlementOwnerID(ctx, *auth.CurrentOrgID(), *auth.CurrentCustomerOrgID())
-		} else {
-			artifacts, err = db.GetArtifactsByOrgID(ctx, *auth.CurrentOrgID())
-		}
-	} else {
-		artifacts, err = db.GetArtifactsByOrgID(ctx, *auth.CurrentOrgID())
-	}
-
-	if err != nil {
-		log.Error("failed to get artifacts", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	if artifacts, err := visibleArtifacts(r.Context()); err != nil {
+		respondInternalError(w, r, err, "failed to get artifacts")
 	} else {
 		RespondJSON(w, mapping.List(artifacts, mapping.ArtifactsWithDownloadsToAPI))
 	}
+}
+
+// visibleArtifacts returns the artifacts the current user may see. Entitlements restrict a customer only
+// once the vendor has created any.
+func visibleArtifacts(ctx context.Context) ([]types.ArtifactWithDownloads, error) {
+	auth := auth.Authentication.Require(ctx)
+	orgID := *auth.CurrentOrgID()
+	customerOrgID := auth.CurrentCustomerOrgID()
+	if !auth.CurrentOrg().HasFeature(types.FeatureLicensing) || customerOrgID == nil {
+		return db.GetArtifactsByOrgID(ctx, orgID)
+	}
+	if entitlements, err := db.GetArtifactEntitlements(ctx, orgID); err != nil {
+		return nil, err
+	} else if len(entitlements) == 0 {
+		return db.GetArtifactsByOrgID(ctx, orgID)
+	}
+	return db.GetArtifactsByEntitlementOwnerID(ctx, orgID, *customerOrgID)
+}
+
+// customerArtifactVersions returns the versions of the artifact that the customer organization may pull,
+// which are restricted by entitlements only when licensing is enabled.
+func customerArtifactVersions(
+	ctx context.Context,
+	artifactID, customerOrgID uuid.UUID,
+	licensing bool,
+) ([]types.TaggedArtifactVersion, error) {
+	var licenseOwnerID *uuid.UUID
+	if licensing {
+		licenseOwnerID = &customerOrgID
+	}
+	return db.GetVersionsForArtifact(ctx, artifactID, licenseOwnerID)
 }
 
 func getArtifact(w http.ResponseWriter, r *http.Request) {
@@ -242,6 +271,17 @@ var patchImageArtifactHandler = patchImageHandler(func(ctx context.Context, body
 		return mapping.ArtifactToAPI(*artifact), nil
 	}
 })
+
+var patchTitleImageArtifactHandler = patchImageHandler(
+	func(ctx context.Context, body api.PatchImageRequest) (any, error) {
+		artifact := internalctx.GetArtifact(ctx)
+		if err := db.UpdateArtifactTitleImage(ctx, artifact, body.ImageID); err != nil {
+			return nil, err
+		} else {
+			return mapping.ArtifactToAPI(*artifact), nil
+		}
+	},
+)
 
 func deleteArtifactHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -382,7 +422,14 @@ func patchArtifactHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if body.Public != nil {
-			return db.UpdateArtifactPublic(ctx, artifact.ID, artifact.OrganizationID, *body.Public)
+			if err := db.UpdateArtifactPublic(ctx, artifact.ID, artifact.OrganizationID, *body.Public); err != nil {
+				return err
+			}
+		}
+		if body.HiddenInCustomerOverview != nil {
+			return db.UpdateArtifactHiddenInCustomerOverview(
+				ctx, artifact.ID, artifact.OrganizationID, *body.HiddenInCustomerOverview,
+			)
 		}
 		return nil
 	}); err != nil {

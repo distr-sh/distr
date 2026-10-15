@@ -1,11 +1,10 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
+	"slices"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
@@ -46,43 +45,40 @@ func getArtifactsByCustomer(w http.ResponseWriter, r *http.Request) {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	} else {
+		licensing := auth.CurrentOrg().HasFeature(types.FeatureLicensing)
+		artifactIDs := make([]uuid.UUID, len(artifacts))
+		for i, artifact := range artifacts {
+			artifactIDs[i] = artifact.ID
+		}
 		result := make([]api.ArtifactsByCustomer, 0)
 		for _, customer := range customers {
 			customerRes := api.ArtifactsByCustomer{Customer: mapping.CustomerOrganizationToAPI(customer.CustomerOrganization)}
+			pulls, err := db.GetLatestArtifactPullsOfCustomerOrganization(
+				ctx, *auth.CurrentOrgID(), customer.ID, artifactIDs,
+			)
+			if err != nil {
+				respondInternalError(w, r, err, "failed to get latest artifact pulls")
+				return
+			}
 			for _, artifact := range artifacts {
-				if latestPulled, err := db.GetLatestPullOfArtifactByCustomerOrganization(
-					ctx,
-					artifact.ID,
-					customer.ID,
-				); err != nil {
-					if errors.Is(err, apierrors.ErrNotFound) {
-						continue
-					} else {
-						log.Error("failed to get latest artifact pull by user", zap.Error(err),
-							zap.Any("artifactId", artifact.ID), zap.Any("userId", customer.ID))
-						sentry.GetHubFromContext(ctx).CaptureException(err)
-					}
-				} else {
-					var licenseOwnerID *uuid.UUID
-					if auth.CurrentOrg().HasFeature(types.FeatureLicensing) {
-						licenseOwnerID = &customer.ID
-					}
-
-					if versions, err := db.GetVersionsForArtifact(ctx, artifact.ID, licenseOwnerID); err != nil {
-						log.Error("failed to get versions for artifact", zap.Error(err))
-						sentry.GetHubFromContext(ctx).CaptureException(err)
-						http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-						return
-					} else {
-						customerRes.Artifacts = append(customerRes.Artifacts, api.DashboardArtifact{
-							Artifact: mapping.ArtifactToAPI(types.ArtifactWithTaggedVersion{
-								ArtifactWithDownloads: artifact,
-								Versions:              versions,
-							}),
-							LatestPulledVersion: latestPulled,
-						})
-					}
+				i := slices.IndexFunc(pulls, func(p types.CustomerArtifactPull) bool { return p.ArtifactID == artifact.ID })
+				if i < 0 {
+					continue
 				}
+				versions, err := customerArtifactVersions(ctx, artifact.ID, customer.ID, licensing)
+				if err != nil {
+					respondInternalError(w, r, err, "failed to get versions for artifact")
+					return
+				}
+				latest, _ := types.LatestArtifactTag(versions)
+				customerRes.Artifacts = append(customerRes.Artifacts, api.DashboardArtifact{
+					Artifact: mapping.ArtifactToAPI(types.ArtifactWithTaggedVersion{
+						ArtifactWithDownloads: artifact,
+						Versions:              versions,
+					}),
+					LatestPulledVersion: pulls[i].VersionName,
+					IsLatest:            types.ArtifactPullIsLatest(versions, latest, pulls[i].VersionName),
+				})
 			}
 
 			result = append(result, customerRes)

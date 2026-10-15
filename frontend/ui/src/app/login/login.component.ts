@@ -177,7 +177,7 @@ export class LoginComponent implements OnInit {
         // reload the app and re-run the bootstrap initializer.
         this.portalBranding.apply();
         if (this.auth.isCustomer()) {
-          await this.router.navigate(['/home']);
+          await this.router.navigate(['/overview']);
         } else {
           await this.router.navigate(['/dashboard'], {queryParams: {from: 'login'}});
         }
