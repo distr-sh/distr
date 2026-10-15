@@ -14,7 +14,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// Responder writes a complete response. Errors are only logged, except notWrittenError.
+// Responder writes a complete response. Errors are logged as a failed write, except
+// notWrittenError and writtenError.
 type Responder interface {
 	WriteResponse(w http.ResponseWriter, r *http.Request) error
 }
@@ -29,6 +30,20 @@ func (e *notWrittenError) Error() string {
 }
 
 func (e *notWrittenError) Unwrap() error {
+	return e.err
+}
+
+// writtenError is a failure other than writing after the response started, so it can only be
+// reported.
+type writtenError struct {
+	err error
+}
+
+func (e *writtenError) Error() string {
+	return e.err.Error()
+}
+
+func (e *writtenError) Unwrap() error {
 	return e.err
 }
 
@@ -72,6 +87,8 @@ func write(w http.ResponseWriter, r *http.Request, resp Responder, err error, fa
 	} else if err := resp.WriteResponse(w, r); err != nil {
 		if notWritten, ok := errors.AsType[*notWrittenError](err); ok {
 			internalError(w, r, notWritten.err, fallback)
+		} else if written, ok := errors.AsType[*writtenError](err); ok {
+			report(r, written.err)
 		} else {
 			internalctx.GetLogger(r.Context()).Warn("failed to write response", zap.Error(err))
 		}
@@ -83,22 +100,29 @@ func write(w http.ResponseWriter, r *http.Request, resp Responder, err error, fa
 const statusClientClosedRequest = 499
 
 func internalError(w http.ResponseWriter, r *http.Request, err error, fallback Responder) {
+	if !report(r, err) {
+		w.WriteHeader(statusClientClosedRequest)
+	} else if fallback == nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	} else if err := fallback.WriteResponse(w, r); err != nil {
+		internalctx.GetLogger(r.Context()).Warn("failed to write fallback response", zap.Error(err))
+	}
+}
+
+// report logs err and reports it to Sentry. It returns false for a request the client cancelled,
+// which is neither reported nor worth answering.
+func report(r *http.Request, err error) bool {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 
 	if errors.Is(err, context.Canceled) && ctx.Err() != nil {
 		log.Debug("request canceled", zap.Error(err))
-		w.WriteHeader(statusClientClosedRequest)
-		return
+		return false
 	}
 
 	log.Error("request failed", zap.String("method", r.Method), zap.String("path", r.URL.Path), zap.Error(err))
 	sentry.GetHubFromContext(ctx).CaptureException(err)
-	if fallback == nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	} else if err := fallback.WriteResponse(w, r); err != nil {
-		log.Warn("failed to write fallback response", zap.Error(err))
-	}
+	return true
 }
 
 func writeHeader(w http.ResponseWriter, header http.Header, status int) {
@@ -191,8 +215,9 @@ func writeStreamHeader(w http.ResponseWriter, contentType string, header http.He
 }
 
 // WriterResponse lets WriteBody write the body while producing it. Status and headers are sent with
-// the first write, so until then WriteBody can answer in its place like a [Handler]. After it, an
-// error is only logged and a Responder is ignored. Defaults: 200, application/octet-stream.
+// the first write, so until then WriteBody can answer in its place like a [Handler]. After it, a
+// Responder is ignored and an error is logged and reported, unless it is the failed write itself,
+// which is only logged. Defaults: 200, application/octet-stream.
 type WriterResponse struct {
 	Status      int
 	ContentType string
@@ -216,8 +241,10 @@ func (resp WriterResponse) WithHeader(key, value string) WriterResponse {
 
 func (resp WriterResponse) WriteResponse(w http.ResponseWriter, r *http.Request) error {
 	body := &deferredHeaderWriter{w: w, resp: resp}
-	if answer, err := resp.WriteBody(body); body.started {
+	if answer, err := resp.WriteBody(body); body.started && (err == nil || errors.Is(err, body.writeErr)) {
 		return err
+	} else if body.started {
+		return &writtenError{err}
 	} else if err != nil {
 		return &notWrittenError{err}
 	} else if answer != nil {
@@ -229,16 +256,21 @@ func (resp WriterResponse) WriteResponse(w http.ResponseWriter, r *http.Request)
 }
 
 type deferredHeaderWriter struct {
-	w       http.ResponseWriter
-	resp    WriterResponse
-	started bool
+	w        http.ResponseWriter
+	resp     WriterResponse
+	started  bool
+	writeErr error
 }
 
 func (d *deferredHeaderWriter) Write(p []byte) (int, error) {
 	if !d.started {
 		d.start()
 	}
-	return d.w.Write(p)
+	n, err := d.w.Write(p)
+	if err != nil {
+		d.writeErr = err
+	}
+	return n, err
 }
 
 func (d *deferredHeaderWriter) start() {
