@@ -22,6 +22,9 @@ faq:
 ---
 
 import CraCta from '~/components/cta/CraCta.astro';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import craReportingClockLight from '~/assets/cra/monitoring-and-reporting/cra-reporting-clock-light.webp';
+import craReportingClockDark from '~/assets/cra/monitoring-and-reporting/cra-reporting-clock-dark.webp';
 
 _Last verified: July 2026. Based on Regulation (EU) 2024/2847. The Article 14
 reporting obligations apply from September 11, 2026, including for products
@@ -46,20 +49,12 @@ Say a proof-of-concept exploit for a vulnerability in your product drops on a
 Monday at 09:00 and you learn about it an hour later, together with reports
 that it is being used in the wild. Here is your week:
 
-```mermaid
-flowchart TD
-    aware["Monday 10:00: you become aware of active exploitation"]
-    ew["By Tuesday 10:00: early warning to your designated CSIRT and ENISA via the Single Reporting Platform"]
-    vn["By Thursday 10:00: vulnerability notification with general information on the product, the exploit, and any corrective measures"]
-    users["In parallel: inform affected users of the vulnerability and what to do"]
-    patch["Corrective measure available, say the following Monday"]
-    final["14 days after the patch is available: final report"]
-    aware --> ew
-    ew --> vn
-    vn --> users
-    vn --> patch
-    patch --> final
-```
+<ThemedImage
+  lightSrc={craReportingClockLight}
+  darkSrc={craReportingClockDark}
+  alt="Example CRA reporting timeline: early warning within 24 hours, notification within 72 hours, final report 14 days after the patch"
+  dropShadow={false}
+/>
 
 The same 24h/72h cascade applies to severe incidents affecting the security of
 your product, with the final report due within one month of the incident

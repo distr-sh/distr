@@ -20,6 +20,9 @@ faq:
 ---
 
 import CraCta from '~/components/cta/CraCta.astro';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import craToolingLight from '~/assets/cra/tooling/cra-tooling-light.webp';
+import craToolingDark from '~/assets/cra/tooling/cra-tooling-dark.webp';
 
 _Last verified: July 2026. Based on Regulation (EU) 2024/2847. Tool
 capabilities change fast; treat the vendor names as examples, not
@@ -41,29 +44,12 @@ running in an air-gapped data center.
 
 ## The stack, from code to customer
 
-```mermaid
-flowchart TD
-    code["Your code and dependencies"]
-    sbom["SBOM generation"]
-    monitor["SBOM management and continuous monitoring"]
-    scan["Vulnerability scanning"]
-    vex["VEX: telling users what is actually exploitable"]
-    sign["Signing and provenance"]
-    cvd["CVD intake"]
-    report["Reporting and GRC"]
-    deliver["Secure update delivery"]
-    customer["Running at the customer"]
-    code --> sbom
-    sbom --> monitor
-    monitor --> scan
-    scan --> vex
-    scan --> report
-    cvd --> report
-    code --> sign
-    sign --> deliver
-    vex --> deliver
-    deliver --> customer
-```
+<ThemedImage
+  lightSrc={craToolingLight}
+  darkSrc={craToolingDark}
+  alt="How CRA tooling fits together, from SBOM generation and scanning to signing and secure update delivery"
+  dropShadow={false}
+/>
 
 Notice where the arrows end. Most compliance conversations stop at the
 reporting box. The regulation does not:
