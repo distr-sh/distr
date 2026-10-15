@@ -205,7 +205,7 @@ export class UpdateNotificationsComponent {
   });
 
   protected readonly editFormLoading = signal(false);
-  protected readonly enabledToggleLoading = signal(false);
+  private readonly togglingConfigId = signal<string | undefined>(undefined);
 
   protected readonly editConfigForm = this.fb.group(
     {
@@ -352,8 +352,12 @@ export class UpdateNotificationsComponent {
     }
   }
 
-  protected async toggleConfigEnabled(config: UpdateNotificationConfiguration) {
-    this.enabledToggleLoading.set(true);
+  protected async toggleConfigEnabled(config: UpdateNotificationConfiguration, event: Event) {
+    if (this.togglingConfigId() === config.id) {
+      event.preventDefault();
+      return;
+    }
+    this.togglingConfigId.set(config.id);
     try {
       const enabled = !config.enabled;
       await firstValueFrom(
@@ -374,7 +378,7 @@ export class UpdateNotificationsComponent {
         this.toast.error(msg);
       }
     } finally {
-      this.enabledToggleLoading.set(false);
+      this.togglingConfigId.set(undefined);
     }
   }
 

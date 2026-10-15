@@ -98,7 +98,7 @@ export class AlertConfigurationsComponent {
   private readonly editConfigDrawerTpl = viewChild.required<TemplateRef<unknown>>('editConfigDrawer');
   private editConfigDrawerRef?: DialogRef;
 
-  protected readonly enabledToggleLoading = signal(false);
+  private readonly togglingConfigId = signal<string | undefined>(undefined);
 
   /** scope is the customer whose users and deployments a configuration of this page reaches. */
   private readonly scope = computed(() => this.customerOrganizationId() ?? this.auth.getClaims()?.c_org);
@@ -239,10 +239,14 @@ export class AlertConfigurationsComponent {
     }
   }
 
-  protected async toggleConfigEnabled(config: AlertConfiguration) {
+  protected async toggleConfigEnabled(config: AlertConfiguration, event: Event) {
+    if (this.togglingConfigId() === config.id) {
+      event.preventDefault();
+      return;
+    }
+    this.togglingConfigId.set(config.id);
     try {
       const request = {...config, enabled: !config.enabled, customerOrganizationId: this.customerOrganizationId()};
-      this.enabledToggleLoading.set(true);
       await firstValueFrom(this.svc.update(config.id, request));
       this.toast.success(`Alert configuration ${request.enabled ? 'enabled' : 'disabled'}`);
       this.reload$.next();
@@ -252,7 +256,7 @@ export class AlertConfigurationsComponent {
         this.toast.error(msg);
       }
     } finally {
-      this.enabledToggleLoading.set(false);
+      this.togglingConfigId.set(undefined);
     }
   }
 

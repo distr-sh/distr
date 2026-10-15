@@ -38,7 +38,7 @@
                 aria-label="Enabled"
                 [disabled]="!canEdit"
                 [checked]="config.enabled"
-                (change)="toggleConfigEnabled(config)" />
+                (click)="toggleConfigEnabled(config, $event)" />
               <div class="distr-toggle peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
             </label>
           </td>
