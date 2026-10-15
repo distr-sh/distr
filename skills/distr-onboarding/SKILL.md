@@ -15,15 +15,16 @@ customer access, updates or visibility.
 
 ## Follow the runbook
 
-The runbook is kept in step with Distr. Fetch it and follow it in order:
+The runbook is kept in step with Distr. Read it and follow it in order:
 
-```sh
-curl -fsSL https://distr.sh/onboard.md
-```
+- Inside a Distr checkout (the repository root contains `deploy/docker/quickstart/try.sh`), read
+  `website/public/onboard.md` from the checkout and use the checkout's `try.sh`. Fetch nothing from distr.sh.
+- Anywhere else, fetch it with `curl -fsSL https://distr.sh/onboard.md`.
 
-It starts Distr locally with `https://distr.sh/try.sh`, packages the application under `distr/` in the repository,
-deploys it through a local Distr controller, verifies status and logs and ends with `distr/HANDOFF.md` or
-`distr/BLOCKED.md`.
+It starts the published Distr Community Edition image locally, deploys Hello Distr to a test customer through a local
+Distr controller, packages the application under `deploy/distr/` in the repository, deploys it the same way, verifies
+status, health and logs and ends with `deploy/distr/HANDOFF.md` or `deploy/distr/BLOCKED.md`. Never build Distr from
+source to onboard.
 
 ## Rules that always apply
 
@@ -32,8 +33,10 @@ deploys it through a local Distr controller, verifies status and logs and ends w
 - Never replace or upgrade Docker, Docker Compose or other system tools. If one is too old, tell the user.
 - Never print or commit the API token from `~/.distr/poc/token`, passwords or connect URLs, and never write an invite
   URL into a file.
-- Only delete what you created. `sh try.sh --down` removes the proof of concept, including its Distr controller and
-  the applications it deployed.
+- Connect Distr controllers with `sh ~/.distr/poc/try.sh --connect`, which never prints the connect URL, and share
+  diagnostics only from `sh ~/.distr/poc/try.sh --diagnose`, which redacts every secret.
+- Only delete what you created. `sh ~/.distr/poc/try.sh --down` removes the proof of concept, including its Distr
+  controllers and the applications they deployed.
 
 ## Reference
 

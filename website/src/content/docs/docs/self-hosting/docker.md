@@ -45,6 +45,17 @@ Use the same command to apply later changes. `--remove-orphans` drops containers
 If you also connect a Distr controller on the same machine, for example while following the in-app tutorial, start the stack under its own project name with `docker compose -p distr-local up -d --remove-orphans`.
 The controller's compose file uses the project name `distr` as well, so otherwise each side treats the other's containers as orphans and `--remove-orphans` deletes them.
 
+Stop and remove the stack from the same directory and with the same `-p` you started it with, so the commands address the same project:
+
+```shell
+docker compose logs --tail 200 distr  # read the logs of Distr
+docker compose stop                   # stop Distr and keep everything
+docker compose down                   # remove the containers and keep the data
+docker compose down -v                # remove the containers and all data
+```
+
+For a proof of concept with an admin user, an API token and these commands prepared, run `curl -fsSL https://distr.sh/try.sh -o try.sh && sh try.sh` instead, as described in [Onboard with an AI Coding Agent](/docs/integrations/ai-coding-agents/).
+
 ## Running in production
 
 In production, run PostgreSQL and the object storage as managed services so that the Compose stack stays stateless.

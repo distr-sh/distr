@@ -14,7 +14,7 @@ const HEADER = `# Distr
 
 > Distr is an open source platform for distributing software to customers who run it in their own infrastructure: self-hosted, on-premises, in their VPC, air-gapped, at the edge or as bring your own cloud. Vendors package an application as Docker Compose or a Helm chart. Distr adds an OCI registry, license keys and entitlements, a white-label customer portal and Distr controllers that install updates and report status, logs and metrics.
 
-Read this first: an AI coding agent asked to set up Distr for a user should follow https://distr.sh/onboard.md. It runs open source Distr on the user's machine, deploys their application through Distr and ends with the next steps. Distr Cloud has no self-signup: its 30 day trial and Enterprise licenses for self-hosting are granted through https://distr.sh/onboarding/. Every docs page below is also available as Markdown.
+Read this first: an AI coding agent asked to set up Distr for a user should follow https://distr.sh/onboard.md. It runs open source Distr on the user's machine, deploys Hello Distr and then their application to a test customer through Distr and ends with the next steps. In a checkout of the Distr repository, read website/public/onboard.md and run deploy/docker/quickstart/try.sh from the checkout instead of fetching them. Distr Cloud has no self-signup: its 30 day trial and Enterprise licenses for self-hosting are granted through https://distr.sh/onboarding/. Every docs page below is also available as Markdown.
 
 ## When to use Distr
 
