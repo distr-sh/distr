@@ -24,15 +24,7 @@ import {
   VersioningStrategy,
 } from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {
-  faArchive,
-  faBox,
-  faBoxesStacked,
-  faChevronDown,
-  faEye,
-  faPlus,
-  faTrash,
-} from '@fortawesome/free-solid-svg-icons';
+import {faArchive, faBox, faBoxesStacked, faChevronDown, faPlus, faTrash} from '@fortawesome/free-solid-svg-icons';
 import {
   catchError,
   combineLatestWith,
@@ -195,7 +187,6 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   protected readonly faTrash = faTrash;
   protected readonly faArchive = faArchive;
   protected readonly faBox = faBox;
-  protected readonly faEye = faEye;
   protected readonly faPlus = faPlus;
   protected readonly resourcePreviewIndices = signal(new Set<number>());
 
@@ -369,7 +360,8 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
     }
   }
 
-  async fillVersionFormWith(application: Application, version: ApplicationVersion) {
+  async fillVersionFormWith(application: Application, version: ApplicationVersion, event: Event) {
+    event.stopPropagation();
     this.isVersionFormExpanded.set(true);
     const val = await this.loadVersionDetails(application, version);
     if (val) {
@@ -441,7 +433,8 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
       .subscribe();
   }
 
-  archiveVersion(application: Application, version: ApplicationVersion) {
+  archiveVersion(application: Application, version: ApplicationVersion, event: Event) {
+    event.stopPropagation();
     this.overlay
       .confirm(`Really archive ${version.name}? Existing deployments will continue to work.`)
       .pipe(
@@ -490,7 +483,8 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
       });
   }
 
-  async unArchiveVersion(application: Application, version: ApplicationVersion) {
+  async unArchiveVersion(application: Application, version: ApplicationVersion, event: Event) {
+    event.stopPropagation();
     try {
       await lastValueFrom(
         this.applicationService.updateApplicationVersion(application, {
