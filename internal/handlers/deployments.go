@@ -29,8 +29,11 @@ func DeploymentsRouter(r chiopenapi.Router) {
 	r.Use(middleware.RequireOrgAndRole)
 	r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 		Put("/", putDeployment).
-		With(option.Description("Create or update a deployment")).
-		With(option.Request(api.DeploymentRequest{}))
+		With(option.Description("Create a deployment, or update it when deploymentId is set. " +
+			"Docker deployments default to dockerType compose. The response has no body: read the new deployment " +
+			"from GET /api/v1/deployment-targets/{deploymentTargetId}.")).
+		With(option.Request(api.DeploymentRequest{})).
+		With(option.Response(http.StatusNoContent, nil))
 	r.With(deploymentMiddleware).Route("/{deploymentId}", func(r chiopenapi.Router) {
 		type DeploymentIDRequest struct {
 			DeploymentID uuid.UUID `path:"deploymentId"`
@@ -42,7 +45,7 @@ func DeploymentsRouter(r chiopenapi.Router) {
 		}
 
 		type ResourceRequest struct {
-			Resource string `query:"resource"`
+			Resource string `query:"resource" required:"true" description:"A name from GET logs/resources"`
 		}
 
 		r.Get("/revisions", getDeploymentRevisions).
@@ -113,6 +116,10 @@ func putDeployment(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if deploymentRequest.DeploymentID == nil {
+			// The docker controller never applies a deployment without a docker type, and it cannot be set later.
+			if validationResult.Target.Type == types.DeploymentTypeDocker && deploymentRequest.DockerType == nil {
+				deploymentRequest.DockerType = new(types.DockerTypeCompose)
+			}
 			deploymentRequest.AutomaticApplicationUpdatesEnabled = &validationResult.AutomaticApplicationUpdatesEnabled
 			if err = db.CreateDeployment(ctx, &deploymentRequest); errors.Is(err, apierrors.ErrConflict) {
 				http.Error(w, err.Error(), http.StatusBadRequest)

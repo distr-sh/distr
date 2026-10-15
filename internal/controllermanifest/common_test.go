@@ -42,3 +42,42 @@ func TestCurrentKubernetesManifestKeepsAgentNamesOfLegacyTargets(t *testing.T) {
 		g.Expect(current).NotTo(ContainSubstring("distr-agent"))
 	}
 }
+
+func renderRegistrySettings(g *WithT, deploymentType types.DeploymentType, distrHost, registryHost string) string {
+	dt := types.DeploymentTargetFull{
+		DeploymentTarget: types.DeploymentTarget{Type: deploymentType},
+		ControllerVersion: types.ControllerVersion{
+			ComposeFileRevision:  types.CurrentComposeFileRevision,
+			ManifestFileRevision: types.CurrentManifestFileRevision,
+		},
+	}
+	tmpl, err := getTemplate(dt)
+	g.Expect(err).NotTo(HaveOccurred())
+	var buf bytes.Buffer
+	g.Expect(tmpl.Execute(&buf, map[string]any{
+		"controllerName":         controllerName(dt),
+		"controllerDockerConfig": "e30=",
+		"targetSecret":           "secret",
+		"targetNamespace":        "default",
+		"targetScope":            types.DeploymentTargetScopeNamespace,
+		"registryEnabled":        true,
+		"registryHost":           registryHost,
+		"registryPlainHttp":      registryPlainHTTP(distrHost),
+	})).To(Succeed())
+	return buf.String()
+}
+
+func TestControllerManifestsPullOverPlainHTTPOnlyFromAnHTTPDistr(t *testing.T) {
+	g := NewWithT(t)
+
+	docker := renderRegistrySettings(g, types.DeploymentTypeDocker, "http://localhost:8080", "localhost:8585")
+	g.Expect(docker).To(ContainSubstring("DISTR_REGISTRY_HOST: 'localhost:8585'"))
+	g.Expect(docker).To(ContainSubstring("DISTR_REGISTRY_PLAIN_HTTP: 'true'"))
+	kubernetes := renderRegistrySettings(g, types.DeploymentTypeKubernetes, "http://localhost:8080", "localhost:8585")
+	g.Expect(kubernetes).To(ContainSubstring(`DISTR_REGISTRY_PLAIN_HTTP: "true"`))
+
+	docker = renderRegistrySettings(g, types.DeploymentTypeDocker, "https://app.distr.sh", "registry.distr.sh")
+	g.Expect(docker).To(ContainSubstring("DISTR_REGISTRY_PLAIN_HTTP: 'false'"))
+	kubernetes = renderRegistrySettings(g, types.DeploymentTypeKubernetes, "https://app.distr.sh", "registry.distr.sh")
+	g.Expect(kubernetes).To(ContainSubstring(`DISTR_REGISTRY_PLAIN_HTTP: "false"`))
+}

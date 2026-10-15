@@ -80,6 +80,13 @@ const REPLAY_PATHS = ['/onboarding', '/contact', '/pricing'];
       (e.__SV = 1));
   })(document, window.posthog || []);
 
+  // Links from a local Distr proof of concept (try.sh) carry its anonymous poc_id, which is also the distinct ID of its
+  // events. Using it here ties this visit and a later signup's identify() to them.
+  const pocParams = new URLSearchParams(window.location.search);
+  const pocId = /^[0-9a-f-]{36}$/.test(pocParams.get('poc_id') ?? '')
+    ? pocParams.get('poc_id')
+    : null;
+
   posthog.init('phc_kT9cJBgrQwRx9ayg0PUQkukLFowbTfN47jQuWqScglR', {
     api_host: 'https://edge.distr.sh',
     ui_host: 'https://eu.posthog.com',
@@ -87,7 +94,16 @@ const REPLAY_PATHS = ['/onboarding', '/contact', '/pricing'];
     person_profiles: 'identified_only',
     disable_session_recording: true,
     disable_surveys: true,
+    ...(pocId && {bootstrap: {distinctID: pocId, isIdentifiedID: false}}),
   });
+
+  if (pocId) {
+    posthog.register({
+      poc_id: pocId,
+      poc_interest: pocParams.get('interest'),
+      poc_client: pocParams.get('client'),
+    });
+  }
 
   if (isReplayPage) {
     posthog.startSessionRecording();

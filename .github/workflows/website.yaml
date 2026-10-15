@@ -9,6 +9,8 @@ on:
     paths:
       - 'website/**'
       - 'CHANGELOG.md'
+      - 'deploy/docker/quickstart/try.sh'
+      - 'skills/distr-onboarding/**'
       - '.github/workflows/website.yaml'
   pull_request:
     branches:
@@ -16,6 +18,8 @@ on:
     paths:
       - 'website/**'
       - 'CHANGELOG.md'
+      - 'deploy/docker/quickstart/try.sh'
+      - 'skills/distr-onboarding/**'
       - '.github/workflows/website.yaml'
 
 permissions:
@@ -39,6 +43,8 @@ jobs:
           sparse-checkout: |
             website
             CHANGELOG.md
+            deploy/docker/quickstart/try.sh
+            skills/distr-onboarding
           sparse-checkout-cone-mode: false
           # Starlight's lastUpdated reads each page's git history. At depth 1
           # every docs page is stamped with the deploy commit, which misinforms
@@ -74,6 +80,15 @@ jobs:
         run: pnpm run check
       - name: Build website
         run: pnpm run build
+      - name: Check the agent onboarding files
+        run: |
+          for file in onboard.md try.sh skills/distr-onboarding/SKILL.md llms.txt llms-full.txt; do
+            test -s "dist/$file" || { echo "dist/$file is missing or empty"; exit 1; }
+          done
+          cmp dist/try.sh ../deploy/docker/quickstart/try.sh
+          cmp dist/skills/distr-onboarding/SKILL.md ../skills/distr-onboarding/SKILL.md
+          grep -q 'hello-distr:start' dist/onboard.md
+          grep -q 'onboard.md' dist/llms.txt
       - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         if: github.ref == 'refs/heads/main'
         with:
@@ -113,14 +128,39 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: >-
           aws s3 sync dist s3://distr.sh/
+          --exclude "*.md" --exclude "*.txt" --exclude "*.sh"
           --cache-control "max-age=60, public, must-revalidate"
           --acl=public-read
+      # The AWS CLI guesses content types from the runner's MIME database, which has no reliable entry for Markdown.
+      - name: Deploy Markdown, text and shell files
+        if: github.ref == 'refs/heads/main'
+        run: |
+          aws s3 sync dist s3://distr.sh/ --exclude "*" --include "*.md" \
+            --content-type "text/markdown; charset=utf-8" \
+            --cache-control "max-age=60, public, must-revalidate" --acl=public-read
+          aws s3 sync dist s3://distr.sh/ --exclude "*" --include "*.txt" --include "*.sh" \
+            --content-type "text/plain; charset=utf-8" \
+            --cache-control "max-age=60, public, must-revalidate" --acl=public-read
       - name: Invalidate cache
         if: github.ref == 'refs/heads/main'
         run: >-
           aws cloudfront create-invalidation
           --distribution-id E1PG5UM7ZE1H97
           --invalidation-batch "Paths={Quantity='1' ,Items=['/*']},CallerReference=WEBSITE_$GITHUB_RUN_ID"
+      - name: Check that the agent onboarding files are reachable
+        if: github.ref == 'refs/heads/main'
+        run: |
+          check() {
+            type="$(curl --fail --silent --show-error --retry 3 --output /dev/null --write-out '%{content_type}' "https://distr.sh/$1")"
+            case "$type" in
+              "$2"*) echo "https://distr.sh/$1: $type" ;;
+              *) echo "https://distr.sh/$1 answers with $type instead of $2"; exit 1 ;;
+            esac
+          }
+          check onboard.md text/markdown
+          check try.sh text/plain
+          check skills/distr-onboarding/SKILL.md text/markdown
+          check llms.txt text/plain
       - name: Submit changed pages to IndexNow
         if: steps.changed.outputs.count > 0 && steps.indexnow-key.outcome == 'success'
         continue-on-error: true
