@@ -39,6 +39,7 @@ export class AlertConfigurationsComponent {
   public readonly customerOrganizationId = input<string>();
 
   protected readonly auth = inject(AuthService);
+  protected readonly canEdit = this.auth.hasAnyRole('read_write', 'admin');
   private readonly svc = inject(AlertConfigurationsService);
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly overlay = inject(OverlayService);
@@ -255,7 +256,8 @@ export class AlertConfigurationsComponent {
     }
   }
 
-  protected async deleteConfig(config: AlertConfiguration) {
+  protected async deleteConfig(config: AlertConfiguration, event: Event) {
+    event.stopPropagation();
     if (!(await firstValueFrom(this.overlay.confirm(`Really delete the alert "${config.name}"?`)))) {
       return;
     }
