@@ -10,9 +10,9 @@ import (
 type CreateUpdateOrganizationRequest struct {
 	Name                        string  `json:"name"`
 	Slug                        *string `json:"slug"`
-	PreConnectScript            *string `json:"preConnectScript"`
-	PostConnectScript           *string `json:"postConnectScript"`
-	ConnectScriptIsSudo         bool    `json:"connectScriptIsSudo"`
+	DockerPreConnectScript      *string `json:"dockerPreConnectScript"`
+	DockerPostConnectScript     *string `json:"dockerPostConnectScript"`
+	DockerConnectScriptIsSudo   bool    `json:"dockerConnectScriptIsSudo"`
 	KubernetesPreConnectScript  *string `json:"kubernetesPreConnectScript"`
 	KubernetesPostConnectScript *string `json:"kubernetesPostConnectScript"`
 	ArtifactVersionMutable      bool    `json:"artifactVersionMutable"`

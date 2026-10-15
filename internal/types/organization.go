@@ -24,11 +24,11 @@ type Organization struct {
 	StripeSubscriptionID                *string            `db:"stripe_subscription_id" json:"stripeSubscriptionId"`
 	SubscriptionCustomerOrganizationQty limit.Limit        `db:"subscription_customer_organization_quantity" json:"subscriptionCustomerOrganizationQuantity"` //nolint:lll
 	SubscriptionUserAccountQty          limit.Limit        `db:"subscription_user_account_quantity" json:"subscriptionUserAccountQuantity"`                   //nolint:lll
-	PreConnectScript                    *string            `db:"pre_connect_script" json:"preConnectScript"`
-	PostConnectScript                   *string            `db:"post_connect_script" json:"postConnectScript"`
-	ConnectScriptIsSudo                 bool               `db:"connect_script_is_sudo" json:"connectScriptIsSudo"`
-	KubernetesPreConnectScript          *string            `db:"kubernetes_pre_connect_script" json:"kubernetesPreConnectScript"`   //nolint:lll
-	KubernetesPostConnectScript         *string            `db:"kubernetes_post_connect_script" json:"kubernetesPostConnectScript"` //nolint:lll
+	DockerPreConnectScript              *string            `db:"docker_pre_connect_script" json:"dockerPreConnectScript"`                                     //nolint:lll
+	DockerPostConnectScript             *string            `db:"docker_post_connect_script" json:"dockerPostConnectScript"`                                   //nolint:lll
+	DockerConnectScriptIsSudo           bool               `db:"docker_connect_script_is_sudo" json:"dockerConnectScriptIsSudo"`                              //nolint:lll
+	KubernetesPreConnectScript          *string            `db:"kubernetes_pre_connect_script" json:"kubernetesPreConnectScript"`                             //nolint:lll
+	KubernetesPostConnectScript         *string            `db:"kubernetes_post_connect_script" json:"kubernetesPostConnectScript"`                           //nolint:lll
 	StripeWebhookSecret                 *dbcrypto.String   `db:"stripe_webhook_secret"            json:"-"`
 	StripeWebhookSecretConfigured       bool               `db:"stripe_webhook_secret_configured" json:"stripeWebhookSecretConfigured"` //nolint:lll
 }
@@ -36,8 +36,8 @@ type Organization struct {
 func (org *Organization) ConnectScripts(deploymentType DeploymentType) (pre string, post string) {
 	switch deploymentType {
 	case DeploymentTypeDocker:
-		pre = util.PtrDerefOrDefault(org.PreConnectScript)
-		post = util.PtrDerefOrDefault(org.PostConnectScript)
+		pre = util.PtrDerefOrDefault(org.DockerPreConnectScript)
+		post = util.PtrDerefOrDefault(org.DockerPostConnectScript)
 	case DeploymentTypeKubernetes:
 		pre = util.PtrDerefOrDefault(org.KubernetesPreConnectScript)
 		post = util.PtrDerefOrDefault(org.KubernetesPostConnectScript)

@@ -19,9 +19,9 @@ import {Organization} from '../types/organization';
 
 interface ConnectScriptSettings {
   prePostScriptsEnabled: boolean;
-  preConnectScript?: string;
-  postConnectScript?: string;
-  connectScriptIsSudo: boolean;
+  dockerPreConnectScript?: string;
+  dockerPostConnectScript?: string;
+  dockerConnectScriptIsSudo: boolean;
   kubernetesPreConnectScript?: string;
   kubernetesPostConnectScript?: string;
 }
@@ -33,7 +33,11 @@ function deploymentTypesUsingConnectScript(settings: ConnectScriptSettings): Dep
   }
   const isSet = (script?: string) => !!script?.trim();
   const result: DeploymentType[] = [];
-  if (isSet(settings.preConnectScript) || isSet(settings.postConnectScript) || settings.connectScriptIsSudo) {
+  if (
+    isSet(settings.dockerPreConnectScript) ||
+    isSet(settings.dockerPostConnectScript) ||
+    settings.dockerConnectScriptIsSudo
+  ) {
     result.push('docker');
   }
   if (isSet(settings.kubernetesPreConnectScript) || isSet(settings.kubernetesPostConnectScript)) {
@@ -64,9 +68,9 @@ export class GeneralSettingsComponent implements OnInit {
   protected readonly form = this.fb.group({
     name: this.fb.control('', [Validators.required]),
     slug: this.fb.control('', [Validators.pattern(slugPattern), Validators.maxLength(slugMaxLength)]),
-    preConnectScript: this.fb.control<string | undefined>(undefined),
-    postConnectScript: this.fb.control<string | undefined>(undefined),
-    connectScriptIsSudo: this.fb.control<boolean>(false),
+    dockerPreConnectScript: this.fb.control<string | undefined>(undefined),
+    dockerPostConnectScript: this.fb.control<string | undefined>(undefined),
+    dockerConnectScriptIsSudo: this.fb.control<boolean>(false),
     kubernetesPreConnectScript: this.fb.control<string | undefined>(undefined),
     kubernetesPostConnectScript: this.fb.control<string | undefined>(undefined),
     artifactVersionMutable: this.fb.control<boolean>(false),

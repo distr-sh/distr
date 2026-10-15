@@ -156,9 +156,9 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 	organization := types.Organization{
 		Name:                        body.Name,
 		Slug:                        body.Slug,
-		PreConnectScript:            body.PreConnectScript,
-		PostConnectScript:           body.PostConnectScript,
-		ConnectScriptIsSudo:         body.ConnectScriptIsSudo,
+		DockerPreConnectScript:      body.DockerPreConnectScript,
+		DockerPostConnectScript:     body.DockerPostConnectScript,
+		DockerConnectScriptIsSudo:   body.DockerConnectScriptIsSudo,
 		KubernetesPreConnectScript:  body.KubernetesPreConnectScript,
 		KubernetesPostConnectScript: body.KubernetesPostConnectScript,
 	}
@@ -243,18 +243,18 @@ func handleUpdateOrganization(
 			needsUpdate = true
 		}
 
-		if !util.PtrEq(org.PreConnectScript, request.PreConnectScript) {
-			org.PreConnectScript = request.PreConnectScript
+		if !util.PtrEq(org.DockerPreConnectScript, request.DockerPreConnectScript) {
+			org.DockerPreConnectScript = request.DockerPreConnectScript
 			needsUpdate = true
 		}
 
-		if !util.PtrEq(org.PostConnectScript, request.PostConnectScript) {
-			org.PostConnectScript = request.PostConnectScript
+		if !util.PtrEq(org.DockerPostConnectScript, request.DockerPostConnectScript) {
+			org.DockerPostConnectScript = request.DockerPostConnectScript
 			needsUpdate = true
 		}
 
-		if request.ConnectScriptIsSudo != org.ConnectScriptIsSudo {
-			org.ConnectScriptIsSudo = request.ConnectScriptIsSudo
+		if request.DockerConnectScriptIsSudo != org.DockerConnectScriptIsSudo {
+			org.DockerConnectScriptIsSudo = request.DockerConnectScriptIsSudo
 			needsUpdate = true
 		}
 

@@ -16,7 +16,7 @@ func buildURL(
 	targetID uuid.UUID,
 	org types.OrganizationWithBranding,
 	targetSecret string,
-	preConnect bool,
+	connectScript bool,
 ) (string, error) {
 	u, err := url.Parse(customdomains.ControllerDomainOrDefault(ctx, org.ID, org.Branding))
 	if err != nil {
@@ -27,7 +27,7 @@ func buildURL(
 	query.Set("targetSecret", targetSecret)
 
 	endpoint := "/api/v1/connect"
-	if preConnect {
+	if connectScript {
 		endpoint = "/api/v1/pre-connect"
 	}
 	u = u.JoinPath(endpoint)
@@ -44,7 +44,7 @@ func BuildConnectURL(
 	return buildURL(ctx, targetID, org, targetSecret, false)
 }
 
-func BuildPreConnectURL(
+func BuildConnectScriptURL(
 	ctx context.Context,
 	targetID uuid.UUID,
 	org types.OrganizationWithBranding,
@@ -61,7 +61,7 @@ func usesConnectScript(deploymentTarget types.DeploymentTarget, org types.Organi
 	if pre != "" || post != "" {
 		return true
 	}
-	return deploymentTarget.Type == types.DeploymentTypeDocker && org.ConnectScriptIsSudo
+	return deploymentTarget.Type == types.DeploymentTypeDocker && org.DockerConnectScriptIsSudo
 }
 
 func GenerateConnectScript(
@@ -159,13 +159,13 @@ func GenerateConnectCommand(
 	targetSecret string,
 ) (string, error) {
 	if usesConnectScript(deploymentTarget, org) {
-		preConnectURL, err := BuildPreConnectURL(ctx, deploymentTarget.ID, org, targetSecret)
+		connectScriptURL, err := BuildConnectScriptURL(ctx, deploymentTarget.ID, org, targetSecret)
 		if err != nil {
-			return "", fmt.Errorf("failed to build pre-connect URL: %w", err)
+			return "", fmt.Errorf("failed to build connect script URL: %w", err)
 		}
 		return generateScriptCommand(
-			preConnectURL,
-			deploymentTarget.Type == types.DeploymentTypeDocker && org.ConnectScriptIsSudo,
+			connectScriptURL,
+			deploymentTarget.Type == types.DeploymentTypeDocker && org.DockerConnectScriptIsSudo,
 		), nil
 	}
 

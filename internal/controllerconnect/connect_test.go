@@ -10,8 +10,8 @@ import (
 func orgWithScripts(features ...types.Feature) types.OrganizationWithBranding {
 	return types.OrganizationWithBranding{Organization: types.Organization{
 		Features:                    features,
-		PreConnectScript:            new("check-docker"),
-		PostConnectScript:           new("after-docker"),
+		DockerPreConnectScript:      new("check-docker"),
+		DockerPostConnectScript:     new("after-docker"),
 		KubernetesPreConnectScript:  new("check-kubernetes"),
 		KubernetesPostConnectScript: new("after-kubernetes"),
 	}}
@@ -31,13 +31,13 @@ func TestUsesConnectScript(t *testing.T) {
 
 	blank := types.OrganizationWithBranding{Organization: types.Organization{
 		Features:                   []types.Feature{types.FeaturePrePostScripts},
-		PreConnectScript:           new("  \n"),
+		DockerPreConnectScript:     new("  \n"),
 		KubernetesPreConnectScript: new("\t"),
 	}}
 	g.Expect(usesConnectScript(docker, blank)).To(BeFalse())
 	g.Expect(usesConnectScript(kubernetes, blank)).To(BeFalse())
 
-	blank.ConnectScriptIsSudo = true
+	blank.DockerConnectScriptIsSudo = true
 	g.Expect(usesConnectScript(docker, blank)).To(BeTrue())
 	g.Expect(usesConnectScript(kubernetes, blank)).To(BeFalse())
 }
@@ -51,7 +51,9 @@ func TestRenderConnectScriptKubernetes(t *testing.T) {
 	script, err := renderConnectScript(target, org, "https://distr.example/connect")
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(script).To(Equal(`#!/bin/sh
+
 export DISTR_NAMESPACE='it'\''s'
+
 # Pre-connect script
 check-kubernetes
 
