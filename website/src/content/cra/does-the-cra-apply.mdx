@@ -39,9 +39,28 @@ artifact and the answer usually stops being controversial.
 <ThemedImage
   lightSrc={craApplicabilityLight}
   darkSrc={craApplicabilityDark}
-  alt="Decision tree for whether the Cyber Resilience Act applies to your software"
+  alt="Decision tree for whether the Cyber Resilience Act applies to your software, with its questions written out below"
   dropShadow={false}
 />
+
+The tree asks, in order:
+
+1. **Do you supply this software to others at all?** If it is for internal use
+   only, it is out of scope, because it is never placed on the market.
+2. **Is it supplied in the course of a commercial activity?** If not, as with
+   non-commercial open source, it is out of scope, or under the steward regime
+   if your company sustains its development.
+3. **Do EU customers receive it?** If not, it is out of CRA scope, but watch
+   other markets.
+4. **Is it a medical device, vehicle, aviation or defense product?** If so, it
+   is regulated under sector rules such as the MDR, not the CRA.
+5. **Is it purely a hosted service, with nothing shipped to customers?** If
+   customers receive software, be it a self-hosted edition, an agent, an
+   installer, a client or an SDK, it is in scope as a product with digital
+   elements.
+6. **Is that hosted service remote data processing a shipped product needs to
+   function?** If so, it is in scope together with that product. If not, it is
+   out of CRA scope, though NIS2 or DORA may apply instead.
 
 <CraCta
   title="In scope means you still owe updates to every customer"
