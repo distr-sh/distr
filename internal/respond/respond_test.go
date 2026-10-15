@@ -52,6 +52,7 @@ func TestHandlerErrors(t *testing.T) {
 		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 		rec, events := serve(t, ctx, nil, fmt.Errorf("query: %w", context.Canceled))
+		g.Expect(rec.Code).To(Equal(statusClientClosedRequest))
 		g.Expect(rec.Body.Len()).To(BeZero())
 		g.Expect(events).To(BeEmpty())
 	})

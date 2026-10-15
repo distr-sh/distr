@@ -78,12 +78,17 @@ func write(w http.ResponseWriter, r *http.Request, resp Responder, err error, fa
 	}
 }
 
+// statusClientClosedRequest is the status nginx uses for a client that went away. net/http has none,
+// and completes a handler that wrote nothing as 200.
+const statusClientClosedRequest = 499
+
 func internalError(w http.ResponseWriter, r *http.Request, err error, fallback Responder) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 
 	if errors.Is(err, context.Canceled) && ctx.Err() != nil {
 		log.Debug("request canceled", zap.Error(err))
+		w.WriteHeader(statusClientClosedRequest)
 		return
 	}
 
