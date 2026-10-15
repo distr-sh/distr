@@ -51,18 +51,23 @@ func stripeWebhookHandler(r *http.Request) (respond.Responder, error) {
 	ctx = internalctx.WithLogger(ctx, log)
 
 	switch event.Type {
-	case stripe.EventTypeCustomerSubscriptionCreated,
-		stripe.EventTypeCustomerSubscriptionUpdated,
-		stripe.EventTypeCustomerSubscriptionDeleted:
-		var sub stripe.Subscription
-		if err := json.Unmarshal(event.Data.Raw, &sub); err != nil {
-			log.Info("error parsing webhook JSON", zap.Error(err))
-			return respond.Status(http.StatusBadRequest), nil
-		} else if orgID, err := uuid.Parse(sub.Metadata["organizationId"]); err != nil {
-			log.Warn("subscription event with missing or invalid organizationId", zap.Error(err))
-			return respond.NoContent(), nil
-		} else if err := handleStripeSubscription(ctx, orgID, sub); err != nil {
-			return nil, fmt.Errorf("failed to handle stripe subscription: %w", err)
+	case stripe.EventTypeCustomerSubscriptionCreated:
+		if _, resp, err := handleStripeSubscription(ctx, event); resp != nil || err != nil {
+			return resp, err
+		} else {
+			log.Info("stripe customer subscription created")
+		}
+	case stripe.EventTypeCustomerSubscriptionUpdated:
+		if _, resp, err := handleStripeSubscription(ctx, event); resp != nil || err != nil {
+			return resp, err
+		} else {
+			log.Info("stripe customer subscription updated")
+		}
+	case stripe.EventTypeCustomerSubscriptionDeleted:
+		if sub, resp, err := handleStripeSubscription(ctx, event); resp != nil || err != nil {
+			return resp, err
+		} else {
+			log.Info("stripe customer subscription deleted", zap.Any("subscription", sub))
 		}
 	default:
 		log.Info("unhandled stripe event")
@@ -71,7 +76,29 @@ func stripeWebhookHandler(r *http.Request) (respond.Responder, error) {
 	return respond.Status(http.StatusOK), nil
 }
 
-func handleStripeSubscription(ctx context.Context, orgID uuid.UUID, sub stripe.Subscription) error {
+// handleStripeSubscription applies the subscription of event to its organization and returns it,
+// unless it answers in place of the caller.
+func handleStripeSubscription(
+	ctx context.Context,
+	event stripe.Event,
+) (*stripe.Subscription, respond.Responder, error) {
+	log := internalctx.GetLogger(ctx)
+
+	var sub stripe.Subscription
+	if err := json.Unmarshal(event.Data.Raw, &sub); err != nil {
+		log.Info("error parsing webhook JSON", zap.Error(err))
+		return nil, respond.Status(http.StatusBadRequest), nil
+	} else if orgID, err := uuid.Parse(sub.Metadata["organizationId"]); err != nil {
+		log.Warn("subscription event with missing or invalid organizationId", zap.Error(err))
+		return nil, respond.NoContent(), nil
+	} else if err := applyStripeSubscription(ctx, orgID, sub); err != nil {
+		return nil, nil, fmt.Errorf("failed to handle stripe subscription: %w", err)
+	} else {
+		return &sub, nil, nil
+	}
+}
+
+func applyStripeSubscription(ctx context.Context, orgID uuid.UUID, sub stripe.Subscription) error {
 	log := internalctx.GetLogger(ctx)
 
 	return db.RunTxRR(ctx, func(ctx context.Context) error {

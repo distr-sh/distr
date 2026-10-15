@@ -9,6 +9,7 @@ import (
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/billing"
+	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/handlerutil"
 	"github.com/distr-sh/distr/internal/respond"
@@ -16,6 +17,7 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v86"
+	"go.uber.org/zap"
 )
 
 func GetSubscriptionHandler(r *http.Request) (respond.Responder, error) {
@@ -125,6 +127,7 @@ func UpdateSubscriptionHandler(r *http.Request) (respond.Responder, error) {
 			ReturnURL:               fmt.Sprintf("%v/subscription", handlerutil.GetRequestSchemeAndHost(r)),
 		})
 		if stripeErr, ok := errors.AsType[*stripe.Error](err); ok && stripeErr.Type == stripe.ErrorTypeInvalidRequest {
+			internalctx.GetLogger(ctx).Warn("stripe rejected subscription update", zap.Error(err))
 			if stripeErr.Code == stripe.ErrorCodeResourceMissing {
 				return respond.BadRequest("stripe error: subscription not found"), nil
 			} else {
