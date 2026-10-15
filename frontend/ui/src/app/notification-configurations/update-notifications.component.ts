@@ -58,6 +58,7 @@ export class UpdateNotificationsComponent {
   public readonly customerOrganizationId = input<string>();
 
   protected readonly auth = inject(AuthService);
+  protected readonly canEdit = this.auth.hasAnyRole('read_write', 'admin');
   private readonly configsService = inject(UpdateNotificationConfigurationsService);
   private readonly applicationsService = inject(ApplicationsService);
   private readonly artifactsService = inject(ArtifactsService);
@@ -377,7 +378,8 @@ export class UpdateNotificationsComponent {
     }
   }
 
-  protected async deleteConfig(config: UpdateNotificationConfiguration) {
+  protected async deleteConfig(config: UpdateNotificationConfiguration, event: Event) {
+    event.stopPropagation();
     if (!(await firstValueFrom(this.overlay.confirm(`Really delete the notification "${config.name}"?`)))) {
       return;
     }
