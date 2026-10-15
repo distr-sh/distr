@@ -53,9 +53,6 @@ func BuildPreConnectURL(
 	return buildURL(ctx, targetID, org, targetSecret, true)
 }
 
-// usesConnectScript reports whether the connect command of the deployment target has to fetch the
-// connect script rather than apply the controller manifest directly. Sudo is a reason on its own
-// for Docker, since it is the only way to run docker compose as root.
 func usesConnectScript(deploymentTarget types.DeploymentTarget, org types.OrganizationWithBranding) bool {
 	if !org.HasFeature(types.FeaturePrePostScripts) {
 		return false
