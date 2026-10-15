@@ -454,8 +454,11 @@ func Host() string { return host }
 // HostScheme is the scheme this instance is reached with, taken from DISTR_HOST. It is https unless
 // DISTR_HOST explicitly says http, and is the scheme of every URL this instance builds for a host
 // other than the one of the current request, e.g. an organization's custom domain.
-func HostScheme() URLScheme {
-	if strings.HasPrefix(strings.ToLower(host), string(SchemeHTTP)+"://") {
+func HostScheme() URLScheme { return SchemeOf(host) }
+
+// SchemeOf is the scheme a URL like DISTR_HOST is reached with: https unless it explicitly says http.
+func SchemeOf(url string) URLScheme {
+	if strings.HasPrefix(strings.ToLower(url), string(SchemeHTTP)+"://") {
 		return SchemeHTTP
 	}
 	return SchemeHTTPS
