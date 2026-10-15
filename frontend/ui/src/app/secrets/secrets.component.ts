@@ -15,7 +15,7 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {AlertComponent} from '../components/alert/alert.component';
@@ -48,6 +48,7 @@ export class SecretsComponent {
   public readonly refresh = output();
 
   protected readonly auth = inject(AuthService);
+  protected readonly canEdit = this.auth.hasAnyRole('read_write', 'admin');
   private readonly overlay = inject(OverlayService);
   private readonly secretsService = inject(SecretsService);
   private readonly toast = inject(ToastService);
@@ -61,7 +62,6 @@ export class SecretsComponent {
   protected readonly faXmark = faXmark;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
-  protected readonly faPen = faPen;
   private readonly createUpdateDialog = viewChild.required<TemplateRef<unknown>>('createUpdateDialog');
   private dialogRef?: DialogRef;
   protected readonly affectedDeployments = signal<AffectedDeployment[]>([]);
@@ -160,7 +160,8 @@ export class SecretsComponent {
     return `{{ .Secrets.${key} }}`;
   }
 
-  protected async deleteSecret(secret: Secret) {
+  protected async deleteSecret(secret: Secret, event: Event) {
+    event.stopPropagation();
     if (
       await firstValueFrom(
         this.overlay.confirm({
