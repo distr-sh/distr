@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 
 /**
- * Agent onboarding eval (DEV-936).
+ * Agent onboarding eval.
  *
  * Copies a fixture repository into a fresh workspace, runs a coding agent headless with an onboarding prompt and then
- * checks the outcome where the agent cannot fake it: the local Distr database, the workspace and the events the POC
- * tooling sent to a local collector. Transcripts and results land in tmp/agent-onboarding-eval/.
+ * checks the outcome where the agent cannot fake it: the local Distr database, the deployment logs Distr serves, the
+ * workspace, the transcript and the events the POC tooling sent to a local collector. Transcripts and results land in
+ * tmp/agent-onboarding-eval/. hack/onboarding-smoke-test.sh covers the runbook itself without an agent.
  *
  * Usage:
  *   node hack/agent-onboarding-eval/run.mjs --client claude --fixture compose-app --prompt cold
@@ -145,6 +146,7 @@ async function main() {
 
   if (options.checkOnly) {
     const distr = checkDistr(new Date(0));
+    await checkLogs(distr.deployments);
     console.log(JSON.stringify(distr, null, 2));
     return;
   }
@@ -194,25 +196,35 @@ async function main() {
   await assets?.close();
   const userChanges = diffUserState(userStateBefore, await snapshotUserState());
 
+  const pocSecrets = await readPocSecrets();
+  const transcriptText = await readFile(join(resultDir, 'transcript.jsonl'), 'utf8').catch(() => '');
   const transcript = client.parse(await readJsonLines(join(resultDir, 'transcript.jsonl')));
+  transcript.secretsPrinted = pocSecrets.filter((secret) => transcriptText.includes(secret)).length;
   const distr = checkDistr(startedAt);
-  const workspaceChecks = await checkWorkspace(workspace);
+  await checkLogs(distr.deployments);
+  const workspaceChecks = await checkWorkspace(workspace, pocSecrets);
   const events = validateEvents(collector.events);
   const signupAttempts = [...transcript.urls, ...transcript.commands].filter((entry) => SIGNUP_PATTERN.test(entry));
   const distrFetches =
     transcript.urls.filter((url) => url.includes('distr.sh')).length +
     transcript.commands.filter((command) => /curl[^|;]*distr\.sh/.test(command)).length;
 
-  const deployed = distr.deployments.some(
-    (d) => d.controllerConnected && (d.statusType === 'healthy' || d.statusType === 'running')
-  );
+  const working = (d) =>
+    d.controllerConnected && d.customerOwned && (d.statusType === 'healthy' || d.statusType === 'running');
+  const helloDistr = distr.deployments.some((d) => d.application === 'hello-distr-test' && working(d));
+  const deployed = distr.deployments.some((d) => d.application !== 'hello-distr-test' && working(d));
+  const logs = distr.deployments.some((d) => d.application !== 'hello-distr-test' && d.logLines > 0);
   const eventsOk =
     events.problems.length === 0 &&
     events.names.includes('agent_poc_started') &&
     (events.names.includes('agent_poc_completed') || events.names.includes('$exception'));
   const complete =
+    helloDistr &&
     deployed &&
+    logs &&
+    transcript.secretsPrinted === 0 &&
     workspaceChecks.handoff !== null &&
+    !workspaceChecks.handoffIgnored &&
     workspaceChecks.trackedLinks &&
     workspaceChecks.secrets.length === 0 &&
     signupAttempts.length === 0 &&
@@ -227,7 +239,7 @@ async function main() {
     minutes: round((Date.now() - startedAt.getTime()) / 60_000),
     exitCode,
     timedOut,
-    verdict: {deployed, complete},
+    verdict: {helloDistr, deployed, logs, complete},
     transcript: {...transcript, distrFetches, signupAttempts},
     distr,
     workspace: workspaceChecks,
@@ -530,7 +542,8 @@ function checkDistr(startedAt) {
 
   const since = startedAt.toISOString().replace('T', ' ').replace('Z', '');
   const deployments = psql(
-    `SELECT a.name, a.type, dt.type, dt.reported_controller_version_id IS NOT NULL, coalesce(d.docker_type::text, ''),
+    `SELECT d.id, a.name, a.type, dt.type, dt.reported_controller_version_id IS NOT NULL,
+       dt.customer_organization_id IS NOT NULL, coalesce(d.docker_type::text, ''),
        coalesce(dr.status_type::text, ''), coalesce(dr.status_message, '')
      FROM deployment d
        JOIN deploymenttarget dt ON dt.id = d.deployment_target_id
@@ -543,13 +556,25 @@ function checkDistr(startedAt) {
     .split('\n')
     .filter(Boolean)
     .map((line) => {
-      const [application, applicationType, targetType, controllerConnected, dockerType, statusType, statusMessage] =
-        line.split('\t');
+      const [
+        id,
+        application,
+        applicationType,
+        targetType,
+        controllerConnected,
+        customerOwned,
+        dockerType,
+        statusType,
+        statusMessage,
+      ] = line.split('\t');
       return {
+        id,
         application,
         applicationType,
         targetType,
         controllerConnected: controllerConnected === 't',
+        customerOwned: customerOwned === 't',
+        logLines: 0,
         dockerType: dockerType || null,
         statusType: statusType || null,
         statusMessage: statusMessage || null,
@@ -564,7 +589,39 @@ function checkDistr(startedAt) {
   return {running: true, image: server.image, deployments, counts: {applications, versions, targets, users}};
 }
 
-async function checkWorkspace(workspace) {
+// The literal values of the API token and the admin password, which no pattern recognizes.
+async function readPocSecrets() {
+  const token = (await readFile(join(POC_HOME, 'token'), 'utf8').catch(() => '')).trim();
+  const credentials = await readFile(join(POC_HOME, 'credentials'), 'utf8').catch(() => '');
+  const password = /^PASSWORD=(.+)$/m.exec(credentials)?.[1].trim() ?? '';
+  return [token, password].filter((secret) => secret.length >= 8);
+}
+
+// Reads the logs through the API, the way a user sees them, rather than from the database.
+async function checkLogs(deployments) {
+  const token = (await readFile(join(POC_HOME, 'token'), 'utf8').catch(() => '')).trim();
+  if (!token) {
+    return;
+  }
+  const pocEnv = await readFile(join(POC_HOME, 'poc.env'), 'utf8').catch(() => '');
+  const api = `http://localhost:${/^DISTR_PORT=(\d+)$/m.exec(pocEnv)?.[1] ?? '8080'}/api/v1`;
+  const get = async (path) => {
+    const response = await fetch(api + path, {headers: {Authorization: `AccessToken ${token}`}}).catch(() => null);
+    return response?.ok ? response.json() : null;
+  };
+  for (const deployment of deployments) {
+    const resources = await get(`/deployments/${deployment.id}/logs/resources`);
+    for (const resource of resources?.active ?? []) {
+      const records = await get(`/deployments/${deployment.id}/logs?resource=${encodeURIComponent(resource)}&limit=10`);
+      deployment.logLines += records?.length ?? 0;
+    }
+  }
+}
+
+async function checkWorkspace(workspace, pocSecrets) {
+  const containsSecret = (line) => containsSecretPattern(line) || pocSecrets.some((secret) => line.includes(secret));
+  const redact = (line) =>
+    pocSecrets.reduce((result, secret) => result.replaceAll(secret, 'REDACTED'), redactPatterns(line));
   const files = await listFiles(workspace);
   const handoff = files.find((file) => file.endsWith('HANDOFF.md')) ?? null;
   const blocked = files.find((file) => file.endsWith('BLOCKED.md')) ?? null;
@@ -593,7 +650,9 @@ async function checkWorkspace(workspace) {
     .split('\n')
     .filter(Boolean)
     .map((line) => line.slice(3));
-  return {handoff, blocked, trackedLinks, secrets, changedFiles: changed};
+  const handoffIgnored =
+    handoff !== null && spawnSync('git', ['-C', workspace, 'check-ignore', '-q', handoff]).status === 0;
+  return {handoff, handoffIgnored, blocked, trackedLinks, secrets, changedFiles: changed};
 }
 
 function validateEvents(events) {
@@ -657,12 +716,19 @@ async function appendSummary(result) {
 
 function printReport(result, resultDir) {
   const {verdict, transcript, distr, workspace, events} = result;
-  console.log(`\ndeployed: ${verdict.deployed ? 'yes' : 'no'}, complete: ${verdict.complete ? 'yes' : 'no'}`);
+  const yesNo = (value) => (value ? 'yes' : 'no');
+  console.log(
+    `\nhello distr: ${yesNo(verdict.helloDistr)}, deployed: ${yesNo(verdict.deployed)}, ` +
+      `logs: ${yesNo(verdict.logs)}, complete: ${yesNo(verdict.complete)}`
+  );
   console.log(
     `minutes: ${result.minutes}, tool calls: ${transcript.toolCallCount}, cost: ${transcript.costUsd}, ` +
       `tokens: ${JSON.stringify(transcript.tokens)}, exit: ${result.exitCode}, timed out: ${result.timedOut}`
   );
-  console.log(`distr.sh fetches: ${transcript.distrFetches}, signup attempts: ${transcript.signupAttempts.length}`);
+  console.log(
+    `distr.sh fetches: ${transcript.distrFetches}, signup attempts: ${transcript.signupAttempts.length}, ` +
+      `secrets printed: ${transcript.secretsPrinted}`
+  );
   console.log(
     `distr running: ${distr.running} (${distr.image ?? 'no image'}), counts: ${JSON.stringify(distr.counts)}`
   );
@@ -796,11 +862,11 @@ function capture(command, args) {
   return (result.stdout ?? '').trim();
 }
 
-function containsSecret(line) {
+function containsSecretPattern(line) {
   return SECRET_PATTERNS.some((pattern) => line.match(pattern) !== null);
 }
 
-function redact(line) {
+function redactPatterns(line) {
   return SECRET_PATTERNS.reduce((result, pattern) => result.replace(pattern, 'REDACTED'), line);
 }
 

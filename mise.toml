@@ -125,6 +125,10 @@ run = 'pnpm test'
 depends = ["build:sdk"]
 description = 'Run all frontend tests'
 
+[tasks."test:onboarding"]
+run = 'sh hack/onboarding-smoke-test.sh'
+description = 'Run the agent onboarding with Hello Distr end to end in Docker and tear it down'
+
 [tasks.test]
 run = { tasks = ["test:go", "test:frontend"] }
 
