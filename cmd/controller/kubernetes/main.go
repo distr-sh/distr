@@ -28,6 +28,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"helm.sh/helm/v4/pkg/kube"
 	"helm.sh/helm/v4/pkg/storage/driver"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -70,6 +71,8 @@ func init() {
 	if controllerenv.ControllerVersionID == "" {
 		logger.Warn("DISTR_CONTROLLER_VERSION_ID is not set. self updates will be disabled")
 	}
+	// Helm names its server-side apply field manager after the binary unless this is set.
+	kube.ManagedFieldsManager = controllerenv.ControllerName
 	if s := envutil.GetEnv("DISTR_CONTROLLER_CONFIG_DIRS"); s != "" {
 		controllerConfigDirs = slices.DeleteFunc(
 			strings.Split(s, "\n"),

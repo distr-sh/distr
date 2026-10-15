@@ -171,7 +171,7 @@ func NewDefault(
 			chimiddleware.Recoverer,
 			chimiddleware.RequestID,
 			chimiddleware.ClientIPFromRemoteAddr,
-			chimiddleware.ClientIPFromXFF(),
+			chimiddleware.ClientIPFromXFFTrustedProxies(1),
 			middleware.OTEL(tracer),
 			middleware.Sentry,
 			middleware.LoggerCtxMiddleware(logger),

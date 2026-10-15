@@ -275,8 +275,39 @@ func (ref *DeploymentType) UnmarshalJSON(data []byte) error {
 	}
 }
 
+type HelmChartType string
+
+const (
+	HelmChartTypeRepository HelmChartType = "repository"
+	HelmChartTypeOCI        HelmChartType = "oci"
+)
+
+var ErrInvalidHelmChartType = errors.New("invalid helm chart type")
+
+func ParseHelmChartType(value string) (HelmChartType, error) {
+	switch value {
+	case string(HelmChartTypeRepository):
+		return HelmChartTypeRepository, nil
+	case string(HelmChartTypeOCI):
+		return HelmChartTypeOCI, nil
+	default:
+		return "", fmt.Errorf("%w: %v", ErrInvalidHelmChartType, value)
+	}
+}
+
+func (ref *HelmChartType) UnmarshalJSON(data []byte) error {
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	} else if chartType, err := ParseHelmChartType(value); err != nil {
+		return err
+	} else {
+		*ref = chartType
+		return nil
+	}
+}
+
 type (
-	HelmChartType         string
 	DeploymentTargetScope string
 	DockerType            string
 	Tutorial              string
@@ -285,9 +316,6 @@ type (
 )
 
 const (
-	HelmChartTypeRepository HelmChartType = "repository"
-	HelmChartTypeOCI        HelmChartType = "oci"
-
 	DockerTypeCompose DockerType = "compose"
 	DockerTypeSwarm   DockerType = "swarm"
 

@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/internal/contenttype"
@@ -114,10 +115,20 @@ func runTxWith(
 
 // decodeJSON decodes and trims the body. A body that cannot be decoded is answered by the returned Responder.
 func decodeJSON[T any](r *http.Request) (T, respond.Responder) {
+	return decodeJSONFrom[T](r.Body, "request body is required")
+}
+
+// decodeJSONFormValue is [decodeJSON] for the JSON that a multipart request carries in the form field key
+// next to its files.
+func decodeJSONFormValue[T any](r *http.Request, key string) (T, respond.Responder) {
+	return decodeJSONFrom[T](strings.NewReader(r.FormValue(key)), key+" is required")
+}
+
+func decodeJSONFrom[T any](reader io.Reader, missing string) (T, respond.Responder) {
 	var t T
-	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
+	if err := json.NewDecoder(reader).Decode(&t); err != nil {
 		if errors.Is(err, io.EOF) {
-			return t, respond.BadRequest("request body is required")
+			return t, respond.BadRequest(missing)
 		} else if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
 			return t, respond.Error(http.StatusRequestEntityTooLarge, "request body too large")
 		} else {

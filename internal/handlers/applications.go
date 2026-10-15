@@ -3,12 +3,10 @@ package handlers
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"slices"
-	"strings"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
@@ -21,7 +19,6 @@ import (
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
-	"github.com/distr-sh/distr/internal/validation"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
@@ -181,8 +178,8 @@ func createApplication(r *http.Request) (respond.Responder, error) {
 	auth := auth.Authentication.Require(ctx)
 	if request, resp := decodeJSON[api.CreateApplicationRequest](r); resp != nil {
 		return resp, nil
-	} else if request.Name == "" {
-		return respond.BadRequest("name is required"), nil
+	} else if err := request.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
 	} else {
 		application := mapping.CreateApplicationToInternal(request)
 		if application.VersioningStrategy == "" {
@@ -250,6 +247,9 @@ func patchApplication(r *http.Request) (respond.Responder, error) {
 	previousStrategy := existing.VersioningStrategy
 	patched := *existing
 	if patch.Name != nil {
+		if *patch.Name == "" {
+			return respond.BadRequest("name is required"), nil
+		}
 		patched.Name = *patch.Name
 	}
 	if patch.VersioningStrategy != nil {
@@ -423,11 +423,12 @@ func createApplicationVersion(r *http.Request) (respond.Responder, error) {
 	auth := auth.Authentication.Require(ctx)
 	application := internalctx.GetApplication(ctx)
 
-	var request api.CreateApplicationVersionRequest
-	if err := json.NewDecoder(strings.NewReader(r.FormValue("applicationversion"))).Decode(&request); err != nil {
+	request, resp := decodeJSONFormValue[api.CreateApplicationVersionRequest](r, "applicationversion")
+	if resp != nil {
+		return resp, nil
+	} else if err := request.Validate(); err != nil {
 		return respond.BadRequest(err.Error()), nil
 	}
-	validation.TrimStrings(&request)
 
 	applicationVersion := mapping.CreateApplicationVersionToInternal(request)
 	applicationVersion.ApplicationID = application.ID
