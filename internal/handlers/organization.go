@@ -154,11 +154,13 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 	}
 
 	organization := types.Organization{
-		Name:                body.Name,
-		Slug:                body.Slug,
-		PreConnectScript:    body.PreConnectScript,
-		PostConnectScript:   body.PostConnectScript,
-		ConnectScriptIsSudo: body.ConnectScriptIsSudo,
+		Name:                        body.Name,
+		Slug:                        body.Slug,
+		PreConnectScript:            body.PreConnectScript,
+		PostConnectScript:           body.PostConnectScript,
+		ConnectScriptIsSudo:         body.ConnectScriptIsSudo,
+		KubernetesPreConnectScript:  body.KubernetesPreConnectScript,
+		KubernetesPostConnectScript: body.KubernetesPostConnectScript,
 	}
 
 	if err := db.RunTx(ctx, func(ctx context.Context) error {
@@ -253,6 +255,16 @@ func handleUpdateOrganization(
 
 		if request.ConnectScriptIsSudo != org.ConnectScriptIsSudo {
 			org.ConnectScriptIsSudo = request.ConnectScriptIsSudo
+			needsUpdate = true
+		}
+
+		if !util.PtrEq(org.KubernetesPreConnectScript, request.KubernetesPreConnectScript) {
+			org.KubernetesPreConnectScript = request.KubernetesPreConnectScript
+			needsUpdate = true
+		}
+
+		if !util.PtrEq(org.KubernetesPostConnectScript, request.KubernetesPostConnectScript) {
+			org.KubernetesPostConnectScript = request.KubernetesPostConnectScript
 			needsUpdate = true
 		}
 

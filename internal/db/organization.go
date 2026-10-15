@@ -36,6 +36,8 @@ var (
 		o.pre_connect_script,
 		o.post_connect_script,
 		o.connect_script_is_sudo,
+		o.kubernetes_pre_connect_script,
+		o.kubernetes_post_connect_script,
 		` + organizationStripeSecret.Value("o") + `,
 		` + organizationStripeSecret.IsSetValue("o") + `
 	`
@@ -147,6 +149,8 @@ func UpdateOrganization(ctx context.Context, org *types.Organization) error {
 			pre_connect_script = @pre_connect_script,
 			post_connect_script = @post_connect_script,
 			connect_script_is_sudo = @connect_script_is_sudo,
+			kubernetes_pre_connect_script = @kubernetes_pre_connect_script,
+			kubernetes_post_connect_script = @kubernetes_post_connect_script,
 			stripe_webhook_secret = NULL,
 			stripe_webhook_secret_enc = @stripe_webhook_secret_enc
 		WHERE id = @id
@@ -166,6 +170,8 @@ func UpdateOrganization(ctx context.Context, org *types.Organization) error {
 			"pre_connect_script":                          org.PreConnectScript,
 			"post_connect_script":                         org.PostConnectScript,
 			"connect_script_is_sudo":                      org.ConnectScriptIsSudo,
+			"kubernetes_pre_connect_script":               org.KubernetesPreConnectScript,
+			"kubernetes_post_connect_script":              org.KubernetesPostConnectScript,
 			"stripe_webhook_secret_enc":                   stripeWebhookSecretEnc,
 		},
 	)

@@ -8,13 +8,15 @@ import (
 )
 
 type CreateUpdateOrganizationRequest struct {
-	Name                   string  `json:"name"`
-	Slug                   *string `json:"slug"`
-	PreConnectScript       *string `json:"preConnectScript"`
-	PostConnectScript      *string `json:"postConnectScript"`
-	ConnectScriptIsSudo    bool    `json:"connectScriptIsSudo"`
-	ArtifactVersionMutable bool    `json:"artifactVersionMutable"`
-	PrePostScriptsEnabled  bool    `json:"prePostScriptsEnabled"`
+	Name                        string  `json:"name"`
+	Slug                        *string `json:"slug"`
+	PreConnectScript            *string `json:"preConnectScript"`
+	PostConnectScript           *string `json:"postConnectScript"`
+	ConnectScriptIsSudo         bool    `json:"connectScriptIsSudo"`
+	KubernetesPreConnectScript  *string `json:"kubernetesPreConnectScript"`
+	KubernetesPostConnectScript *string `json:"kubernetesPostConnectScript"`
+	ArtifactVersionMutable      bool    `json:"artifactVersionMutable"`
+	PrePostScriptsEnabled       bool    `json:"prePostScriptsEnabled"`
 }
 
 type OrganizationResponse struct {

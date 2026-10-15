@@ -2,10 +2,12 @@ package types
 
 import (
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/limit"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 )
 
@@ -25,8 +27,30 @@ type Organization struct {
 	PreConnectScript                    *string            `db:"pre_connect_script" json:"preConnectScript"`
 	PostConnectScript                   *string            `db:"post_connect_script" json:"postConnectScript"`
 	ConnectScriptIsSudo                 bool               `db:"connect_script_is_sudo" json:"connectScriptIsSudo"`
+	KubernetesPreConnectScript          *string            `db:"kubernetes_pre_connect_script" json:"kubernetesPreConnectScript"`   //nolint:lll
+	KubernetesPostConnectScript         *string            `db:"kubernetes_post_connect_script" json:"kubernetesPostConnectScript"` //nolint:lll
 	StripeWebhookSecret                 *dbcrypto.String   `db:"stripe_webhook_secret"            json:"-"`
 	StripeWebhookSecretConfigured       bool               `db:"stripe_webhook_secret_configured" json:"stripeWebhookSecretConfigured"` //nolint:lll
+}
+
+// ConnectScripts returns the pre- and post-connect script for deployment targets of the given type,
+// each empty when it is blank.
+func (org *Organization) ConnectScripts(deploymentType DeploymentType) (pre string, post string) {
+	switch deploymentType {
+	case DeploymentTypeDocker:
+		pre = util.PtrDerefOrDefault(org.PreConnectScript)
+		post = util.PtrDerefOrDefault(org.PostConnectScript)
+	case DeploymentTypeKubernetes:
+		pre = util.PtrDerefOrDefault(org.KubernetesPreConnectScript)
+		post = util.PtrDerefOrDefault(org.KubernetesPostConnectScript)
+	}
+	if strings.TrimSpace(pre) == "" {
+		pre = ""
+	}
+	if strings.TrimSpace(post) == "" {
+		post = ""
+	}
+	return pre, post
 }
 
 func (org *Organization) HasFeature(feature Feature) bool {

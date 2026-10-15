@@ -53,36 +53,76 @@ func BuildPreConnectURL(
 	return buildURL(ctx, targetID, org, targetSecret, true)
 }
 
+// usesConnectScript reports whether the connect command of the deployment target has to fetch the
+// connect script rather than apply the controller manifest directly. Sudo is a reason on its own
+// for Docker, since it is the only way to run docker compose as root.
+func usesConnectScript(deploymentTarget types.DeploymentTarget, org types.OrganizationWithBranding) bool {
+	if !org.HasFeature(types.FeaturePrePostScripts) {
+		return false
+	}
+	pre, post := org.ConnectScripts(deploymentTarget.Type)
+	if pre != "" || post != "" {
+		return true
+	}
+	return deploymentTarget.Type == types.DeploymentTypeDocker && org.ConnectScriptIsSudo
+}
+
 func GenerateConnectScript(
 	ctx context.Context,
-	targetID uuid.UUID,
+	deploymentTarget types.DeploymentTarget,
 	org types.OrganizationWithBranding,
 	targetSecret string,
 ) (string, error) {
-	connectURL, err := BuildConnectURL(ctx, targetID, org, targetSecret)
+	connectURL, err := BuildConnectURL(ctx, deploymentTarget.ID, org, targetSecret)
 	if err != nil {
 		return "", fmt.Errorf("failed to build connect URL: %w", err)
 	}
+	return renderConnectScript(deploymentTarget, org, connectURL)
+}
+
+func renderConnectScript(
+	deploymentTarget types.DeploymentTarget,
+	org types.OrganizationWithBranding,
+	connectURL string,
+) (string, error) {
+	connectCommand, err := manifestConnectCommand(deploymentTarget, connectURL)
+	if err != nil {
+		return "", err
+	}
+
+	preConnectScript, postConnectScript := org.ConnectScripts(deploymentTarget.Type)
 
 	var script strings.Builder
-	script.WriteString("#!/bin/sh\n")
+	script.WriteString("#!/bin/sh")
 
-	if org.PreConnectScript != nil && strings.TrimSpace(*org.PreConnectScript) != "" {
-		script.WriteString("# Pre-connect script\n")
-		script.WriteString(*org.PreConnectScript)
+	if deploymentTarget.Namespace != nil {
 		script.WriteString("\n\n")
+		fmt.Fprintf(&script, "export DISTR_NAMESPACE=%s", shellQuote(*deploymentTarget.Namespace))
 	}
 
+	if preConnectScript != "" {
+		script.WriteString("\n\n")
+		script.WriteString("# Pre-connect script\n")
+		script.WriteString(preConnectScript)
+	}
+
+	script.WriteString("\n\n")
 	script.WriteString("# Connect to Distr controller\n")
-	script.WriteString(generateDockerConnectCommand(connectURL))
+	script.WriteString(connectCommand)
 
-	if org.PostConnectScript != nil && strings.TrimSpace(*org.PostConnectScript) != "" {
-		script.WriteString("\n\n# Post-connect script\n")
-		script.WriteString(*org.PostConnectScript)
-		script.WriteString("\n")
+	if postConnectScript != "" {
+		script.WriteString("\n\n")
+		script.WriteString("# Post-connect script\n")
+		script.WriteString(postConnectScript)
 	}
+
+	script.WriteString("\n")
 
 	return script.String(), nil
+}
+
+func shellQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
 
 func generateScriptCommand(scriptURL string, isSudo bool) string {
@@ -90,36 +130,18 @@ func generateScriptCommand(scriptURL string, isSudo bool) string {
 	if isSudo {
 		shCmd = "sudo " + shCmd
 	}
-	return fmt.Sprintf("curl -fsSL '%s' | %s", scriptURL, shCmd)
+	return fmt.Sprintf("curl -fsSL %s | %s", shellQuote(scriptURL), shCmd)
 }
 
 func generateDockerConnectCommand(connectURL string) string {
-	return fmt.Sprintf("curl -fsSL '%s' | docker compose -f - up -d", connectURL)
+	return fmt.Sprintf("curl -fsSL %s | docker compose -f - up -d", shellQuote(connectURL))
 }
 
 func generateKubernetesConnectCommand(namespace string, connectURL string) string {
-	return fmt.Sprintf("kubectl apply -n %s -f \"%s\"", namespace, connectURL)
+	return fmt.Sprintf("kubectl apply -n %s -f %s", shellQuote(namespace), shellQuote(connectURL))
 }
 
-func GenerateConnectCommand(
-	ctx context.Context,
-	deploymentTarget types.DeploymentTarget,
-	org types.OrganizationWithBranding,
-	targetSecret string,
-) (string, error) {
-	if deploymentTarget.Type == types.DeploymentTypeDocker && org.HasFeature(types.FeaturePrePostScripts) {
-		preConnectURL, err := BuildPreConnectURL(ctx, deploymentTarget.ID, org, targetSecret)
-		if err != nil {
-			return "", fmt.Errorf("failed to build pre-connect URL: %w", err)
-		}
-		return generateScriptCommand(preConnectURL, org.ConnectScriptIsSudo), nil
-	}
-
-	connectURL, err := BuildConnectURL(ctx, deploymentTarget.ID, org, targetSecret)
-	if err != nil {
-		return "", fmt.Errorf("failed to build connect URL: %w", err)
-	}
-
+func manifestConnectCommand(deploymentTarget types.DeploymentTarget, connectURL string) (string, error) {
 	switch deploymentTarget.Type {
 	case types.DeploymentTypeDocker:
 		return generateDockerConnectCommand(connectURL), nil
@@ -131,4 +153,28 @@ func GenerateConnectCommand(
 	default:
 		return "", fmt.Errorf("unsupported deployment type: %s", deploymentTarget.Type)
 	}
+}
+
+func GenerateConnectCommand(
+	ctx context.Context,
+	deploymentTarget types.DeploymentTarget,
+	org types.OrganizationWithBranding,
+	targetSecret string,
+) (string, error) {
+	if usesConnectScript(deploymentTarget, org) {
+		preConnectURL, err := BuildPreConnectURL(ctx, deploymentTarget.ID, org, targetSecret)
+		if err != nil {
+			return "", fmt.Errorf("failed to build pre-connect URL: %w", err)
+		}
+		return generateScriptCommand(
+			preConnectURL,
+			deploymentTarget.Type == types.DeploymentTypeDocker && org.ConnectScriptIsSudo,
+		), nil
+	}
+
+	connectURL, err := BuildConnectURL(ctx, deploymentTarget.ID, org, targetSecret)
+	if err != nil {
+		return "", fmt.Errorf("failed to build connect URL: %w", err)
+	}
+	return manifestConnectCommand(deploymentTarget, connectURL)
 }

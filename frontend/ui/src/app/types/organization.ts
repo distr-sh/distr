@@ -29,6 +29,8 @@ export interface CreateUpdateOrganizationRequest {
   preConnectScript?: string;
   postConnectScript?: string;
   connectScriptIsSudo: boolean;
+  kubernetesPreConnectScript?: string;
+  kubernetesPostConnectScript?: string;
   artifactVersionMutable: boolean;
   prePostScriptsEnabled: boolean;
 }
@@ -47,6 +49,8 @@ export interface Organization extends BaseModel, Named {
   preConnectScript?: string;
   postConnectScript?: string;
   connectScriptIsSudo: boolean;
+  kubernetesPreConnectScript?: string;
+  kubernetesPostConnectScript?: string;
   stripeWebhookSecretConfigured: boolean;
 }
 

@@ -1,14 +1,28 @@
 <ng-template #preflightConfirmTemplate>
-  <p class="text-base leading-relaxed text-gray-500 dark:text-gray-200">
-    Enabling pre-flight checks changes how Docker controllers are installed. All customers will receive a shell script
-    instead of a plain docker compose command. The install command will change from
-    <code class="px-1 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-600 text-sm font-mono"
-      >curl ... | docker compose -f - up -d</code
-    >
-    to
-    <code class="px-1 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-600 text-sm font-mono">curl ... | sh</code>, which
-    wraps docker compose with pre- and post-connect scripts.
-  </p>
+  @for (deploymentType of newlyWrappedDeploymentTypes(); track deploymentType) {
+    <p class="text-base leading-relaxed text-gray-500 dark:text-gray-200">
+      @switch (deploymentType) {
+        @case ('docker') {
+          This changes how Docker controllers are installed. All customers will receive a shell script instead of a
+          plain docker compose command. The install command will change from
+          <code class="px-1 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-600 text-sm font-mono"
+            >curl ... | docker compose -f - up -d</code
+          >
+          to
+          <code class="px-1 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-600 text-sm font-mono">curl ... | sh</code>,
+          which wraps docker compose with pre- and post-connect scripts.
+        }
+        @case ('kubernetes') {
+          This changes how Kubernetes controllers are installed. All customers will receive a shell script instead of a
+          plain kubectl command. The install command will change from
+          <code class="px-1 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-600 text-sm font-mono">kubectl apply ...</code>
+          to
+          <code class="px-1 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-600 text-sm font-mono">curl ... | sh</code>,
+          which wraps kubectl with pre- and post-connect scripts and requires curl and a POSIX shell.
+        }
+      }
+    </p>
+  }
 </ng-template>
 
 <form [formGroup]="form" (ngSubmit)="save()">
@@ -81,8 +95,9 @@
           Enable Pre- and Post-Connect Scripts (Pre-Flight Checks)
         </label>
         <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
-          When enabled, Docker controller install commands use a shell script that wraps docker compose, so that pre-
-          and post-connect scripts can run during controller setup.
+          When enabled, controller install commands use a shell script that wraps docker compose or kubectl, so that
+          pre- and post-connect scripts can run during controller setup. Install commands only change for a platform
+          once a script is configured for it, or for Docker when it should run with sudo.
         </p>
       </div>
     </div>
@@ -90,44 +105,86 @@
     @if (isPrePostScriptEnabled()) {
       <div class="space-y-4">
         <h2 class="text-xl font-bold dark:text-white">Pre-/post-connect scripts</h2>
-        <div>
-          <label for="preConnectScript" class="distr-label flex-grow mb-2">Pre-connect script</label>
-          <div class="mb-4 w-full bg-gray-100 rounded-lg border border-gray-200 dark:bg-gray-600 dark:border-gray-600">
-            <div class="py-2 px-4 bg-gray-50 rounded-b-lg dark:bg-gray-700">
-              <textarea
-                formControlName="preConnectScript"
-                id="preConnectScript"
-                rows="8"
-                class="block px-0 w-full text-sm text-gray-800 bg-gray-50 border-0 dark:bg-gray-700 focus:ring-0 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"></textarea>
-            </div>
-          </div>
-        </div>
+        <app-pill-tab-bar [tabs]="connectScriptTabs" [(active)]="connectScriptTab" />
 
-        <div>
-          <label for="postConnectScript" class="distr-label flex-grow mb-2">Post-connect script</label>
-          <div class="mb-4 w-full bg-gray-100 rounded-lg border border-gray-200 dark:bg-gray-600 dark:border-gray-600">
-            <div class="py-2 px-4 bg-gray-50 rounded-b-lg dark:bg-gray-700">
-              <textarea
-                formControlName="postConnectScript"
-                id="postConnectScript"
-                rows="8"
-                class="block px-0 w-full text-sm text-gray-800 bg-gray-50 border-0 dark:bg-gray-700 focus:ring-0 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"></textarea>
+        @switch (connectScriptTab()) {
+          @case ('docker') {
+            <div>
+              <label for="preConnectScript" class="distr-label flex-grow mb-2">Pre-connect script</label>
+              <div
+                class="mb-4 w-full bg-gray-100 rounded-lg border border-gray-200 dark:bg-gray-600 dark:border-gray-600">
+                <div class="py-2 px-4 bg-gray-50 rounded-b-lg dark:bg-gray-700">
+                  <textarea
+                    formControlName="preConnectScript"
+                    id="preConnectScript"
+                    rows="8"
+                    class="block px-0 w-full text-sm text-gray-800 bg-gray-50 border-0 dark:bg-gray-700 focus:ring-0 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"></textarea>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div>
-          <div class="flex items-center">
-            <input
-              formControlName="connectScriptIsSudo"
-              id="connectScriptIsSudo"
-              type="checkbox"
-              class="distr-checkbox" />
-            <label for="connectScriptIsSudo" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-              Script should be run with sudo
-            </label>
-          </div>
-        </div>
+            <div>
+              <label for="postConnectScript" class="distr-label flex-grow mb-2">Post-connect script</label>
+              <div
+                class="mb-4 w-full bg-gray-100 rounded-lg border border-gray-200 dark:bg-gray-600 dark:border-gray-600">
+                <div class="py-2 px-4 bg-gray-50 rounded-b-lg dark:bg-gray-700">
+                  <textarea
+                    formControlName="postConnectScript"
+                    id="postConnectScript"
+                    rows="8"
+                    class="block px-0 w-full text-sm text-gray-800 bg-gray-50 border-0 dark:bg-gray-700 focus:ring-0 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center">
+                <input
+                  formControlName="connectScriptIsSudo"
+                  id="connectScriptIsSudo"
+                  type="checkbox"
+                  class="distr-checkbox" />
+                <label for="connectScriptIsSudo" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                  Script should be run with sudo
+                </label>
+              </div>
+            </div>
+          }
+          @case ('kubernetes') {
+            <div>
+              <label for="kubernetesPreConnectScript" class="distr-label flex-grow mb-2">Pre-connect script</label>
+              <div
+                class="mb-4 w-full bg-gray-100 rounded-lg border border-gray-200 dark:bg-gray-600 dark:border-gray-600">
+                <div class="py-2 px-4 bg-gray-50 rounded-b-lg dark:bg-gray-700">
+                  <textarea
+                    formControlName="kubernetesPreConnectScript"
+                    id="kubernetesPreConnectScript"
+                    rows="8"
+                    class="block px-0 w-full text-sm text-gray-800 bg-gray-50 border-0 dark:bg-gray-700 focus:ring-0 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label for="kubernetesPostConnectScript" class="distr-label flex-grow mb-2">Post-connect script</label>
+              <div
+                class="mb-4 w-full bg-gray-100 rounded-lg border border-gray-200 dark:bg-gray-600 dark:border-gray-600">
+                <div class="py-2 px-4 bg-gray-50 rounded-b-lg dark:bg-gray-700">
+                  <textarea
+                    formControlName="kubernetesPostConnectScript"
+                    id="kubernetesPostConnectScript"
+                    rows="8"
+                    class="block px-0 w-full text-sm text-gray-800 bg-gray-50 border-0 dark:bg-gray-700 focus:ring-0 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+              The scripts run in a POSIX shell with the customer's kubeconfig. The namespace of the deployment target is
+              available as <code>$DISTR_NAMESPACE</code>.
+            </p>
+          }
+        }
       </div>
     }
 
