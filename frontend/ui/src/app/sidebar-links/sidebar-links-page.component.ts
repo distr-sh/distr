@@ -15,7 +15,7 @@ import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {SidebarLink} from '@distr-sh/distr-sdk';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
-import {faBoxesStacked, faChevronDown, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faBoxesStacked, faChevronDown, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, firstValueFrom, of, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {PageComponent} from '../components/page.component';
@@ -45,9 +45,9 @@ export class SidebarLinksPageComponent {
   protected readonly faXmark = faXmark;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
-  protected readonly faPen = faPen;
 
   protected readonly auth = inject(AuthService);
+  protected readonly canEdit = this.auth.hasAnyRole('read_write', 'admin');
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   private readonly linksService = inject(SidebarLinksService);
   private readonly overlay = inject(OverlayService);
@@ -156,7 +156,8 @@ export class SidebarLinksPageComponent {
     }
   }
 
-  protected async deleteLink(link: SidebarLink) {
+  protected async deleteLink(link: SidebarLink, event: Event) {
+    event.stopPropagation();
     const customerOrgId = this.customerOrganizationId();
     if (!customerOrgId) return;
 
