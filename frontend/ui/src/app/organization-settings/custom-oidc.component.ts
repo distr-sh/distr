@@ -250,7 +250,7 @@ export class CustomOidcComponent {
   private readonly activeDomain = signal<CustomDomain | undefined>(undefined);
   protected readonly editing = signal<CustomOidcConfiguration | undefined>(undefined);
   protected readonly saving = signal(false);
-  protected readonly toggling = signal<string | undefined>(undefined);
+  private readonly toggling = signal<string | undefined>(undefined);
   private readonly formDialog = viewChild.required<TemplateRef<unknown>>('formDialog');
   private dialogRef?: DialogRef;
 
@@ -381,7 +381,11 @@ export class CustomOidcComponent {
     }
   }
 
-  protected async toggleEnabled(configuration: CustomOidcConfiguration, toggle: HTMLInputElement) {
+  protected async toggleEnabled(configuration: CustomOidcConfiguration, toggle: HTMLInputElement, event: Event) {
+    if (this.toggling() === configuration.id) {
+      event.preventDefault();
+      return;
+    }
     this.toggling.set(configuration.id);
     try {
       await firstValueFrom(
@@ -412,7 +416,8 @@ export class CustomOidcComponent {
     }
   }
 
-  protected async test(configuration: CustomOidcConfiguration) {
+  protected async test(configuration: CustomOidcConfiguration, event: Event) {
+    event.stopPropagation();
     try {
       await firstValueFrom(this.customOidcService.test(configuration.id));
       this.toast.success(`${configuration.name} serves a valid OpenID configuration`);
@@ -424,7 +429,8 @@ export class CustomOidcComponent {
     }
   }
 
-  protected async remove(configuration: CustomOidcConfiguration) {
+  protected async remove(configuration: CustomOidcConfiguration, event: Event) {
+    event.stopPropagation();
     const confirmed = await firstValueFrom(
       this.overlay.confirm(
         `Really delete ${configuration.name}? Everyone who signs in through it loses that login, and users without ` +
