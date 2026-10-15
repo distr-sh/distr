@@ -32,7 +32,7 @@ export function toAgentMarkdown(
   const rawImports = readRawImports(entry);
   let body = entry.body ?? '';
 
-  body = body.replace(/^import\s[^\n]*$/gm, '');
+  body = removeMdxImports(body);
   body = body.replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
   body = body.replace(
     /<Aside([^>]*)>([\s\S]*?)<\/Aside>/g,
@@ -103,6 +103,19 @@ function readRawImports(
     });
   }
   return imports;
+}
+
+function removeMdxImports(body: string): string {
+  let inFence = false;
+  return body
+    .split('\n')
+    .filter(line => {
+      if (/^\s*(```|~~~)/.test(line)) {
+        inFence = !inFence;
+      }
+      return inFence || !/^import\s/.test(line);
+    })
+    .join('\n');
 }
 
 function attribute(attributes: string, name: string): string | undefined {
