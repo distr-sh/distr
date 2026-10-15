@@ -18,7 +18,9 @@ customer access, updates or visibility.
 The runbook is kept in step with Distr. Read it and follow it in order:
 
 - Inside a Distr checkout (the repository root contains `deploy/docker/quickstart/try.sh`), read
-  `website/public/onboard.md` from the checkout and use the checkout's `try.sh`. Fetch nothing from distr.sh.
+  `website/public/onboard.md` from the checkout and start Distr with the checked-in script and quickstart:
+  `DISTR_QUICKSTART_DIR=deploy/docker/quickstart sh deploy/docker/quickstart/try.sh`. distr.sh serves the same files
+  as `onboard.md` and `try.sh`, so fetch nothing from distr.sh.
 - Anywhere else, fetch it with `curl -fsSL https://distr.sh/onboard.md`.
 
 It starts the published Distr Community Edition image locally, deploys Hello Distr to a test customer through a local

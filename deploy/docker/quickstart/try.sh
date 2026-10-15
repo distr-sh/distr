@@ -362,7 +362,14 @@ unset_env() {
 
 # A Distr checkout brings its quickstart next to this script, so it is used instead of a download.
 resolve_quickstart_source() {
-  QUICKSTART_SOURCE="${DISTR_QUICKSTART_DIR:-}"
+  QUICKSTART_SOURCE=""
+  if [ -n "${DISTR_QUICKSTART_DIR:-}" ]; then
+    if [ ! -f "$DISTR_QUICKSTART_DIR/docker-compose.yaml" ] || [ ! -f "$DISTR_QUICKSTART_DIR/.env" ]; then
+      log "error: DISTR_QUICKSTART_DIR=$DISTR_QUICKSTART_DIR contains no docker-compose.yaml and .env."
+      exit 2
+    fi
+    QUICKSTART_SOURCE="$(cd "$DISTR_QUICKSTART_DIR" && pwd)"
+  fi
   if [ -z "$QUICKSTART_SOURCE" ] && [ -n "$SCRIPT_PATH" ]; then
     script_dir="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
     if [ -f "$script_dir/docker-compose.yaml" ] && [ -f "$script_dir/.env" ]; then
@@ -676,25 +683,31 @@ connect_controller() {
   unset access
   printf '%s\n' "$TARGET" >> "$POC_HOME/controllers"
 
+  # The URL names host.minikube.internal for Kubernetes targets, which only the cluster resolves.
+  manifest="$(curl -fsSL "$(printf '%s' "$connect_url" | sed 's#//host.minikube.internal:#//localhost:#')")" ||
+    fail connect controller_not_connecting "Could not download the Distr controller manifest of target $TARGET."
+  unset connect_url
   # Distr releases up to 4.4.2 only set DISTR_REGISTRY_PLAIN_HTTP in development builds, so they tell controllers to
   # use TLS against the plain HTTP registry of this proof of concept. Later releases already render true here.
+  if printf '%s' "$manifest" | grep -Eq "DISTR_REGISTRY_PLAIN_HTTP: ['\"]false['\"]"; then
+    log "This Distr renders DISTR_REGISTRY_PLAIN_HTTP=false for its plain HTTP registry, setting it to true."
+    manifest="$(printf '%s\n' "$manifest" | sed -E "s/DISTR_REGISTRY_PLAIN_HTTP: (['\"])false(['\"])/DISTR_REGISTRY_PLAIN_HTTP: \1true\2/")"
+  elif printf '%s' "$manifest" | grep -Eq "DISTR_REGISTRY_PLAIN_HTTP: ['\"]true['\"]"; then
+    log "This Distr renders DISTR_REGISTRY_PLAIN_HTTP=true for its plain HTTP registry."
+  fi
   if [ "$type" = docker ]; then
     log "starting the Distr controller of target $TARGET as the Docker Compose project $CONTROLLER_PROJECT"
-    curl -fsSL "$connect_url" | sed "s/DISTR_REGISTRY_PLAIN_HTTP: 'false'/DISTR_REGISTRY_PLAIN_HTTP: 'true'/" |
-      (cd "$POC_HOME" && docker compose -f - up -d) >&2 ||
+    printf '%s\n' "$manifest" | (cd "$POC_HOME" && docker compose -f - up -d) >&2 ||
       fail connect controller_not_connecting "Could not start the Distr controller, see the output above."
   else
     namespace="$(printf '%s' "$target" | jq -r '.namespace // empty')"
     kubectl --context "$MINIKUBE_PROFILE" get namespace "$namespace" >/dev/null 2>&1 ||
       kubectl --context "$MINIKUBE_PROFILE" create namespace "$namespace" >&2
-    # The URL names host.minikube.internal, which only the cluster resolves.
     log "installing the Distr controller of target $TARGET in the namespace $namespace of $MINIKUBE_PROFILE"
-    curl -fsSL "$(printf '%s' "$connect_url" | sed 's#//host.minikube.internal:#//localhost:#')" |
-      sed 's/DISTR_REGISTRY_PLAIN_HTTP: "false"/DISTR_REGISTRY_PLAIN_HTTP: "true"/' |
-      kubectl --context "$MINIKUBE_PROFILE" apply -n "$namespace" -f - >&2 ||
+    printf '%s\n' "$manifest" | kubectl --context "$MINIKUBE_PROFILE" apply -n "$namespace" -f - >&2 ||
       fail connect controller_not_connecting "Could not install the Distr controller, see the output above."
   fi
-  unset connect_url
+  unset manifest
   wait_for_controller
 }
 

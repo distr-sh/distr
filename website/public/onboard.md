@@ -31,11 +31,12 @@ Both ways below run the published Distr Community Edition image `ghcr.io/distr-s
 source to onboard; that is only for changing Distr itself (see Development at the end).
 
 Inside a Distr checkout (the repository root contains `deploy/docker/quickstart/try.sh`), use the files of the
-checkout: read this runbook from `website/public/onboard.md`, fetch nothing from distr.sh and run every command from the
-repository root.
+checkout: read this runbook from `website/public/onboard.md`, run `deploy/docker/quickstart/try.sh` (the file distr.sh
+serves as `try.sh`) with the checked-in quickstart next to it, fetch nothing from distr.sh and run every command from
+the repository root.
 
 ```sh
-sh deploy/docker/quickstart/try.sh --client <your client, for example claude-code>
+DISTR_QUICKSTART_DIR=deploy/docker/quickstart sh deploy/docker/quickstart/try.sh --client <your client, for example claude-code>
 ```
 
 Anywhere else:
@@ -221,18 +222,29 @@ controller reports to Distr:
 sh ~/.distr/poc/try.sh --check-ports 80 443 && sh ~/.distr/poc/try.sh --connect --target "$TARGET_ID"
 ```
 
+`--connect` also makes the controller pull from the local registry over plain HTTP. Distr releases up to 4.4.2 render
+`DISTR_REGISTRY_PLAIN_HTTP=false` for it, which `--connect` reports and corrects in the manifest before applying it, so
+never edit the generated controller configuration yourself. Check the setting, which is the only line this prints:
+
+```sh
+docker ps -q --filter label=com.docker.compose.project=distr --filter label=com.docker.compose.service=controller |
+  xargs docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -x 'DISTR_REGISTRY_PLAIN_HTTP=true'
+```
+
 Wait until the deployment is healthy. The controller pulls the Hello Distr images first, which takes a few minutes on
-the first run:
+the first run. Hello Distr runs five containers (postgres, backend, frontend, proxy and jobs), and the Docker controller
+reports their health as the status message, `status check results: 5 healthy` once all of them pass:
 
 ```sh
 . ~/.distr/poc/api.env
 attempt=0
 while [ "$attempt" -lt 60 ]; do
-  STATUS=$(curl --fail-with-body -sS "$DISTR_API/deployment-targets/$TARGET_ID" \
+  LATEST=$(curl --fail-with-body -sS "$DISTR_API/deployment-targets/$TARGET_ID" \
     -H "Authorization: AccessToken $DISTR_TOKEN" |
-    jq -r --arg deployment "$HELLO_DEPLOYMENT_ID" \
-      '[(.deployments // [])[] | select(.id == $deployment) | .latestStatus.type][0] // "pending"')
-  echo "Hello Distr: $STATUS"
+    jq -c --arg deployment "$HELLO_DEPLOYMENT_ID" \
+      '[(.deployments // [])[] | select(.id == $deployment) | .latestStatus][0] // {}')
+  STATUS=$(printf '%s' "$LATEST" | jq -r '.type // "pending"')
+  echo "Hello Distr: $STATUS $(printf '%s' "$LATEST" | jq -r '.message // ""')"
   [ "$STATUS" = healthy ] && break
   attempt=$((attempt + 1))
   sleep 10
@@ -240,20 +252,28 @@ done
 [ "$STATUS" = healthy ]
 ```
 
-Verify through the API that the customer owns the target, the controller reported and the deployment is healthy:
+Verify through the API that the customer owns the target and the database password secret, the controller reported
+and all five containers are healthy:
 
 ```sh
 . ~/.distr/poc/api.env
 TARGET=$(curl --fail-with-body -sS "$DISTR_API/deployment-targets/$TARGET_ID" \
   -H "Authorization: AccessToken $DISTR_TOKEN")
-printf '%s' "$TARGET" | jq --arg deployment "$HELLO_DEPLOYMENT_ID" '{
+SECRET=$(curl --fail-with-body -sS "$DISTR_API/secrets" -H "Authorization: AccessToken $DISTR_TOKEN" |
+  jq -c --arg customer "$CUSTOMER_ID" \
+    '[.[] | select(.key == "HELLO_DISTR_DB_PASSWORD" and .customerOrganizationId == $customer) |
+      {key, customerOrganizationId}][0]')
+printf '%s' "$TARGET" | jq --arg deployment "$HELLO_DEPLOYMENT_ID" --argjson secret "$SECRET" '{
   target: .name, customer: .customerOrganization.name, customerOrganizationId,
-  controllerVersion: .reportedControllerVersionId,
+  controllerVersion: .reportedControllerVersionId, secret: $secret,
   deployment: [(.deployments // [])[] | select(.id == $deployment) |
-    {id, version: .applicationVersionName, status: .latestStatus.type}][0]}'
-printf '%s' "$TARGET" | jq -e --arg customer "$CUSTOMER_ID" --arg deployment "$HELLO_DEPLOYMENT_ID" '
+    {id, version: .applicationVersionName, status: .latestStatus.type, containers: .latestStatus.message}][0]}'
+printf '%s' "$TARGET" | jq -e --arg customer "$CUSTOMER_ID" --arg deployment "$HELLO_DEPLOYMENT_ID" \
+  --argjson secret "$SECRET" '
   .customerOrganizationId == $customer and .reportedControllerVersionId != null and
-  any((.deployments // [])[]; .id == $deployment and .latestStatus.type == "healthy")' >/dev/null &&
+  $secret.customerOrganizationId == $customer and
+  any((.deployments // [])[]; .id == $deployment and .latestStatus.type == "healthy" and
+    .latestStatus.message == "status check results: 5 healthy")' >/dev/null &&
   echo "verified"
 ```
 
@@ -267,7 +287,11 @@ done
 curl -fsS -m 5 http://localhost/api/health | jq -e '.status == "healthy" and .database == "connected"'
 ```
 
-Read the deployment logs that the controller sent to Distr, which is where to look first when anything above fails:
+Read the deployment logs that the controller sent to Distr, which is where to look first when anything above fails.
+`GET /deployments/{id}/logs/resources` answers `{"active": [...], "archived": [...]}`, and `GET /deployments/{id}/logs`
+takes one of those names unchanged as `resource`. On a Docker target a name is a Compose service and its replica,
+`<service>-<n>` such as `backend-1`, and on a Kubernetes target the workload that owns the pod, `<resource>/<name>` such
+as `deployments/hello-distr-backend`, or the pod name for a pod without one:
 
 ```sh
 . ~/.distr/poc/api.env
@@ -439,8 +463,10 @@ target like the Docker Compose block does.
 
 ## 7. Verify and fix
 
-Use the wait, verify and logs blocks of step 2 with `$DEPLOYMENT_ID` in place of `$HELLO_DEPLOYMENT_ID`. `healthy` is
-best. A Docker service without a healthcheck reaches `running`, which also counts.
+Use the wait, verify and logs blocks of step 2 with `$DEPLOYMENT_ID` in place of `$HELLO_DEPLOYMENT_ID`. In the verify
+block, expect the number of containers of the user's application instead of 5 and the keys of its secrets instead of
+`HELLO_DISTR_DB_PASSWORD`, or leave out the secret check when it has none. `healthy` is best. A Docker service without a
+healthcheck reaches `running`, which also counts, and shows up in the message as `running (healthchecks missing)`.
 
 If the status is `error` or the containers keep restarting, read the logs, fix the packaging, upload it as a new
 version (`1.0.1`, `1.0.2` and so on) and move the deployment to it with the same `PUT /deployments` request plus
@@ -551,7 +577,9 @@ Every line is a real failure from a real run.
   `DELETE /deployment-targets/$TARGET_ID` before creating another.
 - A deployment to a customer's target only resolves the customer's secrets. Create them with
   `customerOrganizationId`, or the deployment fails on the missing key.
-- Logs need `?resource=<name>`. The names come from `GET /deployments/$DEPLOYMENT_ID/logs/resources`.
+- Logs need `?resource=<name>`. The names come from `GET /deployments/$DEPLOYMENT_ID/logs/resources`: `<service>-<n>`
+  such as `backend-1` on Docker, `<resource>/<name>` such as `deployments/my-app` or a pod name on Kubernetes. Pass
+  them unchanged and URL encoded.
 - Registry tags are immutable. Charts go under `poc/charts/<chart>`, images under `poc/<name>`.
 - `helm registry login` takes `--insecure`, `helm push` takes `--plain-http`. Always pass `--kube-context distr-poc`
   to helm and `--context distr-poc` to kubectl, because `try.sh` leaves the user's current context alone.
