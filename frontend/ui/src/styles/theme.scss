@@ -187,7 +187,7 @@
   }
 
   .distr-card-clickable {
-    @apply cursor-pointer hover:shadow-md transition-shadow;
+    @apply cursor-pointer hover:shadow-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-shadow;
   }
 
   // the row above a table or card grid that holds `app-search-bar` and the page actions. Inside a
