@@ -32,12 +32,13 @@
           <td class="distr-table-cell align-middle">
             <label class="inline-flex items-center cursor-pointer my-1" (click)="$event.stopPropagation()">
               <input
+                #enabledToggle
                 type="checkbox"
                 class="sr-only peer"
                 aria-label="Enabled"
                 [disabled]="!canEdit"
                 [checked]="config.enabled"
-                (click)="toggleConfigEnabled(config, $event)" />
+                (click)="toggleConfigEnabled(config, enabledToggle, $event)" />
               <div class="distr-toggle peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
             </label>
           </td>

@@ -239,7 +239,7 @@ export class AlertConfigurationsComponent {
     }
   }
 
-  protected async toggleConfigEnabled(config: AlertConfiguration, event: Event) {
+  protected async toggleConfigEnabled(config: AlertConfiguration, toggle: HTMLInputElement, event: Event) {
     if (this.togglingConfigId() === config.id) {
       event.preventDefault();
       return;
@@ -251,6 +251,7 @@ export class AlertConfigurationsComponent {
       this.toast.success(`Alert configuration ${request.enabled ? 'enabled' : 'disabled'}`);
       this.reload$.next();
     } catch (e) {
+      toggle.checked = config.enabled;
       const msg = getFormDisplayedError(e);
       if (msg) {
         this.toast.error(msg);

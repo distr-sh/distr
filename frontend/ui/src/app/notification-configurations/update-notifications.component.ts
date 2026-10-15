@@ -352,7 +352,7 @@ export class UpdateNotificationsComponent {
     }
   }
 
-  protected async toggleConfigEnabled(config: UpdateNotificationConfiguration, event: Event) {
+  protected async toggleConfigEnabled(config: UpdateNotificationConfiguration, toggle: HTMLInputElement, event: Event) {
     if (this.togglingConfigId() === config.id) {
       event.preventDefault();
       return;
@@ -373,6 +373,7 @@ export class UpdateNotificationsComponent {
       this.toast.success(`Notification configuration ${enabled ? 'enabled' : 'disabled'}`);
       this.reload$.next();
     } catch (e) {
+      toggle.checked = config.enabled;
       const msg = getFormDisplayedError(e);
       if (msg) {
         this.toast.error(msg);
