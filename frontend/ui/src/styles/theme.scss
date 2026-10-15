@@ -186,6 +186,10 @@
     @apply flex flex-col h-full overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 dark:bg-gray-800;
   }
 
+  .distr-card-clickable {
+    @apply cursor-pointer hover:shadow-md transition-shadow;
+  }
+
   // the row above a table or card grid that holds `app-search-bar` and the page actions. Inside a
   // `distr-table-panel` add `p-4`, above a `distr-card-grid` add `mb-4`.
   .distr-toolbar {
