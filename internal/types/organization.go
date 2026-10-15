@@ -33,8 +33,6 @@ type Organization struct {
 	StripeWebhookSecretConfigured       bool               `db:"stripe_webhook_secret_configured" json:"stripeWebhookSecretConfigured"` //nolint:lll
 }
 
-// ConnectScripts returns the pre- and post-connect script for deployment targets of the given type,
-// each empty when it is blank.
 func (org *Organization) ConnectScripts(deploymentType DeploymentType) (pre string, post string) {
 	switch deploymentType {
 	case DeploymentTypeDocker:
