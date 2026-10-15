@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.4.2](https://github.com/distr-sh/distr/compare/4.4.1...4.4.2) (2026-10-15)
+
+
+### Bug Fixes
+
+* **kubernetes-agent:** reload helm field manager on changes ([#3508](https://github.com/distr-sh/distr/issues/3508)) ([99d6d34](https://github.com/distr-sh/distr/commit/99d6d34b26c49297799c7b8a83ae186c3dde57d6))
+
+
+### Other
+
+* rename missed logline from agent to controller ([#3501](https://github.com/distr-sh/distr/issues/3501)) ([a668799](https://github.com/distr-sh/distr/commit/a668799c0a7b1ae71ea3154f01686c327933f6b0))
+
 ## [4.4.1](https://github.com/distr-sh/distr/compare/4.4.0...4.4.1) (2026-10-14)
 
 
