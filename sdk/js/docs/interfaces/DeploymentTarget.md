@@ -8,7 +8,8 @@
 
 ## Extends
 
-- [`BaseModel`](BaseModel.md).[`Named`](Named.md)
+- [`BaseModel`](BaseModel.md)
+- [`Named`](Named.md)
 
 ## Properties
 

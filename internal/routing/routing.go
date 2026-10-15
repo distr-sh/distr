@@ -127,7 +127,7 @@ func ApiRouter(
 		r.Use(
 			chimiddleware.RequestID,
 			chimiddleware.ClientIPFromRemoteAddr,
-			chimiddleware.ClientIPFromXFF(),
+			chimiddleware.ClientIPFromXFFTrustedProxies(1),
 			middleware.Sentry,
 			middleware.LoggerCtxMiddleware(logger),
 			middleware.LoggingMiddleware,
