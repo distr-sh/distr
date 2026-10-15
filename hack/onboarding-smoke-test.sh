@@ -102,7 +102,8 @@ compose_version="$(docker compose version --short)"
 log "Docker $docker_version, Docker Compose $compose_version, Distr on port $DISTR_PORT, state in $POC"
 
 started="$(date +%s)"
-run sh deploy/docker/quickstart/try.sh --pull --client smoke-test || fail "try.sh --pull"
+run env DISTR_QUICKSTART_DIR=deploy/docker/quickstart sh deploy/docker/quickstart/try.sh --pull --client smoke-test ||
+  fail "try.sh --pull"
 pulled="$(seconds_since "$started")"
 run sh "$POC/try.sh" --client smoke-test || fail "try.sh"
 ready="$(seconds_since "$started")"
@@ -119,6 +120,25 @@ for step in $steps; do
     healthy="$(seconds_since "$ready_at")"
   fi
 done
+
+image_ref() {
+  docker image inspect "$1" --format '{{range .RepoDigests}}{{println .}}{{end}}' 2>/dev/null | head -n 1 | grep . ||
+    docker image inspect "$1" --format '{{.Id}}'
+}
+distr_digest="$(image_ref "$image")"
+controller="$(docker ps -q --filter label=com.docker.compose.project=distr \
+  --filter label=com.docker.compose.service=controller | head -n 1)"
+[ -n "$controller" ] || fail "no Distr controller container is running"
+controller_image="$(docker inspect "$controller" --format '{{.Config.Image}}')"
+controller_digest="$(image_ref "$controller_image")"
+plain_http="$(docker inspect "$controller" --format '{{range .Config.Env}}{{println .}}{{end}}' |
+  sed -n 's/^DISTR_REGISTRY_PLAIN_HTTP=//p')"
+[ "$plain_http" = true ] || fail "the controller has DISTR_REGISTRY_PLAIN_HTTP=$plain_http instead of true"
+if grep -q 'renders DISTR_REGISTRY_PLAIN_HTTP=false' "$WORK/output.log"; then
+  plain_http_source="corrected by try.sh --connect, the Distr image renders false"
+else
+  plain_http_source="rendered by the Distr image"
+fi
 
 log "--- $(basename "$LOGS_STEP")"
 attempt=0
@@ -159,6 +179,10 @@ cat <<EOF
 
 Onboarding smoke test passed
   Distr image:               $image
+                             $distr_digest
+  Controller image:          $controller_image
+                             $controller_digest
+  Registry plain HTTP:       $plain_http, $plain_http_source
   Docker / Docker Compose:   $docker_version / $compose_version
   pull (try.sh --pull):      ${pulled}s
   start until ready:         ${ready}s
