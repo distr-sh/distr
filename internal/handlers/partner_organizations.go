@@ -52,8 +52,6 @@ func PartnerOrganizationsRouter(r chiopenapi.Router) {
 	})
 }
 
-var partnerOrganizationNotFound = respond.NotFound("partner organization not found")
-
 func getPartnerOrganizationsHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)

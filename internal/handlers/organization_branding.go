@@ -38,7 +38,7 @@ func getOrganizationBranding(r *http.Request) (respond.Responder, error) {
 	if organizationBranding, err := db.GetOrganizationBranding(
 		r.Context(), *auth.CurrentOrgID(),
 	); errors.Is(err, distrerr.ErrNotFound) {
-		return respond.NotFound("organization branding not found"), nil
+		return organizationBrandingNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get organizationBranding: %w", err)
 	} else {

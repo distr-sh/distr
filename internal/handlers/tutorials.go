@@ -49,7 +49,7 @@ func getTutorialProgress(r *http.Request) (respond.Responder, error) {
 	tutorial := r.PathValue("tutorial")
 	if progress, err := db.GetTutorialProgress(ctx, auth.CurrentUserID(), *auth.CurrentOrgID(),
 		types.Tutorial(tutorial)); errors.Is(err, distrerr.ErrNotFound) {
-		return respond.NotFound("tutorial progress not found"), nil
+		return tutorialProgressNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("could not get tutorial progress: %w", err)
 	} else {

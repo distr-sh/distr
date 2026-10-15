@@ -26,11 +26,6 @@ const (
 	accessTokenRoleExceedsCallerMessage = "token role cannot exceed your own role"
 )
 
-var (
-	accessTokenNotFound       = respond.NotFound("access token not found")
-	accessTokenSecretNotFound = respond.NotFound("access token secret not found")
-)
-
 func getAccessTokensHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)

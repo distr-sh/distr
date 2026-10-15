@@ -284,7 +284,7 @@ func patchApplication(r *http.Request) (respond.Responder, error) {
 				}
 			}
 			if ev == nil {
-				return respond.BadRequest(fmt.Sprintf("no ApplicationVersion found with ID %v", vp.ID)), nil
+				return respond.BadRequest(fmt.Sprintf("no application version found with ID %v", vp.ID)), nil
 			}
 
 			versionNeedsUpdate := false
@@ -342,11 +342,6 @@ func getApplications(r *http.Request) (respond.Responder, error) {
 		return respond.JSON(mapping.List(applications, applicationMapper(ctx))), nil
 	}
 }
-
-var (
-	applicationNotFound        = respond.NotFound("application not found")
-	applicationVersionNotFound = respond.NotFound("application version not found")
-)
 
 func getApplication(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
@@ -595,7 +590,7 @@ func deleteApplication(r *http.Request) (respond.Responder, error) {
 		return applicationNotFound, nil
 	} else if err := db.DeleteApplicationWithID(ctx, application.ID); err != nil {
 		if errors.Is(err, distrerr.ErrConflict) {
-			return respond.BadRequest("could not delete Application because it is still in use"), nil
+			return respond.BadRequest("could not delete application because it is still in use"), nil
 		} else {
 			return nil, fmt.Errorf("error deleting application: %w", err)
 		}

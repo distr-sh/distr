@@ -265,13 +265,13 @@ func validateDeploymentRequest(
 	if app, err = db.GetApplicationForApplicationVersionID(
 		ctx, request.ApplicationVersionID, orgId,
 	); errors.Is(err, distrerr.ErrNotFound) {
-		return nil, respond.BadRequest("Application does not exist"), nil
+		return nil, respond.BadRequest("application does not exist"), nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get application: %w", err)
 	}
 
 	if version, err = db.GetApplicationVersion(ctx, request.ApplicationVersionID); errors.Is(err, distrerr.ErrNotFound) {
-		return nil, respond.BadRequest("ApplicationVersion does not exist"), nil
+		return nil, respond.BadRequest("application version does not exist"), nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get application version: %w", err)
 	}
@@ -282,7 +282,7 @@ func validateDeploymentRequest(
 		&orgId,
 		auth.CurrentPartnerOrgID(),
 	); errors.Is(err, distrerr.ErrNotFound) {
-		return nil, respond.BadRequest("DeploymentTarget does not exist"), nil
+		return nil, deploymentTargetDoesNotExist, nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get deployment target: %w", err)
 	}
@@ -304,7 +304,7 @@ func validateDeploymentRequest(
 			}
 		}
 		if existingDeployment == nil {
-			return nil, respond.BadRequest("DeploymentTarget doesn't have Deployment with the specified ID"), nil
+			return nil, respond.BadRequest("deployment target has no deployment with the specified ID"), nil
 		}
 	}
 
@@ -504,13 +504,15 @@ func validateDeploymentRequestDeploymentType(
 	return nil
 }
 
+var deploymentTargetDoesNotExist = respond.BadRequest("deployment target does not exist")
+
 func validateDeploymentRequestDeploymentTarget(
 	ctx context.Context,
 	request api.DeploymentRequest,
 	target *types.DeploymentTargetFull,
 ) respond.Responder {
 	if !isDeploymentTargetVisible(ctx, target) {
-		return respond.BadRequest("DeploymentTarget not found")
+		return deploymentTargetDoesNotExist
 	}
 
 	if request.DeploymentID == nil && len(target.Deployments) > 0 {
@@ -582,8 +584,6 @@ func getDeploymentMetrics(r *http.Request) (respond.Responder, error) {
 		return respond.JSON(mapping.DeploymentMetricsToAPI(*metrics)), nil
 	}
 }
-
-var deploymentNotFound = respond.NotFound("deployment not found")
 
 func deploymentMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
 	ctx := r.Context()

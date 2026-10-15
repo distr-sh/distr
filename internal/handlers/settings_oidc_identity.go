@@ -13,8 +13,6 @@ import (
 	"github.com/google/uuid"
 )
 
-var oidcIdentityNotFound = respond.NotFound("identity provider account not found")
-
 func getOIDCIdentitiesHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)

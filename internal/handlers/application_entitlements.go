@@ -322,8 +322,6 @@ func deleteApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-var applicationEntitlementNotFound = respond.NotFound("application entitlement not found")
-
 func applicationEntitlementMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)

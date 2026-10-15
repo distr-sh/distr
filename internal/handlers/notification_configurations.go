@@ -56,8 +56,6 @@ type notificationConfigurationIDRequest struct {
 	ID string `path:"id"`
 }
 
-var updateNotificationConfigurationNotFound = respond.NotFound("update notification configuration not found")
-
 func getUpdateNotificationConfigurationsHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)

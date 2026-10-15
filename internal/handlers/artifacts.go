@@ -220,9 +220,9 @@ func deleteArtifactTagHandler(r *http.Request) (respond.Responder, error) {
 	artifact := internalctx.GetArtifact(ctx)
 
 	if tagName := r.PathValue("tagName"); tagName == "" {
-		return respond.NotFound("artifact tag not found"), nil
+		return artifactTagNotFound, nil
 	} else if err := db.DeleteArtifactTag(ctx, artifact.ID, tagName); errors.Is(err, distrerr.ErrNotFound) {
-		return respond.NotFound("artifact tag not found"), nil
+		return artifactTagNotFound, nil
 	} else if errors.Is(err, distrerr.ErrBadRequest) {
 		return respond.BadRequest(err.Error()), nil
 	} else if errors.Is(err, distrerr.ErrConflict) {
@@ -307,8 +307,6 @@ func patchArtifactHandler(r *http.Request) (respond.Responder, error) {
 		return respond.JSON(mapping.ArtifactToAPI(*result)), nil
 	}
 }
-
-var artifactNotFound = respond.NotFound("artifact not found")
 
 func artifactMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
 	ctx := r.Context()

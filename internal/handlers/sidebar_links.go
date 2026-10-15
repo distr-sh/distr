@@ -64,11 +64,6 @@ func SidebarLinksRouter(r chiopenapi.Router) {
 	})
 }
 
-var (
-	sidebarLinkCustomerNotFound = respond.NotFound("customer not found")
-	sidebarLinkNotFound         = respond.NotFound("sidebar link not found")
-)
-
 func validatePartnerAccessToCustomer(ctx context.Context, customerOrgID uuid.UUID) (bool, error) {
 	a := auth.Authentication.Require(ctx)
 	partnerOrgID := a.CurrentPartnerOrgID()
@@ -87,13 +82,13 @@ func getSidebarLinksHandler(r *http.Request) (respond.Responder, error) {
 	auth := auth.Authentication.Require(ctx)
 
 	if customerOrgID, err := uuid.Parse(r.PathValue("customerOrganizationId")); err != nil {
-		return sidebarLinkCustomerNotFound, nil
+		return customerOrganizationNotFound, nil
 	} else if err := db.ValidateCustomerOrgBelongsToOrg(ctx, customerOrgID, *auth.CurrentOrgID()); err != nil {
-		return sidebarLinkCustomerNotFound, nil
+		return customerOrganizationNotFound, nil
 	} else if ok, err := validatePartnerAccessToCustomer(ctx, customerOrgID); err != nil {
 		return nil, fmt.Errorf("failed to validate partner access: %w", err)
 	} else if !ok {
-		return sidebarLinkCustomerNotFound, nil
+		return customerOrganizationNotFound, nil
 	} else if links, err := db.GetSidebarLinks(ctx, customerOrgID); err != nil {
 		return nil, fmt.Errorf("failed to get sidebar links: %w", err)
 	} else {
@@ -106,13 +101,13 @@ func createSidebarLinkHandler(r *http.Request) (respond.Responder, error) {
 	auth := auth.Authentication.Require(ctx)
 
 	if customerOrgID, err := uuid.Parse(r.PathValue("customerOrganizationId")); err != nil {
-		return sidebarLinkCustomerNotFound, nil
+		return customerOrganizationNotFound, nil
 	} else if err := db.ValidateCustomerOrgBelongsToOrg(ctx, customerOrgID, *auth.CurrentOrgID()); err != nil {
-		return sidebarLinkCustomerNotFound, nil
+		return customerOrganizationNotFound, nil
 	} else if ok, err := validatePartnerAccessToCustomer(ctx, customerOrgID); err != nil {
 		return nil, fmt.Errorf("failed to validate partner access: %w", err)
 	} else if !ok {
-		return sidebarLinkCustomerNotFound, nil
+		return customerOrganizationNotFound, nil
 	} else if body, resp := decodeJSON[api.CreateUpdateSidebarLinkRequest](r); resp != nil {
 		return resp, nil
 	} else if body.Name == "" {
@@ -133,15 +128,15 @@ func updateSidebarLinkHandler(r *http.Request) (respond.Responder, error) {
 	auth := auth.Authentication.Require(ctx)
 
 	if customerOrgID, err := uuid.Parse(r.PathValue("customerOrganizationId")); err != nil {
-		return sidebarLinkCustomerNotFound, nil
+		return customerOrganizationNotFound, nil
 	} else if linkID, err := uuid.Parse(r.PathValue("linkId")); err != nil {
 		return respond.BadRequest("invalid link ID"), nil
 	} else if err := db.ValidateCustomerOrgBelongsToOrg(ctx, customerOrgID, *auth.CurrentOrgID()); err != nil {
-		return sidebarLinkCustomerNotFound, nil
+		return customerOrganizationNotFound, nil
 	} else if ok, err := validatePartnerAccessToCustomer(ctx, customerOrgID); err != nil {
 		return nil, fmt.Errorf("failed to validate partner access: %w", err)
 	} else if !ok {
-		return sidebarLinkCustomerNotFound, nil
+		return customerOrganizationNotFound, nil
 	} else if body, resp := decodeJSON[api.CreateUpdateSidebarLinkRequest](r); resp != nil {
 		return resp, nil
 	} else if body.Name == "" {
@@ -164,15 +159,15 @@ func deleteSidebarLinkHandler(r *http.Request) (respond.Responder, error) {
 	auth := auth.Authentication.Require(ctx)
 
 	if customerOrgID, err := uuid.Parse(r.PathValue("customerOrganizationId")); err != nil {
-		return sidebarLinkCustomerNotFound, nil
+		return customerOrganizationNotFound, nil
 	} else if linkID, err := uuid.Parse(r.PathValue("linkId")); err != nil {
 		return respond.BadRequest("invalid link ID"), nil
 	} else if err := db.ValidateCustomerOrgBelongsToOrg(ctx, customerOrgID, *auth.CurrentOrgID()); err != nil {
-		return sidebarLinkCustomerNotFound, nil
+		return customerOrganizationNotFound, nil
 	} else if ok, err := validatePartnerAccessToCustomer(ctx, customerOrgID); err != nil {
 		return nil, fmt.Errorf("failed to validate partner access: %w", err)
 	} else if !ok {
-		return sidebarLinkCustomerNotFound, nil
+		return customerOrganizationNotFound, nil
 	} else if err := db.DeleteSidebarLink(ctx, linkID, customerOrgID); err != nil {
 		if errors.Is(err, distrerr.ErrNotFound) {
 			return sidebarLinkNotFound, nil

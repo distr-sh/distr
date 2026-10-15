@@ -105,8 +105,6 @@ func AdvisoriesRouter(r chiopenapi.Router) {
 	})
 }
 
-var advisoryNotFound = respond.NotFound("advisory not found")
-
 func getAdvisoriesHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	a := auth.Authentication.Require(ctx)

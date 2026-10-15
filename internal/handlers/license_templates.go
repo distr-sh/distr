@@ -96,8 +96,6 @@ func createLicenseTemplate(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-var licenseTemplateNotFound = respond.NotFound("license template not found")
-
 func updateLicenseTemplate(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	authCtx := auth.Authentication.Require(ctx)

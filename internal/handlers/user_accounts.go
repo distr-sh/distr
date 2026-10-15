@@ -80,8 +80,6 @@ func UserAccountsRouter(r chiopenapi.Router) {
 	})
 }
 
-var userAccountNotFound = respond.NotFound("user not found")
-
 func getUserAccountsHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
@@ -396,7 +394,7 @@ func deleteUserAccountHandler(r *http.Request) (respond.Responder, error) {
 	if resp := checkUserAccountWritability(ctx, *userAccount); resp != nil {
 		return resp, nil
 	} else if userAccount.ID == auth.CurrentUserID() {
-		return respond.Forbidden("UserAccount deleting themselves is not allowed"), nil
+		return respond.Forbidden("deleting your own user account is not allowed"), nil
 	} else if err := db.RunTx(ctx, func(ctx context.Context) error {
 		if err := db.DeleteUserAccountFromOrganization(ctx, userAccount.ID, *auth.CurrentOrgID()); err != nil {
 			if errors.Is(err, distrerr.ErrNotFound) {

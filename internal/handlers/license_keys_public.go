@@ -26,7 +26,7 @@ func PublicLicenseKeysRouter(r chiopenapi.Router) {
 func getLicenseKeyPublicKeyHandler(r *http.Request) (respond.Responder, error) {
 	if pk, err := licensekey.PublicKey(); err != nil {
 		if errors.Is(err, licensekey.ErrNoSigningKey) {
-			return respond.NotFound("public key not found"), nil
+			return licenseKeyPublicKeyNotFound, nil
 		} else {
 			return nil, fmt.Errorf("failed to get public key: %w", err)
 		}

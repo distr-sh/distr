@@ -127,8 +127,6 @@ func createCustomerOrganizationHandler(r *http.Request) (respond.Responder, erro
 	}
 }
 
-var customerOrganizationNotFound = respond.NotFound("customer organization not found")
-
 func updateCustomerOrganizationHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)

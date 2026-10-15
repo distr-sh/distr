@@ -44,8 +44,6 @@ func CustomEmailsRouter(r chiopenapi.Router) {
 	})
 }
 
-var customEmailConfigurationNotFound = respond.NotFound("email configuration not found")
-
 func getCustomEmailConfigurationHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)

@@ -369,8 +369,6 @@ func deleteLicenseKey(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-var licenseKeyNotFound = respond.NotFound("license key not found")
-
 func licenseKeyMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
 	ctx := r.Context()
 	authCtx := auth.Authentication.Require(ctx)

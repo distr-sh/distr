@@ -123,11 +123,6 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 	})
 }
 
-var (
-	supportBundleNotFound       = respond.NotFound("support bundle not found")
-	supportBundleScriptNotFound = respond.NotFound("script not found")
-)
-
 // Configuration handlers
 
 func getSupportBundleConfigurationHandler(r *http.Request) (respond.Responder, error) {

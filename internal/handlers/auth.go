@@ -236,7 +236,7 @@ func authSwitchContextHandler(r *http.Request) (respond.Responder, error) {
 		if user, err := db.GetUserAccountByID(ctx, auth.CurrentUserID()); err != nil {
 			return nil, fmt.Errorf("failed to get user account: %w", err)
 		} else if org, err := db.GetOrganizationByID(ctx, request.OrganizationID); errors.Is(err, distrerr.ErrNotFound) {
-			return respond.NotFound("organization not found"), nil
+			return organizationNotFound, nil
 		} else if err != nil {
 			return nil, fmt.Errorf("failed to get organization: %w", err)
 		} else if _, tokenString, err := authjwt.GenerateDefaultToken(*user, types.OrganizationWithUserRole{

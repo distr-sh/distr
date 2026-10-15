@@ -56,7 +56,6 @@ func SecretsRouter(r chiopenapi.Router) {
 
 var (
 	secretKeyPattern = regexp.MustCompile(`^[a-zA-Z][\w_]*$`)
-	secretNotFound   = respond.NotFound("secret not found")
 	invalidSecretID  = respond.BadRequest("invalid secret ID")
 )
 

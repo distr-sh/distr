@@ -55,8 +55,6 @@ func AlertConfigurationsRouter(r chiopenapi.Router) {
 		})
 }
 
-var alertConfigurationNotFound = respond.NotFound(http.StatusText(http.StatusNotFound))
-
 func getAlertConfigurationsHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)

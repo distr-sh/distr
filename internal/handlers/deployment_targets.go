@@ -278,8 +278,6 @@ func deleteAccessRequestForDeploymentTarget(r *http.Request) (respond.Responder,
 	}
 }
 
-var deploymentTargetNotFound = respond.NotFound("deployment target not found")
-
 func deploymentTargetMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)

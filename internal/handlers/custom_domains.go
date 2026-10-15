@@ -58,8 +58,6 @@ func CustomDomainsRouter(r chiopenapi.Router) {
 	})
 }
 
-var customDomainNotFound = respond.NotFound("custom domain not found")
-
 func getCustomDomainsHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)

@@ -63,8 +63,6 @@ func PublicFileRouter(r chiopenapi.Router) {
 		With(option.Response(http.StatusOK, nil))
 }
 
-var fileNotFound = respond.NotFound("file not found")
-
 func getPublicFileHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 

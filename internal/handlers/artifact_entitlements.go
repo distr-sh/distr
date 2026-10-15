@@ -256,8 +256,6 @@ func deleteArtifactEntitlement(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-var artifactEntitlementNotFound = respond.NotFound("artifact entitlement not found")
-
 func artifactEntitlementMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
 	ctx := r.Context()
 	authCtx := auth.Authentication.Require(ctx)

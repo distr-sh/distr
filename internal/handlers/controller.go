@@ -449,7 +449,7 @@ func controllerPostDeploymentMetricsHandler(r *http.Request) (respond.Responder,
 		dt.Deployments,
 		func(d types.DeploymentWithLatestRevision) bool { return d.ID == deploymentID },
 	) {
-		return respond.NotFound(http.StatusText(http.StatusNotFound)), nil
+		return deploymentNotFound, nil
 	} else if body, resp := decodeJSON[api.ControllerDeploymentResourceMetricsRequest](r); resp != nil {
 		return resp, nil
 	} else {

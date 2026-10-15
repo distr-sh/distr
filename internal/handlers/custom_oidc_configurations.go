@@ -56,8 +56,6 @@ func CustomOIDCConfigurationsRouter(r chiopenapi.Router) {
 	})
 }
 
-var customOIDCConfigurationNotFound = respond.NotFound("OIDC provider not found")
-
 func getCustomOIDCConfigurationsHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
