@@ -1,3 +1,41 @@
+# The default target packages the binary and SBOM files CI built into dist/. The local target builds the Community
+# Edition from source with nothing but Docker, see hack/build-ce-image.sh.
+
+FROM node:26-alpine AS local-frontend
+WORKDIR /src
+RUN npm install --global pnpm@12.11.2
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY sdk/js/package.json sdk/js/package.json
+COPY sdk/js/src sdk/js/src
+RUN pnpm install --frozen-lockfile
+COPY angular.json tsconfig.json .postcssrc.json CHANGELOG.md ./
+COPY hack/update-frontend-version.js hack/controller-changelog.mjs hack/
+COPY frontend frontend
+ARG VERSION=snapshot
+ARG COMMIT=unknown
+RUN VERSION="$VERSION" COMMIT="$COMMIT" pnpm build:community
+
+FROM golang:1.27.2-alpine AS local-backend
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY api api
+COPY cmd cmd
+COPY internal internal
+COPY --from=local-frontend /src/internal/frontend/dist internal/frontend/dist
+ARG VERSION=snapshot
+ARG COMMIT=unknown
+RUN CGO_ENABLED=0 go build -o /out/distr -ldflags="-s -w \
+  -X github.com/distr-sh/distr/internal/buildconfig.version=$VERSION \
+  -X github.com/distr-sh/distr/internal/buildconfig.commit=$COMMIT \
+  -X github.com/distr-sh/distr/internal/buildconfig.edition=community" ./cmd/distr
+
+FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab AS local
+COPY --from=local-backend /out/distr /distr
+USER 65532:65532
+ENTRYPOINT ["/distr"]
+CMD ["serve"]
+
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
