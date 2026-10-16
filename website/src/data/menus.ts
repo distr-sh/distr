@@ -42,6 +42,13 @@ export const docsMenu: MenuItem[] = [
     href: '/docs/integrations/',
   },
   {
+    title: 'Guides',
+    description:
+      'Step-by-step guides for deploying your application onto platforms like Amazon ECS',
+    value: 'map',
+    href: '/docs/guides/',
+  },
+  {
     title: 'Self-Hosting',
     description:
       'Deploy and manage your own Distr instance on Kubernetes or Docker',
