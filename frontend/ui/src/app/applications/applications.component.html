@@ -28,7 +28,7 @@
       </thead>
       <tbody>
         @for (application of applications$ | async; track application.id) {
-          <tr [routerLink]="['/', 'applications', application.id]" class="distr-table-row cursor-pointer">
+          <tr class="distr-table-row relative">
             <td class="distr-table-cell">
               <div class="flex flex-wrap items-center gap-2">
                 <div class="flex items-center">
@@ -36,9 +36,11 @@
                     class="size-8 mr-3 shrink-0"
                     [imageUrl]="application.imageUrl"
                     [type]="application.type" />
-                  <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
+                  <a
+                    [routerLink]="['/', 'applications', application.id]"
+                    class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis after:absolute after:inset-0 focus:outline-none focus-visible:after:rounded-lg focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-[Highlight] focus-visible:after:[outline-color:-webkit-focus-ring-color]!">
                     {{ application.name }}
-                  </span>
+                  </a>
                 </div>
                 <span class="distr-badge capitalize">{{ application.type }}</span>
                 @if (isAutoUpdatesEnabled() && application.allowAutomaticUpdates) {

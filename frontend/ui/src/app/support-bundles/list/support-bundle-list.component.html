@@ -58,7 +58,7 @@
             </thead>
             <tbody>
               @for (bundle of filteredBundles(); track bundle.id) {
-                <tr [routerLink]="routePrefix + '/' + bundle.id" class="distr-table-row cursor-pointer">
+                <tr [appRowLink]="routePrefix + '/' + bundle.id" class="distr-table-row">
                   <td class="distr-table-cell">
                     {{ bundle.title || bundle.id.substring(0, 8) }}
                   </td>
@@ -79,7 +79,7 @@
                       @if (bundle.resourceCount > 0) {
                         <button
                           type="button"
-                          (click)="downloadResources(bundle, $event)"
+                          (click)="downloadResources(bundle)"
                           [disabled]="downloadingBundleId() !== null"
                           title="Download resources"
                           class="py-2 px-3 text-sm distr-btn-secondary">
@@ -90,7 +90,7 @@
                       @if (auth.hasAnyRole('read_write', 'admin')) {
                         <button
                           type="button"
-                          (click)="deleteBundle(bundle, $event)"
+                          (click)="deleteBundle(bundle)"
                           [disabled]="deletingBundleId() !== null"
                           title="Delete support bundle"
                           class="py-2 px-3 distr-btn-danger">
