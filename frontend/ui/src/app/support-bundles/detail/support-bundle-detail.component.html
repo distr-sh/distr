@@ -9,7 +9,7 @@
             <fa-icon [icon]="faArrowLeft" />
           </a>
           <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
-            {{ bundle.title || 'Support Bundle ' + shortId(bundle.id) }}
+            {{ title() }}
           </h1>
           <app-support-bundle-status-badge class="ml-3" [status]="bundle.status" />
         </div>
@@ -104,26 +104,18 @@
       } @else {
         <div class="space-y-3">
           @for (resource of bundle.resources; track resource.id) {
-            <div class="border border-gray-200 dark:border-gray-700 rounded-lg">
-              <button
-                type="button"
-                (click)="toggleResource(resource.id)"
-                class="flex items-center justify-between w-full p-4 text-left text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
-                [class.rounded-lg]="!isResourceExpanded(resource.id)"
-                [class.rounded-t-lg]="isResourceExpanded(resource.id)">
+            <details class="group border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+              <summary
+                class="flex items-center justify-between w-full p-4 cursor-pointer list-none [&::-webkit-details-marker]:hidden text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700">
                 <span>{{ resource.name }}</span>
                 <fa-icon
-                  [icon]="isResourceExpanded(resource.id) ? faChevronDown : faChevronRight"
-                  class="text-gray-500 dark:text-gray-400" />
-              </button>
-              @if (isResourceExpanded(resource.id)) {
-                <div class="border-t border-gray-200 dark:border-gray-700 p-4">
-                  <pre
-                    class="text-xs text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-900 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap break-words"
-                    >{{ resource.content }}</pre>
-                </div>
-              }
-            </div>
+                  [icon]="faChevronRight"
+                  class="text-gray-500 dark:text-gray-400 transition-transform group-open:rotate-90" />
+              </summary>
+              <pre
+                class="text-xs text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-4 overflow-x-auto whitespace-pre-wrap break-words"
+                >{{ resource.content }}</pre>
+            </details>
           }
         </div>
       }
