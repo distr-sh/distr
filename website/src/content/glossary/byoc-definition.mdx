@@ -184,8 +184,7 @@ Software vendors that implement BYOC distribution usually need to build:
 
 Building BYOC infrastructure from scratch is a significant engineering project. [Software distribution platforms](/glossary/software-distribution-platform/) like Distr provide the building blocks out of the box:
 
-- **Cloud account connectors.** Simple setup to connect customer AWS, Azure, or GCP accounts.
-- **Infrastructure provisioning.** Automatic resource spin-up using Terraform and CloudFormation in customer VPCs.
+- **Infrastructure provisioning.** [Infrastructure controllers](/docs/controllers/infrastructure-controllers/) that apply your OpenTofu or Terraform configuration in the customer's AWS, Azure or GCP account and keep it reconciled.
 - **Application deployment.** Automated installation and configuration in customer [Kubernetes](/glossary/kubernetes/) clusters or VMs.
 - **Update management.** Push updates to customer environments with approval workflows and automated rollback on failure.
 - **Health monitoring.** Continuous healthchecks and telemetry collection without accessing customer data.

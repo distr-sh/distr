@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	. "github.com/onsi/gomega"
@@ -46,7 +45,7 @@ func TestResolveLogQueryStart(t *testing.T) {
 		g := NewWithT(t)
 		requested := time.Now().Add(-subscription.LogQueryWindowCommunity - 25*time.Hour)
 		_, err := resolveLogQueryStart(types.SubscriptionTypeCommunity, requested)
-		g.Expect(err).To(MatchError(apierrors.ErrBadRequest))
+		g.Expect(err).To(MatchError(ContainSubstring("after must not be older than")))
 	})
 
 	t.Run("pro subscriptions get the larger default window", func(t *testing.T) {
@@ -66,7 +65,7 @@ func TestResolveLogQueryStart(t *testing.T) {
 
 		tooOld := time.Now().Add(-subscription.LogQueryWindowBusiness - 25*time.Hour)
 		_, err = resolveLogQueryStart(types.SubscriptionTypeBusiness, tooOld)
-		g.Expect(err).To(MatchError(apierrors.ErrBadRequest))
+		g.Expect(err).To(MatchError(ContainSubstring("after must not be older than")))
 	})
 }
 
@@ -130,6 +129,6 @@ func TestParseLogQueryRange(t *testing.T) {
 		tooOld := time.Now().Add(-subscription.LogQueryWindowCommunity - 25*time.Hour)
 		_, err := parseLogQueryRange(logQueryRequest(url.Values{"after": {tooOld.Format(time.RFC3339Nano)}}),
 			types.SubscriptionTypeCommunity)
-		g.Expect(err).To(MatchError(apierrors.ErrBadRequest))
+		g.Expect(err).To(MatchError(ContainSubstring("after must not be older than")))
 	})
 }

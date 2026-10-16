@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"net/mail"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/go-mailx/mailx"
@@ -73,7 +73,7 @@ func FromAddressOrDefault(
 // A disabled configuration is reported as none, so that callers fall back to the instance mailer.
 func configuration(ctx context.Context, orgID uuid.UUID) (*types.CustomEmailConfiguration, error) {
 	config, err := db.GetCustomEmailConfiguration(ctx, orgID)
-	if errors.Is(err, apierrors.ErrNotFound) {
+	if errors.Is(err, distrerr.ErrNotFound) {
 		return nil, nil
 	} else if err != nil {
 		return nil, err

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
@@ -58,7 +58,7 @@ func TestFakeQueryDeploymentLogRecordsInvalidFilter(t *testing.T) {
 	g := NewWithT(t)
 	fake := NewFake()
 	_, err := util.SeqCollect(fake.QueryDeploymentLogRecords(t.Context(), testOrgID, DeploymentLogQuery{Filter: "["}))
-	g.Expect(err).To(MatchError(apierrors.ErrBadRequest))
+	g.Expect(err).To(MatchError(distrerr.ErrBadRequest))
 }
 
 func TestFakeGetDeploymentLogRecordResources(t *testing.T) {

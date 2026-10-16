@@ -2,27 +2,26 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 func PartnerOrganizationsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Partners"))
 	r.With(middleware.RequireVendor, middleware.RequireOrgAndRole).Group(func(r chiopenapi.Router) {
-		r.Get("/", getPartnerOrganizationsHandler()).
+		r.Get("/", respond.Handler(getPartnerOrganizationsHandler)).
 			With(option.Description("List all partner organizations")).
 			With(option.Response(http.StatusOK, []api.PartnerOrganizationWithUsage{}))
 
@@ -32,129 +31,100 @@ func PartnerOrganizationsRouter(r chiopenapi.Router) {
 			}
 
 			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
-				r.Put("/", updatePartnerOrganizationHandler()).
+				r.Put("/", respond.Handler(updatePartnerOrganizationHandler)).
 					With(option.Description("Update a partner organization")).
 					With(option.Request(struct {
 						PartnerOrganizationIDRequest
 						api.CreateUpdatePartnerOrganizationRequest
 					}{})).
 					With(option.Response(http.StatusOK, api.PartnerOrganization{}))
-				r.Delete("/", deletePartnerOrganizationHandler()).
+				r.Delete("/", respond.Handler(deletePartnerOrganizationHandler)).
 					With(option.Description("Delete a partner organization")).
 					With(option.Request(PartnerOrganizationIDRequest{}))
 			})
 		})
 
 		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
-			Post("/", createPartnerOrganizationHandler()).
+			Post("/", respond.Handler(createPartnerOrganizationHandler)).
 			With(option.Description("Create a new partner organization")).
 			With(option.Request(api.CreateUpdatePartnerOrganizationRequest{})).
 			With(option.Response(http.StatusOK, api.PartnerOrganization{}))
 	})
 }
 
-func getPartnerOrganizationsHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
-		partnerOrgs, err := db.GetPartnerOrganizationsByOrganizationID(ctx, *auth.CurrentOrgID())
-		if err != nil {
-			log.Error("failed to get partner orgs", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		RespondJSON(w, mapping.List(partnerOrgs, mapping.PartnerOrganizationWithUsageToAPI))
+func getPartnerOrganizationsHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	if partnerOrgs, err := db.GetPartnerOrganizationsByOrganizationID(ctx, *auth.CurrentOrgID()); err != nil {
+		return nil, fmt.Errorf("failed to get partner orgs: %w", err)
+	} else {
+		return respond.JSON(mapping.List(partnerOrgs, mapping.PartnerOrganizationWithUsageToAPI)), nil
 	}
 }
 
-func createPartnerOrganizationHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
-		request, err := JsonBody[api.CreateUpdatePartnerOrganizationRequest](w, r)
-		if err != nil {
-			return
-		} else if err := request.Validate(); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
+func createPartnerOrganizationHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
 
+	if request, resp := decodeJSON[api.CreateUpdatePartnerOrganizationRequest](r); resp != nil {
+		return resp, nil
+	} else if err := request.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else {
 		partnerOrg := types.PartnerOrganization{
 			OrganizationID: *auth.CurrentOrgID(),
 			Name:           request.Name,
 		}
 		if err := db.CreatePartnerOrganization(ctx, &partnerOrg); err != nil {
-			log.Error("failed to create partner org", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return nil, fmt.Errorf("failed to create partner org: %w", err)
+		} else {
+			return respond.JSON(mapping.PartnerOrganizationToAPI(partnerOrg)), nil
 		}
-		RespondJSON(w, mapping.PartnerOrganizationToAPI(partnerOrg))
 	}
 }
 
-func updatePartnerOrganizationHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := uuid.Parse(r.PathValue("partnerOrganizationId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
+func updatePartnerOrganizationHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
 
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
-		request, err := JsonBody[api.CreateUpdatePartnerOrganizationRequest](w, r)
-		if err != nil {
-			return
-		} else if err := request.Validate(); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
+	if id, err := uuid.Parse(r.PathValue("partnerOrganizationId")); err != nil {
+		return partnerOrganizationNotFound, nil
+	} else if request, resp := decodeJSON[api.CreateUpdatePartnerOrganizationRequest](r); resp != nil {
+		return resp, nil
+	} else if err := request.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else {
 		partnerOrg := types.PartnerOrganization{
 			ID:             id,
 			OrganizationID: *auth.CurrentOrgID(),
 			Name:           request.Name,
 		}
-		if err := db.UpdatePartnerOrganization(ctx, &partnerOrg); errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
+		if err := db.UpdatePartnerOrganization(ctx, &partnerOrg); errors.Is(err, distrerr.ErrNotFound) {
+			return partnerOrganizationNotFound, nil
 		} else if err != nil {
-			log.Error("failed to update partner org", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return nil, fmt.Errorf("failed to update partner org: %w", err)
 		} else {
-			RespondJSON(w, mapping.PartnerOrganizationToAPI(partnerOrg))
+			return respond.JSON(mapping.PartnerOrganizationToAPI(partnerOrg)), nil
 		}
 	}
 }
 
 //nolint:dupl
-func deletePartnerOrganizationHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := uuid.Parse(r.PathValue("partnerOrganizationId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
+func deletePartnerOrganizationHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
 
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
-
-		if err := db.DeletePartnerOrganizationWithID(ctx, id, *auth.CurrentOrgID()); errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
-		} else if errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, "partner organization is not empty", http.StatusConflict)
-		} else if err != nil {
-			log.Error("failed to delete partner org", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			w.WriteHeader(http.StatusNoContent)
-		}
+	if id, err := uuid.Parse(r.PathValue("partnerOrganizationId")); err != nil {
+		return partnerOrganizationNotFound, nil
+	} else if err := db.DeletePartnerOrganizationWithID(
+		ctx, id, *auth.CurrentOrgID(),
+	); errors.Is(err, distrerr.ErrNotFound) {
+		return partnerOrganizationNotFound, nil
+	} else if errors.Is(err, distrerr.ErrConflict) {
+		return respond.Conflict("partner organization is not empty"), nil
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to delete partner org: %w", err)
+	} else {
+		return respond.NoContent(), nil
 	}
 }

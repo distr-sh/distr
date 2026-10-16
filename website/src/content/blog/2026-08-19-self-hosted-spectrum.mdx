@@ -54,7 +54,7 @@ On one end, you still run the product for the customer, just inside their cloud 
 1. **Control plane** stays with you: console, releases, config, fleet view, entitlements, sometimes billing.
 2. **Data plane** lands in the customer’s cloud: the real workloads and the data.
 3. The customer grants **scoped access**, usually by accepting a bootstrap stack into their account (CloudFormation, Terraform or equivalent), not by handing over a root user. That creates a management role or trust your controllers can assume.
-4. From there you (or an **agent / management VM** running with those permissions inside the customer org) **provision** what the product needs: VPC pieces or attachment to an existing network, subnets, storage, a Kubernetes cluster or VMs, IAM roles for the app, object storage buckets, then the application itself. In some setups that agent is literally a VM you land first; it then spins up the rest of the stack.
+4. From there you (or a **controller / management VM** running with those permissions inside the customer org) **provision** what the product needs: VPC pieces or attachment to an existing network, subnets, storage, a Kubernetes cluster or VMs, IAM roles for the app, object storage buckets, then the application itself. In some setups that controller is literally a VM you land first; it then spins up the rest of the stack. Distr's [infrastructure controllers](/docs/controllers/infrastructure-controllers/) do this with OpenTofu.
 5. After bootstrap, day-2 ops run over a **constrained channel**. Egress-only from the customer environment is common. Broad standing inbound access is what security teams fight and what mature BYOC designs avoid.
 
 <ThemedImage
