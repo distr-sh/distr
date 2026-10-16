@@ -5,23 +5,20 @@ description: 'Discover what SBOMs are, their importance, and their role in softw
 lastUpdated: 2026-07-23
 ---
 
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import sbomContentsLight from '~/assets/glossary/sbom-software-bill-of-materials/sbom-contents-light.webp';
+import sbomContentsDark from '~/assets/glossary/sbom-software-bill-of-materials/sbom-contents-dark.webp';
+
 ## What is an SBOM?
 
 A Software Bill of Materials (SBOM) is a detailed, machine-readable list of all software components and dependencies within an application. Much like an ingredient list on food packaging, an SBOM provides transparency into the software's composition, including open source libraries, frameworks, and other dependencies, along with their version and licensing information.
 
-```mermaid
-graph TD
-    A[Application] --> B[SBOM]
-    B --> C[Direct Dependencies]
-    B --> D[Metadata]
-    B --> E[Licensing Info]
-    B --> F[Version Info]
-    C --> G[Dependency 1 v1.2.3]
-    C --> H[Dependency 2 v2.0.1]
-    G --> I[Transitive Dependencies]
-    I --> J[Sub-Dependency A v0.9.5]
-    I --> K[Sub-Dependency B v1.5.0]
-```
+<ThemedImage
+  lightSrc={sbomContentsLight}
+  darkSrc={sbomContentsDark}
+  alt="What an SBOM contains: metadata, licensing, version information, and direct and transitive dependencies"
+  dropShadow={false}
+/>
 
 The diagram above illustrates how an SBOM provides a comprehensive inventory of all software components, including direct and transitive dependencies, along with essential metadata.
 

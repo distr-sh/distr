@@ -27,7 +27,7 @@ Distr provides two deployment controllers:
 - **[Docker Controller](/docs/controllers/docker-controller/)**: manages Docker Compose deployments on any Linux host. Handles updates, environment variables, container health, and supports Docker Swarm mode.
 - **[Kubernetes Controller](/docs/controllers/kubernetes-controller/)**: manages Helm chart deployments in Kubernetes clusters. Supports cluster- and namespace-scoped permissions, value overrides, and migration of existing releases.
 
-[BYOC](/docs/use-cases/byoc-bring-your-own-cloud/) does not need a third controller type. You ship the infrastructure as an ordinary Compose application, and the Docker controller deploys it onto a management VM in the customer's cloud account.
+For [BYOC](/docs/use-cases/byoc-bring-your-own-cloud/) and other Terraform use cases, the [infrastructure controllers](/docs/controllers/infrastructure-controllers/) provision the infrastructure your application runs on. They are not a third deployment target type: you release one as a regular Distr application, and the Docker or Kubernetes controller deploys it.
 
 <Aside>
   We are also working on a read-only version of the Distr controller that will

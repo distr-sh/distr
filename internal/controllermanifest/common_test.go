@@ -52,10 +52,12 @@ func TestCurrentKubernetesManifestKeepsAgentNamesOfLegacyTargets(t *testing.T) {
 	} {
 		legacy := renderKubernetesManifest(g, true, scope)
 		g.Expect(legacy).To(ContainSubstring("name: distr-agent\n"))
+		g.Expect(legacy).To(ContainSubstring(`DISTR_CONTROLLER_NAME: "agent"`))
 		g.Expect(legacy).NotTo(ContainSubstring("distr-controller"))
 
 		current := renderKubernetesManifest(g, false, scope)
 		g.Expect(current).To(ContainSubstring("name: distr-controller\n"))
+		g.Expect(current).To(ContainSubstring(`DISTR_CONTROLLER_NAME: "controller"`))
 		g.Expect(current).NotTo(ContainSubstring("distr-agent"))
 	}
 }
