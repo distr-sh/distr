@@ -16,7 +16,7 @@ import (
 )
 
 //go:embed sql/*
-var fs embed.FS
+var FS embed.FS
 
 type Logger struct {
 	*zap.SugaredLogger
@@ -89,7 +89,7 @@ func Migrate(log *zap.Logger, to uint) (err error) {
 func getInstance(db *sql.DB, log *zap.Logger) (*migrate.Migrate, error) {
 	if driver, err := postgres.WithInstance(db, &postgres.Config{}); err != nil {
 		return nil, err
-	} else if sourceInstance, err := iofs.New(fs, "sql"); err != nil {
+	} else if sourceInstance, err := iofs.New(FS, "sql"); err != nil {
 		return nil, err
 	} else if instance, err := migrate.NewWithInstance("", sourceInstance, "distr", driver); err != nil {
 		return nil, err

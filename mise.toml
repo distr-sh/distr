@@ -120,6 +120,16 @@ run = 'go test ./...'
 depends = ["go-tidy"]
 description = 'Run all Go tests'
 
+[tasks."test:integration"]
+# Arguments after `--` are appended to the last line, which therefore has to stay `go test`.
+run = '''
+trap 'docker compose rm --stop --force postgres-test' EXIT
+docker compose up -d --wait postgres-test
+go test ./internal/apitest/...
+'''
+env = { TEST_DATABASE_URL = 'postgres://test:test@localhost:5433/distr?sslmode=disable' }
+description = 'Run the API integration tests against a throwaway Postgres'
+
 [tasks."test:frontend"]
 run = 'pnpm test'
 depends = ["build:sdk"]

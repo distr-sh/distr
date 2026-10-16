@@ -158,9 +158,20 @@ func NewDefault(
 		seekbuf.SetDefault(&seekbuf.FileBufferFactory{Dir: *dir})
 	}
 
+	return NewWithBlobHandler(logger, pool, mailer, tracer, blobHandler), nil
+}
+
+// NewWithBlobHandler is [NewDefault] with the blobs stored in blobHandler instead of S3.
+func NewWithBlobHandler(
+	logger *zap.Logger,
+	pool *pgxpool.Pool,
+	mailer *mailx.Mailer,
+	tracer trace.TracerProvider,
+	blobHandler blob.BlobHandler,
+) http.Handler {
 	useRegistryErrorFormat()
 
-	reg := New(
+	return New(
 		WithLogger(logger),
 		WithBlobHandler(blobHandler),
 		WithManifestHandler(db.NewManifestHandler()),
@@ -195,8 +206,6 @@ func NewDefault(
 			),
 		),
 	)
-
-	return reg, nil
 }
 
 // Option describes the available options
