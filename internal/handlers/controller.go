@@ -120,7 +120,9 @@ func preConnectHandler(r *http.Request) (respond.Responder, error) {
 
 	if org, err := db.GetOrganizationWithBranding(ctx, deploymentTarget.OrganizationID); err != nil {
 		return nil, fmt.Errorf("could not get organization for deployment target: %w", err)
-	} else if script, err := controllerconnect.GenerateConnectScript(ctx, deploymentTarget.DeploymentTarget, *org, secret); err != nil {
+	} else if script, err := controllerconnect.GenerateConnectScript(
+		ctx, deploymentTarget.DeploymentTarget, *org, secret,
+	); err != nil {
 		return nil, fmt.Errorf("could not generate connect script: %w", err)
 	} else {
 		return respond.Stream("text/plain; charset=utf-8", strings.NewReader(script)), nil

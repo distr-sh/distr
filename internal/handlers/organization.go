@@ -130,9 +130,7 @@ func createOrganization(r *http.Request) (respond.Responder, error) {
 	} else if reached {
 		return respond.BadRequest(subscription.GlobalOrganizationLimitReachedMessage), nil
 	} else {
-		
-
-	organization := types.Organization{
+		organization := types.Organization{
 			Name:                        body.Name,
 			Slug:                        body.Slug,
 			DockerPreConnectScript:      body.DockerPreConnectScript,
@@ -179,9 +177,7 @@ func applyOrganizationUpdate(
 	org *types.Organization,
 	request api.CreateUpdateOrganizationRequest,
 ) error {
-	
-
-		needsUpdate := false
+	needsUpdate := false
 
 	if org.Name != request.Name {
 		org.Name = request.Name
