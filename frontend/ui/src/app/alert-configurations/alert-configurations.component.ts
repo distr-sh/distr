@@ -98,7 +98,7 @@ export class AlertConfigurationsComponent {
   private readonly editConfigDrawerTpl = viewChild.required<TemplateRef<unknown>>('editConfigDrawer');
   private editConfigDrawerRef?: DialogRef;
 
-  private readonly togglingConfigId = signal<string | undefined>(undefined);
+  private readonly togglingConfigIds = new Set<string>();
 
   /** scope is the customer whose users and deployments a configuration of this page reaches. */
   private readonly scope = computed(() => this.customerOrganizationId() ?? this.auth.getClaims()?.c_org);
@@ -240,11 +240,11 @@ export class AlertConfigurationsComponent {
   }
 
   protected async toggleConfigEnabled(config: AlertConfiguration, toggle: HTMLInputElement, event: Event) {
-    if (this.togglingConfigId() === config.id) {
+    if (this.togglingConfigIds.has(config.id)) {
       event.preventDefault();
       return;
     }
-    this.togglingConfigId.set(config.id);
+    this.togglingConfigIds.add(config.id);
     try {
       const request = {...config, enabled: !config.enabled, customerOrganizationId: this.customerOrganizationId()};
       await firstValueFrom(this.svc.update(config.id, request));
@@ -257,7 +257,7 @@ export class AlertConfigurationsComponent {
         this.toast.error(msg);
       }
     } finally {
-      this.togglingConfigId.set(undefined);
+      this.togglingConfigIds.delete(config.id);
     }
   }
 

@@ -205,7 +205,7 @@ export class UpdateNotificationsComponent {
   });
 
   protected readonly editFormLoading = signal(false);
-  private readonly togglingConfigId = signal<string | undefined>(undefined);
+  private readonly togglingConfigIds = new Set<string>();
 
   protected readonly editConfigForm = this.fb.group(
     {
@@ -353,11 +353,11 @@ export class UpdateNotificationsComponent {
   }
 
   protected async toggleConfigEnabled(config: UpdateNotificationConfiguration, toggle: HTMLInputElement, event: Event) {
-    if (this.togglingConfigId() === config.id) {
+    if (this.togglingConfigIds.has(config.id)) {
       event.preventDefault();
       return;
     }
-    this.togglingConfigId.set(config.id);
+    this.togglingConfigIds.add(config.id);
     try {
       const enabled = !config.enabled;
       await firstValueFrom(
@@ -379,7 +379,7 @@ export class UpdateNotificationsComponent {
         this.toast.error(msg);
       }
     } finally {
-      this.togglingConfigId.set(undefined);
+      this.togglingConfigIds.delete(config.id);
     }
   }
 
