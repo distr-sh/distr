@@ -1,42 +1,38 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
-	"github.com/getsentry/sentry-go"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 func NotificationRecordsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Notifications"))
 
-	r.Use(middleware.ProFeature)
+	r.Use(middleware.ProFeature, middleware.NotificationHistoryCustomerFeatureMiddleware)
 
-	r.Get("/", getNotificationRecordsHandler()).
-		With(option.Response(http.StatusOK, []api.NotificationRecordWithCurrentStatus{}))
+	r.Get("/", respond.Handler(getNotificationRecordsHandler)).
+		With(option.Request(customerScopeQuery{})).
+		With(option.Response(http.StatusOK, []api.NotificationRecord{}))
 }
 
-func getNotificationRecordsHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		auth := auth.Authentication.Require(ctx)
+func getNotificationRecordsHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
 
-		records, err := db.GetNotificationRecords(ctx, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID())
-		if err != nil {
-			internalctx.GetLogger(ctx).Error("failed to get notification records", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		RespondJSON(w, mapping.List(records, mapping.NotificationRecordWithCurrentStatusToAPI))
+	if customerOrgID, resp, err := customerScopeFromQuery(r); resp != nil || err != nil {
+		return resp, err
+	} else if records, err := db.GetNotificationRecords(ctx, *auth.CurrentOrgID(), customerOrgID); err != nil {
+		return nil, fmt.Errorf("failed to get notification records: %w", err)
+	} else {
+		return respond.JSON(mapping.List(records, mapping.NotificationRecordWithDetailsToAPI)), nil
 	}
 }

@@ -43,38 +43,35 @@ const useThemedLogo = logoLight && logoDark;
     <div class="lg:col-span-2 space-y-6">
       <!-- Header with Logo and Info -->
       <div class="flex flex-col md:flex-row gap-6 md:gap-12 mb-8">
-        {
-          useThemedLogo ? (
-            <>
-              <Image
-                src={logoLight}
-                alt={`${company} Logo`}
-                class="h-24 w-auto rounded-xl object-contain dark:hidden"
-                width={200}
-                height={96}
-              />
-              <Image
-                src={logoDark}
-                alt={`${company} Logo`}
-                class="h-24 w-auto rounded-xl object-contain hidden dark:block"
-                width={200}
-                height={96}
-              />
-            </>
-          ) : (
+        {useThemedLogo ? (
+          <>
             <Image
-              src={logo}
+              src={logoLight}
               alt={`${company} Logo`}
-              class="h-24 w-auto rounded-xl object-contain"
+              class="h-24 w-auto rounded-xl object-contain dark:hidden"
               width={200}
               height={96}
             />
-          )
-        }
+            <Image
+              src={logoDark}
+              alt={`${company} Logo`}
+              class="h-24 w-auto rounded-xl object-contain hidden dark:block"
+              width={200}
+              height={96}
+            />
+          </>
+        ) : (
+          <Image
+            src={logo}
+            alt={`${company} Logo`}
+            class="h-24 w-auto rounded-xl object-contain"
+            width={200}
+            height={96}
+          />
+        )}
         <div class="flex flex-col gap-2">
           <div class="text-center md:text-left">
-            <div
-              class="text-sm font-semibold text-[#00b5eb] uppercase tracking-wide">
+            <div class="text-sm font-semibold text-[#00b5eb] uppercase tracking-wide">
               Industry:
             </div>
             <div class="text-base font-medium text-gray-900 dark:text-white">
@@ -82,8 +79,7 @@ const useThemedLogo = logoLight && logoDark;
             </div>
           </div>
           <div class="text-center md:text-left">
-            <div
-              class="text-sm font-semibold text-[#00b5eb] uppercase tracking-wide">
+            <div class="text-sm font-semibold text-[#00b5eb] uppercase tracking-wide">
               Use Case:
             </div>
             <div class="text-base font-medium text-gray-900 dark:text-white">
@@ -94,25 +90,21 @@ const useThemedLogo = logoLight && logoDark;
       </div>
 
       <!-- Case study narrative (rendered from the customer markdown body) -->
-      <div
-        class="text-base leading-relaxed text-gray-700 dark:text-gray-300 [&>h2:first-child]:mt-0 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-[#00b5eb] [&_h2]:uppercase [&_h2]:tracking-wide [&_h2]:mt-8 [&_h2]:mb-3 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:list-inside [&_ul]:space-y-1 [&_ul]:mb-4 [&_a]:text-[#00b5eb] [&_a]:underline">
+      <div class="text-base leading-relaxed text-gray-700 dark:text-gray-300 [&>h2:first-child]:mt-0 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-[#00b5eb] [&_h2]:uppercase [&_h2]:tracking-wide [&_h2]:mt-8 [&_h2]:mb-3 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:list-inside [&_ul]:space-y-1 [&_ul]:mb-4 [&_a]:text-[#00b5eb] [&_a]:underline">
         <slot />
       </div>
     </div>
 
     <!-- Sidebar (1/3) -->
     <div class="lg:col-span-1">
-      <div
-        class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 sticky top-24 space-y-6">
+      <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 sticky top-24 space-y-6">
         <!-- Quote -->
-        <blockquote
-          class="text-base md:text-lg leading-relaxed italic font-medium text-gray-700 dark:text-gray-300 mb-6">
+        <blockquote class="text-base md:text-lg leading-relaxed italic font-medium text-gray-700 dark:text-gray-300 mb-6">
           "{quote}"
         </blockquote>
 
         <!-- Person Info -->
-        <div
-          class="flex items-center gap-4 pb-6 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex items-center gap-4 pb-6 border-b border-gray-200 dark:border-gray-700">
           <Image
             src={person.image}
             alt={person.name}

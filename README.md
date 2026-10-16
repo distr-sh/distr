@@ -28,13 +28,14 @@ Distr is the open-source platform to ship self-hosted software. Start simple, sc
 
 ## Main features
 
-- **Deployment agents:** Prebuilt Docker Compose, Docker Swarm, and Helm agents install and update your application in customer environments and report status, logs, and metrics back.
+- **Deployment controllers:** Prebuilt Docker Compose, Docker Swarm and Helm controllers install and update your application in customer environments and report status, logs and metrics back.
+- **Infrastructure controllers:** The [OpenTofu controller](https://github.com/distr-sh/distr-infrastructure-controllers) provisions and reconciles the cloud infrastructure of BYOC and other Terraform installations, deployed as a regular Distr application.
 - **OCI registry:** Distribute Docker images, Helm charts, Zarf packages, and any OCI artifact, with per-customer tag access control, pull-through caching, and download analytics.
 - **Licensing:** Application and artifact entitlements per customer, plus signed JWT license keys your application verifies offline with no call back to Distr.
-- **Remote diagnostics:** Container logs, live metrics, deployment status history, alerts, and customer-initiated support bundles, without access to their infrastructure.
+- **Remote diagnostics:** Container logs, live metrics, deployment status, alerts, and customer-initiated support bundles, without access to their infrastructure.
 - **Customer portal:** White-labeled install instructions, artifact downloads, credentials, and version control per customer organization.
 - **Air-gapped:** Build a Zarf package in CI, publish it to Distr, transfer it across the gap, deploy offline.
-- **Self-hostable:** Apache-2.0. One Go binary plus Postgres, object storage, and Loki. Paid plans run self-hosted too.
+- **Self-hostable:** Apache-2.0. One Go binary plus Postgres 18+, object storage, and Loki. Paid plans run self-hosted too.
 - Automate everything through the [REST API](#distr-api) and the [SDK](#distr-sdk).
 
 Community Edition is free and Apache-2.0. Paid plans start at $80/month on Distr Cloud, or fully self-hosted with a license key. See https://distr.sh/pricing/.
@@ -48,7 +49,7 @@ Shipping into customer-controlled environments starts with a Helm chart or a Com
 **Use cases include:**
 
 - On-premises, VPC and self-hosted software deployments
-- Bring Your Own Cloud (BYOC) automation
+- Bring Your Own Cloud (BYOC) and Terraform infrastructure provisioning
 - Edge & Fleet management
 
 Read more about Distr and its core concepts at https://distr.sh/docs/core-concepts/
@@ -71,14 +72,14 @@ architecture-beta
     junction customerjunction
 
     distr:R <-- L:customerjunction
-    customerjunction:T -- B:agent
+    customerjunction:T -- B:controller
     customerjunction:B -- T:client
 
 
-    group agentcustomer(cloud)[Customer Cloud]
-    service agent(internet)[Distr Agent] in agentcustomer
-    service app(server)[Your Application] in agentcustomer
-    agent:L --> R:app
+    group controllercustomer(cloud)[Customer Cloud]
+    service controller(internet)[Distr Controller] in controllercustomer
+    service app(server)[Your Application] in controllercustomer
+    controller:L --> R:app
 
     group ocicustomer(cloud)[Fully self managed customer]
     service client(internet)[OCI client] in ocicustomer
@@ -123,8 +124,8 @@ Register your first account at http://localhost:8080/register
 
 The full self-hosting documentation is at https://distr.sh/docs/self-hosting/
 
-Using Distr agents on macOS? Follow the [macOS guide](https://distr.sh/docs/agents/distr-on-macos/) to get started.
-Using Distr agents on Windows with WSL2? Follow the [Windows WSL2 guide](https://distr.sh/docs/agents/distr-on-windows-wsl/) to get started.
+Using Distr controllers on macOS? Follow the [macOS guide](https://distr.sh/docs/controllers/distr-on-macos/) to get started.
+Using Distr controllers on Windows with WSL2? Follow the [Windows WSL2 guide](https://distr.sh/docs/controllers/distr-on-windows-wsl/) to get started.
 
 ### Building from source
 
@@ -145,7 +146,7 @@ Distr offers several ways to integrate with your existing tools and workflows.
 
 ### Distr API
 
-Distr provides a comprehensive REST API that allows you to manage deployments, artifacts, agents, licenses, and more programmatically.
+Distr provides a comprehensive REST API that allows you to manage deployments, artifacts, controllers, licenses and more programmatically.
 The full API reference is available at https://app.distr.sh/docs.
 
 For further details on authentication and usage, see https://distr.sh/docs/integrations/api/.

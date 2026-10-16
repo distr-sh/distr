@@ -5,16 +5,11 @@
     </h1>
 
     @if (customOidcSession) {
-      <div
-        class="flex items-start gap-3 mb-6 p-4 text-sm rounded-lg border border-primary-200 bg-primary-50 text-primary-800 dark:border-primary-800 dark:bg-gray-700 dark:text-primary-300"
-        role="alert">
-        <fa-icon [icon]="faCircleExclamation" class="mt-0.5 shrink-0" />
-        <span>
-          You signed in through your organization's identity provider, so you cannot change your e-mail address, set up
-          multi-factor authentication, or disconnect an identity here. Request a password reset on the Security tab to
-          sign in with a password instead, which also lets you set your first one.
-        </span>
-      </div>
+      <app-alert type="info" class="mb-6">
+        You signed in through your organization's identity provider, so you cannot change your e-mail address, set up
+        multi-factor authentication or disconnect an identity here. Request a password reset on the Security tab to sign
+        in with a password instead, which also lets you set your first one.
+      </app-alert>
     }
 
     <app-tab-bar [tabs]="tabs" [(active)]="activeTab" (tabClick)="onTabClick($event)" />

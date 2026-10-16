@@ -10,7 +10,7 @@ import {BytesPipe} from '../../../util/units';
 import {StatusDotDirective} from '../../components/status-dot';
 import {DeploymentTargetLatestMetrics} from '../../types/deployment-target-metrics';
 
-// Agents report metrics every 30 seconds, so one missed report must not mark them as outdated yet.
+// Controllers report metrics every 30 seconds, so one missed report must not mark them as outdated yet.
 const metricsStaleThreshold = dayjs.duration({minutes: 2});
 
 @Component({
@@ -25,12 +25,12 @@ export class DeploymentTargetMetricsComponent {
   protected readonly anyDiskWarning = computed(() =>
     this.metrics().diskMetrics?.some((disk) => disk.bytesUsed / disk.bytesTotal > 0.75)
   );
-  protected readonly agentUsage = computed(() => {
-    const {agentCpuUsageMillis, agentMemoryBytes} = this.metrics();
-    if (agentCpuUsageMillis === undefined || agentMemoryBytes === undefined) {
+  protected readonly controllerUsage = computed(() => {
+    const {controllerCpuUsageMillis, controllerMemoryBytes} = this.metrics();
+    if (controllerCpuUsageMillis === undefined || controllerMemoryBytes === undefined) {
       return undefined;
     }
-    return {cpuUsageMillis: agentCpuUsageMillis, memoryBytes: agentMemoryBytes};
+    return {cpuUsageMillis: controllerCpuUsageMillis, memoryBytes: controllerMemoryBytes};
   });
   protected readonly outdated = computed(() => isStale(this.metrics(), metricsStaleThreshold));
   protected readonly cpuUsageDegrees = computed(() => usageDegrees(this.metrics().cpuUsage));

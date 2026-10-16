@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -93,14 +93,10 @@ func CreateArtifactEntitlement(ctx context.Context, entitlement *types.ArtifactE
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("could not insert ArtifactEntitlement: %w", err)
+		return mapArtifactEntitlementError(fmt.Errorf("could not insert ArtifactEntitlement: %w", err))
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ArtifactEntitlementBase]); err != nil {
-		var pgError *pgconn.PgError
-		if errors.As(err, &pgError) && pgError.Code == pgerrcode.UniqueViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
-		}
-		return err
+		return mapArtifactEntitlementError(fmt.Errorf("could not insert ArtifactEntitlement: %w", err))
 	} else {
 		*entitlement = result
 		return nil
@@ -128,15 +124,13 @@ func UpdateArtifactEntitlement(ctx context.Context, entitlement *types.ArtifactE
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("could not update ArtifactEntitlement: %w", err)
+		return mapArtifactEntitlementError(fmt.Errorf("could not update ArtifactEntitlement: %w", err))
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ArtifactEntitlementBase]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
-		} else if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			return distrerr.ErrNotFound
 		}
-		return err
+		return mapArtifactEntitlementError(fmt.Errorf("could not update ArtifactEntitlement: %w", err))
 	} else {
 		*entitlement = result
 		return nil
@@ -182,9 +176,30 @@ func AddArtifactToArtifactEntitlement(
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("could not insert relation: %w", err)
+		return mapArtifactEntitlementError(fmt.Errorf("could not insert relation: %w", err))
 	}
 	return nil
+}
+
+func mapArtifactEntitlementError(err error) error {
+	pgErr, ok := errors.AsType[*pgconn.PgError](err)
+	if !ok {
+		return err
+	}
+	switch pgErr.Code {
+	case pgerrcode.ForeignKeyViolation:
+		switch pgErr.ConstraintName {
+		case "artifactentitlement_customer_organization_id_fkey":
+			return distrerr.NewBadRequest("invalid customer organization ID")
+		case "artifactlicense_artifact_artifact_id_fkey":
+			return distrerr.NewBadRequest("invalid artifact ID")
+		case "artifactlicense_artifact_artifact_version_id_fkey":
+			return distrerr.NewBadRequest("invalid artifact version ID")
+		}
+	case pgerrcode.UniqueViolation:
+		return fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
+	}
+	return err
 }
 
 func GetArtifactEntitlementByID(ctx context.Context, id uuid.UUID) (*types.ArtifactEntitlement, error) {
@@ -201,7 +216,7 @@ func GetArtifactEntitlementByID(ctx context.Context, id uuid.UUID) (*types.Artif
 
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ArtifactEntitlement]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("could not collect ArtifactEntitlement: %w", err)
 	} else {
@@ -215,11 +230,11 @@ func DeleteArtifactEntitlementWithID(ctx context.Context, id uuid.UUID) error {
 	if err != nil {
 		var pgError *pgconn.PgError
 		if errors.As(err, &pgError) && pgError.Code == pgerrcode.ForeignKeyViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 		return err
 	} else if cmd.RowsAffected() == 0 {
-		err = apierrors.ErrNotFound
+		err = distrerr.ErrNotFound
 	}
 
 	if err != nil {
@@ -239,7 +254,7 @@ func DeleteArtifactEntitlementsWithOrganizationID(ctx context.Context, organizat
 	if err != nil {
 		var pgError *pgconn.PgError
 		if errors.As(err, &pgError) && pgError.Code == pgerrcode.ForeignKeyViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 		return 0, fmt.Errorf("could not delete ArtifactEntitlement: %w", err)
 	}
@@ -262,10 +277,79 @@ func DeleteArtifactEntitlementsWithOrganizationSubscriptionType(
 	if err != nil {
 		var pgError *pgconn.PgError
 		if errors.As(err, &pgError) && pgError.Code == pgerrcode.ForeignKeyViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 		return 0, fmt.Errorf("could not delete ArtifactEntitlements: %w", err)
 	}
 
 	return cmd.RowsAffected(), nil
+}
+
+// GetArtifactVersionEntitlement returns which customer organizations may know that the given
+// artifact version exists. Every customer may know about a public artifact, as the registry lets
+// them pull it. An entitlement for the whole artifact covers every version, and one
+// for a version that resolves to the same content covers it too, be that a sibling tag or an index
+// the version is part of.
+func GetArtifactVersionEntitlement(
+	ctx context.Context,
+	artifactID, artifactVersionID uuid.UUID,
+) (types.GetArtifactVersionEntitlementResult, error) {
+	db := internalctx.GetDb(ctx)
+
+	var result types.GetArtifactVersionEntitlementResult
+	gatedRows, err := db.Query(
+		ctx,
+		`SELECT NOT a.public AND EXISTS (
+			SELECT 1 FROM ArtifactEntitlement ae WHERE ae.organization_id = a.organization_id
+		)
+		FROM Artifact a
+		WHERE a.id = @artifactID`,
+		pgx.NamedArgs{"artifactID": artifactID},
+	)
+	if err != nil {
+		return result, fmt.Errorf("failed to query artifact entitlement existence: %w", err)
+	}
+	if result.Gated, err = pgx.CollectExactlyOneRow(gatedRows, pgx.RowTo[bool]); err != nil {
+		return result, fmt.Errorf("failed to collect artifact entitlement existence: %w", err)
+	} else if !result.Gated {
+		return result, nil
+	}
+
+	rows, err := db.Query(
+		ctx,
+		`WITH RECURSIVE equivalent (id, manifest_blob_digest) AS (
+			SELECT av.id, av.manifest_blob_digest
+			FROM ArtifactVersion av
+			WHERE av.artifact_id = @artifactID
+				AND av.manifest_blob_digest = (
+					SELECT manifest_blob_digest FROM ArtifactVersion WHERE id = @artifactVersionID
+				)
+
+			UNION
+
+			SELECT av.id, av.manifest_blob_digest
+			FROM ArtifactVersion av
+			JOIN ArtifactVersionPart avp ON avp.artifact_version_id = av.id
+			JOIN equivalent e ON avp.artifact_blob_digest = e.manifest_blob_digest
+		)
+		SELECT DISTINCT ae.customer_organization_id
+		FROM ArtifactEntitlement ae
+		JOIN ArtifactEntitlement_Artifact aea ON aea.artifact_entitlement_id = ae.id
+		WHERE aea.artifact_id = @artifactID
+			AND ae.customer_organization_id IS NOT NULL
+			AND (ae.expires_at IS NULL OR ae.expires_at > now())
+			AND (
+				aea.artifact_version_id IS NULL
+				OR aea.artifact_version_id IN (SELECT id FROM equivalent)
+			)`,
+		pgx.NamedArgs{"artifactID": artifactID, "artifactVersionID": artifactVersionID},
+	)
+	if err != nil {
+		return result, fmt.Errorf("failed to query entitled customer organizations: %w", err)
+	}
+	if result.CustomerOrganizationIDs, err = pgx.CollectRows(rows, pgx.RowTo[uuid.UUID]); err != nil {
+		return result, fmt.Errorf("failed to collect entitled customer organizations: %w", err)
+	}
+
+	return result, nil
 }

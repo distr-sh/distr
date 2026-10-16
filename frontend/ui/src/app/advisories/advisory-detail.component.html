@@ -20,14 +20,10 @@
                 [disabled]="patching()"
                 (selected)="changeSeverity($event)" />
             } @else {
-              <span class="distr-status-badge capitalize" [ngClass]="severityBadgeClass(advisory.severity)">
-                {{ advisory.severity }}
-              </span>
+              <app-advisory-severity-badge [severity]="advisory.severity" />
             }
             @if (showsAffectedState) {
-              <span class="distr-status-badge" [ngClass]="affectedBadgeClass(advisory.affected)">
-                {{ affectedLabel(advisory.affected) }}
-              </span>
+              <app-advisory-affected-badge [affected]="advisory.affected" />
             } @else if (canEdit) {
               <app-badge-select
                 ariaLabel="Change status"
@@ -36,15 +32,13 @@
                 [disabled]="patching()"
                 (selected)="changeStatus($event)" />
             } @else {
-              <span class="distr-status-badge" [ngClass]="statusBadgeClass(advisory.status)">
-                {{ statusLabel(advisory.status) }}
-              </span>
+              <app-advisory-status-badge [status]="advisory.status" />
             }
           </div>
           @if (advisory.tags.length > 0) {
             <div class="flex flex-wrap items-center gap-2 mt-3">
               @for (tag of advisory.tags; track tag) {
-                <span class="distr-tag-badge">{{ tag }}</span>
+                <span class="distr-badge distr-badge-neutral">{{ tag }}</span>
               }
             </div>
           }
@@ -103,10 +97,7 @@
           @if (impactResult(); as impact) {
             @if (auth.isCustomer() && (impact.deployments.length > 0 || impact.pulls.length > 0)) {
               @if (advisory.affected) {
-                <div
-                  class="mb-4 p-4 text-sm rounded-lg bg-red-50 text-red-800 dark:bg-gray-700 dark:text-red-400"
-                  role="alert">
-                  <span class="font-semibold">Action required.</span>
+                <app-alert type="warning" heading="Action required." class="mb-4">
                   @if (stillAffectedCount() > 0) {
                     {{ stillAffectedCount() }} of your deployments still
                     <ng-container [ngPlural]="stillAffectedCount()">
@@ -122,14 +113,11 @@
                   } @else {
                     No patched version has been released yet.
                   }
-                </div>
+                </app-alert>
               } @else {
-                <div
-                  class="mb-4 p-4 text-sm rounded-lg bg-green-50 text-green-800 dark:bg-gray-700 dark:text-green-400"
-                  role="alert">
-                  <span class="font-semibold">You might no longer be affected.</span>
+                <app-alert type="success" heading="You might no longer be affected." class="mb-4">
                   You have deployed or downloaded a patched version, so Distr no longer sees exposure to this advisory.
-                </div>
+                </app-alert>
               }
             }
 
@@ -161,9 +149,7 @@
                         <td class="px-3 py-2">{{ deployment.deploymentTargetName }}</td>
                         <td class="px-3 py-2">{{ deployment.applicationName }}</td>
                         <td class="px-3 py-2">
-                          <span class="distr-status-badge" [ngClass]="impactStateBadgeClass(deployment.state)">
-                            {{ impactStateLabel(deployment.state) }}
-                          </span>
+                          <app-advisory-impact-state-badge [state]="deployment.state" />
                         </td>
                         <td class="px-3 py-2">{{ deployment.applicationVersionName }}</td>
                         <td class="px-3 py-2">{{ deployment.currentApplicationVersionName }}</td>
@@ -247,7 +233,7 @@
           <h3 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Affected</h3>
           @if (affectedApplicationVersions().length > 0 || affectedArtifactVersions().length > 0) {
             <ul class="text-sm text-gray-900 dark:text-white space-y-2 mb-4">
-              @for (version of affectedApplicationVersions(); track version.applicationVersionId) {
+              @for (version of affectedApplicationVersions(); track version.applicationVersion.id) {
                 <ng-container *ngTemplateOutlet="applicationVersionItem; context: {$implicit: version}" />
               }
               @for (version of affectedArtifactVersions(); track version.artifactVersionId) {
@@ -261,7 +247,7 @@
           <h3 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Patched In</h3>
           @if (hasPatchedVersions()) {
             <ul class="text-sm text-gray-900 dark:text-white space-y-2">
-              @for (version of patchedApplicationVersions(); track version.applicationVersionId) {
+              @for (version of patchedApplicationVersions(); track version.applicationVersion.id) {
                 <ng-container *ngTemplateOutlet="applicationVersionItem; context: {$implicit: version}" />
               }
               @for (version of patchedArtifactVersions(); track version.artifactVersionId) {
@@ -309,43 +295,22 @@
 </app-page>
 
 <ng-template #applicationVersionItem let-version>
-  <li class="flex items-center gap-2">
-    <app-application-logo
-      class="size-10 shrink-0"
+  <li>
+    <app-application-preview
+      [name]="version.applicationName"
+      [type]="version.applicationType"
       [imageUrl]="version.applicationImageUrl"
-      [type]="version.applicationType" />
-    <div class="min-w-0">
-      <div class="truncate" [title]="applicationVersionLabel(version)">
-        {{ version.applicationName }} {{ version.applicationVersionName }}
-      </div>
-      <span class="distr-deployment-type-badge">{{ version.applicationType }}</span>
-    </div>
+      [version]="version.applicationVersion.name" />
   </li>
 </ng-template>
 
 <ng-template #artifactVersionItem let-version>
-  <li class="flex items-center gap-2">
-    <app-artifact-logo class="size-10 shrink-0" [imageUrl]="version.artifactImageUrl" />
-    <div class="min-w-0">
-      <div class="flex items-baseline gap-2 min-w-0" [title]="artifactVersionLabel(version)">
-        <span class="truncate">{{ version.artifactName }}</span>
-        <span class="shrink-0 text-xs text-gray-500 dark:text-gray-400">
-          <app-artifacts-hash [hash]="version.artifactVersionDigest" [expandable]="false" />
-        </span>
-      </div>
-      @if (version.artifactVersionTags.length > 0) {
-        <div class="flex flex-row flex-wrap gap-1 mt-1">
-          @for (tag of version.artifactVersionTags; track tag) {
-            <span
-              class="inline-block max-w-40 truncate"
-              [class]="tag === 'latest' ? 'distr-artifact-tag-latest' : 'distr-artifact-tag'"
-              [title]="tag">
-              {{ tag }}
-            </span>
-          }
-        </div>
-      }
-    </div>
+  <li>
+    <app-artifact-preview
+      [name]="version.artifactName"
+      [imageUrl]="version.artifactImageUrl"
+      [digest]="version.artifactVersionDigest"
+      [tags]="version.artifactVersionTags" />
   </li>
 </ng-template>
 

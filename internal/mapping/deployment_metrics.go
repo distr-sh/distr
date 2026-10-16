@@ -8,7 +8,7 @@ import (
 
 func DeploymentResourceMetricsRequestToInternal(
 	deploymentID uuid.UUID,
-	req api.AgentDeploymentResourceMetricsRequest,
+	req api.ControllerDeploymentResourceMetricsRequest,
 ) types.DeploymentMetrics {
 	return types.DeploymentMetrics{
 		DeploymentID: deploymentID,

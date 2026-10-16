@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/registry/authz"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	. "github.com/onsi/gomega"
 )
@@ -18,6 +20,9 @@ const (
 	manifestPath = "/v2/acme/app/manifests/1.0.0"
 	tagsPath     = "/v2/acme/app/tags/list"
 	blobPath     = "/v2/acme/app/blobs/sha256:0000000000000000000000000000000000000000000000000000000000000000"
+
+	privatePrefix       = "/v2/acme/private/"
+	privateManifestPath = privatePrefix + "manifests/1.0.0"
 )
 
 // registryHandler composes the registry's middleware split with a marker in place of the real
@@ -36,8 +41,21 @@ func newRegistryHandler(limits env.AnonymousRateLimits) *registryHandler {
 			next.ServeHTTP(w, r)
 		})
 	}
-	ok := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
-	h.handler = middleware.Split(requiresAuthentication, marker, rateLimitAnonymous(limits))(ok)
+	// Stands in for the authorizer, which refuses an anonymous request for a private artifact and
+	// spends the budget only on the ones it grants.
+	authorize := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !h.authenticated {
+			if strings.HasPrefix(r.URL.Path, privatePrefix) {
+				_ = regErrAuthz(authz.ErrAuthenticationRequired).Write(w)
+				return
+			} else if authz.AnonymousLimitExceeded(r.Context()) {
+				_ = regErrAuthz(authz.ErrRateLimited).Write(w)
+				return
+			}
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	h.handler = middleware.Split(requiresAuthentication, marker, rateLimitAnonymous(limits))(authorize)
 	return h
 }
 
@@ -156,19 +174,24 @@ func TestAnonymousAccessRateLimit(t *testing.T) {
 			To(Equal(http.StatusOK), "the blob budget is untouched by the manifest requests")
 
 		w := handler.serve(http.MethodGet, manifestPath)
-		g.Expect(w.Code).To(Equal(http.StatusTooManyRequests))
+		// An OCI client sends its credentials only after a 401 and returns every other status to its
+		// caller, so a 429 would lock a client that holds credentials out of a public artifact.
+		g.Expect(w.Code).To(Equal(http.StatusUnauthorized))
+		g.Expect(w.Header().Get("WWW-Authenticate")).NotTo(BeEmpty())
 		g.Expect(w.Header().Get("Retry-After")).NotTo(BeEmpty())
 
 		var body struct {
 			Errors []struct {
-				Code string `json:"code"`
+				Code    string `json:"code"`
+				Message string `json:"message"`
 			} `json:"errors"`
 		}
 		g.Expect(json.Unmarshal(w.Body.Bytes(), &body)).To(Succeed())
 		g.Expect(body.Errors).To(HaveLen(1))
-		g.Expect(body.Errors[0].Code).To(Equal("TOOMANYREQUESTS"), "clients back off on the OCI error code")
+		g.Expect(body.Errors[0].Message).To(ContainSubstring("rate limit"),
+			"a client without credentials has only the message to tell it apart from a private artifact")
 
-		g.Expect(handler.serve(http.MethodGet, blobPath).Code).To(Equal(http.StatusTooManyRequests))
+		g.Expect(handler.serve(http.MethodGet, blobPath).Code).To(Equal(http.StatusUnauthorized))
 	})
 
 	t.Run("authenticated requests are not counted", func(t *testing.T) {
@@ -178,6 +201,21 @@ func TestAnonymousAccessRateLimit(t *testing.T) {
 		for range 3 {
 			g.Expect(handler.serve(http.MethodGet, manifestPath, "user", "pat").Code).To(Equal(http.StatusOK))
 		}
+	})
+
+	t.Run("refused requests are not counted", func(t *testing.T) {
+		g := NewWithT(t)
+		handler := newRegistryHandler(env.AnonymousRateLimits{ManifestsPerHour: 1})
+
+		// Helm and other OCI clients send every pull of a private artifact without credentials
+		// first and authenticate only after the challenge.
+		for range 3 {
+			w := handler.serve(http.MethodGet, privateManifestPath)
+			g.Expect(w.Code).To(Equal(http.StatusUnauthorized))
+			g.Expect(w.Header().Get("WWW-Authenticate")).NotTo(BeEmpty())
+		}
+		g.Expect(handler.serve(http.MethodGet, manifestPath).Code).
+			To(Equal(http.StatusOK), "the refused pulls left the budget untouched")
 	})
 
 	t.Run("a zero limit is disabled", func(t *testing.T) {

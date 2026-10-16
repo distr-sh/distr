@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"net/http"
 	"slices"
 
 	"github.com/distr-sh/distr/api"
@@ -55,15 +54,6 @@ func triggerAutomaticUpdateOfDeployment(
 	createdByUserID *uuid.UUID,
 ) error {
 	return updateDeploymentsToLatestVersion(ctx, org, applicationID, &deploymentID, createdByUserID)
-}
-
-// automaticUpdateError writes the response for a failed automatic update, for a handler whose
-// transaction only rolls back on the error it returns.
-func automaticUpdateError(ctx context.Context, w http.ResponseWriter, err error) error {
-	internalctx.GetLogger(ctx).Warn("could not trigger automatic application updates", zap.Error(err))
-	sentry.GetHubFromContext(ctx).CaptureException(err)
-	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	return err
 }
 
 func updateDeploymentsToLatestVersion(

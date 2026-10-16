@@ -8,6 +8,7 @@ import {
   ApplicationVersion,
   ApplicationVersionResource,
   CreateAdvisoryCommentRequest,
+  CreateDeploymentTargetRequest,
   CreateUpdateAdvisoryRequest,
   DeploymentRequest,
   DeploymentTarget,
@@ -104,8 +105,13 @@ export class Client {
     return this.get<DeploymentTarget>(`deployment-targets/${deploymentTargetId}`);
   }
 
-  public async createDeploymentTarget(deploymentTarget: DeploymentTarget): Promise<DeploymentTarget> {
-    return this.post<DeploymentTarget>('deployment-targets', deploymentTarget);
+  public createDeploymentTarget(request: CreateDeploymentTargetRequest): Promise<DeploymentTarget>;
+  /** @deprecated Pass a {@link CreateDeploymentTargetRequest} instead. */
+  public createDeploymentTarget(deploymentTarget: DeploymentTarget): Promise<DeploymentTarget>;
+  public async createDeploymentTarget(
+    request: CreateDeploymentTargetRequest | DeploymentTarget
+  ): Promise<DeploymentTarget> {
+    return this.post<DeploymentTarget, CreateDeploymentTargetRequest>('deployment-targets', request);
   }
 
   public async createOrUpdateDeployment(deploymentRequest: DeploymentRequest): Promise<DeploymentRequest> {
@@ -114,6 +120,10 @@ export class Client {
 
   public async createAccessForDeploymentTarget(deploymentTargetId: string): Promise<DeploymentTargetAccessResponse> {
     return this.post<DeploymentTargetAccessResponse>(`deployment-targets/${deploymentTargetId}/access-request`);
+  }
+
+  public async cancelReconnectForDeploymentTarget(deploymentTargetId: string): Promise<void> {
+    await this.send<void, undefined>('DELETE', `deployment-targets/${deploymentTargetId}/access-request`);
   }
 
   public async getAdvisories(filter: AdvisoryFilter = {}): Promise<Advisory[]> {

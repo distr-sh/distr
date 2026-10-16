@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/authjwt"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/custommail"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/go-mailx/mailx"
@@ -32,7 +32,7 @@ func SendUserVerificationMail(
 	}
 
 	branding, err := db.GetOrganizationBranding(ctx, org.ID)
-	if err != nil && !errors.Is(err, apierrors.ErrNotFound) {
+	if err != nil && !errors.Is(err, distrerr.ErrNotFound) {
 		return fmt.Errorf("failed to get organization branding for verification mail: %w", err)
 	}
 

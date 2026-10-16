@@ -12,6 +12,7 @@ export interface UserAccount extends BaseModel {
 }
 
 export interface UserAccountWithRole extends UserAccount {
+  activated: boolean;
   userRole: UserRole;
   customerOrganizationId?: string;
   partnerOrganizationId?: string;

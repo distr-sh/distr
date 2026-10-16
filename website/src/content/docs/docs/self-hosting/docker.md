@@ -51,7 +51,7 @@ Whichever cloud you use, you need the same pieces:
 
 - A VM with at least 2 CPUs and 4 GB RAM (see [System Requirements](/docs/self-hosting/system-requirements/)).
 - Two public hostnames, one for the app and one for the registry, both pointing at the VM. Caddy obtains and renews their certificates via ACME, so TCP `80` and `443` have to be reachable from the internet.
-- A managed PostgreSQL instance the VM can reach over a private network, with TLS enforced. We test against PostgreSQL 18 with 2 CPUs and 2 GB RAM.
+- A managed PostgreSQL 18+ instance the VM can reach over a private network, with TLS enforced. We test with 2 CPUs and 2 GB RAM.
 - Two buckets, one for the registry blobs and one for Loki's log chunks.
 - Disk space for the scratch volume, where the registry buffers layer uploads instead of holding them in memory. Every stack mounts one into Distr, so give the VM room for the layers you expect to be pushed at the same time.
 - A `JWT_SECRET` and a `DATABASE_ENCRYPTION_KEY`, each from `openssl rand -base64 32`, and a `LICENSE_KEY` if you run a paid plan. Back the encryption key up somewhere other than the database, since it is what makes the encrypted columns readable.
@@ -66,11 +66,11 @@ The three enterprise stacks run the Enterprise image `registry.distr.sh/enterpri
 It comes from our own registry, so run `docker login registry.distr.sh` with the credentials you received from us before you start the stack.
 
 :::tip[Let Distr manage your own instance]
-The smoothest way to run a paid plan is to deploy the stack with Distr itself, through a [Docker agent](/docs/agents/docker-agent/) on the target VM.
-The agent then handles the rollout of new Distr versions, configures registry credentials and injects the license key for you: the `enterprise`, `enterprise-aws` and `enterprise-gcp` stacks ship `LICENSE_KEY={{ index .LicenseKeys "Distr" }}` in their `.env`, which the agent resolves at deploy time from the [license key](/docs/platform/license-keys/) named `Distr`.
+The smoothest way to run a paid plan is to deploy the stack with Distr itself, through a [Docker controller](/docs/controllers/docker-controller/) on the target VM.
+The controller then handles the rollout of new Distr versions, configures registry credentials and injects the license key for you: the `enterprise`, `enterprise-aws` and `enterprise-gcp` stacks ship `LICENSE_KEY={{ index .LicenseKeys "Distr" }}` in their `.env`, which the controller resolves at deploy time from the [license key](/docs/platform/license-keys/) named `Distr`.
 
-Those three stacks reference their credentials as [Distr Secrets](/docs/agents/secrets/) in the same way, so the file you version and ship holds references and the agent resolves them into the `.env` it writes on the target.
-Create the secrets your stack needs before the first deployment, since the agent fails a deployment that references a secret the organization does not have:
+Those three stacks reference their credentials as [Distr Secrets](/docs/controllers/secrets/) in the same way, so the file you version and ship holds references and the controller resolves them into the `.env` it writes on the target.
+Create the secrets your stack needs before the first deployment, since the controller fails a deployment that references a secret the organization does not have:
 
 | Secret                          | `enterprise` | `enterprise-aws`  | `enterprise-gcp`  |
 | ------------------------------- | ------------ | ----------------- | ----------------- |

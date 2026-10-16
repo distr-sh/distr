@@ -150,11 +150,10 @@ func ValidateUpstreamCredentials(ctx context.Context, artifact *types.Artifact) 
 	if artifact.UpstreamPassword == nil || *artifact.UpstreamPassword == "" {
 		return fmt.Errorf("password is required when upstream authentication is configured")
 	}
-	repo, err := remote.NewRepository(*artifact.UpstreamURL)
+	repo, err := newUpstreamRepository(artifact)
 	if err != nil {
 		return fmt.Errorf("invalid upstream URL: %w", err)
 	}
-	repo.Client = &auth.Client{Credential: credentialForArtifact(artifact)}
 
 	reg, err := remote.NewRegistry(repo.Reference.Registry)
 	if err != nil {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
@@ -32,7 +32,7 @@ func GetLatestPullOfArtifactByCustomerOrganization(
 		return "", err
 	} else if res, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[string]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", apierrors.ErrNotFound
+			return "", distrerr.ErrNotFound
 		}
 		return "", err
 	} else {

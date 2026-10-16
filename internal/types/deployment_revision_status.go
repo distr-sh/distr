@@ -7,7 +7,6 @@ import (
 )
 
 type DeploymentRevisionStatus struct {
-	ID                   uuid.UUID            `db:"id" json:"id"`
 	CreatedAt            time.Time            `db:"created_at" json:"createdAt"`
 	DeploymentRevisionID uuid.UUID            `db:"deployment_revision_id" json:"deploymentRevisionId"`
 	Type                 DeploymentStatusType `db:"type" json:"type"`

@@ -1,0 +1,1 @@
+ALTER TABLE ApplicationVersion DROP COLUMN created_by_user_account_id;

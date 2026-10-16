@@ -20,7 +20,7 @@ type CustomDomain struct {
 	// CustomerOrganizationID is set on a customer_portal domain that belongs to one customer. When it is
 	// nil, a customer_portal domain is the vendor's shared portal for all of its customers.
 	CustomerOrganizationID *uuid.UUID `json:"customerOrganizationId,omitempty"`
-	// Verified reports whether the domain is currently used for links, mails, agent manifests and
+	// Verified reports whether the domain is currently used for links, mails, controller manifests and
 	// registry URLs. It is decided by the server so that no client has to restate the rule.
 	Verified              bool       `json:"verified"`
 	VerifiedAt            *time.Time `json:"verifiedAt,omitempty"`

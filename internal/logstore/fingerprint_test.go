@@ -57,7 +57,7 @@ func TestDeploymentTargetLogRecordID(t *testing.T) {
 		DeploymentTargetID: uuid.MustParse("bd3ff37e-9dc2-4de6-9668-3f0e4c112233"),
 		Timestamp:          time.Date(2026, 7, 16, 10, 0, 0, 0, time.UTC),
 		Severity:           "info",
-		Body:               "agent says hi",
+		Body:               "controller says hi",
 	}
 
 	t.Run("is deterministic", func(t *testing.T) {

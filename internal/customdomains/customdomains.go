@@ -85,10 +85,10 @@ func customerDomains(ctx context.Context, orgID uuid.UUID, customerOrgID *uuid.U
 	return customDomains(ctx, orgID, customerOrgID)
 }
 
-// AGENT_HOST takes precedence over the organization's own domains, since it is set for an instance
+// CONTROLLER_HOST takes precedence over the organization's own domains, since it is set for an instance
 // whose app host is not reachable from a customer environment at all.
-func AgentDomainOrDefault(ctx context.Context, orgID uuid.UUID, b *types.OrganizationBranding) string {
-	if host := env.AgentHost(); host != nil {
+func ControllerDomainOrDefault(ctx context.Context, orgID uuid.UUID, b *types.OrganizationBranding) string {
+	if host := env.ControllerHost(); host != nil {
 		return withScheme(*host)
 	}
 	return AppDomainOrDefault(ctx, orgID, b)
@@ -115,7 +115,7 @@ func registryDomainOrDefault(vendorDomains []types.CustomDomain, b *types.Organi
 
 // customDomains returns the domains that may be used in outbound URLs, which is why it drops the
 // unverified ones: a domain that does not point here yet would send users, mail recipients and
-// agents to a host this instance does not serve. Errors are swallowed so callers fall back to the
+// controllers to a host this instance does not serve. Errors are swallowed so callers fall back to the
 // legacy branding columns / instance defaults instead of failing outright.
 func customDomains(ctx context.Context, orgID uuid.UUID, customerOrgID *uuid.UUID) []types.CustomDomain {
 	domains, err := db.GetCustomDomains(ctx, orgID, customerOrgID)

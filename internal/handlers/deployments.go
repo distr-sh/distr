@@ -6,34 +6,31 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
-	"time"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/deploymentvalues"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
-	"github.com/distr-sh/distr/internal/subscription"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 func DeploymentsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Deployments"))
 	r.Use(middleware.RequireOrgAndRole)
 	r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
-		Put("/", putDeployment).
+		Put("/", respond.Handler(putDeployment)).
 		With(option.Description("Create or update a deployment")).
 		With(option.Request(api.DeploymentRequest{}))
-	r.With(deploymentMiddleware).Route("/{deploymentId}", func(r chiopenapi.Router) {
+	r.With(respond.Middleware(deploymentMiddleware)).Route("/{deploymentId}", func(r chiopenapi.Router) {
 		type DeploymentIDRequest struct {
 			DeploymentID uuid.UUID `path:"deploymentId"`
 		}
@@ -47,39 +44,28 @@ func DeploymentsRouter(r chiopenapi.Router) {
 			Resource string `query:"resource"`
 		}
 
-		r.Get("/revisions", getDeploymentRevisions).
+		r.Get("/revisions", respond.Handler(getDeploymentRevisions)).
 			With(option.Description("Get deployment revisions")).
 			With(option.Request(DeploymentIDRequest{})).
 			With(option.Response(http.StatusOK, []api.DeploymentRevisionResponse{}))
-		// These are read-only, agent-pushed timeseries that are safe to serve from the read-only db.
+		// These are read-only, controller-pushed timeseries that are safe to serve from the read-only db.
 		r.With(middleware.UseReadonlyDB).Group(func(r chiopenapi.Router) {
-			r.Get("/status", getDeploymentStatus).
-				With(option.Description("Get deployment status")).
-				With(option.Request(DeploymentTimeseriesRequest{})).
-				With(option.Response(http.StatusOK, []api.DeploymentRevisionStatus{}))
-			r.Get("/status/export", exportDeploymentStatusHandler()).
-				With(option.Description("Export deployment status")).
-				With(option.Request(struct {
-					DeploymentIDRequest
-					TimeseriesRangeRequest
-				}{})).
-				With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
-			r.Get("/metrics", getDeploymentMetrics).
+			r.Get("/metrics", respond.Handler(getDeploymentMetrics)).
 				With(option.Description("Get the latest resource metrics reported for a deployment")).
 				With(option.Request(DeploymentIDRequest{})).
 				With(option.Response(http.StatusOK, api.DeploymentResourceMetrics{}))
-			r.Get("/logs", getDeploymentLogsHandler()).
+			r.Get("/logs", respond.Handler(getDeploymentLogsHandler)).
 				With(option.Description("Get deployment logs")).
 				With(option.Request(struct {
 					DeploymentTimeseriesRequest
 					ResourceRequest
 				}{})).
 				With(option.Response(http.StatusOK, []api.DeploymentLogRecord{}))
-			r.Get("/logs/resources", getDeploymentLogsResourcesHandler()).
+			r.Get("/logs/resources", respond.Handler(getDeploymentLogsResourcesHandler)).
 				With(option.Description("Get deployment log resources")).
 				With(option.Request(DeploymentIDRequest{})).
 				With(option.Response(http.StatusOK, api.DeploymentLogRecordResourcesResponse{}))
-			r.Get("/logs/export", exportDeploymentLogsHandler()).
+			r.Get("/logs/export", respond.Handler(exportDeploymentLogsHandler)).
 				With(option.Description("Export deployment logs")).
 				With(option.Request(struct {
 					DeploymentIDRequest
@@ -89,11 +75,11 @@ func DeploymentsRouter(r chiopenapi.Router) {
 				With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
 		})
 		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
-			r.Delete("/", deleteDeploymentHandler()).
+			r.Delete("/", respond.Handler(deleteDeployment)).
 				With(option.Description("Delete a deployment")).
 				With(option.Request(DeploymentIDRequest{}))
 			r.With(middleware.AutoUpdatesFeatureMiddleware).
-				Patch("/", patchDeploymentHandler()).
+				Patch("/", respond.Handler(patchDeployment)).
 				With(option.Description("Partially update a deployment")).
 				With(option.Request(struct {
 					DeploymentIDRequest
@@ -103,226 +89,165 @@ func DeploymentsRouter(r chiopenapi.Router) {
 	})
 }
 
-func putDeployment(w http.ResponseWriter, r *http.Request) {
+func putDeployment(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
-
-	deploymentRequest, err := JsonBody[api.DeploymentRequest](w, r)
-	if err != nil {
-		return
+	if request, resp := decodeJSON[api.DeploymentRequest](r); resp != nil {
+		return resp, nil
+	} else if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
+		return saveDeployment(ctx, request)
+	}); resp != nil || err != nil {
+		return resp, err
+	} else {
+		// TODO: We might need to send a proper deployment object back, but not sure yet what it looks like
+		return respond.NoContent(), nil
 	}
-
-	if !runTxOrRespond(ctx, w, func(ctx context.Context) error {
-		validationResult, err := validateDeploymentRequest(ctx, w, deploymentRequest)
-		if err != nil {
-			return err
-		}
-		if err := setDeploymentRequestValuesHash(
-			&deploymentRequest,
-			validationResult.Secrets,
-			validationResult.LicenseKeys,
-		); err != nil {
-			return deploymentValuesError(ctx, w, err, "invalid deployment values")
-		}
-
-		if deploymentRequest.DeploymentID == nil {
-			deploymentRequest.AutomaticApplicationUpdatesEnabled = &validationResult.AutomaticApplicationUpdatesEnabled
-			if err = db.CreateDeployment(ctx, &deploymentRequest); errors.Is(err, apierrors.ErrConflict) {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return err
-			} else if err != nil {
-				log.Warn("could not create deployment", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return err
-			}
-		} else {
-			authInfo := auth.Authentication.Require(ctx)
-			deployment, err := db.GetDeployment(
-				ctx,
-				*deploymentRequest.DeploymentID,
-				authInfo.CurrentUserID(),
-				*authInfo.CurrentOrgID(),
-				authInfo.CurrentCustomerOrgID(),
-				authInfo.CurrentPartnerOrgID(),
-			)
-			if err != nil {
-				log.Warn("could not get deployment", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return err
-			}
-
-			if deployment.ApplicationEntitlementID == nil && deploymentRequest.ApplicationEntitlementID != nil {
-				deployment.ApplicationEntitlementID = deploymentRequest.ApplicationEntitlementID
-				if err := db.UpdateDeploymentEntitlement(ctx, deployment); err != nil {
-					log.Warn("could not set entitlement for deployment", zap.Error(err))
-					sentry.GetHubFromContext(ctx).CaptureException(err)
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return err
-				}
-			}
-
-			requested := deploymentRequest.AutomaticApplicationUpdatesEnabled
-			if requested != nil && deployment.AutomaticApplicationUpdatesEnabled != *requested {
-				deployment.AutomaticApplicationUpdatesEnabled = *requested
-				if err := db.UpdateDeploymentAutomaticApplicationUpdates(ctx, deployment); err != nil {
-					log.Warn("could not set automatic updates for deployment", zap.Error(err))
-					sentry.GetHubFromContext(ctx).CaptureException(err)
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return err
-				}
-			}
-		}
-
-		createdByUserID := auth.Authentication.Require(ctx).CurrentUserID()
-		deploymentRequest.CreatedByUserAccountID = &createdByUserID
-		deploymentRequest.Trigger = types.DeploymentRevisionTriggerUser
-
-		if _, err := db.CreateDeploymentRevision(ctx, &deploymentRequest); err != nil {
-			log.Warn("could not create deployment revision", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return err
-		}
-		return nil
-	}) {
-		return
-	}
-
-	// TODO: We might need to send a proper deployment object back, but not sure yet what it looks like
-	w.WriteHeader(http.StatusNoContent)
 }
 
-func patchDeploymentHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		deployment := internalctx.GetDeployment(ctx)
-		patch, err := JsonBody[api.PatchDeploymentRequest](w, r)
-		if err != nil {
-			return
-		}
-		if patch.AutomaticApplicationUpdatesEnabled == nil {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		enabled := *patch.AutomaticApplicationUpdatesEnabled
+func saveDeployment(ctx context.Context, request api.DeploymentRequest) (respond.Responder, error) {
+	request.CreatedByUserAccountID = new(auth.Authentication.Require(ctx).CurrentUserID())
+	request.Trigger = types.DeploymentRevisionTriggerUser
 
-		if !runTxOrRespond(ctx, w, func(ctx context.Context) error {
-			return setDeploymentAutomaticUpdates(ctx, w, r, deployment, enabled)
-		}) {
-			return
-		}
+	if validationResult, resp, err := validateDeploymentRequest(ctx, request); resp != nil || err != nil {
+		return resp, err
+	} else if err := setDeploymentRequestValuesHash(
+		&request, validationResult.Secrets, validationResult.LicenseKeys,
+	); err != nil {
+		return deploymentValuesError(err, "invalid deployment values")
+	} else if resp, err := createOrUpdateDeployment(
+		ctx, &request, validationResult.AutomaticApplicationUpdatesEnabled,
+	); resp != nil || err != nil {
+		return resp, err
+	} else if _, err := db.CreateDeploymentRevision(ctx, &request); err != nil {
+		return nil, fmt.Errorf("failed to create deployment revision: %w", err)
+	} else {
+		return nil, nil
+	}
+}
 
-		w.WriteHeader(http.StatusNoContent)
+func createOrUpdateDeployment(
+	ctx context.Context,
+	request *api.DeploymentRequest,
+	automaticUpdates bool,
+) (respond.Responder, error) {
+	authInfo := auth.Authentication.Require(ctx)
+	if request.DeploymentID == nil {
+		request.AutomaticApplicationUpdatesEnabled = &automaticUpdates
+		if err := db.CreateDeployment(ctx, request); errors.Is(err, distrerr.ErrConflict) {
+			return respond.BadRequest("release name must be unique per deployment target"), nil
+		} else if err != nil {
+			return nil, fmt.Errorf("failed to create deployment: %w", err)
+		} else {
+			return nil, nil
+		}
+	} else if deployment, err := db.GetDeployment(
+		ctx,
+		*request.DeploymentID,
+		authInfo.CurrentUserID(),
+		*authInfo.CurrentOrgID(),
+		authInfo.CurrentCustomerOrgID(),
+		authInfo.CurrentPartnerOrgID(),
+	); err != nil {
+		return nil, fmt.Errorf("failed to get deployment: %w", err)
+	} else {
+		if deployment.ApplicationEntitlementID == nil && request.ApplicationEntitlementID != nil {
+			deployment.ApplicationEntitlementID = request.ApplicationEntitlementID
+			if err := db.UpdateDeploymentEntitlement(ctx, deployment); err != nil {
+				return nil, fmt.Errorf("failed to set entitlement for deployment: %w", err)
+			}
+		}
+		if requested := request.AutomaticApplicationUpdatesEnabled; requested != nil &&
+			deployment.AutomaticApplicationUpdatesEnabled != *requested {
+			deployment.AutomaticApplicationUpdatesEnabled = *requested
+			if err := db.UpdateDeploymentAutomaticApplicationUpdates(ctx, deployment); err != nil {
+				return nil, fmt.Errorf("failed to set automatic updates for deployment: %w", err)
+			}
+		}
+		return nil, nil
+	}
+}
+
+func patchDeployment(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	deployment := internalctx.GetDeployment(ctx)
+	if patch, resp := decodeJSON[api.PatchDeploymentRequest](r); resp != nil {
+		return resp, nil
+	} else if patch.AutomaticApplicationUpdatesEnabled == nil {
+		return respond.NoContent(), nil
+	} else if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
+		return setDeploymentAutomaticUpdates(ctx, deployment, *patch.AutomaticApplicationUpdatesEnabled)
+	}); resp != nil || err != nil {
+		return resp, err
+	} else {
+		return respond.NoContent(), nil
 	}
 }
 
 func setDeploymentAutomaticUpdates(
 	ctx context.Context,
-	w http.ResponseWriter,
-	r *http.Request,
 	deployment *types.Deployment,
 	enabled bool,
-) error {
-	log := internalctx.GetLogger(ctx)
+) (respond.Responder, error) {
 	authInfo := auth.Authentication.Require(ctx)
-
-	target, err := db.GetDeploymentTargetForDeploymentID(ctx, deployment.ID)
-	if err != nil {
-		log.Warn("could not get DeploymentTarget", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return err
-	}
-	if target.OrganizationID != *authInfo.CurrentOrgID() || !isDeploymentTargetVisible(ctx, target) {
-		http.NotFound(w, r)
-		return apierrors.ErrNotFound
-	}
-	index := slices.IndexFunc(target.Deployments, func(d types.DeploymentWithLatestRevision) bool {
+	if target, err := db.GetDeploymentTargetForDeploymentID(ctx, deployment.ID); err != nil {
+		return nil, fmt.Errorf("failed to get deployment target: %w", err)
+	} else if target.OrganizationID != *authInfo.CurrentOrgID() || !isDeploymentTargetVisible(ctx, target) {
+		return deploymentNotFound, nil
+	} else if index := slices.IndexFunc(target.Deployments, func(d types.DeploymentWithLatestRevision) bool {
 		return d.ID == deployment.ID
-	})
-	if index < 0 {
-		http.NotFound(w, r)
-		return apierrors.ErrNotFound
-	}
-	current := target.Deployments[index]
-
-	application, err := db.GetApplication(ctx, current.Application.ID, target.OrganizationID)
-	if err != nil {
-		log.Warn("could not get Application", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return err
-	}
-	if enabled && !automaticUpdatesAllowed(authInfo.CurrentOrg(), application) {
-		return badRequestError(w, "this application does not allow automatic updates")
-	}
-
-	if deployment.AutomaticApplicationUpdatesEnabled != enabled {
-		deployment.AutomaticApplicationUpdatesEnabled = enabled
-		if err := db.UpdateDeploymentAutomaticApplicationUpdates(ctx, deployment); err != nil {
-			log.Warn("could not update Deployment", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return err
+	}); index < 0 {
+		return deploymentNotFound, nil
+	} else if application, err := db.GetApplication(
+		ctx, target.Deployments[index].Application.ID, target.OrganizationID,
+	); err != nil {
+		return nil, fmt.Errorf("failed to get application: %w", err)
+	} else if enabled && !automaticUpdatesAllowed(authInfo.CurrentOrg(), application) {
+		return respond.BadRequest("this application does not allow automatic updates"), nil
+	} else {
+		if deployment.AutomaticApplicationUpdatesEnabled != enabled {
+			deployment.AutomaticApplicationUpdatesEnabled = enabled
+			if err := db.UpdateDeploymentAutomaticApplicationUpdates(ctx, deployment); err != nil {
+				return nil, fmt.Errorf("failed to update deployment: %w", err)
+			}
 		}
-	}
 
-	// Enabling has to catch the deployment up, otherwise it would stay behind until the next
-	// version is created.
-	if enabled {
-		if err := triggerAutomaticUpdateOfDeployment(
-			ctx, authInfo.CurrentOrg(), application.ID, deployment.ID, new(authInfo.CurrentUserID()),
-		); err != nil {
-			return automaticUpdateError(ctx, w, err)
+		// Enabling has to catch the deployment up, otherwise it would stay behind until the next
+		// version is created.
+		if enabled {
+			if err := triggerAutomaticUpdateOfDeployment(
+				ctx, authInfo.CurrentOrg(), application.ID, deployment.ID, new(authInfo.CurrentUserID()),
+			); err != nil {
+				return nil, fmt.Errorf("failed to trigger automatic update: %w", err)
+			}
 		}
+		return nil, nil
 	}
-
-	return nil
 }
 
-func deleteDeploymentHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
-		orgId := *auth.CurrentOrgID()
-		deployment := internalctx.GetDeployment(ctx)
-		_ = db.RunTx(ctx, func(ctx context.Context) error {
-			target, err := db.GetDeploymentTargetForDeploymentID(ctx, deployment.ID)
-			if err != nil {
-				log.Warn("could not get DeploymentTarget", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return err
-			}
-			if target.OrganizationID != orgId {
-				http.NotFound(w, r)
-				return apierrors.ErrNotFound
-			} else if !isDeploymentTargetVisible(ctx, target) {
-				http.NotFound(w, r)
-				return apierrors.ErrNotFound
-			}
-
-			if err := db.DeleteDeploymentWithID(ctx, deployment.ID); err != nil {
-				log.Warn("could not delete Deployment", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return err
-			}
-
-			return nil
-		})
+func deleteDeployment(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	deployment := internalctx.GetDeployment(ctx)
+	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
+		if target, err := db.GetDeploymentTargetForDeploymentID(ctx, deployment.ID); err != nil {
+			return nil, fmt.Errorf("failed to get deployment target: %w", err)
+		} else if target.OrganizationID != *auth.CurrentOrgID() || !isDeploymentTargetVisible(ctx, target) {
+			return deploymentNotFound, nil
+		} else if err := db.DeleteDeploymentWithID(ctx, deployment.ID); err != nil {
+			return nil, fmt.Errorf("failed to delete deployment: %w", err)
+		} else {
+			return nil, nil
+		}
+	}); resp != nil || err != nil {
+		return resp, err
+	} else {
+		return respond.NoContent(), nil
 	}
 }
 
 func validateDeploymentRequest(
 	ctx context.Context,
-	w http.ResponseWriter,
 	request api.DeploymentRequest,
-) (*deploymentRequestValidationResult, error) {
-	log := internalctx.GetLogger(ctx)
+) (*deploymentRequestValidationResult, respond.Responder, error) {
 	auth := auth.Authentication.Require(ctx)
 	orgId := *auth.CurrentOrgID()
 
@@ -334,26 +259,21 @@ func validateDeploymentRequest(
 	var licenseKeys []types.LicenseKey
 
 	org := auth.CurrentOrg()
+	var resp respond.Responder
 	var err error
 
-	if app, err = db.GetApplicationForApplicationVersionID(ctx, request.ApplicationVersionID, orgId); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
-			return nil, badRequestError(w, "Application does not exist")
-		} else {
-			log.Warn("could not get Application", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return nil, err
-		}
+	if app, err = db.GetApplicationForApplicationVersionID(
+		ctx, request.ApplicationVersionID, orgId,
+	); errors.Is(err, distrerr.ErrNotFound) {
+		return nil, respond.BadRequest("application does not exist"), nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get application: %w", err)
 	}
 
-	if version, err = db.GetApplicationVersion(ctx, request.ApplicationVersionID); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
-			return nil, badRequestError(w, "ApplicationVersion does not exist")
-		} else {
-			log.Warn("could not get ApplicationVersion", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return nil, err
-		}
+	if version, err = db.GetApplicationVersion(ctx, request.ApplicationVersionID); errors.Is(err, distrerr.ErrNotFound) {
+		return nil, respond.BadRequest("application version does not exist"), nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get application version: %w", err)
 	}
 
 	if target, err = db.GetDeploymentTarget(
@@ -361,26 +281,18 @@ func validateDeploymentRequest(
 		request.DeploymentTargetID,
 		&orgId,
 		auth.CurrentPartnerOrgID(),
-	); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
-			return nil, badRequestError(w, "DeploymentTarget does not exist")
-		} else {
-			log.Warn("could not get DeploymentTarget", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return nil, err
-		}
+	); errors.Is(err, distrerr.ErrNotFound) {
+		return nil, deploymentTargetDoesNotExist, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get deployment target: %w", err)
 	}
 
 	if secrets, err = db.GetSecretsForDeploymentTarget(ctx, target.DeploymentTarget); err != nil {
-		log.Warn("could not get Secrets", zap.Error(err))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return nil, err
+		return nil, nil, fmt.Errorf("failed to get secrets: %w", err)
 	}
 
 	if licenseKeys, err = db.GetLicenseKeysForDeploymentTarget(ctx, target.DeploymentTarget); err != nil {
-		log.Warn("could not get LicenseKeys", zap.Error(err))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return nil, err
+		return nil, nil, fmt.Errorf("failed to get license keys: %w", err)
 	}
 
 	var existingDeployment *types.DeploymentWithLatestRevision
@@ -392,7 +304,7 @@ func validateDeploymentRequest(
 			}
 		}
 		if existingDeployment == nil {
-			return nil, badRequestError(w, "DeploymentTarget doesn't have Deployment with the specified ID")
+			return nil, respond.BadRequest("deployment target has no deployment with the specified ID"), nil
 		}
 	}
 
@@ -404,16 +316,16 @@ func validateDeploymentRequest(
 		} else if existingDeployment.ApplicationEntitlementID == nil {
 			// Allow setting an entitlement once when the existing deployment has no entitlement but the request provides one.
 		} else if *request.ApplicationEntitlementID != *existingDeployment.ApplicationEntitlementID {
-			return nil, badRequestError(w, "can not update entitlement")
+			return nil, respond.BadRequest("can not update entitlement"), nil
 		}
 
 		if existingDeployment.Application.ID != app.ID {
-			return nil, badRequestError(w, "can not change application of existing deployment")
+			return nil, respond.BadRequest("can not change application of existing deployment"), nil
 		}
 	}
 
-	if entitlement, err = resolveDeploymentEntitlement(ctx, w, request, org); err != nil {
-		return nil, err
+	if entitlement, resp, err = resolveDeploymentEntitlement(ctx, request, org); resp != nil || err != nil {
+		return nil, resp, err
 	}
 
 	automaticUpdates := util.PtrDerefOrDefault(request.AutomaticApplicationUpdatesEnabled)
@@ -422,27 +334,29 @@ func validateDeploymentRequest(
 			automaticUpdatesAllowed(org, app)
 	}
 
-	if err = validateDeploymentRequestEntitlement(
-		ctx, w, request, entitlement, app, target, existingDeployment,
-	); err != nil {
-		return nil, err
-	} else if err = validateDeploymentRequestDeploymentType(w, target, app); err != nil {
-		return nil, err
-	} else if err = validateDeploymentRequestDeploymentTarget(ctx, w, request, target); err != nil {
-		return nil, err
-	} else if err = validateDeploymentRequestValues(ctx, w, request, version, secrets, licenseKeys); err != nil {
-		return nil, err
-	} else if err = validateAutomaticApplicationUpdates(
-		w, request.ApplicationVersionID, automaticUpdates, entitlement, app, org,
-	); err != nil {
-		return nil, err
+	if resp := validateDeploymentRequestEntitlement(
+		ctx, request, entitlement, app, target, existingDeployment,
+	); resp != nil {
+		return nil, resp, nil
+	} else if resp := validateDeploymentRequestDeploymentType(target, app); resp != nil {
+		return nil, resp, nil
+	} else if resp := validateDeploymentRequestDeploymentTarget(ctx, request, target); resp != nil {
+		return nil, resp, nil
+	} else if resp, err := validateDeploymentRequestValues(
+		request, version, secrets, licenseKeys,
+	); resp != nil || err != nil {
+		return nil, resp, err
+	} else if resp := validateAutomaticApplicationUpdates(
+		request.ApplicationVersionID, automaticUpdates, entitlement, app, org,
+	); resp != nil {
+		return nil, resp, nil
 	} else {
 		return &deploymentRequestValidationResult{
 			Target:                             target.DeploymentTarget,
 			Secrets:                            secrets,
 			LicenseKeys:                        licenseKeys,
 			AutomaticApplicationUpdatesEnabled: automaticUpdates,
-		}, nil
+		}, nil, nil
 	}
 }
 
@@ -450,21 +364,20 @@ func validateDeploymentRequest(
 // version the customer is entitled to, so that the next update does not immediately supersede the
 // revision this request creates.
 func validateAutomaticApplicationUpdates(
-	w http.ResponseWriter,
 	applicationVersionID uuid.UUID,
 	enabled bool,
 	entitlement *types.ApplicationEntitlement,
 	app *types.Application,
 	org *types.Organization,
-) error {
+) respond.Responder {
 	if !enabled {
 		return nil
 	}
 	if !org.HasFeature(types.FeatureAutoUpdates) {
-		return badRequestError(w, "automatic updates are not enabled for this organization")
+		return respond.BadRequest("automatic updates are not enabled for this organization")
 	}
 	if !automaticUpdatesAllowed(org, app) {
-		return badRequestError(w, "this application does not allow automatic updates")
+		return respond.BadRequest("this application does not allow automatic updates")
 	}
 	versions := app.Versions
 	if entitlement != nil && len(entitlement.Versions) > 0 {
@@ -475,7 +388,7 @@ func validateAutomaticApplicationUpdates(
 		versions,
 	)
 	if latest == nil || latest.ID != applicationVersionID {
-		return badRequestError(w, "a deployment with automatic updates must use the latest application version")
+		return respond.BadRequest("a deployment with automatic updates must use the latest application version")
 	}
 	return nil
 }
@@ -502,288 +415,193 @@ func setDeploymentRequestValuesHash(
 
 func resolveDeploymentEntitlement(
 	ctx context.Context,
-	w http.ResponseWriter,
 	request api.DeploymentRequest,
 	org *types.Organization,
-) (*types.ApplicationEntitlement, error) {
+) (*types.ApplicationEntitlement, respond.Responder, error) {
 	if !org.HasFeature(types.FeatureLicensing) {
 		if request.ApplicationEntitlementID != nil {
-			return nil, badRequestError(w, "unexpected applicationEntitlementId")
+			return nil, respond.BadRequest("unexpected applicationEntitlementId"), nil
 		}
-		return nil, nil
+		return nil, nil, nil
 	}
 
-	log := internalctx.GetLogger(ctx)
 	authInfo := auth.Authentication.Require(ctx)
 
 	if request.ApplicationEntitlementID != nil {
-		entitlement, err := db.GetApplicationEntitlementByID(ctx, *request.ApplicationEntitlementID)
-		if err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
-				return nil, entitlementNotFoundError(w)
-			}
-			log.Error("could not get ApplicationEntitlement", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return nil, err
+		if entitlement, err := db.GetApplicationEntitlementByID(
+			ctx, *request.ApplicationEntitlementID,
+		); errors.Is(err, distrerr.ErrNotFound) {
+			return nil, entitlementDoesNotExist, nil
+		} else if err != nil {
+			return nil, nil, fmt.Errorf("failed to get application entitlement: %w", err)
+		} else {
+			return entitlement, nil, nil
 		}
-		return entitlement, nil
 	}
 
 	if authInfo.CurrentCustomerOrgID() != nil {
-		entitlements, err := db.GetApplicationEntitlementsWithOrganizationID(ctx, *authInfo.CurrentOrgID(), nil)
-		if err != nil {
-			log.Error("could not get ApplicationEntitlement", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return nil, err
-		}
-		if len(entitlements) > 0 {
+		if entitlements, err := db.GetApplicationEntitlementsWithOrganizationID(
+			ctx, *authInfo.CurrentOrgID(), nil,
+		); err != nil {
+			return nil, nil, fmt.Errorf("failed to get application entitlements: %w", err)
+		} else if len(entitlements) > 0 {
 			// entitlement ID is required for customer but optional for vendor
-			return nil, badRequestError(w, "applicationEntitlementId is required")
+			return nil, respond.BadRequest("applicationEntitlementId is required"), nil
 		}
 	}
 
-	return nil, nil
+	return nil, nil, nil
 }
 
-func badRequestError(w http.ResponseWriter, msg string) error {
-	http.Error(w, msg, http.StatusBadRequest)
-	return errors.New(msg)
-}
-
-func entitlementNotFoundError(w http.ResponseWriter) error {
-	return badRequestError(w, "entitlement does not exist")
-}
-
-func invalidEntitlementError(w http.ResponseWriter) error {
-	return badRequestError(w, "invalid entitlement")
-}
+var (
+	entitlementDoesNotExist = respond.BadRequest("entitlement does not exist")
+	invalidEntitlement      = respond.BadRequest("invalid entitlement")
+)
 
 func validateDeploymentRequestEntitlement(
 	ctx context.Context,
-	w http.ResponseWriter,
 	request api.DeploymentRequest,
 	entitlement *types.ApplicationEntitlement,
 	app *types.Application,
 	target *types.DeploymentTargetFull,
 	deployment *types.DeploymentWithLatestRevision,
-) error {
+) respond.Responder {
 	if entitlement != nil {
 		auth := auth.Authentication.Require(ctx)
 
 		if entitlement.OrganizationID != *auth.CurrentOrgID() {
-			return entitlementNotFoundError(w)
+			return entitlementDoesNotExist
 		}
 		if entitlement.CustomerOrganizationID == nil {
-			return invalidEntitlementError(w)
+			return invalidEntitlement
 		}
 		if auth.CurrentCustomerOrgID() != nil && *entitlement.CustomerOrganizationID != *auth.CurrentCustomerOrgID() {
-			return entitlementNotFoundError(w)
+			return entitlementDoesNotExist
 		}
 		if target.CustomerOrganizationID == nil || *target.CustomerOrganizationID != *entitlement.CustomerOrganizationID {
-			return invalidEntitlementError(w)
+			return invalidEntitlement
 		}
 		if len(entitlement.Versions) > 0 && !entitlement.HasVersionWithID(request.ApplicationVersionID) {
-			return invalidEntitlementError(w)
+			return invalidEntitlement
 		}
 		if app.ID != entitlement.ApplicationID {
-			return invalidEntitlementError(w)
+			return invalidEntitlement
 		}
 		if deployment != nil && deployment.Application.ID != entitlement.ApplicationID {
-			return badRequestError(w, "entitlement and deployment have applicationId mismatch")
+			return respond.BadRequest("entitlement and deployment have applicationId mismatch")
 		}
 	}
 	return nil
 }
 
 func validateDeploymentRequestDeploymentType(
-	w http.ResponseWriter,
 	target *types.DeploymentTargetFull,
 	application *types.Application,
-) error {
+) respond.Responder {
 	if target.Type != application.Type {
-		return badRequestError(w, "application and deployment target must have the same type")
+		return respond.BadRequest("application and deployment target must have the same type")
 	}
 	return nil
 }
 
+var deploymentTargetDoesNotExist = respond.BadRequest("deployment target does not exist")
+
 func validateDeploymentRequestDeploymentTarget(
 	ctx context.Context,
-	w http.ResponseWriter,
 	request api.DeploymentRequest,
 	target *types.DeploymentTargetFull,
-) error {
+) respond.Responder {
 	if !isDeploymentTargetVisible(ctx, target) {
-		err := errors.New("DeploymentTarget not found")
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return deploymentTargetDoesNotExist
 	}
 
 	if request.DeploymentID == nil && len(target.Deployments) > 0 {
-		if err := target.AgentVersion.CheckMultiDeploymentSupported(); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return err
+		if err := target.ControllerVersion.CheckMultiDeploymentSupported(); err != nil {
+			return respond.BadRequest(err.Error())
 		}
 	}
 
 	if request.IgnoreRevisionSkew && target.Type != types.DeploymentTypeKubernetes {
-		return badRequestError(w, "IgnoreRevisionSkew is only supported for Kubernetes deployments")
+		return respond.BadRequest("IgnoreRevisionSkew is only supported for Kubernetes deployments")
 	}
 
 	return nil
 }
 
 func validateDeploymentRequestValues(
-	ctx context.Context,
-	w http.ResponseWriter,
 	deploymentRequest api.DeploymentRequest,
 	appVersion *types.ApplicationVersion,
 	secrets []types.SecretWithUpdatedBy,
 	licenseKeys []types.LicenseKey,
-) error {
-	deploymentValues, err := deploymentvalues.ParsedValuesFileReplaceSecrets(&deploymentRequest, secrets, licenseKeys)
-	if err != nil {
-		return deploymentValuesError(ctx, w, err, "invalid values")
+) (respond.Responder, error) {
+	if deploymentValues, err := deploymentvalues.ParsedValuesFileReplaceSecrets(
+		&deploymentRequest, secrets, licenseKeys,
+	); err != nil {
+		return deploymentValuesError(err, "invalid values")
 	} else if appVersionValues, err := appVersion.ParsedValuesFile(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		return nil, fmt.Errorf("failed to parse values file of application version: %w", err)
 	} else if _, err := util.MergeAllRecursive(appVersionValues, deploymentValues); err != nil {
-		return badRequestError(w, fmt.Sprintf("values cannot be merged with base: %v", err))
+		return respond.BadRequest(fmt.Sprintf("values cannot be merged with base: %v", err)), nil
 	} else if _, err := deploymentvalues.EnvFileReplaceSecrets(&deploymentRequest, secrets, licenseKeys); err != nil {
-		return deploymentValuesError(ctx, w, err, "invalid env file")
+		return deploymentValuesError(err, "invalid env file")
+	} else {
+		return nil, nil
 	}
-	return nil
 }
 
-func deploymentValuesError(ctx context.Context, w http.ResponseWriter, err error, clientMsg string) error {
+// deploymentValuesError answers an invalid template with 400 and treats every other error as
+// unexpected.
+func deploymentValuesError(err error, clientMsg string) (respond.Responder, error) {
 	if errors.Is(err, deploymentvalues.ErrInvalidTemplate) {
-		return badRequestError(w, fmt.Sprintf("%s: %v", clientMsg, err.Error()))
+		return respond.BadRequest(fmt.Sprintf("%s: %v", clientMsg, err)), nil
+	} else {
+		return nil, fmt.Errorf("%s: %w", clientMsg, err)
 	}
-	internalctx.GetLogger(ctx).Warn("deployment values error", zap.Error(err))
-	sentry.GetHubFromContext(ctx).CaptureException(err)
-	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	return err
 }
 
-func getDeploymentRevisions(w http.ResponseWriter, r *http.Request) {
+func getDeploymentRevisions(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	deployment := internalctx.GetDeployment(ctx)
 	authInfo := auth.Authentication.Require(ctx)
 	if revisions, err := db.GetDeploymentRevisions(ctx, deployment.ID); err != nil {
-		internalctx.GetLogger(ctx).Error("failed to get deployment revisions", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return nil, fmt.Errorf("failed to get deployment revisions: %w", err)
 	} else {
-		RespondJSON(w, mapping.List(revisions, mapping.DeploymentRevisionToAPI(
+		return respond.JSON(mapping.List(revisions, mapping.DeploymentRevisionToAPI(
 			authInfo.CurrentCustomerOrgID(),
 			authInfo.CurrentPartnerOrgID(),
-		)))
+		))), nil
 	}
 }
 
-func getDeploymentStatus(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	deployment := internalctx.GetDeployment(ctx)
-	limit, err := parseTimeseriesLimit(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	queryRange, err := parseTimeseriesRange(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	order := types.OrderDirection(r.FormValue("order"))
-	if deploymentStatus, err := db.GetDeploymentRevisionStatus(
-		ctx, deployment.ID, limit, queryRange.Before, queryRange.After, queryRange.Filter, order,
-	); err != nil {
-		if errors.Is(err, apierrors.ErrBadRequest) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		internalctx.GetLogger(ctx).Error("failed to get deploymentstatus", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	} else {
-		RespondJSON(w, mapping.List(deploymentStatus, mapping.DeploymentRevisionStatusToAPI))
-	}
-}
-
-func getDeploymentMetrics(w http.ResponseWriter, r *http.Request) {
+func getDeploymentMetrics(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	deployment := internalctx.GetDeployment(ctx)
 	if metrics, err := db.GetLatestDeploymentMetricsForDeploymentID(ctx, deployment.ID); err != nil {
-		internalctx.GetLogger(ctx).Error("failed to get deployment resource metrics", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return nil, fmt.Errorf("failed to get deployment resource metrics: %w", err)
 	} else if metrics == nil {
-		w.WriteHeader(http.StatusNoContent)
+		return respond.NoContent(), nil
 	} else {
-		RespondJSON(w, mapping.DeploymentMetricsToAPI(*metrics))
+		return respond.JSON(mapping.DeploymentMetricsToAPI(*metrics)), nil
 	}
 }
 
-func exportDeploymentStatusHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-
-		deployment := internalctx.GetDeployment(ctx)
-
-		queryRange, err := parseTimeseriesRange(r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		filename := fmt.Sprintf("%s_deployment_status.log", time.Now().Format("2006-01-02"))
-		export := newExportWriter(w, log, filename)
-
-		if err := db.GetDeploymentRevisionStatusForExport(
-			ctx, deployment.ID, int(subscription.MaxLogExportRows),
-			queryRange.Before, queryRange.After, queryRange.Filter,
-			func(record types.DeploymentRevisionStatus) error {
-				return export.writeLine("[%s] [%s] %s\n",
-					record.CreatedAt.Format(time.RFC3339),
-					record.Type,
-					record.Message)
-			},
-		); err != nil {
-			export.fail(ctx, "failed to export status records", err)
-			return
-		}
-		export.finish()
+func deploymentMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	if deploymentId, err := uuid.Parse(r.PathValue("deploymentId")); err != nil {
+		return nil, deploymentNotFound, nil
+	} else if deployment, err := db.GetDeployment(
+		ctx,
+		deploymentId,
+		auth.CurrentUserID(),
+		*auth.CurrentOrgID(),
+		auth.CurrentCustomerOrgID(),
+		auth.CurrentPartnerOrgID(),
+	); errors.Is(err, distrerr.ErrNotFound) {
+		return nil, deploymentNotFound, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get deployment: %w", err)
+	} else {
+		return r.WithContext(internalctx.WithDeployment(ctx, deployment)), nil, nil
 	}
-}
-
-func deploymentMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		auth := auth.Authentication.Require(ctx)
-		deploymentId, err := uuid.Parse(r.PathValue("deploymentId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-
-		if deployment, err := db.GetDeployment(
-			ctx,
-			deploymentId,
-			auth.CurrentUserID(),
-			*auth.CurrentOrgID(),
-			auth.CurrentCustomerOrgID(),
-			auth.CurrentPartnerOrgID(),
-		); errors.Is(err, apierrors.ErrNotFound) {
-			w.WriteHeader(http.StatusNotFound)
-		} else if err != nil {
-			internalctx.GetLogger(ctx).Error("failed to get deployment", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
-		} else {
-			ctx = internalctx.WithDeployment(ctx, deployment)
-			next.ServeHTTP(w, r.WithContext(ctx))
-		}
-	})
 }

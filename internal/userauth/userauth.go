@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/authjwt"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
@@ -25,6 +25,17 @@ func SetUserPassword(ctx context.Context, user *types.UserAccount, password stri
 	return db.UpdateUserAccount(ctx, user)
 }
 
+func SetInitialUserPassword(ctx context.Context, user *types.UserAccount, password string, name *string) error {
+	if name != nil && *name != "" {
+		user.Name = *name
+	}
+	user.Password = password
+	if err := security.HashPassword(user); err != nil {
+		return err
+	}
+	return db.SetUserAccountInitialPassword(ctx, user)
+}
+
 // VerifyUserEmail marks the given email address (the one carried by the verification token) as verified and
 // persists the change. If the token carries a different email address than the user currently has, the email
 // is updated as well (used by the email-change flow). It is a no-op when the email is unchanged and already
@@ -39,7 +50,7 @@ func VerifyUserEmail(ctx context.Context, user *types.UserAccount, email string)
 
 // PrimaryOrganization returns the organization a login should default to: the user's last used organization,
 // or the first one if none was used before. For super admins, who are not assigned to organizations, all
-// organizations are considered. It returns apierrors.ErrNotFound when there is no organization to default to.
+// organizations are considered. It returns distrerr.ErrNotFound when there is no organization to default to.
 func PrimaryOrganization(ctx context.Context, user types.UserAccount) (types.OrganizationWithUserRole, error) {
 	var orgs []types.OrganizationWithUserRole
 	var err error
@@ -52,7 +63,7 @@ func PrimaryOrganization(ctx context.Context, user types.UserAccount) (types.Org
 		return types.OrganizationWithUserRole{}, err
 	}
 	if len(orgs) == 0 {
-		return types.OrganizationWithUserRole{}, apierrors.ErrNotFound
+		return types.OrganizationWithUserRole{}, distrerr.ErrNotFound
 	}
 	org := orgs[0]
 	if user.LastUsedOrganizationID != nil {
@@ -74,7 +85,7 @@ func PrimaryOrganization(ctx context.Context, user types.UserAccount) (types.Org
 func EnsurePrimaryOrganization(ctx context.Context, user types.UserAccount) (types.OrganizationWithUserRole, error) {
 	if org, err := PrimaryOrganization(ctx, user); err == nil {
 		return org, nil
-	} else if !errors.Is(err, apierrors.ErrNotFound) {
+	} else if !errors.Is(err, distrerr.ErrNotFound) {
 		return types.OrganizationWithUserRole{}, err
 	}
 
@@ -115,7 +126,7 @@ func GenerateLoginToken(ctx context.Context, user types.UserAccount) (string, er
 // GenerateCustomOIDCLoginToken generates the login token for a sign-in through an organization's own
 // identity provider, scoped to the organization the configuration belongs to. Unlike GenerateLoginToken it
 // never falls back to another organization and never creates one: the session belongs to the organization
-// whose provider authenticated it. It fails with apierrors.ErrNotFound when the user is not a member of it.
+// whose provider authenticated it. It fails with distrerr.ErrNotFound when the user is not a member of it.
 func GenerateCustomOIDCLoginToken(
 	ctx context.Context,
 	user types.UserAccount,

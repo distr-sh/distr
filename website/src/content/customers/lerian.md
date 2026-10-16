@@ -37,7 +37,7 @@ Lerian adopted Distr to power their Lifecycle Management platform, transforming 
 
 - **Bring Your Own Cluster (BYOC) deployments:** Customers run Lerian services in their own Kubernetes environments, meeting strict compliance requirements while leveraging standardized deployment workflows
 - **Declarative deployments with versioned templates:** All installations are predictable, fully traceable operations using Helm charts and OCI images, eliminating the inefficiency of manual scripts
-- **Integrated monitoring dashboard:** Real-time visibility into deployed versions, application health, container logs, and agent status, giving internal teams full visibility without compromising customer autonomy
+- **Integrated monitoring dashboard:** Real-time visibility into deployed versions, application health, container logs, and controller status, giving internal teams full visibility without compromising customer autonomy
 - **One-click rollbacks:** Instant reversion to previous versions with automatic rollback in seconds, dramatically reducing Mean Time To Recovery (MTTR) and eliminating long investigation windows
 - **Token-protected distribution:** Secure access to Helm repositories and OCI images ensures deployment integrity across all customer environments
 

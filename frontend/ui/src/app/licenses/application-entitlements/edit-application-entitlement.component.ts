@@ -29,17 +29,12 @@ import {
 } from '@angular/forms';
 import {Application, ApplicationVersion} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {
-  faChevronDown,
-  faExclamationTriangle,
-  faLightbulb,
-  faPen,
-  faPlus,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
+import {faChevronDown, faPen, faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {combineLatestWith, filter, first, firstValueFrom, Subject, switchMap, takeUntil} from 'rxjs';
 import {isArchived} from '../../../util/dates';
+import {sortApplicationVersions} from '../../../util/versions';
+import {AlertComponent} from '../../components/alert/alert.component';
 import {ExpiresAtPickerComponent} from '../../components/expires-at-picker/expires-at-picker.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ApplicationsService} from '../../services/applications.service';
@@ -59,6 +54,7 @@ import {ArtifactEntitlement} from '../../types/artifact-entitlement';
     CdkOverlayOrigin,
     CdkConnectedOverlay,
     FaIconComponent,
+    AlertComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   providers: [
@@ -204,7 +200,7 @@ export class EditApplicationEntitlementComponent
         filter((a) => a !== undefined)
       )
       .subscribe((selectedApp) => {
-        const allVersions = selectedApp.versions ?? [];
+        const allVersions = sortApplicationVersions(selectedApp.versioningStrategy, selectedApp.versions ?? []);
         const activeVersions = allVersions.filter((v) => !isArchived(v));
         const archivedVersions = allVersions.filter((v) => isArchived(v));
 
@@ -359,6 +355,4 @@ export class EditApplicationEntitlementComponent
   }
 
   protected readonly isArchived = isArchived;
-  protected readonly faExclamationTriangle = faExclamationTriangle;
-  protected readonly faLightbulb = faLightbulb;
 }

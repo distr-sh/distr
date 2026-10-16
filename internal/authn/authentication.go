@@ -15,6 +15,7 @@ type Authentication[T any] struct {
 	contextKey          contextKey
 	unknownErrorHandler func(w http.ResponseWriter, r *http.Request, err error)
 	unauthorizedHandler func(w http.ResponseWriter, r *http.Request)
+	authenticatedHook   func(ctx context.Context, value T)
 }
 
 func New[T any](authenticators ...RequestAuthenticator[T]) *Authentication[T] {
@@ -30,6 +31,10 @@ func (a *Authentication[T]) SetUnknownErrorHandler(handler func(w http.ResponseW
 // challenge among them, are already set when the handler is called.
 func (a *Authentication[T]) SetUnauthorizedHandler(handler func(w http.ResponseWriter, r *http.Request)) {
 	a.unauthorizedHandler = handler
+}
+
+func (a *Authentication[T]) SetAuthenticatedHook(hook func(ctx context.Context, value T)) {
+	a.authenticatedHook = hook
 }
 
 func (a *Authentication[T]) NewContext(ctx context.Context, auth T) context.Context {
@@ -64,6 +69,9 @@ func (a *Authentication[T]) Middleware(next http.Handler) http.Handler {
 					break
 				}
 			} else {
+				if a.authenticatedHook != nil {
+					a.authenticatedHook(r.Context(), result)
+				}
 				next.ServeHTTP(w, r.WithContext(a.NewContext(r.Context(), result)))
 				return
 			}

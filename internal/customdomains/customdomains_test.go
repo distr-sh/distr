@@ -79,7 +79,7 @@ func TestCustomerPortalDomainOrDefault(t *testing.T) {
 }
 
 // A customer_portal row must never be picked up by the vendor-facing resolvers, or a customer
-// hostname would end up in agent manifests and in the registry host.
+// hostname would end up in controller manifests and in the registry host.
 func TestVendorResolversIgnoreCustomerPortalDomains(t *testing.T) {
 	portalOnly := []types.CustomDomain{domain(types.DomainTypeCustomerPortal, "portal.vendor.com")}
 

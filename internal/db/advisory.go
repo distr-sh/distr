@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/internal/advisory"
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -311,7 +311,7 @@ func GetAdvisoryByID(
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.AdvisoryWithDetails])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("could not get advisory: %w", err)
 	}
@@ -323,7 +323,7 @@ func GetAdvisoryByID(
 		return nil, err
 	}
 	if len(scoped) == 0 {
-		return nil, apierrors.ErrNotFound
+		return nil, distrerr.ErrNotFound
 	}
 	return &scoped[0], nil
 }
@@ -365,7 +365,7 @@ func CreateAdvisory(ctx context.Context, advisory *types.Advisory) error {
 // besides its generated primary key, so a violation here is always the CVE ID.
 func errDuplicateCveID(err error) error {
 	if pgerr, ok := errors.AsType[*pgconn.PgError](err); ok && pgerr.Code == pgerrcode.UniqueViolation {
-		return fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+		return fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 	}
 	return err
 }
@@ -401,7 +401,7 @@ func UpdateAdvisory(ctx context.Context, advisory *types.Advisory) error {
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.Advisory])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return apierrors.ErrNotFound
+			return distrerr.ErrNotFound
 		}
 		return fmt.Errorf("could not update advisory: %w", errDuplicateCveID(err))
 	}
@@ -455,7 +455,7 @@ func PatchAdvisory(
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.Advisory])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("could not patch advisory: %w", err)
 	}
@@ -612,10 +612,12 @@ func getAdvisoryApplicationVersions(
 		`SELECT vav.advisory_id, vav.relation,
 			a.id AS application_id, a.name AS application_name,
 			a.type AS application_type, a.image_id AS application_image_id,
-			av.id AS application_version_id, av.name AS application_version_name
+			a.versioning_strategy AS application_versioning_strategy,
+			`+applicationVersionNestedRowExpr+` AS application_version
 		FROM AdvisoryApplicationVersion vav
 			JOIN ApplicationVersion av ON av.id = vav.application_version_id
-			JOIN Application a ON a.id = av.application_id
+			JOIN Application a ON a.id = av.application_id`+
+			applicationVersionCreatorJoin+`
 		WHERE vav.advisory_id = any(@advisoryIds)
 		ORDER BY a.name, av.created_at`,
 		pgx.NamedArgs{"advisoryIds": advisoryIDs},
@@ -627,6 +629,7 @@ func getAdvisoryApplicationVersions(
 	if err != nil {
 		return nil, fmt.Errorf("could not get advisory application versions: %w", err)
 	}
+	types.SortAdvisoryApplicationVersions(result)
 	return result, nil
 }
 
@@ -684,7 +687,7 @@ func filterAdvisoryVersionsForCustomer(
 	versions.ApplicationVersions = advisory.FilterVisibleVersions(
 		versions.ApplicationVersions,
 		func(v types.AdvisoryApplicationVersion) advisory.VersionRef {
-			return advisory.VersionRef{VersionID: v.ApplicationVersionID, ParentID: v.ApplicationID}
+			return advisory.VersionRef{VersionID: v.ApplicationVersion.ID, ParentID: v.ApplicationID}
 		},
 		application, now,
 	)

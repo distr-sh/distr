@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/authkey"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -97,7 +97,7 @@ func UpdateAccessTokenLabel(ctx context.Context, id, userID, orgID uuid.UUID, la
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.AccessToken]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
+			err = distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("could not update access token: %w", err)
 	} else {
@@ -153,7 +153,7 @@ func GetAccessToken(ctx context.Context, id, userID, orgID uuid.UUID) (*types.Ac
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.AccessToken]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
+			err = distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("could not get token: %w", err)
 	} else {
@@ -165,20 +165,21 @@ func GetAccessToken(ctx context.Context, id, userID, orgID uuid.UUID) (*types.Ac
 // on the token and on the secret that matched. A secret needs no salt, so its hash is a value the
 // database can compare, which is why verification, expiration and the usage timestamps are a single
 // statement: a secret deleted or expired while the request is on its way can then not authenticate
-// it. apierrors.ErrNotFound means the credential is not valid, without saying which part of it was
+// it. distrerr.ErrNotFound means the credential is not valid, without saying which part of it was
 // wrong. The comparison is deliberately not constant-time, unlike one against a password hash,
 // because a digest of CSPRNG output only helps somebody who can invert SHA-256.
 func AuthenticateAccessToken(ctx context.Context, token authkey.Token) (
 	*types.AccessTokenWithUserAccount, error,
 ) {
 	db := internalctx.GetDb(ctx)
-	args := pgx.NamedArgs{"key": token.Key[:]}
+	key := token.Key()
+	args := pgx.NamedArgs{"key": key[:]}
 	// A key that is a credential of its own is only accepted when no secret is presented for it, and
 	// carries its own expiration and last use, since a secret of the same token has its own.
 	secretExpr := ", key_last_used_at = now()"
 	secretCondition := `tok.key_is_credential
 		AND (tok.expires_at IS NULL OR tok.expires_at > now())`
-	if token.Secret != nil {
+	if secure, ok := token.(authkey.SecureToken); ok {
 		secretExpr = ""
 		matches := make([]string, 0, len(types.AccessTokenSecretSlots))
 		for _, slot := range types.AccessTokenSecretSlots {
@@ -191,7 +192,7 @@ func AuthenticateAccessToken(ctx context.Context, token authkey.Token) (
 				prefix))
 		}
 		secretCondition = strings.Join(matches, " OR ")
-		args["hash"] = token.Secret.Hash()
+		args["hash"] = secure.Secret().Hash()
 	}
 
 	rows, err := db.Query(
@@ -214,7 +215,7 @@ func AuthenticateAccessToken(ctx context.Context, token authkey.Token) (
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.AccessTokenWithUserAccount]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
+			err = distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("could not get token: %w", err)
 	} else {
@@ -222,7 +223,7 @@ func AuthenticateAccessToken(ctx context.Context, token authkey.Token) (
 	}
 }
 
-// CreateAccessTokenSecret fills the given slot and returns apierrors.ErrConflict if it is
+// CreateAccessTokenSecret fills the given slot and returns distrerr.ErrConflict if it is
 // already occupied, so that a concurrent request can never overwrite a secret that is in use.
 // It also clears the expiration of the token itself, which only ever belonged to a token that
 // predates secrets: from here on the token expires with the secrets it now has.
@@ -260,7 +261,7 @@ func CreateAccessTokenSecret(
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.AccessToken]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrConflict
+			err = distrerr.ErrConflict
 		}
 		return nil, fmt.Errorf("could not create access token secret: %w", err)
 	} else {
@@ -270,7 +271,7 @@ func CreateAccessTokenSecret(
 
 // DeleteAccessTokenSecret clears the given slot. It requires the other slot to be filled,
 // because a token whose last secret was removed would fall back to authenticating on its key
-// alone. Deleting the last secret returns apierrors.ErrConflict.
+// alone. Deleting the last secret returns distrerr.ErrConflict.
 func DeleteAccessTokenSecret(
 	ctx context.Context,
 	id, userID, orgID uuid.UUID,
@@ -294,7 +295,7 @@ func DeleteAccessTokenSecret(
 	if err != nil {
 		return fmt.Errorf("could not delete access token secret: %w", err)
 	} else if cmd.RowsAffected() == 0 {
-		return apierrors.ErrConflict
+		return distrerr.ErrConflict
 	}
 	return nil
 }
@@ -316,7 +317,7 @@ func RetireAccessTokenKeyCredential(ctx context.Context, id, userID, orgID uuid.
 	if err != nil {
 		return fmt.Errorf("could not retire access token key: %w", err)
 	} else if cmd.RowsAffected() == 0 {
-		return apierrors.ErrConflict
+		return distrerr.ErrConflict
 	}
 	return nil
 }

@@ -21,20 +21,6 @@ func (r *Registry) createJobsScheduler() (*jobs.Scheduler, error) {
 		return nil, err
 	}
 
-	if cron := env.CleanupDeploymenRevisionStatusCron(); cron != nil {
-		err = scheduler.RegisterCronJob(
-			*cron,
-			jobs.NewJob(
-				"DeploymentRevisionStatusCleanup",
-				cleanup.RunDeploymentRevisionStatusCleanup,
-				env.CleanupDeploymenRevisionStatusTimeout(),
-			),
-		)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	if cron := env.CleanupDeploymentTargetMetricsCron(); cron != nil {
 		err = scheduler.RegisterCronJob(
 			*cron,

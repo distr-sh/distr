@@ -1,18 +1,10 @@
 <app-page>
   <div class="distr-toolbar mb-4">
-    <app-search-bar [control]="filterForm.controls.search" placeholder="Filter agents" />
+    <app-search-bar [control]="filterForm.controls.search" placeholder="Filter deployments" />
 
     <div class="distr-toolbar-actions">
-      @if (isAlertsVisible()) {
-        <a
-          routerLink="/notifications/alert-configurations"
-          class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-          <fa-icon [icon]="faBullhorn" class="text-gray-500 dark:text-gray-400 mr-2" />
-          Alerts
-        </a>
-      }
       @if (auth.hasAnyRole('read_write', 'admin')) {
-        <app-quota-limit [usage]="count()" [limit]="limit()" label="agents" #quota />
+        <app-quota-limit [usage]="count()" [limit]="limit()" label="deployments" #quota />
         <button
           (click)="openWizard()"
           [disabled]="auth.isCustomer() && quota.isLimitReached()"
@@ -59,7 +51,7 @@
           <app-quota-limit
             [usage]="customerDeploymentTargets.deploymentTargets.length"
             [limit]="limit()"
-            label="agents" />
+            label="deployments" />
         </div>
       </div>
     }
@@ -74,7 +66,7 @@
       </div>
     }
   } @empty {
-    <div class="text-gray-500 dark:text-gray-400">No agents found.</div>
+    <div class="text-gray-500 dark:text-gray-400">No deployments found.</div>
   }
 
   <ng-template #deploymentModal>

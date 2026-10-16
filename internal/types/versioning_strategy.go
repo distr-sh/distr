@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 
 	"github.com/Masterminds/semver/v3"
@@ -62,6 +63,39 @@ func ApplicationVersionComparator(
 
 func compareApplicationVersionsByDate(a, b ApplicationVersion) int {
 	return a.CreatedAt.Compare(b.CreatedAt)
+}
+
+// SortApplicationVersions orders versions ASC by the application's versioning strategy. The
+// comparator is built from the whole slice, matching ApplicationVersionComparator.
+func SortApplicationVersions(strategy VersioningStrategy, versions []ApplicationVersion) {
+	slices.SortStableFunc(versions, ApplicationVersionComparator(strategy, versions))
+}
+
+// SortAdvisoryApplicationVersions orders advisory version rows by application name, then by each
+// application's versioning strategy (ASC). The comparator is built once per application from that
+// application's marked versions.
+func SortAdvisoryApplicationVersions(versions []AdvisoryApplicationVersion) {
+	grouped := make(map[string][]AdvisoryApplicationVersion)
+	for _, version := range versions {
+		// NUL sorts before any character of a name (Postgres text cannot contain it), so a name that
+		// is a prefix of another still sorts first.
+		key := version.ApplicationName + "\x00" + version.ApplicationID.String()
+		grouped[key] = append(grouped[key], version)
+	}
+	result := make([]AdvisoryApplicationVersion, 0, len(versions))
+	for _, key := range slices.Sorted(maps.Keys(grouped)) {
+		group := grouped[key]
+		applicationVersions := make([]ApplicationVersion, len(group))
+		for j, version := range group {
+			applicationVersions[j] = version.ApplicationVersion
+		}
+		compare := ApplicationVersionComparator(group[0].ApplicationVersioningStrategy, applicationVersions)
+		slices.SortStableFunc(group, func(a, b AdvisoryApplicationVersion) int {
+			return compare(a.ApplicationVersion, b.ApplicationVersion)
+		})
+		result = append(result, group...)
+	}
+	copy(versions, result)
 }
 
 // LatestApplicationVersion returns the newest of the given versions, ignoring archived ones, or

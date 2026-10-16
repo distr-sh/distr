@@ -5,16 +5,16 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/authkey"
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 )
 
 func FromAuthKey(ctx context.Context, token authkey.Token) (AuthInfo, error) {
 	at, err := db.AuthenticateAccessToken(ctx, token)
 	if err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			err = fmt.Errorf("%w: %w", authn.ErrBadAuthentication, err)
 		}
 		return nil, err
@@ -29,9 +29,7 @@ func FromAuthKey(ctx context.Context, token authkey.Token) (AuthInfo, error) {
 		customerOrganizationID: at.CustomerOrganizationID,
 		isAccessToken:          true,
 		userRole:               &role,
-		// Only the key, never the secret: nothing downstream needs to authenticate with the
-		// token again, and a credential that is not carried around cannot be leaked.
-		rawToken: token.Key,
+		rawToken:               token,
 	}, nil
 }
 

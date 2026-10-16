@@ -181,7 +181,7 @@ Faster initial timeline (2 to 3 months) but ongoing maintenance. You serve every
 
 ### Using Distr
 
-Distr supports Docker Compose and Kubernetes natively, which means a single platform for both, consistent licensing across deployment methods, one customer portal, and the same agent architecture regardless of target.
+Distr supports Docker Compose and Kubernetes natively, which means a single platform for both, consistent licensing across deployment methods, one customer portal, and the same controller architecture regardless of target.
 
 ### Kubernetes-only platforms
 

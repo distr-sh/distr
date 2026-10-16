@@ -1,5 +1,5 @@
 <div class="distr-card font-medium text-gray-900 dark:text-white">
-  <div class="mx-4 my-3 md:flex justify-between items-center min-w-0">
+  <div class="mx-4 my-3 md:flex justify-between items-center gap-2 min-w-0">
     <div class="sm:flex justify-between items-center min-w-0">
       <div class="flex gap-3 items-center mb-2 md:mb-0 min-w-0">
         <div class="shrink-0">
@@ -11,12 +11,19 @@
             width="199" />
         </div>
         <div class="min-w-0">
-          <div class="flex gap-2">
+          <div class="flex gap-2 items-center">
             <h3 class="font-bold truncate break-all" [title]="deploymentTarget().name">
               <a [routerLink]="['/deployments', deploymentTarget().id]" class="hover:underline">
                 {{ deploymentTarget().name }}
               </a>
             </h3>
+            @if (deploymentTarget().reconnectPending) {
+              <span
+                class="distr-badge distr-badge-warning shrink-0 whitespace-nowrap"
+                title="The controller secret was rotated, but no controller has connected to Distr with the new secret yet. Until then, the previous secret stays valid and applications continue operating.">
+                Reconnect pending
+              </span>
+            }
           </div>
           <div class="flex flex-col items-start lg:flex-row lg:items-center lg:gap-2">
             <dl class="inline-flex gap-1 text-sm">
@@ -31,7 +38,7 @@
     </div>
 
     <div class="flex gap-2 items-center">
-      @let connected = deploymentTarget().reportedAgentVersionId !== undefined;
+      @let connected = deploymentTarget().reportedControllerVersionId !== undefined;
       @let deployEnabled = isMultiDeploymentSupported() || deploymentTarget().deployments.length === 0;
 
       @if (deploymentTarget().metricsEnabled) {
@@ -46,7 +53,9 @@
           class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary disabled:opacity-60 disabled:cursor-not-allowed"
           [disabled]="!deployEnabled"
           [title]="
-            deployEnabled ? '' : 'Multiple deployments require agent version 1.6 or newer. Please consider updating.'
+            deployEnabled
+              ? ''
+              : 'Multiple deployments require controller version 1.6 or newer. Please consider updating.'
           ">
           <fa-icon [icon]="faPlus" class="h-5 w-5 mr-0.5 -ml-1 text-gray-500 dark:text-gray-400" />
           <span class="whitespace-nowrap">Deploy App</span>
@@ -69,7 +78,7 @@
         #dropdownTrigger="cdkOverlayOrigin"
         (click)="showDeploymentTargetDropdown.set(true)">
         <fa-icon [icon]="faEllipsisVertical" class="h-5 w-5 text-gray-500 dark:text-gray-400" />
-        @if (agentUpdateAvailable() || agentUpdatePending()) {
+        @if (controllerUpdateAvailable() || controllerUpdatePending()) {
           <span class="rounded-full size-2 bg-blue-400 absolute -bottom-0.5 -right-0.5"></span>
         }
       </button>
@@ -104,17 +113,17 @@
                 </button>
               </li>
 
-              @if (agentUpdateAvailable()) {
+              @if (controllerUpdateAvailable()) {
                 <li>
                   <button
                     type="button"
-                    (click)="showDeploymentTargetDropdown.set(false); updateDeploymentTargetAgent()"
+                    (click)="showDeploymentTargetDropdown.set(false); updateDeploymentTargetController()"
                     class="distr-dropdown-item">
                     <fa-icon [icon]="faRotate" class="w-4 text-gray-500 dark:text-gray-400" />
-                    Update Agent
+                    Update Controller
                   </button>
                 </li>
-              } @else if (agentUpdatePending()) {
+              } @else if (controllerUpdatePending()) {
                 <li>
                   <span class="distr-dropdown-item pointer-events-none text-gray-500 dark:text-gray-400 select-none">
                     <fa-icon [icon]="faRotate" class="w-4" />
@@ -138,20 +147,32 @@
             <li>
               <a class="distr-dropdown-item" [routerLink]="[deploymentTarget().id]">
                 <fa-icon [icon]="faBinoculars" class="w-4 text-gray-500 dark:text-gray-400" />
-                Agent Logs
+                Controller Logs
               </a>
             </li>
 
             @if (auth.hasAnyRole('read_write', 'admin')) {
-              <li>
-                <button
-                  type="button"
-                  (click)="showDeploymentTargetDropdown.set(false); openInstructionsModal()"
-                  class="distr-dropdown-item distr-dropdown-item-warning">
-                  <fa-icon [icon]="faLink" class="w-4" />
-                  Reconnect
-                </button>
-              </li>
+              @if (deploymentTarget().reconnectPending) {
+                <li>
+                  <button
+                    type="button"
+                    (click)="showDeploymentTargetDropdown.set(false); cancelReconnect()"
+                    class="distr-dropdown-item distr-dropdown-item-warning">
+                    <fa-icon [icon]="faLinkSlash" class="w-4" />
+                    Cancel reconnect
+                  </button>
+                </li>
+              } @else if (connected) {
+                <li>
+                  <button
+                    type="button"
+                    (click)="showDeploymentTargetDropdown.set(false); openInstructionsModal()"
+                    class="distr-dropdown-item distr-dropdown-item-warning">
+                    <fa-icon [icon]="faLink" class="w-4" />
+                    Reconnect
+                  </button>
+                </li>
+              }
 
               <li>
                 @let hasDeployments = deploymentTarget().deployments.length > 0;
@@ -166,16 +187,12 @@
                   Delete
                 </button>
                 <ng-template #deleteConfirmModal>
-                  <div
-                    class="p-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
-                    role="alert">
-                    <span class="font-semibold me-1">WARNING!</span>
-                    You are about to delete the deployment with name {{ deploymentTarget().name }}
-                    This will also delete all:
+                  <app-alert type="warning">
+                    You are about to delete the deployment with name {{ deploymentTarget().name }}. This will also
+                    delete all:
                     <ul class="my-1.5 list-disc list-inside">
                       <li>associated configuration</li>
                       <li>revision history</li>
-                      <li>status logs</li>
                     </ul>
 
                     <p>
@@ -185,7 +202,7 @@
 
                     This action can not be undone. If you want to continue, please type <code>DELETE</code> into the
                     text box and confirm.
-                  </div>
+                  </app-alert>
                 </ng-template>
               </li>
             }
@@ -201,7 +218,9 @@
         @let deploymentIdsWithUpdate1 = deploymentIdsWithUpdate();
         @let autoUpdatableDeploymentIds = deploymentIdsAllowingAutomaticUpdates();
         @for (deployment of deploymentTarget().deployments; track deployment.id) {
-          <li class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-300 dark:border-gray-500">
+          <li
+            class="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-300 dark:border-gray-500"
+            (click)="onDeploymentRowClick($event, deployment)">
             <div class="px-4 py-2">
               <div class="flex flex-col gap-1">
                 <div class="flex items-center justify-between gap-3">
@@ -221,15 +240,13 @@
                         Open
                       </a>
                     }
-                    @if (deployment.currentStatus ?? deployment.latestStatus) {
-                      <a
-                        class="px-2 py-1 flex items-center text-sm font-medium text-center distr-btn-secondary"
-                        [routerLink]="[deploymentTarget().id]"
-                        [queryParams]="{deploymentId: deployment.id}">
-                        <fa-icon [icon]="faHeartPulse" class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400" />
-                        Inspect
-                      </a>
-                    }
+                    <button
+                      type="button"
+                      (click)="openDeploymentLogs(deployment)"
+                      class="px-2 py-1 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                      <fa-icon [icon]="faBinoculars" class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400" />
+                      Inspect
+                    </button>
                     @if (auth.hasAnyRole('read_write', 'admin')) {
                       <button
                         type="button"
@@ -319,7 +336,7 @@
                                 [title]="
                                   isForceRestartSupported()
                                     ? ''
-                                    : 'Agent must have version 1.12.0 or greater. Please update this agent.'
+                                    : 'Controller must have version 1.12.0 or greater. Please update this controller.'
                                 "
                                 [disabled]="!isForceRestartSupported()">
                                 <fa-icon [icon]="faPowerOff" class="w-4" />
@@ -338,30 +355,26 @@
                                 [title]="
                                   isUndeploySupported()
                                     ? ''
-                                    : 'Agent must have version 1.3.0 or greater. Please update this agent.'
+                                    : 'Controller must have version 1.3.0 or greater. Please update this controller.'
                                 "
                                 [disabled]="!isUndeploySupported()">
                                 <fa-icon [icon]="faTriangleExclamation" class="w-4" />
                                 Undeploy
                               </button>
                               <ng-template #undeployConfirmTemplate>
-                                <div
-                                  class="p-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
-                                  role="alert">
-                                  <span class="font-semibold me-1">WARNING!</span>
+                                <app-alert type="warning">
                                   You are about to uninstall
                                   {{ deployment.application.name }}@{{ deployment.applicationVersionName }} on
                                   {{ deploymentTarget().name }}. This will also delete all:
                                   <ul class="my-1.5 list-disc list-inside">
                                     <li>associated configuration</li>
                                     <li>revision history</li>
-                                    <li>status logs</li>
                                     <li>application data</li>
                                   </ul>
 
                                   This action can not be undone. If you want to continue, please type
                                   <code>UNDEPLOY</code> into the text box and confirm.
-                                </div>
+                                </app-alert>
                               </ng-template>
                             </li>
                           }
@@ -372,17 +385,14 @@
                 </div>
                 <div class="flex items-center justify-between gap-3">
                   <div class="flex items-center gap-2 min-w-0">
-                    <button type="button" class="flex items-center" (click)="openRevisionsDrawer(deployment)">
-                      <app-deployment-status-text [deployment]="deployment" />
-                    </button>
+                    <app-deployment-status-text [deployment]="deployment" />
                     @if (
                       deployment.automaticApplicationUpdatesEnabled &&
                       deployment.id &&
                       autoUpdatableDeploymentIds.has(deployment.id)
                     ) {
                       <span
-                        class="distr-status-badge whitespace-nowrap"
-                        [ngClass]="automaticUpdatesBadgeClass"
+                        class="distr-badge distr-badge-success whitespace-nowrap"
                         title="This deployment is updated to the latest version automatically.">
                         Auto-Updates
                       </span>
@@ -409,23 +419,24 @@
   }
 </div>
 
-<ng-template #updateAgentConfirmTemplate>
+<ng-template #updateControllerConfirmTemplate>
   <div class="space-y-4 text-sm text-gray-700 dark:text-gray-200">
-    <div class="p-4 rounded-lg bg-blue-50 text-blue-800 dark:bg-gray-800 dark:text-blue-300" role="note">
-      Updating the agent is a safe action. It does not trigger any changes or restarts for the deployed application.
-    </div>
+    <app-alert type="info">
+      Updating the controller is a safe action. It does not trigger any changes or restarts for the deployed
+      application.
+    </app-alert>
 
     <p>
-      Update {{ deploymentTarget().name }} agent from <code>{{ agentUpdateFromVersion() ?? 'unknown' }}</code> to
-      <code>{{ agentUpdateToVersion() }}</code
+      Update {{ deploymentTarget().name }} controller from
+      <code>{{ controllerUpdateFromVersion() ?? 'unknown' }}</code> to <code>{{ controllerUpdateToVersion() }}</code
       >?
     </p>
 
     <div>
-      <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Agent release notes</h4>
-      @if (agentUpdateChangelogReleases().length > 0) {
+      <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Controller release notes</h4>
+      @if (controllerUpdateChangelogReleases().length > 0) {
         <div class="max-h-72 overflow-y-auto pr-1 space-y-4">
-          @for (release of agentUpdateChangelogReleases(); track release.version) {
+          @for (release of controllerUpdateChangelogReleases(); track release.version) {
             <div>
               <h5 class="font-semibold text-gray-900 dark:text-white">{{ release.version }}</h5>
               @for (section of release.sections; track section.section) {
@@ -449,14 +460,14 @@
     @if (!deploymentTarget().automaticUpdatesEnabled) {
       <div class="flex items-center">
         <input
-          id="agent-update-automatic-updates-checkbox"
+          id="controller-update-automatic-updates-checkbox"
           type="checkbox"
-          [formControl]="agentUpdateAutomaticUpdatesEnabled"
+          [formControl]="controllerUpdateAutomaticUpdatesEnabled"
           class="distr-checkbox" />
         <label
-          for="agent-update-automatic-updates-checkbox"
+          for="controller-update-automatic-updates-checkbox"
           class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-          Update this agent automatically in the future
+          Update this controller automatically in the future
         </label>
       </div>
     }
@@ -494,7 +505,7 @@
     <!-- Modal body -->
     <div class="p-4 md:p-5 space-y-4">
       <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
-        To setup this Deployment, the Distr Agent must be installed on the target server/VM. Simply connect to the
+        To setup this Deployment, the Distr Controller must be installed on the target server/VM. Simply connect to the
         target (e.g. via SSH) and execute the following:
       </p>
       <app-connect-instructions [deploymentTarget]="deploymentTarget()" />
@@ -555,13 +566,7 @@
     <form [formGroup]="editForm" (ngSubmit)="saveDeploymentTarget()">
       <div class="mb-4 space-y-4">
         @if (deploymentTarget().customerOrganization !== undefined && auth.isVendor()) {
-          <div
-            class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
-            role="alert">
-            <fa-icon [icon]="faCircleExclamation" />
-            <span class="sr-only">Info</span>
-            <div class="ms-3 text-sm font-medium">{{ customerManagedWarning }}</div>
-          </div>
+          <app-alert type="info" class="mb-4">{{ customerManagedNotice }}</app-alert>
         }
         <div>
           <label for="name" class="distr-label mb-2">Name *</label>
@@ -606,11 +611,12 @@
           </div>
           @if (editForm.controls.metricsEnabled.disabled) {
             <p class="text-xs text-gray-500 dark:text-gray-400">
-              Metrics reporting is not available for a namespace scoped agent.
+              Metrics reporting is not available for a namespace scoped controller.
             </p>
           }
           <p class="text-xs text-gray-500 dark:text-gray-400">
-            Changing metrics reporting requires the agent to reconnect. Metrics reporting is not supported on macOS.
+            Changing metrics reporting requires the controller to reconnect. Metrics reporting is not supported on
+            macOS.
           </p>
         </div>
 
@@ -622,12 +628,12 @@
               formControlName="automaticUpdatesEnabled"
               class="distr-checkbox" />
             <label for="automatic-updates-checkbox" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-              Enable automatic agent updates
+              Enable automatic controller updates
             </label>
           </div>
           <p class="text-xs text-gray-500 dark:text-gray-400">
-            When enabled, the agent is updated to the latest version as soon as one becomes available. Updating the
-            agent does not restart or update the deployed application.
+            When enabled, the controller is updated to the latest version as soon as one becomes available. Updating the
+            controller does not restart or update the deployed application.
           </p>
         </div>
 
@@ -644,9 +650,7 @@
           </div>
 
           @if (!isLoggingSupported()) {
-            <p class="text-xs text-yellow-800 dark:text-yellow-300">
-              Log collection requires Agent version 1.9.0 or later
-            </p>
+            <p class="distr-hint-warning">Log collection requires Controller version 1.9.0 or later.</p>
           }
 
           @if (editForm.controls.deploymentLogsEnabled.value && isDeploymentLogsAfterEnabled()) {
@@ -685,7 +689,7 @@
               </div>
 
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                Only collect application logs with a timestamp greater than specified. Use this if an agent appears
+                Only collect application logs with a timestamp greater than specified. Use this if a controller appears
                 stuck collecting very old logs.
               </p>
             </div>
@@ -730,7 +734,7 @@
               autocomplete="off"
               class="distr-input" />
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              The Docker socket on the host that the agent should use. Defaults to
+              The Docker socket on the host that the controller should use. Defaults to
               <code>unix:///var/run/docker.sock</code>.
             </p>
             @if (editForm.controls.dockerEndpoint.invalid && editForm.controls.dockerEndpoint.touched) {
@@ -741,9 +745,7 @@
           </div>
 
           @if (editForm.controls.dockerEndpoint.dirty) {
-            <div class="text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400" role="alert">
-              Changes to the Docker endpoint are only applied after a reconnect!
-            </div>
+            <app-alert type="info">Changes to the Docker endpoint are only applied after a reconnect!</app-alert>
           }
         }
 
@@ -751,7 +753,7 @@
           <div class="flex items-center">
             <input id="custom-resources" type="checkbox" formControlName="customResources" class="distr-checkbox" />
             <label for="custom-resources" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-              Set custom resource requirements for the Distr agent
+              Set custom resource requirements for the Distr controller
             </label>
           </div>
         }
@@ -812,9 +814,7 @@
           </ng-container>
 
           @if (editForm.controls.resources.dirty) {
-            <div class="text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400" role="alert">
-              Changes in the resource requirements are only applied after a reconnect!
-            </div>
+            <app-alert type="info">Changes in the resource requirements are only applied after a reconnect!</app-alert>
           }
         }
       </div>

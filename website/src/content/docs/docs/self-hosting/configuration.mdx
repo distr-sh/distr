@@ -31,6 +31,8 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 | `DISTR_HOST`                          | yes      | —         | Base URL of your Distr instance. Its scheme is used for every link, callback URL and email.                                                                             |
 | `DISTR_ENV`                           | no       | —         | Path to a dotenv file to load on startup (a matching `.secret` file is also loaded if present).                                                                         |
 | `REGISTRATION`                        | no       | `enabled` | Sign-up mode, see below: `enabled`, `hidden` or `disabled`.                                                                                                             |
+| `BLOCKED_EMAIL_DOMAINS`               | no       | —         | Comma-separated email domains that cannot sign up, log in or reset a password, see [Blocklists](#blocklists).                                                           |
+| `BLOCKED_IPS`                         | no       | —         | Comma-separated IP addresses and CIDR ranges that cannot sign up, log in or reset a password, see [Blocklists](#blocklists).                                            |
 | `USER_EMAIL_VERIFICATION_REQUIRED`    | no       | `true`    | Whether new users must verify their email address before signing in.                                                                                                    |
 | `SERVER_SHUTDOWN_DELAY_DURATION`      | no       | —         | Delay between receiving a shutdown signal and stopping the server (useful for rolling deploys).                                                                         |
 | `ENABLE_QUERY_LOGGING`                | no       | `false`   | Logs all database queries. Intended for debugging only.                                                                                                                 |
@@ -48,10 +50,24 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 - `disabled`: sign-up is rejected, both on `/register` and for OIDC logins with an unknown email address. Existing
   users can still sign in, and new users can still be added through an invitation.
 
+### Blocklists
+
+`BLOCKED_EMAIL_DOMAINS` (e.g. `example.com,spam.io`) refuses registration, password login, password resets,
+invitations, email changes and login through the built-in OIDC providers for addresses of a listed domain or any of its subdomains,
+so `example.com` also covers `mail.example.com`. Matching ignores case. Organizations' own OIDC providers are not
+affected.
+
+`BLOCKED_IPS` (e.g. `203.0.113.7,198.51.100.0/24,2001:db8::/32`) refuses every request to the sign-up, login and
+password reset endpoints whose client IP is a listed address or lies in a listed range. Behind a reverse proxy,
+the client IP is the rightmost entry of the `X-Forwarded-For` header.
+
+Both answer with `403 Forbidden`, except a blocked email domain on a built-in OIDC login, which redirects back to the
+login page and shows the reason there.
+
 ### Maintenance mode
 
 `MAINTENANCE_MODE=true` announces planned downtime instead of stopping the instance. Distr keeps serving the
-frontend, but answers every API request, including the ones from agents, and every request to the OCI registry with
+frontend, but answers every API request, including the ones from controllers, and every request to the OCI registry with
 `503 Service Unavailable`, so that nothing reaches the database while you work on it. The frontend picks that up and
 shows a maintenance page that reconnects on its own once the instance is back.
 
@@ -73,11 +89,11 @@ See [Security & Encryption](/docs/self-hosting/security#key-management-service) 
 
 ## Tokens & Sessions
 
-| Variable                         | Required | Default | Description                                                       |
-| -------------------------------- | -------- | ------- | ----------------------------------------------------------------- |
-| `INVITE_TOKEN_VALID_DURATION`    | no       | `24h`   | How long user invite links remain valid.                          |
-| `RESET_TOKEN_VALID_DURATION`     | no       | `1h`    | How long password reset links remain valid.                       |
-| `AGENT_TOKEN_MAX_VALID_DURATION` | no       | `24h`   | Maximum validity of an agent access token before it is refreshed. |
+| Variable                              | Required | Default | Description                                                                                                                     |
+| ------------------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `INVITE_TOKEN_VALID_DURATION`         | no       | `24h`   | How long user invite links remain valid.                                                                                        |
+| `RESET_TOKEN_VALID_DURATION`          | no       | `1h`    | How long password reset links remain valid.                                                                                     |
+| `CONTROLLER_TOKEN_MAX_VALID_DURATION` | no       | `24h`   | Maximum validity of a controller access token before it is refreshed. Replaces the deprecated `AGENT_TOKEN_MAX_VALID_DURATION`. |
 
 ## Bot Protection
 
@@ -97,13 +113,16 @@ the widget and are not verified; they remain subject to the rate limits of the a
 | `TURNSTILE_SITE_KEY` | if `TURNSTILE_SECRET`   | —       | Public site key of the Turnstile widget, rendered on the registration form.        |
 | `TURNSTILE_SECRET`   | if `TURNSTILE_SITE_KEY` | —       | Secret key used to verify tokens with Cloudflare's siteverify API. Keep it secret. |
 
-## Agents
+## Controllers
 
-| Variable              | Required | Default | Description                                                                                                                                                                                                                                                                                 |
-| --------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AGENT_HOST`          | no       | —       | Host (and optional port, no scheme) agents and connect commands reach this instance at, taking precedence over an organization's custom app domain. Its scheme is taken from `DISTR_HOST`. Unset, agents use the organization's custom app domain if it has one and `DISTR_HOST` otherwise. |
-| `AGENT_INTERVAL`      | no       | `5s`    | Interval at which agents poll Distr for updates.                                                                                                                                                                                                                                            |
-| `AGENT_DOCKER_CONFIG` | no       | —       | Base64-encoded Docker config JSON provided to Docker agents for registry authentication.                                                                                                                                                                                                    |
+Distr still reads every controller variable under its deprecated `AGENT_*` name when the new one is unset, and logs a
+warning on startup for each one it found that way.
+
+| Variable                   | Required | Default | Description                                                                                                                                                                                                                                                                                                                                 |
+| -------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CONTROLLER_HOST`          | no       | —       | Host (and optional port, no scheme) controllers and connect commands reach this instance at, taking precedence over an organization's custom app domain. Its scheme is taken from `DISTR_HOST`. Unset, controllers use the organization's custom app domain if it has one and `DISTR_HOST` otherwise. Replaces the deprecated `AGENT_HOST`. |
+| `CONTROLLER_INTERVAL`      | no       | `5s`    | Interval at which controllers poll Distr for updates. Replaces the deprecated `AGENT_INTERVAL`.                                                                                                                                                                                                                                             |
+| `CONTROLLER_DOCKER_CONFIG` | no       | —       | Base64-encoded Docker config JSON provided to Docker controllers for registry authentication. Replaces the deprecated `AGENT_DOCKER_CONFIG`.                                                                                                                                                                                                |
 
 ## Mailer
 
@@ -167,7 +186,7 @@ Custom domain self-service lets vendor organizations serve Distr under their own
 It requires an edge proxy with on-demand TLS (e.g. Caddy, included in the Helm chart) in front of Distr.
 The feature is only offered in the UI when `CUSTOM_DOMAIN_TARGET` is set.
 
-A domain is only used for links, mails, agent manifests and registry URLs once a CNAME check has
+A domain is only used for links, mails, controller manifests and registry URLs once a CNAME check has
 found it to point at the CNAME target; until then the organization keeps the default host. The check runs
 when a domain is registered, can be triggered from the organization settings and needs to be
 [scheduled](/docs/self-hosting/maintenance#custom-domain-verification) so that domains recover on
@@ -211,30 +230,27 @@ See [Maintenance Jobs](/docs/self-hosting/maintenance/) for details and Kubernet
 If a `*_CRON` variable is unset, the corresponding job is not scheduled. For the timeout variables listed below,
 `0` means no timeout.
 
-| Variable                                     | Required | Default | Description                                                                 |
-| -------------------------------------------- | -------- | ------- | --------------------------------------------------------------------------- |
-| `STATUS_ENTRIES_MAX_AGE`                     | no       | —       | Max age of deployment revision status entries before cleanup removes them.  |
-| `METRICS_ENTRIES_MAX_AGE`                    | no       | —       | Max age of deployment target metrics entries before cleanup removes them.   |
-| `CLEANUP_DEPLOYMENT_REVISION_STATUS_CRON`    | no       | —       | Cron schedule for pruning deployment revision status entries.               |
-| `CLEANUP_DEPLOYMENT_REVISION_STATUS_TIMEOUT` | no       | `0`     | Timeout for the revision status cleanup run.                                |
-| `CLEANUP_DEPLOYMENT_TARGET_METRICS_CRON`     | no       | —       | Cron schedule for pruning deployment target metrics.                        |
-| `CLEANUP_DEPLOYMENT_TARGET_METRICS_TIMEOUT`  | no       | `0`     | Timeout for the metrics cleanup run.                                        |
-| `CLEANUP_OIDC_STATE_CRON`                    | no       | —       | Cron schedule for pruning expired OIDC state entries.                       |
-| `CLEANUP_OIDC_STATE_CRON_TIMEOUT`            | no       | `0`     | Timeout for the OIDC state cleanup run.                                     |
-| `CLEANUP_ARTIFACT_BLOB_CRON`                 | no       | —       | Cron schedule for pruning unreferenced registry blobs from S3.              |
-| `CLEANUP_ARTIFACT_BLOB_TIMEOUT`              | no       | `0`     | Timeout for the artifact blob cleanup run.                                  |
-| `CLEANUP_ARTIFACT_BLOB_MIN_AGE`              | no       | `24h`   | Minimum age of an unreferenced blob before it is eligible for deletion.     |
-| `CLEANUP_ORGANIZATION_CRON`                  | no       | —       | Cron schedule for permanently deleting soft-deleted organizations.          |
-| `CLEANUP_ORGANIZATION_TIMEOUT`               | no       | `0`     | Timeout for the organization cleanup run.                                   |
-| `CLEANUP_ORGANIZATION_MIN_AGE`               | no       | `720h`  | Retention period before a soft-deleted organization is permanently deleted. |
-| `CLEANUP_USER_ACCOUNT_CRON`                  | no       | —       | Cron schedule for deleting user accounts that belong to no organization.    |
-| `CLEANUP_USER_ACCOUNT_TIMEOUT`               | no       | `0`     | Timeout for the user account cleanup run.                                   |
-| `CLEANUP_USER_ACCOUNT_MIN_AGE`               | no       | `720h`  | Time since the last login, or creation if never logged in, before deletion. |
-| `CLEANUP_FILE_CRON`                          | no       | —       | Cron schedule for deleting files that nothing references any more.          |
-| `CLEANUP_FILE_TIMEOUT`                       | no       | `0`     | Timeout for the file cleanup run.                                           |
-| `CLEANUP_FILE_MIN_AGE`                       | no       | `24h`   | Minimum age of an unreferenced file before it is deleted.                   |
-| `DEPLOYMENT_STATUS_NOTIFICATION_CRON`        | no       | —       | Cron schedule for sending deployment status notification emails.            |
-| `DEPLOYMENT_STATUS_NOTIFICATION_TIMEOUT`     | no       | `0`     | Timeout for the deployment status notification run.                         |
+| Variable                                    | Required | Default | Description                                                                 |
+| ------------------------------------------- | -------- | ------- | --------------------------------------------------------------------------- |
+| `METRICS_ENTRIES_MAX_AGE`                   | no       | —       | Max age of deployment target metrics entries before cleanup removes them.   |
+| `CLEANUP_DEPLOYMENT_TARGET_METRICS_CRON`    | no       | —       | Cron schedule for pruning deployment target metrics.                        |
+| `CLEANUP_DEPLOYMENT_TARGET_METRICS_TIMEOUT` | no       | `0`     | Timeout for the metrics cleanup run.                                        |
+| `CLEANUP_OIDC_STATE_CRON`                   | no       | —       | Cron schedule for pruning expired OIDC state entries.                       |
+| `CLEANUP_OIDC_STATE_CRON_TIMEOUT`           | no       | `0`     | Timeout for the OIDC state cleanup run.                                     |
+| `CLEANUP_ARTIFACT_BLOB_CRON`                | no       | —       | Cron schedule for pruning unreferenced registry blobs from S3.              |
+| `CLEANUP_ARTIFACT_BLOB_TIMEOUT`             | no       | `0`     | Timeout for the artifact blob cleanup run.                                  |
+| `CLEANUP_ARTIFACT_BLOB_MIN_AGE`             | no       | `24h`   | Minimum age of an unreferenced blob before it is eligible for deletion.     |
+| `CLEANUP_ORGANIZATION_CRON`                 | no       | —       | Cron schedule for permanently deleting soft-deleted organizations.          |
+| `CLEANUP_ORGANIZATION_TIMEOUT`              | no       | `0`     | Timeout for the organization cleanup run.                                   |
+| `CLEANUP_ORGANIZATION_MIN_AGE`              | no       | `720h`  | Retention period before a soft-deleted organization is permanently deleted. |
+| `CLEANUP_USER_ACCOUNT_CRON`                 | no       | —       | Cron schedule for deleting user accounts that belong to no organization.    |
+| `CLEANUP_USER_ACCOUNT_TIMEOUT`              | no       | `0`     | Timeout for the user account cleanup run.                                   |
+| `CLEANUP_USER_ACCOUNT_MIN_AGE`              | no       | `720h`  | Time since the last login, or creation if never logged in, before deletion. |
+| `CLEANUP_FILE_CRON`                         | no       | —       | Cron schedule for deleting files that nothing references any more.          |
+| `CLEANUP_FILE_TIMEOUT`                      | no       | `0`     | Timeout for the file cleanup run.                                           |
+| `CLEANUP_FILE_MIN_AGE`                      | no       | `24h`   | Minimum age of an unreferenced file before it is deleted.                   |
+| `DEPLOYMENT_STATUS_NOTIFICATION_CRON`       | no       | —       | Cron schedule for sending deployment status notification emails.            |
+| `DEPLOYMENT_STATUS_NOTIFICATION_TIMEOUT`    | no       | `0`     | Timeout for the deployment status notification run.                         |
 
 ## OIDC Authentication
 
@@ -292,17 +308,17 @@ instead.
 Tracing and error reporting via Sentry and OpenTelemetry.
 Sampler variables accept `always_on`, `always_off`, `traceidratio`, `parentbased_always_on`, `parentbased_always_off` or `parentbased_traceidratio`.
 
-| Variable                       | Required | Default | Description                                                                          |
-| ------------------------------ | -------- | ------- | ------------------------------------------------------------------------------------ |
-| `SENTRY_DSN`                   | no       | —       | Sentry DSN for backend error reporting.                                              |
-| `SENTRY_DEBUG`                 | no       | `false` | Enables Sentry debug logging.                                                        |
-| `SENTRY_ENVIRONMENT`           | no       | —       | Environment name reported to Sentry (e.g. `production`).                             |
-| `OTEL_EXPORTER_SENTRY_ENABLED` | no       | `false` | Exports OpenTelemetry traces to Sentry.                                              |
-| `OTEL_EXPORTER_OTLP_ENABLED`   | no       | `false` | Exports OpenTelemetry traces via OTLP (configured with standard `OTEL_*` variables). |
-| `OTEL_AGENT_SAMPLER`           | no       | —       | Trace sampler used for agent requests.                                               |
-| `OTEL_AGENT_SAMPLER_ARG`       | no       | `1.0`   | Argument for the agent sampler (e.g. ratio for `traceidratio`).                      |
-| `OTEL_REGISTRY_SAMPLER`        | no       | —       | Trace sampler used for registry requests.                                            |
-| `OTEL_REGISTRY_SAMPLER_ARG`    | no       | `1.0`   | Argument for the registry sampler.                                                   |
+| Variable                       | Required | Default | Description                                                                                                            |
+| ------------------------------ | -------- | ------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `SENTRY_DSN`                   | no       | —       | Sentry DSN for backend error reporting.                                                                                |
+| `SENTRY_DEBUG`                 | no       | `false` | Enables Sentry debug logging.                                                                                          |
+| `SENTRY_ENVIRONMENT`           | no       | —       | Environment name reported to Sentry (e.g. `production`).                                                               |
+| `OTEL_EXPORTER_SENTRY_ENABLED` | no       | `false` | Exports OpenTelemetry traces to Sentry.                                                                                |
+| `OTEL_EXPORTER_OTLP_ENABLED`   | no       | `false` | Exports OpenTelemetry traces via OTLP (configured with standard `OTEL_*` variables).                                   |
+| `OTEL_CONTROLLER_SAMPLER`      | no       | —       | Trace sampler used for controller requests. Replaces the deprecated `OTEL_AGENT_SAMPLER`.                              |
+| `OTEL_CONTROLLER_SAMPLER_ARG`  | no       | `1.0`   | Argument for the controller sampler (e.g. ratio for `traceidratio`). Replaces the deprecated `OTEL_AGENT_SAMPLER_ARG`. |
+| `OTEL_REGISTRY_SAMPLER`        | no       | —       | Trace sampler used for registry requests.                                                                              |
+| `OTEL_REGISTRY_SAMPLER_ARG`    | no       | `1.0`   | Argument for the registry sampler.                                                                                     |
 
 ## Prometheus Metrics
 

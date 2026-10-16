@@ -15,8 +15,8 @@ import {UsersService} from '../services/users.service';
     @if (imageUrl(); as imageUrl) {
       <img class="size-full rounded-sm object-contain" [attr.src]="imageUrl | secureImage | async" alt="" />
     } @else {
-      <span class="flex size-full items-center justify-center text-gray-900 dark:text-gray-400">
-        <fa-icon [icon]="faBox" size="2x" />
+      <span class="@container flex size-full items-center justify-center text-gray-900 dark:text-gray-400">
+        <fa-icon [icon]="faBox" class="text-[80cqi]" />
       </span>
     }
   `,
@@ -31,8 +31,7 @@ export class ArtifactLogoComponent {
 @Component({
   selector: 'app-artifact-public-badge',
   host: {
-    class:
-      'distr-status-badge bg-blue-100 text-blue-800 border-blue-400 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-800',
+    class: 'distr-badge',
     title: 'Anyone who knows the name can pull this artifact without credentials',
   },
   template: `
@@ -169,4 +168,46 @@ export class ArtifactsHashComponent {
   protected readonly hashForDisplay = computed(() => (this.showFull() ? this.hash() : shortDigest(this.hash())));
 
   protected readonly faEllipsis = faEllipsis;
+}
+
+/** An artifact with its logo and, where one is meant, the digest and tags of a version. */
+@Component({
+  selector: 'app-artifact-preview',
+  template: `
+    <app-artifact-logo class="size-10 shrink-0" [imageUrl]="imageUrl()" />
+    <div class="min-w-0">
+      <div class="flex items-baseline gap-2 min-w-0" [title]="label()">
+        <span class="truncate">{{ name() }}</span>
+        @if (digest(); as digest) {
+          <span class="shrink-0 text-xs text-gray-500 dark:text-gray-400">
+            <app-artifacts-hash [hash]="digest" [expandable]="false" />
+          </span>
+        }
+      </div>
+      @if (tags().length > 0) {
+        <div class="flex flex-row flex-wrap gap-1 mt-1">
+          @for (tag of tags(); track tag) {
+            <span
+              class="distr-badge inline-block max-w-40 truncate"
+              [class.distr-badge-success]="tag === 'latest'"
+              [title]="tag">
+              {{ tag }}
+            </span>
+          }
+        </div>
+      }
+    </div>
+  `,
+  host: {class: 'flex items-center gap-2'},
+  imports: [ArtifactLogoComponent, ArtifactsHashComponent],
+})
+export class ArtifactPreviewComponent {
+  public readonly name = input.required<string>();
+  public readonly imageUrl = input<string>();
+  public readonly digest = input<string>();
+  public readonly tags = input<string[]>([]);
+
+  protected readonly label = computed(() =>
+    [this.name(), this.tags().join(', '), this.digest()].filter((part) => part).join(' ')
+  );
 }

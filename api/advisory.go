@@ -57,13 +57,13 @@ type AdvisoryReference struct {
 }
 
 type AdvisoryApplicationVersion struct {
-	ApplicationID          uuid.UUID                     `json:"applicationId"`
-	ApplicationName        string                        `json:"applicationName"`
-	ApplicationType        types.DeploymentType          `json:"applicationType"`
-	ApplicationImageURL    *string                       `json:"applicationImageUrl,omitempty"`
-	ApplicationVersionID   uuid.UUID                     `json:"applicationVersionId"`
-	ApplicationVersionName string                        `json:"applicationVersionName"`
-	Relation               types.AdvisoryVersionRelation `json:"relation"`
+	ApplicationID                 uuid.UUID                     `json:"applicationId"`
+	ApplicationName               string                        `json:"applicationName"`
+	ApplicationType               types.DeploymentType          `json:"applicationType"`
+	ApplicationImageURL           *string                       `json:"applicationImageUrl,omitempty"`
+	ApplicationVersioningStrategy types.VersioningStrategy      `json:"applicationVersioningStrategy"`
+	ApplicationVersion            ApplicationVersionResponse    `json:"applicationVersion"`
+	Relation                      types.AdvisoryVersionRelation `json:"relation"`
 }
 
 type AdvisoryArtifactVersion struct {

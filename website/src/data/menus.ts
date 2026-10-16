@@ -14,11 +14,11 @@ export const docsMenu: MenuItem[] = [
     href: '/docs/',
   },
   {
-    title: 'Deployment Agents',
+    title: 'Deployment Controllers',
     description:
-      'Set up and configure Docker and Helm agents for your deployments',
+      'Set up and configure Docker and Helm controllers for your deployments',
     value: 'rocket',
-    href: '/docs/agents/',
+    href: '/docs/controllers/',
   },
   {
     title: 'Artifact Registry',

@@ -29,24 +29,20 @@ const cycleSeconds = industries.length * secondsPerIndustry;
         style="color: white;">
         Ship self-hosted software
       </h1>
-      <p
-        class="mx-auto mb-8 max-w-3xl text-lg md:text-xl leading-relaxed text-white/90">
+      <p class="mx-auto mb-8 max-w-3xl text-lg md:text-xl leading-relaxed text-white/90">
         Start simple, scale as you go. Onboard to Distr and setup Docker Compose
         POCs in minutes, Helm and air-gapped when the deal needs it. All the
-        tools you need to succeed with offering self-hosted. Proven in <span
-          class="industry-rotator"
-          aria-label={industries.join(', ')}
-          >{
-            industries.map((industry, i) => (
-              <span
-                aria-hidden="true"
-                style={`animation-delay: ${i * secondsPerIndustry}s`}>
-                {industry}
-                <span class="industry-stop">.</span>
-              </span>
-            ))
-          }</span
-        >
+        tools you need to succeed with offering self-hosted. Proven in{' '}
+        <span class="industry-rotator" aria-label={industries.join(', ')}>
+          {industries.map((industry, i) => (
+            <span
+              aria-hidden="true"
+              style={`animation-delay: ${i * secondsPerIndustry}s`}>
+              {industry}
+              <span class="industry-stop">.</span>
+            </span>
+          ))}
+        </span>
       </p>
     </div>
 

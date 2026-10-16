@@ -123,14 +123,14 @@ type AdvisoryReference struct {
 }
 
 type AdvisoryApplicationVersion struct {
-	AdvisoryID             uuid.UUID               `db:"advisory_id"`
-	ApplicationID          uuid.UUID               `db:"application_id"`
-	ApplicationName        string                  `db:"application_name"`
-	ApplicationType        DeploymentType          `db:"application_type"`
-	ApplicationImageID     *uuid.UUID              `db:"application_image_id"`
-	ApplicationVersionID   uuid.UUID               `db:"application_version_id"`
-	ApplicationVersionName string                  `db:"application_version_name"`
-	Relation               AdvisoryVersionRelation `db:"relation"`
+	AdvisoryID                    uuid.UUID               `db:"advisory_id"`
+	ApplicationID                 uuid.UUID               `db:"application_id"`
+	ApplicationName               string                  `db:"application_name"`
+	ApplicationType               DeploymentType          `db:"application_type"`
+	ApplicationImageID            *uuid.UUID              `db:"application_image_id"`
+	ApplicationVersioningStrategy VersioningStrategy      `db:"application_versioning_strategy"`
+	ApplicationVersion            ApplicationVersion      `db:"application_version"`
+	Relation                      AdvisoryVersionRelation `db:"relation"`
 }
 
 type AdvisoryArtifactVersion struct {

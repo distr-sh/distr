@@ -9,6 +9,7 @@ import {BehaviorSubject, combineLatest, firstValueFrom, from, map, of, switchMap
 import {getRemoteEnvironment} from '../../env/remote';
 import {getFormDisplayedError} from '../../util/errors';
 import {slugMaxLength, slugPattern, toSlug} from '../../util/slug';
+import {AlertComponent} from '../components/alert/alert.component';
 import {ClipComponent} from '../components/clip.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
@@ -38,6 +39,7 @@ const DEFAULT_SCOPES = ['openid', 'profile', 'email'];
     NgTemplateOutlet,
     DomainFieldComponent,
     RouterLink,
+    AlertComponent,
   ],
 })
 export class CustomOidcComponent {

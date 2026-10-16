@@ -15,15 +15,7 @@ import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {CustomerOrganization, CustomerOrganizationFeature, CustomerOrganizationWithUsage} from '@distr-sh/distr-sdk';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
-import {
-  faAddressBook,
-  faChevronDown,
-  faCircleExclamation,
-  faEdit,
-  faPlus,
-  faTrash,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
+import {faAddressBook, faChevronDown, faEdit, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, filter, firstValueFrom, map, of, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
@@ -36,11 +28,21 @@ import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {PartnerOrganizationsService} from '../../services/partner-organizations.service';
 import {ToastService} from '../../services/toast.service';
+import {AlertComponent} from '../alert/alert.component';
 import {AvatarComponent} from '../avatar.component';
 import {InlineEditComponent} from '../inline-edit.component';
 import {PageComponent} from '../page.component';
 import {QuotaLimitComponent} from '../quota-limit.component';
 import {SearchBarComponent} from '../search-bar.component';
+
+const customerFeatureLabels: Record<CustomerOrganizationFeature, string> = {
+  deployment_targets: 'Deployments',
+  artifacts: 'Artifacts',
+  alerts: 'Alerts',
+  update_notifications: 'Update Notifications',
+  support_bundles: 'Support Bundles',
+  oidc_providers: 'Identity Provider',
+};
 
 @Component({
   templateUrl: './customer-organizations.component.html',
@@ -58,6 +60,7 @@ import {SearchBarComponent} from '../search-bar.component';
     AvatarComponent,
     PageComponent,
     SearchBarComponent,
+    AlertComponent,
   ],
 })
 export class CustomerOrganizationsComponent {
@@ -65,7 +68,6 @@ export class CustomerOrganizationsComponent {
   protected readonly faAddressBook = faAddressBook;
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
-  protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faEdit = faEdit;
   protected readonly faChevronDown = faChevronDown;
 
@@ -123,6 +125,7 @@ export class CustomerOrganizationsComponent {
     'deployment_targets',
     'alerts',
     'artifacts',
+    'update_notifications',
     'support_bundles',
     'oidc_providers',
   ];
@@ -130,9 +133,9 @@ export class CustomerOrganizationsComponent {
   // A customer can only bring its own identity provider while the vendor's own plan includes the
   // machinery, so the checkbox is hidden rather than shown as a grantable feature that the API refuses.
   protected readonly allCustomerFeatures = computed(() =>
-    this.allCustomerFeaturesList.filter(
-      (feature) => feature !== 'oidc_providers' || this.featureFlags.isCustomOidcProvidersEnabled()
-    )
+    this.allCustomerFeaturesList
+      .filter((feature) => feature !== 'oidc_providers' || this.featureFlags.isCustomOidcProvidersEnabled())
+      .map((feature) => ({feature, label: customerFeatureLabels[feature], indent: feature === 'alerts'}))
   );
 
   protected readonly openCustomerFeaturesDropdownId = signal<string | void>(undefined);
@@ -256,27 +259,6 @@ export class CustomerOrganizationsComponent {
           }
         },
       });
-  }
-
-  protected getFeatureLabel(feature: CustomerOrganizationFeature): string {
-    switch (feature) {
-      case 'deployment_targets':
-        return 'Deployments';
-      case 'artifacts':
-        return 'Artifacts';
-      case 'alerts':
-        return 'Alerts';
-      case 'support_bundles':
-        return 'Support Bundles';
-      case 'oidc_providers':
-        return 'Identity Provider';
-      default:
-        return feature;
-    }
-  }
-
-  protected isFeatureIndent(feature: CustomerOrganizationFeature): boolean {
-    return feature === 'alerts';
   }
 
   protected async toggleFeature(customer: CustomerOrganization, feature: CustomerOrganizationFeature) {

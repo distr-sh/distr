@@ -26,6 +26,22 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 ## Methods
 
+### cancelReconnectForDeploymentTarget()
+
+> **cancelReconnectForDeploymentTarget**(`deploymentTargetId`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### deploymentTargetId
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+---
+
 ### createAccessForDeploymentTarget()
 
 > **createAccessForDeploymentTarget**(`deploymentTargetId`): `Promise`\<[`DeploymentTargetAccessResponse`](../interfaces/DeploymentTargetAccessResponse.md)\>
@@ -120,17 +136,37 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 ### createDeploymentTarget()
 
+#### Call Signature
+
+> **createDeploymentTarget**(`request`): `Promise`\<[`DeploymentTarget`](../interfaces/DeploymentTarget.md)\>
+
+##### Parameters
+
+###### request
+
+[`CreateDeploymentTargetRequest`](../interfaces/CreateDeploymentTargetRequest.md)
+
+##### Returns
+
+`Promise`\<[`DeploymentTarget`](../interfaces/DeploymentTarget.md)\>
+
+#### Call Signature
+
 > **createDeploymentTarget**(`deploymentTarget`): `Promise`\<[`DeploymentTarget`](../interfaces/DeploymentTarget.md)\>
 
-#### Parameters
+##### Parameters
 
-##### deploymentTarget
+###### deploymentTarget
 
 [`DeploymentTarget`](../interfaces/DeploymentTarget.md)
 
-#### Returns
+##### Returns
 
 `Promise`\<[`DeploymentTarget`](../interfaces/DeploymentTarget.md)\>
+
+##### Deprecated
+
+Pass a [CreateDeploymentTargetRequest](../interfaces/CreateDeploymentTargetRequest.md) instead.
 
 ---
 

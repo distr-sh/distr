@@ -10,9 +10,9 @@ import (
 
 	"github.com/compose-spec/compose-go/v2/dotenv"
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
@@ -32,20 +32,6 @@ const (
 			JOIN DeploymentRevision dr ON dr.id = d.latest_deployment_revision_id
 			JOIN ApplicationVersion av ON dr.application_version_id = av.id
 			JOIN Application a ON av.application_id = a.id
-			LEFT JOIN LATERAL (
-				SELECT id, created_at, deployment_revision_id, type, message
-				FROM DeploymentRevisionStatus
-				WHERE deployment_revision_id = dr.id
-				ORDER BY created_at DESC
-				LIMIT 1
-			) drs ON true
-			LEFT JOIN LATERAL (
-				SELECT id, created_at, deployment_revision_id, type, message
-				FROM DeploymentRevisionStatus
-				WHERE deployment_revision_id = d.current_deployment_revision_id
-				ORDER BY created_at DESC
-				LIMIT 1
-			) drs_current ON true
 			LEFT JOIN DeploymentRevision dr_current ON dr_current.id = d.current_deployment_revision_id
 			LEFT JOIN ApplicationVersion av_current ON av_current.id = dr_current.application_version_id
 	`
@@ -72,18 +58,18 @@ var deploymentWithLatestRevisionOutputExpr = deploymentOutputExpr + `,
 	(` + applicationOutputExpr + `) AS application,
 	av.name AS application_version_name,
 	av.link_template AS application_link_template,
-	CASE WHEN drs.id IS NOT NULL THEN (
-		drs.id,
-		drs.created_at,
-		drs.deployment_revision_id,
-		drs.type, drs.message
+	CASE WHEN dr.status_type IS NOT NULL THEN (
+		dr.status_created_at,
+		dr.id,
+		dr.status_type,
+		dr.status_message
 	) END AS latest_status,
 	d.current_deployment_revision_id AS current_deployment_revision_id,
-	CASE WHEN drs_current.id IS NOT NULL THEN (
-		drs_current.id,
-		drs_current.created_at,
-		drs_current.deployment_revision_id,
-		drs_current.type, drs_current.message
+	CASE WHEN dr_current.status_type IS NOT NULL THEN (
+		dr_current.status_created_at,
+		dr_current.id,
+		dr_current.status_type,
+		dr_current.status_message
 	) END AS current_status,
 	dr_current.application_version_id AS current_application_version_id,
 	av_current.name AS current_application_version_name
@@ -121,7 +107,7 @@ func GetDeployment(
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.Deployment])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, apierrors.ErrNotFound
+		return nil, distrerr.ErrNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get Deployment: %w", err)
 	} else {
@@ -256,7 +242,7 @@ func CreateDeployment(ctx context.Context, request *api.DeploymentRequest) error
 	if err != nil {
 		var pgError *pgconn.PgError
 		if errors.As(err, &pgError) && pgError.Code == pgerrcode.UniqueViolation {
-			return fmt.Errorf("%w: release name must be unique per deployment target", apierrors.ErrConflict)
+			return fmt.Errorf("%w: release name must be unique per deployment target", distrerr.ErrConflict)
 		}
 		return fmt.Errorf("could not save Deployment: %w", err)
 	} else {
@@ -283,7 +269,7 @@ func UpdateDeploymentEntitlement(ctx context.Context, deployment *types.Deployme
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.Deployment]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
+			err = distrerr.ErrNotFound
 		}
 		return fmt.Errorf("could not update Deployment: %w", err)
 	} else {
@@ -313,7 +299,7 @@ func UpdateDeploymentAutomaticApplicationUpdates(
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.Deployment]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
+			err = distrerr.ErrNotFound
 		}
 		return fmt.Errorf("could not update Deployment: %w", err)
 	} else {
@@ -365,7 +351,7 @@ func DeleteDeploymentWithID(ctx context.Context, id uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	res, err := db.Exec(ctx, "DELETE FROM Deployment WHERE id = @id", pgx.NamedArgs{"id": id})
 	if err == nil && res.RowsAffected() == 0 {
-		err = apierrors.ErrNotFound
+		err = distrerr.ErrNotFound
 	}
 	if err != nil {
 		return fmt.Errorf("could not delete Deployment: %w", err)
@@ -477,10 +463,10 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 }
 
 // UpdateDeploymentCurrentRevision marks the given revision as the one currently applied on the
-// deployment target. It never moves the current revision back to an older one, because an agent may
+// deployment target. It never moves the current revision back to an older one, because a controller may
 // report a status of the previous revision after the next one has already been applied. Reporting
-// the revision that is already current writes nothing, which is what every agent does once per
-// AGENT_INTERVAL for as long as nothing changes.
+// the revision that is already current writes nothing, which is what every controller does once per
+// CONTROLLER_INTERVAL for as long as nothing changes.
 func UpdateDeploymentCurrentRevision(ctx context.Context, revisionID uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	if _, err := db.Exec(
@@ -559,11 +545,11 @@ func GetDeploymentRevisions(
 				j.partner_organization_id AS created_by_partner_organization_id,
 				(dr.created_by_user_account_id IS NOT NULL AND j.user_account_id IS NULL)
 					AS created_by_deleted,
-				CASE WHEN drs.id IS NOT NULL THEN (
-					drs.id,
-					drs.created_at,
-					drs.deployment_revision_id,
-					drs.type, drs.message
+				CASE WHEN dr.status_type IS NOT NULL THEN (
+					dr.status_created_at,
+					dr.id,
+					dr.status_type,
+					dr.status_message
 				) END AS latest_status
 			FROM DeploymentRevision dr
 				JOIN Deployment d ON dr.deployment_id = d.id
@@ -572,13 +558,6 @@ func GetDeploymentRevisions(
 				LEFT JOIN UserAccount u ON dr.created_by_user_account_id = u.id
 				LEFT JOIN Organization_UserAccount j
 					ON j.user_account_id = u.id AND j.organization_id = dt.organization_id
-				LEFT JOIN LATERAL (
-					SELECT id, created_at, deployment_revision_id, type, message
-					FROM DeploymentRevisionStatus
-					WHERE deployment_revision_id = dr.id
-					ORDER BY created_at DESC
-					LIMIT 1
-				) drs ON true
 			WHERE dr.deployment_id = @deploymentId
 			ORDER BY dr.created_at DESC`,
 		pgx.NamedArgs{"deploymentId": deploymentID},
@@ -609,10 +588,67 @@ func GetDeploymentIDForRevisionID(ctx context.Context, revisionID uuid.UUID) (uu
 	deploymentID, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[uuid.UUID])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
+			err = distrerr.ErrNotFound
 		}
 		return uuid.Nil, fmt.Errorf("failed to scan Deployment ID: %w", err)
 	}
 
 	return deploymentID, nil
+}
+
+// GetDeploymentsPendingUpdate returns the deployments of the given version's application that run
+// a different version of it and whose entitlement, if they were created with one, covers the given
+// version. Whether that version is older is left to the caller, since the ordering depends on the
+// application's versioning strategy.
+func GetDeploymentsPendingUpdate(
+	ctx context.Context,
+	applicationVersionID uuid.UUID,
+) ([]types.DeploymentPendingUpdate, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT
+			d.id AS deployment_id,
+			d.release_name,
+			dt.id AS deployment_target_id,
+			dt.name AS deployment_target_name,
+			dt.customer_organization_id,
+			co.name AS customer_organization_name,
+			co.partner_organization_id,
+			av.id AS current_version_id,
+			av.name AS current_version_name
+		FROM Deployment d
+			-- The latest revision rather than the current one: an automatic update has already
+			-- created a revision for the new version, and that deployment needs no notification.
+			JOIN DeploymentRevision dr ON dr.id = d.latest_deployment_revision_id
+			JOIN ApplicationVersion av ON av.id = dr.application_version_id
+			JOIN DeploymentTarget dt ON dt.id = d.deployment_target_id
+			LEFT JOIN CustomerOrganization co ON co.id = dt.customer_organization_id
+		WHERE av.application_id = (
+				SELECT application_id FROM ApplicationVersion WHERE id = @applicationVersionID
+			)
+			AND dr.application_version_id <> @applicationVersionID
+			AND (d.application_entitlement_id IS NULL OR EXISTS (
+				SELECT 1 FROM ApplicationEntitlement ae
+				WHERE ae.id = d.application_entitlement_id
+					AND (ae.expires_at IS NULL OR ae.expires_at > now())
+					AND (
+						NOT EXISTS (
+							SELECT 1 FROM ApplicationEntitlement_ApplicationVersion aeav
+							WHERE aeav.application_entitlement_id = ae.id
+						)
+						OR EXISTS (
+							SELECT 1 FROM ApplicationEntitlement_ApplicationVersion aeav
+							WHERE aeav.application_entitlement_id = ae.id
+								AND aeav.application_version_id = @applicationVersionID
+						)
+					)
+			))
+		ORDER BY co.name, dt.name`,
+		pgx.NamedArgs{"applicationVersionID": applicationVersionID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query deployments pending update: %w", err)
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[types.DeploymentPendingUpdate])
 }

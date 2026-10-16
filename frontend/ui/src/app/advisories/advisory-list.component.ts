@@ -1,4 +1,4 @@
-import {DatePipe, NgClass} from '@angular/common';
+import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup} from '@angular/forms';
@@ -18,14 +18,14 @@ import {AuthService} from '../services/auth.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 import {
-  affectedBadgeClass,
-  affectedLabel,
+  AdvisoryAffectedBadgeComponent,
+  AdvisorySeverityBadgeComponent,
+  AdvisoryStatusBadgeComponent,
+} from './advisory-badges';
+import {
   confirmAdvisoryVisibilityChange,
   defaultAdvisoryStatusFilter,
-  severityBadgeClass,
   severitySelectOptions,
-  statusBadgeClass,
-  statusLabel,
   statusSelectOptions,
 } from './advisory-display';
 import {AdvisoryFormComponent, AdvisoryFormDraft} from './advisory-form.component';
@@ -36,7 +36,6 @@ import {AdvisoryFormComponent, AdvisoryFormDraft} from './advisory-form.componen
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     DatePipe,
-    NgClass,
     RouterLink,
     FaIconComponent,
     AdvisoryFormComponent,
@@ -44,6 +43,9 @@ import {AdvisoryFormComponent, AdvisoryFormDraft} from './advisory-form.componen
     MultiSelectComponent,
     PageComponent,
     SearchBarComponent,
+    AdvisorySeverityBadgeComponent,
+    AdvisoryStatusBadgeComponent,
+    AdvisoryAffectedBadgeComponent,
   ],
 })
 export class AdvisoryListComponent {
@@ -53,11 +55,6 @@ export class AdvisoryListComponent {
   private readonly toast = inject(ToastService);
 
   protected readonly faPlus = faPlus;
-  protected readonly severityBadgeClass = severityBadgeClass;
-  protected readonly statusBadgeClass = statusBadgeClass;
-  protected readonly statusLabel = statusLabel;
-  protected readonly affectedLabel = affectedLabel;
-  protected readonly affectedBadgeClass = affectedBadgeClass;
   protected readonly statusSelectOptions = statusSelectOptions;
   protected readonly severitySelectOptions = severitySelectOptions;
 

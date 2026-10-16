@@ -1,81 +1,124 @@
 package handlers
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/distr-sh/distr/internal/auth"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
-// resolveCustomerScopeForWrite determines which scope a create or update targets: the caller's own
-// organization (nil) or, for a vendor or partner naming one explicitly, that customer. A customer
-// caller may only ever target itself. Every customer scope, whether it is the caller's own or one
-// named by a vendor or partner, additionally requires that customer's own oidc_providers feature,
-// since a customer's domain and identity provider are one bundle gated by that single feature; the
-// caller organization's own custom_oidc_providers plan feature is already enforced by the router
-// (CustomDomainsFeatureMiddleware / CustomOidcProvidersFeatureMiddleware).
-func resolveCustomerScopeForWrite(w http.ResponseWriter, r *http.Request, requested *uuid.UUID) (*uuid.UUID, bool) {
-	ctx := r.Context()
+var invalidCustomerScope = respond.BadRequest("invalid customer organization ID")
+
+// customerScopeForWrite is customerScope for custom domains and identity providers, which a
+// customer only gets together through its oidc_providers feature. The router already enforces the
+// caller's own plan feature.
+func customerScopeForWrite(ctx context.Context, requested *uuid.UUID) (*uuid.UUID, respond.Responder, error) {
+	if customerOrgID, resp, err := customerScope(ctx, requested); resp != nil || err != nil {
+		return nil, resp, err
+	} else if customerOrgID == nil {
+		return nil, nil, nil
+	} else if resp, err := checkCustomerOidcProvidersFeature(ctx, *customerOrgID); resp != nil || err != nil {
+		return nil, resp, err
+	} else {
+		return customerOrgID, nil, nil
+	}
+}
+
+// customerScopeQuery declares the parameter that scopes a request to one customer for the OpenAPI
+// spec.
+type customerScopeQuery struct {
+	CustomerOrganizationID *string `query:"customerOrganizationId"`
+}
+
+// customerScopeFromQuery reads the requested customer organization from the query parameter.
+func customerScopeFromQuery(r *http.Request) (*uuid.UUID, respond.Responder, error) {
+	if value := r.URL.Query().Get("customerOrganizationId"); value == "" {
+		return customerScope(r.Context(), nil)
+	} else if id, err := uuid.Parse(value); err != nil {
+		return nil, invalidCustomerScope, nil
+	} else {
+		return customerScope(r.Context(), &id)
+	}
+}
+
+// customerScope returns the customer a request operates on, or nil for the vendor's own
+// organization. The returned Responder rejects a customer the caller may not reach.
+func customerScope(ctx context.Context, requested *uuid.UUID) (*uuid.UUID, respond.Responder, error) {
 	a := auth.Authentication.Require(ctx)
 
 	if customerOrgID := a.CurrentCustomerOrgID(); customerOrgID != nil {
 		if requested != nil && *requested != *customerOrgID {
-			http.Error(w, "invalid customer organization ID", http.StatusBadRequest)
-			return nil, false
+			return nil, invalidCustomerScope, nil
+		} else {
+			return customerOrgID, nil, nil
 		}
-		if !requireCustomerOidcProvidersFeature(w, r, *customerOrgID) {
-			return nil, false
+	} else if partnerOrgID := a.CurrentPartnerOrgID(); partnerOrgID != nil {
+		if requested == nil {
+			return nil, respond.BadRequest("customer organization ID is required"), nil
+		} else if err := db.ValidateCustomerOrgBelongsToPartnerOrg(
+			ctx, *requested, *partnerOrgID,
+		); errors.Is(err, db.ErrCustomerOrgNotInPartnerOrg) {
+			return nil, invalidCustomerScope, nil
+		} else if err != nil {
+			return nil, nil, fmt.Errorf("failed to validate customer organization scope: %w", err)
+		} else {
+			return requested, nil, nil
 		}
-		return customerOrgID, true
-	}
-
-	// A partner never owns vendor-scoped resources: unlike a vendor, "no target" cannot fall back to
-	// the caller's own organization, or a partner admin could create app/registry/portal domains and
-	// providers directly on the vendor org. Secrets and entitlements enforce the same rule.
-	partnerOrgID := a.CurrentPartnerOrgID()
-	if requested == nil {
-		if partnerOrgID != nil {
-			http.Error(w, "customer organization ID is required", http.StatusBadRequest)
-			return nil, false
+	} else {
+		if requested == nil {
+			return nil, nil, nil
+		} else if err := db.ValidateCustomerOrgBelongsToOrg(
+			ctx, *requested, *a.CurrentOrgID(),
+		); errors.Is(err, db.ErrCustomerOrgNotInOrg) {
+			return nil, invalidCustomerScope, nil
+		} else if err != nil {
+			return nil, nil, fmt.Errorf("failed to validate customer organization scope: %w", err)
+		} else {
+			return requested, nil, nil
 		}
-		return nil, true
 	}
-
-	if partnerOrgID != nil {
-		if err := db.ValidateCustomerOrgBelongsToPartnerOrg(ctx, *requested, *partnerOrgID); err != nil {
-			http.Error(w, "invalid customer organization ID", http.StatusBadRequest)
-			return nil, false
-		}
-	} else if err := db.ValidateCustomerOrgBelongsToOrg(ctx, *requested, *a.CurrentOrgID()); err != nil {
-		http.Error(w, "invalid customer organization ID", http.StatusBadRequest)
-		return nil, false
-	}
-
-	if !requireCustomerOidcProvidersFeature(w, r, *requested) {
-		return nil, false
-	}
-	return requested, true
 }
 
-func requireCustomerOidcProvidersFeature(w http.ResponseWriter, r *http.Request, customerOrgID uuid.UUID) bool {
-	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
+var notAssignedToPartner = respond.Forbidden("customer is not assigned to your partner organization")
 
-	customerOrg, err := db.GetCustomerOrganizationByID(ctx, customerOrgID)
-	if err != nil {
-		log.Error("failed to get customer organization", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return false
+// checkReachableByPartner answers with rejection for a partner user when a resource belongs to no
+// customer or to one that is not assigned to the partner organization.
+func checkReachableByPartner(
+	ctx context.Context, customerOrgID *uuid.UUID, rejection respond.Responder,
+) (respond.Responder, error) {
+	if partnerOrgID := auth.Authentication.Require(ctx).CurrentPartnerOrgID(); partnerOrgID == nil {
+		return nil, nil
+	} else if customerOrgID == nil {
+		return rejection, nil
+	} else if err := db.ValidateCustomerOrgBelongsToPartnerOrg(
+		ctx, *customerOrgID, *partnerOrgID,
+	); errors.Is(err, db.ErrCustomerOrgNotInPartnerOrg) {
+		return rejection, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to validate customer organization of partner: %w", err)
+	} else {
+		return nil, nil
+	}
+}
+
+func checkCustomerOidcProvidersFeature(ctx context.Context, customerOrgID uuid.UUID) (respond.Responder, error) {
+	customerOrg := auth.Authentication.Require(ctx).CurrentCustomerOrg()
+	if customerOrg == nil || customerOrg.ID != customerOrgID {
+		if withUsage, err := db.GetCustomerOrganizationByID(ctx, customerOrgID); err != nil {
+			return nil, fmt.Errorf("failed to get customer organization: %w", err)
+		} else {
+			customerOrg = &withUsage.CustomerOrganization
+		}
 	}
 	if !customerOrg.HasFeature(types.CustomerOrganizationFeatureOidcProviders) {
-		http.Error(w, "this customer is not allowed to configure an identity provider", http.StatusForbidden)
-		return false
+		return respond.Forbidden("this customer is not allowed to configure an identity provider"), nil
+	} else {
+		return nil, nil
 	}
-	return true
 }

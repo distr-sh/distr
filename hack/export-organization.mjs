@@ -5,10 +5,10 @@ import {closeSync, openSync, renameSync, unlinkSync, writeSync} from 'node:fs';
 
 // Tables that exist independently of any organization and are identified across instances by a
 // natural key instead of their id. References to them are exported as a lookup on that key, so an
-// import links to the account or agent version the target instance already has.
+// import links to the account or controller version the target instance already has.
 const SHARED_TABLES = new Map([
   ['useraccount', 'email'],
-  ['agentversion', 'name'],
+  ['controllerversion', 'name'],
 ]);
 
 // Instance-scoped values that must not be carried over to another instance.
@@ -25,14 +25,14 @@ const COLUMN_OVERRIDES = new Map([
 
 // Logs, telemetry and transient state. Excluded by default because they hold by far the most rows
 // while nothing in the product depends on their history; the telemetry tables are repopulated by
-// the agents once they reconnect.
+// the controllers once they reconnect.
 const DEFAULT_EXCLUDED = new Map([
   ['artifactversionpull', 'artifact pull audit log'],
   ['deploymentmetrics', 'deployment resource telemetry'],
   ['deploymentresourcemetrics', 'deployment resource telemetry'],
   ['deploymentrevisionstatus', 'deployment status history'],
-  ['deploymenttargetdiskmetrics', 'agent disk telemetry'],
-  ['deploymenttargetmetrics', 'agent telemetry'],
+  ['deploymenttargetdiskmetrics', 'controller disk telemetry'],
+  ['deploymenttargetmetrics', 'controller telemetry'],
   ['notificationrecord', 'sent alert history'],
   ['oidcstate', 'transient OIDC login state'],
 ]);
@@ -508,7 +508,7 @@ ${total === null ? '' : `-- rows:         ${total}\n`}--
 -- the import would then reach the end of the file with the transaction still open, which rolls
 -- everything back and, because psql reports no error for that, still exits successfully.
 --
--- Accounts and agent versions are shared between organizations, so they are inserted with
+-- Accounts and controller versions are shared between organizations, so they are inserted with
 -- ON CONFLICT DO NOTHING and referenced by email respectively name. An account that already exists
 -- on the target instance keeps its current password, and the import adds it to this organization.
 --

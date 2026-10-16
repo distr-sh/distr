@@ -6,7 +6,7 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faDocker} from '@fortawesome/free-brands-svg-icons';
 import {
   faAddressBook,
-  faCheckCircle,
+  faCircleCheck,
   faCog,
   faDharmachakra,
   faNetworkWired,
@@ -33,7 +33,7 @@ export class DeploymentWizardStepperComponent extends CdkStepper {
   protected readonly faNetworkWired = faNetworkWired;
   protected readonly faAddressBook = faAddressBook;
   protected readonly faCog = faCog;
-  protected readonly faCheckCircle = faCheckCircle;
+  protected readonly faCircleCheck = faCircleCheck;
 
   currentFormGroup() {
     return this.selected!.stepControl as FormGroup;

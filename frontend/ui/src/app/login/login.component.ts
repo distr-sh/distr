@@ -113,6 +113,9 @@ export class LoginComponent implements OnInit {
             'Please contact your administrator.'
         );
         break;
+      case 'oidc-email-blocked':
+        this.toast.error('Email addresses from this domain are not allowed. Please contact your administrator.');
+        break;
       case 'oidc-org-limit':
         this.toast.error(
           'This instance has reached its organization limit, so no account could be created. ' +

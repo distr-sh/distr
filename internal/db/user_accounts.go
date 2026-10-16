@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -31,7 +31,8 @@ var (
 		` + userAccountMFASecret.Value("u") + `,
 		u.mfa_enabled,
 		u.mfa_enabled_at,
-		u.is_super_admin`
+		u.is_super_admin,
+		` + userAccountActivatedExpr
 	userAccountWithRoleOutputExpr = userAccountOutputExpr +
 		", j.user_role, j.created_at, j.customer_organization_id, j.partner_organization_id "
 	userAccountWithRoleOutputExprWithAlias = userAccountWithRoleOutputExpr + " as joined_org_at "
@@ -80,7 +81,7 @@ func CreateUserAccount(ctx context.Context, userAccount *types.UserAccount) erro
 		return fmt.Errorf("could not query users: %w", err)
 	} else if created, err := pgx.CollectExactlyOneRow[types.UserAccount](rows, pgx.RowToStructByPos); err != nil {
 		if pgerr := (*pgconn.PgError)(nil); errors.As(err, &pgerr) && pgerr.Code == pgerrcode.UniqueViolation {
-			return fmt.Errorf("user account with email %v can not be created: %w", userAccount.Email, apierrors.ErrAlreadyExists)
+			return fmt.Errorf("user account with email %v can not be created: %w", userAccount.Email, distrerr.ErrAlreadyExists)
 		}
 		return fmt.Errorf("could not create user: %w", err)
 	} else {
@@ -115,9 +116,9 @@ func UpdateUserAccount(ctx context.Context, userAccount *types.UserAccount) erro
 		return fmt.Errorf("could not query users: %w", err)
 	} else if created, err := pgx.CollectExactlyOneRow[types.UserAccount](rows, pgx.RowToStructByPos); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return apierrors.ErrNotFound
+			return distrerr.ErrNotFound
 		} else if pgerr := (*pgconn.PgError)(nil); errors.As(err, &pgerr) && pgerr.Code == pgerrcode.UniqueViolation {
-			return fmt.Errorf("can not update user with email %v: %w", userAccount.Email, apierrors.ErrAlreadyExists)
+			return fmt.Errorf("can not update user with email %v: %w", userAccount.Email, distrerr.ErrAlreadyExists)
 		}
 		return fmt.Errorf("could not update user: %w", err)
 	} else {
@@ -142,15 +143,48 @@ func UpdateUserAccountEmailVerified(ctx context.Context, userAccount *types.User
 		return fmt.Errorf("could not query users: %w", err)
 	} else if created, err := pgx.CollectExactlyOneRow[types.UserAccount](rows, pgx.RowToStructByPos); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return apierrors.ErrNotFound
+			return distrerr.ErrNotFound
 		} else if pgerr := (*pgconn.PgError)(nil); errors.As(err, &pgerr) && pgerr.Code == pgerrcode.UniqueViolation {
-			return fmt.Errorf("can not update user with email %v: %w", userAccount.Email, apierrors.ErrAlreadyExists)
+			return fmt.Errorf("can not update user with email %v: %w", userAccount.Email, distrerr.ErrAlreadyExists)
 		}
 		return fmt.Errorf("could not update user: %w", err)
 	} else {
 		*userAccount = created
 		return nil
 	}
+}
+
+const userAccountActivatedExpr = `(u.password_hash IS NOT NULL
+	OR u.last_logged_in_at IS NOT NULL
+	OR EXISTS (SELECT 1 FROM UserAccountOIDCIdentity i WHERE i.user_account_id = u.id))`
+
+func SetUserAccountInitialPassword(ctx context.Context, userAccount *types.UserAccount) error {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`UPDATE UserAccount AS u
+		SET name = @name,
+			password_hash = @password_hash,
+			password_salt = @password_salt
+		WHERE u.id = @id AND NOT `+userAccountActivatedExpr+`
+		RETURNING `+userAccountOutputExpr,
+		pgx.NamedArgs{
+			"id":            userAccount.ID,
+			"name":          userAccount.Name,
+			"password_hash": userAccount.PasswordHash,
+			"password_salt": userAccount.PasswordSalt,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("could not set initial password: %w", err)
+	}
+	updated, err := pgx.CollectExactlyOneRow[types.UserAccount](rows, pgx.RowToStructByPos)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return distrerr.ErrConflict
+	} else if err != nil {
+		return fmt.Errorf("could not set initial password: %w", err)
+	}
+	*userAccount = updated
+	return nil
 }
 
 func UpdateUserAccountLastUsedOrganizationID(ctx context.Context, userID, orgID uuid.UUID) error {
@@ -162,7 +196,7 @@ func UpdateUserAccountLastUsedOrganizationID(ctx context.Context, userID, orgID 
 	)
 	if err != nil {
 	} else if cmd.RowsAffected() == 0 {
-		err = apierrors.ErrNotFound
+		err = distrerr.ErrNotFound
 	}
 
 	if err != nil {
@@ -177,10 +211,10 @@ func DeleteUserAccountWithID(ctx context.Context, id uuid.UUID) error {
 	cmd, err := db.Exec(ctx, `DELETE FROM UserAccount WHERE id = @id`, pgx.NamedArgs{"id": id})
 	if err != nil {
 		if isStillReferencedError(err) {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 	} else if cmd.RowsAffected() == 0 {
-		err = apierrors.ErrNotFound
+		err = distrerr.ErrNotFound
 	}
 
 	if err != nil {
@@ -217,7 +251,7 @@ func DeleteUserAccountFromOrganization(ctx context.Context, userID, orgID uuid.U
 		WHERE user_account_id = @userId AND organization_id = @orgId`,
 		pgx.NamedArgs{"userId": userID, "orgId": orgID})
 	if err == nil && cmd.RowsAffected() == 0 {
-		err = apierrors.ErrNotFound
+		err = distrerr.ErrNotFound
 	}
 	return err
 }
@@ -243,7 +277,7 @@ func CreateUserAccountOrganizationAssignment(
 		},
 	)
 	if pgerr := (*pgconn.PgError)(nil); errors.As(err, &pgerr) && pgerr.Code == pgerrcode.UniqueViolation {
-		return apierrors.ErrAlreadyExists
+		return distrerr.ErrAlreadyExists
 	}
 	return err
 }
@@ -273,7 +307,7 @@ func UpdateUserAccountOrganizationAssignment(
 	if err != nil {
 		return fmt.Errorf("failed to update Organization_UserAccount: %w", err)
 	} else if cmd.RowsAffected() == 0 {
-		return fmt.Errorf("%w: user not found in org", apierrors.ErrNotFound)
+		return fmt.Errorf("%w: user not found in org", distrerr.ErrNotFound)
 	} else {
 		return nil
 	}
@@ -423,7 +457,7 @@ func GetUserAccountByID(ctx context.Context, id uuid.UUID) (*types.UserAccount, 
 		return nil, fmt.Errorf("could not query users: %w", err)
 	} else if userAccount, err := pgx.CollectExactlyOneRow[types.UserAccount](rows, pgx.RowToStructByPos); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		} else {
 			return nil, fmt.Errorf("could not map user: %w", err)
 		}
@@ -442,7 +476,7 @@ func GetUserAccountByEmail(ctx context.Context, email string) (*types.UserAccoun
 		return nil, fmt.Errorf("could not query users: %w", err)
 	} else if userAccount, err := pgx.CollectExactlyOneRow[types.UserAccount](rows, pgx.RowToStructByPos); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		} else {
 			return nil, fmt.Errorf("could not map user: %w", err)
 		}
@@ -486,7 +520,7 @@ func GetUserAccountWithRole(
 	userAccount, err := pgx.CollectExactlyOneRow[types.UserAccountWithUserRole](rows, pgx.RowToStructByPos)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		} else {
 			return nil, fmt.Errorf("could not map user: %w", err)
 		}
@@ -508,7 +542,7 @@ func GetUserRoleInOrganization(ctx context.Context, userID, orgID uuid.UUID) (ty
 	}
 	if role, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[types.UserRole]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
+			err = distrerr.ErrNotFound
 		}
 		return "", fmt.Errorf("could not get user role: %w", err)
 	} else {
@@ -521,15 +555,28 @@ func GetUserAccountAndOrg(ctx context.Context, userID, orgID uuid.UUID) (
 	*types.OrganizationWithBranding,
 	error,
 ) {
+	membership, err := GetOrganizationMembership(ctx, userID, orgID)
+	if err != nil {
+		return nil, nil, err
+	}
+	return &membership.User, &membership.Organization, nil
+}
+
+// GetOrganizationMembership returns the user's membership in the organization together with the
+// customer organization the membership belongs to, if any, which authentication reads on every
+// request.
+func GetOrganizationMembership(ctx context.Context, userID, orgID uuid.UUID) (*types.OrganizationMembership, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		"SELECT ("+userAccountWithRoleOutputExpr+`),
 					(`+organizationOutputExpr+`),
-					CASE WHEN b.id IS NOT NULL THEN (`+organizationBrandingOutputExpr+`) END AS branding
+					CASE WHEN b.id IS NOT NULL THEN (`+organizationBrandingOutputExpr+`) END AS branding,
+					CASE WHEN co.id IS NOT NULL THEN (`+customerOrganizationOutputExpr+`) END AS customer_organization
 			FROM UserAccount u
 			INNER JOIN Organization_UserAccount j ON u.id = j.user_account_id
 			INNER JOIN Organization o ON o.id = j.organization_id
 			LEFT JOIN OrganizationBranding b ON b.organization_id = o.id
+			LEFT JOIN CustomerOrganization co ON co.id = j.customer_organization_id
 			WHERE u.id = @id
 				AND j.organization_id = @orgId
 				AND o.deleted_at IS NULL`,
@@ -539,22 +586,24 @@ func GetUserAccountAndOrg(ctx context.Context, userID, orgID uuid.UUID) (
 		},
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	res, err := pgx.CollectExactlyOneRow[struct {
-		User     types.UserAccountWithUserRole
-		Org      types.Organization
-		Branding *types.OrganizationBranding
+		User                 types.UserAccountWithUserRole
+		Org                  types.Organization
+		Branding             *types.OrganizationBranding
+		CustomerOrganization *types.CustomerOrganization
 	}](rows, pgx.RowToStructByPos)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil, apierrors.ErrNotFound
-		} else {
-			return nil, nil, fmt.Errorf("could not map user or org: %w", err)
-		}
-	} else {
-		return &res.User, &types.OrganizationWithBranding{Organization: res.Org, Branding: res.Branding}, nil
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, distrerr.ErrNotFound
+	} else if err != nil {
+		return nil, fmt.Errorf("could not map user or org: %w", err)
 	}
+	return &types.OrganizationMembership{
+		User:                 res.User,
+		Organization:         types.OrganizationWithBranding{Organization: res.Org, Branding: res.Branding},
+		CustomerOrganization: res.CustomerOrganization,
+	}, nil
 }
 
 func GetCustomerAndOrgForDeploymentTarget(
@@ -584,7 +633,7 @@ func GetCustomerAndOrgForDeploymentTarget(
 	}](rows, pgx.RowToStructByPos)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil, apierrors.ErrNotFound
+			return nil, nil, distrerr.ErrNotFound
 		} else {
 			return nil, nil, fmt.Errorf("could not map customer or org: %w", err)
 		}
@@ -602,7 +651,7 @@ func UpdateUserAccountLastLoggedIn(ctx context.Context, userID uuid.UUID) error 
 		pgx.NamedArgs{"id": userID},
 	)
 	if err == nil && cmd.RowsAffected() == 0 {
-		err = apierrors.ErrNotFound
+		err = distrerr.ErrNotFound
 	}
 	if err != nil {
 		err = fmt.Errorf("could not update last_logged_in_at on UserAccount: %w", err)
@@ -651,7 +700,7 @@ func UpdateUserAccountMFASecret(ctx context.Context, userID uuid.UUID, secret db
 	if err != nil {
 		return fmt.Errorf("could not update MFA secret: %w", err)
 	} else if cmd.RowsAffected() == 0 {
-		return apierrors.ErrNotFound
+		return distrerr.ErrNotFound
 	}
 	return nil
 }
@@ -665,7 +714,7 @@ func EnableUserAccountMFA(ctx context.Context, userID uuid.UUID) error {
 	if err != nil {
 		return fmt.Errorf("could not enable MFA: %w", err)
 	} else if cmd.RowsAffected() == 0 {
-		return apierrors.ErrNotFound
+		return distrerr.ErrNotFound
 	}
 	return nil
 }
@@ -681,7 +730,7 @@ func DisableUserAccountMFA(ctx context.Context, userID uuid.UUID) error {
 	if err != nil {
 		return fmt.Errorf("could not disable MFA: %w", err)
 	} else if cmd.RowsAffected() == 0 {
-		return apierrors.ErrNotFound
+		return distrerr.ErrNotFound
 	}
 	return nil
 }

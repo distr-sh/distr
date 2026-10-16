@@ -24,22 +24,16 @@
     </div>
 
     @if (auth.isVendor() && !loading() && !configExists()) {
-      <div
-        class="m-4 p-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400 border border-blue-200 dark:border-blue-800 flex items-center justify-between gap-4"
-        role="alert">
-        <div>
-          <p class="font-semibold mb-1">Support bundle configuration has not been set up yet.</p>
-          <p>
-            Configure the environment variables that should be collected from the host and Docker containers when
-            customers create support bundles.
-          </p>
-        </div>
+      <app-alert type="info" heading="Support bundle configuration has not been set up yet." class="m-4">
+        Configure the environment variables that should be collected from the host and Docker containers when customers
+        create support bundles.
         <a
+          alertActions
           routerLink="/support-bundles/settings"
           class="shrink-0 py-1.5 px-3 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
           Configure
         </a>
-      </div>
+      </app-alert>
     }
 
     @if (!loading()) {
@@ -74,9 +68,7 @@
                     <td class="px-4 py-3">{{ bundle.customerOrganizationName }}</td>
                   }
                   <td class="px-4 py-3">
-                    <span class="distr-status-badge capitalize" [ngClass]="statusBadgeClass(bundle.status)">
-                      {{ bundle.status }}
-                    </span>
+                    <app-support-bundle-status-badge [status]="bundle.status" />
                   </td>
                   <td class="px-4 py-3">{{ bundle.createdAt | date: 'medium' }}</td>
                   <td class="px-4 py-3">{{ bundle.resourceCount }}</td>
@@ -155,11 +147,8 @@
       <div class="p-4 md:p-5">
         @if (collectCommand(); as cmd) {
           <div class="space-y-4">
-            <div
-              class="p-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400 border border-blue-300 dark:border-blue-800"
-              role="alert">
-              <p class="font-medium mb-2">Support bundle initialized successfully.</p>
-              <p class="mb-2">
+            <app-alert type="success" heading="Support bundle initialized successfully.">
+              <p class="mt-2 mb-2">
                 The script will collect vendor-defined environment variables and all Docker container logs. You will
                 have the choice to select the containers you want to collect data from. No data will be sent to the
                 server without your permission.
@@ -169,7 +158,7 @@
                 can exclude any of them before it runs.
               </p>
               <p>Run the following command on the target system to collect and upload the support bundle:</p>
-            </div>
+            </app-alert>
             <div class="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-600 rounded-lg">
               <code class="text-sm text-gray-900 dark:text-white break-all flex-1 select-all">{{ cmd }}</code>
               <app-clip [clip]="cmd" />

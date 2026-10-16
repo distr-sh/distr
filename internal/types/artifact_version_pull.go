@@ -11,7 +11,7 @@ type ArtifactVersionPull struct {
 	RemoteAddress *string
 	// Anonymous says the pull came without credentials, which only a public artifact allows.
 	Anonymous bool
-	// UserAccount is nil when an agent pulled the artifact with its own token, in which case
+	// UserAccount is nil when a controller pulled the artifact with its own token, in which case
 	// DeploymentTarget identifies it instead, and when the pull was anonymous.
 	UserAccount          *UserAccount
 	CustomerOrganization *CustomerOrganization

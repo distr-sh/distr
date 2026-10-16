@@ -12,7 +12,7 @@ func Authenticator() authn.Authenticator[string, authkey.Token] {
 	return authn.AuthenticatorFunc[string, authkey.Token](
 		func(ctx context.Context, encoded string) (authkey.Token, error) {
 			if token, err := authkey.Parse(encoded); err != nil {
-				return authkey.Token{}, fmt.Errorf("%w: %w", authn.ErrBadAuthentication, err)
+				return nil, fmt.Errorf("%w: %w", authn.ErrBadAuthentication, err)
 			} else {
 				return token, nil
 			}

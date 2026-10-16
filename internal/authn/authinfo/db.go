@@ -4,21 +4,25 @@ import (
 	"context"
 	"errors"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/distr-sh/distr/internal/util"
 )
 
 type DbAuthInfo struct {
 	AuthInfo
-	user *types.UserAccount
-	org  *types.OrganizationWithBranding
+	user        *types.UserAccount
+	org         *types.OrganizationWithBranding
+	customerOrg *types.CustomerOrganization
 }
 
 func (a DbAuthInfo) CurrentUser() *types.UserAccount {
 	return a.user
+}
+
+func (a DbAuthInfo) CurrentCustomerOrg() *types.CustomerOrganization {
+	return a.customerOrg
 }
 
 func (a DbAuthInfo) CurrentOrg() *types.Organization {
@@ -38,13 +42,13 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 			// Super admins: skip membership check, just verify user and org exist
 			if a.IsSuperAdmin() {
 				user, err := db.GetUserAccountByID(ctx, a.CurrentUserID())
-				if errors.Is(err, apierrors.ErrNotFound) {
+				if errors.Is(err, distrerr.ErrNotFound) {
 					return nil, authn.ErrBadAuthentication
 				} else if err != nil {
 					return nil, err
 				}
 				org, err := db.GetOrganizationWithBranding(ctx, *a.CurrentOrgID())
-				if errors.Is(err, apierrors.ErrNotFound) {
+				if errors.Is(err, distrerr.ErrNotFound) {
 					return nil, authn.ErrBadAuthentication
 				} else if err != nil {
 					return nil, err
@@ -69,15 +73,15 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 			}
 			// Regular users: require org membership and validate role
 			if a.CurrentUserRole() != nil {
-				if u, o, err := db.GetUserAccountAndOrg(
+				if m, err := db.GetOrganizationMembership(
 					ctx,
 					a.CurrentUserID(),
 					*a.CurrentOrgID(),
-				); errors.Is(err, apierrors.ErrNotFound) {
+				); errors.Is(err, distrerr.ErrNotFound) {
 					return nil, authn.ErrBadAuthentication
 				} else if err != nil {
 					return nil, err
-				} else if a.CurrentUserRole().GreaterThan(u.UserRole) {
+				} else if a.CurrentUserRole().GreaterThan(m.User.UserRole) {
 					// The role carried by the credential must never exceed the
 					// user's current role in the organization. Equal-or-below is
 					// fine (e.g. a PAT scoped to a lower role); above means the
@@ -89,8 +93,8 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 							userID:                 a.CurrentUserID(),
 							userEmail:              a.CurrentUserEmail(),
 							organizationID:         a.CurrentOrgID(),
-							customerOrganizationID: u.CustomerOrganizationID,
-							partnerOrganizationID:  u.PartnerOrganizationID,
+							customerOrganizationID: m.User.CustomerOrganizationID,
+							partnerOrganizationID:  m.User.PartnerOrganizationID,
 							emailVerified:          a.CurrentUserEmailVerified(),
 							tokenScope:             a.TokenScope(),
 							isAccessToken:          a.IsAccessToken(),
@@ -99,15 +103,16 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 							isSuperAdmin:           false,
 							rawToken:               a.Token(),
 						},
-						user: util.PtrTo(u.AsUserAccount()),
-						org:  o,
+						user:        new(m.User.AsUserAccount()),
+						org:         &m.Organization,
+						customerOrg: m.CustomerOrganization,
 					}, nil
 				}
 			}
 			return nil, authn.ErrBadAuthentication
 		} else {
 			// some special tokens like password reset don't have an organization ID
-			if u, err := db.GetUserAccountByID(ctx, a.CurrentUserID()); errors.Is(err, apierrors.ErrNotFound) {
+			if u, err := db.GetUserAccountByID(ctx, a.CurrentUserID()); errors.Is(err, distrerr.ErrNotFound) {
 				return nil, authn.ErrBadAuthentication
 			} else if err != nil {
 				return nil, err
@@ -119,26 +124,26 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 	return authn.AuthenticatorFunc[AuthInfo, AuthInfoWithUserAndOrganization](fn)
 }
 
-type agentDBAuthInfo struct {
+type controllerDBAuthInfo struct {
 	AuthInfo
 	org *types.OrganizationWithBranding
 }
 
-func (a agentDBAuthInfo) CurrentOrg() *types.Organization {
+func (a controllerDBAuthInfo) CurrentOrg() *types.Organization {
 	if a.org == nil {
 		return nil
 	}
 	return &a.org.Organization
 }
 
-func (a agentDBAuthInfo) CurrentOrgWithBranding() *types.OrganizationWithBranding {
+func (a controllerDBAuthInfo) CurrentOrgWithBranding() *types.OrganizationWithBranding {
 	return a.org
 }
 
-func AgentDbAuthenticator() authn.Authenticator[AgentAuthInfo, AuthInfoWithOrganization] {
-	fn := func(ctx context.Context, a AgentAuthInfo) (AuthInfoWithOrganization, error) {
+func ControllerDbAuthenticator() authn.Authenticator[ControllerAuthInfo, AuthInfoWithOrganization] {
+	fn := func(ctx context.Context, a ControllerAuthInfo) (AuthInfoWithOrganization, error) {
 		customer, org, err := db.GetCustomerAndOrgForDeploymentTarget(ctx, a.CurrentDeploymentTargetID())
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return nil, authn.ErrBadAuthentication
 		} else if err != nil {
 			return nil, err
@@ -152,9 +157,9 @@ func AgentDbAuthenticator() authn.Authenticator[AgentAuthInfo, AuthInfoWithOrgan
 		if customer != nil {
 			info.customerOrganizationID = &customer.ID
 		}
-		return &agentDBAuthInfo{AuthInfo: info, org: org}, nil
+		return &controllerDBAuthInfo{AuthInfo: info, org: org}, nil
 	}
-	return authn.AuthenticatorFunc[AgentAuthInfo, AuthInfoWithOrganization](fn)
+	return authn.AuthenticatorFunc[ControllerAuthInfo, AuthInfoWithOrganization](fn)
 }
 
 func DropUser() authn.Authenticator[AuthInfoWithUserAndOrganization, AuthInfoWithOrganization] {

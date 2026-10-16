@@ -50,6 +50,14 @@
 
 ---
 
+### createdBy?
+
+> `optional` **createdBy?**: [`ApplicationVersionCreator`](ApplicationVersionCreator.md)
+
+The user who created this version. Only vendor users get to see it.
+
+---
+
 ### id?
 
 > `optional` **id?**: `string`

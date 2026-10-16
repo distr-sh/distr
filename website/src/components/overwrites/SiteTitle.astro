@@ -9,35 +9,38 @@ import {links} from '~/data/navigation';
 ---
 
 <>
-  <Default><slot /></Default>
+  <Default>
+    <slot />
+  </Default>
 
   <starlight-select class="mobile">
     <label>
       <select aria-label="Menu">
-        <option value="" disabled selected>Menu</option>
-        {
-          links.map(link => (
-            <>
-              {link.children ? (
-                <>
-                  <option value={link.value} disabled>
-                    {link.title}
+        <option value="" disabled selected>
+          Menu
+        </option>
+        {links.map(link => (
+          <>
+            {link.children ? (
+              <>
+                <option value={link.value} disabled>
+                  {link.title}
+                </option>
+                {link.children.map(child => (
+                  <option value={child.value} style="padding-left: 1rem;">
+                    &nbsp;&nbsp;{child.title}
                   </option>
-                  {link.children.map(child => (
-                    <option value={child.value} style="padding-left: 1rem;">
-                      &nbsp;&nbsp;{child.title}
-                    </option>
-                  ))}
-                </>
-              ) : (
-                <option value={link.value} set:html={link.title} />
-              )}
-            </>
-          ))
-        }
+                ))}
+              </>
+            ) : (
+              <option value={link.value} set:html={link.title} />
+            )}
+          </>
+        ))}
         <option disabled>──────────</option>
-        <option value="https://cal.glasskube.com/team/gk/demo">Book Demo</option
-        >
+        <option value="https://cal.glasskube.com/team/gk/demo">
+          Book Demo
+        </option>
         <option value="/onboarding/">Start free trial</option>
         <option value="https://app.distr.sh">Login</option>
       </select>

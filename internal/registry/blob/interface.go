@@ -38,6 +38,12 @@ type BlobPutHandler interface {
 	GetUploadedPartsSize(ctx context.Context, id string) (int64, error)
 }
 
+// BlobChunkMinLengthHandler is an extension interface representing a blob storage backend that
+// requires every chunk of a chunked upload except the last to have a minimum size.
+type BlobChunkMinLengthHandler interface {
+	ChunkMinLength() int64
+}
+
 // BlobDeleteHandler is an extension interface representing a blob storage
 // backend that can delete blob contents.
 type BlobDeleteHandler interface {

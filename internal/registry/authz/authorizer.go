@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/registry/name"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/opencontainers/go-digest"
@@ -61,12 +61,14 @@ func authorizeAnonymous(ctx context.Context, n *name.Name, action Action) error 
 	if action != ActionRead && action != ActionStat {
 		return ErrAuthenticationRequired
 	} else if artifact, err := db.GetArtifactByName(ctx, n.OrgName, n.ArtifactName); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return ErrAuthenticationRequired
 		}
 		return err
 	} else if !artifact.Public {
 		return ErrAuthenticationRequired
+	} else if AnonymousLimitExceeded(ctx) {
+		return ErrRateLimited
 	}
 	return nil
 }
@@ -74,7 +76,7 @@ func authorizeAnonymous(ctx context.Context, n *name.Name, action Action) error 
 // authorizeUpstreamWrite rejects a push to a pull-through cache artifact.
 func authorizeUpstreamWrite(ctx context.Context, n *name.Name) error {
 	if artifact, err := db.GetArtifactByName(ctx, n.OrgName, n.ArtifactName); err != nil {
-		if !errors.Is(err, apierrors.ErrNotFound) {
+		if !errors.Is(err, distrerr.ErrNotFound) {
 			return err
 		}
 	} else if artifact.UpstreamURL != nil {
@@ -152,7 +154,7 @@ func (a *authorizer) AuthorizeReference(ctx context.Context, nameStr string, ref
 			*principal.CurrentCustomerOrgID(),
 			*principal.CurrentOrgID(),
 		)
-		if errors.Is(err, apierrors.ErrForbidden) {
+		if errors.Is(err, distrerr.ErrForbidden) {
 			return NewErrAccessDenied("entitlement required")
 		} else if err != nil {
 			return err
@@ -186,6 +188,8 @@ func (a *authorizer) AuthorizeBlob(
 			return err
 		} else if !belongs {
 			return ErrAuthenticationRequired
+		} else if AnonymousLimitExceeded(ctx) {
+			return ErrRateLimited
 		}
 		return nil
 	}
@@ -202,16 +206,19 @@ func (a *authorizer) AuthorizeBlob(
 		return NewErrAccessDenied("organization slug does not match reference")
 	}
 
-	if belongs, err := db.ArtifactBlobBelongsToOrg(ctx, org.ID, digest.String()); err != nil {
-		return err
-	} else if !belongs {
-		return apierrors.ErrNotFound
+	// A pushing client stats every blob after uploading it and before any manifest references it.
+	if action != ActionStat {
+		if belongs, err := db.ArtifactBlobBelongsToOrg(ctx, org.ID, digest.String()); err != nil {
+			return err
+		} else if !belongs {
+			return distrerr.ErrNotFound
+		}
 	}
 
 	if principal.CurrentCustomerOrgID() != nil && org.HasFeature(types.FeatureLicensing) {
 		err := db.CheckEntitlementForArtifactBlob(
 			ctx, digest.String(), n.ArtifactName, *principal.CurrentCustomerOrgID(), *principal.CurrentOrgID())
-		if errors.Is(err, apierrors.ErrForbidden) {
+		if errors.Is(err, distrerr.ErrForbidden) {
 			return NewErrAccessDenied("entitlement required")
 		} else if err != nil {
 			return err

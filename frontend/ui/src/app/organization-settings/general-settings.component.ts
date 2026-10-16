@@ -84,7 +84,8 @@ export class GeneralSettingsComponent implements OnInit {
               message: '',
               alert: {
                 type: 'warning',
-                message: 'Existing agents are not affected. New agent connect commands will use the new format.',
+                message:
+                  'Existing controllers are not affected. New controller connect commands will use the new format.',
               },
             },
           })

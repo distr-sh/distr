@@ -176,7 +176,7 @@ func (reg *Registry) createArtifactsRegistry(ctx context.Context) (http.Handler,
 
 func (r *Registry) GetRouter() http.Handler {
 	return routing.NewRouter(
-		r.GetLogger(),
+		r.GetLogger().With(zap.String("component", "api")),
 		r.GetDbPool(),
 		r.GetDbReadonlyPool(),
 		r.GetMailer(),

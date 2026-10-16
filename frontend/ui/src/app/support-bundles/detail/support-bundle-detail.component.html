@@ -11,9 +11,7 @@
           <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
             {{ bundle.title || 'Support Bundle ' + shortId(bundle.id) }}
           </h1>
-          <span class="ml-3 distr-status-badge capitalize" [ngClass]="statusBadgeClass(bundle.status)">
-            {{ bundle.status }}
-          </span>
+          <app-support-bundle-status-badge class="ml-3" [status]="bundle.status" />
         </div>
         <div class="flex items-center gap-2">
           @if (auth.hasAnyRole('read_write', 'admin') && bundle.status === 'initialized') {

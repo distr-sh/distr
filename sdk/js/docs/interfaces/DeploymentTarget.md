@@ -8,15 +8,10 @@
 
 ## Extends
 
-- [`BaseModel`](BaseModel.md).[`Named`](Named.md)
+- [`BaseModel`](BaseModel.md)
+- [`Named`](Named.md)
 
 ## Properties
-
-### agentVersion?
-
-> `optional` **agentVersion?**: [`AgentVersion`](AgentVersion.md)
-
----
 
 ### autohealEnabled?
 
@@ -27,6 +22,12 @@
 ### automaticUpdatesEnabled?
 
 > `optional` **automaticUpdatesEnabled?**: `boolean`
+
+---
+
+### controllerVersion?
+
+> `optional` **controllerVersion?**: [`ControllerVersion`](ControllerVersion.md)
 
 ---
 
@@ -108,9 +109,15 @@
 
 ---
 
-### reportedAgentVersionId?
+### reconnectPending?
 
-> `optional` **reportedAgentVersionId?**: `string`
+> `optional` **reconnectPending?**: `boolean`
+
+---
+
+### reportedControllerVersionId?
+
+> `optional` **reportedControllerVersionId?**: `string`
 
 ---
 

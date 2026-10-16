@@ -6,7 +6,15 @@ import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
 import {UserRole} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faClipboard, faPen, faPlus, faTrash, faTriangleExclamation, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {
+  faCircleExclamation,
+  faClipboard,
+  faPen,
+  faPlus,
+  faTrash,
+  faTriangleExclamation,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {firstValueFrom} from 'rxjs';
 import {isExpired, RelativeDatePipe} from '../../util/dates';
@@ -63,6 +71,7 @@ export class AccessTokensComponent {
   protected readonly faXmark = faXmark;
   protected readonly faClipboard = faClipboard;
   protected readonly faTriangleExclamation = faTriangleExclamation;
+  protected readonly faCircleExclamation = faCircleExclamation;
 
   private readonly accessTokensService = inject(AccessTokensService);
   private readonly auth = inject(AuthService);
@@ -158,15 +167,17 @@ export class AccessTokensComponent {
   }
 
   public async deleteAccessToken(row: AccessTokenRow) {
-    if (await firstValueFrom(this.overlay.confirm(`Really delete token '${row.name}'?`))) {
-      try {
-        await firstValueFrom(this.accessTokensService.delete(row.token.id!));
-        this.accessTokens.reload();
-      } catch (e) {
-        const message = getFormDisplayedError(e);
-        if (message) {
-          this.toast.error(message);
-        }
+    if (!row.expired && !(await firstValueFrom(this.overlay.confirm(`Really delete token '${row.name}'?`)))) {
+      return;
+    }
+    try {
+      await firstValueFrom(this.accessTokensService.delete(row.token.id!));
+      this.toast.success('Access Token deleted');
+      this.accessTokens.reload();
+    } catch (e) {
+      const message = getFormDisplayedError(e);
+      if (message) {
+        this.toast.error(message);
       }
     }
   }

@@ -13,11 +13,14 @@ import (
 	"github.com/distr-sh/distr/internal/authkey"
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
+	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/prometheus"
+	"github.com/distr-sh/distr/internal/requestlog"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	sentryhttp "github.com/getsentry/sentry-go/http"
@@ -111,18 +114,39 @@ func LoggerCtxMiddleware(logger *zap.Logger) func(next http.Handler) http.Handle
 func LoggingMiddleware(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+		ctx, fields := requestlog.NewContext(r.Context())
 		now := time.Now()
-		handler.ServeHTTP(ww, r)
+		handler.ServeHTTP(ww, r.WithContext(ctx))
 		elapsed := time.Since(now)
-		logger := internalctx.GetLogger(r.Context())
-		logger.Info("handling request",
+		logFields := []zap.Field{
 			zap.String("method", r.Method),
 			zap.String("path", r.URL.Path),
 			zap.Int("status", ww.Status()),
-			zap.String("time", elapsed.String()))
+			zap.String("time", elapsed.String()),
+		}
+		if buildconfig.IsRelease() {
+			logFields = append(
+				logFields,
+				zap.String("userAgent", r.UserAgent()),
+				zap.String("ip", middleware.GetClientIP(ctx)),
+			)
+		}
+		internalctx.GetLogger(ctx).Info("handling request", append(logFields, fields.ZapFields()...)...)
 	}
 	return http.HandlerFunc(fn)
 }
+
+// guard passes the request on unless check answers it with a Responder or fails like a [respond.Handler].
+func guard(check func(r *http.Request) (respond.Responder, error)) func(http.Handler) http.Handler {
+	return respond.Middleware(func(r *http.Request) (*http.Request, respond.Responder, error) {
+		if resp, err := check(r); resp != nil || err != nil {
+			return nil, resp, err
+		}
+		return r, nil, nil
+	})
+}
+
+var insufficientPermissions = respond.Forbidden("insufficient permissions")
 
 func isSuperAdmin(ctx context.Context) bool {
 	if auth, err := auth.Authentication.Get(ctx); err == nil {
@@ -132,23 +156,15 @@ func isSuperAdmin(ctx context.Context) bool {
 }
 
 func RequireAnyUserRole(userRoles ...types.UserRole) func(handler http.Handler) http.Handler {
-	return func(handler http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-			if isSuperAdmin(ctx) {
-				handler.ServeHTTP(w, r)
-				return
-			}
-			if auth, err := auth.Authentication.Get(ctx); err != nil {
-				http.Error(w, err.Error(), http.StatusForbidden)
-			} else if auth.CurrentUserRole() == nil || !slices.Contains(userRoles, *auth.CurrentUserRole()) {
-				http.Error(w, "insufficient permissions", http.StatusForbidden)
-			} else {
-				handler.ServeHTTP(w, r)
-			}
+	return guard(func(r *http.Request) (respond.Responder, error) {
+		if auth, err := auth.Authentication.Get(r.Context()); err != nil {
+			return nil, err
+		} else if role := auth.CurrentUserRole(); !auth.IsSuperAdmin() &&
+			(role == nil || !slices.Contains(userRoles, *role)) {
+			return insufficientPermissions, nil
 		}
-		return http.HandlerFunc(fn)
-	}
+		return nil, nil
+	})
 }
 
 var (
@@ -160,67 +176,46 @@ var (
 // denylist of the lower plans instead of an allowlist of the higher ones, so a newly
 // introduced plan has access by default.
 func ForbidSubscriptionTypes(forbidden ...types.SubscriptionType) func(http.Handler) http.Handler {
-	return func(handler http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-			if auth, err := auth.Authentication.Get(ctx); err != nil {
-				http.Error(w, err.Error(), http.StatusForbidden)
-			} else if auth.CurrentOrg() == nil {
-				http.Error(w, "inadequate access token", http.StatusForbidden)
-			} else if slices.Contains(forbidden, auth.CurrentOrg().SubscriptionType) {
-				typesStr := make([]string, 0, len(forbidden))
-				for _, t := range forbidden {
-					typesStr = append(typesStr, string(t))
-				}
-				http.Error(w, fmt.Sprintf(
-					"this operation can not be performed on an organization with one of the following subscription types: %v",
-					strings.Join(typesStr, ", "),
-				), http.StatusForbidden)
-			} else {
-				handler.ServeHTTP(w, r)
-			}
-		}
-		return http.HandlerFunc(fn)
+	names := make([]string, len(forbidden))
+	for i, t := range forbidden {
+		names[i] = string(t)
 	}
+	forbiddenSubscription := respond.Forbidden(
+		"this operation can not be performed on an organization with one of the following subscription types: " +
+			strings.Join(names, ", "),
+	)
+
+	return guard(func(r *http.Request) (respond.Responder, error) {
+		if auth, err := auth.Authentication.Get(r.Context()); err != nil {
+			return nil, err
+		} else if auth.CurrentOrg() == nil {
+			return respond.Forbidden("inadequate access token"), nil
+		} else if slices.Contains(forbidden, auth.CurrentOrg().SubscriptionType) {
+			return forbiddenSubscription, nil
+		}
+		return nil, nil
+	})
 }
 
 var ProFeature = ForbidSubscriptionTypes(types.NonProSubscriptionTypes...)
 
-func RequireVendor(handler http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		if isSuperAdmin(ctx) {
-			handler.ServeHTTP(w, r)
-			return
-		}
-		if auth, err := auth.Authentication.Get(ctx); err != nil {
-			http.Error(w, err.Error(), http.StatusForbidden)
-		} else if auth.CurrentCustomerOrgID() != nil || auth.CurrentPartnerOrgID() != nil {
-			http.Error(w, "insufficient permissions", http.StatusForbidden)
-		} else {
-			handler.ServeHTTP(w, r)
-		}
+var RequireVendor = guard(func(r *http.Request) (respond.Responder, error) {
+	if auth, err := auth.Authentication.Get(r.Context()); err != nil {
+		return nil, err
+	} else if !auth.IsSuperAdmin() && (auth.CurrentCustomerOrgID() != nil || auth.CurrentPartnerOrgID() != nil) {
+		return insufficientPermissions, nil
 	}
-	return http.HandlerFunc(fn)
-}
+	return nil, nil
+})
 
-func RequireVendorOrPartner(handler http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		if isSuperAdmin(ctx) {
-			handler.ServeHTTP(w, r)
-			return
-		}
-		if auth, err := auth.Authentication.Get(ctx); err != nil {
-			http.Error(w, err.Error(), http.StatusForbidden)
-		} else if auth.CurrentCustomerOrgID() != nil {
-			http.Error(w, "insufficient permissions", http.StatusForbidden)
-		} else {
-			handler.ServeHTTP(w, r)
-		}
+var RequireVendorOrPartner = guard(func(r *http.Request) (respond.Responder, error) {
+	if auth, err := auth.Authentication.Get(r.Context()); err != nil {
+		return nil, err
+	} else if !auth.IsSuperAdmin() && auth.CurrentCustomerOrgID() != nil {
+		return insufficientPermissions, nil
 	}
-	return http.HandlerFunc(fn)
-}
+	return nil, nil
+})
 
 var Sentry = sentryhttp.New(sentryhttp.Options{Repanic: true}).Handle
 
@@ -241,14 +236,14 @@ func SetSentryUserFromUserAuth(h http.Handler) http.Handler {
 	})
 }
 
-// SetSentryUserFromAgentAuth sets the authenticated agent's identity on the Sentry scope. It
-// must run after auth.AgentAuthentication.Middleware so the agent is available in the context;
-// if there is no authenticated agent it panics, since that is a wiring bug.
-func SetSentryUserFromAgentAuth(h http.Handler) http.Handler {
+// SetSentryUserFromControllerAuth sets the authenticated controller's identity on the Sentry scope. It
+// must run after auth.ControllerAuthentication.Middleware so the controller is available in the context;
+// if there is no authenticated controller it panics, since that is a wiring bug.
+func SetSentryUserFromControllerAuth(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if hub := sentry.GetHubFromContext(ctx); hub != nil {
-			auth := auth.AgentAuthentication.Require(ctx)
+			auth := auth.ControllerAuthentication.Require(ctx)
 			hub.Scope().SetUser(sentry.User{
 				ID: auth.CurrentDeploymentTargetID().String(),
 			})
@@ -262,7 +257,7 @@ func getTokenIdKey(token any, id uuid.UUID) string {
 	switch token.(type) {
 	case jwt.Token:
 		prefix = "jwt"
-	case authkey.Key:
+	case authkey.Token:
 		prefix = "authkey"
 	default:
 		panic("unknown token type")
@@ -288,7 +283,7 @@ var RequireOrgAndRole = auth.Authentication.ValidatorMiddleware(
 
 // RequireTokenScope rejects the request unless the authenticated credential was minted with the
 // given token scope. It restricts the password-setting endpoints to their dedicated special tokens:
-// regular login tokens, PATs and agent tokens carry the empty scope and are therefore rejected.
+// regular login tokens, PATs and controller tokens carry the empty scope and are therefore rejected.
 func RequireTokenScope(scope authjwt.TokenScope) func(http.Handler) http.Handler {
 	return auth.Authentication.ValidatorMiddleware(
 		func(value authinfo.AuthInfoWithUserAndOrganization) error {
@@ -303,19 +298,13 @@ func RequireTokenScope(scope authjwt.TokenScope) func(http.Handler) http.Handler
 // BlockCrossOrganizationAction rejects an action that would leave the organization the credential is
 // confined to, or destroy it, for the credentials described by authinfo.AuthInfo.OrganizationScoped.
 // A personal access token is one of them.
-func BlockCrossOrganizationAction(handler http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		if auth.Authentication.Require(r.Context()).OrganizationScoped() {
-			http.Error(w,
-				"you are signed in with a credential that belongs to a single organization and can "+
-					"therefore only act within that organization",
-				http.StatusForbidden)
-			return
-		}
-		handler.ServeHTTP(w, r)
+var BlockCrossOrganizationAction = guard(func(r *http.Request) (respond.Responder, error) {
+	if auth.Authentication.Require(r.Context()).OrganizationScoped() {
+		return respond.Forbidden("you are signed in with a credential that belongs to a single organization and can " +
+			"therefore only act within that organization"), nil
 	}
-	return http.HandlerFunc(fn)
-}
+	return nil, nil
+})
 
 // The messages are exported for the endpoints that reject only part of their request body and
 // therefore cannot apply the middleware.
@@ -325,96 +314,93 @@ const (
 	AccessTokenBlockedMessage = "this cannot be done with an access token. Sign in to Distr to do it."
 )
 
-func RequireNonOidcToken(handler http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		if auth.Authentication.Require(r.Context()).IsCustomOIDCSession() {
-			http.Error(w, OidcSessionBlockedMessage, http.StatusForbidden)
-			return
-		}
-		handler.ServeHTTP(w, r)
+var RequireNonOidcToken = guard(func(r *http.Request) (respond.Responder, error) {
+	if auth.Authentication.Require(r.Context()).IsCustomOIDCSession() {
+		return respond.Forbidden(OidcSessionBlockedMessage), nil
 	}
-	return http.HandlerFunc(fn)
-}
+	return nil, nil
+})
 
-func RequireNonAccessToken(handler http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		if auth.Authentication.Require(r.Context()).IsAccessToken() {
-			http.Error(w, AccessTokenBlockedMessage, http.StatusForbidden)
-			return
-		}
-		handler.ServeHTTP(w, r)
+var RequireNonAccessToken = guard(func(r *http.Request) (respond.Responder, error) {
+	if auth.Authentication.Require(r.Context()).IsAccessToken() {
+		return respond.Forbidden(AccessTokenBlockedMessage), nil
 	}
-	return http.HandlerFunc(fn)
-}
+	return nil, nil
+})
 
 // RequireEmailVerified rejects requests with 403 when USER_EMAIL_VERIFICATION_REQUIRED is
 // enabled and the authenticated user's DB record has no EmailVerifiedAt. It must run after
 // auth.Authentication.Middleware so the DB-loaded user is available in the context; if
 // there is no authenticated user it panics, since that is a wiring bug.
-func RequireEmailVerified(handler http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		if !env.UserEmailVerificationRequired() {
-			handler.ServeHTTP(w, r)
-			return
-		}
-		value := auth.Authentication.Require(r.Context())
-		if user := value.CurrentUser(); user == nil || user.EmailVerifiedAt == nil {
-			http.Error(w, "email not verified", http.StatusForbidden)
-		} else {
-			handler.ServeHTTP(w, r)
-		}
+var RequireEmailVerified = guard(func(r *http.Request) (respond.Responder, error) {
+	if !env.UserEmailVerificationRequired() {
+		return nil, nil
+	} else if user := auth.Authentication.Require(r.Context()).CurrentUser(); user == nil || user.EmailVerifiedAt == nil {
+		return respond.Forbidden("email not verified"), nil
 	}
-	return http.HandlerFunc(fn)
-}
+	return nil, nil
+})
 
-func BlockSuperAdmin(handler http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		if isSuperAdmin(r.Context()) {
-			http.Error(w, "super admins cannot modify resources", http.StatusForbidden)
-			return
-		}
-		handler.ServeHTTP(w, r)
+var BlockSuperAdmin = guard(func(r *http.Request) (respond.Responder, error) {
+	if isSuperAdmin(r.Context()) {
+		return respond.Forbidden("super admins cannot modify resources"), nil
 	}
-	return http.HandlerFunc(fn)
-}
+	return nil, nil
+})
 
-func BlockSuperAdminUnlessOrganizationExpired(handler http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		if isSuperAdmin(ctx) {
-			org := auth.Authentication.Require(ctx).CurrentOrg()
-			if org == nil || org.HasActiveSubscription() {
-				http.Error(
-					w,
-					"super admins cannot delete an active organization",
-					http.StatusForbidden,
-				)
-				return
-			}
-		}
-		handler.ServeHTTP(w, r)
+var BlockSuperAdminUnlessOrganizationExpired = guard(func(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	if !isSuperAdmin(ctx) {
+		return nil, nil
+	} else if org := auth.Authentication.Require(ctx).CurrentOrg(); org == nil || org.HasActiveSubscription() {
+		return respond.Forbidden("super admins cannot delete an active organization"), nil
 	}
-	return http.HandlerFunc(fn)
-}
+	return nil, nil
+})
 
 func FeatureFlagMiddleware(feature types.Feature) func(handler http.Handler) http.Handler {
-	return func(handler http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-			if auth, err := auth.Authentication.Get(ctx); err != nil {
-				http.Error(w, err.Error(), http.StatusForbidden)
-			} else {
-				org := auth.CurrentOrg()
-				if !org.HasFeature(feature) {
-					http.Error(w, fmt.Sprintf("%v not enabled for organization", feature), http.StatusForbidden)
-				} else {
-					handler.ServeHTTP(w, r)
-				}
-			}
+	featureNotEnabled := respond.Forbidden(fmt.Sprintf("%v not enabled for organization", feature))
+
+	return guard(func(r *http.Request) (respond.Responder, error) {
+		if auth, err := auth.Authentication.Get(r.Context()); err != nil {
+			return nil, err
+		} else if !auth.CurrentOrg().HasFeature(feature) {
+			return featureNotEnabled, nil
 		}
-		return http.HandlerFunc(fn)
-	}
+		return nil, nil
+	})
 }
+
+// CustomerFeatureMiddleware rejects a customer user whose customer organization has none of the
+// features. Vendor and partner users pass, since they manage the features on behalf of their customers.
+func CustomerFeatureMiddleware(features ...types.CustomerOrganizationFeature) func(handler http.Handler) http.Handler {
+	names := make([]string, len(features))
+	for i, feature := range features {
+		names[i] = string(feature)
+	}
+	featureNotEnabled := respond.Forbidden(strings.Join(names, " or ") + " not enabled for customer organization")
+
+	return guard(func(r *http.Request) (respond.Responder, error) {
+		if auth, err := auth.Authentication.Get(r.Context()); err != nil {
+			return nil, err
+		} else if customerOrg := auth.CurrentCustomerOrg(); customerOrg != nil &&
+			!slices.ContainsFunc(features, customerOrg.HasFeature) {
+			return featureNotEnabled, nil
+		}
+		return nil, nil
+	})
+}
+
+var (
+	AlertsCustomerFeatureMiddleware              = CustomerFeatureMiddleware(types.CustomerOrganizationFeatureAlerts)
+	UpdateNotificationsCustomerFeatureMiddleware = CustomerFeatureMiddleware(
+		types.CustomerOrganizationFeatureUpdateNotifications,
+	)
+	NotificationHistoryCustomerFeatureMiddleware = CustomerFeatureMiddleware(
+		types.CustomerOrganizationFeatureAlerts,
+		types.CustomerOrganizationFeatureUpdateNotifications,
+	)
+)
 
 var (
 	LicensingFeatureFlagEnabledMiddleware = FeatureFlagMiddleware(types.FeatureLicensing)
@@ -430,15 +416,12 @@ var (
 // RequireCustomDomainsConfigured rejects requests unless the instance itself is set up for custom
 // domain self-service. Without a CNAME target there is no proxy obtaining certificates for custom
 // domains, so a registered domain would never be served.
-func RequireCustomDomainsConfigured(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !env.CustomDomainsConfigured() {
-			http.Error(w, "custom domains are not configured on this instance", http.StatusForbidden)
-			return
-		}
-		handler.ServeHTTP(w, r)
-	})
-}
+var RequireCustomDomainsConfigured = guard(func(r *http.Request) (respond.Responder, error) {
+	if !env.CustomDomainsConfigured() {
+		return respond.Forbidden("custom domains are not configured on this instance"), nil
+	}
+	return nil, nil
+})
 
 func SetRequestPattern(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

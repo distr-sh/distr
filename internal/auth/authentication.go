@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/internal/authjwt"
+	accesstoken "github.com/distr-sh/distr/internal/authkey"
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
 	"github.com/distr-sh/distr/internal/authn/authkey"
@@ -13,6 +14,7 @@ import (
 	authnSupportBundle "github.com/distr-sh/distr/internal/authn/supportbundle"
 	"github.com/distr-sh/distr/internal/authn/token"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/requestlog"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"go.uber.org/zap"
@@ -35,13 +37,13 @@ var Authentication = authn.New(
 	),
 )
 
-// AgentAuthentication supports only Bearer JWT tokens
-var AgentAuthentication = authn.New(
+// ControllerAuthentication supports only Bearer JWT tokens
+var ControllerAuthentication = authn.New(
 	authn.Chain3(
 		token.NewExtractor(token.WithExtractorFuncs(token.FromHeader("Bearer"))),
 		jwt.Authenticator(authjwt.VerifyToken),
-		authinfo.AgentJWTAuthenticator(),
-		// for agents, db check is done in the agent auth middleware, therefore no DbAuthenticator here
+		authinfo.ControllerJWTAuthenticator(),
+		// for controllers, db check is done in the controller auth middleware, therefore no DbAuthenticator here
 	),
 )
 
@@ -66,11 +68,11 @@ var ArtifactsAuthentication = authn.New(
 				authinfo.DbAuthenticator(),
 				authinfo.DropUser(),
 			),
-			// Authenticate with Agent JWT
+			// Authenticate with controller JWT
 			authn.Chain3(
 				jwt.Authenticator(authjwt.VerifyToken),
-				authinfo.AgentJWTAuthenticator(),
-				authinfo.AgentDbAuthenticator(),
+				authinfo.ControllerJWTAuthenticator(),
+				authinfo.ControllerDbAuthenticator(),
 			),
 		),
 	),
@@ -100,9 +102,44 @@ func handleUnknownError(w http.ResponseWriter, r *http.Request, err error) {
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
+func recordAuthInfo(ctx context.Context, info authinfo.AuthInfo) {
+	requestlog.FromContext(ctx).Update(func(f *requestlog.Fields) {
+		if token, ok := info.Token().(accesstoken.Token); ok {
+			f.TokenID = new(token.ID())
+		}
+		f.OrganizationID = info.CurrentOrgID()
+		f.CustomerOrganizationID = info.CurrentCustomerOrgID()
+		if deploymentTargetID := info.CurrentDeploymentTargetID(); deploymentTargetID != nil {
+			f.DeploymentTargetID = deploymentTargetID
+		} else {
+			f.UserID = new(info.CurrentUserID())
+			f.OrganizationScoped = new(info.OrganizationScoped())
+		}
+	})
+}
+
 func init() {
 	Authentication.SetUnknownErrorHandler(handleUnknownError)
-	AgentAuthentication.SetUnknownErrorHandler(handleUnknownError)
+	ControllerAuthentication.SetUnknownErrorHandler(handleUnknownError)
 	ArtifactsAuthentication.SetUnknownErrorHandler(handleUnknownError)
 	SupportBundleAuthentication.SetUnknownErrorHandler(handleUnknownError)
+
+	Authentication.SetAuthenticatedHook(func(ctx context.Context, info authinfo.AuthInfoWithUserAndOrganization) {
+		recordAuthInfo(ctx, info)
+	})
+	ArtifactsAuthentication.SetAuthenticatedHook(func(ctx context.Context, info authinfo.AuthInfoWithOrganization) {
+		recordAuthInfo(ctx, info)
+	})
+	ControllerAuthentication.SetAuthenticatedHook(func(ctx context.Context, info authinfo.ControllerAuthInfo) {
+		requestlog.FromContext(ctx).Update(func(f *requestlog.Fields) {
+			f.OrganizationID = new(info.CurrentOrgID())
+			f.DeploymentTargetID = new(info.CurrentDeploymentTargetID())
+		})
+	})
+	SupportBundleAuthentication.SetAuthenticatedHook(func(ctx context.Context, bundle *types.SupportBundle) {
+		requestlog.FromContext(ctx).Update(func(f *requestlog.Fields) {
+			f.OrganizationID = &bundle.OrganizationID
+			f.CustomerOrganizationID = &bundle.CustomerOrganizationID
+		})
+	})
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"net/netip"
 	"os"
 	"strconv"
 	"strings"
@@ -21,110 +22,109 @@ import (
 const kmsResolveTimeout = 30 * time.Second
 
 var (
-	databaseUrl                            string
-	databaseMaxConns                       *int
-	databaseReadonlyUrl                    *string
-	databaseReadonlyMaxConns               *int
-	databaseEncryptionKey                  string
-	databaseEncryptionMigrateOnBoot        bool
-	jwtSecret                              []byte
-	host                                   string
-	agentHost                              *string
-	registryHost                           string
-	mailerConfig                           MailerConfig
-	inviteTokenValidDuration               time.Duration
-	resetTokenValidDuration                time.Duration
-	agentTokenMaxValidDuration             time.Duration
-	agentInterval                          time.Duration
-	statusEntriesMaxAge                    *time.Duration
-	metricsEntriesMaxAge                   *time.Duration
-	sentryDSN                              string
-	sentryDebug                            bool
-	sentryEnvironment                      string
-	otelAgentSampler                       *SamplerConfig
-	otelRegistrySampler                    *SamplerConfig
-	otelExporterSentryEnabled              bool
-	otelExporterOtlpEnabled                bool
-	enableQueryLogging                     bool
-	agentDockerConfig                      []byte
-	frontendSentryDSN                      *string
-	frontendSentryTraceSampleRate          *float64
-	frontendPosthogToken                   *string
-	frontendPosthogAPIHost                 *string
-	frontendPosthogUIHost                  *string
-	userEmailVerificationRequired          bool
-	serverShutdownDelayDuration            *time.Duration
-	registration                           RegistrationMode
-	turnstileSiteKey                       *string
-	turnstileSecret                        *string
-	supportEmail                           *string
-	registryEnabled                        bool
-	registryS3Config                       S3Config
-	registryScratchDir                     *string
-	registryAnonymousRateLimits            AnonymousRateLimits
-	artifactTagsDefaultLimitPerOrg         int
-	registryUpstreamSyncCron               *string
-	registryUpstreamSyncTimeout            time.Duration
-	cleanupDeploymentRevisionStatusCron    *string
-	cleanupDeploymentRevisionStatusTimeout time.Duration
-	cleanupDeploymentTargetMetricsCron     *string
-	cleanupDeploymentTargetMetricsTimeout  time.Duration
-	cleanupOIDCStateCron                   *string
-	cleanupOIDCStateCronTimeout            time.Duration
-	cleanupArtifactBlobCron                *string
-	cleanupArtifactBlobTimeout             time.Duration
-	cleanupArtifactBlobMinAge              time.Duration
-	cleanupOrganizationCron                *string
-	cleanupOrganizationTimeout             time.Duration
-	cleanupOrganizationMinAge              time.Duration
-	cleanupUserAccountCron                 *string
-	cleanupUserAccountTimeout              time.Duration
-	cleanupUserAccountMinAge               time.Duration
-	cleanupFileCron                        *string
-	cleanupFileTimeout                     time.Duration
-	cleanupFileMinAge                      time.Duration
-	deploymentStatusNotificationCron       *string
-	deploymentStatusNotificationTimeout    time.Duration
-	notificationEmailHourlyQuota           int
-	oidcGithubEnabled                      bool
-	oidcGithubClientID                     *string
-	oidcGithubClientSecret                 *string
-	oidcGoogleEnabled                      bool
-	oidcGoogleClientID                     *string
-	oidcGoogleClientSecret                 *string
-	oidcMicrosoftEnabled                   bool
-	oidcMicrosoftClientID                  *string
-	oidcMicrosoftClientSecret              *string
-	oidcMicrosoftTenantID                  *string
-	oidcGenericEnabled                     bool
-	oidcGenericClientID                    *string
-	oidcGenericClientSecret                *string
-	oidcGenericIssuer                      *string
-	oidcGenericScopes                      *string
-	oidcGenericPKCEEnabled                 bool
-	wellKnownMicrosoftIdentityAssociation  []byte
-	stripeWebhookSecret                    *string
-	stripeWebhookVersionMismatchBehavior   StripeWebhookVersionMismatchBehaviorType
-	stripeAPIKey                           *string
-	licenseKeyPrivateKeyPEM                []byte
-	licenseKey                             string
-	metricsEnabled                         bool
-	metricsAddr                            string
-	metricsBearerToken                     *string
-	supportBundleLogTailLines              int
-	supportBundleResourceMaxBytes          int
-	supportBundleScriptTimeout             time.Duration
-	lokiURL                                string
-	lokiBearerToken                        *string
-	lokiBasicAuthUsername                  *string
-	lokiBasicAuthPassword                  *string
-	lokiRequestTimeout                     time.Duration
-	customDomainTarget                     *string
-	customDomainVerificationCron           *string
-	customDomainVerificationTimeout        time.Duration
-	customDomainVerificationRefreshAfter   time.Duration
-	internalServerAddr                     string
-	maintenanceMode                        bool
+	databaseUrl                           string
+	databaseMaxConns                      *int
+	databaseReadonlyUrl                   *string
+	databaseReadonlyMaxConns              *int
+	databaseEncryptionKey                 string
+	databaseEncryptionMigrateOnBoot       bool
+	jwtSecret                             []byte
+	host                                  string
+	controllerHost                        *string
+	registryHost                          string
+	mailerConfig                          MailerConfig
+	inviteTokenValidDuration              time.Duration
+	resetTokenValidDuration               time.Duration
+	controllerTokenMaxValidDuration       time.Duration
+	controllerInterval                    time.Duration
+	metricsEntriesMaxAge                  *time.Duration
+	sentryDSN                             string
+	sentryDebug                           bool
+	sentryEnvironment                     string
+	otelControllerSampler                 *SamplerConfig
+	otelRegistrySampler                   *SamplerConfig
+	otelExporterSentryEnabled             bool
+	otelExporterOtlpEnabled               bool
+	enableQueryLogging                    bool
+	controllerDockerConfig                []byte
+	frontendSentryDSN                     *string
+	frontendSentryTraceSampleRate         *float64
+	frontendPosthogToken                  *string
+	frontendPosthogAPIHost                *string
+	frontendPosthogUIHost                 *string
+	userEmailVerificationRequired         bool
+	serverShutdownDelayDuration           *time.Duration
+	registration                          RegistrationMode
+	blockedEmailDomains                   []string
+	blockedIPs                            []netip.Prefix
+	turnstileSiteKey                      *string
+	turnstileSecret                       *string
+	supportEmail                          *string
+	registryEnabled                       bool
+	registryS3Config                      S3Config
+	registryScratchDir                    *string
+	registryAnonymousRateLimits           AnonymousRateLimits
+	artifactTagsDefaultLimitPerOrg        int
+	registryUpstreamSyncCron              *string
+	registryUpstreamSyncTimeout           time.Duration
+	cleanupDeploymentTargetMetricsCron    *string
+	cleanupDeploymentTargetMetricsTimeout time.Duration
+	cleanupOIDCStateCron                  *string
+	cleanupOIDCStateCronTimeout           time.Duration
+	cleanupArtifactBlobCron               *string
+	cleanupArtifactBlobTimeout            time.Duration
+	cleanupArtifactBlobMinAge             time.Duration
+	cleanupOrganizationCron               *string
+	cleanupOrganizationTimeout            time.Duration
+	cleanupOrganizationMinAge             time.Duration
+	cleanupUserAccountCron                *string
+	cleanupUserAccountTimeout             time.Duration
+	cleanupUserAccountMinAge              time.Duration
+	cleanupFileCron                       *string
+	cleanupFileTimeout                    time.Duration
+	cleanupFileMinAge                     time.Duration
+	deploymentStatusNotificationCron      *string
+	deploymentStatusNotificationTimeout   time.Duration
+	notificationEmailHourlyQuota          int
+	oidcGithubEnabled                     bool
+	oidcGithubClientID                    *string
+	oidcGithubClientSecret                *string
+	oidcGoogleEnabled                     bool
+	oidcGoogleClientID                    *string
+	oidcGoogleClientSecret                *string
+	oidcMicrosoftEnabled                  bool
+	oidcMicrosoftClientID                 *string
+	oidcMicrosoftClientSecret             *string
+	oidcMicrosoftTenantID                 *string
+	oidcGenericEnabled                    bool
+	oidcGenericClientID                   *string
+	oidcGenericClientSecret               *string
+	oidcGenericIssuer                     *string
+	oidcGenericScopes                     *string
+	oidcGenericPKCEEnabled                bool
+	wellKnownMicrosoftIdentityAssociation []byte
+	stripeWebhookSecret                   *string
+	stripeWebhookVersionMismatchBehavior  StripeWebhookVersionMismatchBehaviorType
+	stripeAPIKey                          *string
+	licenseKeyPrivateKeyPEM               []byte
+	licenseKey                            string
+	metricsEnabled                        bool
+	metricsAddr                           string
+	metricsBearerToken                    *string
+	supportBundleLogTailLines             int
+	supportBundleResourceMaxBytes         int
+	supportBundleScriptTimeout            time.Duration
+	lokiURL                               string
+	lokiBearerToken                       *string
+	lokiBasicAuthUsername                 *string
+	lokiBasicAuthPassword                 *string
+	lokiRequestTimeout                    time.Duration
+	customDomainTarget                    *string
+	customDomainVerificationCron          *string
+	customDomainVerificationTimeout       time.Duration
+	customDomainVerificationRefreshAfter  time.Duration
+	internalServerAddr                    string
+	maintenanceMode                       bool
 )
 
 func Initialize() {
@@ -163,9 +163,12 @@ func Initialize() {
 	jwtSecret = util.Require(envutil.ParseValue("JWT_SECRET",
 		requireEnvResolved(ctx, resolver, "JWT_SECRET"), base64.StdEncoding.DecodeString))
 	host = envutil.RequireEnv("DISTR_HOST")
-	agentHost = envutil.GetEnvParsedOrNil("AGENT_HOST", envparse.Host)
-	agentInterval = envutil.GetEnvParsedOrDefault("AGENT_INTERVAL", envparse.PositiveDuration, 5*time.Second)
-	statusEntriesMaxAge = envutil.GetEnvParsedOrNil("STATUS_ENTRIES_MAX_AGE", envparse.PositiveDuration)
+	controllerHost = envutil.GetEnvParsedOrNil(
+		envutil.ResolveDeprecatedAlias("CONTROLLER_HOST", "AGENT_HOST"), envparse.Host,
+	)
+	controllerInterval = envutil.GetEnvParsedOrDefault(
+		envutil.ResolveDeprecatedAlias("CONTROLLER_INTERVAL", "AGENT_INTERVAL"), envparse.PositiveDuration, 5*time.Second,
+	)
 	metricsEntriesMaxAge = envutil.GetEnvParsedOrNil("METRICS_ENTRIES_MAX_AGE", envparse.PositiveDuration)
 	enableQueryLogging = envutil.GetEnvParsedOrDefault("ENABLE_QUERY_LOGGING", strconv.ParseBool, false)
 	userEmailVerificationRequired = envutil.GetEnvParsedOrDefault(
@@ -173,6 +176,8 @@ func Initialize() {
 	)
 	serverShutdownDelayDuration = envutil.GetEnvParsedOrNil("SERVER_SHUTDOWN_DELAY_DURATION", envparse.PositiveDuration)
 	registration = envutil.GetEnvParsedOrDefault("REGISTRATION", parseRegistrationMode, RegistrationEnabled)
+	blockedEmailDomains = envutil.GetEnvParsedOrDefault("BLOCKED_EMAIL_DOMAINS", envparse.EmailDomainList, nil)
+	blockedIPs = envutil.GetEnvParsedOrDefault("BLOCKED_IPS", envparse.IPPrefixList, nil)
 	// Turnstile needs the site key in the browser and the secret on the server, so a half-configured widget
 	// can only ever fail: either the form has no widget to solve, or its token cannot be verified.
 	if siteKey, secret := envutil.GetEnv("TURNSTILE_SITE_KEY"), envutil.GetEnv("TURNSTILE_SECRET"); siteKey != "" &&
@@ -192,8 +197,9 @@ func Initialize() {
 	resetTokenValidDuration = envutil.GetEnvParsedOrDefault(
 		"RESET_TOKEN_VALID_DURATION", envparse.PositiveDuration, 1*time.Hour,
 	)
-	agentTokenMaxValidDuration = envutil.GetEnvParsedOrDefault(
-		"AGENT_TOKEN_MAX_VALID_DURATION", envparse.PositiveDuration, 24*time.Hour,
+	controllerTokenMaxValidDuration = envutil.GetEnvParsedOrDefault(
+		envutil.ResolveDeprecatedAlias("CONTROLLER_TOKEN_MAX_VALID_DURATION", "AGENT_TOKEN_MAX_VALID_DURATION"),
+		envparse.PositiveDuration, 24*time.Hour,
 	)
 
 	mailerConfig.Type = envutil.GetEnvParsedOrDefault("MAILER_TYPE", parseMailerType, MailerTypeUnspecified)
@@ -259,10 +265,14 @@ func Initialize() {
 	sentryEnvironment = envutil.GetEnv("SENTRY_ENVIRONMENT")
 	otelExporterSentryEnabled = envutil.GetEnvParsedOrDefault("OTEL_EXPORTER_SENTRY_ENABLED", strconv.ParseBool, false)
 	otelExporterOtlpEnabled = envutil.GetEnvParsedOrDefault("OTEL_EXPORTER_OTLP_ENABLED", strconv.ParseBool, false)
-	if s := envutil.GetEnvParsedOrNil("OTEL_AGENT_SAMPLER", parseSamplerType); s != nil {
-		otelAgentSampler = &SamplerConfig{
+	if s := envutil.GetEnvParsedOrNil(
+		envutil.ResolveDeprecatedAlias("OTEL_CONTROLLER_SAMPLER", "OTEL_AGENT_SAMPLER"), parseSamplerType,
+	); s != nil {
+		otelControllerSampler = &SamplerConfig{
 			Sampler: *s,
-			Arg:     envutil.GetEnvParsedOrDefault("OTEL_AGENT_SAMPLER_ARG", envparse.Float, 1.0),
+			Arg: envutil.GetEnvParsedOrDefault(
+				envutil.ResolveDeprecatedAlias("OTEL_CONTROLLER_SAMPLER_ARG", "OTEL_AGENT_SAMPLER_ARG"), envparse.Float, 1.0,
+			),
 		}
 	}
 	if s := envutil.GetEnvParsedOrNil("OTEL_REGISTRY_SAMPLER", parseSamplerType); s != nil {
@@ -272,16 +282,15 @@ func Initialize() {
 		}
 	}
 
-	agentDockerConfig = envutil.GetEnvParsedOrDefault("AGENT_DOCKER_CONFIG", envparse.ByteSlice, nil)
+	controllerDockerConfig = envutil.GetEnvParsedOrDefault(
+		envutil.ResolveDeprecatedAlias("CONTROLLER_DOCKER_CONFIG", "AGENT_DOCKER_CONFIG"), envparse.ByteSlice, nil,
+	)
 	frontendSentryDSN = envutil.GetEnvOrNil("FRONTEND_SENTRY_DSN")
 	frontendSentryTraceSampleRate = envutil.GetEnvParsedOrNil("FRONTEND_SENTRY_TRACE_SAMPLE_RATE", envparse.Float)
 	frontendPosthogToken = envutil.GetEnvOrNil("FRONTEND_POSTHOG_TOKEN")
 	frontendPosthogAPIHost = envutil.GetEnvOrNil("FRONTEND_POSTHOG_API_HOST")
 	frontendPosthogUIHost = envutil.GetEnvOrNil("FRONTEND_POSTHOG_UI_HOST")
 
-	cleanupDeploymentRevisionStatusCron = envutil.GetEnvOrNil("CLEANUP_DEPLOYMENT_REVISION_STATUS_CRON")
-	cleanupDeploymentRevisionStatusTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_DEPLOYMENT_REVISION_STATUS_TIMEOUT",
-		envparse.PositiveDuration, 0)
 	cleanupDeploymentTargetMetricsCron = envutil.GetEnvOrNil("CLEANUP_DEPLOYMENT_TARGET_METRICS_CRON")
 	cleanupDeploymentTargetMetricsTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_DEPLOYMENT_TARGET_METRICS_TIMEOUT",
 		envparse.PositiveDuration, 0)
@@ -355,7 +364,7 @@ func Initialize() {
 
 	licenseKey = envutil.GetEnv("LICENSE_KEY")
 	metricsEnabled = envutil.GetEnvParsedOrDefault("METRICS_ENABLED", strconv.ParseBool, false)
-	metricsAddr = envutil.GetEnvOrDefault("METRICS_ADDR", ":3000", envutil.GetEnvOpts{})
+	metricsAddr = envutil.GetEnvOrDefault("METRICS_ADDR", ":3000")
 	metricsBearerToken = envutil.GetEnvOrNil("METRICS_BEARER_TOKEN")
 	supportBundleLogTailLines = envutil.GetEnvParsedOrDefault(
 		"SUPPORT_BUNDLE_LOG_TAIL_LINES", envparse.PositiveNumber, 1000,
@@ -379,7 +388,7 @@ func Initialize() {
 		envparse.PositiveDuration, 4*time.Minute)
 	customDomainVerificationRefreshAfter = envutil.GetEnvParsedOrDefault("CUSTOM_DOMAIN_VERIFICATION_REFRESH_AFTER",
 		envparse.PositiveDuration, 12*time.Hour)
-	internalServerAddr = envutil.GetEnvOrDefault("INTERNAL_SERVER_ADDR", ":8085", envutil.GetEnvOpts{})
+	internalServerAddr = envutil.GetEnvOrDefault("INTERNAL_SERVER_ADDR", ":8085")
 
 	maintenanceMode = envutil.GetEnvParsedOrDefault("MAINTENANCE_MODE", strconv.ParseBool, false)
 }
@@ -452,7 +461,7 @@ func HostScheme() URLScheme {
 	return SchemeHTTPS
 }
 
-func AgentHost() *string { return agentHost }
+func ControllerHost() *string { return controllerHost }
 
 func RegistryHost() string { return registryHost }
 
@@ -479,12 +488,12 @@ func ResetTokenValidDuration() time.Duration {
 	return resetTokenValidDuration
 }
 
-func AgentTokenMaxValidDuration() time.Duration {
-	return agentTokenMaxValidDuration
+func ControllerTokenMaxValidDuration() time.Duration {
+	return controllerTokenMaxValidDuration
 }
 
-func AgentInterval() time.Duration {
-	return agentInterval
+func ControllerInterval() time.Duration {
+	return controllerInterval
 }
 
 func SentryDSN() string {
@@ -503,16 +512,12 @@ func EnableQueryLogging() bool {
 	return enableQueryLogging
 }
 
-func StatusEntriesMaxAge() *time.Duration {
-	return statusEntriesMaxAge
-}
-
 func MetricsEntriesMaxAge() *time.Duration {
 	return metricsEntriesMaxAge
 }
 
-func AgentDockerConfig() []byte {
-	return agentDockerConfig
+func ControllerDockerConfig() []byte {
+	return controllerDockerConfig
 }
 
 func FrontendSentryDSN() *string {
@@ -545,6 +550,14 @@ func ServerShutdownDelayDuration() *time.Duration {
 
 func Registration() RegistrationMode {
 	return registration
+}
+
+func BlockedEmailDomains() []string {
+	return blockedEmailDomains
+}
+
+func BlockedIPs() []netip.Prefix {
+	return blockedIPs
 }
 
 func TurnstileSiteKey() *string {
@@ -583,8 +596,8 @@ func RegistryUpstreamSyncTimeout() time.Duration {
 	return registryUpstreamSyncTimeout
 }
 
-func OtelAgentSampler() *SamplerConfig {
-	return otelAgentSampler
+func OtelControllerSampler() *SamplerConfig {
+	return otelControllerSampler
 }
 
 func OtelRegistrySampler() *SamplerConfig {
@@ -597,14 +610,6 @@ func OtelExporterSentryEnabled() bool {
 
 func OtelExporterOtlpEnabled() bool {
 	return otelExporterOtlpEnabled
-}
-
-func CleanupDeploymenRevisionStatusCron() *string {
-	return cleanupDeploymentRevisionStatusCron
-}
-
-func CleanupDeploymenRevisionStatusTimeout() time.Duration {
-	return cleanupDeploymentRevisionStatusTimeout
 }
 
 func CleanupDeploymentTargetMetricsCron() *string {

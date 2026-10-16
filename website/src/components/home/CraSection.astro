@@ -20,12 +20,10 @@ const highlights = [
 ];
 ---
 
-<section
-  class="py-8 md:py-16 lg:py-24 bg-gradient-to-br from-accent-400 to-accent-600 dark:from-accent-600 dark:to-accent-950">
+<section class="py-8 md:py-16 lg:py-24 bg-gradient-to-br from-accent-400 to-accent-600 dark:from-accent-600 dark:to-accent-950">
   <div class="container mx-auto px-4 max-w-5xl">
     <div class="text-center mb-10 text-white">
-      <p
-        class="text-sm font-semibold uppercase tracking-wide text-white opacity-90 mb-3">
+      <p class="text-sm font-semibold uppercase tracking-wide text-white opacity-90 mb-3">
         EU Cyber Resilience Act
       </p>
       <h2 class="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4">
@@ -40,17 +38,15 @@ const highlights = [
     </div>
 
     <div class="grid gap-6 md:grid-cols-3 mb-10">
-      {
-        highlights.map(h => (
-          <a
-            href="/cyber-resilience-act/"
-            class="block p-6 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 hover:border-white/40 transition-colors no-underline text-white">
-            <Icon name={`lucide:${h.icon}`} class="w-8 h-8 mb-4" />
-            <h3 class="text-lg font-semibold text-white mb-2">{h.title}</h3>
-            <p class="text-sm text-white opacity-90">{h.text}</p>
-          </a>
-        ))
-      }
+      {highlights.map(h => (
+        <a
+          href="/cyber-resilience-act/"
+          class="block p-6 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 hover:border-white/40 transition-colors no-underline text-white">
+          <Icon name={`lucide:${h.icon}`} class="w-8 h-8 mb-4" />
+          <h3 class="text-lg font-semibold text-white mb-2">{h.title}</h3>
+          <p class="text-sm text-white opacity-90">{h.text}</p>
+        </a>
+      ))}
     </div>
 
     <div class="text-center">

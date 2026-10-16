@@ -21,7 +21,7 @@ faq:
   - question: Why do organizations choose self-hosted software?
     answer: 'Data sovereignty and compliance requirements, security policies (including air-gapped networks), deep customization and integration needs, and sometimes cost control. Regulated industries like finance, government, and healthcare are typical adopters.'
   - question: How do software vendors support self-hosted customers?
-    answer: 'With a software distribution platform (such as Distr) that provides a registry for versioned artifacts, deployment agents for installs and updates, offline-capable license enforcement, health monitoring, and a customer self-service portal.'
+    answer: 'With a software distribution platform (such as Distr) that provides a registry for versioned artifacts, deployment controllers for installs and updates, offline-capable license enforcement, health monitoring and a customer self-service portal.'
 ---
 
 ## What is Self-Hosted Software?
@@ -53,9 +53,9 @@ Where people draw a distinction: "self-hosted" emphasizes **where** the software
 Offering a self-hosted edition doesn't mean handing customers a tarball and wishing them luck. The vendors that succeed with self-hosted treat it as a product surface of its own, and a [software distribution platform](/glossary/software-distribution-platform/) like [Distr](/docs/) provides the infrastructure for that:
 
 - **Artifact distribution.** A vendor-controlled [container registry](/glossary/oci-container-artifact-registry/) serves Docker images, [Helm charts](/glossary/helm-chart/), and other artifacts, with per-customer access controls so each customer only sees the versions they are entitled to.
-- **Guided installation and updates.** Optional deployment agents (Docker Compose and Helm) install the software in the customer's environment and roll out updates when the customer approves them, which reduces version fragmentation.
+- **Guided installation and updates.** Optional deployment controllers (Docker Compose and Helm) install the software in the customer's environment and roll out updates when the customer approves them, which reduces version fragmentation.
 - **Offline license enforcement.** Signed [license keys](/glossary/software-license-management/) and [entitlements](/glossary/software-entitlement/) work without a connection back to the vendor, so seat limits, feature gates, and expiry hold up even in [air-gapped](/glossary/air-gapped-meaning/) environments.
-- **Health monitoring and diagnostics.** With customer consent, agents report deployment status, metrics, and logs, so support teams can troubleshoot without direct access to the customer's infrastructure.
+- **Health monitoring and diagnostics.** With customer consent, controllers report deployment status, metrics and logs, so support teams can troubleshoot without direct access to the customer's infrastructure.
 - **Customer self-service portal.** Customers download releases, generate registry credentials, and manage their deployments through a white-labeled portal instead of email threads with support.
 
 The result: vendors can offer a self-hosted edition with an operational profile close to SaaS, while customers keep the control that made them choose self-hosted in the first place.

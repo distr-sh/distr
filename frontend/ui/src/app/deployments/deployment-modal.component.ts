@@ -2,10 +2,11 @@ import {ChangeDetectionStrategy, Component, computed, effect, inject, input, out
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {DeploymentTarget, DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCircleExclamation, faShip, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faShip, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {fromBase64} from '../../util/encoding';
 import {getFormDisplayedError} from '../../util/errors';
+import {AlertComponent} from '../components/alert/alert.component';
 import {SpinnerComponent} from '../components/spinner/spinner.component';
 import {ApplicationEntitlementsService} from '../services/application-entitlements.service';
 import {ApplicationsService} from '../services/applications.service';
@@ -23,7 +24,7 @@ import {
   selector: 'app-deployment-modal',
   templateUrl: './deployment-modal.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [DeploymentFormComponent, FaIconComponent, ReactiveFormsModule, SpinnerComponent],
+  imports: [DeploymentFormComponent, FaIconComponent, ReactiveFormsModule, SpinnerComponent, AlertComponent],
 })
 export class DeploymentModalComponent {
   public readonly deploymentTarget = input.required<DeploymentTarget>();
@@ -40,7 +41,7 @@ export class DeploymentModalComponent {
 
   protected readonly dataLoaded = signal(false);
 
-  protected readonly customerManagedWarningVisible = computed(
+  protected readonly customerManagedNoticeVisible = computed(
     () => this.deploymentTarget().customerOrganization !== undefined && this.auth.isVendor()
   );
 
@@ -52,7 +53,6 @@ export class DeploymentModalComponent {
   protected readonly loading = signal(false);
 
   protected readonly faShip = faShip;
-  protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faXmark = faXmark;
 
   constructor() {

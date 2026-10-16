@@ -41,11 +41,9 @@
                     {{ application.name }}
                   </span>
                 </a>
-                <span class="distr-deployment-type-badge">{{ application.type }}</span>
+                <span class="distr-badge capitalize">{{ application.type }}</span>
                 @if (isAutoUpdatesEnabled() && application.allowAutomaticUpdates) {
-                  <span class="distr-status-badge whitespace-nowrap" [ngClass]="automaticUpdatesBadgeClass">
-                    Auto-Updates allowed
-                  </span>
+                  <span class="distr-badge distr-badge-success whitespace-nowrap"> Auto-Updates allowed </span>
                 }
               </div>
             </td>

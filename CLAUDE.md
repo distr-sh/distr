@@ -4,7 +4,9 @@ Guidance for Claude Code (claude.ai/code) and other agents working in this repos
 
 ## Project
 
-Distr distributes applications to self-managed customers. The Distr server runs in the cloud, agents run in customer environments and an OCI-compatible registry serves the artifacts.
+Distr distributes applications to self-managed customers. The Distr server runs in the cloud, controllers run in customer environments and an OCI-compatible registry serves the artifacts.
+
+The component in customer environments is the Distr Controller, never the agent. The name holds for user-facing text, docs, identifiers, file and folder names. Keep the former agent name only where installed controllers or self-hosted configurations depend on it: the deprecated `/api/v1/agent*` routes and the `agent*` fields controllers send to them, the JWT audience `agent`, the Kubernetes label `agent.distr.sh/deployment`, the Helm secrets `sh.distr.agent.v1.*`, the field managers `distr-agent*`, the manifest revisions older than the current one, the resource names, compose service and Helm field manager of targets with `LegacyControllerName` (the `controllerName` template variable) and the `AGENT_*` env var aliases of Distr itself. Never add an `agent*` alias to the user-facing API or the SDK.
 
 That server is called Distr, never Hub. The name holds for user-facing text, for identifiers in configuration users write (Helm values, Compose services, Kubernetes labels) and for file, folder and mise task names. Reintroducing "Hub" anywhere is a regression.
 
@@ -13,11 +15,11 @@ That server is called Distr, never Hub. The name holds for user-facing text, for
 ## Repository layout
 
 - `cmd/distr/`: Distr itself, a Go backend on chi/v5 serving the REST API on `/api/v1` and the compiled frontend on `/`.
-- `cmd/agent/docker/`, `cmd/agent/kubernetes/`: the agents that run Docker Compose and Helm deployments in customer environments and report logs and metrics back.
+- `cmd/controller/docker/`, `cmd/controller/kubernetes/`: the controllers that run Docker Compose and Helm deployments in customer environments and report logs and metrics back.
 - `frontend/ui/`: the Angular app (standalone components, TailwindCSS 4, SCSS, Flowbite), built into `internal/frontend/dist/ui/`.
 - `sdk/js/`: `@distr-sh/distr-sdk`, a standalone pnpm project. Prefer its high-level `DistrService` over the low-level `Client`, and run its examples against the config in `src/examples/config.ts`.
 - `website/`: the docs and marketing site, a standalone pnpm project with a Prettier config of its own.
-- `internal/`: the backend. `db/` holds every query, `handlers/` the HTTP handlers, `api/` their request and response structs, `routing/` the routes and middleware, `mapping/` the conversions between `api` and `types`, `types/` the database models, `svc/` the services, `authn/` the authentication providers, `logstore/` the Loki-backed log records, `registry/` the OCI registry, `advisory/` the advisory visibility rules and `migrations/sql/` the schema.
+- `internal/`: the backend. `db/` holds every query, `handlers/` the HTTP handlers, `respond/` their adapter and response types, `api/` their request and response structs, `routing/` the routes and middleware, `mapping/` the conversions between `api` and `types`, `types/` the database models, `svc/` the services, `authn/` the authentication providers, `logstore/` the Loki-backed log records, `registry/` the OCI registry, `advisory/` the advisory visibility rules and `migrations/sql/` the schema.
 
 PostgreSQL is reached through pgx/v5, registry blobs and Loki chunks live in S3-compatible object storage and deployment logs live in Loki rather than in the database. Timestamp columns are `TIMESTAMP`, never `TIMESTAMPTZ`.
 
@@ -27,8 +29,8 @@ Build, test, lint and format through mise. Never invoke `go build`, `go test`, `
 
 ```sh
 mise run build:distr:community # includes the frontend
-mise run build:agent:docker
-mise run build:agent:kubernetes
+mise run build:controller:docker
+mise run build:controller:kubernetes
 mise run build:sdk             # after every SDK change
 mise run build:website
 mise run test:go
@@ -44,23 +46,25 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 - Use `context.Context` for request-scoped values and cancellation, and the `internal/context` helpers to read the logger, database and user from it.
 - Do not add new accessors to `internal/context`. They belong in the package that defines the stored type (e.g. `logstore.NewContext`/`logstore.FromContext`), which also avoids import cycles.
 - Query through the `internal/db/queryable.Queryable` interface, which covers both `*pgxpool.Pool` and `pgx.Tx`, and collect rows with `pgx.CollectRows`, which closes them itself. Only a query iterated manually needs `defer rows.Close()`.
-- Pass dependencies into HTTP handlers via closure.
-- Return API errors through `internal/apierrors` so they carry a status code.
+- Write an HTTP handler as a plain `func(*http.Request) (respond.Responder, error)` registered with `respond.Handler(...)`, never as a factory returning a closure; handlers that differ in one step share a helper taking the request (`patchImage`). Write a middleware that loads an entity into the context the same way, as a `func(*http.Request) (*http.Request, respond.Responder, error)` registered with `respond.Middleware(...)`, next to the handlers that read it in `internal/handlers`. A middleware that knows no specific resource belongs in `internal/middleware`, and one there that only rejects is a `guard`. Decode the body with `decodeJSON`. Chain consecutive steps that can fail into one if/else if/else with each step in the init statement and the success path in the final else (`if advisory, resp, err := requireAdvisory(r); resp != nil || err != nil { return resp, err } else if references, err := db.GetAdvisoryReferences(ctx, advisory.ID); err != nil { … } else { … }`) rather than a series of early returns.
+- Answer every expected failure on the left as a `respond.ErrorResponse` (`return respond.NotFound("secret not found"), nil`), mapping the errors a handler expects from below, mostly the `distrerr.Err*` sentinels from `internal/db`, to what they mean for that action. Return only unexpected errors on the right, wrapped with context (`fmt.Errorf("failed to get secrets: %w", err)`), and leave logging, Sentry and the 500 to `respond.Handler`. A helper shared by many handlers whose rejection is the same for all of them (`decodeJSON`, `customerScope`) returns that rejection as a `respond.Responder`. Never create a `distrerr` error in a handler or its helpers only to map it back to a 4xx; a validator whose every error is a 400 returns a plain error like `request.Validate()`. Stream a body produced while answering, an export being the example, with `respond.Writer`, never by writing to the `http.ResponseWriter`. Register a handler the browser navigates to, the OIDC endpoints being the example, with `respond.HandlerWithFallback`, so an unexpected error redirects the user instead of showing a bare 500. Never call `CaptureException` in a handler. Rate limit on the route with `httprate.LimitBy` and a key function in `internal/middleware`, never with a limiter inside the handler.
+- Reject a request from inside a transaction with `runTx` or `runTxRR` in `internal/handlers`, whose closure returns `(respond.Responder, error)` like a handler: a Responder rolls the transaction back and answers the request. Collect what the response to a committed transaction needs into a variable outside the closure and answer after `runTx` returns.
 - Log with zap: `logger.Info("message", zap.String("key", value))`.
-- Route what a dependency logs in an agent into the agent's zap logger with `agentlogging.Redirect`, which covers logrus and the standard library logger. Only what passes through zap reaches Distr, so anything else ends up in the agent's container output alone.
+- Route what a dependency logs in a controller into the controller's zap logger with `controllerlogging.Redirect`, which covers logrus and the standard library logger. Only what passes through zap reaches Distr, so anything else ends up in the controller's container output alone.
 - Report exceptions with `sentry.GetHubFromContext(ctx).CaptureException(err)`. Use `sentry.CurrentHub()` in a background job, since a job context carries no hub and taking one from it panics.
 - Give types in `internal/types` `db:` tags only. Never serialize one into a response and never embed one in an `api` type. `api.OrganizationResponse` and `api.LicenseKeyRevision` do embed one; they are legacy, do not copy them.
 - Give every endpoint its own struct in `api/` and put both conversion directions in `internal/mapping`: `XToAPI` for model to response, `XToInternal` for request to model, with `mapping.List(...)` for slices. Never assemble an `api.*` or `types.*` struct field by field in a handler.
 - Reference shared string enums (`types.UserRole`, `types.DomainType`, `types.OIDCProvider`) from `api` instead of duplicating them.
 - Use `new(value)` to obtain a `*T` from a typed value (e.g. `new(types.UserRoleReadOnly)`). Do not use `util.PtrTo`.
 - Use `errors.AsType[E](err)` where the target type is known at the call site, since it needs no pre-declared variable: `if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation`. Keep `errors.As` where the target is an interface a caller passes in.
-- Write 4xx bodies for the end user. The frontend forms display them verbatim (`getFormDisplayedError`), so put anything only a developer can use into the log instead.
+- Write 4xx bodies for the end user. The frontend forms display them verbatim (`getFormDisplayedError`), so put anything only a developer can use into the log instead. Name an entity in plain words ("deployment target"), never as its Go type (`DeploymentTarget`).
+- Declare the 404 of an entity once in `internal/handlers/not_found.go` and return that variable, never an inline `respond.NotFound(...)`.
 - Hash a credential that is CSPRNG output, an access token secret being the example, with the digest in `internal/authkey`, and have the statement that looks it up also check the expiration and record the use (`db.AuthenticateAccessToken`). Never read the row, compare in Go and write it back, which authenticates a credential revoked in between. Keep the argon2id hashing in `internal/security` for what a human chose (passwords) and for long-lived shared secrets (deployment target keys).
 
 ## Frontend Code
 
 - Use standalone components (no NgModules), reactive forms and `inject()` rather than constructor injection for dependencies (`private readonly http = inject(HttpClient)`). `standalone: true` is the default and never needs writing, and neither does `changeDetection: ChangeDetectionStrategy.OnPush`. Set `changeDetection` only to opt a component out with `ChangeDetectionStrategy.Eager`, and drop that opt-out once the component's state is fully signal-based.
-- Give services `providedIn: 'root'`.
+- Give services `providedIn: 'root'`, and list one in a component's `providers` only where the subtree has to share exactly that instance (`OverlayService` and `ImageUploadService` on `AppComponent`) or where a page needs a cache of its own (`CustomerOrganizationsCache`).
 - Split a component into `component-name.component.ts` and `.html`, plus a `.scss` only when it needs styling beyond utility classes in the template.
 - Type API models with the interfaces in `app/types/`. Never type a value `any` or `unknown`, and do not widen a type with `| undefined` or `?` where the value is always present.
 - Use [signals](https://angular.dev/guide/signals) for inputs, child views and anywhere else the current Angular version supports them, and convert the non-signal usages you come across in files you edit anyway.
@@ -70,9 +74,10 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 - Leave responsive classes out of modals. They are for desktop only.
 - Never bind a template to a method call (`@if (getUsage(x))`, `{{ formatFoo(y) }}`); use a `computed` instead. Every template expression is re-evaluated on each change detection pass, once per instance of the view, so a page with many rows multiplies the work. Anything a template reads indirectly has to be just as cheap: a getter or service method must not decode, parse or re-derive (see the claims cache in `AuthService`).
 - Never let a pipe perform I/O. Angular creates one pipe instance per binding, so an `HttpClient` call inside `transform` becomes one request per element, and the browser's HTTP cache does not help because every instance still runs the interceptor chain. Put the request in a `providedIn: 'root'` service that caches by key and shares the in-flight observable with `shareReplay`, and reduce the pipe to a delegate (see `SecureImageCache` and `SecureImagePipe` in `frontend/ui/src/util/secureImage.ts`).
-- Call a `ReactiveList`-backed service's `refresh()` before opening a form or modal that has to show the current state, and await it before building the form. Such a service fetches its list once per session, so anything created in another tab, by another user or through the API is missing from it, and a list that arrives later updates the options but no longer moves a selection the form already made.
+- Call a `ReactiveList`-backed service's `refresh()` before opening a form or modal that has to show the current state, and await it before building the form. Such a service fetches its list once per session, so anything created in another tab, by another user or through the API is missing from it, and a list that arrives later updates the options but no longer moves a selection the form already made. The alert and update notification drawers are the exception: they open from the cache and refresh behind the form.
 - Return a `Promise` from a service method that exists for its side effect, `refresh()` being the example, so a caller cannot forget to subscribe. Everything that is a stream (`list()`, the CRUD methods) stays an `Observable`, and a reactive consumer wraps the promise in `from(...)`.
 - Never start an HTTP request or other async work inside a `subscribe` callback. Compose it with `switchMap`, or write the handler as an `async` method with `await firstValueFrom(...)`, which is what most event handlers here do.
+- Pass a caught error through `getFormDisplayedError` before handing it to `ToastService`, never the raw object, and confirm a destructive action with `overlay.confirm(...)` first.
 - Transform text with Tailwind utilities (`capitalize`, `uppercase`, `lowercase`) rather than in TypeScript.
 - Pluralize with [NgPlural](https://angular.dev/api/common/NgPlural) instead of a ternary like `count === 1 ? 'day' : 'days'`:
 
@@ -89,10 +94,14 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 - Put styling a component always needs on the component itself via `host: {class: '…'}` (e.g. `app-search-bar`, `app-editor`), and leave only what varies per call site in the template.
 - Keep styling used by a single component in its own `.scss` rather than in `theme.scss`, and start that file with `@reference '<path>/styles/tailwind.css'`, or `@apply` fails the build with `Cannot apply unknown utility class`. Tailwind compiles each component stylesheet on its own, and that entry point holds the `@theme` tokens and the `dark` variant, so keep it plain CSS: `@reference` cannot read Sass. Prefer the `.scss` file over an inline `styles` block, since Tailwind scans `.ts` files and emits utilities found there into the global stylesheet as well.
 - Never map Tailwind utility chains in the component class to pick a variant at runtime. Put the variants into the stylesheet.
-- Write a Tailwind chain as one literal string where it applies, in `host: {class: '…'}` or in the template, never interpolated from a TypeScript constant (`class: \`distr-status-badge ${colors}\``). A chain that has to vary with a value goes into a `*BadgeClass()`helper read through`[ngClass]`, as the advisory and support bundle badges do, and one that repeats across the app becomes a shared class in `theme.scss`.
-- Use a shared badge class for every badge: `distr-status-badge` for a state, with the colors including a `border-*` from a color helper next to the feature, `distr-tag-badge` for a free-form label and `distr-deployment-type-badge` or `distr-artifact-tag` for those two. Do not write a new pill inline.
+- Write a Tailwind chain as one literal string where it applies, in `host: {class: '…'}` or in the template, never interpolated from a TypeScript constant (`class: \`distr-badge ${colors}\``). Pick a chain that varies with a value by an `@switch`over that value in the template, one element per case with its literal classes, rather than returning classes from TypeScript. A chain that repeats across the app becomes a shared class in`theme.scss`.
+- Render every badge, whether a state, a free-form label, a deployment type or an artifact tag, as `distr-badge`, which is blue, plus a `distr-badge-<variant>` for any other color. Do not write a new pill inline, add a badge class of its own or add colors next to a feature. Map a domain value to a `BadgeVariant` in the feature's display helper and render it through a small badge component (see `advisory-badges.ts`, `SupportBundleStatusBadgeComponent`), which also keeps the mapping out of the template.
+- Render every inline notice with `app-alert`, whose `type` (`success`, `info`, `warning`, `error`) picks the colors and the icon. Pass a title as `heading`, mark a button or link with `alertActions` to place it on the right and set `dismissible` for one the user can close. Show a former "error" that the user can still act on as a `warning`, and keep `error` for what has failed or expired. Do not write the box or the icon inline and do not prefix the text with "Warning:". A one-line caution under a form field takes `distr-hint-warning` instead.
+- Wrap a danger zone panel in `distr-danger-zone`.
+- Give a page that a vendor also manages per customer the shape the users and secrets pages have: an inner component with a `customerOrganizationId` input that scopes what it reads and writes, a routed organization page with `app-organization-scope-nav` and a routed customer page under `customers/:customerOrganizationId/<section>` with `app-customer-breadcrumb`. Scope such an endpoint with a `customerOrganizationId` parameter resolved through `resolveCustomerScope` rather than by widening what a list returns.
+- Switch between the sections of a page with `app-tab-bar` and between the sections of a form, a drawer or a panel with `app-pill-tab-bar`. Do not write the buttons of either inline, and do not give a list of configurations one route per kind when one table can show them all.
 - Use `app-badge-select` where the state a badge shows can also be set, rather than a row of buttons or a separate `<select>`. It emits the picked value instead of writing it, so the caller sends the request and passes back what the server returned.
-- Put `distr-dropdown-panel` on the root element of every dropdown overlay: a wrapping `<div>` when the panel holds more than the list, the `<ul>` itself when it does not. Give the entries `distr-dropdown-item`, with `distr-dropdown-item-danger` for a destructive action and `distr-dropdown-item-warning` for one that needs caution, and put `distr-dropdown-divider` on an empty `<li>` for a section break. The item class goes on the `<button>` or `<a>`, never on the enclosing `<li>`, so the hover area and the click area match. Do not write a dropdown row inline and do not reintroduce the `divide-y` separators the panel replaced. Dropdowns whose entries are checkboxes are the exception: their rows stay bordered and have no hover.
+- Put `distr-dropdown-panel` on the root element of every dropdown overlay: a wrapping `<div>` when the panel holds more than the list, the `<ul>` itself when it does not. Give the entries `distr-dropdown-item`, with `distr-dropdown-item-danger` for a destructive action and `distr-dropdown-item-warning` for one that needs caution, and put `distr-dropdown-divider` on an empty `<li>` for a section break. The item class goes on the `<button>` or `<a>`, never on the enclosing `<li>`, so the hover area and the click area match. Do not write a dropdown row inline and do not reintroduce the `divide-y` separators the panel replaced. Dropdowns whose entries are checkboxes are the exception: their rows stay bordered and wrap the checkbox and its label in `distr-dropdown-checkbox-item`.
 
 ## Database Access
 
@@ -167,6 +176,8 @@ Never gate a feature by listing the subscription types allowed to use it. Such a
 
 Plan-specific billing UI (checkout, plan comparison) and upsell banners for one plan are the exceptions, since they are tied to concrete plans.
 
+Gate what a customer organization may configure for itself with a `types.CustomerOrganizationFeature`, the way `alerts` does: the toggle on the customers page, the entry point on the page the feature belongs to rather than in the sidebar, the router guarded with `middleware.CustomerFeatureMiddleware` and the rows a customer may link narrowed down in `internal/db`, so hiding the UI is not what protects them.
+
 Keep the two sources of organization features (`types.Feature`) apart. Only the plan-managed ones, granted by `types.FeaturesForSubscriptionType` and collected in `types.PlanManagedFeatures`, may be revoked when an organization loses its plan. The rest is granted out of band (`vendor_billing` by staff, `pre_post_scripts` and `artifact_version_mutable` by an organization admin in the settings) and has to survive plan changes and edition reconciliation. Remove `types.PlanManagedFeatures` from the `features` array to revoke a plan; never overwrite the whole array.
 
 ## Sending Mail
@@ -177,11 +188,11 @@ Pass the organization explicitly rather than reading it from the authentication.
 
 ## Input Trimming
 
-Never trim a single request field by hand. `validation.TrimStrings` in `handlers.JsonBody` and the frontend's `trimInterceptor` trim request body strings generically; where surrounding whitespace matters, opt out with `trim:"-"` and `skipTrim()`.
+Never trim a single request field by hand. `validation.TrimStrings` in `decodeJSON` and the frontend's `trimInterceptor` trim request body strings generically; where surrounding whitespace matters, opt out with `trim:"-"` and `skipTrim()`.
 
 ## API Routes
 
-Define routes in `internal/routing/`, grouped by what they authenticate with: public, user (JWT), admin, agent token and the OCI registry's own scheme.
+Define routes in `internal/routing/`, grouped by what they authenticate with: public, user (JWT), admin, controller token and the OCI registry's own scheme.
 
 Keep the OpenAPI spec valid, which the `chiopenapi` router generates from the route definitions. Declare path parameters, query parameters and request bodies with `option.Request()` and a struct using `path:`, `query:` and `json:` tags, composing path param structs with body request structs by embedding as the existing routes do. An endpoint with neither parameters nor a body needs no `option.Request()`.
 
@@ -220,9 +231,9 @@ Only write a test that could fail for a real reason. Every test is code that has
 - Assert with [Gomega](https://onsi.github.io/gomega/) in Go tests.
 - Do not test guard clauses, getters, plain mappings, a single `if` branch or that a value passed in comes back out.
 - Do not write a test whose assertion is trivially true because the dependency it needs is not configured in tests.
-- Do test what is hard to get right and expensive to get wrong: wire formats sent to third parties, fail-closed security behavior, parsing, permission or subscription gating and non-trivial query or business logic.
+- Do test what is hard to get right and expensive to get wrong: wire formats sent to third parties, fail-closed security behavior, parsing, gating whose rule is more than one condition and non-trivial query or business logic. A single condition deciding who sees a field needs no test, however security relevant it is.
 - Prefer a few focused tests over an exhaustive matrix of near-duplicates.
-- Do not put a test in the agent `main` packages under `cmd/agent/`. They build their clients in package-level variables through `util.Require`, which panics before `TestMain` can set the agent's environment variables. Extract the part that needs no Docker or Kubernetes client into a package under `internal/` and test it there.
+- Do not put a test in the controller `main` packages under `cmd/controller/`. They build their clients in package-level variables through `util.Require`, which panics before `TestMain` can set the controller's environment variables. Extract the part that needs no Docker or Kubernetes client into a package under `internal/` and test it there.
 
 ## General rules
 
@@ -235,7 +246,7 @@ Only write a test that could fail for a real reason. Every test is code that has
 - Update `website/src/content/docs/docs/self-hosting/configuration.mdx` in the same change whenever you add, remove or change an environment variable in `internal/env/env.go`, including its default, whether it is required and the values it accepts.
 - Run `mise run build:helm-schema` after every change to `deploy/charts/distr/values.yaml`, since CI rejects a stale `values.schema.json`. Annotate a value with `# @schema` where the type inferred from the default is too narrow, an IntOrString field or an override a user sets to null being the cases, and render every file under `deploy/charts/distr/examples/` to confirm the schema still accepts them.
 - Use the GitHub CLI (`gh`) rather than the web interface to fetch data from GitHub.
-- Write shell for anything from a one-off command to a checked-in script (like `hack/validate-migrations.sh`), and Node once a task outgrows shell (like `hack/agent-changelog.mjs`). Avoid Python and never use Perl (e.g. `perl -pi -e`). Edit files directly rather than piping them through a stream editor.
+- Write shell for anything from a one-off command to a checked-in script (like `hack/validate-migrations.sh`), and Node once a task outgrows shell (like `hack/controller-changelog.mjs`). Avoid Python and never use Perl (e.g. `perl -pi -e`). Edit files directly rather than piping them through a stream editor.
 
 ## Code Review Instructions
 

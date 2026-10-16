@@ -72,7 +72,7 @@
                           <!-- Selection Indicator -->
                           @if (isSelected) {
                             <div class="absolute top-2 left-2 text-primary-600 dark:text-primary-400">
-                              <fa-icon [icon]="faCheckCircle" class="w-6 h-6" />
+                              <fa-icon [icon]="faCircleCheck" class="w-6 h-6" />
                             </div>
                           }
                         </button>
@@ -123,7 +123,7 @@
                         <!-- Selection Indicator -->
                         @if (customerForm.value.customerOrganizationId === customer.id) {
                           <div class="absolute top-2 left-2 text-primary-600 dark:text-primary-400">
-                            <fa-icon [icon]="faCheckCircle" class="w-6 h-6" />
+                            <fa-icon [icon]="faCircleCheck" class="w-6 h-6" />
                           </div>
                         }
                       </button>
@@ -173,13 +173,12 @@
                       </div>
 
                       <!-- Deployment Type Badge -->
-                      <div
-                        class="px-2 py-1 rounded-md text-xs font-medium mb-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                      <div class="distr-badge mb-1">
                         @if (app.type === 'docker') {
-                          <fa-icon [icon]="faDocker" class="mr-1" />
+                          <fa-icon [icon]="faDocker" />
                           Docker
                         } @else {
-                          <fa-icon [icon]="faDharmachakra" class="mr-1" />
+                          <fa-icon [icon]="faDharmachakra" />
                           Kubernetes
                         }
                       </div>
@@ -192,7 +191,7 @@
                       <!-- Selection Indicator -->
                       @if (applicationForm.value.applicationId === app.id) {
                         <div class="absolute top-2 left-2 text-primary-600 dark:text-primary-400">
-                          <fa-icon [icon]="faCheckCircle" class="w-6 h-6" />
+                          <fa-icon [icon]="faCircleCheck" class="w-6 h-6" />
                         </div>
                       }
                     </button>
@@ -226,11 +225,11 @@
 
                 <!-- Deployment Name -->
                 <div>
-                  <label for="agent-name" class="distr-label mb-2"> Deployment Name </label>
+                  <label for="controller-name" class="distr-label mb-2"> Deployment Name </label>
                   <input
                     [formControl]="deploymentTargetForm.controls.name"
                     type="text"
-                    id="agent-name"
+                    id="controller-name"
                     class="distr-input"
                     required
                     autotrim
@@ -297,7 +296,7 @@
                         autotrim
                         autocomplete="off" />
                       <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        The Docker socket on the host that the agent should use. Defaults to
+                        The Docker socket on the host that the controller should use. Defaults to
                         <code>unix:///var/run/docker.sock</code>.
                       </div>
                       @if (
@@ -326,7 +325,7 @@
                       autotrim
                       autocomplete="off" />
                     <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      The namespace where the agent and application will be deployed
+                      The namespace where the controller and application will be deployed
                     </div>
                     @if (
                       deploymentTargetForm.controls.namespace.invalid && deploymentTargetForm.controls.namespace.touched
@@ -349,7 +348,7 @@
                   </div>
                   @if (!deploymentTargetForm.controls.clusterScope.value) {
                     <p class="text-xs text-gray-500 dark:text-gray-400">
-                      Note: Metrics reporting will not be available for namespace-scoped agents.
+                      Note: Metrics reporting will not be available for namespace-scoped controllers.
                     </p>
                   }
 
@@ -360,7 +359,7 @@
                       [formControl]="deploymentTargetForm.controls.customResources"
                       class="distr-checkbox" />
                     <label for="custom-resources" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                      Set custom resource requirements for the Distr agent
+                      Set custom resource requirements for the Distr controller
                     </label>
                   </div>
 
@@ -461,7 +460,7 @@
                   </label>
                 </div>
 
-                <!-- Automatic Agent Updates (all deployment types) -->
+                <!-- Automatic Controller Updates (all deployment types) -->
                 <div>
                   <div class="flex items-center">
                     <input
@@ -472,12 +471,12 @@
                     <label
                       for="automatic-updates-enabled"
                       class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                      Enable automatic agent updates
+                      Enable automatic controller updates
                     </label>
                   </div>
                   <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    When enabled, the agent is updated to the latest version as soon as one becomes available. Updating
-                    the agent does not restart or update the deployed application.
+                    When enabled, the controller is updated to the latest version as soon as one becomes available.
+                    Updating the controller does not restart or update the deployed application.
                   </p>
                 </div>
               </div>
@@ -508,7 +507,7 @@
             <div class="space-y-6 mt-12">
               <div class="space-y-6">
                 <div class="flex flex-col items-center text-center space-y-4">
-                  <fa-icon [icon]="faCheckCircle" class="text-green-600 dark:text-green-500 text-6xl mt-4" />
+                  <fa-icon [icon]="faCircleCheck" class="text-green-600 dark:text-green-500 text-6xl mt-4" />
                   <h3 class="text-2xl font-semibold text-gray-900 dark:text-white">Deployment Created Successfully</h3>
                   <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400 max-w-2xl">
                     Your deployment has been created successfully. To deploy it, please copy and paste the following

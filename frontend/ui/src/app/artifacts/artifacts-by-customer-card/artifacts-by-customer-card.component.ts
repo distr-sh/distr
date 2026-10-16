@@ -5,16 +5,7 @@ import {ReactiveFormsModule} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {CustomerOrganization} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {
-  faAddressBook,
-  faBox,
-  faCircleExclamation,
-  faHeartPulse,
-  faPen,
-  faShip,
-  faTrash,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
+import {faAddressBook, faBox, faHeartPulse, faPen, faShip, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {SemVer} from 'semver';
 import {maxBy} from '../../../util/arrays';
 import {SecureImagePipe} from '../../../util/secureImage';
@@ -75,7 +66,6 @@ export class ArtifactsByCustomerCardComponent {
   protected readonly faTrash = faTrash;
   protected readonly faHeartPulse = faHeartPulse;
   protected readonly faXmark = faXmark;
-  protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faBox = faBox;
   protected readonly faAddressBook = faAddressBook;
 }

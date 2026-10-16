@@ -4,15 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net"
 	"net/http"
 	"net/url"
 	"slices"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/distr-sh/distr/internal/egress"
 	"github.com/distr-sh/distr/internal/env"
 	"golang.org/x/oauth2"
 )
@@ -166,10 +165,9 @@ func RestrictedClientContext(ctx context.Context) context.Context {
 }
 
 func restrictedHTTPClient() *http.Client {
-	dialer := &net.Dialer{Control: rejectPrivateAddress}
 	return &http.Client{
 		Timeout:   discoveryTimeout,
-		Transport: &http.Transport{DialContext: dialer.DialContext},
+		Transport: egress.Transport(nonPublicIssuersAllowed()),
 	}
 }
 
@@ -181,25 +179,6 @@ func restrictedHTTPClient() *http.Client {
 // instance-wide generic provider instead.
 func nonPublicIssuersAllowed() bool {
 	return env.HostScheme() != env.SchemeHTTPS
-}
-
-func rejectPrivateAddress(_, address string, _ syscall.RawConn) error {
-	if nonPublicIssuersAllowed() {
-		return nil
-	}
-	host, _, err := net.SplitHostPort(address)
-	if err != nil {
-		return fmt.Errorf("could not parse address %v: %w", address, err)
-	}
-	ip := net.ParseIP(host)
-	if ip == nil {
-		return fmt.Errorf("could not parse address %v", address)
-	}
-	if ip.IsLoopback() || ip.IsPrivate() || ip.IsUnspecified() ||
-		ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsMulticast() {
-		return fmt.Errorf("the issuer resolves to the non-public address %v", ip)
-	}
-	return nil
 }
 
 func containsFold(values []string, search string) bool {

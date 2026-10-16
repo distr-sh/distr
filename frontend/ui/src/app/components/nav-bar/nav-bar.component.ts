@@ -9,13 +9,7 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faArrowLeft,
   faBarsStaggered,
-  faCheck,
-  faCheckDouble,
   faChevronDown,
-  faChevronUp,
-  faCircleExclamation,
-  faClipboard,
-  faLightbulb,
   faPlus,
   faShuffle,
   faUserCircle,
@@ -228,16 +222,10 @@ export class NavBarComponent implements OnInit {
     location.assign('/login');
   }
 
-  protected readonly faLightbulb = faLightbulb;
   protected readonly faArrowLeft = faArrowLeft;
   protected readonly faShuffle = faShuffle;
-  protected readonly faCheck = faCheck;
-  protected readonly faCheckDouble = faCheckDouble;
   protected readonly faChevronDown = faChevronDown;
-  protected readonly faChevronUp = faChevronUp;
   protected readonly faPlus = faPlus;
-  protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faXmark = faXmark;
-  protected readonly faClipboard = faClipboard;
   protected readonly faUserCircle = faUserCircle;
 }

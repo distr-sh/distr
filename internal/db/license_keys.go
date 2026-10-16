@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -128,7 +128,7 @@ func GetLicenseKeyByID(ctx context.Context, id uuid.UUID) (*types.LicenseKey, er
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.LicenseKey]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("could not collect LicenseKey: %w", err)
 	} else {
@@ -158,7 +158,7 @@ func CreateLicenseKey(ctx context.Context, licenseKey *types.LicenseKey) error {
 		if id, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[uuid.UUID]); err != nil {
 			var pgError *pgconn.PgError
 			if errors.As(err, &pgError) && pgError.Code == pgerrcode.UniqueViolation {
-				return fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+				return fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 			}
 			return err
 		} else {
@@ -211,7 +211,7 @@ func UpdateLicenseKeyMetadata(
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.LicenseKey]); err != nil {
 		var pgError *pgconn.PgError
 		if errors.As(err, &pgError) && pgError.Code == pgerrcode.UniqueViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 		return nil, err
 	} else {
@@ -226,7 +226,7 @@ func DeleteLicenseKeyWithID(ctx context.Context, id uuid.UUID) error {
 		return fmt.Errorf("could not delete LicenseKey: %w", err)
 	}
 	if cmd.RowsAffected() == 0 {
-		return fmt.Errorf("could not delete LicenseKey: %w", apierrors.ErrNotFound)
+		return fmt.Errorf("could not delete LicenseKey: %w", distrerr.ErrNotFound)
 	}
 	return nil
 }

@@ -7,16 +7,16 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/deploymentvalues"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/resources"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
@@ -26,61 +26,49 @@ import (
 func TutorialsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupHidden(true))
 	r.Use(middleware.RequireOrgAndRole, middleware.RequireVendor, middleware.RequireAdmin)
-	r.Get("/", getTutorialProgresses)
+	r.Get("/", respond.Handler(getTutorialProgresses))
 	r.Route("/{tutorial}", func(r chiopenapi.Router) {
-		r.Get("/", getTutorialProgress)
-		r.With(middleware.BlockSuperAdmin).Put("/", saveTutorialProgress)
+		r.Get("/", respond.Handler(getTutorialProgress))
+		r.With(middleware.BlockSuperAdmin).Put("/", respond.Handler(saveTutorialProgress))
 	})
 }
 
-func getTutorialProgresses(w http.ResponseWriter, r *http.Request) {
+func getTutorialProgresses(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 	if progresses, err := db.GetTutorialProgresses(ctx, auth.CurrentUserID(), *auth.CurrentOrgID()); err != nil {
-		log.Warn("could not get tutorial progresses", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil, fmt.Errorf("could not get tutorial progresses: %w", err)
 	} else {
-		RespondJSON(w, progresses)
+		return respond.JSON(progresses), nil
 	}
 }
 
-func getTutorialProgress(w http.ResponseWriter, r *http.Request) {
+func getTutorialProgress(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 	tutorial := r.PathValue("tutorial")
 	if progress, err := db.GetTutorialProgress(ctx, auth.CurrentUserID(), *auth.CurrentOrgID(),
-		types.Tutorial(tutorial)); errors.Is(err, apierrors.ErrNotFound) {
-		http.NotFound(w, r)
+		types.Tutorial(tutorial)); errors.Is(err, distrerr.ErrNotFound) {
+		return tutorialProgressNotFound, nil
 	} else if err != nil {
-		log.Warn("could not get tutorial progress", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil, fmt.Errorf("could not get tutorial progress: %w", err)
 	} else {
-		RespondJSON(w, progress)
+		return respond.JSON(progress), nil
 	}
 }
 
-func saveTutorialProgress(w http.ResponseWriter, r *http.Request) {
+func saveTutorialProgress(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 	tutorial := types.Tutorial(r.PathValue("tutorial"))
 
-	req, err := JsonBody[api.TutorialProgressRequest](w, r)
-	if err != nil {
-		return
-	}
-
-	_ = db.RunTx(ctx, func(ctx context.Context) error {
-		if tutorial == types.TutorialAgents && req.StepID == "welcome" && req.TaskID == "start" {
+	var progress any
+	if req, resp := decodeJSON[api.TutorialProgressRequest](r); resp != nil {
+		return resp, nil
+	} else if err := db.RunTx(ctx, func(ctx context.Context) error {
+		if tutorial == types.TutorialControllers && req.StepID == "welcome" && req.TaskID == "start" {
 			if dt, err := createSampleAppAndDeployment(ctx); err != nil {
-				log.Warn("could not create sample app and deployment", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, "could not create sample app and deployment", http.StatusInternalServerError)
-				return err
+				return fmt.Errorf("could not create sample app and deployment: %w", err)
 			} else if dt != nil {
 				// TODO save additional data?
 				req.Value = map[string]string{
@@ -89,16 +77,18 @@ func saveTutorialProgress(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		if res, err := db.SaveTutorialProgress(ctx, auth.CurrentUserID(), *auth.CurrentOrgID(), tutorial, &req); err != nil {
-			log.Warn("could not save tutorial progress", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return err
-		} else {
-			RespondJSON(w, res)
-			return nil
+		var err error
+		if progress, err = db.SaveTutorialProgress(
+			ctx, auth.CurrentUserID(), *auth.CurrentOrgID(), tutorial, &req,
+		); err != nil {
+			return fmt.Errorf("could not save tutorial progress: %w", err)
 		}
-	})
+		return nil
+	}); err != nil {
+		return nil, err
+	} else {
+		return respond.JSON(progress), nil
+	}
 }
 
 func createSampleAppAndDeployment(ctx context.Context) (*types.DeploymentTargetFull, error) {
@@ -167,10 +157,10 @@ func createHelloDistrDeploymentTarget(ctx context.Context) (*types.DeploymentTar
 			AutomaticUpdatesEnabled: true,
 		},
 	}
-	if agentVersion, err := db.GetCurrentAgentVersion(ctx); err != nil {
+	if controllerVersion, err := db.GetCurrentControllerVersion(ctx); err != nil {
 		return nil, err
 	} else {
-		dt.AgentVersionID = &agentVersion.ID
+		dt.ControllerVersionID = &controllerVersion.ID
 		if err := db.CreateDeploymentTarget(
 			ctx,
 			&dt,

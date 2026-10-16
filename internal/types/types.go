@@ -199,7 +199,7 @@ const (
 	DeploymentStatusTypeError       DeploymentStatusType = "error"
 )
 
-// IsApplied reports whether the status means the agent has the revision up and running, which is
+// IsApplied reports whether the status means the controller has the revision up and running, which is
 // everything a new status type should mean unless it explicitly does not.
 func (t DeploymentStatusType) IsApplied() bool {
 	return t != DeploymentStatusTypeProgressing && t != DeploymentStatusTypeError
@@ -275,8 +275,39 @@ func (ref *DeploymentType) UnmarshalJSON(data []byte) error {
 	}
 }
 
+type HelmChartType string
+
+const (
+	HelmChartTypeRepository HelmChartType = "repository"
+	HelmChartTypeOCI        HelmChartType = "oci"
+)
+
+var ErrInvalidHelmChartType = errors.New("invalid helm chart type")
+
+func ParseHelmChartType(value string) (HelmChartType, error) {
+	switch value {
+	case string(HelmChartTypeRepository):
+		return HelmChartTypeRepository, nil
+	case string(HelmChartTypeOCI):
+		return HelmChartTypeOCI, nil
+	default:
+		return "", fmt.Errorf("%w: %v", ErrInvalidHelmChartType, value)
+	}
+}
+
+func (ref *HelmChartType) UnmarshalJSON(data []byte) error {
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	} else if chartType, err := ParseHelmChartType(value); err != nil {
+		return err
+	} else {
+		*ref = chartType
+		return nil
+	}
+}
+
 type (
-	HelmChartType         string
 	DeploymentTargetScope string
 	DockerType            string
 	Tutorial              string
@@ -285,9 +316,6 @@ type (
 )
 
 const (
-	HelmChartTypeRepository HelmChartType = "repository"
-	HelmChartTypeOCI        HelmChartType = "oci"
-
 	DockerTypeCompose DockerType = "compose"
 	DockerTypeSwarm   DockerType = "swarm"
 
@@ -295,7 +323,7 @@ const (
 	DeploymentTargetScopeNamespace DeploymentTargetScope = "namespace"
 
 	TutorialBranding      Tutorial  = "branding"
-	TutorialAgents        Tutorial  = "agents"
+	TutorialControllers   Tutorial  = "controllers"
 	TutorialRegistry      Tutorial  = "registry"
 	TutorialUsers         Tutorial  = "users"
 	FileScopePlatform     FileScope = "platform"
@@ -304,6 +332,31 @@ const (
 	SubscriptionPeriodMonthly SubscriptionPeriod = "monthly"
 	SubscriptionPeriodYearly  SubscriptionPeriod = "yearly"
 )
+
+var ErrInvalidDeploymentTargetScope = errors.New("invalid deployment target scope")
+
+func ParseDeploymentTargetScope(value string) (DeploymentTargetScope, error) {
+	switch value {
+	case string(DeploymentTargetScopeCluster):
+		return DeploymentTargetScopeCluster, nil
+	case string(DeploymentTargetScopeNamespace):
+		return DeploymentTargetScopeNamespace, nil
+	default:
+		return "", fmt.Errorf("%w: %v", ErrInvalidDeploymentTargetScope, value)
+	}
+}
+
+func (ref *DeploymentTargetScope) UnmarshalJSON(data []byte) error {
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	} else if scope, err := ParseDeploymentTargetScope(value); err != nil {
+		return err
+	} else {
+		*ref = scope
+		return nil
+	}
+}
 
 type Base struct {
 	ID        uuid.UUID `db:"id" json:"id"`

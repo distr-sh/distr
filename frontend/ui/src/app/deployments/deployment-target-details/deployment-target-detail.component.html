@@ -67,7 +67,7 @@
               @if (selectedDeployment(); as deployment) {
                 {{ deployment.application.name }}@{{ deployment.applicationVersionName }}
               } @else {
-                Agent Logs
+                Controller Logs
               }
               <fa-icon
                 class="transition duration-150 ease-in-out"
@@ -88,7 +88,7 @@
                 animate.leave="animate-flip-out-top">
                 <ul>
                   <li>
-                    <button class="distr-dropdown-item" (click)="selectDeployment(undefined)">Agent Logs</button>
+                    <button class="distr-dropdown-item" (click)="selectDeployment(undefined)">Controller Logs</button>
                   </li>
                   @for (deployment of selectedDeploymentTarget()?.deployments; track deployment.id) {
                     <li>
@@ -115,7 +115,7 @@
                 @if (selectedResources().length > 0) {
                   {{ selectedResources().length }} services selected
                 } @else {
-                  Deployment Status
+                  No services selected
                 }
                 <fa-icon
                   class="transition duration-150 ease-in-out"
@@ -136,14 +136,11 @@
                   animate.leave="animate-flip-out-top">
                   <ul>
                     <li>
-                      <button class="distr-dropdown-item" (click)="selectDeployment(undefined)">Agent Logs</button>
-                    </li>
-                    <li>
-                      <button class="distr-dropdown-item" (click)="clearResources()">Deployment Status</button>
+                      <button class="distr-dropdown-item" (click)="selectDeployment(undefined)">Controller Logs</button>
                     </li>
                     @if (visibleResources().length > 1) {
                       <li class="w-full border-t border-gray-100 dark:border-gray-600">
-                        <div class="flex items-center px-2">
+                        <div class="distr-dropdown-checkbox-item">
                           <input
                             id="resource-check-all"
                             type="checkbox"
@@ -165,7 +162,7 @@
                     }
                     @for (r of availableResources()?.active; track r) {
                       <li class="w-full border-t border-gray-100 dark:border-gray-600">
-                        <div class="flex items-center px-2">
+                        <div class="distr-dropdown-checkbox-item">
                           <input
                             [id]="'resource-' + r"
                             type="checkbox"
@@ -195,7 +192,7 @@
                       @if (showArchivedResources()) {
                         @for (r of availableResources()?.archived; track r) {
                           <li class="w-full border-t border-gray-100 dark:border-gray-600">
-                            <div class="flex items-center px-2">
+                            <div class="distr-dropdown-checkbox-item">
                               <input
                                 [id]="'resource-archived-' + r"
                                 type="checkbox"
@@ -308,21 +305,10 @@
       </form>
 
       @if (showBusinessLogBanner()) {
-        <div
-          class="mb-4 px-3 py-2 text-xs rounded-lg border border-primary-200 bg-primary-50 text-primary-800 dark:border-primary-800 dark:bg-gray-800 dark:text-primary-300 flex items-center justify-between gap-2">
-          <span>
-            Instantly unlock your last 30 days of logs with the
-            <a routerLink="/subscription" class="font-semibold underline">Distr Business plan</a>.
-          </span>
-          <button
-            type="button"
-            title="Dismiss"
-            (click)="dismissBusinessLogBanner()"
-            class="shrink-0 p-1 leading-none rounded-lg hover:bg-primary-100 dark:hover:bg-gray-700">
-            <fa-icon [icon]="faXmark" />
-            <span class="sr-only">Dismiss</span>
-          </button>
-        </div>
+        <app-alert type="info" class="mb-4" [dismissible]="true" (dismissed)="dismissBusinessLogBanner()">
+          Instantly unlock your last 30 days of logs with the
+          <a routerLink="/subscription" class="font-semibold underline">Distr Business plan</a>.
+        </app-alert>
       }
     </div>
 
@@ -337,13 +323,14 @@
           [before]="before()"
           [filter]="filter()"
           [orderDirection]="orderDirection()" />
-      } @else {
-        <app-deployment-status-table
-          [deploymentId]="deploymentId"
-          [after]="after()"
-          [before]="before()"
-          [filter]="filter()"
-          [orderDirection]="orderDirection()" />
+      } @else if (availableResources()) {
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          @if (deploymentHasResources()) {
+            Select at least one service to view logs.
+          } @else {
+            This deployment has no services to show logs for.
+          }
+        </p>
       }
     } @else if (deploymentTargetId(); as targetId) {
       <app-deployment-target-logs-table

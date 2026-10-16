@@ -217,7 +217,6 @@ export class DistrService {
       type: target.type,
       namespace: target.kubernetes?.namespace,
       scope: target.kubernetes?.scope,
-      deployments: [],
       metricsEnabled: false,
       imageCleanupEnabled: false,
       deploymentLogsEnabled: false,

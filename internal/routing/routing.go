@@ -2,6 +2,7 @@ package routing
 
 import (
 	"context"
+	"io/fs"
 	"net/http"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/prometheus"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/tracers"
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
@@ -32,9 +34,9 @@ Distr enables software and AI companies to distribute applications to self-manag
 
 ## Main features
 
-- **Centralized Management:** View & manage all deployments, artifacts, connected agents, self-managed &
+- **Centralized Management:** View & manage all deployments, artifacts, connected controllers, self-managed &
   BYOC customers via the intuitive web UI
-- **Deployment Automation:** Optional prebuilt Helm and Docker agents manage deployments, collect logs and metrics,
+- **Deployment Automation:** Optional prebuilt Helm and Docker controllers manage deployments, collect logs and metrics,
   and allow remote troubleshooting.
 - **White-label customer portal:** Let your customers control their deployments or download your artifacts
 - **License Management:** Distribute specific versions of your application to specific customers
@@ -127,7 +129,7 @@ func ApiRouter(
 		r.Use(
 			chimiddleware.RequestID,
 			chimiddleware.ClientIPFromRemoteAddr,
-			chimiddleware.ClientIPFromXFF(),
+			chimiddleware.ClientIPFromXFFTrustedProxies(1),
 			middleware.Sentry,
 			middleware.LoggerCtxMiddleware(logger),
 			middleware.LoggingMiddleware,
@@ -166,10 +168,10 @@ func ApiRouter(
 						httprate.LimitBy(2000, 1*time.Hour, middleware.RateLimitUserIDKey),
 
 						// TODO (low-prio) in the future, additionally check token audience and require it to be "api"/"user",
-						// such that agents cant access anything here (they also can't now, because their tokens will not
+						// such that controllers cant access anything here (they also can't now, because their tokens will not
 						// pass the Authentication chain (DbAuthenticator can't find the user -> 401)
 					)
-					r.Route("/agent-versions", handlers.AgentVersionsRouter)
+					r.Route("/controller-versions", handlers.ControllerVersionsRouter)
 					r.Route("/application-entitlements", handlers.ApplicationEntitlementsRouter)
 					r.Route("/applications", handlers.ApplicationsRouter)
 					r.Route("/artifact-entitlements", handlers.ArtifactEntitlementsRouter)
@@ -188,6 +190,8 @@ func ApiRouter(
 						Route("/partner-organizations", handlers.PartnerOrganizationsRouter)
 					r.With(middleware.UseReadonlyDB).Route("/dashboard", handlers.DashboardRouter)
 					r.Route("/alert-configurations", handlers.AlertConfigurationsRouter)
+					r.Route("/update-notification-configurations",
+						handlers.UpdateNotificationConfigurationsRouter)
 					r.With(middleware.UseReadonlyDB).
 						Route("/deployment-target-metrics", handlers.DeploymentTargetMetricsRouter)
 					r.Route("/deployment-targets", handlers.DeploymentTargetsRouter)
@@ -209,14 +213,14 @@ func ApiRouter(
 				})
 			})
 
-			// agent connect and download routes go here (authenticated but with accessKeyId and accessKeySecret)
+			// controller connect and download routes go here (authenticated but with accessKeyId and accessKeySecret)
 			r.Group(func(r chiopenapi.Router) {
 				r.Group(func(r chiopenapi.Router) {
 					r.Use(
-						middleware.OTEL(tracers.Agent()),
+						middleware.OTEL(tracers.Controller()),
 						requestSize50MiB,
 					)
-					r.Route("/", handlers.AgentRouter)
+					r.Route("/", handlers.ControllerRouter)
 				})
 
 				r.Group(func(r chiopenapi.Router) {
@@ -250,7 +254,7 @@ func CaddyAskRouter(logger *zap.Logger, db *pgxpool.Pool) http.Handler {
 		middleware.LoggerCtxMiddleware(logger),
 		middleware.ContextInjectorMiddleware(db, nil, nil, nil, nil, nil),
 	)
-	router.Get("/internal/webhook/tls/ask", handlers.TLSAskHandler())
+	router.Get("/internal/webhook/tls/ask", respond.Handler(handlers.TLSAskHandler))
 	return router
 }
 
@@ -307,9 +311,21 @@ func FrontendRouter() http.Handler {
 		middleware.CacheControlMediaAssets,
 	)
 
-	router.Handle("/*", handlers.StaticFileHandler(frontend.BrowserFS()))
+	router.Handle("/*", staticFileHandler(frontend.BrowserFS()))
 
 	return router
+}
+
+func staticFileHandler(fsys fs.FS) http.HandlerFunc {
+	server := http.FileServer(http.FS(fsys))
+	return func(w http.ResponseWriter, r *http.Request) {
+		// check if the requested file exists and use index.html if it does not.
+		if _, err := fs.Stat(fsys, r.URL.Path[1:]); err != nil {
+			http.StripPrefix(r.URL.Path, server).ServeHTTP(w, r)
+		} else {
+			server.ServeHTTP(w, r)
+		}
+	}
 }
 
 func WellKnownRouter() http.Handler {

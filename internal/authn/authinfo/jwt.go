@@ -70,8 +70,8 @@ func UserJWTAuthenticator() authn.Authenticator[jwt.Token, AuthInfo] {
 	)
 }
 
-func FromAgentJWT(token jwt.Token) (*SimpleAgentAuthInfo, error) {
-	var result SimpleAgentAuthInfo
+func FromControllerJWT(token jwt.Token) (*SimpleControllerAuthInfo, error) {
+	var result SimpleControllerAuthInfo
 	result.rawToken = token
 
 	if subjectStr, ok := token.Subject(); !ok {
@@ -93,10 +93,10 @@ func FromAgentJWT(token jwt.Token) (*SimpleAgentAuthInfo, error) {
 	return &result, nil
 }
 
-func AgentJWTAuthenticator() authn.Authenticator[jwt.Token, AgentAuthInfo] {
-	return authn.AuthenticatorFunc[jwt.Token, AgentAuthInfo](
-		func(ctx context.Context, token jwt.Token) (AgentAuthInfo, error) {
-			return FromAgentJWT(token)
+func ControllerJWTAuthenticator() authn.Authenticator[jwt.Token, ControllerAuthInfo] {
+	return authn.AuthenticatorFunc[jwt.Token, ControllerAuthInfo](
+		func(ctx context.Context, token jwt.Token) (ControllerAuthInfo, error) {
+			return FromControllerJWT(token)
 		},
 	)
 }

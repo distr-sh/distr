@@ -63,7 +63,7 @@ cosign verify \
 For production, disable the bundled dependencies and point the chart at managed services instead.
 This part is the same on every cloud:
 
-- Leave `postgresql.enabled` at `false` and set `externalDatabase.existingSecret` to a secret holding the connection URI. The alternative, `externalDatabase.uri`, puts the URI into the release values in plain text.
+- Leave `postgresql.enabled` at `false` and set `externalDatabase.existingSecret` to a secret holding the connection URI of a PostgreSQL 18+ database. The alternative, `externalDatabase.uri`, puts the URI into the release values in plain text.
 - Use external object storage for both the registry (`REGISTRY_S3_*` in `distr.env`) and Loki (`loki.loki.storage`). Create both buckets up front, set `REGISTRY_S3_CREATE_BUCKET` to `false` and drop the `create-loki-bucket` init container with `loki.singleBinary.initContainers: []`, which only exists to provision a bucket in the in-cluster RustFS.
 - Put `JWT_SECRET`, `DATABASE_ENCRYPTION_KEY`, the license key and the object storage credentials in a `secretKeyRef` or in `distr.envFrom`, not in your `distr.env` values.
 - Enable a scratch volume with `distr.scratch.enabled`, so the registry buffers layer uploads on disk instead of in memory.
@@ -81,8 +81,8 @@ Paid plans run the Enterprise image `registry.distr.sh/enterprise/distr-ee`.
 It comes from our own registry, so create a pull secret from the credentials you received from us and reference it in `imagePullSecrets`.
 
 :::tip[Let Distr manage your own instance]
-The smoothest way to run a paid plan is to deploy the chart with Distr itself, through a [Kubernetes agent](/docs/agents/kubernetes-agent/) in the target cluster.
-The agent then handles the rollout of new Distr versions and injects the license key for you: put `value: '{{ index .LicenseKeys "Distr" }}'` on the `LICENSE_KEY` entry of your Helm values and it is resolved at deploy time from the [license key](/docs/platform/license-keys/) named `Distr`, so the token is never stored in the release.
+The smoothest way to run a paid plan is to deploy the chart with Distr itself, through a [Kubernetes controller](/docs/controllers/kubernetes-controller/) in the target cluster.
+The controller then handles the rollout of new Distr versions and injects the license key for you: put `value: '{{ index .LicenseKeys "Distr" }}'` on the `LICENSE_KEY` entry of your Helm values and it is resolved at deploy time from the [license key](/docs/platform/license-keys/) named `Distr`, so the token is never stored in the release.
 :::
 
 ```yaml

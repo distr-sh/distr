@@ -1,27 +1,23 @@
 import {ChangeDetectionStrategy, Component, computed, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
-import {RouterLink} from '@angular/router';
-import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faArrowRight, faUsers} from '@fortawesome/free-solid-svg-icons';
-import {of, startWith, Subject, switchMap} from 'rxjs';
+import {faUsers} from '@fortawesome/free-solid-svg-icons';
+import {startWith, Subject, switchMap} from 'rxjs';
 import {organizationKind} from '../../../../util/organization-kind';
 import {AuthService} from '../../../services/auth.service';
-import {CustomerOrganizationsService} from '../../../services/customer-organizations.service';
 import {UsersService} from '../../../services/users.service';
+import {OrganizationScopeNavComponent} from '../../organization-scope-nav.component';
 import {PageComponent} from '../../page.component';
 import {UsersComponent} from '../users.component';
 
 @Component({
   templateUrl: './vendor-users.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [UsersComponent, RouterLink, FaIconComponent, PageComponent],
+  imports: [UsersComponent, OrganizationScopeNavComponent, PageComponent],
 })
 export class VendorUsersComponent {
   protected readonly faUsers = faUsers;
-  protected readonly faArrowRight = faArrowRight;
 
   private readonly usersService = inject(UsersService);
-  private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   private readonly auth = inject(AuthService);
   protected readonly refresh$ = new Subject<void>();
 
@@ -42,8 +38,4 @@ export class VendorUsersComponent {
     }
     return all;
   });
-
-  protected readonly customerOrganizations = toSignal(
-    this.auth.isVendor() ? this.customerOrganizationsService.getCustomerOrganizations() : of([])
-  );
 }

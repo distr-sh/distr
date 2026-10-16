@@ -1,5 +1,238 @@
 # Changelog
 
+## [4.4.2](https://github.com/distr-sh/distr/compare/4.4.1...4.4.2) (2026-10-15)
+
+
+### Bug Fixes
+
+* **kubernetes-agent:** reload helm field manager on changes ([#3508](https://github.com/distr-sh/distr/issues/3508)) ([99d6d34](https://github.com/distr-sh/distr/commit/99d6d34b26c49297799c7b8a83ae186c3dde57d6))
+
+
+### Other
+
+* rename missed logline from agent to controller ([#3501](https://github.com/distr-sh/distr/issues/3501)) ([a668799](https://github.com/distr-sh/distr/commit/a668799c0a7b1ae71ea3154f01686c327933f6b0))
+
+## [4.4.1](https://github.com/distr-sh/distr/compare/4.4.0...4.4.1) (2026-10-14)
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([#3460](https://github.com/distr-sh/distr/issues/3460)) ([e2e681a](https://github.com/distr-sh/distr/commit/e2e681a2c6009ebc00902bcaa50dc46497794d35))
+* **deps:** update module github.com/aws/smithy-go to v1.28.5 ([#3462](https://github.com/distr-sh/distr/issues/3462)) ([1e82741](https://github.com/distr-sh/distr/commit/1e82741f19c7572d060892a6374adde89278ef37))
+* **deps:** update module github.com/getsentry/sentry-go/otel/otlp to v0.50.0 ([#3466](https://github.com/distr-sh/distr/issues/3466)) ([e36d8bc](https://github.com/distr-sh/distr/commit/e36d8bc19648c09fe4340bba68a8f195b8d50172))
+* **deps:** update module github.com/go-chi/chi/v5 to v5.4.0 ([#3483](https://github.com/distr-sh/distr/issues/3483)) ([4d42bc2](https://github.com/distr-sh/distr/commit/4d42bc223a734eb587c4e4c9c7aab32e55cba14c))
+* **deps:** update module github.com/go-mailx/mailx-ses to v1.0.13 ([#3479](https://github.com/distr-sh/distr/issues/3479)) ([1e73c8d](https://github.com/distr-sh/distr/commit/1e73c8d97e349b1fdc53bd35c0af678965b5974d))
+* **deps:** update module github.com/moby/moby/client to v0.6.2 ([#3464](https://github.com/distr-sh/distr/issues/3464)) ([6dfbbb6](https://github.com/distr-sh/distr/commit/6dfbbb65817e32cf681437470a4a82ddb96e09bd))
+* **deps:** update module github.com/prometheus/client_golang to v1.25.0 ([#3467](https://github.com/distr-sh/distr/issues/3467)) ([190233f](https://github.com/distr-sh/distr/commit/190233f2b8357cef4e82c658f2020147d157e499))
+* **deps:** update module oras.land/oras-go/v2 to v2.6.3 ([#3491](https://github.com/distr-sh/distr/issues/3491)) ([3712dde](https://github.com/distr-sh/distr/commit/3712dde6a116b45ed8b7bb71dd79b5bdec9fd359))
+* **deps:** update sentry-javascript monorepo to v11 ([#3488](https://github.com/distr-sh/distr/issues/3488)) ([438f690](https://github.com/distr-sh/distr/commit/438f6900124ba79d353393d093300aaa28e24add))
+* **frontend:** fix colspan on alert configs page ([#3494](https://github.com/distr-sh/distr/issues/3494)) ([12f2601](https://github.com/distr-sh/distr/commit/12f260141775974e446e61c04653b24d61ee358e))
+* **kubernetes-agent:** explicitly set helm field manager label ([#3499](https://github.com/distr-sh/distr/issues/3499)) ([32bf9dd](https://github.com/distr-sh/distr/commit/32bf9dd75109abd111958cb8be9c5929ba669d28))
+
+
+### Other
+
+* **deps:** update dependency marked to v18.1.1 ([#3489](https://github.com/distr-sh/distr/issues/3489)) ([a6265b6](https://github.com/distr-sh/distr/commit/a6265b6a9f79577a6d86aa3145173a1ba59c4dab))
+* **deps:** update dependency postcss to v8.5.30 ([#3485](https://github.com/distr-sh/distr/issues/3485)) ([e95bdcd](https://github.com/distr-sh/distr/commit/e95bdcdcfca612bcd7cdbd0c5226a28964b25a32))
+* **deps:** update dependency posthog-js to v1.438.9 ([#3486](https://github.com/distr-sh/distr/issues/3486)) ([6f75e20](https://github.com/distr-sh/distr/commit/6f75e20d78ad0be0e6621ec82df1dbb59a91ce25))
+* **deps:** update dependency vitest to v5.0.4 ([#3481](https://github.com/distr-sh/distr/issues/3481)) ([ce1dc26](https://github.com/distr-sh/distr/commit/ce1dc2603f3f3dee64f347ecb9310962ba08fde9))
+* **deps:** update jdx/mise-action action to v5.1.2 ([#3482](https://github.com/distr-sh/distr/issues/3482)) ([60881fb](https://github.com/distr-sh/distr/commit/60881fb8f968fa799694913329814fb5f346da96))
+* **deps:** update website dependencies ([#3474](https://github.com/distr-sh/distr/issues/3474)) ([6a3c48d](https://github.com/distr-sh/distr/commit/6a3c48d3267d13a7d14db0c52c77ebd15674d4ca))
+* **frontend:** add border to panels and tables ([#3478](https://github.com/distr-sh/distr/issues/3478)) ([97dc1d6](https://github.com/distr-sh/distr/commit/97dc1d672b878c6358910dd554f219b7bca1e701))
+* **frontend:** remove colored background for dangerzone ([#3484](https://github.com/distr-sh/distr/issues/3484)) ([624a7e1](https://github.com/distr-sh/distr/commit/624a7e171b85551076769ed558a9f03e89e76638))
+* **website:** update mermaid to v12 ([#3480](https://github.com/distr-sh/distr/issues/3480)) ([73e3475](https://github.com/distr-sh/distr/commit/73e3475071fe0e022a161417e07e8770823040f1))
+* **website:** update node-html-parser to v9 ([#3476](https://github.com/distr-sh/distr/issues/3476)) ([c424f9f](https://github.com/distr-sh/distr/commit/c424f9fc57b781b120f1034236f46dd1bd5eb763))
+* **website:** update preact to v11 ([#3477](https://github.com/distr-sh/distr/issues/3477)) ([5d127e8](https://github.com/distr-sh/distr/commit/5d127e8062dba4722a43a12cc3aacfc230f2cb05))
+
+## [4.4.0](https://github.com/distr-sh/distr/compare/4.3.0...4.4.0) (2026-10-13)
+
+
+### Bug Fixes
+
+* **backend:** close gap on secret creation with empty customerOrgID by re-using resolveCustomerScope ([#3446](https://github.com/distr-sh/distr/issues/3446)) ([f4e0d70](https://github.com/distr-sh/distr/commit/f4e0d70629f23060f6a3b06e58af412b0d9875d2))
+* **backend:** improve error mapping and validation for deployment targets ([#3450](https://github.com/distr-sh/distr/issues/3450)) ([f4713c8](https://github.com/distr-sh/distr/commit/f4713c82fcf21c1432b2d290367c79a98bb5e41d))
+* **backend:** improve error mapping for artifact entitlement operations ([#3442](https://github.com/distr-sh/distr/issues/3442)) ([76f9b4e](https://github.com/distr-sh/distr/commit/76f9b4ec1be0f963a5c4bf7a6b514e5d6dec995b))
+* **backend:** return 400 instead of 500 for duplicate organization slug ([#3444](https://github.com/distr-sh/distr/issues/3444)) ([258a5a6](https://github.com/distr-sh/distr/commit/258a5a6e842ad01516f38e6cb326e6d927198201))
+* **deps:** update module github.com/docker/compose/v5 to v5.6.0 ([#3409](https://github.com/distr-sh/distr/issues/3409)) ([4301a69](https://github.com/distr-sh/distr/commit/4301a69ec7376aad2a5c6e6141986e43a42231cf))
+* **deps:** update module github.com/exaring/otelpgx to v0.13.0 ([#3441](https://github.com/distr-sh/distr/issues/3441)) ([267a713](https://github.com/distr-sh/distr/commit/267a7131da6328d1a5d4599237ef5eac1ad24028))
+* **deps:** update module github.com/getsentry/sentry-go to v0.50.0 ([#3448](https://github.com/distr-sh/distr/issues/3448)) ([7b5fe8a](https://github.com/distr-sh/distr/commit/7b5fe8a1bf0c6f7eb8e241cf831b917274a9c718))
+* **deps:** update module github.com/go-chi/httprate to v0.16.1 ([#3447](https://github.com/distr-sh/distr/issues/3447)) ([9f91eb1](https://github.com/distr-sh/distr/commit/9f91eb1c05f1b7188bfb505d842e54045e80966c))
+* **deps:** update module github.com/go-mailx/mailx-ses to v1.0.12 ([#3463](https://github.com/distr-sh/distr/issues/3463)) ([b32b281](https://github.com/distr-sh/distr/commit/b32b281a8af6990cd23b822e594f113b493e26c8))
+* **deps:** update module golang.org/x/crypto to v0.58.0 ([#3469](https://github.com/distr-sh/distr/issues/3469)) ([5945e27](https://github.com/distr-sh/distr/commit/5945e27a44aa86579534bcf53786985c0a789e4b))
+* **deps:** update module golang.org/x/sync to v0.24.0 ([#3470](https://github.com/distr-sh/distr/issues/3470)) ([305cf51](https://github.com/distr-sh/distr/commit/305cf51e49274433af6dea0b91792c9d4aac4263))
+* **deps:** update website dependencies ([#3420](https://github.com/distr-sh/distr/issues/3420)) ([0d11390](https://github.com/distr-sh/distr/commit/0d1139052b68ca2d3d110ed4c9169e40bee9d449))
+* **registry:** improve conformance with OCI distribution spec  ([#3445](https://github.com/distr-sh/distr/issues/3445)) ([d16e44a](https://github.com/distr-sh/distr/commit/d16e44a6ccfc3a9e66c960385c45404f1d2c09ea))
+* reject a missing user role before creating a user account ([#3437](https://github.com/distr-sh/distr/issues/3437)) ([cca0d31](https://github.com/distr-sh/distr/commit/cca0d319df6ae0cf3e056dab045cf66dbed083b0))
+
+
+### Other
+
+* Add possibility to cancel a pending reconnect ([#3453](https://github.com/distr-sh/distr/issues/3453)) ([c26d9bc](https://github.com/distr-sh/distr/commit/c26d9bcfb59b9c25604ee1a32b2d1c8c29f35a0f))
+* **backend:** improve API validations for application endpoints ([#3461](https://github.com/distr-sh/distr/issues/3461)) ([17e3f29](https://github.com/distr-sh/distr/commit/17e3f296fb70788943bad36d3aaad390b89b8c50))
+* customer info should not be a warning ([#3468](https://github.com/distr-sh/distr/issues/3468)) ([23342ed](https://github.com/distr-sh/distr/commit/23342ed7893522a78cc936fc9b9ebc8ebb67ab3f))
+* **deps:** update actions/download-artifact action to v8.0.2 ([#3430](https://github.com/distr-sh/distr/issues/3430)) ([984d2e0](https://github.com/distr-sh/distr/commit/984d2e0a4d0f92054439e8149fefbfa8b02f4d5a))
+* **deps:** update actions/setup-node action to v7.1.0 ([#3440](https://github.com/distr-sh/distr/issues/3440)) ([7db136d](https://github.com/distr-sh/distr/commit/7db136dada3dce7f265311c2e46d50f480653550))
+* **deps:** update actions/upload-artifact action to v7.0.2 ([#3431](https://github.com/distr-sh/distr/issues/3431)) ([fbcab6b](https://github.com/distr-sh/distr/commit/fbcab6be7e8a6535761123d10c12ae9b2bcf3108))
+* **deps:** update angular monorepo to v22.2.2 ([#3454](https://github.com/distr-sh/distr/issues/3454)) ([4f514cf](https://github.com/distr-sh/distr/commit/4f514cf7fa786a33a7dda771a0aef8379b1582ae))
+* **deps:** update axllent/mailpit docker tag to v1.31.5 ([#3455](https://github.com/distr-sh/distr/issues/3455)) ([bae2aa9](https://github.com/distr-sh/distr/commit/bae2aa908b1e9a513063074720855bb33b137b4e))
+* **deps:** update codemirror ([#3432](https://github.com/distr-sh/distr/issues/3432)) ([f575e67](https://github.com/distr-sh/distr/commit/f575e67af501ec8830d3cfe1167fa03071f7d9a3))
+* **deps:** update dependency @angular/cdk to v22.2.2 ([#3433](https://github.com/distr-sh/distr/issues/3433)) ([8894fec](https://github.com/distr-sh/distr/commit/8894fec445b38619511fdd088b423866a47cdfdd))
+* **deps:** update dependency go to v1.27.2 ([#3436](https://github.com/distr-sh/distr/issues/3436)) ([a2faec9](https://github.com/distr-sh/distr/commit/a2faec9756e001bea53bccc50fdba0eebfd4d63f))
+* **deps:** update dependency prettier to v3.9.10 ([#3459](https://github.com/distr-sh/distr/issues/3459)) ([5aeeb8b](https://github.com/distr-sh/distr/commit/5aeeb8be6e0363f96bb3ef869ddeb196234475bf))
+* **deps:** update dependency stripe to v1.53.1 ([#3435](https://github.com/distr-sh/distr/issues/3435)) ([9e810fd](https://github.com/distr-sh/distr/commit/9e810fdfe5f5dc7d0ee302e88e2eb1b717eb1185))
+* **deps:** update docker to v29.9.0 ([#3457](https://github.com/distr-sh/distr/issues/3457)) ([f14cbd7](https://github.com/distr-sh/distr/commit/f14cbd703a5c3ef09ef19cd7f53a30ac1c0a964d))
+* **deps:** update google/osv-scanner-action action to v2.7.0 ([#3472](https://github.com/distr-sh/distr/issues/3472)) ([8ea3fec](https://github.com/distr-sh/distr/commit/8ea3fec07d2aa735d6796ce69c063c3952a6537a))
+* **deps:** update loki docker tag to v18.15.1 ([#3434](https://github.com/distr-sh/distr/issues/3434)) ([4a1d978](https://github.com/distr-sh/distr/commit/4a1d978e0fbb676380ddb7dcd399ffcd5d04c9b9))
+* **deps:** update pnpm to v12.11.2 ([#3465](https://github.com/distr-sh/distr/issues/3465)) ([9d1f343](https://github.com/distr-sh/distr/commit/9d1f3437aaaab3b39e4db0ffce357d102953e555))
+* **deps:** update rclone/rclone docker tag to v1.75.2 ([#3449](https://github.com/distr-sh/distr/issues/3449)) ([dcb08f0](https://github.com/distr-sh/distr/commit/dcb08f0883f812b95396e0faa0123210e7de9452))
+* **frontend:** introduce a shared alert component and streamline badges ([#3451](https://github.com/distr-sh/distr/issues/3451)) ([9281069](https://github.com/distr-sh/distr/commit/9281069140a8629c7547842bfb3810488e29004d))
+
+
+### Build
+
+* change next release version to 4.4.0 ([001a585](https://github.com/distr-sh/distr/commit/001a5859fca669f0afa9121b4f0a91a210b0e2a9))
+
+
+### Refactoring
+
+* rename distr agent to distr controller ([#3400](https://github.com/distr-sh/distr/issues/3400)) ([d231a12](https://github.com/distr-sh/distr/commit/d231a125396d83e85f2139f85af1de7e4c6fa78b))
+
+## [4.3.0](https://github.com/distr-sh/distr/compare/4.2.1...4.3.0) (2026-10-08)
+
+
+### Features
+
+* keep the agent connected during a reconnect and show a reconnect pending badge ([#3418](https://github.com/distr-sh/distr/issues/3418)) ([6a8804f](https://github.com/distr-sh/distr/commit/6a8804f1fcec319354f41ea996215447e1e1a28d))
+* update notifications ([#3290](https://github.com/distr-sh/distr/issues/3290)) ([d8d67a6](https://github.com/distr-sh/distr/commit/d8d67a67e2069f8669829a9e961c7e8e7c1a6013))
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([#3425](https://github.com/distr-sh/distr/issues/3425)) ([a1b7e85](https://github.com/distr-sh/distr/commit/a1b7e853aac287c16cb00af69e9facc79a20b6c2))
+* **deps:** update module github.com/aws/smithy-go to v1.28.4 ([#3426](https://github.com/distr-sh/distr/issues/3426)) ([23aea13](https://github.com/distr-sh/distr/commit/23aea13cefdf72edd2468aec1bc81c4ade5ce683))
+* **deps:** update module github.com/exaring/otelpgx to v0.12.1 ([#3416](https://github.com/distr-sh/distr/issues/3416)) ([6d3bf6e](https://github.com/distr-sh/distr/commit/6d3bf6edbb91fe5a52134af77863ba1af0d504e4))
+
+
+### Other
+
+* application version sorting by versioning strategy ([#3411](https://github.com/distr-sh/distr/issues/3411)) ([b51ba6d](https://github.com/distr-sh/distr/commit/b51ba6d490bd961ea4342e5cb87d23644991eb5d))
+* **deploy/chart:** add deploymentAnnotations value ([#3422](https://github.com/distr-sh/distr/issues/3422)) ([0b7e016](https://github.com/distr-sh/distr/commit/0b7e016088cc225c2e99f6b582ca623a5e63c0a4))
+* **deps:** update angular-cli monorepo to v22.2.2 ([#3428](https://github.com/distr-sh/distr/issues/3428)) ([59900fb](https://github.com/distr-sh/distr/commit/59900fb27f3cd7a9188de4503a8f604e195689f6))
+* **deps:** update axllent/mailpit docker tag to v1.31.4 ([#3397](https://github.com/distr-sh/distr/issues/3397)) ([873299a](https://github.com/distr-sh/distr/commit/873299a19f962e4f0988e8bae8863d8b95c7ea7a))
+* **deps:** update caddy docker tag to v2.11.7 ([#3412](https://github.com/distr-sh/distr/issues/3412)) ([2fe39a1](https://github.com/distr-sh/distr/commit/2fe39a1e3038c61b607329bef7d0fa3d968aac36))
+* **deps:** update dependency jsdom to v30.1.2 ([#3403](https://github.com/distr-sh/distr/issues/3403)) ([902a007](https://github.com/distr-sh/distr/commit/902a007fd4cf3e9cd7d60825d6d332dbebfa9078))
+* **deps:** update dependency marked to v18.1.0 ([#3415](https://github.com/distr-sh/distr/issues/3415)) ([94d8eff](https://github.com/distr-sh/distr/commit/94d8effbe600ea50cb2576848ae173f1055e95f5))
+* **deps:** update dependency watchexec to v2.8.0 ([#3423](https://github.com/distr-sh/distr/issues/3423)) ([3a27a67](https://github.com/distr-sh/distr/commit/3a27a673d2e19e31374c4481e8a7610b9cc73ef3))
+* **deps:** update helm/kind-action action to v1.15.1 ([#3417](https://github.com/distr-sh/distr/issues/3417)) ([ea95df1](https://github.com/distr-sh/distr/commit/ea95df14d4f454de0e8aaed22ad5931ddd1588e0))
+* **deps:** update jdx/mise-action action to v5.1.0 ([#3407](https://github.com/distr-sh/distr/issues/3407)) ([6cdff7c](https://github.com/distr-sh/distr/commit/6cdff7c6160b1613006871a60b800b2134f53b06))
+* **deps:** update jdx/mise-action action to v5.1.1 ([#3413](https://github.com/distr-sh/distr/issues/3413)) ([ad11089](https://github.com/distr-sh/distr/commit/ad110897e861ae2e0680bd9be3c931f76e9a1e94))
+* **deps:** update loki docker tag to v18.13.8 ([#3404](https://github.com/distr-sh/distr/issues/3404)) ([2432aaf](https://github.com/distr-sh/distr/commit/2432aafc590c169398a91c8daf96651d92ebb23d))
+* **deps:** update loki docker tag to v18.14.0 ([#3424](https://github.com/distr-sh/distr/issues/3424)) ([ebc6ea6](https://github.com/distr-sh/distr/commit/ebc6ea6c3298b34e0faffdd8d3e848e4d89b56e7))
+* **deps:** update pnpm to v12.10.1 ([#3427](https://github.com/distr-sh/distr/issues/3427)) ([226248f](https://github.com/distr-sh/distr/commit/226248f52c03fe4969a72f20f9a6e4b0f00b42cd))
+* **deps:** update pnpm to v12.9.1 ([#3408](https://github.com/distr-sh/distr/issues/3408)) ([636e312](https://github.com/distr-sh/distr/commit/636e3125aa07887170835fd6aadb23a54a673510))
+* **deps:** update rustfs/rustfs docker tag to v1.0.1 ([#3406](https://github.com/distr-sh/distr/issues/3406)) ([67771af](https://github.com/distr-sh/distr/commit/67771afa5c3bd5897c2890a377fb43e3d8956445))
+* **deps:** update website dependencies ([#3391](https://github.com/distr-sh/distr/issues/3391)) ([b9c6877](https://github.com/distr-sh/distr/commit/b9c68778e15cb0c15f0ceed99e8b8cf59864540a))
+* **registry:** disallow local artifact upstream registries and validate manifest data ([#3401](https://github.com/distr-sh/distr/issues/3401)) ([0fdd3d5](https://github.com/distr-sh/distr/commit/0fdd3d5290217898db7f5b4ce9a4f3c303f012a2))
+
+## [4.2.1](https://github.com/distr-sh/distr/compare/4.2.0...4.2.1) (2026-10-05)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @astrojs/starlight to v0.42.5 ([#3387](https://github.com/distr-sh/distr/issues/3387)) ([8592bb7](https://github.com/distr-sh/distr/commit/8592bb7fdcec6b92dc4a6cb5058bbb3a88de6bde))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/service/s3 to v1.114.0 ([#3382](https://github.com/distr-sh/distr/issues/3382)) ([a7b2f3a](https://github.com/distr-sh/distr/commit/a7b2f3acb6452886fe70dba6203176c7e4ec5f94))
+* **deps:** update module github.com/docker/cli to v29.8.2+incompatible ([#3375](https://github.com/distr-sh/distr/issues/3375)) ([4a63bfb](https://github.com/distr-sh/distr/commit/4a63bfbb44826916ef5315810893e3c9b06fa205))
+* **deps:** update module github.com/moby/moby/client to v0.6.1 ([#3393](https://github.com/distr-sh/distr/issues/3393)) ([1068fdb](https://github.com/distr-sh/distr/commit/1068fdb8e76e08bde0ffcd910e3b82b9c8a799be))
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.162.0 ([#3371](https://github.com/distr-sh/distr/issues/3371)) ([9645b47](https://github.com/distr-sh/distr/commit/9645b477522c8fad5118037f47bb6be99de81d5f))
+* **deps:** update module github.com/shirou/gopsutil/v4 to v4.26.9 ([#3384](https://github.com/distr-sh/distr/issues/3384)) ([5aeb6ab](https://github.com/distr-sh/distr/commit/5aeb6aba406c7f08dc51b4f9dca1f41212983479))
+* **deps:** update opentelemetry-go monorepo to v1.47.0 ([#3394](https://github.com/distr-sh/distr/issues/3394)) ([a483bb9](https://github.com/distr-sh/distr/commit/a483bb9fe2336a186494c73d54bf7f7264904590))
+* **registry:** don't check blob ownership for HEAD requests ([#3402](https://github.com/distr-sh/distr/issues/3402)) ([330d106](https://github.com/distr-sh/distr/commit/330d106d692ba3a243e6dc1928999f8b454de9b8))
+
+
+### Other
+
+* **backend:** expand request logging ([#3360](https://github.com/distr-sh/distr/issues/3360)) ([84d7b7e](https://github.com/distr-sh/distr/commit/84d7b7e7e9c8b65698ae67d8923e2b2b46fce0e2))
+* **deps:** update anchore/sbom-action action to v0.24.3 ([#3395](https://github.com/distr-sh/distr/issues/3395)) ([6902c89](https://github.com/distr-sh/distr/commit/6902c895b83c57ed49023e5e1e49b1ad93377076))
+* **deps:** update angular monorepo to v22.2.1 ([#3379](https://github.com/distr-sh/distr/issues/3379)) ([9ed4431](https://github.com/distr-sh/distr/commit/9ed44318af440d91dece2113291649331c356bca))
+* **deps:** update angular-cli monorepo to v22.2.1 ([#3390](https://github.com/distr-sh/distr/issues/3390)) ([150ef38](https://github.com/distr-sh/distr/commit/150ef38d1d64eaae6a669f9fdf594721b308df8f))
+* **deps:** update dependency @angular/cdk to v22.2.1 ([#3377](https://github.com/distr-sh/distr/issues/3377)) ([f81022e](https://github.com/distr-sh/distr/commit/f81022ebb43dde9ca7b8e0b2cb096a05835dac91))
+* **deps:** update dependency @iconify-json/lucide to v1.2.138 ([#3378](https://github.com/distr-sh/distr/issues/3378)) ([2d61a16](https://github.com/distr-sh/distr/commit/2d61a16cee4d23d674dba56d9a435b24dc9fbdce))
+* **deps:** update dependency stripe to v1.53.0 ([#3374](https://github.com/distr-sh/distr/issues/3374)) ([6292a62](https://github.com/distr-sh/distr/commit/6292a62d1598fe33566e9ec8fd7cacaa9fe7e824))
+* **deps:** update dependency vitest to v5.0.3 ([#3380](https://github.com/distr-sh/distr/issues/3380)) ([0dee01a](https://github.com/distr-sh/distr/commit/0dee01a89097497952e5fc63dca8de3ece47b2c4))
+* **deps:** update dependency watchexec to v2.7.4 ([#3396](https://github.com/distr-sh/distr/issues/3396)) ([4243d3d](https://github.com/distr-sh/distr/commit/4243d3d99cf11fa5da7a623adc2a2afdd9e9c530))
+* **deps:** update docker docker tag to v29.8.2 ([#3383](https://github.com/distr-sh/distr/issues/3383)) ([17827ff](https://github.com/distr-sh/distr/commit/17827ffe4b49e1258b9b87e08562b7bf83ab3beb))
+* **deps:** update helm release rustfs to v1.0.1 ([#3398](https://github.com/distr-sh/distr/issues/3398)) ([236e8aa](https://github.com/distr-sh/distr/commit/236e8aae92e715cb04031a2209e509068e4e8540))
+* **deps:** update jdx/mise-action action to v5.0.1 ([#3381](https://github.com/distr-sh/distr/issues/3381)) ([46680f6](https://github.com/distr-sh/distr/commit/46680f6b29bc51db7d2e86c783eb51d5b1d5a9dc))
+* **deps:** update pnpm to v12.8.1 ([#3366](https://github.com/distr-sh/distr/issues/3366)) ([9d3ba1d](https://github.com/distr-sh/distr/commit/9d3ba1d084a1d8f6cd5340110bdcf8e12ff21e53))
+* **frontend:** replace support bundle status dot with badge on dashboard ([#3388](https://github.com/distr-sh/distr/issues/3388)) ([b6daa02](https://github.com/distr-sh/distr/commit/b6daa025485ff69029ac6f380e8cd4fe0e9c6e77))
+* **sdk/js:** bump typescript to v6 ([#3376](https://github.com/distr-sh/distr/issues/3376)) ([b31339c](https://github.com/distr-sh/distr/commit/b31339c37fb3270ad45b44742c06b3745f8cf9a0))
+
+## [4.2.0](https://github.com/distr-sh/distr/compare/4.1.0...4.2.0) (2026-09-30)
+
+
+### Features
+
+* track distinct current/latest deployment revision ([#3310](https://github.com/distr-sh/distr/issues/3310)) ([8308190](https://github.com/distr-sh/distr/commit/830819089e71ecaadf0d5834375ca6e32c0232fd))
+
+
+### Bug Fixes
+
+* **backend:** restrict invite token access and capabilities ([#3344](https://github.com/distr-sh/distr/issues/3344)) ([9def3d0](https://github.com/distr-sh/distr/commit/9def3d0aa8993de6582d4aaa9d7bbc59ab629a95))
+* **deps:** update aws-sdk-go-v2 monorepo ([#3342](https://github.com/distr-sh/distr/issues/3342)) ([4d0f618](https://github.com/distr-sh/distr/commit/4d0f618af5905f75793da1f7150246a4fc717a29))
+* **deps:** update kubernetes monorepo to v0.37.1 ([#3341](https://github.com/distr-sh/distr/issues/3341)) ([7326f28](https://github.com/distr-sh/distr/commit/7326f28bd124f8d19c2547c3bbd547e3bdb46c83))
+* **deps:** update module cloud.google.com/go/kms to v1.35.0 ([#3354](https://github.com/distr-sh/distr/issues/3354)) ([a0a014f](https://github.com/distr-sh/distr/commit/a0a014fb2f4e2cf82404891ec035313d7fc074b9))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/service/s3 to v1.113.2 ([#3324](https://github.com/distr-sh/distr/issues/3324)) ([515ba84](https://github.com/distr-sh/distr/commit/515ba84e68d31455c9b30edc5fe1c010e1b9a172))
+* **deps:** update module github.com/go-mailx/mailx-ses to v1.0.10 ([#3357](https://github.com/distr-sh/distr/issues/3357)) ([8eac18a](https://github.com/distr-sh/distr/commit/8eac18a5d6db84de3797fabf6499540aa07d4d4a))
+* **deps:** update module github.com/onsi/gomega to v1.44.0 ([#3355](https://github.com/distr-sh/distr/issues/3355)) ([66b34dd](https://github.com/distr-sh/distr/commit/66b34dd0fb8fe9af2044d8ef1979890b96eb8c5d))
+* **deps:** update module go.opentelemetry.io/collector/component to v1.68.0 ([#3362](https://github.com/distr-sh/distr/issues/3362)) ([a55a018](https://github.com/distr-sh/distr/commit/a55a0182b37dd8d6c84bdd26cf790bd4fc03dc2e))
+* **deps:** update module go.opentelemetry.io/collector/confmap to v1.68.0 ([#3363](https://github.com/distr-sh/distr/issues/3363)) ([f60b501](https://github.com/distr-sh/distr/commit/f60b50134a98700c76d59788d198745a7dde5811))
+* **deps:** update module go.opentelemetry.io/collector/receiver to v1.68.0 ([#3368](https://github.com/distr-sh/distr/issues/3368)) ([38f2078](https://github.com/distr-sh/distr/commit/38f2078839cb9517e6a4f028bfd152e032e615a0))
+* **deps:** update website dependencies ([#3323](https://github.com/distr-sh/distr/issues/3323)) ([32aec2a](https://github.com/distr-sh/distr/commit/32aec2a555c5a77fbfdf74f2c34c0608bcab7ea3))
+* **deps:** update website dependencies ([#3351](https://github.com/distr-sh/distr/issues/3351)) ([275c341](https://github.com/distr-sh/distr/commit/275c341fc82ab19ede78d638edb7c098dbda8be3))
+* **registry:** only count successful requests towards anonymous rate-limit budget and use 401 status for rate-limited requests ([#3328](https://github.com/distr-sh/distr/issues/3328)) ([5872e62](https://github.com/distr-sh/distr/commit/5872e62764db7849a5eb8cedb5a687c362921d67))
+
+
+### Other
+
+* add blocklist ([#3349](https://github.com/distr-sh/distr/issues/3349)) ([92da826](https://github.com/distr-sh/distr/commit/92da82664f5fbea09069bb404c45962dabb04410))
+* **agent:** move health checks to a separate goroutine ([#3337](https://github.com/distr-sh/distr/issues/3337)) ([20827bf](https://github.com/distr-sh/distr/commit/20827bf5f9513a4015bf0f3ea93a23c65c112e92))
+* **agent:** send "progressing" status immediately at the start of an operation ([#3329](https://github.com/distr-sh/distr/issues/3329)) ([21d5157](https://github.com/distr-sh/distr/commit/21d5157222163f5a4b062b1d8de99821fe072fa1))
+* **backend:** add entitlement check on application version details endpoint ([#3335](https://github.com/distr-sh/distr/issues/3335)) ([cfeb2d9](https://github.com/distr-sh/distr/commit/cfeb2d937456e963525718246c30115c5a3898c2))
+* **deps:** update angular monorepo to v22.2.0 ([#3346](https://github.com/distr-sh/distr/issues/3346)) ([9f64b27](https://github.com/distr-sh/distr/commit/9f64b27fab93894957173c8c4e2ace91296fa93e))
+* **deps:** update angular-cli monorepo to v22.2.0 ([#3347](https://github.com/distr-sh/distr/issues/3347)) ([b1e8581](https://github.com/distr-sh/distr/commit/b1e8581af04abe6e8a6845e4e01a0fed4a634263))
+* **deps:** update axllent/mailpit docker tag to v1.31.3 ([#3359](https://github.com/distr-sh/distr/issues/3359)) ([d996b15](https://github.com/distr-sh/distr/commit/d996b154fbfa6a06b0c183aef1e5dcacd5d78305))
+* **deps:** update codemirror ([#3320](https://github.com/distr-sh/distr/issues/3320)) ([d769afa](https://github.com/distr-sh/distr/commit/d769afa0b09d4dcb6a3c33bab01edf66c874f2b4))
+* **deps:** update dependency @angular/cdk to v22.2.0 ([#3339](https://github.com/distr-sh/distr/issues/3339)) ([dc713d8](https://github.com/distr-sh/distr/commit/dc713d856477cf9d16486bcbd46a35aa504a0111))
+* **deps:** update dependency @iconify-json/simple-icons to v1.2.98 ([#3365](https://github.com/distr-sh/distr/issues/3365)) ([cc3d986](https://github.com/distr-sh/distr/commit/cc3d986d6faf4ea5b3ba3c751727811b75fefeef))
+* **deps:** update dependency @lezer/highlight to v1.2.4 ([#3345](https://github.com/distr-sh/distr/issues/3345)) ([15a82ca](https://github.com/distr-sh/distr/commit/15a82cae31dc31b3d38a948d72bafa59ff19fcc2))
+* **deps:** update dependency @lezer/highlight to v1.2.5 ([#3361](https://github.com/distr-sh/distr/issues/3361)) ([a2b1783](https://github.com/distr-sh/distr/commit/a2b17836bd50c9eedfb26895328db196feb3be02))
+* **deps:** update dependency jsdom to v30.1.1 ([#3321](https://github.com/distr-sh/distr/issues/3321)) ([fd3664f](https://github.com/distr-sh/distr/commit/fd3664fee50cc951739c80908f29630e2c94190f))
+* **deps:** update dependency marked to v18.0.14 ([#3322](https://github.com/distr-sh/distr/issues/3322)) ([e50f445](https://github.com/distr-sh/distr/commit/e50f4453796d6f8c29edeb216a4f93200780e71c))
+* **deps:** update dependency prettier to v3.9.9 ([#3332](https://github.com/distr-sh/distr/issues/3332)) ([0d92cb4](https://github.com/distr-sh/distr/commit/0d92cb47068c804255bfbc03949ed8d6d0ae3643))
+* **deps:** update dependency stripe to v1.51.1 ([#3317](https://github.com/distr-sh/distr/issues/3317)) ([898d622](https://github.com/distr-sh/distr/commit/898d622c233e4fd2c8ec6237653a89f754826237))
+* **deps:** update dependency stripe to v1.52.0 ([#3352](https://github.com/distr-sh/distr/issues/3352)) ([4bf8052](https://github.com/distr-sh/distr/commit/4bf80529375ea5143401415ddc307b3cb4ea8993))
+* **deps:** update dependency vitest to v5.0.2 ([#3356](https://github.com/distr-sh/distr/issues/3356)) ([df8bd41](https://github.com/distr-sh/distr/commit/df8bd414b7d45105692e51283274b00dc71816d8))
+* **deps:** update golangci-lint to v2.14.0 ([#3348](https://github.com/distr-sh/distr/issues/3348)) ([f444cee](https://github.com/distr-sh/distr/commit/f444ceea94fe52383737a648ccc37488c03eff15))
+* **deps:** update jdx/mise-action action to v5 ([#3369](https://github.com/distr-sh/distr/issues/3369)) ([3e77472](https://github.com/distr-sh/distr/commit/3e774721679b44d738b20ee739cafdc229dbe23c))
+* **deps:** update loki docker tag to v18.13.5 ([#3318](https://github.com/distr-sh/distr/issues/3318)) ([90d8d8a](https://github.com/distr-sh/distr/commit/90d8d8a63da1f5713889fa3beb2b9be9496c0565))
+* **deps:** update loki docker tag to v18.13.7 ([#3358](https://github.com/distr-sh/distr/issues/3358)) ([28a73d4](https://github.com/distr-sh/distr/commit/28a73d48c55d8b02448f663561ef4db205be709b))
+* **deps:** update pnpm to v12.6.0 ([#3331](https://github.com/distr-sh/distr/issues/3331)) ([59ff516](https://github.com/distr-sh/distr/commit/59ff516305c705995997641ca824b03a7db6ff02))
+* **deps:** update postgresql docker tag to v18.12.0 ([#3340](https://github.com/distr-sh/distr/issues/3340)) ([35fde99](https://github.com/distr-sh/distr/commit/35fde994db65bfb55a35c88453403b173b18aa98))
+* **deps:** update postgresql docker tag to v18.12.4 ([#3353](https://github.com/distr-sh/distr/issues/3353)) ([c691ebc](https://github.com/distr-sh/distr/commit/c691ebc99046d778b0b9e62435c689f7aff4b2b2))
+* improve distr enterprise docker stack config ([#3313](https://github.com/distr-sh/distr/issues/3313)) ([0ea3f19](https://github.com/distr-sh/distr/commit/0ea3f191f8c832dbf5c5de8f7371e0aef44f9f04))
+* only require access token deletion confirmation for non expired access tokens ([#3312](https://github.com/distr-sh/distr/issues/3312)) ([791c9a9](https://github.com/distr-sh/distr/commit/791c9a991fffdfbf0330d7e94c0d590272d60e29))
+* remove deployment status history ([#3334](https://github.com/distr-sh/distr/issues/3334)) ([0f816fe](https://github.com/distr-sh/distr/commit/0f816fec0c2ece2563d149203cbca8a0de1dacf9))
+* show who created an application version ([#3315](https://github.com/distr-sh/distr/issues/3315)) ([cdb0cb6](https://github.com/distr-sh/distr/commit/cdb0cb67ea8e750d496509981bcb0336aa7a0c56))
+
+
+### Docs
+
+* clarify PostgreSQL 18+ requirement ([#3343](https://github.com/distr-sh/distr/issues/3343)) ([83895cd](https://github.com/distr-sh/distr/commit/83895cd49e3be6a378e136ca321a37ffff91b92c))
+* **website:** clarify helm revision skew behavior ([#3333](https://github.com/distr-sh/distr/issues/3333)) ([d50661c](https://github.com/distr-sh/distr/commit/d50661c4cfad26ce4d81bbce40ea7a807e28084f))
+* **website:** rewrite the About page around verifiable facts ([#3336](https://github.com/distr-sh/distr/issues/3336)) ([d3492f7](https://github.com/distr-sh/distr/commit/d3492f70ff4f70617d4d183b2cf5f2b50f46fca9))
+* **website:** update the homepage metrics ([#3325](https://github.com/distr-sh/distr/issues/3325)) ([1495fc3](https://github.com/distr-sh/distr/commit/1495fc3559e1de7c5e9955f51dac41f515008e5d))
+* **website:** update website comparison ([#3316](https://github.com/distr-sh/distr/issues/3316)) ([35646b7](https://github.com/distr-sh/distr/commit/35646b7c3a4f1bf996660b88c29ce14c2c537e8a))
+
 ## [4.1.0](https://github.com/distr-sh/distr/compare/4.0.3...4.1.0) (2026-09-22)
 
 

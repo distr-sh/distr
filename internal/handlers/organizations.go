@@ -1,39 +1,36 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"slices"
 
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/getsentry/sentry-go"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 func OrganizationsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Organizations"))
 	r.Use(middleware.RequireOrgAndRole)
-	r.Get("/", getOrganizations).
+	r.Get("/", respond.Handler(getOrganizations)).
 		With(option.Description("List all organizations for current user")).
 		With(option.Response(http.StatusOK, []types.OrganizationWithUserRole{}))
 }
 
-func getOrganizations(w http.ResponseWriter, r *http.Request) {
+func getOrganizations(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 
 	if orgs, err := db.GetOrganizationsForUser(ctx, auth.CurrentUserID()); err != nil {
-		internalctx.GetLogger(ctx).Error("failed to get organizations", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		return nil, fmt.Errorf("failed to get organizations: %w", err)
 	} else {
-		RespondJSON(w, visibleOrganizations(auth, orgs))
+		return respond.JSON(visibleOrganizations(auth, orgs)), nil
 	}
 }
 

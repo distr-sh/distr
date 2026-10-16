@@ -10,6 +10,7 @@ import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observabl
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
+import {AlertComponent} from '../../components/alert/alert.component';
 import {ClipComponent} from '../../components/clip.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
 import {UuidComponent} from '../../components/uuid';
@@ -36,6 +37,7 @@ import {ViewLicenseKeyModalComponent} from './view-license-key-modal.component';
     UuidComponent,
     ClipComponent,
     SearchBarComponent,
+    AlertComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './license-keys.component.html',

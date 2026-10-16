@@ -3,20 +3,19 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authkey"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
 const (
@@ -27,289 +26,178 @@ const (
 	accessTokenRoleExceedsCallerMessage = "token role cannot exceed your own role"
 )
 
-func getAccessTokensHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
-		tokens, err := db.GetAccessTokens(ctx, auth.CurrentUserID(), *auth.CurrentOrgID())
-		if err != nil {
-			log.Warn("error getting tokens", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			RespondJSON(w, mapping.List(tokens, mapping.AccessTokenToAPI))
-		}
+func getAccessTokensHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	if tokens, err := db.GetAccessTokens(ctx, auth.CurrentUserID(), *auth.CurrentOrgID()); err != nil {
+		return nil, fmt.Errorf("error getting tokens: %w", err)
+	} else {
+		return respond.JSON(mapping.List(tokens, mapping.AccessTokenToAPI)), nil
 	}
 }
 
-func createAccessTokenHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
-		request, err := JsonBody[api.CreateAccessTokenRequest](w, r)
-		if err != nil {
-			return
-		}
-
-		if err := request.Validate(); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		if !checkAccessTokenRole(ctx, w, request.UserRole) {
-			return
-		}
-
-		newToken, err := authkey.NewToken()
-		if err != nil {
-			log.Warn("error creating token", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
+func createAccessTokenHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	if request, resp := decodeJSON[api.CreateAccessTokenRequest](r); resp != nil {
+		return resp, nil
+	} else if err := request.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else if resp, err := checkAccessTokenRole(ctx, request.UserRole); resp != nil || err != nil {
+		return resp, err
+	} else if newToken, err := authkey.NewToken(); err != nil {
+		return nil, fmt.Errorf("error creating token: %w", err)
+	} else {
 		token := types.AccessToken{
 			Label:         request.Label,
 			UserAccountID: auth.CurrentUserID(),
-			Key:           newToken.Key,
+			Key:           newToken.Key(),
 			Secret1: &types.AccessTokenSecret{
-				Hash:      newToken.Secret.Hash(),
+				Hash:      newToken.Secret().Hash(),
 				ExpiresAt: request.ExpiresAt,
 			},
 			OrganizationID: *auth.CurrentOrgID(),
 			UserRole:       request.UserRole,
 		}
 		if err := db.CreateAccessToken(ctx, &token); err != nil {
-			log.Warn("error creating token", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return nil, fmt.Errorf("error creating token: %w", err)
 		} else {
-			RespondJSONWithStatus(w, http.StatusCreated, mapping.AccessTokenToAPI(token).WithKey(newToken.Serialize()))
+			return respond.JSON(mapping.AccessTokenToAPI(token).WithKey(newToken.Serialize())).
+				WithStatus(http.StatusCreated), nil
 		}
 	}
 }
 
-func patchAccessTokenHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
-		tokenID, err := uuid.Parse(r.PathValue("accessTokenId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-
-		patch, err := JsonBody[api.PatchAccessTokenRequest](w, r)
-		if err != nil {
-			return
-		}
-
-		updated, err := db.UpdateAccessTokenLabel(
-			ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(), patch.Label,
-		)
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
-		} else if err != nil {
-			log.Warn("error updating token", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			RespondJSON(w, mapping.AccessTokenToAPI(*updated))
-		}
+func patchAccessTokenHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	if tokenID, err := uuid.Parse(r.PathValue("accessTokenId")); err != nil {
+		return accessTokenNotFound, nil
+	} else if patch, resp := decodeJSON[api.PatchAccessTokenRequest](r); resp != nil {
+		return resp, nil
+	} else if updated, err := db.UpdateAccessTokenLabel(
+		ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(), patch.Label,
+	); errors.Is(err, distrerr.ErrNotFound) {
+		return accessTokenNotFound, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("error updating token: %w", err)
+	} else {
+		return respond.JSON(mapping.AccessTokenToAPI(*updated)), nil
 	}
 }
 
-func deleteAccessTokenHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		tokenID, err := uuid.Parse(r.PathValue("accessTokenId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-		auth := auth.Authentication.Require(ctx)
-		if err := db.DeleteAccessToken(ctx, tokenID, auth.CurrentUserID()); err != nil {
-			log.Warn("error deleting token", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			w.WriteHeader(http.StatusNoContent)
-		}
+func deleteAccessTokenHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	if tokenID, err := uuid.Parse(r.PathValue("accessTokenId")); err != nil {
+		return accessTokenNotFound, nil
+	} else if err := db.DeleteAccessToken(ctx, tokenID, auth.CurrentUserID()); err != nil {
+		return nil, fmt.Errorf("error deleting token: %w", err)
+	} else {
+		return respond.NoContent(), nil
 	}
 }
 
-func createAccessTokenSecretHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
-		tokenID, err := uuid.Parse(r.PathValue("accessTokenId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-
-		request, err := JsonBody[api.CreateAccessTokenSecretRequest](w, r)
-		if err != nil {
-			return
-		}
-
-		if err := request.Validate(); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		token, err := db.GetAccessToken(ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID())
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
-			return
-		} else if err != nil {
-			log.Warn("error getting token", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		slot := token.FreeSecretSlot()
-		if slot == nil || token.CredentialCount() >= 2 {
-			http.Error(w, accessTokenCredentialsExhaustedMessage, http.StatusBadRequest)
-			return
-		}
-
-		newSecret, err := authkey.NewSecret()
-		if err != nil {
-			log.Warn("error creating token secret", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
+func createAccessTokenSecretHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	if tokenID, err := uuid.Parse(r.PathValue("accessTokenId")); err != nil {
+		return accessTokenNotFound, nil
+	} else if request, resp := decodeJSON[api.CreateAccessTokenSecretRequest](r); resp != nil {
+		return resp, nil
+	} else if err := request.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else if token, err := db.GetAccessToken(
+		ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(),
+	); errors.Is(err, distrerr.ErrNotFound) {
+		return accessTokenNotFound, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("error getting token: %w", err)
+	} else if slot := token.FreeSecretSlot(); slot == nil || token.CredentialCount() >= 2 {
+		return respond.BadRequest(accessTokenCredentialsExhaustedMessage), nil
+	} else if newSecret, err := authkey.NewSecret(); err != nil {
+		return nil, fmt.Errorf("error creating token secret: %w", err)
+	} else {
 		secret := types.AccessTokenSecret{Hash: newSecret.Hash(), ExpiresAt: request.ExpiresAt}
-		updated, err := db.CreateAccessTokenSecret(ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(), *slot, secret)
-		if errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, accessTokenCredentialsExhaustedMessage, http.StatusBadRequest)
+		if updated, err := db.CreateAccessTokenSecret(
+			ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(), *slot, secret,
+		); errors.Is(err, distrerr.ErrConflict) {
+			return respond.BadRequest(accessTokenCredentialsExhaustedMessage), nil
 		} else if err != nil {
-			log.Warn("error creating token secret", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return nil, fmt.Errorf("error creating token secret: %w", err)
 		} else {
-			rotated := authkey.Token{Key: updated.Key, Secret: &newSecret}
-			RespondJSONWithStatus(
-				w,
-				http.StatusCreated,
-				mapping.AccessTokenToAPI(*updated).WithKey(rotated.Serialize()),
-			)
+			rotated := authkey.NewSecureToken(updated.Key, newSecret)
+			return respond.JSON(mapping.AccessTokenToAPI(*updated).WithKey(rotated.Serialize())).
+				WithStatus(http.StatusCreated), nil
 		}
 	}
 }
 
-func deleteAccessTokenSecretHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
-		tokenID, err := uuid.Parse(r.PathValue("accessTokenId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-
-		slotValue, err := strconv.Atoi(r.PathValue("slot"))
-		slot := types.AccessTokenSecretSlot(slotValue)
-		if err != nil || !slot.Valid() {
-			http.NotFound(w, r)
-			return
-		}
-
-		token, err := db.GetAccessToken(ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID())
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
-			return
-		} else if err != nil {
-			log.Warn("error getting token", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		} else if token.Secret(slot) == nil {
-			http.NotFound(w, r)
-			return
-		} else if token.CredentialCount() < 2 {
-			http.Error(w, accessTokenLastCredentialMessage, http.StatusBadRequest)
-			return
-		}
-
-		if err := db.DeleteAccessTokenSecret(
-			ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(), slot,
-		); errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, accessTokenLastCredentialMessage, http.StatusBadRequest)
-		} else if err != nil {
-			log.Warn("error deleting token secret", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			w.WriteHeader(http.StatusNoContent)
-		}
+func deleteAccessTokenSecretHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	if tokenID, err := uuid.Parse(r.PathValue("accessTokenId")); err != nil {
+		return accessTokenNotFound, nil
+	} else if slotValue, err := strconv.Atoi(r.PathValue("slot")); err != nil {
+		return accessTokenSecretNotFound, nil
+	} else if slot := types.AccessTokenSecretSlot(slotValue); !slot.Valid() {
+		return accessTokenSecretNotFound, nil
+	} else if token, err := db.GetAccessToken(
+		ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(),
+	); errors.Is(err, distrerr.ErrNotFound) {
+		return accessTokenNotFound, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("error getting token: %w", err)
+	} else if token.Secret(slot) == nil {
+		return accessTokenSecretNotFound, nil
+	} else if token.CredentialCount() < 2 {
+		return respond.BadRequest(accessTokenLastCredentialMessage), nil
+	} else if err := db.DeleteAccessTokenSecret(
+		ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(), slot,
+	); errors.Is(err, distrerr.ErrConflict) {
+		return respond.BadRequest(accessTokenLastCredentialMessage), nil
+	} else if err != nil {
+		return nil, fmt.Errorf("error deleting token secret: %w", err)
+	} else {
+		return respond.NoContent(), nil
 	}
 }
 
 // deleteAccessTokenKeyHandler retires the key as a credential of its own, which is the last step of
 // migrating a token issued before secrets existed.
-func deleteAccessTokenKeyHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
-		tokenID, err := uuid.Parse(r.PathValue("accessTokenId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-
-		token, err := db.GetAccessToken(ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID())
-		if errors.Is(err, apierrors.ErrNotFound) || (err == nil && !token.KeyIsCredential) {
-			http.NotFound(w, r)
-			return
-		} else if err != nil {
-			log.Warn("error getting token", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		} else if !token.HasSecrets() {
-			http.Error(w, accessTokenLastCredentialMessage, http.StatusBadRequest)
-			return
-		}
-
-		if err := db.RetireAccessTokenKeyCredential(
-			ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(),
-		); errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, accessTokenLastCredentialMessage, http.StatusBadRequest)
-		} else if err != nil {
-			log.Warn("error retiring token key", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			w.WriteHeader(http.StatusNoContent)
-		}
+func deleteAccessTokenKeyHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	if tokenID, err := uuid.Parse(r.PathValue("accessTokenId")); err != nil {
+		return accessTokenNotFound, nil
+	} else if token, err := db.GetAccessToken(
+		ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(),
+	); errors.Is(err, distrerr.ErrNotFound) || (err == nil && !token.KeyIsCredential) {
+		return accessTokenNotFound, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("error getting token: %w", err)
+	} else if !token.HasSecrets() {
+		return respond.BadRequest(accessTokenLastCredentialMessage), nil
+	} else if err := db.RetireAccessTokenKeyCredential(
+		ctx, tokenID, auth.CurrentUserID(), *auth.CurrentOrgID(),
+	); errors.Is(err, distrerr.ErrConflict) {
+		return respond.BadRequest(accessTokenLastCredentialMessage), nil
+	} else if err != nil {
+		return nil, fmt.Errorf("error retiring token key: %w", err)
+	} else {
+		return respond.NoContent(), nil
 	}
 }
 
-func checkAccessTokenRole(ctx context.Context, w http.ResponseWriter, requested *types.UserRole) bool {
-	log := internalctx.GetLogger(ctx)
+func checkAccessTokenRole(ctx context.Context, requested *types.UserRole) (respond.Responder, error) {
 	auth := auth.Authentication.Require(ctx)
-	membershipRole, err := db.GetUserRoleInOrganization(ctx, auth.CurrentUserID(), *auth.CurrentOrgID())
-	if err != nil {
-		log.Warn("error getting user role", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return false
+	if membershipRole, err := db.GetUserRoleInOrganization(
+		ctx, auth.CurrentUserID(), *auth.CurrentOrgID(),
+	); err != nil {
+		return nil, fmt.Errorf("error getting user role: %w", err)
+	} else if !types.AccessTokenRoleAllowed(requested, auth.CurrentUserRole(), membershipRole) {
+		return respond.BadRequest(accessTokenRoleExceedsCallerMessage), nil
+	} else {
+		return nil, nil
 	}
-	if !types.AccessTokenRoleAllowed(requested, auth.CurrentUserRole(), membershipRole) {
-		http.Error(w, accessTokenRoleExceedsCallerMessage, http.StatusBadRequest)
-		return false
-	}
-	return true
 }

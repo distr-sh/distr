@@ -22,6 +22,11 @@ type ApplicationVersion struct {
 	ChartUrl      *string        `db:"chart_url" json:"chartUrl,omitempty"`
 	ChartVersion  *string        `db:"chart_version" json:"chartVersion,omitempty"`
 
+	CreatedByUserAccountID *uuid.UUID `db:"created_by_user_account_id" json:"-"`
+	CreatedByName          *string    `db:"created_by_name" json:"-"`
+	CreatedByEmail         *string    `db:"created_by_email" json:"-"`
+	CreatedByImageID       *uuid.UUID `db:"created_by_image_id" json:"-"`
+
 	// awful but relevant: the following must be defined after the ChartType, because somehow order matters
 	// for pgx at collecting the subrows (relevant at getting application + list of its versions with these
 	// array aggregations) – long term it should probably be refactored because this is such a pitfall

@@ -82,7 +82,7 @@ In addition to the Distr-specific metrics, the endpoint exposes standard Go runt
 
 ### Custom alerting for customer deployments
 
-Distr includes built-in [alerts](/docs/agents/alerts/) that notify users by email when deployments become unhealthy or resource usage exceeds thresholds.
+Distr includes built-in [alerts](/docs/controllers/alerts/) that notify users by email when deployments become unhealthy or resource usage exceeds thresholds.
 For more advanced alerting workflows, the Prometheus metrics endpoint can be combined with [Alertmanager](https://github.com/prometheus/alertmanager) or [Grafana Alerts](https://grafana.com/docs/grafana/latest/alerting/) to build custom error reporting independently from the integrated Distr alerts.
 
 For example, you can define Prometheus alerting rules based on `distr_deployment_status` to trigger notifications via Slack, PagerDuty or other channels when a customer deployment enters an error state, or to escalate issues that remain unresolved after a certain period.

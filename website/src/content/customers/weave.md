@@ -37,10 +37,10 @@ Weave runs as a microservice architecture on Google Cloud Platform. To make self
 
 **How they use Distr:**
 
-- **One setup for every self-hosted customer:** Rather than tailoring each deployment to individual customer requirements, Weave ships a single standardized setup. Customers provision a VM and run one setup command. The Distr agent then takes over deployment and reporting.
-- **Metrics and logs, without data leaving:** The Distr agent collects metrics and logs to give Weave the visibility they need to debug issues, while no stored customer data ever leaves the customer's environment.
+- **One setup for every self-hosted customer:** Rather than tailoring each deployment to individual customer requirements, Weave ships a single standardized setup. Customers provision a VM and run one setup command. The Distr controller then takes over deployment and reporting.
+- **Metrics and logs, without data leaving:** The Distr controller collects metrics and logs to give Weave the visibility they need to debug issues, while no stored customer data ever leaves the customer's environment.
 - **Continuous delivery from one platform:** Weave uses the [Distr GitHub Action](/docs/integrations/gh-action/) to continuously push new commits and artifacts to Distr, so every customer fetches the latest version from a single platform, while still deciding for themselves which version they run.
-- **Zero-downtime deploys:** The Distr agent rolls out updates to self-hosted customers without taking their environment offline, so on-prem deployments stay current without planned maintenance windows.
+- **Zero-downtime deploys:** The Distr controller rolls out updates to self-hosted customers without taking their environment offline, so on-prem deployments stay current without planned maintenance windows.
 
 Just as important was keeping self-hosted from slowing the team down. By deploying the same services in both environments, Weave avoided a parallel codebase.
 

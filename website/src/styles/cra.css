@@ -77,31 +77,3 @@
 :root[data-theme='dark'] .guide-content tbody tr:nth-child(even) {
   background-color: var(--color-gray-800);
 }
-
-/* Mermaid diagrams render with light node fills, so give them a light
-   card in both modes instead of floating white boxes on dark background.
-   rehype-mermaid (inline-svg strategy) assigns ids starting with "mermaid",
-   which keeps other inline SVGs unaffected. */
-.guide-content svg[id^='mermaid'] {
-  max-width: 100%;
-  height: auto;
-  margin: 2rem auto;
-  display: block;
-  background: var(--color-white);
-  border: 1px solid var(--sl-color-gray-5, var(--color-gray-200));
-  border-radius: 0.5rem;
-  padding: 1.25rem;
-  box-sizing: border-box;
-}
-
-/* rehype-mermaid measures text with different font metrics than the
-   browser renders, which clips node labels. Letting the foreignObject
-   overflow and tightening the label line-height fixes the clipping. */
-.guide-content svg[id^='mermaid'] foreignObject {
-  overflow: visible;
-}
-
-.guide-content svg[id^='mermaid'] .nodeLabel,
-.guide-content svg[id^='mermaid'] .edgeLabel {
-  line-height: 1.15;
-}

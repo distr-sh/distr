@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -100,7 +100,7 @@ func UpdateSidebarLink(
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.SidebarLink])
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("could not collect SidebarLink: %w", err)
 	}
@@ -125,7 +125,7 @@ func DeleteSidebarLink(
 		return fmt.Errorf("could not delete SidebarLink: %w", err)
 	}
 	if cmd.RowsAffected() == 0 {
-		return apierrors.ErrNotFound
+		return distrerr.ErrNotFound
 	}
 	return nil
 }

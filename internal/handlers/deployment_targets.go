@@ -2,39 +2,39 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/agentconnect"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/controllerconnect"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
+	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 func DeploymentTargetsRouter(r chiopenapi.Router) {
-	r.WithOptions(option.GroupTags("Agents"))
+	r.WithOptions(option.GroupTags("Controllers"))
 	r.Use(middleware.RequireOrgAndRole)
-	r.Get("/", getDeploymentTargets).
+	r.Get("/", respond.Handler(getDeploymentTargets)).
 		With(option.Description("List all deployment targets")).
 		With(option.Response(http.StatusOK, []types.DeploymentTargetFull{}))
 	r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
-		Post("/", createDeploymentTarget).
+		Post("/", respond.Handler(createDeploymentTarget)).
 		With(option.Description("Create a new deployment target")).
-		With(option.Response(http.StatusOK, []types.DeploymentTargetFull{}))
+		With(option.Request(api.CreateDeploymentTargetRequest{})).
+		With(option.Response(http.StatusOK, types.DeploymentTargetFull{}))
 	r.Route("/{deploymentTargetId}", func(r chiopenapi.Router) {
 		type DeploymentTargetIDRequest struct {
 			DeploymentTargetID uuid.UUID `path:"deploymentTargetId"`
@@ -45,34 +45,40 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 			TimeseriesRequest
 		}
 
-		r.Use(deploymentTargetMiddleware)
-		r.Get("/", getDeploymentTarget).
+		r.Use(respond.Middleware(deploymentTargetMiddleware))
+		r.Get("/", respond.Handler(getDeploymentTarget)).
 			With(option.Description("Get a deployment target")).
 			With(option.Request(DeploymentTargetIDRequest{})).
-			With(option.Response(http.StatusOK, []types.DeploymentTargetFull{}))
+			With(option.Response(http.StatusOK, types.DeploymentTargetFull{}))
 		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
-			r.Put("/", updateDeploymentTarget).
+			r.Put("/", respond.Handler(updateDeploymentTarget)).
 				With(option.Description("Update a deployment target")).
 				With(option.Request(struct {
 					DeploymentTargetIDRequest
-					types.DeploymentTargetFull
+					api.UpdateDeploymentTargetRequest
 				}{})).
-				With(option.Response(http.StatusOK, []types.DeploymentTargetFull{}))
-			r.Delete("/", deleteDeploymentTarget).
+				With(option.Response(http.StatusOK, types.DeploymentTargetFull{}))
+			r.Delete("/", respond.Handler(deleteDeploymentTarget)).
 				With(option.Description("Delete a deployment target")).
 				With(option.Request(DeploymentTargetIDRequest{}))
-			r.Post("/access-request", createAccessForDeploymentTarget).
+			r.Post("/access-request", respond.Handler(createAccessForDeploymentTarget)).
 				With(option.Description("Create access token for deployment target")).
 				With(option.Request(DeploymentTargetIDRequest{})).
 				With(option.Response(http.StatusOK, api.DeploymentTargetAccessTokenResponse{}))
+			r.Delete("/access-request", respond.Handler(deleteAccessRequestForDeploymentTarget)).
+				With(option.Description(
+					"Cancel a pending reconnect of a deployment target. " +
+						"The pending secret is deleted and the active one stays valid.",
+				)).
+				With(option.Request(DeploymentTargetIDRequest{}))
 		})
 		r.Route("/notes", func(r chiopenapi.Router) {
-			r.Get("/", getDeploymentTargetNotesHandler()).
+			r.Get("/", respond.Handler(getDeploymentTargetNotesHandler)).
 				With(option.Description("Get notes for this deployment target")).
 				With(option.Request(DeploymentTargetIDRequest{})).
 				With(option.Response(http.StatusOK, api.DeploymentTargetNotes{}))
 			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
-				Put("/", putDeploymentTargetNotesHandler()).
+				Put("/", respond.Handler(putDeploymentTargetNotesHandler)).
 				With(option.Description("Set notes for this deployment target")).
 				With(option.Request(struct {
 					DeploymentTargetIDRequest
@@ -80,13 +86,13 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 				}{})).
 				With(option.Response(http.StatusOK, api.DeploymentTargetNotes{}))
 		})
-		// These are read-only, agent-pushed logs that are safe to serve from the read-only db.
+		// These are read-only, controller-pushed logs that are safe to serve from the read-only db.
 		r.With(middleware.UseReadonlyDB).Group(func(r chiopenapi.Router) {
-			r.Get("/logs", getDeploymentTargetLogRecordsHandler()).
+			r.Get("/logs", respond.Handler(getDeploymentTargetLogRecordsHandler)).
 				With(option.Description("Get logs for this deployment target")).
 				With(option.Request(DeploymentTargetTimeseriesRequest{})).
 				With(option.Response(http.StatusOK, []api.DeploymentTargetLogRecord{}))
-			r.Get("/logs/export", exportDeploymentTargetLogRecordsHandler()).
+			r.Get("/logs/export", respond.Handler(exportDeploymentTargetLogRecordsHandler)).
 				With(option.Description("Export logs for this deployment target")).
 				With(option.Request(struct {
 					DeploymentTargetIDRequest
@@ -97,260 +103,197 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 	})
 }
 
-func getDeploymentTargets(w http.ResponseWriter, r *http.Request) {
+func getDeploymentTargets(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
-	deploymentTargets, err := db.GetDeploymentTargets(
+	if deploymentTargets, err := db.GetDeploymentTargets(
 		ctx,
 		*auth.CurrentOrgID(),
 		auth.CurrentCustomerOrgID(),
 		auth.CurrentPartnerOrgID(),
-	)
-	if err != nil {
-		internalctx.GetLogger(ctx).Error("failed to get DeploymentTargets", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		w.WriteHeader(http.StatusInternalServerError)
+	); err != nil {
+		return nil, fmt.Errorf("failed to get DeploymentTargets: %w", err)
 	} else {
-		RespondJSON(w, deploymentTargets)
+		return respond.JSON(deploymentTargets), nil
 	}
 }
 
-func getDeploymentTarget(w http.ResponseWriter, r *http.Request) {
+func getDeploymentTarget(r *http.Request) (respond.Responder, error) {
 	dt := internalctx.GetDeploymentTarget(r.Context())
-	RespondJSON(w, dt)
+	return respond.JSON(dt), nil
 }
 
-func createDeploymentTarget(w http.ResponseWriter, r *http.Request) {
+func createDeploymentTarget(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
-	if dt, err := JsonBody[types.DeploymentTargetFull](w, r); err != nil {
-		return
-	} else if err = dt.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-	} else if agentVersion, err := db.GetCurrentAgentVersion(ctx); err != nil {
-		log.Warn("could not get current agent version", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if request, resp := decodeJSON[api.CreateDeploymentTargetRequest](r); resp != nil {
+		return resp, nil
+	} else if err := request.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else if controllerVersion, err := db.GetCurrentControllerVersion(ctx); err != nil {
+		return nil, fmt.Errorf("could not get current controller version: %w", err)
 	} else {
-		dt.AgentVersionID = &agentVersion.ID
-		if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
-			if dt.CustomerOrganization == nil || dt.CustomerOrganization.ID == uuid.Nil {
-				http.Error(w, "partner users must assign a deployment target to a customer", http.StatusForbidden)
-				return
-			}
+		dt := mapping.CreateDeploymentTargetToInternal(request)
+		dt.ControllerVersionID = &controllerVersion.ID
+		requestedCustomerOrgID := dt.CustomerOrganizationID
+		if auth.CurrentPartnerOrgID() != nil && requestedCustomerOrgID == nil {
+			return respond.Forbidden("partner users must assign a deployment target to a customer"), nil
 		}
 
-		err = db.RunTx(ctx, func(ctx context.Context) error {
+		if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 			customerOrgID := auth.CurrentCustomerOrgID()
 
-			if dt.CustomerOrganization != nil && dt.CustomerOrganization.ID != uuid.Nil {
-				if err := db.ValidateCustomerOrgBelongsToOrg(ctx, dt.CustomerOrganization.ID, *auth.CurrentOrgID()); err != nil {
-					err = errors.New("customer organization does not belong to organization")
-					http.Error(w, err.Error(), http.StatusForbidden)
-					return err
+			if requestedCustomerOrgID != nil {
+				if err := db.ValidateCustomerOrgBelongsToOrg(ctx, *requestedCustomerOrgID, *auth.CurrentOrgID()); err != nil {
+					return respond.Forbidden("customer organization does not belong to organization"), nil
 				}
 				if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
-					co, err := db.GetCustomerOrganizationByID(ctx, dt.CustomerOrganization.ID)
+					co, err := db.GetCustomerOrganizationByID(ctx, *requestedCustomerOrgID)
 					if err != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-						http.Error(w, "customer is not assigned to your partner organization", http.StatusForbidden)
-						return errors.New("customer not in partner org")
+						return notAssignedToPartner, nil
 					}
 				}
-				customerOrgID = &dt.CustomerOrganization.ID
+				customerOrgID = requestedCustomerOrgID
 			}
 
-			limitReached, err := subscription.IsDeploymentTargetLimitReached(
-				ctx, *auth.CurrentOrg(),
-				customerOrgID)
-			if err != nil {
-				log.Warn("could not check deployment target limit", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return err
-			} else if limitReached {
-				err = errors.New("deployment target limit reached")
-				http.Error(w, err.Error(), http.StatusForbidden)
-				return err
-			}
-
-			if err = db.CreateDeploymentTarget(
-				ctx,
-				&dt,
-				*auth.CurrentOrgID(),
-				auth.CurrentUserID(),
-				customerOrgID,
+			if limitReached, err := subscription.IsDeploymentTargetLimitReached(
+				ctx, *auth.CurrentOrg(), customerOrgID,
 			); err != nil {
-				log.Warn("could not create DeploymentTarget", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return err
+				return nil, fmt.Errorf("could not check deployment target limit: %w", err)
+			} else if limitReached {
+				return respond.Forbidden("deployment target limit reached"), nil
+			} else if err := db.CreateDeploymentTarget(
+				ctx, &dt, *auth.CurrentOrgID(), auth.CurrentUserID(), customerOrgID,
+			); err != nil {
+				return nil, fmt.Errorf("could not create DeploymentTarget: %w", err)
+			} else {
+				return nil, nil
 			}
-
-			return nil
-		})
-
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
+		}); resp != nil || err != nil {
+			return resp, err
 		} else {
-			RespondJSON(w, dt)
+			return respond.JSON(dt), nil
 		}
 	}
 }
 
-func updateDeploymentTarget(w http.ResponseWriter, r *http.Request) {
+func updateDeploymentTarget(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
-	dt, err := JsonBody[types.DeploymentTargetFull](w, r)
-	if err != nil {
-		return
-	}
-
-	if dt.AgentVersion.ID != uuid.Nil {
-		dt.AgentVersionID = &dt.AgentVersion.ID
-	} else if dt.AutomaticUpdatesEnabled {
-		// Without this, enabling automatic updates would only take effect on the next restart.
-		agentVersion, err := db.GetCurrentAgentVersion(ctx)
-		if err != nil {
-			log.Warn("could not get current agent version", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-		dt.AgentVersionID = &agentVersion.ID
-	}
-
 	existing := internalctx.GetDeploymentTarget(ctx)
-	if dt.ID == uuid.Nil {
-		dt.ID = existing.ID
-	} else if dt.ID != existing.ID {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, "wrong id")
-		return
-	}
 
-	if err := types.ValidateDockerEndpoint(dt.DockerEndpoint, existing.Type); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	if request, resp := decodeJSON[api.UpdateDeploymentTargetRequest](r); resp != nil {
+		return resp, nil
+	} else if err := request.Validate(existing.Type); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else {
+		dt := mapping.UpdateDeploymentTargetToInternal(existing.ID, request)
+		if dt.ControllerVersionID == nil && dt.AutomaticUpdatesEnabled {
+			// Without this, enabling automatic updates would only take effect on the next restart.
+			if controllerVersion, err := db.GetCurrentControllerVersion(ctx); err != nil {
+				return nil, fmt.Errorf("could not get current controller version: %w", err)
+			} else {
+				dt.ControllerVersionID = &controllerVersion.ID
+			}
+		}
 
-	if err := db.UpdateDeploymentTarget(ctx, &dt, *auth.CurrentOrgID()); err != nil {
-		log.Warn("could not update DeploymentTarget", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, err)
-	} else if err = json.NewEncoder(w).Encode(dt); err != nil {
-		log.Error("failed to encode json", zap.Error(err))
+		if err := db.UpdateDeploymentTarget(ctx, &dt, *auth.CurrentOrgID()); errors.Is(err, distrerr.ErrBadRequest) {
+			return respond.BadRequest(err.Error()), nil
+		} else if err != nil {
+			return nil, fmt.Errorf("could not update DeploymentTarget: %w", err)
+		} else {
+			return respond.JSON(dt), nil
+		}
 	}
 }
 
-func deleteDeploymentTarget(w http.ResponseWriter, r *http.Request) {
+func deleteDeploymentTarget(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	dt := internalctx.GetDeploymentTarget(ctx)
 	auth := auth.Authentication.Require(ctx)
 	if dt.OrganizationID != *auth.CurrentOrgID() {
-		http.NotFound(w, r)
+		return deploymentTargetNotFound, nil
 	} else if !isDeploymentTargetVisible(ctx, dt) {
-		http.Error(w, "must be vendor or creator", http.StatusForbidden)
+		return respond.Forbidden("must be vendor or creator"), nil
 	} else if err := db.DeleteDeploymentTargetWithID(ctx, dt.ID); err != nil {
-		log.Warn("error deleting deployment target", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return nil, fmt.Errorf("error deleting deployment target: %w", err)
 	} else {
-		w.WriteHeader(http.StatusNoContent)
+		return respond.NoContent(), nil
 	}
 }
 
-func createAccessForDeploymentTarget(w http.ResponseWriter, r *http.Request) {
+func createAccessForDeploymentTarget(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
+	deploymentTarget := internalctx.GetDeploymentTarget(ctx)
+	auth := auth.Authentication.Require(ctx)
+	org := auth.CurrentOrgWithBranding()
+
+	if targetSecret, err := security.GenerateAccessKey(); err != nil {
+		return nil, fmt.Errorf("failed to generate access key: %w", err)
+	} else if salt, hash, err := security.HashAccessKey(targetSecret); err != nil {
+		return nil, fmt.Errorf("failed to hash access key: %w", err)
+	} else {
+		deploymentTarget.PendingAccessKeySalt = &salt
+		deploymentTarget.PendingAccessKeyHash = &hash
+
+		if err := db.UpdateDeploymentTargetPendingAccess(
+			ctx, &deploymentTarget.DeploymentTarget, *auth.CurrentOrgID(),
+		); err != nil {
+			return nil, fmt.Errorf("could not update DeploymentTarget: %w", err)
+		} else if connectUrl, err := controllerconnect.BuildConnectURL(
+			ctx, deploymentTarget.ID, *org, targetSecret,
+		); err != nil {
+			return nil, fmt.Errorf("could not create connecturl: %w", err)
+		} else if connectCommand, err := controllerconnect.GenerateConnectCommand(
+			ctx,
+			deploymentTarget.DeploymentTarget,
+			*org,
+			targetSecret,
+		); err != nil {
+			return nil, fmt.Errorf("could not create connect command: %w", err)
+		} else {
+			return respond.JSON(api.DeploymentTargetAccessTokenResponse{
+				ConnectURL:     connectUrl,
+				TargetID:       deploymentTarget.ID,
+				TargetSecret:   targetSecret,
+				ConnectCommand: connectCommand,
+			}), nil
+		}
+	}
+}
+
+func deleteAccessRequestForDeploymentTarget(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
 	deploymentTarget := internalctx.GetDeploymentTarget(ctx)
 	auth := auth.Authentication.Require(ctx)
 
-	var targetSecret string
-	var err error
-	if targetSecret, err = security.GenerateAccessKey(); err != nil {
-		log.Error("failed to generate access key", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if salt, hash, err := security.HashAccessKey(targetSecret); err != nil {
-		log.Error("failed to hash access key", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+	if err := db.DeleteDeploymentTargetPendingAccess(
+		ctx, deploymentTarget.ID, *auth.CurrentOrgID(),
+	); errors.Is(err, distrerr.ErrNotFound) {
+		return respond.Conflict("This deployment target has no pending reconnect."), nil
+	} else if err != nil {
+		return nil, fmt.Errorf("could not delete pending access of DeploymentTarget: %w", err)
 	} else {
-		deploymentTarget.AccessKeySalt = &salt
-		deploymentTarget.AccessKeyHash = &hash
-	}
-
-	if err := db.UpdateDeploymentTargetAccess(ctx, &deploymentTarget.DeploymentTarget, *auth.CurrentOrgID()); err != nil {
-		log.Warn("could not update DeploymentTarget", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	org := auth.CurrentOrgWithBranding()
-	connectUrl, err := agentconnect.BuildConnectURL(ctx, deploymentTarget.ID, *org, targetSecret)
-	if err != nil {
-		log.Error("could not create connecturl", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	connectCommand, err := agentconnect.GenerateConnectCommand(
-		ctx,
-		deploymentTarget.DeploymentTarget,
-		*org,
-		targetSecret,
-	)
-	if err != nil {
-		log.Error("could not create connect command", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if err = json.NewEncoder(w).Encode(api.DeploymentTargetAccessTokenResponse{
-		ConnectURL:     connectUrl,
-		TargetID:       deploymentTarget.ID,
-		TargetSecret:   targetSecret,
-		ConnectCommand: connectCommand,
-	}); err != nil {
-		log.Error("failed to encode json", zap.Error(err))
+		return respond.NoContent(), nil
 	}
 }
 
-func deploymentTargetMiddleware(wh http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		id, err := uuid.Parse(r.PathValue("deploymentTargetId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-		auth := auth.Authentication.Require(ctx)
-		orgId := auth.CurrentOrgID()
-		deploymentTarget, err := db.GetDeploymentTarget(ctx, id, orgId, auth.CurrentPartnerOrgID())
-		if errors.Is(err, apierrors.ErrNotFound) {
-			w.WriteHeader(http.StatusNotFound)
-		} else if err != nil {
-			internalctx.GetLogger(ctx).Error("failed to get DeploymentTarget", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		} else if !isDeploymentTargetVisible(ctx, deploymentTarget) {
-			http.NotFound(w, r)
-		} else {
-			ctx = internalctx.WithDeploymentTarget(ctx, deploymentTarget)
-			wh.ServeHTTP(w, r.WithContext(ctx))
-		}
-	})
+func deploymentTargetMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	if id, err := uuid.Parse(r.PathValue("deploymentTargetId")); err != nil {
+		return nil, deploymentTargetNotFound, nil
+	} else if deploymentTarget, err := db.GetDeploymentTarget(
+		ctx, id, auth.CurrentOrgID(), auth.CurrentPartnerOrgID(),
+	); errors.Is(err, distrerr.ErrNotFound) {
+		return nil, deploymentTargetNotFound, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get deployment target: %w", err)
+	} else if !isDeploymentTargetVisible(ctx, deploymentTarget) {
+		return nil, deploymentTargetNotFound, nil
+	} else {
+		return r.WithContext(internalctx.WithDeploymentTarget(ctx, deploymentTarget)), nil, nil
+	}
 }
 
 func isDeploymentTargetVisible(ctx context.Context, target *types.DeploymentTargetFull) bool {

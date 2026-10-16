@@ -14,7 +14,7 @@ services:
   # distr app and registry hostnames via ACME. It only joins the "proxy" network
   # and therefore has no route to postgres or the storage (rustfs) service.
   caddy:
-    image: 'caddy:2.11.4-alpine'
+    image: 'caddy:2.11.7-alpine'
     depends_on:
       - distr
     environment:
@@ -22,7 +22,7 @@ services:
       DISTR_REGISTRY_HOSTNAME: ${DISTR_REGISTRY_HOSTNAME}
       CADDY_ACME_EMAIL: ${CADDY_ACME_EMAIL}
     # The Caddyfile is written inline on startup instead of being mounted, because
-    # the distr agent does not support mounting files via volumes. The hostnames and
+    # the Distr controller does not support mounting files via volumes. The hostnames and
     # ACME email remain Caddy env placeholders ({$VAR}) that are resolved at runtime.
     entrypoint:
       - sh
@@ -72,7 +72,7 @@ services:
       start_period: 30s
 
   distr:
-    image: ghcr.io/distr-sh/distr-ce:4.1.0 # x-release-please-version
+    image: ghcr.io/distr-sh/distr-ce:4.4.2 # x-release-please-version
     depends_on:
       postgres:
         condition: service_healthy
@@ -105,7 +105,7 @@ services:
   # If you don't want to use the OCI registry (REGISTRY_ENABLED=false) or want to use an external S3 provider,
   # you don't need to run the storage service.
   storage:
-    image: 'rustfs/rustfs:1.0.0'
+    image: 'rustfs/rustfs:1.0.1'
     volumes:
       - 'rustfs:/data/'
     environment:
@@ -141,7 +141,7 @@ services:
       storage:
         condition: service_healthy
     pre_start:
-      - image: 'rclone/rclone:1.75.1'
+      - image: 'rclone/rclone:1.75.2'
         environment:
           RCLONE_CONFIG_STORAGE_TYPE: s3
           RCLONE_CONFIG_STORAGE_PROVIDER: Other
@@ -203,11 +203,11 @@ configs:
         max_global_streams_per_user: 25000
         # Truncate oversized log lines instead of rejecting the whole push.
         max_line_size_truncate: true
-        # Accept backfilled logs up to the retention period so an agent that was
+        # Accept backfilled logs up to the retention period so a controller that was
         # offline can still push its backlog.
         reject_old_samples_max_age: 720h
         # Raised moderately from Loki's 4/6 MB defaults to give an organization with
-        # several chatty agents more headroom before pushes are throttled.
+        # several chatty controllers more headroom before pushes are throttled.
         ingestion_rate_mb: 16
         ingestion_burst_size_mb: 32
 

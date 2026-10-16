@@ -15,9 +15,10 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCircleExclamation, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {AlertComponent} from '../components/alert/alert.component';
 import {ClipComponent} from '../components/clip.component';
 import {SearchBarComponent} from '../components/search-bar.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
@@ -30,7 +31,15 @@ import {Secret} from '../types/secret';
 
 @Component({
   selector: 'app-secrets',
-  imports: [FaIconComponent, ReactiveFormsModule, DatePipe, AutotrimDirective, ClipComponent, SearchBarComponent],
+  imports: [
+    FaIconComponent,
+    ReactiveFormsModule,
+    DatePipe,
+    AutotrimDirective,
+    ClipComponent,
+    SearchBarComponent,
+    AlertComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './secrets.component.html',
 })
@@ -53,8 +62,6 @@ export class SecretsComponent {
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
   protected readonly faPen = faPen;
-  protected readonly faCircleExclamation = faCircleExclamation;
-
   private readonly createUpdateDialog = viewChild.required<TemplateRef<unknown>>('createUpdateDialog');
   private dialogRef?: DialogRef;
   protected readonly affectedDeployments = signal<AffectedDeployment[]>([]);

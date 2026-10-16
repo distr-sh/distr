@@ -3,14 +3,23 @@ import {DatePipe} from '@angular/common';
 import {Component, computed, effect, ElementRef, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {rxResource, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
-import {ActivatedRoute, RouterLink} from '@angular/router';
+import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faChevronDown, faKey, faPlus, faTrash, faTriangleExclamation, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {
+  faChevronDown,
+  faCircleExclamation,
+  faKey,
+  faPlus,
+  faTrash,
+  faTriangleExclamation,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {catchError, firstValueFrom, Observable, of, tap} from 'rxjs';
 import {isExpired, RelativeDatePipe} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {USER_ROLE_LABELS} from '../../util/user-role';
+import {AlertComponent} from '../components/alert/alert.component';
 import {CreatedAccessTokenComponent} from '../components/created-access-token.component';
 import {
   EXPIRES_AT_DATE_FORMAT,
@@ -52,6 +61,7 @@ interface CredentialRow {
     ExpiresAtPickerComponent,
     InlineEditComponent,
     PageComponent,
+    AlertComponent,
   ],
   templateUrl: './access-token-detail.component.html',
 })
@@ -60,6 +70,7 @@ export class AccessTokenDetailComponent {
   protected readonly faKey = faKey;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
+  protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faTriangleExclamation = faTriangleExclamation;
   protected readonly faXmark = faXmark;
 
@@ -68,6 +79,7 @@ export class AccessTokenDetailComponent {
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
   private readonly createdTokens = inject(CreatedAccessTokenStore);
+  private readonly router = inject(Router);
   private readonly routeParams = toSignal(inject(ActivatedRoute).params);
 
   private readonly accessTokens = rxResource({stream: () => this.accessTokensService.list()});
@@ -117,6 +129,7 @@ export class AccessTokenDetailComponent {
   protected readonly legacy = computed(() => this.token()?.legacyKey !== undefined);
   protected readonly canCreateSecret = computed(() => this.credentials().length < 2);
   protected readonly canDeleteCredential = computed(() => this.credentials().length > 1);
+  private readonly expired = computed(() => this.credentials().every((credential) => credential.expired));
 
   // A token that was created without a role of its own acts under the role its owner has, which
   // is re-read on every request, so it follows them when they are promoted or demoted.
@@ -212,25 +225,41 @@ export class AccessTokenDetailComponent {
     }
   }
 
+  public async deleteAccessToken() {
+    if (!this.expired() && !(await firstValueFrom(this.overlay.confirm(`Really delete token '${this.name()}'?`)))) {
+      return;
+    }
+    try {
+      await firstValueFrom(this.accessTokensService.delete(this.tokenId()!));
+      this.toast.success('Access Token deleted');
+      await this.router.navigate(['/', 'settings', 'access-tokens']);
+    } catch (e) {
+      this.showError(e);
+    }
+  }
+
   public async deleteCredential(credential: CredentialRow) {
-    const confirmation =
-      `Really delete ${credential.slot ? `token ${credential.slot}` : 'the legacy token'} of ` +
-      `'${this.name()}'? Everything that still authenticates with it stops working.`;
-    if (await firstValueFrom(this.overlay.confirm(confirmation))) {
-      try {
-        const id = this.tokenId()!;
-        await firstValueFrom(
-          credential.slot
-            ? this.accessTokensService.deleteSecret(id, credential.slot)
-            : this.accessTokensService.deleteLegacyKey(id)
-        );
-        this.toast.success('token deleted');
-        // The token on screen may be the one that was deleted, and it no longer works.
-        this.createdToken.set(null);
-        this.accessTokens.reload();
-      } catch (e) {
-        this.showError(e);
+    if (!credential.expired) {
+      const confirmation =
+        `Really delete ${credential.slot ? `token ${credential.slot}` : 'the legacy token'} of ` +
+        `'${this.name()}'? Everything that still authenticates with it stops working.`;
+      if (!(await firstValueFrom(this.overlay.confirm(confirmation)))) {
+        return;
       }
+    }
+    try {
+      const id = this.tokenId()!;
+      await firstValueFrom(
+        credential.slot
+          ? this.accessTokensService.deleteSecret(id, credential.slot)
+          : this.accessTokensService.deleteLegacyKey(id)
+      );
+      this.toast.success('token deleted');
+      // The token on screen may be the one that was deleted, and it no longer works.
+      this.createdToken.set(null);
+      this.accessTokens.reload();
+    } catch (e) {
+      this.showError(e);
     }
   }
 
