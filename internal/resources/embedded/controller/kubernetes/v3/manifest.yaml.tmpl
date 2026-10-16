@@ -113,7 +113,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: distr-{{ .controllerName }}
-          image: "{{ .controllerImageRegistry }}/kubernetes-controller:{{ .controllerVersion }}"
+          image: "{{ .controllerImageRepository }}/kubernetes-controller:{{ .controllerVersion }}"
           imagePullPolicy: IfNotPresent
           env:
             - name: DOCKER_CONFIG

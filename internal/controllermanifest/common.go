@@ -66,7 +66,7 @@ func getTemplateData(
 	result := map[string]any{
 		"controllerName":               controllerName(deploymentTarget),
 		"controllerDockerConfig":       base64.StdEncoding.EncodeToString(env.ControllerDockerConfig()),
-		"controllerImageRegistry":      ImageRegistry(&org.Organization, deploymentTarget.CustomerOrganization),
+		"controllerImageRepository":    ImageRepository(org.Organization),
 		"controllerInterval":           env.ControllerInterval(),
 		"controllerVersion":            deploymentTarget.ControllerVersion.Name,
 		"controllerVersionId":          deploymentTarget.ControllerVersion.ID,
@@ -99,14 +99,11 @@ func getTemplateData(
 	return result, nil
 }
 
-func ImageRegistry(org *types.Organization, customerOrg *types.CustomerOrganization) string {
-	if customerOrg != nil && customerOrg.ControllerImageRegistry != nil {
-		return *customerOrg.ControllerImageRegistry
+func ImageRepository(org types.Organization) string {
+	if org.ControllerImageRepository != nil {
+		return *org.ControllerImageRepository
 	}
-	if org != nil && org.ControllerImageRegistry != nil {
-		return *org.ControllerImageRegistry
-	}
-	return env.ControllerImageRegistry()
+	return env.ControllerImageRepository()
 }
 
 // controllerName is the name the controller's own resources and compose service are derived from. A controller

@@ -8,13 +8,25 @@ import (
 )
 
 type CreateUpdateOrganizationRequest struct {
-	Name                   string  `json:"name"`
-	Slug                   *string `json:"slug"`
-	PreConnectScript       *string `json:"preConnectScript"`
-	PostConnectScript      *string `json:"postConnectScript"`
-	ConnectScriptIsSudo    bool    `json:"connectScriptIsSudo"`
-	ArtifactVersionMutable bool    `json:"artifactVersionMutable"`
-	PrePostScriptsEnabled  bool    `json:"prePostScriptsEnabled"`
+	Name                      string  `json:"name"`
+	Slug                      *string `json:"slug"`
+	PreConnectScript          *string `json:"preConnectScript"`
+	PostConnectScript         *string `json:"postConnectScript"`
+	ConnectScriptIsSudo       bool    `json:"connectScriptIsSudo"`
+	ArtifactVersionMutable    bool    `json:"artifactVersionMutable"`
+	PrePostScriptsEnabled     bool    `json:"prePostScriptsEnabled"`
+	ControllerImageRepository *string `json:"controllerImageRepository"`
+}
+
+func (r *CreateUpdateOrganizationRequest) Normalize() {
+	if r.ControllerImageRepository == nil {
+		return
+	}
+	if value := validation.NormalizeImageRepository(*r.ControllerImageRepository); value != "" {
+		r.ControllerImageRepository = &value
+	} else {
+		r.ControllerImageRepository = nil
+	}
 }
 
 type OrganizationResponse struct {
@@ -22,6 +34,8 @@ type OrganizationResponse struct {
 	SubscriptionLimits               SubscriptionLimits `json:"subscriptionLimits"`
 	CurrentBillableUserAccountCount  int64              `json:"currentBillableUserAccountCount"`
 	CurrentCustomerOrganizationCount int64              `json:"currentCustomerOrganizationCount"`
+	ControllerImageRepository        *string            `json:"controllerImageRepository,omitempty"`
+	DefaultControllerImageRepository string             `json:"defaultControllerImageRepository"`
 }
 
 type OrganizationWebhookResponse struct {

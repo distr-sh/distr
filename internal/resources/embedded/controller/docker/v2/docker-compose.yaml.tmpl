@@ -3,7 +3,7 @@ services:
   {{ .controllerName }}:
     network_mode: host
     restart: always
-    image: '{{ .controllerImageRegistry }}/docker-controller:{{ .controllerVersion }}'
+    image: '{{ .controllerImageRepository }}/docker-controller:{{ .controllerVersion }}'
     labels:
       - sh.distr.autoheal=true
     environment:
@@ -46,7 +46,7 @@ services:
       {{- else }}
       AUTOHEAL_CONTAINER_LABEL: sh.distr.autoheal
       {{- end }}
-    image: '{{ .controllerImageRegistry }}/docker-autoheal:{{ .controllerVersion }}'
+    image: '{{ .controllerImageRepository }}/docker-autoheal:{{ .controllerVersion }}'
     network_mode: none
     restart: always
     volumes:

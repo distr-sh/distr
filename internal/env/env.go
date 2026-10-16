@@ -47,7 +47,7 @@ var (
 	otelExporterOtlpEnabled               bool
 	enableQueryLogging                    bool
 	controllerDockerConfig                []byte
-	controllerImageRegistry               string
+	controllerImageRepository             string
 	frontendSentryDSN                     *string
 	frontendSentryTraceSampleRate         *float64
 	frontendPosthogToken                  *string
@@ -286,8 +286,8 @@ func Initialize() {
 	controllerDockerConfig = envutil.GetEnvParsedOrDefault(
 		envutil.ResolveDeprecatedAlias("CONTROLLER_DOCKER_CONFIG", "AGENT_DOCKER_CONFIG"), envparse.ByteSlice, nil,
 	)
-	controllerImageRegistry = envutil.GetEnvParsedOrDefault(
-		"CONTROLLER_IMAGE_REGISTRY", envparse.ImageRegistry, "ghcr.io/distr-sh/distr",
+	controllerImageRepository = envutil.GetEnvParsedOrDefault(
+		"CONTROLLER_IMAGE_REPOSITORY", envparse.ImageRepository, "ghcr.io/distr-sh/distr",
 	)
 	frontendSentryDSN = envutil.GetEnvOrNil("FRONTEND_SENTRY_DSN")
 	frontendSentryTraceSampleRate = envutil.GetEnvParsedOrNil("FRONTEND_SENTRY_TRACE_SAMPLE_RATE", envparse.Float)
@@ -524,8 +524,8 @@ func ControllerDockerConfig() []byte {
 	return controllerDockerConfig
 }
 
-func ControllerImageRegistry() string {
-	return controllerImageRegistry
+func ControllerImageRepository() string {
+	return controllerImageRepository
 }
 
 func FrontendSentryDSN() *string {

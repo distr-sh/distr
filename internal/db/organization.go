@@ -38,7 +38,7 @@ var (
 		o.connect_script_is_sudo,
 		` + organizationStripeSecret.Value("o") + `,
 		` + organizationStripeSecret.IsSetValue("o") + `,
-		o.controller_image_registry
+		o.controller_image_repository
 	`
 	organizationWithUserRoleOutputExpr = organizationOutputExpr + `,
 		j.user_role,
@@ -148,6 +148,7 @@ func UpdateOrganization(ctx context.Context, org *types.Organization) error {
 			pre_connect_script = @pre_connect_script,
 			post_connect_script = @post_connect_script,
 			connect_script_is_sudo = @connect_script_is_sudo,
+			controller_image_repository = @controller_image_repository,
 			stripe_webhook_secret = NULL,
 			stripe_webhook_secret_enc = @stripe_webhook_secret_enc
 		WHERE id = @id
@@ -167,6 +168,7 @@ func UpdateOrganization(ctx context.Context, org *types.Organization) error {
 			"pre_connect_script":                          org.PreConnectScript,
 			"post_connect_script":                         org.PostConnectScript,
 			"connect_script_is_sudo":                      org.ConnectScriptIsSudo,
+			"controller_image_repository":                 org.ControllerImageRepository,
 			"stripe_webhook_secret_enc":                   stripeWebhookSecretEnc,
 		},
 	)
@@ -393,20 +395,6 @@ func SetOrganizationStripeWebhookSecret(ctx context.Context, orgID uuid.UUID, se
 	)
 	if err != nil {
 		return fmt.Errorf("could not update Organization stripe webhook secret: %w", err)
-	}
-	return nil
-}
-
-func SetOrganizationControllerImageRegistry(ctx context.Context, orgID uuid.UUID, value *string) error {
-	db := internalctx.GetDb(ctx)
-	cmd, err := db.Exec(ctx,
-		`UPDATE Organization SET controller_image_registry = @value WHERE id = @id AND deleted_at IS NULL`,
-		pgx.NamedArgs{"id": orgID, "value": value},
-	)
-	if err != nil {
-		return fmt.Errorf("could not update Organization controller image registry: %w", err)
-	} else if cmd.RowsAffected() == 0 {
-		return apierrors.ErrNotFound
 	}
 	return nil
 }

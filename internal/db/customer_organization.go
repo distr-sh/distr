@@ -22,8 +22,7 @@ const (
 		co.image_id,
 		co.name,
 		co.features,
-		co.partner_organization_id,
-		co.controller_image_registry
+		co.partner_organization_id
 	`
 	customerOrganizationWithUsageOutputExpr = customerOrganizationOutputExpr + `,
 		count(distinct(oua.user_account_id)) as user_count,
@@ -184,25 +183,6 @@ func UpdateCustomerOrganization(ctx context.Context, customerOrg *types.Customer
 		*customerOrg = result
 		return nil
 	}
-}
-
-func SetCustomerOrganizationControllerImageRegistry(
-	ctx context.Context,
-	customerOrgID, orgID uuid.UUID,
-	value *string,
-) error {
-	db := internalctx.GetDb(ctx)
-	cmd, err := db.Exec(ctx,
-		`UPDATE CustomerOrganization SET controller_image_registry = @value
-		WHERE id = @id AND organization_id = @organizationId`,
-		pgx.NamedArgs{"id": customerOrgID, "organizationId": orgID, "value": value},
-	)
-	if err != nil {
-		return fmt.Errorf("could not update CustomerOrganization controller image registry: %w", err)
-	} else if cmd.RowsAffected() == 0 {
-		return apierrors.ErrNotFound
-	}
-	return nil
 }
 
 func GetCustomerOrganizationsByPartnerOrgID(

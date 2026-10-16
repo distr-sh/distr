@@ -1,4 +1,13 @@
-import {ChangeDetectionStrategy, Component, inject, OnInit, signal, TemplateRef, viewChild} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+  TemplateRef,
+  viewChild,
+} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -9,6 +18,7 @@ import {slugMaxLength, slugPattern} from '../../util/slug';
 import {DeleteOrganizationComponent} from '../components/delete-organization/delete-organization.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
+import {ContextService} from '../services/context.service';
 import {OrganizationService} from '../services/organization.service';
 import {OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
@@ -28,7 +38,6 @@ export class GeneralSettingsComponent implements OnInit {
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly overlayService = inject(OverlayService);
   protected readonly auth = inject(AuthService);
-
   private readonly preflightConfirmTemplate = viewChild.required<TemplateRef<unknown>>('preflightConfirmTemplate');
 
   private organization?: Organization;
@@ -41,8 +50,18 @@ export class GeneralSettingsComponent implements OnInit {
     connectScriptIsSudo: this.fb.control<boolean>(false),
     artifactVersionMutable: this.fb.control<boolean>(false),
     prePostScriptsEnabled: this.fb.control<boolean>(false),
+    controllerImageRepository: this.fb.control<string | undefined>(undefined),
   });
   formLoading = signal(false);
+
+  private readonly currentOrganization = toSignal(this.organizationService.get());
+  private readonly registryHost = toSignal(inject(ContextService).getRegistryHost());
+  protected readonly defaultControllerImageRepository = computed(
+    () => this.currentOrganization()?.defaultControllerImageRepository
+  );
+  protected readonly exampleControllerImageRepository = computed(
+    () => `${this.registryHost() || 'registry.distr.sh'}/${this.currentOrganization()?.slug || 'your-org'}`
+  );
 
   protected readonly isPrePostScriptEnabled = toSignal(
     this.form.controls.prePostScriptsEnabled.valueChanges.pipe(
@@ -107,8 +126,10 @@ export class GeneralSettingsComponent implements OnInit {
             connectScriptIsSudo: this.form.value.connectScriptIsSudo ?? false,
             artifactVersionMutable: this.form.value.artifactVersionMutable ?? false,
             prePostScriptsEnabled: this.form.value.prePostScriptsEnabled ?? false,
+            controllerImageRepository: this.form.value.controllerImageRepository || undefined,
           })
         );
+        this.form.controls.controllerImageRepository.setValue(this.organization.controllerImageRepository);
         this.toast.success('Settings saved successfully');
       } catch (e) {
         const msg = getFormDisplayedError(e);

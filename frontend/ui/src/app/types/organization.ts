@@ -31,6 +31,7 @@ export interface CreateUpdateOrganizationRequest {
   connectScriptIsSudo: boolean;
   artifactVersionMutable: boolean;
   prePostScriptsEnabled: boolean;
+  controllerImageRepository?: string;
 }
 
 export interface Organization extends BaseModel, Named {
@@ -48,6 +49,8 @@ export interface Organization extends BaseModel, Named {
   postConnectScript?: string;
   connectScriptIsSudo: boolean;
   stripeWebhookSecretConfigured: boolean;
+  controllerImageRepository?: string;
+  defaultControllerImageRepository: string;
 }
 
 export interface OrganizationWithUserRole extends Organization {

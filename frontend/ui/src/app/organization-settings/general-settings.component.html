@@ -85,6 +85,31 @@
           and post-connect scripts can run during controller setup.
         </p>
       </div>
+
+      <div>
+        <label for="controllerImageRepository" class="distr-label mb-2">Controller image repository</label>
+        <input
+          formControlName="controllerImageRepository"
+          autotrim
+          type="text"
+          id="controllerImageRepository"
+          class="distr-input"
+          [placeholder]="defaultControllerImageRepository() ?? ''" />
+        <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+          Where controllers pull their images from: a registry host followed by an optional path, e.g.
+          <code class="font-mono">{{ exampleControllerImageRepository() }}</code> for your Distr registry. A host
+          without a dot needs a port, e.g. <code class="font-mono">registry:5000</code>. Distr appends the image names
+          <code class="font-mono">docker-controller</code>, <code class="font-mono">kubernetes-controller</code> and
+          <code class="font-mono">docker-autoheal</code> with the controller version as the tag, so a mirror has to host
+          them under the same names. Leave it empty to pull from
+          <code class="font-mono">{{ defaultControllerImageRepository() }}</code
+          >.
+        </p>
+        <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
+          The images have to be publicly available there, or every deployment target needs access to the registry before
+          you save. A change applies when a deployment target connects and at its next controller update.
+        </p>
+      </div>
     </div>
 
     @if (isPrePostScriptEnabled()) {

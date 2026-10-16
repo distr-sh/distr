@@ -8,22 +8,41 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func renderKubernetesManifest(g *WithT, legacy bool, scope types.DeploymentTargetScope) string {
-	dt := types.DeploymentTargetFull{
-		DeploymentTarget:  types.DeploymentTarget{Type: types.DeploymentTypeKubernetes, LegacyControllerName: legacy},
-		ControllerVersion: types.ControllerVersion{ManifestFileRevision: types.CurrentManifestFileRevision},
-	}
+func render(g *WithT, dt types.DeploymentTargetFull, data map[string]any) string {
 	tmpl, err := getTemplate(dt)
 	g.Expect(err).NotTo(HaveOccurred())
 	var buf bytes.Buffer
-	g.Expect(tmpl.Execute(&buf, map[string]any{
-		"controllerName":         controllerName(dt),
-		"controllerDockerConfig": "e30=",
-		"targetSecret":           "secret",
-		"targetNamespace":        "default",
-		"targetScope":            scope,
-	})).To(Succeed())
+	g.Expect(tmpl.Execute(&buf, data)).To(Succeed())
 	return buf.String()
+}
+
+func currentTarget(deploymentType types.DeploymentType, legacy bool) types.DeploymentTargetFull {
+	return types.DeploymentTargetFull{
+		DeploymentTarget: types.DeploymentTarget{Type: deploymentType, LegacyControllerName: legacy},
+		ControllerVersion: types.ControllerVersion{
+			Name:                 "1.2.3",
+			ManifestFileRevision: types.CurrentManifestFileRevision,
+			ComposeFileRevision:  types.CurrentComposeFileRevision,
+		},
+	}
+}
+
+func templateData(dt types.DeploymentTargetFull) map[string]any {
+	return map[string]any{
+		"controllerName":            controllerName(dt),
+		"controllerDockerConfig":    "e30=",
+		"controllerImageRepository": "registry.example.com/mirror",
+		"controllerVersion":         dt.ControllerVersion.Name,
+		"targetSecret":              "secret",
+		"targetNamespace":           "default",
+	}
+}
+
+func renderKubernetesManifest(g *WithT, legacy bool, scope types.DeploymentTargetScope) string {
+	dt := currentTarget(types.DeploymentTypeKubernetes, legacy)
+	data := templateData(dt)
+	data["targetScope"] = scope
+	return render(g, dt, data)
 }
 
 func TestCurrentKubernetesManifestKeepsAgentNamesOfLegacyTargets(t *testing.T) {
@@ -39,4 +58,16 @@ func TestCurrentKubernetesManifestKeepsAgentNamesOfLegacyTargets(t *testing.T) {
 		g.Expect(current).To(ContainSubstring("name: distr-controller\n"))
 		g.Expect(current).NotTo(ContainSubstring("distr-agent"))
 	}
+}
+
+func TestCurrentManifestsPullControllerImagesFromRepository(t *testing.T) {
+	g := NewWithT(t)
+
+	kubernetes := renderKubernetesManifest(g, false, types.DeploymentTargetScopeCluster)
+	g.Expect(kubernetes).To(ContainSubstring(`image: "registry.example.com/mirror/kubernetes-controller:1.2.3"`))
+
+	dt := currentTarget(types.DeploymentTypeDocker, false)
+	docker := render(g, dt, templateData(dt))
+	g.Expect(docker).To(ContainSubstring(`image: 'registry.example.com/mirror/docker-controller:1.2.3'`))
+	g.Expect(docker).To(ContainSubstring(`image: 'registry.example.com/mirror/docker-autoheal:1.2.3'`))
 }

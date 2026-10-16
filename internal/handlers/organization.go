@@ -44,7 +44,7 @@ func OrganizationRouter(r chiopenapi.Router) {
 			Put("/", updateOrganization).
 			With(option.Description("Update current organization")).
 			With(option.Request(api.CreateUpdateOrganizationRequest{})).
-			With(option.Response(http.StatusOK, types.Organization{}))
+			With(option.Response(http.StatusOK, api.OrganizationResponse{}))
 	})
 
 	r.With(
@@ -73,25 +73,27 @@ func OrganizationRouter(r chiopenapi.Router) {
 }
 
 func getOrganization(w http.ResponseWriter, r *http.Request) {
+	respondOrganization(w, r, *auth.Authentication.Require(r.Context()).CurrentOrg())
+}
+
+func respondOrganization(w http.ResponseWriter, r *http.Request, org types.Organization) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
-	auth := auth.Authentication.Require(ctx)
-	orgID := *auth.CurrentOrgID()
-	billableUserCount, err := db.CountBillableUserAccountsByOrgID(ctx, orgID)
+	billableUserCount, err := db.CountBillableUserAccountsByOrgID(ctx, org.ID)
 	if err != nil {
 		log.Error("failed to count billable user accounts", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	customerOrgCount, err := db.CountCustomerOrganizationsByOrganizationID(ctx, orgID)
+	customerOrgCount, err := db.CountCustomerOrganizationsByOrganizationID(ctx, org.ID)
 	if err != nil {
 		log.Error("failed to count customer organizations", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	RespondJSON(w, mapping.OrganizationToAPI(*auth.CurrentOrg(), billableUserCount, customerOrgCount))
+	RespondJSON(w, mapping.OrganizationToAPI(org, billableUserCount, customerOrgCount))
 }
 
 func updateOrganization(w http.ResponseWriter, r *http.Request) {
@@ -101,7 +103,9 @@ func updateOrganization(w http.ResponseWriter, r *http.Request) {
 	body, err := JsonBody[api.CreateUpdateOrganizationRequest](w, r)
 	if err != nil {
 		return
-	} else if ok := validateOrganizationRequest(w, body); !ok {
+	}
+	body.Normalize()
+	if ok := validateOrganizationRequest(w, body); !ok {
 		return
 	}
 
@@ -117,7 +121,7 @@ func updateOrganization(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	} else {
-		RespondJSON(w, org)
+		respondOrganization(w, r, *org)
 	}
 }
 
@@ -139,7 +143,9 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 	body, err := JsonBody[api.CreateUpdateOrganizationRequest](w, r)
 	if err != nil {
 		return
-	} else if ok := validateOrganizationRequest(w, body); !ok {
+	}
+	body.Normalize()
+	if ok := validateOrganizationRequest(w, body); !ok {
 		return
 	}
 
@@ -198,6 +204,12 @@ func validateOrganizationRequest(w http.ResponseWriter, organization api.CreateU
 			return false
 		}
 	}
+	if organization.ControllerImageRepository != nil {
+		if err := validation.ValidateImageRepository(*organization.ControllerImageRepository); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return false
+		}
+	}
 	return true
 }
 
@@ -248,6 +260,11 @@ func handleUpdateOrganization(
 
 		if !util.PtrEq(org.PostConnectScript, request.PostConnectScript) {
 			org.PostConnectScript = request.PostConnectScript
+			needsUpdate = true
+		}
+
+		if !util.PtrEq(org.ControllerImageRepository, request.ControllerImageRepository) {
+			org.ControllerImageRepository = request.ControllerImageRepository
 			needsUpdate = true
 		}
 
