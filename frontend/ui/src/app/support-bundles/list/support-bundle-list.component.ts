@@ -14,7 +14,7 @@ import {ClipComponent} from '../../components/clip.component';
 import {PageComponent} from '../../components/page.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
-import {RowLinkDirective} from '../../directives/row-link.directive';
+import {ClickableRowDirective} from '../../directives/clickable-row.directive';
 import {AuthService} from '../../services/auth.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService, supportBundleZipFileName} from '../../services/support-bundles.service';
@@ -34,7 +34,7 @@ import {SupportBundleStatusBadgeComponent} from '../support-bundle-status-badge.
     FaIconComponent,
     ClipComponent,
     AutotrimDirective,
-    RowLinkDirective,
+    ClickableRowDirective,
     PageComponent,
     SearchBarComponent,
     SupportBundleStatusBadgeComponent,

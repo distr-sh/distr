@@ -58,7 +58,7 @@
             </thead>
             <tbody>
               @for (bundle of filteredBundles(); track bundle.id) {
-                <tr [appRowLink]="routePrefix + '/' + bundle.id" class="distr-table-row">
+                <tr [appClickableRow]="routePrefix + '/' + bundle.id" class="distr-table-row">
                   <td class="distr-table-cell">
                     {{ bundle.title || bundle.id.substring(0, 8) }}
                   </td>

@@ -27,10 +27,21 @@
     </thead>
     <tbody>
       @for (config of filteredConfigs(); track config.id) {
-        <tr (click)="canEdit && showDrawer(config)" class="distr-table-row" [class.cursor-pointer]="canEdit">
-          <td class="distr-table-cell">{{ config.name }}</td>
+        <tr class="distr-table-row relative">
+          <td class="distr-table-cell">
+            @if (canEdit) {
+              <button
+                type="button"
+                (click)="showDrawer(config)"
+                class="cursor-pointer text-left after:absolute after:inset-0 focus:outline-none focus-visible:after:rounded-lg focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-[Highlight] focus-visible:after:[outline-color:-webkit-focus-ring-color]!">
+                {{ config.name }}
+              </button>
+            } @else {
+              {{ config.name }}
+            }
+          </td>
           <td class="distr-table-cell align-middle">
-            <label class="inline-flex items-center cursor-pointer my-1" (click)="$event.stopPropagation()">
+            <label class="relative inline-flex items-center cursor-pointer my-1">
               <input
                 #enabledToggle
                 type="checkbox"
@@ -71,8 +82,8 @@
               <button
                 type="button"
                 aria-label="Delete"
-                (click)="deleteConfig(config, $event)"
-                class="py-2 px-3 distr-btn-danger">
+                (click)="deleteConfig(config)"
+                class="relative py-2 px-3 distr-btn-danger">
                 <fa-icon [icon]="faTrash" class="h-4 w-4" />
               </button>
             }

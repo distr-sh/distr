@@ -261,8 +261,7 @@ export class AlertConfigurationsComponent {
     }
   }
 
-  protected async deleteConfig(config: AlertConfiguration, event: Event) {
-    event.stopPropagation();
+  protected async deleteConfig(config: AlertConfiguration) {
     if (!(await firstValueFrom(this.overlay.confirm(`Really delete the alert "${config.name}"?`)))) {
       return;
     }

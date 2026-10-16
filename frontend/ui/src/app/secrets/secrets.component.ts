@@ -22,6 +22,7 @@ import {AlertComponent} from '../components/alert/alert.component';
 import {ClipComponent} from '../components/clip.component';
 import {SearchBarComponent} from '../components/search-bar.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {ClickableRowDirective} from '../directives/clickable-row.directive';
 import {AuthService} from '../services/auth.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {SecretsService} from '../services/secrets.service';
@@ -36,6 +37,7 @@ import {Secret} from '../types/secret';
     ReactiveFormsModule,
     DatePipe,
     AutotrimDirective,
+    ClickableRowDirective,
     ClipComponent,
     SearchBarComponent,
     AlertComponent,
@@ -160,8 +162,7 @@ export class SecretsComponent {
     return `{{ .Secrets.${key} }}`;
   }
 
-  protected async deleteSecret(secret: Secret, event: Event) {
-    event.stopPropagation();
+  protected async deleteSecret(secret: Secret) {
     if (
       await firstValueFrom(
         this.overlay.confirm({
