@@ -25,6 +25,7 @@ import (
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/notification"
+	"github.com/distr-sh/distr/internal/redact"
 	"github.com/distr-sh/distr/internal/requestlog"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/security"
@@ -259,8 +260,12 @@ func controllerPutDeploymentLogsHandler(r *http.Request) (respond.Responder, err
 
 	if records, resp := decodeJSON[[]api.DeploymentLogRecord](r); resp != nil {
 		return resp, nil
+	} else if redactor, err := deploymentTargetRedactor(
+		ctx, internalctx.GetDeploymentTarget(ctx).DeploymentTarget,
+	); err != nil {
+		return nil, err
 	} else {
-		records = sanitizeLogRecords(records)
+		records = sanitizeLogRecords(records, redactor)
 
 		// Drop records referencing unknown deployment/revision tuples instead of rejecting the
 		// whole batch: the controller buffers records for many deployments together, so a single
@@ -291,10 +296,10 @@ func controllerPutDeploymentLogsHandler(r *http.Request) (respond.Responder, err
 	}
 }
 
-func sanitizeLogRecords(records []api.DeploymentLogRecord) []api.DeploymentLogRecord {
+func sanitizeLogRecords(records []api.DeploymentLogRecord, redactor *redact.Redactor) []api.DeploymentLogRecord {
 	filteredRecords := make([]api.DeploymentLogRecord, 0, len(records))
 	for _, record := range records {
-		record.Body = strings.ReplaceAll(record.Body, "\x00", "")
+		record.Body = redactor.Redact(strings.ReplaceAll(record.Body, "\x00", ""))
 		if record.Body != "" {
 			filteredRecords = append(filteredRecords, record)
 		}
@@ -308,8 +313,10 @@ func controllerPutDeploymentTargetLogsHandler(r *http.Request) (respond.Responde
 
 	if records, resp := decodeJSON[[]api.DeploymentTargetLogRecordRequest](r); resp != nil {
 		return resp, nil
+	} else if redactor, err := deploymentTargetRedactor(ctx, deploymentTarget.DeploymentTarget); err != nil {
+		return nil, err
 	} else if err := logstore.FromContext(ctx).SaveDeploymentTargetLogRecords(
-		ctx, deploymentTarget.OrganizationID, deploymentTarget.ID, records,
+		ctx, deploymentTarget.OrganizationID, deploymentTarget.ID, redactDeploymentTargetLogRecords(records, redactor),
 	); err != nil {
 		if errors.Is(err, distrerr.ErrBadRequest) {
 			return respond.BadRequest(err.Error()), nil
@@ -321,6 +328,16 @@ func controllerPutDeploymentTargetLogsHandler(r *http.Request) (respond.Responde
 	} else {
 		return respond.NoContent(), nil
 	}
+}
+
+func redactDeploymentTargetLogRecords(
+	records []api.DeploymentTargetLogRecordRequest,
+	redactor *redact.Redactor,
+) []api.DeploymentTargetLogRecordRequest {
+	for i := range records {
+		records[i].Body = redactor.Redact(records[i].Body)
+	}
+	return records
 }
 
 func patchProjectName(data map[string]any, deploymentID uuid.UUID) ([]byte, error) {
