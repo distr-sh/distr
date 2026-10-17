@@ -1,5 +1,44 @@
 # Changelog
 
+## [4.5.0](https://github.com/distr-sh/distr/compare/4.4.2...4.5.0) (2026-10-17)
+
+
+### Features
+
+* add pre-/post-connect scripts for kubernetes ([#3514](https://github.com/distr-sh/distr/issues/3514)) ([4b6952d](https://github.com/distr-sh/distr/commit/4b6952d1ae7540fcdf3ad1344ed00f05ca83c778))
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/docker/cli to v29.9.1+incompatible ([#3458](https://github.com/distr-sh/distr/issues/3458)) ([bdf197b](https://github.com/distr-sh/distr/commit/bdf197b182faca792b59e9cc4d386912fe3830c9))
+* **deps:** update module github.com/go-chi/chi/v5 to v5.5.0 ([#3517](https://github.com/distr-sh/distr/issues/3517)) ([1eb9772](https://github.com/distr-sh/distr/commit/1eb9772bc56a85427b6df0b4a5303921cfdbc313))
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.163.0 ([#3507](https://github.com/distr-sh/distr/issues/3507)) ([e1cc4e6](https://github.com/distr-sh/distr/commit/e1cc4e67e9df5de32d38948e1d0529474c8015ab))
+* **deps:** update module helm.sh/helm/v4 to v4.3.1 ([#3521](https://github.com/distr-sh/distr/issues/3521)) ([5ca10b2](https://github.com/distr-sh/distr/commit/5ca10b26dc0847cad160123f24cc6be233413c90))
+
+
+### Other
+
+* **deps:** update angular monorepo to v22.2.3 ([#3518](https://github.com/distr-sh/distr/issues/3518)) ([9e11f9f](https://github.com/distr-sh/distr/commit/9e11f9f08ca480394c3128e713231bda9027aaa6))
+* **deps:** update axllent/mailpit docker tag to v1.31.6 ([#3520](https://github.com/distr-sh/distr/issues/3520)) ([626c621](https://github.com/distr-sh/distr/commit/626c621b2706acbe5867272201e659d3aba7a877))
+* **deps:** update dependency @angular/cdk to v22.2.3 ([#3516](https://github.com/distr-sh/distr/issues/3516)) ([a04ef83](https://github.com/distr-sh/distr/commit/a04ef839c66222d2f5a6ea40059320130704bb6b))
+* **deps:** update dependency helm to v4.3.1 ([#3519](https://github.com/distr-sh/distr/issues/3519)) ([8efe39d](https://github.com/distr-sh/distr/commit/8efe39d48980e9ba39f0a4a8cdd731f56dc8ca66))
+* **deps:** update dependency jsdom to v30.1.3 ([#3524](https://github.com/distr-sh/distr/issues/3524)) ([30c4e07](https://github.com/distr-sh/distr/commit/30c4e07497fe3c9b33f5c55edd140953e65aac37))
+* **deps:** update dependency typedoc-plugin-markdown to v4.14.0 ([#3506](https://github.com/distr-sh/distr/issues/3506)) ([3976463](https://github.com/distr-sh/distr/commit/397646380ee9c1ec26838ca2bacb0690fa7eea88))
+* **deps:** update loki docker tag to v18.16.0 ([#3513](https://github.com/distr-sh/distr/issues/3513)) ([75d3230](https://github.com/distr-sh/distr/commit/75d3230da21f6d36a27e07e274bdf495cad7ba06))
+* **deps:** update loki docker tag to v18.16.1 ([#3522](https://github.com/distr-sh/distr/issues/3522)) ([dfcb52f](https://github.com/distr-sh/distr/commit/dfcb52faba02de03ed69925f1775b6ab4ce8f0a7))
+* **frontend:** simplify support bundle resource panel ([#3528](https://github.com/distr-sh/distr/issues/3528)) ([58c248d](https://github.com/distr-sh/distr/commit/58c248d1b05ca956ced446768aa46662ca372a3b))
+
+
+### Docs
+
+* **website:** introduce infrastrcuture controllers and clarify byoc case ([#3495](https://github.com/distr-sh/distr/issues/3495)) ([44abf73](https://github.com/distr-sh/distr/commit/44abf738608f86b1062f52fcee2a9821867eb75b))
+* **website:** replace Mermaid charts with rendered diagrams ([#3498](https://github.com/distr-sh/distr/issues/3498)) ([6610900](https://github.com/distr-sh/distr/commit/66109008191e4b2f06e7aebe2d479e5f4ff4495d))
+
+
+### Refactoring
+
+* **backend:** refactor API handler error and response handling ([#3473](https://github.com/distr-sh/distr/issues/3473)) ([3b3510a](https://github.com/distr-sh/distr/commit/3b3510acfa017401d5f3622742f985ceb3cb3860))
+
 ## [4.4.2](https://github.com/distr-sh/distr/compare/4.4.1...4.4.2) (2026-10-15)
 
 
