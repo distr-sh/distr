@@ -1,5 +1,8 @@
 <div class="distr-card font-medium text-gray-900 dark:text-white">
-  <div class="mx-4 my-3 flex justify-between items-center min-w-0">
+  <div
+    routerLink="/deployments"
+    [queryParams]="{search: deploymentTarget().name}"
+    class="px-4 py-3 flex justify-between items-center min-w-0 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
     <div class="flex justify-between items-center min-w-0">
       <div class="flex items-center gap-3 min-w-0">
         <div class="self-start shrink-0">
@@ -15,25 +18,23 @@
           }
         </div>
         <div class="min-w-0">
-          <a routerLink="/deployments" class="hover:underline" [queryParams]="{search: deploymentTarget().name}">
-            @if (deploymentTarget().customerOrganization; as customer) {
-              <h3 class="font-bold leading-none truncate" [title]="deploymentTarget().name">
-                {{ customer.name }}
-              </h3>
-              <div class="text-gray-500 dark:text-gray-400 text-sm truncate">{{ deploymentTarget().name }}</div>
-            } @else {
-              <h3 class="font-bold truncate" [title]="deploymentTarget().name">
-                {{ deploymentTarget().name }}
-              </h3>
-            }
-          </a>
+          @if (deploymentTarget().customerOrganization; as customer) {
+            <h3 class="font-bold leading-none truncate" [title]="deploymentTarget().name">
+              {{ customer.name }}
+            </h3>
+            <div class="text-gray-500 dark:text-gray-400 text-sm truncate">{{ deploymentTarget().name }}</div>
+          } @else {
+            <h3 class="font-bold truncate" [title]="deploymentTarget().name">
+              {{ deploymentTarget().name }}
+            </h3>
+          }
         </div>
       </div>
     </div>
 
     @if (deploymentTarget().metricsEnabled) {
       @if (deploymentTargetMetrics(); as metrics) {
-        <app-deployment-target-metrics [metrics]="metrics" />
+        <app-deployment-target-metrics [metrics]="metrics" (click)="$event.stopPropagation()" />
       }
     }
   </div>

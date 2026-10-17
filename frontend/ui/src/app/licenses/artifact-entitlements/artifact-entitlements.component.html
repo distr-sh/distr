@@ -30,8 +30,11 @@
       </thead>
       <tbody>
         @for (entitlement of entitlements$ | async; track entitlement.id) {
-          <tr class="distr-table-row">
-            <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+          <tr
+            (click)="canOpenDetails && openDrawer(manageEntitlementDrawer, entitlement)"
+            class="distr-table-row"
+            [class.cursor-pointer]="canOpenDetails">
+            <td class="distr-table-cell">
               <div class="flex items-center mr-3">
                 <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
                   {{ entitlement.name }}
@@ -39,7 +42,7 @@
               </div>
             </td>
             @if (!customerOrganizationId()) {
-              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+              <td class="distr-table-cell">
                 <div class="flex items-center mr-3">
                   <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
                     {{ getOwnerColumn(entitlement.customerOrganizationId) | async }}
@@ -47,19 +50,19 @@
                 </div>
               </td>
             }
-            <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+            <td class="distr-table-cell">
               <div class="flex items-center mr-3">
                 <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
                   {{ getArtifactColumn(entitlement.artifacts) | async }}
                 </span>
               </div>
             </td>
-            <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+            <td class="distr-table-cell">
               <div class="flex items-center">
                 {{ entitlement.createdAt | date: 'short' }}
               </div>
             </td>
-            <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+            <td class="distr-table-cell">
               @if (entitlement.expiresAt; as d) {
                 {{ d | date }}
                 @if (isExpired(entitlement)) {
@@ -72,30 +75,15 @@
                 never
               }
             </td>
-            <td
-              class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
-              @if (auth.isVendor() || auth.isPartner()) {
+            <td class="px-4 py-3 text-end">
+              @if (canOpenDetails && auth.hasAnyRole('read_write', 'admin')) {
                 <button
                   type="button"
-                  (click)="openDrawer(manageEntitlementDrawer, entitlement)"
-                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                  @if (auth.hasAnyRole('read_write', 'admin')) {
-                    <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
-                    Edit
-                  } @else {
-                    <fa-icon [icon]="faEye" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
-                    Details
-                  }
+                  aria-label="Delete"
+                  (click)="deleteEntitlement(entitlement, $event)"
+                  class="py-2 px-3 distr-btn-danger">
+                  <fa-icon [icon]="faTrash" class="h-4 w-4" />
                 </button>
-                @if (auth.hasAnyRole('read_write', 'admin')) {
-                  <button
-                    type="button"
-                    aria-label="Delete"
-                    (click)="deleteEntitlement(entitlement)"
-                    class="py-2 px-3 distr-btn-danger">
-                    <fa-icon [icon]="faTrash" class="h-4 w-4" />
-                  </button>
-                }
               }
             </td>
           </tr>

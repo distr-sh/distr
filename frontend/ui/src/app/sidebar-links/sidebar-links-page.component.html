@@ -74,34 +74,28 @@
         </thead>
         <tbody>
           @for (link of links(); track link.id) {
-            <tr class="distr-table-row">
-              <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ link.name }}</td>
+            <tr (click)="canEdit && showDialog(link)" class="distr-table-row" [class.cursor-pointer]="canEdit">
+              <td class="distr-table-cell">{{ link.name }}</td>
               <td
                 class="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap max-w-96 overflow-hidden text-ellipsis">
                 <a
                   [href]="link.link"
                   target="_blank"
                   rel="noopener noreferrer"
+                  (click)="$event.stopPropagation()"
                   class="text-blue-600 dark:text-blue-400 hover:underline">
                   {{ link.link }}
                 </a>
               </td>
-              <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+              <td class="distr-table-cell">
                 {{ link.createdAt | date }}
               </td>
-              <td class="px-4 py-3 flex gap-2 justify-end">
-                @if (auth.hasAnyRole('read_write', 'admin')) {
-                  <button
-                    type="button"
-                    (click)="showDialog(link)"
-                    class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                    <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
-                    Edit
-                  </button>
+              <td class="px-4 py-3 text-end">
+                @if (canEdit) {
                   <button
                     type="button"
                     aria-label="Delete"
-                    (click)="deleteLink(link)"
+                    (click)="deleteLink(link, $event)"
                     class="py-2 px-3 distr-btn-danger">
                     <fa-icon [icon]="faTrash" class="h-4 w-4" />
                   </button>

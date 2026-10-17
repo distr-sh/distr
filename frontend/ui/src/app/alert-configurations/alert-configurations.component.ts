@@ -39,6 +39,7 @@ export class AlertConfigurationsComponent {
   public readonly customerOrganizationId = input<string>();
 
   protected readonly auth = inject(AuthService);
+  protected readonly canEdit = this.auth.hasAnyRole('read_write', 'admin');
   private readonly svc = inject(AlertConfigurationsService);
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly overlay = inject(OverlayService);
@@ -97,7 +98,7 @@ export class AlertConfigurationsComponent {
   private readonly editConfigDrawerTpl = viewChild.required<TemplateRef<unknown>>('editConfigDrawer');
   private editConfigDrawerRef?: DialogRef;
 
-  protected readonly enabledToggleLoading = signal(false);
+  private readonly togglingConfigIds = new Set<string>();
 
   /** scope is the customer whose users and deployments a configuration of this page reaches. */
   private readonly scope = computed(() => this.customerOrganizationId() ?? this.auth.getClaims()?.c_org);
@@ -238,20 +239,25 @@ export class AlertConfigurationsComponent {
     }
   }
 
-  protected async toggleConfigEnabled(config: AlertConfiguration) {
+  protected async toggleConfigEnabled(config: AlertConfiguration, toggle: HTMLInputElement, event: Event) {
+    if (this.togglingConfigIds.has(config.id)) {
+      event.preventDefault();
+      return;
+    }
+    this.togglingConfigIds.add(config.id);
     try {
       const request = {...config, enabled: !config.enabled, customerOrganizationId: this.customerOrganizationId()};
-      this.enabledToggleLoading.set(true);
       await firstValueFrom(this.svc.update(config.id, request));
       this.toast.success(`Alert configuration ${request.enabled ? 'enabled' : 'disabled'}`);
       this.reload$.next();
     } catch (e) {
+      toggle.checked = config.enabled;
       const msg = getFormDisplayedError(e);
       if (msg) {
         this.toast.error(msg);
       }
     } finally {
-      this.enabledToggleLoading.set(false);
+      this.togglingConfigIds.delete(config.id);
     }
   }
 

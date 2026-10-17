@@ -9,7 +9,6 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faCircleExclamation,
   faClipboard,
-  faPen,
   faPlus,
   faTrash,
   faTriangleExclamation,
@@ -65,7 +64,6 @@ interface AccessTokenRow {
   templateUrl: './access-tokens.component.html',
 })
 export class AccessTokensComponent {
-  protected readonly faPen = faPen;
   protected readonly faTrash = faTrash;
   protected readonly faPlus = faPlus;
   protected readonly faXmark = faXmark;
@@ -166,7 +164,8 @@ export class AccessTokensComponent {
     }
   }
 
-  public async deleteAccessToken(row: AccessTokenRow) {
+  public async deleteAccessToken(row: AccessTokenRow, event: Event) {
+    event.stopPropagation();
     if (!row.expired && !(await firstValueFrom(this.overlay.confirm(`Really delete token '${row.name}'?`)))) {
       return;
     }

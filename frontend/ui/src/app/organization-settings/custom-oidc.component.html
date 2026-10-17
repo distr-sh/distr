@@ -169,18 +169,17 @@
         </thead>
         <tbody>
           @for (configuration of configurationsFor(domain); track configuration.id) {
-            <tr class="distr-table-row">
+            <tr (click)="showDialog(domain, configuration)" class="distr-table-row cursor-pointer">
               <td class="ps-4 py-3">
-                <label class="inline-flex items-center cursor-pointer align-middle">
+                <label class="inline-flex items-center cursor-pointer align-middle" (click)="$event.stopPropagation()">
                   <input
                     #enabledToggle
                     type="checkbox"
                     class="sr-only peer"
                     aria-label="Enabled"
-                    [disabled]="toggling() === configuration.id"
                     [checked]="configuration.enabled"
-                    (change)="toggleEnabled(configuration, enabledToggle)" />
-                  <div class="distr-toggle peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                    (click)="toggleEnabled(configuration, enabledToggle, $event)" />
+                  <div class="distr-toggle"></div>
                 </label>
               </td>
               <td class="px-4 py-3">
@@ -198,7 +197,7 @@
                 </div>
               </td>
               <td class="px-4 py-3">
-                <div class="flex items-center gap-2">
+                <div class="inline-flex items-center gap-2 cursor-auto" (click)="$event.stopPropagation()">
                   <code
                     class="font-mono text-xs text-gray-500 dark:text-gray-400 truncate max-w-64"
                     [title]="configuration.callbackUrl">
@@ -207,28 +206,23 @@
                   <app-clip [clip]="configuration.callbackUrl" />
                 </div>
               </td>
-              <td class="px-4 py-3 flex gap-2 justify-end">
-                <button
-                  type="button"
-                  (click)="test(configuration)"
-                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                  <fa-icon [icon]="faPlug" class="mr-2 text-gray-500 dark:text-gray-400" />
-                  Test
-                </button>
-                <button
-                  type="button"
-                  (click)="showDialog(domain, configuration)"
-                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                  <fa-icon [icon]="faPen" class="mr-2 text-gray-500 dark:text-gray-400" />
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  aria-label="Delete"
-                  (click)="remove(configuration)"
-                  class="py-2 px-3 distr-btn-danger">
-                  <fa-icon [icon]="faTrash" class="h-4 w-4" />
-                </button>
+              <td class="px-4 py-3">
+                <div class="flex gap-2 justify-end">
+                  <button
+                    type="button"
+                    (click)="test(configuration, $event)"
+                    class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                    <fa-icon [icon]="faPlug" class="mr-2 text-gray-500 dark:text-gray-400" />
+                    Test
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Delete"
+                    (click)="remove(configuration, $event)"
+                    class="py-2 px-3 distr-btn-danger">
+                    <fa-icon [icon]="faTrash" class="h-4 w-4" />
+                  </button>
+                </div>
               </td>
             </tr>
           } @empty {

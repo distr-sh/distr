@@ -58,6 +58,7 @@ export class UpdateNotificationsComponent {
   public readonly customerOrganizationId = input<string>();
 
   protected readonly auth = inject(AuthService);
+  protected readonly canEdit = this.auth.hasAnyRole('read_write', 'admin');
   private readonly configsService = inject(UpdateNotificationConfigurationsService);
   private readonly applicationsService = inject(ApplicationsService);
   private readonly artifactsService = inject(ArtifactsService);
@@ -204,7 +205,7 @@ export class UpdateNotificationsComponent {
   });
 
   protected readonly editFormLoading = signal(false);
-  protected readonly enabledToggleLoading = signal(false);
+  private readonly togglingConfigIds = new Set<string>();
 
   protected readonly editConfigForm = this.fb.group(
     {
@@ -351,8 +352,12 @@ export class UpdateNotificationsComponent {
     }
   }
 
-  protected async toggleConfigEnabled(config: UpdateNotificationConfiguration) {
-    this.enabledToggleLoading.set(true);
+  protected async toggleConfigEnabled(config: UpdateNotificationConfiguration, toggle: HTMLInputElement, event: Event) {
+    if (this.togglingConfigIds.has(config.id)) {
+      event.preventDefault();
+      return;
+    }
+    this.togglingConfigIds.add(config.id);
     try {
       const enabled = !config.enabled;
       await firstValueFrom(
@@ -368,16 +373,18 @@ export class UpdateNotificationsComponent {
       this.toast.success(`Notification configuration ${enabled ? 'enabled' : 'disabled'}`);
       this.reload$.next();
     } catch (e) {
+      toggle.checked = config.enabled;
       const msg = getFormDisplayedError(e);
       if (msg) {
         this.toast.error(msg);
       }
     } finally {
-      this.enabledToggleLoading.set(false);
+      this.togglingConfigIds.delete(config.id);
     }
   }
 
-  protected async deleteConfig(config: UpdateNotificationConfiguration) {
+  protected async deleteConfig(config: UpdateNotificationConfiguration, event: Event) {
+    event.stopPropagation();
     if (!(await firstValueFrom(this.overlay.confirm(`Really delete the notification "${config.name}"?`)))) {
       return;
     }

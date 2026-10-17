@@ -27,28 +27,38 @@
     </thead>
     <tbody>
       @for (config of filteredConfigs(); track config.id) {
-        <tr class="distr-table-row">
-          <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ config.name }}</td>
-          <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap align-middle">
-            <label class="inline-flex items-center cursor-pointer my-1">
+        <tr class="distr-table-row relative">
+          <td class="distr-table-cell">
+            @if (canEdit) {
+              <button
+                type="button"
+                (click)="showDrawer(config)"
+                class="cursor-pointer text-left after:absolute after:inset-0 focus:outline-none focus-visible:after:rounded-lg focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-[Highlight] focus-visible:after:[outline-color:-webkit-focus-ring-color]!">
+                {{ config.name }}
+              </button>
+            } @else {
+              {{ config.name }}
+            }
+          </td>
+          <td class="distr-table-cell align-middle">
+            <label class="relative inline-flex items-center cursor-pointer my-1">
               <input
+                #enabledToggle
                 type="checkbox"
                 class="sr-only peer"
                 aria-label="Enabled"
-                [disabled]="!auth.hasAnyRole('read_write', 'admin')"
+                [disabled]="!canEdit"
                 [checked]="config.enabled"
-                (change)="toggleConfigEnabled(config)" />
+                (click)="toggleConfigEnabled(config, enabledToggle, $event)" />
               <div class="distr-toggle peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
             </label>
           </td>
-          <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+          <td class="distr-table-cell">
             {{ config.createdAt | date }}
           </td>
-          <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
-            {{ getTriggersCount(config) }} enabled
-          </td>
+          <td class="distr-table-cell">{{ getTriggersCount(config) }} enabled</td>
           <td
-            class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
+            class="distr-table-cell max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
             [title]="getNames(config.deploymentTargets)">
             @for (dt of config.deploymentTargets; track dt.id; let last = $last) {
               <ng-container>{{ dt.name }}</ng-container>
@@ -58,7 +68,7 @@
             }
           </td>
           <td
-            class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
+            class="distr-table-cell max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
             [title]="getNames(config.userAccounts)">
             @for (user of config.userAccounts; track user.id; let last = $last) {
               <ng-container>{{ user.name || user.email }}</ng-container>
@@ -67,20 +77,13 @@
               }
             }
           </td>
-          <td class="px-4 py-3 flex gap-2 justify-end">
-            @if (auth.hasAnyRole('read_write', 'admin')) {
-              <button
-                type="button"
-                (click)="showDrawer(config)"
-                class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
-                Edit
-              </button>
+          <td class="px-4 py-3 text-end">
+            @if (canEdit) {
               <button
                 type="button"
                 aria-label="Delete"
                 (click)="deleteConfig(config)"
-                class="py-2 px-3 distr-btn-danger">
+                class="relative py-2 px-3 distr-btn-danger">
                 <fa-icon [icon]="faTrash" class="h-4 w-4" />
               </button>
             }
