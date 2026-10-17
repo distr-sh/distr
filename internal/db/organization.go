@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/license"
 	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
@@ -185,7 +185,7 @@ func UpdateOrganization(ctx context.Context, org *types.Organization) error {
 
 func mapDuplicateSlugError(err error) error {
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation {
-		return fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+		return fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 	}
 	return err
 }
@@ -347,7 +347,7 @@ func GetOrganizationByID(ctx context.Context, orgID uuid.UUID) (*types.Organizat
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[types.Organization])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, fmt.Errorf("%w: organization %v", apierrors.ErrNotFound, orgID)
+		return nil, fmt.Errorf("%w: organization %v", distrerr.ErrNotFound, orgID)
 	} else if err != nil {
 		return nil, err
 	} else {
@@ -375,7 +375,7 @@ func GetOrganizationWithBranding(ctx context.Context, orgID uuid.UUID) (*types.O
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[types.OrganizationWithBranding])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
+			err = distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("could not get organization: %w", err)
 	} else {

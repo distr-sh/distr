@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
@@ -394,7 +394,7 @@ func (s *lokiStore) push(ctx context.Context, orgID uuid.UUID, streams map[strin
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusBadRequest {
-		return apierrors.NewBadRequest("loki rejected log records: " + readErrorBody(resp))
+		return distrerr.NewBadRequest("loki rejected log records: " + readErrorBody(resp))
 	} else if resp.StatusCode == http.StatusTooManyRequests {
 		return fmt.Errorf("%w: %v", ErrRateLimitExceeded, readErrorBody(resp))
 	} else if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -468,7 +468,7 @@ func (s *lokiStore) queryRange(
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusBadRequest {
-		return nil, apierrors.NewBadRequest("loki rejected query: " + readErrorBody(resp))
+		return nil, distrerr.NewBadRequest("loki rejected query: " + readErrorBody(resp))
 	} else if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return nil, fmt.Errorf("loki query failed with status %v: %v", resp.StatusCode, readErrorBody(resp))
 	}

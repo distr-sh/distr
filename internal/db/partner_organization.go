@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -121,7 +121,7 @@ func GetPartnerOrganizationByID(
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.PartnerOrganizationWithUsage])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("could not collect PartnerOrganization: %w", err)
 	}
@@ -172,7 +172,7 @@ func UpdatePartnerOrganization(ctx context.Context, partnerOrg *types.PartnerOrg
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.PartnerOrganization])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return apierrors.ErrNotFound
+		return distrerr.ErrNotFound
 	} else if err != nil {
 		return err
 	}
@@ -189,12 +189,12 @@ func DeletePartnerOrganizationWithID(ctx context.Context, id uuid.UUID, organiza
 	if err != nil {
 		var pgError *pgconn.PgError
 		if errors.As(err, &pgError) && pgError.Code == pgerrcode.ForeignKeyViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 		return err
 	}
 	if cmd.RowsAffected() == 0 {
-		return apierrors.ErrNotFound
+		return distrerr.ErrNotFound
 	}
 	return nil
 }

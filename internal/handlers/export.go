@@ -1,15 +1,14 @@
 package handlers
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"net/http"
+	"io"
+	"iter"
 
-	"github.com/distr-sh/distr/internal/apierrors"
+	"github.com/distr-sh/distr/internal/distrerr"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/subscription"
-	"github.com/getsentry/sentry-go"
-	"go.uber.org/zap"
 )
 
 // exportTruncationNotice is appended to an export when streaming fails midway: the response
@@ -27,61 +26,31 @@ var exportLimitNotice = fmt.Sprintf(`
 export truncated at the limit of %d lines, select a smaller time range to export all lines
 `, subscription.MaxLogExportRows)
 
-// exportWriter streams a plain text export to the client. The download headers are only set
-// right before the first line, so an error response can still be sent as long as nothing has
-// been written yet.
-type exportWriter struct {
-	w        http.ResponseWriter
-	log      *zap.Logger
-	filename string
-	written  bool
-	count    int64
-	writeErr error
-}
+func noRecords[T any](func(T, error) bool) {}
 
-func newExportWriter(w http.ResponseWriter, log *zap.Logger, filename string) *exportWriter {
-	return &exportWriter{w: w, log: log, filename: filename}
-}
-
-// writeLine writes a single exported line. A returned error means the client is gone and the
-// export must be abandoned; it is already logged.
-func (e *exportWriter) writeLine(format string, args ...any) error {
-	if !e.written {
-		SetFileDownloadHeaders(e.w, e.filename)
-		e.written = true
-	}
-	if _, err := fmt.Fprintf(e.w, format, args...); err != nil {
-		e.log.Error("failed to write export to response writer", zap.Error(err))
-		e.writeErr = err
-		return err
-	}
-	e.count++
-	return nil
-}
-
-// fail ends an export that could not read all of its records.
-func (e *exportWriter) fail(ctx context.Context, msg string, err error) {
-	e.log.Error(msg, zap.Error(err))
-	switch {
-	case e.writeErr != nil:
-		// The export was abandoned because the client is gone, so there is nobody left to
-		// respond to.
-	case e.written:
-		_, _ = e.w.Write([]byte(exportTruncationNotice))
-	case errors.Is(err, apierrors.ErrBadRequest):
-		http.Error(e.w, err.Error(), http.StatusBadRequest)
-	default:
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(e.w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	}
-}
-
-// finish ends an export that read all of its records. An export without any records still
-// produces a downloadable (empty) file, and one that hit the row limit is marked as truncated.
-func (e *exportWriter) finish() {
-	if !e.written {
-		SetFileDownloadHeaders(e.w, e.filename)
-	} else if subscription.MaxLogExportRows.IsReached(e.count) {
-		_, _ = e.w.Write([]byte(exportLimitNotice))
-	}
+// logExport streams one line per record as a plain text download. An export without any records
+// still produces a downloadable (empty) file.
+func logExport[T any](filename string, records iter.Seq2[T, error], line func(T) string) respond.Responder {
+	return respond.Writer("text/plain; charset=utf-8", func(w io.Writer) (respond.Responder, error) {
+		var count int64
+		for record, err := range records {
+			if err != nil && count > 0 {
+				_, _ = io.WriteString(w, exportTruncationNotice)
+				return nil, fmt.Errorf("failed to export log records: %w", err)
+			} else if errors.Is(err, distrerr.ErrBadRequest) {
+				return respond.BadRequest(err.Error()), nil
+			} else if err != nil {
+				return nil, fmt.Errorf("failed to export log records: %w", err)
+			} else if _, err := io.WriteString(w, line(record)); err != nil {
+				return nil, fmt.Errorf("failed to write export: %w", err)
+			}
+			count++
+		}
+		if subscription.MaxLogExportRows.IsReached(count) {
+			if _, err := io.WriteString(w, exportLimitNotice); err != nil {
+				return nil, fmt.Errorf("failed to write export: %w", err)
+			}
+		}
+		return nil, nil
+	}).WithHeader("Content-Disposition", attachment(filename))
 }

@@ -29,6 +29,13 @@ func (r *CreateUpdateOrganizationRequest) Normalize() {
 	}
 }
 
+func (r *CreateUpdateOrganizationRequest) ValidateControllerImageRepository() error {
+	if r.ControllerImageRepository == nil {
+		return nil
+	}
+	return validation.ValidateImageRepository(*r.ControllerImageRepository)
+}
+
 type OrganizationResponse struct {
 	types.Organization
 	SubscriptionLimits               SubscriptionLimits `json:"subscriptionLimits"`

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -108,7 +108,7 @@ func UpdateCustomOIDCConfiguration(ctx context.Context, c *types.CustomOIDCConfi
 	}
 	updated, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.CustomOIDCConfiguration])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return apierrors.ErrNotFound
+		return distrerr.ErrNotFound
 	} else if err != nil {
 		return mapCustomOIDCConfigurationError(err)
 	}
@@ -120,9 +120,9 @@ func mapCustomOIDCConfigurationError(err error) error {
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok {
 		switch pgErr.Code {
 		case pgerrcode.UniqueViolation:
-			return fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			return fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		case pgerrcode.ForeignKeyViolation:
-			return fmt.Errorf("%w: %w", apierrors.ErrBadRequest, err)
+			return fmt.Errorf("%w: %w", distrerr.ErrBadRequest, err)
 		}
 	}
 	return fmt.Errorf("could not save CustomOIDCConfiguration: %w", err)
@@ -210,7 +210,7 @@ func GetCustomOIDCConfigurationOfOrganization(
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.CustomOIDCConfiguration])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, apierrors.ErrNotFound
+		return nil, distrerr.ErrNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("could not get CustomOIDCConfiguration: %w", err)
 	}
@@ -239,7 +239,7 @@ func GetCustomOIDCConfigurationForHost(
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.CustomOIDCConfiguration])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, apierrors.ErrNotFound
+		return nil, distrerr.ErrNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("could not get CustomOIDCConfiguration: %w", err)
 	}
@@ -268,7 +268,7 @@ func DeleteCustomOIDCConfiguration(
 	if err != nil {
 		return fmt.Errorf("could not delete CustomOIDCConfiguration: %w", err)
 	} else if cmd.RowsAffected() == 0 {
-		return apierrors.ErrNotFound
+		return distrerr.ErrNotFound
 	}
 	return nil
 }

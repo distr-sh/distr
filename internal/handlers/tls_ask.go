@@ -1,13 +1,12 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/validation"
-	"github.com/getsentry/sentry-go"
-	"go.uber.org/zap"
 )
 
 // TLSAskHandler answers the Caddy on-demand TLS "ask" request (GET ...?domain=<sni>): 200 iff the
@@ -19,26 +18,19 @@ import (
 // Whether the domain is verified must not be part of this decision. Verification lags a corrected
 // DNS record by up to a verification interval, and without a certificate the domain answers no
 // https request at all in the meantime.
-func TLSAskHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+func TLSAskHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
 
-		// Domains are stored normalized, and the SNI Caddy passes here may carry a different
-		// case or a trailing dot, so it must be normalized before the lookup.
-		domain := validation.NormalizeHostname(r.URL.Query().Get("domain"))
-		if domain == "" {
-			http.Error(w, "parameter domain is required", http.StatusBadRequest)
-			return
-		}
-
-		if exists, err := db.ExistsCustomDomain(ctx, domain); err != nil {
-			internalctx.GetLogger(ctx).Error("failed to check custom domain existence", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
-		} else if !exists {
-			w.WriteHeader(http.StatusNotFound)
-		} else {
-			w.WriteHeader(http.StatusOK)
-		}
+	// Domains are stored normalized, and the SNI Caddy passes here may carry a different
+	// case or a trailing dot, so it must be normalized before the lookup.
+	domain := validation.NormalizeHostname(r.URL.Query().Get("domain"))
+	if domain == "" {
+		return respond.BadRequest("parameter domain is required"), nil
+	} else if exists, err := db.ExistsCustomDomain(ctx, domain); err != nil {
+		return nil, fmt.Errorf("failed to check custom domain existence: %w", err)
+	} else if !exists {
+		return respond.Status(http.StatusNotFound), nil
+	} else {
+		return respond.Status(http.StatusOK), nil
 	}
 }
