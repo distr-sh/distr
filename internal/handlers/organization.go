@@ -143,11 +143,13 @@ func createOrganization(r *http.Request) (respond.Responder, error) {
 		return respond.BadRequest(subscription.GlobalOrganizationLimitReachedMessage), nil
 	} else {
 		organization := types.Organization{
-			Name:                body.Name,
-			Slug:                body.Slug,
-			PreConnectScript:    body.PreConnectScript,
-			PostConnectScript:   body.PostConnectScript,
-			ConnectScriptIsSudo: body.ConnectScriptIsSudo,
+			Name:                        body.Name,
+			Slug:                        body.Slug,
+			DockerPreConnectScript:      body.DockerPreConnectScript,
+			DockerPostConnectScript:     body.DockerPostConnectScript,
+			DockerConnectScriptIsSudo:   body.DockerConnectScriptIsSudo,
+			KubernetesPreConnectScript:  body.KubernetesPreConnectScript,
+			KubernetesPostConnectScript: body.KubernetesPostConnectScript,
 		}
 
 		if err := db.RunTx(ctx, func(ctx context.Context) error {
@@ -199,13 +201,13 @@ func applyOrganizationUpdate(
 		needsUpdate = true
 	}
 
-	if !util.PtrEq(org.PreConnectScript, request.PreConnectScript) {
-		org.PreConnectScript = request.PreConnectScript
+	if !util.PtrEq(org.DockerPreConnectScript, request.DockerPreConnectScript) {
+		org.DockerPreConnectScript = request.DockerPreConnectScript
 		needsUpdate = true
 	}
 
-	if !util.PtrEq(org.PostConnectScript, request.PostConnectScript) {
-		org.PostConnectScript = request.PostConnectScript
+	if !util.PtrEq(org.DockerPostConnectScript, request.DockerPostConnectScript) {
+		org.DockerPostConnectScript = request.DockerPostConnectScript
 		needsUpdate = true
 	}
 
@@ -214,8 +216,18 @@ func applyOrganizationUpdate(
 		needsUpdate = true
 	}
 
-	if request.ConnectScriptIsSudo != org.ConnectScriptIsSudo {
-		org.ConnectScriptIsSudo = request.ConnectScriptIsSudo
+	if request.DockerConnectScriptIsSudo != org.DockerConnectScriptIsSudo {
+		org.DockerConnectScriptIsSudo = request.DockerConnectScriptIsSudo
+		needsUpdate = true
+	}
+
+	if !util.PtrEq(org.KubernetesPreConnectScript, request.KubernetesPreConnectScript) {
+		org.KubernetesPreConnectScript = request.KubernetesPreConnectScript
+		needsUpdate = true
+	}
+
+	if !util.PtrEq(org.KubernetesPostConnectScript, request.KubernetesPostConnectScript) {
+		org.KubernetesPostConnectScript = request.KubernetesPostConnectScript
 		needsUpdate = true
 	}
 
