@@ -19,7 +19,10 @@ import (
 
 // kmsResolveTimeout bounds the requests to the key management service, which happen before
 // anything of this process runs that could cancel them.
-const kmsResolveTimeout = 30 * time.Second
+const (
+	kmsResolveTimeout                = 30 * time.Second
+	DefaultControllerImageRepository = "ghcr.io/distr-sh/distr"
+)
 
 var (
 	databaseUrl                           string
@@ -47,6 +50,8 @@ var (
 	otelExporterOtlpEnabled               bool
 	enableQueryLogging                    bool
 	controllerDockerConfig                []byte
+	controllerImageRepository             string
+	controllerImageRepositoryCustomDomain bool
 	frontendSentryDSN                     *string
 	frontendSentryTraceSampleRate         *float64
 	frontendPosthogToken                  *string
@@ -285,6 +290,12 @@ func Initialize() {
 	controllerDockerConfig = envutil.GetEnvParsedOrDefault(
 		envutil.ResolveDeprecatedAlias("CONTROLLER_DOCKER_CONFIG", "AGENT_DOCKER_CONFIG"), envparse.ByteSlice, nil,
 	)
+	controllerImageRepository = envutil.GetEnvParsedOrDefault(
+		"CONTROLLER_IMAGE_REPOSITORY", envparse.ImageRepository, DefaultControllerImageRepository,
+	)
+	controllerImageRepositoryCustomDomain = envutil.GetEnvParsedOrDefault(
+		"CONTROLLER_IMAGE_REPOSITORY_USE_CUSTOM_DOMAIN", strconv.ParseBool, false,
+	)
 	frontendSentryDSN = envutil.GetEnvOrNil("FRONTEND_SENTRY_DSN")
 	frontendSentryTraceSampleRate = envutil.GetEnvParsedOrNil("FRONTEND_SENTRY_TRACE_SAMPLE_RATE", envparse.Float)
 	frontendPosthogToken = envutil.GetEnvOrNil("FRONTEND_POSTHOG_TOKEN")
@@ -518,6 +529,14 @@ func MetricsEntriesMaxAge() *time.Duration {
 
 func ControllerDockerConfig() []byte {
 	return controllerDockerConfig
+}
+
+func ControllerImageRepository() string {
+	return controllerImageRepository
+}
+
+func ControllerImageRepositoryUseCustomDomain() bool {
+	return controllerImageRepositoryCustomDomain
 }
 
 func FrontendSentryDSN() *string {

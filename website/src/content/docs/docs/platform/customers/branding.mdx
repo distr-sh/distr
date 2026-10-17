@@ -118,6 +118,27 @@ A customer that needs its own hostname and its own identity provider, rather tha
 On self-hosted instances, the Custom Domains section only appears when the instance is configured for custom domain self-service.
 See the [configuration reference](/docs/self-hosting/configuration/#custom-domains) for the required setup.
 
+## Controller Image Repository
+
+The [Docker](/docs/controllers/docker-controller/) and [Kubernetes](/docs/controllers/kubernetes-controller/) controllers pull their images from `ghcr.io/distr-sh/distr` by default.
+To have your customers pull them from your own registry instead, for example your Distr registry, enable **Use an external controller repository** under **Settings → Organization → General** and enter its host and an optional path (e.g. `registry.distr.sh/your-org`).
+The setting applies to all of your customers.
+
+Only the prefix can be changed. Distr appends the image names `docker-controller`, `docker-autoheal` and `kubernetes-controller` with the controller version as the tag, so your registry has to host the images under these names.
+They have to be publicly available there, or every deployment target needs access to the registry before you save it.
+A new repository applies when a deployment target connects and at its next controller update.
+
+<Aside type="caution">
+  The Kubernetes controller is replaced rather than rolled over. If the cluster
+  nodes cannot pull the image from the new repository, the deployment target is
+  left without a running controller until you fix the repository and apply the
+  manifest again.
+</Aside>
+
+On self-hosted instances, [`CONTROLLER_IMAGE_REPOSITORY`](/docs/self-hosting/configuration/) changes the default for every organization.
+With `CONTROLLER_IMAGE_REPOSITORY_USE_CUSTOM_DOMAIN` enabled, an organization with a [custom registry domain](#custom-domains) pulls the images through that domain instead, keeping the path of `CONTROLLER_IMAGE_REPOSITORY`.
+The images have to be public in the Distr registry.
+
 ## Custom Email
 
 By default, all transactional e-mails — invitations, e-mail verifications, password resets, license key updates and deployment notifications — are sent by Distr.

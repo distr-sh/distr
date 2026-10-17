@@ -87,6 +87,55 @@
       <h2 class="text-xl font-bold dark:text-white">Controllers</h2>
       <div>
         <input
+          formControlName="controllerImageRepositoryEnabled"
+          id="controllerImageRepositoryEnabled"
+          type="checkbox"
+          class="distr-checkbox" />
+        <label for="controllerImageRepositoryEnabled" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+          @if (currentOrganization()?.controllerImageRepositoryUseCustomDomain) {
+            Use a different controller repository
+          } @else {
+            Use an external controller repository
+          }
+        </label>
+        @if (currentOrganization(); as org) {
+          <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
+            @switch (org.defaultControllerImageRepositorySource) {
+              @case ('custom_domain') {
+                By default, controller images are pulled through your registry domain from
+              }
+              @case ('environment') {
+                By default, controller images are pulled from
+              }
+              @default {
+                By default, controller images are pulled from GitHub at
+              }
+            }
+            <code class="font-mono">{{ org.defaultControllerImageRepository }}</code
+            >.
+            <a
+              [href]="controllerRepositoryDocsUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-primary-600 hover:underline dark:text-primary-500"
+              >Learn more</a
+            >
+          </p>
+        }
+        @if (isControllerImageRepositoryEnabled()) {
+          <input
+            formControlName="controllerImageRepository"
+            autotrim
+            type="text"
+            id="controllerImageRepository"
+            aria-label="Controller repository"
+            placeholder="registry.example.com/distr"
+            class="distr-input" />
+        }
+      </div>
+
+      <div>
+        <input
           formControlName="prePostScriptsEnabled"
           id="prePostScriptsEnabled"
           type="checkbox"

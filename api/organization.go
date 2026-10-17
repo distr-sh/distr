@@ -17,13 +17,36 @@ type CreateUpdateOrganizationRequest struct {
 	KubernetesPostConnectScript *string `json:"kubernetesPostConnectScript"`
 	ArtifactVersionMutable      bool    `json:"artifactVersionMutable"`
 	PrePostScriptsEnabled       bool    `json:"prePostScriptsEnabled"`
+	ControllerImageRepository   *string `json:"controllerImageRepository"`
+}
+
+func (r *CreateUpdateOrganizationRequest) Normalize() {
+	if r.ControllerImageRepository == nil {
+		return
+	}
+	if value := validation.NormalizeImageRepository(*r.ControllerImageRepository); value != "" {
+		r.ControllerImageRepository = &value
+	} else {
+		r.ControllerImageRepository = nil
+	}
+}
+
+func (r *CreateUpdateOrganizationRequest) ValidateControllerImageRepository() error {
+	if r.ControllerImageRepository == nil {
+		return nil
+	}
+	return validation.ValidateImageRepository(*r.ControllerImageRepository)
 }
 
 type OrganizationResponse struct {
 	types.Organization
-	SubscriptionLimits               SubscriptionLimits `json:"subscriptionLimits"`
-	CurrentBillableUserAccountCount  int64              `json:"currentBillableUserAccountCount"`
-	CurrentCustomerOrganizationCount int64              `json:"currentCustomerOrganizationCount"`
+	SubscriptionLimits                     SubscriptionLimits                    `json:"subscriptionLimits"`
+	CurrentBillableUserAccountCount        int64                                 `json:"currentBillableUserAccountCount"`
+	CurrentCustomerOrganizationCount       int64                                 `json:"currentCustomerOrganizationCount"`
+	ControllerImageRepository              *string                               `json:"controllerImageRepository,omitempty"` //nolint:lll
+	DefaultControllerImageRepository       string                                `json:"defaultControllerImageRepository"`
+	DefaultControllerImageRepositorySource types.ControllerImageRepositorySource `json:"defaultControllerImageRepositorySource"`   //nolint:lll
+	ControllerImageCustomDomain            bool                                  `json:"controllerImageRepositoryUseCustomDomain"` //nolint:lll
 }
 
 type OrganizationWebhookResponse struct {

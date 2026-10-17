@@ -125,6 +125,10 @@ You can also provide credentials via an [application entitlement](/docs/platform
 
 When the controller version for a deployment target is updated in Distr, the controller updates itself on the next cycle. It fetches the new manifest from `DISTR_MANIFEST_ENDPOINT` and restarts.
 
+## Controller Image Repository
+
+The controller image is pulled from `ghcr.io/distr-sh/distr` by default. You can have it pulled from your own registry instead, as described in [Controller Image Repository](/docs/platform/branding/#controller-image-repository).
+
 ## Migrating an Existing Helm Release
 
 The Kubernetes controller only manages releases it knows about. If you already have a Helm release running and want Distr to take it over, you need to create a tracking secret that tells the controller the release exists and which revision it is on.

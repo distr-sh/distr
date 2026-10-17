@@ -33,6 +33,7 @@ export interface CreateUpdateOrganizationRequest {
   kubernetesPostConnectScript?: string;
   artifactVersionMutable: boolean;
   prePostScriptsEnabled: boolean;
+  controllerImageRepository?: string;
 }
 
 export interface Organization extends BaseModel, Named {
@@ -52,7 +53,13 @@ export interface Organization extends BaseModel, Named {
   kubernetesPreConnectScript?: string;
   kubernetesPostConnectScript?: string;
   stripeWebhookSecretConfigured: boolean;
+  controllerImageRepository?: string;
+  defaultControllerImageRepository: string;
+  defaultControllerImageRepositorySource: ControllerImageRepositorySource;
+  controllerImageRepositoryUseCustomDomain: boolean;
 }
+
+export type ControllerImageRepositorySource = 'default' | 'environment' | 'custom_domain';
 
 export interface OrganizationWithUserRole extends Organization {
   userRole: UserRole;
