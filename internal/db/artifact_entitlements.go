@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -128,7 +128,7 @@ func UpdateArtifactEntitlement(ctx context.Context, entitlement *types.ArtifactE
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ArtifactEntitlementBase]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return apierrors.ErrNotFound
+			return distrerr.ErrNotFound
 		}
 		return mapArtifactEntitlementError(fmt.Errorf("could not update ArtifactEntitlement: %w", err))
 	} else {
@@ -190,14 +190,14 @@ func mapArtifactEntitlementError(err error) error {
 	case pgerrcode.ForeignKeyViolation:
 		switch pgErr.ConstraintName {
 		case "artifactentitlement_customer_organization_id_fkey":
-			return apierrors.NewBadRequest("invalid customer organization ID")
+			return distrerr.NewBadRequest("invalid customer organization ID")
 		case "artifactlicense_artifact_artifact_id_fkey":
-			return apierrors.NewBadRequest("invalid artifact ID")
+			return distrerr.NewBadRequest("invalid artifact ID")
 		case "artifactlicense_artifact_artifact_version_id_fkey":
-			return apierrors.NewBadRequest("invalid artifact version ID")
+			return distrerr.NewBadRequest("invalid artifact version ID")
 		}
 	case pgerrcode.UniqueViolation:
-		return fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+		return fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 	}
 	return err
 }
@@ -216,7 +216,7 @@ func GetArtifactEntitlementByID(ctx context.Context, id uuid.UUID) (*types.Artif
 
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ArtifactEntitlement]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("could not collect ArtifactEntitlement: %w", err)
 	} else {
@@ -230,11 +230,11 @@ func DeleteArtifactEntitlementWithID(ctx context.Context, id uuid.UUID) error {
 	if err != nil {
 		var pgError *pgconn.PgError
 		if errors.As(err, &pgError) && pgError.Code == pgerrcode.ForeignKeyViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 		return err
 	} else if cmd.RowsAffected() == 0 {
-		err = apierrors.ErrNotFound
+		err = distrerr.ErrNotFound
 	}
 
 	if err != nil {
@@ -254,7 +254,7 @@ func DeleteArtifactEntitlementsWithOrganizationID(ctx context.Context, organizat
 	if err != nil {
 		var pgError *pgconn.PgError
 		if errors.As(err, &pgError) && pgError.Code == pgerrcode.ForeignKeyViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 		return 0, fmt.Errorf("could not delete ArtifactEntitlement: %w", err)
 	}
@@ -277,7 +277,7 @@ func DeleteArtifactEntitlementsWithOrganizationSubscriptionType(
 	if err != nil {
 		var pgError *pgconn.PgError
 		if errors.As(err, &pgError) && pgError.Code == pgerrcode.ForeignKeyViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 		return 0, fmt.Errorf("could not delete ArtifactEntitlements: %w", err)
 	}

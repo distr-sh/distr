@@ -1,0 +1,104 @@
+---
+title: Infrastructure Controllers
+description: 'Distr infrastructure controllers provision and reconcile cloud infrastructure in customer environments. The OpenTofu controller runs your Terraform configuration as a regular Distr application, for BYOC and any other Terraform use case.'
+slug: docs/controllers/infrastructure-controllers
+sidebar:
+  label: Infrastructure Controllers
+  order: 4
+---
+
+import {Aside, Steps} from '@astrojs/starlight/components';
+
+Infrastructure controllers provision the cloud resources your application needs in the customer's environment: a Kubernetes cluster, a database, object storage, networks and IAM roles.
+The [deployment controllers](/docs/controllers/) deploy applications, while the infrastructure controllers create and reconcile what those applications run on.
+
+An infrastructure controller is not a new kind of deployment target. It is a container image that you release as a regular Distr application, with a Docker Compose file or a Helm chart.
+The [Docker controller](/docs/controllers/docker-controller/) runs it on a VM, or the [Kubernetes controller](/docs/controllers/kubernetes-controller/) runs it in an existing cluster.
+Versions, entitlements, secrets, logs, health and updates work exactly as they do for every other application.
+
+The infrastructure controllers are open source and available in the [distr-infrastructure-controllers](https://github.com/distr-sh/distr-infrastructure-controllers) repository.
+
+| Controller          | Manages                                                     | Image                                                                   |
+| ------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------- |
+| OpenTofu controller | Infrastructure described by an OpenTofu or Terraform config | `ghcr.io/distr-sh/distr-infrastructure-controllers/opentofu-controller` |
+
+## Use cases
+
+- **[Bring Your Own Cloud (BYOC)](/docs/use-cases/byoc-bring-your-own-cloud/)**: the OpenTofu controller creates the cluster and the resources your product needs in the customer's cloud account, and the Kubernetes controller deploys your application into that cluster.
+- **Terraform use cases**: provision a managed database, a bucket or DNS records next to an application the customer runs, with the same versioned configuration for every customer and a view in Distr of which version each customer runs and whether its last run succeeded.
+
+## OpenTofu controller
+
+The OpenTofu controller runs an OpenTofu configuration baked into its image and keeps the state in a persistent volume.
+OpenTofu is the open source fork of Terraform, so existing Terraform configurations and providers work without changes.
+
+On start, the controller copies the configuration into its data volume, next to the state.
+It then plans and applies the configuration every `RECONCILE_INTERVAL` and logs each step, so the [deployment logs](/docs/controllers/logs-and-metrics/) in Distr show what is created, changed or destroyed and why:
+
+```text
+INFO run #1 started {"operation": "apply", "mode": "auto", "version": "0.2.0"}
+INFO plan: update aws_s3_object.version
+INFO plan: 0 to add, 1 to change, 0 to destroy
+INFO upgrading the infrastructure from version 0.1.0 to 0.2.0
+INFO aws_s3_object.version: modification complete after 0s [id=version.json]
+INFO apply complete: 0 added, 1 changed, 0 destroyed
+INFO run #1 finished in 3.7s: the infrastructure is up to date
+```
+
+The controller tells an upgrade, a new configuration, changed variables and drift apart, and says which one caused a change.
+Its `/readyz` endpoint reports whether the last run succeeded, so a failed run shows up in Distr as an unhealthy deployment and can trigger an [alert](/docs/controllers/alerts/).
+
+### Ship your infrastructure with the OpenTofu controller
+
+<Steps>
+
+1. Write an OpenTofu configuration with an empty `backend "local" {}` block and keep the `.terraform.lock.hcl` that `tofu init` writes. The controller installs exactly the providers locked in it.
+
+2. Build an image on top of the OpenTofu controller that copies the configuration to `/module`, and push it to the [Distr registry](/docs/registry/) or any other registry:
+
+   ```dockerfile
+   FROM ghcr.io/distr-sh/distr-infrastructure-controllers/opentofu-controller:0.2.0
+   ARG VERSION
+   ENV APP_VERSION=${VERSION}
+   COPY . /module/
+   ```
+
+   Build it with `--build-arg VERSION=1.0.0` to set the version of the infrastructure, which OpenTofu receives as `var.app_version`.
+
+3. [Create an application](/docs/controllers/application/) in Distr whose Compose file or Helm chart runs that image with a persistent volume at `/data`. Every example in the repository contains both.
+
+4. Deploy it to a deployment target in the customer's environment. Pass the cloud credentials as [secrets](/docs/controllers/secrets/) and the variables of your configuration as `TF_VAR_<name>`.
+
+5. To change the infrastructure, release a new image version and update the deployment. Distr rolls it out like any other application update.
+
+</Steps>
+
+<Aside type="caution">
+  The state lives in the data volume. Undeploying a Docker deployment removes
+  that volume, so destroy the infrastructure first by setting `DESTROY_CONFIRM`
+  to the `INSTANCE_NAME` and waiting for the logs to confirm it.
+</Aside>
+
+### Examples
+
+Every directory in [`examples/opentofu/`](https://github.com/distr-sh/distr-infrastructure-controllers/tree/main/examples/opentofu) is a complete infrastructure application with a Dockerfile, a Compose file with its environment template and a Helm chart. Copy one to start your own.
+
+| Example                                                                                                                                 | Provisions                                                           |
+| --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| [`hello-world`](https://github.com/distr-sh/distr-infrastructure-controllers/tree/main/examples/opentofu/hello-world)                   | Nothing real: random names, a password and a fake provisioning delay |
+| [`azure-static-website`](https://github.com/distr-sh/distr-infrastructure-controllers/tree/main/examples/opentofu/azure-static-website) | A public Azure Storage website showing the deployed version          |
+| [`aws-eks`](https://github.com/distr-sh/distr-infrastructure-controllers/tree/main/examples/opentofu/aws-eks)                           | An EKS cluster, a PostgreSQL database and a bucket in one zone       |
+
+### Configuration
+
+The most important environment variables of the OpenTofu controller are listed below. The [repository README](https://github.com/distr-sh/distr-infrastructure-controllers#configuration) documents all of them.
+
+| Variable                      | Default  | Description                                                                                      |
+| ----------------------------- | -------- | ------------------------------------------------------------------------------------------------ |
+| `INSTANCE_NAME`               | required | Name of the installation, passed to OpenTofu as `var.instance_name`                              |
+| `APPLY_MODE`                  | `auto`   | `auto` applies every plan, `plan` only logs it for review                                        |
+| `RECONCILE_INTERVAL`          | `15m`    | Time between two runs                                                                            |
+| `STATE_ENCRYPTION_PASSPHRASE` |          | Encrypts the state and the plans, at least 16 characters                                         |
+| `DESTROY_CONFIRM`             |          | Set to `INSTANCE_NAME` to destroy all infrastructure, also in `plan` mode                        |
+| `PROVIDER_MIRROR`             |          | OCI repository prefix to install providers from, for installations that can't reach the registry |
+| `TF_VAR_<name>`               |          | Variables of the OpenTofu configuration                                                          |

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -54,7 +54,7 @@ func GetFileWithID(ctx context.Context, id uuid.UUID) (*types.File, error) {
 		return nil, fmt.Errorf("could not query file: %w", err)
 	} else if file, err := pgx.CollectExactlyOneRow[types.File](rows, pgx.RowToStructByName); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		} else {
 			return nil, fmt.Errorf("could not map file: %w", err)
 		}
@@ -74,7 +74,7 @@ func GetFileMetadataWithID(ctx context.Context, id uuid.UUID) (*types.FileMetada
 		return nil, fmt.Errorf("could not query file metadata: %w", err)
 	} else if metadata, err := pgx.CollectExactlyOneRow[types.FileMetadata](rows, pgx.RowToStructByName); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		} else {
 			return nil, fmt.Errorf("could not map file metadata: %w", err)
 		}
@@ -88,10 +88,10 @@ func DeleteFileWithID(ctx context.Context, id uuid.UUID) error {
 	cmd, err := db.Exec(ctx, `DELETE FROM file WHERE id = @id`, pgx.NamedArgs{"id": id})
 	if err != nil {
 		if pgerr := (*pgconn.PgError)(nil); errors.As(err, &pgerr) && pgerr.Code == pgerrcode.ForeignKeyViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 	} else if cmd.RowsAffected() == 0 {
-		err = apierrors.ErrNotFound
+		err = distrerr.ErrNotFound
 	}
 
 	if err != nil {

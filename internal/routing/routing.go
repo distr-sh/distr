@@ -2,6 +2,7 @@ package routing
 
 import (
 	"context"
+	"io/fs"
 	"net/http"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/prometheus"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/tracers"
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
@@ -127,7 +129,7 @@ func ApiRouter(
 		r.Use(
 			chimiddleware.RequestID,
 			chimiddleware.ClientIPFromRemoteAddr,
-			chimiddleware.ClientIPFromXFF(),
+			chimiddleware.ClientIPFromXFFTrustedProxies(1),
 			middleware.Sentry,
 			middleware.LoggerCtxMiddleware(logger),
 			middleware.LoggingMiddleware,
@@ -253,7 +255,7 @@ func CaddyAskRouter(logger *zap.Logger, db *pgxpool.Pool) http.Handler {
 		middleware.LoggerCtxMiddleware(logger),
 		middleware.ContextInjectorMiddleware(db, nil, nil, nil, nil, nil),
 	)
-	router.Get("/internal/webhook/tls/ask", handlers.TLSAskHandler())
+	router.Get("/internal/webhook/tls/ask", respond.Handler(handlers.TLSAskHandler))
 	return router
 }
 
@@ -310,9 +312,21 @@ func FrontendRouter() http.Handler {
 		middleware.CacheControlMediaAssets,
 	)
 
-	router.Handle("/*", handlers.StaticFileHandler(frontend.BrowserFS()))
+	router.Handle("/*", staticFileHandler(frontend.BrowserFS()))
 
 	return router
+}
+
+func staticFileHandler(fsys fs.FS) http.HandlerFunc {
+	server := http.FileServer(http.FS(fsys))
+	return func(w http.ResponseWriter, r *http.Request) {
+		// check if the requested file exists and use index.html if it does not.
+		if _, err := fs.Stat(fsys, r.URL.Path[1:]); err != nil {
+			http.StripPrefix(r.URL.Path, server).ServeHTTP(w, r)
+		} else {
+			server.ServeHTTP(w, r)
+		}
+	}
 }
 
 func WellKnownRouter() http.Handler {

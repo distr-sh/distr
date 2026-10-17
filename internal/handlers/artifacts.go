@@ -3,23 +3,23 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/registry/upstream"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 type UpstreamTagSyncer interface {
@@ -29,43 +29,43 @@ type UpstreamTagSyncer interface {
 func ArtifactsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Artifacts"))
 	r.Use(middleware.RequireOrgAndRole)
-	r.Get("/", getArtifacts).
+	r.Get("/", respond.Handler(getArtifacts)).
 		With(option.Description("List all artifacts")).
 		With(option.Response(http.StatusOK, []api.ArtifactsResponse{}))
-	r.Get("/pull-status", getArtifactPullStatus).
+	r.Get("/pull-status", respond.Handler(getArtifactPullStatus)).
 		With(option.Description("Get whether the current user has pulled an artifact of the organization")).
 		With(option.Response(http.StatusOK, api.ArtifactPullStatusResponse{}))
 	r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
-		Post("/", createArtifactHandler()).
+		Post("/", respond.Handler(createArtifactHandler)).
 		With(option.Description("Create an artifact")).
 		With(option.Request(api.CreateArtifactRequest{})).
 		With(option.Response(http.StatusCreated, api.ArtifactResponse{}))
-	r.With(artifactMiddleware).Route("/{artifactId}", func(r chiopenapi.Router) {
+	r.With(respond.Middleware(artifactMiddleware)).Route("/{artifactId}", func(r chiopenapi.Router) {
 		type ArtifactRequest struct {
 			ArtifactID uuid.UUID `path:"artifactId"`
 		}
 
-		r.Get("/", getArtifact).
+		r.Get("/", respond.Handler(getArtifact)).
 			With(option.Description("Get an artifact by ID")).
 			With(option.Request(ArtifactRequest{})).
 			With(option.Response(http.StatusOK, []api.ArtifactResponse{}))
 		r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 			Group(func(r chiopenapi.Router) {
-				r.Patch("/image", patchImageArtifactHandler).
+				r.Patch("/image", respond.Handler(patchImageArtifactHandler)).
 					With(option.Description("Update artifact image")).
 					With(option.Request(struct {
 						ArtifactRequest
 						api.PatchImageRequest
 					}{})).
 					With(option.Response(http.StatusOK, []api.ArtifactResponse{}))
-				r.Patch("/title-image", patchTitleImageArtifactHandler).
+				r.Patch("/title-image", respond.Handler(patchTitleImageArtifactHandler)).
 					With(option.Description("Update the artifact title image shown in the customer overview")).
 					With(option.Request(struct {
 						ArtifactRequest
 						api.PatchImageRequest
 					}{})).
 					With(option.Response(http.StatusOK, api.ArtifactResponse{}))
-				r.Patch("/", patchArtifactHandler).
+				r.Patch("/", respond.Handler(patchArtifactHandler)).
 					With(option.Description(
 						"Update artifact upstream URL and/or authentication, its public visibility " +
 							"or whether it is hidden in the customer overview")).
@@ -74,14 +74,14 @@ func ArtifactsRouter(r chiopenapi.Router) {
 						api.PatchArtifactRequest
 					}{})).
 					With(option.Response(http.StatusOK, api.ArtifactResponse{}))
-				r.Post("/sync", syncArtifactHandler()).
+				r.Post("/sync", respond.Handler(syncArtifactHandler)).
 					With(option.Description("Trigger upstream sync for a pull-through artifact")).
 					With(option.Request(ArtifactRequest{})).
 					With(option.Response(http.StatusOK, api.ArtifactResponse{}))
-				r.Delete("/", deleteArtifactHandler).
+				r.Delete("/", respond.Handler(deleteArtifactHandler)).
 					With(option.Description("Delete an artifact")).
 					With(option.Request(ArtifactRequest{}))
-				r.Delete("/tags/{tagName}", deleteArtifactTagHandler).
+				r.Delete("/tags/{tagName}", respond.Handler(deleteArtifactTagHandler)).
 					With(option.Description("Delete an artifact tag")).
 					With(option.Request(struct {
 						ArtifactRequest
@@ -91,139 +91,92 @@ func ArtifactsRouter(r chiopenapi.Router) {
 	})
 }
 
-func getArtifactPullStatus(w http.ResponseWriter, r *http.Request) {
+func getArtifactPullStatus(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 	if hasPulled, err := db.HasUserPulledArtifact(ctx, auth.CurrentUserID(), *auth.CurrentOrgID()); err != nil {
-		respondInternalError(w, r, err, "failed to get artifact pull status")
+		return nil, fmt.Errorf("failed to get artifact pull status: %w", err)
 	} else {
-		RespondJSON(w, api.ArtifactPullStatusResponse{HasPulled: hasPulled})
+		return respond.JSON(api.ArtifactPullStatusResponse{HasPulled: hasPulled}), nil
 	}
 }
 
-func createArtifactHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		authentication := auth.Authentication.Require(ctx)
+func createArtifactHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	authentication := auth.Authentication.Require(ctx)
 
-		body, err := JsonBody[api.CreateArtifactRequest](w, r)
-		if err != nil {
-			return
-		}
-		if body.Name == "" {
-			http.Error(w, "name is required", http.StatusBadRequest)
-			return
-		}
+	if body, resp := decodeJSON[api.CreateArtifactRequest](r); resp != nil {
+		return resp, nil
+	} else if body.Name == "" {
+		return respond.BadRequest("name is required"), nil
+	} else {
 		if body.UpstreamURL != nil {
 			if *body.UpstreamURL == "" {
-				http.Error(w, "upstreamUrl must not be empty", http.StatusBadRequest)
-				return
-			}
-			if err := upstream.ValidateUpstreamURL(ctx, *body.UpstreamURL); err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
+				return respond.BadRequest("upstreamUrl must not be empty"), nil
+			} else if err := upstream.ValidateUpstreamURL(ctx, *body.UpstreamURL); err != nil {
+				return respond.BadRequest(err.Error()), nil
 			}
 		}
 
 		orgID := *authentication.CurrentOrgID()
-		org, err := db.GetOrganizationByID(ctx, orgID)
-		if err != nil {
-			log.Error("failed to get organization", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-		if org.Slug == nil || *org.Slug == "" {
-			http.Error(
-				w,
-				"your organization does not have a slug yet. Please set one in the organization settings "+
+		if org, err := db.GetOrganizationByID(ctx, orgID); err != nil {
+			return nil, fmt.Errorf("failed to get organization: %w", err)
+		} else if org.Slug == nil || *org.Slug == "" {
+			return respond.BadRequest(
+				"your organization does not have a slug yet. Please set one in the organization settings " +
 					"before creating an artifact.",
-				http.StatusBadRequest,
-			)
-			return
-		}
-
-		artifact := &types.Artifact{
-			Name:           body.Name,
-			OrganizationID: orgID,
-			UpstreamURL:    body.UpstreamURL,
-		}
-		if body.UpstreamAuth != nil {
-			if artifact.UpstreamURL == nil {
-				http.Error(w, "upstream auth can only be set if upstream URL is set", http.StatusBadRequest)
-				return
+			), nil
+		} else {
+			artifact := &types.Artifact{
+				Name:           body.Name,
+				OrganizationID: orgID,
+				UpstreamURL:    body.UpstreamURL,
 			}
+			if body.UpstreamAuth != nil {
+				if artifact.UpstreamURL == nil {
+					return respond.BadRequest("upstream auth can only be set if upstream URL is set"), nil
+				}
 
-			artifact.UpstreamAuthType = &body.UpstreamAuth.Type
-			artifact.UpstreamUsername = dbcrypto.StringPtr(body.UpstreamAuth.Username)
-			artifact.UpstreamPassword = dbcrypto.StringPtr(body.UpstreamAuth.Password)
-		}
-		if err := upstream.ValidateUpstreamCredentials(ctx, artifact); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		if err := db.CreateArtifact(ctx, artifact); err != nil {
-			if errors.Is(err, apierrors.ErrConflict) {
-				http.Error(w, "artifact name already exists", http.StatusConflict)
-				return
+				artifact.UpstreamAuthType = &body.UpstreamAuth.Type
+				artifact.UpstreamUsername = dbcrypto.StringPtr(body.UpstreamAuth.Username)
+				artifact.UpstreamPassword = dbcrypto.StringPtr(body.UpstreamAuth.Password)
 			}
-			log.Error("failed to create artifact", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
+			if err := upstream.ValidateUpstreamCredentials(ctx, artifact); err != nil {
+				return respond.BadRequest(err.Error()), nil
+			} else if err := db.CreateArtifact(ctx, artifact); errors.Is(err, distrerr.ErrConflict) {
+				return respond.Conflict("artifact name already exists"), nil
+			} else if err != nil {
+				return nil, fmt.Errorf("failed to create artifact: %w", err)
+			} else if result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil); err != nil {
+				return nil, fmt.Errorf("failed to fetch created artifact: %w", err)
+			} else {
+				return respond.JSON(mapping.ArtifactToAPI(*result)).WithStatus(http.StatusCreated), nil
+			}
 		}
-
-		result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil)
-		if err != nil {
-			log.Error("failed to fetch created artifact", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusCreated)
-		RespondJSON(w, mapping.ArtifactToAPI(*result))
 	}
 }
 
-func syncArtifactHandler() http.HandlerFunc {
+func syncArtifactHandler(r *http.Request) (respond.Responder, error) {
 	syncer := new(upstream.Syncer)
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		artifact := internalctx.GetArtifact(ctx)
+	ctx := r.Context()
+	artifact := internalctx.GetArtifact(ctx)
 
-		if artifact.UpstreamURL == nil {
-			http.Error(w, "artifact is not a pull-through cache", http.StatusBadRequest)
-			return
-		}
-
-		if err := syncer.SyncArtifactTags(ctx, &artifact.Artifact, false); err != nil {
-			log.Error("upstream sync failed", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil)
-		if err != nil {
-			log.Error("failed to fetch artifact after sync", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		RespondJSON(w, mapping.ArtifactToAPI(*result))
+	if artifact.UpstreamURL == nil {
+		return respond.BadRequest("artifact is not a pull-through cache"), nil
+	} else if err := syncer.SyncArtifactTags(ctx, &artifact.Artifact, false); err != nil {
+		return nil, fmt.Errorf("upstream sync failed: %w", err)
+	} else if result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil); err != nil {
+		return nil, fmt.Errorf("failed to fetch artifact after sync: %w", err)
+	} else {
+		return respond.JSON(mapping.ArtifactToAPI(*result)), nil
 	}
 }
 
-func getArtifacts(w http.ResponseWriter, r *http.Request) {
+func getArtifacts(r *http.Request) (respond.Responder, error) {
 	if artifacts, err := visibleArtifacts(r.Context()); err != nil {
-		respondInternalError(w, r, err, "failed to get artifacts")
+		return nil, fmt.Errorf("failed to get artifacts: %w", err)
 	} else {
-		RespondJSON(w, mapping.List(artifacts, mapping.ArtifactsWithDownloadsToAPI))
+		return respond.JSON(mapping.List(artifacts, mapping.ArtifactsWithDownloadsToAPI)), nil
 	}
 }
 
@@ -258,116 +211,87 @@ func customerArtifactVersions(
 	return db.GetVersionsForArtifact(ctx, artifactID, licenseOwnerID)
 }
 
-func getArtifact(w http.ResponseWriter, r *http.Request) {
+func getArtifact(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	RespondJSON(w, mapping.ArtifactToAPI(*internalctx.GetArtifact(ctx)))
+	return respond.JSON(mapping.ArtifactToAPI(*internalctx.GetArtifact(ctx))), nil
 }
 
-var patchImageArtifactHandler = patchImageHandler(func(ctx context.Context, body api.PatchImageRequest) (any, error) {
-	artifact := internalctx.GetArtifact(ctx)
-	if err := db.UpdateArtifactImage(ctx, artifact, body.ImageID); err != nil {
-		return nil, err
-	} else {
-		return mapping.ArtifactToAPI(*artifact), nil
-	}
-})
+func patchImageArtifactHandler(r *http.Request) (respond.Responder, error) {
+	return patchImage(r, func(ctx context.Context, body api.PatchImageRequest) (any, error) {
+		artifact := internalctx.GetArtifact(ctx)
+		if err := db.UpdateArtifactImage(ctx, artifact, body.ImageID); err != nil {
+			return nil, err
+		} else {
+			return mapping.ArtifactToAPI(*artifact), nil
+		}
+	})
+}
 
-var patchTitleImageArtifactHandler = patchImageHandler(
-	func(ctx context.Context, body api.PatchImageRequest) (any, error) {
+func patchTitleImageArtifactHandler(r *http.Request) (respond.Responder, error) {
+	return patchImage(r, func(ctx context.Context, body api.PatchImageRequest) (any, error) {
 		artifact := internalctx.GetArtifact(ctx)
 		if err := db.UpdateArtifactTitleImage(ctx, artifact, body.ImageID); err != nil {
 			return nil, err
 		} else {
 			return mapping.ArtifactToAPI(*artifact), nil
 		}
-	},
-)
-
-func deleteArtifactHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
-	artifact := internalctx.GetArtifact(ctx)
-
-	err := db.RunTx(ctx, func(ctx context.Context) error {
-		isReferenced, err := db.ArtifactIsReferencedInEntitlements(ctx, artifact.ID)
-		if err != nil {
-			return err
-		}
-		if isReferenced {
-			return apierrors.NewBadRequest("Cannot delete artifact: it is referenced in one or more entitlements.")
-		}
-
-		if err := db.DeleteArtifactWithID(ctx, artifact.ID); err != nil {
-			return err
-		}
-		return nil
 	})
-	if err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
-			return
-		}
-		if errors.Is(err, apierrors.ErrBadRequest) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		log.Error("error deleting artifact", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
 }
 
-func deleteArtifactTagHandler(w http.ResponseWriter, r *http.Request) {
+func deleteArtifactHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	artifact := internalctx.GetArtifact(ctx)
 
-	tagName := r.PathValue("tagName")
-	if tagName == "" {
-		http.NotFound(w, r)
-		return
+	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
+		if isReferenced, err := db.ArtifactIsReferencedInEntitlements(ctx, artifact.ID); err != nil {
+			return nil, fmt.Errorf("failed to check artifact entitlements: %w", err)
+		} else if isReferenced {
+			return respond.BadRequest("Cannot delete artifact: it is referenced in one or more entitlements."), nil
+		} else if err := db.DeleteArtifactWithID(ctx, artifact.ID); errors.Is(err, distrerr.ErrNotFound) {
+			return artifactNotFound, nil
+		} else if err != nil {
+			return nil, fmt.Errorf("error deleting artifact: %w", err)
+		} else {
+			return nil, nil
+		}
+	}); resp != nil || err != nil {
+		return resp, err
+	} else {
+		return respond.NoContent(), nil
 	}
-
-	if err := db.DeleteArtifactTag(ctx, artifact.ID, tagName); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
-			return
-		}
-		if errors.Is(err, apierrors.ErrBadRequest) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		if errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, err.Error(), http.StatusConflict)
-			return
-		}
-		log.Error("error deleting artifact tag", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
 }
 
-func patchArtifactHandler(w http.ResponseWriter, r *http.Request) {
+func deleteArtifactTagHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	artifact := internalctx.GetArtifact(ctx)
 
-	body, err := JsonBody[api.PatchArtifactRequest](w, r)
-	if err != nil {
-		return
+	if tagName := r.PathValue("tagName"); tagName == "" {
+		return artifactTagNotFound, nil
+	} else if err := db.DeleteArtifactTag(ctx, artifact.ID, tagName); errors.Is(err, distrerr.ErrNotFound) {
+		return artifactTagNotFound, nil
+	} else if errors.Is(err, distrerr.ErrBadRequest) {
+		return respond.BadRequest(err.Error()), nil
+	} else if errors.Is(err, distrerr.ErrConflict) {
+		return respond.Conflict(err.Error()), nil
+	} else if err != nil {
+		return nil, fmt.Errorf("error deleting artifact tag: %w", err)
+	} else {
+		return respond.NoContent(), nil
+	}
+}
+
+func patchArtifactHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	artifact := internalctx.GetArtifact(ctx)
+
+	body, resp := decodeJSON[api.PatchArtifactRequest](r)
+	if resp != nil {
+		return resp, nil
 	}
 
 	if body.Public != nil {
-		role := auth.Authentication.Require(ctx).CurrentUserRole()
-		if role == nil || *role != types.UserRoleAdmin {
-			http.Error(w, "must be admin to change the visibility of an artifact", http.StatusForbidden)
-			return
+		if role := auth.Authentication.Require(ctx).CurrentUserRole(); role == nil || *role != types.UserRoleAdmin {
+			return respond.Forbidden("must be admin to change the visibility of an artifact"), nil
 		}
 	}
 
@@ -375,15 +299,13 @@ func patchArtifactHandler(w http.ResponseWriter, r *http.Request) {
 
 	if body.UpstreamURL != nil {
 		if *body.UpstreamURL == "" {
-			http.Error(w, "upstreamUrl must not be empty", http.StatusBadRequest)
-			return
+			return respond.BadRequest("upstreamUrl must not be empty"), nil
+		} else if err := upstream.ValidateUpstreamURL(ctx, *body.UpstreamURL); err != nil {
+			return respond.BadRequest(err.Error()), nil
+		} else {
+			params.UpdateURL = true
+			params.UpstreamURL = body.UpstreamURL
 		}
-		if err := upstream.ValidateUpstreamURL(ctx, *body.UpstreamURL); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		params.UpdateURL = true
-		params.UpstreamURL = body.UpstreamURL
 	}
 
 	if body.Auth.Present {
@@ -397,8 +319,7 @@ func patchArtifactHandler(w http.ResponseWriter, r *http.Request) {
 
 	if params.UpdateURL || params.UpdateAuth {
 		if artifact.UpstreamURL == nil {
-			http.Error(w, "artifact is not a pull-through cache artifact", http.StatusBadRequest)
-			return
+			return respond.BadRequest("artifact is not a pull-through cache artifact"), nil
 		}
 		validationArtifact := artifact.Artifact
 		if params.UpdateURL {
@@ -410,8 +331,7 @@ func patchArtifactHandler(w http.ResponseWriter, r *http.Request) {
 			validationArtifact.UpstreamPassword = params.Password
 		}
 		if err := upstream.ValidateUpstreamCredentials(ctx, &validationArtifact); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+			return respond.BadRequest(err.Error()), nil
 		}
 	}
 
@@ -433,50 +353,32 @@ func patchArtifactHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return nil
 	}); err != nil {
-		log.Error("failed to update artifact", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to update artifact: %w", err)
+	} else if result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil); err != nil {
+		return nil, fmt.Errorf("failed to fetch artifact after update: %w", err)
+	} else {
+		return respond.JSON(mapping.ArtifactToAPI(*result)), nil
 	}
-
-	result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil)
-	if err != nil {
-		log.Error("failed to fetch artifact after update", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	RespondJSON(w, mapping.ArtifactToAPI(*result))
 }
 
-func artifactMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
+func artifactMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
 
-		var artifact *types.ArtifactWithTaggedVersion
-		var err error
+	var entitledCustomerOrgID *uuid.UUID
+	if auth.CurrentOrg().HasFeature(types.FeatureLicensing) {
+		entitledCustomerOrgID = auth.CurrentCustomerOrgID()
+	}
 
-		if artifactId, parseErr := uuid.Parse(r.PathValue("artifactId")); parseErr != nil {
-			http.NotFound(w, r)
-			return
-		} else if auth.CurrentOrg().HasFeature(types.FeatureLicensing) && auth.CurrentCustomerOrgID() != nil {
-			artifact, err = db.GetArtifactByID(ctx, *auth.CurrentOrgID(), artifactId, auth.CurrentCustomerOrgID())
-		} else {
-			artifact, err = db.GetArtifactByID(ctx, *auth.CurrentOrgID(), artifactId, nil)
-		}
-
-		if err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
-				http.NotFound(w, r)
-			} else {
-				log.Error("failed to get artifact", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			}
-		} else {
-			h.ServeHTTP(w, r.WithContext(internalctx.WithArtifact(ctx, artifact)))
-		}
-	})
+	if artifactId, err := uuid.Parse(r.PathValue("artifactId")); err != nil {
+		return nil, artifactNotFound, nil
+	} else if artifact, err := db.GetArtifactByID(
+		ctx, *auth.CurrentOrgID(), artifactId, entitledCustomerOrgID,
+	); errors.Is(err, distrerr.ErrNotFound) {
+		return nil, artifactNotFound, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get artifact: %w", err)
+	} else {
+		return r.WithContext(internalctx.WithArtifact(ctx, artifact)), nil, nil
+	}
 }

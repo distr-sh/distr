@@ -22,6 +22,9 @@ faq:
 ---
 
 import CraCta from '~/components/cta/CraCta.astro';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import craTimelineLight from '~/assets/cra/introduction/cra-timeline-light.webp';
+import craTimelineDark from '~/assets/cra/introduction/cra-timeline-dark.webp';
 
 _Last verified: July 2026. Based on Regulation (EU) 2024/2847 and the European
 Commission's March 2026 draft guidance. The draft guidance can still change._
@@ -92,13 +95,12 @@ the market before December 11, 2027 only need full compliance after a
 substantial modification. But Article 14 reporting applies to them anyway from
 September 2026. You cannot grandfather your way out of the 24-hour clock.
 
-```mermaid
-flowchart TD
-    a["Dec 10, 2024: CRA in force"] --> b["Jun 11, 2026: conformity body provisions apply"]
-    b --> c["Sep 11, 2026: Article 14 reporting starts"]
-    c --> d["Dec 11, 2027: full application, CE marking required"]
-    d --> e["After: new versions and substantial modifications must comply from day one"]
-```
+<ThemedImage
+  lightSrc={craTimelineLight}
+  darkSrc={craTimelineDark}
+  alt="CRA timeline from entry into force in December 2024 to full application in December 2027"
+  dropShadow={false}
+/>
 
 ## What a manufacturer has to do
 

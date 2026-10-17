@@ -29,6 +29,7 @@ Distr is the open-source platform to ship self-hosted software. Start simple, sc
 ## Main features
 
 - **Deployment controllers:** Prebuilt Docker Compose, Docker Swarm and Helm controllers install and update your application in customer environments and report status, logs and metrics back.
+- **Infrastructure controllers:** The [OpenTofu controller](https://github.com/distr-sh/distr-infrastructure-controllers) provisions and reconciles the cloud infrastructure of BYOC and other Terraform installations, deployed as a regular Distr application.
 - **OCI registry:** Distribute Docker images, Helm charts, Zarf packages, and any OCI artifact, with per-customer tag access control, pull-through caching, and download analytics.
 - **Licensing:** Application and artifact entitlements per customer, plus signed JWT license keys your application verifies offline with no call back to Distr.
 - **Remote diagnostics:** Container logs, live metrics, deployment status, alerts, and customer-initiated support bundles, without access to their infrastructure.
@@ -48,7 +49,7 @@ Shipping into customer-controlled environments starts with a Helm chart or a Com
 **Use cases include:**
 
 - On-premises, VPC and self-hosted software deployments
-- Bring Your Own Cloud (BYOC) automation
+- Bring Your Own Cloud (BYOC) and Terraform infrastructure provisioning
 - Edge & Fleet management
 
 Read more about Distr and its core concepts at https://distr.sh/docs/core-concepts/

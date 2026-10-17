@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/validation"
 	"github.com/google/uuid"
 )
 
@@ -50,6 +51,13 @@ type CreateApplicationRequest struct {
 	AllowAutomaticUpdates bool                     `json:"allowAutomaticUpdates,omitempty"`
 }
 
+func (r CreateApplicationRequest) Validate() error {
+	if r.Name == "" {
+		return validation.NewValidationFailedError("name is required")
+	}
+	return validateDeploymentType(r.Type)
+}
+
 type UpdateApplicationRequest struct {
 	Name               string                   `json:"name"`
 	VersioningStrategy types.VersioningStrategy `json:"versioningStrategy,omitempty"`
@@ -78,6 +86,13 @@ type CreateApplicationVersionRequest struct {
 	ChartUrl     *string                             `json:"chartUrl,omitempty"`
 	ChartVersion *string                             `json:"chartVersion,omitempty"`
 	Resources    []ApplicationVersionResourceRequest `json:"resources,omitempty"`
+}
+
+func (r CreateApplicationVersionRequest) Validate() error {
+	if r.Name == "" {
+		return validation.NewValidationFailedError("name is required")
+	}
+	return nil
 }
 
 type ApplicationVersionResourceRequest struct {

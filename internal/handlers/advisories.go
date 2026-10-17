@@ -9,19 +9,17 @@ import (
 	"strings"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 const duplicateCveIDMessage = "another advisory in this organization already covers this CVE ID"
@@ -33,42 +31,53 @@ func advisoryScope(a authinfo.AuthInfoWithUserAndOrganization) db.AdvisoryScope 
 	}
 }
 
+func advisoryFilter(
+	a authinfo.AuthInfoWithUserAndOrganization, parsed api.ParsedListAdvisoriesRequest,
+) db.AdvisoryFilter {
+	return db.AdvisoryFilter{
+		Scope:      advisoryScope(a),
+		Statuses:   parsed.Statuses,
+		Severities: parsed.Severities,
+		Tags:       parsed.Tags,
+	}
+}
+
 func AdvisoriesRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Advisories"))
 
 	r.With(middleware.RequireOrgAndRole).Group(func(r chiopenapi.Router) {
-		r.Get("/", getAdvisoriesHandler()).
+		r.Get("/", respond.Handler(getAdvisoriesHandler)).
 			With(option.Description("List advisories")).
 			With(option.Request(api.ListAdvisoriesRequest{})).
 			With(option.Response(http.StatusOK, []api.Advisory{}))
 
 		r.With(middleware.RequireVendor).
-			Get("/tags", getAdvisoryTagsHandler()).
+			Get("/tags", respond.Handler(getAdvisoryTagsHandler)).
 			With(option.Description("List all advisory tags used in the organization")).
 			With(option.Response(http.StatusOK, []string{}))
 
 		r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
-			Post("/", createAdvisoryHandler()).
+			Post("/", respond.Handler(createAdvisoryHandler)).
 			With(option.Description("Create a new advisory")).
 			With(option.Request(api.CreateUpdateAdvisoryRequest{})).
 			With(option.Response(http.StatusOK, api.AdvisoryDetail{}))
 
 		r.Route("/{advisoryId}", func(r chiopenapi.Router) {
-			r.Get("/", getAdvisoryDetailHandler()).
+			r.Get("/", respond.Handler(getAdvisoryDetailHandler)).
 				With(option.Description("Get advisory detail")).
 				With(option.Request(api.AdvisoryIDRequest{})).
 				With(option.Response(http.StatusOK, api.AdvisoryDetail{}))
 
 			// Deliberately not served from the read-only database: the detail view refetches
 			// impact right after an edit, and replica lag would show the state from before it.
-			r.Get("/impact", getAdvisoryImpactHandler()).
+			r.Get("/impact", respond.Handler(getAdvisoryImpactHandler)).
 				With(option.Description("Get the deployments and downloads affected by this advisory")).
 				With(option.Request(api.AdvisoryIDRequest{})).
 				With(option.Response(http.StatusOK, api.AdvisoryImpact{}))
 
 			r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 				Group(func(r chiopenapi.Router) {
-					r.Put("/", updateAdvisoryHandler()).
+					r.Put("/", respond.Handler(updateAdvisoryHandler)).
 						With(option.Description("Update an advisory")).
 						With(option.Request(struct {
 							api.AdvisoryIDRequest
@@ -76,7 +85,7 @@ func AdvisoriesRouter(r chiopenapi.Router) {
 						}{})).
 						With(option.Response(http.StatusOK, api.AdvisoryDetail{}))
 
-					r.Patch("/", patchAdvisoryHandler()).
+					r.Patch("/", respond.Handler(patchAdvisoryHandler)).
 						With(option.Description("Change the status or severity of an advisory")).
 						With(option.Request(struct {
 							api.AdvisoryIDRequest
@@ -84,7 +93,7 @@ func AdvisoriesRouter(r chiopenapi.Router) {
 						}{})).
 						With(option.Response(http.StatusOK, api.AdvisoryDetail{}))
 
-					r.Post("/comments", createAdvisoryCommentHandler()).
+					r.Post("/comments", respond.Handler(createAdvisoryCommentHandler)).
 						With(option.Description("Add a comment to the advisory timeline")).
 						With(option.Request(struct {
 							api.AdvisoryIDRequest
@@ -96,99 +105,60 @@ func AdvisoriesRouter(r chiopenapi.Router) {
 	})
 }
 
-func getAdvisoriesHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		a := auth.Authentication.Require(ctx)
+func getAdvisoriesHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	a := auth.Authentication.Require(ctx)
 
-		values := r.URL.Query()
-		query := api.ListAdvisoriesRequest{
-			Status:   values["status"],
-			Severity: values["severity"],
-			Tag:      values["tag"],
-		}
-		parsed, err := query.Parse()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		filter := db.AdvisoryFilter{
-			Scope:      advisoryScope(a),
-			Statuses:   parsed.Statuses,
-			Severities: parsed.Severities,
-			Tags:       parsed.Tags,
-		}
-
-		advisories, err := db.GetAdvisories(ctx, *a.CurrentOrgID(), filter)
-		if err != nil {
-			log.Error("failed to get advisories", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		RespondJSON(w, mapping.List(
+	values := r.URL.Query()
+	query := api.ListAdvisoriesRequest{
+		Status:   values["status"],
+		Severity: values["severity"],
+		Tag:      values["tag"],
+	}
+	if parsed, err := query.Parse(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else if advisories, err := db.GetAdvisories(ctx, *a.CurrentOrgID(), advisoryFilter(a, parsed)); err != nil {
+		return nil, fmt.Errorf("failed to get advisories: %w", err)
+	} else {
+		return respond.JSON(mapping.List(
 			advisories,
 			mapping.AdvisoryToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID()),
-		))
+		)), nil
 	}
 }
 
-func getAdvisoryTagsHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		a := auth.Authentication.Require(ctx)
+func getAdvisoryTagsHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	a := auth.Authentication.Require(ctx)
 
-		tags, err := db.GetAdvisoryTagNames(ctx, *a.CurrentOrgID())
-		if err != nil {
-			log.Error("failed to get advisory tags", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		RespondJSON(w, tags)
+	if tags, err := db.GetAdvisoryTagNames(ctx, *a.CurrentOrgID()); err != nil {
+		return nil, fmt.Errorf("failed to get advisory tags: %w", err)
+	} else {
+		return respond.JSON(tags), nil
 	}
 }
 
-func getAdvisoryDetailHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		advisory := requireAdvisory(w, r)
-		if advisory == nil {
-			return
-		}
-
-		detail, ok := buildAdvisoryDetail(w, r, *advisory)
-		if !ok {
-			return
-		}
-		RespondJSON(w, detail)
+func getAdvisoryDetailHandler(r *http.Request) (respond.Responder, error) {
+	if advisory, resp, err := requireAdvisory(r); resp != nil || err != nil {
+		return resp, err
+	} else {
+		return advisoryDetailResponse(r, *advisory)
 	}
 }
 
-func createAdvisoryHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		a := auth.Authentication.Require(ctx)
-		orgID := *a.CurrentOrgID()
-		userID := a.CurrentUserID()
+func createAdvisoryHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	a := auth.Authentication.Require(ctx)
+	orgID := *a.CurrentOrgID()
+	userID := a.CurrentUserID()
 
-		request, err := JsonBody[api.CreateUpdateAdvisoryRequest](w, r)
-		if err != nil {
-			return
-		} else if err := request.Validate(); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		if !validateAdvisoryVersionsInOrg(w, r, orgID, &request) {
-			return
-		}
-
+	if request, resp := decodeJSON[api.CreateUpdateAdvisoryRequest](r); resp != nil {
+		return resp, nil
+	} else if err := request.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else if resp, err := validateAdvisoryVersionsInOrg(r, orgID, &request); resp != nil || err != nil {
+		return resp, err
+	} else {
 		status := request.Status
 		if status == "" {
 			status = types.AdvisoryStatusTriage
@@ -204,7 +174,7 @@ func createAdvisoryHandler() http.HandlerFunc {
 			CveID:                  request.CveID,
 		}
 
-		err = db.RunTxRR(ctx, func(ctx context.Context) error {
+		err := db.RunTxRR(ctx, func(ctx context.Context) error {
 			if err := db.CreateAdvisory(ctx, &advisory); err != nil {
 				return err
 			}
@@ -213,193 +183,168 @@ func createAdvisoryHandler() http.HandlerFunc {
 			}
 			return recordAdvisoryPublication(ctx, &advisory, userID)
 		})
-		if errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, duplicateCveIDMessage, http.StatusConflict)
-			return
+		if errors.Is(err, distrerr.ErrConflict) {
+			return respond.Conflict(duplicateCveIDMessage), nil
 		} else if err != nil {
-			log.Error("failed to create advisory", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return nil, fmt.Errorf("failed to create advisory: %w", err)
+		} else {
+			return respondAdvisoryDetail(r, advisory.ID)
 		}
-
-		respondAdvisoryDetail(w, r, advisory.ID)
 	}
 }
 
-func updateAdvisoryHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		existing := requireAdvisory(w, r)
-		if existing == nil {
-			return
-		}
-
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		a := auth.Authentication.Require(ctx)
-		orgID := *a.CurrentOrgID()
-		userID := a.CurrentUserID()
-
-		request, err := JsonBody[api.CreateUpdateAdvisoryRequest](w, r)
-		if err != nil {
-			return
-		} else if err := request.Validate(); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		if !validateAdvisoryVersionsInOrg(w, r, orgID, &request) {
-			return
-		}
-
-		// An advisory that has not been disclosed yet records nothing, so the change detection
-		// feeding the timeline message is only worth running once it has been.
-		wasPublished := existing.PublishedAt != nil
-		var changes []string
-		var versionsBefore []versionMarking
-		if wasPublished {
-			var ok bool
-			if versionsBefore, ok = loadAdvisoryVersionMarkings(w, r, existing.ID); !ok {
-				return
-			}
-
-			existingReferences, err := db.GetAdvisoryReferences(ctx, existing.ID)
-			if err != nil {
-				log.Error("failed to get advisory references", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			changes = slices.Concat(
-				detailChangeParts(existing.Advisory, request),
-				tagChangeParts(existing.Tags, request.Tags),
-				referenceChangeParts(existingReferences, request.References),
-			)
-		}
-
-		severity, _ := types.ParseAdvisorySeverity(request.Severity)
-		advisory := types.Advisory{
-			ID:             existing.ID,
-			OrganizationID: orgID,
-			Title:          request.Title,
-			Description:    request.Description,
-			Status:         existing.Status,
-			Severity:       severity,
-			CveID:          request.CveID,
-		}
-		if request.Status != "" {
-			advisory.Status = request.Status
-		}
-
-		err = db.RunTxRR(ctx, func(ctx context.Context) error {
-			if err := db.UpdateAdvisory(ctx, &advisory); err != nil {
-				return err
-			}
-			if err := applyAdvisoryAssociations(ctx, advisory.ID, request); err != nil {
-				return err
-			}
-			if !wasPublished {
-				return recordAdvisoryPublication(ctx, &advisory, userID)
-			}
-			// Read back rather than derived from the request, so that the names in the message
-			// come from the database instead of being looked up separately.
-			versionsAfter, err := advisoryVersionMarkings(ctx, advisory.ID, advisory.OrganizationID)
-			if err != nil {
-				return err
-			}
-			// One entry for the whole save, so that an edit reads as the single action it was,
-			// and none at all when the save changed nothing.
-			parts := slices.Concat(changes, versionChangeParts(versionsBefore, versionsAfter))
-			if len(parts) > 0 {
-				message := strings.Join(parts, "; ")
-				if err := db.CreateAdvisoryEvent(
-					ctx, advisory.ID, &userID, types.AdvisoryEventTypeEdited, &message,
-				); err != nil {
-					return err
-				}
-			}
-			if advisory.Status != existing.Status {
-				return createAdvisoryStatusEvent(ctx, advisory.ID, userID, existing.Status, advisory.Status)
-			}
-			return nil
-		})
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
-			return
-		} else if errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, duplicateCveIDMessage, http.StatusConflict)
-			return
-		} else if err != nil {
-			log.Error("failed to update advisory", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		respondAdvisoryDetail(w, r, advisory.ID)
+func updateAdvisoryHandler(r *http.Request) (respond.Responder, error) {
+	existing, resp, err := requireAdvisory(r)
+	if resp != nil || err != nil {
+		return resp, err
 	}
+
+	ctx := r.Context()
+	a := auth.Authentication.Require(ctx)
+	orgID := *a.CurrentOrgID()
+	userID := a.CurrentUserID()
+
+	request, resp := decodeJSON[api.CreateUpdateAdvisoryRequest](r)
+	if resp != nil {
+		return resp, nil
+	} else if err := request.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	}
+
+	if resp, err := validateAdvisoryVersionsInOrg(r, orgID, &request); resp != nil || err != nil {
+		return resp, err
+	}
+
+	// An advisory that has not been disclosed yet records nothing, so the change detection
+	// feeding the timeline message is only worth running once it has been.
+	wasPublished := existing.PublishedAt != nil
+	var changes []string
+	var versionsBefore []versionMarking
+	if wasPublished {
+		if versionsBefore, err = loadAdvisoryVersionMarkings(r, existing.ID); err != nil {
+			return nil, err
+		}
+
+		existingReferences, err := db.GetAdvisoryReferences(ctx, existing.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get advisory references: %w", err)
+		}
+
+		changes = slices.Concat(
+			detailChangeParts(existing.Advisory, request),
+			tagChangeParts(existing.Tags, request.Tags),
+			referenceChangeParts(existingReferences, request.References),
+		)
+	}
+
+	severity, _ := types.ParseAdvisorySeverity(request.Severity)
+	advisory := types.Advisory{
+		ID:             existing.ID,
+		OrganizationID: orgID,
+		Title:          request.Title,
+		Description:    request.Description,
+		Status:         existing.Status,
+		Severity:       severity,
+		CveID:          request.CveID,
+	}
+	if request.Status != "" {
+		advisory.Status = request.Status
+	}
+
+	err = db.RunTxRR(ctx, func(ctx context.Context) error {
+		if err := db.UpdateAdvisory(ctx, &advisory); err != nil {
+			return err
+		}
+		if err := applyAdvisoryAssociations(ctx, advisory.ID, request); err != nil {
+			return err
+		}
+		if !wasPublished {
+			return recordAdvisoryPublication(ctx, &advisory, userID)
+		}
+		// Read back rather than derived from the request, so that the names in the message
+		// come from the database instead of being looked up separately.
+		versionsAfter, err := advisoryVersionMarkings(ctx, advisory.ID, advisory.OrganizationID)
+		if err != nil {
+			return err
+		}
+		// One entry for the whole save, so that an edit reads as the single action it was,
+		// and none at all when the save changed nothing.
+		parts := slices.Concat(changes, versionChangeParts(versionsBefore, versionsAfter))
+		if len(parts) > 0 {
+			message := strings.Join(parts, "; ")
+			if err := db.CreateAdvisoryEvent(
+				ctx, advisory.ID, &userID, types.AdvisoryEventTypeEdited, &message,
+			); err != nil {
+				return err
+			}
+		}
+		if advisory.Status != existing.Status {
+			return createAdvisoryStatusEvent(ctx, advisory.ID, userID, existing.Status, advisory.Status)
+		}
+		return nil
+	})
+	if errors.Is(err, distrerr.ErrNotFound) {
+		return advisoryNotFound, nil
+	} else if errors.Is(err, distrerr.ErrConflict) {
+		return respond.Conflict(duplicateCveIDMessage), nil
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to update advisory: %w", err)
+	}
+
+	return respondAdvisoryDetail(r, advisory.ID)
 }
 
-func patchAdvisoryHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		existing := requireAdvisory(w, r)
-		if existing == nil {
-			return
-		}
+func patchAdvisoryHandler(r *http.Request) (respond.Responder, error) {
+	existing, resp, err := requireAdvisory(r)
+	if resp != nil || err != nil {
+		return resp, err
+	}
 
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		a := auth.Authentication.Require(ctx)
-		userID := a.CurrentUserID()
+	ctx := r.Context()
+	a := auth.Authentication.Require(ctx)
+	userID := a.CurrentUserID()
 
-		request, err := JsonBody[api.PatchAdvisoryRequest](w, r)
+	request, resp := decodeJSON[api.PatchAdvisoryRequest](r)
+	if resp != nil {
+		return resp, nil
+	} else if err := request.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	}
+
+	wasPublished := existing.PublishedAt != nil
+	statusChanged := request.Status != nil && *request.Status != existing.Status
+	severityChanged := request.Severity != nil && *request.Severity != existing.Severity
+
+	err = db.RunTxRR(ctx, func(ctx context.Context) error {
+		patched, err := db.PatchAdvisory(
+			ctx, existing.ID, existing.OrganizationID, request.Status, request.Severity,
+		)
 		if err != nil {
-			return
-		} else if err := request.Validate(); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+			return err
 		}
-
-		wasPublished := existing.PublishedAt != nil
-		statusChanged := request.Status != nil && *request.Status != existing.Status
-		severityChanged := request.Severity != nil && *request.Severity != existing.Severity
-
-		err = db.RunTxRR(ctx, func(ctx context.Context) error {
-			patched, err := db.PatchAdvisory(
-				ctx, existing.ID, existing.OrganizationID, request.Status, request.Severity,
-			)
-			if err != nil {
+		if !wasPublished {
+			return recordAdvisoryPublication(ctx, patched, userID)
+		}
+		if severityChanged {
+			message := fmt.Sprintf("changed the severity from %v to %v", existing.Severity, *request.Severity)
+			if err := db.CreateAdvisoryEvent(
+				ctx, existing.ID, &userID, types.AdvisoryEventTypeEdited, &message,
+			); err != nil {
 				return err
 			}
-			if !wasPublished {
-				return recordAdvisoryPublication(ctx, patched, userID)
-			}
-			if severityChanged {
-				message := fmt.Sprintf("changed the severity from %v to %v", existing.Severity, *request.Severity)
-				if err := db.CreateAdvisoryEvent(
-					ctx, existing.ID, &userID, types.AdvisoryEventTypeEdited, &message,
-				); err != nil {
-					return err
-				}
-			}
-			if statusChanged {
-				return createAdvisoryStatusEvent(ctx, existing.ID, userID, existing.Status, *request.Status)
-			}
-			return nil
-		})
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
-			return
-		} else if err != nil {
-			log.Error("failed to patch advisory", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
 		}
-
-		respondAdvisoryDetail(w, r, existing.ID)
+		if statusChanged {
+			return createAdvisoryStatusEvent(ctx, existing.ID, userID, existing.Status, *request.Status)
+		}
+		return nil
+	})
+	if errors.Is(err, distrerr.ErrNotFound) {
+		return advisoryNotFound, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to patch advisory: %w", err)
 	}
+
+	return respondAdvisoryDetail(r, existing.ID)
 }
 
 func createAdvisoryStatusEvent(
@@ -420,167 +365,111 @@ func recordAdvisoryPublication(ctx context.Context, advisory *types.Advisory, us
 	return db.CreateAdvisoryEvent(ctx, advisory.ID, &userID, types.AdvisoryEventTypePublished, nil)
 }
 
-func createAdvisoryCommentHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		advisory := requireAdvisory(w, r)
-		if advisory == nil {
-			return
-		}
+func createAdvisoryCommentHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	a := auth.Authentication.Require(ctx)
 
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		a := auth.Authentication.Require(ctx)
-
-		request, err := JsonBody[api.CreateAdvisoryCommentRequest](w, r)
-		if err != nil {
-			return
-		} else if err := request.Validate(); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		event, err := db.CreateAdvisoryCommentEvent(
-			ctx, advisory.ID, a.CurrentUserID(), request.Content)
-		if err != nil {
-			log.Error("failed to create advisory comment", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		RespondJSON(w, mapping.AdvisoryEventToAPI(*event))
+	if advisory, resp, err := requireAdvisory(r); resp != nil || err != nil {
+		return resp, err
+	} else if request, resp := decodeJSON[api.CreateAdvisoryCommentRequest](r); resp != nil {
+		return resp, nil
+	} else if err := request.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else if event, err := db.CreateAdvisoryCommentEvent(
+		ctx, advisory.ID, a.CurrentUserID(), request.Content,
+	); err != nil {
+		return nil, fmt.Errorf("failed to create advisory comment: %w", err)
+	} else {
+		return respond.JSON(mapping.AdvisoryEventToAPI(*event)), nil
 	}
 }
 
-func getAdvisoryImpactHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		advisory := requireAdvisory(w, r)
-		if advisory == nil {
-			return
-		}
+func getAdvisoryImpactHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	a := auth.Authentication.Require(ctx)
 
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		a := auth.Authentication.Require(ctx)
+	// Customers reach this endpoint too, to see whether their own deployments still run an
+	// affected version. The scope keeps every other customer's rows out of the response.
+	scope := advisoryScope(a)
 
-		// Customers reach this endpoint too, to see whether their own deployments still run an
-		// affected version. The scope keeps every other customer's rows out of the response.
-		scope := advisoryScope(a)
-
-		deployments, err := db.GetAdvisoryImpactedDeployments(ctx, advisory.ID, advisory.OrganizationID, scope)
-		if err != nil {
-			log.Error("failed to get advisory impacted deployments", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		pulls, err := db.GetAdvisoryImpactedPulls(ctx, advisory.ID, advisory.OrganizationID, scope)
-		if err != nil {
-			log.Error("failed to get advisory impacted pulls", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		RespondJSON(w, api.AdvisoryImpact{
+	if advisory, resp, err := requireAdvisory(r); resp != nil || err != nil {
+		return resp, err
+	} else if deployments, err := db.GetAdvisoryImpactedDeployments(
+		ctx, advisory.ID, advisory.OrganizationID, scope,
+	); err != nil {
+		return nil, fmt.Errorf("failed to get advisory impacted deployments: %w", err)
+	} else if pulls, err := db.GetAdvisoryImpactedPulls(
+		ctx, advisory.ID, advisory.OrganizationID, scope,
+	); err != nil {
+		return nil, fmt.Errorf("failed to get advisory impacted pulls: %w", err)
+	} else {
+		return respond.JSON(api.AdvisoryImpact{
 			Deployments: mapping.List(deployments, mapping.AdvisoryImpactedDeploymentToAPI),
 			Pulls:       mapping.List(pulls, mapping.AdvisoryImpactedPullToAPI),
-		})
+		}), nil
 	}
 }
 
-// requireAdvisory returns nil if an error response was already written.
-func requireAdvisory(w http.ResponseWriter, r *http.Request) *types.AdvisoryWithDetails {
-	id, err := uuid.Parse(r.PathValue("advisoryId"))
-	if err != nil {
-		http.NotFound(w, r)
-		return nil
-	}
-
+func requireAdvisory(r *http.Request) (*types.AdvisoryWithDetails, respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	a := auth.Authentication.Require(ctx)
 
-	advisory, err := db.GetAdvisoryByID(ctx, id, *a.CurrentOrgID(), advisoryScope(a))
-	if errors.Is(err, apierrors.ErrNotFound) {
-		http.NotFound(w, r)
-		return nil
+	if id, err := uuid.Parse(r.PathValue("advisoryId")); err != nil {
+		return nil, advisoryNotFound, nil
+	} else if advisory, err := db.GetAdvisoryByID(
+		ctx, id, *a.CurrentOrgID(), advisoryScope(a),
+	); errors.Is(err, distrerr.ErrNotFound) {
+		return nil, advisoryNotFound, nil
 	} else if err != nil {
-		log.Error("failed to get advisory", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return nil
+		return nil, nil, fmt.Errorf("failed to get advisory: %w", err)
+	} else {
+		return advisory, nil, nil
 	}
-
-	return advisory
 }
 
-func respondAdvisoryDetail(w http.ResponseWriter, r *http.Request, id uuid.UUID) {
+func respondAdvisoryDetail(r *http.Request, id uuid.UUID) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	a := auth.Authentication.Require(ctx)
 
-	advisory, err := db.GetAdvisoryByID(ctx, id, *a.CurrentOrgID(), advisoryScope(a))
-	if err != nil {
-		log.Error("failed to get advisory", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	if advisory, err := db.GetAdvisoryByID(ctx, id, *a.CurrentOrgID(), advisoryScope(a)); err != nil {
+		return nil, fmt.Errorf("failed to get advisory: %w", err)
+	} else {
+		return advisoryDetailResponse(r, *advisory)
 	}
-
-	detail, ok := buildAdvisoryDetail(w, r, *advisory)
-	if !ok {
-		return
-	}
-	RespondJSON(w, detail)
 }
 
-// buildAdvisoryDetail omits the event timeline for customer and partner users, since it is
+// advisoryDetailResponse omits the event timeline for customer and partner users, since it is
 // vendor-internal.
-func buildAdvisoryDetail(
-	w http.ResponseWriter, r *http.Request, advisory types.AdvisoryWithDetails,
-) (api.AdvisoryDetail, bool) {
+func advisoryDetailResponse(r *http.Request, advisory types.AdvisoryWithDetails) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	a := auth.Authentication.Require(ctx)
 
-	fail := func(message string, err error) (api.AdvisoryDetail, bool) {
-		log.Error(message, zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return api.AdvisoryDetail{}, false
-	}
-
-	references, err := db.GetAdvisoryReferences(ctx, advisory.ID)
-	if err != nil {
-		return fail("failed to get advisory references", err)
-	}
-
-	versions, err := db.GetAdvisoryVersions(ctx, []uuid.UUID{advisory.ID}, *a.CurrentOrgID(), advisoryScope(a))
-	if err != nil {
-		return fail("failed to get advisory versions", err)
-	}
-
-	events := []types.AdvisoryEventWithUser{}
-	if a.CurrentCustomerOrgID() == nil && a.CurrentPartnerOrgID() == nil {
-		events, err = db.GetAdvisoryEvents(ctx, advisory.ID)
-		if err != nil {
-			return fail("failed to get advisory events", err)
+	if references, err := db.GetAdvisoryReferences(ctx, advisory.ID); err != nil {
+		return nil, fmt.Errorf("failed to get advisory references: %w", err)
+	} else if versions, err := db.GetAdvisoryVersions(
+		ctx, []uuid.UUID{advisory.ID}, *a.CurrentOrgID(), advisoryScope(a),
+	); err != nil {
+		return nil, fmt.Errorf("failed to get advisory versions: %w", err)
+	} else {
+		events := []types.AdvisoryEventWithUser{}
+		if a.CurrentCustomerOrgID() == nil && a.CurrentPartnerOrgID() == nil {
+			if events, err = db.GetAdvisoryEvents(ctx, advisory.ID); err != nil {
+				return nil, fmt.Errorf("failed to get advisory events: %w", err)
+			}
 		}
-	}
 
-	return api.AdvisoryDetail{
-		Advisory:    mapping.AdvisoryToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID())(advisory),
-		Description: advisory.Description,
-		References:  mapping.List(references, mapping.AdvisoryReferenceToAPI),
-		ApplicationVersions: mapping.List(
-			versions.ApplicationVersions,
-			mapping.AdvisoryApplicationVersionToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID()),
-		),
-		ArtifactVersions: mapping.List(versions.ArtifactVersions, mapping.AdvisoryArtifactVersionToAPI),
-		Events:           mapping.List(events, mapping.AdvisoryEventToAPI),
-	}, true
+		return respond.JSON(api.AdvisoryDetail{
+			Advisory:    mapping.AdvisoryToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID())(advisory),
+			Description: advisory.Description,
+			References:  mapping.List(references, mapping.AdvisoryReferenceToAPI),
+			ApplicationVersions: mapping.List(
+				versions.ApplicationVersions,
+				mapping.AdvisoryApplicationVersionToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID()),
+			),
+			ArtifactVersions: mapping.List(versions.ArtifactVersions, mapping.AdvisoryArtifactVersionToAPI),
+			Events:           mapping.List(events, mapping.AdvisoryEventToAPI),
+		}), nil
+	}
 }
 
 func applyAdvisoryAssociations(
@@ -604,30 +493,25 @@ func applyAdvisoryAssociations(
 	})
 }
 
-// validateAdvisoryVersionsInOrg returns false if an error response was already written.
 func validateAdvisoryVersionsInOrg(
-	w http.ResponseWriter, r *http.Request, orgID uuid.UUID, request *api.CreateUpdateAdvisoryRequest,
-) bool {
+	r *http.Request, orgID uuid.UUID, request *api.CreateUpdateAdvisoryRequest,
+) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 
 	applicationVersionIDs := slices.Concat(
 		request.AffectedApplicationVersionIDs, request.PatchedApplicationVersionIDs)
 	artifactVersionIDs := slices.Concat(
 		request.AffectedArtifactVersionIDs, request.PatchedArtifactVersionIDs)
 
-	count, err := db.CountAdvisoryVersionsOutsideOrg(ctx, orgID, applicationVersionIDs, artifactVersionIDs)
-	if err != nil {
-		log.Error("failed to validate advisory versions", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return false
+	if count, err := db.CountAdvisoryVersionsOutsideOrg(
+		ctx, orgID, applicationVersionIDs, artifactVersionIDs,
+	); err != nil {
+		return nil, fmt.Errorf("failed to validate advisory versions: %w", err)
+	} else if count > 0 {
+		return respond.BadRequest("one or more versions do not exist in this organization"), nil
+	} else {
+		return nil, nil
 	}
-	if count > 0 {
-		http.Error(w, "one or more versions do not exist in this organization", http.StatusBadRequest)
-		return false
-	}
-	return true
 }
 
 type versionMarking struct {
@@ -667,19 +551,14 @@ func advisoryVersionMarkings(
 	return markings, nil
 }
 
-func loadAdvisoryVersionMarkings(
-	w http.ResponseWriter, r *http.Request, advisoryID uuid.UUID,
-) ([]versionMarking, bool) {
+func loadAdvisoryVersionMarkings(r *http.Request, advisoryID uuid.UUID) ([]versionMarking, error) {
 	ctx := r.Context()
 	a := auth.Authentication.Require(ctx)
 	markings, err := advisoryVersionMarkings(ctx, advisoryID, *a.CurrentOrgID())
 	if err != nil {
-		internalctx.GetLogger(ctx).Error("failed to get advisory versions", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return nil, false
+		return nil, fmt.Errorf("failed to get advisory versions: %w", err)
 	}
-	return markings, true
+	return markings, nil
 }
 
 // maxVersionChangeMessageParts bounds the timeline message: marking a hundred versions at

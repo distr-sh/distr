@@ -16,6 +16,13 @@ type EntityReference struct {
 	ID uuid.UUID `json:"id"`
 }
 
+func validateDeploymentType(deploymentType types.DeploymentType) error {
+	if _, err := types.ParseDeploymentType(string(deploymentType)); err != nil {
+		return validation.NewValidationFailedError(err.Error())
+	}
+	return nil
+}
+
 type DeploymentTargetResources struct {
 	CPURequest    string `json:"cpuRequest"`
 	MemoryRequest string `json:"memoryRequest"`
@@ -87,6 +94,9 @@ type CreateDeploymentTargetRequest struct {
 }
 
 func (r *CreateDeploymentTargetRequest) Validate() error {
+	if err := validateDeploymentType(r.Type); err != nil {
+		return err
+	}
 	switch r.Type {
 	case types.DeploymentTypeKubernetes:
 		if r.AutohealEnabled {
@@ -109,8 +119,6 @@ func (r *CreateDeploymentTargetRequest) Validate() error {
 		if r.Scope != nil {
 			return validation.NewValidationFailedError("DeploymentTarget with type \"docker\" must not have a scope")
 		}
-	default:
-		return validation.NewValidationFailedError("invalid deployment target type")
 	}
 	return r.DeploymentTargetSettings.Validate(r.Type)
 }

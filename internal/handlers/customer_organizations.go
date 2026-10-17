@@ -3,30 +3,29 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"slices"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 func CustomerOrganizationsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Customers"))
 	r.With(middleware.RequireVendorOrPartner, middleware.RequireOrgAndRole).Group(func(r chiopenapi.Router) {
-		r.Get("/", getCustomerOrganizationsHandler()).
+		r.Get("/", respond.Handler(getCustomerOrganizationsHandler)).
 			With(option.Description("List all customer organizations")).
 			With(option.Response(http.StatusOK, []api.CustomerOrganizationWithUsage{}))
 
@@ -40,7 +39,7 @@ func CustomerOrganizationsRouter(r chiopenapi.Router) {
 			r.With(middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
 				r.With(middleware.RequireVendorOrPartner).Group(func(r chiopenapi.Router) {
 					r.With(middleware.RequireReadWriteOrAdmin).
-						Put("/", updateCustomerOrganizationHandler()).
+						Put("/", respond.Handler(updateCustomerOrganizationHandler)).
 						With(option.Description("Update a customer organization")).
 						With(option.Request(struct {
 							CustomerOrganizationIDRequest
@@ -49,13 +48,13 @@ func CustomerOrganizationsRouter(r chiopenapi.Router) {
 						With(option.Response(http.StatusOK, api.CustomerOrganization{}))
 
 					r.With(middleware.RequireAdmin).
-						Delete("/", deleteCustomerOrganizationHandler()).
+						Delete("/", respond.Handler(deleteCustomerOrganizationHandler)).
 						With(option.Description("Delete a customer organization")).
 						With(option.Request(CustomerOrganizationIDRequest{}))
 				})
 
 				r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.PartnerManagementFeatureMiddleware).
-					Put("/partner", assignCustomerToPartnerHandler()).
+					Put("/partner", respond.Handler(assignCustomerToPartnerHandler)).
 					With(option.Description("Assign or unassign a partner organization for a customer organization")).
 					With(option.Request(struct {
 						CustomerOrganizationIDRequest
@@ -66,50 +65,41 @@ func CustomerOrganizationsRouter(r chiopenapi.Router) {
 		})
 
 		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
-			Post("/", createCustomerOrganizationHandler()).
+			Post("/", respond.Handler(createCustomerOrganizationHandler)).
 			With(option.Description("Create a new customer organization")).
 			With(option.Request(api.CreateUpdateCustomerOrganizationRequest{})).
 			With(option.Response(http.StatusOK, api.CustomerOrganization{}))
 	})
 }
 
-func getCustomerOrganizationsHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
+func getCustomerOrganizationsHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
 
-		var customerOrganizations []types.CustomerOrganizationWithUsage
-		var err error
-		if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
-			customerOrganizations, err = db.GetCustomerOrganizationsByPartnerOrgID(ctx, *partnerOrgID)
-		} else {
-			customerOrganizations, err = db.GetCustomerOrganizationsByOrganizationID(ctx, *auth.CurrentOrgID())
-		}
+	var customerOrganizations []types.CustomerOrganizationWithUsage
+	var err error
+	if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
+		customerOrganizations, err = db.GetCustomerOrganizationsByPartnerOrgID(ctx, *partnerOrgID)
+	} else {
+		customerOrganizations, err = db.GetCustomerOrganizationsByOrganizationID(ctx, *auth.CurrentOrgID())
+	}
 
-		if err != nil {
-			log.Error("failed to get customer orgs", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			RespondJSON(w, mapping.List(customerOrganizations, mapping.CustomerOrganizationWithUsageToAPI))
-		}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get customer orgs: %w", err)
+	} else {
+		return respond.JSON(mapping.List(customerOrganizations, mapping.CustomerOrganizationWithUsageToAPI)), nil
 	}
 }
 
-func createCustomerOrganizationHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
-		request, err := JsonBody[api.CreateUpdateCustomerOrganizationRequest](w, r)
-		if err != nil {
-			return
-		} else if err := request.Validate(); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
+func createCustomerOrganizationHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
 
+	if request, resp := decodeJSON[api.CreateUpdateCustomerOrganizationRequest](r); resp != nil {
+		return resp, nil
+	} else if err := request.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else {
 		customerOrganization := types.CustomerOrganization{
 			OrganizationID:        *auth.CurrentOrgID(),
 			Name:                  request.Name,
@@ -117,55 +107,42 @@ func createCustomerOrganizationHandler() http.HandlerFunc {
 			PartnerOrganizationID: auth.CurrentPartnerOrgID(),
 		}
 
-		err = db.RunTx(ctx, func(ctx context.Context) error {
+		if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 			if limitReached, err := subscription.IsCustomerOrganizationLimitReached(ctx, *auth.CurrentOrg()); err != nil {
-				return err
+				return nil, fmt.Errorf("failed to check customer limit: %w", err)
 			} else if limitReached {
-				return apierrors.NewForbidden("customer limit reached")
+				return respond.Forbidden("customer limit reached"), nil
+			} else if err := db.CreateCustomerOrganization(ctx, &customerOrganization); errors.Is(err, distrerr.ErrBadRequest) {
+				return respond.BadRequest(err.Error()), nil
+			} else if err != nil {
+				return nil, fmt.Errorf("failed to create customer org: %w", err)
+			} else {
+				return nil, nil
 			}
-			return db.CreateCustomerOrganization(ctx, &customerOrganization)
-		})
-
-		if err == nil {
-			RespondJSON(w, mapping.CustomerOrganizationToAPI(customerOrganization))
-		} else if errors.Is(err, apierrors.ErrBadRequest) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else if errors.Is(err, apierrors.ErrForbidden) {
-			http.Error(w, err.Error(), http.StatusForbidden)
+		}); resp != nil || err != nil {
+			return resp, err
 		} else {
-			log.Error("failed to create customer org", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return respond.JSON(mapping.CustomerOrganizationToAPI(customerOrganization)), nil
 		}
 	}
 }
 
-func updateCustomerOrganizationHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := uuid.Parse(r.PathValue("customerOrganizationId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
+func updateCustomerOrganizationHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
 
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
-		request, err := JsonBody[api.CreateUpdateCustomerOrganizationRequest](w, r)
-		if err != nil {
-			return
-		} else if err := request.Validate(); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
+	if id, err := uuid.Parse(r.PathValue("customerOrganizationId")); err != nil {
+		return customerOrganizationNotFound, nil
+	} else if request, resp := decodeJSON[api.CreateUpdateCustomerOrganizationRequest](r); resp != nil {
+		return resp, nil
+	} else if err := request.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else {
 		if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
-			if co, coErr := db.GetCustomerOrganizationByID(ctx, id); errors.Is(coErr, apierrors.ErrNotFound) {
-				http.NotFound(w, r)
-				return
+			if co, coErr := db.GetCustomerOrganizationByID(ctx, id); errors.Is(coErr, distrerr.ErrNotFound) {
+				return customerOrganizationNotFound, nil
 			} else if coErr != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-				http.Error(w, "customer is not assigned to your partner organization", http.StatusForbidden)
-				return
+				return notAssignedToPartner, nil
 			}
 		}
 
@@ -184,34 +161,11 @@ func updateCustomerOrganizationHandler() http.HandlerFunc {
 		// neither the context nor the organization.
 		if slices.Contains(features, types.CustomerOrganizationFeatureOidcProviders) &&
 			!auth.CurrentOrg().HasFeature(types.FeatureCustomOidcProviders) {
-			http.Error(w, "the custom identity provider feature is not available on your plan",
-				http.StatusForbidden)
-			return
+			return respond.Forbidden("the custom identity provider feature is not available on your plan"), nil
 		}
 
-		// Features granted before a downgrade may stay, so that the customer can still be edited.
-		if !auth.CurrentOrg().SubscriptionType.IsPro() &&
-			slices.ContainsFunc(features, func(f types.CustomerOrganizationFeature) bool {
-				return slices.Contains(types.ProCustomerOrganizationFeatures, f)
-			}) {
-			existing, err := db.GetCustomerOrganizationByID(ctx, id)
-			if errors.Is(err, apierrors.ErrNotFound) ||
-				(err == nil && existing.OrganizationID != *auth.CurrentOrgID()) {
-				http.NotFound(w, r)
-				return
-			} else if err != nil {
-				log.Error("failed to get customer org", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			for _, feature := range features {
-				if slices.Contains(types.ProCustomerOrganizationFeatures, feature) && !existing.HasFeature(feature) {
-					http.Error(w, "alerts, update notifications and support bundles require the Pro plan",
-						http.StatusForbidden)
-					return
-				}
-			}
+		if resp, err := checkProCustomerOrganizationFeatures(ctx, id, features); resp != nil || err != nil {
+			return resp, err
 		}
 
 		customerOrganization := types.CustomerOrganization{
@@ -223,103 +177,106 @@ func updateCustomerOrganizationHandler() http.HandlerFunc {
 		}
 
 		if err := db.UpdateCustomerOrganization(ctx, &customerOrganization); err != nil {
-			log.Error("failed to update customer org", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return nil, fmt.Errorf("failed to update customer org: %w", err)
 		} else {
-			RespondJSON(w, mapping.CustomerOrganizationToAPI(customerOrganization))
+			return respond.JSON(mapping.CustomerOrganizationToAPI(customerOrganization)), nil
 		}
 	}
 }
 
-func assignCustomerToPartnerHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := uuid.Parse(r.PathValue("customerOrganizationId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
+// checkProCustomerOrganizationFeatures rejects adding a Pro customer feature without the Pro plan.
+// Features granted before a downgrade may stay, so that the customer can still be edited.
+func checkProCustomerOrganizationFeatures(
+	ctx context.Context,
+	id uuid.UUID,
+	features []types.CustomerOrganizationFeature,
+) (respond.Responder, error) {
+	auth := auth.Authentication.Require(ctx)
+	if auth.CurrentOrg().SubscriptionType.IsPro() ||
+		!slices.ContainsFunc(features, func(f types.CustomerOrganizationFeature) bool {
+			return slices.Contains(types.ProCustomerOrganizationFeatures, f)
+		}) {
+		return nil, nil
+	}
+	existing, err := db.GetCustomerOrganizationByID(ctx, id)
+	if errors.Is(err, distrerr.ErrNotFound) || (err == nil && existing.OrganizationID != *auth.CurrentOrgID()) {
+		return customerOrganizationNotFound, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to get customer org: %w", err)
+	}
+	for _, feature := range features {
+		if slices.Contains(types.ProCustomerOrganizationFeatures, feature) && !existing.HasFeature(feature) {
+			return respond.Forbidden("alerts, update notifications and support bundles require the Pro plan"), nil
 		}
+	}
+	return nil, nil
+}
 
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
-		request, err := JsonBody[api.AssignCustomerToPartnerRequest](w, r)
-		if err != nil {
-			return
-		}
+func assignCustomerToPartnerHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
 
+	if id, err := uuid.Parse(r.PathValue("customerOrganizationId")); err != nil {
+		return customerOrganizationNotFound, nil
+	} else if request, resp := decodeJSON[api.AssignCustomerToPartnerRequest](r); resp != nil {
+		return resp, nil
+	} else {
 		if request.PartnerOrganizationID != nil {
-			if err := db.ValidatePartnerOrgBelongsToOrg(ctx, *request.PartnerOrganizationID, *auth.CurrentOrgID()); err != nil {
+			if err := db.ValidatePartnerOrgBelongsToOrg(
+				ctx, *request.PartnerOrganizationID, *auth.CurrentOrgID(),
+			); err != nil {
 				if errors.Is(err, db.ErrPartnerOrgNotInOrg) {
-					http.Error(w, "partner organization not found", http.StatusBadRequest)
+					return respond.BadRequest("partner organization not found"), nil
 				} else {
-					log.Error("failed to check partner in org", zap.Error(err))
-					sentry.GetHubFromContext(ctx).CaptureException(err)
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+					return nil, fmt.Errorf("failed to check partner in org: %w", err)
 				}
-				return
 			}
 		}
 
-		err = db.SetCustomerOrganizationPartner(ctx, id, *auth.CurrentOrgID(), request.PartnerOrganizationID)
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
+		if err := db.SetCustomerOrganizationPartner(
+			ctx, id, *auth.CurrentOrgID(), request.PartnerOrganizationID,
+		); errors.Is(err, distrerr.ErrNotFound) {
+			return customerOrganizationNotFound, nil
 		} else if err != nil {
-			log.Error("failed to assign partner to customer org", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return nil, fmt.Errorf("failed to assign partner to customer org: %w", err)
+		} else if customerOrg, err := db.GetCustomerOrganizationByID(ctx, id); err != nil {
+			return nil, fmt.Errorf("failed to get customer org after partner assignment: %w", err)
 		} else {
-			customerOrg, err := db.GetCustomerOrganizationByID(ctx, id)
-			if err != nil {
-				log.Error("failed to get customer org after partner assignment", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			RespondJSON(w, mapping.CustomerOrganizationToAPI(customerOrg.CustomerOrganization))
+			return respond.JSON(mapping.CustomerOrganizationToAPI(customerOrg.CustomerOrganization)), nil
 		}
 	}
 }
 
 //nolint:dupl
-func deleteCustomerOrganizationHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := uuid.Parse(r.PathValue("customerOrganizationId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
+func deleteCustomerOrganizationHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
 
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
-
+	if id, err := uuid.Parse(r.PathValue("customerOrganizationId")); err != nil {
+		return customerOrganizationNotFound, nil
+	} else {
 		if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
 			if co, err := db.GetCustomerOrganizationByID(ctx, id); err != nil {
-				if errors.Is(err, apierrors.ErrNotFound) {
-					http.NotFound(w, r)
+				if errors.Is(err, distrerr.ErrNotFound) {
+					return customerOrganizationNotFound, nil
 				} else {
-					log.Error("failed to get customer org", zap.Error(err))
-					sentry.GetHubFromContext(ctx).CaptureException(err)
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+					return nil, fmt.Errorf("failed to get customer org: %w", err)
 				}
-				return
 			} else if !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-				http.NotFound(w, r)
-				return
+				return customerOrganizationNotFound, nil
 			}
 		}
 
-		if err := db.DeleteCustomerOrganizationWithID(ctx, id, *auth.CurrentOrgID()); errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
-		} else if errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, "customer is not empty", http.StatusConflict)
+		if err := db.DeleteCustomerOrganizationWithID(
+			ctx, id, *auth.CurrentOrgID(),
+		); errors.Is(err, distrerr.ErrNotFound) {
+			return customerOrganizationNotFound, nil
+		} else if errors.Is(err, distrerr.ErrConflict) {
+			return respond.Conflict("customer is not empty"), nil
 		} else if err != nil {
-			log.Error("failed to delete customer org", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return nil, fmt.Errorf("failed to delete customer org: %w", err)
 		} else {
-			w.WriteHeader(http.StatusNoContent)
+			return respond.NoContent(), nil
 		}
 	}
 }

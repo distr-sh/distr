@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"slices"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -23,88 +25,90 @@ func OverviewRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupHidden(true))
 	r.Use(middleware.RequireOrgAndRole, middleware.RequireCustomer)
 	r.With(middleware.CustomerFeatureMiddleware(types.CustomerOrganizationFeatureDeploymentTargets)).
-		Get("/deployment-targets", getOverviewDeploymentTargets)
+		Get("/deployment-targets", respond.Handler(getOverviewDeploymentTargets))
 	r.With(middleware.CustomerFeatureMiddleware(types.CustomerOrganizationFeatureArtifacts)).
-		Get("/artifacts", getOverviewArtifacts)
-	r.Get("/checklist", getOverviewChecklist)
+		Get("/artifacts", respond.Handler(getOverviewArtifacts))
+	r.Get("/checklist", respond.Handler(getOverviewChecklist))
 	r.With(middleware.LicensingFeatureFlagEnabledMiddleware, middleware.UseReadonlyDB).
-		Get("/license", getOverviewLicense)
+		Get("/license", respond.Handler(getOverviewLicense))
 	r.With(middleware.ProFeature, middleware.AlertsCustomerFeatureMiddleware, middleware.UseReadonlyDB).
-		Get("/alerts", getOverviewAlerts)
-	r.Get("/access-tokens", getOverviewAccessTokens)
+		Get("/alerts", respond.Handler(getOverviewAlerts))
+	r.Get("/access-tokens", respond.Handler(getOverviewAccessTokens))
 	r.With(
 		middleware.ProFeature,
 		middleware.CustomerFeatureMiddleware(types.CustomerOrganizationFeatureSupportBundles),
-	).Get("/support-bundles", getOverviewSupportBundles)
-	r.With(middleware.UseReadonlyDB).Get("/activity", getOverviewActivity)
+	).Get("/support-bundles", respond.Handler(getOverviewSupportBundles))
+	r.With(middleware.UseReadonlyDB).Get("/activity", respond.Handler(getOverviewActivity))
 }
 
-func getOverviewDeploymentTargets(w http.ResponseWriter, r *http.Request) {
+func getOverviewDeploymentTargets(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 	orgID, customerOrgID := *auth.CurrentOrgID(), *auth.CurrentCustomerOrgID()
 
-	targets, err := db.GetDeploymentTargetsByScope(ctx, orgID, &customerOrgID)
-	if err != nil {
-		respondInternalError(w, r, err, "failed to get deployment targets")
-		return
-	}
-	deployments, err := db.GetOverviewDeployments(ctx, orgID, customerOrgID)
-	if err != nil {
-		respondInternalError(w, r, err, "failed to get deployments")
-		return
-	}
-	applications, err := db.GetApplicationsByOrgID(ctx, orgID)
-	if err != nil {
-		respondInternalError(w, r, err, "failed to get applications")
-		return
-	}
-	var entitlements []types.ApplicationEntitlement
-	if entitled, err := applicationEntitlementsApply(ctx); err != nil {
-		respondInternalError(w, r, err, "failed to check for application entitlements")
-		return
-	} else if entitled {
-		if entitlements, err = db.GetApplicationEntitlementsWithCustomerOrganizationID(
-			ctx, customerOrgID, orgID, nil,
-		); err != nil {
-			respondInternalError(w, r, err, "failed to get application entitlements")
-			return
-		} else if entitlements == nil {
-			entitlements = []types.ApplicationEntitlement{}
+	if targets, err := db.GetDeploymentTargetsByScope(ctx, orgID, &customerOrgID); err != nil {
+		return nil, fmt.Errorf("failed to get deployment targets: %w", err)
+	} else if deployments, err := db.GetOverviewDeployments(ctx, orgID, customerOrgID); err != nil {
+		return nil, fmt.Errorf("failed to get deployments: %w", err)
+	} else if applications, err := db.GetApplicationsByOrgID(ctx, orgID); err != nil {
+		return nil, fmt.Errorf("failed to get applications: %w", err)
+	} else if entitlements, err := overviewApplicationEntitlements(ctx, orgID, customerOrgID); err != nil {
+		return nil, err
+	} else {
+		now := time.Now()
+		deploymentsByTarget := make(map[uuid.UUID][]api.OverviewDeployment)
+		for _, d := range deployments {
+			var latest *types.ApplicationVersion
+			updateAvailable := false
+			if i := slices.IndexFunc(applications, func(a types.Application) bool {
+				return a.ID == d.Application.ID
+			}); i >= 0 {
+				latest = types.LatestDeploymentApplicationVersion(applications[i], d.ApplicationEntitlementID, entitlements, now)
+				updateAvailable = types.ApplicationUpdateAvailable(applications[i], d.ApplicationVersionID, latest)
+			}
+			deploymentsByTarget[d.DeploymentTargetID] = append(
+				deploymentsByTarget[d.DeploymentTargetID],
+				mapping.OverviewDeploymentToAPI(d, latest, updateAvailable),
+			)
 		}
-	}
 
-	now := time.Now()
-	deploymentsByTarget := make(map[uuid.UUID][]api.OverviewDeployment)
-	for _, d := range deployments {
-		var latest *types.ApplicationVersion
-		updateAvailable := false
-		if i := slices.IndexFunc(applications, func(a types.Application) bool { return a.ID == d.Application.ID }); i >= 0 {
-			latest = types.LatestDeploymentApplicationVersion(applications[i], d.ApplicationEntitlementID, entitlements, now)
-			updateAvailable = types.ApplicationUpdateAvailable(applications[i], d.ApplicationVersionID, latest)
+		result := make([]api.OverviewDeploymentTarget, len(targets))
+		for i, target := range targets {
+			result[i] = mapping.OverviewDeploymentTargetToAPI(target, deploymentsByTarget[target.ID])
 		}
-		deploymentsByTarget[d.DeploymentTargetID] = append(
-			deploymentsByTarget[d.DeploymentTargetID],
-			mapping.OverviewDeploymentToAPI(d, latest, updateAvailable),
-		)
+		return respond.JSON(result), nil
 	}
-
-	result := make([]api.OverviewDeploymentTarget, len(targets))
-	for i, target := range targets {
-		result[i] = mapping.OverviewDeploymentTargetToAPI(target, deploymentsByTarget[target.ID])
-	}
-	RespondJSON(w, result)
 }
 
-func getOverviewArtifacts(w http.ResponseWriter, r *http.Request) {
+// overviewApplicationEntitlements returns the application entitlements of the customer organization, or nil
+// when entitlements do not restrict it.
+func overviewApplicationEntitlements(
+	ctx context.Context,
+	orgID, customerOrgID uuid.UUID,
+) ([]types.ApplicationEntitlement, error) {
+	if entitled, err := applicationEntitlementsApply(ctx); err != nil {
+		return nil, fmt.Errorf("failed to check for application entitlements: %w", err)
+	} else if !entitled {
+		return nil, nil
+	} else if entitlements, err := db.GetApplicationEntitlementsWithCustomerOrganizationID(
+		ctx, customerOrgID, orgID, nil,
+	); err != nil {
+		return nil, fmt.Errorf("failed to get application entitlements: %w", err)
+	} else if entitlements == nil {
+		return []types.ApplicationEntitlement{}, nil
+	} else {
+		return entitlements, nil
+	}
+}
+
+func getOverviewArtifacts(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 	orgID, customerOrgID := *auth.CurrentOrgID(), *auth.CurrentCustomerOrgID()
 
 	artifacts, err := visibleArtifacts(ctx)
 	if err != nil {
-		respondInternalError(w, r, err, "failed to get artifacts")
-		return
+		return nil, fmt.Errorf("failed to get artifacts: %w", err)
 	}
 	artifactIDs := make([]uuid.UUID, len(artifacts))
 	for i, a := range artifacts {
@@ -112,8 +116,7 @@ func getOverviewArtifacts(w http.ResponseWriter, r *http.Request) {
 	}
 	pulls, err := db.GetLatestArtifactPullsOfCustomerOrganization(ctx, orgID, customerOrgID, artifactIDs)
 	if err != nil {
-		respondInternalError(w, r, err, "failed to get artifact pulls")
-		return
+		return nil, fmt.Errorf("failed to get artifact pulls: %w", err)
 	}
 
 	licensing := auth.CurrentOrg().HasFeature(types.FeatureLicensing)
@@ -124,8 +127,7 @@ func getOverviewArtifacts(w http.ResponseWriter, r *http.Request) {
 		}
 		versions, err := customerArtifactVersions(ctx, artifact.ID, customerOrgID, licensing)
 		if err != nil {
-			respondInternalError(w, r, err, "failed to get versions for artifact")
-			return
+			return nil, fmt.Errorf("failed to get versions for artifact: %w", err)
 		}
 		latest, latestTag := types.LatestArtifactTag(versions)
 		var pull *types.CustomerArtifactPull
@@ -139,74 +141,73 @@ func getOverviewArtifacts(w http.ResponseWriter, r *http.Request) {
 		response.Artifacts = append(response.Artifacts,
 			mapping.OverviewArtifactToAPI(artifact, latestTag, pull, pullIsLatest))
 	}
-	RespondJSON(w, response)
+	return respond.JSON(response), nil
 }
 
-func getOverviewChecklist(w http.ResponseWriter, r *http.Request) {
+func getOverviewChecklist(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 	if checklist, err := db.GetOverviewChecklist(
 		ctx, *auth.CurrentOrgID(), *auth.CurrentCustomerOrgID(), auth.CurrentUserID(),
 	); err != nil {
-		respondInternalError(w, r, err, "failed to get overview checklist")
+		return nil, fmt.Errorf("failed to get overview checklist: %w", err)
 	} else {
-		RespondJSON(w, mapping.OverviewChecklistToAPI(*checklist))
+		return respond.JSON(mapping.OverviewChecklistToAPI(*checklist)), nil
 	}
 }
 
-func getOverviewLicense(w http.ResponseWriter, r *http.Request) {
+func getOverviewLicense(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 	if license, err := db.GetOverviewLicense(ctx, *auth.CurrentOrgID(), *auth.CurrentCustomerOrgID()); err != nil {
-		respondInternalError(w, r, err, "failed to get license")
+		return nil, fmt.Errorf("failed to get license: %w", err)
 	} else if license == nil {
-		w.WriteHeader(http.StatusNoContent)
+		return respond.NoContent(), nil
 	} else {
-		RespondJSON(w, mapping.OverviewLicenseToAPI(*license))
+		return respond.JSON(mapping.OverviewLicenseToAPI(*license)), nil
 	}
 }
 
-func getOverviewAlerts(w http.ResponseWriter, r *http.Request) {
+func getOverviewAlerts(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 	if summary, err := db.GetOverviewAlertSummary(ctx, *auth.CurrentOrgID(), *auth.CurrentCustomerOrgID()); err != nil {
-		respondInternalError(w, r, err, "failed to get alert summary")
+		return nil, fmt.Errorf("failed to get alert summary: %w", err)
 	} else {
-		RespondJSON(w, mapping.OverviewAlertSummaryToAPI(*summary))
+		return respond.JSON(mapping.OverviewAlertSummaryToAPI(*summary)), nil
 	}
 }
 
-func getOverviewAccessTokens(w http.ResponseWriter, r *http.Request) {
+func getOverviewAccessTokens(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
-	tokens, err := db.GetAccessTokens(ctx, auth.CurrentUserID(), *auth.CurrentOrgID())
-	if err != nil {
-		respondInternalError(w, r, err, "failed to get access tokens")
-		return
-	}
-	now := time.Now()
-	threshold := now.Add(overviewAccessTokenExpiryWindow)
-	result := []api.OverviewAccessToken{}
-	for _, token := range tokens {
-		if expiresAt := token.NextExpiresAt(now); expiresAt != nil && expiresAt.Before(threshold) {
-			result = append(result, mapping.OverviewAccessTokenToAPI(token, *expiresAt))
+	if tokens, err := db.GetAccessTokens(ctx, auth.CurrentUserID(), *auth.CurrentOrgID()); err != nil {
+		return nil, fmt.Errorf("failed to get access tokens: %w", err)
+	} else {
+		now := time.Now()
+		threshold := now.Add(overviewAccessTokenExpiryWindow)
+		result := []api.OverviewAccessToken{}
+		for _, token := range tokens {
+			if expiresAt := token.NextExpiresAt(now); expiresAt != nil && expiresAt.Before(threshold) {
+				result = append(result, mapping.OverviewAccessTokenToAPI(token, *expiresAt))
+			}
 		}
+		slices.SortFunc(result, func(a, b api.OverviewAccessToken) int { return a.ExpiresAt.Compare(b.ExpiresAt) })
+		return respond.JSON(result), nil
 	}
-	slices.SortFunc(result, func(a, b api.OverviewAccessToken) int { return a.ExpiresAt.Compare(b.ExpiresAt) })
-	RespondJSON(w, result)
 }
 
-func getOverviewSupportBundles(w http.ResponseWriter, r *http.Request) {
+func getOverviewSupportBundles(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 	if bundles, err := db.GetOverviewSupportBundles(ctx, *auth.CurrentOrgID(), *auth.CurrentCustomerOrgID()); err != nil {
-		respondInternalError(w, r, err, "failed to get support bundles")
+		return nil, fmt.Errorf("failed to get support bundles: %w", err)
 	} else {
-		RespondJSON(w, mapping.List(bundles, mapping.OverviewSupportBundleToAPI))
+		return respond.JSON(mapping.List(bundles, mapping.OverviewSupportBundleToAPI)), nil
 	}
 }
 
-func getOverviewActivity(w http.ResponseWriter, r *http.Request) {
+func getOverviewActivity(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 	org, customerOrg := auth.CurrentOrg(), auth.CurrentCustomerOrg()
@@ -220,20 +221,13 @@ func getOverviewActivity(w http.ResponseWriter, r *http.Request) {
 	}
 	var err error
 	if filter.EntitledApplicationsOnly, err = applicationEntitlementsApply(ctx); err != nil {
-		respondInternalError(w, r, err, "failed to check for application entitlements")
-		return
-	}
-	if filter.Licensing {
-		if filter.EntitledArtifactsOnly, err = db.HasAnyArtifactEntitlement(ctx, org.ID); err != nil {
-			respondInternalError(w, r, err, "failed to check for artifact entitlements")
-			return
-		}
-	}
-
-	if activity, err := db.GetOverviewActivity(ctx, org.ID, customerOrg.ID, filter); err != nil {
-		respondInternalError(w, r, err, "failed to get overview activity")
+		return nil, fmt.Errorf("failed to check for application entitlements: %w", err)
+	} else if filter.EntitledArtifactsOnly, err = artifactEntitlementsApply(ctx, filter.Licensing); err != nil {
+		return nil, fmt.Errorf("failed to check for artifact entitlements: %w", err)
+	} else if activity, err := db.GetOverviewActivity(ctx, org.ID, customerOrg.ID, filter); err != nil {
+		return nil, fmt.Errorf("failed to get overview activity: %w", err)
 	} else {
-		RespondJSON(w, mapping.List(activity, mapping.OverviewActivityToAPI))
+		return respond.JSON(mapping.List(activity, mapping.OverviewActivityToAPI)), nil
 	}
 }
 
@@ -245,4 +239,11 @@ func applicationEntitlementsApply(ctx context.Context) (bool, error) {
 		return false, nil
 	}
 	return db.HasAnyApplicationEntitlement(ctx, *auth.CurrentOrgID())
+}
+
+func artifactEntitlementsApply(ctx context.Context, licensing bool) (bool, error) {
+	if !licensing {
+		return false, nil
+	}
+	return db.HasAnyArtifactEntitlement(ctx, *auth.Authentication.Require(ctx).CurrentOrgID())
 }

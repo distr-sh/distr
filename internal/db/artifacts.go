@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/containers/image/v5/manifest"
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
@@ -223,13 +223,13 @@ func GetArtifactByID(
 	artifact, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[types.ArtifactWithDownloads])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to collect artifact by ID: %w", err)
 	} else if versions, err := GetVersionsForArtifact(ctx, artifact.ID, customerOrgID); err != nil {
 		return nil, fmt.Errorf("failed to get artifact versions: %w", err)
 	} else if customerOrgID != nil && len(versions) == 0 {
-		return nil, apierrors.ErrNotFound
+		return nil, distrerr.ErrNotFound
 	} else {
 		return &types.ArtifactWithTaggedVersion{ArtifactWithDownloads: *artifact, Versions: versions}, nil
 	}
@@ -254,7 +254,7 @@ func GetArtifactByName(ctx context.Context, orgSlug, name string) (*types.Artifa
 	}
 	if a, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[types.Artifact]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
+			err = distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to get artifact: %w", err)
 	} else {
@@ -480,7 +480,7 @@ func CreateArtifact(ctx context.Context, artifact *types.Artifact) error {
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.Artifact]); err != nil {
 		if pgError, ok := errors.AsType[*pgconn.PgError](err); ok && pgError.Code == pgerrcode.UniqueViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 		return err
 	} else {
@@ -684,7 +684,7 @@ func CheckEntitlementForArtifact(
 	if err != nil {
 		return fmt.Errorf("could not query ArtifactVersion: %w", err)
 	} else if referenceExists && !entitled {
-		return apierrors.ErrForbidden
+		return distrerr.ErrForbidden
 	}
 	return nil
 }
@@ -810,7 +810,7 @@ func CheckEntitlementForArtifactBlob(ctx context.Context, digest, artifactName s
 	if err != nil {
 		return fmt.Errorf("could not query ArtifactVersion: %w", err)
 	} else if !exists {
-		return apierrors.ErrForbidden
+		return distrerr.ErrForbidden
 	}
 	return nil
 }
@@ -834,7 +834,7 @@ func GetArtifactVersion(ctx context.Context, orgName, name, reference string) (*
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ArtifactVersion])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
+			err = distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("could not query ArtifactVersion: %w", err)
 	}
@@ -908,7 +908,7 @@ func CreateArtifactVersion(ctx context.Context, av *types.ArtifactVersion) error
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ArtifactVersion]); err != nil {
 		var pgError *pgconn.PgError
 		if errors.As(err, &pgError) && pgError.Code == pgerrcode.UniqueViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 		return err
 	} else {
@@ -1419,7 +1419,7 @@ func GetArtifactVersionByName(
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ArtifactVersion])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("could not query ArtifactVersion: %w", err)
 	}
@@ -1502,7 +1502,7 @@ func CheckArtifactVersionDeletionForEntitlements(
 		}
 
 		if otherTags == 0 {
-			return apierrors.NewBadRequest(
+			return distrerr.NewBadRequest(
 				"cannot delete tag: the manifest digest is referenced in one or more entitlements " +
 					"and this is the last non-SHA tag pointing to it",
 			)
@@ -1530,7 +1530,7 @@ func checkAllVersionsEntitlement(ctx context.Context, artifactID uuid.UUID) erro
 	}
 
 	if hasAllVersionsEntitlement {
-		return apierrors.NewBadRequest("cannot delete tag: there is an all-versions entitlement for this artifact")
+		return distrerr.NewBadRequest("cannot delete tag: there is an all-versions entitlement for this artifact")
 	}
 
 	return nil
@@ -1541,10 +1541,10 @@ func DeleteArtifactWithID(ctx context.Context, id uuid.UUID) error {
 	cmd, err := db.Exec(ctx, `DELETE FROM Artifact WHERE id = @id`, pgx.NamedArgs{"id": id})
 	if err != nil {
 		if isStillReferencedError(err) {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 	} else if cmd.RowsAffected() == 0 {
-		err = apierrors.ErrNotFound
+		err = distrerr.ErrNotFound
 	}
 
 	if err != nil {
@@ -1587,10 +1587,10 @@ func DeleteArtifactVersion(ctx context.Context, artifactID uuid.UUID, tagName st
 		})
 	if err != nil {
 		if isStillReferencedError(err) {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 	} else if cmd.RowsAffected() == 0 {
-		err = apierrors.ErrNotFound
+		err = distrerr.ErrNotFound
 	}
 
 	if err != nil {
@@ -1627,7 +1627,7 @@ func DeleteArtifactTag(ctx context.Context, artifactID uuid.UUID, tagName string
 		if isLast, err := IsLastTagOfArtifact(ctx, artifactID, tagName); err != nil {
 			return err
 		} else if isLast {
-			return apierrors.NewConflict(
+			return distrerr.NewConflict(
 				"Cannot delete tag: it is the last tag of the artifact. At least one tag must remain for the artifact.",
 			)
 		}
@@ -1811,7 +1811,7 @@ func GetPullThroughBlobSize(ctx context.Context, orgSlug, artifactName, blobDige
 	).Scan(&size)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return 0, apierrors.ErrNotFound
+			return 0, distrerr.ErrNotFound
 		}
 		return 0, fmt.Errorf("could not query blob size: %w", err)
 	}

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
@@ -162,7 +162,7 @@ func compileFilter(filter string) (*regexp.Regexp, error) {
 	}
 	re, err := regexp.Compile(filter)
 	if err != nil {
-		return nil, apierrors.NewBadRequest("invalid filter regex")
+		return nil, distrerr.NewBadRequest("invalid filter regex")
 	}
 	return re, nil
 }

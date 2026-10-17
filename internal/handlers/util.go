@@ -5,19 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html"
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/internal/contenttype"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/handlerutil"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/validation"
-	"github.com/getsentry/sentry-go"
-	"go.uber.org/zap"
 )
 
 type TimeseriesRequest struct {
@@ -80,92 +78,85 @@ func parseTimeseriesRange(r *http.Request) (timeseriesRange, error) {
 	return timeseriesRange{Before: before, After: after, Filter: filter}, nil
 }
 
-// runTxOrRespond runs f in a transaction and reports whether that transaction committed. Failing to
-// begin or to commit it is answered with status 500, an error returned from f is not, since f has
-// already written the response for it.
-func runTxOrRespond(ctx context.Context, w http.ResponseWriter, f func(ctx context.Context) error) bool {
-	var fErr error
-	if err := db.RunTx(ctx, func(ctx context.Context) error {
-		fErr = f(ctx)
-		return fErr
-	}); err != nil {
-		if fErr == nil {
-			internalctx.GetLogger(ctx).Warn("could not run db transaction", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
-		return false
-	}
-	return true
+var errRollback = errors.New("transaction rolled back")
+
+// runTx runs f in a transaction. A Responder returned from f rolls it back and answers the request,
+// so f rejects a request the way a handler does. Nil for both means f succeeded and it committed.
+func runTx(ctx context.Context, f func(ctx context.Context) (respond.Responder, error)) (respond.Responder, error) {
+	return runTxWith(ctx, db.RunTx, f)
 }
 
-func JsonBody[T any](w http.ResponseWriter, r *http.Request) (T, error) {
+// runTxRR is runTx with isolation level RepeatableRead.
+func runTxRR(ctx context.Context, f func(ctx context.Context) (respond.Responder, error)) (respond.Responder, error) {
+	return runTxWith(ctx, db.RunTxRR, f)
+}
+
+func runTxWith(
+	ctx context.Context,
+	run func(ctx context.Context, f func(ctx context.Context) error) error,
+	f func(ctx context.Context) (respond.Responder, error),
+) (respond.Responder, error) {
+	var resp respond.Responder
+	if err := run(ctx, func(ctx context.Context) error {
+		var err error
+		if resp, err = f(ctx); err != nil {
+			return err
+		} else if resp != nil {
+			return errRollback
+		} else {
+			return nil
+		}
+	}); err != nil && !errors.Is(err, errRollback) {
+		return nil, err
+	} else {
+		return resp, nil
+	}
+}
+
+// decodeJSON decodes and trims the body. A body that cannot be decoded is answered by the returned Responder.
+func decodeJSON[T any](r *http.Request) (T, respond.Responder) {
+	return decodeJSONFrom[T](r.Body, "request body is required")
+}
+
+// decodeJSONFormValue is [decodeJSON] for the JSON that a multipart request carries in the form field key
+// next to its files.
+func decodeJSONFormValue[T any](r *http.Request, key string) (T, respond.Responder) {
+	return decodeJSONFrom[T](strings.NewReader(r.FormValue(key)), key+" is required")
+}
+
+func decodeJSONFrom[T any](reader io.Reader, missing string) (T, respond.Responder) {
 	var t T
-	err := json.NewDecoder(r.Body).Decode(&t)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-	} else {
-		validation.TrimStrings(&t)
-	}
-	return t, err
-}
-
-func RespondJSON(w http.ResponseWriter, data any) {
-	RespondJSONWithStatus(w, http.StatusOK, data)
-}
-
-// respondInternalError answers 500 and keeps the cause in the log and in Sentry, where the message
-// describes what failed. The body says nothing, because a 4xx body is what the frontend displays.
-func respondInternalError(w http.ResponseWriter, r *http.Request, err error, message string) {
-	ctx := r.Context()
-	internalctx.GetLogger(ctx).Error(message, zap.Error(err))
-	sentry.GetHubFromContext(ctx).CaptureException(err)
-	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-}
-
-func RespondJSONWithStatus(w http.ResponseWriter, status int, data any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(data); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-	}
-}
-
-func SetFileDownloadHeaders(w http.ResponseWriter, filename string) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
-}
-
-func readMultipartFile(w http.ResponseWriter, r *http.Request, formKey string) ([]byte, bool) {
-	log := internalctx.GetLogger(r.Context())
-	if file, head, err := r.FormFile(formKey); err != nil {
-		if !errors.Is(err, http.ErrMissingFile) {
-			log.Error("failed to get file from upload", zap.Error(err))
-			sentry.GetHubFromContext(r.Context()).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return nil, false
+	if err := json.NewDecoder(reader).Decode(&t); err != nil {
+		if errors.Is(err, io.EOF) {
+			return t, respond.BadRequest(missing)
+		} else if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
+			return t, respond.Error(http.StatusRequestEntityTooLarge, "request body too large")
 		} else {
-			return nil, true
+			return t, respond.BadRequest(err.Error())
 		}
+	}
+	validation.TrimStrings(&t)
+	return t, nil
+}
+
+// attachment is the Content-Disposition value that makes a browser download the response as filename.
+func attachment(filename string) string {
+	return fmt.Sprintf("attachment; filename=\"%s\"", filename)
+}
+
+// readMultipartFile reads the optional YAML file formKey of at most 100 KiB from a multipart form.
+func readMultipartFile(r *http.Request, formKey string) ([]byte, respond.Responder, error) {
+	if file, head, err := r.FormFile(formKey); errors.Is(err, http.ErrMissingFile) {
+		return nil, nil, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get file %v from upload: %w", formKey, err)
+	} else if head.Size > 102400 {
+		return nil, respond.Error(http.StatusRequestEntityTooLarge, "file too large (max 100 KiB)"), nil
+	} else if err := contenttype.IsYaml(head.Header); err != nil {
+		return nil, respond.Error(http.StatusUnsupportedMediaType, err.Error()), nil
+	} else if data, err := io.ReadAll(file); err != nil {
+		return nil, nil, fmt.Errorf("failed to read file %v from upload: %w", formKey, err)
 	} else {
-		log.Sugar().Debugf("got file %v with type %v and size %v", head.Filename, head.Header, head.Size)
-		// max file size is 100KiB
-		if head.Size > 102400 {
-			log.Debug("large body was rejected")
-			w.WriteHeader(http.StatusRequestEntityTooLarge)
-			fmt.Fprintln(w, "file too large (max 100 KiB)")
-			return nil, false
-		} else if err := contenttype.IsYaml(head.Header); err != nil {
-			w.WriteHeader(http.StatusUnsupportedMediaType)
-			fmt.Fprint(w, html.EscapeString(err.Error()))
-			return nil, false
-		} else if data, err := io.ReadAll(file); err != nil {
-			log.Error("failed to read file from upload", zap.Error(err))
-			sentry.GetHubFromContext(r.Context()).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return nil, false
-		} else {
-			return data, true
-		}
+		return data, nil, nil
 	}
 }
