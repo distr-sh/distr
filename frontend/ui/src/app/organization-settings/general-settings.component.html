@@ -87,6 +87,55 @@
       <h2 class="text-xl font-bold dark:text-white">Controllers</h2>
       <div>
         <input
+          formControlName="controllerImageRepositoryEnabled"
+          id="controllerImageRepositoryEnabled"
+          type="checkbox"
+          class="distr-checkbox" />
+        <label for="controllerImageRepositoryEnabled" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+          @if (currentOrganization()?.controllerImageRepositoryUseCustomDomain) {
+            Use a different controller repository
+          } @else {
+            Use an external controller repository
+          }
+        </label>
+        @if (currentOrganization(); as org) {
+          <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
+            @switch (org.defaultControllerImageRepositorySource) {
+              @case ('custom_domain') {
+                By default, controller images are pulled through your registry domain from
+              }
+              @case ('environment') {
+                By default, controller images are pulled from
+              }
+              @default {
+                By default, controller images are pulled from GitHub at
+              }
+            }
+            <code class="font-mono">{{ org.defaultControllerImageRepository }}</code
+            >.
+            <a
+              [href]="controllerRepositoryDocsUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-primary-600 hover:underline dark:text-primary-500"
+              >Learn more</a
+            >
+          </p>
+        }
+        @if (isControllerImageRepositoryEnabled()) {
+          <input
+            formControlName="controllerImageRepository"
+            autotrim
+            type="text"
+            id="controllerImageRepository"
+            aria-label="Controller repository"
+            placeholder="registry.example.com/distr"
+            class="distr-input" />
+        }
+      </div>
+
+      <div>
+        <input
           formControlName="prePostScriptsEnabled"
           id="prePostScriptsEnabled"
           type="checkbox"
@@ -99,46 +148,6 @@
           pre- and post-connect scripts can run during controller setup. Install commands only change for a platform
           once a script is configured for it, or for Docker when it should run with sudo.
         </p>
-      </div>
-
-      <div>
-        <label for="controllerImageRepository" class="distr-label mb-2">
-          @if (currentOrganization()?.controllerImageRepositoryUseCustomDomain) {
-            Controller repository
-          } @else {
-            External controller repository
-          }
-        </label>
-        <input
-          formControlName="controllerImageRepository"
-          autotrim
-          type="text"
-          id="controllerImageRepository"
-          class="distr-input" />
-        @if (currentOrganization(); as org) {
-          <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
-            @switch (org.defaultControllerImageRepositorySource) {
-              @case ('custom_domain') {
-                Leave empty to pull controller images through your registry domain from
-              }
-              @case ('environment') {
-                Leave empty to pull controller images from
-              }
-              @default {
-                Leave empty to pull controller images from GitHub at
-              }
-            }
-            <code class="font-mono">{{ org.defaultControllerImageRepository }}</code
-            >.
-            <a
-              href="https://distr.sh/docs/platform/branding/#controller-image-repository"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-primary-600 hover:underline dark:text-primary-500"
-              >Learn more</a
-            >
-          </p>
-        }
       </div>
     </div>
 

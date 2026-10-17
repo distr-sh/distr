@@ -5,6 +5,7 @@ import {DeploymentType} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faFloppyDisk} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, startWith} from 'rxjs';
+import {WEBSITE_URL} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
 import {slugMaxLength, slugPattern} from '../../util/slug';
 import {DeleteOrganizationComponent} from '../components/delete-organization/delete-organization.component';
@@ -74,11 +75,13 @@ export class GeneralSettingsComponent implements OnInit {
     kubernetesPostConnectScript: this.fb.control<string | undefined>(undefined),
     artifactVersionMutable: this.fb.control<boolean>(false),
     prePostScriptsEnabled: this.fb.control<boolean>(false),
+    controllerImageRepositoryEnabled: this.fb.control<boolean>(false),
     controllerImageRepository: this.fb.control<string | undefined>(undefined),
   });
   formLoading = signal(false);
 
   protected readonly currentOrganization = toSignal(this.organizationService.get());
+  protected readonly controllerRepositoryDocsUrl = `${WEBSITE_URL}/docs/platform/branding/#controller-image-repository`;
   protected readonly connectScriptTabs: TabItem<DeploymentType>[] = [
     {id: 'docker', label: 'Docker'},
     {id: 'kubernetes', label: 'Kubernetes'},
@@ -93,6 +96,13 @@ export class GeneralSettingsComponent implements OnInit {
     {initialValue: false}
   );
 
+  protected readonly isControllerImageRepositoryEnabled = toSignal(
+    this.form.controls.controllerImageRepositoryEnabled.valueChanges.pipe(
+      startWith(this.form.controls.controllerImageRepositoryEnabled.value)
+    ),
+    {initialValue: false}
+  );
+
   async ngOnInit() {
     try {
       this.organization = await firstValueFrom(this.organizationService.get());
@@ -103,6 +113,7 @@ export class GeneralSettingsComponent implements OnInit {
         ...this.organization,
         artifactVersionMutable: this.organization.features?.includes('artifact_version_mutable') ?? false,
         prePostScriptsEnabled: this.organization.features?.includes('pre_post_scripts') ?? false,
+        controllerImageRepositoryEnabled: !!this.organization.controllerImageRepository,
       });
     } catch (e) {
       const msg = getFormDisplayedError(e);
@@ -144,14 +155,18 @@ export class GeneralSettingsComponent implements OnInit {
 
       this.formLoading.set(true);
       try {
+        const {controllerImageRepositoryEnabled, controllerImageRepository, ...request} = formValue;
         this.organization = await firstValueFrom(
           this.organizationService.update({
             ...this.organization!,
-            ...formValue,
-            controllerImageRepository: formValue.controllerImageRepository || undefined,
+            ...request,
+            controllerImageRepository: (controllerImageRepositoryEnabled && controllerImageRepository) || undefined,
           })
         );
-        this.form.controls.controllerImageRepository.setValue(this.organization.controllerImageRepository);
+        this.form.patchValue({
+          controllerImageRepositoryEnabled: !!this.organization.controllerImageRepository,
+          controllerImageRepository: this.organization.controllerImageRepository,
+        });
         this.toast.success('Settings saved successfully');
       } catch (e) {
         const msg = getFormDisplayedError(e);

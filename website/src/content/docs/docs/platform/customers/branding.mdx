@@ -121,7 +121,7 @@ See the [configuration reference](/docs/self-hosting/configuration/#custom-domai
 ## Controller Image Repository
 
 The [Docker](/docs/controllers/docker-controller/) and [Kubernetes](/docs/controllers/kubernetes-controller/) controllers pull their images from `ghcr.io/distr-sh/distr` by default.
-To have your customers pull them from your own registry instead, for example your Distr registry, set its host and an optional path as the **External controller repository** under **Settings → Organization → General** (e.g. `registry.distr.sh/your-org`).
+To have your customers pull them from your own registry instead, for example your Distr registry, enable **Use an external controller repository** under **Settings → Organization → General** and enter its host and an optional path (e.g. `registry.distr.sh/your-org`).
 The setting applies to all of your customers.
 
 Only the prefix can be changed. Distr appends the image names `docker-controller`, `docker-autoheal` and `kubernetes-controller` with the controller version as the tag, so your registry has to host the images under these names.
