@@ -121,8 +121,7 @@ See the [configuration reference](/docs/self-hosting/configuration/#custom-domai
 ## Controller Image Repository
 
 The [Docker](/docs/controllers/docker-controller/) and [Kubernetes](/docs/controllers/kubernetes-controller/) controllers pull their images from `ghcr.io/distr-sh/distr` by default.
-To have your customers pull them from your own registry instead, for example your Distr registry, set its host and an optional path as the **Controller image repository** under **Settings → Organization → General** (e.g. `registry.distr.sh/your-org`).
-A host without a dot needs a port (e.g. `registry:5000/distr`), because container runtimes resolve any other name without a dot against Docker Hub.
+To have your customers pull them from your own registry instead, for example your Distr registry, set its host and an optional path as the **External controller repository** under **Settings → Organization → General** (e.g. `registry.distr.sh/your-org`).
 The setting applies to all of your customers.
 
 Only the prefix can be changed. Distr appends the image names `docker-controller`, `docker-autoheal` and `kubernetes-controller` with the controller version as the tag, so your registry has to host the images under these names.
@@ -137,6 +136,8 @@ A new repository applies when a deployment target connects and at its next contr
 </Aside>
 
 On self-hosted instances, [`CONTROLLER_IMAGE_REPOSITORY`](/docs/self-hosting/configuration/) changes the default for every organization.
+With `CONTROLLER_IMAGE_REPOSITORY_USE_CUSTOM_DOMAIN` enabled, an organization with a [custom registry domain](#custom-domains) pulls the images through that domain instead, keeping the path of `CONTROLLER_IMAGE_REPOSITORY`.
+The images have to be public in the Distr registry.
 
 ## Custom Email
 

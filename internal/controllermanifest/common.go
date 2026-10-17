@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/url"
 	"path"
+	"strings"
 	"text/template"
 
 	"github.com/distr-sh/distr/internal/buildconfig"
@@ -14,6 +15,7 @@ import (
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/resources"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/google/uuid"
 )
 
 func Get(
@@ -66,7 +68,7 @@ func getTemplateData(
 	result := map[string]any{
 		"controllerName":               controllerName(deploymentTarget),
 		"controllerDockerConfig":       base64.StdEncoding.EncodeToString(env.ControllerDockerConfig()),
-		"controllerImageRepository":    ImageRepository(org.Organization),
+		"controllerImageRepository":    ImageRepository(ctx, org),
 		"controllerInterval":           env.ControllerInterval(),
 		"controllerVersion":            deploymentTarget.ControllerVersion.Name,
 		"controllerVersionId":          deploymentTarget.ControllerVersion.ID,
@@ -99,11 +101,36 @@ func getTemplateData(
 	return result, nil
 }
 
-func ImageRepository(org types.Organization) string {
+func ImageRepository(ctx context.Context, org types.OrganizationWithBranding) string {
 	if org.ControllerImageRepository != nil {
 		return *org.ControllerImageRepository
 	}
-	return env.ControllerImageRepository()
+	repository, _ := DefaultImageRepository(ctx, org.ID, org.Branding)
+	return repository
+}
+
+func DefaultImageRepository(
+	ctx context.Context,
+	orgID uuid.UUID,
+	branding *types.OrganizationBranding,
+) (string, types.ControllerImageRepositorySource) {
+	repository := env.ControllerImageRepository()
+	if env.ControllerImageRepositoryUseCustomDomain() && env.RegistryEnabled() {
+		if domain := customdomains.RegistryDomain(ctx, orgID, branding); domain != nil {
+			return imageRepositoryOnDomain(repository, *domain), types.ControllerImageRepositorySourceCustomDomain
+		}
+	}
+	if repository == env.DefaultControllerImageRepository {
+		return repository, types.ControllerImageRepositorySourceDefault
+	}
+	return repository, types.ControllerImageRepositorySourceEnvironment
+}
+
+func imageRepositoryOnDomain(repository, domain string) string {
+	if _, repositoryPath, ok := strings.Cut(repository, "/"); ok {
+		return domain + "/" + repositoryPath
+	}
+	return domain
 }
 
 // controllerName is the name the controller's own resources and compose service are derived from. A controller

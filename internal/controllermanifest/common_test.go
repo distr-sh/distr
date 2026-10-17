@@ -73,3 +73,10 @@ func TestCurrentManifestsPullControllerImagesFromRepository(t *testing.T) {
 	g.Expect(docker).To(ContainSubstring(`image: 'registry.example.com/mirror/docker-controller:1.2.3'`))
 	g.Expect(docker).To(ContainSubstring(`image: 'registry.example.com/mirror/docker-autoheal:1.2.3'`))
 }
+
+func TestImageRepositoryOnDomainKeepsPathOfConfiguredRepository(t *testing.T) {
+	g := NewWithT(t)
+	g.Expect(imageRepositoryOnDomain("registry.distr.sh:5000/distr-sh/distr", "registry.vendor.com")).
+		To(Equal("registry.vendor.com/distr-sh/distr"))
+	g.Expect(imageRepositoryOnDomain("localhost:5000", "registry.vendor.com")).To(Equal("registry.vendor.com"))
+}

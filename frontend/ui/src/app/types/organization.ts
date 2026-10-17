@@ -51,7 +51,11 @@ export interface Organization extends BaseModel, Named {
   stripeWebhookSecretConfigured: boolean;
   controllerImageRepository?: string;
   defaultControllerImageRepository: string;
+  defaultControllerImageRepositorySource: ControllerImageRepositorySource;
+  controllerImageRepositoryUseCustomDomain: boolean;
 }
+
+export type ControllerImageRepositorySource = 'default' | 'environment' | 'custom_domain';
 
 export interface OrganizationWithUserRole extends Organization {
   userRole: UserRole;

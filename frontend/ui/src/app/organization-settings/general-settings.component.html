@@ -87,28 +87,43 @@
       </div>
 
       <div>
-        <label for="controllerImageRepository" class="distr-label mb-2">Controller image repository</label>
+        <label for="controllerImageRepository" class="distr-label mb-2">
+          @if (currentOrganization()?.controllerImageRepositoryUseCustomDomain) {
+            Controller repository
+          } @else {
+            External controller repository
+          }
+        </label>
         <input
           formControlName="controllerImageRepository"
           autotrim
           type="text"
           id="controllerImageRepository"
-          class="distr-input"
-          [placeholder]="defaultControllerImageRepository() ?? ''" />
-        <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-          Where controllers pull their images from: a registry host followed by an optional path, e.g.
-          <code class="font-mono">{{ exampleControllerImageRepository() }}</code> for your Distr registry. A host
-          without a dot needs a port, e.g. <code class="font-mono">registry:5000</code>. Distr appends the image names
-          <code class="font-mono">docker-controller</code>, <code class="font-mono">kubernetes-controller</code> and
-          <code class="font-mono">docker-autoheal</code> with the controller version as the tag, so a mirror has to host
-          them under the same names. Leave it empty to pull from
-          <code class="font-mono">{{ defaultControllerImageRepository() }}</code
-          >.
-        </p>
-        <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
-          The images have to be publicly available there, or every deployment target needs access to the registry before
-          you save. A change applies when a deployment target connects and at its next controller update.
-        </p>
+          class="distr-input" />
+        @if (currentOrganization(); as org) {
+          <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
+            @switch (org.defaultControllerImageRepositorySource) {
+              @case ('custom_domain') {
+                Leave empty to pull controller images through your registry domain from
+              }
+              @case ('environment') {
+                Leave empty to pull controller images from
+              }
+              @default {
+                Leave empty to pull controller images from GitHub at
+              }
+            }
+            <code class="font-mono">{{ org.defaultControllerImageRepository }}</code
+            >.
+            <a
+              href="https://distr.sh/docs/platform/branding/#controller-image-repository"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-primary-600 hover:underline dark:text-primary-500"
+              >Learn more</a
+            >
+          </p>
+        }
       </div>
     </div>
 

@@ -30,6 +30,14 @@ type Organization struct {
 	ControllerImageRepository           *string            `db:"controller_image_repository" json:"-"`
 }
 
+type ControllerImageRepositorySource string
+
+const (
+	ControllerImageRepositorySourceDefault      ControllerImageRepositorySource = "default"
+	ControllerImageRepositorySourceEnvironment  ControllerImageRepositorySource = "environment"
+	ControllerImageRepositorySourceCustomDomain ControllerImageRepositorySource = "custom_domain"
+)
+
 func (org *Organization) HasFeature(feature Feature) bool {
 	return slices.Contains(org.Features, feature)
 }

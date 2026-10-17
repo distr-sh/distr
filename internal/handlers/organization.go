@@ -9,6 +9,7 @@ import (
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/controllermanifest"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/distrerr"
@@ -79,8 +80,12 @@ func organizationResponse(ctx context.Context, org types.Organization) (respond.
 		return nil, fmt.Errorf("failed to count billable user accounts: %w", err)
 	} else if customerOrgCount, err := db.CountCustomerOrganizationsByOrganizationID(ctx, org.ID); err != nil {
 		return nil, fmt.Errorf("failed to count customer organizations: %w", err)
+	} else if branding, err := db.GetOrganizationBranding(ctx, org.ID); err != nil &&
+		!errors.Is(err, distrerr.ErrNotFound) {
+		return nil, fmt.Errorf("failed to get organization branding: %w", err)
 	} else {
-		return respond.JSON(mapping.OrganizationToAPI(org, billableUserCount, customerOrgCount)), nil
+		repository, source := controllermanifest.DefaultImageRepository(ctx, org.ID, branding)
+		return respond.JSON(mapping.OrganizationToAPI(org, billableUserCount, customerOrgCount, repository, source)), nil
 	}
 }
 
