@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"iter"
@@ -17,7 +16,6 @@ import (
 	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/mapping"
-	"github.com/distr-sh/distr/internal/redact"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
@@ -136,30 +134,4 @@ func getDeploymentLogsHandler(r *http.Request) (respond.Responder, error) {
 		}
 		return respond.JSON(response), nil
 	}
-}
-
-// deploymentTargetRedactor masks the secrets a deployment target can reference as well as common
-// credential patterns in what the target's controller reports.
-func deploymentTargetRedactor(ctx context.Context, dt types.DeploymentTarget) (*redact.Redactor, error) {
-	if secrets, err := db.GetSecretsForDeploymentTarget(ctx, dt); err != nil {
-		return nil, fmt.Errorf("failed to get secrets: %w", err)
-	} else {
-		return secretsRedactor(secrets), nil
-	}
-}
-
-func secretsRedactor(secrets []types.SecretWithUpdatedBy) *redact.Redactor {
-	values := make([]string, len(secrets))
-	for i, secret := range secrets {
-		values[i] = string(secret.Value)
-	}
-	return redact.New(values...)
-}
-
-// queryTimeRedactor redacts log records that were stored before redaction moved to ingestion.
-//
-// TODO: Remove once no log records ingested without redaction remain within the default Loki
-// retention period of 30 days.
-func queryTimeRedactor(ctx context.Context, dt types.DeploymentTarget) (*redact.Redactor, error) {
-	return deploymentTargetRedactor(ctx, dt)
 }
