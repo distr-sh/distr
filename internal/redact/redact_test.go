@@ -37,6 +37,15 @@ func TestRedact(t *testing.T) {
 			"env:\n  - name: GITHUB_TOKEN\n    value: ********\n  - name: PORT\n    value: \"80\"\n",
 		},
 		{
+			"env:\n  - name: DB_PASSWORD\n    value: |-\n      line one\n\n      line two\n  - name: PORT\n    value: \"80\"\n",
+			"env:\n  - name: DB_PASSWORD\n    value: |-\n      ********\n  - name: PORT\n    value: \"80\"\n",
+		},
+		{
+			"- name: API_TOKEN\r\n  value: >2 # folded\r\n    abc\r\n    def",
+			"- name: API_TOKEN\r\n  value: >2 # folded\r\n    ********",
+		},
+		{"- name: API_TOKEN\r\n  value: |\r\n    abc\r\n", "- name: API_TOKEN\r\n  value: |\r\n    ********\r\n"},
+		{
 			"-----BEGIN RSA PRIVATE KEY-----\nMIIE\nabcd\n-----END RSA PRIVATE KEY-----",
 			"-----BEGIN RSA PRIVATE KEY-----********-----END RSA PRIVATE KEY-----",
 		},

@@ -37,8 +37,9 @@ var patterns = compile(
 	`(?i)(?P<prefix>\b[a-z][a-z0-9+.-]*://)[^\s:/@"'<>]+:[^\s/@"'<>]+(?P<suffix>@)`,
 	// Kubernetes env entry in JSON: {"name":"DB_PASSWORD","value":"..."}
 	`(?i)(?P<prefix>"name"\s*:\s*"`+sensitiveName+`"\s*,\s*"value"\s*:\s*")`+jsonStringContent+`(?P<suffix>")`,
-	// Kubernetes env entry in YAML: "- name: DB_PASSWORD" followed by "value: ..." on the next line
-	`(?im)(?P<prefix>^[ \t]*-?[ \t]*name:[ \t]*["']?`+sensitiveName+`["']?[ \t]*\r?\n[ \t]*value:[ \t]*)[^\s].*`,
+	// Kubernetes env entry in YAML: "- name: DB_PASSWORD" followed by "value: ..." on the next line.
+	// A block scalar (value: |) is left to redactYAMLBlockScalars.
+	`(?im)(?P<prefix>^[ \t]*-?[ \t]*name:[ \t]*["']?`+sensitiveName+`["']?[ \t]*\r?\n[ \t]*value:[ \t]*)[^\s|>].*`,
 	// Double-quoted value of a sensitive key: "client_secret": "...", DB_PASSWORD="..."
 	`(?i)(?P<prefix>\b`+sensitiveKey+`["']?[ \t]*[:=][ \t]*")`+jsonStringContent+`(?P<suffix>")`,
 	// Single-quoted value of a sensitive key: password='...'
@@ -98,9 +99,67 @@ func New(secrets ...string) *Redactor {
 }
 
 func (r *Redactor) Redact(s string) string {
-	s = r.secrets.Replace(s)
+	s = redactYAMLBlockScalars(r.secrets.Replace(s))
 	for _, pattern := range patterns {
 		s = pattern.ReplaceAllString(s, replacement)
 	}
 	return s
+}
+
+// yamlBlockScalarEnvValue matches a Kubernetes env entry in YAML whose value is a literal or folded
+// block scalar ("- name: DB_PASSWORD" followed by "value: |-"), up to the end of the value line.
+var yamlBlockScalarEnvValue = regexp.MustCompile(
+	`(?im)^[ \t]*-?[ \t]*name:[ \t]*["']?` + sensitiveName + `["']?[ \t]*\r?\n` +
+		`(?P<indent>[ \t]*)value:[ \t]*[|>][0-9+-]*[ \t]*(?:#.*)?\r?$`,
+)
+
+// redactYAMLBlockScalars replaces the content of every block scalar matched by
+// yamlBlockScalarEnvValue with a single masked line. The content is every following line indented
+// deeper than the value line, which a regular expression cannot tell apart from the next entry.
+func redactYAMLBlockScalars(s string) string {
+	matches := yamlBlockScalarEnvValue.FindAllStringSubmatchIndex(s, -1)
+	if matches == nil {
+		return s
+	}
+	indentGroup := yamlBlockScalarEnvValue.SubexpIndex("indent")
+
+	var b strings.Builder
+	last := 0
+	for _, match := range matches {
+		if match[0] < last || match[1] == len(s) {
+			continue
+		}
+		valueIndent := match[2*indentGroup+1] - match[2*indentGroup]
+		contentStart := match[1] + 1
+		contentEnd, contentIndent := -1, 0
+		for pos := contentStart; pos < len(s); {
+			lineEnd := strings.IndexByte(s[pos:], '\n')
+			if lineEnd < 0 {
+				lineEnd = len(s)
+			} else {
+				lineEnd += pos
+			}
+			line := strings.TrimRight(s[pos:lineEnd], "\r")
+			if content := strings.TrimLeft(line, " \t"); content != "" {
+				indent := len(line) - len(content)
+				if indent <= valueIndent {
+					break
+				}
+				if contentEnd < 0 {
+					contentIndent = indent
+				}
+				contentEnd = pos + len(line)
+			}
+			pos = lineEnd + 1
+		}
+		if contentEnd < 0 {
+			continue
+		}
+		b.WriteString(s[last:contentStart])
+		b.WriteString(strings.Repeat(" ", contentIndent))
+		b.WriteString(Mask)
+		last = contentEnd
+	}
+	b.WriteString(s[last:])
+	return b.String()
 }
