@@ -250,6 +250,15 @@ export default defineConfig({
                   ],
                 },
                 {
+                  label: 'Amazon Elastic Container Service (ECS)',
+                  items: [
+                    {
+                      label: 'Deploying to Amazon ECS',
+                      link: '/docs/integrations/aws-ecs/',
+                    },
+                  ],
+                },
+                {
                   label: 'API & SDK',
                   items: [
                     {label: 'Distr API', link: '/docs/integrations/api/'},
@@ -264,17 +273,6 @@ export default defineConfig({
                       link: '/docs/integrations/personal-access-token/',
                     },
                   ],
-                },
-              ],
-            },
-            {
-              label: 'Guides',
-              link: '/docs/guides/',
-              icon: 'notes',
-              items: [
-                {
-                  label: 'Deployment Guides',
-                  items: [{autogenerate: {directory: 'docs/guides'}}],
                 },
               ],
             },
@@ -358,6 +356,7 @@ export default defineConfig({
     '/docs/use-cases/air-gapped/': '/docs/use-cases/air-gapped-deployments/',
 
     // guides/ redirects (slugs that existed on main)
+    '/docs/guides/': '/docs/quickstart/',
     '/docs/guides/secrets/': '/docs/controllers/secrets/',
     '/docs/guides/application-links/': '/docs/controllers/application-links/',
     '/docs/guides/preflight-checks/': '/docs/controllers/preflight-checks/',

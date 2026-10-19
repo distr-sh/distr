@@ -1,16 +1,15 @@
 ---
 title: Deploying to Amazon ECS
 description: Run your application on Amazon ECS in your customers' AWS accounts, with container images pulled straight from the Distr registry and access controlled by artifact entitlements and license keys.
-slug: docs/guides/aws-ecs
+slug: docs/integrations/aws-ecs
 sidebar:
-  label: Amazon ECS
-  order: 1
+  label: Deploying to Amazon ECS
 ---
 
 import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import awsEcsLight from '~/assets/docs/guides/aws-ecs/aws-ecs-light.webp';
-import awsEcsDark from '~/assets/docs/guides/aws-ecs/aws-ecs-dark.webp';
+import awsEcsLight from '~/assets/docs/integrations/aws-ecs/aws-ecs-light.webp';
+import awsEcsDark from '~/assets/docs/integrations/aws-ecs/aws-ecs-dark.webp';
 
 Many enterprise customers standardize on [Amazon Elastic Container Service (ECS)](https://aws.amazon.com/ecs/) and want to run your application on the clusters they already operate.
 Distr supports this through its [artifact registry](/docs/registry/): you publish your container images to Distr and decide per customer which images and tags they are entitled to, and the customer's ECS tasks pull those images directly from Distr with a Personal Access Token.
@@ -107,7 +106,7 @@ Store these values in AWS Secrets Manager and pass them through the `secrets` of
 - `ACME_DATABASE_PASSWORD`: the password of your PostgreSQL user
 - `ACME_LICENSE_TOKEN`: your license token from the Licenses page
 
-Follow the [Amazon ECS guide](https://distr.sh/docs/guides/aws-ecs/#customer-setup-running-the-application-on-amazon-ecs)
+Follow the [Amazon ECS guide](https://distr.sh/docs/integrations/aws-ecs/#customer-setup-running-the-application-on-amazon-ecs)
 for the step by step setup.
 ````
 
