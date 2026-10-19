@@ -8,7 +8,7 @@ interface Props {
 const {class: className = ''} = Astro.props;
 
 const prompt =
-  "I'm looking for a platform to distribute self-hosted software to my customers. Summarize the highlights from Distr's website: https://distr.sh and Documentation https://distr.sh/docs";
+  "I'm looking for a platform to distribute self-hosted software to my customers. Summarize the highlights from Distr's website: https://distr.sh and Documentation https://distr.sh/llms.txt";
 
 const assistants = [
   {
@@ -57,4 +57,12 @@ const assistants = [
       </li>
     ))}
   </ul>
+  <p class="text-xs text-gray-500 dark:text-gray-400 m-0">
+    Using your own agent? Point it at{' '}
+    <a
+      href="/llms.txt"
+      class="text-accent-600 hover:text-accent-700 dark:text-accent-200 dark:hover:text-accent-300 transition-colors">
+      llms.txt
+    </a>
+  </p>
 </div>
