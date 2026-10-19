@@ -19,7 +19,7 @@ require (
 	github.com/containerd/log v0.2.0
 	github.com/containers/image/v5 v5.36.2
 	github.com/coreos/go-oidc/v3 v3.21.0
-	github.com/docker/cli v29.9.0+incompatible
+	github.com/docker/cli v29.9.1+incompatible
 	github.com/docker/compose/v5 v5.6.0
 	github.com/exaring/otelpgx v0.13.0
 	github.com/fsnotify/fsnotify v1.10.1
@@ -81,7 +81,7 @@ require (
 	k8s.io/client-go v0.37.1
 	k8s.io/kubectl v0.37.1
 	k8s.io/metrics v0.37.1
-	oras.land/oras-go/v2 v2.6.3
+	oras.land/oras-go/v2 v2.6.4
 )
 
 require (
