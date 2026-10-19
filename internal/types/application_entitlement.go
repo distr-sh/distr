@@ -1,6 +1,7 @@
 package types
 
 import (
+	"slices"
 	"time"
 
 	"github.com/distr-sh/distr/internal/dbcrypto"
@@ -18,6 +19,8 @@ type ApplicationEntitlementBase struct {
 	RegistryURL            *string          `db:"registry_url" json:"registryUrl,omitempty"`
 	RegistryUsername       *dbcrypto.String `db:"registry_username" json:"registryUsername,omitempty"`
 	RegistryPassword       *dbcrypto.String `db:"registry_password" json:"registryPassword,omitempty"`
+	AllVersions            bool             `db:"all_versions" json:"allVersions"`
+	AutoAddVersionRegex    *string          `db:"auto_add_version_regex" json:"autoAddVersionRegex,omitempty"`
 }
 
 type ApplicationEntitlementWithVersions struct {
@@ -31,6 +34,11 @@ type ApplicationEntitlement struct {
 	CustomerOrganization *CustomerOrganization `db:"customer_organization" json:"customerOrganization,omitempty"`
 }
 
+type ApplicationEntitlementAutoAddVersionRegex struct {
+	ApplicationEntitlementID uuid.UUID `db:"id"`
+	AutoAddVersionRegex      string    `db:"auto_add_version_regex"`
+}
+
 type DeploymentVersionUsage struct {
 	DeploymentID           uuid.UUID `db:"deployment_id"`
 	DeploymentTargetName   string    `db:"deployment_target_name"`
@@ -38,11 +46,18 @@ type DeploymentVersionUsage struct {
 	ApplicationVersionName string    `db:"application_version_name"`
 }
 
-func (entitlement *ApplicationEntitlementWithVersions) HasVersionWithID(id uuid.UUID) bool {
-	for _, v := range entitlement.Versions {
-		if v.ID == id {
-			return true
-		}
+func (entitlement *ApplicationEntitlementWithVersions) CoversVersionWithID(id uuid.UUID) bool {
+	return entitlement.AllVersions || slices.ContainsFunc(entitlement.Versions, func(v ApplicationVersion) bool {
+		return v.ID == id
+	})
+}
+
+// EntitledVersions narrows the versions of the application down to the ones the entitlement grants.
+func (entitlement *ApplicationEntitlementWithVersions) EntitledVersions(
+	applicationVersions []ApplicationVersion,
+) []ApplicationVersion {
+	if entitlement.AllVersions {
+		return applicationVersions
 	}
-	return false
+	return entitlement.Versions
 }

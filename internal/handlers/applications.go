@@ -448,6 +448,9 @@ func createApplicationVersion(r *http.Request) (respond.Responder, error) {
 		if err := db.CreateApplicationVersionResources(ctx, applicationVersion.ID, resources); err != nil {
 			return err
 		}
+		if _, err := addVersionToMatchingEntitlements(ctx, applicationVersion, nil); err != nil {
+			return err
+		}
 		return triggerAutomaticApplicationUpdates(
 			ctx, auth.CurrentOrg(), application.ID, new(auth.CurrentUserID()))
 	}); errors.Is(err, distrerr.ErrNotFound) {
@@ -517,15 +520,23 @@ func updateApplicationVersion(r *http.Request) (respond.Responder, error) {
 	}); existingIndex < 0 {
 		return applicationVersionNotFound, nil
 	} else {
+		previousName := existing.Versions[existingIndex].Name
 		updatedVersion := mapping.UpdateApplicationVersionToInternal(request, existing.Versions[existingIndex])
 		updated := *existing
 		updated.Versions = slices.Clone(existing.Versions)
 		updated.Versions[existingIndex] = updatedVersion
+		var autoAdded bool
 		if err := types.ValidateVersionsForStrategy(updated.VersioningStrategy, updated.Versions); err != nil {
 			return respond.BadRequest(err.Error()), nil
 		} else if err := db.RunTx(ctx, func(ctx context.Context) error {
 			if err := db.UpdateApplicationVersion(ctx, &updatedVersion); err != nil {
 				return err
+			}
+			if updatedVersion.Name != previousName {
+				var err error
+				if autoAdded, err = addVersionToMatchingEntitlements(ctx, updatedVersion, &previousName); err != nil {
+					return err
+				}
 			}
 			return triggerAutomaticApplicationUpdates(
 				ctx, auth.CurrentOrg(), existing.ID, new(auth.CurrentUserID()))
@@ -536,6 +547,11 @@ func updateApplicationVersion(r *http.Request) (respond.Responder, error) {
 		} else if err != nil {
 			return nil, fmt.Errorf("could not update applicationversion: %w", err)
 		} else {
+			if autoAdded {
+				notification.Dispatch(ctx, func(ctx context.Context) error {
+					return notification.SendApplicationUpdateAvailableNotifications(ctx, updatedVersion)
+				})
+			}
 			return respond.JSON(applicationVersionMapper(ctx)(updatedVersion)), nil
 		}
 	}

@@ -380,8 +380,8 @@ func validateAutomaticApplicationUpdates(
 		return respond.BadRequest("this application does not allow automatic updates")
 	}
 	versions := app.Versions
-	if entitlement != nil && len(entitlement.Versions) > 0 {
-		versions = entitlement.Versions
+	if entitlement != nil {
+		versions = entitlement.EntitledVersions(app.Versions)
 	}
 	latest := types.LatestApplicationVersion(
 		types.ApplicationVersionComparator(app.VersioningStrategy, app.Versions),
@@ -481,7 +481,7 @@ func validateDeploymentRequestEntitlement(
 		if target.CustomerOrganizationID == nil || *target.CustomerOrganizationID != *entitlement.CustomerOrganizationID {
 			return invalidEntitlement
 		}
-		if len(entitlement.Versions) > 0 && !entitlement.HasVersionWithID(request.ApplicationVersionID) {
+		if !entitlement.CoversVersionWithID(request.ApplicationVersionID) {
 			return invalidEntitlement
 		}
 		if app.ID != entitlement.ApplicationID {

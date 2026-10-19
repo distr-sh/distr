@@ -32,6 +32,11 @@
     @apply size-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600;
   }
 
+  // a `<label>` wrapping a `distr-radio` with a title and a description, one per option of a choice
+  .distr-radio-card {
+    @apply flex items-start gap-3 p-4 rounded-lg border border-gray-200 bg-gray-50 cursor-pointer hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 has-checked:border-primary-600 has-checked:ring-1 has-checked:ring-primary-600 dark:has-checked:border-primary-500 dark:has-checked:ring-primary-500 has-disabled:cursor-not-allowed has-disabled:opacity-60;
+  }
+
   .distr-label {
     @apply block text-sm font-medium text-gray-900 dark:text-white;
   }

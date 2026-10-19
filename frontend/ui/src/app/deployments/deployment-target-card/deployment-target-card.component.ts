@@ -261,11 +261,11 @@ export class DeploymentTargetCardComponent {
     const latestVersions = new Map<string, ApplicationVersion>();
     for (const deployment of deploymentTarget.deployments) {
       const application = applications.find((app) => app.id === deployment.application.id);
-      const entitledVersions = deployment.applicationEntitlementId
-        ? entitlements.find((entitlement) => entitlement.id === deployment.applicationEntitlementId)?.versions
+      const entitlement = deployment.applicationEntitlementId
+        ? entitlements.find((entitlement) => entitlement.id === deployment.applicationEntitlementId)
         : undefined;
-      // An entitlement without versions covers all of them.
-      const candidates = entitledVersions?.length ? entitledVersions : (application?.versions ?? []);
+      const candidates =
+        entitlement && !entitlement.allVersions ? (entitlement.versions ?? []) : (application?.versions ?? []);
       const maxVersion = latestApplicationVersion(
         applicationVersionComparator(application?.versioningStrategy, application?.versions ?? []),
         candidates

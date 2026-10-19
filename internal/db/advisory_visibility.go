@@ -265,29 +265,28 @@ func union(a, b []uuid.UUID) []uuid.UUID {
 }
 
 type entitlementRefRow struct {
-	ParentID   uuid.UUID   `db:"parent_id"`
-	ExpiresAt  *time.Time  `db:"expires_at"`
-	VersionIDs []uuid.UUID `db:"version_ids"`
+	ParentID    uuid.UUID   `db:"parent_id"`
+	ExpiresAt   *time.Time  `db:"expires_at"`
+	AllVersions bool        `db:"all_versions"`
+	VersionIDs  []uuid.UUID `db:"version_ids"`
 }
 
 func (r entitlementRefRow) toRef() advisory.EntitlementRef {
 	return advisory.EntitlementRef{
-		ParentID:   r.ParentID,
-		VersionIDs: r.VersionIDs,
-		ExpiresAt:  r.ExpiresAt,
+		ParentID:    r.ParentID,
+		AllVersions: r.AllVersions,
+		VersionIDs:  r.VersionIDs,
+		ExpiresAt:   r.ExpiresAt,
 	}
 }
 
-// getApplicationEntitlementRefs returns one ref per application entitlement. An entitlement
-// without any ApplicationEntitlement_ApplicationVersion rows covers every version of its
-// application, which is represented by an empty VersionIDs.
 func getApplicationEntitlementRefs(
 	ctx context.Context, orgID, customerOrgID uuid.UUID,
 ) ([]advisory.EntitlementRef, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`SELECT ae.application_id AS parent_id, ae.expires_at,
+		`SELECT ae.application_id AS parent_id, ae.expires_at, ae.all_versions,
 			coalesce((
 				SELECT array_agg(aeav.application_version_id)
 				FROM ApplicationEntitlement_ApplicationVersion aeav
@@ -313,8 +312,7 @@ func getApplicationEntitlementRefs(
 }
 
 // getArtifactEntitlementRefs returns one ref per (entitlement, artifact) pair. A pair with
-// any NULL artifact_version_id covers the whole artifact, which is represented by an empty
-// VersionIDs.
+// any NULL artifact_version_id covers the whole artifact.
 func getArtifactEntitlementRefs(
 	ctx context.Context, orgID, customerOrgID uuid.UUID,
 ) ([]advisory.EntitlementRef, error) {
@@ -322,6 +320,7 @@ func getArtifactEntitlementRefs(
 	rows, err := db.Query(
 		ctx,
 		`SELECT aea.artifact_id AS parent_id, ae.expires_at,
+			bool_or(aea.artifact_version_id IS NULL) AS all_versions,
 			CASE
 				WHEN bool_or(aea.artifact_version_id IS NULL) THEN ARRAY[]::UUID[]
 				ELSE array_agg(aea.artifact_version_id)

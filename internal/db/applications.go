@@ -45,13 +45,12 @@ const (
 			SELECT array_agg(row(av.id, av.created_at, av.archived_at, av.name, av.link_template, av.application_id,
 				av.chart_type, av.chart_name, av.chart_url, av.chart_version) ORDER BY av.created_at ASC)
 			FROM ApplicationVersion av
-			WHERE av.application_id = a.id and
-				((av.id IN
-					(SELECT application_version_id FROM ApplicationEntitlement_ApplicationVersion
-						WHERE application_entitlement_id = al.id)
-					OR (SELECT NOT EXISTS (SELECT FROM ApplicationEntitlement_ApplicationVersion
-						WHERE application_entitlement_id = al.id)))
-		)), array[]::record[]) AS versions `
+			WHERE av.application_id = a.id AND (
+				al.all_versions
+				OR av.id IN (SELECT application_version_id FROM ApplicationEntitlement_ApplicationVersion
+					WHERE application_entitlement_id = al.id)
+			)
+		), array[]::record[]) AS versions `
 )
 
 func CreateApplication(ctx context.Context, application *types.Application, orgID uuid.UUID) error {
@@ -388,8 +387,7 @@ func GetApplicationVersionOfApplication(
 					AND al.customer_organization_id = @customerOrganizationId
 					AND (al.expires_at IS NULL OR al.expires_at > now())
 					AND (
-						NOT EXISTS (SELECT FROM ApplicationEntitlement_ApplicationVersion alav
-							WHERE alav.application_entitlement_id = al.id)
+						al.all_versions
 						OR EXISTS (SELECT FROM ApplicationEntitlement_ApplicationVersion alav
 							WHERE alav.application_entitlement_id = al.id AND alav.application_version_id = av.id)
 					)

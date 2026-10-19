@@ -1,4 +1,4 @@
-import {AsyncPipe, DatePipe} from '@angular/common';
+import {AsyncPipe, DatePipe, NgPlural, NgPluralCase} from '@angular/common';
 import {ChangeDetectionStrategy, Component, inject, input, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
@@ -27,6 +27,8 @@ import {EditApplicationEntitlementComponent} from './edit-application-entitlemen
     ReactiveFormsModule,
     FaIconComponent,
     DatePipe,
+    NgPlural,
+    NgPluralCase,
     EditApplicationEntitlementComponent,
     SearchBarComponent,
     AlertComponent,

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
+	"regexp/syntax"
 	"slices"
 	"strings"
 
@@ -21,6 +23,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
+	"go.uber.org/zap"
 )
 
 func ApplicationEntitlementsRouter(r chiopenapi.Router) {
@@ -83,6 +86,8 @@ func createApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 		return resp, err
 	} else if err := checkRegistryInput(&entitlement); err != nil {
 		return respond.BadRequest(err.Error()), nil
+	} else if err := checkVersionScope(&entitlement); err != nil {
+		return respond.BadRequest(err.Error()), nil
 	} else if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 		if err := db.CreateApplicationEntitlement(
 			ctx, &entitlement.ApplicationEntitlementBase,
@@ -107,7 +112,11 @@ func createApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 	}); resp != nil || err != nil {
 		return resp, err
 	} else {
-		notifyEntitledVersions(ctx, entitlement.ApplicationEntitlementBase, versionIDs(entitlement.Versions))
+		if entitlement.AllVersions {
+			notifyEntitledVersions(ctx, entitlement.ApplicationEntitlementBase, nil)
+		} else if len(entitlement.Versions) > 0 {
+			notifyEntitledVersions(ctx, entitlement.ApplicationEntitlementBase, versionIDs(entitlement.Versions))
+		}
 		return respond.JSON(created), nil
 	}
 }
@@ -156,9 +165,11 @@ func updateApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 		return respond.BadRequest("Changing the application is not allowed"), nil
 	} else if err := checkRegistryInput(&entitlement); err != nil {
 		return respond.BadRequest(err.Error()), nil
+	} else if err := checkVersionScope(&entitlement); err != nil {
+		return respond.BadRequest(err.Error()), nil
 	}
 
-	addedVersionIDs, widened := widenedVersions(versionIDs(existing.Versions), versionIDs(entitlement.Versions))
+	addedVersionIDs, widened := widenedEntitlement(&existing.ApplicationEntitlementWithVersions, &entitlement)
 
 	var updated *types.ApplicationEntitlement
 	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
@@ -172,23 +183,7 @@ func updateApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 
 		newVersionIDs := versionIDs(entitlement.Versions)
 
-		isNarrowing := false
-		if len(entitlement.Versions) > 0 {
-			if len(existing.Versions) == 0 {
-				isNarrowing = true
-			} else {
-				for _, ev := range existing.Versions {
-					if !slices.ContainsFunc(entitlement.Versions, func(v types.ApplicationVersion) bool {
-						return v.ID == ev.ID
-					}) {
-						isNarrowing = true
-						break
-					}
-				}
-			}
-		}
-
-		if isNarrowing {
+		if narrowedEntitlement(&existing.ApplicationEntitlementWithVersions, &entitlement) {
 			if conflicts, err := db.GetDeploymentsUsingVersionsNotInList(ctx, entitlement.ID, newVersionIDs); err != nil {
 				return nil, fmt.Errorf("could not check deployment version usage: %w", err)
 			} else if len(conflicts) > 0 {
@@ -222,16 +217,43 @@ func updateApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 	}
 }
 
+// widenedEntitlement returns the versions an update adds, which are nil when it widens to all versions.
+func widenedEntitlement(existing, updated *types.ApplicationEntitlementWithVersions) ([]uuid.UUID, bool) {
+	if existing.AllVersions {
+		return nil, false
+	} else if updated.AllVersions {
+		return nil, true
+	}
+	added := addedVersionIDs(versionIDs(existing.Versions), versionIDs(updated.Versions))
+	return added, len(added) > 0
+}
+
+func narrowedEntitlement(existing, updated *types.ApplicationEntitlementWithVersions) bool {
+	if updated.AllVersions {
+		return false
+	} else if existing.AllVersions {
+		return true
+	}
+	return slices.ContainsFunc(existing.Versions, func(v types.ApplicationVersion) bool {
+		return !updated.CoversVersionWithID(v.ID)
+	})
+}
+
+// widenedVersions treats an empty selection as all versions, as artifact entitlements do.
 func widenedVersions(existing, updated []uuid.UUID) ([]uuid.UUID, bool) {
 	if len(existing) == 0 {
 		return nil, false
 	} else if len(updated) == 0 {
 		return nil, true
 	}
-	added := slices.DeleteFunc(slices.Clone(updated), func(id uuid.UUID) bool {
+	added := addedVersionIDs(existing, updated)
+	return added, len(added) > 0
+}
+
+func addedVersionIDs(existing, updated []uuid.UUID) []uuid.UUID {
+	return slices.DeleteFunc(slices.Clone(updated), func(id uuid.UUID) bool {
 		return slices.Contains(existing, id)
 	})
-	return added, len(added) > 0
 }
 
 func formatVersionConflictError(conflicts []types.DeploymentVersionUsage) string {
@@ -267,6 +289,75 @@ func checkRegistryInput(entitlement *types.ApplicationEntitlementWithVersions) e
 		return errors.New("registry username and password are required when a registry URL is given")
 	}
 	return nil
+}
+
+func checkVersionScope(entitlement *types.ApplicationEntitlementWithVersions) error {
+	if entitlement.AutoAddVersionRegex != nil && *entitlement.AutoAddVersionRegex == "" {
+		entitlement.AutoAddVersionRegex = nil
+	}
+	if entitlement.AllVersions {
+		if len(entitlement.Versions) > 0 {
+			return errors.New("an entitlement for all versions cannot select specific versions")
+		} else if entitlement.AutoAddVersionRegex != nil {
+			return errors.New("an entitlement for all versions cannot auto-add versions")
+		}
+		return nil
+	} else if len(entitlement.Versions) == 0 && entitlement.AutoAddVersionRegex == nil {
+		// API clients that predate allVersions grant all versions by selecting none.
+		entitlement.AllVersions = true
+		return nil
+	} else if entitlement.AutoAddVersionRegex == nil {
+		return nil
+	} else if _, err := regexp.Compile(*entitlement.AutoAddVersionRegex); err != nil {
+		if syntaxErr, ok := errors.AsType[*syntax.Error](err); ok {
+			return fmt.Errorf("invalid auto-add version regex: %v", syntaxErr.Code)
+		}
+		return errors.New("invalid auto-add version regex")
+	}
+	return nil
+}
+
+// addVersionToMatchingEntitlements has to run in the transaction that creates or renames the version and before
+// automatic updates are triggered, so that those already see the version as entitled. It reports whether the version
+// was added to any entitlement.
+func addVersionToMatchingEntitlements(
+	ctx context.Context,
+	version types.ApplicationVersion,
+	previousName *string,
+) (bool, error) {
+	// The entitlement form cannot deselect an archived version, so one added here could not be removed again.
+	if version.ArchivedAt != nil {
+		return false, nil
+	}
+	regexes, err := db.GetApplicationEntitlementAutoAddVersionRegexes(ctx, version.ApplicationID)
+	if err != nil {
+		return false, err
+	}
+	entitlementIDs := entitlementsToAutoAddVersionTo(ctx, regexes, version.Name, previousName)
+	if len(entitlementIDs) == 0 {
+		return false, nil
+	}
+	return db.AddVersionToApplicationEntitlements(ctx, version.ID, entitlementIDs)
+}
+
+// entitlementsToAutoAddVersionTo only picks an entitlement for a renamed version if the previous name did not match
+// yet, so that a version removed by hand is not added back.
+func entitlementsToAutoAddVersionTo(
+	ctx context.Context,
+	regexes []types.ApplicationEntitlementAutoAddVersionRegex,
+	name string,
+	previousName *string,
+) []uuid.UUID {
+	var entitlementIDs []uuid.UUID
+	for _, r := range regexes {
+		if re, err := regexp.Compile(r.AutoAddVersionRegex); err != nil {
+			internalctx.GetLogger(ctx).Warn("skipping invalid auto-add version regex",
+				zap.Stringer("applicationEntitlementId", r.ApplicationEntitlementID), zap.Error(err))
+		} else if re.MatchString(name) && (previousName == nil || !re.MatchString(*previousName)) {
+			entitlementIDs = append(entitlementIDs, r.ApplicationEntitlementID)
+		}
+	}
+	return entitlementIDs
 }
 
 func getApplicationEntitlements(r *http.Request) (respond.Responder, error) {

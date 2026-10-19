@@ -110,10 +110,21 @@ func TestIsVisibleToCustomerApplicationEntitlements(t *testing.T) {
 			view: advisory.CustomerView{
 				OrgHasApplicationEntitlements: true,
 				ApplicationEntitlements: []advisory.EntitlementRef{
-					{ParentID: applicationID},
+					{ParentID: applicationID, AllVersions: true},
 				},
 			},
 			visible: true,
+		},
+		{
+			name:     "entitlement granting no versions yet",
+			affected: []advisory.VersionRef{appVersion(versionOneID)},
+			view: advisory.CustomerView{
+				OrgHasApplicationEntitlements: true,
+				ApplicationEntitlements: []advisory.EntitlementRef{
+					{ParentID: applicationID},
+				},
+			},
+			visible: false,
 		},
 		{
 			name:     "entitlement pinned to the affected version",
@@ -143,7 +154,7 @@ func TestIsVisibleToCustomerApplicationEntitlements(t *testing.T) {
 			view: advisory.CustomerView{
 				OrgHasApplicationEntitlements: true,
 				ApplicationEntitlements: []advisory.EntitlementRef{
-					{ParentID: otherApplicationID},
+					{ParentID: otherApplicationID, AllVersions: true},
 				},
 			},
 			visible: false,
@@ -190,7 +201,7 @@ func TestIsVisibleToCustomerArtifactEntitlements(t *testing.T) {
 			view: advisory.CustomerView{
 				OrgHasArtifactEntitlements: true,
 				ArtifactEntitlements: []advisory.EntitlementRef{
-					{ParentID: artifactID},
+					{ParentID: artifactID, AllVersions: true},
 				},
 			},
 			visible: true,
@@ -223,7 +234,7 @@ func TestIsVisibleToCustomerArtifactEntitlements(t *testing.T) {
 			view: advisory.CustomerView{
 				OrgHasArtifactEntitlements: true,
 				ArtifactEntitlements: []advisory.EntitlementRef{
-					{ParentID: otherArtifactID},
+					{ParentID: otherArtifactID, AllVersions: true},
 				},
 			},
 			visible: false,
@@ -350,7 +361,7 @@ func TestIsVisibleToCustomerEntitlementExpiry(t *testing.T) {
 			view := advisory.CustomerView{
 				OrgHasApplicationEntitlements: true,
 				ApplicationEntitlements: []advisory.EntitlementRef{
-					{ParentID: applicationID, ExpiresAt: tc.expiresAt},
+					{ParentID: applicationID, AllVersions: true, ExpiresAt: tc.expiresAt},
 				},
 			}
 			g.Expect(advisory.IsVisibleToCustomer(
@@ -423,7 +434,7 @@ func TestIsVisibleToCustomerEntitlementFallback(t *testing.T) {
 				OrgHasApplicationEntitlements: true,
 				OrgHasArtifactEntitlements:    true,
 				ArtifactEntitlements: []advisory.EntitlementRef{
-					{ParentID: artifactID},
+					{ParentID: artifactID, AllVersions: true},
 				},
 			},
 			visible: true,
@@ -482,16 +493,25 @@ func TestVersionVisibilityAllows(t *testing.T) {
 			name: "entitlement covers the whole application",
 			visibility: advisory.VersionVisibility{
 				OrgHasEntitlements: true,
-				Entitlements:       []advisory.EntitlementRef{{ParentID: applicationID}},
+				Entitlements:       []advisory.EntitlementRef{{ParentID: applicationID, AllVersions: true}},
 			},
 			ref:     appVersion(versionTwoID),
 			allowed: true,
 		},
 		{
+			name: "entitlement grants no versions yet",
+			visibility: advisory.VersionVisibility{
+				OrgHasEntitlements: true,
+				Entitlements:       []advisory.EntitlementRef{{ParentID: applicationID}},
+			},
+			ref:     appVersion(versionTwoID),
+			allowed: false,
+		},
+		{
 			name: "entitlement is for another application entirely",
 			visibility: advisory.VersionVisibility{
 				OrgHasEntitlements: true,
-				Entitlements:       []advisory.EntitlementRef{{ParentID: otherApplicationID}},
+				Entitlements:       []advisory.EntitlementRef{{ParentID: otherApplicationID, AllVersions: true}},
 			},
 			ref:     appVersion(versionOneID),
 			allowed: false,
@@ -500,7 +520,9 @@ func TestVersionVisibilityAllows(t *testing.T) {
 			name: "entitlement has expired",
 			visibility: advisory.VersionVisibility{
 				OrgHasEntitlements: true,
-				Entitlements:       []advisory.EntitlementRef{{ParentID: applicationID, ExpiresAt: &expired}},
+				Entitlements: []advisory.EntitlementRef{
+					{ParentID: applicationID, AllVersions: true, ExpiresAt: &expired},
+				},
 			},
 			ref:     appVersion(versionOneID),
 			allowed: false,
@@ -509,7 +531,9 @@ func TestVersionVisibilityAllows(t *testing.T) {
 			name: "entitlement has not expired yet",
 			visibility: advisory.VersionVisibility{
 				OrgHasEntitlements: true,
-				Entitlements:       []advisory.EntitlementRef{{ParentID: applicationID, ExpiresAt: &valid}},
+				Entitlements: []advisory.EntitlementRef{
+					{ParentID: applicationID, AllVersions: true, ExpiresAt: &valid},
+				},
 			},
 			ref:     appVersion(versionOneID),
 			allowed: true,

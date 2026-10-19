@@ -57,7 +57,7 @@ If you don't see the feature yet, make sure you're on a Pro plan or Pro Trial. O
 5. **Give it a name**
 6. **Set an expiration date** (optional)
 7. **Assign to an application**
-8. **Choose the version/s** you want to grant the customer access to
+8. **Choose the versions**: grant all versions, or select specific ones and optionally an auto-add regex for future versions
 9. **Save**: click "Save" and you're done
 
 The customer can now access and deploy the assigned application version/s directly from their [customer portal](/docs/platform/customer-portal/).
@@ -67,6 +67,20 @@ The customer can now access and deploy the assigned application version/s direct
   darkSrc={entitlementFormDark}
   alt="Application Entitlement create form showing name, expiration date, application selector, version picker, and optional registry credentials"
 />
+
+## Choosing the granted versions
+
+An entitlement grants either **All versions** of the application, which includes every version you create later, or **Specific versions**. With specific versions, the customer only gets the versions you select, and new versions are not added unless they match the auto-add regex described below.
+
+## Automatically adding new versions
+
+An entitlement for specific versions can add new versions on its own. Enter a regular expression in **Auto-add Version Regex**, and every application version created afterwards whose name matches it is added to the entitlement. For example, `^2\.\d+\.\d+$` adds every new `2.x.y` release.
+
+- The expression uses [RE2 syntax](https://github.com/google/re2/wiki/Syntax) and matches anywhere in the version name unless you anchor it with `^` and `$`.
+- It only applies to versions created after you set it. Existing versions stay as you selected them.
+- Renaming a version adds it as well if the new name matches and the previous one did not. Archived versions are never added.
+- An auto-added version is an ordinary entry of the entitlement, so you can remove it like any other. Renaming it to a name that no longer matches keeps it in the entitlement.
+- You can leave every existing version unselected. The customer then gets no version until the first matching one is created, for example to grant only an upcoming major release.
 
 ## OCI registry authentication
 
