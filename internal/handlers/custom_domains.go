@@ -3,21 +3,22 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/validation"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
@@ -31,144 +32,119 @@ type customDomainPathRequest struct {
 func CustomDomainsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Custom Domains"))
 	r.Use(middleware.RequireOrgAndRole, middleware.RequireAdmin)
-	r.Get("/", getCustomDomainsHandler).
+	r.Get("/", respond.Handler(getCustomDomainsHandler)).
 		With(option.Description("List the custom domains within the caller's scope: every domain for a " +
 			"vendor, one customer's own for a customer, or the domains of the customers assigned to a partner")).
 		With(option.Response(http.StatusOK, []api.CustomDomain{}))
-	r.Get("/{customDomainId}/verification", getCustomDomainVerificationHandler).
+	r.Get("/{customDomainId}/verification", respond.Handler(getCustomDomainVerificationHandler)).
 		With(option.Description("Get the stored result of the last CNAME check of a custom domain, without " +
 			"performing a lookup")).
 		With(option.Request(customDomainPathRequest{})).
 		With(option.Response(http.StatusOK, api.CustomDomainVerification{}))
 	r.With(middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
-		r.Post("/{customDomainId}/verification", verifyCustomDomainHandler).
+		r.Post("/{customDomainId}/verification", respond.Handler(verifyCustomDomainHandler)).
 			With(option.Description("Check whether a custom domain's CNAME record currently points at the " +
 				"expected target and store the result. This performs a live DNS lookup and can take seconds")).
 			With(option.Request(customDomainPathRequest{})).
 			With(option.Response(http.StatusOK, api.CustomDomainVerification{}))
-		r.With(middleware.RequireCustomDomainsConfigured).Post("/", createCustomDomainsHandler).
+		r.With(middleware.RequireCustomDomainsConfigured).Post("/", respond.Handler(createCustomDomainsHandler)).
 			With(option.Description("Register new custom domains for the caller's organization, or for a " +
 				"customer named in the request")).
 			With(option.Request(api.CreateCustomDomainsRequest{})).
 			With(option.Response(http.StatusOK, []api.CustomDomain{}))
-		r.Delete("/{customDomainId}", deleteCustomDomainHandler).
+		r.Delete("/{customDomainId}", respond.Handler(deleteCustomDomainHandler)).
 			With(option.Description("Delete a custom domain")).
 			With(option.Request(customDomainPathRequest{}))
 	})
 }
 
-func getCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
-	auth := auth.Authentication.Require(ctx)
-	customDomains, err := db.GetCustomDomainsForScope(
-		ctx, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
-	if err != nil {
-		log.Error("failed to get custom domains", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	RespondJSON(w, mapping.List(customDomains, mapping.CustomDomainToAPI))
-}
-
-func getCustomDomainVerificationHandler(w http.ResponseWriter, r *http.Request) {
-	domain, ok := customDomainOfCaller(w, r)
-	if !ok {
-		return
-	}
-	RespondJSON(w, mapping.CustomDomainVerificationToAPI(*domain, false))
-}
-
-func verifyCustomDomainHandler(w http.ResponseWriter, r *http.Request) {
-	domain, ok := customDomainOfCaller(w, r)
-	if !ok {
-		return
-	}
-
-	ctx := r.Context()
-	updated, inconclusive, err := customdomains.CheckAndStore(ctx, *domain)
-	if err != nil {
-		internalctx.GetLogger(ctx).Error("failed to verify custom domain", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	RespondJSON(w, mapping.CustomDomainVerificationToAPI(*updated, inconclusive))
-}
-
-func customDomainOfCaller(w http.ResponseWriter, r *http.Request) (*types.CustomDomain, bool) {
-	id, err := uuid.Parse(r.PathValue("customDomainId"))
-	if err != nil {
-		http.NotFound(w, r)
-		return nil, false
-	}
-
+func getCustomDomainsHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
-	domain, err := db.GetCustomDomainOfOrganization(
-		ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
-	if errors.Is(err, apierrors.ErrNotFound) {
-		http.NotFound(w, r)
-		return nil, false
+	if customDomains, err := db.GetCustomDomainsForScope(
+		ctx, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID(),
+	); err != nil {
+		return nil, fmt.Errorf("failed to get custom domains: %w", err)
+	} else {
+		return respond.JSON(mapping.List(customDomains, mapping.CustomDomainToAPI)), nil
+	}
+}
+
+func getCustomDomainVerificationHandler(r *http.Request) (respond.Responder, error) {
+	if domain, resp, err := customDomainOfCaller(r); resp != nil || err != nil {
+		return resp, err
+	} else {
+		return respond.JSON(mapping.CustomDomainVerificationToAPI(*domain, false)), nil
+	}
+}
+
+func verifyCustomDomainHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+
+	if domain, resp, err := customDomainOfCaller(r); resp != nil || err != nil {
+		return resp, err
+	} else if updated, inconclusive, err := customdomains.CheckAndStore(ctx, *domain); err != nil {
+		return nil, fmt.Errorf("failed to verify custom domain: %w", err)
+	} else {
+		return respond.JSON(mapping.CustomDomainVerificationToAPI(*updated, inconclusive)), nil
+	}
+}
+
+func customDomainOfCaller(r *http.Request) (*types.CustomDomain, respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+
+	if id, err := uuid.Parse(r.PathValue("customDomainId")); err != nil {
+		return nil, customDomainNotFound, nil
+	} else if domain, err := db.GetCustomDomainOfOrganization(
+		ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID(),
+	); errors.Is(err, distrerr.ErrNotFound) {
+		return nil, customDomainNotFound, nil
 	} else if err != nil {
-		internalctx.GetLogger(ctx).Error("failed to get custom domain", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return nil, false
+		return nil, nil, fmt.Errorf("failed to get custom domain: %w", err)
+	} else {
+		return domain, nil, nil
 	}
-	return domain, true
 }
 
-func createCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
+func createCustomDomainsHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 
-	request, err := JsonBody[api.CreateCustomDomainsRequest](w, r)
-	if err != nil {
-		return
+	request, resp := decodeJSON[api.CreateCustomDomainsRequest](r)
+	if resp != nil {
+		return resp, nil
 	}
 	request.Normalize()
 	if err := request.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	customerOrgID, ok := resolveCustomerScopeForWrite(w, r, request.CustomerOrganizationID)
-	if !ok {
-		return
-	}
-
-	customDomains := make([]types.CustomDomain, len(request.Domains))
-	for i, domain := range request.Domains {
-		if customerOrgID != nil && domain.DomainType != types.DomainTypeCustomerPortal {
-			http.Error(w, "a customer can only register a customer portal domain", http.StatusBadRequest)
-			return
-		}
-		if isPlatformOwnedDomain(domain.Domain) {
-			http.Error(w, "this domain is owned by the platform and cannot be registered", http.StatusBadRequest)
-			return
-		}
-		if conflict, err := legacyDomainOwnedByOtherOrg(ctx, domain.Domain, *auth.CurrentOrgID()); err != nil {
-			log.Error("failed to check legacy branding domains", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		} else if conflict {
-			http.Error(w, "this domain is already in use", http.StatusConflict)
-			return
-		}
-		customDomains[i] = mapping.CustomDomainToInternal(domain, *auth.CurrentOrgID(), customerOrgID)
-	}
-
-	if created, err := db.CreateCustomDomains(ctx, customDomains); errors.Is(err, apierrors.ErrConflict) {
-		http.Error(w, "this domain is already in use", http.StatusConflict)
-	} else if err != nil {
-		log.Error("failed to create custom domains", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return respond.BadRequest(err.Error()), nil
+	} else if customerOrgID, resp, err := customerScopeForWrite(
+		ctx, request.CustomerOrganizationID,
+	); resp != nil || err != nil {
+		return resp, err
 	} else {
-		RespondJSON(w, mapping.List(verifyCreatedDomains(ctx, created), mapping.CustomDomainToAPI))
+		customDomains := make([]types.CustomDomain, len(request.Domains))
+		for i, domain := range request.Domains {
+			if customerOrgID != nil && domain.DomainType != types.DomainTypeCustomerPortal {
+				return respond.BadRequest("a customer can only register a customer portal domain"), nil
+			} else if isPlatformOwnedDomain(domain.Domain) {
+				return respond.BadRequest("this domain is owned by the platform and cannot be registered"), nil
+			} else if conflict, err := legacyDomainOwnedByOtherOrg(ctx, domain.Domain, *auth.CurrentOrgID()); err != nil {
+				return nil, fmt.Errorf("failed to check legacy branding domains: %w", err)
+			} else if conflict {
+				return respond.Conflict("this domain is already in use"), nil
+			} else {
+				customDomains[i] = mapping.CustomDomainToInternal(domain, *auth.CurrentOrgID(), customerOrgID)
+			}
+		}
+
+		if created, err := db.CreateCustomDomains(ctx, customDomains); errors.Is(err, distrerr.ErrConflict) {
+			return respond.Conflict("this domain is already in use"), nil
+		} else if err != nil {
+			return nil, fmt.Errorf("failed to create custom domains: %w", err)
+		} else {
+			return respond.JSON(mapping.List(verifyCreatedDomains(ctx, created), mapping.CustomDomainToAPI)), nil
+		}
 	}
 }
 
@@ -186,31 +162,24 @@ func verifyCreatedDomains(ctx context.Context, created []types.CustomDomain) []t
 	return result
 }
 
-func deleteCustomDomainHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := uuid.Parse(r.PathValue("customDomainId"))
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-
+func deleteCustomDomainHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 
-	err = db.DeleteCustomDomain(ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
-	if errors.Is(err, apierrors.ErrNotFound) {
-		http.NotFound(w, r)
-	} else if errors.Is(err, apierrors.ErrConflict) {
-		http.Error(w,
-			"this domain still has an identity provider configured, please delete it on the "+
-				"Custom Domains & Identity Provider tab first",
-			http.StatusConflict)
+	if id, err := uuid.Parse(r.PathValue("customDomainId")); err != nil {
+		return customDomainNotFound, nil
+	} else if err := db.DeleteCustomDomain(
+		ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID(),
+	); errors.Is(err, distrerr.ErrNotFound) {
+		return customDomainNotFound, nil
+	} else if errors.Is(err, distrerr.ErrConflict) {
+		return respond.Conflict(
+			"this domain still has an identity provider configured, please delete it on the " +
+				"Custom Domains & Identity Provider tab first"), nil
 	} else if err != nil {
-		log.Error("failed to delete custom domain", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil, fmt.Errorf("failed to delete custom domain: %w", err)
 	} else {
-		w.WriteHeader(http.StatusNoContent)
+		return respond.NoContent(), nil
 	}
 }
 

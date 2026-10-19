@@ -16,5 +16,9 @@ var (
 	ProgressingInterval    = 3 * Interval
 	DistrRegistryHost      = envutil.GetEnv("DISTR_REGISTRY_HOST")
 	DistrRegistryPlainHTTP = envutil.GetEnvParsedOrDefault("DISTR_REGISTRY_PLAIN_HTTP", strconv.ParseBool, false)
-	ControllerName         = envutil.GetEnv("DISTR_CONTROLLER_NAME")
 )
+
+// ControllerName is read on every call, since the controller updates its environment when its config map changes.
+func ControllerName() string {
+	return envutil.GetEnv("DISTR_CONTROLLER_NAME")
+}

@@ -8,7 +8,6 @@ import tailwindcss from '@tailwindcss/vite';
 import icon from 'astro-icon';
 import {defineConfig, fontProviders} from 'astro/config';
 import rehypeExternalLinks from 'rehype-external-links';
-import rehypeMermaid from 'rehype-mermaid';
 import starlightLinksValidator from 'starlight-links-validator';
 import starlightSidebarTopics from 'starlight-sidebar-topics';
 
@@ -318,7 +317,6 @@ export default defineConfig({
   markdown: {
     processor: unified({
       rehypePlugins: [
-        [rehypeMermaid, {strategy: 'inline-svg'}],
         [
           rehypeExternalLinks,
           {target: '_blank', rel: ['noopener', 'noreferrer']},

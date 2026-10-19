@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -87,7 +87,7 @@ func collectApplicationEntitlement(rows pgx.Rows, entitlement *types.Application
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ApplicationEntitlementBase])
 	if err != nil {
 		if pgError, ok := errors.AsType[*pgconn.PgError](err); ok && pgError.Code == pgerrcode.UniqueViolation {
-			return fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			return fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 		return err
 	}
@@ -153,55 +153,10 @@ func RevokeApplicationEntitlementWithID(ctx context.Context, id uuid.UUID) error
 		pgx.NamedArgs{"id": id},
 	)
 	if err == nil && cmd.RowsAffected() < 1 {
-		err = apierrors.ErrNotFound
+		err = distrerr.ErrNotFound
 	}
 	if err != nil {
 		return fmt.Errorf("could not update ApplicationEntitlement: %w", err)
-	} else {
-		return nil
-	}
-}
-
-func AddVersionToApplicationEntitlement(
-	ctx context.Context,
-	entitlement *types.ApplicationEntitlementBase,
-	id uuid.UUID,
-) error {
-	db := internalctx.GetDb(ctx)
-	_, err := db.Exec(
-		ctx,
-		`INSERT INTO ApplicationEntitlement_ApplicationVersion (application_version_id, application_entitlement_id)
-		VALUES (@applicationVersionId, @applicationEntitlementId)
-		ON CONFLICT (application_version_id, application_entitlement_id) DO NOTHING`,
-		pgx.NamedArgs{
-			"applicationVersionId":     id,
-			"applicationEntitlementId": entitlement.ID,
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("could not insert relation: %w", err)
-	}
-	return nil
-}
-
-func RemoveVersionFromApplicationEntitlement(
-	ctx context.Context,
-	entitlement *types.ApplicationEntitlementBase,
-	id uuid.UUID,
-) error {
-	db := internalctx.GetDb(ctx)
-	_, err := db.Exec(
-		ctx,
-		`DELETE FROM ApplicationEntitlement_ApplicationVersion
-		WHERE application_entitlement_id = @applicationEntitlementId
-		AND application_version_id = @applicationVersionId`,
-		pgx.NamedArgs{
-			"applicationEntitlementId": entitlement.ID,
-			"applicationVersionId":     id,
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("could not delete relation: %w", err)
 	} else {
 		return nil
 	}
@@ -325,7 +280,7 @@ func GetApplicationEntitlementByID(ctx context.Context, id uuid.UUID) (*types.Ap
 
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ApplicationEntitlement]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("could not collect ApplicationEntitlement: %w", err)
 	} else {
@@ -342,6 +297,26 @@ func sortApplicationEntitlementsVersions(entitlements []types.ApplicationEntitle
 
 func sortApplicationEntitlementVersions(entitlement *types.ApplicationEntitlement) {
 	types.SortApplicationVersions(entitlement.Application.VersioningStrategy, entitlement.Versions)
+}
+
+func ApplicationVersionsBelongToApplication(
+	ctx context.Context, applicationID uuid.UUID, versionIDs []uuid.UUID,
+) (bool, error) {
+	db := internalctx.GetDb(ctx)
+	var belong bool
+	if err := db.QueryRow(
+		ctx,
+		`SELECT NOT EXISTS (
+			SELECT FROM unnest(@versionIds::UUID[]) requested(id)
+			WHERE NOT EXISTS (
+				SELECT FROM ApplicationVersion av WHERE av.id = requested.id AND av.application_id = @applicationId
+			)
+		)`,
+		pgx.NamedArgs{"applicationId": applicationID, "versionIds": versionIDs},
+	).Scan(&belong); err != nil {
+		return false, fmt.Errorf("could not check application versions: %w", err)
+	}
+	return belong, nil
 }
 
 func SetApplicationEntitlementVersions(ctx context.Context, entitlementID uuid.UUID, versionIDs []uuid.UUID) error {
@@ -418,11 +393,11 @@ func DeleteApplicationEntitlementWithID(ctx context.Context, id uuid.UUID) error
 	if err != nil {
 		var pgError *pgconn.PgError
 		if errors.As(err, &pgError) && pgError.Code == pgerrcode.ForeignKeyViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 		return err
 	} else if cmd.RowsAffected() == 0 {
-		err = apierrors.ErrNotFound
+		err = distrerr.ErrNotFound
 	}
 
 	if err != nil {
@@ -442,7 +417,7 @@ func DeleteApplicationEntitlementsWithOrganizationID(ctx context.Context, orgID 
 	if err != nil {
 		var pgError *pgconn.PgError
 		if errors.As(err, &pgError) && pgError.Code == pgerrcode.ForeignKeyViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 		return 0, fmt.Errorf("could not delete ApplicationEntitlements: %w", err)
 	}
@@ -465,7 +440,7 @@ func DeleteApplicationEntitlementsWithOrganizationSubscriptionType(
 	if err != nil {
 		var pgError *pgconn.PgError
 		if errors.As(err, &pgError) && pgError.Code == pgerrcode.ForeignKeyViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 		return 0, fmt.Errorf("could not delete ApplicationEntitlements: %w", err)
 	}

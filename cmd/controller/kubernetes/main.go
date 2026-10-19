@@ -28,7 +28,6 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"helm.sh/helm/v4/pkg/kube"
 	"helm.sh/helm/v4/pkg/storage/driver"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -71,8 +70,7 @@ func init() {
 	if controllerenv.ControllerVersionID == "" {
 		logger.Warn("DISTR_CONTROLLER_VERSION_ID is not set. self updates will be disabled")
 	}
-	// Helm names its server-side apply field manager after the binary unless this is set.
-	kube.ManagedFieldsManager = controllerenv.ControllerName
+	reloadHelmFieldManager()
 	if s := envutil.GetEnv("DISTR_CONTROLLER_CONFIG_DIRS"); s != "" {
 		controllerConfigDirs = slices.DeleteFunc(
 			strings.Split(s, "\n"),
@@ -149,6 +147,7 @@ func main() {
 		} else {
 			logger.Debug("controller client config unchanged")
 		}
+		reloadHelmFieldManager()
 
 		res, err := controllerClient.Resource(ctx)
 		if err != nil {
@@ -214,7 +213,7 @@ func main() {
 				if errors.Is(err, driver.ErrReleaseNotFound) {
 					logger.Info("current helm release does not exist")
 				} else if !requiresInstallOrUpgrade(deployment.RevisionID, currentDeployment) {
-					logger.Warn("helm release differs from the one deployed by the agent", zap.Error(err))
+					logger.Warn("helm release differs from the one deployed by the controller", zap.Error(err))
 				} else {
 					logger.Warn("refusing to install or update", zap.Error(err))
 					pushErrorStatus(ctx, deployment, err)

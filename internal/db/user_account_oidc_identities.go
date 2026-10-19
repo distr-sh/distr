@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -57,7 +57,7 @@ func GetUserAccountWithOIDCIdentity(
 	}](rows, pgx.RowToStructByPos)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil, apierrors.ErrNotFound
+			return nil, nil, distrerr.ErrNotFound
 		}
 		return nil, nil, fmt.Errorf("could not map UserAccountOIDCIdentity: %w", err)
 	}
@@ -127,7 +127,7 @@ func CreateUserAccountOIDCIdentity(ctx context.Context, identity *types.UserAcco
 	if err != nil {
 		if pgerr := (*pgconn.PgError)(nil); errors.As(err, &pgerr) && pgerr.Code == pgerrcode.UniqueViolation {
 			return fmt.Errorf("identity %v/%v is already linked: %w",
-				identity.Issuer, identity.Subject, apierrors.ErrAlreadyExists)
+				identity.Issuer, identity.Subject, distrerr.ErrAlreadyExists)
 		}
 		return fmt.Errorf("could not create UserAccountOIDCIdentity: %w", err)
 	}
@@ -146,7 +146,7 @@ func UpdateUserAccountOIDCIdentityOnLogin(ctx context.Context, id uuid.UUID, ema
 		pgx.NamedArgs{"id": id, "email": email},
 	)
 	if err == nil && cmd.RowsAffected() == 0 {
-		err = apierrors.ErrNotFound
+		err = distrerr.ErrNotFound
 	}
 	if err != nil {
 		return fmt.Errorf("could not update UserAccountOIDCIdentity: %w", err)
@@ -175,7 +175,7 @@ func DeleteUserAccountOIDCIdentity(ctx context.Context, userID, id uuid.UUID) er
 		pgx.NamedArgs{"id": id, "userId": userID},
 	)
 	if err == nil && cmd.RowsAffected() == 0 {
-		err = apierrors.ErrNotFound
+		err = distrerr.ErrNotFound
 	}
 	if err != nil {
 		return fmt.Errorf("could not delete UserAccountOIDCIdentity: %w", err)

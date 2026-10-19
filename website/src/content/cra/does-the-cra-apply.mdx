@@ -20,6 +20,9 @@ faq:
 ---
 
 import CraCta from '~/components/cta/CraCta.astro';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import craApplicabilityLight from '~/assets/cra/does-the-cra-apply/cra-applicability-light.webp';
+import craApplicabilityDark from '~/assets/cra/does-the-cra-apply/cra-applicability-dark.webp';
 
 _Last verified: July 2026. Based on Regulation (EU) 2024/2847 and the European
 Commission's March 2026 draft guidance. The draft guidance can still change._
@@ -33,22 +36,31 @@ artifact and the answer usually stops being controversial.
 
 ## The decision tree
 
-```mermaid
-flowchart TD
-    start{Do you supply this software to others at all?}
-    start -->|"No, internal use only"| out1["Out of scope: never placed on the market"]
-    start -->|Yes| commercial{Is it supplied in the course of a commercial activity?}
-    commercial -->|"No, non-commercial open source"| out2["Out of scope, or steward regime if your company sustains its development"]
-    commercial -->|Yes| eu{Do EU customers receive it?}
-    eu -->|No| out3["Out of CRA scope, watch other markets"]
-    eu -->|Yes| sector{"Medical device, vehicle, aviation, or defense product?"}
-    sector -->|Yes| out4["Regulated under sector rules like MDR, not the CRA"]
-    sector -->|No| saas{"Is it purely a hosted service, nothing shipped to customers?"}
-    saas -->|Yes| rdps{Is it a remote data processing solution a shipped product needs to function?}
-    rdps -->|No| out5["Out of CRA scope. NIS2 or DORA may apply instead"]
-    rdps -->|Yes| inscope[In scope with the product]
-    saas -->|"No, customers receive software: self-hosted edition, agent, installer, client, SDK"| inscope2["In scope: product with digital elements"]
-```
+<ThemedImage
+  lightSrc={craApplicabilityLight}
+  darkSrc={craApplicabilityDark}
+  alt="Decision tree for whether the Cyber Resilience Act applies to your software, with its questions written out below"
+  dropShadow={false}
+/>
+
+The tree asks, in order:
+
+1. **Do you supply this software to others at all?** If it is for internal use
+   only, it is out of scope, because it is never placed on the market.
+2. **Is it supplied in the course of a commercial activity?** If not, as with
+   non-commercial open source, it is out of scope, or under the steward regime
+   if your company sustains its development.
+3. **Do EU customers receive it?** If not, it is out of CRA scope, but watch
+   other markets.
+4. **Is it a medical device, vehicle, aviation or defense product?** If so, it
+   is regulated under sector rules such as the MDR, not the CRA.
+5. **Is it purely a hosted service, with nothing shipped to customers?** If
+   customers receive software, be it a self-hosted edition, an agent, an
+   installer, a client or an SDK, it is in scope as a product with digital
+   elements.
+6. **Is that hosted service remote data processing a shipped product needs to
+   function?** If so, it is in scope together with that product. If not, it is
+   out of CRA scope, though NIS2 or DORA may apply instead.
 
 <CraCta
   title="In scope means you still owe updates to every customer"

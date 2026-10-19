@@ -66,19 +66,12 @@ jobs:
           node-version-file: 'website/package.json'
           cache: pnpm
           cache-dependency-path: website/pnpm-lock.yaml
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('website/pnpm-lock.yaml') }}
       - name: Install dependencies
         run: pnpm i
       - name: Lint with prettier
         run: pnpm run lint
       - name: Check with astro
         run: pnpm run check
-      - name: Install playwright browser
-        run: pnpm exec playwright install --only-shell
       - name: Build website
         run: pnpm run build
       - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0

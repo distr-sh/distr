@@ -25,6 +25,16 @@ var helmEnvSettings = cli.New()
 
 const helmUpgradeInstallTimeout = 10 * time.Minute
 
+// reloadHelmFieldManager updates the server-side apply field manager, which Helm names after the binary unless
+// [kube.ManagedFieldsManager] is set. Helm reads that variable without synchronization, so call this only before the
+// main loop starts or from the main loop itself, which runs every Helm install, upgrade and uninstall.
+func reloadHelmFieldManager() {
+	if name := controllerenv.ControllerName(); name != kube.ManagedFieldsManager {
+		kube.ManagedFieldsManager = name
+		logger.Info("helm field manager changed", zap.String("fieldManager", name))
+	}
+}
+
 func GetHelmActionConfig(
 	ctx context.Context,
 	namespace string,

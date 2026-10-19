@@ -7,121 +7,99 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/distr-sh/distr/internal/util"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 func OrganizationBrandingRouter(r chiopenapi.Router) {
 	r.Use(middleware.RequireOrgAndRole)
-	r.Get("/", getOrganizationBranding).
+	r.Get("/", respond.Handler(getOrganizationBranding)).
 		With(option.Description("Get organization branding")).
 		With(option.Response(http.StatusOK, types.OrganizationBranding{}))
 	r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
-		Put("/", upsertOrganizationBranding).
+		Put("/", respond.Handler(upsertOrganizationBranding)).
 		With(option.Description("Create or update organization branding")).
 		With(option.Request(api.UpsertOrganizationBrandingRequest{})).
 		With(option.Response(http.StatusOK, types.OrganizationBranding{}))
 }
 
-func getOrganizationBranding(w http.ResponseWriter, r *http.Request) {
+func getOrganizationBranding(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 
 	if organizationBranding, err := db.GetOrganizationBranding(
 		r.Context(), *auth.CurrentOrgID(),
-	); errors.Is(err, apierrors.ErrNotFound) {
-		http.NotFound(w, r)
+	); errors.Is(err, distrerr.ErrNotFound) {
+		return organizationBrandingNotFound, nil
 	} else if err != nil {
-		internalctx.GetLogger(r.Context()).Error("failed to get organizationBranding", zap.Error(err))
-		sentry.GetHubFromContext(r.Context()).CaptureException(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		return nil, fmt.Errorf("failed to get organizationBranding: %w", err)
 	} else {
-		RespondJSON(w, organizationBranding)
+		return respond.JSON(organizationBranding), nil
 	}
 }
 
-func upsertOrganizationBranding(w http.ResponseWriter, r *http.Request) {
+func upsertOrganizationBranding(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 
-	body, err := JsonBody[api.UpsertOrganizationBrandingRequest](w, r)
-	if err != nil {
-		return
-	}
-
-	organizationBranding := mapping.OrganizationBrandingToInternal(body)
-	organizationBranding.OrganizationID = *auth.CurrentOrgID()
-	organizationBranding.UpdatedByUserAccountID = util.PtrTo(auth.CurrentUserID())
-
-	orgID := organizationBranding.OrganizationID
-	if err := verifyPublicImageBelongsToOrganization(ctx, organizationBranding.LogoImageID, orgID, "logo"); err != nil {
-		if errors.Is(err, apierrors.ErrBadRequest) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else {
-			log.Warn("could not verify logo image", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	} else if err := verifyPublicImageBelongsToOrganization(
-		ctx,
-		organizationBranding.FaviconImageID,
-		orgID,
-		"favicon",
-	); err != nil {
-		if errors.Is(err, apierrors.ErrBadRequest) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else {
-			log.Warn("could not verify favicon image", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	} else if err = db.UpsertOrganizationBranding(ctx, &organizationBranding); err != nil {
-		log.Warn("could not save organizationBranding", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if body, resp := decodeJSON[api.UpsertOrganizationBrandingRequest](r); resp != nil {
+		return resp, nil
 	} else {
-		RespondJSON(w, organizationBranding)
+		organizationBranding := mapping.OrganizationBrandingToInternal(body)
+		organizationBranding.OrganizationID = *auth.CurrentOrgID()
+		organizationBranding.UpdatedByUserAccountID = new(auth.CurrentUserID())
+
+		orgID := organizationBranding.OrganizationID
+		if resp, err := verifyPublicImageBelongsToOrganization(
+			ctx, organizationBranding.LogoImageID, orgID, "logo",
+		); resp != nil || err != nil {
+			return resp, err
+		} else if resp, err := verifyPublicImageBelongsToOrganization(
+			ctx, organizationBranding.FaviconImageID, orgID, "favicon",
+		); resp != nil || err != nil {
+			return resp, err
+		} else if err = db.UpsertOrganizationBranding(ctx, &organizationBranding); err != nil {
+			return nil, fmt.Errorf("could not save organizationBranding: %w", err)
+		} else {
+			return respond.JSON(organizationBranding), nil
+		}
 	}
 }
 
 // verifyPublicImageBelongsToOrganization ensures the referenced branding image (logo or favicon) belongs to the
 // given organization and is a public, servable image, since these images are served unauthenticated via the
 // public file API. A nil imageID is valid (image not set). The imageType (e.g. "logo" or "favicon") is included
-// in validation messages so clients can tell which image failed. Validation failures are returned as ErrBadRequest.
+// in validation messages so clients can tell which image failed.
 func verifyPublicImageBelongsToOrganization(
 	ctx context.Context,
 	imageID *uuid.UUID,
 	organizationID uuid.UUID,
 	imageType string,
-) error {
+) (respond.Responder, error) {
 	if imageID == nil {
-		return nil
+		return nil, nil
 	}
 
 	fileMeta, err := db.GetFileMetadataWithID(ctx, *imageID)
-	if errors.Is(err, apierrors.ErrNotFound) {
-		return apierrors.NewBadRequest(fmt.Sprintf("%s file does not exist", imageType))
+	if errors.Is(err, distrerr.ErrNotFound) {
+		return respond.BadRequest(fmt.Sprintf("%s file does not exist", imageType)), nil
 	} else if err != nil {
-		return err
+		return nil, fmt.Errorf("could not verify %s image: %w", imageType, err)
 	} else if fileMeta.OrganizationID == nil || *fileMeta.OrganizationID != organizationID {
-		return apierrors.NewBadRequest(fmt.Sprintf("%s file does not exist", imageType))
+		return respond.BadRequest(fmt.Sprintf("%s file does not exist", imageType)), nil
 	} else if !fileMeta.Public {
-		return apierrors.NewBadRequest(fmt.Sprintf("%s file must be public", imageType))
+		return respond.BadRequest(fmt.Sprintf("%s file must be public", imageType)), nil
 	} else if !isServableImageContentType(fileMeta.ContentType) {
-		return apierrors.NewBadRequest(fmt.Sprintf("%s file must be an image", imageType))
+		return respond.BadRequest(fmt.Sprintf("%s file must be an image", imageType)), nil
 	}
 
-	return nil
+	return nil, nil
 }
