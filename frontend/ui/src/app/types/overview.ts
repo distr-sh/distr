@@ -82,6 +82,7 @@ export interface OverviewAccessToken {
   id: string;
   label?: string;
   expiresAt: string;
+  lastUsedAt?: string;
 }
 
 export interface OverviewSupportBundle {

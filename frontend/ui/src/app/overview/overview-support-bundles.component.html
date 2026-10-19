@@ -27,6 +27,20 @@
             <div class="min-w-0">
               <span class="block truncate font-medium text-gray-900 dark:text-white">{{ bundle.title }}</span>
               <span class="distr-text-muted" [title]="bundle.updatedAt | date: 'medium'">
+                @switch (bundle.status) {
+                  @case ('initialized') {
+                    Created
+                  }
+                  @case ('created') {
+                    Uploaded
+                  }
+                  @case ('resolved') {
+                    Resolved
+                  }
+                  @case ('canceled') {
+                    Canceled
+                  }
+                }
                 {{ bundle.updatedAt | relativeDate }}
                 @if (bundle.updatedBy; as user) {
                   by {{ user.name }}

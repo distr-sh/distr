@@ -84,9 +84,10 @@ type OverviewAlertsResponse struct {
 }
 
 type OverviewAccessToken struct {
-	ID        uuid.UUID `json:"id"`
-	Label     *string   `json:"label,omitempty"`
-	ExpiresAt time.Time `json:"expiresAt"`
+	ID         uuid.UUID  `json:"id"`
+	Label      *string    `json:"label,omitempty"`
+	ExpiresAt  time.Time  `json:"expiresAt"`
+	LastUsedAt *time.Time `json:"lastUsedAt,omitempty"`
 }
 
 type OverviewSupportBundle struct {

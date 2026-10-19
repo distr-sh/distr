@@ -115,7 +115,7 @@ func OverviewAlertSummaryToAPI(s types.OverviewAlertSummary) api.OverviewAlertsR
 }
 
 func OverviewAccessTokenToAPI(t types.AccessToken, expiresAt time.Time) api.OverviewAccessToken {
-	return api.OverviewAccessToken{ID: t.ID, Label: t.Label, ExpiresAt: expiresAt}
+	return api.OverviewAccessToken{ID: t.ID, Label: t.Label, ExpiresAt: expiresAt, LastUsedAt: t.LastUsedAt}
 }
 
 func OverviewSupportBundleToAPI(b types.OverviewSupportBundle) api.OverviewSupportBundle {
