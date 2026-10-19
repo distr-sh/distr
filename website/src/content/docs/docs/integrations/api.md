@@ -17,6 +17,11 @@ that handle authentication and error handling for you, and provide types.
 
 Every Distr instance, no matter if self-managed or the SaaS version, exposes this API under the `/api/v1` path.
 
+## API reference
+
+Every instance serves an interactive API reference at `/docs` and the machine-readable OpenAPI specification at `/docs/openapi.json`.
+For Distr Cloud these are [app.distr.sh/docs](https://app.distr.sh/docs) and [app.distr.sh/docs/openapi.json](https://app.distr.sh/docs/openapi.json).
+
 ## Authentication
 
 To authenticate with the Distr API, you need to use a Personal Access Token.
@@ -34,10 +39,10 @@ The token needs to be sent with every request to the API.
 
 ## Request Limits
 
-The following limits apply to the Distr API:
+The following limits apply to the Distr API for each user:
 
-- 5 requests per second
-- 60 requests per minute
+- 30 requests per second
+- 300 requests per minute
 - 2000 requests per hour
 
 If these limits are exceeded, the API will respond with a `429 Too Many Requests` status code.
