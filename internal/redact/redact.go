@@ -34,7 +34,7 @@ var patterns = compile(
 	// PEM private key block: -----BEGIN RSA PRIVATE KEY----- ... -----END RSA PRIVATE KEY-----
 	`(?s)(?P<prefix>-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----).*?(?P<suffix>-----END [A-Z0-9 ]*PRIVATE KEY-----)`,
 	// Credentials in a URL: postgres://user:password@host
-	`(?i)(?P<prefix>\b[a-z][a-z0-9+.-]*://)[^\s:/@"'<>]+:[^\s/@"'<>]+(?P<suffix>@)`,
+	`(?i)(?P<prefix>\b[a-z][a-z0-9+.-]*://)[^\s:/@"'<>]*:[^\s/@"'<>]+(?P<suffix>@)`,
 	// Kubernetes env entry in JSON: {"name":"DB_PASSWORD","value":"..."}
 	`(?i)(?P<prefix>"name"\s*:\s*"`+sensitiveName+`"\s*,\s*"value"\s*:\s*")`+jsonStringContent+`(?P<suffix>")`,
 	// Kubernetes env entry in YAML: "- name: DB_PASSWORD" followed by "value: ..." on the next line.
