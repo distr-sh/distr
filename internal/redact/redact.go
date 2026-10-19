@@ -53,6 +53,9 @@ var patterns = compile(
 	`(?i)(?P<prefix>\b`+sensitiveKey+`\\?["']?[ \t]*[:=][ \t]*)[^\s"'\\,;&{}\[\]]+`,
 	// Password field of a connection string, which may contain spaces: Password=...;
 	`(?i)(?P<prefix>\b(?:password|pwd)[ \t]*=[ \t]*)[^;\r\n]+(?P<suffix>;)`,
+	// Password field after another field of a connection string, where the trailing semicolon is
+	// optional: Server=db;Pwd=.... Without a preceding field, Pwd=... is the shell's PWD variable.
+	`(?i)(?P<prefix>;[ \t]*(?:password|pwd)[ \t]*=[ \t]*)[^;\r\n]+`,
 	// Authorization header: Authorization: Bearer ...
 	`(?i)(?P<prefix>\bauthorization["']?[ \t]*[:=][ \t]*["']?(?:bearer|basic|token)?[ \t]*)[^\s"',;]+`,
 	// Bearer token outside an Authorization header

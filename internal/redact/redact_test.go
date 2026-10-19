@@ -25,6 +25,8 @@ func TestRedact(t *testing.T) {
 		{`msg="{\"api_key\":\"k\\\\ey\"}"`, `msg="{\"api_key\":\"********\"}"`},
 		{`msg="{\"api_key\":\"head\\\"tailpiece\"}"`, `msg="{\"api_key\":\"********\"}"`},
 		{"Server=db;User ID=app;Password=p a;", "Server=db;User ID=app;Password=********;"},
+		{"Server=db;Pwd=abc def", "Server=db;Pwd=********"},
+		{"Server=db; Password=a b\nnext", "Server=db; Password=********\nnext"},
 		{"Authorization: Bearer abc.def", "Authorization: Bearer ********"},
 		{`{"name":"AWS_SECRET_ACCESS_KEY","value":"x"}`, `{"name":"AWS_SECRET_ACCESS_KEY","value":"********"}`},
 		{`{"name":"DB_PASSWORD","value":"head\"tailpiece"}`, `{"name":"DB_PASSWORD","value":"********"}`},
