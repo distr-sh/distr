@@ -4,19 +4,21 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/billing"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/licensekey"
 	"github.com/distr-sh/distr/internal/licensetemplate"
 	"github.com/distr-sh/distr/internal/mailsending"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
@@ -26,77 +28,62 @@ import (
 	"go.uber.org/zap"
 )
 
-func vendorStripeWebhookHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		ctx := req.Context()
-		log := internalctx.GetLogger(ctx)
+func vendorStripeWebhookHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
 
-		orgID, err := uuid.Parse(req.PathValue("organizationId"))
-		if err != nil {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-
-		org, err := db.GetOrganizationByID(ctx, orgID)
-		if errors.Is(err, apierrors.ErrNotFound) {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		} else if err != nil {
-			log.Error("failed to get organization for vendor webhook", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		if org.StripeWebhookSecret == nil {
-			log.Warn("vendor stripe webhook secret not configured", zap.Stringer("organizationId", orgID))
-			w.WriteHeader(http.StatusServiceUnavailable)
-			return
-		}
-
-		payload, err := io.ReadAll(req.Body)
-		if err != nil {
-			log.Warn("error reading vendor webhook request body", zap.Error(err))
-			w.WriteHeader(http.StatusServiceUnavailable)
-			return
-		}
-
-		event, err := webhook.ConstructEvent(payload, req.Header.Get("Stripe-Signature"), string(*org.StripeWebhookSecret))
-		if err != nil {
-			log.Warn("vendor webhook signature verification failed", zap.Error(err))
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		log = log.With(
-			zap.Stringer("organizationId", orgID),
-			zap.String("stripeEventId", event.ID),
-			zap.String("stripeEventType", string(event.Type)),
-		)
-		ctx = internalctx.WithLogger(ctx, log)
-
-		switch event.Type {
-		case stripe.EventTypeCustomerSubscriptionCreated,
-			stripe.EventTypeCustomerSubscriptionUpdated,
-			stripe.EventTypeCustomerSubscriptionDeleted:
-			var sub stripe.Subscription
-			if err := json.Unmarshal(event.Data.Raw, &sub); err != nil {
-				log.Info("error parsing vendor webhook JSON", zap.Error(err))
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			if err := handleVendorStripeSubscription(ctx, orgID, sub); err != nil {
-				log.Error("error handling vendor stripe subscription", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-		default:
-			log.Info("unhandled vendor stripe event")
-		}
-
-		w.WriteHeader(http.StatusOK)
+	orgID, err := uuid.Parse(r.PathValue("organizationId"))
+	if err != nil {
+		return respond.Status(http.StatusNotFound), nil
 	}
+
+	org, err := db.GetOrganizationByID(ctx, orgID)
+	if errors.Is(err, distrerr.ErrNotFound) {
+		return respond.Status(http.StatusNotFound), nil
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to get organization for vendor webhook: %w", err)
+	}
+
+	if org.StripeWebhookSecret == nil {
+		log.Warn("vendor stripe webhook secret not configured", zap.Stringer("organizationId", orgID))
+		return respond.Status(http.StatusServiceUnavailable), nil
+	}
+
+	payload, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Warn("error reading vendor webhook request body", zap.Error(err))
+		return respond.Status(http.StatusServiceUnavailable), nil
+	}
+
+	event, err := webhook.ConstructEvent(payload, r.Header.Get("Stripe-Signature"), string(*org.StripeWebhookSecret))
+	if err != nil {
+		log.Warn("vendor webhook signature verification failed", zap.Error(err))
+		return respond.Status(http.StatusBadRequest), nil
+	}
+
+	log = log.With(
+		zap.Stringer("organizationId", orgID),
+		zap.String("stripeEventId", event.ID),
+		zap.String("stripeEventType", string(event.Type)),
+	)
+	ctx = internalctx.WithLogger(ctx, log)
+
+	switch event.Type {
+	case stripe.EventTypeCustomerSubscriptionCreated,
+		stripe.EventTypeCustomerSubscriptionUpdated,
+		stripe.EventTypeCustomerSubscriptionDeleted:
+		var sub stripe.Subscription
+		if err := json.Unmarshal(event.Data.Raw, &sub); err != nil {
+			log.Info("error parsing vendor webhook JSON", zap.Error(err))
+			return respond.Status(http.StatusBadRequest), nil
+		} else if err := handleVendorStripeSubscription(ctx, orgID, sub); err != nil {
+			return nil, fmt.Errorf("failed to handle vendor stripe subscription: %w", err)
+		}
+	default:
+		log.Info("unhandled vendor stripe event")
+	}
+
+	return respond.Status(http.StatusOK), nil
 }
 
 func handleVendorStripeSubscription(ctx context.Context, orgID uuid.UUID, sub stripe.Subscription) error {
@@ -109,7 +96,7 @@ func handleVendorStripeSubscription(ctx context.Context, orgID uuid.UUID, sub st
 	}
 
 	licenseKey, err := db.GetLicenseKeyByID(ctx, licenseKeyID)
-	if errors.Is(err, apierrors.ErrNotFound) {
+	if errors.Is(err, distrerr.ErrNotFound) {
 		log.Info("license key not found for vendor subscription event", zap.Stringer("licenseKeyId", licenseKeyID))
 		return nil
 	} else if err != nil {

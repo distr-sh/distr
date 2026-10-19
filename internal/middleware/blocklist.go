@@ -4,14 +4,12 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/internal/blocklist"
+	"github.com/distr-sh/distr/internal/respond"
 )
 
-func BlockIPs(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if blocklist.ClientIPBlocked(r.Context()) {
-			http.Error(w, blocklist.IPBlockedMessage, http.StatusForbidden)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
+var BlockIPs = guard(func(r *http.Request) (respond.Responder, error) {
+	if blocklist.ClientIPBlocked(r.Context()) {
+		return respond.Forbidden(blocklist.IPBlockedMessage), nil
+	}
+	return nil, nil
+})

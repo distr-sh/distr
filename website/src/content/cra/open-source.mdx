@@ -20,6 +20,9 @@ faq:
 ---
 
 import CraCta from '~/components/cta/CraCta.astro';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import craOpenSourceLight from '~/assets/cra/open-source/cra-open-source-light.webp';
+import craOpenSourceDark from '~/assets/cra/open-source/cra-open-source-dark.webp';
 
 _Last verified: July 2026. Based on Regulation (EU) 2024/2847, the European
 Commission's March 2026 draft guidance (¶48-65), and the ORC Working Group FAQ.
@@ -62,16 +65,12 @@ selling anything connected to the software is in, at least for what it sells.
 
 ## The three tiers
 
-```mermaid
-flowchart TD
-    q1{Do you monetize the software or anything around it?}
-    q1 -->|No, genuinely nothing| out[Out of scope entirely - no CRA obligations]
-    q1 -->|Yes| q2{Which edition are we talking about?}
-    q2 -->|The paid or monetized edition| mfr[Manufacturer - full CRA obligations]
-    q2 -->|The free community edition of the same product| q3{Does your company systematically support its development?}
-    q3 -->|Yes, it is your product| steward[Open-source software steward - light obligations, no fines]
-    q3 -->|No, community-run| out
-```
+<ThemedImage
+  lightSrc={craOpenSourceLight}
+  darkSrc={craOpenSourceDark}
+  alt="Decision tree for open-source projects: out of scope, manufacturer, or open-source steward"
+  dropShadow={false}
+/>
 
 - **Tier 1: out of scope.** Individual developers and genuinely non-commercial
   projects. No obligations. The CRA also explicitly protects contributors:

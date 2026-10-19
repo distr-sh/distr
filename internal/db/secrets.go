@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -171,7 +171,7 @@ func GetSecretByID(
 
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.SecretWithUpdatedBy]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
+			err = distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to collect Secret: %w", err)
 	} else {
@@ -217,7 +217,7 @@ func CreateSecret(
 
 	if secret, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.SecretWithUpdatedBy]); err != nil {
 		if pgerr, ok := errors.AsType[*pgconn.PgError](err); ok && pgerr.Code == pgerrcode.UniqueViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 		return nil, fmt.Errorf("failed to collect Secret: %w", err)
 	} else {
@@ -269,7 +269,7 @@ func UpdateSecret(ctx context.Context,
 
 	if secret, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.SecretWithUpdatedBy]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
+			err = distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to collect Secret: %w", err)
 	} else {
@@ -307,7 +307,7 @@ func DeleteSecret(
 	if err != nil {
 		return fmt.Errorf("failed to delete Secret: %w", err)
 	} else if cmd.RowsAffected() == 0 {
-		return fmt.Errorf("failed to delete Secret: %w", apierrors.ErrNotFound)
+		return fmt.Errorf("failed to delete Secret: %w", distrerr.ErrNotFound)
 	} else {
 		return nil
 	}

@@ -25,9 +25,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/registry/authz"
 	"github.com/distr-sh/distr/internal/registry/blob"
 	"github.com/distr-sh/distr/internal/registry/name"
@@ -43,7 +43,7 @@ type UpstreamBlobFetcher interface {
 	// FetchAndStoreBlob fetches the blob identified by d from the upstream registry
 	// for repo, stores it via bph, and returns a Buffer for serving the content
 	// directly to the client. The caller must call Buffer.Destroy() after use.
-	// Returns apierrors.ErrNotFound if repo has no upstream configured.
+	// Returns distrerr.ErrNotFound if repo has no upstream configured.
 	FetchAndStoreBlob(
 		ctx context.Context, repo string, d digest.Digest, bph blob.BlobPutHandler,
 	) (seekbuf.Buffer, int64, error)
@@ -206,7 +206,7 @@ func (b *blobs) handleHead(resp http.ResponseWriter, req *http.Request, repo, ta
 func (b *blobs) statFromUpstreamDB(ctx context.Context, repo string, h digest.Digest) (int64, error) {
 	n, err := name.Parse(repo)
 	if err != nil {
-		return 0, apierrors.ErrNotFound
+		return 0, distrerr.ErrNotFound
 	}
 	return db.GetPullThroughBlobSize(ctx, n.OrgName, n.ArtifactName, h.String())
 }
@@ -361,7 +361,7 @@ func (b *blobs) fetchFromUpstream(
 	}
 	tmp, size, err := b.upstreamFetcher.FetchAndStoreBlob(ctx, repo, h, bph)
 	if err != nil {
-		if !errors.Is(err, apierrors.ErrNotFound) {
+		if !errors.Is(err, distrerr.ErrNotFound) {
 			log := internalctx.GetLogger(ctx)
 			log.Warn("upstream blob fetch failed", zap.String("digest", h.String()), zap.Error(err))
 		}

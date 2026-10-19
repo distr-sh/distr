@@ -77,9 +77,9 @@ export const products: Product[] = [
     href: '/docs/controllers/secrets/',
   },
   {
-    title: 'Integrations / BYOC',
+    title: 'BYOC & Terraform',
     description:
-      'Extend your pull based deployment model with push based approaches with our API Integrations and GitHub Action',
+      'New - Provision customer cloud infrastructure from your OpenTofu or Terraform configuration with our infrastructure controllers',
     value: 'workflow',
     href: '/docs/use-cases/byoc-bring-your-own-cloud/',
   },

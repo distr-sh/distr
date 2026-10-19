@@ -1,6 +1,6 @@
 ---
 title: Bring Your Own Cloud (BYOC)
-description: In BYOC deployments the Distr Docker controller deploys an infrastructure application onto a management VM in the end customer's cloud account, where it provisions and reconciles their infrastructure. The Distr Kubernetes controller then deploys, manages and updates your application in the cluster that infrastructure application creates.
+description: In BYOC deployments the Distr OpenTofu infrastructure controller provisions and reconciles the infrastructure in the end customer's cloud account, deployed as a regular Distr application. The Distr Kubernetes controller then deploys, manages and updates your application in the cluster it creates.
 slug: docs/use-cases/byoc-bring-your-own-cloud
 sidebar:
   label: BYOC
@@ -12,19 +12,14 @@ import ThemedImage from '~/components/util/ThemedImage.astro';
 import byocLight from '~/assets/docs/getting-started/distribution-scenarios/byoc/byoc-light.webp';
 import byocDark from '~/assets/docs/getting-started/distribution-scenarios/byoc/byoc-dark.webp';
 
-<Aside type="caution" title="Currently in development">
-  We are still working on automating the BYOC integration process. Please reach
-  out to get early access.
-</Aside>
-
 [Bring Your Own Cloud (BYOC)](/glossary/byoc-definition/) is the vendor-operated pole of [self-hosted](/glossary/self-hosted-software/) (see [the self-hosted spectrum](/blog/self-hosted-spectrum/)): fully managed operations inside customer-owned cloud resources.
 It suits organizations with strict data residency or compliance requirements that need to keep ownership of their cloud infrastructure.
 
 BYOC runs on two independent Distr applications.
 
-The first is an infrastructure application: a Docker Compose application that the [Docker controller](/docs/controllers/docker-controller/)
-deploys onto a small management VM in the end customer's cloud account. It reconciles their infrastructure on a loop and
-creates the cluster and the resources your product needs. Its cloud credentials and its state stay in the customer's account.
+The first is an infrastructure application built on the [OpenTofu controller](/docs/controllers/infrastructure-controllers/), one of the Distr infrastructure controllers.
+It contains your OpenTofu or Terraform configuration, and the [Docker controller](/docs/controllers/docker-controller/) runs it on a small management VM in the end customer's cloud account.
+It reconciles their infrastructure on a loop and creates the cluster and the resources your product needs. Its cloud credentials and its state stay in the customer's account.
 
 The second is your application. The [Kubernetes controller](/docs/controllers/kubernetes-controller/) manages it in the cluster the
 infrastructure application created.
@@ -54,10 +49,12 @@ and roll it out. This keeps every managed BYOC customer on the same infrastructu
 {/* steps can't be indented due to prettier */}
 
 1. Set Up Your [Registry](/docs/registry/configuration/)
-2. Create Your [Application](/docs/controllers/application/)
-3. White-label the [Customer portal](/docs/platform/branding/)
-4. Onboard your first [customer](/docs/platform/rbac/#inviting-customer-organization-users)
-5. Reach out to the Distr team to connect the customer's target environment _(We are working hard on automating this step)_
-6. Manage deployments and updates of your app directly for the customer using the [Distr controllers](/docs/controllers/)
+2. Build your infrastructure image on the [OpenTofu controller](/docs/controllers/infrastructure-controllers/#ship-your-infrastructure-with-the-opentofu-controller), starting from the [`aws-eks` example](https://github.com/distr-sh/distr-infrastructure-controllers/tree/main/examples/opentofu/aws-eks)
+3. Create two [Applications](/docs/controllers/application/): a Docker application for the infrastructure and your own application
+4. White-label the [Customer portal](/docs/platform/branding/)
+5. Onboard your first [customer](/docs/platform/rbac/#inviting-customer-organization-users)
+6. Connect a management VM in the customer's cloud account with the [Docker controller](/docs/controllers/docker-controller/) and deploy the infrastructure application to it, passing the customer's cloud credentials as [secrets](/docs/controllers/secrets/)
+7. Connect the [Kubernetes controller](/docs/controllers/kubernetes-controller/) to the cluster the infrastructure application created and deploy your application to it
+8. Manage deployments and updates of both applications directly for the customer using the [Distr controllers](/docs/controllers/)
 
 </Steps>

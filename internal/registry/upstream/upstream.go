@@ -11,10 +11,10 @@ import (
 	"sync"
 
 	"github.com/containers/image/v5/manifest"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/egress"
 	"github.com/distr-sh/distr/internal/registry/blob"
 	"github.com/distr-sh/distr/internal/registry/name"
@@ -119,7 +119,7 @@ func syncTag(
 	if skipExistingTags {
 		if _, err := db.GetArtifactVersionByName(ctx, artifact.ID, tag); err == nil {
 			return nil
-		} else if !errors.Is(err, apierrors.ErrNotFound) {
+		} else if !errors.Is(err, distrerr.ErrNotFound) {
 			return fmt.Errorf("checking if tag exists: %w", err)
 		}
 	}
@@ -305,7 +305,7 @@ func extractBlobsAndSubManifests(
 // FetchAndStoreBlob fetches a blob from the upstream registry for the given repo,
 // stores it in the blob handler, and returns a Buffer that can be used to serve
 // the blob content to the client. The caller must call Buffer.Destroy() after use.
-// Returns apierrors.ErrNotFound if the artifact has no upstream configured.
+// Returns distrerr.ErrNotFound if the artifact has no upstream configured.
 func (s *Syncer) FetchAndStoreBlob(
 	ctx context.Context,
 	repoStr string,
@@ -314,14 +314,14 @@ func (s *Syncer) FetchAndStoreBlob(
 ) (seekbuf.Buffer, int64, error) {
 	n, err := name.Parse(repoStr)
 	if err != nil {
-		return nil, 0, apierrors.ErrNotFound
+		return nil, 0, distrerr.ErrNotFound
 	}
 
 	artifact, err := db.GetArtifactByName(ctx, n.OrgName, n.ArtifactName)
 	if err != nil {
 		return nil, 0, fmt.Errorf("getting artifact by name: %w", err)
 	} else if artifact.UpstreamURL == nil {
-		return nil, 0, apierrors.ErrNotFound
+		return nil, 0, distrerr.ErrNotFound
 	}
 
 	repo, err := newUpstreamRepository(artifact)

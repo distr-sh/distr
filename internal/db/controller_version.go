@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -76,7 +76,7 @@ func GetCurrentControllerVersion(ctx context.Context) (*types.ControllerVersion,
 		return nil, err
 	} else if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ControllerVersion]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		} else {
 			return nil, err
 		}
@@ -98,7 +98,7 @@ func GetControllerVersionForDeploymentTargetID(ctx context.Context, id uuid.UUID
 		return nil, err
 	} else if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ControllerVersion]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		} else {
 			return nil, err
 		}
@@ -119,7 +119,7 @@ func GetControllerVersionWithName(ctx context.Context, name string) (*types.Cont
 		return nil, err
 	} else if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ControllerVersion]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		} else {
 			return nil, err
 		}
