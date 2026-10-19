@@ -10,9 +10,9 @@ import (
 
 	"github.com/compose-spec/compose-go/v2/dotenv"
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
@@ -107,7 +107,7 @@ func GetDeployment(
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.Deployment])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, apierrors.ErrNotFound
+		return nil, distrerr.ErrNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get Deployment: %w", err)
 	} else {
@@ -242,7 +242,7 @@ func CreateDeployment(ctx context.Context, request *api.DeploymentRequest) error
 	if err != nil {
 		var pgError *pgconn.PgError
 		if errors.As(err, &pgError) && pgError.Code == pgerrcode.UniqueViolation {
-			return fmt.Errorf("%w: release name must be unique per deployment target", apierrors.ErrConflict)
+			return fmt.Errorf("%w: release name must be unique per deployment target", distrerr.ErrConflict)
 		}
 		return fmt.Errorf("could not save Deployment: %w", err)
 	} else {
@@ -269,7 +269,7 @@ func UpdateDeploymentEntitlement(ctx context.Context, deployment *types.Deployme
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.Deployment]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
+			err = distrerr.ErrNotFound
 		}
 		return fmt.Errorf("could not update Deployment: %w", err)
 	} else {
@@ -299,7 +299,7 @@ func UpdateDeploymentAutomaticApplicationUpdates(
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.Deployment]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
+			err = distrerr.ErrNotFound
 		}
 		return fmt.Errorf("could not update Deployment: %w", err)
 	} else {
@@ -351,7 +351,7 @@ func DeleteDeploymentWithID(ctx context.Context, id uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	res, err := db.Exec(ctx, "DELETE FROM Deployment WHERE id = @id", pgx.NamedArgs{"id": id})
 	if err == nil && res.RowsAffected() == 0 {
-		err = apierrors.ErrNotFound
+		err = distrerr.ErrNotFound
 	}
 	if err != nil {
 		return fmt.Errorf("could not delete Deployment: %w", err)
@@ -588,7 +588,7 @@ func GetDeploymentIDForRevisionID(ctx context.Context, revisionID uuid.UUID) (uu
 	deploymentID, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[uuid.UUID])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
+			err = distrerr.ErrNotFound
 		}
 		return uuid.Nil, fmt.Errorf("failed to scan Deployment ID: %w", err)
 	}

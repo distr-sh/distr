@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -31,7 +31,7 @@ func GetOrganizationBranding(ctx context.Context, organizationID uuid.UUID) (*ty
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.OrganizationBranding])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, apierrors.ErrNotFound
+		return nil, distrerr.ErrNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get OrganizationBranding: %w", err)
 	} else {

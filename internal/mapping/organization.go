@@ -21,10 +21,12 @@ func OrganizationToCreateResponse(o types.Organization, inviteURL string) api.Cr
 
 func CreateOrganizationRequestToInternal(r api.CreateOrganizationRequest) types.Organization {
 	return types.Organization{
-		Name:                r.Name,
-		Slug:                r.Slug,
-		PreConnectScript:    r.PreConnectScript,
-		PostConnectScript:   r.PostConnectScript,
-		ConnectScriptIsSudo: r.ConnectScriptIsSudo,
+		Name:                        r.Name,
+		Slug:                        r.Slug,
+		DockerPreConnectScript:      r.DockerPreConnectScript,
+		DockerPostConnectScript:     r.DockerPostConnectScript,
+		DockerConnectScriptIsSudo:   r.DockerConnectScriptIsSudo,
+		KubernetesPreConnectScript:  r.KubernetesPreConnectScript,
+		KubernetesPostConnectScript: r.KubernetesPostConnectScript,
 	}
 }

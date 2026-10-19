@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -179,7 +179,7 @@ func UpdateUpdateNotificationConfiguration(
 		if err != nil {
 			return fmt.Errorf("failed to update UpdateNotificationConfiguration: %w", err)
 		} else if cmd.RowsAffected() == 0 {
-			return apierrors.ErrNotFound
+			return distrerr.ErrNotFound
 		}
 		return updateUpdateNotificationConfigurationLinks(ctx, config)
 	})
@@ -208,7 +208,7 @@ func DeleteUpdateNotificationConfiguration(
 	if err != nil {
 		return fmt.Errorf("failed to delete UpdateNotificationConfiguration: %w", err)
 	} else if cmd.RowsAffected() == 0 {
-		return apierrors.ErrNotFound
+		return distrerr.ErrNotFound
 	}
 	return nil
 }

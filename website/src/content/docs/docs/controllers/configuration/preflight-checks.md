@@ -1,6 +1,6 @@
 ---
 title: Pre-Flight Checks
-description: Validate target environments before deployment by checking Docker version, CPU, RAM, disk space and more with custom pre-flight check scripts.
+description: Validate target environments before deployment by checking Docker or Kubernetes version, CPU, RAM, disk space and more with custom pre-flight check scripts.
 slug: docs/controllers/preflight-checks
 sidebar:
   label: Pre-Flight Checks
@@ -8,7 +8,7 @@ sidebar:
 ---
 
 Pre-flight checks are validation scripts that run **before** your application is deployed to a customer environment.
-They verify that the target system meets the minimum requirements (the correct Docker version, sufficient CPU, memory, and disk space) and prevent deployments from proceeding when critical conditions are not met.
+They verify that the target system meets the minimum requirements (the correct Docker or Kubernetes version, sufficient CPU, memory and disk space) and prevent deployments from proceeding when critical conditions are not met.
 
 ## Why Pre-Flight Checks Matter
 
@@ -24,17 +24,21 @@ Pre-flight checks catch these problems **before** deployment begins, giving cust
 
 ## How It Works in Distr
 
-When pre-flight checks are enabled for your organization, the connect instructions delivered to your customers change:
+Pre-flight check scripts are configured separately for Docker and Kubernetes deployment targets, since the two environments need different checks.
+Once pre-flight checks are enabled for your organization and a script is configured for a platform, the connect instructions delivered to your customers on that platform change:
 
-- **Without pre-flight checks:** Customers receive a `docker compose` command directly.
-- **With pre-flight checks:** Customers receive a shell script that:
+- **Without pre-flight checks:** Customers receive a `docker compose` or `kubectl apply` command directly.
+- **With pre-flight checks:** Customers receive a `curl ... | sh` command that fetches a shell script which:
   1. Runs your pre-flight check scripts to validate the environment.
   2. Reports any failing checks with clear error messages.
-  3. Only proceeds with `docker compose up` if all checks pass.
+  3. Only proceeds with `docker compose up` or `kubectl apply` if all checks pass.
+
+For Docker, the shell script is also used when it should be run with `sudo`, even if no script is configured.
 
 This approach is transparent to customers: they run a single command and get immediate feedback if their environment doesn't meet requirements.
 
 You can configure pre-flight check scripts in the **Organization Settings** under **Controllers**.
+The scripts are inlined into a `#!/bin/sh` script, so write them in POSIX shell rather than Bash.
 
 > **Tip:** Pre-flight check scripts are not limited to validation. You can also use them to install or update software on the target machine. For example, you can ensure a specific package is installed or upgrade a dependency to a compatible version before the deployment starts.
 
@@ -49,13 +53,12 @@ Each script exits with a non-zero status and prints an error message if the chec
 
 Ensures the Docker CLI meets a minimum version requirement. This is useful when your Compose file uses features introduced in a specific Docker version.
 
-```bash
-#!/bin/bash
+```sh
 set -e
 
 REQUIRED_VERSION="24.0.0"
 
-if ! command -v docker &> /dev/null; then
+if ! command -v docker > /dev/null 2>&1; then
   echo "FAIL: Docker is not installed."
   exit 1
 fi
@@ -78,8 +81,7 @@ echo "OK: Docker version $DOCKER_VERSION meets the minimum requirement ($REQUIRE
 
 Checks that the host has enough CPU cores to run your application.
 
-```bash
-#!/bin/bash
+```sh
 set -e
 
 REQUIRED_CORES=2
@@ -98,8 +100,7 @@ echo "OK: $AVAILABLE_CORES CPU core(s) available (minimum: $REQUIRED_CORES)."
 
 Verifies the system has enough total memory. Adjust the threshold based on your application's requirements.
 
-```bash
-#!/bin/bash
+```sh
 set -e
 
 REQUIRED_RAM_MB=4096
@@ -107,7 +108,7 @@ REQUIRED_RAM_MB=4096
 if [ -f /proc/meminfo ]; then
   TOTAL_RAM_KB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
   TOTAL_RAM_MB=$((TOTAL_RAM_KB / 1024))
-elif command -v sysctl &> /dev/null; then
+elif command -v sysctl > /dev/null 2>&1; then
   TOTAL_RAM_BYTES=$(sysctl -n hw.memsize 2>/dev/null || echo 0)
   TOTAL_RAM_MB=$((TOTAL_RAM_BYTES / 1024 / 1024))
 else
@@ -127,8 +128,7 @@ echo "OK: ${TOTAL_RAM_MB}MB RAM available (minimum: ${REQUIRED_RAM_MB}MB)."
 
 Checks that the target mount point (typically `/` or `/var/lib/docker`) has enough free disk space.
 
-```bash
-#!/bin/bash
+```sh
 set -e
 
 REQUIRED_DISK_GB=20
@@ -150,14 +150,13 @@ echo "OK: ${AVAILABLE_GB}GB free disk space on $MOUNT_POINT (minimum: ${REQUIRED
 You can combine multiple checks into one pre-flight script.
 The script runs all checks and reports all failures at once, so customers can fix everything in a single pass.
 
-```bash
-#!/bin/bash
+```sh
 
 ERRORS=0
 
 # --- Docker version check ---
 REQUIRED_DOCKER_VERSION="24.0.0"
-if ! command -v docker &> /dev/null; then
+if ! command -v docker > /dev/null 2>&1; then
   echo "FAIL: Docker is not installed."
   ERRORS=$((ERRORS + 1))
 else
@@ -204,6 +203,56 @@ if [ "$AVAILABLE_GB" -lt "$REQUIRED_DISK_GB" ]; then
   ERRORS=$((ERRORS + 1))
 else
   echo "OK: ${AVAILABLE_GB}GB free disk space"
+fi
+
+# --- Summary ---
+echo ""
+if [ "$ERRORS" -gt 0 ]; then
+  echo "Pre-flight checks failed with $ERRORS error(s). Please resolve the issues above before deploying."
+  exit 1
+fi
+
+echo "All pre-flight checks passed."
+```
+
+## Pre-Flight Checks for Kubernetes
+
+Kubernetes pre-flight check scripts run on the machine of the customer who connects the controller, with their kubeconfig.
+They check the cluster rather than the host, for example the Kubernetes version, the available StorageClasses, required CRDs or the permissions of the user.
+The namespace of the deployment target is available as `$DISTR_NAMESPACE`.
+
+The connect command for Kubernetes deployment targets then requires `curl` and a POSIX shell in addition to `kubectl`.
+
+```sh
+ERRORS=0
+
+# --- Kubernetes version check ---
+REQUIRED_MINOR=28
+SERVER_MINOR=$(kubectl version -o json 2>/dev/null | grep -A 10 '"serverVersion"' | grep '"minor"' | head -1 | tr -dc '0-9')
+if [ -z "$SERVER_MINOR" ]; then
+  echo "FAIL: Unable to reach the Kubernetes cluster."
+  ERRORS=$((ERRORS + 1))
+elif [ "$SERVER_MINOR" -lt "$REQUIRED_MINOR" ]; then
+  echo "FAIL: Kubernetes 1.$SERVER_MINOR is below the required minimum 1.$REQUIRED_MINOR."
+  ERRORS=$((ERRORS + 1))
+else
+  echo "OK: Kubernetes 1.$SERVER_MINOR"
+fi
+
+# --- Default StorageClass check ---
+if kubectl get storageclass -o jsonpath='{.items[*].metadata.annotations.storageclass\.kubernetes\.io/is-default-class}' 2>/dev/null | grep -q true; then
+  echo "OK: A default StorageClass exists"
+else
+  echo "FAIL: No default StorageClass is configured."
+  ERRORS=$((ERRORS + 1))
+fi
+
+# --- Permission check ---
+if kubectl auth can-i create deployments -n "$DISTR_NAMESPACE" > /dev/null 2>&1; then
+  echo "OK: Allowed to create deployments in $DISTR_NAMESPACE"
+else
+  echo "FAIL: Not allowed to create deployments in namespace $DISTR_NAMESPACE."
+  ERRORS=$((ERRORS + 1))
 fi
 
 # --- Summary ---

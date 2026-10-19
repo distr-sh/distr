@@ -2,15 +2,17 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
@@ -22,11 +24,11 @@ import (
 func DashboardRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupHidden(true))
 	r.With(middleware.RequireVendorOrPartner, middleware.RequireOrgAndRole).Group(func(r chiopenapi.Router) {
-		r.Get("/artifacts-by-customer", getArtifactsByCustomer)
+		r.Get("/artifacts-by-customer", respond.Handler(getArtifactsByCustomer))
 	})
 }
 
-func getArtifactsByCustomer(w http.ResponseWriter, r *http.Request) {
+func getArtifactsByCustomer(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
@@ -38,13 +40,9 @@ func getArtifactsByCustomer(w http.ResponseWriter, r *http.Request) {
 		customers, err = db.GetCustomerOrganizationsByOrganizationID(ctx, *auth.CurrentOrgID())
 	}
 	if err != nil {
-		log.Error("failed to get customers", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return nil, fmt.Errorf("failed to get customers: %w", err)
 	} else if artifacts, err := db.GetArtifactsByOrgID(ctx, *auth.CurrentOrgID()); err != nil {
-		log.Error("failed to get artifacts", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return nil, fmt.Errorf("failed to get artifacts: %w", err)
 	} else {
 		result := make([]api.ArtifactsByCustomer, 0)
 		for _, customer := range customers {
@@ -55,7 +53,7 @@ func getArtifactsByCustomer(w http.ResponseWriter, r *http.Request) {
 					artifact.ID,
 					customer.ID,
 				); err != nil {
-					if errors.Is(err, apierrors.ErrNotFound) {
+					if errors.Is(err, distrerr.ErrNotFound) {
 						continue
 					} else {
 						log.Error("failed to get latest artifact pull by user", zap.Error(err),
@@ -69,10 +67,7 @@ func getArtifactsByCustomer(w http.ResponseWriter, r *http.Request) {
 					}
 
 					if versions, err := db.GetVersionsForArtifact(ctx, artifact.ID, licenseOwnerID); err != nil {
-						log.Error("failed to get versions for artifact", zap.Error(err))
-						sentry.GetHubFromContext(ctx).CaptureException(err)
-						http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-						return
+						return nil, fmt.Errorf("failed to get versions for artifact: %w", err)
 					} else {
 						customerRes.Artifacts = append(customerRes.Artifacts, api.DashboardArtifact{
 							Artifact: mapping.ArtifactToAPI(types.ArtifactWithTaggedVersion{
@@ -88,6 +83,6 @@ func getArtifactsByCustomer(w http.ResponseWriter, r *http.Request) {
 			result = append(result, customerRes)
 		}
 
-		RespondJSON(w, result)
+		return respond.JSON(result), nil
 	}
 }

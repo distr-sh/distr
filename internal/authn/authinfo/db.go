@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 )
 
@@ -42,7 +42,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 			// Super admins: skip membership check, just verify user and org exist
 			if a.IsSuperAdmin() {
 				user, err := db.GetUserAccountByID(ctx, a.CurrentUserID())
-				if errors.Is(err, apierrors.ErrNotFound) {
+				if errors.Is(err, distrerr.ErrNotFound) {
 					return nil, authn.ErrBadAuthentication
 				} else if err != nil {
 					return nil, err
@@ -51,7 +51,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 					return nil, authn.ErrBadAuthentication
 				}
 				org, err := db.GetOrganizationWithBranding(ctx, *a.CurrentOrgID())
-				if errors.Is(err, apierrors.ErrNotFound) {
+				if errors.Is(err, distrerr.ErrNotFound) {
 					return nil, authn.ErrBadAuthentication
 				} else if err != nil {
 					return nil, err
@@ -87,7 +87,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 					ctx,
 					a.CurrentUserID(),
 					*a.CurrentOrgID(),
-				); errors.Is(err, apierrors.ErrNotFound) {
+				); errors.Is(err, distrerr.ErrNotFound) {
 					return nil, authn.ErrBadAuthentication
 				} else if err != nil {
 					return nil, err
@@ -133,7 +133,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 			return nil, authn.ErrBadAuthentication
 		} else {
 			// some special tokens like password reset don't have an organization ID
-			if u, err := db.GetUserAccountByID(ctx, a.CurrentUserID()); errors.Is(err, apierrors.ErrNotFound) {
+			if u, err := db.GetUserAccountByID(ctx, a.CurrentUserID()); errors.Is(err, distrerr.ErrNotFound) {
 				return nil, authn.ErrBadAuthentication
 			} else if err != nil {
 				return nil, err
@@ -187,7 +187,7 @@ func (a controllerDBAuthInfo) CurrentOrgWithBranding() *types.OrganizationWithBr
 func ControllerDbAuthenticator() authn.Authenticator[ControllerAuthInfo, AuthInfoWithOrganization] {
 	fn := func(ctx context.Context, a ControllerAuthInfo) (AuthInfoWithOrganization, error) {
 		customer, org, err := db.GetCustomerAndOrgForDeploymentTarget(ctx, a.CurrentDeploymentTargetID())
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return nil, authn.ErrBadAuthentication
 		} else if err != nil {
 			return nil, err

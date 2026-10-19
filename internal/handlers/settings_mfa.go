@@ -5,146 +5,91 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"image/png"
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/distrerr"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/getsentry/sentry-go"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
-	"go.uber.org/zap"
 )
 
-func mfaSetupHandler(w http.ResponseWriter, r *http.Request) {
+func mfaSetupHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	authInfo := auth.Authentication.Require(ctx)
 	userID := authInfo.CurrentUserID()
 
-	user, err := db.GetUserAccountByID(ctx, userID)
-	if err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.Error(w, "user not found", http.StatusNotFound)
+	var buf bytes.Buffer
+	if user, err := db.GetUserAccountByID(ctx, userID); err != nil {
+		if errors.Is(err, distrerr.ErrNotFound) {
+			return userAccountNotFound, nil
 		} else {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to get user", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return nil, fmt.Errorf("failed to get user: %w", err)
 		}
-		return
-	}
-
-	if user.MFAEnabled {
-		http.Error(w, "MFA is already enabled", http.StatusBadRequest)
-		return
-	}
-
-	key, err := totp.Generate(totp.GenerateOpts{
+	} else if user.MFAEnabled {
+		return respond.BadRequest("MFA is already enabled"), nil
+	} else if key, err := totp.Generate(totp.GenerateOpts{
 		Issuer:      "Distr",
 		AccountName: user.Email,
 		Algorithm:   otp.AlgorithmSHA1,
 		Digits:      otp.DigitsSix,
 		Period:      30,
-	})
-	if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("failed to generate TOTP key", zap.Error(err))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+	}); err != nil {
+		return nil, fmt.Errorf("failed to generate TOTP key: %w", err)
+	} else if err := db.UpdateUserAccountMFASecret(ctx, userID, dbcrypto.String(key.Secret())); err != nil {
+		return nil, fmt.Errorf("failed to save MFA secret: %w", err)
+	} else if img, err := key.Image(200, 200); err != nil {
+		return nil, fmt.Errorf("failed to generate QR code: %w", err)
+	} else if err := png.Encode(&buf, img); err != nil {
+		return nil, fmt.Errorf("failed to encode QR code: %w", err)
+	} else {
+		qrCode := "data:image/png;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
+
+		return respond.JSON(api.SetupMFAResponse{
+			Secret:    key.Secret(),
+			QRCodeUrl: qrCode,
+		}), nil
 	}
-
-	if err := db.UpdateUserAccountMFASecret(ctx, userID, dbcrypto.String(key.Secret())); err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("failed to save MFA secret", zap.Error(err))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	img, err := key.Image(200, 200)
-	if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("failed to generate QR code", zap.Error(err))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	var buf bytes.Buffer
-	if err := png.Encode(&buf, img); err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("failed to encode QR code", zap.Error(err))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	qrCode := "data:image/png;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
-
-	RespondJSON(w, api.SetupMFAResponse{
-		Secret:    key.Secret(),
-		QRCodeUrl: qrCode,
-	})
 }
 
-func mfaEnableHandler(w http.ResponseWriter, r *http.Request) {
+func mfaEnableHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	authInfo := auth.Authentication.Require(ctx)
 	userID := authInfo.CurrentUserID()
 
-	request, err := JsonBody[api.EnableMFARequest](w, r)
-	if err != nil {
-		return
-	}
-
-	user, err := db.GetUserAccountByID(ctx, userID)
-	if err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.Error(w, "user not found", http.StatusNotFound)
+	if request, resp := decodeJSON[api.EnableMFARequest](r); resp != nil {
+		return resp, nil
+	} else if user, err := db.GetUserAccountByID(ctx, userID); err != nil {
+		if errors.Is(err, distrerr.ErrNotFound) {
+			return userAccountNotFound, nil
 		} else {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to get user", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return nil, fmt.Errorf("failed to get user: %w", err)
 		}
-		return
-	}
-
-	if user.MFAEnabled {
-		http.Error(w, "MFA is already enabled", http.StatusBadRequest)
-		return
-	}
-
-	if user.MFASecret == nil {
-		http.Error(w, "MFA not set up", http.StatusBadRequest)
-		return
-	}
-
-	valid := totp.Validate(request.Code, string(*user.MFASecret))
-	if !valid {
-		http.Error(w, "invalid code", http.StatusBadRequest)
-		return
+	} else if user.MFAEnabled {
+		return respond.BadRequest("MFA is already enabled"), nil
+	} else if user.MFASecret == nil {
+		return respond.BadRequest("MFA not set up"), nil
+	} else if valid := totp.Validate(request.Code, string(*user.MFASecret)); !valid {
+		return respond.BadRequest("invalid code"), nil
 	}
 
 	codes, err := security.GenerateRecoveryCodes()
 	if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("failed to generate recovery codes", zap.Error(err))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to generate recovery codes: %w", err)
 	}
 
 	recoveryCodeRecords := make([]types.MFARecoveryCode, len(codes))
 	for i, code := range codes {
 		salt, hash, err := security.HashRecoveryCode(code)
 		if err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to hash recovery code", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
+			return nil, fmt.Errorf("failed to hash recovery code: %w", err)
 		}
 		recoveryCodeRecords[i] = types.MFARecoveryCode{
 			CodeHash: hash,
@@ -159,10 +104,7 @@ func mfaEnableHandler(w http.ResponseWriter, r *http.Request) {
 		return db.CreateMFARecoveryCodes(ctx, userID, recoveryCodeRecords)
 	})
 	if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("failed to enable MFA", zap.Error(err))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to enable MFA: %w", err)
 	}
 
 	formattedCodes := make([]string, len(codes))
@@ -170,109 +112,69 @@ func mfaEnableHandler(w http.ResponseWriter, r *http.Request) {
 		formattedCodes[i] = security.FormatRecoveryCode(code)
 	}
 
-	RespondJSON(w, api.EnableMFAResponse{
+	return respond.JSON(api.EnableMFAResponse{
 		RecoveryCodes: formattedCodes,
-	})
+	}), nil
 }
 
-func mfaDisableHandler(w http.ResponseWriter, r *http.Request) {
+func mfaDisableHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	authInfo := auth.Authentication.Require(ctx)
 	userID := authInfo.CurrentUserID()
 
-	request, err := JsonBody[api.DisableMFARequest](w, r)
-	if err != nil {
-		return
-	}
-
-	user, err := db.GetUserAccountByID(ctx, userID)
-	if err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.Error(w, "user not found", http.StatusNotFound)
+	if request, resp := decodeJSON[api.DisableMFARequest](r); resp != nil {
+		return resp, nil
+	} else if user, err := db.GetUserAccountByID(ctx, userID); err != nil {
+		if errors.Is(err, distrerr.ErrNotFound) {
+			return userAccountNotFound, nil
 		} else {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to get user", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return nil, fmt.Errorf("failed to get user: %w", err)
 		}
-		return
-	}
-
-	if !user.MFAEnabled {
-		http.Error(w, "MFA is not enabled", http.StatusBadRequest)
-		return
-	}
-
-	if err := security.VerifyPassword(*user, request.Password); err != nil {
-		http.Error(w, "invalid password", http.StatusUnauthorized)
-		return
-	}
-
-	err = db.RunTx(ctx, func(ctx context.Context) error {
+	} else if !user.MFAEnabled {
+		return respond.BadRequest("MFA is not enabled"), nil
+	} else if err := security.VerifyPassword(*user, request.Password); err != nil {
+		return respond.Unauthorized("invalid password"), nil
+	} else if err := db.RunTx(ctx, func(ctx context.Context) error {
 		if err := db.DisableUserAccountMFA(ctx, userID); err != nil {
 			return err
 		}
 		return db.DeleteAllMFARecoveryCodes(ctx, userID)
-	})
-	if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("failed to disable MFA", zap.Error(err))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+	}); err != nil {
+		return nil, fmt.Errorf("failed to disable MFA: %w", err)
+	} else {
+		return respond.NoContent(), nil
 	}
-
-	w.WriteHeader(http.StatusNoContent)
 }
 
-func mfaRegenerateRecoveryCodesHandler(w http.ResponseWriter, r *http.Request) {
+func mfaRegenerateRecoveryCodesHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	authInfo := auth.Authentication.Require(ctx)
 	userID := authInfo.CurrentUserID()
 
-	request, err := JsonBody[api.RegenerateMFARecoveryCodesRequest](w, r)
-	if err != nil {
-		return
-	}
-
-	user, err := db.GetUserAccountByID(ctx, userID)
-	if err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.Error(w, "user not found", http.StatusNotFound)
+	if request, resp := decodeJSON[api.RegenerateMFARecoveryCodesRequest](r); resp != nil {
+		return resp, nil
+	} else if user, err := db.GetUserAccountByID(ctx, userID); err != nil {
+		if errors.Is(err, distrerr.ErrNotFound) {
+			return userAccountNotFound, nil
 		} else {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to get user", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return nil, fmt.Errorf("failed to get user: %w", err)
 		}
-		return
-	}
-
-	if !user.MFAEnabled {
-		http.Error(w, "MFA is not enabled", http.StatusBadRequest)
-		return
-	}
-
-	if err := security.VerifyPassword(*user, request.Password); err != nil {
-		http.Error(w, "invalid password", http.StatusUnauthorized)
-		return
+	} else if !user.MFAEnabled {
+		return respond.BadRequest("MFA is not enabled"), nil
+	} else if err := security.VerifyPassword(*user, request.Password); err != nil {
+		return respond.Unauthorized("invalid password"), nil
 	}
 
 	codes, err := security.GenerateRecoveryCodes()
 	if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("failed to generate recovery codes", zap.Error(err))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to generate recovery codes: %w", err)
 	}
 
 	recoveryCodeRecords := make([]types.MFARecoveryCode, len(codes))
 	for i, code := range codes {
 		salt, hash, err := security.HashRecoveryCode(code)
 		if err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to hash recovery code", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
+			return nil, fmt.Errorf("failed to hash recovery code: %w", err)
 		}
 		recoveryCodeRecords[i] = types.MFARecoveryCode{
 			CodeHash: hash,
@@ -287,10 +189,7 @@ func mfaRegenerateRecoveryCodesHandler(w http.ResponseWriter, r *http.Request) {
 		return db.CreateMFARecoveryCodes(ctx, userID, recoveryCodeRecords)
 	})
 	if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("failed to regenerate recovery codes", zap.Error(err))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to regenerate recovery codes: %w", err)
 	}
 
 	formattedCodes := make([]string, len(codes))
@@ -298,43 +197,29 @@ func mfaRegenerateRecoveryCodesHandler(w http.ResponseWriter, r *http.Request) {
 		formattedCodes[i] = security.FormatRecoveryCode(code)
 	}
 
-	RespondJSON(w, api.RegenerateMFARecoveryCodesResponse{
+	return respond.JSON(api.RegenerateMFARecoveryCodesResponse{
 		RecoveryCodes: formattedCodes,
-	})
+	}), nil
 }
 
-func mfaRecoveryCodesStatusHandler(w http.ResponseWriter, r *http.Request) {
+func mfaRecoveryCodesStatusHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	authInfo := auth.Authentication.Require(ctx)
 	userID := authInfo.CurrentUserID()
 
-	user, err := db.GetUserAccountByID(ctx, userID)
-	if err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.Error(w, "user not found", http.StatusNotFound)
+	if user, err := db.GetUserAccountByID(ctx, userID); err != nil {
+		if errors.Is(err, distrerr.ErrNotFound) {
+			return userAccountNotFound, nil
 		} else {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to get user", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return nil, fmt.Errorf("failed to get user: %w", err)
 		}
-		return
+	} else if !user.MFAEnabled {
+		return respond.BadRequest("MFA is not enabled"), nil
+	} else if count, err := db.CountUnusedMFARecoveryCodes(ctx, userID); err != nil {
+		return nil, fmt.Errorf("failed to count recovery codes: %w", err)
+	} else {
+		return respond.JSON(api.MFARecoveryCodesStatusResponse{
+			RemainingCodes: count,
+		}), nil
 	}
-
-	if !user.MFAEnabled {
-		http.Error(w, "MFA is not enabled", http.StatusBadRequest)
-		return
-	}
-
-	count, err := db.CountUnusedMFARecoveryCodes(ctx, userID)
-	if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("failed to count recovery codes", zap.Error(err))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	RespondJSON(w, api.MFARecoveryCodesStatusResponse{
-		RemainingCodes: count,
-	})
 }

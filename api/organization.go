@@ -9,13 +9,15 @@ import (
 )
 
 type CreateUpdateOrganizationRequest struct {
-	Name                   string  `json:"name"`
-	Slug                   *string `json:"slug"`
-	PreConnectScript       *string `json:"preConnectScript"`
-	PostConnectScript      *string `json:"postConnectScript"`
-	ConnectScriptIsSudo    bool    `json:"connectScriptIsSudo"`
-	ArtifactVersionMutable bool    `json:"artifactVersionMutable"`
-	PrePostScriptsEnabled  bool    `json:"prePostScriptsEnabled"`
+	Name                        string  `json:"name"`
+	Slug                        *string `json:"slug"`
+	DockerPreConnectScript      *string `json:"dockerPreConnectScript"`
+	DockerPostConnectScript     *string `json:"dockerPostConnectScript"`
+	DockerConnectScriptIsSudo   bool    `json:"dockerConnectScriptIsSudo"`
+	KubernetesPreConnectScript  *string `json:"kubernetesPreConnectScript"`
+	KubernetesPostConnectScript *string `json:"kubernetesPostConnectScript"`
+	ArtifactVersionMutable      bool    `json:"artifactVersionMutable"`
+	PrePostScriptsEnabled       bool    `json:"prePostScriptsEnabled"`
 }
 
 type CreateOrganizationRequest struct {

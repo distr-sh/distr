@@ -1,5 +1,49 @@
 # Changelog
 
+## [4.4.2](https://github.com/distr-sh/distr/compare/4.4.1...4.4.2) (2026-10-15)
+
+
+### Bug Fixes
+
+* **kubernetes-agent:** reload helm field manager on changes ([#3508](https://github.com/distr-sh/distr/issues/3508)) ([99d6d34](https://github.com/distr-sh/distr/commit/99d6d34b26c49297799c7b8a83ae186c3dde57d6))
+
+
+### Other
+
+* rename missed logline from agent to controller ([#3501](https://github.com/distr-sh/distr/issues/3501)) ([a668799](https://github.com/distr-sh/distr/commit/a668799c0a7b1ae71ea3154f01686c327933f6b0))
+
+## [4.4.1](https://github.com/distr-sh/distr/compare/4.4.0...4.4.1) (2026-10-14)
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([#3460](https://github.com/distr-sh/distr/issues/3460)) ([e2e681a](https://github.com/distr-sh/distr/commit/e2e681a2c6009ebc00902bcaa50dc46497794d35))
+* **deps:** update module github.com/aws/smithy-go to v1.28.5 ([#3462](https://github.com/distr-sh/distr/issues/3462)) ([1e82741](https://github.com/distr-sh/distr/commit/1e82741f19c7572d060892a6374adde89278ef37))
+* **deps:** update module github.com/getsentry/sentry-go/otel/otlp to v0.50.0 ([#3466](https://github.com/distr-sh/distr/issues/3466)) ([e36d8bc](https://github.com/distr-sh/distr/commit/e36d8bc19648c09fe4340bba68a8f195b8d50172))
+* **deps:** update module github.com/go-chi/chi/v5 to v5.4.0 ([#3483](https://github.com/distr-sh/distr/issues/3483)) ([4d42bc2](https://github.com/distr-sh/distr/commit/4d42bc223a734eb587c4e4c9c7aab32e55cba14c))
+* **deps:** update module github.com/go-mailx/mailx-ses to v1.0.13 ([#3479](https://github.com/distr-sh/distr/issues/3479)) ([1e73c8d](https://github.com/distr-sh/distr/commit/1e73c8d97e349b1fdc53bd35c0af678965b5974d))
+* **deps:** update module github.com/moby/moby/client to v0.6.2 ([#3464](https://github.com/distr-sh/distr/issues/3464)) ([6dfbbb6](https://github.com/distr-sh/distr/commit/6dfbbb65817e32cf681437470a4a82ddb96e09bd))
+* **deps:** update module github.com/prometheus/client_golang to v1.25.0 ([#3467](https://github.com/distr-sh/distr/issues/3467)) ([190233f](https://github.com/distr-sh/distr/commit/190233f2b8357cef4e82c658f2020147d157e499))
+* **deps:** update module oras.land/oras-go/v2 to v2.6.3 ([#3491](https://github.com/distr-sh/distr/issues/3491)) ([3712dde](https://github.com/distr-sh/distr/commit/3712dde6a116b45ed8b7bb71dd79b5bdec9fd359))
+* **deps:** update sentry-javascript monorepo to v11 ([#3488](https://github.com/distr-sh/distr/issues/3488)) ([438f690](https://github.com/distr-sh/distr/commit/438f6900124ba79d353393d093300aaa28e24add))
+* **frontend:** fix colspan on alert configs page ([#3494](https://github.com/distr-sh/distr/issues/3494)) ([12f2601](https://github.com/distr-sh/distr/commit/12f260141775974e446e61c04653b24d61ee358e))
+* **kubernetes-agent:** explicitly set helm field manager label ([#3499](https://github.com/distr-sh/distr/issues/3499)) ([32bf9dd](https://github.com/distr-sh/distr/commit/32bf9dd75109abd111958cb8be9c5929ba669d28))
+
+
+### Other
+
+* **deps:** update dependency marked to v18.1.1 ([#3489](https://github.com/distr-sh/distr/issues/3489)) ([a6265b6](https://github.com/distr-sh/distr/commit/a6265b6a9f79577a6d86aa3145173a1ba59c4dab))
+* **deps:** update dependency postcss to v8.5.30 ([#3485](https://github.com/distr-sh/distr/issues/3485)) ([e95bdcd](https://github.com/distr-sh/distr/commit/e95bdcdcfca612bcd7cdbd0c5226a28964b25a32))
+* **deps:** update dependency posthog-js to v1.438.9 ([#3486](https://github.com/distr-sh/distr/issues/3486)) ([6f75e20](https://github.com/distr-sh/distr/commit/6f75e20d78ad0be0e6621ec82df1dbb59a91ce25))
+* **deps:** update dependency vitest to v5.0.4 ([#3481](https://github.com/distr-sh/distr/issues/3481)) ([ce1dc26](https://github.com/distr-sh/distr/commit/ce1dc2603f3f3dee64f347ecb9310962ba08fde9))
+* **deps:** update jdx/mise-action action to v5.1.2 ([#3482](https://github.com/distr-sh/distr/issues/3482)) ([60881fb](https://github.com/distr-sh/distr/commit/60881fb8f968fa799694913329814fb5f346da96))
+* **deps:** update website dependencies ([#3474](https://github.com/distr-sh/distr/issues/3474)) ([6a3c48d](https://github.com/distr-sh/distr/commit/6a3c48d3267d13a7d14db0c52c77ebd15674d4ca))
+* **frontend:** add border to panels and tables ([#3478](https://github.com/distr-sh/distr/issues/3478)) ([97dc1d6](https://github.com/distr-sh/distr/commit/97dc1d672b878c6358910dd554f219b7bca1e701))
+* **frontend:** remove colored background for dangerzone ([#3484](https://github.com/distr-sh/distr/issues/3484)) ([624a7e1](https://github.com/distr-sh/distr/commit/624a7e171b85551076769ed558a9f03e89e76638))
+* **website:** update mermaid to v12 ([#3480](https://github.com/distr-sh/distr/issues/3480)) ([73e3475](https://github.com/distr-sh/distr/commit/73e3475071fe0e022a161417e07e8770823040f1))
+* **website:** update node-html-parser to v9 ([#3476](https://github.com/distr-sh/distr/issues/3476)) ([c424f9f](https://github.com/distr-sh/distr/commit/c424f9fc57b781b120f1034236f46dd1bd5eb763))
+* **website:** update preact to v11 ([#3477](https://github.com/distr-sh/distr/issues/3477)) ([5d127e8](https://github.com/distr-sh/distr/commit/5d127e8062dba4722a43a12cc3aacfc230f2cb05))
+
 ## [4.4.0](https://github.com/distr-sh/distr/compare/4.3.0...4.4.0) (2026-10-13)
 
 

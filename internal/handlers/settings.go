@@ -2,40 +2,39 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authjwt"
 	"github.com/distr-sh/distr/internal/blocklist"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/custommail"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
-	"github.com/getsentry/sentry-go"
 	"github.com/go-mailx/mailx"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 func SettingsRouter(r chiopenapi.Router) {
 	r.Route("/user", func(r chiopenapi.Router) {
 		r.WithOptions(option.GroupTags("Settings"))
 
-		r.Post("/", userSettingsUpdateHandler).
+		r.Post("/", respond.Handler(userSettingsUpdateHandler)).
 			With(option.Description("Update user settings")).
 			With(option.Request(api.UpdateUserAccountRequest{})).
 			With(option.Response(http.StatusOK, types.UserAccount{}))
 
 		r.With(middleware.RequireNonAccessToken, middleware.RequireNonOidcToken).
-			Post("/email", userSettingsUpdateEmailHandler()).
+			Post("/email", respond.Handler(userSettingsUpdateEmailHandler)).
 			With(option.Description("Update current user email address")).
 			With(option.Request(api.UpdateUserAccountEmailRequest{})).
 			With(option.Response(http.StatusAccepted, nil))
@@ -45,12 +44,12 @@ func SettingsRouter(r chiopenapi.Router) {
 				OIDCIdentityID uuid.UUID `path:"oidcIdentityId"`
 			}
 
-			r.Get("/", getOIDCIdentitiesHandler).
+			r.Get("/", respond.Handler(getOIDCIdentitiesHandler)).
 				With(option.Description("List the identity provider accounts connected to the current user")).
 				With(option.Response(http.StatusOK, []api.UserAccountOIDCIdentity{}))
 
 			r.With(middleware.RequireNonAccessToken, middleware.RequireNonOidcToken).
-				Delete("/{oidcIdentityId}", deleteOIDCIdentityHandler).
+				Delete("/{oidcIdentityId}", respond.Handler(deleteOIDCIdentityHandler)).
 				With(option.Description("Disconnect an identity provider account from the current user")).
 				With(option.Request(OIDCIdentityIDRequest{}))
 		})
@@ -63,27 +62,27 @@ func SettingsRouter(r chiopenapi.Router) {
 		// factor the account's owner does not have. Disabling MFA and regenerating the recovery codes
 		// verify the password, which is proof of ownership on its own.
 		r.With(middleware.RequireNonAccessToken, middleware.RequireNonOidcToken).
-			Post("/setup", mfaSetupHandler).
+			Post("/setup", respond.Handler(mfaSetupHandler)).
 			With(option.Description("Setup a new TOTP secret for the current user. MFA must still be enabled afterwards")).
 			With(option.Response(http.StatusOK, api.SetupMFAResponse{}))
 
 		r.With(middleware.RequireNonAccessToken, middleware.RequireNonOidcToken).
-			Post("/enable", mfaEnableHandler).
+			Post("/enable", respond.Handler(mfaEnableHandler)).
 			With(option.Description("Enable MFA for the current user and receive recovery codes")).
 			With(option.Request(api.EnableMFARequest{})).
 			With(option.Response(http.StatusOK, api.EnableMFAResponse{}))
 
-		r.Post("/disable", mfaDisableHandler).
+		r.Post("/disable", respond.Handler(mfaDisableHandler)).
 			With(option.Description(
 				"Disable MFA for the current user. This will also remove the TOTP secret and all recovery codes")).
 			With(option.Request(api.DisableMFARequest{}))
 
-		r.Post("/recovery-codes/regenerate", mfaRegenerateRecoveryCodesHandler).
+		r.Post("/recovery-codes/regenerate", respond.Handler(mfaRegenerateRecoveryCodesHandler)).
 			With(option.Description("Regenerate all recovery codes. This invalidates all existing codes")).
 			With(option.Request(api.RegenerateMFARecoveryCodesRequest{})).
 			With(option.Response(http.StatusOK, api.RegenerateMFARecoveryCodesResponse{}))
 
-		r.Get("/recovery-codes/status", mfaRecoveryCodesStatusHandler).
+		r.Get("/recovery-codes/status", respond.Handler(mfaRecoveryCodesStatusHandler)).
 			With(option.Description("Get the count of remaining unused recovery codes")).
 			With(option.Response(http.StatusOK, api.MFARecoveryCodesStatusResponse{}))
 	})
@@ -95,158 +94,114 @@ func SettingsRouter(r chiopenapi.Router) {
 
 		r.Use(middleware.RequireOrgAndRole, middleware.RequireNonAccessToken, middleware.RequireOwnContext)
 
-		r.Get("/", getAccessTokensHandler())
+		r.Get("/", respond.Handler(getAccessTokensHandler))
 
-		r.With(middleware.BlockSuperAdmin).Post("/", createAccessTokenHandler())
+		r.With(middleware.BlockSuperAdmin).Post("/", respond.Handler(createAccessTokenHandler))
 
 		r.Route("/{accessTokenId}", func(r chiopenapi.Router) {
-			r.With(middleware.BlockSuperAdmin).Patch("/", patchAccessTokenHandler())
+			r.With(middleware.BlockSuperAdmin).Patch("/", respond.Handler(patchAccessTokenHandler))
 
-			r.With(middleware.BlockSuperAdmin).Delete("/", deleteAccessTokenHandler())
+			r.With(middleware.BlockSuperAdmin).Delete("/", respond.Handler(deleteAccessTokenHandler))
 
-			r.With(middleware.BlockSuperAdmin).Delete("/key", deleteAccessTokenKeyHandler())
+			r.With(middleware.BlockSuperAdmin).Delete("/key", respond.Handler(deleteAccessTokenKeyHandler))
 
 			r.Route("/secrets", func(r chiopenapi.Router) {
-				r.With(middleware.BlockSuperAdmin).Post("/", createAccessTokenSecretHandler())
+				r.With(middleware.BlockSuperAdmin).Post("/", respond.Handler(createAccessTokenSecretHandler))
 
-				r.With(middleware.BlockSuperAdmin).Delete("/{slot}", deleteAccessTokenSecretHandler())
+				r.With(middleware.BlockSuperAdmin).Delete("/{slot}", respond.Handler(deleteAccessTokenSecretHandler))
 			})
 		})
 	})
 }
 
-func userSettingsUpdateHandler(w http.ResponseWriter, r *http.Request) {
+func userSettingsUpdateHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
-	body, err := JsonBody[api.UpdateUserAccountRequest](w, r)
-	if err != nil {
-		return
-	}
+	if body, resp := decodeJSON[api.UpdateUserAccountRequest](r); resp != nil {
+		return resp, nil
+	} else if err := body.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else if body.Password != nil && auth.IsAccessToken() {
+		// Only the password is a credential change; the name and the image stay available to every session.
+		return respond.Forbidden(middleware.AccessTokenBlockedMessage), nil
+	} else if body.Password != nil && auth.IsCustomOIDCSession() {
+		return respond.Forbidden(middleware.OidcSessionBlockedMessage), nil
+	} else {
+		user := auth.CurrentUser()
+		isUpdateNeeded := false
 
-	if err := body.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Only the password is a credential change; the name and the image stay available to every session.
-	if body.Password != nil {
-		if auth.IsAccessToken() {
-			http.Error(w, middleware.AccessTokenBlockedMessage, http.StatusForbidden)
-			return
-		} else if auth.IsCustomOIDCSession() {
-			http.Error(w, middleware.OidcSessionBlockedMessage, http.StatusForbidden)
-			return
+		if body.Name != nil && *body.Name != user.Name {
+			user.Name = *body.Name
+			isUpdateNeeded = true
 		}
-	}
 
-	user := auth.CurrentUser()
-	isUpdateNeeded := false
-
-	if body.Name != nil && *body.Name != user.Name {
-		user.Name = *body.Name
-		isUpdateNeeded = true
-	}
-
-	if body.Password != nil {
-		user.Password = *body.Password
-		if err := security.HashPassword(user); err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to hash password", zap.Error(err))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		isUpdateNeeded = true
-	}
-
-	if body.ImageID != nil && !util.PtrEq(user.ImageID, body.ImageID) {
-		user.ImageID = body.ImageID
-		isUpdateNeeded = true
-	}
-
-	if isUpdateNeeded {
-		if err := db.UpdateUserAccount(ctx, user); err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-			} else {
-				log.Error("failed to update user", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+		if body.Password != nil {
+			user.Password = *body.Password
+			if err := security.HashPassword(user); err != nil {
+				return nil, fmt.Errorf("failed to hash password: %w", err)
 			}
-			return
+			isUpdateNeeded = true
 		}
-	}
 
-	RespondJSON(w, user)
+		if body.ImageID != nil && !util.PtrEq(user.ImageID, body.ImageID) {
+			user.ImageID = body.ImageID
+			isUpdateNeeded = true
+		}
+
+		if isUpdateNeeded {
+			if err := db.UpdateUserAccount(ctx, user); err != nil {
+				if errors.Is(err, distrerr.ErrNotFound) {
+					return respond.BadRequest(err.Error()), nil
+				} else {
+					return nil, fmt.Errorf("failed to update user: %w", err)
+				}
+			}
+		}
+
+		return respond.JSON(user), nil
+	}
 }
 
-func userSettingsUpdateEmailHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
-		user := auth.CurrentUser()
+func userSettingsUpdateEmailHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	user := auth.CurrentUser()
 
-		body, err := JsonBody[api.UpdateUserAccountEmailRequest](w, r)
-		if err != nil {
-			return
-		}
-
-		if err := body.Validate(); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		if blocklist.EmailBlocked(body.Email) {
-			http.Error(w, blocklist.EmailBlockedMessage, http.StatusForbidden)
-			return
-		}
-
-		if user.Email == body.Email {
-			http.Error(w, "new email must be different from current email", http.StatusBadRequest)
-			return
-		}
-
-		if exists, err := db.ExistsUserAccountWithEmail(ctx, body.Email); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		} else if exists {
-			http.Error(w, "email already in use", http.StatusBadRequest)
-			return
-		}
-
+	if body, resp := decodeJSON[api.UpdateUserAccountEmailRequest](r); resp != nil {
+		return resp, nil
+	} else if err := body.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	} else if blocklist.EmailBlocked(body.Email) {
+		return respond.Forbidden(blocklist.EmailBlockedMessage), nil
+	} else if user.Email == body.Email {
+		return respond.BadRequest("new email must be different from current email"), nil
+	} else if exists, err := db.ExistsUserAccountWithEmail(ctx, body.Email); err != nil {
+		return nil, fmt.Errorf("failed to check whether email is in use: %w", err)
+	} else if exists {
+		return respond.BadRequest("email already in use"), nil
+	} else {
 		// Set new email on the UserAccount to generate a verification token
 		// This is not saved to the DB yet!
 		oldEmail := user.Email
 		user.Email = body.Email
 		_, token, err := authjwt.GenerateVerificationTokenValidFor(*user)
 		if err != nil {
-			log.Error("failed to send email verification", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, "failed to generate verification token", http.StatusInternalServerError)
-			return
+			return nil, fmt.Errorf("failed to generate verification token: %w", err)
 		}
 		user.Email = oldEmail
 
-		mailer, err := custommail.MailerForOrganization(ctx, *auth.CurrentOrgID())
-		if err != nil {
-			log.Error("failed to resolve mailer for email change", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		owb := *auth.CurrentOrgWithBranding()
-		if err := mailer.Send(ctx,
+		if mailer, err := custommail.MailerForOrganization(ctx, *auth.CurrentOrgID()); err != nil {
+			return nil, fmt.Errorf("failed to resolve mailer for email change: %w", err)
+		} else if err := mailer.Send(ctx,
 			mailx.To(body.Email),
 			mailx.Subject("[Action required] Distr E-Mail address change"),
-			mailx.HtmlBodyTemplate(mailtemplates.UpdateEmail(ctx, *user, owb, auth.CurrentCustomerOrgID(), token)),
+			mailx.HtmlBodyTemplate(mailtemplates.UpdateEmail(
+				ctx, *user, *auth.CurrentOrgWithBranding(), auth.CurrentCustomerOrgID(), token,
+			)),
 		); err != nil {
-			log.Error("failed to send email verification", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return nil, fmt.Errorf("failed to send email verification: %w", err)
+		} else {
+			return respond.Status(http.StatusAccepted), nil
 		}
-
-		w.WriteHeader(http.StatusAccepted)
 	}
 }

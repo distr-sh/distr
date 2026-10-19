@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
@@ -50,7 +50,7 @@ func EnterPortal(
 	switch {
 	case requested.CustomerOrganizationID != nil && requested.PartnerOrganizationID == nil:
 		customerOrg, err := db.GetCustomerOrganization(ctx, *requested.CustomerOrganizationID, orgID)
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return nil, ErrPortalForbidden
 		} else if err != nil {
 			return nil, err

@@ -70,6 +70,7 @@ func init() {
 	if controllerenv.ControllerVersionID == "" {
 		logger.Warn("DISTR_CONTROLLER_VERSION_ID is not set. self updates will be disabled")
 	}
+	reloadHelmFieldManager()
 	if s := envutil.GetEnv("DISTR_CONTROLLER_CONFIG_DIRS"); s != "" {
 		controllerConfigDirs = slices.DeleteFunc(
 			strings.Split(s, "\n"),
@@ -146,6 +147,7 @@ func main() {
 		} else {
 			logger.Debug("controller client config unchanged")
 		}
+		reloadHelmFieldManager()
 
 		res, err := controllerClient.Resource(ctx)
 		if err != nil {
@@ -211,7 +213,7 @@ func main() {
 				if errors.Is(err, driver.ErrReleaseNotFound) {
 					logger.Info("current helm release does not exist")
 				} else if !requiresInstallOrUpgrade(deployment.RevisionID, currentDeployment) {
-					logger.Warn("helm release differs from the one deployed by the agent", zap.Error(err))
+					logger.Warn("helm release differs from the one deployed by the controller", zap.Error(err))
 				} else {
 					logger.Warn("refusing to install or update", zap.Error(err))
 					pushErrorStatus(ctx, deployment, err)
