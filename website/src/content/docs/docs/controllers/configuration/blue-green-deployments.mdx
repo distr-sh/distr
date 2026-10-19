@@ -1,0 +1,505 @@
+---
+title: Blue-Green Deployments
+description: Run two versions of an application side by side on one Docker or Kubernetes deployment target and shift traffic between them by weight, without downtime and with instant rollback.
+slug: docs/controllers/blue-green-deployments
+sidebar:
+  label: Blue-Green Deployments
+  order: 7
+---
+
+import {Aside, Steps, TabItem, Tabs} from '@astrojs/starlight/components';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import blueGreenDeploymentsLight from '~/assets/docs/controllers/configuration/blue-green-deployments/blue-green-deployments-light.webp';
+import blueGreenDeploymentsDark from '~/assets/docs/controllers/configuration/blue-green-deployments/blue-green-deployments-dark.webp';
+
+A blue-green deployment runs the new version of an application next to the version that currently serves traffic.
+Traffic moves to the new version only once it is healthy, and the old version keeps running until you are sure you no longer need it.
+Rolling back is a matter of sending the traffic back.
+
+With Distr you set this up on any Docker deployment target by splitting the application into several deployments on that target: a reverse proxy, a persistence layer and two slots of your application called **blue** and **green**.
+A single controller manages all of them, so every step of a rollout is an ordinary deployment update in Distr.
+The same pattern works on a Kubernetes deployment target with Helm charts, as described in [Blue-green deployments on Kubernetes](#blue-green-deployments-on-kubernetes).
+
+## How the blue-green setup is structured
+
+<ThemedImage
+  lightSrc={blueGreenDeploymentsLight}
+  darkSrc={blueGreenDeploymentsDark}
+  alt="Blue-green deployment diagram: on one deployment target, a Traefik proxy sends 90 percent of the requests to the blue slot on version 1.4.0 and 10 percent to the green slot on version 1.5.0, and both slots use the same database"
+  dropShadow={false}
+/>
+
+| Deployment | Application | Role                                                                                                                      |
+| ---------- | ----------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `proxy`    | Proxy       | Receives all requests and splits them between the slots by weight. Creates the Docker network the other deployments join. |
+| `database` | Database    | Holds the data both slots share. It stays deployed for the lifetime of the setup.                                         |
+| `blue`     | Your app    | One slot, running one version of your application.                                                                        |
+| `green`    | Your app    | The other slot, running the next version during a rollout.                                                                |
+
+The blue and green slots are two deployments of the same Distr application, each on its own version.
+Distr runs every deployment as a Docker Compose project of its own, so the deployments reach each other through a shared Docker network that the proxy deployment creates and the others declare as `external`.
+
+The proxy in this guide is [Traefik](https://doc.traefik.io/traefik/), which supports weighted load balancing and health checks per slot.
+Any reverse proxy with weighted upstreams works the same way.
+
+## Prerequisites
+
+- A Docker deployment target. See [Create a Deployment](/docs/controllers/deployment/).
+- An application image with an endpoint that answers with a 2xx status once the application is ready to serve requests.
+- An application that does not publish host ports and does not set `container_name`, since both slots run on the same host at the same time. Only the proxy publishes ports.
+
+## Step 1: Create the proxy application
+
+Create a Docker application named **Proxy** in Distr and add a version with the following Compose file and environment template.
+
+<Tabs>
+  <TabItem label="docker-compose.yaml">
+
+```yaml
+services:
+  traefik:
+    image: traefik:v3.5
+    restart: unless-stopped
+    command:
+      - --entrypoints.web.address=:80
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+      - --ping=true
+    ports:
+      - '80:80'
+    volumes:
+      - routing:/etc/traefik/dynamic:ro
+    networks:
+      - acme
+    healthcheck:
+      test: ['CMD', 'traefik', 'healthcheck', '--ping']
+      interval: 10s
+
+  routing:
+    image: busybox:1.37
+    restart: unless-stopped
+    init: true
+    # Compose recreates a container when its environment changes, but not when only the content of a config does.
+    environment:
+      BLUE_WEIGHT: ${BLUE_WEIGHT}
+      GREEN_WEIGHT: ${GREEN_WEIGHT}
+    command:
+      - sh
+      - -c
+      - cp /routing.yaml /etc/traefik/dynamic/routing.yaml.tmp &&
+        mv /etc/traefik/dynamic/routing.yaml.tmp /etc/traefik/dynamic/routing.yaml &&
+        exec sleep infinity
+    configs:
+      - source: routing
+        target: /routing.yaml
+    volumes:
+      - routing:/etc/traefik/dynamic
+    healthcheck:
+      test: ['CMD', 'test', '-f', '/etc/traefik/dynamic/routing.yaml']
+      interval: 10s
+
+configs:
+  routing:
+    content: |
+      http:
+        routers:
+          app:
+            entryPoints: [web]
+            rule: PathPrefix(`/`)
+            service: app
+        services:
+          app:
+            weighted:
+              healthCheck: {}
+              services:
+                - name: blue
+                  weight: ${BLUE_WEIGHT}
+                - name: green
+                  weight: ${GREEN_WEIGHT}
+          blue:
+            loadBalancer:
+              healthCheck:
+                path: /health
+                interval: 2s
+              servers:
+                - url: http://app-blue:8080
+          green:
+            loadBalancer:
+              healthCheck:
+                path: /health
+                interval: 2s
+              servers:
+                - url: http://app-green:8080
+
+volumes:
+  routing:
+
+networks:
+  acme:
+    name: acme
+```
+
+  </TabItem>
+  <TabItem label=".env">
+
+```dotenv
+BLUE_WEIGHT=100
+GREEN_WEIGHT=0
+```
+
+  </TabItem>
+</Tabs>
+
+What each part does:
+
+- **`networks.acme.name`** gives the shared network a fixed name. Without it, Compose prefixes the network with the project name, which Distr sets per deployment, and the other deployments could not find it. Replace `acme` with a name unique to your application.
+- **`traefik`** is the proxy. It reads its routing from a directory and reloads it whenever a file in there changes, so it never has to restart while you shift traffic.
+- **`routing`** writes the routing file into that directory and then keeps running. Changing a weight recreates only this container, which replaces the file, and Traefik applies the new weights as soon as the file changes. Neither requests in flight nor new ones are interrupted.
+- **`weighted`** splits the requests between the slots in proportion to `BLUE_WEIGHT` and `GREEN_WEIGHT`. With `healthCheck: {}` Traefik leaves out a slot whose health check fails, so a slot that goes down during a rollout loses its share of the traffic to the other one.
+- **`app-blue` and `app-green`** are the network aliases the two slots register on the shared network. Adjust the port and the health check `path` to your application.
+
+<Aside type="tip">
+  Since the weights are deployment variables, you or your customer change them
+  in the Distr UI like any other configuration value, and every change is
+  recorded in the [deployment
+  history](/docs/controllers/deployment/#deployment-history).
+</Aside>
+
+## Step 2: Create the database application
+
+Put everything both slots read and write into a deployment of its own, so it is not replaced when a slot is.
+This example uses PostgreSQL. Create a Docker application named **Database** with this version:
+
+<Tabs>
+  <TabItem label="docker-compose.yaml">
+
+```yaml
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: acme
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: acme
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - acme
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'acme']
+      interval: 10s
+
+volumes:
+  db-data:
+
+networks:
+  acme:
+    external: true
+```
+
+  </TabItem>
+  <TabItem label=".env">
+
+```dotenv
+POSTGRES_PASSWORD={{ .Secrets.POSTGRES_PASSWORD }}
+```
+
+  </TabItem>
+</Tabs>
+
+The password comes from a [Distr secret](/docs/controllers/secrets/), so the database and both slots share it without it appearing in any deployment configuration. Since the slots put the password into a connection URL, choose one without characters that have a meaning in URLs, such as `/`, `#`, `@` or `:`.
+
+<Aside type="caution">
+  Undeploying a deployment removes its volumes. Keep the database deployment in
+  place across rollouts and only ever undeploy the slots.
+</Aside>
+
+## Step 3: Prepare your application
+
+Both slots run the same Compose file. A `SLOT` variable decides which alias the slot registers on the shared network, and with it which weight in the proxy applies to it.
+
+<Tabs>
+  <TabItem label="docker-compose.yaml">
+
+```yaml
+services:
+  app:
+    image: ghcr.io/acme/app:1.4.0
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://acme:${POSTGRES_PASSWORD}@db:5432/acme
+    networks:
+      acme:
+        aliases:
+          - app-${SLOT:?SLOT must be blue or green}
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:8080/health']
+      interval: 5s
+
+networks:
+  acme:
+    external: true
+```
+
+  </TabItem>
+  <TabItem label=".env">
+
+```dotenv
+SLOT=blue
+POSTGRES_PASSWORD={{ .Secrets.POSTGRES_PASSWORD }}
+```
+
+  </TabItem>
+</Tabs>
+
+The Docker health check is what Distr reports as the deployment's status, so it tells you when a slot is ready to receive traffic. Use a command that exists in your image, `curl` or `wget` being the usual ones.
+
+Add one application version per release as usual, each pinning its image tag.
+
+## Step 4: Deploy the setup
+
+Create the first three deployments on the same deployment target. The green slot follows with the first rollout. For the first deployment, follow [Create a Deployment](/docs/controllers/deployment/). For the others, use **+ Deploy App** on the deployment target card.
+
+<Steps>
+
+1. Deploy the **Proxy** with `BLUE_WEIGHT=100` and `GREEN_WEIGHT=0`. It creates the shared network.
+
+2. Deploy the **Database**.
+
+3. Deploy your application with `SLOT=blue` and the version you currently ship, and name the deployment after its slot, for example `app blue`.
+
+</Steps>
+
+The order matters only for the network. A deployment that joins it before it exists fails with `network acme declared as external, but could not be found`, and the controller retries it on its next cycle until the proxy has created the network.
+
+Once all three deployments are **Healthy**, every request on port 80 goes to the blue slot.
+
+## Step 5: Roll out a new version
+
+<Steps>
+
+1. **Start the new version in the idle slot.** Deploy your application a second time with `SLOT=green` and the new version. Wait until the deployment is **Healthy**. Green is running, but it does not receive any traffic yet.
+
+2. **Send a share of the traffic to it.** Update the proxy deployment to `BLUE_WEIGHT=90` and `GREEN_WEIGHT=10`. One in ten requests now reaches the new version. Watch its [logs and metrics](/docs/controllers/logs-and-metrics/) and increase the share in as many steps as you like.
+
+3. **Switch over.** Update the proxy deployment to `BLUE_WEIGHT=0` and `GREEN_WEIGHT=100`. All requests now reach the new version, and the old one keeps running.
+
+4. **Roll back if needed.** As long as the blue slot is deployed, setting the weights back to `100` and `0` moves all traffic to the old version at once, without waiting for anything to start.
+
+5. **Retire the old version.** Once you are confident in the new version, undeploy the blue slot or leave it running for the next rollout.
+
+</Steps>
+
+The slots take turns from then on. For the next release, update the idle slot to the new version, or deploy it again if you undeployed it, and repeat the weight changes in the opposite direction.
+
+<Aside type="caution">
+  Give a slot weight only after its deployment is **Healthy**. Traefik considers
+  a slot up until its first health check fails, so weight on a slot that is not
+  running yet sends requests to it for up to one health check interval.
+</Aside>
+
+## Blue-green deployments on Kubernetes
+
+On a Kubernetes deployment target the setup has the same shape, with Helm charts instead of Compose files and the cluster's [Gateway API](https://gateway-api.sigs.k8s.io/) implementation in place of the proxy deployment:
+
+- Each slot is a Helm release of its own, `app-blue` and `app-green`, deployed from the same Distr application on its own version.
+- A small routing release holds an `HTTPRoute` that splits the requests between the two slots by weight.
+- The database runs as a deployment of its own or outside the cluster, and both slots connect to it.
+
+A rolling update of a single Deployment, which is what Kubernetes does by default, avoids downtime as well. It mixes both versions for the duration of the rollout though, and once it is done the old version is gone, so going back means rolling out again. With two slots, the switch happens when you change the weights, and the old version keeps running until you undeploy it.
+
+### Prerequisites on Kubernetes
+
+- A Gateway API implementation in the cluster, such as Traefik, Envoy Gateway, NGINX Gateway Fabric, Istio or Cilium, and a Gateway whose listener accepts routes from the namespace of your deployments. A listener only accepts routes from its own namespace unless its `allowedRoutes.namespaces` says otherwise.
+- All deployments of the setup in the same namespace. A namespace-scoped controller is enough, since every resource lives in that namespace.
+
+### Create the slot chart
+
+Both slots install the same chart. The `slot` value goes into the name of every resource, so the two releases never manage the same object, and into a label that the slot's Service selects.
+
+<Tabs>
+  <TabItem label="Chart.yaml">
+
+```yaml
+apiVersion: v2
+name: acme-app
+version: 1.4.0
+appVersion: 1.4.0
+```
+
+  </TabItem>
+  <TabItem label="values.yaml">
+
+```yaml
+slot: ''
+replicas: 2
+image:
+  repository: ghcr.io/acme/app
+```
+
+  </TabItem>
+  <TabItem label="templates/deployment.yaml">
+
+```yaml
+{{- if not (has .Values.slot (list "blue" "green")) }}
+{{- fail "slot must be blue or green" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-{{ .Values.slot }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: acme-app
+      slot: {{ .Values.slot }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: acme-app
+        slot: {{ .Values.slot }}
+    spec:
+      containers:
+        - name: app
+          image: {{ .Values.image.repository }}:{{ .Chart.AppVersion }}
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+```
+
+  </TabItem>
+  <TabItem label="templates/service.yaml">
+
+{/* prettier-ignore */}
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-{{ .Values.slot }}
+spec:
+  selector:
+    app.kubernetes.io/name: acme-app
+    slot: {{ .Values.slot }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+```
+
+  </TabItem>
+</Tabs>
+
+The image tag comes from the chart's `appVersion`, so the application version you pick in Distr decides what a slot runs. Publish one chart version per release and add it to the Distr application as a new version.
+
+The readiness probe decides when a pod receives requests. The controller waits for the pods of a release to be ready before it reports the deployment as **Healthy**, so a slot shows as healthy only once it can serve traffic.
+
+### Create the routing chart
+
+Create a second Helm application in Distr for the routing chart:
+
+<Tabs>
+  <TabItem label="Chart.yaml">
+
+```yaml
+apiVersion: v2
+name: acme-routing
+version: 1.0.0
+```
+
+  </TabItem>
+  <TabItem label="values.yaml">
+
+```yaml
+gateway:
+  name: ''
+  namespace: ''
+hostnames: []
+weights:
+  blue: 100
+  green: 0
+```
+
+  </TabItem>
+  <TabItem label="templates/httproute.yaml">
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: app
+spec:
+  parentRefs:
+    - name: {{ required "gateway.name is required" .Values.gateway.name }}
+      {{- with .Values.gateway.namespace }}
+      namespace: {{ . }}
+      {{- end }}
+  {{- with .Values.hostnames }}
+  hostnames:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    - backendRefs:
+        - name: app-blue
+          port: 80
+          weight: {{ .Values.weights.blue }}
+        - name: app-green
+          port: 80
+          weight: {{ .Values.weights.green }}
+```
+
+  </TabItem>
+</Tabs>
+
+`gateway.name` and `gateway.namespace` point at the Gateway in the customer's cluster, and `hostnames` optionally restricts the route to the hostnames of your application. Changing the weights only updates the `HTTPRoute`, and the Gateway applies the change without restarting anything.
+
+### Deploy and roll out on Kubernetes
+
+Use **+ Deploy App** on the Kubernetes deployment target for each deployment, and set the **Helm release name** and the values as follows.
+
+<Steps>
+
+1. **Deploy the blue slot.** Deploy the slot chart with the release name `app-blue`, the version you currently ship and `slot: blue` in the values.
+
+2. **Deploy the routing.** Deploy the routing chart with the release name `app-routing`, the `gateway` values of the cluster and the weights `blue: 100` and `green: 0`. All requests now reach the blue slot.
+
+3. **Start the new version in the idle slot.** Deploy the slot chart again with the release name `app-green`, the new version and `slot: green`. Wait until the deployment is **Healthy**.
+
+4. **Shift the traffic.** Update the routing deployment to `blue: 90` and `green: 10`, and later to `blue: 0` and `green: 100`. To roll back, set the weights back to `100` and `0`.
+
+5. **Retire the old version.** Once you are confident in the new version, undeploy `app-blue` or leave it running for the next rollout.
+
+</Steps>
+
+<Aside type="caution">
+  The Gateway does not move traffic away from a slot that fails. A weight on a
+  slot that is not deployed or has no ready pods makes that share of the
+  requests fail until you remove the weight. Give a slot weight only after its
+  deployment is **Healthy**, and set its weight to `0` before you undeploy it.
+</Aside>
+
+## Keep both versions compatible with the data
+
+During a rollout both versions read and write the same database. Every database change a release brings has to work with the version before it:
+
+- Add columns and tables in one release and start using them in the next.
+- Remove what the old version still reads only in a release after the one that stopped reading it.
+- Run migrations in a way that does not lock tables the running version needs.
+
+A migration that breaks the old version also breaks the rollback, since rolling back only moves traffic and leaves the data as it is.
+
+## Automate the rollout
+
+Every step above is a deployment created or updated in Distr, so a release pipeline can run a rollout through the [Distr API](/docs/integrations/api/) or the [Distr SDK](/docs/integrations/sdk/). Leave [automatic updates](/docs/controllers/deployment/#automatic-updates) off for the two slots, since they would move both slots to the latest version at the same time.
+
+## Related guides
+
+- [Docker Environment Variables](/docs/controllers/docker-env/): define the environment templates used for the weights and the slot
+- [Secrets Management](/docs/controllers/secrets/): share credentials between the database and the slots
+- [Logs & Metrics](/docs/controllers/logs-and-metrics/): watch the new version while it receives a share of the traffic
+- [Kubernetes Controller](/docs/controllers/kubernetes-controller/): how the controller installs and upgrades the Helm releases of the slots
