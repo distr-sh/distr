@@ -11,10 +11,13 @@ import rehypeExternalLinks from 'rehype-external-links';
 import starlightLinksValidator from 'starlight-links-validator';
 import starlightLlmsTxt from 'starlight-llms-txt';
 import starlightSidebarTopics from 'starlight-sidebar-topics';
+import {llmsTxtOptions} from './src/llms-txt/options';
+
+const site = 'https://distr.sh';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://distr.sh',
+  site,
   prefetch: {
     prefetchAll: true,
   },
@@ -300,32 +303,7 @@ export default defineConfig({
             'http://localhost:**',
           ],
         }),
-        starlightLlmsTxt({
-          description:
-            'Distr is an open source platform for distributing applications to self-managed customers. ' +
-            'The vendor runs Distr in the cloud or self-hosts it, a Distr Controller in each customer environment ' +
-            'deploys Docker Compose or Helm applications and an OCI-compatible registry serves the artifacts.',
-          details: [
-            'Distr suits software vendors whose customers run the software on their own infrastructure: ' +
-              'fully or assisted self-managed, BYOC, air-gapped and edge deployments. ' +
-              'A vendor whose software runs only as their own SaaS does not need it.',
-            '',
-            '- Start with the quickstart to run Distr locally with Docker Compose.',
-            '- Every Distr instance serves an interactive API reference on `/docs` and the OpenAPI specification on `/docs/openapi.json`.',
-            '- Automate Distr with the REST API on `/api/v1`, authenticated with a personal access token, or with the JavaScript SDK `@distr-sh/distr-sdk`.',
-          ].join('\n'),
-          customSets: [
-            {
-              label: 'Documentation',
-              description:
-                'the complete product documentation without the changelog',
-              paths: ['docs/**'],
-            },
-          ],
-          promote: ['docs', 'docs/core-concepts', 'docs/quickstart'],
-          demote: ['changelog', 'privacy-policy'],
-          exclude: ['changelog', 'privacy-policy'],
-        }),
+        starlightLlmsTxt(llmsTxtOptions(site)),
       ],
     }),
     mdx(),
