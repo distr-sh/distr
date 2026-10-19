@@ -412,6 +412,8 @@ export default defineConfig({
     // Renamed / superseded blog posts
     '/blog/self-managed-vs-cloud-vs-byoc/': '/blog/self-hosted-spectrum/',
     '/blog/self-hosted-vs-saas-vs-byoc/': '/blog/self-hosted-spectrum/',
+    '/blog/protect-source-code-docker-container/':
+      '/blog/secure-source-code-docker-container/',
 
     // Glossary redirects
     '/glossary/self-managed-software/': '/glossary/self-hosted-software/',
