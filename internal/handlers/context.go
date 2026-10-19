@@ -115,14 +115,14 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 			log.Warn("failed to get organization branding", zap.Error(err))
 		}
 		registryHost := customdomains.RegistryDomainOrDefault(ctx, orgID, branding)
-		controllerRepository, controllerRepositorySource := controllermanifest.DefaultImageRepository(ctx, orgID, branding)
+		controllerRepository := controllermanifest.DefaultImageRepository(ctx, orgID, branding)
 
 		return respond.JSON(api.ContextResponse{
 			User: mapping.UserAccountToAPI(
 				auth.CurrentUser().AsUserAccountWithRole(*userRole, customerOrgID, auth.CurrentPartnerOrgID(), joinDate),
 			),
 			Organization: mapping.OrganizationToAPI(
-				*auth.CurrentOrg(), billableUserCount, customerOrgCount, controllerRepository, controllerRepositorySource,
+				*auth.CurrentOrg(), billableUserCount, customerOrgCount, controllerRepository,
 			),
 			CustomerOrganization:  customerOrg,
 			PartnerOrganization:   partnerOrg,

@@ -92,25 +92,11 @@
           type="checkbox"
           class="distr-checkbox" />
         <label for="controllerImageRepositoryEnabled" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-          @if (currentOrganization()?.controllerImageRepositoryUseCustomDomain) {
-            Use a different controller repository
-          } @else {
-            Use an external controller repository
-          }
+          Use an external controller repository
         </label>
         @if (currentOrganization(); as org) {
           <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
-            @switch (org.defaultControllerImageRepositorySource) {
-              @case ('custom_domain') {
-                By default, controller images are pulled through your registry domain from
-              }
-              @case ('environment') {
-                By default, controller images are pulled from
-              }
-              @default {
-                By default, controller images are pulled from GitHub at
-              }
-            }
+            By default, controller images are pulled from
             <code class="font-mono">{{ org.defaultControllerImageRepository }}</code
             >.
             <a

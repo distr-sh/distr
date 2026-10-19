@@ -84,8 +84,8 @@ func organizationResponse(ctx context.Context, org types.Organization) (respond.
 		!errors.Is(err, distrerr.ErrNotFound) {
 		return nil, fmt.Errorf("failed to get organization branding: %w", err)
 	} else {
-		repository, source := controllermanifest.DefaultImageRepository(ctx, org.ID, branding)
-		return respond.JSON(mapping.OrganizationToAPI(org, billableUserCount, customerOrgCount, repository, source)), nil
+		repository := controllermanifest.DefaultImageRepository(ctx, org.ID, branding)
+		return respond.JSON(mapping.OrganizationToAPI(org, billableUserCount, customerOrgCount, repository)), nil
 	}
 }
 

@@ -105,25 +105,21 @@ func ImageRepository(ctx context.Context, org types.OrganizationWithBranding) st
 	if org.ControllerImageRepository != nil {
 		return *org.ControllerImageRepository
 	}
-	repository, _ := DefaultImageRepository(ctx, org.ID, org.Branding)
-	return repository
+	return DefaultImageRepository(ctx, org.ID, org.Branding)
 }
 
 func DefaultImageRepository(
 	ctx context.Context,
 	orgID uuid.UUID,
 	branding *types.OrganizationBranding,
-) (string, types.ControllerImageRepositorySource) {
+) string {
 	repository := env.ControllerImageRepository()
-	if env.ControllerImageRepositoryUseCustomDomain() && env.RegistryEnabled() {
+	if host, _, _ := strings.Cut(repository, "/"); env.RegistryEnabled() && host == env.RegistryHost() {
 		if domain := customdomains.RegistryDomain(ctx, orgID, branding); domain != nil {
-			return imageRepositoryOnDomain(repository, *domain), types.ControllerImageRepositorySourceCustomDomain
+			return imageRepositoryOnDomain(repository, *domain)
 		}
 	}
-	if repository == env.DefaultControllerImageRepository {
-		return repository, types.ControllerImageRepositorySourceDefault
-	}
-	return repository, types.ControllerImageRepositorySourceEnvironment
+	return repository
 }
 
 func imageRepositoryOnDomain(repository, domain string) string {

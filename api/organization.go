@@ -44,13 +44,11 @@ func (r *UpdateOrganizationRequest) ValidateControllerImageRepository() error {
 
 type OrganizationResponse struct {
 	types.Organization
-	SubscriptionLimits                     SubscriptionLimits                    `json:"subscriptionLimits"`
-	CurrentBillableUserAccountCount        int64                                 `json:"currentBillableUserAccountCount"`
-	CurrentCustomerOrganizationCount       int64                                 `json:"currentCustomerOrganizationCount"`
-	ControllerImageRepository              *string                               `json:"controllerImageRepository,omitempty"` //nolint:lll
-	DefaultControllerImageRepository       string                                `json:"defaultControllerImageRepository"`
-	DefaultControllerImageRepositorySource types.ControllerImageRepositorySource `json:"defaultControllerImageRepositorySource"`   //nolint:lll
-	ControllerImageCustomDomain            bool                                  `json:"controllerImageRepositoryUseCustomDomain"` //nolint:lll
+	SubscriptionLimits               SubscriptionLimits `json:"subscriptionLimits"`
+	CurrentBillableUserAccountCount  int64              `json:"currentBillableUserAccountCount"`
+	CurrentCustomerOrganizationCount int64              `json:"currentCustomerOrganizationCount"`
+	ControllerImageRepository        *string            `json:"controllerImageRepository,omitempty"`
+	DefaultControllerImageRepository string             `json:"defaultControllerImageRepository"`
 }
 
 type OrganizationWebhookResponse struct {
