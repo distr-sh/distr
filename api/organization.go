@@ -7,7 +7,11 @@ import (
 	"github.com/distr-sh/distr/internal/validation"
 )
 
-type CreateUpdateOrganizationRequest struct {
+type CreateOrganizationRequest struct {
+	Name string `json:"name"`
+}
+
+type UpdateOrganizationRequest struct {
 	Name                        string  `json:"name"`
 	Slug                        *string `json:"slug"`
 	DockerPreConnectScript      *string `json:"dockerPreConnectScript"`
@@ -20,7 +24,7 @@ type CreateUpdateOrganizationRequest struct {
 	ControllerImageRepository   *string `json:"controllerImageRepository"`
 }
 
-func (r *CreateUpdateOrganizationRequest) Normalize() {
+func (r *UpdateOrganizationRequest) Normalize() {
 	if r.ControllerImageRepository == nil {
 		return
 	}
@@ -31,7 +35,7 @@ func (r *CreateUpdateOrganizationRequest) Normalize() {
 	}
 }
 
-func (r *CreateUpdateOrganizationRequest) ValidateControllerImageRepository() error {
+func (r *UpdateOrganizationRequest) ValidateControllerImageRepository() error {
 	if r.ControllerImageRepository == nil {
 		return nil
 	}

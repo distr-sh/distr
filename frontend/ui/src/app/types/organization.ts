@@ -23,7 +23,7 @@ export interface SubscriptionLimits {
   logQueryWindowSeconds: number;
 }
 
-export interface CreateUpdateOrganizationRequest {
+export interface UpdateOrganizationRequest {
   name: string;
   slug?: string;
   dockerPreConnectScript?: string;
