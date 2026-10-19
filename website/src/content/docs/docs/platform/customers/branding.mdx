@@ -120,8 +120,11 @@ See the [configuration reference](/docs/self-hosting/configuration/#custom-domai
 
 ## Controller Image Repository
 
-The [Docker](/docs/controllers/docker-controller/) and [Kubernetes](/docs/controllers/kubernetes-controller/) controllers pull their images from `ghcr.io/distr-sh/distr` by default.
-To have your customers pull them from your own registry instead, for example your Distr registry, enable **Use an external controller repository** under **Settings → Organization → General** and enter its host and an optional path (e.g. `registry.distr.sh/your-org`).
+On Distr Cloud, the [Docker](/docs/controllers/docker-controller/) and [Kubernetes](/docs/controllers/kubernetes-controller/) controllers pull their images from `registry.distr.sh/public`.
+If your organization has a [custom registry domain](#custom-domains), they are pulled through that domain instead, e.g. `registry.your-company.com/public`.
+Self-hosted instances pull them from `ghcr.io/distr-sh/distr` unless the instance is [configured](/docs/self-hosting/configuration/) otherwise.
+
+To have your customers pull them from another registry, enable **Use an external controller repository** under **Settings → Organization → General** and enter its host and an optional path (e.g. `registry.distr.sh/your-org`).
 The setting applies to all of your customers.
 
 Only the prefix can be changed. Distr appends the image names `docker-controller`, `docker-autoheal` and `kubernetes-controller` with the controller version as the tag, so your registry has to host the images under these names.
@@ -134,10 +137,6 @@ A new repository applies when a deployment target connects and at its next contr
   left without a running controller until you fix the repository and apply the
   manifest again.
 </Aside>
-
-On self-hosted instances, [`CONTROLLER_IMAGE_REPOSITORY`](/docs/self-hosting/configuration/) changes the default for every organization.
-With `CONTROLLER_IMAGE_REPOSITORY_USE_CUSTOM_DOMAIN` enabled, an organization with a [custom registry domain](#custom-domains) pulls the images through that domain instead, keeping the path of `CONTROLLER_IMAGE_REPOSITORY`.
-The images have to be public in the Distr registry.
 
 ## Custom Email
 
