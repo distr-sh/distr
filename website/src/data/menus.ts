@@ -37,7 +37,7 @@ export const docsMenu: MenuItem[] = [
   {
     title: 'Integrations & API',
     description:
-      'Connect Distr with GitHub Actions, the REST API, and the TypeScript SDK',
+      'Connect Distr with GitHub Actions, Amazon ECS, the REST API and the TypeScript SDK',
     value: 'plug',
     href: '/docs/integrations/',
   },
