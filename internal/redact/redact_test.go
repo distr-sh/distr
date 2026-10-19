@@ -14,7 +14,10 @@ func TestRedact(t *testing.T) {
 	for _, tc := range []struct{ input, expected string }{
 		{"login with hunter2 failed", "login with ******** failed"},
 		{"connecting to postgres://app:s3cr3t@db:5432", "connecting to postgres://********@db:5432"},
-		{"DB_PASSWORD=abc123 PORT=8080", "DB_PASSWORD=******** PORT=8080"},
+		{"level=info DB_PASSWORD=abc123 PORT=8080", "level=info DB_PASSWORD=******** PORT=8080"},
+		{"HOME=/root\nDB_PASSWORD=abc,def ghi\nPORT=80", "HOME=/root\nDB_PASSWORD=********\nPORT=80"},
+		{"export API_TOKEN=a;b\r\n", "export API_TOKEN=********\r\n"},
+		{`DB_PASSWORD="a b"`, `DB_PASSWORD="********"`},
 		{`{"client_secret": "a b c", "user": "x"}`, `{"client_secret": "********", "user": "x"}`},
 		{`{"password":"head\"tailpiece"}`, `{"password":"********"}`},
 		{`DB_PASSWORD="head'tailpiece"`, `DB_PASSWORD="********"`},

@@ -46,6 +46,9 @@ var patterns = compile(
 	`(?i)(?P<prefix>\b`+sensitiveKey+`["']?[ \t]*[:=][ \t]*')[^'\r\n]+(?P<suffix>')`,
 	// Value of a sensitive key in JSON that is itself embedded in a JSON string: {\"api_key\":\"...\"}
 	`(?i)(?P<prefix>\b`+sensitiveKey+`\\"[ \t]*:[ \t]*\\")`+embeddedJSONStringContent+`(?P<suffix>\\")`,
+	// Line of an environment dump or .env file assigning a sensitive variable, whose unquoted value
+	// runs to the end of the line: DB_PASSWORD=..., export API_TOKEN=...
+	`(?im)^(?P<prefix>[ \t]*(?:export[ \t]+)?`+sensitiveKey+`=)[^"'\r\n][^\r\n]*`,
 	// Unquoted value of a sensitive key: DB_PASSWORD=..., api_key: ...
 	`(?i)(?P<prefix>\b`+sensitiveKey+`\\?["']?[ \t]*[:=][ \t]*)[^\s"'\\,;&{}\[\]]+`,
 	// Password field of a connection string, which may contain spaces: Password=...;
