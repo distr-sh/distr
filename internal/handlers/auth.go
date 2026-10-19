@@ -238,7 +238,7 @@ func authSwitchContextHandler(r *http.Request) (respond.Responder, error) {
 	}
 
 	var target types.OrganizationWithUserRole
-	var membership authinfo.Portal
+	var own authinfo.Portal
 	if auth.IsSuperAdmin() {
 		// Super admins can switch to any organization, where they have no role and no membership
 		if org, err := db.GetOrganizationByID(ctx, request.OrganizationID); errors.Is(err, distrerr.ErrNotFound) {
@@ -256,21 +256,21 @@ func authSwitchContextHandler(r *http.Request) (respond.Responder, error) {
 	} else {
 		target.Organization = org.Organization
 		target.UserRole = user.UserRole
-		membership = authinfo.Portal{
+		own = authinfo.Portal{
 			CustomerOrganizationID: user.CustomerOrganizationID,
 			PartnerOrganizationID:  user.PartnerOrganizationID,
 		}
 	}
 
-	portal := membership
+	portal := own
 	requested := authinfo.Portal{
 		CustomerOrganizationID: request.CustomerOrganizationID,
 		PartnerOrganizationID:  request.PartnerOrganizationID,
 	}
-	foreignContext := !authinfo.IsOwnPortal(membership, requested)
+	foreignContext := !authinfo.IsOwnPortal(own, requested)
 	if foreignContext {
 		if _, err := authinfo.EnterPortal(
-			ctx, target.ID, membership, auth.IsSuperAdmin(), requested,
+			ctx, target.ID, own, auth.IsSuperAdmin(), requested,
 		); errors.Is(err, authinfo.ErrPortalForbidden) {
 			return respond.Forbidden(err.Error()), nil
 		} else if err != nil {

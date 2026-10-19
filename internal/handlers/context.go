@@ -124,11 +124,11 @@ func getContextSwitchTargetsHandler(r *http.Request) (respond.Responder, error) 
 	}
 
 	orgIDs := make([]uuid.UUID, 0, len(orgs))
-	memberships := make(map[uuid.UUID]authinfo.Portal, len(orgs))
+	ownPortals := make(map[uuid.UUID]authinfo.Portal, len(orgs))
 	var portalOrgIDs, partnerOrgIDs []uuid.UUID
 	for _, org := range orgs {
 		orgIDs = append(orgIDs, org.ID)
-		memberships[org.ID] = authinfo.Portal{
+		ownPortals[org.ID] = authinfo.Portal{
 			CustomerOrganizationID: org.CustomerOrganizationID,
 			PartnerOrganizationID:  org.PartnerOrganizationID,
 		}
@@ -155,15 +155,13 @@ func getContextSwitchTargetsHandler(r *http.Request) (respond.Responder, error) 
 
 	enterableCustomerOrgs := make(map[uuid.UUID][]types.CustomerOrganization)
 	for _, co := range customerOrgs {
-		requested := authinfo.Portal{CustomerOrganizationID: &co.ID}
-		if authinfo.MayEnter(memberships[co.OrganizationID], auth.IsSuperAdmin(), requested, co.PartnerOrganizationID) {
+		if authinfo.MayEnterCustomerPortal(ownPortals[co.OrganizationID], auth.IsSuperAdmin(), co.PartnerOrganizationID) {
 			enterableCustomerOrgs[co.OrganizationID] = append(enterableCustomerOrgs[co.OrganizationID], co)
 		}
 	}
 	enterablePartnerOrgs := make(map[uuid.UUID][]types.PartnerOrganization)
 	for _, po := range partnerOrgs {
-		requested := authinfo.Portal{PartnerOrganizationID: &po.ID}
-		if authinfo.MayEnter(memberships[po.OrganizationID], auth.IsSuperAdmin(), requested, nil) {
+		if authinfo.MayEnterPartnerPortal(ownPortals[po.OrganizationID], auth.IsSuperAdmin()) {
 			enterablePartnerOrgs[po.OrganizationID] = append(enterablePartnerOrgs[po.OrganizationID], po)
 		}
 	}

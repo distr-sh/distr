@@ -555,7 +555,7 @@ func GetUserAccountAndOrg(ctx context.Context, userID, orgID uuid.UUID) (
 	*types.OrganizationWithBranding,
 	error,
 ) {
-	membership, err := GetOrganizationMembership(ctx, userID, orgID)
+	membership, err := GetOrganizationMembership(ctx, userID, orgID, nil, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -564,14 +564,29 @@ func GetUserAccountAndOrg(ctx context.Context, userID, orgID uuid.UUID) (
 
 // GetOrganizationMembership returns the user's membership in the organization together with the
 // customer organization the membership belongs to, if any, which authentication reads on every
-// request.
-func GetOrganizationMembership(ctx context.Context, userID, orgID uuid.UUID) (*types.OrganizationMembership, error) {
+// request. It also looks up the requested customer or partner portal of the organization, so that
+// authenticating a session switched into one takes no query of its own.
+func GetOrganizationMembership(
+	ctx context.Context,
+	userID, orgID uuid.UUID,
+	requestedCustomerOrgID, requestedPartnerOrgID *uuid.UUID,
+) (*types.OrganizationMembership, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		"SELECT ("+userAccountWithRoleOutputExpr+`),
 					(`+organizationOutputExpr+`),
 					CASE WHEN b.id IS NOT NULL THEN (`+organizationBrandingOutputExpr+`) END AS branding,
-					CASE WHEN co.id IS NOT NULL THEN (`+customerOrganizationOutputExpr+`) END AS customer_organization
+					CASE WHEN co.id IS NOT NULL THEN (`+customerOrganizationOutputExpr+`) END AS customer_organization,
+					(
+						SELECT (`+customerOrganizationOutputExpr+`)
+						FROM CustomerOrganization co
+						WHERE co.id = @requestedCustomerOrgId::UUID AND co.organization_id = o.id
+					) AS requested_customer_organization,
+					EXISTS (
+						SELECT 1
+						FROM PartnerOrganization po
+						WHERE po.id = @requestedPartnerOrgId::UUID AND po.organization_id = o.id
+					) AS requested_partner_organization_exists
 			FROM UserAccount u
 			INNER JOIN Organization_UserAccount j ON u.id = j.user_account_id
 			INNER JOIN Organization o ON o.id = j.organization_id
@@ -581,18 +596,22 @@ func GetOrganizationMembership(ctx context.Context, userID, orgID uuid.UUID) (*t
 				AND j.organization_id = @orgId
 				AND o.deleted_at IS NULL`,
 		pgx.NamedArgs{
-			"id":    userID,
-			"orgId": orgID,
+			"id":                     userID,
+			"orgId":                  orgID,
+			"requestedCustomerOrgId": requestedCustomerOrgID,
+			"requestedPartnerOrgId":  requestedPartnerOrgID,
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
 	res, err := pgx.CollectExactlyOneRow[struct {
-		User                 types.UserAccountWithUserRole
-		Org                  types.Organization
-		Branding             *types.OrganizationBranding
-		CustomerOrganization *types.CustomerOrganization
+		User                               types.UserAccountWithUserRole
+		Org                                types.Organization
+		Branding                           *types.OrganizationBranding
+		CustomerOrganization               *types.CustomerOrganization
+		RequestedCustomerOrganization      *types.CustomerOrganization
+		RequestedPartnerOrganizationExists bool
 	}](rows, pgx.RowToStructByPos)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, distrerr.ErrNotFound
@@ -600,9 +619,11 @@ func GetOrganizationMembership(ctx context.Context, userID, orgID uuid.UUID) (*t
 		return nil, fmt.Errorf("could not map user or org: %w", err)
 	}
 	return &types.OrganizationMembership{
-		User:                 res.User,
-		Organization:         types.OrganizationWithBranding{Organization: res.Org, Branding: res.Branding},
-		CustomerOrganization: res.CustomerOrganization,
+		User:                               res.User,
+		Organization:                       types.OrganizationWithBranding{Organization: res.Org, Branding: res.Branding},
+		CustomerOrganization:               res.CustomerOrganization,
+		RequestedCustomerOrganization:      res.RequestedCustomerOrganization,
+		RequestedPartnerOrganizationExists: res.RequestedPartnerOrganizationExists,
 	}, nil
 }
 

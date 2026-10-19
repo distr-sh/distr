@@ -56,7 +56,11 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 				} else if err != nil {
 					return nil, err
 				}
-				portal, customerOrg, foreignContext, err := sessionPortal(ctx, a, Portal{}, nil)
+				portal, customerOrg, foreignContext, err := sessionPortal(a, Portal{}, nil,
+					func(own, requested Portal) (*types.CustomerOrganization, error) {
+						return EnterPortal(ctx, org.ID, own, true, requested)
+					},
+				)
 				if err != nil {
 					return nil, err
 				}
@@ -83,10 +87,13 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 			}
 			// Regular users: require org membership and validate role
 			if a.CurrentUserRole() != nil {
+				requested := requestedPortal(a)
 				if m, err := db.GetOrganizationMembership(
 					ctx,
 					a.CurrentUserID(),
 					*a.CurrentOrgID(),
+					requested.CustomerOrganizationID,
+					requested.PartnerOrganizationID,
 				); errors.Is(err, distrerr.ErrNotFound) {
 					return nil, authn.ErrBadAuthentication
 				} else if err != nil {
@@ -98,13 +105,17 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 					// user was demoted after the credential was issued.
 					return nil, authn.ErrBadAuthentication
 				} else if portal, customerOrg, foreignContext, err := sessionPortal(
-					ctx,
 					a,
 					Portal{
 						CustomerOrganizationID: m.User.CustomerOrganizationID,
 						PartnerOrganizationID:  m.User.PartnerOrganizationID,
 					},
 					m.CustomerOrganization,
+					func(own, requested Portal) (*types.CustomerOrganization, error) {
+						return enterLoadedPortal(
+							own, false, requested, m.RequestedCustomerOrganization, m.RequestedPartnerOrganizationExists,
+						)
+					},
 				); err != nil {
 					return nil, err
 				} else {
@@ -148,24 +159,32 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 // sessionPortal returns the portal a session operates in, the customer organization of that portal and
 // whether that portal is a foreign context, one the session operates in without being a member. A personal
 // access token always operates in its membership's portal: only a login session switches, through the
-// switch-context endpoint.
+// switch-context endpoint. enter decides whether the session may operate in a requested portal that is not
+// its own.
 func sessionPortal(
-	ctx context.Context,
 	a AuthInfo,
-	membership Portal,
-	membershipCustomerOrg *types.CustomerOrganization,
+	own Portal,
+	ownCustomerOrg *types.CustomerOrganization,
+	enter func(own, requested Portal) (*types.CustomerOrganization, error),
 ) (Portal, *types.CustomerOrganization, bool, error) {
-	requested := Portal{CustomerOrganizationID: a.CurrentCustomerOrgID(), PartnerOrganizationID: a.CurrentPartnerOrgID()}
-	if a.IsAccessToken() || IsOwnPortal(membership, requested) {
-		return membership, membershipCustomerOrg, false, nil
+	requested := requestedPortal(a)
+	if IsOwnPortal(own, requested) {
+		return own, ownCustomerOrg, false, nil
 	}
-	customerOrg, err := EnterPortal(ctx, *a.CurrentOrgID(), membership, a.IsSuperAdmin(), requested)
+	customerOrg, err := enter(own, requested)
 	if errors.Is(err, ErrPortalForbidden) {
 		return Portal{}, nil, false, authn.ErrBadAuthentication
 	} else if err != nil {
 		return Portal{}, nil, false, err
 	}
 	return requested, customerOrg, true, nil
+}
+
+func requestedPortal(a AuthInfo) Portal {
+	if a.IsAccessToken() {
+		return Portal{}
+	}
+	return Portal{CustomerOrganizationID: a.CurrentCustomerOrgID(), PartnerOrganizationID: a.CurrentPartnerOrgID()}
 }
 
 type controllerDBAuthInfo struct {

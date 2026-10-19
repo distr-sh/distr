@@ -180,12 +180,29 @@ export class NavBarComponent implements OnInit {
         };
       });
   });
+  // A single organization is left out of the list, the banner of a foreign context leads back to its own portal.
+  protected readonly isSingleOrganization = computed(() => this.switcherTree().length === 1);
   protected readonly switchEntryCount = computed(() =>
     this.switcherTree().reduce(
-      (count, entry) => count + Number(!entry.current) + entry.portals.filter((portal) => !portal.current).length,
+      (count, entry) =>
+        count +
+        Number(!entry.current && !this.isSingleOrganization()) +
+        entry.portals.filter((portal) => !portal.current).length,
       0
     )
   );
+  protected readonly switcherFilterLabels = computed(() => {
+    if (!this.isSingleOrganization()) {
+      return {placeholder: 'Filter organizations', empty: 'No organization matches your filter.'};
+    }
+    const kinds = new Set(this.switcherTree()[0].portals.map((portal) => portal.kind));
+    if (kinds.size > 1) {
+      return {placeholder: 'Filter customers and partners', empty: 'No customer or partner matches your filter.'};
+    } else if (kinds.has('partner')) {
+      return {placeholder: 'Filter partners', empty: 'No partner matches your filter.'};
+    }
+    return {placeholder: 'Filter customers', empty: 'No customer matches your filter.'};
+  });
 
   protected readonly userOpened = signal(false);
   protected readonly organizationsOpened = signal(false);
@@ -223,8 +240,7 @@ export class NavBarComponent implements OnInit {
         if (matchingPortals.length > 0) {
           portals = matchingPortals;
           expandedByDefault = true;
-        } else if (entry.org.name.toLowerCase().includes(term)) {
-          portals = collapsible ? portals : [];
+        } else if (collapsible && entry.org.name.toLowerCase().includes(term)) {
           expandedByDefault = false;
         } else {
           return [];
