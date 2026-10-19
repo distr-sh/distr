@@ -49,8 +49,9 @@ var patterns = compile(
 	// Line of an environment dump or .env file assigning a sensitive variable, whose unquoted value
 	// runs to the end of the line: DB_PASSWORD=..., export API_TOKEN=...
 	`(?im)^(?P<prefix>[ \t]*(?:export[ \t]+)?`+sensitiveKey+`=)[^"'\r\n][^\r\n]*`,
-	// Unquoted value of a sensitive key: DB_PASSWORD=..., api_key: ...
-	`(?i)(?P<prefix>\b`+sensitiveKey+`\\?["']?[ \t]*[:=][ \t]*)[^\s"'\\,;&{}\[\]]+`,
+	// Unquoted value of a sensitive key: DB_PASSWORD=..., api_key: .... A YAML block scalar
+	// (password: |) is left to redactYAMLBlockScalars.
+	`(?i)(?P<prefix>\b`+sensitiveKey+`\\?["']?[ \t]*[:=][ \t]*)[^\s"'\\,;&{}\[\]|>][^\s"'\\,;&{}\[\]]*`,
 	// Password field of a connection string, which may contain spaces: Password=...;
 	`(?i)(?P<prefix>\b(?:password|pwd)[ \t]*=[ \t]*)[^;\r\n]+(?P<suffix>;)`,
 	// Password field after another field of a connection string, where the trailing semicolon is
@@ -112,22 +113,35 @@ func (r *Redactor) Redact(s string) string {
 	return s
 }
 
-// yamlBlockScalarEnvValue matches a Kubernetes env entry in YAML whose value is a literal or folded
-// block scalar ("- name: DB_PASSWORD" followed by "value: |-"), up to the end of the value line.
-var yamlBlockScalarEnvValue = regexp.MustCompile(
-	`(?im)^[ \t]*-?[ \t]*name:[ \t]*["']?` + sensitiveName + `["']?[ \t]*\r?\n` +
-		`(?P<indent>[ \t]*)value:[ \t]*[|>][0-9+-]*[ \t]*(?:#.*)?\r?$`,
+const yamlBlockScalarIndicator = `[|>][0-9+-]*[ \t]*(?:#.*)?\r?$`
+
+// yamlBlockScalarValues match a sensitive YAML value that is a literal or folded block scalar, up to
+// the end of the line that opens it. The indent group is the indentation that the content of the
+// block scalar is deeper than.
+var yamlBlockScalarValues = compile(
+	// Kubernetes env entry: "- name: DB_PASSWORD" followed by "value: |-" on the next line
+	`(?im)^[ \t]*-?[ \t]*name:[ \t]*["']?`+sensitiveName+`["']?[ \t]*\r?\n(?P<indent>[ \t]*)value:[ \t]*`+
+		yamlBlockScalarIndicator,
+	// Sensitive key: "password: |-", "- client_secret: >"
+	`(?im)^(?P<indent>[ \t]*(?:-[ \t]+)?)["']?`+sensitiveKey+`["']?[ \t]*:[ \t]*`+yamlBlockScalarIndicator,
 )
 
-// redactYAMLBlockScalars replaces the content of every block scalar matched by
-// yamlBlockScalarEnvValue with a single masked line. The content is every following line indented
-// deeper than the value line, which a regular expression cannot tell apart from the next entry.
 func redactYAMLBlockScalars(s string) string {
-	matches := yamlBlockScalarEnvValue.FindAllStringSubmatchIndex(s, -1)
+	for _, pattern := range yamlBlockScalarValues {
+		s = redactYAMLBlockScalar(s, pattern)
+	}
+	return s
+}
+
+// redactYAMLBlockScalar replaces the content of every block scalar matched by pattern with a single
+// masked line. The content is every following line indented deeper than the indent group, which a
+// regular expression cannot tell apart from the next entry.
+func redactYAMLBlockScalar(s string, pattern *regexp.Regexp) string {
+	matches := pattern.FindAllStringSubmatchIndex(s, -1)
 	if matches == nil {
 		return s
 	}
-	indentGroup := yamlBlockScalarEnvValue.SubexpIndex("indent")
+	indentGroup := pattern.SubexpIndex("indent")
 
 	var b strings.Builder
 	last := 0

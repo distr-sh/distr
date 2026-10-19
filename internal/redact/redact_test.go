@@ -52,6 +52,14 @@ func TestRedact(t *testing.T) {
 		},
 		{"- name: API_TOKEN\r\n  value: |\r\n    abc\r\n", "- name: API_TOKEN\r\n  value: |\r\n    ********\r\n"},
 		{
+			"database:\n  password: |-\n    s3cr3t\n  host: db\n",
+			"database:\n  password: |-\n    ********\n  host: db\n",
+		},
+		{
+			"oidc:\n  - client_secret: > # folded\n      a\n      b\n    issuer: x",
+			"oidc:\n  - client_secret: > # folded\n      ********\n    issuer: x",
+		},
+		{
 			"-----BEGIN RSA PRIVATE KEY-----\nMIIE\nabcd\n-----END RSA PRIVATE KEY-----",
 			"-----BEGIN RSA PRIVATE KEY-----********-----END RSA PRIVATE KEY-----",
 		},
