@@ -273,7 +273,7 @@ Save it as `acme-app-task.json` and register it:
 aws ecs register-task-definition --cli-input-json file://acme-app-task.json
 ```
 
-For the EC2 launch type, set `requiresCompatibilities` to `EC2`; registry authentication works the same way.
+For the EC2 launch type, set `requiresCompatibilities` to `EC2` here and `--launch-type` to `EC2` when you create the service in the next step; registry authentication works the same way.
 Terraform (`repositoryCredentials` inside `container_definitions` of `aws_ecs_task_definition`) and CloudFormation (`RepositoryCredentials` of a container definition) accept the same fields.
 
 ### 7. Create the service
@@ -287,6 +287,9 @@ aws ecs create-service \
   --launch-type FARGATE \
   --network-configuration 'awsvpcConfiguration={subnets=[subnet-0a1b2c3d4e5f67890],securityGroups=[sg-0a1b2c3d4e5f67890],assignPublicIp=DISABLED}'
 ```
+
+The example runs the tasks in private subnets with a NAT gateway.
+Fargate tasks in a public subnet need `assignPublicIp=ENABLED` instead, or they cannot reach the registry.
 
 Add `--load-balancers` to put the service behind an Application Load Balancer, as with any other ECS service.
 The service events show whether the tasks started:
@@ -345,7 +348,8 @@ Running tasks are not affected, since the credentials are only needed to pull th
 ## Download analytics for ECS installations
 
 Every image pull of an ECS task appears in the [download analytics](/docs/registry/analytics/) of the vendor, with the customer, the user, the version and the IP address it came from.
-As a vendor, you therefore know which versions your ECS customers run and when they upgrade, without any component running in their AWS account.
+As a vendor, you therefore see which versions your ECS customers pull and when they pull a new one, without any component running in their AWS account.
+A pull is recorded when the registry serves the image, so it shows that a version was fetched, not that its tasks started successfully.
 
 ## Troubleshooting image pulls on ECS
 
