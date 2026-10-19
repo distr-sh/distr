@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/deploymentvalues"
 	"github.com/distr-sh/distr/internal/redact"
 	"github.com/distr-sh/distr/internal/types"
 )
@@ -20,9 +21,13 @@ func deploymentTargetRedactor(ctx context.Context, dt types.DeploymentTarget) (*
 }
 
 func secretsRedactor(secrets []types.SecretWithUpdatedBy) *redact.Redactor {
-	values := make([]string, len(secrets))
-	for i, secret := range secrets {
-		values[i] = string(secret.Value)
+	values := make([]string, 0, 2*len(secrets))
+	for _, secret := range secrets {
+		value := string(secret.Value)
+		values = append(values, value)
+		if escaped := deploymentvalues.EscapeNewlines(value); escaped != value {
+			values = append(values, escaped)
+		}
 	}
 	return redact.New(values...)
 }
