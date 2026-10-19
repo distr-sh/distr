@@ -22,6 +22,12 @@ const (
 	sensitiveKey = identifierChars + `(?:` + credentialWords + `|credentials)`
 	// sensitiveName matches the name of an environment variable containing such a word anywhere.
 	sensitiveName = identifierChars + `(?:` + credentialWords + `)` + identifierChars
+	// jsonStringContent matches the content of a double-quoted string up to the closing quote,
+	// consuming escape sequences so that an escaped quote does not end it early.
+	jsonStringContent = `(?:[^"\\\r\n]|\\.)+`
+	// embeddedJSONStringContent is jsonStringContent for a string whose quotes are escaped once
+	// more, so an escape sequence inside it starts with two backslashes and \" ends it.
+	embeddedJSONStringContent = `(?:[^"\\\r\n]|\\\\(?:\\.|[^\\]))+`
 )
 
 var patterns = compile(
@@ -30,12 +36,15 @@ var patterns = compile(
 	// Credentials in a URL: postgres://user:password@host
 	`(?i)(?P<prefix>\b[a-z][a-z0-9+.-]*://)[^\s:/@"'<>]+:[^\s/@"'<>]+(?P<suffix>@)`,
 	// Kubernetes env entry in JSON: {"name":"DB_PASSWORD","value":"..."}
-	`(?i)(?P<prefix>"name"\s*:\s*"`+sensitiveName+`"\s*,\s*"value"\s*:\s*")[^"]*(?P<suffix>")`,
+	`(?i)(?P<prefix>"name"\s*:\s*"`+sensitiveName+`"\s*,\s*"value"\s*:\s*")`+jsonStringContent+`(?P<suffix>")`,
 	// Kubernetes env entry in YAML: "- name: DB_PASSWORD" followed by "value: ..." on the next line
 	`(?im)(?P<prefix>^[ \t]*-?[ \t]*name:[ \t]*["']?`+sensitiveName+`["']?[ \t]*\r?\n[ \t]*value:[ \t]*)[^\s].*`,
-	// Quoted value of a sensitive key: "client_secret": "...", password='...'. The optional
-	// backslashes cover JSON that is itself embedded in a JSON string.
-	`(?i)(?P<prefix>\b`+sensitiveKey+`\\?["']?[ \t]*[:=][ \t]*\\?["'])(?:[^"'\\\r\n]|\\[^"'])+(?P<suffix>\\?["'])`,
+	// Double-quoted value of a sensitive key: "client_secret": "...", DB_PASSWORD="..."
+	`(?i)(?P<prefix>\b`+sensitiveKey+`["']?[ \t]*[:=][ \t]*")`+jsonStringContent+`(?P<suffix>")`,
+	// Single-quoted value of a sensitive key: password='...'
+	`(?i)(?P<prefix>\b`+sensitiveKey+`["']?[ \t]*[:=][ \t]*')[^'\r\n]+(?P<suffix>')`,
+	// Value of a sensitive key in JSON that is itself embedded in a JSON string: {\"api_key\":\"...\"}
+	`(?i)(?P<prefix>\b`+sensitiveKey+`\\"[ \t]*:[ \t]*\\")`+embeddedJSONStringContent+`(?P<suffix>\\")`,
 	// Unquoted value of a sensitive key: DB_PASSWORD=..., api_key: ...
 	`(?i)(?P<prefix>\b`+sensitiveKey+`\\?["']?[ \t]*[:=][ \t]*)[^\s"'\\,;&{}\[\]]+`,
 	// Password field of a connection string, which may contain spaces: Password=...;
