@@ -6,16 +6,19 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"path"
 
+	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/smithy-go"
+	"github.com/aws/smithy-go/middleware"
+	smithyhttp "github.com/aws/smithy-go/transport/http"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/registry/blob"
 	"github.com/distr-sh/distr/internal/registry/verify"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/glasskube/pkg/seekbuf"
 	"github.com/google/uuid"
 	"github.com/opencontainers/go-digest"
@@ -99,7 +102,7 @@ func (handler *blobHandler) Get(
 	key := h.String()
 	if handler.allowRedirect && allowRedirect {
 		resp, err := handler.s3PresignClient.PresignGetObject(ctx,
-			&s3.GetObjectInput{Bucket: util.PtrTo(handler.bucket), Key: &key})
+			&s3.GetObjectInput{Bucket: &handler.bucket, Key: &key})
 		if err != nil {
 			return nil, convertErrNotFound(err)
 		} else {
@@ -487,17 +490,19 @@ func (handler *blobHandler) copyObject(ctx context.Context, srcKey, srcETag, dst
 		return err
 	}
 	objectSize := *head.ContentLength
-	copySource := handler.bucket + "/" + srcKey
+	src := pinnedSource{key: srcKey, etag: srcETag, gcsGeneration: gcsGeneration(head.ResultMetadata)}
 
 	if objectSize <= maxS3PartSize {
-		_, err = handler.s3Client.CopyObject(ctx, &s3.CopyObjectInput{
-			Bucket:            &handler.bucket,
-			Key:               &dstKey,
-			CopySource:        &copySource,
-			CopySourceIfMatch: &srcETag,
-		})
-		return err
+		return handler.copyObjectSingle(ctx, src, dstKey)
 	}
+
+	// GCS implements the multipart upload API but not UploadPartCopy: it documents
+	// x-amz-copy-source-range as not applicable and answers NotImplemented.
+	if src.gcsGeneration != "" {
+		return handler.copyObjectWithoutPartCopy(ctx, src, dstKey, objectSize)
+	}
+
+	copySource := handler.bucket + "/" + srcKey
 
 	upload, err := handler.s3Client.CreateMultipartUpload(ctx, &s3.CreateMultipartUploadInput{
 		Bucket: &handler.bucket,
@@ -535,10 +540,8 @@ func (handler *blobHandler) copyObject(ctx context.Context, srcKey, srcETag, dst
 		})
 		if err != nil {
 			abort()
-			// GCS implements the multipart upload API but not UploadPartCopy: it documents
-			// x-amz-copy-source-range as not applicable and answers NotImplemented.
 			if apiErr, ok := errors.AsType[smithy.APIError](err); ok && apiErr.ErrorCode() == "NotImplemented" {
-				return handler.copyObjectWithoutPartCopy(ctx, srcKey, srcETag, dstKey, objectSize)
+				return handler.copyObjectWithoutPartCopy(ctx, src, dstKey, objectSize)
 			}
 			return err
 		}
@@ -557,29 +560,58 @@ func (handler *blobHandler) copyObject(ctx context.Context, srcKey, srcETag, dst
 	return nil
 }
 
+// pinnedSource is the verified object a copy reads from. gcsGeneration is only set on GCS.
+type pinnedSource struct {
+	key, etag     string
+	gcsGeneration string
+}
+
+func gcsGeneration(metadata middleware.Metadata) string {
+	if resp, ok := awsmiddleware.GetRawResponse(metadata).(*smithyhttp.Response); ok {
+		return resp.Header.Get("x-goog-generation")
+	}
+	return ""
+}
+
+// copyObjectSingle copies src to dstKey in a single CopyObject request that fails if src has changed.
+func (handler *blobHandler) copyObjectSingle(ctx context.Context, src pinnedSource, dstKey string) error {
+	input := &s3.CopyObjectInput{
+		Bucket: &handler.bucket,
+		Key:    &dstKey,
+	}
+	copySource := handler.bucket + "/" + src.key
+	if src.gcsGeneration != "" {
+		// GCS answers x-amz-copy-source-if-match with InvalidArgument unless the ETag is an MD5 hash,
+		// which the ETag of a multipart object is not, and rejects a request that mixes x-amz and
+		// x-goog headers, so x-goog-copy-source-if-generation-match is no option either. GCS maps
+		// versionId to the generation and answers NoSuchKey once that generation was replaced.
+		copySource += "?versionId=" + url.QueryEscape(src.gcsGeneration)
+	} else {
+		input.CopySourceIfMatch = &src.etag
+	}
+	input.CopySource = &copySource
+	_, err := handler.s3Client.CopyObject(ctx, input)
+	return err
+}
+
 // copyObjectWithoutPartCopy copies an object that exceeds the CopyObject limit on a backend that does not
 // implement UploadPartCopy. The 5 GB limit is an S3 restriction that does not necessarily apply elsewhere, so
 // a single request is tried first: on GCS a copy within one bucket is a server-side rewrite, which is orders of
 // magnitude cheaper than moving the whole blob through the registry.
 func (handler *blobHandler) copyObjectWithoutPartCopy(
 	ctx context.Context,
-	srcKey, srcETag, dstKey string,
+	src pinnedSource,
+	dstKey string,
 	objectSize int64,
 ) error {
-	copySource := handler.bucket + "/" + srcKey
-	if _, err := handler.s3Client.CopyObject(ctx, &s3.CopyObjectInput{
-		Bucket:            &handler.bucket,
-		Key:               &dstKey,
-		CopySource:        &copySource,
-		CopySourceIfMatch: &srcETag,
-	}); err == nil {
+	if err := handler.copyObjectSingle(ctx, src, dstKey); err == nil {
 		return nil
 	} else {
 		internalctx.GetLogger(ctx).Info("copying large blob in a single request failed, streaming it instead",
 			zap.Int64("objectSize", objectSize), zap.Error(err))
 	}
 
-	return handler.copyObjectViaUpload(ctx, srcKey, srcETag, dstKey, objectSize)
+	return handler.copyObjectViaUpload(ctx, src.key, src.etag, dstKey, objectSize)
 }
 
 // copyObjectViaUpload copies an object by downloading it range by range and uploading each range as a

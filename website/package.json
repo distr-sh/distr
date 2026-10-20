@@ -21,9 +21,9 @@
     "format": "prettier --write --list-different ."
   },
   "dependencies": {
-    "@astrojs/markdown-remark": "7.3.2",
-    "@astrojs/mdx": "8.0.3",
-    "@astrojs/preact": "6.0.6",
+    "@astrojs/markdown-remark": "7.3.3",
+    "@astrojs/mdx": "8.1.0",
+    "@astrojs/preact": "6.1.0",
     "@astrojs/sitemap": "3.7.4",
     "@astrojs/starlight": "0.42.6",
     "@astrojs/starlight-tailwind": "5.0.0",
@@ -32,7 +32,7 @@
     "@iconify-json/lucide": "^1.2.132",
     "@iconify-json/simple-icons": "^1.2.96",
     "@tailwindcss/vite": "^4.3.3",
-    "astro": "7.3.8",
+    "astro": "7.4.0",
     "astro-icon": "^1.2.0",
     "embla-carousel": "^8.6.0",
     "embla-carousel-autoplay": "^8.6.0",
@@ -43,6 +43,7 @@
     "rehype-external-links": "^3.0.0",
     "sharp": "^0.35.4",
     "starlight-links-validator": "^0.27.0",
+    "starlight-llms-txt": "0.12.0",
     "starlight-sidebar-topics": "^0.9.0",
     "tailwindcss": "^4.3.3"
   },
@@ -54,7 +55,7 @@
     "prettier-plugin-organize-imports": "^4.3.0",
     "typescript": "^6.0.3"
   },
-  "packageManager": "pnpm@12.11.2",
+  "packageManager": "pnpm@12.14.0",
   "engines": {
     "node": "26.x"
   }

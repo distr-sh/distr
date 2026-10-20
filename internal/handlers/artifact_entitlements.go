@@ -86,11 +86,7 @@ func createArtifactEntitlement(r *http.Request) (respond.Responder, error) {
 
 	if entitlement.Name == "" {
 		return respond.BadRequest("name is required"), nil
-	} else if auth.CurrentPartnerOrgID() != nil && entitlement.CustomerOrganizationID == nil {
-		return respond.BadRequest("customer organization is required"), nil
-	} else if resp, err := checkReachableByPartner(
-		ctx, entitlement.CustomerOrganizationID, notAssignedToPartner,
-	); resp != nil || err != nil {
+	} else if _, resp, err := customerScope(ctx, entitlement.CustomerOrganizationID); resp != nil || err != nil {
 		return resp, err
 	} else if err := validateEntitlementSelections(entitlement); err != nil {
 		return respond.BadRequest(err.Error()), nil
@@ -130,6 +126,8 @@ func updateArtifactEntitlement(r *http.Request) (respond.Responder, error) {
 
 	if entitlement.Name == "" {
 		return respond.BadRequest("name is required"), nil
+	} else if _, resp, err := customerScope(ctx, entitlement.CustomerOrganizationID); resp != nil || err != nil {
+		return resp, err
 	} else if err := validateEntitlementSelections(entitlement); err != nil {
 		return respond.BadRequest(err.Error()), nil
 	} else if entitlement.ID != existing.ID {
