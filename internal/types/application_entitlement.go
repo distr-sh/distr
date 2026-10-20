@@ -1,7 +1,6 @@
 package types
 
 import (
-	"slices"
 	"time"
 
 	"github.com/distr-sh/distr/internal/dbcrypto"
@@ -19,8 +18,9 @@ type ApplicationEntitlementBase struct {
 	RegistryURL            *string          `db:"registry_url" json:"registryUrl,omitempty"`
 	RegistryUsername       *dbcrypto.String `db:"registry_username" json:"registryUsername,omitempty"`
 	RegistryPassword       *dbcrypto.String `db:"registry_password" json:"registryPassword,omitempty"`
-	AllVersions            bool             `db:"all_versions" json:"allVersions"`
-	AutoAddVersionRegex    *string          `db:"auto_add_version_regex" json:"autoAddVersionRegex,omitempty"`
+	// AutoAddVersionRegex is only set on an entitlement with versions. One without versions grants all of them, so
+	// adding a matching version would narrow it down to that version.
+	AutoAddVersionRegex *string `db:"auto_add_version_regex" json:"autoAddVersionRegex,omitempty"`
 }
 
 type ApplicationEntitlementWithVersions struct {
@@ -46,18 +46,11 @@ type DeploymentVersionUsage struct {
 	ApplicationVersionName string    `db:"application_version_name"`
 }
 
-func (entitlement *ApplicationEntitlementWithVersions) CoversVersionWithID(id uuid.UUID) bool {
-	return entitlement.AllVersions || slices.ContainsFunc(entitlement.Versions, func(v ApplicationVersion) bool {
-		return v.ID == id
-	})
-}
-
-// EntitledVersions narrows the versions of the application down to the ones the entitlement grants.
-func (entitlement *ApplicationEntitlementWithVersions) EntitledVersions(
-	applicationVersions []ApplicationVersion,
-) []ApplicationVersion {
-	if entitlement.AllVersions {
-		return applicationVersions
+func (entitlement *ApplicationEntitlementWithVersions) HasVersionWithID(id uuid.UUID) bool {
+	for _, v := range entitlement.Versions {
+		if v.ID == id {
+			return true
+		}
 	}
-	return entitlement.Versions
+	return false
 }

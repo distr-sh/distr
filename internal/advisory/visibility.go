@@ -21,13 +21,13 @@ type VersionRef struct {
 	ParentID  uuid.UUID
 }
 
-// EntitlementRef covers every version of the parent when AllVersions is set and exactly its
-// VersionIDs otherwise, which may be none.
+// EntitlementRef with an empty VersionIDs covers every version of the parent, matching the
+// behaviour of ApplicationEntitlement rows without ApplicationEntitlement_ApplicationVersion
+// children and of ArtifactEntitlement_Artifact rows with a NULL artifact_version_id.
 type EntitlementRef struct {
-	ParentID    uuid.UUID
-	AllVersions bool
-	VersionIDs  []uuid.UUID
-	ExpiresAt   *time.Time
+	ParentID   uuid.UUID
+	VersionIDs []uuid.UUID
+	ExpiresAt  *time.Time
 }
 
 func (e EntitlementRef) coversVersion(ref VersionRef, now time.Time) bool {
@@ -37,7 +37,10 @@ func (e EntitlementRef) coversVersion(ref VersionRef, now time.Time) bool {
 	if e.ExpiresAt != nil && !e.ExpiresAt.After(now) {
 		return false
 	}
-	return e.AllVersions || slices.Contains(e.VersionIDs, ref.VersionID)
+	if len(e.VersionIDs) == 0 {
+		return true
+	}
+	return slices.Contains(e.VersionIDs, ref.VersionID)
 }
 
 // CustomerView is what the visibility rule knows about one customer organization.

@@ -288,8 +288,9 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
     map(([shouldShowLicense, license, application, selectedApplicationVersionId]) => {
       let versions;
 
-      if (shouldShowLicense && license && !license.allVersions) {
-        versions = license.versions ?? [];
+      if (shouldShowLicense) {
+        // if the license has no version associations, assume that the application has all available versions
+        versions = license?.versions?.length ? license.versions : (application?.versions ?? []);
       } else {
         versions = application?.versions ?? [];
       }

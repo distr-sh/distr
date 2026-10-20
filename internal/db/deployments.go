@@ -633,7 +633,10 @@ func GetDeploymentsPendingUpdate(
 				WHERE ae.id = d.application_entitlement_id
 					AND (ae.expires_at IS NULL OR ae.expires_at > now())
 					AND (
-						ae.all_versions
+						NOT EXISTS (
+							SELECT 1 FROM ApplicationEntitlement_ApplicationVersion aeav
+							WHERE aeav.application_entitlement_id = ae.id
+						)
 						OR EXISTS (
 							SELECT 1 FROM ApplicationEntitlement_ApplicationVersion aeav
 							WHERE aeav.application_entitlement_id = ae.id

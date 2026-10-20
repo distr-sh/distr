@@ -187,7 +187,8 @@ func updateDeploymentToLatestVersion(
 	return nil
 }
 
-// entitledApplicationVersions are the versions the deployment may be updated to.
+// entitledApplicationVersions are the versions the deployment may be updated to. An entitlement
+// without versions entitles the customer to all of them.
 func entitledApplicationVersions(
 	ctx context.Context,
 	application *types.Application,
@@ -200,7 +201,10 @@ func entitledApplicationVersions(
 	if err != nil {
 		return nil, err
 	}
-	return entitlement.EntitledVersions(application.Versions), nil
+	if len(entitlement.Versions) == 0 {
+		return application.Versions, nil
+	}
+	return entitlement.Versions, nil
 }
 
 func validateAutomaticUpdateValues(

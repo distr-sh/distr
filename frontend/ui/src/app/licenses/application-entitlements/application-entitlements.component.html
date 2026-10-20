@@ -51,7 +51,7 @@
               <div class="flex items-center mr-3">
                 <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
                   {{ entitlement.application?.name }}
-                  @if (entitlement.allVersions) {
+                  @if (!entitlement.versions?.length) {
                     (unrestricted)
                   } @else {
                     @let autoAdd = entitlement.autoAddVersionRegex ? ' + auto-add' : '';

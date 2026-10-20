@@ -170,7 +170,7 @@
       </div>
 
       @if (editForm.hasError('versionsRequired') && editForm.controls.versionScope.touched) {
-        <p class="text-sm text-red-600 dark:text-red-500">Select at least one version or enter an auto-add regex.</p>
+        <p class="text-sm text-red-600 dark:text-red-500">Select at least one version.</p>
       } @else {
         <p class="distr-hint">
           New versions whose name matches the regex are added to the entitlement automatically. You can still remove

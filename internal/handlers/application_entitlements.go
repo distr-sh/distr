@@ -86,7 +86,7 @@ func createApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 		return resp, err
 	} else if err := checkRegistryInput(&entitlement); err != nil {
 		return respond.BadRequest(err.Error()), nil
-	} else if err := checkVersionScope(&entitlement); err != nil {
+	} else if err := checkAutoAddVersionRegex(&entitlement); err != nil {
 		return respond.BadRequest(err.Error()), nil
 	} else if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 		if err := db.CreateApplicationEntitlement(
@@ -112,11 +112,7 @@ func createApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 	}); resp != nil || err != nil {
 		return resp, err
 	} else {
-		if entitlement.AllVersions {
-			notifyEntitledVersions(ctx, entitlement.ApplicationEntitlementBase, nil)
-		} else if len(entitlement.Versions) > 0 {
-			notifyEntitledVersions(ctx, entitlement.ApplicationEntitlementBase, versionIDs(entitlement.Versions))
-		}
+		notifyEntitledVersions(ctx, entitlement.ApplicationEntitlementBase, versionIDs(entitlement.Versions))
 		return respond.JSON(created), nil
 	}
 }
@@ -165,11 +161,11 @@ func updateApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 		return respond.BadRequest("Changing the application is not allowed"), nil
 	} else if err := checkRegistryInput(&entitlement); err != nil {
 		return respond.BadRequest(err.Error()), nil
-	} else if err := checkVersionScope(&entitlement); err != nil {
+	} else if err := checkAutoAddVersionRegex(&entitlement); err != nil {
 		return respond.BadRequest(err.Error()), nil
 	}
 
-	addedVersionIDs, widened := widenedEntitlement(&existing.ApplicationEntitlementWithVersions, &entitlement)
+	addedVersionIDs, widened := widenedVersions(versionIDs(existing.Versions), versionIDs(entitlement.Versions))
 
 	var updated *types.ApplicationEntitlement
 	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
@@ -183,7 +179,23 @@ func updateApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 
 		newVersionIDs := versionIDs(entitlement.Versions)
 
-		if narrowedEntitlement(&existing.ApplicationEntitlementWithVersions, &entitlement) {
+		isNarrowing := false
+		if len(entitlement.Versions) > 0 {
+			if len(existing.Versions) == 0 {
+				isNarrowing = true
+			} else {
+				for _, ev := range existing.Versions {
+					if !slices.ContainsFunc(entitlement.Versions, func(v types.ApplicationVersion) bool {
+						return v.ID == ev.ID
+					}) {
+						isNarrowing = true
+						break
+					}
+				}
+			}
+		}
+
+		if isNarrowing {
 			if conflicts, err := db.GetDeploymentsUsingVersionsNotInList(ctx, entitlement.ID, newVersionIDs); err != nil {
 				return nil, fmt.Errorf("could not check deployment version usage: %w", err)
 			} else if len(conflicts) > 0 {
@@ -217,43 +229,16 @@ func updateApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-// widenedEntitlement returns the versions an update adds, which are nil when it widens to all versions.
-func widenedEntitlement(existing, updated *types.ApplicationEntitlementWithVersions) ([]uuid.UUID, bool) {
-	if existing.AllVersions {
-		return nil, false
-	} else if updated.AllVersions {
-		return nil, true
-	}
-	added := addedVersionIDs(versionIDs(existing.Versions), versionIDs(updated.Versions))
-	return added, len(added) > 0
-}
-
-func narrowedEntitlement(existing, updated *types.ApplicationEntitlementWithVersions) bool {
-	if updated.AllVersions {
-		return false
-	} else if existing.AllVersions {
-		return true
-	}
-	return slices.ContainsFunc(existing.Versions, func(v types.ApplicationVersion) bool {
-		return !updated.CoversVersionWithID(v.ID)
-	})
-}
-
-// widenedVersions treats an empty selection as all versions, as artifact entitlements do.
 func widenedVersions(existing, updated []uuid.UUID) ([]uuid.UUID, bool) {
 	if len(existing) == 0 {
 		return nil, false
 	} else if len(updated) == 0 {
 		return nil, true
 	}
-	added := addedVersionIDs(existing, updated)
-	return added, len(added) > 0
-}
-
-func addedVersionIDs(existing, updated []uuid.UUID) []uuid.UUID {
-	return slices.DeleteFunc(slices.Clone(updated), func(id uuid.UUID) bool {
+	added := slices.DeleteFunc(slices.Clone(updated), func(id uuid.UUID) bool {
 		return slices.Contains(existing, id)
 	})
+	return added, len(added) > 0
 }
 
 func formatVersionConflictError(conflicts []types.DeploymentVersionUsage) string {
@@ -291,23 +276,14 @@ func checkRegistryInput(entitlement *types.ApplicationEntitlementWithVersions) e
 	return nil
 }
 
-func checkVersionScope(entitlement *types.ApplicationEntitlementWithVersions) error {
+func checkAutoAddVersionRegex(entitlement *types.ApplicationEntitlementWithVersions) error {
 	if entitlement.AutoAddVersionRegex != nil && *entitlement.AutoAddVersionRegex == "" {
 		entitlement.AutoAddVersionRegex = nil
 	}
-	if entitlement.AllVersions {
-		if len(entitlement.Versions) > 0 {
-			return errors.New("an entitlement for all versions cannot select specific versions")
-		} else if entitlement.AutoAddVersionRegex != nil {
-			return errors.New("an entitlement for all versions cannot auto-add versions")
-		}
+	if entitlement.AutoAddVersionRegex == nil {
 		return nil
-	} else if len(entitlement.Versions) == 0 && entitlement.AutoAddVersionRegex == nil {
-		// API clients that predate allVersions grant all versions by selecting none.
-		entitlement.AllVersions = true
-		return nil
-	} else if entitlement.AutoAddVersionRegex == nil {
-		return nil
+	} else if len(entitlement.Versions) == 0 {
+		return errors.New("an auto-add version regex requires at least one selected version")
 	} else if _, err := regexp.Compile(*entitlement.AutoAddVersionRegex); err != nil {
 		if syntaxErr, ok := errors.AsType[*syntax.Error](err); ok {
 			return fmt.Errorf("invalid auto-add version regex: %v", syntaxErr.Code)

@@ -60,14 +60,14 @@ function regexValidator(control: AbstractControl<string>): ValidationErrors | nu
   }
 }
 
+// An entitlement without versions grants all of them, so "Specific versions" needs at least one.
 const specificVersionsValidator: ValidatorFn = (control) => {
   const versionScope = control.get('versionScope')?.value as VersionScope;
-  const autoAddVersionRegex = control.get('autoAddVersionRegex')?.value as string;
   const selected = [
     ...(control.get('activeVersions') as FormArray).getRawValue(),
     ...(control.get('archivedVersions') as FormArray).getRawValue(),
   ].some((v) => !!v);
-  return versionScope === 'all' || autoAddVersionRegex || selected ? null : {versionsRequired: true};
+  return versionScope === 'all' || selected ? null : {versionsRequired: true};
 };
 
 @Component({
@@ -191,7 +191,6 @@ export class EditApplicationEntitlementComponent implements OnInit, AfterViewIni
           name: val.name,
           expiresAt: val.expiresAt ? new Date(val.expiresAt) : undefined,
           applicationId: val.subjectId,
-          allVersions,
           versions,
           autoAddVersionRegex: (!allVersions && val.autoAddVersionRegex) || undefined,
           customerOrganizationId: val.customerOrganizationId,
@@ -323,7 +322,7 @@ export class EditApplicationEntitlementComponent implements OnInit, AfterViewIni
         subjectId: entitlement.applicationId,
         activeVersions: [], // will be set by on-change,
         archivedVersions: [], // will be set by on-change,
-        versionScope: entitlement.id && !entitlement.allVersions ? 'specific' : 'all',
+        versionScope: entitlement.versions?.length ? 'specific' : 'all',
         autoAddVersionRegex: entitlement.autoAddVersionRegex ?? '',
         customerOrganizationId: entitlement.customerOrganizationId,
         registry: {

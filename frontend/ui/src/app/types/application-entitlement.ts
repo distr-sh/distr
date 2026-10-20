@@ -4,7 +4,6 @@ export interface ApplicationEntitlement extends BaseModel, Named {
   expiresAt?: Date;
   applicationId?: string;
   application?: Application;
-  allVersions: boolean;
   versions?: ApplicationVersion[];
   autoAddVersionRegex?: string;
   customerOrganizationId?: string;
