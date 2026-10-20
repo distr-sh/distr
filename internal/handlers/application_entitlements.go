@@ -62,7 +62,11 @@ func ApplicationEntitlementsRouter(r chiopenapi.Router) {
 		})
 }
 
-var applicationEntitlementNameTaken = respond.BadRequest("An entitlement with this name already exists")
+var (
+	applicationEntitlementNameTaken = respond.BadRequest("An entitlement with this name already exists")
+	invalidEntitlementApplication   = respond.BadRequest("invalid application ID")
+	invalidEntitlementVersion       = respond.BadRequest("invalid application version ID")
+)
 
 func createApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
@@ -78,11 +82,15 @@ func createApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 		return respond.BadRequest("name is required"), nil
 	} else if entitlement.ApplicationID == uuid.Nil {
 		return respond.BadRequest("application is required"), nil
-	} else if auth.CurrentPartnerOrgID() != nil && entitlement.CustomerOrganizationID == nil {
-		return respond.BadRequest("customer organization is required"), nil
-	} else if resp, err := checkReachableByPartner(
-		ctx, entitlement.CustomerOrganizationID, notAssignedToPartner,
-	); resp != nil || err != nil {
+	} else if _, resp, err := customerScope(ctx, entitlement.CustomerOrganizationID); resp != nil || err != nil {
+		return resp, err
+	} else if _, err := db.GetApplication(ctx, entitlement.ApplicationID, entitlement.OrganizationID); errors.Is(
+		err, distrerr.ErrNotFound,
+	) {
+		return invalidEntitlementApplication, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to get application: %w", err)
+	} else if resp, err := checkEntitlementVersions(ctx, entitlement); resp != nil || err != nil {
 		return resp, err
 	} else if err := checkRegistryInput(&entitlement); err != nil {
 		return respond.BadRequest(err.Error()), nil
@@ -95,13 +103,10 @@ func createApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 			return applicationEntitlementNameTaken, nil
 		} else if err != nil {
 			return nil, fmt.Errorf("could not create entitlement: %w", err)
-		}
-		for _, version := range entitlement.Versions {
-			if err := db.AddVersionToApplicationEntitlement(
-				ctx, &entitlement.ApplicationEntitlementBase, version.ID,
-			); err != nil {
-				return nil, fmt.Errorf("could not add version to entitlement: %w", err)
-			}
+		} else if err := db.SetApplicationEntitlementVersions(
+			ctx, entitlement.ID, versionIDs(entitlement.Versions),
+		); err != nil {
+			return nil, fmt.Errorf("could not add versions to entitlement: %w", err)
 		}
 
 		var err error
@@ -127,6 +132,20 @@ func notifyEntitledVersions(
 			ctx, entitlement.OrganizationID, entitlement.ApplicationID, applicationVersionIDs,
 		)
 	})
+}
+
+func checkEntitlementVersions(
+	ctx context.Context, entitlement types.ApplicationEntitlementWithVersions,
+) (respond.Responder, error) {
+	if ok, err := db.ApplicationVersionsBelongToApplication(
+		ctx, entitlement.ApplicationID, versionIDs(entitlement.Versions),
+	); err != nil {
+		return nil, fmt.Errorf("failed to check application versions: %w", err)
+	} else if !ok {
+		return invalidEntitlementVersion, nil
+	} else {
+		return nil, nil
+	}
 }
 
 func versionIDs(versions []types.ApplicationVersion) []uuid.UUID {
@@ -159,6 +178,10 @@ func updateApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 		return respond.BadRequest("Changing the entitlement owner is not allowed"), nil
 	} else if existing.ApplicationID != entitlement.ApplicationID {
 		return respond.BadRequest("Changing the application is not allowed"), nil
+	} else if _, resp, err := customerScope(ctx, entitlement.CustomerOrganizationID); resp != nil || err != nil {
+		return resp, err
+	} else if resp, err := checkEntitlementVersions(ctx, entitlement); resp != nil || err != nil {
+		return resp, err
 	} else if err := checkRegistryInput(&entitlement); err != nil {
 		return respond.BadRequest(err.Error()), nil
 	} else if err := checkAutoAddVersionRegex(&entitlement); err != nil {

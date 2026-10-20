@@ -2,7 +2,7 @@ module github.com/distr-sh/distr
 
 go 1.27.0
 
-toolchain go1.27.2
+toolchain go1.27.3
 
 require (
 	cloud.google.com/go/kms v1.35.0
@@ -81,7 +81,7 @@ require (
 	k8s.io/client-go v0.37.1
 	k8s.io/kubectl v0.37.1
 	k8s.io/metrics v0.37.1
-	oras.land/oras-go/v2 v2.6.3
+	oras.land/oras-go/v2 v2.6.4
 )
 
 require (

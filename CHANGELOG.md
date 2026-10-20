@@ -1,5 +1,79 @@
 # Changelog
 
+## [4.6.0](https://github.com/distr-sh/distr/compare/4.5.0...4.6.0) (2026-10-20)
+
+
+### Features
+
+* **backend:** improve secret redaction ([#3527](https://github.com/distr-sh/distr/issues/3527)) ([57c575d](https://github.com/distr-sh/distr/commit/57c575d74b005e68ac4b0de3fb9da0d82a4d6152))
+* custom controller image repository ([#3492](https://github.com/distr-sh/distr/issues/3492)) ([197527c](https://github.com/distr-sh/distr/commit/197527cdb59641832411b73650b0c2c29b36b97a))
+
+
+### Bug Fixes
+
+* **backend:** improve deployment creation request validation ([#3525](https://github.com/distr-sh/distr/issues/3525)) ([874b658](https://github.com/distr-sh/distr/commit/874b658a9b409270629e9bc177d7e941e8496900))
+
+
+### Docs
+
+* **website:** add an Amazon ECS guide to Integrations & API ([#3504](https://github.com/distr-sh/distr/issues/3504)) ([dd9f65b](https://github.com/distr-sh/distr/commit/dd9f65be1f0554cbd7bd6d42e9ca292c167d9813))
+* **website:** add llms.txt ([#3550](https://github.com/distr-sh/distr/issues/3550)) ([a03c217](https://github.com/distr-sh/distr/commit/a03c21775890afcab68b598481e4440a882875cf))
+* **website:** retitle protect source code docker post ([#3471](https://github.com/distr-sh/distr/issues/3471)) ([561da42](https://github.com/distr-sh/distr/commit/561da42b178f8a6b0ba286a84b4d057037764083))
+
+## [4.5.0](https://github.com/distr-sh/distr/compare/4.4.2...4.5.0) (2026-10-19)
+
+
+### Features
+
+* add pre-/post-connect scripts for kubernetes ([#3514](https://github.com/distr-sh/distr/issues/3514)) ([4b6952d](https://github.com/distr-sh/distr/commit/4b6952d1ae7540fcdf3ad1344ed00f05ca83c778))
+
+
+### Bug Fixes
+
+* **backend:** improve entitlement versions request validation ([#3538](https://github.com/distr-sh/distr/issues/3538)) ([c726d37](https://github.com/distr-sh/distr/commit/c726d37cbf507271f10ae6057d02b3c3f87fd146))
+* **deps:** update module github.com/docker/cli to v29.9.1+incompatible ([#3458](https://github.com/distr-sh/distr/issues/3458)) ([bdf197b](https://github.com/distr-sh/distr/commit/bdf197b182faca792b59e9cc4d386912fe3830c9))
+* **deps:** update module github.com/go-chi/chi/v5 to v5.5.0 ([#3517](https://github.com/distr-sh/distr/issues/3517)) ([1eb9772](https://github.com/distr-sh/distr/commit/1eb9772bc56a85427b6df0b4a5303921cfdbc313))
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.163.0 ([#3507](https://github.com/distr-sh/distr/issues/3507)) ([e1cc4e6](https://github.com/distr-sh/distr/commit/e1cc4e67e9df5de32d38948e1d0529474c8015ab))
+* **deps:** update module helm.sh/helm/v4 to v4.3.1 ([#3521](https://github.com/distr-sh/distr/issues/3521)) ([5ca10b2](https://github.com/distr-sh/distr/commit/5ca10b26dc0847cad160123f24cc6be233413c90))
+* **deps:** update module oras.land/oras-go/v2 to v2.6.4 ([#3535](https://github.com/distr-sh/distr/issues/3535)) ([7bfbf7f](https://github.com/distr-sh/distr/commit/7bfbf7f348e7e3da51dfb5051a6e98fc9eaf3ff9))
+* **deps:** update website dependencies ([#3490](https://github.com/distr-sh/distr/issues/3490)) ([ae451d0](https://github.com/distr-sh/distr/commit/ae451d0025a537bed340897c11a54eab105eed0f))
+* **registry:** fix object copy failing on GCP due to incompatible `x-amz-copy-source-if-match` header ([#3542](https://github.com/distr-sh/distr/issues/3542)) ([0040b19](https://github.com/distr-sh/distr/commit/0040b19306ee06713d8a540b71ece8856443a6f2))
+
+
+### Other
+
+* **deps:** update angular monorepo to v22.2.3 ([#3518](https://github.com/distr-sh/distr/issues/3518)) ([9e11f9f](https://github.com/distr-sh/distr/commit/9e11f9f08ca480394c3128e713231bda9027aaa6))
+* **deps:** update angular-cli monorepo to v22.2.3 ([#3531](https://github.com/distr-sh/distr/issues/3531)) ([2ab2e3a](https://github.com/distr-sh/distr/commit/2ab2e3a1ef6f8f0fe6aa4e4b2760aff71f244634))
+* **deps:** update axllent/mailpit docker tag to v1.31.6 ([#3520](https://github.com/distr-sh/distr/issues/3520)) ([626c621](https://github.com/distr-sh/distr/commit/626c621b2706acbe5867272201e659d3aba7a877))
+* **deps:** update dependency @angular/cdk to v22.2.3 ([#3516](https://github.com/distr-sh/distr/issues/3516)) ([a04ef83](https://github.com/distr-sh/distr/commit/a04ef839c66222d2f5a6ea40059320130704bb6b))
+* **deps:** update dependency helm to v4.3.1 ([#3519](https://github.com/distr-sh/distr/issues/3519)) ([8efe39d](https://github.com/distr-sh/distr/commit/8efe39d48980e9ba39f0a4a8cdd731f56dc8ca66))
+* **deps:** update dependency jsdom to v30.1.3 ([#3524](https://github.com/distr-sh/distr/issues/3524)) ([30c4e07](https://github.com/distr-sh/distr/commit/30c4e07497fe3c9b33f5c55edd140953e65aac37))
+* **deps:** update dependency stripe to v1.54.0 ([#3536](https://github.com/distr-sh/distr/issues/3536)) ([6121daa](https://github.com/distr-sh/distr/commit/6121daa10c5ee451753016a789b7c7114ead215c))
+* **deps:** update dependency typedoc-plugin-markdown to v4.14.0 ([#3506](https://github.com/distr-sh/distr/issues/3506)) ([3976463](https://github.com/distr-sh/distr/commit/397646380ee9c1ec26838ca2bacb0690fa7eea88))
+* **deps:** update dependency vitest to v5.0.5 ([#3529](https://github.com/distr-sh/distr/issues/3529)) ([dd76e87](https://github.com/distr-sh/distr/commit/dd76e872a58e1acbdd0d9d050aa5f51fbd76b2a4))
+* **deps:** update docker docker tag to v29.9.1 ([#3537](https://github.com/distr-sh/distr/issues/3537)) ([55a431b](https://github.com/distr-sh/distr/commit/55a431bf338701a9ec24d5447f8800e5ee325b69))
+* **deps:** update golangci-lint to v2.15.0 ([#3532](https://github.com/distr-sh/distr/issues/3532)) ([0b6836f](https://github.com/distr-sh/distr/commit/0b6836f215ed883e3f8b433d377f319378bb3034))
+* **deps:** update helm release rustfs to v1.0.3 ([#3539](https://github.com/distr-sh/distr/issues/3539)) ([5ea40c0](https://github.com/distr-sh/distr/commit/5ea40c02a90d90b2bce32795914471c6bfc7ebdd))
+* **deps:** update jdx/mise-action action to v5.2.0 ([#3533](https://github.com/distr-sh/distr/issues/3533)) ([cc50178](https://github.com/distr-sh/distr/commit/cc5017870c34846e7cb52df25b48d4a3ffe52dbf))
+* **deps:** update loki docker tag to v18.16.0 ([#3513](https://github.com/distr-sh/distr/issues/3513)) ([75d3230](https://github.com/distr-sh/distr/commit/75d3230da21f6d36a27e07e274bdf495cad7ba06))
+* **deps:** update loki docker tag to v18.16.1 ([#3522](https://github.com/distr-sh/distr/issues/3522)) ([dfcb52f](https://github.com/distr-sh/distr/commit/dfcb52faba02de03ed69925f1775b6ab4ce8f0a7))
+* **deps:** update loki docker tag to v18.17.1 ([#3530](https://github.com/distr-sh/distr/issues/3530)) ([2221b13](https://github.com/distr-sh/distr/commit/2221b13ad5ae58f8c4a4863f6169fcef894a76d7))
+* **deps:** update pnpm to v12.14.0 ([#3526](https://github.com/distr-sh/distr/issues/3526)) ([5096fb4](https://github.com/distr-sh/distr/commit/5096fb413b2054f60f31482b496c48b3079f2d58))
+* **deps:** update rustfs/rustfs docker tag to v1.0.3 ([#3534](https://github.com/distr-sh/distr/issues/3534)) ([ed4097e](https://github.com/distr-sh/distr/commit/ed4097e6e0adbfa223dab5db32a99a3de9413913))
+* **frontend:** simplify support bundle resource panel ([#3528](https://github.com/distr-sh/distr/issues/3528)) ([58c248d](https://github.com/distr-sh/distr/commit/58c248d1b05ca956ced446768aa46662ca372a3b))
+
+
+### Docs
+
+* **website:** add a Nuon comparison ([#3338](https://github.com/distr-sh/distr/issues/3338)) ([2357dfe](https://github.com/distr-sh/distr/commit/2357dfe7d2803e9ec4093317ca14e17bdd3d0769))
+* **website:** introduce infrastrcuture controllers and clarify byoc case ([#3495](https://github.com/distr-sh/distr/issues/3495)) ([44abf73](https://github.com/distr-sh/distr/commit/44abf738608f86b1062f52fcee2a9821867eb75b))
+* **website:** replace Mermaid charts with rendered diagrams ([#3498](https://github.com/distr-sh/distr/issues/3498)) ([6610900](https://github.com/distr-sh/distr/commit/66109008191e4b2f06e7aebe2d479e5f4ff4495d))
+
+
+### Refactoring
+
+* **backend:** refactor API handler error and response handling ([#3473](https://github.com/distr-sh/distr/issues/3473)) ([3b3510a](https://github.com/distr-sh/distr/commit/3b3510acfa017401d5f3622742f985ceb3cb3860))
+
 ## [4.4.2](https://github.com/distr-sh/distr/compare/4.4.1...4.4.2) (2026-10-15)
 
 

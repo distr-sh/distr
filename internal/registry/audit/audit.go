@@ -6,6 +6,7 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/registry/name"
+	"github.com/distr-sh/distr/internal/types"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
 )
@@ -30,7 +31,9 @@ func (a *auditor) AuditPull(ctx context.Context, nameStr string, reference strin
 	if err != nil {
 		return err
 	}
-	if principal, ok := auth.ArtifactsPrincipal(ctx); ok {
+	// A principal pulling another organization's public artifact is logged as anonymous, so the
+	// artifact owner never sees the identity or deployment targets of a foreign organization.
+	if principal, ok := auth.ArtifactsPrincipal(ctx); ok && ownsArtifact(principal.CurrentOrg(), name) {
 		return db.CreateArtifactPullLogEntry(
 			ctx,
 			digestVersion.ID,
@@ -50,4 +53,8 @@ func (a *auditor) AuditPull(ctx context.Context, nameStr string, reference strin
 		nil,
 		true,
 	)
+}
+
+func ownsArtifact(org *types.Organization, n *name.Name) bool {
+	return org != nil && org.Slug != nil && *org.Slug == n.OrgName
 }

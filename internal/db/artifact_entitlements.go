@@ -157,6 +157,9 @@ func RemoveAllArtifactsFromEntitlement(
 	}
 }
 
+// AddArtifactToArtifactEntitlement only adds an artifact of the entitlement's organization and a
+// version of that artifact. It relies on the caller not adding the same selection twice, as a
+// conflicting row would be rejected like an invalid one.
 func AddArtifactToArtifactEntitlement(
 	ctx context.Context,
 	entitlementID uuid.UUID,
@@ -164,10 +167,14 @@ func AddArtifactToArtifactEntitlement(
 	artifactVersionId *uuid.UUID,
 ) error {
 	db := internalctx.GetDb(ctx)
-	_, err := db.Exec(
+	cmd, err := db.Exec(
 		ctx,
 		`INSERT INTO ArtifactEntitlement_Artifact (artifact_entitlement_id, artifact_id, artifact_version_id)
-		VALUES (@entitlementId, @id, @versionId)
+		SELECT ae.id, a.id, av.id
+		FROM ArtifactEntitlement ae
+			JOIN Artifact a ON a.id = @id AND a.organization_id = ae.organization_id
+			LEFT JOIN ArtifactVersion av ON av.id = @versionId AND av.artifact_id = a.id
+		WHERE ae.id = @entitlementId AND (@versionId::UUID IS NULL OR av.id IS NOT NULL)
 		ON CONFLICT (artifact_entitlement_id, artifact_id, artifact_version_id) DO NOTHING`,
 		pgx.NamedArgs{
 			"entitlementId": entitlementID,
@@ -177,6 +184,8 @@ func AddArtifactToArtifactEntitlement(
 	)
 	if err != nil {
 		return mapArtifactEntitlementError(fmt.Errorf("could not insert relation: %w", err))
+	} else if cmd.RowsAffected() == 0 {
+		return distrerr.NewBadRequest("invalid artifact or artifact version ID")
 	}
 	return nil
 }

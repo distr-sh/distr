@@ -164,51 +164,6 @@ func RevokeApplicationEntitlementWithID(ctx context.Context, id uuid.UUID) error
 	}
 }
 
-func AddVersionToApplicationEntitlement(
-	ctx context.Context,
-	entitlement *types.ApplicationEntitlementBase,
-	id uuid.UUID,
-) error {
-	db := internalctx.GetDb(ctx)
-	_, err := db.Exec(
-		ctx,
-		`INSERT INTO ApplicationEntitlement_ApplicationVersion (application_version_id, application_entitlement_id)
-		VALUES (@applicationVersionId, @applicationEntitlementId)
-		ON CONFLICT (application_version_id, application_entitlement_id) DO NOTHING`,
-		pgx.NamedArgs{
-			"applicationVersionId":     id,
-			"applicationEntitlementId": entitlement.ID,
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("could not insert relation: %w", err)
-	}
-	return nil
-}
-
-func RemoveVersionFromApplicationEntitlement(
-	ctx context.Context,
-	entitlement *types.ApplicationEntitlementBase,
-	id uuid.UUID,
-) error {
-	db := internalctx.GetDb(ctx)
-	_, err := db.Exec(
-		ctx,
-		`DELETE FROM ApplicationEntitlement_ApplicationVersion
-		WHERE application_entitlement_id = @applicationEntitlementId
-		AND application_version_id = @applicationVersionId`,
-		pgx.NamedArgs{
-			"applicationEntitlementId": entitlement.ID,
-			"applicationVersionId":     id,
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("could not delete relation: %w", err)
-	} else {
-		return nil
-	}
-}
-
 func GetApplicationEntitlementAutoAddVersionRegexes(
 	ctx context.Context,
 	applicationID uuid.UUID,
@@ -389,6 +344,26 @@ func sortApplicationEntitlementsVersions(entitlements []types.ApplicationEntitle
 
 func sortApplicationEntitlementVersions(entitlement *types.ApplicationEntitlement) {
 	types.SortApplicationVersions(entitlement.Application.VersioningStrategy, entitlement.Versions)
+}
+
+func ApplicationVersionsBelongToApplication(
+	ctx context.Context, applicationID uuid.UUID, versionIDs []uuid.UUID,
+) (bool, error) {
+	db := internalctx.GetDb(ctx)
+	var belong bool
+	if err := db.QueryRow(
+		ctx,
+		`SELECT NOT EXISTS (
+			SELECT FROM unnest(@versionIds::UUID[]) requested(id)
+			WHERE NOT EXISTS (
+				SELECT FROM ApplicationVersion av WHERE av.id = requested.id AND av.application_id = @applicationId
+			)
+		)`,
+		pgx.NamedArgs{"applicationId": applicationID, "versionIds": versionIDs},
+	).Scan(&belong); err != nil {
+		return false, fmt.Errorf("could not check application versions: %w", err)
+	}
+	return belong, nil
 }
 
 func SetApplicationEntitlementVersions(ctx context.Context, entitlementID uuid.UUID, versionIDs []uuid.UUID) error {
