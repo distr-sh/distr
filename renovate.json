@@ -68,6 +68,63 @@
       "automerge": true
     },
     {
+      "description": "Automerge minor and patch releases of the noisiest GitHub Actions",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchPackageNames": [
+        "actions/cache",
+        "actions/checkout",
+        "actions/download-artifact",
+        "actions/setup-go",
+        "actions/setup-node",
+        "actions/upload-artifact",
+        "anchore/sbom-action",
+        "aws-actions/configure-aws-credentials",
+        "docker/build-push-action",
+        "docker/login-action",
+        "docker/metadata-action",
+        "docker/setup-buildx-action",
+        "golangci/golangci-lint-action",
+        "google/osv-scanner-action",
+        "googleapis/release-please-action",
+        "jdx/mise-action",
+        "pnpm/action-setup",
+        "sigstore/cosign-installer"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "automerge": true
+    },
+    {
+      "description": "Automerge minor and patch releases of other noisy dependencies, none of which ever needed a fix or a revert",
+      "matchPackageNames": [
+        "@sentry/angular",
+        "@sentry/browser",
+        "axllent/mailpit",
+        "github.com/getsentry/sentry-go",
+        "github.com/getsentry/sentry-go/**",
+        "posthog-js",
+        "rustfs",
+        "rustfs/rustfs"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "automerge": true
+    },
+    {
+      "description": "The sentry-go modules share one version and go mod tidy bumps the rest with any one of them, which autocloses their separate PRs",
+      "matchPackageNames": [
+        "github.com/getsentry/sentry-go",
+        "github.com/getsentry/sentry-go/**"
+      ],
+      "groupName": "sentry-go"
+    },
+    {
       "description": "Schedule noisy deps on Monday morning (6 AM - 9 AM)",
       "matchPackageNames": [
         "posthog-js",
