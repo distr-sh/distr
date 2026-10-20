@@ -21,6 +21,7 @@ import {ApplicationLogoComponent} from '../applications/components';
 import {ArtifactLogoComponent} from '../artifacts/components';
 import {SearchBarComponent} from '../components/search-bar.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {ClickableRowDirective} from '../directives/clickable-row.directive';
 import {ApplicationEntitlementsService} from '../services/application-entitlements.service';
 import {ApplicationsService} from '../services/applications.service';
 import {ArtifactEntitlementsService} from '../services/artifact-entitlements.service';
@@ -48,6 +49,7 @@ type NotificationKind = 'application' | 'artifact';
     DatePipe,
     SearchBarComponent,
     AutotrimDirective,
+    ClickableRowDirective,
     ApplicationLogoComponent,
     ArtifactLogoComponent,
     NotificationRecipientsComponent,
@@ -383,8 +385,7 @@ export class UpdateNotificationsComponent {
     }
   }
 
-  protected async deleteConfig(config: UpdateNotificationConfiguration, event: Event) {
-    event.stopPropagation();
+  protected async deleteConfig(config: UpdateNotificationConfiguration) {
     if (!(await firstValueFrom(this.overlay.confirm(`Really delete the notification "${config.name}"?`)))) {
       return;
     }

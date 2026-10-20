@@ -10,6 +10,7 @@ import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
+import {ClickableRowDirective} from '../../directives/clickable-row.directive';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
 import {AuthService} from '../../services/auth.service';
@@ -30,6 +31,7 @@ import {EditApplicationEntitlementComponent} from './edit-application-entitlemen
     EditApplicationEntitlementComponent,
     SearchBarComponent,
     AlertComponent,
+    ClickableRowDirective,
   ],
 })
 export class ApplicationEntitlementsComponent {
@@ -121,8 +123,7 @@ export class ApplicationEntitlementsComponent {
     }
   }
 
-  deleteEntitlement(entitlement: ApplicationEntitlement, event: Event) {
-    event.stopPropagation();
+  deleteEntitlement(entitlement: ApplicationEntitlement) {
     this.overlay
       .confirm(`Really delete ${entitlement.name}?`)
       .pipe(

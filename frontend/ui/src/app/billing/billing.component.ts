@@ -9,6 +9,7 @@ import {catchError, EMPTY, filter, firstValueFrom, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {AlertComponent} from '../components/alert/alert.component';
 import {PageComponent} from '../components/page.component';
+import {ClickableRowDirective} from '../directives/clickable-row.directive';
 import {AuthService} from '../services/auth.service';
 import {LicenseTemplatesService} from '../services/license-templates.service';
 import {OrganizationService} from '../services/organization.service';
@@ -20,7 +21,16 @@ import {LicenseTemplate} from '../types/license-template';
   selector: 'app-billing',
   templateUrl: './billing.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [FaIconComponent, ReactiveFormsModule, RouterLink, PageComponent, AlertComponent, NgPlural, NgPluralCase],
+  imports: [
+    FaIconComponent,
+    ReactiveFormsModule,
+    RouterLink,
+    PageComponent,
+    AlertComponent,
+    NgPlural,
+    NgPluralCase,
+    ClickableRowDirective,
+  ],
 })
 export class BillingComponent {
   protected readonly auth = inject(AuthService);
@@ -104,8 +114,7 @@ export class BillingComponent {
     }
   }
 
-  deleteTemplate(template: LicenseTemplate, event: Event) {
-    event.stopPropagation();
+  deleteTemplate(template: LicenseTemplate) {
     this.overlay
       .confirm(`Really delete template "${template.name}"?`)
       .pipe(

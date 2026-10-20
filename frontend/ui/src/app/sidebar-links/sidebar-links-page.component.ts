@@ -20,6 +20,7 @@ import {combineLatest, firstValueFrom, of, startWith, Subject, switchMap} from '
 import {getFormDisplayedError} from '../../util/errors';
 import {PageComponent} from '../components/page.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {ClickableRowDirective} from '../directives/clickable-row.directive';
 import {AuthService} from '../services/auth.service';
 import {CustomerOrganizationsService} from '../services/customer-organizations.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
@@ -36,6 +37,7 @@ import {ToastService} from '../services/toast.service';
     ReactiveFormsModule,
     DatePipe,
     AutotrimDirective,
+    ClickableRowDirective,
     PageComponent,
   ],
 })
@@ -156,8 +158,7 @@ export class SidebarLinksPageComponent {
     }
   }
 
-  protected async deleteLink(link: SidebarLink, event: Event) {
-    event.stopPropagation();
+  protected async deleteLink(link: SidebarLink) {
     const customerOrgId = this.customerOrganizationId();
     if (!customerOrgId) return;
 

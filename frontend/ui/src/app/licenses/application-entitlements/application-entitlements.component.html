@@ -30,7 +30,7 @@
       </thead>
       <tbody>
         @for (entitlement of entitlements$ | async; track entitlement.id) {
-          <tr (click)="openDrawer(manageEntitlementDrawer, entitlement)" class="distr-table-row cursor-pointer">
+          <tr appClickableRow (rowActivate)="openDrawer(manageEntitlementDrawer, entitlement)" class="distr-table-row">
             <td class="distr-table-cell">
               <div class="flex items-center mr-3">
                 <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
@@ -82,7 +82,7 @@
                 <button
                   type="button"
                   aria-label="Delete"
-                  (click)="deleteEntitlement(entitlement, $event)"
+                  (click)="deleteEntitlement(entitlement)"
                   class="py-2 px-3 distr-btn-danger">
                   <fa-icon [icon]="faTrash" class="h-4 w-4" />
                 </button>

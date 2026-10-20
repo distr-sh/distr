@@ -12,6 +12,7 @@ import {slugMaxLength, slugPattern, toSlug} from '../../util/slug';
 import {AlertComponent} from '../components/alert/alert.component';
 import {ClipComponent} from '../components/clip.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {ClickableRowDirective} from '../directives/clickable-row.directive';
 import {AuthService} from '../services/auth.service';
 import {ContextService} from '../services/context.service';
 import {CustomDomainsService} from '../services/custom-domains.service';
@@ -35,6 +36,7 @@ const DEFAULT_SCOPES = ['openid', 'profile', 'email'];
     FaIconComponent,
     ReactiveFormsModule,
     AutotrimDirective,
+    ClickableRowDirective,
     ClipComponent,
     NgTemplateOutlet,
     DomainFieldComponent,
@@ -416,8 +418,7 @@ export class CustomOidcComponent {
     }
   }
 
-  protected async test(configuration: CustomOidcConfiguration, event: Event) {
-    event.stopPropagation();
+  protected async test(configuration: CustomOidcConfiguration) {
     try {
       await firstValueFrom(this.customOidcService.test(configuration.id));
       this.toast.success(`${configuration.name} serves a valid OpenID configuration`);
@@ -429,8 +430,7 @@ export class CustomOidcComponent {
     }
   }
 
-  protected async remove(configuration: CustomOidcConfiguration, event: Event) {
-    event.stopPropagation();
+  protected async remove(configuration: CustomOidcConfiguration) {
     const confirmed = await firstValueFrom(
       this.overlay.confirm(
         `Really delete ${configuration.name}? Everyone who signs in through it loses that login, and users without ` +

@@ -2,7 +2,7 @@ import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, inject, input, OnDestroy, TemplateRef} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {Router, RouterLink} from '@angular/router';
+import {Router} from '@angular/router';
 import {Application, DeploymentType} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
@@ -12,6 +12,7 @@ import {filteredByFormControl} from '../../util/filter';
 import {SelectableVersioningStrategy} from '../../util/versions';
 import {SearchBarComponent} from '../components/search-bar.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {ClickableRowDirective} from '../directives/clickable-row.directive';
 import {PermissionsDirective} from '../directives/required-role.directive';
 import {ApplicationsService} from '../services/applications.service';
 import {FeatureFlagService} from '../services/feature-flag.service';
@@ -29,7 +30,7 @@ import {ApplicationLogoComponent} from './components';
     OverlayModule,
     AutotrimDirective,
     PermissionsDirective,
-    RouterLink,
+    ClickableRowDirective,
     ApplicationLogoComponent,
     SearchBarComponent,
   ],

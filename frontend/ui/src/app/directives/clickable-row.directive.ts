@@ -22,7 +22,7 @@ const interactiveElements = 'a, button, input, select, textarea, label, [role="b
   },
 })
 export class ClickableRowDirective {
-  public readonly appClickableRow = input<string | readonly string[]>('');
+  public readonly appClickableRow = input<string | Parameters<Router['createUrlTree']>[0]>('');
   public readonly appClickableRowDisabled = input(false);
   public readonly rowActivate = output<void>();
 

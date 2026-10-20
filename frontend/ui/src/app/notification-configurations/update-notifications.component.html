@@ -26,12 +26,16 @@
     </thead>
     <tbody>
       @for (config of filteredRows(); track config.id) {
-        <tr (click)="canEdit && showDrawer(config)" class="distr-table-row" [class.cursor-pointer]="canEdit">
+        <tr
+          appClickableRow
+          [appClickableRowDisabled]="!canEdit"
+          (rowActivate)="showDrawer(config)"
+          class="distr-table-row">
           <td class="distr-table-cell">
             {{ config.name }}
           </td>
           <td class="distr-table-cell align-middle">
-            <label class="inline-flex items-center cursor-pointer my-1" (click)="$event.stopPropagation()">
+            <label class="inline-flex items-center cursor-pointer my-1">
               <input
                 #enabledToggle
                 type="checkbox"
@@ -61,7 +65,7 @@
               <button
                 type="button"
                 aria-label="Delete"
-                (click)="deleteConfig(config, $event)"
+                (click)="deleteConfig(config)"
                 class="py-2 px-3 distr-btn-danger">
                 <fa-icon [icon]="faTrash" class="h-4 w-4" />
               </button>

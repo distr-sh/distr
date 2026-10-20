@@ -55,6 +55,7 @@ import {PageComponent} from '../components/page.component';
 import {PlanFeatureHintComponent} from '../components/plan-feature-hint.component';
 import {UuidComponent} from '../components/uuid';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {ClickableRowDirective} from '../directives/clickable-row.directive';
 import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
 import {ApplicationsService} from '../services/applications.service';
 import {AuthService} from '../services/auth.service';
@@ -83,6 +84,7 @@ import {
     NgOptimizedImage,
     UuidComponent,
     AutotrimDirective,
+    ClickableRowDirective,
     DatePipe,
     EditorComponent,
     InlineEditComponent,
@@ -360,8 +362,7 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
     }
   }
 
-  async fillVersionFormWith(application: Application, version: ApplicationVersion, event: Event) {
-    event.stopPropagation();
+  async fillVersionFormWith(application: Application, version: ApplicationVersion) {
     this.isVersionFormExpanded.set(true);
     const val = await this.loadVersionDetails(application, version);
     if (val) {
@@ -433,8 +434,7 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
       .subscribe();
   }
 
-  archiveVersion(application: Application, version: ApplicationVersion, event: Event) {
-    event.stopPropagation();
+  archiveVersion(application: Application, version: ApplicationVersion) {
     this.overlay
       .confirm(`Really archive ${version.name}? Existing deployments will continue to work.`)
       .pipe(
@@ -483,8 +483,7 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
       });
   }
 
-  async unArchiveVersion(application: Application, version: ApplicationVersion, event: Event) {
-    event.stopPropagation();
+  async unArchiveVersion(application: Application, version: ApplicationVersion) {
     try {
       await lastValueFrom(
         this.applicationService.updateApplicationVersion(application, {

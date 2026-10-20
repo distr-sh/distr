@@ -74,7 +74,11 @@
         </thead>
         <tbody>
           @for (link of links(); track link.id) {
-            <tr (click)="canEdit && showDialog(link)" class="distr-table-row" [class.cursor-pointer]="canEdit">
+            <tr
+              appClickableRow
+              [appClickableRowDisabled]="!canEdit"
+              (rowActivate)="showDialog(link)"
+              class="distr-table-row">
               <td class="distr-table-cell">{{ link.name }}</td>
               <td
                 class="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap max-w-96 overflow-hidden text-ellipsis">
@@ -82,7 +86,6 @@
                   [href]="link.link"
                   target="_blank"
                   rel="noopener noreferrer"
-                  (click)="$event.stopPropagation()"
                   class="text-blue-600 dark:text-blue-400 hover:underline">
                   {{ link.link }}
                 </a>
@@ -95,7 +98,7 @@
                   <button
                     type="button"
                     aria-label="Delete"
-                    (click)="deleteLink(link, $event)"
+                    (click)="deleteLink(link)"
                     class="py-2 px-3 distr-btn-danger">
                     <fa-icon [icon]="faTrash" class="h-4 w-4" />
                   </button>

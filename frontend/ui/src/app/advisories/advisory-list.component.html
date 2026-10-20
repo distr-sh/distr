@@ -62,7 +62,7 @@
             </thead>
             <tbody>
               @for (advisory of filteredAdvisories(); track advisory.id) {
-                <tr [routerLink]="routePrefix + '/' + advisory.id" class="distr-table-row cursor-pointer">
+                <tr [appClickableRow]="routePrefix + '/' + advisory.id" class="distr-table-row">
                   <td class="distr-table-cell">
                     {{ advisory.title }}
                   </td>

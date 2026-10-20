@@ -10,6 +10,7 @@ import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
+import {ClickableRowDirective} from '../../directives/clickable-row.directive';
 import {ArtifactEntitlementsService} from '../../services/artifact-entitlements.service';
 import {ArtifactsService} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
@@ -29,6 +30,7 @@ import {EditArtifactEntitlementComponent} from './edit-artifact-entitlement.comp
     EditArtifactEntitlementComponent,
     SearchBarComponent,
     AlertComponent,
+    ClickableRowDirective,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './artifact-entitlements.component.html',
@@ -127,8 +129,7 @@ export class ArtifactEntitlementsComponent {
     }
   }
 
-  deleteEntitlement(entitlement: ArtifactEntitlement, event: Event) {
-    event.stopPropagation();
+  deleteEntitlement(entitlement: ArtifactEntitlement) {
     this.overlay
       .confirm(`Really delete ${entitlement.name}?`)
       .pipe(

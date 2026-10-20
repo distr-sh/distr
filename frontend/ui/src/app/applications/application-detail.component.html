@@ -192,8 +192,9 @@
                 @for (version of visibleVersions$ | async; track version.id) {
                   @let archived = isArchived(version);
                   <tr
-                    (click)="openVersionDetails(application, version)"
-                    class="bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer">
+                    appClickableRow
+                    (rowActivate)="openVersionDetails(application, version)"
+                    class="bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                     @if (auth.hasAnyRole('read_write', 'admin')) {
                       <td class="px-1 py-4">
                         @if (!archived) {
@@ -201,7 +202,6 @@
                             type="checkbox"
                             class="distr-checkbox"
                             [checked]="isVersionSelected(version)"
-                            (click)="$event.stopPropagation()"
                             (change)="toggleVersionSelected(version)" />
                         }
                       </td>
@@ -254,14 +254,14 @@
                       @if (auth.hasAnyRole('read_write', 'admin')) {
                         @if (!archived) {
                           <button
-                            (click)="archiveVersion(application, version, $event)"
+                            (click)="archiveVersion(application, version)"
                             class="py-2 px-3 mr-2 items-center text-sm font-medium text-center distr-btn-secondary">
                             <fa-icon [icon]="faArchive" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
                             Archive
                           </button>
                         } @else {
                           <button
-                            (click)="unArchiveVersion(application, version, $event)"
+                            (click)="unArchiveVersion(application, version)"
                             class="py-2 px-3 mr-4 items-center text-sm font-medium text-center distr-btn-secondary">
                             <fa-icon [icon]="faArchive" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
                             Unarchive
@@ -270,7 +270,7 @@
                         <button
                           type="button"
                           class="font-medium text-blue-600 dark:text-blue-500 hover:underline"
-                          (click)="fillVersionFormWith(application, version, $event)">
+                          (click)="fillVersionFormWith(application, version)">
                           Copy from
                         </button>
                       }

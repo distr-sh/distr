@@ -19,6 +19,7 @@ import {combineLatest, firstValueFrom, startWith, Subject, switchMap} from 'rxjs
 import {getFormDisplayedError} from '../../util/errors';
 import {validateRecordAtLeast} from '../../util/validation';
 import {SearchBarComponent} from '../components/search-bar.component';
+import {ClickableRowDirective} from '../directives/clickable-row.directive';
 import {AlertConfigurationsService} from '../services/alert-configurations.service';
 import {AuthService} from '../services/auth.service';
 import {CustomerOrganizationsService} from '../services/customer-organizations.service';
@@ -32,7 +33,7 @@ import {AlertConfiguration, CreateUpdateAlertConfigurationRequest} from '../type
   selector: 'app-alert-configurations',
   templateUrl: './alert-configurations.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [FaIconComponent, ReactiveFormsModule, DatePipe, SearchBarComponent],
+  imports: [FaIconComponent, ReactiveFormsModule, DatePipe, SearchBarComponent, ClickableRowDirective],
 })
 export class AlertConfigurationsComponent {
   /** customerOrganizationId scopes the page to what one customer is notified about. */

@@ -29,7 +29,7 @@
         </thead>
         <tbody>
           @for (row of filteredRows(); track row.token.id) {
-            <tr [routerLink]="['/', 'settings', 'access-tokens', row.token.id]" class="distr-table-row cursor-pointer">
+            <tr [appClickableRow]="['/', 'settings', 'access-tokens', row.token.id]" class="distr-table-row">
               <td class="distr-table-cell max-w-48 xl:max-w-64 2xl:max-w-96 truncate" [title]="row.token.label">
                 {{ row.token.label }}
               </td>
@@ -81,7 +81,7 @@
                 <button
                   type="button"
                   aria-label="Delete"
-                  (click)="deleteAccessToken(row, $event)"
+                  (click)="deleteAccessToken(row)"
                   class="py-2 px-3 distr-btn-danger">
                   <fa-icon [icon]="faTrash" class="h-4 w-4" />
                 </button>
