@@ -114,7 +114,7 @@ export class EditApplicationEntitlementComponent implements OnInit, AfterViewIni
       versionScope: this.fb.nonNullable.control<VersionScope>('all'),
       activeVersions: this.fb.array<boolean>([]),
       archivedVersions: this.fb.array<boolean>([]),
-      autoAddVersionRegex: this.fb.nonNullable.control('', regexValidator),
+      autoAddVersionRegex: this.fb.nonNullable.control('', [Validators.maxLength(200), regexValidator]),
       customerOrganizationId: this.fb.nonNullable.control<string | undefined>(undefined),
       registry: this.fb.nonNullable.group(
         {

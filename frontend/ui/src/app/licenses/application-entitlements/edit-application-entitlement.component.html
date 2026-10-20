@@ -154,8 +154,12 @@
             id="autoAddVersionRegex"
             class="distr-input font-mono"
             placeholder="^2\.\d+\.\d+$" />
-          @if (editForm.controls.autoAddVersionRegex.invalid && editForm.controls.autoAddVersionRegex.touched) {
-            <p class="mt-1 text-sm text-red-600 dark:text-red-500">Invalid regular expression.</p>
+          @if (editForm.controls.autoAddVersionRegex.touched) {
+            @if (editForm.controls.autoAddVersionRegex.hasError('maxlength')) {
+              <p class="mt-1 text-sm text-red-600 dark:text-red-500">Must not be longer than 200 characters.</p>
+            } @else if (editForm.controls.autoAddVersionRegex.hasError('regex')) {
+              <p class="mt-1 text-sm text-red-600 dark:text-red-500">Invalid regular expression.</p>
+            }
           }
         </div>
       </div>

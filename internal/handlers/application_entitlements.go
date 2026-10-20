@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"regexp/syntax"
 	"slices"
 	"strings"
 
@@ -20,6 +19,7 @@ import (
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
+	"github.com/distr-sh/distr/internal/validation"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
@@ -276,6 +276,8 @@ func checkRegistryInput(entitlement *types.ApplicationEntitlementWithVersions) e
 	return nil
 }
 
+const maxAutoAddVersionRegexLength = 200
+
 func checkAutoAddVersionRegex(entitlement *types.ApplicationEntitlementWithVersions) error {
 	if entitlement.AutoAddVersionRegex != nil && *entitlement.AutoAddVersionRegex == "" {
 		entitlement.AutoAddVersionRegex = nil
@@ -284,11 +286,8 @@ func checkAutoAddVersionRegex(entitlement *types.ApplicationEntitlementWithVersi
 		return nil
 	} else if len(entitlement.Versions) == 0 {
 		return errors.New("an auto-add version regex requires at least one selected version")
-	} else if _, err := regexp.Compile(*entitlement.AutoAddVersionRegex); err != nil {
-		if syntaxErr, ok := errors.AsType[*syntax.Error](err); ok {
-			return fmt.Errorf("invalid auto-add version regex: %v", syntaxErr.Code)
-		}
-		return errors.New("invalid auto-add version regex")
+	} else if _, err := validation.ParseRegex(*entitlement.AutoAddVersionRegex, maxAutoAddVersionRegexLength); err != nil {
+		return err
 	}
 	return nil
 }

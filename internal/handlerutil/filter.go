@@ -4,24 +4,18 @@ import (
 	"errors"
 	"regexp/syntax"
 	"slices"
+
+	"github.com/distr-sh/distr/internal/validation"
 )
 
 const maxFilterLength = 200
 
 func ValidateFilterRegex(filter string) error {
-	if len(filter) > maxFilterLength {
-		return errors.New("filter exceeds maximum length of 200 characters")
-	}
-
-	re, err := syntax.Parse(filter, syntax.Perl)
-	if err != nil {
-		return errors.New("invalid filter regex: " + err.Error())
-	}
-
-	if hasNestedQuantifier(re) {
+	if re, err := validation.ParseRegex(filter, maxFilterLength); err != nil {
+		return err
+	} else if hasNestedQuantifier(re) {
 		return errors.New("filter contains nested quantifiers which are not allowed")
 	}
-
 	return nil
 }
 
