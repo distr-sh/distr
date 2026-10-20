@@ -8,7 +8,12 @@ import (
 	"github.com/google/uuid"
 )
 
-type CreateUpdateOrganizationRequest struct {
+type CreateOrganizationRequest struct {
+	Name       string `json:"name"`
+	AdminEmail string `json:"adminEmail,omitempty"`
+}
+
+type UpdateOrganizationRequest struct {
 	Name                        string  `json:"name"`
 	Slug                        *string `json:"slug"`
 	DockerPreConnectScript      *string `json:"dockerPreConnectScript"`
@@ -18,11 +23,25 @@ type CreateUpdateOrganizationRequest struct {
 	KubernetesPostConnectScript *string `json:"kubernetesPostConnectScript"`
 	ArtifactVersionMutable      bool    `json:"artifactVersionMutable"`
 	PrePostScriptsEnabled       bool    `json:"prePostScriptsEnabled"`
+	ControllerImageRepository   *string `json:"controllerImageRepository"`
 }
 
-type CreateOrganizationRequest struct {
-	CreateUpdateOrganizationRequest
-	AdminEmail string `json:"adminEmail,omitempty"`
+func (r *UpdateOrganizationRequest) Normalize() {
+	if r.ControllerImageRepository == nil {
+		return
+	}
+	if value := validation.NormalizeImageRepository(*r.ControllerImageRepository); value != "" {
+		r.ControllerImageRepository = &value
+	} else {
+		r.ControllerImageRepository = nil
+	}
+}
+
+func (r *UpdateOrganizationRequest) ValidateControllerImageRepository() error {
+	if r.ControllerImageRepository == nil {
+		return nil
+	}
+	return validation.ValidateImageRepository(*r.ControllerImageRepository)
 }
 
 type CreateOrganizationResponse struct {
@@ -35,6 +54,8 @@ type OrganizationResponse struct {
 	SubscriptionLimits               SubscriptionLimits `json:"subscriptionLimits"`
 	CurrentBillableUserAccountCount  int64              `json:"currentBillableUserAccountCount"`
 	CurrentCustomerOrganizationCount int64              `json:"currentCustomerOrganizationCount"`
+	ControllerImageRepository        *string            `json:"controllerImageRepository,omitempty"`
+	DefaultControllerImageRepository string             `json:"defaultControllerImageRepository"`
 }
 
 type OrganizationWebhookResponse struct {

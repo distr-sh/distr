@@ -11,6 +11,7 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/controllermanifest"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/distrerr"
@@ -91,6 +92,7 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 			log.Warn("failed to get organization branding", zap.Error(err))
 		}
 		registryHost := customdomains.RegistryDomainOrDefault(ctx, orgID, branding)
+		controllerRepository := controllermanifest.DefaultImageRepository(ctx, orgID, branding)
 
 		return respond.JSON(api.ContextResponse{
 			User: mapping.UserAccountToAPI(
@@ -98,7 +100,9 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 					userRole, auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID(), joinDate,
 				),
 			),
-			Organization:         mapping.OrganizationToAPI(*auth.CurrentOrg(), billableUserCount, customerOrgCount),
+			Organization: mapping.OrganizationToAPI(
+				*auth.CurrentOrg(), billableUserCount, customerOrgCount, controllerRepository,
+			),
 			CustomerOrganization: customerOrg,
 			PartnerOrganization:  partnerOrg,
 			SidebarLinks:         sidebarLinks,

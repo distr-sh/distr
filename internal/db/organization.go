@@ -39,7 +39,8 @@ var (
 		o.kubernetes_pre_connect_script,
 		o.kubernetes_post_connect_script,
 		` + organizationStripeSecret.Value("o") + `,
-		` + organizationStripeSecret.IsSetValue("o") + `
+		` + organizationStripeSecret.IsSetValue("o") + `,
+		o.controller_image_repository
 	`
 	organizationWithUserRoleOutputExpr = organizationOutputExpr + `,
 		j.user_role,
@@ -151,6 +152,7 @@ func UpdateOrganization(ctx context.Context, org *types.Organization) error {
 			docker_connect_script_is_sudo = @docker_connect_script_is_sudo,
 			kubernetes_pre_connect_script = @kubernetes_pre_connect_script,
 			kubernetes_post_connect_script = @kubernetes_post_connect_script,
+			controller_image_repository = @controller_image_repository,
 			stripe_webhook_secret = NULL,
 			stripe_webhook_secret_enc = @stripe_webhook_secret_enc
 		WHERE id = @id
@@ -172,6 +174,7 @@ func UpdateOrganization(ctx context.Context, org *types.Organization) error {
 			"docker_connect_script_is_sudo":               org.DockerConnectScriptIsSudo,
 			"kubernetes_pre_connect_script":               org.KubernetesPreConnectScript,
 			"kubernetes_post_connect_script":              org.KubernetesPostConnectScript,
+			"controller_image_repository":                 org.ControllerImageRepository,
 			"stripe_webhook_secret_enc":                   stripeWebhookSecretEnc,
 		},
 	)

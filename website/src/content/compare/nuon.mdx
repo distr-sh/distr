@@ -1,0 +1,432 @@
+---
+title: 'Nuon Alternative: Distr vs Nuon'
+description: 'Compare Distr and Nuon for BYOC infrastructure provisioning, application delivery, OpenTofu, Kubernetes, licensing, air-gapped environments and day-two operations.'
+slug: nuon
+competitor: Nuon
+heroImage: '/src/assets/compare/nuon.webp'
+teaser: 'Compare open-source infrastructure controllers with a dedicated platform for vendor-operated BYOC.'
+heading: Distr vs Nuon for BYOC Software Distribution
+subheading: 'Distr and Nuon both deploy software into customer-controlled cloud accounts. They differ in infrastructure ownership, operational model and support for distribution outside BYOC on AWS, Azure and Google Cloud.'
+faqs:
+  - question: Is Distr a Nuon alternative?
+    answer: |
+      <p>Yes.</p>
+      <p>Distr and Nuon can both provision infrastructure and deploy applications inside customer cloud accounts.</p>
+      <p>Distr combines OpenTofu-based infrastructure controllers with application delivery, licensing, artifact access and support for on-premises and air-gapped environments. Nuon provides a more opinionated platform for vendors that operate BYOC installations on AWS, Azure and Google Cloud on behalf of their customers.</p>
+  - question: Does Distr support BYOC deployments?
+    answer: |
+      <p>Yes.</p>
+      <p>Distr's OpenTofu controller can provision networks, Kubernetes clusters, databases, storage, IAM resources and other cloud infrastructure. Distr's Kubernetes controller can then deploy and update the application on the resulting cluster.</p>
+  - question: Can Distr use existing Terraform configurations?
+    answer: |
+      <p>Yes.</p>
+      <p>Distr packages an OpenTofu or Terraform configuration and its provider lock file in a versioned controller image. OpenTofu installs the locked providers when the controller runs. Vendors can reuse their existing providers, modules, resources and infrastructure engineering practices.</p>
+  - question: Does Distr detect infrastructure drift?
+    answer: |
+      <p>Yes.</p>
+      <p>The OpenTofu controller periodically reconciles the declared infrastructure. It plans and applies required changes, records the results in deployment logs and reports failed reconciliations through deployment health.</p>
+  - question: Does Distr require direct access to customer cloud accounts?
+    answer: |
+      <p>No.</p>
+      <p>Distr's infrastructure and deployment controllers run inside the customer environment. Cloud credentials and permissions are supplied there, for example as Distr secrets, and are not held as standing vendor access outside that deployment. Customers control IAM policies, Kubernetes permissions and controller configuration.</p>
+  - question: Does Distr support on-premises and air-gapped environments?
+    answer: |
+      <p>Yes.</p>
+      <p>Distr supports customer cloud accounts, existing Kubernetes clusters, Docker hosts, Linux virtual machines, private data centers and air-gapped environments. Distr also supports offline license verification and private artifact distribution.</p>
+  - question: When is Nuon the better choice?
+    answer: |
+      <p>Nuon is the better choice when BYOC on AWS, Azure or Google Cloud is the primary distribution model and the vendor wants a packaged system for operating every customer environment.</p>
+      <p>Nuon's strengths include approval gates, staged fleet rollouts, release windows, operational actions, break-glass access and integrated drift workflows.</p>
+  - question: When is Distr the better choice?
+    answer: |
+      <p>Distr is the better choice when a vendor wants to reuse existing infrastructure automation or support more than vendor-operated BYOC on AWS, Azure and Google Cloud.</p>
+      <p>Distr supports BYOC alongside existing Kubernetes clusters, Docker, on-premises systems, air-gapped environments, customer-managed CI/CD, software licensing and artifact entitlements.</p>
+---
+
+import LinkButton from '~/components/overwrites/LinkButton.astro';
+import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
+
+## Executive Summary
+
+Distr and Nuon can both provision infrastructure and deploy applications inside
+customer-owned cloud accounts.
+
+Distr packages existing OpenTofu or Terraform configurations as versioned controller
+images. Its infrastructure controller provisions and reconciles cloud resources, while
+its Kubernetes controller deploys the application onto the resulting cluster.
+Infrastructure and application releases use the same Distr distribution workflow.
+
+Nuon provides a more opinionated operating model for vendor-managed BYOC on AWS,
+Azure and Google Cloud. Its advantages include staged fleet rollouts, approval gates,
+operational actions, release windows, break-glass access and integrated drift
+remediation.
+
+Distr fits vendors that want to reuse existing infrastructure automation and support
+BYOC alongside Kubernetes, Docker, on-premises, air-gapped or customer-operated
+installations.
+
+Nuon fits vendors that want a dedicated platform for operating installations on AWS,
+Azure and Google Cloud on their customers' behalf.
+
+## Distr vs Nuon at a Glance
+
+| Capability                                          | Distr                                       | Nuon                                                         |
+| --------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------ |
+| Provision customer-cloud infrastructure             | Yes, through OpenTofu controllers           | Yes                                                          |
+| Deploy applications into customer clouds            | Yes                                         | Yes                                                          |
+| Reuse existing Terraform or OpenTofu configurations | Yes                                         | Yes, within Nuon's application model                         |
+| Periodic infrastructure reconciliation              | Yes                                         | Yes                                                          |
+| Infrastructure drift detection                      | Yes                                         | Yes                                                          |
+| Packaged drift review and remediation               | Reconciliation and deployment logs          | More integrated workflow                                     |
+| Existing Kubernetes clusters                        | Yes                                         | Focused on AWS, Azure and Google Cloud BYOC                  |
+| Docker and virtual machine deployments              | Yes                                         | Not the primary deployment model                             |
+| On-premises environments                            | Yes                                         | Not the primary deployment model                             |
+| Air-gapped environments                             | Yes                                         | Not the primary deployment model                             |
+| Customer-managed CI/CD                              | Yes                                         | Vendor-operated model                                        |
+| Software licensing                                  | Built-in signed offline licenses            | Not a native product capability                              |
+| Artifact entitlements and OCI registry              | Built-in entitlements and registry          | Artifact sync into installs; different entitlement model     |
+| Staged fleet rollout groups                         | Per-customer version and deployment updates | Packaged install groups with plan and approval               |
+| Customer approval gates                             | Customer-controlled update timing           | Built-in BYOC approval workflow                              |
+| Operational actions                                 | Application and controller operations       | Dedicated action framework                                   |
+| Break-glass access                                  | No packaged workflow                        | Built-in temporary elevated access                           |
+| Open source                                         | Yes (Apache 2.0)                            | Yes (AGPL)                                                   |
+| Self-hostable control plane                         | Yes                                         | Yes (AWS self-host and Nuon BYOC; Nuon Cloud also available) |
+
+## The Short Answer
+
+Choose Distr when:
+
+- Existing Terraform or OpenTofu configurations should be reused.
+- Infrastructure and application versions should follow one release workflow.
+- BYOC is one of several required deployment models.
+- Some customers provide an existing Kubernetes cluster or virtual machine.
+- Docker, on-premises or air-gapped distribution is required.
+- Customers may deploy through their own CI/CD pipelines.
+- Software licensing and artifact entitlements are required.
+- Open-source code and control-plane self-hosting matter.
+
+Choose Nuon when:
+
+- BYOC on AWS, Azure or Google Cloud is the primary distribution model.
+- The vendor operates each customer environment as a managed service.
+- Staged fleet rollouts and approval gates are central requirements.
+- Operational actions need a dedicated execution framework.
+- Release windows and customer-approved updates are required.
+- Break-glass access must be part of the platform.
+- A packaged drift investigation workflow matters more than infrastructure portability.
+
+## The Core Difference
+
+### Distr Uses Versioned Infrastructure Controllers
+
+Distr treats infrastructure as another versioned application.
+
+The vendor packages an OpenTofu or Terraform configuration in an infrastructure
+controller image. That controller runs inside the customer environment and provisions
+the resources required by the application.
+
+Those resources can include:
+
+- Virtual networks
+- Kubernetes clusters
+- Managed databases
+- Object storage
+- DNS records
+- IAM roles and policies
+- Other resources supported by OpenTofu providers
+
+The vendor publishes a new controller image when the infrastructure configuration
+changes. Updating the Distr deployment rolls out the new infrastructure version.
+
+The controller creates an OpenTofu plan, applies the required changes and records the
+result in the deployment logs. Periodic reconciliation detects configuration changes
+and infrastructure drift.
+
+Distr can then use its Kubernetes controller to deploy the application onto the
+provisioned cluster.
+
+This creates a two-layer deployment:
+
+1. The infrastructure controller provisions and reconciles the environment.
+2. The Kubernetes controller installs and updates the product.
+
+Distr manages both layers through versioned applications, customer deployments,
+secrets, logs, health information and release controls.
+
+<LinkButton
+  href="/docs/controllers/infrastructure-controllers/"
+  variant="secondary"
+  icon="lucide:arrow-right"
+  iconPlacement="end">
+  Infrastructure Controllers
+</LinkButton>
+
+### Nuon Uses a Dedicated BYOC Application Model
+
+Nuon models the customer-cloud installation as a complete BYOC application.
+
+The vendor defines the infrastructure, application components, inputs, policies,
+actions and deployment behavior within Nuon's platform. A runner inside the customer
+account executes the required operations with customer-controlled permissions.
+
+Nuon coordinates the installation lifecycle through its control plane. Its operating
+model covers infrastructure provisioning, application deployment, customer approvals,
+operational actions and fleet management.
+
+This approach gives vendors a structured system for operating installations across
+many customer accounts on AWS, Azure and Google Cloud.
+
+The tradeoff is a more opinionated platform model. Infrastructure and operational
+workflows become part of Nuon's application structure rather than remaining independent
+OpenTofu automation.
+
+## Infrastructure Provisioning
+
+### Reusing Existing Infrastructure Code With Distr
+
+Distr works with standard OpenTofu and Terraform configurations.
+
+A controller image contains:
+
+- The infrastructure configuration
+- The provider lock file
+- The Distr OpenTofu controller
+- Vendor-defined supporting files
+
+OpenTofu installs the providers locked in that file when the controller runs. For
+installations that cannot reach the public provider registry, vendors can mirror
+providers into an OCI registry and point the controller at it.
+
+Customer-specific values are passed through standard OpenTofu variables. Cloud
+credentials remain inside the customer environment, for example as Distr secrets
+consumed by the controller.
+
+The infrastructure definition stays in the vendor's repository and remains compatible
+with standard OpenTofu tooling. The vendor can test, review and run the same
+configuration outside Distr.
+
+This model fits vendors that already manage their SaaS or enterprise infrastructure
+with Terraform or OpenTofu. Infrastructure engineers can keep using familiar modules,
+providers, resource definitions and review processes.
+
+### Using Nuon's BYOC Model
+
+Nuon also supports infrastructure-as-code workflows, but it coordinates them through
+its broader BYOC application model.
+
+The platform connects infrastructure provisioning with application components,
+installation inputs, actions, policies and rollout behavior.
+
+This model provides more built-in operational structure. It also creates a tighter
+relationship between the infrastructure workflow and the Nuon platform.
+
+Nuon fits vendors that want the BYOC platform to define how the complete installation
+operates.
+
+Distr fits vendors that want existing OpenTofu automation to remain the primary
+infrastructure definition.
+
+## Updates and Drift
+
+Both platforms can update infrastructure and detect drift.
+
+Distr's OpenTofu controller periodically reconciles the declared configuration. It
+creates a plan when the infrastructure version, variables or underlying resources
+change.
+
+The controller records resource changes in the deployment logs. A failed
+reconciliation affects deployment health and can trigger an alert.
+
+Distr can either reconcile the infrastructure automatically or run in plan-only mode.
+In plan-only mode the controller logs the plan for review and does not apply it,
+except for a confirmed destroy. The customer controls the controller's credentials and
+permissions.
+
+Nuon provides a more integrated day-two workflow around infrastructure changes. Its
+platform is designed to help vendors review, approve, coordinate and remediate changes
+across customer installations.
+
+Nuon has the advantage when visual drift investigation and coordinated remediation are
+central operating requirements.
+
+Distr has the advantage when the declared OpenTofu configuration should remain
+portable and automatic reconciliation is sufficient.
+
+## Fleet Operations
+
+Nuon's strongest differentiation appears after the initial installation.
+
+Nuon provides packaged workflows for:
+
+- Staged rollout groups
+- Customer approval gates
+- Release windows
+- Pull-request plans
+- Operational actions
+- Break-glass access
+- Installation-wide audit history
+- Coordinated drift remediation
+
+These capabilities support vendors that actively operate a fleet of customer
+environments on AWS, Azure and Google Cloud.
+
+Distr manages infrastructure and application versions across customer deployments.
+Vendors can monitor deployment status, release updates, inspect logs, receive alerts
+and control which version each customer can access.
+
+Distr does not currently provide the same packaged operating model for staged BYOC
+rollouts, temporary operational access and arbitrary actions across customer
+environments.
+
+Nuon is stronger when the vendor needs a dedicated operations platform for a large
+BYOC fleet on AWS, Azure and Google Cloud.
+
+Distr is stronger when the vendor wants a simpler controller model or expects
+customers to retain more operational control.
+
+<TestimonialCTA name="weave" />
+
+## Security and Customer Control
+
+Both products run components inside the customer environment.
+
+Distr's infrastructure and deployment controllers receive only the credentials and
+permissions required for their configurations.
+
+The customer controls:
+
+- Cloud credentials supplied to the controllers
+- IAM policies
+- Kubernetes permissions
+- Infrastructure variables
+- Controller deployment
+- Registry access
+- Update timing
+
+The vendor does not require interactive access to the customer account.
+
+Customers can also choose not to run a deployment controller. They can pull approved
+artifacts from Distr and deploy them through their own CI/CD pipeline.
+
+Nuon also uses an in-account runner with customer-controlled permissions. Its operating
+model assumes that the vendor remains more involved in running the installation.
+
+Nuon adds controls for that relationship, including release windows, customer
+approvals, operational actions, audit history and break-glass access.
+
+Distr fits environments where the customer may operate the deployment independently.
+
+Nuon fits environments where the vendor operates the deployment under customer-defined
+guardrails.
+
+## Beyond BYOC on AWS, Azure and Google Cloud
+
+Distr covers distribution models outside BYOC on AWS, Azure and Google Cloud.
+
+The same platform can distribute software to:
+
+- Customer-owned cloud accounts
+- Existing Kubernetes clusters
+- Docker hosts
+- Linux virtual machines
+- Private data centers
+- Air-gapped networks
+- Customer-managed CI/CD pipelines
+
+Distr also provides the commercial distribution layer around those deployments.
+
+That layer includes:
+
+- Customer and application entitlements
+- Authenticated OCI artifact distribution
+- Version access controls
+- Software license generation
+- Offline license verification
+- Vendor and customer portals
+- Deployment health and logs
+- Documentation and support workflows
+
+These capabilities matter when customers have different security, infrastructure or
+operating requirements.
+
+A vendor can provision a new Kubernetes cluster for one customer, deploy into an
+existing cluster for another and distribute Docker artifacts to a third. The same
+customer, licensing and release model applies across those installations.
+
+Nuon is more focused. Its platform is designed around vendor-operated applications
+inside customer-owned accounts on AWS, Azure and Google Cloud.
+
+That focus allows Nuon to provide deeper workflows for that BYOC operating model.
+Distr's broader scope allows one platform to cover BYOC and traditional self-hosted
+software distribution.
+
+<LinkButton
+  href="/docs/use-cases/byoc-bring-your-own-cloud/"
+  variant="secondary"
+  icon="lucide:arrow-right"
+  iconPlacement="end">
+  BYOC
+</LinkButton>
+
+## When Distr Is the Better Fit
+
+Choose Distr when the product must support several enterprise distribution models.
+
+Distr is a stronger fit when:
+
+- Existing OpenTofu or Terraform configurations should remain portable.
+- Customers have different infrastructure requirements.
+- Some customers expect the vendor to provision infrastructure.
+- Other customers provide an existing cluster or virtual machine.
+- Customers may require Docker or customer-managed CI/CD.
+- On-premises and air-gapped installations are required.
+- Software licensing must work without internet connectivity.
+- Artifact and version access must be controlled per customer.
+- The company wants an open-source, self-hostable platform.
+
+Distr keeps infrastructure provisioning, application delivery, artifact access and
+licensing within one customer and release model.
+
+## When Nuon Is the Better Fit
+
+Choose Nuon when the company is building a vendor-operated BYOC service on AWS, Azure
+and Google Cloud.
+
+Nuon is a stronger fit when:
+
+- Every installation runs on AWS, Azure or Google Cloud.
+- The vendor owns day-two operations.
+- Customers expect controlled vendor access.
+- Rollouts require staged installation groups.
+- Customers must approve updates or define release windows.
+- Operational actions must run across customer installations.
+- Break-glass access needs a packaged workflow.
+- Drift investigation and remediation are central platform functions.
+- The company prefers Nuon's application model over maintaining independent controllers.
+
+Nuon provides more of the operating structure required to manage customer-cloud
+environments as an ongoing service.
+
+## Final Comparison
+
+Distr and Nuon overlap across infrastructure provisioning and application deployment,
+but they optimize for different distribution strategies.
+
+Distr packages infrastructure as portable OpenTofu controller images. It manages those
+controllers alongside application deployments, customer entitlements, artifacts and
+licenses.
+
+The same Distr platform also supports existing infrastructure, Docker, Kubernetes,
+on-premises systems, air-gapped environments and customer-managed pipelines.
+
+Nuon provides a dedicated platform for vendors that operate applications inside
+customer accounts on AWS, Azure and Google Cloud. Its strongest advantages are staged
+fleet rollouts, approval gates, operational actions, release windows, break-glass
+access and integrated drift operations.
+
+Choose Distr when BYOC must coexist with other self-hosted distribution models or when
+existing infrastructure automation should remain portable.
+
+Choose Nuon when vendor-operated BYOC on AWS, Azure and Google Cloud is the primary
+distribution model and the company wants a more opinionated operations platform around
+every customer installation.

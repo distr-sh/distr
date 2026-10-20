@@ -106,11 +106,13 @@ func uploadSupportBundleResourceHandler(r *http.Request) (respond.Responder, err
 		defer file.Close()
 		if contentBytes, err := io.ReadAll(file); err != nil {
 			return respond.BadRequest("failed to read content"), nil
+		} else if secrets, err := db.GetSecretsForCustomer(ctx, bundle.CustomerOrganizationID); err != nil {
+			return nil, fmt.Errorf("failed to get secrets: %w", err)
 		} else {
 			resource := types.SupportBundleResource{
 				SupportBundleID: bundle.ID,
 				Name:            name,
-				Content:         dbcrypto.String(contentBytes),
+				Content:         dbcrypto.String(secretsRedactor(secrets).Redact(string(contentBytes))),
 			}
 			if err := db.CreateSupportBundleResource(ctx, &resource); err != nil {
 				return nil, fmt.Errorf("failed to create support bundle resource: %w", err)

@@ -10,6 +10,7 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
 	"github.com/distr-sh/distr/internal/blocklist"
+	"github.com/distr-sh/distr/internal/controllermanifest"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/distrerr"
@@ -42,8 +43,8 @@ func OrganizationRouter(r chiopenapi.Router) {
 	r.With(middleware.BlockSuperAdmin, middleware.RequireVendor, middleware.RequireAdmin).
 		Put("/", respond.Handler(updateOrganization)).
 		With(option.Description("Update current organization")).
-		With(option.Request(api.CreateUpdateOrganizationRequest{})).
-		With(option.Response(http.StatusOK, types.Organization{}))
+		With(option.Request(api.UpdateOrganizationRequest{})).
+		With(option.Response(http.StatusOK, api.OrganizationResponse{}))
 
 	r.With(
 		middleware.RequireVendor,
@@ -72,14 +73,20 @@ func OrganizationRouter(r chiopenapi.Router) {
 
 func getOrganization(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	auth := auth.Authentication.Require(ctx)
-	orgID := *auth.CurrentOrgID()
-	if billableUserCount, err := db.CountBillableUserAccountsByOrgID(ctx, orgID); err != nil {
+	return organizationResponse(ctx, *auth.Authentication.Require(ctx).CurrentOrg())
+}
+
+func organizationResponse(ctx context.Context, org types.Organization) (respond.Responder, error) {
+	if billableUserCount, err := db.CountBillableUserAccountsByOrgID(ctx, org.ID); err != nil {
 		return nil, fmt.Errorf("failed to count billable user accounts: %w", err)
-	} else if customerOrgCount, err := db.CountCustomerOrganizationsByOrganizationID(ctx, orgID); err != nil {
+	} else if customerOrgCount, err := db.CountCustomerOrganizationsByOrganizationID(ctx, org.ID); err != nil {
 		return nil, fmt.Errorf("failed to count customer organizations: %w", err)
+	} else if branding, err := db.GetOrganizationBranding(ctx, org.ID); err != nil &&
+		!errors.Is(err, distrerr.ErrNotFound) {
+		return nil, fmt.Errorf("failed to get organization branding: %w", err)
 	} else {
-		return respond.JSON(mapping.OrganizationToAPI(*auth.CurrentOrg(), billableUserCount, customerOrgCount)), nil
+		repository := controllermanifest.DefaultImageRepository(ctx, org.ID, branding)
+		return respond.JSON(mapping.OrganizationToAPI(org, billableUserCount, customerOrgCount, repository)), nil
 	}
 }
 
@@ -100,11 +107,16 @@ func updateOrganization(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 
+	body, resp := decodeJSON[api.UpdateOrganizationRequest](r)
+	if resp != nil {
+		return resp, nil
+	}
+	body.Normalize()
 	var org *types.Organization
-	if body, resp := decodeJSON[api.CreateUpdateOrganizationRequest](r); resp != nil {
+	if resp := validateOrganizationRequest(body); resp != nil {
 		return resp, nil
-	} else if resp := validateOrganizationRequest(body); resp != nil {
-		return resp, nil
+	} else if err := body.ValidateControllerImageRepository(); err != nil {
+		return respond.BadRequest(err.Error()), nil
 	} else if resp, err := runTxRR(ctx, func(ctx context.Context) (respond.Responder, error) {
 		var err error
 		if org, err = db.GetOrganizationByID(ctx, *auth.CurrentOrgID()); err != nil {
@@ -121,7 +133,7 @@ func updateOrganization(r *http.Request) (respond.Responder, error) {
 	}); resp != nil || err != nil {
 		return resp, err
 	} else {
-		return respond.JSON(org), nil
+		return organizationResponse(ctx, *org)
 	}
 }
 
@@ -135,8 +147,8 @@ func createOrganization(r *http.Request) (respond.Responder, error) {
 		return respond.Forbidden("you are not allowed to create organizations"), nil
 	} else if body, resp := decodeJSON[api.CreateOrganizationRequest](r); resp != nil {
 		return resp, nil
-	} else if resp := validateOrganizationRequest(body.CreateUpdateOrganizationRequest); resp != nil {
-		return resp, nil
+	} else if body.Name == "" {
+		return respond.BadRequest("name is required"), nil
 	} else if resp := validateOrganizationAdmin(auth, body.AdminEmail); resp != nil {
 		return resp, nil
 	} else if reached, err := subscription.IsGlobalOrganizationLimitReached(ctx); err != nil {
@@ -161,9 +173,7 @@ func createOrganization(r *http.Request) (respond.Responder, error) {
 					ctx, *orgWithBranding, body.AdminEmail, "", types.UserRoleAdmin, nil, nil)
 				return err
 			}
-		}); errors.Is(err, distrerr.ErrConflict) {
-			return slugNotAvailable, nil
-		} else if err != nil {
+		}); err != nil {
 			return nil, fmt.Errorf("could not create organization: %w", err)
 		} else {
 			return respond.JSON(mapping.OrganizationToCreateResponse(organization, inviteURL)), nil
@@ -186,7 +196,7 @@ func validateOrganizationAdmin(auth authinfo.AuthInfo, adminEmail string) respon
 	return nil
 }
 
-func validateOrganizationRequest(organization api.CreateUpdateOrganizationRequest) respond.Responder {
+func validateOrganizationRequest(organization api.UpdateOrganizationRequest) respond.Responder {
 	if organization.Name == "" {
 		return respond.BadRequest("name is required")
 	}
@@ -201,7 +211,7 @@ func validateOrganizationRequest(organization api.CreateUpdateOrganizationReques
 func applyOrganizationUpdate(
 	ctx context.Context,
 	org *types.Organization,
-	request api.CreateUpdateOrganizationRequest,
+	request api.UpdateOrganizationRequest,
 ) error {
 	needsUpdate := false
 
@@ -222,6 +232,11 @@ func applyOrganizationUpdate(
 
 	if !util.PtrEq(org.DockerPostConnectScript, request.DockerPostConnectScript) {
 		org.DockerPostConnectScript = request.DockerPostConnectScript
+		needsUpdate = true
+	}
+
+	if !util.PtrEq(org.ControllerImageRepository, request.ControllerImageRepository) {
+		org.ControllerImageRepository = request.ControllerImageRepository
 		needsUpdate = true
 	}
 

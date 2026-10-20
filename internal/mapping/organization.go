@@ -6,12 +6,18 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 )
 
-func OrganizationToAPI(o types.Organization, billableUserCount, customerOrgCount int64) api.OrganizationResponse {
+func OrganizationToAPI(
+	o types.Organization,
+	billableUserCount, customerOrgCount int64,
+	defaultControllerImageRepository string,
+) api.OrganizationResponse {
 	return api.OrganizationResponse{
 		Organization:                     o,
 		SubscriptionLimits:               subscription.GetSubscriptionLimits(o.SubscriptionType),
 		CurrentBillableUserAccountCount:  billableUserCount,
 		CurrentCustomerOrganizationCount: customerOrgCount,
+		ControllerImageRepository:        o.ControllerImageRepository,
+		DefaultControllerImageRepository: defaultControllerImageRepository,
 	}
 }
 
@@ -20,13 +26,5 @@ func OrganizationToCreateResponse(o types.Organization, inviteURL string) api.Cr
 }
 
 func CreateOrganizationRequestToInternal(r api.CreateOrganizationRequest) types.Organization {
-	return types.Organization{
-		Name:                        r.Name,
-		Slug:                        r.Slug,
-		DockerPreConnectScript:      r.DockerPreConnectScript,
-		DockerPostConnectScript:     r.DockerPostConnectScript,
-		DockerConnectScriptIsSudo:   r.DockerConnectScriptIsSudo,
-		KubernetesPreConnectScript:  r.KubernetesPreConnectScript,
-		KubernetesPostConnectScript: r.KubernetesPostConnectScript,
-	}
+	return types.Organization{Name: r.Name}
 }

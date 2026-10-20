@@ -168,7 +168,7 @@ services:
 
 A pull against a digest fails fast if the registry no longer has those bytes, which is exactly what you want: silent drift becomes a loud error. The same image reference works in `docker stack deploy`, in `docker run`, and in Kubernetes manifests.
 
-For the broader picture of what your customers can extract from a published image (and why image hygiene matters beyond reproducibility), check out our guide on [protecting source code and IP in Docker and Kubernetes deployments](/blog/protect-source-code-docker-container/). And if you're still picking a registry, our [container registry comparison](/blog/container-image-registry-comparison/) walks through the trade-offs.
+For the broader picture of what your customers can extract from a published image (and why image hygiene matters beyond reproducibility), check out our guide on [securing your source code in Docker images](/blog/secure-source-code-docker-container/). And if you're still picking a registry, our [container registry comparison](/blog/container-image-registry-comparison/) walks through the trade-offs.
 
 ## Why Mounting `/var/run/docker.sock` Is a Security Risk
 

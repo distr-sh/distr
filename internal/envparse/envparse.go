@@ -33,6 +33,11 @@ func Host(value string) (string, error) {
 	return value, nil
 }
 
+func ImageRepository(value string) (string, error) {
+	value = validation.NormalizeImageRepository(value)
+	return value, validation.ValidateImageRepository(value)
+}
+
 func MailAddress(s string) (mail.Address, error) {
 	if parsed, err := mail.ParseAddress(s); err != nil || parsed == nil {
 		return mail.Address{}, err

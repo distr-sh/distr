@@ -5,10 +5,10 @@ import {combineLatestWith, map, merge, Observable, shareReplay, Subject, tap} fr
 import {
   CreateOrganizationRequest,
   CreateOrganizationResponse,
-  CreateUpdateOrganizationRequest,
   isSubscriptionExpired,
   Organization,
   OrganizationWithUserRole,
+  UpdateOrganizationRequest,
 } from '../types/organization';
 import {isPayingSubscription} from '../types/subscription';
 import {ContextService} from './context.service';
@@ -49,7 +49,7 @@ export class OrganizationService {
     return this.httpClient.post<CreateOrganizationResponse>(this.baseUrl, request);
   }
 
-  update(organization: CreateUpdateOrganizationRequest): Observable<Organization> {
+  update(organization: UpdateOrganizationRequest): Observable<Organization> {
     return this.httpClient.put<Organization>(this.baseUrl, organization).pipe(
       combineLatestWith(this.getAll()),
       map(([it, allOrgs]) => {
