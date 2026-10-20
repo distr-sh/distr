@@ -70,16 +70,33 @@ The customer can now access and deploy the assigned application version/s direct
 
 ## Choosing the granted versions
 
-An entitlement grants either **All versions** of the application, which includes every version you create later, or **Specific versions**. With specific versions, you have to select at least one version, the customer only gets the versions you select and new versions are not added unless they match the auto-add regex described below.
+An entitlement grants either **All versions** of the application, which includes every version you create later, or **Specific versions**. With specific versions, you have to select at least one version, the customer only gets the versions you select and new versions are not added unless they match the [auto-add version regex](#auto-add-version-regex).
 
-## Automatically adding new versions
+## Auto-add version regex
 
-An entitlement for specific versions can add new versions on its own. Enter a regular expression in **Auto-add Version Regex**, and every application version created afterwards whose name matches it is added to the entitlement. For example, `^2\.\d+\.\d+$` adds every new `2.x.y` release.
+An entitlement for specific versions can grow with your releases. Enter a regular expression in **Auto-add Version Regex**, and every new application version whose name matches it is added to the entitlement automatically. For example, `^2\.\d+\.\d+$` keeps a customer on every `2.x.y` release without you editing the entitlement after each one.
 
-- The expression uses [RE2 syntax](https://github.com/google/re2/wiki/Syntax) and matches anywhere in the version name unless you anchor it with `^` and `$`.
-- It only applies to versions created after you set it. Existing versions stay as you selected them.
-- Renaming a version adds it as well if the new name matches and the previous one did not. Archived versions are never added.
-- An auto-added version is an ordinary entry of the entitlement, so you can remove it like any other. Renaming it to a name that no longer matches keeps it in the entitlement.
+### How matching works
+
+- **When it runs:** The regex is checked whenever you create an application version and whenever you rename one. Setting or changing the regex does not touch existing versions, so select those yourself.
+- **Renamed versions:** A renamed version is added if its new name matches and its previous name did not. A version you removed by hand is therefore not added back by a rename that keeps it matching.
+- **Archived versions:** These are never added.
+- **Syntax:** The regex uses [RE2 syntax](https://github.com/google/re2/wiki/Syntax) and may be up to 200 characters long. Lookaheads and backreferences are not supported.
+- **Partial matches:** The regex matches anywhere in the version name unless you anchor it with `^` and `$`. Matching is case-sensitive; prefix the regex with `(?i)` to ignore case.
+- **At least one version:** An entitlement with an auto-add regex needs at least one selected version, since an entitlement without versions already grants all of them.
+
+An auto-added version is an ordinary entry of the entitlement. The customer can deploy it right away, it is considered for automatic updates and update notifications and you can remove it like any version you selected yourself. Renaming it to a name that no longer matches keeps it in the entitlement.
+
+### Examples
+
+| Regex             | Adds                           | Does not add             |
+| ----------------- | ------------------------------ | ------------------------ |
+| `^2\.\d+\.\d+$`   | `2.0.0`, `2.14.3`              | `12.0.0`, `2.1.0-rc.1`   |
+| `^2\.`            | `2.1.0`, `2.1.0-rc.1`          | `12.0.0`, `v2.1.0`       |
+| `^\d+\.\d+\.\d+$` | `1.4.2`, `3.0.0`               | `1.5.0-beta.1`, `v1.4.2` |
+| `-lts$`           | `3.2.0-lts`                    | `3.2.0`, `3.2.0-lts.1`   |
+| `^[23]\.\d+\.\d+` | `2.1.0`, `3.0.4`, `3.0.4-rc1`  | `4.0.0`, `1.2.3`         |
+| `(?i)^release-`   | `release-2026-10`, `RELEASE-7` | `pre-release-1`          |
 
 ## OCI registry authentication
 

@@ -34,6 +34,7 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faChevronDown} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {filter, firstValueFrom, switchMap} from 'rxjs';
+import {WEBSITE_URL} from '../../../constants';
 import {isArchived} from '../../../util/dates';
 import {sortApplicationVersions} from '../../../util/versions';
 import {AlertComponent} from '../../components/alert/alert.component';
@@ -148,6 +149,7 @@ export class EditApplicationEntitlementComponent implements OnInit, AfterViewIni
   protected readonly dropdownWidth = signal(0);
 
   protected readonly faChevronDown = faChevronDown;
+  protected readonly autoAddVersionRegexDocsUrl = `${WEBSITE_URL}/docs/platform/application-entitlements/#auto-add-version-regex`;
 
   protected readonly dropdownTriggerButton = viewChild<ElementRef<HTMLElement>>('dropdownTriggerButton');
 
