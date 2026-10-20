@@ -122,11 +122,18 @@
     animate.leave="animate-fly-out-right"
     tabindex="-1"
     aria-labelledby="application-entitlement-drawer-label">
-    <h5
-      id="application-entitlement-drawer-label"
-      class="inline-flex items-center mb-6 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
-      Manage Application Entitlement
-    </h5>
+    <div class="mb-6">
+      <h5
+        id="application-entitlement-drawer-label"
+        class="inline-flex items-center text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
+        Manage Application Entitlement
+      </h5>
+      @if (customerName(); as customerName) {
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          Customer: <span class="font-medium text-gray-900 dark:text-white">{{ customerName }}</span>
+        </p>
+      }
+    </div>
     <button
       type="button"
       (click)="hideDrawer()"

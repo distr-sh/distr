@@ -14,24 +14,15 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <label for="subjectId" class="distr-label mb-2"> Application * </label>
-        <select id="subjectId" formControlName="subjectId" class="distr-input">
-          @for (app of applications$ | async; track app.id) {
-            <option [value]="app.id">{{ app.name }}</option>
-          }
-        </select>
-        @if (editForm.controls.subjectId.invalid && editForm.controls.subjectId.touched) {
-          <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
+    <div>
+      <label for="subjectId" class="distr-label mb-2"> Application * </label>
+      <select id="subjectId" formControlName="subjectId" class="distr-input">
+        @for (app of applications$ | async; track app.id) {
+          <option [value]="app.id">{{ app.name }}</option>
         }
-      </div>
-
-      @if (customerName(); as customerName) {
-        <div>
-          <span class="distr-label mb-2">Customer</span>
-          <p class="flex h-10.5 items-center text-sm text-gray-900 dark:text-white">{{ customerName }}</p>
-        </div>
+      </select>
+      @if (editForm.controls.subjectId.invalid && editForm.controls.subjectId.touched) {
+        <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
       }
     </div>
 

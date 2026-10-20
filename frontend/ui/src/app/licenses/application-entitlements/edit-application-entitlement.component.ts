@@ -4,7 +4,6 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
-  computed,
   DestroyRef,
   ElementRef,
   forwardRef,
@@ -14,7 +13,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   ControlValueAccessor,
@@ -34,7 +33,7 @@ import {Application, ApplicationVersion} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faChevronDown} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {filter, first, firstValueFrom, switchMap} from 'rxjs';
+import {filter, firstValueFrom, switchMap} from 'rxjs';
 import {isArchived} from '../../../util/dates';
 import {sortApplicationVersions} from '../../../util/versions';
 import {AlertComponent} from '../../components/alert/alert.component';
@@ -42,7 +41,6 @@ import {ExpiresAtPickerComponent} from '../../components/expires-at-picker/expir
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ApplicationsService} from '../../services/applications.service';
 import {AuthService} from '../../services/auth.service';
-import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {ApplicationEntitlement} from '../../types/application-entitlement';
 import {ArtifactEntitlement} from '../../types/artifact-entitlement';
 
@@ -103,12 +101,9 @@ export class EditApplicationEntitlementComponent implements OnInit, AfterViewIni
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
   private readonly applicationsService = inject(ApplicationsService);
-  private readonly customerOrganizationService = inject(CustomerOrganizationsService);
   protected readonly auth = inject(AuthService);
 
   applications$ = this.applicationsService.list();
-  private readonly customers = toSignal(this.customerOrganizationService.getCustomerOrganizations().pipe(first()));
-
   private fb = inject(FormBuilder);
   editForm = this.fb.nonNullable.group(
     {
@@ -145,12 +140,6 @@ export class EditApplicationEntitlementComponent implements OnInit, AfterViewIni
     {validators: specificVersionsValidator}
   );
   readonly entitlement = signal<ApplicationEntitlement | undefined>(undefined);
-  protected readonly customerName = computed(() => {
-    const customerOrganizationId = this.entitlement()?.customerOrganizationId;
-    return customerOrganizationId
-      ? (this.customers()?.find((c) => c.id === customerOrganizationId)?.name ?? '—')
-      : undefined;
-  });
   readonly selectedSubject = signal<Application | undefined>(undefined);
   readonly includedArchivedVersions = signal<ApplicationVersion[]>([]);
 
