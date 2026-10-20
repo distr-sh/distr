@@ -15,7 +15,6 @@ import {
 } from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {
-  AbstractControl,
   ControlValueAccessor,
   FormArray,
   FormBuilder,
@@ -46,18 +45,6 @@ import {ApplicationEntitlement} from '../../types/application-entitlement';
 import {ArtifactEntitlement} from '../../types/artifact-entitlement';
 
 type VersionScope = 'all' | 'specific';
-
-function regexValidator(control: AbstractControl<string>): ValidationErrors | null {
-  if (!control.value) {
-    return null;
-  }
-  try {
-    new RegExp(control.value);
-    return null;
-  } catch {
-    return {regex: true};
-  }
-}
 
 // An entitlement without versions grants all of them, so "Specific versions" needs at least one.
 const specificVersionsValidator: ValidatorFn = (control) => {
@@ -115,7 +102,7 @@ export class EditApplicationEntitlementComponent implements OnInit, AfterViewIni
       versionScope: this.fb.nonNullable.control<VersionScope>('all'),
       activeVersions: this.fb.array<boolean>([]),
       archivedVersions: this.fb.array<boolean>([]),
-      autoAddVersionRegex: this.fb.nonNullable.control('', [Validators.maxLength(200), regexValidator]),
+      autoAddVersionRegex: this.fb.nonNullable.control('', [Validators.maxLength(200)]),
       customerOrganizationId: this.fb.nonNullable.control<string | undefined>(undefined),
       registry: this.fb.nonNullable.group(
         {
