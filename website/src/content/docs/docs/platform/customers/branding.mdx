@@ -120,8 +120,8 @@ See the [configuration reference](/docs/self-hosting/configuration/#custom-domai
 
 ## Controller Image Repository
 
-On Distr Cloud, the [Docker](/docs/controllers/docker-controller/) and [Kubernetes](/docs/controllers/kubernetes-controller/) controllers pull their images from `registry.distr.sh/public`.
-If your organization has a [custom registry domain](#custom-domains), they are pulled through that domain instead, e.g. `registry.your-company.com/public`.
+On Distr Cloud, the [Docker](/docs/controllers/docker-controller/) and [Kubernetes](/docs/controllers/kubernetes-controller/) controllers pull their images from `registry.distr.sh/distr`.
+If your organization has a [custom registry domain](#custom-domains), they are pulled through that domain instead, e.g. `registry.your-company.com/distr`.
 Self-hosted instances pull them from `ghcr.io/distr-sh/distr` unless the instance is [configured](/docs/self-hosting/configuration/) otherwise.
 
 To have your customers pull them from another registry, enable **Use an external controller repository** under **Settings → Organization → General** and enter its host and an optional path (e.g. `registry.distr.sh/your-org`).

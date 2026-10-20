@@ -49,7 +49,7 @@ jobs:
         with:
           images: |
             ghcr.io/distr-sh/distr/docker-autoheal
-            registry.distr.sh/public/docker-autoheal
+            registry.distr.sh/distr/docker-autoheal
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}

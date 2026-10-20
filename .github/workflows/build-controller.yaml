@@ -136,7 +136,7 @@ jobs:
         with:
           images: |
             ${{ env.REGISTRY_IMAGE }}
-            registry.distr.sh/public/${{ matrix.controller }}
+            registry.distr.sh/distr/${{ matrix.controller }}
           tags: |
             type=ref,event=branch
             type=sha,event=branch
