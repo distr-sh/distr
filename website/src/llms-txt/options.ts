@@ -34,6 +34,11 @@ function readContentPages(collectionDir: string, pattern: string) {
     .filter(page => !page.data.draft);
 }
 
+export const comparePages = () =>
+  readContentPages('compare', '*.{md,mdx}').sort((a, b) =>
+    collator.compare(a.id, b.id),
+  );
+
 const rank = (id: string) =>
   promote.includes(id) ? promote.indexOf(id) : Infinity;
 
@@ -46,13 +51,11 @@ export function llmsTxtOptions(site: string): LlmsTxtOptions {
       description: data.description,
     }));
 
-  const comparePageLinks = readContentPages('compare', '*.{md,mdx}')
-    .sort((a, b) => collator.compare(a.id, b.id))
-    .map(({id, data}) => ({
-      label: data.title,
-      url: `${site}/compare/${id}/`,
-      description: data.description,
-    }));
+  const comparePageLinks = comparePages().map(({id, data}) => ({
+    label: data.title,
+    url: `${site}/compare/${id}/`,
+    description: data.description,
+  }));
 
   return {
     // The plugin prefixes the description with "> " once, so it has to stay on a single line.
