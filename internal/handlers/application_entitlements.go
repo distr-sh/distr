@@ -97,7 +97,9 @@ func createApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 	} else if err := checkAutoAddVersionRegex(&entitlement); err != nil {
 		return respond.BadRequest(err.Error()), nil
 	} else if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
-		if err := db.CreateApplicationEntitlement(
+		if err := db.LockApplicationExclusive(ctx, entitlement.ApplicationID); err != nil {
+			return nil, err
+		} else if err := db.CreateApplicationEntitlement(
 			ctx, &entitlement.ApplicationEntitlementBase,
 		); errors.Is(err, distrerr.ErrConflict) {
 			return applicationEntitlementNameTaken, nil
@@ -192,7 +194,9 @@ func updateApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 
 	var updated *types.ApplicationEntitlement
 	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
-		if err := db.UpdateApplicationEntitlement(
+		if err := db.LockApplicationExclusive(ctx, entitlement.ApplicationID); err != nil {
+			return nil, err
+		} else if err := db.UpdateApplicationEntitlement(
 			ctx, &entitlement.ApplicationEntitlementBase,
 		); errors.Is(err, distrerr.ErrConflict) {
 			return applicationEntitlementNameTaken, nil
@@ -326,6 +330,11 @@ func addVersionToMatchingEntitlements(
 	// The entitlement form cannot deselect an archived version, so one added here could not be removed again.
 	if version.ArchivedAt != nil {
 		return false, nil
+	}
+	// Without the lock, an entitlement switched to all versions concurrently would end up with only this version,
+	// because the insert below does not wait for the edit that removes its versions.
+	if err := db.LockApplicationExclusive(ctx, version.ApplicationID); err != nil {
+		return false, err
 	}
 	regexes, err := db.GetApplicationEntitlementAutoAddVersionRegexes(ctx, version.ApplicationID)
 	if err != nil {
