@@ -18,9 +18,7 @@ type ApplicationEntitlementBase struct {
 	RegistryURL            *string          `db:"registry_url" json:"registryUrl,omitempty"`
 	RegistryUsername       *dbcrypto.String `db:"registry_username" json:"registryUsername,omitempty"`
 	RegistryPassword       *dbcrypto.String `db:"registry_password" json:"registryPassword,omitempty"`
-	// AutoAddVersionRegex is only set on an entitlement with versions. One without versions grants all of them, so
-	// adding a matching version would narrow it down to that version.
-	AutoAddVersionRegex *string `db:"auto_add_version_regex" json:"autoAddVersionRegex,omitempty"`
+	AutoAddVersionRegex    *string          `db:"auto_add_version_regex" json:"autoAddVersionRegex,omitempty"`
 }
 
 type ApplicationEntitlementWithVersions struct {
