@@ -99,7 +99,7 @@
       "automerge": true
     },
     {
-      "description": "Automerge minor and patch releases of other noisy dependencies, none of which ever needed a fix or a revert",
+      "description": "Automerge minor and patch releases",
       "matchPackageNames": [
         "@sentry/angular",
         "@sentry/browser",
