@@ -31,6 +31,7 @@ type Organization struct {
 	KubernetesPostConnectScript         *string            `db:"kubernetes_post_connect_script" json:"kubernetesPostConnectScript"`                           //nolint:lll
 	StripeWebhookSecret                 *dbcrypto.String   `db:"stripe_webhook_secret"            json:"-"`
 	StripeWebhookSecretConfigured       bool               `db:"stripe_webhook_secret_configured" json:"stripeWebhookSecretConfigured"` //nolint:lll
+	ControllerImageRepository           *string            `db:"controller_image_repository" json:"-"`
 }
 
 func (org *Organization) ConnectScripts(deploymentType DeploymentType) (pre string, post string) {

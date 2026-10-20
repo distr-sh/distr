@@ -1,5 +1,25 @@
 # Changelog
 
+## [4.6.0](https://github.com/distr-sh/distr/compare/4.5.0...4.6.0) (2026-10-20)
+
+
+### Features
+
+* **backend:** improve secret redaction ([#3527](https://github.com/distr-sh/distr/issues/3527)) ([57c575d](https://github.com/distr-sh/distr/commit/57c575d74b005e68ac4b0de3fb9da0d82a4d6152))
+* custom controller image repository ([#3492](https://github.com/distr-sh/distr/issues/3492)) ([197527c](https://github.com/distr-sh/distr/commit/197527cdb59641832411b73650b0c2c29b36b97a))
+
+
+### Bug Fixes
+
+* **backend:** improve deployment creation request validation ([#3525](https://github.com/distr-sh/distr/issues/3525)) ([874b658](https://github.com/distr-sh/distr/commit/874b658a9b409270629e9bc177d7e941e8496900))
+
+
+### Docs
+
+* **website:** add an Amazon ECS guide to Integrations & API ([#3504](https://github.com/distr-sh/distr/issues/3504)) ([dd9f65b](https://github.com/distr-sh/distr/commit/dd9f65be1f0554cbd7bd6d42e9ca292c167d9813))
+* **website:** add llms.txt ([#3550](https://github.com/distr-sh/distr/issues/3550)) ([a03c217](https://github.com/distr-sh/distr/commit/a03c21775890afcab68b598481e4440a882875cf))
+* **website:** retitle protect source code docker post ([#3471](https://github.com/distr-sh/distr/issues/3471)) ([561da42](https://github.com/distr-sh/distr/commit/561da42b178f8a6b0ba286a84b4d057037764083))
+
 ## [4.5.0](https://github.com/distr-sh/distr/compare/4.4.2...4.5.0) (2026-10-19)
 
 
