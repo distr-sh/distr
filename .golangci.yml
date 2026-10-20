@@ -18,6 +18,7 @@ linters:
     - errcheck
     - errchkjson
     - errname
+    - forbidigo
     - ginkgolinter
     - gocheckcompilerdirectives
     - goconst
@@ -51,7 +52,23 @@ linters:
       - third_party$
       - builtin$
       - examples$
+    rules:
+      - linters:
+          - forbidigo
+        path-except: ^internal/(handlers|middleware)/
+      - linters:
+          - forbidigo
+        path: ^internal/middleware/
+        text: http\.ResponseWriter
   settings:
+    forbidigo:
+      forbid:
+        - pattern: ^http\.ResponseWriter$
+          msg: return a respond.Responder from a handler registered with respond.Handler
+        - pattern: ^http\.Error$
+          msg: return a respond.ErrorResponse such as respond.BadRequest
+        - pattern: ^distrerr\.New
+          msg: return a respond.ErrorResponse such as respond.BadRequest instead of an error the caller maps back
     gocritic:
       disabled-checks:
         - ifElseChain

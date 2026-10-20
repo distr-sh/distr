@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/authn/token"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 )
@@ -33,7 +33,7 @@ func Authenticator() authn.RequestAuthenticator[*types.SupportBundle] {
 			bundle, err := db.GetSupportBundleByBundleSecret(
 				ctx, bundleID, bundleSecret,
 			)
-			if errors.Is(err, apierrors.ErrNotFound) {
+			if errors.Is(err, distrerr.ErrNotFound) {
 				return nil, fmt.Errorf(
 					"%w: invalid or expired token",
 					authn.ErrBadAuthentication,

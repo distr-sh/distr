@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -246,7 +246,7 @@ func UpdateAlertConfiguration(ctx context.Context, config *types.AlertConfigurat
 		if err != nil {
 			return fmt.Errorf("failed to update AlertConfiguration: %w", err)
 		} else if cmd.RowsAffected() == 0 {
-			return apierrors.ErrNotFound
+			return distrerr.ErrNotFound
 		}
 
 		if err := updateAlertConfigurationLinks(ctx, config); err != nil {
@@ -321,7 +321,7 @@ func DeleteAlertConfiguration(
 	)
 
 	if err == nil && cmd.RowsAffected() == 0 {
-		err = apierrors.ErrNotFound
+		err = distrerr.ErrNotFound
 	}
 
 	if err != nil {

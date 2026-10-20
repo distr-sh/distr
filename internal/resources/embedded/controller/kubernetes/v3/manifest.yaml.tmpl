@@ -114,7 +114,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: distr-{{ .controllerName }}
-          image: "ghcr.io/distr-sh/distr/kubernetes-controller:{{ .controllerVersion }}"
+          image: "{{ .controllerImageRepository }}/kubernetes-controller:{{ .controllerVersion }}"
           imagePullPolicy: IfNotPresent
           env:
             - name: DOCKER_CONFIG

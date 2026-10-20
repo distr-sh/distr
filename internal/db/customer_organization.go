@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -74,7 +74,7 @@ func CreateCustomerOrganization(ctx context.Context, customerOrg *types.Customer
 		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok &&
 			pgErr.Code == pgerrcode.ForeignKeyViolation &&
 			pgErr.ConstraintName == "customerorganization_image_id_fkey" {
-			return apierrors.NewBadRequest("invalid image ID")
+			return distrerr.NewBadRequest("invalid image ID")
 		}
 
 		return fmt.Errorf("could not scan created CustomerOrganization: %w", err)
@@ -107,7 +107,7 @@ func GetCustomerOrganizationByID(
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.CustomerOrganizationWithUsage])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, apierrors.ErrNotFound
+		return nil, distrerr.ErrNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("could not collect CustomerOrganization: %w", err)
 	}
@@ -176,7 +176,7 @@ func UpdateCustomerOrganization(ctx context.Context, customerOrg *types.Customer
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.CustomerOrganization])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return apierrors.ErrNotFound
+		return distrerr.ErrNotFound
 	} else if err != nil {
 		return err
 	} else {
@@ -233,7 +233,7 @@ func SetCustomerOrganizationPartner(
 	if err != nil {
 		return fmt.Errorf("could not update CustomerOrganization partner: %w", err)
 	} else if cmd.RowsAffected() == 0 {
-		return apierrors.ErrNotFound
+		return distrerr.ErrNotFound
 	}
 	return nil
 }
@@ -264,14 +264,14 @@ func DeleteCustomerOrganizationWithID(ctx context.Context, id uuid.UUID, organiz
 			return fmt.Errorf("could not delete CustomerOrganization: %w", err)
 		}
 		if cmd.RowsAffected() == 0 {
-			return apierrors.ErrNotFound
+			return distrerr.ErrNotFound
 		}
 		return nil
 	})
 	if err != nil {
 		var pgError *pgconn.PgError
 		if errors.As(err, &pgError) && pgError.Code == pgerrcode.ForeignKeyViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 	}
 	return err

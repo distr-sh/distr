@@ -6,7 +6,6 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faArrowLeft,
   faCheck,
-  faChevronDown,
   faChevronRight,
   faComment,
   faDownload,
@@ -53,7 +52,6 @@ export class SupportBundleDetailComponent {
   protected readonly auth = inject(AuthService);
 
   protected readonly faArrowLeft = faArrowLeft;
-  protected readonly faChevronDown = faChevronDown;
   protected readonly faChevronRight = faChevronRight;
   protected readonly faCheck = faCheck;
   protected readonly faComment = faComment;
@@ -63,11 +61,15 @@ export class SupportBundleDetailComponent {
   private readonly timeline = viewChild(ActivityTimelineComponent);
 
   protected readonly bundle = signal<SupportBundleDetail | undefined>(undefined);
-  protected readonly expandedResources = signal(new Set<string>());
   protected readonly updatingStatus = signal(false);
   protected readonly submittingComment = signal(false);
   protected readonly downloading = signal(false);
   protected readonly deleting = signal(false);
+
+  protected readonly title = computed(() => {
+    const bundle = this.bundle();
+    return bundle?.title || `Support Bundle ${bundle?.id.substring(0, 8)}`;
+  });
 
   protected readonly timelineEntries = computed<ActivityTimelineEntry[]>(() =>
     (this.bundle()?.comments ?? []).map((comment) => ({
@@ -103,26 +105,6 @@ export class SupportBundleDetailComponent {
           }
         },
       });
-  }
-
-  protected toggleResource(resourceId: string): void {
-    this.expandedResources.update((set) => {
-      const next = new Set(set);
-      if (next.has(resourceId)) {
-        next.delete(resourceId);
-      } else {
-        next.add(resourceId);
-      }
-      return next;
-    });
-  }
-
-  protected isResourceExpanded(resourceId: string): boolean {
-    return this.expandedResources().has(resourceId);
-  }
-
-  protected shortId(id: string): string {
-    return id.substring(0, 8);
   }
 
   protected readonly backRoute = this.auth.isCustomer() ? '/support' : '/support-bundles';

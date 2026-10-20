@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/registry/name"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/opencontainers/go-digest"
@@ -61,7 +61,7 @@ func authorizeAnonymous(ctx context.Context, n *name.Name, action Action) error 
 	if action != ActionRead && action != ActionStat {
 		return ErrAuthenticationRequired
 	} else if artifact, err := db.GetArtifactByName(ctx, n.OrgName, n.ArtifactName); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return ErrAuthenticationRequired
 		}
 		return err
@@ -73,10 +73,42 @@ func authorizeAnonymous(ctx context.Context, n *name.Name, action Action) error 
 	return nil
 }
 
+func authorizeAnonymousBlob(ctx context.Context, n *name.Name, digest digest.Digest, action Action) error {
+	// The blob route carries the repository name, so an anonymous caller is held to the artifact
+	// it names rather than to any artifact of the organization that references the digest.
+	if action != ActionRead && action != ActionStat {
+		return ErrAuthenticationRequired
+	} else if belongs, err := db.ArtifactBlobBelongsToPublicArtifact(
+		ctx, n.OrgName, n.ArtifactName, digest.String(),
+	); err != nil {
+		return err
+	} else if !belongs {
+		return ErrAuthenticationRequired
+	} else if AnonymousLimitExceeded(ctx) {
+		return ErrRateLimited
+	}
+	return nil
+}
+
+// authorizeOrganization reports whether the principal's organization owns the reference. A principal
+// reading another organization's repository is held to authorizePublic, the check an anonymous caller
+// gets, because a host logged in to a registry domain sends its credentials for every repository on it.
+func authorizeOrganization(org *types.Organization, n *name.Name, authorizePublic func() error) (bool, error) {
+	if org.Slug != nil && *org.Slug == n.OrgName {
+		return true, nil
+	} else if err := authorizePublic(); !errors.Is(err, ErrAuthenticationRequired) {
+		return false, err
+	} else if org.Slug == nil {
+		return false, NewErrAccessDenied("organization has no slug")
+	} else {
+		return false, NewErrAccessDenied("organization slug does not match reference")
+	}
+}
+
 // authorizeUpstreamWrite rejects a push to a pull-through cache artifact.
 func authorizeUpstreamWrite(ctx context.Context, n *name.Name) error {
 	if artifact, err := db.GetArtifactByName(ctx, n.OrgName, n.ArtifactName); err != nil {
-		if !errors.Is(err, apierrors.ErrNotFound) {
+		if !errors.Is(err, distrerr.ErrNotFound) {
 			return err
 		}
 	} else if artifact.UpstreamURL != nil {
@@ -104,10 +136,10 @@ func (a *authorizer) Authorize(ctx context.Context, nameStr string, action Actio
 	}
 
 	org := principal.CurrentOrg()
-	if org.Slug == nil {
-		return NewErrAccessDenied("organization has no slug")
-	} else if *org.Slug != n.OrgName {
-		return NewErrAccessDenied("organization slug does not match reference")
+	if owned, err := authorizeOrganization(org, n, func() error {
+		return authorizeAnonymous(ctx, n, action)
+	}); !owned || err != nil {
+		return err
 	}
 
 	if action == ActionWrite {
@@ -136,10 +168,10 @@ func (a *authorizer) AuthorizeReference(ctx context.Context, nameStr string, ref
 	}
 
 	org := principal.CurrentOrg()
-	if org.Slug == nil {
-		return NewErrAccessDenied("organization has no slug")
-	} else if *org.Slug != n.OrgName {
-		return NewErrAccessDenied("organization slug does not match reference")
+	if owned, err := authorizeOrganization(org, n, func() error {
+		return authorizeAnonymous(ctx, n, action)
+	}); !owned || err != nil {
+		return err
 	}
 
 	if action == ActionWrite {
@@ -154,7 +186,7 @@ func (a *authorizer) AuthorizeReference(ctx context.Context, nameStr string, ref
 			*principal.CurrentCustomerOrgID(),
 			*principal.CurrentOrgID(),
 		)
-		if errors.Is(err, apierrors.ErrForbidden) {
+		if errors.Is(err, distrerr.ErrForbidden) {
 			return NewErrAccessDenied("entitlement required")
 		} else if err != nil {
 			return err
@@ -178,20 +210,7 @@ func (a *authorizer) AuthorizeBlob(
 
 	principal, ok := auth.ArtifactsPrincipal(ctx)
 	if !ok {
-		// The blob route carries the repository name, so an anonymous caller is held to the artifact
-		// it names rather than to any artifact of the organization that references the digest.
-		if action != ActionRead && action != ActionStat {
-			return ErrAuthenticationRequired
-		} else if belongs, err := db.ArtifactBlobBelongsToPublicArtifact(
-			ctx, n.OrgName, n.ArtifactName, digest.String(),
-		); err != nil {
-			return err
-		} else if !belongs {
-			return ErrAuthenticationRequired
-		} else if AnonymousLimitExceeded(ctx) {
-			return ErrRateLimited
-		}
-		return nil
+		return authorizeAnonymousBlob(ctx, n, digest, action)
 	}
 
 	// For writes we skip ownership checks: the push may (re)associate this digest with the org, even if it already exists.
@@ -200,10 +219,10 @@ func (a *authorizer) AuthorizeBlob(
 	}
 
 	org := principal.CurrentOrg()
-	if org.Slug == nil {
-		return NewErrAccessDenied("organization has no slug")
-	} else if *org.Slug != n.OrgName {
-		return NewErrAccessDenied("organization slug does not match reference")
+	if owned, err := authorizeOrganization(org, n, func() error {
+		return authorizeAnonymousBlob(ctx, n, digest, action)
+	}); !owned || err != nil {
+		return err
 	}
 
 	// A pushing client stats every blob after uploading it and before any manifest references it.
@@ -211,14 +230,14 @@ func (a *authorizer) AuthorizeBlob(
 		if belongs, err := db.ArtifactBlobBelongsToOrg(ctx, org.ID, digest.String()); err != nil {
 			return err
 		} else if !belongs {
-			return apierrors.ErrNotFound
+			return distrerr.ErrNotFound
 		}
 	}
 
 	if principal.CurrentCustomerOrgID() != nil && org.HasFeature(types.FeatureLicensing) {
 		err := db.CheckEntitlementForArtifactBlob(
 			ctx, digest.String(), n.ArtifactName, *principal.CurrentCustomerOrgID(), *principal.CurrentOrgID())
-		if errors.Is(err, apierrors.ErrForbidden) {
+		if errors.Is(err, distrerr.ErrForbidden) {
 			return NewErrAccessDenied("entitlement required")
 		} else if err != nil {
 			return err

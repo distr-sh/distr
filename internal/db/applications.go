@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
@@ -106,10 +106,10 @@ func DeleteApplicationWithID(ctx context.Context, id uuid.UUID) error {
 	cmd, err := db.Exec(ctx, `DELETE FROM Application WHERE id = @id`, pgx.NamedArgs{"id": id})
 	if err != nil {
 		if isStillReferencedError(err) {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 	} else if cmd.RowsAffected() == 0 {
-		err = apierrors.ErrNotFound
+		err = distrerr.ErrNotFound
 	}
 
 	if err != nil {
@@ -193,7 +193,7 @@ func GetApplication(ctx context.Context, id, orgID uuid.UUID) (*types.Applicatio
 		return nil, fmt.Errorf("failed to query application: %w", err)
 	} else if application, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.Application]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to get application: %w", err)
 	} else {
@@ -232,7 +232,7 @@ func GetApplicationWithEntitlementOwnerID(
 		return nil, fmt.Errorf("failed to query applications: %w", err)
 	} else if applications, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.Application]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to get application: %w", err)
 	} else {
@@ -251,7 +251,7 @@ func GetApplicationForApplicationVersionID(ctx context.Context, id, orgID uuid.U
 		return nil, fmt.Errorf("failed to query application: %w", err)
 	} else if application, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.Application]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to get application: %w", err)
 	} else {
@@ -298,9 +298,9 @@ func CreateApplicationVersion(ctx context.Context, applicationVersion *types.App
 		return fmt.Errorf("cannot create ApplicationVersion: %w", err)
 	} else if result, err := pgx.CollectExactlyOneRow(row, pgx.RowToStructByName[types.ApplicationVersion]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
+			err = distrerr.ErrNotFound
 		} else if pgerr, ok := errors.AsType[*pgconn.PgError](err); ok && pgerr.Code == pgerrcode.UniqueViolation {
-			err = apierrors.ErrAlreadyExists
+			err = distrerr.ErrAlreadyExists
 		}
 		return fmt.Errorf("could not scan ApplicationVersion: %w", err)
 	} else {
@@ -326,14 +326,14 @@ func UpdateApplicationVersion(ctx context.Context, applicationVersion *types.App
 		})
 	if err != nil {
 		if pgerr, ok := errors.AsType[*pgconn.PgError](err); ok && pgerr.Code == pgerrcode.UniqueViolation {
-			err = apierrors.ErrAlreadyExists
+			err = distrerr.ErrAlreadyExists
 		}
 		return fmt.Errorf("cannot update ApplicationVersion: %w", err)
 	} else if updated, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ApplicationVersion]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
+			err = distrerr.ErrNotFound
 		} else if pgerr, ok := errors.AsType[*pgconn.PgError](err); ok && pgerr.Code == pgerrcode.UniqueViolation {
-			err = apierrors.ErrAlreadyExists
+			err = distrerr.ErrAlreadyExists
 		}
 		return fmt.Errorf("could not scan ApplicationVersion: %w", err)
 	} else {
@@ -356,7 +356,7 @@ func GetApplicationVersion(ctx context.Context, applicationVersionID uuid.UUID) 
 	} else if data, err := pgx.CollectExactlyOneRow(rows,
 		pgx.RowToStructByName[types.ApplicationVersion]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		}
 		return nil, err
 	} else {
@@ -406,7 +406,7 @@ func GetApplicationVersionOfApplication(
 	} else if data, err := pgx.CollectExactlyOneRow(rows,
 		pgx.RowToStructByName[types.ApplicationVersion]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apierrors.ErrNotFound
+			return nil, distrerr.ErrNotFound
 		}
 		return nil, fmt.Errorf("could not get ApplicationVersion: %w", err)
 	} else {

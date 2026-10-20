@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -43,7 +43,7 @@ func GetLicenseTemplateByID(ctx context.Context, id, orgID uuid.UUID) (*types.Li
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.LicenseTemplate])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, apierrors.ErrNotFound
+		return nil, distrerr.ErrNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("could not collect LicenseTemplate: %w", err)
 	}
@@ -68,7 +68,7 @@ func CreateLicenseTemplate(ctx context.Context, t *types.LicenseTemplate) error 
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.LicenseTemplate])
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation {
-		return fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+		return fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 	} else if err != nil {
 		return fmt.Errorf("could not collect LicenseTemplate: %w", err)
 	}
@@ -98,9 +98,9 @@ func UpdateLicenseTemplate(ctx context.Context, t *types.LicenseTemplate) error 
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.LicenseTemplate])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return apierrors.ErrNotFound
+		return distrerr.ErrNotFound
 	} else if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation {
-		return fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+		return fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 	} else if err != nil {
 		return fmt.Errorf("could not collect LicenseTemplate: %w", err)
 	}
@@ -118,7 +118,7 @@ func DeleteLicenseTemplateByID(ctx context.Context, id, orgID uuid.UUID) error {
 		return fmt.Errorf("could not delete LicenseTemplate: %w", err)
 	}
 	if cmd.RowsAffected() == 0 {
-		return apierrors.ErrNotFound
+		return distrerr.ErrNotFound
 	}
 	return nil
 }

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -51,7 +51,7 @@ func CreateCustomDomains(ctx context.Context, customDomains []types.CustomDomain
 	}
 	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.CustomDomain])
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation {
-		return nil, fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+		return nil, fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 	} else if err != nil {
 		return nil, fmt.Errorf("could not collect CustomDomains: %w", err)
 	}
@@ -160,7 +160,7 @@ func GetCustomDomainOfOrganization(
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.CustomDomain])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, apierrors.ErrNotFound
+		return nil, distrerr.ErrNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("could not get CustomDomain: %w", err)
 	}
@@ -194,11 +194,11 @@ func DeleteCustomDomain(
 		// A domain an identity provider hangs off references it with ON DELETE RESTRICT, so that removing
 		// a domain cannot silently take everyone's sign-in with it.
 		if isStillReferencedError(err) {
-			return fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+			return fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
 		}
 		return fmt.Errorf("could not delete CustomDomain: %w", err)
 	} else if cmd.RowsAffected() == 0 {
-		return apierrors.ErrNotFound
+		return distrerr.ErrNotFound
 	}
 	return nil
 }
@@ -280,7 +280,7 @@ func SetCustomDomainVerificationResult(
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.CustomDomain])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, apierrors.ErrNotFound
+		return nil, distrerr.ErrNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("could not update CustomDomain verification result: %w", err)
 	}
@@ -302,7 +302,7 @@ func SetCustomDomainVerificationAttempted(ctx context.Context, id uuid.UUID) (*t
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.CustomDomain])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, apierrors.ErrNotFound
+		return nil, distrerr.ErrNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("could not update CustomDomain verification attempt: %w", err)
 	}

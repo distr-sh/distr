@@ -2,19 +2,21 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/controllermanifest"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -24,10 +26,10 @@ import (
 
 func ContextRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupHidden(true))
-	r.With(middleware.RequireOrgAndRole).Get("/", getContextHandler)
+	r.With(middleware.RequireOrgAndRole).Get("/", respond.Handler(getContextHandler))
 }
 
-func getContextHandler(w http.ResponseWriter, r *http.Request) {
+func getContextHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
@@ -43,10 +45,7 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		log.Error("failed to get organizations", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("failed to get organizations: %w", err)
 	}
 
 	var joinDate time.Time
@@ -57,7 +56,7 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 	if auth.IsSuperAdmin() {
 		// Super admins: use current org's creation time as join date, no role
 		joinDate = auth.CurrentOrg().CreatedAt
-		userRole = util.PtrTo(types.UserRoleAdmin)
+		userRole = new(types.UserRoleAdmin)
 	} else {
 		// Regular users: find their actual join date and role
 		for _, org := range orgs {
@@ -104,39 +103,33 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	orgID := *auth.CurrentOrgID()
-	billableUserCount, err := db.CountBillableUserAccountsByOrgID(ctx, orgID)
-	if err != nil {
-		log.Error("failed to count billable user accounts", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	customerOrgCount, err := db.CountCustomerOrganizationsByOrganizationID(ctx, orgID)
-	if err != nil {
-		log.Error("failed to count customer organizations", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	if billableUserCount, err := db.CountBillableUserAccountsByOrgID(ctx, orgID); err != nil {
+		return nil, fmt.Errorf("failed to count billable user accounts: %w", err)
+	} else if customerOrgCount, err := db.CountCustomerOrganizationsByOrganizationID(ctx, orgID); err != nil {
+		return nil, fmt.Errorf("failed to count customer organizations: %w", err)
+	} else {
+		// The registry host is best-effort: without branding it still resolves custom domains
+		// and falls back to the instance default.
+		branding, err := db.GetOrganizationBranding(ctx, orgID)
+		if err != nil && !errors.Is(err, distrerr.ErrNotFound) {
+			log.Warn("failed to get organization branding", zap.Error(err))
+		}
+		registryHost := customdomains.RegistryDomainOrDefault(ctx, orgID, branding)
+		controllerRepository := controllermanifest.DefaultImageRepository(ctx, orgID, branding)
 
-	// The registry host is best-effort: without branding it still resolves custom domains
-	// and falls back to the instance default.
-	branding, err := db.GetOrganizationBranding(ctx, orgID)
-	if err != nil && !errors.Is(err, apierrors.ErrNotFound) {
-		log.Warn("failed to get organization branding", zap.Error(err))
+		return respond.JSON(api.ContextResponse{
+			User: mapping.UserAccountToAPI(
+				auth.CurrentUser().AsUserAccountWithRole(*userRole, customerOrgID, auth.CurrentPartnerOrgID(), joinDate),
+			),
+			Organization: mapping.OrganizationToAPI(
+				*auth.CurrentOrg(), billableUserCount, customerOrgCount, controllerRepository,
+			),
+			CustomerOrganization:  customerOrg,
+			PartnerOrganization:   partnerOrg,
+			SidebarLinks:          sidebarLinks,
+			AvailableContexts:     visibleOrganizations(auth, orgs),
+			RegistryHost:          registryHost,
+			CanCreateOrganization: !auth.OrganizationScoped(),
+		}), nil
 	}
-	registryHost := customdomains.RegistryDomainOrDefault(ctx, orgID, branding)
-
-	RespondJSON(w, api.ContextResponse{
-		User: mapping.UserAccountToAPI(
-			auth.CurrentUser().AsUserAccountWithRole(*userRole, customerOrgID, auth.CurrentPartnerOrgID(), joinDate),
-		),
-		Organization:          mapping.OrganizationToAPI(*auth.CurrentOrg(), billableUserCount, customerOrgCount),
-		CustomerOrganization:  customerOrg,
-		PartnerOrganization:   partnerOrg,
-		SidebarLinks:          sidebarLinks,
-		AvailableContexts:     visibleOrganizations(auth, orgs),
-		RegistryHost:          registryHost,
-		CanCreateOrganization: !auth.OrganizationScoped(),
-	})
 }

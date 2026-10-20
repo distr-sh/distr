@@ -6,11 +6,12 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mapping"
+	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
@@ -75,13 +76,13 @@ func (h portalHost) turnstileSiteKey() *string {
 
 func PublicPortalRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Portal"))
-	r.Get("/", getPortalHandler).
+	r.Get("/", respond.Handler(getPortalHandler)).
 		With(option.Description("Get the host-resolved portal branding (browser tab title, favicon and logo), " +
 			"the instance support email and the login methods available on this host")).
 		With(option.Response(http.StatusOK, api.PortalResponse{}))
 }
 
-func getPortalHandler(w http.ResponseWriter, r *http.Request) {
+func getPortalHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 
 	// Resolution is best-effort: on error the host keeps whatever could be determined before it failed, so a
@@ -104,10 +105,9 @@ func getPortalHandler(w http.ResponseWriter, r *http.Request) {
 	response.LoginConfig = portalLoginConfig(ctx, host)
 
 	// Branding and login methods are resolved from the request Host, so shared caches/CDNs must key on it.
-	w.Header().Set("Vary", "Host")
-	w.Header().Set("Cache-Control", "public, max-age=60")
-
-	RespondJSON(w, response)
+	return respond.JSON(response).
+		WithHeader("Vary", "Host").
+		WithHeader("Cache-Control", "public, max-age=60"), nil
 }
 
 // portalLoginConfig lists the login methods offered on the given host. Instance-scoped OIDC providers are
@@ -166,7 +166,7 @@ func resolvePortalHost(ctx context.Context, host string) (portalHost, error) {
 	if customDomain != nil {
 		resolved := portalHost{source: portalHostCustomDomain, customDomainRow: customDomain}
 		branding, err := db.GetOrganizationBranding(ctx, customDomain.OrganizationID)
-		if errors.Is(err, apierrors.ErrNotFound) {
+		if errors.Is(err, distrerr.ErrNotFound) {
 			return resolved, nil
 		} else if err != nil {
 			return resolved, err

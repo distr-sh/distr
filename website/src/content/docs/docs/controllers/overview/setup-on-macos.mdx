@@ -1,10 +1,10 @@
 ---
 title: Run Distr Controllers on macOS
-description: To run Distr on macOS, you need to configure Docker Desktop, reset the Docker context to default, and update your Docker config to avoid credential store issues.
+description: To run Distr controllers on macOS, configure Docker Desktop and reset the Docker context to default. Docker Swarm deployments also need a change to your Docker config.
 slug: docs/controllers/distr-on-macos
 sidebar:
   label: Run on macOS
-  order: 6
+  order: 7
 ---
 
 import {Aside} from '@astrojs/starlight/components';
@@ -88,12 +88,12 @@ Instead of switching contexts, you can tell the controller which socket to use. 
   `unix:///Users/you/.socktainer/container.sock`.
 </Aside>
 
-### 3. Disable `credStore` usage for authentication
+### 3. Docker Swarm only: disable `credsStore`
 
-If you're using the Distr controller on macOS, docker uses macOS's credential manager (`credStore`).
-As the Distr controller does not have access to your user credential manager, we need to disable that feature.
-It's best to remove the `credStore` entry from the Docker config file entirely that will configure Docker to store
-registry authentications in a file which the controller has access to.
+Docker Compose deployments pull images with credentials the Distr controller keeps itself, so they need no change here.
+Restarting a Docker Swarm service, however, reads your Docker config, which on macOS points to the macOS credential
+manager (`credsStore`) that the controller cannot reach.
+For Docker Swarm, remove the `credsStore` entry, so that Docker keeps registry credentials in the config file instead.
 
 **Open the config file in a text editor**
 
@@ -103,12 +103,12 @@ Use `open -e` to edit the Docker configuration in your text editor:
 open -e ~/.docker/config.json
 ```
 
-**Remove the `credStore` line**
+**Remove the `credsStore` line**
 
 Inside the file, find the line that contains:
 
 ```text
-"credStore": "desktop"
+"credsStore": "desktop"
 ```
 
 Delete this line entirely, ensuring you **don't leave a trailing comma** that could cause JSON parsing errors.
@@ -135,13 +135,9 @@ After these steps, your macOS environment should be ready to run Distr controlle
 ## Common Issues
 
 As the Distr controller is primarily designed for Linux server environments, macOS support is limited and for demo purposes only.
-It also has some common limitations:
+Deployment logs are collected as on Linux, but metrics are not.
 
-### 1. Metrics collection must be disabled
+### Metrics collection must be disabled
 
 Metrics collection is not supported on macOS due to Docker Desktop's virtualized filesystem not supporting the required mount propagation.
 When creating or editing a deployment target for macOS, make sure to **disable metrics collection** in the deployment target settings.
-
-### 2. Log collection does not work
-
-Log collection is not supported on macOS.

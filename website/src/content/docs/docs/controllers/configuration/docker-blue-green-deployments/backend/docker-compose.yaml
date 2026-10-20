@@ -1,0 +1,23 @@
+services:
+  backend:
+    image: 'ghcr.io/distr-sh/hello-distr/backend:0.4.9'
+    restart: unless-stopped
+    environment:
+      DB_URL: postgresql://hello-distr:${POSTGRES_PASSWORD}@postgres/hello-distr?sslmode=disable
+    networks:
+      hello-distr:
+        aliases:
+          - backend-${SLOT:?SLOT must be blue or green}
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=1)",
+        ]
+      interval: 5s
+
+networks:
+  hello-distr:
+    external: true

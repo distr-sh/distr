@@ -23,14 +23,17 @@ export interface SubscriptionLimits {
   logQueryWindowSeconds: number;
 }
 
-export interface CreateUpdateOrganizationRequest {
+export interface UpdateOrganizationRequest {
   name: string;
   slug?: string;
-  preConnectScript?: string;
-  postConnectScript?: string;
-  connectScriptIsSudo: boolean;
+  dockerPreConnectScript?: string;
+  dockerPostConnectScript?: string;
+  dockerConnectScriptIsSudo: boolean;
+  kubernetesPreConnectScript?: string;
+  kubernetesPostConnectScript?: string;
   artifactVersionMutable: boolean;
   prePostScriptsEnabled: boolean;
+  controllerImageRepository?: string;
 }
 
 export interface Organization extends BaseModel, Named {
@@ -44,10 +47,14 @@ export interface Organization extends BaseModel, Named {
   subscriptionUserAccountQuantity: number;
   currentBillableUserAccountCount: number;
   currentCustomerOrganizationCount: number;
-  preConnectScript?: string;
-  postConnectScript?: string;
-  connectScriptIsSudo: boolean;
+  dockerPreConnectScript?: string;
+  dockerPostConnectScript?: string;
+  dockerConnectScriptIsSudo: boolean;
+  kubernetesPreConnectScript?: string;
+  kubernetesPostConnectScript?: string;
   stripeWebhookSecretConfigured: boolean;
+  controllerImageRepository?: string;
+  defaultControllerImageRepository: string;
 }
 
 export interface OrganizationWithUserRole extends Organization {
