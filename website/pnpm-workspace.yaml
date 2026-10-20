@@ -1,3 +1,9 @@
+auditConfig:
+  ignoreGhsas:
+    # braces has no fix; starlight-llms-txt only matches our own config globs at build time
+    - GHSA-vfj7-8cjw-p6xm
+    # postcss-selector-parser 6.x via Expressive Code only parses our own CSS at build time
+    - GHSA-rj75-hqrm-r3gf
 allowBuilds:
   esbuild: false
   sharp: false

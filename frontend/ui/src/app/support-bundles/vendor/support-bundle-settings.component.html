@@ -38,7 +38,8 @@
         <p class="text-sm text-gray-500 dark:text-gray-400">
           These environment variables are collected from the host and from Docker containers when customers create
           support bundles. Only the variables listed below are collected, and variables marked as redacted have their
-          values replaced with [REDACTED].
+          values replaced with [REDACTED]. Distr additionally masks the customer's secrets and common credential
+          patterns in every collected resource.
         </p>
 
         @if (envVarsArray.length > 0) {

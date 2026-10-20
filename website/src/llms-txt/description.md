@@ -1,0 +1,1 @@
+Distr is an open source platform for distributing applications to self-managed customers. The vendor runs Distr in the cloud or self-hosts it, a Distr Controller in each customer environment deploys Docker Compose or Helm applications and an OCI-compatible registry serves the artifacts.

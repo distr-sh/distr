@@ -135,27 +135,10 @@ func createDeploymentTarget(r *http.Request) (respond.Responder, error) {
 	} else {
 		dt := mapping.CreateDeploymentTargetToInternal(request)
 		dt.ControllerVersionID = &controllerVersion.ID
-		requestedCustomerOrgID := dt.CustomerOrganizationID
-		if auth.CurrentPartnerOrgID() != nil && requestedCustomerOrgID == nil {
-			return respond.Forbidden("partner users must assign a deployment target to a customer"), nil
-		}
 
-		if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
-			customerOrgID := auth.CurrentCustomerOrgID()
-
-			if requestedCustomerOrgID != nil {
-				if err := db.ValidateCustomerOrgBelongsToOrg(ctx, *requestedCustomerOrgID, *auth.CurrentOrgID()); err != nil {
-					return respond.Forbidden("customer organization does not belong to organization"), nil
-				}
-				if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
-					co, err := db.GetCustomerOrganizationByID(ctx, *requestedCustomerOrgID)
-					if err != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-						return notAssignedToPartner, nil
-					}
-				}
-				customerOrgID = requestedCustomerOrgID
-			}
-
+		if customerOrgID, resp, err := customerScope(ctx, dt.CustomerOrganizationID); resp != nil || err != nil {
+			return resp, err
+		} else if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 			if limitReached, err := subscription.IsDeploymentTargetLimitReached(
 				ctx, *auth.CurrentOrg(), customerOrgID,
 			); err != nil {
