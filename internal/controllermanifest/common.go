@@ -9,7 +9,6 @@ import (
 	"path"
 	"text/template"
 
-	"github.com/distr-sh/distr/internal/buildconfig"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/resources"
@@ -76,7 +75,7 @@ func getTemplateData(
 		"deploymentMetricsEndpoint":    deploymentMetricsEndpoint,
 		"registryEnabled":              env.RegistryEnabled(),
 		"registryHost":                 customdomains.RegistryDomainOrDefault(ctx, org.ID, org.Branding),
-		"registryPlainHttp":            buildconfig.IsDevelopment(),
+		"registryPlainHttp":            registryPlainHTTP(env.Host()),
 		"resourcesEndpoint":            resourcesEndpoint,
 		"statusEndpoint":               statusEndpoint,
 		"targetId":                     deploymentTarget.ID,
@@ -96,6 +95,13 @@ func getTemplateData(
 		result["targetResources"] = deploymentTarget.Resources
 	}
 	return result, nil
+}
+
+// registryPlainHTTP reports whether controllers have to reach the registry without TLS. REGISTRY_HOST and the
+// registry custom domains carry no scheme and are served behind the same TLS termination as DISTR_HOST, so the
+// registry is reached with the scheme of DISTR_HOST.
+func registryPlainHTTP(distrHost string) bool {
+	return env.SchemeOf(distrHost) == env.SchemeHTTP
 }
 
 // controllerName is the name the controller's own resources and compose service are derived from. A controller
