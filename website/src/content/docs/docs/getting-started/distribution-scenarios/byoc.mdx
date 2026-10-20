@@ -1,6 +1,6 @@
 ---
 title: Bring Your Own Cloud (BYOC)
-description: In BYOC deployments the Distr OpenTofu infrastructure controller provisions and reconciles the infrastructure in the end customer's cloud account, deployed as a regular Distr application. The Distr Kubernetes controller then deploys, manages and updates your application in the cluster it creates.
+description: Distr provisions and reconciles the infrastructure in your customer's cloud account with OpenTofu, deploys your application onto it and rolls out infrastructure and application versions from one place.
 slug: docs/use-cases/byoc-bring-your-own-cloud
 sidebar:
   label: BYOC
@@ -58,3 +58,5 @@ and roll it out. This keeps every managed BYOC customer on the same infrastructu
 8. Manage deployments and updates of both applications directly for the customer using the [Distr controllers](/docs/controllers/)
 
 </Steps>
+
+For how this compares with a dedicated BYOC platform, see [Distr vs Nuon](/compare/nuon/).

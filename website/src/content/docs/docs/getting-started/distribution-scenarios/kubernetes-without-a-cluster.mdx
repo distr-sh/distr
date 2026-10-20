@@ -1,0 +1,106 @@
+---
+title: Kubernetes for Customers Without a Cluster
+description: Ship a Helm application to customers that run no Kubernetes cluster. Install k3s on their Linux server with the connect command, provision a managed cluster in their cloud account or install k3s offline with Zarf.
+slug: docs/use-cases/kubernetes-without-a-cluster
+sidebar:
+  label: Kubernetes Without a Cluster
+  order: 6
+---
+
+import {Steps} from '@astrojs/starlight/components';
+
+Some customers want your Kubernetes application but do not operate a cluster.
+Distr gives you four ways to serve them, depending on the application and the environment:
+
+| Customer environment                       | Path                                                                                              |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| A Linux server, application runs on Docker | [Docker Compose](/docs/controllers/docker-controller/) with the Docker controller                 |
+| A Linux server, application needs Helm     | [k3s installed by the connect command](#k3s-installed-by-the-connect-command)                     |
+| A cloud account                            | [A managed cluster from the infrastructure controller](#a-managed-cluster-in-the-customers-cloud) |
+| An air-gapped network                      | [k3s from the Zarf init package](#air-gapped-servers)                                             |
+
+For production, deploy into a cluster the customer already operates whenever there is one.
+Otherwise use k3s on a dedicated server or a managed cluster in the customer's cloud account.
+Tools that run Kubernetes inside Docker, such as minikube or kind, are built for local development and are not meant for customer installations.
+
+## k3s installed by the connect command
+
+[k3s](https://k3s.io) is a lightweight, CNCF-certified Kubernetes distribution that runs on a single Linux server.
+A [pre-connect script](/docs/controllers/preflight-checks/) can install it before the Kubernetes controller is applied, so the customer runs one command on a fresh server and ends up with a cluster that Distr manages.
+
+<Steps>
+
+1. In the Vendor Portal, open **Organization Settings** and, under **Controllers**, check **Enable Pre- and Post-Connect Scripts (Pre-Flight Checks)**.
+   Paste the script below as the **Pre-connect script** on the **Kubernetes** tab and save.
+2. The customer creates a Kubernetes deployment target in the Customer Portal, or you create one for them.
+3. The customer runs the connect command on the server as a user with `sudo` or as `root`.
+   The script installs k3s, waits for the node, creates the namespace of the deployment target and the connect command then applies the Distr controller.
+
+</Steps>
+
+```sh
+SUDO=""
+if [ "$(id -u)" -ne 0 ]; then
+  SUDO="sudo"
+fi
+
+INSTALLED_K3S=false
+if ! command -v kubectl > /dev/null 2>&1; then
+  echo "No kubectl found on this machine. Installing k3s."
+  curl -sfL https://get.k3s.io | $SUDO sh -s - || exit 1
+  mkdir -p "$HOME/.kube"
+  $SUDO cat /etc/rancher/k3s/k3s.yaml > "$HOME/.kube/config" || exit 1
+  chmod 600 "$HOME/.kube/config"
+  INSTALLED_K3S=true
+fi
+
+# The kubectl that k3s installs reads /etc/rancher/k3s/k3s.yaml, which only root can read, unless KUBECONFIG is set.
+if [ -z "$KUBECONFIG" ] && [ -f "$HOME/.kube/config" ]; then
+  export KUBECONFIG="$HOME/.kube/config"
+fi
+
+if [ "$INSTALLED_K3S" = true ]; then
+  ATTEMPTS=0
+  until kubectl get nodes -o name 2> /dev/null | grep -q .; do
+    ATTEMPTS=$((ATTEMPTS + 1))
+    if [ "$ATTEMPTS" -ge 90 ]; then
+      echo "FAIL: k3s did not register a node."
+      exit 1
+    fi
+    sleep 2
+  done
+  kubectl wait --for=condition=Ready node --all --timeout=180s || exit 1
+  kubectl create namespace "$DISTR_NAMESPACE" || exit 1
+fi
+```
+
+The pre-connect script runs for every Kubernetes deployment target in your organization.
+It only installs k3s on a machine without `kubectl`, so customers that connect an existing cluster are not affected.
+Running the connect command again on the same server, for example to reconnect the controller, reuses the cluster.
+
+The server needs:
+
+- Linux with systemd or OpenRC and at least the [k3s requirements](https://docs.k3s.io/installation/requirements) plus what your application needs
+- Outbound access to `get.k3s.io` and GitHub during the installation, next to the access to Distr that every controller needs
+
+To pin the k3s version, replace `$SUDO sh -s -` with `$SUDO env INSTALL_K3S_VERSION=v1.36.5+k3s1 sh -s -`.
+The k3s [configuration options](https://docs.k3s.io/installation/configuration) are passed the same way.
+
+### Upgrading k3s
+
+k3s upgrades itself through the [system-upgrade-controller](https://docs.k3s.io/upgrades/automated), which applies `Plan` resources that name the target k3s version.
+Package the controller and a `Plan` in a Helm chart and deploy it as a second Distr application on the same deployment target.
+Publishing an application version with a newer `Plan` version then upgrades the cluster the same way an application update rolls out.
+
+## A managed cluster in the customer's cloud
+
+When the customer has a cloud account but no cluster, an [infrastructure controller](/docs/controllers/infrastructure-controllers/) provisions one with OpenTofu, for example Amazon EKS.
+The Kubernetes controller then deploys your application onto it.
+The [BYOC guide](/docs/use-cases/byoc-bring-your-own-cloud/) walks through the setup.
+
+## Air-gapped servers
+
+An air-gapped server cannot reach Distr, so the connect command does not apply.
+The [Zarf](/docs/integrations/zarf/) init package contains an optional k3s component instead: running `zarf init --components k3s --confirm` as `root` on the server installs k3s from the package, without network access.
+Deploy your application with `zarf package deploy` afterwards, as described in the [air-gapped deployments guide](/docs/use-cases/air-gapped-deployments/).
+See the [Zarf init package reference](https://docs.zarf.dev/ref/init-package/) for the requirements of that component.

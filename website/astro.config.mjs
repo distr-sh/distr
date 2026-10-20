@@ -300,6 +300,7 @@ export default defineConfig({
           exclude: [
             '/',
             '/compare/**',
+            '/case-studies{,/**}',
             '/contact/',
             '/pricing/',
             '/blog/**',
@@ -338,7 +339,8 @@ export default defineConfig({
     '/docs/getting-started/how-it-works/': '/docs/core-concepts/',
     '/docs/getting-started/core-concepts/': '/docs/core-concepts/',
     '/docs/getting-started/quickstart/': '/docs/quickstart/',
-    '/docs/getting-started/deployment-methods/': '/docs/subscription/',
+    '/docs/getting-started/deployment-methods/':
+      '/docs/subscription/#distr-cloud-or-self-hosted',
     '/docs/privacy-policy/': '/privacy-policy/',
 
     // product/ redirects
@@ -376,11 +378,12 @@ export default defineConfig({
     '/docs/guides/docker-secrets/': '/docs/controllers/docker-compose-secrets/',
     '/docs/guides/container-registry-for-end-customers/':
       '/docs/platform/customer-portal/registry/',
-    '/docs/guides/license-mgmt/': '/docs/platform/application-entitlements/',
+    '/docs/guides/license-mgmt/': '/docs/platform/license-management/',
     '/docs/guides/application-licenses/':
       '/docs/platform/application-entitlements/',
     '/docs/guides/artifact-licenses/': '/docs/platform/artifact-entitlements/',
-    '/docs/guides/onboarding-a-new-customer/': '/docs/platform/rbac/',
+    '/docs/guides/onboarding-a-new-customer/':
+      '/docs/platform/customer-management/',
     '/docs/guides/onboarding-a-docker-app/': '/docs/controllers/application/',
     '/docs/guides/onboarding-a-helm-app/': '/docs/controllers/application/',
     '/docs/guides/distr-on-macos/': '/docs/controllers/distr-on-macos/',
