@@ -1,11 +1,16 @@
+---
+applyTo: '**'
+excludeAgent: 'cloud-agent'
+---
+
 # Code Review Instructions
 
 This file provides additional context to the code review instructions.
 
 ## Keep the website and documentation in sync
 
-- When changes Distr are made, make sure the website (website/) which contains the documentation in (website/docs/)
-  doesn't get out-of-sync
+- When changes to Distr are made, make sure the website (website/) which contains the documentation in (website/docs/)
+  does not get out of sync
 - When environment variables in `internal/env/env.go` are added, removed, or changed (name, default, required/optional
   status, or accepted values), check that the configuration reference page at
   `website/src/content/docs/docs/self-hosting/configuration.mdx` is updated accordingly and stays complete and accurate.
@@ -16,7 +21,12 @@ This file provides additional context to the code review instructions.
 - Do not suggest improvements, refactors, or style changes to surrounding code that was not modified in the pull request.
 - Exception: Critical security vulnerabilities may be flagged regardless of whether the code was changed.
 
-## Supress known false-positives
+## Flag scope creep
+
+- Flag changes that the pull request title and description do not cover, such as unrelated refactorings, renames, reformatting, dependency updates and drive-by fixes. Name the change and ask for it to be moved to a separate pull request.
+- Flag a pull request that combines independent changes which could be reviewed and merged on their own.
+
+## Suppress known false positives
 
 Do not produce comments about the following patterns:
 
