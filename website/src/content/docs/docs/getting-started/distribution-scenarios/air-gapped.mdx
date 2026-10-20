@@ -92,7 +92,7 @@ docker compose -f docker-compose.yaml up -d --pull never
 Compose uses the `image:` names in the file, which match the images just loaded, so it never reaches a registry.
 To serve the images from an internal registry instead, push them there after `docker load` and point the Compose file at it.
 
-If the application needs Kubernetes and the air-gapped server has no cluster, see [Kubernetes for customers without a cluster](/docs/use-cases/kubernetes-without-a-cluster/#air-gapped-servers).
+If the application needs Kubernetes and the air-gapped server has no cluster, see [Cluster Setup with k3s](/docs/integrations/k3s/#air-gapped-servers).
 
 ## Crossing the gap
 

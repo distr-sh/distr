@@ -29,7 +29,7 @@ faqs:
     answer: |
       <p>Docker Compose is an alternative when the application does not require Kubernetes-specific capabilities.</p>
       <p>Instead of provisioning and maintaining a cluster for one application, the vendor can distribute the software as a Docker Compose application on a Linux host.</p>
-      <p>If the application depends on Kubernetes and the customer operates no cluster, Distr can install k3s on the customer's server with the connect command or provision a managed cluster in the customer's cloud account. See <a href="/docs/use-cases/kubernetes-without-a-cluster/">Kubernetes for customers without a cluster</a>.</p>
+      <p>If the application depends on Kubernetes and the customer operates no cluster, Distr can install k3s on the customer's server with the connect command or provision a managed cluster in the customer's cloud account. See <a href="/docs/integrations/k3s/">Cluster Setup with k3s</a>.</p>
   - question: How does this compare to Replicated Embedded Cluster?
     answer: |
       <p>Embedded Cluster installs Kubernetes together with the application on a virtual machine or bare-metal server. Replicated documents these limitations:</p>
@@ -290,11 +290,11 @@ Otherwise use k3s on a dedicated server or a managed cluster in the customer's
 cloud account.
 
 <LinkButton
-  href="/docs/use-cases/kubernetes-without-a-cluster/"
+  href="/docs/integrations/k3s/"
   variant="secondary"
   icon="lucide:arrow-right"
   iconPlacement="end">
-  Kubernetes for Customers Without a Cluster
+  Cluster Setup with k3s
 </LinkButton>
 
 <TestimonialCTA name="sophris" />

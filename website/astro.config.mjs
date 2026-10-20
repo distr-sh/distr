@@ -254,6 +254,15 @@ export default defineConfig({
                   ],
                 },
                 {
+                  label: 'Kubernetes Cluster Setup',
+                  items: [
+                    {
+                      label: 'Cluster Setup with k3s',
+                      link: '/docs/integrations/k3s/',
+                    },
+                  ],
+                },
+                {
                   label: 'Amazon Elastic Container Service (ECS)',
                   items: [
                     {
