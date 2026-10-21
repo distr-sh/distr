@@ -309,11 +309,13 @@ func (b *blobs) serveFromUpstream(resp http.ResponseWriter, req *http.Request, r
 		<-copied
 	}()
 
+	controller := http.NewResponseController(resp)
 	resp.Header().Set("Content-Length", strconv.FormatInt(size, 10))
 	resp.Header().Set("Docker-Content-Digest", h.String())
 	resp.WriteHeader(http.StatusOK)
+	_ = controller.Flush()
 
-	w := &upstreamBlobWriter{client: resp, clientController: http.NewResponseController(resp), buffer: pw}
+	w := &upstreamBlobWriter{client: resp, clientController: controller, buffer: pw}
 	// The server sets no write timeout of its own, so a deadline left behind would apply to the next request
 	// on the same connection.
 	defer func() { _ = w.clientController.SetWriteDeadline(time.Time{}) }()
