@@ -9,7 +9,7 @@
   ],
   "timezone": "UTC",
   "automergeSchedule": [
-    "after 8am and before 1pm on Monday,Tuesday,Wednesday and Thursday"
+    "* 8-12 * * 1-4"
   ],
   "platformAutomerge": false,
   "rebaseWhen": "behind-base-branch",
