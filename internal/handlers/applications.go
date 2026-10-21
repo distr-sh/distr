@@ -576,11 +576,11 @@ func addVersionToMatchingEntitlements(
 	if err := db.LockApplicationExclusive(ctx, version.ApplicationID); err != nil {
 		return false, err
 	}
-	regexes, err := db.GetApplicationEntitlementAutoAddVersionRegexes(ctx, version.ApplicationID)
+	entitlements, err := db.GetApplicationEntitlementsWithAutoAddVersionRegex(ctx, version.ApplicationID)
 	if err != nil {
 		return false, err
 	}
-	entitlementIDs := entitlementsToAutoAddVersionTo(ctx, regexes, version.Name, previousName)
+	entitlementIDs := entitlementsToAutoAddVersionTo(ctx, entitlements, version.Name, previousName)
 	if len(entitlementIDs) == 0 {
 		return false, nil
 	}
@@ -591,17 +591,17 @@ func addVersionToMatchingEntitlements(
 // yet, so that a version removed by hand is not added back.
 func entitlementsToAutoAddVersionTo(
 	ctx context.Context,
-	regexes []types.ApplicationEntitlementAutoAddVersionRegex,
+	entitlements []types.ApplicationEntitlementBase,
 	name string,
 	previousName *string,
 ) []uuid.UUID {
 	var entitlementIDs []uuid.UUID
-	for _, r := range regexes {
-		if re, err := regexp.Compile(r.AutoAddVersionRegex); err != nil {
+	for _, entitlement := range entitlements {
+		if re, err := regexp.Compile(*entitlement.AutoAddVersionRegex); err != nil {
 			internalctx.GetLogger(ctx).Warn("skipping invalid auto-add version regex",
-				zap.Stringer("applicationEntitlementId", r.ApplicationEntitlementID), zap.Error(err))
+				zap.Stringer("applicationEntitlementId", entitlement.ID), zap.Error(err))
 		} else if re.MatchString(name) && (previousName == nil || !re.MatchString(*previousName)) {
-			entitlementIDs = append(entitlementIDs, r.ApplicationEntitlementID)
+			entitlementIDs = append(entitlementIDs, entitlement.ID)
 		}
 	}
 	return entitlementIDs

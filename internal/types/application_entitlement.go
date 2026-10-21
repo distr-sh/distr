@@ -32,11 +32,6 @@ type ApplicationEntitlement struct {
 	CustomerOrganization *CustomerOrganization `db:"customer_organization" json:"customerOrganization,omitempty"`
 }
 
-type ApplicationEntitlementAutoAddVersionRegex struct {
-	ApplicationEntitlementID uuid.UUID `db:"id"`
-	AutoAddVersionRegex      string    `db:"auto_add_version_regex"`
-}
-
 type DeploymentVersionUsage struct {
 	DeploymentID           uuid.UUID `db:"deployment_id"`
 	DeploymentTargetName   string    `db:"deployment_target_name"`

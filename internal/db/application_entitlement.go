@@ -164,13 +164,13 @@ func RevokeApplicationEntitlementWithID(ctx context.Context, id uuid.UUID) error
 	}
 }
 
-func GetApplicationEntitlementAutoAddVersionRegexes(
+func GetApplicationEntitlementsWithAutoAddVersionRegex(
 	ctx context.Context,
 	applicationID uuid.UUID,
-) ([]types.ApplicationEntitlementAutoAddVersionRegex, error) {
+) ([]types.ApplicationEntitlementBase, error) {
 	rows, err := internalctx.GetDb(ctx).Query(
 		ctx,
-		`SELECT al.id, al.auto_add_version_regex
+		`SELECT `+applicationEntitlementOutputExpr+`
 		FROM ApplicationEntitlement al
 		WHERE al.application_id = @applicationId
 			AND al.auto_add_version_regex IS NOT NULL
@@ -182,7 +182,7 @@ func GetApplicationEntitlementAutoAddVersionRegexes(
 	if err != nil {
 		return nil, fmt.Errorf("could not query ApplicationEntitlement: %w", err)
 	}
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ApplicationEntitlementAutoAddVersionRegex])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ApplicationEntitlementBase])
 	if err != nil {
 		return nil, fmt.Errorf("could not collect ApplicationEntitlement: %w", err)
 	}

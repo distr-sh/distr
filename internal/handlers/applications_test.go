@@ -11,9 +11,9 @@ import (
 func TestEntitlementsToAutoAddVersionTo(t *testing.T) {
 	majorTwo := uuid.New()
 	hotfix := uuid.New()
-	regexes := []types.ApplicationEntitlementAutoAddVersionRegex{
-		{ApplicationEntitlementID: majorTwo, AutoAddVersionRegex: `^2\.`},
-		{ApplicationEntitlementID: hotfix, AutoAddVersionRegex: `-hotfix$`},
+	entitlements := []types.ApplicationEntitlementBase{
+		{ID: majorTwo, AutoAddVersionRegex: new(`^2\.`)},
+		{ID: hotfix, AutoAddVersionRegex: new(`-hotfix$`)},
 	}
 
 	cases := []struct {
@@ -33,7 +33,7 @@ func TestEntitlementsToAutoAddVersionTo(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			g := NewWithT(t)
-			g.Expect(entitlementsToAutoAddVersionTo(t.Context(), regexes, tc.versionName, tc.previousName)).
+			g.Expect(entitlementsToAutoAddVersionTo(t.Context(), entitlements, tc.versionName, tc.previousName)).
 				To(Equal(tc.expected))
 		})
 	}
