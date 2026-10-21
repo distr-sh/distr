@@ -18,3 +18,5 @@
 /sdk/js/pnpm-lock.yaml
 /sdk/js/pnpm-workspace.yaml
 /deploy/charts/distr/Chart.lock
+/deploy/charts/distr/Chart.yaml
+/deploy/docker/*/docker-compose.yaml
