@@ -68,6 +68,7 @@ var (
 	artifactTagsDefaultLimitPerOrg        int
 	registryUpstreamSyncCron              *string
 	registryUpstreamSyncTimeout           time.Duration
+	registryUpstreamBlobFetchTimeout      time.Duration
 	cleanupDeploymentTargetMetricsCron    *string
 	cleanupDeploymentTargetMetricsTimeout time.Duration
 	cleanupOIDCStateCron                  *string
@@ -259,6 +260,9 @@ func Initialize() {
 	registryUpstreamSyncCron = envutil.GetEnvOrNil("REGISTRY_UPSTREAM_SYNC_CRON")
 	registryUpstreamSyncTimeout = envutil.GetEnvParsedOrDefault(
 		"REGISTRY_UPSTREAM_SYNC_TIMEOUT", envparse.PositiveDuration, 10*time.Minute,
+	)
+	registryUpstreamBlobFetchTimeout = envutil.GetEnvParsedOrDefault(
+		"REGISTRY_UPSTREAM_BLOB_FETCH_TIMEOUT", envparse.PositiveDuration, time.Hour,
 	)
 
 	sentryDSN = envutil.GetEnv("SENTRY_DSN")
@@ -602,6 +606,10 @@ func RegistryUpstreamSyncCron() *string {
 
 func RegistryUpstreamSyncTimeout() time.Duration {
 	return registryUpstreamSyncTimeout
+}
+
+func RegistryUpstreamBlobFetchTimeout() time.Duration {
+	return registryUpstreamBlobFetchTimeout
 }
 
 func OtelControllerSampler() *SamplerConfig {

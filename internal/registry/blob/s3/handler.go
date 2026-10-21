@@ -41,7 +41,6 @@ type blobHandler struct {
 
 var (
 	_ blob.BlobHandler               = &blobHandler{}
-	_ blob.BlobStatHandler           = &blobHandler{}
 	_ blob.BlobPutHandler            = &blobHandler{}
 	_ blob.BlobDeleteHandler         = &blobHandler{}
 	_ blob.BlobChunkMinLengthHandler = &blobHandler{}
@@ -120,7 +119,7 @@ func (handler *blobHandler) Get(
 	}
 }
 
-// Stat implements blob.BlobStatHandler.
+// Stat implements blob.BlobHandler.
 func (handler *blobHandler) Stat(ctx context.Context, repo string, h digest.Digest) (int64, error) {
 	key := h.String()
 	obj, err := handler.s3Client.HeadObject(ctx, &s3.HeadObjectInput{Bucket: &handler.bucket, Key: &key})

@@ -165,6 +165,7 @@ See [Registry Configuration](/docs/registry/configuration/) for a feature overvi
 | `ARTIFACT_TAGS_DEFAULT_LIMIT_PER_ORG`      | no                  | `0`     | Default maximum number of artifact tags per organization. `0` means unlimited.     |
 | `REGISTRY_UPSTREAM_SYNC_CRON`              | no                  | —       | Cron schedule for syncing tags from upstream registries (pull-through cache).      |
 | `REGISTRY_UPSTREAM_SYNC_TIMEOUT`           | no                  | `10m`   | Timeout for a single upstream sync run.                                            |
+| `REGISTRY_UPSTREAM_BLOB_FETCH_TIMEOUT`     | no                  | `1h`    | Timeout for fetching and storing a single blob from an upstream registry on pull.  |
 
 ### Anonymous pull rate limits
 
