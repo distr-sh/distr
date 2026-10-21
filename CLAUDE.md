@@ -239,9 +239,9 @@ Only write a test that could fail for a real reason. Every test is code that has
 
 Keep the changes on the branch you work in to the one fix, feature or refactoring it exists for, since every branch becomes exactly one pull request.
 
-- Commit only what that task needs. Never refactor, rename, move or reformat code, update dependencies or fix unrelated bugs, typos and rule violations on the branch, not even in the files you touch.
+- Commit only what that task needs. Never make changes unrelated to it, such as refactoring, renaming, moving or reformatting other code, updating dependencies or fixing unrelated bugs, typos and rule violations. A refactoring the task itself calls for, like extracting a shared function instead of duplicating code, is part of the task.
 - Split a task with independent parts, or one that needs a preparatory refactoring, across separate branches, and land the preparation first.
-- Never widen the branch, create another branch or pull request or commit to a different branch on your own. When you notice something worth changing outside the task, finish the task and tell the user what it is, where it is and that it belongs on a separate branch. Make that change only when the user asks for it, and then on a branch of its own.
+- Never widen the branch, create another branch or pull request or commit to a different branch on your own. When you notice something worth changing outside the task, finish the task and tell the user what it is and where it is. Make that change only when the user asks for it, and ask whether it belongs on this branch or a separate one.
 - When you come across a legacy pattern or code that breaks these rules, encourage the user to clean it up in a small refactoring on a separate branch, one pattern per branch, and name the files it affects.
 - Treat review feedback that asks for something outside the task of the branch the same way: tell the user instead of committing it.
 
