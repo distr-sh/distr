@@ -68,7 +68,7 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 - Give services `providedIn: 'root'`, and list one in a component's `providers` only where the subtree has to share exactly that instance (`OverlayService` and `ImageUploadService` on `AppComponent`) or where a page needs a cache of its own (`CustomerOrganizationsCache`).
 - Split a component into `component-name.component.ts` and `.html`, plus a `.scss` only when it needs styling beyond utility classes in the template.
 - Type API models with the interfaces in `app/types/`. Never type a value `any` or `unknown`, and do not widen a type with `| undefined` or `?` where the value is always present.
-- Use [signals](https://angular.dev/guide/signals) for inputs, child views and anywhere else the current Angular version supports them, and convert the non-signal usages you come across in files you edit anyway.
+- Use [signals](https://angular.dev/guide/signals) for inputs, child views and anywhere else the current Angular version supports them.
 - Use `takeUntilDestroyed` rather than a manual `destroyed$` subject, and [CSS-based animations](https://angular.dev/guide/animations) rather than using the deprecated `@angular/animations` package.
 - Self-close components without content: `<fa-icon [icon]="faPlus" />`.
 - Take icons from the icon library, never as an SVG path, and keep the name identical in the import, the component and the template (`faServer`, not `serverIcon`). This covers CSS too: never hand-write an inline SVG or a `url("data:image/svg+xml,...")` background, not even to restyle a browser or Flowbite default.
@@ -236,6 +236,16 @@ Only write a test that could fail for a real reason. Every test is code that has
 - Prefer a few focused tests over an exhaustive matrix of near-duplicates.
 - Do not put a test in the controller `main` packages under `cmd/controller/`. They build their clients in package-level variables through `util.Require`, which panics before `TestMain` can set the controller's environment variables. Extract the part that needs no Docker or Kubernetes client into a package under `internal/` and test it there.
 
+## Branches
+
+Keep the changes on the branch you work in to the one fix, feature or refactoring it exists for, since every branch becomes exactly one pull request.
+
+- Commit only what that task needs. Never make changes unrelated to it, such as refactoring, renaming, moving or reformatting other code, updating dependencies or fixing unrelated bugs, typos and rule violations. A refactoring the task itself calls for, like extracting a shared function instead of duplicating code, is part of the task.
+- Split a task with independent parts, or one that needs a preparatory refactoring, across separate branches, and land the preparation first.
+- Never widen the branch, create another branch or pull request or commit to a different branch on your own. When you notice something worth changing outside the task, finish the task and tell the user what it is and where it is. Make that change only when the user asks for it, and ask whether it belongs on this branch or a separate one.
+- When you come across a legacy pattern or code that breaks these rules, encourage the user to clean it up in a small refactoring on a separate branch, one pattern per branch, and name the files it affects.
+- Treat review feedback that asks for something outside the task of the branch the same way: tell the user instead of committing it.
+
 ## General rules
 
 - Keep this file current, and add a rule for it whenever a user asks you to do something differently than you did.
@@ -243,7 +253,7 @@ Only write a test that could fail for a real reason. Every test is code that has
   - Write every rule as an instruction: what to do, what not to do and where. A rule needs no paragraph explaining the design it protects, no threat model and no history of what was there before. Where an agent has to understand the mechanism to follow the rule, point it at the doc comment or the docs page that explains it rather than restating them here, since a copy here goes stale without anything failing.
   - When you add a rule, check whether the surrounding section can lose prose in exchange. This file is read in full on every request, so its length is a cost paid by every task.
 - Write every text without Oxford commas and without em dashes, in this file as much as in documentation, code comments and UI copy. Use a comma, a colon or a second sentence where a dash is tempting.
-- Fix the code you read that breaks these rules, and the typos and spelling mistakes you come across.
+- Report the typos and spelling mistakes you come across outside your change to the user instead of fixing them (see Branches).
 - Update `website/src/content/docs/docs/self-hosting/configuration.mdx` in the same change whenever you add, remove or change an environment variable in `internal/env/env.go`, including its default, whether it is required and the values it accepts.
 - Run `mise run build:helm-schema` after every change to `deploy/charts/distr/values.yaml`, since CI rejects a stale `values.schema.json`. Annotate a value with `# @schema` where the type inferred from the default is too narrow, an IntOrString field or an override a user sets to null being the cases, and render every file under `deploy/charts/distr/examples/` to confirm the schema still accepts them.
 - Use the GitHub CLI (`gh`) rather than the web interface to fetch data from GitHub.
@@ -251,4 +261,4 @@ Only write a test that could fail for a real reason. Every test is code that has
 
 ## Code Review Instructions
 
-Follow @.github/copilot-code-review-instructions.md when performing code reviews.
+Follow @.github/instructions/code-review.instructions.md when performing code reviews.
