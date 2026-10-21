@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"slices"
 
 	"github.com/distr-sh/distr/api"
@@ -22,6 +23,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
+	"go.uber.org/zap"
 )
 
 func ApplicationsRouter(r chiopenapi.Router) {
@@ -555,6 +557,54 @@ func updateApplicationVersion(r *http.Request) (respond.Responder, error) {
 			return respond.JSON(applicationVersionMapper(ctx)(updatedVersion)), nil
 		}
 	}
+}
+
+// addVersionToMatchingEntitlements has to run in the transaction that creates or renames the version and before
+// automatic updates are triggered, so that those already see the version as entitled. It reports whether the version
+// was added to any entitlement.
+func addVersionToMatchingEntitlements(
+	ctx context.Context,
+	version types.ApplicationVersion,
+	previousName *string,
+) (bool, error) {
+	// The entitlement form cannot deselect an archived version, so one added here could not be removed again.
+	if version.ArchivedAt != nil {
+		return false, nil
+	}
+	// Without the lock, an entitlement switched to all versions concurrently would end up with only this version,
+	// because the insert below does not wait for the edit that removes its versions.
+	if err := db.LockApplicationExclusive(ctx, version.ApplicationID); err != nil {
+		return false, err
+	}
+	regexes, err := db.GetApplicationEntitlementAutoAddVersionRegexes(ctx, version.ApplicationID)
+	if err != nil {
+		return false, err
+	}
+	entitlementIDs := entitlementsToAutoAddVersionTo(ctx, regexes, version.Name, previousName)
+	if len(entitlementIDs) == 0 {
+		return false, nil
+	}
+	return db.AddVersionToApplicationEntitlements(ctx, version.ID, entitlementIDs)
+}
+
+// entitlementsToAutoAddVersionTo only picks an entitlement for a renamed version if the previous name did not match
+// yet, so that a version removed by hand is not added back.
+func entitlementsToAutoAddVersionTo(
+	ctx context.Context,
+	regexes []types.ApplicationEntitlementAutoAddVersionRegex,
+	name string,
+	previousName *string,
+) []uuid.UUID {
+	var entitlementIDs []uuid.UUID
+	for _, r := range regexes {
+		if re, err := regexp.Compile(r.AutoAddVersionRegex); err != nil {
+			internalctx.GetLogger(ctx).Warn("skipping invalid auto-add version regex",
+				zap.Stringer("applicationEntitlementId", r.ApplicationEntitlementID), zap.Error(err))
+		} else if re.MatchString(name) && (previousName == nil || !re.MatchString(*previousName)) {
+			entitlementIDs = append(entitlementIDs, r.ApplicationEntitlementID)
+		}
+	}
+	return entitlementIDs
 }
 
 func getApplicationVersionComposeFile(r *http.Request) (respond.Responder, error) {
