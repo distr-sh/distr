@@ -152,45 +152,20 @@ func (b *blobs) handleHead(resp http.ResponseWriter, req *http.Request, repo, ta
 		return regErrDigestInvalid
 	}
 
-	var size int64
-	if bsh, ok := b.blobHandler.(blob.BlobStatHandler); ok {
-		size, err = bsh.Stat(req.Context(), repo, h)
-		if errors.Is(err, blob.ErrNotFound) {
-			if s, upstreamErr := b.statFromUpstreamDB(req.Context(), repo, h); upstreamErr == nil {
-				size = s
-			} else {
-				return regErrBlobUnknown
-			}
-		} else if err != nil {
-			var rerr blob.RedirectError
-			if errors.As(err, &rerr) {
-				http.Redirect(resp, req, rerr.Location, rerr.Code)
-				return nil
-			}
-			return regErrInternal(err)
-		}
-	} else {
-		rc, err := b.blobHandler.Get(req.Context(), repo, h, true)
-		if errors.Is(err, blob.ErrNotFound) {
-			if s, upstreamErr := b.statFromUpstreamDB(req.Context(), repo, h); upstreamErr == nil {
-				size = s
-			} else {
-				return regErrBlobUnknown
-			}
-		} else if err != nil {
-			var rerr blob.RedirectError
-			if errors.As(err, &rerr) {
-				http.Redirect(resp, req, rerr.Location, rerr.Code)
-				return nil
-			}
-			return regErrInternal(err)
+	size, err := b.blobHandler.Stat(req.Context(), repo, h)
+	if errors.Is(err, blob.ErrNotFound) {
+		if s, upstreamErr := b.statFromUpstreamDB(req.Context(), repo, h); upstreamErr == nil {
+			size = s
 		} else {
-			defer rc.Close()
-			size, err = io.Copy(io.Discard, rc)
-			if err != nil {
-				return regErrInternal(err)
-			}
+			return regErrBlobUnknown
 		}
+	} else if err != nil {
+		var rerr blob.RedirectError
+		if errors.As(err, &rerr) {
+			http.Redirect(resp, req, rerr.Location, rerr.Code)
+			return nil
+		}
+		return regErrInternal(err)
 	}
 
 	resp.Header().Set("Content-Length", fmt.Sprint(size))
@@ -226,55 +201,31 @@ func (b *blobs) handleGet(resp http.ResponseWriter, req *http.Request, repo, tar
 		}
 	}
 
-	var size int64
-	var r io.Reader
-	if bsh, ok := b.blobHandler.(blob.BlobStatHandler); ok {
-		size, err = bsh.Stat(req.Context(), repo, h)
-		if errors.Is(err, blob.ErrNotFound) {
-			return b.serveFromUpstream(resp, req, repo, h)
-		} else if err != nil {
-			var rerr blob.RedirectError
-			if errors.As(err, &rerr) {
-				http.Redirect(resp, req, rerr.Location, rerr.Code)
-				return nil
-			}
-			return regErrInternal(err)
+	size, err := b.blobHandler.Stat(req.Context(), repo, h)
+	if errors.Is(err, blob.ErrNotFound) {
+		return b.serveFromUpstream(resp, req, repo, h)
+	} else if err != nil {
+		var rerr blob.RedirectError
+		if errors.As(err, &rerr) {
+			http.Redirect(resp, req, rerr.Location, rerr.Code)
+			return nil
 		}
-
-		rc, err := b.blobHandler.Get(req.Context(), repo, h, true)
-		if errors.Is(err, blob.ErrNotFound) {
-			return regErrBlobUnknown
-		} else if err != nil {
-			var rerr blob.RedirectError
-			if errors.As(err, &rerr) {
-				http.Redirect(resp, req, rerr.Location, rerr.Code)
-				return nil
-			}
-			return regErrInternal(err)
-		}
-		defer rc.Close()
-		r = rc
-	} else {
-		tmp, err := b.blobHandler.Get(req.Context(), repo, h, true)
-		if errors.Is(err, blob.ErrNotFound) {
-			return b.serveFromUpstream(resp, req, repo, h)
-		} else if err != nil {
-			var rerr blob.RedirectError
-			if errors.As(err, &rerr) {
-				http.Redirect(resp, req, rerr.Location, rerr.Code)
-				return nil
-			}
-			return regErrInternal(err)
-		} else {
-			defer tmp.Close()
-			var buf bytes.Buffer
-			if _, err := io.Copy(&buf, tmp); err != nil {
-				return regErrInternal(err)
-			}
-			size = int64(buf.Len())
-			r = &buf
-		}
+		return regErrInternal(err)
 	}
+
+	rc, err := b.blobHandler.Get(req.Context(), repo, h, true)
+	if errors.Is(err, blob.ErrNotFound) {
+		return regErrBlobUnknown
+	} else if err != nil {
+		var rerr blob.RedirectError
+		if errors.As(err, &rerr) {
+			http.Redirect(resp, req, rerr.Location, rerr.Code)
+			return nil
+		}
+		return regErrInternal(err)
+	}
+	defer rc.Close()
+	var r io.Reader = rc
 
 	if rangeHeader != "" {
 		start, end := int64(0), int64(0)
