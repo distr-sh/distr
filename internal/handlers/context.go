@@ -124,12 +124,11 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 			Organization: mapping.OrganizationToAPI(
 				*auth.CurrentOrg(), billableUserCount, customerOrgCount, controllerRepository,
 			),
-			CustomerOrganization:  customerOrg,
-			PartnerOrganization:   partnerOrg,
-			SidebarLinks:          sidebarLinks,
-			AvailableContexts:     visibleOrganizations(auth, orgs),
-			RegistryHost:          registryHost,
-			CanCreateOrganization: !auth.OrganizationScoped(),
+			CustomerOrganization: customerOrg,
+			PartnerOrganization:  partnerOrg,
+			SidebarLinks:         sidebarLinks,
+			AvailableContexts:    visibleOrganizations(auth, orgs),
+			RegistryHost:         registryHost,
 		}), nil
 	}
 }

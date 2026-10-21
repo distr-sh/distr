@@ -1,31 +1,21 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
 import {HttpErrorResponse} from '@angular/common/http';
-import {Component, computed, inject, input, OnInit, signal, TemplateRef, viewChild} from '@angular/core';
+import {Component, computed, inject, input, OnInit, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
-import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {FormControl} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {
-  faArrowLeft,
-  faBarsStaggered,
-  faChevronDown,
-  faPlus,
-  faShuffle,
-  faUserCircle,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
+import {faArrowLeft, faBarsStaggered, faChevronDown, faShuffle, faUserCircle} from '@fortawesome/free-solid-svg-icons';
 import {catchError, EMPTY, lastValueFrom, map, of} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {MembershipLabelPipe, organizationKind} from '../../../util/organization-kind';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {UserRoleLabelPipe} from '../../../util/user-role';
-import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AuthService} from '../../services/auth.service';
 import {ContextService} from '../../services/context.service';
 import {OrganizationBrandingService} from '../../services/organization-branding.service';
 import {OrganizationService} from '../../services/organization.service';
-import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SidebarService} from '../../services/sidebar.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
@@ -57,15 +47,12 @@ const ORGANIZATION_SEARCH_THRESHOLD = 4;
     SecureImagePipe,
     SubscriptionBadgeComponent,
     AsyncPipe,
-    AutotrimDirective,
-    ReactiveFormsModule,
     UserRoleLabelPipe,
     MembershipLabelPipe,
   ],
 })
 export class NavBarComponent implements OnInit {
   protected readonly auth = inject(AuthService);
-  private readonly overlay = inject(OverlayService);
   public readonly sidebar = inject(SidebarService);
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
@@ -101,10 +88,6 @@ export class NavBarComponent implements OnInit {
       );
   });
   protected readonly currentOrg = toSignal(this.ctx.getOrganization());
-  protected readonly isVendorSomewhere = computed(() =>
-    this.allOrgs().some((org) => organizationKind(org) === 'vendor')
-  );
-  protected readonly canCreateOrganization = toSignal(this.ctx.canCreateOrganization(), {initialValue: false});
   protected readonly isDifferentOrganizationKind = computed(
     () => this.allOrgs().reduce((kinds, org) => kinds.add(organizationKind(org)), new Set<string>()).size > 1
   );
@@ -113,9 +96,7 @@ export class NavBarComponent implements OnInit {
 
   protected readonly userOpened = signal(false);
   protected readonly organizationsOpened = signal(false);
-  protected readonly isOrganizationSwitcherVisible = computed(
-    () => this.isVendorSomewhere() || this.availableOrgs().length > 0
-  );
+  protected readonly isOrganizationSwitcherVisible = computed(() => this.availableOrgs().length > 0);
   protected readonly switcherShortcut = navigator.userAgent.includes('Mac') ? '⌘K' : 'Ctrl+K';
 
   protected readonly organizationSearch = new FormControl<string>('', {nonNullable: true});
@@ -141,12 +122,6 @@ export class NavBarComponent implements OnInit {
   public readonly isSubscriptionBannerVisible = input<boolean>();
   public readonly isSidebarVisible = input<boolean>();
 
-  private readonly createOrgModal = viewChild.required<TemplateRef<unknown>>('createOrgModal');
-  private modalRef?: DialogRef;
-  protected readonly createOrgForm = new FormGroup({
-    name: new FormControl<string>('', Validators.required),
-  });
-
   public async ngOnInit() {
     // Trigger the initial load; the template updates reactively via the branding service's stream.
     try {
@@ -165,7 +140,7 @@ export class NavBarComponent implements OnInit {
   }
 
   protected onSwitcherShortcut(event: Event) {
-    if (!this.isOrganizationSwitcherVisible() || this.modalRef) {
+    if (!this.isOrganizationSwitcherVisible()) {
       return;
     }
     // Ctrl+K and Cmd+K are the browsers' own shortcuts for their search and address bars
@@ -173,44 +148,17 @@ export class NavBarComponent implements OnInit {
     this.toggleOrganizations();
   }
 
-  async switchContext(org: Organization, targetPath = '/') {
+  async switchContext(org: Organization) {
     this.organizationsOpened.set(false);
     try {
       const switched = await lastValueFrom(this.auth.switchContext(org));
       if (switched) {
-        location.assign(targetPath);
+        location.assign('/');
       }
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {
         this.toast.error(msg);
-      }
-    }
-  }
-
-  showCreateOrgModal(): void {
-    this.closeCreateOrgModal();
-    this.organizationsOpened.set(false);
-    this.modalRef = this.overlay.showModal(this.createOrgModal());
-    this.modalRef.result().subscribe(() => (this.modalRef = undefined));
-  }
-
-  closeCreateOrgModal() {
-    this.modalRef?.close();
-    this.createOrgForm.reset();
-  }
-
-  async submitCreateOrgForm() {
-    this.createOrgForm.markAllAsTouched();
-    if (this.createOrgForm.valid) {
-      try {
-        const created = await lastValueFrom(this.organizationService.create(this.createOrgForm.value.name!));
-        await this.switchContext(created, '/dashboard?from=new-org');
-      } catch (e) {
-        const msg = getFormDisplayedError(e);
-        if (msg) {
-          this.toast.error(msg);
-        }
       }
     }
   }
@@ -225,7 +173,5 @@ export class NavBarComponent implements OnInit {
   protected readonly faArrowLeft = faArrowLeft;
   protected readonly faShuffle = faShuffle;
   protected readonly faChevronDown = faChevronDown;
-  protected readonly faPlus = faPlus;
-  protected readonly faXmark = faXmark;
   protected readonly faUserCircle = faUserCircle;
 }

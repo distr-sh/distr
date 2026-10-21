@@ -7,10 +7,6 @@ import (
 	"github.com/distr-sh/distr/internal/validation"
 )
 
-type CreateOrganizationRequest struct {
-	Name string `json:"name"`
-}
-
 type UpdateOrganizationRequest struct {
 	Name                        string  `json:"name"`
 	Slug                        *string `json:"slug"`
