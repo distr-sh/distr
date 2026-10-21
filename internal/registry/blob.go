@@ -24,6 +24,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
@@ -312,7 +313,10 @@ func (b *blobs) serveFromUpstream(resp http.ResponseWriter, req *http.Request, r
 	resp.Header().Set("Docker-Content-Digest", h.String())
 	resp.WriteHeader(http.StatusOK)
 
-	w := &upstreamBlobWriter{client: resp, buffer: pw}
+	w := &upstreamBlobWriter{client: resp, clientController: http.NewResponseController(resp), buffer: pw}
+	// The server sets no write timeout of its own, so a deadline left behind would apply to the next request
+	// on the same connection.
+	defer func() { _ = w.clientController.SetWriteDeadline(time.Time{}) }()
 	_, err = io.Copy(w, rc)
 	_ = rc.Close()
 	_ = pw.CloseWithError(err)
@@ -354,16 +358,27 @@ func storeUpstreamBlob(ctx context.Context, repo string, h digest.Digest, bph bl
 
 var errUpstreamBlobAbandoned = errors.New("neither the client nor the buffer accepts the upstream blob")
 
+// upstreamBlobClientWriteTimeout bounds every write to the client. A client that keeps the connection open without
+// reading would otherwise block the download, and with it the buffer, indefinitely.
+var upstreamBlobClientWriteTimeout = time.Minute
+
 // upstreamBlobWriter writes an upstream blob to the client and to the buffer, and keeps writing to one of them after
 // the other failed.
 type upstreamBlobWriter struct {
-	client, buffer       io.Writer
+	client               io.Writer
+	clientController     *http.ResponseController
+	buffer               io.Writer
 	clientErr, bufferErr error
 }
 
 func (w *upstreamBlobWriter) Write(p []byte) (int, error) {
 	if w.clientErr == nil {
-		_, w.clientErr = w.client.Write(p)
+		err := w.clientController.SetWriteDeadline(time.Now().Add(upstreamBlobClientWriteTimeout))
+		if err != nil && !errors.Is(err, http.ErrNotSupported) {
+			w.clientErr = err
+		} else {
+			_, w.clientErr = w.client.Write(p)
+		}
 	}
 	if w.bufferErr == nil {
 		_, w.bufferErr = w.buffer.Write(p)
