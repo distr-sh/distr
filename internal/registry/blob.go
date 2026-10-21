@@ -309,16 +309,16 @@ func (b *blobs) serveFromUpstream(resp http.ResponseWriter, req *http.Request, r
 		<-copied
 	}()
 
-	controller := http.NewResponseController(resp)
-	resp.Header().Set("Content-Length", strconv.FormatInt(size, 10))
-	resp.Header().Set("Docker-Content-Digest", h.String())
-	resp.WriteHeader(http.StatusOK)
-	_ = controller.Flush()
-
-	w := &upstreamBlobWriter{client: resp, clientController: controller, buffer: pw}
+	w := &upstreamBlobWriter{client: resp, clientController: http.NewResponseController(resp), buffer: pw}
 	// The server sets no write timeout of its own, so a deadline left behind would apply to the next request
 	// on the same connection.
 	defer func() { _ = w.clientController.SetWriteDeadline(time.Time{}) }()
+
+	resp.Header().Set("Content-Length", strconv.FormatInt(size, 10))
+	resp.Header().Set("Docker-Content-Digest", h.String())
+	resp.WriteHeader(http.StatusOK)
+	w.flushClient()
+
 	_, err = io.Copy(w, rc)
 	_ = rc.Close()
 	_ = pw.CloseWithError(err)
@@ -374,13 +374,8 @@ type upstreamBlobWriter struct {
 }
 
 func (w *upstreamBlobWriter) Write(p []byte) (int, error) {
-	if w.clientErr == nil {
-		err := w.clientController.SetWriteDeadline(time.Now().Add(upstreamBlobClientWriteTimeout))
-		if err != nil && !errors.Is(err, http.ErrNotSupported) {
-			w.clientErr = err
-		} else {
-			_, w.clientErr = w.client.Write(p)
-		}
+	if w.extendClientDeadline() {
+		_, w.clientErr = w.client.Write(p)
 	}
 	if w.bufferErr == nil {
 		_, w.bufferErr = w.buffer.Write(p)
@@ -389,6 +384,26 @@ func (w *upstreamBlobWriter) Write(p []byte) (int, error) {
 		return 0, errUpstreamBlobAbandoned
 	}
 	return len(p), nil
+}
+
+func (w *upstreamBlobWriter) flushClient() {
+	if w.extendClientDeadline() {
+		if err := w.clientController.Flush(); err != nil && !errors.Is(err, http.ErrNotSupported) {
+			w.clientErr = err
+		}
+	}
+}
+
+// extendClientDeadline reports whether the client is still accepting writes.
+func (w *upstreamBlobWriter) extendClientDeadline() bool {
+	if w.clientErr != nil {
+		return false
+	}
+	err := w.clientController.SetWriteDeadline(time.Now().Add(upstreamBlobClientWriteTimeout))
+	if err != nil && !errors.Is(err, http.ErrNotSupported) {
+		w.clientErr = err
+	}
+	return w.clientErr == nil
 }
 
 func (b *blobs) handlePost(resp http.ResponseWriter, req *http.Request, repo, target, digestArg string) *regError {
