@@ -2,7 +2,6 @@ import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup} from '@angular/forms';
-import {RouterLink} from '@angular/router';
 import {Advisory, AdvisorySeverity, AdvisoryStatus, PatchAdvisoryRequest} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faPlus} from '@fortawesome/free-solid-svg-icons';
@@ -13,6 +12,7 @@ import {BadgeSelectComponent} from '../components/badge-select/badge-select.comp
 import {MultiSelectComponent, MultiSelectOption} from '../components/multi-select/multi-select.component';
 import {PageComponent} from '../components/page.component';
 import {SearchBarComponent} from '../components/search-bar.component';
+import {ClickableRowDirective} from '../directives/clickable-row.directive';
 import {AdvisoriesService} from '../services/advisories.service';
 import {AuthService} from '../services/auth.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
@@ -36,7 +36,7 @@ import {AdvisoryFormComponent, AdvisoryFormDraft} from './advisory-form.componen
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     DatePipe,
-    RouterLink,
+    ClickableRowDirective,
     FaIconComponent,
     AdvisoryFormComponent,
     BadgeSelectComponent,

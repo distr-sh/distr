@@ -25,12 +25,12 @@
     </div>
   </div>
 
+  <hr class="border-t-2 border-gray-200 dark:border-gray-600" />
   @if (artifacts().length > 0) {
-    <hr class="border-gray-200 dark:border-gray-600" />
     <ul>
       @for (artifact of artifacts(); track artifact.artifact.id) {
         <li
-          class="w-full flex gap-3 items-center px-4 py-2 border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium text-gray-900 whitespace-normal dark:text-white">
+          class="w-full flex gap-3 items-center px-4 py-2 not-first:border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium text-gray-900 whitespace-normal dark:text-white">
           @if (artifact.artifact.imageUrl) {
             <img class="size-8 rounded-full" [attr.src]="artifact.artifact.imageUrl | secureImage | async" alt="" />
           } @else {

@@ -132,11 +132,7 @@ func createLicenseKey(r *http.Request) (respond.Responder, error) {
 			licenseKey.ExpiresAt = &body.ExpiresAt
 		}
 
-		if authCtx.CurrentPartnerOrgID() != nil && body.CustomerOrganizationID == nil {
-			return respond.BadRequest("customer organization is required"), nil
-		} else if resp, err := checkReachableByPartner(
-			ctx, body.CustomerOrganizationID, notAssignedToPartner,
-		); resp != nil || err != nil {
+		if _, resp, err := customerScope(ctx, body.CustomerOrganizationID); resp != nil || err != nil {
 			return resp, err
 		} else if err := db.CreateLicenseKey(ctx, &licenseKey); errors.Is(err, distrerr.ErrConflict) {
 			return respond.BadRequest("A license key with this name already exists"), nil

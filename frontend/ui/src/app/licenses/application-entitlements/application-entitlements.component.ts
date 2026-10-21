@@ -3,13 +3,14 @@ import {ChangeDetectionStrategy, Component, computed, inject, input, TemplateRef
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCircleExclamation, faEye, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faCircleExclamation, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, EMPTY, filter, first, firstValueFrom, map, Observable, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
+import {ClickableRowDirective} from '../../directives/clickable-row.directive';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
 import {AuthService} from '../../services/auth.service';
@@ -33,6 +34,7 @@ import {EditApplicationEntitlementComponent} from './edit-application-entitlemen
     EditApplicationEntitlementComponent,
     SearchBarComponent,
     AlertComponent,
+    ClickableRowDirective,
   ],
 })
 export class ApplicationEntitlementsComponent {
@@ -80,7 +82,6 @@ export class ApplicationEntitlementsComponent {
   private manageEntitlementDrawerRef?: DialogRef;
 
   protected readonly faCircleExclamation = faCircleExclamation;
-  protected readonly faEye = faEye;
   protected readonly faPen = faPen;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;

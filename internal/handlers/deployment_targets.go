@@ -194,10 +194,8 @@ func deleteDeploymentTarget(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	dt := internalctx.GetDeploymentTarget(ctx)
 	auth := auth.Authentication.Require(ctx)
-	if dt.OrganizationID != *auth.CurrentOrgID() {
+	if dt.OrganizationID != *auth.CurrentOrgID() || !isDeploymentTargetVisible(ctx, dt) {
 		return deploymentTargetNotFound, nil
-	} else if !isDeploymentTargetVisible(ctx, dt) {
-		return respond.Forbidden("must be vendor or creator"), nil
 	} else if err := db.DeleteDeploymentTargetWithID(ctx, dt.ID); err != nil {
 		return nil, fmt.Errorf("error deleting deployment target: %w", err)
 	} else {

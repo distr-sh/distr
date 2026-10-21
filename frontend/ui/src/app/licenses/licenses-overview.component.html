@@ -5,7 +5,7 @@
 
   <div class="distr-card-grid">
     @for (license of licenses(); track license.customerOrganization.id) {
-      <div (click)="navigateToCustomer(license)" class="distr-card cursor-pointer hover:shadow-md transition-shadow">
+      <div (click)="navigateToCustomer(license)" class="distr-card distr-card-clickable">
         <div class="p-4 flex items-center gap-3">
           @if (license.customerOrganization.imageUrl; as imageUrl) {
             <img class="size-10 rounded-sm" [attr.src]="imageUrl | secureImage | async" alt="" />

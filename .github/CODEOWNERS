@@ -5,12 +5,18 @@
 /sdk/ @distr-sh/reviewers
 /deploy/ @distr-sh/reviewers
 /docker-autoheal/ @distr-sh/reviewers
-/Dockerfile.* @distr-sh/reviewers
 /release-please-config.json @distr-sh/reviewers
 /.release-please-manifest.json @distr-sh/reviewers
 /.github/CODEOWNERS @distr-sh/reviewers
 
+**/Dockerfile*
+# Renovate needs these exemptions to automerge the grouped hello-distr updates.
+/internal/handlers/tutorials.go
+/internal/resources/embedded/apps/hello-distr/docker-compose.yaml
+/frontend/ui/src/app/tutorials/registry/registry-tutorial.component.ts
 /sdk/js/package.json
 /sdk/js/pnpm-lock.yaml
 /sdk/js/pnpm-workspace.yaml
 /deploy/charts/distr/Chart.lock
+/deploy/charts/distr/Chart.yaml
+/deploy/docker/*/docker-compose.yaml

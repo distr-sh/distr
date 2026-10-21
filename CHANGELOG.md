@@ -1,5 +1,41 @@
 # Changelog
 
+## [4.6.1](https://github.com/distr-sh/distr/compare/4.6.0...4.6.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* **backend:** unify API responses for out of scope ids ([#3575](https://github.com/distr-sh/distr/issues/3575)) ([9e9ec5c](https://github.com/distr-sh/distr/commit/9e9ec5c116781e89470dabd1a035e4c4d68572bb))
+* **deps:** update aws-sdk-go-v2 monorepo ([#3568](https://github.com/distr-sh/distr/issues/3568)) ([ab0ccf2](https://github.com/distr-sh/distr/commit/ab0ccf2fe8d79cc46e8c1b9f440b6e093d0b7dc7))
+* **deps:** update website dependencies ([#3559](https://github.com/distr-sh/distr/issues/3559)) ([86e9390](https://github.com/distr-sh/distr/commit/86e9390849598de4d49a608d8f58fa0cd74be36e))
+* **quickstart:** serve the quickstart with an http DISTR_HOST ([#3547](https://github.com/distr-sh/distr/issues/3547)) ([0e2185f](https://github.com/distr-sh/distr/commit/0e2185f2566443b3b3ae5a2b9dd7fad4ae97ca79))
+* **quickstart:** start on Docker Compose versions before 5.3 ([#3548](https://github.com/distr-sh/distr/issues/3548)) ([8da9c24](https://github.com/distr-sh/distr/commit/8da9c2455ca6b9e45645825fdc25d7f972cdc516))
+* **registry:** prevent timeout when downloading large pull-through blobs ([#3576](https://github.com/distr-sh/distr/issues/3576)) ([bb13451](https://github.com/distr-sh/distr/commit/bb13451f553107a868129b1dbc81219e22396fb2))
+
+
+### Other
+
+* **deps:** update dependency @codemirror/view to v6.43.15 ([#3565](https://github.com/distr-sh/distr/issues/3565)) ([169e008](https://github.com/distr-sh/distr/commit/169e00845b718572a5179ecd887b851df4af44e5))
+* **deps:** update dependency go to v1.27.3 ([#3569](https://github.com/distr-sh/distr/issues/3569)) ([4cdc61e](https://github.com/distr-sh/distr/commit/4cdc61ec2a778a275b773f709ed3336d9a2713ce))
+* **deps:** update dependency stripe to v1.54.1 ([#3567](https://github.com/distr-sh/distr/issues/3567)) ([30c1ae0](https://github.com/distr-sh/distr/commit/30c1ae003488c8ac3a70842919fefda1bc84ab8e))
+* **deps:** update dependency typedoc-plugin-markdown to v4.14.1 ([#3566](https://github.com/distr-sh/distr/issues/3566)) ([14df4c1](https://github.com/distr-sh/distr/commit/14df4c1ccc7c8460c3fef872acad501c74d2bf47))
+* **deps:** update go toolchain directive to v1.27.3 ([#3553](https://github.com/distr-sh/distr/issues/3553)) ([7a776df](https://github.com/distr-sh/distr/commit/7a776dfa02e5b90f8c0d90d237a03dd69a4c047b))
+* **deps:** update golang docker tag to v1.27.3 ([#3570](https://github.com/distr-sh/distr/issues/3570)) ([c9f7574](https://github.com/distr-sh/distr/commit/c9f7574f580e3c71064231fb89e29c14432f7e60))
+* **deps:** update jdx/mise-action action to v5.2.1 ([#3554](https://github.com/distr-sh/distr/issues/3554)) ([ad2247a](https://github.com/distr-sh/distr/commit/ad2247a01b4abd07b44ef4a9129df46ed9478b30))
+* **deps:** update postgresql docker tag to v18.12.14 ([#3577](https://github.com/distr-sh/distr/issues/3577)) ([dc2c441](https://github.com/distr-sh/distr/commit/dc2c441cfe7e1519c47a67f8bf93062f36397665))
+* **deps:** update seekbuf to v0.1.2 ([#3574](https://github.com/distr-sh/distr/issues/3574)) ([a0f979c](https://github.com/distr-sh/distr/commit/a0f979cc9e248bc03c3e3e4c5a084159a619e4d5))
+* **deps:** update website dependencies ([#3552](https://github.com/distr-sh/distr/issues/3552)) ([d687e5e](https://github.com/distr-sh/distr/commit/d687e5e7d6d90d5a0eb8b199cf1377bcb8b5dba6))
+* encourage agents to reduce scope creep ([#3560](https://github.com/distr-sh/distr/issues/3560)) ([6e4cb85](https://github.com/distr-sh/distr/commit/6e4cb85d0ceb07384283686c498545635e071a4e))
+* **frontend:** remove border from toast notifications ([#3572](https://github.com/distr-sh/distr/issues/3572)) ([e36ae14](https://github.com/distr-sh/distr/commit/e36ae14a022e45896738e16b8caf37e6e7eebc57))
+* **frontend:** replace details and edit buttons with clickable rows and cards ([#3515](https://github.com/distr-sh/distr/issues/3515)) ([ffdfb88](https://github.com/distr-sh/distr/commit/ffdfb8886052476545b0fd435944fc43a8ac9cfb))
+
+
+### Docs
+
+* Update hosted version URL in README ([#3557](https://github.com/distr-sh/distr/issues/3557)) ([7b0e391](https://github.com/distr-sh/distr/commit/7b0e391ff9801e50e863ce4bd808221a7b570908))
+* **website:** add blue-green deployment configuration ([#3505](https://github.com/distr-sh/distr/issues/3505)) ([6390d2c](https://github.com/distr-sh/distr/commit/6390d2cf2237f6647bb14683030349cc9b225767))
+* **website:** link the API reference, correct the API rate limits and the macOS controller page ([#3549](https://github.com/distr-sh/distr/issues/3549)) ([9f6877a](https://github.com/distr-sh/distr/commit/9f6877a277c03aecb0cb76d0321e1a8fa723cbf1))
+
 ## [4.6.0](https://github.com/distr-sh/distr/compare/4.5.0...4.6.0) (2026-10-20)
 
 
