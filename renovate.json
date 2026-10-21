@@ -9,7 +9,7 @@
   ],
   "timezone": "UTC",
   "automergeSchedule": [
-    "* 8-12 * * 1-4"
+    "after 8am and before 1pm on Monday,Tuesday,Wednesday and Thursday"
   ],
   "platformAutomerge": false,
   "rebaseWhen": "behind-base-branch",
@@ -143,13 +143,6 @@
       ]
     },
     {
-      "matchPackageNames": [
-        "distr-sh/hello-distr",
-        "ghcr.io/distr-sh/hello-distr/**"
-      ],
-      "groupName": "distr-sh/hello-distr"
-    },
-    {
       "matchSourceUrls": [
         "https://github.com/golangci/golangci-lint"
       ],
@@ -159,6 +152,14 @@
       "matchFileNames": ["website/**"],
       "matchPackageNames": ["!pnpm"],
       "groupName": "website dependencies"
+    },
+    {
+      "matchPackageNames": [
+        "distr-sh/hello-distr",
+        "ghcr.io/distr-sh/hello-distr/**"
+      ],
+      "groupName": "hello-distr",
+      "automerge": true
     },
     {
       "description": "Silence dependency lookup warnings for enterprise images, which are not publicly available",
