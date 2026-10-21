@@ -191,10 +191,7 @@
               <tbody>
                 @for (version of visibleVersions$ | async; track version.id) {
                   @let archived = isArchived(version);
-                  <tr
-                    appClickableRow
-                    (rowActivate)="openVersionDetails(application, version)"
-                    class="bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                  <tr appClickableRow (rowActivate)="openVersionDetails(application, version)" class="distr-table-row">
                     @if (auth.hasAnyRole('read_write', 'admin')) {
                       <td class="px-1 py-4">
                         @if (!archived) {
