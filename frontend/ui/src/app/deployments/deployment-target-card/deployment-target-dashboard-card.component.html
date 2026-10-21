@@ -19,7 +19,7 @@
         </div>
         <div class="min-w-0">
           @if (deploymentTarget().customerOrganization; as customer) {
-            <h3 class="font-bold leading-none truncate" [title]="deploymentTarget().name">
+            <h3 class="font-bold leading-tight truncate" [title]="deploymentTarget().name">
               {{ customer.name }}
             </h3>
             <div class="text-gray-500 dark:text-gray-400 text-sm truncate">{{ deploymentTarget().name }}</div>
