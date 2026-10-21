@@ -7,7 +7,8 @@ sidebar:
 ---
 
 The easiest way to host your own Distr instance is Docker Compose.
-You need Docker Engine 29 or later and the Docker Compose plugin 5.3 or later.
+You need Docker Engine 29 or later.
+The `quickstart` stack runs on any current Docker Compose plugin, while the four production stacks need version 5.3 or later for their `pre_start` hooks.
 
 All five Compose stacks under [`deploy/docker`](https://github.com/distr-sh/distr/tree/main/deploy/docker) run Distr and [Loki](/docs/self-hosting/configuration/#log-processing-loki) for log processing.
 They differ in the edition they run and in what they bring along:

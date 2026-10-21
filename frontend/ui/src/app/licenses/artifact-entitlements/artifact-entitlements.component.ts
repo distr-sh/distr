@@ -3,13 +3,14 @@ import {ChangeDetectionStrategy, Component, inject, input, TemplateRef} from '@a
 import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCircleExclamation, faEye, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faCircleExclamation, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, shareReplay, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
+import {ClickableRowDirective} from '../../directives/clickable-row.directive';
 import {ArtifactEntitlementsService} from '../../services/artifact-entitlements.service';
 import {ArtifactsService} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
@@ -29,6 +30,7 @@ import {EditArtifactEntitlementComponent} from './edit-artifact-entitlement.comp
     EditArtifactEntitlementComponent,
     SearchBarComponent,
     AlertComponent,
+    ClickableRowDirective,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './artifact-entitlements.component.html',
@@ -43,8 +45,9 @@ export class ArtifactEntitlementsComponent {
   private readonly customerOrganizationService = inject(CustomerOrganizationsService);
   private readonly artifactsService = inject(ArtifactsService);
 
+  protected readonly canOpenDetails = this.auth.isVendor() || this.auth.isPartner();
+
   protected readonly faCircleExclamation = faCircleExclamation;
-  protected readonly faEye = faEye;
   protected readonly faPen = faPen;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;

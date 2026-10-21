@@ -25,7 +25,12 @@ export type InlineEditDisplayTag = 'span' | 'h3';
   imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, AutofocusDirective],
   template: `
     @if (editing()) {
-      <form class="flex" [formGroup]="form" (ngSubmit)="submit()" (focusout)="onFocusOut($event)">
+      <form
+        class="flex"
+        [formGroup]="form"
+        (ngSubmit)="submit()"
+        (focusout)="onFocusOut($event)"
+        (click)="$event.stopPropagation()">
         <input
           formControlName="value"
           autotrim
@@ -56,7 +61,11 @@ export type InlineEditDisplayTag = 'span' | 'h3';
           <span class="text-gray-500">{{ emptyLabel() }}</span>
         }
         @if (editable()) {
-          <button type="button" aria-label="Edit" (click)="enable()" class="text-gray-900 dark:text-gray-400 ms-2">
+          <button
+            type="button"
+            aria-label="Edit"
+            (click)="$event.stopPropagation(); enable()"
+            class="text-gray-900 dark:text-gray-400 ms-2">
             <fa-icon [icon]="faPen" />
           </button>
         }
