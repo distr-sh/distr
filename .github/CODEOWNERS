@@ -5,11 +5,11 @@
 /sdk/ @distr-sh/reviewers
 /deploy/ @distr-sh/reviewers
 /docker-autoheal/ @distr-sh/reviewers
-/Dockerfile.* @distr-sh/reviewers
 /release-please-config.json @distr-sh/reviewers
 /.release-please-manifest.json @distr-sh/reviewers
 /.github/CODEOWNERS @distr-sh/reviewers
 
+**/Dockerfile*
 /sdk/js/package.json
 /sdk/js/pnpm-lock.yaml
 /sdk/js/pnpm-workspace.yaml
