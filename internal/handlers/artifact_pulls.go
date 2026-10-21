@@ -13,7 +13,6 @@ import (
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
-	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
@@ -150,13 +149,12 @@ func artifactPullFilter(r *http.Request) (types.ArtifactVersionPullFilter, respo
 	if partnerOrgID := authInfo.CurrentPartnerOrgID(); partnerOrgID != nil {
 		filter.PartnerOrganizationID = partnerOrgID
 		if filter.CustomerOrganizationID != nil {
-			co, err := db.GetCustomerOrganizationByID(ctx, *filter.CustomerOrganizationID)
-			if errors.Is(err, distrerr.ErrNotFound) {
-				return filter, notAssignedToPartner, nil
+			if err := db.ValidateCustomerOrgBelongsToPartnerOrg(
+				ctx, *filter.CustomerOrganizationID, *partnerOrgID,
+			); errors.Is(err, db.ErrCustomerOrgNotInPartnerOrg) {
+				return filter, invalidCustomerScope, nil
 			} else if err != nil {
-				return filter, nil, fmt.Errorf("could not get customer organization: %w", err)
-			} else if !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-				return filter, notAssignedToPartner, nil
+				return filter, nil, fmt.Errorf("failed to validate customer organization of partner: %w", err)
 			}
 		}
 	}
