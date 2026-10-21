@@ -38,13 +38,11 @@
       }
     }
   </div>
-  @if (deploymentTarget().deployments.length > 0) {
-    <hr class="border-gray-200 dark:border-gray-600" />
-  }
+  <hr class="border-t-2 border-gray-200 dark:border-gray-600" />
   @if (deploymentTarget().deployments.length > 0) {
     <ul class="overflow-hidden">
       @for (deployment of deploymentTarget().deployments; track deployment.id) {
-        <li class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+        <li class="hover:bg-gray-100 dark:hover:bg-gray-700 not-first:border-t border-gray-200 dark:border-gray-600">
           <div class="px-4 py-2">
             <div class="flex items-center gap-3 text-sm">
               <app-deployment-app-name class="flex-1 min-w-0" [deployment]="deployment" />
