@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, inject, input} from '@angular/core';
+import {Component, inject, input} from '@angular/core';
 import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleCheck, faCircleExclamation, faCircleInfo, faXmark} from '@fortawesome/free-solid-svg-icons';
@@ -13,13 +13,7 @@ const autoCloseDuration = 5000;
   selector: 'app-toast',
   template: `
     <div
-      [class.border-red-300]="type() === 'error'"
-      [class.dark:border-red-800]="type() === 'error'"
-      [class.border-green-300]="type() === 'success'"
-      [class.dark:border-green-800]="type() === 'success'"
-      [class.border-blue-300]="type() === 'info'"
-      [class.dark:border-blue-800]="type() === 'info'"
-      class="flex items-center w-full max-w-xs gap-3 p-4 mb-4 text-gray-500 bg-white rounded-lg shadow-sm dark:text-gray-400 dark:bg-gray-800 border border-gray-200 dark:border-gray-600"
+      class="flex items-center w-full max-w-xs gap-3 p-4 mb-4 text-gray-500 bg-white rounded-lg shadow-sm dark:text-gray-400 dark:bg-gray-800"
       role="alert">
       @switch (type()) {
         @case ('error') {
@@ -52,7 +46,6 @@ const autoCloseDuration = 5000;
       </button>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FaIconComponent],
 })
 export class ToastComponent {
