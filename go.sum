@@ -260,8 +260,8 @@ github.com/getsentry/sentry-go/otel/otlp v0.50.0 h1:mmKr7wsrSnleAabOTYzlNWrOzN5p
 github.com/getsentry/sentry-go/otel/otlp v0.50.0/go.mod h1:3SLOxr/akXyaI5Qlb7aqhLIU4W3efiQTqINKORTVqDA=
 github.com/glasskube/pkg/crypto v0.2.0 h1:vaI2WjPNWtP3LRqc4SoF/PMcEflPmAhUcAAHF+rryQU=
 github.com/glasskube/pkg/crypto v0.2.0/go.mod h1:lp/XKaha7EYH2ZkRKya+fp0VLz84/hZA48ujO5iQQzU=
-github.com/glasskube/pkg/seekbuf v0.1.1 h1:nUdyZS6XEkjkjploYIsmtGD60o/giGUI7Kiz9jqBFHM=
-github.com/glasskube/pkg/seekbuf v0.1.1/go.mod h1:JXcnhJNn6GxanHkWOkF45wK3CxUgrAwEeManYxTgySs=
+github.com/glasskube/pkg/seekbuf v0.1.2 h1:nEaCPAcDKPluYKSSR9XXs/y2FFfX0suFViZ/DnstRQQ=
+github.com/glasskube/pkg/seekbuf v0.1.2/go.mod h1:mwAk7QElI9WQnyuUINUi/XOKDx7AfLop81aw5w2AQWw=
 github.com/go-chi/chi/v5 v5.5.0 h1:xdKQ1dJmVJsmgahrXSKhUx8NyVPzpwdlyrrQFpMPJgg=
 github.com/go-chi/chi/v5 v5.5.0/go.mod h1:d1IG7GtKPSjPyBP365PH8sAGVHk3qfB/IhjFNRH1wWM=
 github.com/go-chi/httprate v0.16.1 h1:q2M8FmDsI4oEr1oRX43N+VeA0Ujd1tb/EasrSzXy87o=

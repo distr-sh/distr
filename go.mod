@@ -26,7 +26,7 @@ require (
 	github.com/getsentry/sentry-go v0.50.0
 	github.com/getsentry/sentry-go/otel/otlp v0.50.0
 	github.com/glasskube/pkg/crypto v0.2.0
-	github.com/glasskube/pkg/seekbuf v0.1.1
+	github.com/glasskube/pkg/seekbuf v0.1.2
 	github.com/go-chi/chi/v5 v5.5.0
 	github.com/go-chi/httprate v0.16.1
 	github.com/go-co-op/gocron/v2 v2.22.0
