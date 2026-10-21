@@ -31,7 +31,7 @@ import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SidebarService} from '../../services/sidebar.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
-import {ContextSwitchPortal, ContextSwitchTargets, SwitchContextRequest} from '../../types/context-switch';
+import {ContextSwitchPortal, ContextSwitchTargets} from '../../types/context-switch';
 import {CreateOrganizationResponse, Organization, OrganizationWithUserRole} from '../../types/organization';
 import {subscriptionRank} from '../../types/subscription';
 import {AlertComponent} from '../alert/alert.component';
@@ -40,7 +40,7 @@ import {ClipComponent} from '../clip.component';
 import {ColorSchemeSwitcherComponent} from '../color-scheme-switcher/color-scheme-switcher.component';
 import {SearchBarComponent} from '../search-bar.component';
 import {SubscriptionBadgeComponent} from '../subscription-badge.component';
-import {NavBarForeignContextBannerComponent} from './nav-bar-foreign-context-banner/nav-bar-foreign-context-banner.component';
+import {NavBarLensBannerComponent} from './nav-bar-lens-banner/nav-bar-lens-banner.component';
 import {NavBarSubscriptionBannerComponent} from './nav-bar-subscription-banner/nav-bar-subscription-banner.component';
 
 // above this many entries the dropdown gets a search field
@@ -78,7 +78,7 @@ interface SwitcherEntry extends SwitcherOrganization {
     AvatarComponent,
     ClipComponent,
     ColorSchemeSwitcherComponent,
-    NavBarForeignContextBannerComponent,
+    NavBarLensBannerComponent,
     NavBarSubscriptionBannerComponent,
     OverlayModule,
     FaIconComponent,
@@ -131,7 +131,7 @@ export class NavBarComponent implements OnInit {
   protected readonly isTrial = computed(() => this.currentOrg()?.subscriptionType === 'trial');
   protected readonly isSubscriptionExpired = this.organizationService.isSubscriptionExpired;
 
-  protected readonly isForeignContext = this.auth.isForeignContext();
+  protected readonly isLens = this.auth.isLens();
   protected readonly isSuperAdmin = this.auth.isSuperAdmin();
   protected readonly ownPortalKind = computed(() => {
     const membership = this.allOrgs().find((org) => org.id === this.currentOrg()?.id);
@@ -164,7 +164,7 @@ export class NavBarComponent implements OnInit {
         return {
           org,
           logoUrl: target?.logoUrl,
-          current: isCurrentOrg && !this.isForeignContext,
+          current: isCurrentOrg && !this.isLens,
           portals: [
             ...(target?.partnerOrganizations ?? []).map((portal) => ({
               ...portal,
@@ -180,13 +180,14 @@ export class NavBarComponent implements OnInit {
         };
       });
   });
-  // A single organization is left out of the list, the banner of a foreign context leads back to its own portal.
   protected readonly isSingleOrganization = computed(() => this.switcherTree().length === 1);
+  // A single organization is left out of the list unless the session is in a lens, which it leads back from.
+  protected readonly isOrganizationListed = computed(() => !this.isSingleOrganization() || this.isLens);
   protected readonly switchEntryCount = computed(() =>
     this.switcherTree().reduce(
       (count, entry) =>
         count +
-        Number(!entry.current && !this.isSingleOrganization()) +
+        Number(!entry.current && this.isOrganizationListed()) +
         entry.portals.filter((portal) => !portal.current).length,
       0
     )
@@ -207,7 +208,7 @@ export class NavBarComponent implements OnInit {
   protected readonly userOpened = signal(false);
   protected readonly organizationsOpened = signal(false);
   protected readonly isOrganizationSwitcherVisible = computed(
-    () => this.isVendorSomewhere() || this.isForeignContext || this.switchEntryCount() > 0
+    () => this.isVendorSomewhere() || this.isLens || this.switchEntryCount() > 0
   );
   protected readonly switcherShortcut = navigator.userAgent.includes('Mac') ? '⌘K' : 'Ctrl+K';
 
@@ -317,20 +318,22 @@ export class NavBarComponent implements OnInit {
   }
 
   protected async switchOrganization(org: Organization) {
-    await this.switchContext({organizationId: org.id!});
+    await this.switchContext(() => this.auth.switchContext(org.id!));
   }
 
-  protected async switchPortal(org: Organization, portal: SwitcherPortal) {
-    await this.switchContext({
-      organizationId: org.id!,
-      ...(portal.kind === 'partner' ? {partnerOrganizationId: portal.id} : {customerOrganizationId: portal.id}),
-    });
+  protected async enterLens(org: Organization, portal: SwitcherPortal) {
+    await this.switchContext(() =>
+      this.auth.enterLens(
+        portal.kind === 'partner' ? {partnerOrganizationId: portal.id} : {customerOrganizationId: portal.id},
+        org.id!
+      )
+    );
   }
 
-  private async switchContext(request: SwitchContextRequest, targetPath = '/') {
+  private async switchContext(switchFn: () => Promise<void>) {
     this.organizationsOpened.set(false);
     try {
-      await this.auth.switchContext(request, targetPath);
+      await switchFn();
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {
@@ -377,7 +380,7 @@ export class NavBarComponent implements OnInit {
   }
 
   protected async openCreatedOrganization(organizationId: string) {
-    await this.switchContext({organizationId}, '/dashboard?from=new-org');
+    await this.switchContext(() => this.auth.switchContext(organizationId, '/dashboard?from=new-org'));
   }
 
   async logout() {

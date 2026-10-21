@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/lens"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
@@ -59,7 +61,7 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 
 	var customerOrg *api.CustomerOrganization
 	var sidebarLinks []api.SidebarLink
-	if co := auth.CurrentCustomerOrg(); co != nil {
+	if co := cmp.Or(auth.LensCustomerOrg(), auth.CurrentCustomerOrg()); co != nil {
 		customerOrg = new(mapping.CustomerOrganizationToAPI(*co))
 		if links, err := db.GetSidebarLinks(ctx, co.ID); err != nil {
 			log.Error("failed to get sidebar links", zap.Error(err))
@@ -116,8 +118,8 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 }
 
 // getContextSwitchTargetsHandler lists, for the organizations the user may switch to, their logos and the
-// customer and partner portals the user may enter there. The memberships decide which portals, not the portal
-// the session operates in right now, so the list stays the same while the session is in a foreign context.
+// customer and partner organizations whose lens the user may enter there. The memberships decide which, not the
+// organization the session operates in right now, so the list stays the same while the session is in a lens.
 func getContextSwitchTargetsHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
@@ -128,14 +130,11 @@ func getContextSwitchTargetsHandler(r *http.Request) (respond.Responder, error) 
 	}
 
 	orgIDs := make([]uuid.UUID, 0, len(orgs))
-	ownPortals := make(map[uuid.UUID]authinfo.Portal, len(orgs))
+	ownTargets := make(map[uuid.UUID]lens.Target, len(orgs))
 	var portalOrgIDs, partnerOrgIDs []uuid.UUID
 	for _, org := range orgs {
 		orgIDs = append(orgIDs, org.ID)
-		ownPortals[org.ID] = authinfo.Portal{
-			CustomerOrganizationID: org.CustomerOrganizationID,
-			PartnerOrganizationID:  org.PartnerOrganizationID,
-		}
+		ownTargets[org.ID] = lens.MembershipTarget(org)
 		if auth.IsSuperAdmin() || org.CustomerOrganizationID == nil {
 			portalOrgIDs = append(portalOrgIDs, org.ID)
 			if org.HasFeature(types.FeaturePartnerManagement) {
@@ -159,13 +158,13 @@ func getContextSwitchTargetsHandler(r *http.Request) (respond.Responder, error) 
 
 	enterableCustomerOrgs := make(map[uuid.UUID][]types.CustomerOrganization)
 	for _, co := range customerOrgs {
-		if authinfo.MayEnterCustomerPortal(ownPortals[co.OrganizationID], auth.IsSuperAdmin(), co.PartnerOrganizationID) {
+		if lens.MayEnterCustomer(ownTargets[co.OrganizationID], auth.IsSuperAdmin(), co.PartnerOrganizationID) {
 			enterableCustomerOrgs[co.OrganizationID] = append(enterableCustomerOrgs[co.OrganizationID], co)
 		}
 	}
 	enterablePartnerOrgs := make(map[uuid.UUID][]types.PartnerOrganization)
 	for _, po := range partnerOrgs {
-		if authinfo.MayEnterPartnerPortal(ownPortals[po.OrganizationID], auth.IsSuperAdmin()) {
+		if lens.MayEnterPartner(ownTargets[po.OrganizationID], auth.IsSuperAdmin()) {
 			enterablePartnerOrgs[po.OrganizationID] = append(enterablePartnerOrgs[po.OrganizationID], po)
 		}
 	}

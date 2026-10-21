@@ -102,8 +102,8 @@ const requireVendorOrCustomer: CanActivateFn = () => {
   return inject(Router).createUrlTree(['/']);
 };
 
-const requireOwnContext: CanActivateFn = () => {
-  if (!inject(AuthService).isForeignContext()) {
+const requireNonLensContext: CanActivateFn = () => {
+  if (!inject(AuthService).isLens()) {
     return true;
   }
   return inject(Router).createUrlTree(['/']);
@@ -439,7 +439,7 @@ export const routes: Routes = [
           },
           {
             path: 'access-tokens',
-            canActivate: [requireOwnContext],
+            canActivate: [requireNonLensContext],
             children: [
               {
                 path: '',

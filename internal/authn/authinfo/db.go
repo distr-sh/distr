@@ -7,14 +7,16 @@ import (
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/distrerr"
+	"github.com/distr-sh/distr/internal/lens"
 	"github.com/distr-sh/distr/internal/types"
 )
 
 type DbAuthInfo struct {
 	AuthInfo
-	user        *types.UserAccount
-	org         *types.OrganizationWithBranding
-	customerOrg *types.CustomerOrganization
+	user            *types.UserAccount
+	org             *types.OrganizationWithBranding
+	customerOrg     *types.CustomerOrganization
+	lensCustomerOrg *types.CustomerOrganization
 }
 
 func (a DbAuthInfo) CurrentUser() *types.UserAccount {
@@ -23,6 +25,10 @@ func (a DbAuthInfo) CurrentUser() *types.UserAccount {
 
 func (a DbAuthInfo) CurrentCustomerOrg() *types.CustomerOrganization {
 	return a.customerOrg
+}
+
+func (a DbAuthInfo) LensCustomerOrg() *types.CustomerOrganization {
+	return a.lensCustomerOrg
 }
 
 func (a DbAuthInfo) CurrentOrg() *types.Organization {
@@ -56,9 +62,9 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 				} else if err != nil {
 					return nil, err
 				}
-				portal, customerOrg, foreignContext, err := sessionPortal(a, Portal{}, nil,
-					func(own, requested Portal) (*types.CustomerOrganization, error) {
-						return EnterPortal(ctx, org.ID, own, true, requested)
+				target, lensCustomerOrg, isLens, err := sessionTarget(a, lens.Target{},
+					func(own, requested lens.Target) (*types.CustomerOrganization, error) {
+						return lens.Enter(ctx, org.ID, own, true, requested)
 					},
 				)
 				if err != nil {
@@ -69,25 +75,25 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 						userID:                 a.CurrentUserID(),
 						userEmail:              a.CurrentUserEmail(),
 						organizationID:         a.CurrentOrgID(),
-						customerOrganizationID: portal.CustomerOrganizationID,
-						partnerOrganizationID:  portal.PartnerOrganizationID,
+						customerOrganizationID: target.CustomerOrganizationID,
+						partnerOrganizationID:  target.PartnerOrganizationID,
 						emailVerified:          a.CurrentUserEmailVerified(),
 						tokenScope:             a.TokenScope(),
 						isAccessToken:          a.IsAccessToken(),
 						isCustomOIDCSession:    a.IsCustomOIDCSession(),
 						userRole:               nil, // Super admins don't have a role
 						isSuperAdmin:           true,
-						isForeignContext:       foreignContext,
+						isLens:                 isLens,
 						rawToken:               a.Token(),
 					},
-					user:        user,
-					org:         org,
-					customerOrg: customerOrg,
+					user:            user,
+					org:             org,
+					lensCustomerOrg: lensCustomerOrg,
 				}, nil
 			}
 			// Regular users: require org membership and validate role
 			if a.CurrentUserRole() != nil {
-				requested := requestedPortal(a)
+				requested := requestedTarget(a)
 				if m, err := db.GetOrganizationMembership(
 					ctx,
 					a.CurrentUserID(),
@@ -104,17 +110,18 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 					// fine (e.g. a PAT scoped to a lower role); above means the
 					// user was demoted after the credential was issued.
 					return nil, authn.ErrBadAuthentication
-				} else if portal, customerOrg, foreignContext, err := sessionPortal(
+				} else if target, lensCustomerOrg, isLens, err := sessionTarget(
 					a,
-					Portal{
+					lens.Target{
 						CustomerOrganizationID: m.User.CustomerOrganizationID,
 						PartnerOrganizationID:  m.User.PartnerOrganizationID,
 					},
-					m.CustomerOrganization,
-					func(own, requested Portal) (*types.CustomerOrganization, error) {
-						return enterLoadedPortal(
-							own, false, requested, m.RequestedCustomerOrganization, m.RequestedPartnerOrganizationExists,
-						)
+					func(own, requested lens.Target) (*types.CustomerOrganization, error) {
+						if (requested.CustomerOrganizationID != nil && m.RequestedCustomerOrganization == nil) ||
+							(requested.PartnerOrganizationID != nil && !m.RequestedPartnerOrganizationExists) {
+							return nil, lens.ErrForbidden
+						}
+						return lens.EnterLoaded(own, false, requested, m.RequestedCustomerOrganization)
 					},
 				); err != nil {
 					return nil, err
@@ -124,20 +131,21 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 							userID:                 a.CurrentUserID(),
 							userEmail:              a.CurrentUserEmail(),
 							organizationID:         a.CurrentOrgID(),
-							customerOrganizationID: portal.CustomerOrganizationID,
-							partnerOrganizationID:  portal.PartnerOrganizationID,
+							customerOrganizationID: target.CustomerOrganizationID,
+							partnerOrganizationID:  target.PartnerOrganizationID,
 							emailVerified:          a.CurrentUserEmailVerified(),
 							tokenScope:             a.TokenScope(),
 							isAccessToken:          a.IsAccessToken(),
 							isCustomOIDCSession:    a.IsCustomOIDCSession(),
 							userRole:               a.CurrentUserRole(),
 							isSuperAdmin:           false,
-							isForeignContext:       foreignContext,
+							isLens:                 isLens,
 							rawToken:               a.Token(),
 						},
-						user:        new(m.User.AsUserAccount()),
-						org:         &m.Organization,
-						customerOrg: customerOrg,
+						user:            new(m.User.AsUserAccount()),
+						org:             &m.Organization,
+						customerOrg:     m.CustomerOrganization,
+						lensCustomerOrg: lensCustomerOrg,
 					}, nil
 				}
 			}
@@ -156,35 +164,33 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 	return authn.AuthenticatorFunc[AuthInfo, AuthInfoWithUserAndOrganization](fn)
 }
 
-// sessionPortal returns the portal a session operates in, the customer organization of that portal and
-// whether that portal is a foreign context, one the session operates in without being a member. A personal
-// access token always operates in its membership's portal: only a login session switches, through the
-// switch-context endpoint. enter decides whether the session may operate in a requested portal that is not
-// its own.
-func sessionPortal(
+// sessionTarget returns the target a session operates in, the customer organization of its lens and whether it
+// operates in a lens. A personal access token always operates in its membership's target: only a login session
+// enters a lens, through the lens endpoint. enter decides whether the session may operate in a requested target
+// that is not its own.
+func sessionTarget(
 	a AuthInfo,
-	own Portal,
-	ownCustomerOrg *types.CustomerOrganization,
-	enter func(own, requested Portal) (*types.CustomerOrganization, error),
-) (Portal, *types.CustomerOrganization, bool, error) {
-	requested := requestedPortal(a)
-	if IsOwnPortal(own, requested) {
-		return own, ownCustomerOrg, false, nil
+	own lens.Target,
+	enter func(own, requested lens.Target) (*types.CustomerOrganization, error),
+) (lens.Target, *types.CustomerOrganization, bool, error) {
+	requested := requestedTarget(a)
+	if lens.IsOwn(own, requested) {
+		return own, nil, false, nil
 	}
 	customerOrg, err := enter(own, requested)
-	if errors.Is(err, ErrPortalForbidden) {
-		return Portal{}, nil, false, authn.ErrBadAuthentication
+	if errors.Is(err, lens.ErrForbidden) {
+		return lens.Target{}, nil, false, authn.ErrBadAuthentication
 	} else if err != nil {
-		return Portal{}, nil, false, err
+		return lens.Target{}, nil, false, err
 	}
 	return requested, customerOrg, true, nil
 }
 
-func requestedPortal(a AuthInfo) Portal {
+func requestedTarget(a AuthInfo) lens.Target {
 	if a.IsAccessToken() {
-		return Portal{}
+		return lens.Target{}
 	}
-	return Portal{CustomerOrganizationID: a.CurrentCustomerOrgID(), PartnerOrganizationID: a.CurrentPartnerOrgID()}
+	return lens.Target{CustomerOrganizationID: a.CurrentCustomerOrgID(), PartnerOrganizationID: a.CurrentPartnerOrgID()}
 }
 
 type controllerDBAuthInfo struct {

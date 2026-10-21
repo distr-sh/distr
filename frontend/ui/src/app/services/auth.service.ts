@@ -4,7 +4,7 @@ import {LoginResponse, TokenResponse, UserRole} from '@distr-sh/distr-sdk';
 import dayjs from 'dayjs';
 import {jwtDecode} from 'jwt-decode';
 import {firstValueFrom, map, Observable, of, tap, throwError} from 'rxjs';
-import {Portal, SwitchContextRequest} from '../types/context-switch';
+import {Lens} from '../types/context-switch';
 
 const tokenStorageKey = 'cloud_token';
 const actionTokenStorageKey = 'distr_action_token';
@@ -21,8 +21,8 @@ export interface JWTClaims {
   scope?: 'password_reset' | 'invite';
   // The custom OIDC configuration that authenticated the session; absent on every other login.
   oidc?: string;
-  // Present while the session is in a foreign context, a customer or partner portal its user is not a member of.
-  foreign?: boolean;
+  // Present while the session is in the lens of a customer or partner organization its user is not a member of.
+  lens?: boolean;
   email_verified: boolean;
   name: string;
   exp: string;
@@ -93,8 +93,8 @@ export class AuthService {
     return this.getClaims()?.is_super_admin === true;
   }
 
-  public isForeignContext(): boolean {
-    return this.getClaims()?.foreign === true;
+  public isLens(): boolean {
+    return this.getClaims()?.lens === true;
   }
 
   public isCustomOidcSession(): boolean {
@@ -228,22 +228,43 @@ export class AuthService {
     return this.httpClient.get<{active: boolean}>(`${authBaseUrl}/status`);
   }
 
-  public async switchContext(request: SwitchContextRequest, targetPath = '/'): Promise<void> {
-    const response = await firstValueFrom(
-      this.httpClient.post<TokenResponse | null>(`${authBaseUrl}/switch-context`, request)
-    );
-    if (response) {
-      this.token = response.token;
-      this.actionToken = null;
+  public async switchContext(organizationId: string, targetPath = '/'): Promise<void> {
+    if (await this.requestContextToken('switch-context', {organizationId})) {
       location.assign(targetPath);
     }
   }
 
-  public async switchPortal(portal: Portal): Promise<void> {
-    const organizationId = this.getClaims()?.org;
-    if (organizationId !== undefined) {
-      await this.switchContext({...portal, organizationId});
+  /**
+   * Enters a lens of the given organization, the current one by default. The lens endpoint only opens lenses of the
+   * organization the session operates in, so another organization is switched to first, and switched back from if
+   * the lens cannot be entered there.
+   */
+  public async enterLens(lens: Lens, organizationId = this.getClaims()?.org): Promise<void> {
+    const previousToken = this.token;
+    let changed = false;
+    try {
+      if (organizationId !== undefined && organizationId !== this.getClaims()?.org) {
+        changed = await this.requestContextToken('switch-context', {organizationId});
+      }
+      changed = (await this.requestContextToken('lens', lens)) || changed;
+    } catch (e) {
+      this.token = previousToken;
+      throw e;
     }
+    if (changed) {
+      location.assign('/');
+    }
+  }
+
+  private async requestContextToken(endpoint: 'switch-context' | 'lens', body: object): Promise<boolean> {
+    const response = await firstValueFrom(
+      this.httpClient.post<TokenResponse | null>(`${authBaseUrl}/${endpoint}`, body)
+    );
+    if (response) {
+      this.token = response.token;
+      this.actionToken = null;
+    }
+    return !!response;
   }
 
   public logout(): Observable<void> {
@@ -315,6 +336,7 @@ function authenticatedRoute(req: HttpRequest<unknown>): boolean {
   return (
     !req.url.startsWith(authBaseUrl) ||
     req.url === `${authBaseUrl}/switch-context` ||
+    req.url === `${authBaseUrl}/lens` ||
     req.url === `${authBaseUrl}/status` ||
     req.url.startsWith(`${authBaseUrl}/verify/`) ||
     req.url.startsWith(`${authBaseUrl}/invite/`) ||

@@ -17,6 +17,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/lens"
 	"github.com/distr-sh/distr/internal/mailsending"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/middleware"
@@ -56,13 +57,17 @@ func AuthRouter(r chiopenapi.Router) {
 	r.Route("/oidc", AuthOIDCRouter)
 	r.Post("/register", respond.Handler(authRegisterHandler))
 	r.Post("/reset", respond.Handler(authResetPasswordHandler))
-	r.With(
-		auth.Authentication.Middleware,
-		middleware.SetSentryUserFromUserAuth,
-		middleware.RequireEmailVerified,
-		middleware.RequireOrgAndRole,
-		middleware.RequireNonAccessToken,
-	).Post("/switch-context", respond.Handler(authSwitchContextHandler))
+	r.Group(func(r chiopenapi.Router) {
+		r.Use(
+			auth.Authentication.Middleware,
+			middleware.SetSentryUserFromUserAuth,
+			middleware.RequireEmailVerified,
+			middleware.RequireOrgAndRole,
+			middleware.RequireNonAccessToken,
+		)
+		r.Post("/switch-context", respond.Handler(authSwitchContextHandler))
+		r.Post("/lens", respond.Handler(authLensHandler))
+	})
 	r.Group(func(r chiopenapi.Router) {
 		r.Use(auth.Authentication.Middleware, middleware.SetSentryUserFromUserAuth)
 
@@ -225,78 +230,117 @@ func setPasswordAndLogin(
 	}
 }
 
+// authSwitchContextHandler switches the session to the user's own context in an organization, which also leaves a
+// lens.
 func authSwitchContextHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
-	request, resp := decodeJSON[api.AuthSwitchContextRequest](r)
-	if resp != nil {
+	if request, resp := decodeJSON[api.AuthSwitchContextRequest](r); resp != nil {
 		return resp, nil
 	} else if request.OrganizationID == uuid.Nil {
 		return respond.BadRequest("bad request"), nil
 	} else if auth.OrganizationScoped() && request.OrganizationID != *auth.CurrentOrgID() {
 		return respond.Forbidden(middleware.CrossOrganizationBlockedMessage), nil
-	}
-
-	var target types.OrganizationWithUserRole
-	var own authinfo.Portal
-	if auth.IsSuperAdmin() {
-		// Super admins can switch to any organization, where they have no role and no membership
-		if org, err := db.GetOrganizationByID(ctx, request.OrganizationID); errors.Is(err, distrerr.ErrNotFound) {
-			return organizationNotFound, nil
-		} else if err != nil {
-			return nil, fmt.Errorf("failed to get organization: %w", err)
-		} else {
-			target.Organization = *org
-		}
-	} else if user, org, err := db.GetUserAccountAndOrg(
-		ctx, auth.CurrentUserID(), request.OrganizationID); errors.Is(err, distrerr.ErrNotFound) {
-		return respond.BadRequest("bad request"), nil
-	} else if err != nil {
-		return nil, fmt.Errorf("context switch failed: %w", err)
-	} else {
-		target.Organization = org.Organization
-		target.UserRole = user.UserRole
-		own = authinfo.Portal{
-			CustomerOrganizationID: user.CustomerOrganizationID,
-			PartnerOrganizationID:  user.PartnerOrganizationID,
-		}
-	}
-
-	portal := own
-	requested := authinfo.Portal{
-		CustomerOrganizationID: request.CustomerOrganizationID,
-		PartnerOrganizationID:  request.PartnerOrganizationID,
-	}
-	foreignContext := !authinfo.IsOwnPortal(own, requested)
-	if foreignContext {
-		if _, err := authinfo.EnterPortal(
-			ctx, target.ID, own, auth.IsSuperAdmin(), requested,
-		); errors.Is(err, authinfo.ErrPortalForbidden) {
-			return respond.Forbidden(err.Error()), nil
-		} else if err != nil {
-			return nil, fmt.Errorf("failed to check the requested portal: %w", err)
-		}
-		portal = requested
-	}
-	target.CustomerOrganizationID = portal.CustomerOrganizationID
-	target.PartnerOrganizationID = portal.PartnerOrganizationID
-
-	orgChanged := target.ID != *auth.CurrentOrgID()
-	if !orgChanged && util.PtrEq(portal.CustomerOrganizationID, auth.CurrentCustomerOrgID()) &&
-		util.PtrEq(portal.PartnerOrganizationID, auth.CurrentPartnerOrgID()) {
+	} else if orgChanged := request.OrganizationID != *auth.CurrentOrgID(); !orgChanged && !auth.IsLens() {
 		return respond.NoContent(), nil
-	} else if currentToken, ok := auth.Token().(jwt.Token); !ok {
-		return nil, errors.New("failed to generate token: session is not authenticated by a JWT")
-	} else if _, tokenString, err := authjwt.GenerateContextToken(
-		currentToken, *auth.CurrentUser(), target, foreignContext,
-	); err != nil {
-		return nil, fmt.Errorf("failed to generate token: %w", err)
+	} else if target, resp, err := switchTarget(ctx, auth, request.OrganizationID); resp != nil || err != nil {
+		return resp, err
+	} else if tokenString, err := generateContextToken(auth, *target, false); err != nil {
+		return nil, err
 	} else if !orgChanged {
 		return respond.JSON(api.AuthLoginResponse{Token: tokenString}), nil
 	} else if err := db.UpdateUserAccountLastUsedOrganizationID(ctx, auth.CurrentUserID(), target.ID); err != nil {
 		return nil, fmt.Errorf("failed to update last used organization ID: %w", err)
 	} else {
 		return respond.JSON(api.AuthLoginResponse{Token: tokenString}), nil
+	}
+}
+
+// authLensHandler switches the session to the lens of a customer or partner organization of the organization it
+// operates in.
+func authLensHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	request, resp := decodeJSON[api.AuthLensRequest](r)
+	if resp != nil {
+		return resp, nil
+	} else if err := request.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
+	}
+
+	requested := lens.Target{
+		CustomerOrganizationID: request.CustomerOrganizationID,
+		PartnerOrganizationID:  request.PartnerOrganizationID,
+	}
+	if auth.IsLens() && util.PtrEq(requested.CustomerOrganizationID, auth.CurrentCustomerOrgID()) &&
+		util.PtrEq(requested.PartnerOrganizationID, auth.CurrentPartnerOrgID()) {
+		return respond.NoContent(), nil
+	} else if target, resp, err := switchTarget(ctx, auth, *auth.CurrentOrgID()); resp != nil || err != nil {
+		return resp, err
+	} else if own := lens.MembershipTarget(*target); lens.IsOwn(own, requested) {
+		return respond.BadRequest("this is your own organization, return to it instead"), nil
+	} else if _, err := lens.Enter(ctx, target.ID, own, auth.IsSuperAdmin(), requested); errors.Is(
+		err, lens.ErrForbidden,
+	) {
+		return respond.Forbidden(err.Error()), nil
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to enter lens: %w", err)
+	} else {
+		target.CustomerOrganizationID = requested.CustomerOrganizationID
+		target.PartnerOrganizationID = requested.PartnerOrganizationID
+		if tokenString, err := generateContextToken(auth, *target, true); err != nil {
+			return nil, err
+		} else {
+			return respond.JSON(api.AuthLoginResponse{Token: tokenString}), nil
+		}
+	}
+}
+
+// switchTarget loads an organization the session switches to, with the role and the customer or partner
+// organization of the user's membership there. Super admins can switch to any organization, where they have
+// neither.
+func switchTarget(
+	ctx context.Context,
+	auth authinfo.AuthInfo,
+	orgID uuid.UUID,
+) (*types.OrganizationWithUserRole, respond.Responder, error) {
+	if auth.IsSuperAdmin() {
+		if org, err := db.GetOrganizationByID(ctx, orgID); errors.Is(err, distrerr.ErrNotFound) {
+			return nil, organizationNotFound, nil
+		} else if err != nil {
+			return nil, nil, fmt.Errorf("failed to get organization: %w", err)
+		} else {
+			return &types.OrganizationWithUserRole{Organization: *org}, nil, nil
+		}
+	} else if user, org, err := db.GetUserAccountAndOrg(ctx, auth.CurrentUserID(), orgID); errors.Is(
+		err, distrerr.ErrNotFound,
+	) {
+		return nil, respond.BadRequest("bad request"), nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("failed to get organization membership: %w", err)
+	} else {
+		return &types.OrganizationWithUserRole{
+			Organization:           org.Organization,
+			UserRole:               user.UserRole,
+			CustomerOrganizationID: user.CustomerOrganizationID,
+			PartnerOrganizationID:  user.PartnerOrganizationID,
+		}, nil, nil
+	}
+}
+
+func generateContextToken(
+	auth authinfo.AuthInfoWithUserAndOrganization,
+	target types.OrganizationWithUserRole,
+	isLens bool,
+) (string, error) {
+	if currentToken, ok := auth.Token().(jwt.Token); !ok {
+		return "", errors.New("failed to generate token: session is not authenticated by a JWT")
+	} else if _, tokenString, err := authjwt.GenerateContextToken(
+		currentToken, *auth.CurrentUser(), target, isLens,
+	); err != nil {
+		return "", fmt.Errorf("failed to generate token: %w", err)
+	} else {
+		return tokenString, nil
 	}
 }
 

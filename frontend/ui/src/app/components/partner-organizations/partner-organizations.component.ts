@@ -129,7 +129,7 @@ export class PartnerOrganizationsComponent {
 
   protected async openPortal(partner: PartnerOrganizationWithUsage) {
     try {
-      await this.auth.switchPortal({partnerOrganizationId: partner.id});
+      await this.auth.enterLens({partnerOrganizationId: partner.id});
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {

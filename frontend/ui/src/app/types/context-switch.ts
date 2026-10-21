@@ -1,11 +1,7 @@
-/** A customer or partner portal of an organization, the user's own portal when neither is set. */
-export interface Portal {
+/** The customer or partner organization a lens shows, exactly one of which is set. */
+export interface Lens {
   customerOrganizationId?: string;
   partnerOrganizationId?: string;
-}
-
-export interface SwitchContextRequest extends Portal {
-  organizationId: string;
 }
 
 export interface ContextSwitchPortal {

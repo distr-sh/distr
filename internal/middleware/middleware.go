@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"net/http"
@@ -313,6 +314,8 @@ const (
 	AccessTokenBlockedMessage       = "this cannot be done with an access token. Sign in to Distr to do it."
 	CrossOrganizationBlockedMessage = "you are signed in with a credential that belongs to a single " +
 		"organization and can therefore only act within that organization"
+	LensBlockedMessage = "this cannot be done while you are switched to a customer or partner portal. " +
+		"Return to your own portal to do it."
 )
 
 var RequireNonOidcToken = guard(func(r *http.Request) (respond.Responder, error) {
@@ -329,12 +332,11 @@ var RequireNonAccessToken = guard(func(r *http.Request) (respond.Responder, erro
 	return nil, nil
 })
 
-// RequireOwnContext rejects a session in a foreign context, a customer or partner portal its user is not a
-// member of, for what belongs to the user's membership rather than to the portal, such as personal access tokens.
-var RequireOwnContext = guard(func(r *http.Request) (respond.Responder, error) {
-	if auth.Authentication.Require(r.Context()).IsForeignContext() {
-		return respond.Forbidden("this cannot be done while you are switched to a customer or partner portal. " +
-			"Return to your own portal to do it."), nil
+// RequireNonLensContext rejects a session in a lens for what belongs to the user's membership rather than to the
+// organization the lens shows, such as personal access tokens.
+var RequireNonLensContext = guard(func(r *http.Request) (respond.Responder, error) {
+	if auth.Authentication.Require(r.Context()).IsLens() {
+		return respond.Forbidden(LensBlockedMessage), nil
 	}
 	return nil, nil
 })
@@ -394,7 +396,7 @@ func CustomerFeatureMiddleware(features ...types.CustomerOrganizationFeature) fu
 	return guard(func(r *http.Request) (respond.Responder, error) {
 		if auth, err := auth.Authentication.Get(r.Context()); err != nil {
 			return nil, err
-		} else if customerOrg := auth.CurrentCustomerOrg(); customerOrg != nil &&
+		} else if customerOrg := cmp.Or(auth.LensCustomerOrg(), auth.CurrentCustomerOrg()); customerOrg != nil &&
 			!slices.ContainsFunc(features, customerOrg.HasFeature) {
 			return featureNotEnabled, nil
 		}

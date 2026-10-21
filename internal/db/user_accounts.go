@@ -564,8 +564,8 @@ func GetUserAccountAndOrg(ctx context.Context, userID, orgID uuid.UUID) (
 
 // GetOrganizationMembership returns the user's membership in the organization together with the
 // customer organization the membership belongs to, if any, which authentication reads on every
-// request. It also looks up the requested customer or partner portal of the organization, so that
-// authenticating a session switched into one takes no query of its own.
+// request. It also looks up the customer or partner organization of a requested lens, so that
+// authenticating a session in a lens takes no query of its own.
 func GetOrganizationMembership(
 	ctx context.Context,
 	userID, orgID uuid.UUID,

@@ -1,7 +1,7 @@
 <nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
   @let organization = currentOrg();
-  @if (isForeignContext && organization) {
-    <app-nav-bar-foreign-context-banner
+  @if (isLens && organization) {
+    <app-nav-bar-lens-banner
       [organization]="organization"
       [ownPortalKind]="ownPortalKind()"
       (returnToOwnPortal)="switchOrganization(organization)" />
@@ -86,7 +86,7 @@
                           [endsAt]="organization.subscriptionEndsAt" />
                       }
                     </span>
-                    @if (isForeignContext && organization) {
+                    @if (isLens && organization) {
                       <span class="text-xs font-light text-amber-600 dark:text-amber-400" role="none">
                         {{ organization | membershipLabel }}
                         &bull;
@@ -139,7 +139,7 @@
                   @if (switchEntryCount() > 0) {
                     <ul class="overflow-y-auto min-h-0" role="none">
                       @for (entry of switcherEntries(); track entry.org.id) {
-                        @if (!isSingleOrganization()) {
+                        @if (isOrganizationListed()) {
                           <li class="flex items-center gap-1">
                             <button
                               type="button"
@@ -199,10 +199,10 @@
                         }
                         @if (entry.expanded) {
                           @for (portal of entry.portals; track portal.id) {
-                            <li [class.ps-4]="!isSingleOrganization()">
+                            <li [class.ps-4]="isOrganizationListed()">
                               <button
                                 type="button"
-                                (click)="switchPortal(entry.org, portal)"
+                                (click)="enterLens(entry.org, portal)"
                                 [attr.aria-current]="portal.current"
                                 class="distr-dropdown-item ps-3 focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
                                 role="menuitem">
@@ -325,7 +325,7 @@
                       Edit Your Profile
                     </a>
                   </li>
-                  @if (!isSuperAdmin && !isForeignContext) {
+                  @if (!isSuperAdmin && !isLens) {
                     <li>
                       <a
                         (click)="userOpened.set(false)"

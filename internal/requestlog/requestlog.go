@@ -18,7 +18,7 @@ type Fields struct {
 	DeploymentTargetID     *uuid.UUID
 	TokenID                *string
 	OrganizationScoped     *bool
-	ForeignContext         bool
+	Lens                   bool
 }
 
 type contextKey struct{}
@@ -53,8 +53,8 @@ func (f *Fields) ZapFields() []zap.Field {
 	if f.OrganizationScoped != nil {
 		fields = append(fields, zap.Bool("organizationScoped", *f.OrganizationScoped))
 	}
-	if f.ForeignContext {
-		fields = append(fields, zap.Bool("foreignContext", true))
+	if f.Lens {
+		fields = append(fields, zap.Bool("lens", true))
 	}
 	return fields
 }

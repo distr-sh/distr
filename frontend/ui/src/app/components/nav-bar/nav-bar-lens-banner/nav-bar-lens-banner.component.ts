@@ -7,11 +7,11 @@ import {AuthService} from '../../../services/auth.service';
 import {OrganizationWithUserRole} from '../../../types/organization';
 
 @Component({
-  selector: 'app-nav-bar-foreign-context-banner',
+  selector: 'app-nav-bar-lens-banner',
   imports: [FaIconComponent, UserRoleLabelPipe],
-  templateUrl: './nav-bar-foreign-context-banner.component.html',
+  templateUrl: './nav-bar-lens-banner.component.html',
 })
-export class NavBarForeignContextBannerComponent {
+export class NavBarLensBannerComponent {
   protected readonly isSuperAdmin = inject(AuthService).isSuperAdmin();
 
   public readonly organization = input.required<OrganizationWithUserRole>();

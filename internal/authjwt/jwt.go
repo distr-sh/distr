@@ -35,10 +35,9 @@ const (
 	// for logging.
 	CustomOIDCConfigurationIDKey = "oidc"
 
-	// ForeignContextKey marks a session in a foreign context, a customer or partner portal its user is not a
-	// member of. It is meant for the frontend only: authentication decides this against the database on every
-	// request.
-	ForeignContextKey = "foreign"
+	// LensKey marks a session in the lens of a customer or partner organization its user is not a member of. It is
+	// meant for the frontend only: authentication decides this against the database on every request.
+	LensKey = "lens"
 
 	audienceUserValue = "user"
 	// audienceControllerValue keeps the value from before the rename to controller, so a token issued before
@@ -112,17 +111,18 @@ func GenerateCustomOIDCToken(
 }
 
 // GenerateContextToken generates the token that switches the session of current to another organization or
-// portal. foreignContext marks a session that operates in a portal its user is not a member of. A session of a
-// custom OIDC provider stays one, so that switching cannot lift the confinement GenerateCustomOIDCToken describes.
+// lens. isLens marks a session that operates in a customer or partner organization its user is not a member of.
+// A session of a custom OIDC provider stays one, so that switching cannot lift the confinement
+// GenerateCustomOIDCToken describes.
 func GenerateContextToken(
 	current jwt.Token,
 	user types.UserAccount,
 	org types.OrganizationWithUserRole,
-	foreignContext bool,
+	isLens bool,
 ) (jwt.Token, string, error) {
 	extraClaims := map[string]any{}
-	if foreignContext {
-		extraClaims[ForeignContextKey] = true
+	if isLens {
+		extraClaims[LensKey] = true
 	}
 	if customOIDCConfigurationID, ok := current.Field(CustomOIDCConfigurationIDKey); ok {
 		extraClaims[CustomOIDCConfigurationIDKey] = customOIDCConfigurationID
