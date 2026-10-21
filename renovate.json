@@ -74,29 +74,9 @@
       "automerge": true
     },
     {
-      "description": "Automerge minor and patch releases of the noisiest GitHub Actions",
+      "description": "Automerge minor and patch releases of GitHub Actions",
       "matchManagers": [
         "github-actions"
-      ],
-      "matchPackageNames": [
-        "actions/cache",
-        "actions/checkout",
-        "actions/download-artifact",
-        "actions/setup-go",
-        "actions/setup-node",
-        "actions/upload-artifact",
-        "anchore/sbom-action",
-        "aws-actions/configure-aws-credentials",
-        "docker/build-push-action",
-        "docker/login-action",
-        "docker/metadata-action",
-        "docker/setup-buildx-action",
-        "golangci/golangci-lint-action",
-        "google/osv-scanner-action",
-        "googleapis/release-please-action",
-        "jdx/mise-action",
-        "pnpm/action-setup",
-        "sigstore/cosign-installer"
       ],
       "matchUpdateTypes": [
         "minor",
