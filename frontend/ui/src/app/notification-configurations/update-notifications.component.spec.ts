@@ -112,7 +112,9 @@ describe('UpdateNotificationsComponent', () => {
       },
     ]);
 
-    buttonWithText('Edit').click();
+    Array.from(document.body.querySelectorAll('tbody tr'))
+      .find((row) => row.textContent?.includes('existing'))!
+      .dispatchEvent(new MouseEvent('click', {bubbles: true}));
     await settle();
     flushPicklists();
     await settle();

@@ -1,3 +1,4 @@
+import {NgPlural, NgPluralCase} from '@angular/common';
 import {ChangeDetectionStrategy, Component, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
@@ -8,6 +9,7 @@ import {catchError, EMPTY, filter, firstValueFrom, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {AlertComponent} from '../components/alert/alert.component';
 import {PageComponent} from '../components/page.component';
+import {ClickableRowDirective} from '../directives/clickable-row.directive';
 import {AuthService} from '../services/auth.service';
 import {LicenseTemplatesService} from '../services/license-templates.service';
 import {OrganizationService} from '../services/organization.service';
@@ -19,7 +21,16 @@ import {LicenseTemplate} from '../types/license-template';
   selector: 'app-billing',
   templateUrl: './billing.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [FaIconComponent, ReactiveFormsModule, RouterLink, PageComponent, AlertComponent],
+  imports: [
+    FaIconComponent,
+    ReactiveFormsModule,
+    RouterLink,
+    PageComponent,
+    AlertComponent,
+    NgPlural,
+    NgPluralCase,
+    ClickableRowDirective,
+  ],
 })
 export class BillingComponent {
   protected readonly auth = inject(AuthService);
@@ -28,6 +39,8 @@ export class BillingComponent {
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder).nonNullable;
+
+  protected readonly canEdit = this.auth.hasAnyRole('read_write', 'admin');
 
   protected readonly faGear = faGear;
   protected readonly faPen = faPen;

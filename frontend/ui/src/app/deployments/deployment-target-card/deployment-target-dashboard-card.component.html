@@ -1,5 +1,8 @@
 <div class="distr-card font-medium text-gray-900 dark:text-white">
-  <div class="mx-4 my-3 flex justify-between items-center min-w-0">
+  <div
+    routerLink="/deployments"
+    [queryParams]="{search: deploymentTarget().name}"
+    class="px-4 py-3 flex justify-between items-center min-w-0 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
     <div class="flex justify-between items-center min-w-0">
       <div class="flex items-center gap-3 min-w-0">
         <div class="self-start shrink-0">
@@ -15,35 +18,31 @@
           }
         </div>
         <div class="min-w-0">
-          <a routerLink="/deployments" class="hover:underline" [queryParams]="{search: deploymentTarget().name}">
-            @if (deploymentTarget().customerOrganization; as customer) {
-              <h3 class="font-bold leading-none truncate" [title]="deploymentTarget().name">
-                {{ customer.name }}
-              </h3>
-              <div class="text-gray-500 dark:text-gray-400 text-sm truncate">{{ deploymentTarget().name }}</div>
-            } @else {
-              <h3 class="font-bold truncate" [title]="deploymentTarget().name">
-                {{ deploymentTarget().name }}
-              </h3>
-            }
-          </a>
+          @if (deploymentTarget().customerOrganization; as customer) {
+            <h3 class="font-bold leading-tight truncate" [title]="deploymentTarget().name">
+              {{ customer.name }}
+            </h3>
+            <div class="text-gray-500 dark:text-gray-400 text-sm truncate">{{ deploymentTarget().name }}</div>
+          } @else {
+            <h3 class="font-bold truncate" [title]="deploymentTarget().name">
+              {{ deploymentTarget().name }}
+            </h3>
+          }
         </div>
       </div>
     </div>
 
     @if (deploymentTarget().metricsEnabled) {
       @if (deploymentTargetMetrics(); as metrics) {
-        <app-deployment-target-metrics [metrics]="metrics" />
+        <app-deployment-target-metrics [metrics]="metrics" (click)="$event.stopPropagation()" />
       }
     }
   </div>
-  @if (deploymentTarget().deployments.length > 0) {
-    <hr class="border-gray-200 dark:border-gray-600" />
-  }
+  <hr class="border-t-2 border-gray-200 dark:border-gray-600" />
   @if (deploymentTarget().deployments.length > 0) {
     <ul class="overflow-hidden">
       @for (deployment of deploymentTarget().deployments; track deployment.id) {
-        <li class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+        <li class="hover:bg-gray-100 dark:hover:bg-gray-700 not-first:border-t border-gray-200 dark:border-gray-600">
           <div class="px-4 py-2">
             <div class="flex items-center gap-3 text-sm">
               <app-deployment-app-name class="flex-1 min-w-0" [deployment]="deployment" />
