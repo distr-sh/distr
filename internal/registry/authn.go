@@ -2,6 +2,7 @@ package registry
 
 import (
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/distr-sh/distr/internal/auth"
@@ -17,11 +18,11 @@ func requiresAuthentication(r *http.Request) bool {
 
 // useRegistryErrorFormat replaces the plain text 401 of the authentication middleware with the error
 // format of the distribution spec, which is what an OCI client reads.
-func useRegistryErrorFormat() {
+var useRegistryErrorFormat = sync.OnceFunc(func() {
 	auth.ArtifactsAuthentication.SetUnauthorizedHandler(func(w http.ResponseWriter, r *http.Request) {
 		_ = regErrCredentialsRequired.Write(w)
 	})
-}
+})
 
 type anonymousLimiter struct {
 	pred    func(*http.Request) bool

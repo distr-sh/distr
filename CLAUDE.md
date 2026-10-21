@@ -34,6 +34,7 @@ mise run build:controller:kubernetes
 mise run build:sdk             # after every SDK change
 mise run build:website
 mise run test:go
+mise run test:integration      # the API and registry tests in internal/apitest, needs Docker
 mise run test:frontend
 mise run lint                  # :app, :go, :frontend, :migrations, :website for parts
 mise run format                # everything; :app, :go, :frontend, :website for parts
@@ -233,6 +234,8 @@ Only write a test that could fail for a real reason. Every test is code that has
 - Do not write a test whose assertion is trivially true because the dependency it needs is not configured in tests.
 - Do test what is hard to get right and expensive to get wrong: wire formats sent to third parties, fail-closed security behavior, parsing, gating whose rule is more than one condition and non-trivial query or business logic. A single condition deciding who sees a field needs no test, however security relevant it is.
 - Prefer a few focused tests over an exhaustive matrix of near-duplicates.
+- Test an endpoint's behavior in `internal/apitest`: real HTTP requests against a database of the test's own (`apitest.New(t)`), asserting the status and what the request wrote. Probe what the endpoint answers before pinning it, and collect the cases of one endpoint in a `statuses` table rather than in subtests, since the harness reports a failure to the test that created it. Drive the registry through `Harness.PushImage` and `PullImage`, which use a real OCI client, and send raw requests with `Harness.Registry` only where the test is about the protocol itself.
+- Mark a test that fails because of a bug with `knownBug(t, reason)` when the fix belongs in another change, and remove the call in the change that fixes it. `APITEST_KNOWN_BUGS=1` runs these tests.
 - Do not put a test in the controller `main` packages under `cmd/controller/`. They build their clients in package-level variables through `util.Require`, which panics before `TestMain` can set the controller's environment variables. Extract the part that needs no Docker or Kubernetes client into a package under `internal/` and test it there.
 
 ## General rules
