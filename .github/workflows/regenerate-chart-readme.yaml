@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: Regenerate Chart README
+
+on:
+  pull_request:
+    paths:
+      - deploy/charts/distr/Chart.yaml
+      - deploy/charts/distr/values.yaml
+      - deploy/charts/distr/README.md.gotmpl
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  helm-docs:
+    name: Regenerate
+    # release-please and Renovate change the chart without running helm-docs
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (startsWith(github.head_ref, 'release-please--') || startsWith(github.head_ref, 'renovate/'))
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.head_ref }}
+          # a push with the GITHUB_TOKEN would not run the pull request checks again
+          token: ${{ secrets.GLASSKUBE_BOT_SECRET }}
+      - name: Install mise
+        uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
+        with:
+          install_args: 'helm-docs node pnpm'
+      - name: Install dependencies with pnpm
+        run: pnpm install --frozen-lockfile
+      - name: Regenerate README
+        # a fresh checkout gives the README and its sources arbitrary mtimes
+        run: mise run --force build:helm-docs
+      - name: Commit and push
+        run: |
+          if git diff --quiet deploy/charts/distr/README.md; then
+            exit 0
+          fi
+          git config user.name 'glasskube[bot]'
+          git config user.email '133648757+glasskube-bot@users.noreply.github.com'
+          git commit -m 'docs(chart): regenerate README' deploy/charts/distr/README.md
+          git push

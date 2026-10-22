@@ -16,6 +16,9 @@
   "platformAutomerge": false,
   "rebaseWhen": "behind-base-branch",
   "minimumReleaseAge": "1 day",
+  "gitIgnoredAuthors": [
+    "133648757+glasskube-bot@users.noreply.github.com"
+  ],
   "packageRules": [
     {
       "description": "Registries other than Docker Hub do not expose release timestamps, which would make minimumReleaseAge unsatisfiable",
