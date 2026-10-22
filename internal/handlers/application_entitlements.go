@@ -188,12 +188,22 @@ func updateApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 		return respond.BadRequest(err.Error()), nil
 	}
 
-	addedVersionIDs, widened := widenedVersions(versionIDs(existing.Versions), versionIDs(entitlement.Versions))
-
-	var updated *types.ApplicationEntitlement
+	var (
+		updated         *types.ApplicationEntitlement
+		addedVersionIDs []uuid.UUID
+		widened         bool
+	)
 	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 		if err := db.LockApplicationExclusive(ctx, entitlement.ApplicationID); err != nil {
 			return nil, err
+		}
+		// The entitlement read by the middleware can be stale by now, since creating or renaming a version adds it
+		// to matching entitlements while holding the same lock.
+		current, err := db.GetApplicationEntitlementByID(ctx, entitlement.ID)
+		if errors.Is(err, distrerr.ErrNotFound) {
+			return applicationEntitlementNotFound, nil
+		} else if err != nil {
+			return nil, fmt.Errorf("could not read entitlement: %w", err)
 		} else if err := db.UpdateApplicationEntitlement(
 			ctx, &entitlement.ApplicationEntitlementBase,
 		); errors.Is(err, distrerr.ErrConflict) {
@@ -203,24 +213,10 @@ func updateApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 		}
 
 		newVersionIDs := versionIDs(entitlement.Versions)
+		currentVersionIDs := versionIDs(current.Versions)
+		addedVersionIDs, widened = widenedVersions(currentVersionIDs, newVersionIDs)
 
-		isNarrowing := false
-		if len(entitlement.Versions) > 0 {
-			if len(existing.Versions) == 0 {
-				isNarrowing = true
-			} else {
-				for _, ev := range existing.Versions {
-					if !slices.ContainsFunc(entitlement.Versions, func(v types.ApplicationVersion) bool {
-						return v.ID == ev.ID
-					}) {
-						isNarrowing = true
-						break
-					}
-				}
-			}
-		}
-
-		if isNarrowing {
+		if narrowsVersions(currentVersionIDs, newVersionIDs) {
 			if conflicts, err := db.GetDeploymentsUsingVersionsNotInList(ctx, entitlement.ID, newVersionIDs); err != nil {
 				return nil, fmt.Errorf("could not check deployment version usage: %w", err)
 			} else if len(conflicts) > 0 {
@@ -239,7 +235,6 @@ func updateApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 			return nil, fmt.Errorf("failed to trigger automatic application updates: %w", err)
 		}
 
-		var err error
 		if updated, err = db.GetApplicationEntitlementByID(ctx, entitlement.ID); err != nil {
 			return nil, fmt.Errorf("could not read previously updated entitlement: %w", err)
 		}
@@ -252,6 +247,17 @@ func updateApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 		}
 		return respond.JSON(updated), nil
 	}
+}
+
+func narrowsVersions(existing, updated []uuid.UUID) bool {
+	if len(updated) == 0 {
+		return false
+	} else if len(existing) == 0 {
+		return true
+	}
+	return slices.ContainsFunc(existing, func(id uuid.UUID) bool {
+		return !slices.Contains(updated, id)
+	})
 }
 
 func widenedVersions(existing, updated []uuid.UUID) ([]uuid.UUID, bool) {
