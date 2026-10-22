@@ -61,21 +61,24 @@
               <app-color-scheme-switcher />
             </div>
 
-            @if (isOrganizationSwitcherVisible()) {
+            @if (organization) {
               <div class="ms-2 me-4">
                 <button
                   type="button"
-                  class="flex items-center text-sm"
-                  [title]="'Switch organization (' + switcherShortcut + ')'"
-                  [attr.aria-expanded]="organizationsOpened()"
+                  class="flex items-center text-sm disabled:cursor-default"
+                  [disabled]="!canSwitchOrganization()"
+                  [attr.title]="canSwitchOrganization() ? 'Switch organization (' + switcherShortcut + ')' : null"
+                  [attr.aria-expanded]="canSwitchOrganization() ? organizationsOpened() : null"
                   cdkOverlayOrigin
                   #organizationsDropdownTrigger="cdkOverlayOrigin"
                   (click)="toggleOrganizations()">
-                  <span class="sr-only">Show Organizations</span>
+                  @if (canSwitchOrganization()) {
+                    <span class="sr-only">Show Organizations</span>
+                  }
                   <span class="flex flex-col text-end text-sm font-medium text-gray-900 dark:text-gray-300" role="none">
                     <span class="flex items-center justify-end gap-2" role="none">
-                      {{ organization?.name }}
-                      @if (organization && auth.isSuperAdmin()) {
+                      {{ organization.name }}
+                      @if (auth.isSuperAdmin()) {
                         <app-subscription-badge
                           [plan]="organization.subscriptionType"
                           [endsAt]="organization.subscriptionEndsAt" />
@@ -87,18 +90,20 @@
                       </span>
                     } @else {
                       <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
-                        @if (isDifferentOrganizationKind() && currentOrg(); as currentOrganization) {
-                          {{ currentOrganization | membershipLabel }}
+                        @if (isDifferentOrganizationKind()) {
+                          {{ organization | membershipLabel }}
                           &bull;
                         }
                         {{ user.userRole | userRoleLabel }}
                       </span>
                     }
                   </span>
-                  <fa-icon
-                    class="ml-2 text-gray-900 dark:text-gray-300 transition duration-150 ease-in-out"
-                    [class.rotate-x-180]="organizationsOpened()"
-                    [icon]="faChevronDown" />
+                  @if (canSwitchOrganization()) {
+                    <fa-icon
+                      class="ml-2 text-gray-900 dark:text-gray-300 transition duration-150 ease-in-out"
+                      [class.rotate-x-180]="organizationsOpened()"
+                      [icon]="faChevronDown" />
+                  }
                 </button>
               </div>
               <ng-template
