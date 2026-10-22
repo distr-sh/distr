@@ -9,10 +9,12 @@
   ],
   "timezone": "Europe/Vienna",
   "schedule": [
-    "* 20-23 * * 1-4"
+    "* 0-7,20-23 * * 1-5",
+    "* * * * 0,6"
   ],
   "automergeSchedule": [
-    "* 20-23 * * 1-4"
+    "* 0-7,20-23 * * 1-5",
+    "* * * * 0,6"
   ],
   "updateNotScheduled": false,
   "platformAutomerge": false,
@@ -123,7 +125,7 @@
       "automerge": true
     },
     {
-      "description": "Automerge minor and patch releases Monday through Thursday before 8 AM",
+      "description": "Automerge minor and patch releases",
       "matchPackageNames": [
         "@fontsource/*",
         "@sentry/*",
@@ -139,13 +141,7 @@
         "minor",
         "patch"
       ],
-      "schedule": [
-        "* 0-7 * * 1-4"
-      ],
-      "automerge": true,
-      "automergeSchedule": [
-        "* 0-7 * * 1-4"
-      ]
+      "automerge": true
     },
     {
       "matchPackageNames": [
