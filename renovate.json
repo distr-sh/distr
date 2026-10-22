@@ -140,6 +140,18 @@
       "automerge": true
     },
     {
+      "description": "Schedule noisy dependencies on Sunday",
+      "matchPackageNames": [
+        "@fontsource/*",
+        "@sentry/*",
+        "postcss",
+        "posthog-js"
+      ],
+      "schedule": [
+        "* * * * 0"
+      ]
+    },
+    {
       "matchPackageNames": [
         "distr-sh/hello-distr",
         "ghcr.io/distr-sh/hello-distr/**"
