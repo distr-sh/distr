@@ -259,6 +259,18 @@ func LockArtifactRows(ctx context.Context, artifactIDs []uuid.UUID) error {
 	return nil
 }
 
+func LockArtifactEntitlementExclusive(ctx context.Context, entitlementID uuid.UUID) error {
+	// Advisory locks share one namespace instance-wide, hence the entity prefix in the key.
+	if _, err := internalctx.GetDb(ctx).Exec(
+		ctx,
+		`SELECT pg_advisory_xact_lock(hashtextextended('ArtifactEntitlement:' || @id::TEXT, 0))`,
+		pgx.NamedArgs{"id": entitlementID},
+	); err != nil {
+		return fmt.Errorf("could not lock artifact entitlement: %w", err)
+	}
+	return nil
+}
+
 func mapArtifactEntitlementError(err error) error {
 	pgErr, ok := errors.AsType[*pgconn.PgError](err)
 	if !ok {

@@ -139,18 +139,20 @@ func updateArtifactEntitlement(r *http.Request) (respond.Responder, error) {
 
 	var widened []types.ArtifactEntitlementSelection
 	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
-		if err := db.LockArtifactRows(
-			ctx, append(selectionArtifactIDs(existing.Artifacts), selectionArtifactIDs(entitlement.Artifacts)...),
-		); err != nil {
+		// No other edit can change the artifacts of a locked entitlement, so unlike those the middleware read, the ones
+		// read below are the ones a concurrent registry push may be adding tags to.
+		if err := db.LockArtifactEntitlementExclusive(ctx, entitlement.ID); err != nil {
 			return nil, err
 		}
-		// The entitlement read by the middleware can be stale by now, since a registry push adds a tag to matching
-		// entitlements while holding the same lock.
 		current, err := db.GetArtifactEntitlementByID(ctx, entitlement.ID)
 		if errors.Is(err, distrerr.ErrNotFound) {
 			return artifactEntitlementNotFound, nil
 		} else if err != nil {
 			return nil, fmt.Errorf("could not read entitlement: %w", err)
+		} else if err := db.LockArtifactRows(
+			ctx, append(selectionArtifactIDs(current.Artifacts), selectionArtifactIDs(entitlement.Artifacts)...),
+		); err != nil {
+			return nil, err
 		} else if err := db.UpdateArtifactEntitlement(ctx, &entitlement.ArtifactEntitlementBase); errors.Is(
 			err, distrerr.ErrNotFound,
 		) {
