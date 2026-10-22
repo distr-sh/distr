@@ -444,6 +444,9 @@ func createApplicationVersion(r *http.Request) (respond.Responder, error) {
 	); err != nil {
 		return respond.BadRequest(err.Error()), nil
 	} else if err := db.RunTx(ctx, func(ctx context.Context) error {
+		if err := db.LockApplicationExclusive(ctx, application.ID); err != nil {
+			return err
+		}
 		if err := db.CreateApplicationVersion(ctx, &applicationVersion); err != nil {
 			return err
 		}
@@ -531,6 +534,9 @@ func updateApplicationVersion(r *http.Request) (respond.Responder, error) {
 		if err := types.ValidateVersionsForStrategy(updated.VersioningStrategy, updated.Versions); err != nil {
 			return respond.BadRequest(err.Error()), nil
 		} else if err := db.RunTx(ctx, func(ctx context.Context) error {
+			if err := db.LockApplicationExclusive(ctx, existing.ID); err != nil {
+				return err
+			}
 			if err := db.UpdateApplicationVersion(ctx, &updatedVersion); err != nil {
 				return err
 			}
