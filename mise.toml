@@ -132,7 +132,10 @@ run = { tasks = ["test:go", "test:frontend"] }
 run = 'golangci-lint run --fix'
 
 [tasks."build:helm-docs"]
-run = 'helm-docs --chart-search-root deploy/charts'
+run = [
+  'helm-docs --chart-search-root deploy/charts',
+  'pnpm exec prettier --write deploy/charts/distr/README.md',
+]
 sources = [
   "deploy/charts/distr/Chart.yaml",
   "deploy/charts/distr/values.yaml",

@@ -10,7 +10,7 @@
 /.github/CODEOWNERS @distr-sh/reviewers
 
 **/Dockerfile*
-# Renovate needs these exemptions to automerge the grouped hello-distr updates.
+# Renovate needs these exemptions to automerge its updates, the chart README because a workflow regenerates it on Renovate branches.
 /internal/handlers/tutorials.go
 /internal/resources/embedded/apps/hello-distr/docker-compose.yaml
 /frontend/ui/src/app/tutorials/registry/registry-tutorial.component.ts
@@ -19,4 +19,5 @@
 /sdk/js/pnpm-workspace.yaml
 /deploy/charts/distr/Chart.lock
 /deploy/charts/distr/Chart.yaml
+/deploy/charts/distr/README.md
 /deploy/docker/*/docker-compose.yaml
