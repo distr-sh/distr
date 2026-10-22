@@ -72,7 +72,15 @@
         "!distr-sh/hello-distr",
         "!ghcr.io/distr-sh/hello-distr/**"
       ],
-      "groupName": "website dependencies"
+      "groupName": "website dependencies",
+      "semanticCommitType": "build",
+      "semanticCommitScope": "website"
+    },
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "semanticCommitType": "ci"
     },
     {
       "description": "Automerge minor and patch releases of non-0.x development dependencies",
