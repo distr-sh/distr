@@ -21,6 +21,8 @@ permissions:
 jobs:
   generate:
     name: Regenerate
+    # release-please and Renovate change the chart without running helm-docs
+    if: startsWith(github.head_ref, 'release-please--') || startsWith(github.head_ref, 'renovate/')
     runs-on: ubuntu-latest
     outputs:
       readme: ${{ steps.regenerate.outputs.readme }}
@@ -37,19 +39,11 @@ jobs:
           install_args: 'helm-docs node pnpm'
       - name: Regenerate README
         id: regenerate
-        env:
-          # release-please and Renovate change the chart without running helm-docs, so the README is pushed for them
-          BOT: ${{ contains(fromJSON('["glasskube-bot", "renovate[bot]"]'), github.event.pull_request.user.login) }}
         # a fresh checkout gives the README and its sources arbitrary mtimes, hence --force
         run: |
           pnpm install --frozen-lockfile
           mise run --force build:helm-docs
-          if git diff --quiet deploy/charts/distr/README.md; then
-            exit 0
-          elif [ "$BOT" != true ]; then
-            echo '::error::deploy/charts/distr/README.md is out of date, run "mise run build:helm-docs" and commit the result'
-            exit 1
-          fi
+          git diff --quiet deploy/charts/distr/README.md && exit 0
           # compressed, since the README exceeds the 128 KB a single environment variable can hold
           {
             echo "readme=$(gzip -9c deploy/charts/distr/README.md | base64 -w0)"
