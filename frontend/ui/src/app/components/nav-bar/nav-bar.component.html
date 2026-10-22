@@ -141,10 +141,10 @@
                         [autofocus]="true" />
                     </div>
                   }
-                  <ul class="overflow-y-auto min-h-0" role="none">
+                  <ul class="grid grid-cols-[minmax(0,1fr)_auto] gap-y-0.5 overflow-y-auto min-h-0" role="none">
                     @for (entry of switcherEntries(); track entry.org.id) {
                       @if (isOrganizationListed()) {
-                        <li class="flex items-center gap-1">
+                        <li class="col-span-2 grid grid-cols-subgrid items-center">
                           <button
                             type="button"
                             (click)="switchOrganization(entry.org)"
@@ -187,7 +187,7 @@
                               (click)="toggleSwitcherEntry(entry)"
                               [attr.aria-expanded]="entry.expanded"
                               [attr.aria-label]="(entry.expanded ? 'Collapse ' : 'Expand ') + entry.org.name"
-                              class="shrink-0 self-stretch flex items-center gap-1.5 px-2 rounded-md text-xs text-gray-500 hover:bg-gray-100 focus:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white dark:focus:bg-gray-600 dark:focus:text-white">
+                              class="self-stretch flex items-center gap-1.5 ms-1 px-2 rounded-md text-xs text-gray-500 hover:bg-gray-100 focus-visible:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white dark:focus-visible:bg-gray-600 dark:focus-visible:text-white">
                               {{ entry.portals.length }}
                               <fa-icon
                                 [icon]="faChevronDown"
@@ -199,7 +199,7 @@
                       }
                       @if (entry.expanded) {
                         @for (portal of entry.portals; track portal.id) {
-                          <li [class.ps-4]="isOrganizationListed()">
+                          <li class="col-start-1" [class.ps-4]="isOrganizationListed()">
                             <button
                               type="button"
                               (click)="enterLens(entry.org, portal)"
@@ -236,7 +236,7 @@
                         }
                       }
                     } @empty {
-                      <li>
+                      <li class="col-span-2">
                         <div class="px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300" role="menuitem">
                           {{ switcherFilterLabels().empty }}
                         </div>
