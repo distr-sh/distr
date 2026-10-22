@@ -7,6 +7,14 @@
   "extends": [
     "config:recommended"
   ],
+  "timezone": "Europe/Vienna",
+  "automergeSchedule": [
+    "* 0-7,20-23 * * 1-5",
+    "* * * * 0,6"
+  ],
+  "updateNotScheduled": false,
+  "platformAutomerge": false,
+  "rebaseWhen": "behind-base-branch",
   "minimumReleaseAge": "1 day",
   "packageRules": [
     {
@@ -15,6 +23,13 @@
         "docker"
       ],
       "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    {
+      "description": "Silence dependency lookup warnings for enterprise images, which are not publicly available",
+      "matchPackageNames": [
+        "registry.distr.sh/enterprise/distr-ee"
+      ],
+      "enabled": false
     },
     {
       "matchPackageNames": [
@@ -35,13 +50,40 @@
       "groupName": "opentelemetry-go-contrib monorepo"
     },
     {
+      "description": "The sentry-go modules share one version and go mod tidy bumps the rest with any one of them, which auto-closes their separate PRs",
+      "matchPackageNames": [
+        "github.com/getsentry/sentry-go",
+        "github.com/getsentry/sentry-go/**"
+      ],
+      "groupName": "sentry-go"
+    },
+    {
+      "matchSourceUrls": [
+        "https://github.com/golangci/golangci-lint"
+      ],
+      "groupName": "golangci-lint"
+    },
+    {
+      "matchFileNames": ["website/**"],
+      "matchPackageNames": [
+        "!pnpm",
+        "!distr-sh/hello-distr",
+        "!ghcr.io/distr-sh/hello-distr/**"
+      ],
+      "groupName": "website dependencies",
+      "semanticCommitType": "build",
+      "semanticCommitScope": "website"
+    },
+    {
       "matchManagers": [
-        "npm",
-        "github-actions",
-        "gomod",
-        "dockerfile",
-        "docker-compose",
-        "mise"
+        "github-actions"
+      ],
+      "semanticCommitType": "ci"
+    },
+    {
+      "description": "Automerge minor and patch releases of non-0.x development dependencies",
+      "matchManagers": [
+        "npm"
       ],
       "matchDepTypes": [
         "devDependencies"
@@ -54,9 +96,9 @@
       "automerge": true
     },
     {
+      "description": "Automerge patch releases of non-0.x dependencies",
       "matchManagers": [
         "npm",
-        "github-actions",
         "gomod",
         "dockerfile",
         "docker-compose"
@@ -68,15 +110,45 @@
       "automerge": true
     },
     {
-      "description": "Schedule noisy deps on Monday morning (6 AM - 9 AM)",
+      "description": "Automerge minor and patch releases of GitHub Actions",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "automerge": true
+    },
+    {
+      "description": "Automerge minor and patch releases",
       "matchPackageNames": [
-        "posthog-js",
-        "@sentry/*",
         "@fontsource/*",
-        "postcss"
+        "@sentry/*",
+        "axllent/mailpit",
+        "github.com/getsentry/sentry-go",
+        "github.com/getsentry/sentry-go/**",
+        "postcss",
+        "posthog-js",
+        "rustfs",
+        "rustfs/rustfs"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "automerge": true
+    },
+    {
+      "description": "Schedule noisy dependencies on Sunday",
+      "matchPackageNames": [
+        "@fontsource/*",
+        "@sentry/*",
+        "postcss",
+        "posthog-js"
       ],
       "schedule": [
-        "before 9am on monday"
+        "* * * * 0"
       ]
     },
     {
@@ -84,25 +156,9 @@
         "distr-sh/hello-distr",
         "ghcr.io/distr-sh/hello-distr/**"
       ],
-      "groupName": "distr-sh/hello-distr"
-    },
-    {
-      "matchSourceUrls": [
-        "https://github.com/golangci/golangci-lint"
-      ],
-      "groupName": "golangci-lint"
-    },
-    {
-      "matchFileNames": ["website/**"],
-      "matchPackageNames": ["!pnpm"],
-      "groupName": "website dependencies"
-    },
-    {
-      "description": "Silence dependency lookup warnings for enterprise images, which are not publicly available",
-      "matchPackageNames": [
-        "registry.distr.sh/enterprise/distr-ee"
-      ],
-      "enabled": false
+      "groupName": "hello-distr",
+      "minimumReleaseAge": "0 days",
+      "automerge": true
     }
   ],
   "customManagers": [

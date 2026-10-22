@@ -8,17 +8,13 @@ import (
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
-	"github.com/distr-sh/distr/internal/authn/authinfo"
-	"github.com/distr-sh/distr/internal/blocklist"
 	"github.com/distr-sh/distr/internal/controllermanifest"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/distrerr"
-	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
-	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/distr-sh/distr/internal/validation"
@@ -33,12 +29,6 @@ func OrganizationRouter(r chiopenapi.Router) {
 	r.Get("/", respond.Handler(getOrganization)).
 		With(option.Description("Get current organization")).
 		With(option.Response(http.StatusOK, api.OrganizationResponse{}))
-
-	r.With(middleware.BlockCrossOrganizationAction).
-		Post("/", respond.Handler(createOrganization)).
-		With(option.Description("Create a new organization")).
-		With(option.Request(api.CreateOrganizationRequest{})).
-		With(option.Response(http.StatusOK, api.CreateOrganizationResponse{}))
 
 	r.With(middleware.BlockSuperAdmin, middleware.RequireVendor, middleware.RequireAdmin).
 		Put("/", respond.Handler(updateOrganization)).
@@ -90,17 +80,6 @@ func organizationResponse(ctx context.Context, org types.Organization) (respond.
 	}
 }
 
-// mayCreateOrganization keeps vendors from creating organizations while registration is hidden or disabled, since
-// another organization is what a sign-up would get them. Super admins may create one regardless.
-func mayCreateOrganization(
-	auth authinfo.AuthInfo,
-	hasVendorMembership bool,
-	registration env.RegistrationMode,
-) bool {
-	return !auth.OrganizationScoped() &&
-		(auth.IsSuperAdmin() || (hasVendorMembership && registration == env.RegistrationEnabled))
-}
-
 var slugNotAvailable = respond.BadRequest("Slug is not available")
 
 func updateOrganization(r *http.Request) (respond.Responder, error) {
@@ -135,65 +114,6 @@ func updateOrganization(r *http.Request) (respond.Responder, error) {
 	} else {
 		return organizationResponse(ctx, *org)
 	}
-}
-
-func createOrganization(r *http.Request) (respond.Responder, error) {
-	ctx := r.Context()
-	auth := auth.Authentication.Require(ctx)
-
-	if hasVendorMembership, err := db.ExistsVendorOrganizationWithUserID(ctx, auth.CurrentUserID()); err != nil {
-		return nil, fmt.Errorf("failed to check if user is vendor: %w", err)
-	} else if !mayCreateOrganization(auth, hasVendorMembership, env.Registration()) {
-		return respond.Forbidden("you are not allowed to create organizations"), nil
-	} else if body, resp := decodeJSON[api.CreateOrganizationRequest](r); resp != nil {
-		return resp, nil
-	} else if body.Name == "" {
-		return respond.BadRequest("name is required"), nil
-	} else if resp := validateOrganizationAdmin(auth, body.AdminEmail); resp != nil {
-		return resp, nil
-	} else if reached, err := subscription.IsGlobalOrganizationLimitReached(ctx); err != nil {
-		return nil, fmt.Errorf("could not check global organization limit: %w", err)
-	} else if reached {
-		return respond.BadRequest(subscription.GlobalOrganizationLimitReachedMessage), nil
-	} else {
-		organization := mapping.CreateOrganizationRequestToInternal(body)
-		var inviteURL string
-
-		if err := db.RunTx(ctx, func(ctx context.Context) error {
-			if err := db.CreateOrganization(ctx, &organization); err != nil {
-				return err
-			} else if !auth.IsSuperAdmin() {
-				return db.CreateUserAccountOrganizationAssignment(
-					ctx, auth.CurrentUserID(), organization.ID, types.UserRoleAdmin, nil, nil)
-			} else if orgWithBranding, err := db.GetOrganizationWithBranding(ctx, organization.ID); err != nil {
-				return err
-			} else {
-				// Super admins hand the organization over instead of joining it, since their sessions stay read-only.
-				_, inviteURL, err = inviteUserAccount(
-					ctx, *orgWithBranding, body.AdminEmail, "", types.UserRoleAdmin, nil, nil)
-				return err
-			}
-		}); err != nil {
-			return nil, fmt.Errorf("could not create organization: %w", err)
-		} else {
-			return respond.JSON(mapping.OrganizationToCreateResponse(organization, inviteURL)), nil
-		}
-	}
-}
-
-func validateOrganizationAdmin(auth authinfo.AuthInfo, adminEmail string) respond.Responder {
-	if !auth.IsSuperAdmin() {
-		if adminEmail != "" {
-			return respond.BadRequest("only super admins can choose the admin of a new organization")
-		}
-	} else if adminEmail == "" {
-		return respond.BadRequest("the email address of the organization's admin is required")
-	} else if err := validation.ValidateEmail(adminEmail); err != nil {
-		return respond.BadRequest(err.Error())
-	} else if blocklist.EmailBlocked(adminEmail) {
-		return respond.Forbidden(blocklist.EmailBlockedMessage)
-	}
-	return nil
 }
 
 func validateOrganizationRequest(organization api.UpdateOrganizationRequest) respond.Responder {

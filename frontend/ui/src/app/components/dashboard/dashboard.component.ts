@@ -13,7 +13,6 @@ import {DeploymentTargetsMetricsService} from '../../services/deployment-target-
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
 import {SupportBundlesService} from '../../services/support-bundles.service';
-import {ToastService} from '../../services/toast.service';
 import {SupportBundleDashboardCardComponent} from '../../support-bundles/dashboard-card/support-bundle-dashboard-card.component';
 import {SupportBundle} from '../../types/support-bundle';
 import {PageComponent} from '../page.component';
@@ -34,7 +33,6 @@ export class DashboardComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
-  private readonly toast = inject(ToastService);
   private readonly dashboardService = inject(DashboardService);
   private readonly featureFlags = inject(FeatureFlagService);
   private readonly supportBundlesService = inject(SupportBundlesService);
@@ -105,9 +103,6 @@ export class DashboardComponent implements OnInit {
         )
         .subscribe();
     } else if (this.route.snapshot.queryParams?.['from'] === 'login') {
-      this.router.navigate([this.router.url]);
-    } else if (this.route.snapshot.queryParams?.['from'] === 'new-org') {
-      this.toast.success('New organization created successfully');
       this.router.navigate([this.router.url]);
     }
   }

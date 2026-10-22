@@ -127,8 +127,13 @@ func createUserAccountHandler(r *http.Request) (respond.Responder, error) {
 		}
 	}
 
-	var userAccount types.UserAccount
-	var inviteURL string
+	userAccount := types.UserAccount{
+		Email: body.Email,
+		Name:  body.Name,
+	}
+	// An invite link lets its holder set the account's password, so the one in the response is only for an account
+	// created here.
+	var emailInviteURL, responseInviteURL string
 
 	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 		organization, err := db.GetOrganizationWithBranding(ctx, *auth.CurrentOrgID())
@@ -144,19 +149,54 @@ func createUserAccountHandler(r *http.Request) (respond.Responder, error) {
 			return respond.Forbidden("user limit reached"), nil
 		}
 
-		if userAccount, inviteURL, err = inviteUserAccount(
+		created := false
+		if existingUA, err := db.GetUserAccountByEmail(ctx, body.Email); errors.Is(err, distrerr.ErrNotFound) {
+			created = true
+			if err := db.CreateUserAccount(ctx, &userAccount); err != nil {
+				return nil, fmt.Errorf("failed to create user account: %w", err)
+			}
+		} else if err != nil {
+			return nil, fmt.Errorf("failed to get existing user account: %w", err)
+		} else {
+			userAccount = *existingUA
+		}
+
+		if err := db.CreateUserAccountOrganizationAssignment(
 			ctx,
-			*organization,
-			body.Email,
-			body.Name,
+			userAccount.ID,
+			organization.ID,
 			body.UserRole,
 			body.CustomerOrganizationID,
 			body.PartnerOrganizationID,
 		); errors.Is(err, distrerr.ErrAlreadyExists) {
 			return respond.BadRequest("user is already part of this organization"), nil
 		} else if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to create user org assignment: %w", err)
 		}
+
+		if !userAccount.Activated {
+			if emailInviteURL, err = generateUserInviteUrl(
+				ctx, userAccount, *organization, body.CustomerOrganizationID, true); err != nil {
+				return nil, err
+			}
+		}
+		if created && !env.UserEmailVerificationRequired() {
+			if responseInviteURL, err = generateUserInviteUrl(
+				ctx, userAccount, *organization, body.CustomerOrganizationID, false); err != nil {
+				return nil, err
+			}
+		}
+
+		if err := mailsending.SendUserInviteMail(
+			ctx,
+			userAccount,
+			*organization,
+			body.CustomerOrganizationID,
+			emailInviteURL,
+		); err != nil {
+			return nil, fmt.Errorf("failed to send user invite mail: %w", err)
+		}
+
 		return nil, nil
 	}); resp != nil || err != nil {
 		return resp, err
@@ -164,56 +204,9 @@ func createUserAccountHandler(r *http.Request) (respond.Responder, error) {
 		return respond.JSON(api.CreateUserAccountResponse{
 			User: mapping.UserAccountToAPI(userAccount.AsUserAccountWithRole(
 				body.UserRole, body.CustomerOrganizationID, body.PartnerOrganizationID, time.Now())),
-			InviteURL: inviteURL,
+			InviteURL: responseInviteURL,
 		}), nil
 	}
-}
-
-// inviteUserAccount adds the user with the given email address to the organization, creating their account where there
-// is none, and mails them an invitation. The invite link it returns lets its holder set the account's password, so
-// there is one only for an account created here and only where email addresses need no verification.
-func inviteUserAccount(
-	ctx context.Context,
-	organization types.OrganizationWithBranding,
-	email, name string,
-	role types.UserRole,
-	customerOrgID, partnerOrgID *uuid.UUID,
-) (types.UserAccount, string, error) {
-	userAccount := types.UserAccount{Email: email, Name: name}
-	created := false
-	if existingUA, err := db.GetUserAccountByEmail(ctx, email); errors.Is(err, distrerr.ErrNotFound) {
-		if err := db.CreateUserAccount(ctx, &userAccount); err != nil {
-			return userAccount, "", fmt.Errorf("failed to create user account: %w", err)
-		}
-		created = true
-	} else if err != nil {
-		return userAccount, "", fmt.Errorf("failed to get existing user account: %w", err)
-	} else {
-		userAccount = *existingUA
-	}
-
-	if err := db.CreateUserAccountOrganizationAssignment(
-		ctx, userAccount.ID, organization.ID, role, customerOrgID, partnerOrgID,
-	); err != nil {
-		return userAccount, "", fmt.Errorf("failed to create user org assignment: %w", err)
-	}
-
-	var emailInviteURL, responseInviteURL string
-	var err error
-	if !userAccount.Activated {
-		if emailInviteURL, err = generateUserInviteUrl(ctx, userAccount, organization, customerOrgID, true); err != nil {
-			return userAccount, "", err
-		}
-	}
-	if created && !env.UserEmailVerificationRequired() {
-		if responseInviteURL, err = generateUserInviteUrl(ctx, userAccount, organization, customerOrgID, false); err != nil {
-			return userAccount, "", err
-		}
-	}
-	if err := mailsending.SendUserInviteMail(ctx, userAccount, organization, customerOrgID, emailInviteURL); err != nil {
-		return userAccount, "", fmt.Errorf("failed to send user invite mail: %w", err)
-	}
-	return userAccount, responseInviteURL, nil
 }
 
 func validateCreateUserAccount(ctx context.Context, body *api.CreateUserAccountRequest) (respond.Responder, error) {
@@ -278,10 +271,9 @@ func getVerifiedCustomerOrganization(
 		return nil, customerDoesNotExist, nil
 	}
 
-	// Partner users can only create users in customers assigned to their partner org.
 	partnerOrgID := auth.CurrentPartnerOrgID()
 	if partnerOrgID != nil && !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-		return nil, notAssignedToPartner, nil
+		return nil, customerDoesNotExist, nil
 	}
 
 	return co, nil, nil

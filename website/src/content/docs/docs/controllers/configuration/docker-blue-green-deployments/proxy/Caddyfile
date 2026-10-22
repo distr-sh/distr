@@ -1,0 +1,11 @@
+{
+	admin unix//etc/caddy/routing/admin.sock
+}
+
+:80 {
+	reverse_proxy backend-blue:5000 backend-green:5000 {
+		lb_policy weighted_round_robin ${BLUE_WEIGHT} ${GREEN_WEIGHT}
+		health_uri /health
+		health_interval 2s
+	}
+}

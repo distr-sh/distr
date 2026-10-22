@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"slices"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
@@ -16,7 +15,6 @@ import (
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/distrerr"
-	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/lens"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
@@ -110,9 +108,6 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 			SidebarLinks:         sidebarLinks,
 			AvailableContexts:    orgs,
 			RegistryHost:         registryHost,
-			CanCreateOrganization: mayCreateOrganization(
-				auth, slices.ContainsFunc(orgs, isVendorMembership), env.Registration(),
-			),
 		}), nil
 	}
 }
@@ -194,8 +189,4 @@ func contextOrganizations(ctx context.Context, auth authinfo.AuthInfo) ([]types.
 		return nil, err
 	}
 	return visibleOrganizations(auth, orgs), nil
-}
-
-func isVendorMembership(org types.OrganizationWithUserRole) bool {
-	return org.CustomerOrganizationID == nil && org.PartnerOrganizationID == nil
 }

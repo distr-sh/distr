@@ -16,10 +16,9 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/egress"
-	"github.com/distr-sh/distr/internal/registry/blob"
 	"github.com/distr-sh/distr/internal/registry/name"
+	"github.com/distr-sh/distr/internal/registry/verify"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/glasskube/pkg/seekbuf"
 	godigest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.uber.org/zap"
@@ -302,55 +301,37 @@ func extractBlobsAndSubManifests(
 	return blobs, subManifests, nil
 }
 
-// FetchAndStoreBlob fetches a blob from the upstream registry for the given repo,
-// stores it in the blob handler, and returns a Buffer that can be used to serve
-// the blob content to the client. The caller must call Buffer.Destroy() after use.
+// OpenBlob opens the blob identified by d at the upstream registry of repoStr and returns its size and content.
+// The content ends with an error instead of io.EOF if it does not match d, since upstream registries are not
+// trusted to serve what they announce. The download stays bound to ctx until the caller closes the content.
 // Returns distrerr.ErrNotFound if the artifact has no upstream configured.
-func (s *Syncer) FetchAndStoreBlob(
-	ctx context.Context,
-	repoStr string,
-	d godigest.Digest,
-	bph blob.BlobPutHandler,
-) (seekbuf.Buffer, int64, error) {
+func (s *Syncer) OpenBlob(ctx context.Context, repoStr string, d godigest.Digest) (int64, io.ReadCloser, error) {
 	n, err := name.Parse(repoStr)
 	if err != nil {
-		return nil, 0, distrerr.ErrNotFound
+		return 0, nil, distrerr.ErrNotFound
 	}
 
 	artifact, err := db.GetArtifactByName(ctx, n.OrgName, n.ArtifactName)
 	if err != nil {
-		return nil, 0, fmt.Errorf("getting artifact by name: %w", err)
+		return 0, nil, fmt.Errorf("getting artifact by name: %w", err)
 	} else if artifact.UpstreamURL == nil {
-		return nil, 0, distrerr.ErrNotFound
+		return 0, nil, distrerr.ErrNotFound
 	}
 
 	repo, err := newUpstreamRepository(artifact)
 	if err != nil {
-		return nil, 0, fmt.Errorf("upstream client: %w", err)
+		return 0, nil, fmt.Errorf("upstream client: %w", err)
 	}
 
-	blobDesc, rc, err := repo.Blobs().FetchReference(ctx, d.String())
+	desc, rc, err := repo.Blobs().FetchReference(ctx, d.String())
 	if err != nil {
-		return nil, 0, fmt.Errorf("fetching blob from upstream: %w", err)
+		return 0, nil, fmt.Errorf("fetching blob from upstream: %w", err)
 	}
-	defer rc.Close()
 
-	tmp, err := seekbuf.New(rc)
+	vrc, err := verify.ReadCloser(rc, desc.Size, d)
 	if err != nil {
-		return nil, 0, fmt.Errorf("buffering blob: %w", err)
+		_ = rc.Close()
+		return 0, nil, err
 	}
-
-	sr, err := tmp.Get()
-	if err != nil {
-		_ = tmp.Destroy()
-		return nil, 0, fmt.Errorf("opening temp blob: %w", err)
-	}
-	if putErr := bph.Put(ctx, repoStr, d, "", sr); putErr != nil {
-		sr.Close()
-		_ = tmp.Destroy()
-		return nil, 0, fmt.Errorf("storing blob: %w", putErr)
-	}
-	sr.Close()
-
-	return tmp, blobDesc.Size, nil
+	return desc.Size, vrc, nil
 }

@@ -1,9 +1,9 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
 import {HttpErrorResponse} from '@angular/common/http';
-import {Component, computed, inject, input, linkedSignal, OnInit, signal, TemplateRef, viewChild} from '@angular/core';
+import {Component, computed, inject, input, linkedSignal, OnInit, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
-import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {FormControl} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
@@ -13,30 +13,24 @@ import {
   faBuilding,
   faCheck,
   faChevronDown,
-  faPlus,
   faUserCircle,
-  faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import {catchError, EMPTY, firstValueFrom, lastValueFrom, map, of, startWith, Subject, switchMap} from 'rxjs';
+import {catchError, EMPTY, lastValueFrom, map, of, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {MembershipLabelPipe, organizationKind} from '../../../util/organization-kind';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {UserRoleLabelPipe} from '../../../util/user-role';
-import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AuthService} from '../../services/auth.service';
 import {ContextService} from '../../services/context.service';
 import {OrganizationBrandingService} from '../../services/organization-branding.service';
 import {OrganizationService} from '../../services/organization.service';
-import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SidebarService} from '../../services/sidebar.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
 import {ContextSwitchPortal, ContextSwitchTargets} from '../../types/context-switch';
-import {CreateOrganizationResponse, Organization, OrganizationWithUserRole} from '../../types/organization';
+import {Organization, OrganizationWithUserRole} from '../../types/organization';
 import {subscriptionRank} from '../../types/subscription';
-import {AlertComponent} from '../alert/alert.component';
 import {AvatarComponent} from '../avatar.component';
-import {ClipComponent} from '../clip.component';
 import {ColorSchemeSwitcherComponent} from '../color-scheme-switcher/color-scheme-switcher.component';
 import {SearchBarComponent} from '../search-bar.component';
 import {SubscriptionBadgeComponent} from '../subscription-badge.component';
@@ -74,9 +68,7 @@ interface SwitcherEntry extends SwitcherOrganization {
     '(document:keydown.escape)': 'organizationsOpened.set(false)',
   },
   imports: [
-    AlertComponent,
     AvatarComponent,
-    ClipComponent,
     ColorSchemeSwitcherComponent,
     NavBarLensBannerComponent,
     NavBarSubscriptionBannerComponent,
@@ -87,15 +79,12 @@ interface SwitcherEntry extends SwitcherOrganization {
     SecureImagePipe,
     SubscriptionBadgeComponent,
     AsyncPipe,
-    AutotrimDirective,
-    ReactiveFormsModule,
     UserRoleLabelPipe,
     MembershipLabelPipe,
   ],
 })
 export class NavBarComponent implements OnInit {
   protected readonly auth = inject(AuthService);
-  private readonly overlay = inject(OverlayService);
   public readonly sidebar = inject(SidebarService);
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
@@ -121,10 +110,6 @@ export class NavBarComponent implements OnInit {
 
   protected readonly allOrgs = toSignal(this.ctx.getAvailableOrganizations(), {initialValue: []});
   protected readonly currentOrg = toSignal(this.ctx.getOrganization());
-  protected readonly isVendorSomewhere = computed(() =>
-    this.allOrgs().some((org) => organizationKind(org) === 'vendor')
-  );
-  protected readonly canCreateOrganization = toSignal(this.ctx.canCreateOrganization(), {initialValue: false});
   protected readonly isDifferentOrganizationKind = computed(
     () => this.allOrgs().reduce((kinds, org) => kinds.add(organizationKind(org)), new Set<string>()).size > 1
   );
@@ -207,9 +192,7 @@ export class NavBarComponent implements OnInit {
 
   protected readonly userOpened = signal(false);
   protected readonly organizationsOpened = signal(false);
-  protected readonly isOrganizationSwitcherVisible = computed(
-    () => this.isVendorSomewhere() || this.isLens || this.switchEntryCount() > 0
-  );
+  protected readonly canSwitchOrganization = computed(() => this.switchEntryCount() > 0);
   protected readonly switcherShortcut = navigator.userAgent.includes('Mac') ? '⌘K' : 'Ctrl+K';
 
   protected readonly organizationSearch = new FormControl<string>('', {nonNullable: true});
@@ -271,19 +254,6 @@ export class NavBarComponent implements OnInit {
   public readonly isSubscriptionBannerVisible = input<boolean>();
   public readonly isSidebarVisible = input<boolean>();
 
-  private readonly createOrgModal = viewChild.required<TemplateRef<unknown>>('createOrgModal');
-  private modalRef?: DialogRef;
-  // Super admins do not join an organization they create, so they name its admin instead.
-  protected readonly createOrgForm = new FormGroup({
-    name: new FormControl<string>('', Validators.required),
-    adminEmail: new FormControl(
-      {value: '', disabled: !this.isSuperAdmin},
-      {nonNullable: true, validators: [Validators.required, Validators.email]}
-    ),
-  });
-  protected readonly createOrgFormLoading = signal(false);
-  protected readonly createdOrganization = signal<Required<CreateOrganizationResponse> | undefined>(undefined);
-
   public async ngOnInit() {
     // Trigger the initial load; the template updates reactively via the branding service's stream.
     try {
@@ -305,7 +275,7 @@ export class NavBarComponent implements OnInit {
   }
 
   protected onSwitcherShortcut(event: Event) {
-    if (!this.isOrganizationSwitcherVisible() || this.modalRef) {
+    if (!this.canSwitchOrganization()) {
       return;
     }
     // Ctrl+K and Cmd+K are the browsers' own shortcuts for their search and address bars
@@ -342,47 +312,6 @@ export class NavBarComponent implements OnInit {
     }
   }
 
-  showCreateOrgModal(): void {
-    this.closeCreateOrgModal();
-    this.organizationsOpened.set(false);
-    this.modalRef = this.overlay.showModal(this.createOrgModal());
-    this.modalRef.result().subscribe(() => (this.modalRef = undefined));
-  }
-
-  closeCreateOrgModal() {
-    this.modalRef?.close();
-    this.createOrgForm.reset();
-    this.createdOrganization.set(undefined);
-  }
-
-  async submitCreateOrgForm() {
-    this.createOrgForm.markAllAsTouched();
-    if (this.createOrgForm.valid) {
-      this.createOrgFormLoading.set(true);
-      try {
-        const {name, adminEmail} = this.createOrgForm.value;
-        const {id, inviteUrl} = await firstValueFrom(this.organizationService.create({name: name!, adminEmail}));
-        if (inviteUrl) {
-          this.createdOrganization.set({id, inviteUrl});
-          this.ctx.reload();
-        } else {
-          await this.openCreatedOrganization(id);
-        }
-      } catch (e) {
-        const msg = getFormDisplayedError(e);
-        if (msg) {
-          this.toast.error(msg);
-        }
-      } finally {
-        this.createOrgFormLoading.set(false);
-      }
-    }
-  }
-
-  protected async openCreatedOrganization(organizationId: string) {
-    await this.switchContext(() => this.auth.switchContext(organizationId, '/dashboard?from=new-org'));
-  }
-
   async logout() {
     await lastValueFrom(this.auth.logout());
     // This is necessary to flush the caching crud services
@@ -395,7 +324,5 @@ export class NavBarComponent implements OnInit {
   protected readonly faBuilding = faBuilding;
   protected readonly faCheck = faCheck;
   protected readonly faChevronDown = faChevronDown;
-  protected readonly faPlus = faPlus;
-  protected readonly faXmark = faXmark;
   protected readonly faUserCircle = faUserCircle;
 }

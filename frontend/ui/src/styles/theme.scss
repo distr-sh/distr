@@ -52,7 +52,7 @@
 
   // the track of a toggle switch, following a `<input type="checkbox" class="sr-only peer">`
   .distr-toggle {
-    @apply relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600;
+    @apply relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-blue-300 dark:peer-focus-visible:ring-blue-800 rounded-full dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600;
   }
 
   .distr-input {
@@ -186,6 +186,10 @@
     @apply flex flex-col h-full overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 dark:bg-gray-800;
   }
 
+  .distr-card-clickable {
+    @apply cursor-pointer hover:shadow-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-shadow;
+  }
+
   // the row above a table or card grid that holds `app-search-bar` and the page actions. Inside a
   // `distr-table-panel` add `p-4`, above a `distr-card-grid` add `mb-4`.
   .distr-toolbar {
@@ -206,5 +210,9 @@
 
   .distr-table-row {
     @apply border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700;
+  }
+
+  .distr-table-cell {
+    @apply px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white;
   }
 }

@@ -45,26 +45,27 @@
           </thead>
           <tbody>
             @for (template of templates(); track template.id) {
-              <tr class="distr-table-row">
-                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ template.name }}</td>
+              <tr
+                appClickableRow
+                [appClickableRowDisabled]="!canEdit"
+                (rowActivate)="openTemplateDrawer(template)"
+                class="distr-table-row">
+                <td class="distr-table-cell">{{ template.name }}</td>
                 <td class="px-4 py-3 text-gray-900 dark:text-white">
-                  {{ template.expirationGracePeriodDays }} day{{ template.expirationGracePeriodDays !== 1 ? 's' : '' }}
+                  {{ template.expirationGracePeriodDays }}
+                  <ng-container [ngPlural]="template.expirationGracePeriodDays">
+                    <ng-template ngPluralCase="=1">day</ng-template>
+                    <ng-template ngPluralCase="other">days</ng-template>
+                  </ng-container>
                 </td>
-                <td class="px-4 py-3 flex justify-end gap-2">
-                  @if (auth.hasAnyRole('read_write', 'admin')) {
-                    <button
-                      type="button"
-                      (click)="openTemplateDrawer(template)"
-                      class="py-2 px-3 flex gap-2 items-center text-sm font-medium text-center distr-btn-secondary">
-                      <fa-icon [icon]="faPen" class="text-gray-500 dark:text-gray-400" />
-                      Edit
-                    </button>
+                <td class="px-4 py-3 text-end">
+                  @if (canEdit) {
                     <button
                       type="button"
                       aria-label="Delete"
                       (click)="deleteTemplate(template)"
                       class="py-2 px-3 distr-btn-danger">
-                      <fa-icon [icon]="faTrash" />
+                      <fa-icon [icon]="faTrash" class="h-4 w-4" />
                     </button>
                   }
                 </td>

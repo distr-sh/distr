@@ -357,7 +357,7 @@ func applicationEntitlementMiddleware(r *http.Request) (*http.Request, respond.R
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get entitlement: %w", err)
 	} else if !canSeeEntitlement(auth, entitlement) {
-		return nil, respond.Forbidden("you cannot access this application entitlement"), nil
+		return nil, applicationEntitlementNotFound, nil
 	} else {
 		return r.WithContext(internalctx.WithApplicationEntitlement(ctx, entitlement)), nil, nil
 	}

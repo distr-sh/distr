@@ -20,11 +20,3 @@ func OrganizationToAPI(
 		DefaultControllerImageRepository: defaultControllerImageRepository,
 	}
 }
-
-func OrganizationToCreateResponse(o types.Organization, inviteURL string) api.CreateOrganizationResponse {
-	return api.CreateOrganizationResponse{ID: o.ID, InviteURL: inviteURL}
-}
-
-func CreateOrganizationRequestToInternal(r api.CreateOrganizationRequest) types.Organization {
-	return types.Organization{Name: r.Name}
-}

@@ -3,8 +3,6 @@ import {inject, Injectable} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {combineLatestWith, map, merge, Observable, shareReplay, Subject, tap} from 'rxjs';
 import {
-  CreateOrganizationRequest,
-  CreateOrganizationResponse,
   isSubscriptionExpired,
   Organization,
   OrganizationWithUserRole,
@@ -43,10 +41,6 @@ export class OrganizationService {
   getAll(): Observable<OrganizationWithUserRole[]> {
     // TODO take updates into account like with organization$
     return this.contextService.getAvailableOrganizations();
-  }
-
-  create(request: CreateOrganizationRequest): Observable<CreateOrganizationResponse> {
-    return this.httpClient.post<CreateOrganizationResponse>(this.baseUrl, request);
   }
 
   update(organization: UpdateOrganizationRequest): Observable<Organization> {

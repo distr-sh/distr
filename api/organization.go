@@ -5,13 +5,7 @@ import (
 
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/validation"
-	"github.com/google/uuid"
 )
-
-type CreateOrganizationRequest struct {
-	Name       string `json:"name"`
-	AdminEmail string `json:"adminEmail,omitempty"`
-}
 
 type UpdateOrganizationRequest struct {
 	Name                        string  `json:"name"`
@@ -42,11 +36,6 @@ func (r *UpdateOrganizationRequest) ValidateControllerImageRepository() error {
 		return nil
 	}
 	return validation.ValidateImageRepository(*r.ControllerImageRepository)
-}
-
-type CreateOrganizationResponse struct {
-	ID        uuid.UUID `json:"id"`
-	InviteURL string    `json:"inviteUrl,omitempty"`
 }
 
 type OrganizationResponse struct {

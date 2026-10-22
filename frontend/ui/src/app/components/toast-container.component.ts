@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
+import {Component, inject} from '@angular/core';
 import {ToastService} from '../services/toast.service';
 import {ToastComponent} from './toast.component';
 
@@ -18,7 +18,6 @@ import {ToastComponent} from './toast.component';
       }
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [ToastComponent],
 })
 export class ToastContainerComponent {

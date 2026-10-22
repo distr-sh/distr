@@ -24,15 +24,7 @@ import {
   VersioningStrategy,
 } from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {
-  faArchive,
-  faBox,
-  faBoxesStacked,
-  faChevronDown,
-  faEye,
-  faPlus,
-  faTrash,
-} from '@fortawesome/free-solid-svg-icons';
+import {faArchive, faBox, faBoxesStacked, faChevronDown, faPlus, faTrash} from '@fortawesome/free-solid-svg-icons';
 import {
   catchError,
   combineLatestWith,
@@ -63,6 +55,7 @@ import {PageComponent} from '../components/page.component';
 import {PlanFeatureHintComponent} from '../components/plan-feature-hint.component';
 import {UuidComponent} from '../components/uuid';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {ClickableRowDirective} from '../directives/clickable-row.directive';
 import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
 import {ApplicationsService} from '../services/applications.service';
 import {AuthService} from '../services/auth.service';
@@ -91,6 +84,7 @@ import {
     NgOptimizedImage,
     UuidComponent,
     AutotrimDirective,
+    ClickableRowDirective,
     DatePipe,
     EditorComponent,
     InlineEditComponent,
@@ -195,7 +189,6 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   protected readonly faTrash = faTrash;
   protected readonly faArchive = faArchive;
   protected readonly faBox = faBox;
-  protected readonly faEye = faEye;
   protected readonly faPlus = faPlus;
   protected readonly resourcePreviewIndices = signal(new Set<number>());
 
