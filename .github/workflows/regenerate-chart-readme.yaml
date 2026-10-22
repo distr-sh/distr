@@ -1,0 +1,70 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: Regenerate Chart README
+
+on:
+  pull_request:
+    paths:
+      - deploy/charts/distr/Chart.yaml
+      - deploy/charts/distr/values.yaml
+      - deploy/charts/distr/README.md.gotmpl
+      - mise.toml
+      - .github/workflows/regenerate-chart-readme.yaml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    name: Regenerate
+    # release-please and Renovate change the chart without running helm-docs
+    if: startsWith(github.head_ref, 'release-please--') || startsWith(github.head_ref, 'renovate/')
+    runs-on: ubuntu-latest
+    outputs:
+      readme: ${{ steps.regenerate.outputs.readme }}
+      sha: ${{ steps.regenerate.outputs.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Install mise
+        uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        with:
+          install_args: 'helm-docs node pnpm'
+      - name: Regenerate README
+        id: regenerate
+        # a fresh checkout gives the README and its sources arbitrary mtimes, hence --force
+        run: |
+          pnpm install --frozen-lockfile
+          mise run --force build:helm-docs
+          git diff --quiet deploy/charts/distr/README.md && exit 0
+          # compressed, since the README exceeds the 128 KB a single environment variable can hold
+          {
+            echo "readme=$(gzip -9c deploy/charts/distr/README.md | base64 -w0)"
+            echo "sha=$(git rev-parse HEAD:deploy/charts/distr/README.md)"
+          } >> "$GITHUB_OUTPUT"
+
+  push:
+    name: Push
+    needs: generate
+    # runs no code from the pull request, since it holds a token that can push to the repository
+    if: needs.generate.outputs.readme != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Commit README
+        env:
+          # a commit with the GITHUB_TOKEN would not run the pull request checks again
+          GH_TOKEN: ${{ secrets.GLASSKUBE_BOT_SECRET }}
+          README: ${{ needs.generate.outputs.readme }}
+          SHA: ${{ needs.generate.outputs.sha }}
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          base64 -d <<< "$README" | gunzip | base64 -w0 > content
+          gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/deploy/charts/distr/README.md" \
+            -f message='docs(chart): regenerate README' -f branch="$BRANCH" -f sha="$SHA" -F content=@content
