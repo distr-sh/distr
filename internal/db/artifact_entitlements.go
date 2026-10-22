@@ -16,7 +16,7 @@ import (
 
 const (
 	artifactEntitlementOutExpr = `al.id, al.created_at, al.name, al.expires_at, ` +
-		`al.customer_organization_id, al.organization_id `
+		`al.customer_organization_id, al.organization_id, al.auto_add_version_regex `
 	artifactSelectionsOutExpor = `
 		(
 			SELECT array_agg(DISTINCT row(
@@ -78,9 +78,9 @@ func CreateArtifactEntitlement(ctx context.Context, entitlement *types.ArtifactE
 	rows, err := db.Query(ctx, `
 		WITH inserted AS (
 			INSERT INTO ArtifactEntitlement (
-				name, expires_at, organization_id, customer_organization_id
+				name, expires_at, organization_id, customer_organization_id, auto_add_version_regex
 			) VALUES (
-				@name, @expiresAt, @organizationId, @customerOrganizationId
+				@name, @expiresAt, @organizationId, @customerOrganizationId, @autoAddVersionRegex
 			) RETURNING *
 		)
 		SELECT `+artifactEntitlementOutExpr+`
@@ -90,6 +90,7 @@ func CreateArtifactEntitlement(ctx context.Context, entitlement *types.ArtifactE
 			"expiresAt":              entitlement.ExpiresAt,
 			"organizationId":         entitlement.OrganizationID,
 			"customerOrganizationId": entitlement.CustomerOrganizationID,
+			"autoAddVersionRegex":    entitlement.AutoAddVersionRegex,
 		},
 	)
 	if err != nil {
@@ -110,7 +111,8 @@ func UpdateArtifactEntitlement(ctx context.Context, entitlement *types.ArtifactE
 			UPDATE ArtifactEntitlement SET
 			name = @name,
             expires_at = @expiresAt,
-            customer_organization_id = @customerOrganizationId
+            customer_organization_id = @customerOrganizationId,
+            auto_add_version_regex = @autoAddVersionRegex
 		 	WHERE id = @id AND organization_id = @organizationId RETURNING *
 		)
 		SELECT `+artifactEntitlementOutExpr+`
@@ -121,6 +123,7 @@ func UpdateArtifactEntitlement(ctx context.Context, entitlement *types.ArtifactE
 			"name":                   entitlement.Name,
 			"expiresAt":              entitlement.ExpiresAt,
 			"customerOrganizationId": entitlement.CustomerOrganizationID,
+			"autoAddVersionRegex":    entitlement.AutoAddVersionRegex,
 		},
 	)
 	if err != nil {
@@ -186,6 +189,72 @@ func AddArtifactToArtifactEntitlement(
 		return mapArtifactEntitlementError(fmt.Errorf("could not insert relation: %w", err))
 	} else if cmd.RowsAffected() == 0 {
 		return distrerr.NewBadRequest("invalid artifact or artifact version ID")
+	}
+	return nil
+}
+
+// GetArtifactEntitlementsWithAutoAddVersionRegex locks the entitlements it returns, so that one deleted concurrently
+// does not fail the insert of an auto-added version with a foreign key violation.
+func GetArtifactEntitlementsWithAutoAddVersionRegex(
+	ctx context.Context,
+	artifactID uuid.UUID,
+) ([]types.ArtifactEntitlementBase, error) {
+	rows, err := internalctx.GetDb(ctx).Query(
+		ctx,
+		`SELECT `+artifactEntitlementOutExpr+`
+		FROM ArtifactEntitlement al
+		WHERE al.auto_add_version_regex IS NOT NULL
+			AND EXISTS (
+				SELECT FROM ArtifactEntitlement_Artifact aea
+				WHERE aea.artifact_entitlement_id = al.id
+					AND aea.artifact_id = @artifactId
+					AND aea.artifact_version_id IS NOT NULL
+			)
+		FOR KEY SHARE`,
+		pgx.NamedArgs{"artifactId": artifactID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query ArtifactEntitlement: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ArtifactEntitlementBase])
+	if err != nil {
+		return nil, fmt.Errorf("could not collect ArtifactEntitlement: %w", err)
+	}
+	return result, nil
+}
+
+func AddVersionToArtifactEntitlements(
+	ctx context.Context,
+	artifactID uuid.UUID,
+	manifestDigest types.Digest,
+	entitlementIDs []uuid.UUID,
+) error {
+	_, err := internalctx.GetDb(ctx).Exec(
+		ctx,
+		`INSERT INTO ArtifactEntitlement_Artifact (artifact_entitlement_id, artifact_id, artifact_version_id)
+		SELECT e.id, v.artifact_id, v.id
+		FROM unnest(@entitlementIds::UUID[]) e(id)
+			JOIN ArtifactVersion v ON v.artifact_id = @artifactId AND v.name = @manifestDigest
+		ON CONFLICT (artifact_entitlement_id, artifact_id, artifact_version_id) DO NOTHING`,
+		pgx.NamedArgs{"entitlementIds": entitlementIDs, "artifactId": artifactID, "manifestDigest": manifestDigest},
+	)
+	if err != nil {
+		return fmt.Errorf("could not insert version relations: %w", err)
+	}
+	return nil
+}
+
+// LockArtifactRows takes row locks rather than the advisory lock of [LockArtifactExclusive]: a registry push already
+// holds the row lock of [GetOrCreateArtifact] when it would take the advisory lock, while an entitlement edit holding
+// the advisory lock waits for that row lock on every selection it inserts, which would deadlock. The fixed order keeps
+// two edits from deadlocking each other.
+func LockArtifactRows(ctx context.Context, artifactIDs []uuid.UUID) error {
+	if _, err := internalctx.GetDb(ctx).Exec(
+		ctx,
+		`SELECT FROM Artifact WHERE id = ANY(@artifactIds::UUID[]) ORDER BY id FOR NO KEY UPDATE`,
+		pgx.NamedArgs{"artifactIds": artifactIDs},
+	); err != nil {
+		return fmt.Errorf("could not lock artifacts: %w", err)
 	}
 	return nil
 }

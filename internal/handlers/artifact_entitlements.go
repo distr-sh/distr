@@ -15,6 +15,7 @@ import (
 	"github.com/distr-sh/distr/internal/notification"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/validation"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
@@ -88,10 +89,12 @@ func createArtifactEntitlement(r *http.Request) (respond.Responder, error) {
 		return respond.BadRequest("name is required"), nil
 	} else if _, resp, err := customerScope(ctx, entitlement.CustomerOrganizationID); resp != nil || err != nil {
 		return resp, err
-	} else if err := validateEntitlementSelections(entitlement); err != nil {
+	} else if err := validateEntitlementSelections(&entitlement); err != nil {
 		return respond.BadRequest(err.Error()), nil
 	} else if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
-		if err := db.CreateArtifactEntitlement(ctx, &entitlement.ArtifactEntitlementBase); errors.Is(
+		if err := db.LockArtifactRows(ctx, selectionArtifactIDs(entitlement.Artifacts)); err != nil {
+			return nil, err
+		} else if err := db.CreateArtifactEntitlement(ctx, &entitlement.ArtifactEntitlementBase); errors.Is(
 			err, distrerr.ErrConflict,
 		) {
 			return artifactEntitlementNameTaken, nil
@@ -128,12 +131,27 @@ func updateArtifactEntitlement(r *http.Request) (respond.Responder, error) {
 		return respond.BadRequest("name is required"), nil
 	} else if _, resp, err := customerScope(ctx, entitlement.CustomerOrganizationID); resp != nil || err != nil {
 		return resp, err
-	} else if err := validateEntitlementSelections(entitlement); err != nil {
+	} else if err := validateEntitlementSelections(&entitlement); err != nil {
 		return respond.BadRequest(err.Error()), nil
 	} else if entitlement.ID != existing.ID {
 		return respond.BadRequest("entitlement ID does not match the URL"), nil
-	} else if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
-		if err := db.UpdateArtifactEntitlement(ctx, &entitlement.ArtifactEntitlementBase); errors.Is(
+	}
+
+	var widened []types.ArtifactEntitlementSelection
+	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
+		if err := db.LockArtifactRows(
+			ctx, append(selectionArtifactIDs(existing.Artifacts), selectionArtifactIDs(entitlement.Artifacts)...),
+		); err != nil {
+			return nil, err
+		}
+		// The entitlement read by the middleware can be stale by now, since a registry push adds a tag to matching
+		// entitlements while holding the same lock.
+		current, err := db.GetArtifactEntitlementByID(ctx, entitlement.ID)
+		if errors.Is(err, distrerr.ErrNotFound) {
+			return artifactEntitlementNotFound, nil
+		} else if err != nil {
+			return nil, fmt.Errorf("could not read entitlement: %w", err)
+		} else if err := db.UpdateArtifactEntitlement(ctx, &entitlement.ArtifactEntitlementBase); errors.Is(
 			err, distrerr.ErrNotFound,
 		) {
 			return artifactEntitlementNotFound, nil
@@ -145,15 +163,26 @@ func updateArtifactEntitlement(r *http.Request) (respond.Responder, error) {
 			return nil, fmt.Errorf("could not update artifact entitlement: %w", err)
 		} else if err := db.RemoveAllArtifactsFromEntitlement(ctx, entitlement.ID); err != nil {
 			return nil, fmt.Errorf("could not update artifact entitlement selection: %w", err)
+		} else if resp, err := addArtifacts(ctx, entitlement); resp != nil || err != nil {
+			return resp, err
 		} else {
-			return addArtifacts(ctx, entitlement)
+			widened = widenedArtifactEntitlement(current.Artifacts, entitlement.Artifacts)
+			return nil, nil
 		}
 	}); resp != nil || err != nil {
 		return resp, err
 	} else {
-		notifyEntitledArtifactVersions(ctx, widenedArtifactEntitlement(existing.Artifacts, entitlement.Artifacts))
+		notifyEntitledArtifactVersions(ctx, widened)
 		return respond.JSON(entitlement), nil
 	}
+}
+
+func selectionArtifactIDs(selections []types.ArtifactEntitlementSelection) []uuid.UUID {
+	ids := make([]uuid.UUID, len(selections))
+	for i, selection := range selections {
+		ids[i] = selection.ArtifactID
+	}
+	return ids
 }
 
 func notifyEntitledArtifactVersions(ctx context.Context, selections []types.ArtifactEntitlementSelection) {
@@ -193,7 +222,7 @@ func widenedArtifactEntitlement(
 	return widened
 }
 
-func validateEntitlementSelections(entitlement types.ArtifactEntitlement) error {
+func validateEntitlementSelections(entitlement *types.ArtifactEntitlement) error {
 	artifactIdSet := make(map[uuid.UUID]struct{})
 	for _, selection := range entitlement.Artifacts {
 		if _, exists := artifactIdSet[selection.ArtifactID]; exists {
@@ -208,7 +237,19 @@ func validateEntitlementSelections(entitlement types.ArtifactEntitlement) error 
 		}
 		artifactIdSet[selection.ArtifactID] = struct{}{}
 	}
-	return nil
+	return checkArtifactAutoAddVersionRegex(entitlement)
+}
+
+func checkArtifactAutoAddVersionRegex(entitlement *types.ArtifactEntitlement) error {
+	if regex := entitlement.AutoAddVersionRegex; regex == nil || *regex == "" {
+		entitlement.AutoAddVersionRegex = nil
+		return nil
+	} else if len(entitlement.Artifacts) != 1 {
+		return errors.New("an auto-add tag regex requires an entitlement with exactly one artifact")
+	} else if len(entitlement.Artifacts[0].VersionIDs) == 0 {
+		return errors.New("an auto-add tag regex requires at least one selected tag")
+	}
+	return validation.ValidateAutoAddVersionRegex(*entitlement.AutoAddVersionRegex)
 }
 
 func addArtifacts(ctx context.Context, entitlement types.ArtifactEntitlement) (respond.Responder, error) {
