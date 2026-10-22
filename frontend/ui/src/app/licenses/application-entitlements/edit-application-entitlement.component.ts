@@ -56,6 +56,11 @@ const specificVersionsValidator: ValidatorFn = (control) => {
   return versionScope === 'all' || selected ? null : {versionsRequired: true};
 };
 
+const noSurroundingWhitespaceValidator: ValidatorFn = (control) => {
+  const value = control.value as string;
+  return value === value.trim() ? null : {surroundingWhitespace: true};
+};
+
 @Component({
   selector: 'app-edit-application-entitlement',
   templateUrl: './edit-application-entitlement.component.html',
@@ -102,7 +107,10 @@ export class EditApplicationEntitlementComponent implements OnInit, AfterViewIni
       versionScope: this.fb.nonNullable.control<VersionScope>('all'),
       activeVersions: this.fb.array<boolean>([]),
       archivedVersions: this.fb.array<boolean>([]),
-      autoAddVersionRegex: this.fb.nonNullable.control('', [Validators.maxLength(200)]),
+      autoAddVersionRegex: this.fb.nonNullable.control('', [
+        Validators.maxLength(200),
+        noSurroundingWhitespaceValidator,
+      ]),
       customerOrganizationId: this.fb.nonNullable.control<string | undefined>(undefined),
       registry: this.fb.nonNullable.group(
         {

@@ -81,7 +81,7 @@ An entitlement for specific versions can grow with your releases. Enter a regula
 - **When it runs:** The regex is checked whenever you create an application version and whenever you rename one. Setting or changing the regex does not touch existing versions, so select those yourself.
 - **Renamed versions:** A renamed version is added if its new name matches and its previous name did not. A version you removed by hand is therefore not added back by a rename that keeps it matching.
 - **Archived versions:** These are never added.
-- **Syntax:** The regex uses [RE2 syntax](https://github.com/google/re2/wiki/Syntax) and may be up to 200 characters long. Lookaheads and backreferences are not supported.
+- **Syntax:** The regex uses [RE2 syntax](https://github.com/google/re2/wiki/Syntax) and may be up to 200 characters long. Lookaheads and backreferences are not supported. It must not start or end with whitespace; write `\s` or `[ ]` to match a space there.
 - **Partial matches:** The regex matches anywhere in the version name unless you anchor it with `^` and `$`. Matching is case-sensitive; prefix the regex with `(?i)` to ignore case.
 - **At least one version:** An entitlement with an auto-add regex needs at least one selected version, since an entitlement without versions already grants all of them.
 
