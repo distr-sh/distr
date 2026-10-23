@@ -32,7 +32,7 @@ import {
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faChevronDown} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {distinctUntilChanged, firstValueFrom, of, switchMap, tap} from 'rxjs';
+import {distinctUntilChanged, of, switchMap, tap} from 'rxjs';
 import {WEBSITE_URL} from '../../../constants';
 import {RelativeDatePipe} from '../../../util/dates';
 import {noSurroundingWhitespaceValidator} from '../../../util/validation';
@@ -141,7 +141,7 @@ export class EditSingleArtifactEntitlementComponent implements OnInit, AfterView
       this.onTouched();
       const val = this.editForm.getRawValue();
       const allTags = val.tagScope === 'all';
-      const versionIds = this.getSelectedVersions(val.artifactTags);
+      const versionIds = this.getSelectedVersions(val.artifactId, val.artifactTags);
       this.tagsSelected.set(versionIds.length);
       const entitlement: ArtifactEntitlement = {
         id: val.id,
@@ -163,11 +163,7 @@ export class EditSingleArtifactEntitlementComponent implements OnInit, AfterView
           this.selectedArtifact.set(undefined);
           this.editForm.controls.artifactTags.clear({emitEvent: false});
         }),
-        switchMap(async (artifactId) => {
-          const artifacts = await firstValueFrom(this.artifactsService.list());
-          return artifacts.find((a) => a.id === artifactId);
-        }),
-        switchMap((artifact) => (artifact ? this.artifactsService.getByIdAndCache(artifact.id) : of(undefined)))
+        switchMap((artifactId) => (artifactId ? this.artifactsService.getByIdAndCache(artifactId) : of(undefined)))
       )
       .subscribe((artifact) => {
         this.selectedArtifact.set(artifact);
@@ -184,9 +180,13 @@ export class EditSingleArtifactEntitlementComponent implements OnInit, AfterView
       });
   }
 
-  private getSelectedVersions(tagControls: (boolean | null)[]): string[] {
+  private getSelectedVersions(artifactId: string | undefined, tagControls: (boolean | null)[]): string[] {
     const artifact = this.selectedArtifact();
-    return tagControls.map((v, idx) => (v ? artifact?.versions?.[idx]?.id : undefined)).filter((v) => v !== undefined);
+    if (!artifact) {
+      // Until the tags have loaded, keep the saved selection, since an empty one grants all tags.
+      return this.entitlement()?.artifacts?.find((a) => a.artifactId === artifactId)?.versionIds ?? [];
+    }
+    return tagControls.map((v, idx) => (v ? artifact.versions?.[idx]?.id : undefined)).filter((v) => v !== undefined);
   }
 
   ngAfterViewInit() {
