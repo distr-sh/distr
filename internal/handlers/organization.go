@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
@@ -16,7 +15,6 @@ import (
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
-	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/distr-sh/distr/internal/validation"
@@ -32,18 +30,11 @@ func OrganizationRouter(r chiopenapi.Router) {
 		With(option.Description("Get current organization")).
 		With(option.Response(http.StatusOK, api.OrganizationResponse{}))
 
-	r.With(middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
-		r.With(middleware.BlockCrossOrganizationAction).Post("/", respond.Handler(createOrganization)).
-			With(option.Description("Create a new organization")).
-			With(option.Request(api.CreateOrganizationRequest{})).
-			With(option.Response(http.StatusOK, types.OrganizationWithUserRole{}))
-
-		r.With(middleware.RequireVendor, middleware.RequireAdmin).
-			Put("/", respond.Handler(updateOrganization)).
-			With(option.Description("Update current organization")).
-			With(option.Request(api.UpdateOrganizationRequest{})).
-			With(option.Response(http.StatusOK, api.OrganizationResponse{}))
-	})
+	r.With(middleware.BlockSuperAdmin, middleware.RequireVendor, middleware.RequireAdmin).
+		Put("/", respond.Handler(updateOrganization)).
+		With(option.Description("Update current organization")).
+		With(option.Request(api.UpdateOrganizationRequest{})).
+		With(option.Response(http.StatusOK, api.OrganizationResponse{}))
 
 	r.With(
 		middleware.RequireVendor,
@@ -122,43 +113,6 @@ func updateOrganization(r *http.Request) (respond.Responder, error) {
 		return resp, err
 	} else {
 		return organizationResponse(ctx, *org)
-	}
-}
-
-func createOrganization(r *http.Request) (respond.Responder, error) {
-	ctx := r.Context()
-	auth := auth.Authentication.Require(ctx)
-
-	if ok, err := db.ExistsVendorOrganizationWithUserID(ctx, auth.CurrentUserID()); err != nil {
-		return nil, fmt.Errorf("failed to check if user is vendor: %w", err)
-	} else if !ok {
-		return respond.Forbidden("only vendors can create organizations"), nil
-	} else if body, resp := decodeJSON[api.CreateOrganizationRequest](r); resp != nil {
-		return resp, nil
-	} else if body.Name == "" {
-		return respond.BadRequest("name is required"), nil
-	} else if reached, err := subscription.IsGlobalOrganizationLimitReached(ctx); err != nil {
-		return nil, fmt.Errorf("could not check global organization limit: %w", err)
-	} else if reached {
-		return respond.BadRequest(subscription.GlobalOrganizationLimitReachedMessage), nil
-	} else {
-		organization := types.Organization{Name: body.Name}
-
-		if err := db.RunTx(ctx, func(ctx context.Context) error {
-			if err := db.CreateOrganization(ctx, &organization); err != nil {
-				return err
-			}
-			return db.CreateUserAccountOrganizationAssignment(
-				ctx, auth.CurrentUserID(), organization.ID, types.UserRoleAdmin, nil, nil)
-		}); err != nil {
-			return nil, fmt.Errorf("could not create organization: %w", err)
-		} else {
-			return respond.JSON(types.OrganizationWithUserRole{
-				Organization: organization,
-				UserRole:     types.UserRoleAdmin,
-				JoinedOrgAt:  time.Now(),
-			}), nil
-		}
 	}
 }
 

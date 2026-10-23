@@ -24,10 +24,12 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/distrerr"
+	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/registry/authz"
 	"github.com/distr-sh/distr/internal/registry/blob"
 	"github.com/distr-sh/distr/internal/registry/name"
@@ -38,15 +40,12 @@ import (
 	"go.uber.org/zap"
 )
 
-// UpstreamBlobFetcher fetches a blob from an upstream registry and stores it locally.
+// UpstreamBlobFetcher fetches a blob from an upstream registry.
 type UpstreamBlobFetcher interface {
-	// FetchAndStoreBlob fetches the blob identified by d from the upstream registry
-	// for repo, stores it via bph, and returns a Buffer for serving the content
-	// directly to the client. The caller must call Buffer.Destroy() after use.
+	// OpenBlob returns the size and the content of the blob identified by d at the upstream registry for repo.
+	// The content ends with an error if it does not match d. The caller must close it.
 	// Returns distrerr.ErrNotFound if repo has no upstream configured.
-	FetchAndStoreBlob(
-		ctx context.Context, repo string, d digest.Digest, bph blob.BlobPutHandler,
-	) (seekbuf.Buffer, int64, error)
+	OpenBlob(ctx context.Context, repo string, d digest.Digest) (int64, io.ReadCloser, error)
 }
 
 const (
@@ -154,45 +153,20 @@ func (b *blobs) handleHead(resp http.ResponseWriter, req *http.Request, repo, ta
 		return regErrDigestInvalid
 	}
 
-	var size int64
-	if bsh, ok := b.blobHandler.(blob.BlobStatHandler); ok {
-		size, err = bsh.Stat(req.Context(), repo, h)
-		if errors.Is(err, blob.ErrNotFound) {
-			if s, upstreamErr := b.statFromUpstreamDB(req.Context(), repo, h); upstreamErr == nil {
-				size = s
-			} else {
-				return regErrBlobUnknown
-			}
-		} else if err != nil {
-			var rerr blob.RedirectError
-			if errors.As(err, &rerr) {
-				http.Redirect(resp, req, rerr.Location, rerr.Code)
-				return nil
-			}
-			return regErrInternal(err)
-		}
-	} else {
-		rc, err := b.blobHandler.Get(req.Context(), repo, h, true)
-		if errors.Is(err, blob.ErrNotFound) {
-			if s, upstreamErr := b.statFromUpstreamDB(req.Context(), repo, h); upstreamErr == nil {
-				size = s
-			} else {
-				return regErrBlobUnknown
-			}
-		} else if err != nil {
-			var rerr blob.RedirectError
-			if errors.As(err, &rerr) {
-				http.Redirect(resp, req, rerr.Location, rerr.Code)
-				return nil
-			}
-			return regErrInternal(err)
+	size, err := b.blobHandler.Stat(req.Context(), repo, h)
+	if errors.Is(err, blob.ErrNotFound) {
+		if s, upstreamErr := b.statFromUpstreamDB(req.Context(), repo, h); upstreamErr == nil {
+			size = s
 		} else {
-			defer rc.Close()
-			size, err = io.Copy(io.Discard, rc)
-			if err != nil {
-				return regErrInternal(err)
-			}
+			return regErrBlobUnknown
 		}
+	} else if err != nil {
+		var rerr blob.RedirectError
+		if errors.As(err, &rerr) {
+			http.Redirect(resp, req, rerr.Location, rerr.Code)
+			return nil
+		}
+		return regErrInternal(err)
 	}
 
 	resp.Header().Set("Content-Length", fmt.Sprint(size))
@@ -228,78 +202,31 @@ func (b *blobs) handleGet(resp http.ResponseWriter, req *http.Request, repo, tar
 		}
 	}
 
-	var size int64
-	var r io.Reader
-	var upstreamTmp seekbuf.Buffer
-	if bsh, ok := b.blobHandler.(blob.BlobStatHandler); ok {
-		size, err = bsh.Stat(req.Context(), repo, h)
-		if errors.Is(err, blob.ErrNotFound) {
-			tmp, fetchSize, fetchErr := b.fetchFromUpstream(req.Context(), repo, h)
-			if fetchErr != nil {
-				return regErrBlobUnknown
-			}
-			upstreamTmp = tmp
-			size = fetchSize
-		} else if err != nil {
-			var rerr blob.RedirectError
-			if errors.As(err, &rerr) {
-				http.Redirect(resp, req, rerr.Location, rerr.Code)
-				return nil
-			}
-			return regErrInternal(err)
+	size, err := b.blobHandler.Stat(req.Context(), repo, h)
+	if errors.Is(err, blob.ErrNotFound) {
+		return b.serveFromUpstream(resp, req, repo, h)
+	} else if err != nil {
+		var rerr blob.RedirectError
+		if errors.As(err, &rerr) {
+			http.Redirect(resp, req, rerr.Location, rerr.Code)
+			return nil
 		}
-
-		if upstreamTmp == nil {
-			rc, err := b.blobHandler.Get(req.Context(), repo, h, true)
-			if errors.Is(err, blob.ErrNotFound) {
-				return regErrBlobUnknown
-			} else if err != nil {
-				var rerr blob.RedirectError
-				if errors.As(err, &rerr) {
-					http.Redirect(resp, req, rerr.Location, rerr.Code)
-					return nil
-				}
-				return regErrInternal(err)
-			}
-			defer rc.Close()
-			r = rc
-		}
-	} else {
-		tmp, err := b.blobHandler.Get(req.Context(), repo, h, true)
-		if errors.Is(err, blob.ErrNotFound) {
-			fetchedTmp, fetchSize, fetchErr := b.fetchFromUpstream(req.Context(), repo, h)
-			if fetchErr != nil {
-				return regErrBlobUnknown
-			}
-			upstreamTmp = fetchedTmp
-			size = fetchSize
-		} else if err != nil {
-			var rerr blob.RedirectError
-			if errors.As(err, &rerr) {
-				http.Redirect(resp, req, rerr.Location, rerr.Code)
-				return nil
-			}
-			return regErrInternal(err)
-		} else {
-			defer tmp.Close()
-			var buf bytes.Buffer
-			if _, err := io.Copy(&buf, tmp); err != nil {
-				return regErrInternal(err)
-			}
-			size = int64(buf.Len())
-			r = &buf
-		}
+		return regErrInternal(err)
 	}
 
-	if upstreamTmp != nil {
-		defer func() { _ = upstreamTmp.Destroy() }()
-		sr, openErr := upstreamTmp.Get()
-		if openErr != nil {
-			return regErrInternal(openErr)
+	rc, err := b.blobHandler.Get(req.Context(), repo, h, true)
+	if errors.Is(err, blob.ErrNotFound) {
+		return regErrBlobUnknown
+	} else if err != nil {
+		var rerr blob.RedirectError
+		if errors.As(err, &rerr) {
+			http.Redirect(resp, req, rerr.Location, rerr.Code)
+			return nil
 		}
-		defer sr.Close()
-		r = sr
+		return regErrInternal(err)
 	}
+	defer rc.Close()
+	var r io.Reader = rc
 
 	if rangeHeader != "" {
 		start, end := int64(0), int64(0)
@@ -349,25 +276,137 @@ func (b *blobs) handleGet(resp http.ResponseWriter, req *http.Request, repo, tar
 	return nil
 }
 
-func (b *blobs) fetchFromUpstream(
-	ctx context.Context, repo string, h digest.Digest,
-) (seekbuf.Buffer, int64, error) {
+// serveFromUpstream streams a blob of a pull-through artifact from its upstream registry to the client and stores
+// it once the download is complete. The response has to start before the download finishes, since proxies in front
+// of the registry give up on a response that has not started after a fixed time, commonly 30 seconds. The download
+// outlives the request so that the retry of a client that gave up finds the blob stored.
+func (b *blobs) serveFromUpstream(resp http.ResponseWriter, req *http.Request, repo string, h digest.Digest) *regError {
 	if b.upstreamFetcher == nil {
-		return nil, 0, blob.ErrNotFound
+		return regErrBlobUnknown
 	}
 	bph, ok := b.blobHandler.(blob.BlobPutHandler)
 	if !ok {
-		return nil, 0, blob.ErrNotFound
+		return regErrBlobUnknown
 	}
-	tmp, size, err := b.upstreamFetcher.FetchAndStoreBlob(ctx, repo, h, bph)
+
+	log := internalctx.GetLogger(req.Context()).With(zap.String("digest", h.String()))
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(req.Context()), env.RegistryUpstreamBlobFetchTimeout())
+	ctx = internalctx.WithLogger(ctx, log)
+	size, rc, err := b.upstreamFetcher.OpenBlob(ctx, repo, h)
 	if err != nil {
+		cancel()
 		if !errors.Is(err, distrerr.ErrNotFound) {
-			log := internalctx.GetLogger(ctx)
-			log.Warn("upstream blob fetch failed", zap.String("digest", h.String()), zap.Error(err))
+			log.Warn("upstream blob fetch failed", zap.Error(err))
 		}
-		return nil, 0, blob.ErrNotFound
+		return regErrBlobUnknown
 	}
-	return tmp, size, nil
+
+	pr, pw := io.Pipe()
+	copied := make(chan struct{})
+	go func() {
+		defer cancel()
+		storeUpstreamBlob(ctx, repo, h, bph, pr)
+		<-copied
+	}()
+
+	w := &upstreamBlobWriter{client: resp, clientController: http.NewResponseController(resp), buffer: pw}
+	// The server sets no write timeout of its own, so a deadline left behind would apply to the next request
+	// on the same connection.
+	defer func() {
+		w.flushClient()
+		_ = w.clientController.SetWriteDeadline(time.Time{})
+	}()
+
+	resp.Header().Set("Content-Length", strconv.FormatInt(size, 10))
+	resp.Header().Set("Docker-Content-Digest", h.String())
+	resp.WriteHeader(http.StatusOK)
+	w.flushClient()
+
+	_, err = io.Copy(w, rc)
+	_ = rc.Close()
+	_ = pw.CloseWithError(err)
+	close(copied)
+
+	// Unless buffering failed before, storeUpstreamBlob receives err through the pipe and logs it.
+	if err != nil && w.bufferErr != nil && !errors.Is(err, errUpstreamBlobAbandoned) {
+		log.Warn("upstream blob fetch failed", zap.Error(err))
+	}
+	return nil
+}
+
+func storeUpstreamBlob(ctx context.Context, repo string, h digest.Digest, bph blob.BlobPutHandler, r *io.PipeReader) {
+	log := internalctx.GetLogger(ctx)
+
+	buf, err := seekbuf.New(r)
+	if err != nil {
+		_ = r.CloseWithError(err)
+		log.Warn("failed to buffer upstream blob", zap.Error(err))
+		return
+	}
+	defer func() {
+		if err := buf.Destroy(); err != nil {
+			log.Warn("ephemeral resource cleanup error", zap.Error(err))
+		}
+	}()
+
+	sr, err := buf.Get()
+	if err != nil {
+		log.Warn("failed to open buffered upstream blob", zap.Error(err))
+		return
+	}
+	defer sr.Close()
+
+	if err := bph.Put(ctx, repo, h, "", sr); err != nil {
+		log.Warn("failed to store upstream blob", zap.Error(err))
+	}
+}
+
+var errUpstreamBlobAbandoned = errors.New("neither the client nor the buffer accepts the upstream blob")
+
+// upstreamBlobClientWriteTimeout bounds every write to the client. A client that keeps the connection open without
+// reading would otherwise block the download, and with it the buffer, indefinitely.
+var upstreamBlobClientWriteTimeout = time.Minute
+
+// upstreamBlobWriter writes an upstream blob to the client and to the buffer, and keeps writing to one of them after
+// the other failed.
+type upstreamBlobWriter struct {
+	client               io.Writer
+	clientController     *http.ResponseController
+	buffer               io.Writer
+	clientErr, bufferErr error
+}
+
+func (w *upstreamBlobWriter) Write(p []byte) (int, error) {
+	if w.extendClientDeadline() {
+		_, w.clientErr = w.client.Write(p)
+	}
+	if w.bufferErr == nil {
+		_, w.bufferErr = w.buffer.Write(p)
+	}
+	if w.clientErr != nil && w.bufferErr != nil {
+		return 0, errUpstreamBlobAbandoned
+	}
+	return len(p), nil
+}
+
+func (w *upstreamBlobWriter) flushClient() {
+	if w.extendClientDeadline() {
+		if err := w.clientController.Flush(); err != nil && !errors.Is(err, http.ErrNotSupported) {
+			w.clientErr = err
+		}
+	}
+}
+
+// extendClientDeadline reports whether the client is still accepting writes.
+func (w *upstreamBlobWriter) extendClientDeadline() bool {
+	if w.clientErr != nil {
+		return false
+	}
+	err := w.clientController.SetWriteDeadline(time.Now().Add(upstreamBlobClientWriteTimeout))
+	if err != nil && !errors.Is(err, http.ErrNotSupported) {
+		w.clientErr = err
+	}
+	return w.clientErr == nil
 }
 
 func (b *blobs) handlePost(resp http.ResponseWriter, req *http.Request, repo, target, digestArg string) *regError {

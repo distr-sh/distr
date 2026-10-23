@@ -11,6 +11,5 @@ type ContextResponse struct {
 	AvailableContexts    []types.OrganizationWithUserRole `json:"availableContexts,omitempty"`
 	// RegistryHost is the effective registry host of the organization, considering custom
 	// domains and legacy branding domains, falling back to the instance default.
-	RegistryHost          string `json:"registryHost,omitzero"`
-	CanCreateOrganization bool   `json:"canCreateOrganization"`
+	RegistryHost string `json:"registryHost,omitzero"`
 }

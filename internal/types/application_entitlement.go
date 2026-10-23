@@ -18,6 +18,7 @@ type ApplicationEntitlementBase struct {
 	RegistryURL            *string          `db:"registry_url" json:"registryUrl,omitempty"`
 	RegistryUsername       *dbcrypto.String `db:"registry_username" json:"registryUsername,omitempty"`
 	RegistryPassword       *dbcrypto.String `db:"registry_password" json:"registryPassword,omitempty"`
+	AutoAddVersionRegex    *string          `db:"auto_add_version_regex" json:"autoAddVersionRegex,omitempty" trim:"-"`
 }
 
 type ApplicationEntitlementWithVersions struct {

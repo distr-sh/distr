@@ -15,11 +15,12 @@ import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {SidebarLink} from '@distr-sh/distr-sdk';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
-import {faBoxesStacked, faChevronDown, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faBoxesStacked, faChevronDown, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, firstValueFrom, of, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {PageComponent} from '../components/page.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {ClickableRowDirective} from '../directives/clickable-row.directive';
 import {AuthService} from '../services/auth.service';
 import {CustomerOrganizationsService} from '../services/customer-organizations.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
@@ -36,6 +37,7 @@ import {ToastService} from '../services/toast.service';
     ReactiveFormsModule,
     DatePipe,
     AutotrimDirective,
+    ClickableRowDirective,
     PageComponent,
   ],
 })
@@ -45,9 +47,9 @@ export class SidebarLinksPageComponent {
   protected readonly faXmark = faXmark;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
-  protected readonly faPen = faPen;
 
   protected readonly auth = inject(AuthService);
+  protected readonly canEdit = this.auth.hasAnyRole('read_write', 'admin');
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   private readonly linksService = inject(SidebarLinksService);
   private readonly overlay = inject(OverlayService);

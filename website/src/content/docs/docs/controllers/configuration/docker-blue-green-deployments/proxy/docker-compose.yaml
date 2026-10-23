@@ -1,0 +1,48 @@
+services:
+  caddy:
+    image: 'caddy:2.11.7-alpine'
+    restart: unless-stopped
+    command: >-
+      sh -c 'until [ -f /etc/caddy/routing/Caddyfile ]; do sleep 1; done &&
+      exec caddy run --config /etc/caddy/routing/Caddyfile --adapter caddyfile'
+    ports:
+      - '80:80'
+    volumes:
+      - 'routing:/etc/caddy/routing'
+    networks:
+      - hello-distr
+
+  routing:
+    image: 'caddy:2.11.7-alpine'
+    restart: unless-stopped
+    init: true
+    # Compose recreates a container when its environment changes, but not when only the content of a config does.
+    environment:
+      BLUE_WEIGHT: ${BLUE_WEIGHT}
+      GREEN_WEIGHT: ${GREEN_WEIGHT}
+    command: >-
+      sh -c 'cp /Caddyfile /etc/caddy/routing/Caddyfile.tmp &&
+      mv /etc/caddy/routing/Caddyfile.tmp /etc/caddy/routing/Caddyfile &&
+      until caddy reload --config /etc/caddy/routing/Caddyfile --adapter caddyfile; do sleep 1; done &&
+      touch /tmp/reloaded &&
+      exec sleep infinity'
+    configs:
+      - source: caddyfile
+        target: /Caddyfile
+    volumes:
+      - 'routing:/etc/caddy/routing'
+    healthcheck:
+      test: ['CMD', 'test', '-f', '/tmp/reloaded']
+      interval: 10s
+
+configs:
+  caddyfile:
+    content: |
+      # Caddyfile
+
+volumes:
+  routing:
+
+networks:
+  hello-distr:
+    name: hello-distr

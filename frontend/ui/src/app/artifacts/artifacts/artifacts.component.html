@@ -80,29 +80,21 @@
     <div class="overflow-x-auto">
       <ul role="list" class="distr-card-grid">
         @for (artifact of artifacts; track artifact.id) {
-          <li class="distr-card py-3 px-6 sm:py-4">
+          <li [routerLink]="artifact.id" class="distr-card distr-card-clickable py-3 px-6 sm:py-4">
             <div class="flex items-center">
               @if (artifact.imageUrl) {
-                <img
-                  [routerLink]="artifact.id"
-                  class="w-8 h-8 rounded-full cursor-pointer"
-                  [attr.src]="artifact.imageUrl | secureImage | async"
-                  alt="" />
+                <img class="w-8 h-8 rounded-full" [attr.src]="artifact.imageUrl | secureImage | async" alt="" />
               } @else {
                 <div class="shrink-0 text-gray-900 dark:text-gray-400">
-                  <fa-icon [routerLink]="artifact.id" [icon]="faBox" size="xl" class="text-xl cursor-pointer" />
+                  <fa-icon [icon]="faBox" size="xl" class="text-xl" />
                 </div>
               }
               <div class="flex-1 min-w-0 ms-4">
                 <div class="flex items-center gap-2 flex-wrap">
-                  <a
-                    class="font-semibold text-gray-900 truncate dark:text-white hover:underline hover:text-blue-600 dark:hover:text-blue-500"
-                    [routerLink]="artifact.id">
-                    {{ artifact.name }}
-                  </a>
+                  <span class="font-semibold text-gray-900 truncate dark:text-white">{{ artifact.name }}</span>
                 </div>
                 <p class="flex items-center gap-1 text-sm text-gray-500 truncate dark:text-gray-400 mt-1">
-                  <app-uuid [uuid]="artifact.id" [small]="true" />
+                  <app-uuid [uuid]="artifact.id" [small]="true" (click)="$event.stopPropagation()" />
                   @if (auth.isVendor() && artifact.upstreamUrl) {
                     <span class="distr-badge distr-badge-neutral">pull-through</span>
                   }

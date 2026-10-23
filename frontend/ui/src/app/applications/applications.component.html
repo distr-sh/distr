@@ -23,16 +23,15 @@
           <th scope="col" class="p-4">Versions</th>
           @if (fullVersion()) {
             <th scope="col" class="p-4">Creation Date</th>
-            <th scope="col" class="p-4"></th>
           }
         </tr>
       </thead>
       <tbody>
         @for (application of applications$ | async; track application.id) {
-          <tr class="distr-table-row">
-            <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+          <tr [appClickableRow]="['/', 'applications', application.id]" class="distr-table-row">
+            <td class="distr-table-cell">
               <div class="flex flex-wrap items-center gap-2">
-                <a [routerLink]="['/', 'applications', application.id]" class="flex items-center">
+                <div class="flex items-center">
                   <app-application-logo
                     class="size-8 mr-3 shrink-0"
                     [imageUrl]="application.imageUrl"
@@ -40,34 +39,23 @@
                   <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
                     {{ application.name }}
                   </span>
-                </a>
+                </div>
                 <span class="distr-badge capitalize">{{ application.type }}</span>
                 @if (isAutoUpdatesEnabled() && application.allowAutomaticUpdates) {
                   <span class="distr-badge distr-badge-success whitespace-nowrap"> Auto-Updates allowed </span>
                 }
               </div>
             </td>
-            <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+            <td class="distr-table-cell">
               <div class="flex items-center">
                 {{ application.versions?.length || 0 }}
               </div>
             </td>
             @if (fullVersion()) {
-              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+              <td class="distr-table-cell">
                 <div class="flex items-center">
                   {{ application.createdAt | date: 'short' }}
                 </div>
-              </td>
-              <td
-                class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
-                <a
-                  *appRequireVendor
-                  [routerLink]="['/', 'applications', application.id]"
-                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                  <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
-                  Details
-                  <ng-template [appRequiredRole]="['admin', 'read_write']">/ Edit</ng-template>
-                </a>
               </td>
             }
           </tr>
@@ -121,62 +109,33 @@
               <div class="mt-4">
                 <label class="distr-label mb-2">Application Type <span class="text-red-500">*</span></label>
                 <div class="mb-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div
-                    class="rounded-lg border border-gray-200 bg-gray-50 p-4 ps-4 dark:border-gray-700 dark:bg-gray-800">
-                    <div class="flex items-start">
-                      <div class="flex h-5 items-center">
-                        <input
-                          id="app-type-docker-radio"
-                          [formControl]="createApplicationForm.controls.type"
-                          aria-describedby="app-type-docker-radio-text"
-                          type="radio"
-                          name="appType"
-                          value="docker"
-                          class="distr-radio" />
-                      </div>
-
-                      <div class="ms-4 text-sm">
-                        <label for="app-type-docker-radio" class="font-bold leading-none text-gray-900 dark:text-white"
-                          >Docker Compose</label
-                        >
-                        <p
-                          id="app-type-docker-radio-text"
-                          class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-                          I have a docker compose file.
-                        </p>
-                      </div>
+                  <label class="distr-radio-card">
+                    <input
+                      [formControl]="createApplicationForm.controls.type"
+                      aria-describedby="app-type-docker-radio-text"
+                      type="radio"
+                      name="appType"
+                      value="docker"
+                      class="distr-radio mt-0.5" />
+                    <div class="text-sm">
+                      <span class="font-bold text-gray-900 dark:text-white">Docker Compose</span>
+                      <p id="app-type-docker-radio-text" class="distr-hint mt-1">I have a docker compose file.</p>
                     </div>
-                  </div>
+                  </label>
 
-                  <div
-                    class="rounded-lg border border-gray-200 bg-gray-50 p-4 ps-4 dark:border-gray-700 dark:bg-gray-800">
-                    <div class="flex items-start">
-                      <div class="flex h-5 items-center">
-                        <input
-                          id="app-type-kubernetes-radio"
-                          [formControl]="createApplicationForm.controls.type"
-                          aria-describedby="app-type-kubernetes-radio-text"
-                          type="radio"
-                          name="appType"
-                          value="kubernetes"
-                          class="distr-radio"
-                          checked />
-                      </div>
-
-                      <div class="ms-4 text-sm">
-                        <label
-                          for="app-type-kubernetes-radio"
-                          class="font-bold leading-none text-gray-900 dark:text-white">
-                          Helm / Kubernetes
-                        </label>
-                        <p
-                          id="app-type-kubernetes-radio-text"
-                          class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-                          I have a Helm chart.
-                        </p>
-                      </div>
+                  <label class="distr-radio-card">
+                    <input
+                      [formControl]="createApplicationForm.controls.type"
+                      aria-describedby="app-type-kubernetes-radio-text"
+                      type="radio"
+                      name="appType"
+                      value="kubernetes"
+                      class="distr-radio mt-0.5" />
+                    <div class="text-sm">
+                      <span class="font-bold text-gray-900 dark:text-white">Helm / Kubernetes</span>
+                      <p id="app-type-kubernetes-radio-text" class="distr-hint mt-1">I have a Helm chart.</p>
                     </div>
-                  </div>
+                  </label>
                 </div>
 
                 @if (createApplicationForm.controls.type.invalid && createApplicationForm.controls.type.touched) {

@@ -137,15 +137,9 @@ func updateCustomerOrganizationHandler(r *http.Request) (respond.Responder, erro
 		return resp, nil
 	} else if err := request.Validate(); err != nil {
 		return respond.BadRequest(err.Error()), nil
+	} else if resp, err := checkReachableByPartner(ctx, &id, customerOrganizationNotFound); resp != nil || err != nil {
+		return resp, err
 	} else {
-		if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
-			if co, coErr := db.GetCustomerOrganizationByID(ctx, id); errors.Is(coErr, distrerr.ErrNotFound) {
-				return customerOrganizationNotFound, nil
-			} else if coErr != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-				return notAssignedToPartner, nil
-			}
-		}
-
 		var features []types.CustomerOrganizationFeature
 		if request.Features == nil {
 			features = []types.CustomerOrganizationFeature{
@@ -176,7 +170,9 @@ func updateCustomerOrganizationHandler(r *http.Request) (respond.Responder, erro
 			Features:       features,
 		}
 
-		if err := db.UpdateCustomerOrganization(ctx, &customerOrganization); err != nil {
+		if err := db.UpdateCustomerOrganization(ctx, &customerOrganization); errors.Is(err, distrerr.ErrNotFound) {
+			return customerOrganizationNotFound, nil
+		} else if err != nil {
 			return nil, fmt.Errorf("failed to update customer org: %w", err)
 		} else {
 			return respond.JSON(mapping.CustomerOrganizationToAPI(customerOrganization)), nil

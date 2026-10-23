@@ -271,10 +271,9 @@ func getVerifiedCustomerOrganization(
 		return nil, customerDoesNotExist, nil
 	}
 
-	// Partner users can only create users in customers assigned to their partner org.
 	partnerOrgID := auth.CurrentPartnerOrgID()
 	if partnerOrgID != nil && !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-		return nil, notAssignedToPartner, nil
+		return nil, customerDoesNotExist, nil
 	}
 
 	return co, nil, nil

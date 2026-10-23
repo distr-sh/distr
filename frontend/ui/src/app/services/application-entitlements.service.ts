@@ -4,6 +4,7 @@ import {firstValueFrom, Observable, tap} from 'rxjs';
 import {ApplicationEntitlement} from '../types/application-entitlement';
 import {DefaultReactiveList} from './cache';
 import {CrudService} from './interfaces';
+import {skipTrim} from './trim.interceptor';
 
 @Injectable({
   providedIn: 'root',
@@ -32,13 +33,15 @@ export class ApplicationEntitlementsService implements CrudService<ApplicationEn
 
   create(entitlement: ApplicationEntitlement): Observable<ApplicationEntitlement> {
     return this.httpClient
-      .post<ApplicationEntitlement>(this.entitlementsUrl, entitlement)
+      .post<ApplicationEntitlement>(this.entitlementsUrl, entitlement, {context: skipTrim('autoAddVersionRegex')})
       .pipe(tap((it) => this.cache.save(it)));
   }
 
   update(entitlement: ApplicationEntitlement): Observable<ApplicationEntitlement> {
     return this.httpClient
-      .put<ApplicationEntitlement>(`${this.entitlementsUrl}/${entitlement.id}`, entitlement)
+      .put<ApplicationEntitlement>(`${this.entitlementsUrl}/${entitlement.id}`, entitlement, {
+        context: skipTrim('autoAddVersionRegex'),
+      })
       .pipe(tap((it) => this.cache.save(it)));
   }
 

@@ -1,18 +1,20 @@
-import {AsyncPipe, DatePipe} from '@angular/common';
-import {ChangeDetectionStrategy, Component, inject, input, TemplateRef} from '@angular/core';
-import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
+import {AsyncPipe, DatePipe, NgPlural, NgPluralCase} from '@angular/common';
+import {ChangeDetectionStrategy, Component, computed, inject, input, TemplateRef} from '@angular/core';
+import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCircleExclamation, faEye, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, switchMap} from 'rxjs';
+import {faCircleExclamation, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {catchError, combineLatest, EMPTY, filter, first, firstValueFrom, map, Observable, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
+import {ClickableRowDirective} from '../../directives/clickable-row.directive';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
 import {AuthService} from '../../services/auth.service';
+import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
 import {ApplicationEntitlement} from '../../types/application-entitlement';
@@ -27,9 +29,12 @@ import {EditApplicationEntitlementComponent} from './edit-application-entitlemen
     ReactiveFormsModule,
     FaIconComponent,
     DatePipe,
+    NgPlural,
+    NgPluralCase,
     EditApplicationEntitlementComponent,
     SearchBarComponent,
     AlertComponent,
+    ClickableRowDirective,
   ],
 })
 export class ApplicationEntitlementsComponent {
@@ -38,6 +43,7 @@ export class ApplicationEntitlementsComponent {
   protected readonly auth = inject(AuthService);
   private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
   private readonly applicationsService = inject(ApplicationsService);
+  private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
 
@@ -59,6 +65,11 @@ export class ApplicationEntitlementsComponent {
   );
 
   applications$ = this.applicationsService.list();
+  private readonly customers = toSignal(this.customerOrganizationsService.getCustomerOrganizations().pipe(first()));
+  protected readonly customerName = computed(() => {
+    const customerOrganizationId = this.customerOrganizationId();
+    return customerOrganizationId ? this.customers()?.find((c) => c.id === customerOrganizationId)?.name : undefined;
+  });
 
   editForm = new FormGroup({
     entitlement: new FormControl<ApplicationEntitlement | undefined>(undefined, {
@@ -71,7 +82,6 @@ export class ApplicationEntitlementsComponent {
   private manageEntitlementDrawerRef?: DialogRef;
 
   protected readonly faCircleExclamation = faCircleExclamation;
-  protected readonly faEye = faEye;
   protected readonly faPen = faPen;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;

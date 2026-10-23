@@ -2,7 +2,7 @@ module github.com/distr-sh/distr
 
 go 1.27.0
 
-toolchain go1.27.2
+toolchain go1.27.3
 
 require (
 	cloud.google.com/go/kms v1.35.0
@@ -11,22 +11,22 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.47.3
 	github.com/aws/aws-sdk-go-v2/config v1.33.9
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.9
-	github.com/aws/aws-sdk-go-v2/service/ecr v1.66.4
-	github.com/aws/aws-sdk-go-v2/service/kms v1.61.4
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.3
-	github.com/aws/smithy-go v1.28.5
-	github.com/compose-spec/compose-go/v2 v2.16.1
+	github.com/aws/aws-sdk-go-v2/service/ecr v1.66.5
+	github.com/aws/aws-sdk-go-v2/service/kms v1.61.5
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.4
+	github.com/aws/smithy-go v1.28.6
+	github.com/compose-spec/compose-go/v2 v2.16.2
 	github.com/containerd/log v0.2.0
 	github.com/containers/image/v5 v5.36.2
 	github.com/coreos/go-oidc/v3 v3.21.0
-	github.com/docker/cli v29.9.1+incompatible
-	github.com/docker/compose/v5 v5.6.0
+	github.com/docker/cli v29.9.2+incompatible
+	github.com/docker/compose/v5 v5.6.1
 	github.com/exaring/otelpgx v0.13.0
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/getsentry/sentry-go v0.50.0
 	github.com/getsentry/sentry-go/otel/otlp v0.50.0
-	github.com/glasskube/pkg/crypto v0.2.0
-	github.com/glasskube/pkg/seekbuf v0.1.1
+	github.com/glasskube/pkg/crypto v0.2.1
+	github.com/glasskube/pkg/seekbuf v0.1.2
 	github.com/go-chi/chi/v5 v5.5.0
 	github.com/go-chi/httprate v0.16.1
 	github.com/go-co-op/gocron/v2 v2.22.0
@@ -104,7 +104,7 @@ require (
 	github.com/ProtonMail/go-crypto v1.4.1 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.22 // indirect
+	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.23 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.20.3 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.5.6 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.8.6 // indirect

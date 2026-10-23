@@ -30,8 +30,8 @@
       </thead>
       <tbody>
         @for (entitlement of entitlements$ | async; track entitlement.id) {
-          <tr class="distr-table-row">
-            <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+          <tr appClickableRow (rowActivate)="openDrawer(manageEntitlementDrawer, entitlement)" class="distr-table-row">
+            <td class="distr-table-cell">
               <div class="flex items-center mr-3">
                 <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
                   {{ entitlement.name }}
@@ -39,7 +39,7 @@
               </div>
             </td>
             @if (!customerOrganizationId()) {
-              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+              <td class="distr-table-cell">
                 <div class="flex items-center mr-3">
                   <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
                     {{ entitlement.customerOrganization?.name }}
@@ -47,24 +47,30 @@
                 </div>
               </td>
             }
-            <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+            <td class="distr-table-cell">
               <div class="flex items-center mr-3">
                 <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
-                  {{
-                    entitlement.application?.name +
-                      ((entitlement.versions || []).length === 0
-                        ? ' (unrestricted)'
-                        : ' (' + entitlement.versions!.length + ' versions)')
-                  }}
+                  {{ entitlement.application?.name }}
+                  @if (!entitlement.versions?.length) {
+                    (unrestricted)
+                  } @else {
+                    @let autoAdd = entitlement.autoAddVersionRegex ? ' + auto-add' : '';
+                    <ng-container [ngPlural]="entitlement.versions?.length ?? 0">
+                      <ng-template ngPluralCase="=1">(1 version{{ autoAdd }})</ng-template>
+                      <ng-template ngPluralCase="other"
+                        >({{ entitlement.versions?.length ?? 0 }} versions{{ autoAdd }})</ng-template
+                      >
+                    </ng-container>
+                  }
                 </span>
               </div>
             </td>
-            <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+            <td class="distr-table-cell">
               <div class="flex items-center">
                 {{ entitlement.createdAt | date: 'short' }}
               </div>
             </td>
-            <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+            <td class="distr-table-cell">
               @if (entitlement.expiresAt; as d) {
                 {{ d | date }}
                 @if (isExpired(entitlement)) {
@@ -77,20 +83,7 @@
                 never
               }
             </td>
-            <td
-              class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
-              <button
-                type="button"
-                (click)="openDrawer(manageEntitlementDrawer, entitlement)"
-                class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                @if (auth.hasAnyRole('read_write', 'admin')) {
-                  <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
-                  Edit
-                } @else {
-                  <fa-icon [icon]="faEye" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
-                  Details
-                }
-              </button>
+            <td class="px-4 py-3 text-end">
               @if ((auth.isVendor() || auth.isPartner()) && auth.hasAnyRole('read_write', 'admin')) {
                 <button
                   type="button"
@@ -116,11 +109,18 @@
     animate.leave="animate-fly-out-right"
     tabindex="-1"
     aria-labelledby="application-entitlement-drawer-label">
-    <h5
-      id="application-entitlement-drawer-label"
-      class="inline-flex items-center mb-6 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
-      Manage Application Entitlement
-    </h5>
+    <div class="mb-6">
+      <h5
+        id="application-entitlement-drawer-label"
+        class="inline-flex items-center text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
+        Manage Application Entitlement
+      </h5>
+      @if (customerName(); as customerName) {
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          Customer: <span class="font-medium text-gray-900 dark:text-white">{{ customerName }}</span>
+        </p>
+      }
+    </div>
     <button
       type="button"
       (click)="hideDrawer()"

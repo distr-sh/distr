@@ -12,6 +12,7 @@ import {filteredByFormControl} from '../../../util/filter';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {PageComponent} from '../../components/page.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
+import {ClickableRowDirective} from '../../directives/clickable-row.directive';
 import {AuthService} from '../../services/auth.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService, supportBundleZipFileName} from '../../services/support-bundles.service';
@@ -30,6 +31,7 @@ import {SupportBundleStatusBadgeComponent} from '../support-bundle-status-badge.
     ReactiveFormsModule,
     RouterLink,
     FaIconComponent,
+    ClickableRowDirective,
     PageComponent,
     SearchBarComponent,
     SupportBundleCreateDialogComponent,
@@ -103,8 +105,7 @@ export class SupportBundleListComponent {
 
   protected readonly downloadingBundleId = signal<string | null>(null);
 
-  protected async downloadResources(bundle: SupportBundle, event: Event): Promise<void> {
-    event.stopPropagation();
+  protected async downloadResources(bundle: SupportBundle): Promise<void> {
     if (this.downloadingBundleId() !== null) {
       return;
     }
@@ -126,8 +127,7 @@ export class SupportBundleListComponent {
 
   protected readonly deletingBundleId = signal<string | null>(null);
 
-  protected async deleteBundle(bundle: SupportBundle, event: Event): Promise<void> {
-    event.stopPropagation();
+  protected async deleteBundle(bundle: SupportBundle): Promise<void> {
     if (this.deletingBundleId() !== null) {
       return;
     }
