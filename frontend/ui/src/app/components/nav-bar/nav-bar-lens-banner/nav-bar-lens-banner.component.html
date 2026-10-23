@@ -1,5 +1,5 @@
 <div
-  class="flex justify-between items-center gap-8 h-17 px-4 w-full bg-amber-50 border-b border-amber-200 dark:bg-gray-900 dark:border-amber-800">
+  class="flex justify-between items-center gap-4 md:gap-8 h-17 px-4 w-full bg-amber-50 border-b border-amber-200 dark:bg-gray-900 dark:border-amber-800">
   <div class="flex items-center">
     <fa-icon size="lg" [icon]="faShuffle" class="hidden mr-3 w-6 h-6 lg:flex text-amber-600 dark:text-amber-400" />
     <p class="text-sm text-gray-700 dark:text-gray-300">
@@ -9,9 +9,12 @@
       } @else {
         <span class="font-semibold text-amber-700 dark:text-amber-400">Customer Lens:</span>
         You are working in the customer portal of
-        <span class="font-semibold text-gray-900 dark:text-white">{{ portalName() }}</span> with your
-        <span class="font-semibold text-gray-900 dark:text-white">{{ organization().userRole | userRoleLabel }}</span>
-        role. Changes you make here apply to {{ portalName() }}.
+        <span class="font-semibold text-gray-900 dark:text-white">{{ portalName() }}</span
+        ><span class="hidden md:inline">
+          with your
+          <span class="font-semibold text-gray-900 dark:text-white">{{ organization().userRole | userRoleLabel }}</span>
+          role. Changes you make here apply to {{ portalName() }}</span
+        >.
       }
     </p>
   </div>

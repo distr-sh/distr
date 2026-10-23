@@ -196,7 +196,7 @@ Never trim a single request field by hand. `validation.TrimStrings` in `decodeJS
 
 Define routes in `internal/routing/`, grouped by what they authenticate with: public, user (JWT), admin, controller token and the OCI registry's own scheme.
 
-Guard every route that writes with a role middleware (`RequireReadWriteOrAdmin`, `RequireAdmin`) and with `middleware.BlockSuperAdmin`, since super admins pass every role check but must stay read-only. Creating an organization is the exception, which super admins may do (see `mayCreateOrganization`).
+Guard every user-authenticated route that writes with a role middleware (`RequireReadWriteOrAdmin`, `RequireAdmin`) and with `middleware.BlockSuperAdmin`, since super admins pass every role check but must stay read-only. Creating an organization is the exception, which super admins may do (see `mayCreateOrganization`).
 
 Keep the OpenAPI spec valid, which the `chiopenapi` router generates from the route definitions. Declare path parameters, query parameters and request bodies with `option.Request()` and a struct using `path:`, `query:` and `json:` tags, composing path param structs with body request structs by embedding as the existing routes do. An endpoint with neither parameters nor a body needs no `option.Request()`.
 

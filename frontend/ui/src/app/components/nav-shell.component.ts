@@ -29,6 +29,8 @@ export class NavShellComponent {
 
   protected readonly isSubscriptionExpired = this.organizationService.isSubscriptionExpired;
 
+  private readonly isOrganizationLoaded = toSignal(this.organization$.pipe(map(() => true)), {initialValue: false});
+
   private readonly isSubscriptionTrial = toSignal(
     this.organization$.pipe(map((org) => org.subscriptionType === 'trial')),
     {initialValue: false}
@@ -46,5 +48,7 @@ export class NavShellComponent {
   });
 
   // A switched session is never a vendor session, so the two banners never show at once.
-  protected readonly isBannerVisible = computed(() => this.auth.isLens() || this.isSubscriptionBannerVisible());
+  protected readonly isBannerVisible = computed(
+    () => (this.auth.isLens() && this.isOrganizationLoaded()) || this.isSubscriptionBannerVisible()
+  );
 }
