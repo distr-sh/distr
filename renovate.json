@@ -8,7 +8,7 @@
     "config:recommended"
   ],
   "timezone": "Europe/Vienna",
-  "automergeSchedule": [
+  "schedule": [
     "* 0-7,20-23 * * 1-5",
     "* * * * 0,6"
   ],
@@ -93,20 +93,6 @@
       ],
       "matchUpdateTypes": [
         "minor",
-        "patch"
-      ],
-      "matchCurrentVersion": "!/^0/",
-      "automerge": true
-    },
-    {
-      "description": "Automerge patch releases of non-0.x dependencies",
-      "matchManagers": [
-        "npm",
-        "gomod",
-        "dockerfile",
-        "docker-compose"
-      ],
-      "matchUpdateTypes": [
         "patch"
       ],
       "matchCurrentVersion": "!/^0/",
