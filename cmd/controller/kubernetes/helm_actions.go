@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
+	"github.com/distr-sh/distr/internal/chartcache"
 	"github.com/distr-sh/distr/internal/controllerauth"
 	"github.com/distr-sh/distr/internal/controllerenv"
 	"github.com/distr-sh/distr/internal/util"
@@ -15,13 +16,17 @@ import (
 	"helm.sh/helm/v4/pkg/chart"
 	"helm.sh/helm/v4/pkg/chart/loader"
 	"helm.sh/helm/v4/pkg/cli"
+	"helm.sh/helm/v4/pkg/helmpath"
 	"helm.sh/helm/v4/pkg/kube"
 	"helm.sh/helm/v4/pkg/registry"
 	"helm.sh/helm/v4/pkg/release"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-var helmEnvSettings = cli.New()
+var (
+	helmEnvSettings = cli.New()
+	chartCache      = chartcache.Cache{Dir: helmpath.CachePath("charts")}
+)
 
 const helmUpgradeInstallTimeout = 10 * time.Minute
 
@@ -96,10 +101,27 @@ func RunHelmPreflight(
 	action.Version = deployment.ChartVersion
 	if registry.IsOCI(deployment.ChartUrl) {
 		chartName = deployment.ChartUrl
+		if deployment.ChartDigest != "" {
+			// Given a version as well, Helm resolves the tag against the registry on every pull.
+			chartName += "@" + deployment.ChartDigest
+			action.Version = ""
+		}
 	} else {
 		action.RepoURL = deployment.ChartUrl
 	}
-	if chartPath, err := action.LocateChart(chartName, helmEnvSettings); err != nil {
+	chartPath, err := chartCache.Locate(
+		logger.With(zap.String("deploymentId", deployment.ID.String())),
+		deployment.ID,
+		deployment.RevisionID,
+		chartcache.Chart{
+			URL:     deployment.ChartUrl,
+			Name:    deployment.ChartName,
+			Version: deployment.ChartVersion,
+			Digest:  deployment.ChartDigest,
+		},
+		func() (string, error) { return action.LocateChart(chartName, helmEnvSettings) },
+	)
+	if err != nil {
 		return nil, fmt.Errorf("could not locate chart: %w", err)
 	} else if charter, err := loader.Load(chartPath); err != nil {
 		return nil, fmt.Errorf("chart loading failed: %w", err)
