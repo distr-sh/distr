@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/validation"
 	"github.com/google/uuid"
 )
@@ -52,22 +53,27 @@ const (
 )
 
 type SupportBundleConfigurationScript struct {
-	ID          uuid.UUID `json:"id"`
-	CreatedAt   time.Time `json:"createdAt"`
-	Name        string    `json:"name"`
-	Description *string   `json:"description,omitempty"`
-	Content     string    `json:"content"`
-	Enabled     bool      `json:"enabled"`
+	ID             uuid.UUID            `json:"id"`
+	CreatedAt      time.Time            `json:"createdAt"`
+	DeploymentType types.DeploymentType `json:"deploymentType"`
+	Name           string               `json:"name"`
+	Description    *string              `json:"description,omitempty"`
+	Content        string               `json:"content"`
+	Enabled        bool                 `json:"enabled"`
 }
 
 type CreateUpdateSupportBundleConfigurationScriptRequest struct {
-	Name        string  `json:"name"`
-	Description *string `json:"description"`
-	Content     string  `json:"content"`
-	Enabled     bool    `json:"enabled"`
+	DeploymentType types.DeploymentType `json:"deploymentType"`
+	Name           string               `json:"name"`
+	Description    *string              `json:"description"`
+	Content        string               `json:"content"`
+	Enabled        bool                 `json:"enabled"`
 }
 
 func (r *CreateUpdateSupportBundleConfigurationScriptRequest) Validate() error {
+	if err := validateSupportBundleDeploymentType(&r.DeploymentType); err != nil {
+		return err
+	}
 	if r.Name == "" {
 		return validation.NewValidationFailedError("script name must not be empty")
 	}
@@ -98,25 +104,38 @@ func (r *CreateUpdateSupportBundleConfigurationScriptRequest) Validate() error {
 	return nil
 }
 
+// validateSupportBundleDeploymentType treats an omitted deployment type as docker, which was the
+// only one before the field existed.
+func validateSupportBundleDeploymentType(deploymentType *types.DeploymentType) error {
+	if *deploymentType == "" {
+		*deploymentType = types.DeploymentTypeDocker
+	}
+	if *deploymentType != types.DeploymentTypeDocker {
+		return validation.NewValidationFailedError("only Docker support bundles are supported")
+	}
+	return nil
+}
+
 // Bundle
 
 type SupportBundle struct {
-	ID                       uuid.UUID  `json:"id"`
-	CreatedAt                time.Time  `json:"createdAt"`
-	CustomerOrganizationID   uuid.UUID  `json:"customerOrganizationId"`
-	CustomerOrganizationName string     `json:"customerOrganizationName"`
-	CreatedByUserAccountID   *uuid.UUID `json:"createdByUserAccountId,omitempty"`
-	CreatedByUserName        *string    `json:"createdByUserName,omitempty"`
-	CreatedByImageURL        *string    `json:"createdByImageUrl,omitempty"`
-	Title                    string     `json:"title"`
-	Description              *string    `json:"description,omitempty"`
-	Status                   string     `json:"status"`
-	ResourceCount            int64      `json:"resourceCount"`
-	CommentCount             int64      `json:"commentCount"`
-	LastCommentAt            *time.Time `json:"lastCommentAt,omitempty"`
-	StatusChangedByUserName  *string    `json:"statusChangedByUserName,omitempty"`
-	StatusChangedByImageURL  *string    `json:"statusChangedByImageUrl,omitempty"`
-	StatusChangedAt          *time.Time `json:"statusChangedAt,omitempty"`
+	ID                       uuid.UUID            `json:"id"`
+	CreatedAt                time.Time            `json:"createdAt"`
+	CustomerOrganizationID   uuid.UUID            `json:"customerOrganizationId"`
+	CustomerOrganizationName string               `json:"customerOrganizationName"`
+	CreatedByUserAccountID   *uuid.UUID           `json:"createdByUserAccountId,omitempty"`
+	CreatedByUserName        *string              `json:"createdByUserName,omitempty"`
+	CreatedByImageURL        *string              `json:"createdByImageUrl,omitempty"`
+	DeploymentType           types.DeploymentType `json:"deploymentType"`
+	Title                    string               `json:"title"`
+	Description              *string              `json:"description,omitempty"`
+	Status                   string               `json:"status"`
+	ResourceCount            int64                `json:"resourceCount"`
+	CommentCount             int64                `json:"commentCount"`
+	LastCommentAt            *time.Time           `json:"lastCommentAt,omitempty"`
+	StatusChangedByUserName  *string              `json:"statusChangedByUserName,omitempty"`
+	StatusChangedByImageURL  *string              `json:"statusChangedByImageUrl,omitempty"`
+	StatusChangedAt          *time.Time           `json:"statusChangedAt,omitempty"`
 }
 
 type SupportBundleDetail struct {
@@ -127,8 +146,19 @@ type SupportBundleDetail struct {
 }
 
 type CreateSupportBundleRequest struct {
-	Title       string  `json:"title"`
-	Description *string `json:"description"`
+	DeploymentType types.DeploymentType `json:"deploymentType"`
+	Title          string               `json:"title"`
+	Description    *string              `json:"description"`
+}
+
+func (r *CreateSupportBundleRequest) Validate() error {
+	if err := validateSupportBundleDeploymentType(&r.DeploymentType); err != nil {
+		return err
+	}
+	if r.Title == "" {
+		return validation.NewValidationFailedError("title is required")
+	}
+	return nil
 }
 
 type CreateSupportBundleResponse struct {

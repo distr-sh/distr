@@ -261,8 +261,8 @@ func createSupportBundleHandler(r *http.Request) (respond.Responder, error) {
 		return respond.Forbidden("only customers can create support bundles"), nil
 	} else if request, resp := decodeJSON[api.CreateSupportBundleRequest](r); resp != nil {
 		return resp, nil
-	} else if request.Title == "" {
-		return respond.BadRequest("title is required"), nil
+	} else if err := request.Validate(); err != nil {
+		return respond.BadRequest(err.Error()), nil
 	} else if bundleSecret, err := security.GenerateAccessKey(); err != nil {
 		return nil, fmt.Errorf("failed to generate collect token: %w", err)
 	} else if org, err := db.GetOrganizationWithBranding(ctx, *a.CurrentOrgID()); err != nil {
@@ -275,6 +275,7 @@ func createSupportBundleHandler(r *http.Request) (respond.Responder, error) {
 			OrganizationID:         *a.CurrentOrgID(),
 			CustomerOrganizationID: *a.CurrentCustomerOrgID(),
 			CreatedByUserAccountID: new(a.CurrentUserID()),
+			DeploymentType:         request.DeploymentType,
 			Title:                  request.Title,
 			Description:            request.Description,
 			BundleSecret:           dbcrypto.String(bundleSecret),
