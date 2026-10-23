@@ -26,6 +26,7 @@ type Chart struct {
 	URL     string `json:"url"`
 	Name    string `json:"name"`
 	Version string `json:"version"`
+	Digest  string `json:"digest,omitempty"`
 }
 
 type entry struct {
@@ -38,9 +39,10 @@ type Cache struct {
 }
 
 // Locate returns the path of the chart archive for a revision of a deployment. It calls pull, which returns the
-// path of a freshly pulled archive, unless the cached chart was cached for the same revision. A new revision
-// always pulls, because a mutable artifact version may have been overwritten since, and falls back to the cached
-// chart only if the pull fails and the chart reference is unchanged.
+// path of a freshly pulled archive, unless the cached chart has the same digest or, for a chart without a digest,
+// was cached for the same revision. A new revision of a chart without a digest always pulls, because a mutable
+// artifact version may have been overwritten since, and falls back to the cached chart only if the pull fails and
+// the chart reference is unchanged.
 func (c Cache) Locate(
 	logger *zap.Logger,
 	deploymentID uuid.UUID,
@@ -54,7 +56,7 @@ func (c Cache) Locate(
 	}
 	cachedChartMatches := cached != nil && cached.Chart == chart
 
-	if cachedChartMatches && cached.RevisionID == revisionID {
+	if cachedChartMatches && (chart.Digest != "" || cached.RevisionID == revisionID) {
 		logger.Debug("using cached chart")
 		return c.chartPath(deploymentID), nil
 	}

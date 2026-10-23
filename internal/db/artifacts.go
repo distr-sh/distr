@@ -814,6 +814,36 @@ func GetArtifactVersion(ctx context.Context, orgName, name, reference string) (*
 	return &result, nil
 }
 
+func GetArtifactTagDigest(
+	ctx context.Context,
+	organizationID uuid.UUID,
+	orgSlug, artifactName, tag string,
+) (*types.Digest, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT v.manifest_blob_digest
+		FROM ArtifactVersion v
+		JOIN Artifact a ON a.id = v.artifact_id
+		JOIN Organization o ON o.id = a.organization_id
+		WHERE o.id = @organizationId
+			AND o.slug = @orgSlug
+			AND a.name = @artifactName
+			AND v.name = @tag`,
+		pgx.NamedArgs{"organizationId": organizationID, "orgSlug": orgSlug, "artifactName": artifactName, "tag": tag},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query ArtifactVersion digest: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[types.Digest])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, distrerr.ErrNotFound
+	} else if err != nil {
+		return nil, fmt.Errorf("could not get ArtifactVersion digest: %w", err)
+	}
+	return &result, nil
+}
+
 func GetNewestArtifactTag(
 	ctx context.Context,
 	artifactID uuid.UUID,

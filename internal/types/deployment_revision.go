@@ -30,6 +30,9 @@ type DeploymentRevision struct {
 	HelmOptions            *HelmOptions              `db:"helm_options" json:"helmOptions,omitempty"`
 	CreatedByUserAccountID *uuid.UUID                `db:"created_by_user_account_id" json:"-"`
 	Trigger                DeploymentRevisionTrigger `db:"trigger"`
+	// ChartDigest pins the Helm chart of the revision to the manifest digest its tag pointed to when the revision
+	// was created. It is only known for OCI charts in the organization's own Distr registry.
+	ChartDigest *Digest `db:"chart_digest"`
 }
 
 type HelmOptions struct {

@@ -197,7 +197,7 @@ func createHelloDistrDeploymentAndRevision(ctx context.Context, appVersionID uui
 		return err
 	} else {
 		deploymentRequest.ValuesHash = hash[:]
-		if _, err := db.CreateDeploymentRevision(ctx, deploymentRequest); err != nil {
+		if _, err := db.CreateDeploymentRevision(ctx, deploymentRequest, nil); err != nil {
 			return err
 		}
 		return nil

@@ -68,3 +68,42 @@ func TestLocate(t *testing.T) {
 	_, err = locate(revision3, chart, pullFails)
 	g.Expect(err).To(MatchError(errOffline))
 }
+
+func TestLocateWithDigest(t *testing.T) {
+	g := NewWithT(t)
+	cache := chartcache.Cache{Dir: t.TempDir()}
+	deploymentID := uuid.New()
+	chart := chartcache.Chart{URL: "oci://example.com/charts/app", Version: "1.0.0", Digest: "sha256:aaaa"}
+	errOffline := errors.New("registry unreachable")
+
+	pulls := 0
+	pull := func(content string) func() (string, error) {
+		return func() (string, error) {
+			pulls++
+			path := filepath.Join(t.TempDir(), "app.tgz")
+			return path, os.WriteFile(path, []byte(content), 0o600)
+		}
+	}
+	pullFails := func() (string, error) {
+		pulls++
+		return "", errOffline
+	}
+	locate := func(chart chartcache.Chart, pull func() (string, error)) (string, error) {
+		path, err := cache.Locate(zap.NewNop(), deploymentID, uuid.New(), chart, pull)
+		if err != nil {
+			return "", err
+		}
+		data, err := os.ReadFile(path)
+		return string(data), err
+	}
+
+	g.Expect(locate(chart, pull("a"))).To(Equal("a"))
+	g.Expect(locate(chart, pullFails)).To(Equal("a"), "a new revision with the same digest must not pull")
+	g.Expect(pulls).To(Equal(1))
+
+	overwritten := chart
+	overwritten.Digest = "sha256:bbbb"
+	_, err := locate(overwritten, pullFails)
+	g.Expect(err).To(MatchError(errOffline), "the cached chart must not stand in for another digest")
+	g.Expect(locate(overwritten, pull("b"))).To(Equal("b"))
+}

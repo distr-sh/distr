@@ -101,6 +101,11 @@ func RunHelmPreflight(
 	action.Version = deployment.ChartVersion
 	if registry.IsOCI(deployment.ChartUrl) {
 		chartName = deployment.ChartUrl
+		if deployment.ChartDigest != "" {
+			// Given a version as well, Helm resolves the tag against the registry on every pull.
+			chartName += "@" + deployment.ChartDigest
+			action.Version = ""
+		}
 	} else {
 		action.RepoURL = deployment.ChartUrl
 	}
@@ -108,7 +113,12 @@ func RunHelmPreflight(
 		logger.With(zap.String("deploymentId", deployment.ID.String())),
 		deployment.ID,
 		deployment.RevisionID,
-		chartcache.Chart{URL: deployment.ChartUrl, Name: deployment.ChartName, Version: deployment.ChartVersion},
+		chartcache.Chart{
+			URL:     deployment.ChartUrl,
+			Name:    deployment.ChartName,
+			Version: deployment.ChartVersion,
+			Digest:  deployment.ChartDigest,
+		},
 		func() (string, error) { return action.LocateChart(chartName, helmEnvSettings) },
 	)
 	if err != nil {
