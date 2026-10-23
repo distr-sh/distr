@@ -104,18 +104,7 @@
       } @else {
         <div class="space-y-3">
           @for (resource of bundle.resources; track resource.id) {
-            <details class="group border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-              <summary
-                class="flex items-center justify-between w-full p-4 cursor-pointer list-none [&::-webkit-details-marker]:hidden text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700">
-                <span>{{ resource.name }}</span>
-                <fa-icon
-                  [icon]="faChevronRight"
-                  class="text-gray-500 dark:text-gray-400 transition-transform group-open:rotate-90" />
-              </summary>
-              <pre
-                class="text-xs text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-4 overflow-x-auto whitespace-pre-wrap break-words"
-                >{{ resource.content }}</pre>
-            </details>
+            <app-support-bundle-resource [bundleId]="bundle.id" [resource]="resource" />
           }
         </div>
       }
