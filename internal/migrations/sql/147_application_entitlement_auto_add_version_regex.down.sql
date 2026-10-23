@@ -1,0 +1,1 @@
+ALTER TABLE ApplicationEntitlement DROP COLUMN auto_add_version_regex;

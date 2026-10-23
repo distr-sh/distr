@@ -14,144 +14,178 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
-      <div class="w-full">
-        <label for="subjectId" class="distr-label mb-2"> Application * </label>
-        <select id="subjectId" formControlName="subjectId" class="distr-input">
-          @for (app of applications$ | async; track app.id) {
-            <option [value]="app.id">{{ app.name }}</option>
-          }
-        </select>
-        @if (editForm.controls.subjectId.invalid && editForm.controls.subjectId.touched) {
-          <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
-        }
-      </div>
-
-      <div class="w-full">
-        <label class="distr-label mb-2"> Application Versions * </label>
-        <button
-          class="distr-input inline-flex"
-          type="button"
-          cdkOverlayOrigin
-          #dropdownTriggerButton
-          #dropdownTrigger="cdkOverlayOrigin"
-          [disabled]="!auth.hasAnyRole('admin', 'read_write')"
-          (click)="toggleDropdown()">
-          <span class="flex-grow text-left"
-            >{{
-              editForm.controls.includeAllItems.value
-                ? 'All versions and future versions'
-                : subjectItemsSelected + ' versions selected'
-            }}
-          </span>
-          <fa-icon
-            class="transition duration-150 ease-in-out"
-            [class.opacity-30]="!auth.hasAnyRole('admin', 'read_write')"
-            [class.rotate-x-180]="dropdownOpen()"
-            [icon]="faChevronDown" />
-        </button>
-
-        <ng-template
-          cdkConnectedOverlay
-          [cdkConnectedOverlayHasBackdrop]="true"
-          (backdropClick)="dropdownOpen.set(false)"
-          [cdkConnectedOverlayBackdropClass]="'transparent'"
-          [cdkConnectedOverlayOrigin]="dropdownTrigger"
-          [cdkConnectedOverlayMinWidth]="dropdownWidth + 'px'"
-          [cdkConnectedOverlayOpen]="dropdownOpen()">
-          <div
-            class="w-full text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600 origin-top"
-            animate.enter="animate-flip-in-top"
-            animate.leave="animate-flip-out-top">
-            <ul
-              class="w-full max-h-128 overflow-y-auto text-sm font-medium text-gray-900 bg-white border-gray-200 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-              <li class="w-full border-gray-200 dark:border-gray-600">
-                <div class="flex items-center ps-3">
-                  <input
-                    id="all-versions-checkbox"
-                    formControlName="includeAllItems"
-                    type="checkbox"
-                    class="distr-checkbox" />
-                  <label
-                    for="all-versions-checkbox"
-                    class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-                    >All versions and future versions</label
-                  >
-                </div>
-              </li>
-              <ng-container formArrayName="activeVersions">
-                @for (versionCtrl of activeVersionsArray.controls; track i; let i = $index) {
-                  @let item = selectedApplication()?.versions?.[i];
-                  @let itemLabel = selectedApplication()?.versions?.[i]?.name;
-                  <li class="w-full border-t border-gray-200 dark:border-gray-600">
-                    <div class="flex items-center ps-3">
-                      <input
-                        id="version-checkbox-{{ i }}"
-                        type="checkbox"
-                        [formControlName]="i"
-                        [value]="item"
-                        class="distr-checkbox" />
-                      <label
-                        for="version-checkbox-{{ i }}"
-                        class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                        {{ itemLabel }}
-                      </label>
-                    </div>
-                  </li>
-                }
-              </ng-container>
-
-              <ng-container formArrayName="archivedVersions">
-                @if (includedArchivedVersions().length > 0) {
-                  <li class="w-full border-t border-gray-200 dark:border-gray-600">
-                    <div class="flex items-center ps-3 py-3 text-sm font-medium text-gray-900 dark:text-gray-300">
-                      <details class="open:border-gray-200 dark:open:border-gray-700 rounded-lg text-sm font-medium">
-                        <summary class="select-none">
-                          Including {{ includedArchivedVersions().length }} Archived Versions
-                        </summary>
-                        <ul
-                          class="w-full mt-1 text-sm font-medium text-gray-900 bg-white border-gray-200 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                          @for (versionCtrl of archivedVersionsArray.controls; track i; let i = $index) {
-                            @let item = selectedApplication()?.versions?.[i + activeVersionsArray.length];
-                            @let itemLabel = item?.name;
-                            <li class="w-full border-gray-200 dark:border-gray-600">
-                              <div class="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  id="archived-checkbox-{{ i }}"
-                                  [formControlName]="i"
-                                  [value]="item"
-                                  class="distr-checkbox" />
-                                <label
-                                  for="archived-checkbox-{{ i }}"
-                                  class="w-full py-1 ms-2 font-medium text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                                  >{{ itemLabel }}</label
-                                >
-                              </div>
-                            </li>
-                          }
-                        </ul>
-                      </details>
-                    </div>
-                  </li>
-                }
-              </ng-container>
-            </ul>
-          </div>
-        </ng-template>
-      </div>
-    </div>
-  </div>
-
-  @if (editForm.getRawValue().customerOrganizationId) {
     <div>
-      <label class="distr-label mb-2">Customer</label>
-      @let customers = customers$ | async;
-      <p class="text-sm text-gray-900 dark:text-white">
-        {{ customers?.find((c) => c.id === editForm.getRawValue().customerOrganizationId)?.name ?? '—' }}
-      </p>
+      <label for="subjectId" class="distr-label mb-2"> Application * </label>
+      <select id="subjectId" formControlName="subjectId" class="distr-input">
+        @for (app of applications$ | async; track app.id) {
+          <option [value]="app.id">{{ app.name }}</option>
+        }
+      </select>
+      @if (editForm.controls.subjectId.invalid && editForm.controls.subjectId.touched) {
+        <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
+      }
     </div>
-  }
+
+    <div>
+      <span class="distr-label mb-2">Application Versions *</span>
+      <div class="grid grid-cols-2 gap-4">
+        <label class="distr-radio-card">
+          <input
+            type="radio"
+            formControlName="versionScope"
+            value="all"
+            class="distr-radio mt-0.5"
+            aria-describedby="versionScopeAllText" />
+          <div class="text-sm">
+            <span class="font-bold text-gray-900 dark:text-white">All versions</span>
+            <p id="versionScopeAllText" class="distr-hint mt-1">Every current and future version of the application.</p>
+          </div>
+        </label>
+        <label class="distr-radio-card">
+          <input
+            type="radio"
+            formControlName="versionScope"
+            value="specific"
+            class="distr-radio mt-0.5"
+            aria-describedby="versionScopeSpecificText" />
+          <div class="text-sm">
+            <span class="font-bold text-gray-900 dark:text-white">Specific versions</span>
+            <p id="versionScopeSpecificText" class="distr-hint mt-1">
+              The selected versions plus new ones matching a regex.
+            </p>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    @if (editForm.controls.versionScope.value === 'specific') {
+      <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
+        <div class="w-full">
+          <label for="versionsDropdownTrigger" class="distr-label mb-2">Versions</label>
+          <button
+            id="versionsDropdownTrigger"
+            class="distr-input inline-flex"
+            type="button"
+            cdkOverlayOrigin
+            #dropdownTriggerButton
+            #dropdownTrigger="cdkOverlayOrigin"
+            [disabled]="!auth.hasAnyRole('admin', 'read_write')"
+            (click)="toggleDropdown()">
+            <span class="flex-grow text-left">
+              <ng-container [ngPlural]="versionsSelected()">
+                <ng-template ngPluralCase="=0">No versions selected</ng-template>
+                <ng-template ngPluralCase="=1">1 version selected</ng-template>
+                <ng-template ngPluralCase="other">{{ versionsSelected() }} versions selected</ng-template>
+              </ng-container>
+            </span>
+            <fa-icon
+              class="transition duration-150 ease-in-out"
+              [class.opacity-30]="!auth.hasAnyRole('admin', 'read_write')"
+              [class.rotate-x-180]="dropdownOpen()"
+              [icon]="faChevronDown" />
+          </button>
+
+          <ng-template
+            cdkConnectedOverlay
+            [cdkConnectedOverlayHasBackdrop]="true"
+            (backdropClick)="dropdownOpen.set(false)"
+            [cdkConnectedOverlayBackdropClass]="'transparent'"
+            [cdkConnectedOverlayOrigin]="dropdownTrigger"
+            [cdkConnectedOverlayMinWidth]="dropdownWidth() + 'px'"
+            [cdkConnectedOverlayOpen]="dropdownOpen()">
+            <div
+              class="distr-dropdown-panel w-full max-h-128 overflow-y-auto"
+              animate.enter="animate-flip-in-top"
+              animate.leave="animate-flip-out-top">
+              <ul>
+                <ng-container formArrayName="activeVersions">
+                  @for (versionCtrl of activeVersionsArray.controls; track i; let i = $index) {
+                    <li class="w-full border-t first:border-t-0 border-gray-100 dark:border-gray-600">
+                      <label class="distr-dropdown-checkbox-item">
+                        <input type="checkbox" [formControlName]="i" class="distr-checkbox" />
+                        <span class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                          {{ selectedSubject()?.versions?.[i]?.name }}
+                        </span>
+                      </label>
+                    </li>
+                  } @empty {
+                    <li class="px-2 py-3 text-sm text-gray-500 dark:text-gray-400">
+                      This application has no versions yet.
+                    </li>
+                  }
+                </ng-container>
+
+                <ng-container formArrayName="archivedVersions">
+                  @if (includedArchivedVersions().length > 0) {
+                    <li class="w-full border-t border-gray-100 dark:border-gray-600">
+                      <div class="flex items-center px-2 py-3 text-sm font-medium text-gray-900 dark:text-gray-300">
+                        <details class="text-sm font-medium">
+                          <summary class="select-none">
+                            Including {{ includedArchivedVersions().length }} Archived Versions
+                          </summary>
+                          <ul class="w-full mt-1">
+                            @for (versionCtrl of archivedVersionsArray.controls; track i; let i = $index) {
+                              <li class="w-full">
+                                <label class="flex items-center cursor-not-allowed">
+                                  <input type="checkbox" [formControlName]="i" class="distr-checkbox" />
+                                  <span class="w-full py-1 ms-2 font-medium text-gray-400 dark:text-gray-500">
+                                    {{ selectedSubject()?.versions?.[i + activeVersionsArray.length]?.name }}
+                                  </span>
+                                </label>
+                              </li>
+                            }
+                          </ul>
+                        </details>
+                      </div>
+                    </li>
+                  }
+                </ng-container>
+              </ul>
+            </div>
+          </ng-template>
+        </div>
+
+        <div class="w-full">
+          <label for="autoAddVersionRegex" class="distr-label mb-2">Auto-add Version Regex</label>
+          <input
+            formControlName="autoAddVersionRegex"
+            type="text"
+            id="autoAddVersionRegex"
+            class="distr-input font-mono"
+            placeholder="^2\.\d+\.\d+$" />
+          @if (
+            editForm.controls.autoAddVersionRegex.touched && editForm.controls.autoAddVersionRegex.hasError('maxlength')
+          ) {
+            <p class="mt-1 text-sm text-red-600 dark:text-red-500">Must not be longer than 200 characters.</p>
+          }
+          @if (
+            editForm.controls.autoAddVersionRegex.touched &&
+            editForm.controls.autoAddVersionRegex.hasError('surroundingWhitespace')
+          ) {
+            <p class="mt-1 text-sm text-red-600 dark:text-red-500">
+              Must not start or end with whitespace. Use <code>\s</code> or <code>[ ]</code> to match a space.
+            </p>
+          }
+        </div>
+      </div>
+
+      @if (editForm.hasError('versionsRequired') && editForm.controls.versionScope.touched) {
+        <p class="text-sm text-red-600 dark:text-red-500">Select at least one version.</p>
+      } @else {
+        <p class="distr-hint">
+          New versions whose name matches the regex are added to the entitlement automatically. You can still remove
+          them afterwards. Without a regex, the entitlement only contains the selected versions.
+          <a
+            [href]="autoAddVersionRegexDocsUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-primary-700 dark:text-primary-400 hover:underline"
+            >Learn more</a
+          >
+        </p>
+      }
+    }
+  </div>
 
   <hr class="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
 
