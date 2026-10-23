@@ -17,15 +17,6 @@ type ContextResponse struct {
 	RegistryHost string `json:"registryHost,omitzero"`
 }
 
-type LensesResponse struct {
-	Organizations []OrganizationLenses `json:"organizations"`
-}
-
-type OrganizationLenses struct {
-	ID                    uuid.UUID      `json:"id"`
-	CustomerOrganizations []CustomerLens `json:"customerOrganizations"`
-}
-
 type CustomerLens struct {
 	ID   uuid.UUID `json:"id"`
 	Name string    `json:"name"`

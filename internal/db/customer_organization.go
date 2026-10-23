@@ -134,28 +134,6 @@ func GetCustomerOrganization(ctx context.Context, id, orgID uuid.UUID) (*types.C
 	return &result, nil
 }
 
-func GetCustomerOrganizationsByOrganizationIDs(
-	ctx context.Context,
-	orgIDs []uuid.UUID,
-) ([]types.CustomerOrganization, error) {
-	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(ctx,
-		"SELECT "+customerOrganizationOutputExpr+`
-		FROM CustomerOrganization co
-		WHERE co.organization_id = ANY(@orgIds)
-		ORDER BY co.name`,
-		pgx.NamedArgs{"orgIds": orgIDs},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("could not query CustomerOrganization: %w", err)
-	}
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.CustomerOrganization])
-	if err != nil {
-		return nil, fmt.Errorf("could not collect CustomerOrganization: %w", err)
-	}
-	return result, nil
-}
-
 func GetCustomerOrganizationsByOrganizationID(
 	ctx context.Context,
 	orgID uuid.UUID,

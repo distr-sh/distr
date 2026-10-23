@@ -19,7 +19,7 @@ import {OrganizationService} from '../../services/organization.service';
 import {SidebarService} from '../../services/sidebar.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
-import {CustomerLens, LensesResponse} from '../../types/lens';
+import {CustomerLens} from '../../types/lens';
 import {Organization, OrganizationWithUserRole} from '../../types/organization';
 import {subscriptionRank} from '../../types/subscription';
 import {AvatarComponent} from '../avatar.component';
@@ -31,8 +31,6 @@ import {NavBarSubscriptionBannerComponent} from './nav-bar-subscription-banner/n
 
 // above this many entries the dropdown gets a search field
 const ORGANIZATION_SEARCH_THRESHOLD = 4;
-
-const NO_LENSES: LensesResponse = {organizations: []};
 
 interface SwitcherLens extends CustomerLens {
   current: boolean;
@@ -119,12 +117,12 @@ export class NavBarComponent implements OnInit {
       startWith(undefined),
       switchMap(() => this.ctx.getLenses().pipe(catchError(() => EMPTY)))
     ),
-    {initialValue: NO_LENSES}
+    {initialValue: []}
   );
-  // The current organization comes first since it holds the lens the session is in, if any.
+  // The current organization comes first since it holds the lenses, which only it can enter.
   protected readonly switcherTree = computed<SwitcherOrganization[]>(() => {
     const current = this.currentOrg();
-    const lensesByOrg = new Map(this.lenses().organizations.map((it) => [it.id, it]));
+    const lenses = this.lenses();
     return [...this.allOrgs()]
       .sort(
         (a, b) =>
@@ -138,10 +136,9 @@ export class NavBarComponent implements OnInit {
         return {
           org,
           current: isCurrentOrg && !this.isLens,
-          lenses: (lensesByOrg.get(org.id!)?.customerOrganizations ?? []).map((lens) => ({
-            ...lens,
-            current: isCurrentOrg && lens.id === current?.customerOrganizationId,
-          })),
+          lenses: isCurrentOrg
+            ? lenses.map((lens) => ({...lens, current: lens.id === current?.customerOrganizationId}))
+            : [],
         };
       });
   });
@@ -181,9 +178,8 @@ export class NavBarComponent implements OnInit {
     source: this.organizationSearchTerm,
     computation: () => new Map(),
   });
-  // With several organizations their lenses start collapsed, except for the organization of the lens the session is
-  // in. A filter shows the matching lenses expanded below their organization and all lenses collapsed below an
-  // organization that matches by name alone.
+  // With several organizations the lenses start collapsed unless the session is in one of them. A filter shows the
+  // matching lenses expanded and all lenses collapsed when only their organization matches by name.
   protected readonly switcherEntries = computed<SwitcherEntry[]>(() => {
     const tree = this.switcherTree();
     const term = this.organizationSearchTerm();
@@ -264,8 +260,8 @@ export class NavBarComponent implements OnInit {
     await this.switchContextOrEnterLens(() => this.auth.switchContext(org.id!));
   }
 
-  protected async enterLens(org: Organization, lens: SwitcherLens) {
-    await this.switchContextOrEnterLens(() => this.auth.enterLens(lens.id, org.id!));
+  protected async enterLens(lens: SwitcherLens) {
+    await this.switchContextOrEnterLens(() => this.auth.enterLens(lens.id));
   }
 
   private async switchContextOrEnterLens(switchFn: () => Promise<void>) {

@@ -232,24 +232,9 @@ export class AuthService {
     }
   }
 
-  /**
-   * Enters the lens of a customer organization of the given organization, the current one by default. The lens
-   * endpoint only opens lenses of the organization the session operates in, so another organization is switched to
-   * first, and switched back from if the lens cannot be entered there.
-   */
-  public async enterLens(customerOrganizationId: string, organizationId = this.getClaims()?.org): Promise<void> {
-    const previousToken = this.token;
-    let changed = false;
-    try {
-      if (organizationId !== undefined && organizationId !== this.getClaims()?.org) {
-        changed = await this.requestContextToken('switch-context', {organizationId});
-      }
-      changed = (await this.requestContextToken('lens', {customerOrganizationId})) || changed;
-    } catch (e) {
-      this.token = previousToken;
-      throw e;
-    }
-    if (changed) {
+  /** Enters the lens of a customer organization of the organization the session operates in. */
+  public async enterLens(customerOrganizationId: string): Promise<void> {
+    if (await this.requestContextToken('lens', {customerOrganizationId})) {
       location.assign('/');
     }
   }

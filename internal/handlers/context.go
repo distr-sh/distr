@@ -21,7 +21,6 @@ import (
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
-	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
 	"go.uber.org/zap"
@@ -112,46 +111,25 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-// getLensesHandler lists, for the organizations the user may switch to, the customer organizations whose lens the
-// user may enter there. The memberships decide which, not the organization the request operates in right now, so the
-// list stays the same while the request is in a lens.
+// getLensesHandler lists the customer organizations of the current organization whose lens the user may enter. The
+// membership decides which, not the lens the request is in right now, so the list stays the same while in a lens.
 func getLensesHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
-
-	orgs, err := contextOrganizations(ctx, auth)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get organizations: %w", err)
-	}
-
-	ownLenses := make(map[uuid.UUID]lens.Lens, len(orgs))
-	var lensOrgIDs []uuid.UUID
-	for _, org := range orgs {
-		ownLenses[org.ID] = lens.Own(org)
-		if auth.IsSuperAdmin() || org.CustomerOrganizationID == nil {
-			lensOrgIDs = append(lensOrgIDs, org.ID)
-		}
-	}
-
-	customerOrgs, err := db.GetCustomerOrganizationsByOrganizationIDs(ctx, lensOrgIDs)
-	if err != nil {
+	if membership, resp, err := switchTarget(ctx, auth, *auth.CurrentOrgID()); resp != nil || err != nil {
+		return resp, err
+	} else if customerOrgs, err := db.GetCustomerOrganizationsByOrganizationID(ctx, membership.ID); err != nil {
 		return nil, fmt.Errorf("failed to get customer organizations: %w", err)
-	}
-
-	enterableCustomerOrgs := make(map[uuid.UUID][]types.CustomerOrganization)
-	for _, co := range customerOrgs {
-		if lens.MayEnterCustomer(ownLenses[co.OrganizationID], auth.IsSuperAdmin(), co.PartnerOrganizationID) {
-			enterableCustomerOrgs[co.OrganizationID] = append(enterableCustomerOrgs[co.OrganizationID], co)
+	} else {
+		own := lens.Own(*membership)
+		lenses := []api.CustomerLens{}
+		for _, co := range customerOrgs {
+			if lens.MayEnterCustomer(own, auth.IsSuperAdmin(), co.PartnerOrganizationID) {
+				lenses = append(lenses, mapping.CustomerOrganizationToLens(co.CustomerOrganization))
+			}
 		}
+		return respond.JSON(lenses), nil
 	}
-
-	response := api.LensesResponse{Organizations: []api.OrganizationLenses{}}
-	for _, org := range orgs {
-		if customers := enterableCustomerOrgs[org.ID]; len(customers) > 0 {
-			response.Organizations = append(response.Organizations, mapping.OrganizationLensesToAPI(org.ID, customers))
-		}
-	}
-	return respond.JSON(response), nil
 }
 
 // contextOrganizations lists the organizations the user may switch to: every organization for a super admin and
