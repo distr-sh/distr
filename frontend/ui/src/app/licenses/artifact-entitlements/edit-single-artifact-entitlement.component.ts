@@ -157,13 +157,13 @@ export class EditSingleArtifactEntitlementComponent implements OnInit, AfterView
     });
     this.editForm.controls.artifactId.valueChanges
       .pipe(
-        takeUntilDestroyed(this.destroyRef),
         distinctUntilChanged(),
         tap(() => {
           this.selectedArtifact.set(undefined);
           this.editForm.controls.artifactTags.clear({emitEvent: false});
         }),
-        switchMap((artifactId) => (artifactId ? this.artifactsService.getByIdAndCache(artifactId) : of(undefined)))
+        switchMap((artifactId) => (artifactId ? this.artifactsService.getByIdAndCache(artifactId) : of(undefined))),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((artifact) => {
         this.selectedArtifact.set(artifact);
