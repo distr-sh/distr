@@ -8,7 +8,7 @@
     "config:recommended"
   ],
   "timezone": "Europe/Vienna",
-  "automergeSchedule": [
+  "schedule": [
     "* 0-7,20-23 * * 1-5",
     "* * * * 0,6"
   ],
