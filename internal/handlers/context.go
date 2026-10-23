@@ -112,19 +112,19 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 }
 
 // getLensesHandler lists the customer organizations of the current organization whose lens the user may enter. The
-// membership decides which, not the lens the request is in right now, so the list stays the same while in a lens.
+// own context decides which, not the lens the request is in right now, so the list stays the same while in a lens.
 func getLensesHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
-	if membership, resp, err := switchTarget(ctx, auth, *auth.CurrentOrgID()); resp != nil || err != nil {
+	if ownOrg, resp, err := ownContext(ctx, auth, *auth.CurrentOrgID()); resp != nil || err != nil {
 		return resp, err
-	} else if customerOrgs, err := db.GetCustomerOrganizationsByOrganizationID(ctx, membership.ID); err != nil {
+	} else if customerOrgs, err := db.GetCustomerOrganizationsByOrganizationID(ctx, ownOrg.ID); err != nil {
 		return nil, fmt.Errorf("failed to get customer organizations: %w", err)
 	} else {
-		own := lens.Own(*membership)
+		own := lens.Own(*ownOrg)
 		lenses := []api.CustomerLens{}
 		for _, co := range customerOrgs {
-			if lens.MayEnterCustomer(own, auth.IsSuperAdmin(), co.PartnerOrganizationID) {
+			if lens.MayEnter(own, auth.IsSuperAdmin(), co.PartnerOrganizationID) {
 				lenses = append(lenses, mapping.CustomerOrganizationToLens(co.CustomerOrganization))
 			}
 		}

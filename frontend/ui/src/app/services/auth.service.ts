@@ -226,20 +226,20 @@ export class AuthService {
     return this.httpClient.get<{active: boolean}>(`${authBaseUrl}/status`);
   }
 
-  public async switchContext(organizationId: string, targetPath = '/'): Promise<void> {
+  public async switchContext(organizationId: string): Promise<void> {
     if (await this.requestContextToken('switch-context', {organizationId})) {
-      location.assign(targetPath);
+      location.assign('/');
     }
   }
 
   /** Enters the lens of a customer organization of the organization the session operates in. */
   public async enterLens(customerOrganizationId: string): Promise<void> {
-    if (await this.requestContextToken('lens', {customerOrganizationId})) {
+    if (await this.requestContextToken('enter-lens', {customerOrganizationId})) {
       location.assign('/');
     }
   }
 
-  private async requestContextToken(endpoint: 'switch-context' | 'lens', body: object): Promise<boolean> {
+  private async requestContextToken(endpoint: 'switch-context' | 'enter-lens', body: object): Promise<boolean> {
     const response = await firstValueFrom(
       this.httpClient.post<TokenResponse | null>(`${authBaseUrl}/${endpoint}`, body)
     );
@@ -319,7 +319,7 @@ function authenticatedRoute(req: HttpRequest<unknown>): boolean {
   return (
     !req.url.startsWith(authBaseUrl) ||
     req.url === `${authBaseUrl}/switch-context` ||
-    req.url === `${authBaseUrl}/lens` ||
+    req.url === `${authBaseUrl}/enter-lens` ||
     req.url === `${authBaseUrl}/status` ||
     req.url.startsWith(`${authBaseUrl}/verify/`) ||
     req.url.startsWith(`${authBaseUrl}/invite/`) ||

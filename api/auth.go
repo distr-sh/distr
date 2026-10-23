@@ -61,11 +61,11 @@ type AuthSwitchContextRequest struct {
 	OrganizationID uuid.UUID `json:"organizationId"`
 }
 
-type AuthLensRequest struct {
+type AuthEnterLensRequest struct {
 	CustomerOrganizationID uuid.UUID `json:"customerOrganizationId"`
 }
 
-func (r *AuthLensRequest) Validate() error {
+func (r *AuthEnterLensRequest) Validate() error {
 	if r.CustomerOrganizationID == uuid.Nil {
 		return errors.New("a customer organization is required")
 	}

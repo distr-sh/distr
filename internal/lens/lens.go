@@ -26,10 +26,10 @@ type Lens struct {
 	PartnerOrganizationID  *uuid.UUID
 }
 
-func Own(membership types.OrganizationWithUserRole) Lens {
+func Own(org types.OrganizationWithUserRole) Lens {
 	return Lens{
-		CustomerOrganizationID: membership.CustomerOrganizationID,
-		PartnerOrganizationID:  membership.PartnerOrganizationID,
+		CustomerOrganizationID: org.CustomerOrganizationID,
+		PartnerOrganizationID:  org.PartnerOrganizationID,
 	}
 }
 
@@ -41,7 +41,7 @@ func (l Lens) isVendor() bool {
 	return l.CustomerOrganizationID == nil && l.PartnerOrganizationID == nil
 }
 
-var ErrForbidden = errors.New("you are not allowed to switch to this organization")
+var ErrForbidden = errors.New("you are not allowed to open the portal of this customer")
 
 // IsOwn reports whether a request for the lens of the customer organization requestedCustomerOrgID stays in the own
 // lens, which a request for none does as well.
@@ -63,14 +63,14 @@ func Enter(
 		return nil, ErrForbidden
 	} else if err != nil {
 		return nil, err
-	} else if !MayEnterCustomer(own, isSuperAdmin, customerOrg.PartnerOrganizationID) {
+	} else if !MayEnter(own, isSuperAdmin, customerOrg.PartnerOrganizationID) {
 		return nil, ErrForbidden
 	} else {
 		return customerOrg, nil
 	}
 }
 
-func MayEnterCustomer(own Lens, isSuperAdmin bool, customerPartnerOrgID *uuid.UUID) bool {
+func MayEnter(own Lens, isSuperAdmin bool, customerPartnerOrgID *uuid.UUID) bool {
 	switch {
 	case isSuperAdmin, own.isVendor():
 		return true

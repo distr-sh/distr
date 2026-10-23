@@ -7,29 +7,29 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestMayEnterCustomer(t *testing.T) {
+func TestMayEnter(t *testing.T) {
 	partnerID, otherPartnerID, customerID := uuid.New(), uuid.New(), uuid.New()
 	partner := Lens{PartnerOrganizationID: &partnerID}
 	customer := Customer(customerID)
 
 	t.Run("vendor members and super admins enter every customer", func(t *testing.T) {
 		g := NewWithT(t)
-		g.Expect(MayEnterCustomer(Lens{}, false, &partnerID)).To(BeTrue())
-		g.Expect(MayEnterCustomer(Lens{}, false, nil)).To(BeTrue())
-		g.Expect(MayEnterCustomer(customer, true, nil)).To(BeTrue())
+		g.Expect(MayEnter(Lens{}, false, &partnerID)).To(BeTrue())
+		g.Expect(MayEnter(Lens{}, false, nil)).To(BeTrue())
+		g.Expect(MayEnter(customer, true, nil)).To(BeTrue())
 	})
 
 	t.Run("partner members enter only the customers assigned to their partner", func(t *testing.T) {
 		g := NewWithT(t)
-		g.Expect(MayEnterCustomer(partner, false, &partnerID)).To(BeTrue())
-		g.Expect(MayEnterCustomer(partner, false, &otherPartnerID)).To(BeFalse())
-		g.Expect(MayEnterCustomer(partner, false, nil)).To(BeFalse())
+		g.Expect(MayEnter(partner, false, &partnerID)).To(BeTrue())
+		g.Expect(MayEnter(partner, false, &otherPartnerID)).To(BeFalse())
+		g.Expect(MayEnter(partner, false, nil)).To(BeFalse())
 	})
 
 	t.Run("customer members enter no other customer", func(t *testing.T) {
 		g := NewWithT(t)
-		g.Expect(MayEnterCustomer(customer, false, nil)).To(BeFalse())
-		g.Expect(MayEnterCustomer(customer, false, &partnerID)).To(BeFalse())
+		g.Expect(MayEnter(customer, false, nil)).To(BeFalse())
+		g.Expect(MayEnter(customer, false, &partnerID)).To(BeFalse())
 	})
 }
 

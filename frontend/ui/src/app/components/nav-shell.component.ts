@@ -47,7 +47,7 @@ export class NavShellComponent {
     return this.isSubscriptionExpired() || this.isSubscriptionTrial();
   });
 
-  // A switched session is never a vendor session, so the two banners never show at once.
+  // A session in a lens is never a vendor session, so the two banners never show at once.
   protected readonly isBannerVisible = computed(
     () => (this.auth.isLens() && this.isOrganizationLoaded()) || this.isSubscriptionBannerVisible()
   );

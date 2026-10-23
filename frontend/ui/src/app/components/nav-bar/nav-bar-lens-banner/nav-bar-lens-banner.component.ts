@@ -15,10 +15,10 @@ export class NavBarLensBannerComponent {
   protected readonly isSuperAdmin = inject(AuthService).isSuperAdmin();
 
   public readonly organization = input.required<OrganizationWithUserRole>();
-  public readonly ownPortalKind = input.required<OrganizationKind>();
-  public readonly returnToOwnPortal = output();
+  public readonly ownKind = input.required<OrganizationKind>();
+  public readonly leaveLens = output();
 
-  protected readonly portalName = computed(() => membershipLabel(this.organization()));
+  protected readonly lensName = computed(() => membershipLabel(this.organization()));
 
   protected readonly faShuffle = faShuffle;
 }

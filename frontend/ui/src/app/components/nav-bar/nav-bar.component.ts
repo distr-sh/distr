@@ -106,7 +106,7 @@ export class NavBarComponent implements OnInit {
 
   protected readonly isLens = this.auth.isLens();
   protected readonly isSuperAdmin = this.auth.isSuperAdmin();
-  protected readonly ownPortalKind = computed(() => {
+  protected readonly ownKind = computed(() => {
     const membership = this.allOrgs().find((org) => org.id === this.currentOrg()?.id);
     return membership ? organizationKind(membership) : 'vendor';
   });
@@ -162,7 +162,7 @@ export class NavBarComponent implements OnInit {
 
   protected readonly userOpened = signal(false);
   protected readonly organizationsOpened = signal(false);
-  protected readonly canSwitchOrganization = computed(() => this.switchEntryCount() > 0);
+  protected readonly canOpenSwitcher = computed(() => this.switchEntryCount() > 0);
   protected readonly switcherShortcut = navigator.userAgent.includes('Mac') ? '⌘K' : 'Ctrl+K';
 
   protected readonly organizationSearch = new FormControl<string>('', {nonNullable: true});
@@ -244,7 +244,7 @@ export class NavBarComponent implements OnInit {
   }
 
   protected onSwitcherShortcut(event: Event) {
-    if (!this.canSwitchOrganization()) {
+    if (!this.canOpenSwitcher()) {
       return;
     }
     // Ctrl+K and Cmd+K are the browsers' own shortcuts for their search and address bars

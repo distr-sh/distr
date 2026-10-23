@@ -3,8 +3,8 @@
   @if (isLens && organization) {
     <app-nav-bar-lens-banner
       [organization]="organization"
-      [ownPortalKind]="ownPortalKind()"
-      (returnToOwnPortal)="switchOrganization(organization)" />
+      [ownKind]="ownKind()"
+      (leaveLens)="switchOrganization(organization)" />
   } @else if (isSubscriptionBannerVisible() && organization) {
     <app-nav-bar-subscription-banner
       [organization]="organization"
@@ -71,13 +71,13 @@
                 <button
                   type="button"
                   class="flex items-center text-sm disabled:cursor-default"
-                  [disabled]="!canSwitchOrganization()"
-                  [attr.title]="canSwitchOrganization() ? 'Switch organization (' + switcherShortcut + ')' : null"
-                  [attr.aria-expanded]="canSwitchOrganization() ? organizationsOpened() : null"
+                  [disabled]="!canOpenSwitcher()"
+                  [attr.title]="canOpenSwitcher() ? 'Switch organization (' + switcherShortcut + ')' : null"
+                  [attr.aria-expanded]="canOpenSwitcher() ? organizationsOpened() : null"
                   cdkOverlayOrigin
                   #organizationsDropdownTrigger="cdkOverlayOrigin"
                   (click)="toggleOrganizations()">
-                  @if (canSwitchOrganization()) {
+                  @if (canOpenSwitcher()) {
                     <span class="sr-only">Show Organizations</span>
                   }
                   <span class="flex flex-col text-end text-sm font-medium text-gray-900 dark:text-gray-300" role="none">
@@ -113,7 +113,7 @@
                       </span>
                     }
                   </span>
-                  @if (canSwitchOrganization()) {
+                  @if (canOpenSwitcher()) {
                     <fa-icon
                       class="ml-2 text-gray-900 dark:text-gray-300 transition duration-150 ease-in-out"
                       [class.rotate-x-180]="organizationsOpened()"

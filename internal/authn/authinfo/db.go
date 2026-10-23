@@ -63,7 +63,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 				} else if err != nil {
 					return nil, err
 				}
-				current, lensCustomerOrg, isLens, err := sessionLens(a, lens.Lens{},
+				current, lensCustomerOrg, isLens, err := currentLens(a, lens.Lens{},
 					func(own lens.Lens, customerOrgID uuid.UUID) (*types.CustomerOrganization, error) {
 						return lens.Enter(ctx, org.ID, own, true, customerOrgID)
 					},
@@ -109,7 +109,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 					// fine (e.g. a PAT scoped to a lower role); above means the
 					// user was demoted after the credential was issued.
 					return nil, authn.ErrBadAuthentication
-				} else if current, lensCustomerOrg, isLens, err := sessionLens(
+				} else if current, lensCustomerOrg, isLens, err := currentLens(
 					a,
 					lens.Lens{
 						CustomerOrganizationID: m.User.CustomerOrganizationID,
@@ -117,7 +117,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 					},
 					func(own lens.Lens, _ uuid.UUID) (*types.CustomerOrganization, error) {
 						if customerOrg := m.RequestedCustomerOrganization; customerOrg == nil ||
-							!lens.MayEnterCustomer(own, false, customerOrg.PartnerOrganizationID) {
+							!lens.MayEnter(own, false, customerOrg.PartnerOrganizationID) {
 							return nil, lens.ErrForbidden
 						} else {
 							return customerOrg, nil
@@ -164,11 +164,11 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 	return authn.AuthenticatorFunc[AuthInfo, AuthInfoWithUserAndOrganization](fn)
 }
 
-// sessionLens returns the lens a session looks through, the customer organization of that lens if it is not the
-// own one and whether it is not. A personal access token always looks through its membership's own lens: only a
-// login session enters another one, through the lens endpoint. enter decides whether the session may look through
-// the lens of a requested customer organization that is not its own.
-func sessionLens(
+// currentLens returns the lens the authentication looks through, the customer organization of that lens if it is
+// not the own one and whether it is not. A personal access token always looks through its membership's own lens:
+// only a login session enters another one, through the lens endpoint. enter decides whether the lens of a requested
+// customer organization that is not the own one may be entered.
+func currentLens(
 	a AuthInfo,
 	own lens.Lens,
 	enter func(own lens.Lens, customerOrgID uuid.UUID) (*types.CustomerOrganization, error),

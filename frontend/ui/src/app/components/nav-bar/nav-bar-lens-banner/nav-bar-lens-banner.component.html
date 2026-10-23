@@ -5,24 +5,21 @@
     <p class="text-sm text-gray-700 dark:text-gray-300">
       @if (isSuperAdmin) {
         You are viewing the customer portal of
-        <span class="font-semibold text-gray-900 dark:text-white">{{ portalName() }}</span> with read-only access.
+        <span class="font-semibold text-gray-900 dark:text-white">{{ lensName() }}</span> with read-only access.
       } @else {
         <span class="font-semibold text-amber-700 dark:text-amber-400">Customer Lens:</span>
         You are working in the customer portal of
-        <span class="font-semibold text-gray-900 dark:text-white">{{ portalName() }}</span
+        <span class="font-semibold text-gray-900 dark:text-white">{{ lensName() }}</span
         ><span class="hidden md:inline">
           with your
           <span class="font-semibold text-gray-900 dark:text-white">{{ organization().userRole | userRoleLabel }}</span>
-          role. Changes you make here apply to {{ portalName() }}</span
+          role. Changes you make here apply to {{ lensName() }}</span
         >.
       }
     </p>
   </div>
-  <button
-    type="button"
-    (click)="returnToOwnPortal.emit()"
-    class="shrink-0 py-2 px-3 text-sm font-medium distr-btn-secondary">
-    @switch (ownPortalKind()) {
+  <button type="button" (click)="leaveLens.emit()" class="shrink-0 py-2 px-3 text-sm font-medium distr-btn-secondary">
+    @switch (ownKind()) {
       @case ('partner') {
         Return to Partner Portal
       }

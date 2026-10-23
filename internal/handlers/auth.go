@@ -66,7 +66,7 @@ func AuthRouter(r chiopenapi.Router) {
 			middleware.RequireNonAccessToken,
 		)
 		r.Post("/switch-context", respond.Handler(authSwitchContextHandler))
-		r.Post("/lens", respond.Handler(authLensHandler))
+		r.Post("/enter-lens", respond.Handler(authEnterLensHandler))
 	})
 	r.Group(func(r chiopenapi.Router) {
 		r.Use(auth.Authentication.Middleware, middleware.SetSentryUserFromUserAuth)
@@ -243,25 +243,25 @@ func authSwitchContextHandler(r *http.Request) (respond.Responder, error) {
 		return respond.Forbidden(middleware.CrossOrganizationBlockedMessage), nil
 	} else if orgChanged := request.OrganizationID != *auth.CurrentOrgID(); !orgChanged && !auth.IsLens() {
 		return respond.NoContent(), nil
-	} else if target, resp, err := switchTarget(ctx, auth, request.OrganizationID); resp != nil || err != nil {
+	} else if ownOrg, resp, err := ownContext(ctx, auth, request.OrganizationID); resp != nil || err != nil {
 		return resp, err
-	} else if tokenString, err := generateContextToken(auth, *target, false); err != nil {
+	} else if tokenString, err := generateContextToken(auth, *ownOrg, false); err != nil {
 		return nil, err
 	} else if !orgChanged {
 		return respond.JSON(api.AuthLoginResponse{Token: tokenString}), nil
-	} else if err := db.UpdateUserAccountLastUsedOrganizationID(ctx, auth.CurrentUserID(), target.ID); err != nil {
+	} else if err := db.UpdateUserAccountLastUsedOrganizationID(ctx, auth.CurrentUserID(), ownOrg.ID); err != nil {
 		return nil, fmt.Errorf("failed to update last used organization ID: %w", err)
 	} else {
 		return respond.JSON(api.AuthLoginResponse{Token: tokenString}), nil
 	}
 }
 
-// authLensHandler switches the session to the lens of a customer organization of the organization it
+// authEnterLensHandler switches the session to the lens of a customer organization of the organization it
 // operates in.
-func authLensHandler(r *http.Request) (respond.Responder, error) {
+func authEnterLensHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
-	request, resp := decodeJSON[api.AuthLensRequest](r)
+	request, resp := decodeJSON[api.AuthEnterLensRequest](r)
 	if resp != nil {
 		return resp, nil
 	} else if err := request.Validate(); err != nil {
@@ -271,20 +271,21 @@ func authLensHandler(r *http.Request) (respond.Responder, error) {
 	requested := request.CustomerOrganizationID
 	if auth.IsLens() && util.PtrEq(&requested, auth.CurrentCustomerOrgID()) {
 		return respond.NoContent(), nil
-	} else if target, resp, err := switchTarget(ctx, auth, *auth.CurrentOrgID()); resp != nil || err != nil {
+	} else if ownOrg, resp, err := ownContext(ctx, auth, *auth.CurrentOrgID()); resp != nil || err != nil {
 		return resp, err
-	} else if own := lens.Own(*target); lens.IsOwn(own, &requested) {
+	} else if own := lens.Own(*ownOrg); lens.IsOwn(own, &requested) {
 		return respond.BadRequest("this is your own organization, return to it instead"), nil
-	} else if _, err := lens.Enter(ctx, target.ID, own, auth.IsSuperAdmin(), requested); errors.Is(
+	} else if _, err := lens.Enter(ctx, ownOrg.ID, own, auth.IsSuperAdmin(), requested); errors.Is(
 		err, lens.ErrForbidden,
 	) {
 		return respond.Forbidden(err.Error()), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to enter lens: %w", err)
 	} else {
-		target.CustomerOrganizationID = &requested
-		target.PartnerOrganizationID = nil
-		if tokenString, err := generateContextToken(auth, *target, true); err != nil {
+		lensOrg := *ownOrg
+		lensOrg.CustomerOrganizationID = &requested
+		lensOrg.PartnerOrganizationID = nil
+		if tokenString, err := generateContextToken(auth, lensOrg, true); err != nil {
 			return nil, err
 		} else {
 			return respond.JSON(api.AuthLoginResponse{Token: tokenString}), nil
@@ -292,10 +293,10 @@ func authLensHandler(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-// switchTarget loads an organization the session switches to, with the role and the customer or partner
-// organization of the user's membership there. Super admins can switch to any organization, where they have
-// neither.
-func switchTarget(
+// ownContext loads the user's own context in an organization: the organization with the role and the customer or
+// partner organization of the user's membership there, regardless of the lens the request is in. Super admins can
+// access any organization, where they have neither.
+func ownContext(
 	ctx context.Context,
 	auth authinfo.AuthInfo,
 	orgID uuid.UUID,
@@ -311,7 +312,7 @@ func switchTarget(
 	} else if user, org, err := db.GetUserAccountAndOrg(ctx, auth.CurrentUserID(), orgID); errors.Is(
 		err, distrerr.ErrNotFound,
 	) {
-		return nil, respond.BadRequest("bad request"), nil
+		return nil, organizationNotFound, nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get organization membership: %w", err)
 	} else {
@@ -326,13 +327,13 @@ func switchTarget(
 
 func generateContextToken(
 	auth authinfo.AuthInfoWithUserAndOrganization,
-	target types.OrganizationWithUserRole,
+	org types.OrganizationWithUserRole,
 	isLens bool,
 ) (string, error) {
 	if currentToken, ok := auth.Token().(jwt.Token); !ok {
 		return "", errors.New("failed to generate token: session is not authenticated by a JWT")
 	} else if _, tokenString, err := authjwt.GenerateContextToken(
-		currentToken, *auth.CurrentUser(), target, isLens,
+		currentToken, *auth.CurrentUser(), org, isLens,
 	); err != nil {
 		return "", fmt.Errorf("failed to generate token: %w", err)
 	} else {

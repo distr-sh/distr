@@ -222,7 +222,7 @@ export class CustomerOrganizationsComponent {
       .add(() => this.savingCustomerId.set(undefined));
   }
 
-  protected async openPortal(customer: CustomerOrganization) {
+  protected async enterLens(customer: CustomerOrganization) {
     try {
       await this.auth.enterLens(customer.id);
     } catch (e) {
