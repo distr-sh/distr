@@ -10,14 +10,12 @@ import (
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authjwt"
-	"github.com/distr-sh/distr/internal/authn/authinfo"
 	"github.com/distr-sh/distr/internal/blocklist"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/custommail"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/env"
-	"github.com/distr-sh/distr/internal/lens"
 	"github.com/distr-sh/distr/internal/mailsending"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/middleware"
@@ -27,14 +25,12 @@ import (
 	"github.com/distr-sh/distr/internal/turnstile"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/userauth"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httprate"
 	"github.com/go-mailx/mailx"
 	"github.com/google/uuid"
-	"github.com/lestrrat-go/jwx/v4/jwt"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
 	"go.uber.org/zap"
@@ -227,117 +223,6 @@ func setPasswordAndLogin(
 		}
 
 		return respond.JSON(api.AuthLoginResponse{Token: token}), nil
-	}
-}
-
-// authSwitchContextHandler switches the session to the user's own context in an organization, which also leaves a
-// lens.
-func authSwitchContextHandler(r *http.Request) (respond.Responder, error) {
-	ctx := r.Context()
-	auth := auth.Authentication.Require(ctx)
-	if request, resp := decodeJSON[api.AuthSwitchContextRequest](r); resp != nil {
-		return resp, nil
-	} else if request.OrganizationID == uuid.Nil {
-		return respond.BadRequest("bad request"), nil
-	} else if auth.OrganizationScoped() && request.OrganizationID != *auth.CurrentOrgID() {
-		return respond.Forbidden(middleware.CrossOrganizationBlockedMessage), nil
-	} else if orgChanged := request.OrganizationID != *auth.CurrentOrgID(); !orgChanged && !auth.IsLens() {
-		return respond.NoContent(), nil
-	} else if ownOrg, resp, err := ownContext(ctx, auth, request.OrganizationID); resp != nil || err != nil {
-		return resp, err
-	} else if tokenString, err := generateContextToken(auth, *ownOrg, false); err != nil {
-		return nil, err
-	} else if !orgChanged {
-		return respond.JSON(api.AuthLoginResponse{Token: tokenString}), nil
-	} else if err := db.UpdateUserAccountLastUsedOrganizationID(ctx, auth.CurrentUserID(), ownOrg.ID); err != nil {
-		return nil, fmt.Errorf("failed to update last used organization ID: %w", err)
-	} else {
-		return respond.JSON(api.AuthLoginResponse{Token: tokenString}), nil
-	}
-}
-
-// authEnterLensHandler switches the session to the lens of a customer organization of the organization it
-// operates in.
-func authEnterLensHandler(r *http.Request) (respond.Responder, error) {
-	ctx := r.Context()
-	auth := auth.Authentication.Require(ctx)
-	request, resp := decodeJSON[api.AuthEnterLensRequest](r)
-	if resp != nil {
-		return resp, nil
-	} else if err := request.Validate(); err != nil {
-		return respond.BadRequest(err.Error()), nil
-	}
-
-	requested := request.CustomerOrganizationID
-	if auth.IsLens() && util.PtrEq(&requested, auth.CurrentCustomerOrgID()) {
-		return respond.NoContent(), nil
-	} else if ownOrg, resp, err := ownContext(ctx, auth, *auth.CurrentOrgID()); resp != nil || err != nil {
-		return resp, err
-	} else if own := lens.Own(*ownOrg); lens.IsOwn(own, &requested) {
-		return respond.BadRequest("this is your own portal, return to it instead"), nil
-	} else if _, err := lens.Enter(ctx, ownOrg.ID, own, auth.IsSuperAdmin(), requested); errors.Is(
-		err, lens.ErrForbidden,
-	) {
-		return respond.Forbidden(err.Error()), nil
-	} else if err != nil {
-		return nil, fmt.Errorf("failed to enter lens: %w", err)
-	} else {
-		lensOrg := *ownOrg
-		lensOrg.CustomerOrganizationID = &requested
-		lensOrg.PartnerOrganizationID = nil
-		if tokenString, err := generateContextToken(auth, lensOrg, true); err != nil {
-			return nil, err
-		} else {
-			return respond.JSON(api.AuthLoginResponse{Token: tokenString}), nil
-		}
-	}
-}
-
-// ownContext loads the user's own context in an organization: the organization with the role and the customer or
-// partner organization of the user's membership there, regardless of the lens the request is in. Super admins can
-// access any organization, where they have neither.
-func ownContext(
-	ctx context.Context,
-	auth authinfo.AuthInfo,
-	orgID uuid.UUID,
-) (*types.OrganizationWithUserRole, respond.Responder, error) {
-	if auth.IsSuperAdmin() {
-		if org, err := db.GetOrganizationByID(ctx, orgID); errors.Is(err, distrerr.ErrNotFound) {
-			return nil, organizationNotFound, nil
-		} else if err != nil {
-			return nil, nil, fmt.Errorf("failed to get organization: %w", err)
-		} else {
-			return &types.OrganizationWithUserRole{Organization: *org}, nil, nil
-		}
-	} else if user, org, err := db.GetUserAccountAndOrg(ctx, auth.CurrentUserID(), orgID); errors.Is(
-		err, distrerr.ErrNotFound,
-	) {
-		return nil, organizationNotFound, nil
-	} else if err != nil {
-		return nil, nil, fmt.Errorf("failed to get organization membership: %w", err)
-	} else {
-		return &types.OrganizationWithUserRole{
-			Organization:           org.Organization,
-			UserRole:               user.UserRole,
-			CustomerOrganizationID: user.CustomerOrganizationID,
-			PartnerOrganizationID:  user.PartnerOrganizationID,
-		}, nil, nil
-	}
-}
-
-func generateContextToken(
-	auth authinfo.AuthInfoWithUserAndOrganization,
-	org types.OrganizationWithUserRole,
-	isLens bool,
-) (string, error) {
-	if currentToken, ok := auth.Token().(jwt.Token); !ok {
-		return "", errors.New("failed to generate token: session is not authenticated by a JWT")
-	} else if _, tokenString, err := authjwt.GenerateContextToken(
-		currentToken, *auth.CurrentUser(), org, isLens,
-	); err != nil {
-		return "", fmt.Errorf("failed to generate token: %w", err)
-	} else {
-		return tokenString, nil
 	}
 }
 

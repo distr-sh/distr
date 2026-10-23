@@ -14,6 +14,7 @@ import {SecureImagePipe} from '../../../util/secureImage';
 import {UserRoleLabelPipe} from '../../../util/user-role';
 import {AuthService} from '../../services/auth.service';
 import {ContextService} from '../../services/context.service';
+import {LensesService} from '../../services/lenses.service';
 import {OrganizationBrandingService} from '../../services/organization-branding.service';
 import {OrganizationService} from '../../services/organization.service';
 import {SidebarService} from '../../services/sidebar.service';
@@ -80,6 +81,7 @@ export class NavBarComponent implements OnInit {
   private readonly organizationService = inject(OrganizationService);
   private readonly organizationBranding = inject(OrganizationBrandingService);
   private readonly ctx = inject(ContextService);
+  private readonly lensesService = inject(LensesService);
   protected readonly user$ = this.usersService.get().pipe(
     catchError(() => {
       const claims = this.auth.getClaims();
@@ -115,7 +117,7 @@ export class NavBarComponent implements OnInit {
   private readonly lenses = toSignal(
     this.lensesRefresh$.pipe(
       startWith(undefined),
-      switchMap(() => this.ctx.getLenses().pipe(catchError(() => EMPTY)))
+      switchMap(() => this.lensesService.list().pipe(catchError(() => EMPTY)))
     ),
     {initialValue: []}
   );
