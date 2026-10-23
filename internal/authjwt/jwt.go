@@ -35,7 +35,7 @@ const (
 	// for logging.
 	CustomOIDCConfigurationIDKey = "oidc"
 
-	// LensKey marks a session in the lens of a customer or partner organization its user is not a member of. It is
+	// LensKey marks a session in the lens of a customer organization its user is not a member of. It is
 	// meant for the frontend only: authentication decides this against the database on every request.
 	LensKey = "lens"
 
@@ -111,7 +111,7 @@ func GenerateCustomOIDCToken(
 }
 
 // GenerateContextToken generates the token that switches the session of current to another organization or
-// lens. isLens marks a session that operates in a customer or partner organization its user is not a member of.
+// lens. isLens marks a session that operates in a customer organization its user is not a member of.
 // A session of a custom OIDC provider stays one, so that switching cannot lift the confinement
 // GenerateCustomOIDCToken describes.
 func GenerateContextToken(

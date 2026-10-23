@@ -4,8 +4,6 @@ import {LoginResponse, TokenResponse, UserRole} from '@distr-sh/distr-sdk';
 import dayjs from 'dayjs';
 import {jwtDecode} from 'jwt-decode';
 import {firstValueFrom, map, Observable, of, tap, throwError} from 'rxjs';
-import {Lens} from '../types/context-switch';
-
 const tokenStorageKey = 'cloud_token';
 const actionTokenStorageKey = 'distr_action_token';
 const authBaseUrl = '/api/v1/auth';
@@ -21,7 +19,7 @@ export interface JWTClaims {
   scope?: 'password_reset' | 'invite';
   // The custom OIDC configuration that authenticated the session; absent on every other login.
   oidc?: string;
-  // Present while the session is in the lens of a customer or partner organization its user is not a member of.
+  // Present while the session is in the lens of a customer organization its user is not a member of.
   lens?: boolean;
   email_verified: boolean;
   name: string;
@@ -235,18 +233,18 @@ export class AuthService {
   }
 
   /**
-   * Enters a lens of the given organization, the current one by default. The lens endpoint only opens lenses of the
-   * organization the session operates in, so another organization is switched to first, and switched back from if
-   * the lens cannot be entered there.
+   * Enters the lens of a customer organization of the given organization, the current one by default. The lens
+   * endpoint only opens lenses of the organization the session operates in, so another organization is switched to
+   * first, and switched back from if the lens cannot be entered there.
    */
-  public async enterLens(lens: Lens, organizationId = this.getClaims()?.org): Promise<void> {
+  public async enterLens(customerOrganizationId: string, organizationId = this.getClaims()?.org): Promise<void> {
     const previousToken = this.token;
     let changed = false;
     try {
       if (organizationId !== undefined && organizationId !== this.getClaims()?.org) {
         changed = await this.requestContextToken('switch-context', {organizationId});
       }
-      changed = (await this.requestContextToken('lens', lens)) || changed;
+      changed = (await this.requestContextToken('lens', {customerOrganizationId})) || changed;
     } catch (e) {
       this.token = previousToken;
       throw e;

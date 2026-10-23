@@ -62,13 +62,12 @@ type AuthSwitchContextRequest struct {
 }
 
 type AuthLensRequest struct {
-	CustomerOrganizationID *uuid.UUID `json:"customerOrganizationId,omitempty"`
-	PartnerOrganizationID  *uuid.UUID `json:"partnerOrganizationId,omitempty"`
+	CustomerOrganizationID uuid.UUID `json:"customerOrganizationId"`
 }
 
 func (r *AuthLensRequest) Validate() error {
-	if (r.CustomerOrganizationID == nil) == (r.PartnerOrganizationID == nil) {
-		return errors.New("either a customer or a partner organization is required")
+	if r.CustomerOrganizationID == uuid.Nil {
+		return errors.New("a customer organization is required")
 	}
 	return nil
 }

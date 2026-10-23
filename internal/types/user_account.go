@@ -93,11 +93,10 @@ type UserAccountWithUserRole struct {
 }
 
 type OrganizationMembership struct {
-	User                               UserAccountWithUserRole
-	Organization                       OrganizationWithBranding
-	CustomerOrganization               *CustomerOrganization
-	RequestedCustomerOrganization      *CustomerOrganization
-	RequestedPartnerOrganizationExists bool
+	User                          UserAccountWithUserRole
+	Organization                  OrganizationWithBranding
+	CustomerOrganization          *CustomerOrganization
+	RequestedCustomerOrganization *CustomerOrganization
 }
 
 func (u *UserAccountWithUserRole) AsUserAccount() UserAccount {

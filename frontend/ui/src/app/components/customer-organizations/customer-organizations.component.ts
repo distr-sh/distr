@@ -224,7 +224,7 @@ export class CustomerOrganizationsComponent {
 
   protected async openPortal(customer: CustomerOrganization) {
     try {
-      await this.auth.enterLens({customerOrganizationId: customer.id});
+      await this.auth.enterLens(customer.id);
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {

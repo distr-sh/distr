@@ -29,10 +29,9 @@ type AuthInfo interface {
 	// account belongs to, or create one.
 	OrganizationScoped() bool
 	IsSuperAdmin() bool
-	// IsLens reports whether the session operates in the lens of a customer or partner organization its user is not
-	// a member of (see lens.Enter). CurrentCustomerOrgID and CurrentPartnerOrgID name that organization, so a handler
-	// reading them treats the session like one of a member of it. Only authentication against the database sets
-	// this.
+	// IsLens reports whether the session operates in the lens of a customer organization its user is not a member of
+	// (see lens.Enter). CurrentCustomerOrgID names that organization, so a handler reading it treats the session like
+	// one of a member of it. Only authentication against the database sets this.
 	IsLens() bool
 	Token() any
 }

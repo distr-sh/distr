@@ -113,7 +113,7 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 }
 
 // getContextSwitchTargetsHandler lists, for the organizations the user may switch to, their logos and the
-// customer and partner organizations whose lens the user may enter there. The memberships decide which, not the
+// customer organizations whose lens the user may enter there. The memberships decide which, not the
 // organization the session operates in right now, so the list stays the same while the session is in a lens.
 func getContextSwitchTargetsHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
@@ -125,16 +125,13 @@ func getContextSwitchTargetsHandler(r *http.Request) (respond.Responder, error) 
 	}
 
 	orgIDs := make([]uuid.UUID, 0, len(orgs))
-	ownTargets := make(map[uuid.UUID]lens.Target, len(orgs))
-	var portalOrgIDs, partnerOrgIDs []uuid.UUID
+	ownLenses := make(map[uuid.UUID]lens.Lens, len(orgs))
+	var lensOrgIDs []uuid.UUID
 	for _, org := range orgs {
 		orgIDs = append(orgIDs, org.ID)
-		ownTargets[org.ID] = lens.MembershipTarget(org)
+		ownLenses[org.ID] = lens.Own(org)
 		if auth.IsSuperAdmin() || org.CustomerOrganizationID == nil {
-			portalOrgIDs = append(portalOrgIDs, org.ID)
-			if org.HasFeature(types.FeaturePartnerManagement) {
-				partnerOrgIDs = append(partnerOrgIDs, org.ID)
-			}
+			lensOrgIDs = append(lensOrgIDs, org.ID)
 		}
 	}
 
@@ -142,34 +139,23 @@ func getContextSwitchTargetsHandler(r *http.Request) (respond.Responder, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get organization logos: %w", err)
 	}
-	customerOrgs, err := db.GetCustomerOrganizationsByOrganizationIDs(ctx, portalOrgIDs)
+	customerOrgs, err := db.GetCustomerOrganizationsByOrganizationIDs(ctx, lensOrgIDs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get customer organizations: %w", err)
-	}
-	partnerOrgs, err := db.GetPartnerOrganizationsByOrganizationIDs(ctx, partnerOrgIDs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get partner organizations: %w", err)
 	}
 
 	enterableCustomerOrgs := make(map[uuid.UUID][]types.CustomerOrganization)
 	for _, co := range customerOrgs {
-		if lens.MayEnterCustomer(ownTargets[co.OrganizationID], auth.IsSuperAdmin(), co.PartnerOrganizationID) {
+		if lens.MayEnterCustomer(ownLenses[co.OrganizationID], auth.IsSuperAdmin(), co.PartnerOrganizationID) {
 			enterableCustomerOrgs[co.OrganizationID] = append(enterableCustomerOrgs[co.OrganizationID], co)
-		}
-	}
-	enterablePartnerOrgs := make(map[uuid.UUID][]types.PartnerOrganization)
-	for _, po := range partnerOrgs {
-		if lens.MayEnterPartner(ownTargets[po.OrganizationID], auth.IsSuperAdmin()) {
-			enterablePartnerOrgs[po.OrganizationID] = append(enterablePartnerOrgs[po.OrganizationID], po)
 		}
 	}
 
 	response := api.ContextSwitchTargetsResponse{Organizations: []api.ContextSwitchOrganization{}}
 	for _, org := range orgs {
-		customers, partners := enterableCustomerOrgs[org.ID], enterablePartnerOrgs[org.ID]
-		if logoImageIDs[org.ID] != nil || len(customers) > 0 || len(partners) > 0 {
+		if customers := enterableCustomerOrgs[org.ID]; logoImageIDs[org.ID] != nil || len(customers) > 0 {
 			response.Organizations = append(response.Organizations,
-				mapping.ContextSwitchOrganizationToAPI(org.ID, logoImageIDs[org.ID], customers, partners))
+				mapping.ContextSwitchOrganizationToAPI(org.ID, logoImageIDs[org.ID], customers))
 		}
 	}
 	return respond.JSON(response), nil

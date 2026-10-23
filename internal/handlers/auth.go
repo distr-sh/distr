@@ -256,7 +256,7 @@ func authSwitchContextHandler(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-// authLensHandler switches the session to the lens of a customer or partner organization of the organization it
+// authLensHandler switches the session to the lens of a customer organization of the organization it
 // operates in.
 func authLensHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
@@ -268,16 +268,12 @@ func authLensHandler(r *http.Request) (respond.Responder, error) {
 		return respond.BadRequest(err.Error()), nil
 	}
 
-	requested := lens.Target{
-		CustomerOrganizationID: request.CustomerOrganizationID,
-		PartnerOrganizationID:  request.PartnerOrganizationID,
-	}
-	if auth.IsLens() && util.PtrEq(requested.CustomerOrganizationID, auth.CurrentCustomerOrgID()) &&
-		util.PtrEq(requested.PartnerOrganizationID, auth.CurrentPartnerOrgID()) {
+	requested := request.CustomerOrganizationID
+	if auth.IsLens() && util.PtrEq(&requested, auth.CurrentCustomerOrgID()) {
 		return respond.NoContent(), nil
 	} else if target, resp, err := switchTarget(ctx, auth, *auth.CurrentOrgID()); resp != nil || err != nil {
 		return resp, err
-	} else if own := lens.MembershipTarget(*target); lens.IsOwn(own, requested) {
+	} else if own := lens.Own(*target); lens.IsOwn(own, &requested) {
 		return respond.BadRequest("this is your own organization, return to it instead"), nil
 	} else if _, err := lens.Enter(ctx, target.ID, own, auth.IsSuperAdmin(), requested); errors.Is(
 		err, lens.ErrForbidden,
@@ -286,8 +282,8 @@ func authLensHandler(r *http.Request) (respond.Responder, error) {
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to enter lens: %w", err)
 	} else {
-		target.CustomerOrganizationID = requested.CustomerOrganizationID
-		target.PartnerOrganizationID = requested.PartnerOrganizationID
+		target.CustomerOrganizationID = &requested
+		target.PartnerOrganizationID = nil
 		if tokenString, err := generateContextToken(auth, *target, true); err != nil {
 			return nil, err
 		} else {

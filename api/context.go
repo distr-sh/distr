@@ -25,7 +25,6 @@ type ContextSwitchOrganization struct {
 	ID                    uuid.UUID             `json:"id"`
 	LogoURL               *string               `json:"logoUrl,omitempty"`
 	CustomerOrganizations []ContextSwitchPortal `json:"customerOrganizations"`
-	PartnerOrganizations  []ContextSwitchPortal `json:"partnerOrganizations"`
 }
 
 type ContextSwitchPortal struct {

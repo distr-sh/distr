@@ -314,7 +314,7 @@ const (
 	AccessTokenBlockedMessage       = "this cannot be done with an access token. Sign in to Distr to do it."
 	CrossOrganizationBlockedMessage = "you are signed in with a credential that belongs to a single " +
 		"organization and can therefore only act within that organization"
-	LensBlockedMessage = "this cannot be done while you are switched to a customer or partner portal. " +
+	LensBlockedMessage = "this cannot be done while you are switched to a customer portal. " +
 		"Return to your own portal to do it."
 )
 

@@ -206,28 +206,13 @@
                               [attr.aria-current]="portal.current"
                               class="distr-dropdown-item ps-3 focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
                               role="menuitem">
-                              @switch (portal.kind) {
-                                @case ('partner') {
-                                  <app-avatar
-                                    [name]="portal.name"
-                                    [icon]="faBuilding"
-                                    iconClass="text-[0.625rem]"
-                                    class="size-5 rounded-sm" />
-                                  <span class="grow" role="none">{{ portal.name }}</span>
-                                  <span class="ps-2 text-xs font-light text-gray-500 dark:text-gray-400" role="none">
-                                    Partner
-                                  </span>
-                                }
-                                @default {
-                                  <app-avatar
-                                    [image]="portal.imageUrl"
-                                    [name]="portal.name"
-                                    [icon]="faAddressBook"
-                                    iconClass="text-[0.625rem]"
-                                    class="size-5 rounded-sm" />
-                                  <span class="grow" role="none">{{ portal.name }}</span>
-                                }
-                              }
+                              <app-avatar
+                                [image]="portal.imageUrl"
+                                [name]="portal.name"
+                                [icon]="faAddressBook"
+                                iconClass="text-[0.625rem]"
+                                class="size-5 rounded-sm" />
+                              <span class="grow" role="none">{{ portal.name }}</span>
                               @if (portal.current) {
                                 <fa-icon [icon]="faCheck" class="ps-2 text-primary-600 dark:text-primary-400" />
                               }

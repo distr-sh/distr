@@ -156,28 +156,6 @@ func GetPartnerOrganizationsByOrganizationID(
 	return result, nil
 }
 
-func GetPartnerOrganizationsByOrganizationIDs(
-	ctx context.Context,
-	orgIDs []uuid.UUID,
-) ([]types.PartnerOrganization, error) {
-	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(ctx,
-		"SELECT "+partnerOrganizationOutputExpr+`
-		FROM PartnerOrganization po
-		WHERE po.organization_id = ANY(@orgIds)
-		ORDER BY po.name`,
-		pgx.NamedArgs{"orgIds": orgIDs},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("could not query PartnerOrganization: %w", err)
-	}
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.PartnerOrganization])
-	if err != nil {
-		return nil, fmt.Errorf("could not collect PartnerOrganization: %w", err)
-	}
-	return result, nil
-}
-
 func UpdatePartnerOrganization(ctx context.Context, partnerOrg *types.PartnerOrganization) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,

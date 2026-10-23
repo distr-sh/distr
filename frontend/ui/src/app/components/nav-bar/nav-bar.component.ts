@@ -10,7 +10,6 @@ import {
   faAddressBook,
   faArrowLeft,
   faBarsStaggered,
-  faBuilding,
   faCheck,
   faChevronDown,
   faUserCircle,
@@ -43,7 +42,6 @@ const ORGANIZATION_SEARCH_THRESHOLD = 4;
 const NO_SWITCH_TARGETS: ContextSwitchTargets = {organizations: []};
 
 interface SwitcherPortal extends ContextSwitchPortal {
-  kind: 'customer' | 'partner';
   current: boolean;
 }
 
@@ -150,18 +148,10 @@ export class NavBarComponent implements OnInit {
           org,
           logoUrl: target?.logoUrl,
           current: isCurrentOrg && !this.isLens,
-          portals: [
-            ...(target?.partnerOrganizations ?? []).map((portal) => ({
-              ...portal,
-              kind: 'partner' as const,
-              current: isCurrentOrg && portal.id === current?.partnerOrganizationId,
-            })),
-            ...(target?.customerOrganizations ?? []).map((portal) => ({
-              ...portal,
-              kind: 'customer' as const,
-              current: isCurrentOrg && portal.id === current?.customerOrganizationId,
-            })),
-          ],
+          portals: (target?.customerOrganizations ?? []).map((portal) => ({
+            ...portal,
+            current: isCurrentOrg && portal.id === current?.customerOrganizationId,
+          })),
         };
       });
   });
@@ -177,18 +167,11 @@ export class NavBarComponent implements OnInit {
       0
     )
   );
-  protected readonly switcherFilterLabels = computed(() => {
-    if (!this.isSingleOrganization()) {
-      return {placeholder: 'Filter organizations', empty: 'No organization matches your filter.'};
-    }
-    const kinds = new Set(this.switcherTree()[0].portals.map((portal) => portal.kind));
-    if (kinds.size > 1) {
-      return {placeholder: 'Filter customers and partners', empty: 'No customer or partner matches your filter.'};
-    } else if (kinds.has('partner')) {
-      return {placeholder: 'Filter partners', empty: 'No partner matches your filter.'};
-    }
-    return {placeholder: 'Filter customers', empty: 'No customer matches your filter.'};
-  });
+  protected readonly switcherFilterLabels = computed(() =>
+    this.isSingleOrganization()
+      ? {placeholder: 'Filter customers', empty: 'No customer matches your filter.'}
+      : {placeholder: 'Filter organizations', empty: 'No organization matches your filter.'}
+  );
 
   protected readonly userOpened = signal(false);
   protected readonly organizationsOpened = signal(false);
@@ -292,12 +275,7 @@ export class NavBarComponent implements OnInit {
   }
 
   protected async enterLens(org: Organization, portal: SwitcherPortal) {
-    await this.switchContext(() =>
-      this.auth.enterLens(
-        portal.kind === 'partner' ? {partnerOrganizationId: portal.id} : {customerOrganizationId: portal.id},
-        org.id!
-      )
-    );
+    await this.switchContext(() => this.auth.enterLens(portal.id, org.id!));
   }
 
   private async switchContext(switchFn: () => Promise<void>) {
@@ -321,7 +299,6 @@ export class NavBarComponent implements OnInit {
 
   protected readonly faAddressBook = faAddressBook;
   protected readonly faArrowLeft = faArrowLeft;
-  protected readonly faBuilding = faBuilding;
   protected readonly faCheck = faCheck;
   protected readonly faChevronDown = faChevronDown;
   protected readonly faUserCircle = faUserCircle;

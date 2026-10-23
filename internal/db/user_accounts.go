@@ -555,7 +555,7 @@ func GetUserAccountAndOrg(ctx context.Context, userID, orgID uuid.UUID) (
 	*types.OrganizationWithBranding,
 	error,
 ) {
-	membership, err := GetOrganizationMembership(ctx, userID, orgID, nil, nil)
+	membership, err := GetOrganizationMembership(ctx, userID, orgID, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -564,12 +564,12 @@ func GetUserAccountAndOrg(ctx context.Context, userID, orgID uuid.UUID) (
 
 // GetOrganizationMembership returns the user's membership in the organization together with the
 // customer organization the membership belongs to, if any, which authentication reads on every
-// request. It also looks up the customer or partner organization of a requested lens, so that
+// request. It also looks up the customer organization of a requested lens, so that
 // authenticating a session in a lens takes no query of its own.
 func GetOrganizationMembership(
 	ctx context.Context,
 	userID, orgID uuid.UUID,
-	requestedCustomerOrgID, requestedPartnerOrgID *uuid.UUID,
+	requestedCustomerOrgID *uuid.UUID,
 ) (*types.OrganizationMembership, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
@@ -581,12 +581,7 @@ func GetOrganizationMembership(
 						SELECT (`+customerOrganizationOutputExpr+`)
 						FROM CustomerOrganization co
 						WHERE co.id = @requestedCustomerOrgId::UUID AND co.organization_id = o.id
-					) AS requested_customer_organization,
-					EXISTS (
-						SELECT 1
-						FROM PartnerOrganization po
-						WHERE po.id = @requestedPartnerOrgId::UUID AND po.organization_id = o.id
-					) AS requested_partner_organization_exists
+					) AS requested_customer_organization
 			FROM UserAccount u
 			INNER JOIN Organization_UserAccount j ON u.id = j.user_account_id
 			INNER JOIN Organization o ON o.id = j.organization_id
@@ -599,19 +594,17 @@ func GetOrganizationMembership(
 			"id":                     userID,
 			"orgId":                  orgID,
 			"requestedCustomerOrgId": requestedCustomerOrgID,
-			"requestedPartnerOrgId":  requestedPartnerOrgID,
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
 	res, err := pgx.CollectExactlyOneRow[struct {
-		User                               types.UserAccountWithUserRole
-		Org                                types.Organization
-		Branding                           *types.OrganizationBranding
-		CustomerOrganization               *types.CustomerOrganization
-		RequestedCustomerOrganization      *types.CustomerOrganization
-		RequestedPartnerOrganizationExists bool
+		User                          types.UserAccountWithUserRole
+		Org                           types.Organization
+		Branding                      *types.OrganizationBranding
+		CustomerOrganization          *types.CustomerOrganization
+		RequestedCustomerOrganization *types.CustomerOrganization
 	}](rows, pgx.RowToStructByPos)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, distrerr.ErrNotFound
@@ -619,11 +612,10 @@ func GetOrganizationMembership(
 		return nil, fmt.Errorf("could not map user or org: %w", err)
 	}
 	return &types.OrganizationMembership{
-		User:                               res.User,
-		Organization:                       types.OrganizationWithBranding{Organization: res.Org, Branding: res.Branding},
-		CustomerOrganization:               res.CustomerOrganization,
-		RequestedCustomerOrganization:      res.RequestedCustomerOrganization,
-		RequestedPartnerOrganizationExists: res.RequestedPartnerOrganizationExists,
+		User:                          res.User,
+		Organization:                  types.OrganizationWithBranding{Organization: res.Org, Branding: res.Branding},
+		CustomerOrganization:          res.CustomerOrganization,
+		RequestedCustomerOrganization: res.RequestedCustomerOrganization,
 	}, nil
 }
 
