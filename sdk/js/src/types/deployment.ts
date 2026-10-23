@@ -58,6 +58,8 @@ export interface DeploymentWithLatestRevision extends Deployment {
   envFileData?: string;
   deploymentRevisionId?: string;
   deploymentRevisionCreatedAt?: string;
+  /** Omitted when the viewer may not see who created the revision. */
+  deploymentRevisionCreatedBy?: DeploymentRevisionCreatedBy;
   latestStatus?: DeploymentRevisionStatus;
   /**
    * The revision a controller last reported as applied, which differs from deploymentRevisionId while a
@@ -75,6 +77,12 @@ export interface DeploymentRevisionStatus {
   deploymentRevisionId: string;
   type: DeploymentStatusType;
   message: string;
+}
+
+export interface DeploymentRevisionCreatedBy {
+  id: string;
+  name?: string;
+  imageId?: string;
 }
 
 export interface DeploymentRevisionCreator {

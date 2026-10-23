@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/types"
@@ -196,6 +197,7 @@ func GetNotificationRecords(
 	ctx context.Context,
 	organizationID uuid.UUID,
 	customerOrganizationID *uuid.UUID,
+	after *time.Time,
 ) ([]types.NotificationRecordWithDetails, error) {
 	db := internalctx.GetDb(ctx)
 
@@ -241,12 +243,14 @@ func GetNotificationRecords(
 		WHERE r.organization_id = @organizationID
 			AND ((@isVendor AND r.customer_organization_id IS NULL)
 				OR r.customer_organization_id = @customerOrganizationID)
+			AND (@after::TIMESTAMP IS NULL OR r.created_at > @after)
 		GROUP BY r.id, dt.id, co.id, a.id, av.id, ar.id, arv.id, dtm.id
 		ORDER BY r.created_at DESC`,
 		pgx.NamedArgs{
 			"organizationID":         organizationID,
 			"customerOrganizationID": customerOrganizationID,
 			"isVendor":               customerOrganizationID == nil,
+			"after":                  after,
 		},
 	)
 	if err != nil {

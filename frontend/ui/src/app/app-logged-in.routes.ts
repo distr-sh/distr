@@ -25,6 +25,7 @@ import {VendorUsersComponent} from './components/users/vendors/vendor-users.comp
 import {CustomerSettingsComponent} from './customer-settings/customer-settings.component';
 import {DeploymentTargetDetailComponent} from './deployments/deployment-target-details/deployment-target-detail.component';
 import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
+import {CustomerHomePageComponent} from './home/customer/customer-home-page.component';
 import {CustomerLicenseDetailPageComponent} from './licenses/customer-license-detail-page.component';
 import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
 import {VendorLicenseDetailPageComponent} from './licenses/vendor-license-detail-page.component';
@@ -37,7 +38,6 @@ import {CustomEmailComponent} from './organization-settings/custom-email.compone
 import {CustomOidcComponent} from './organization-settings/custom-oidc.component';
 import {GeneralSettingsComponent} from './organization-settings/general-settings.component';
 import {OrganizationSettingsComponent} from './organization-settings/organization-settings.component';
-import {OverviewPageComponent} from './overview/overview-page.component';
 import {CustomerSecretsPageComponent} from './secrets/customer-secrets-page.component';
 import {SecretsPage} from './secrets/secrets-page.component';
 import {AuthService} from './services/auth.service';
@@ -229,11 +229,11 @@ export const routes: Routes = [
         canActivate: [requireVendorOrPartner],
       },
       {
-        path: 'overview',
-        component: OverviewPageComponent,
+        path: 'home',
+        component: CustomerHomePageComponent,
         canActivate: [requireCustomer],
       },
-      {path: 'home', pathMatch: 'full', redirectTo: 'overview'},
+      {path: 'overview', pathMatch: 'full', redirectTo: 'home'},
       {
         path: 'applications',
         canActivate: [requireVendor],

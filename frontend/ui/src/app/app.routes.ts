@@ -85,7 +85,7 @@ const baseRouteRedirectGuard: CanActivateFn = () => {
   if (auth.isVendor() || auth.isPartner()) {
     return router.createUrlTree(['/dashboard']);
   } else {
-    return router.createUrlTree(['/overview']);
+    return router.createUrlTree(['/home']);
   }
 };
 

@@ -22,17 +22,17 @@ type CreateArtifactRequest struct {
 // PatchArtifactRequest supports partial updates: omitted fields are left unchanged.
 // For auth, explicit null clears the credentials.
 type PatchArtifactRequest struct {
-	UpstreamURL              *string                        `json:"upstreamUrl,omitempty"`
-	Auth                     Nullable[ArtifactUpstreamAuth] `json:"auth"`
-	Public                   *bool                          `json:"public,omitempty"`
-	HiddenInCustomerOverview *bool                          `json:"hiddenInCustomerOverview,omitempty"`
+	UpstreamURL  *string                        `json:"upstreamUrl,omitempty"`
+	Auth         Nullable[ArtifactUpstreamAuth] `json:"auth"`
+	Public       *bool                          `json:"public,omitempty"`
+	HiddenInHome *bool                          `json:"hiddenInHome,omitempty"`
 }
 
 type ArtifactResponse struct {
 	types.ArtifactWithTaggedVersion
-	ImageUrl                 *string `json:"imageUrl,omitempty"`
-	TitleImageUrl            *string `json:"titleImageUrl,omitempty"`
-	HiddenInCustomerOverview bool    `json:"hiddenInCustomerOverview"`
+	ImageUrl      *string `json:"imageUrl,omitempty"`
+	TitleImageUrl *string `json:"titleImageUrl,omitempty"`
+	HiddenInHome  bool    `json:"hiddenInHome"`
 }
 
 type ArtifactPullStatusResponse struct {
@@ -41,9 +41,22 @@ type ArtifactPullStatusResponse struct {
 
 type ArtifactsResponse struct {
 	types.ArtifactWithDownloads
-	ImageUrl                 *string `json:"imageUrl,omitempty"`
-	TitleImageUrl            *string `json:"titleImageUrl,omitempty"`
-	HiddenInCustomerOverview bool    `json:"hiddenInCustomerOverview"`
+	ImageUrl      *string `json:"imageUrl,omitempty"`
+	TitleImageUrl *string `json:"titleImageUrl,omitempty"`
+	HiddenInHome  bool    `json:"hiddenInHome"`
+	// LatestVersionName and LastPull are only set for a customer.
+	LatestVersionName *string           `json:"latestVersionName,omitempty"`
+	LastPull          *ArtifactLastPull `json:"lastPull,omitempty"`
+}
+
+// ArtifactLastPull is the most recent pull of a release tag of the artifact by the customer organization.
+type ArtifactLastPull struct {
+	VersionName          string    `json:"versionName"`
+	CreatedAt            time.Time `json:"createdAt"`
+	PulledByName         *string   `json:"pulledByName,omitempty"`
+	PulledByImageUrl     *string   `json:"pulledByImageUrl,omitempty"`
+	DeploymentTargetName *string   `json:"deploymentTargetName,omitempty"`
+	IsLatest             bool      `json:"isLatest"`
 }
 
 type ArtifactVersionPullResponse struct {

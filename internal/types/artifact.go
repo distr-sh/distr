@@ -39,20 +39,20 @@ const (
 )
 
 type Artifact struct {
-	ID                       uuid.UUID         `db:"id" json:"id"`
-	CreatedAt                time.Time         `db:"created_at" json:"createdAt"`
-	OrganizationID           uuid.UUID         `db:"organization_id" json:"-"`
-	Name                     string            `db:"name" json:"name"`
-	ImageID                  *uuid.UUID        `db:"image_id" json:"-"`
-	TitleImageID             *uuid.UUID        `db:"title_image_id" json:"-"`
-	Public                   bool              `db:"public" json:"public"`
-	HiddenInCustomerOverview bool              `db:"hidden_in_customer_overview" json:"-"`
-	UpstreamURL              *string           `db:"upstream_url" json:"upstreamUrl,omitempty"`
-	LastSyncedAt             *time.Time        `db:"last_synced_at" json:"lastSyncedAt,omitempty"`
-	LastSyncError            *string           `db:"last_sync_error" json:"lastSyncError,omitempty"`
-	UpstreamAuthType         *UpstreamAuthType `db:"upstream_auth_type" json:"upstreamAuthType,omitempty"`
-	UpstreamUsername         *dbcrypto.String  `db:"upstream_username" json:"-"`
-	UpstreamPassword         *dbcrypto.String  `db:"upstream_password" json:"-"`
+	ID               uuid.UUID         `db:"id" json:"id"`
+	CreatedAt        time.Time         `db:"created_at" json:"createdAt"`
+	OrganizationID   uuid.UUID         `db:"organization_id" json:"-"`
+	Name             string            `db:"name" json:"name"`
+	ImageID          *uuid.UUID        `db:"image_id" json:"-"`
+	TitleImageID     *uuid.UUID        `db:"title_image_id" json:"-"`
+	Public           bool              `db:"public" json:"public"`
+	HiddenInHome     bool              `db:"hidden_in_home" json:"-"`
+	UpstreamURL      *string           `db:"upstream_url" json:"upstreamUrl,omitempty"`
+	LastSyncedAt     *time.Time        `db:"last_synced_at" json:"lastSyncedAt,omitempty"`
+	LastSyncError    *string           `db:"last_sync_error" json:"lastSyncError,omitempty"`
+	UpstreamAuthType *UpstreamAuthType `db:"upstream_auth_type" json:"upstreamAuthType,omitempty"`
+	UpstreamUsername *dbcrypto.String  `db:"upstream_username" json:"-"`
+	UpstreamPassword *dbcrypto.String  `db:"upstream_password" json:"-"`
 }
 
 type DownloadMetrics struct {
@@ -104,6 +104,46 @@ type CustomerArtifactPull struct {
 	UserName             *string    `db:"user_name"`
 	UserImageID          *uuid.UUID `db:"user_image_id"`
 	DeploymentTargetName *string    `db:"deployment_target_name"`
+}
+
+// SignatureArtifactType is the artifact type of a referrer that marks a version as a signature.
+const SignatureArtifactType = "application/vnd.dev.sigstore.bundle.v0.3+json"
+
+// ArtifactReleaseVersion is a tagged version of an artifact with only what LatestArtifactTag needs.
+type ArtifactReleaseVersion struct {
+	ArtifactID uuid.UUID `db:"artifact_id"`
+	ID         uuid.UUID `db:"id"`
+	CreatedAt  time.Time `db:"created_at"`
+	TagNames   []string  `db:"tag_names"`
+	Signature  bool      `db:"signature"`
+}
+
+// TaggedArtifactVersionsByArtifact converts the versions for LatestArtifactTag, grouped by their artifact.
+func TaggedArtifactVersionsByArtifact(versions []ArtifactReleaseVersion) map[uuid.UUID][]TaggedArtifactVersion {
+	result := make(map[uuid.UUID][]TaggedArtifactVersion)
+	for _, v := range versions {
+		tagged := TaggedArtifactVersion{ID: v.ID, CreatedAt: v.CreatedAt, InferredType: ManifestTypeGeneric}
+		if v.Signature {
+			tagged.InferredType = ManifestTypeSignature
+		}
+		for _, name := range v.TagNames {
+			tagged.Tags = append(tagged.Tags, ArtifactVersionTag{Name: name})
+		}
+		result[v.ArtifactID] = append(result[v.ArtifactID], tagged)
+	}
+	return result
+}
+
+// FirstArtifactVersionPull is the first pull of a release tag of an artifact by a user of a customer
+// organization.
+type FirstArtifactVersionPull struct {
+	ID           uuid.UUID  `db:"id"`
+	CreatedAt    time.Time  `db:"created_at"`
+	ArtifactID   uuid.UUID  `db:"artifact_id"`
+	ArtifactName string     `db:"artifact_name"`
+	VersionName  string     `db:"version_name"`
+	UserName     *string    `db:"user_name"`
+	UserImageID  *uuid.UUID `db:"user_image_id"`
 }
 
 // LatestArtifactTag returns the newest of the versions along with the tag to show for it. Signatures and

@@ -31,7 +31,7 @@ var (
 
 func artifactOutputExprWith(upstreamCredential func(EncryptedColumn, string) string) string {
 	return ` a.id, a.created_at, a.organization_id, a.name, a.image_id, a.title_image_id, a.public, ` +
-		`a.hidden_in_customer_overview, ` +
+		`a.hidden_in_home, ` +
 		`a.upstream_url, a.last_synced_at, a.last_sync_error, a.upstream_auth_type, ` +
 		upstreamCredential(artifactUpstreamUsername, "a") + `, ` +
 		upstreamCredential(artifactUpstreamPassword, "a") + ` `
@@ -262,6 +262,110 @@ func GetArtifactByName(ctx context.Context, orgSlug, name string) (*types.Artifa
 	}
 }
 
+// artifactVersionVisibleExpr matches the digest version av when it has a tag and either @isVendorUser is set
+// or @customerOrgId may pull it.
+var artifactVersionVisibleExpr = `(
+	@isVendorUser
+	OR a.public
+	-- only check entitlement if there is at least one entitlement in this organization
+	OR NOT EXISTS (
+		SELECT al.id
+		FROM artifact a
+		JOIN ArtifactEntitlement al ON a.organization_id = al.organization_id
+		WHERE a.id = av.artifact_id
+	)
+	-- entitlement check
+	OR EXISTS (
+		-- entitlement for all versions of the artifact
+		SELECT *
+		FROM ArtifactEntitlement_Artifact ala
+		INNER JOIN ArtifactEntitlement al ON ala.artifact_entitlement_id = al.id
+		WHERE ala.artifact_id = av.artifact_id AND ala.artifact_version_id IS NULL
+		AND al.customer_organization_id = @customerOrgId AND (al.expires_at IS NULL OR al.expires_at > now())
+	)
+	OR EXISTS (
+		-- or entitlement only for specific versions or their parent versions
+		WITH RECURSIVE ArtifactVersionAggregate (id, manifest_blob_digest) AS (
+			SELECT avx.id, avx.manifest_blob_digest
+			FROM ArtifactVersion avx
+			WHERE avx.manifest_blob_digest = av.manifest_blob_digest AND avx.artifact_id = av.artifact_id
+
+			UNION ALL
+
+			SELECT DISTINCT avx.id, avx.manifest_blob_digest
+			FROM ArtifactVersion avx
+			JOIN ArtifactVersionPart avp ON avx.id = avp.artifact_version_id
+			JOIN ArtifactVersionAggregate agg ON avp.artifact_blob_digest = agg.manifest_blob_digest
+		)
+		SELECT *
+		FROM ArtifactVersionAggregate avagg
+		INNER JOIN ArtifactEntitlement_Artifact ala ON ala.artifact_version_id = avagg.id
+		INNER JOIN ArtifactEntitlement al ON ala.artifact_entitlement_id = al.id
+		WHERE al.customer_organization_id = @customerOrgId AND (al.expires_at IS NULL OR al.expires_at > now())
+		AND ala.artifact_id = av.artifact_id
+	)
+)
+AND EXISTS (
+	-- only versions that have a tag
+	SELECT avt.id
+	FROM ArtifactVersion avt
+	WHERE avt.manifest_blob_digest = av.manifest_blob_digest
+	AND avt.artifact_id = av.artifact_id
+	AND ` + artifactVersionIsTagExpr("avt") + `
+)`
+
+// ListArtifactReleaseVersions returns the tagged versions of the artifacts, with no more than
+// LatestArtifactTag needs to decide the latest of them. With licensing, only those the customer organization
+// may pull.
+func ListArtifactReleaseVersions(
+	ctx context.Context,
+	artifactIDs []uuid.UUID,
+	customerOrgID uuid.UUID,
+	licensing bool,
+) ([]types.ArtifactReleaseVersion, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx, `
+		SELECT
+			av.artifact_id,
+			av.id,
+			av.created_at,
+			coalesce((
+				SELECT array_agg(avt.name ORDER BY avt.name)
+				FROM ArtifactVersion avt
+				WHERE avt.manifest_blob_digest = av.manifest_blob_digest
+					AND avt.artifact_id = av.artifact_id
+					AND `+artifactVersionIsTagExpr("avt")+`
+			), ARRAY[]::TEXT[]) AS tag_names,
+			EXISTS (
+				SELECT 1
+				FROM ArtifactVersionPart avp
+					JOIN ArtifactVersion av1 ON av1.manifest_blob_digest = avp.artifact_blob_digest
+				WHERE avp.artifact_version_id = av.id
+					AND convert_from(av1.manifest_data, 'UTF8')::jsonb ->> 'artifactType' = @signatureArtifactType
+			) AS signature
+		FROM ArtifactVersion av
+			JOIN Artifact a ON a.id = av.artifact_id
+		WHERE av.artifact_id = any(@artifactIds)
+			AND `+artifactVersionIsDigestExpr("av")+`
+			AND `+artifactVersionVisibleExpr+`
+		ORDER BY av.created_at DESC`,
+		pgx.NamedArgs{
+			"artifactIds":           artifactIDs,
+			"customerOrgId":         customerOrgID,
+			"isVendorUser":          !licensing,
+			"signatureArtifactType": types.SignatureArtifactType,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query artifact release versions: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ArtifactReleaseVersion])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect artifact release versions: %w", err)
+	}
+	return result, nil
+}
+
 func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerOrgID *uuid.UUID) (
 	[]types.TaggedArtifactVersion,
 	error,
@@ -340,55 +444,7 @@ func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerO
 					AND oua_dl.user_account_id = avpl.useraccount_id
 			WHERE av.artifact_id = @artifactId
 			AND `+artifactVersionIsDigestExpr("av")+`
-			AND (
-				@isVendorUser
-				OR a.public
-				-- only check entitlement if there is at least one entitlement in this organization
-				OR NOT EXISTS (
-					SELECT al.id
-					FROM artifact a
-					JOIN ArtifactEntitlement al ON a.organization_id = al.organization_id
-					WHERE a.id = @artifactId
-				)
-				-- entitlement check
-				OR EXISTS (
-					-- entitlement for all versions of the artifact
-					SELECT *
-					FROM ArtifactEntitlement_Artifact ala
-					INNER JOIN ArtifactEntitlement al ON ala.artifact_entitlement_id = al.id
-					WHERE ala.artifact_id = @artifactId AND ala.artifact_version_id IS NULL
-					AND al.customer_organization_id = @customerOrgId AND (al.expires_at IS NULL OR al.expires_at > now())
-				)
-				OR EXISTS (
-					-- or entitlement only for specific versions or their parent versions
-					WITH RECURSIVE ArtifactVersionAggregate (id, manifest_blob_digest) AS (
-						SELECT avx.id, avx.manifest_blob_digest
-						FROM ArtifactVersion avx
-						WHERE avx.manifest_blob_digest = av.manifest_blob_digest AND avx.artifact_id = @artifactId
-
-						UNION ALL
-
-						SELECT DISTINCT avx.id, avx.manifest_blob_digest
-						FROM ArtifactVersion avx
-						JOIN ArtifactVersionPart avp ON avx.id = avp.artifact_version_id
-						JOIN ArtifactVersionAggregate agg ON avp.artifact_blob_digest = agg.manifest_blob_digest
-					)
-					SELECT *
-					FROM ArtifactVersionAggregate avagg
-					INNER JOIN ArtifactEntitlement_Artifact ala ON ala.artifact_version_id = avagg.id
-					INNER JOIN ArtifactEntitlement al ON ala.artifact_entitlement_id = al.id
-					WHERE al.customer_organization_id = @customerOrgId AND (al.expires_at IS NULL OR al.expires_at > now())
-					AND ala.artifact_id = @artifactId
-				)
-			)
-			AND EXISTS (
-				-- only versions that have a tag
-				SELECT avt.id
-				FROM ArtifactVersion avt
-				WHERE avt.manifest_blob_digest = av.manifest_blob_digest
-				AND avt.artifact_id = av.artifact_id
-				AND `+artifactVersionIsTagExpr("avt")+`
-			)
+			AND `+artifactVersionVisibleExpr+`
 			GROUP BY av.id, av.created_at, av.manifest_blob_digest, a.organization_id
 			ORDER BY av.created_at DESC
 			`,
@@ -403,7 +459,7 @@ func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerO
 	} else {
 		for i, version := range versions {
 			version.InferredType = types.ManifestTypeGeneric
-			if slices.Contains(version.ReferrerArtifactTypes, "application/vnd.dev.sigstore.bundle.v0.3+json") {
+			if slices.Contains(version.ReferrerArtifactTypes, types.SignatureArtifactType) {
 				version.InferredType = types.ManifestTypeSignature
 			} else if strings.HasPrefix(version.ManifestContentType, "application/vnd.docker") {
 				version.InferredType = types.ManifestTypeContainerImage
@@ -579,18 +635,18 @@ func UpdateArtifactPublic(ctx context.Context, artifactID, organizationID uuid.U
 	return nil
 }
 
-func UpdateArtifactHiddenInCustomerOverview(
+func UpdateArtifactHiddenInHome(
 	ctx context.Context,
 	artifactID, organizationID uuid.UUID,
 	hidden bool,
 ) error {
 	db := internalctx.GetDb(ctx)
 	_, err := db.Exec(ctx,
-		`UPDATE Artifact SET hidden_in_customer_overview = @hidden WHERE id = @id AND organization_id = @organizationId`,
+		`UPDATE Artifact SET hidden_in_home = @hidden WHERE id = @id AND organization_id = @organizationId`,
 		pgx.NamedArgs{"id": artifactID, "organizationId": organizationID, "hidden": hidden},
 	)
 	if err != nil {
-		return fmt.Errorf("could not update artifact overview visibility: %w", err)
+		return fmt.Errorf("could not update artifact home page visibility: %w", err)
 	}
 	return nil
 }
@@ -991,6 +1047,50 @@ func BulkUpsertArtifactVersionParts(ctx context.Context, parts []types.ArtifactV
 // organization for each of the given artifacts that it has pulled at all. Pulls of a manifest by digest are
 // left out: a client pulling by tag always resolves the tag first, which is recorded as well, and the child
 // manifests of an index are only ever pulled by digest.
+// GetFirstArtifactVersionPullsOfCustomerOrganization returns the newest first pulls of the users of the
+// customer organization for each release tag created since, at most limit of them. Restricting the tags to
+// those created since makes the first pull since also the first pull ever.
+func GetFirstArtifactVersionPullsOfCustomerOrganization(
+	ctx context.Context,
+	orgID, customerOrgID uuid.UUID,
+	since time.Time,
+	limit int,
+) ([]types.FirstArtifactVersionPull, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`WITH `+customerOrgPullsExpr+`
+		SELECT * FROM (
+			SELECT DISTINCT ON (v.id, p.useraccount_id)
+				p.id,
+				p.created_at,
+				a.id AS artifact_id,
+				a.name AS artifact_name,
+				v.name AS version_name,
+				u.name AS user_name,
+				u.image_id AS user_image_id
+			FROM customer_pull p
+				JOIN ArtifactVersion v ON v.id = p.artifact_version_id
+				JOIN Artifact a ON a.id = v.artifact_id
+				JOIN UserAccount u ON u.id = p.useraccount_id
+			WHERE a.organization_id = @orgId
+				AND v.created_at > @since
+				AND `+artifactVersionIsReleaseTagExpr("v")+`
+			ORDER BY v.id, p.useraccount_id, p.created_at
+		) first_pull
+		ORDER BY created_at DESC
+		LIMIT @limit`,
+		pgx.NamedArgs{"orgId": orgID, "customerOrganizationId": customerOrgID, "since": since, "limit": limit},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query first artifact version pulls: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.FirstArtifactVersionPull])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect first artifact version pulls: %w", err)
+	}
+	return result, nil
+}
+
 func GetLatestArtifactPullsOfCustomerOrganization(
 	ctx context.Context,
 	orgID, customerOrgID uuid.UUID,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/distrerr"
@@ -161,6 +162,59 @@ func mergeApplications(applications []types.Application) []types.Application {
 		}
 	}
 	return util.GetValues(applicationMap)
+}
+
+// GetCustomerApplicationVersions returns the newest versions released since that the customer organization
+// may deploy, at most limit of them. Archived versions are left out, and with entitledOnly so are the versions
+// no valid entitlement of the customer covers.
+func GetCustomerApplicationVersions(
+	ctx context.Context,
+	orgID, customerOrgID uuid.UUID,
+	entitledOnly bool,
+	since time.Time,
+	limit int,
+) ([]types.CustomerApplicationVersion, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT av.id, av.created_at, a.id AS application_id, a.name AS application_name, av.name
+		FROM Application a
+			JOIN ApplicationVersion av ON av.application_id = a.id
+		WHERE a.organization_id = @orgId
+			AND av.created_at > @since
+			AND av.archived_at IS NULL
+			AND (NOT @entitledOnly OR EXISTS (
+				SELECT 1 FROM ApplicationEntitlement al
+				WHERE al.application_id = a.id
+					AND al.customer_organization_id = @customerOrgId
+					AND (al.expires_at IS NULL OR al.expires_at > now())
+					AND (
+						NOT EXISTS (
+							SELECT 1 FROM ApplicationEntitlement_ApplicationVersion alav
+							WHERE alav.application_entitlement_id = al.id
+						) OR EXISTS (
+							SELECT 1 FROM ApplicationEntitlement_ApplicationVersion alav
+							WHERE alav.application_entitlement_id = al.id AND alav.application_version_id = av.id
+						)
+					)
+			))
+		ORDER BY av.created_at DESC
+		LIMIT @limit`,
+		pgx.NamedArgs{
+			"orgId":         orgID,
+			"customerOrgId": customerOrgID,
+			"entitledOnly":  entitledOnly,
+			"since":         since,
+			"limit":         limit,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query customer application versions: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.CustomerApplicationVersion])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect customer application versions: %w", err)
+	}
+	return result, nil
 }
 
 func GetApplicationsWithEntitlementOwnerID(

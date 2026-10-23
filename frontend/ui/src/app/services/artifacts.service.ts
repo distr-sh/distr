@@ -38,11 +38,24 @@ export interface ArtifactUpstreamAuth {
 
 export interface Artifact extends BaseArtifact, HasDownloads {
   public: boolean;
-  hiddenInCustomerOverview: boolean;
+  hiddenInHome: boolean;
   upstreamUrl?: string;
   lastSyncedAt?: string;
   lastSyncError?: string;
   upstreamAuthType?: UpstreamAuthType;
+  /** Only set for a customer. */
+  latestVersionName?: string;
+  /** Only set for a customer. */
+  lastPull?: ArtifactLastPull;
+}
+
+export interface ArtifactLastPull {
+  versionName: string;
+  createdAt: string;
+  pulledByName?: string;
+  pulledByImageUrl?: string;
+  deploymentTargetName?: string;
+  isLatest: boolean;
 }
 
 export interface TaggedArtifactVersion extends HasDownloads {
@@ -67,7 +80,7 @@ export interface PatchArtifactRequest {
   upstreamUrl?: string | null;
   auth?: ArtifactUpstreamAuth | null;
   public?: boolean;
-  hiddenInCustomerOverview?: boolean;
+  hiddenInHome?: boolean;
 }
 
 class ArtifactsReactiveList extends ReactiveList<ArtifactWithTags> {

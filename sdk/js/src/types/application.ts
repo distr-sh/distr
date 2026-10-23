@@ -14,7 +14,7 @@ export interface Application extends BaseModel, Named {
   type: DeploymentType;
   imageId?: string;
   imageUrl?: string;
-  /** The landscape image shown for this application on a customer's overview page. */
+  /** The landscape image shown for this application on the Customer Portal home page. */
   titleImageUrl?: string;
   versioningStrategy?: VersioningStrategy;
   /** Whether deployments of this application may have automatic updates enabled. */

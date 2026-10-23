@@ -1,9 +1,13 @@
 <div
-  class="p-6"
+  [class.p-6]="variant() === 'panel'"
   [class.distr-panel]="variant() === 'panel'"
+  [class.p-4]="variant() === 'card'"
   [class.distr-card]="variant() === 'card'"
   [class.block]="variant() === 'card'">
-  <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+  <h2
+    class="text-lg font-semibold text-gray-900 dark:text-white"
+    [class.mb-4]="variant() === 'panel'"
+    [class.mb-3]="variant() === 'card'">
     @if (icon(); as icon) {
       <fa-icon [icon]="icon" class="mr-2 text-gray-500 dark:text-gray-400" />
     }
@@ -15,7 +19,7 @@
   } @else {
     <ol class="relative border-s border-gray-200 dark:border-gray-600 ms-3">
       @for (entry of entries(); track entry.id) {
-        <li class="mb-6 ms-8">
+        <li class="ms-8" [class.mb-6]="variant() === 'panel'" [class.mb-4]="variant() === 'card'">
           @if (entry.icon; as icon) {
             <span
               class="absolute -start-4 flex items-center justify-center size-8 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">

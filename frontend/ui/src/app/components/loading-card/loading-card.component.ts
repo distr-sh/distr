@@ -12,8 +12,8 @@ export class LoadingCardComponent {
   public readonly heading = input<string>();
   public readonly icon = input<IconDefinition>();
   /**
-   * Renders a placeholder with the dimensions of one overview list row, so the card keeps its height
-   * once the list arrives. Keep it in line with the layout of `app-overview-artifact-item`, the shortest row.
+   * Renders a placeholder with the dimensions of one customer home list row, so the card keeps its height
+   * once the list arrives. Keep it in line with the layout of `app-customer-home-artifact-item`, the shortest row.
    */
   public readonly row = input(false, {transform: booleanAttribute});
 

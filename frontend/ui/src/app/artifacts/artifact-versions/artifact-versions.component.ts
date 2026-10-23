@@ -373,13 +373,11 @@ export class ArtifactVersionsComponent {
     }
   }
 
-  protected async setHiddenInCustomerOverview(artifact: ArtifactWithTags, hidden: boolean) {
+  protected async setHiddenInHome(artifact: ArtifactWithTags, hidden: boolean) {
     this.showDropdown.set(false);
     try {
-      await firstValueFrom(this.artifacts.patchArtifact(artifact.id, {hiddenInCustomerOverview: hidden}));
-      this.toast.success(
-        hidden ? 'Artifact is hidden in the customer overview' : 'Artifact is shown in the customer overview'
-      );
+      await firstValueFrom(this.artifacts.patchArtifact(artifact.id, {hiddenInHome: hidden}));
+      this.toast.success(hidden ? 'Artifact is hidden in home' : 'Artifact is shown in home');
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) this.toast.error(msg);

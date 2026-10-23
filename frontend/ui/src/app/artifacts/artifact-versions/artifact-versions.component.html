@@ -28,8 +28,8 @@
                 @if (artifact.public) {
                   <app-artifact-public-badge />
                 }
-                @if (auth.isVendor() && artifact.hiddenInCustomerOverview) {
-                  <span class="distr-badge distr-badge-neutral">Hidden in customer overview</span>
+                @if (auth.isVendor() && artifact.hiddenInHome) {
+                  <span class="distr-badge distr-badge-neutral">Hidden in home</span>
                 }
               </p>
             </div>
@@ -102,15 +102,13 @@
                       </li>
                     }
                     <li>
-                      <button
-                        class="distr-dropdown-item"
-                        (click)="setHiddenInCustomerOverview(artifact, !artifact.hiddenInCustomerOverview)">
-                        @if (artifact.hiddenInCustomerOverview) {
+                      <button class="distr-dropdown-item" (click)="setHiddenInHome(artifact, !artifact.hiddenInHome)">
+                        @if (artifact.hiddenInHome) {
                           <fa-icon [icon]="faEye" />
-                          Show in customer overview
+                          Show in home
                         } @else {
                           <fa-icon [icon]="faEyeSlash" />
-                          Hide in customer overview
+                          Hide in home
                         }
                       </button>
                     </li>
