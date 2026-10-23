@@ -140,7 +140,7 @@ export class EditApplicationEntitlementComponent implements OnInit, AfterViewIni
   protected readonly dropdownWidth = signal(0);
 
   protected readonly faChevronDown = faChevronDown;
-  protected readonly autoAddVersionRegexDocsUrl = `${WEBSITE_URL}/docs/platform/application-entitlements/#auto-add-version-regex`;
+  protected readonly autoAddVersionRegexDocsUrl = `${WEBSITE_URL}/docs/platform/auto-add-regex/`;
 
   protected readonly dropdownTriggerButton = viewChild<ElementRef<HTMLElement>>('dropdownTriggerButton');
 

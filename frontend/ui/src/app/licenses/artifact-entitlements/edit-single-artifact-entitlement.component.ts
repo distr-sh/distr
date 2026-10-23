@@ -120,7 +120,7 @@ export class EditSingleArtifactEntitlementComponent implements OnInit, AfterView
   private readonly dropdownTriggerButton = viewChild<ElementRef<HTMLElement>>('dropdownTriggerButton');
 
   protected readonly faChevronDown = faChevronDown;
-  protected readonly autoAddTagRegexDocsUrl = `${WEBSITE_URL}/docs/platform/artifact-entitlements/#auto-add-tag-regex`;
+  protected readonly autoAddTagRegexDocsUrl = `${WEBSITE_URL}/docs/platform/auto-add-regex/`;
 
   constructor() {
     if (!this.auth.hasAnyRole('admin', 'read_write')) {

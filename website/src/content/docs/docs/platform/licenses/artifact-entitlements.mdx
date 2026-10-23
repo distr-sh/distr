@@ -80,28 +80,7 @@ An entitlement that bundles several artifacts opens in the legacy view. There yo
 
 ## Auto-add tag regex
 
-An entitlement with specific tags can grow with your releases. Enter a regular expression in **Auto-add Tag Regex** next to the tag picker, and every new tag of the artifact whose name matches it is added to the entitlement automatically. For example, `^2\.\d+\.\d+$` keeps a customer on every `2.x.y` release without you editing the entitlement after each push. The regex is only available for an entitlement with a single artifact.
-
-### How matching works
-
-- **When it runs:** The regex is checked whenever you push a tag that did not exist yet, or move a tag to a new manifest when [mutable tags](/docs/registry/#artifact-details) are enabled. Setting or changing the regex does not touch existing tags, so select those yourself. Tags synced from an upstream registry are not matched.
-- **What is added:** The manifest the tag points to is added to the entitlement, just like selecting it in the tag picker. Every other tag pointing to the same manifest becomes available to the customer as well.
-- **Syntax:** The regex uses [RE2 syntax](https://github.com/google/re2/wiki/Syntax) and may be up to 200 characters long. Lookaheads and backreferences are not supported. It must not start or end with whitespace; write `\s` or `[ ]` to match a space there.
-- **Partial matches:** The regex matches anywhere in the tag name unless you anchor it with `^` and `$`. Matching is case-sensitive; prefix the regex with `(?i)` to ignore case.
-- **At least one tag:** An entitlement with an auto-add regex needs at least one selected tag, since selecting all tags already includes future ones.
-
-An auto-added tag is an ordinary entry of the entitlement. The customer can pull it right away, it is considered for update notifications and you can remove it like any tag you selected yourself.
-
-### Examples
-
-| Regex             | Adds                           | Does not add             |
-| ----------------- | ------------------------------ | ------------------------ |
-| `^2\.\d+\.\d+$`   | `2.0.0`, `2.14.3`              | `12.0.0`, `2.1.0-rc.1`   |
-| `^2\.`            | `2.1.0`, `2.1.0-rc.1`          | `12.0.0`, `v2.1.0`       |
-| `^\d+\.\d+\.\d+$` | `1.4.2`, `3.0.0`               | `1.5.0-beta.1`, `v1.4.2` |
-| `-lts$`           | `3.2.0-lts`                    | `3.2.0`, `3.2.0-lts.1`   |
-| `^[23]\.\d+\.\d+` | `2.1.0`, `3.0.4`, `3.0.4-rc1`  | `4.0.0`, `1.2.3`         |
-| `(?i)^release-`   | `release-2026-10`, `RELEASE-7` | `pre-release-1`          |
+An entitlement with specific tags can grow with your releases. Enter a regular expression in **Auto-add Tag Regex** next to the tag picker, and every new tag of the artifact whose name matches it is added to the entitlement automatically. The regex is only available for an entitlement with a single artifact. See [Auto-add Regex](/docs/platform/auto-add-regex/) for when it runs, how to write it and examples.
 
 ## Managing existing entitlements
 
