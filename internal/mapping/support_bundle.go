@@ -21,12 +21,13 @@ func SupportBundleConfigurationScriptToAPI(
 	script types.SupportBundleConfigurationScript,
 ) api.SupportBundleConfigurationScript {
 	return api.SupportBundleConfigurationScript{
-		ID:          script.ID,
-		CreatedAt:   script.CreatedAt,
-		Name:        script.Name,
-		Description: script.Description,
-		Content:     script.Content,
-		Enabled:     script.Enabled,
+		ID:             script.ID,
+		CreatedAt:      script.CreatedAt,
+		DeploymentType: script.DeploymentType,
+		Name:           script.Name,
+		Description:    script.Description,
+		Content:        script.Content,
+		Enabled:        script.Enabled,
 	}
 }
 
@@ -36,6 +37,7 @@ func SupportBundleConfigurationScriptToInternal(
 ) types.SupportBundleConfigurationScript {
 	return types.SupportBundleConfigurationScript{
 		OrganizationID: orgID,
+		DeploymentType: request.DeploymentType,
 		Name:           request.Name,
 		Description:    request.Description,
 		Content:        request.Content,
@@ -52,6 +54,7 @@ func SupportBundleToAPI(bundle types.SupportBundleWithDetails) api.SupportBundle
 		CreatedByUserAccountID:   bundle.CreatedByUserAccountID,
 		CreatedByUserName:        bundle.CreatedByUserName,
 		CreatedByImageURL:        CreateImageURL(bundle.CreatedByImageID),
+		DeploymentType:           bundle.DeploymentType,
 		Title:                    bundle.Title,
 		Description:              bundle.Description,
 		Status:                   string(bundle.Status),

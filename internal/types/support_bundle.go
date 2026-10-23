@@ -23,13 +23,14 @@ type SupportBundleConfigurationEnvVar struct {
 }
 
 type SupportBundleConfigurationScript struct {
-	ID             uuid.UUID `db:"id"`
-	CreatedAt      time.Time `db:"created_at"`
-	OrganizationID uuid.UUID `db:"organization_id"`
-	Name           string    `db:"name"`
-	Description    *string   `db:"description"`
-	Content        string    `db:"content"`
-	Enabled        bool      `db:"enabled"`
+	ID             uuid.UUID      `db:"id"`
+	CreatedAt      time.Time      `db:"created_at"`
+	OrganizationID uuid.UUID      `db:"organization_id"`
+	DeploymentType DeploymentType `db:"deployment_type"`
+	Name           string         `db:"name"`
+	Description    *string        `db:"description"`
+	Content        string         `db:"content"`
+	Enabled        bool           `db:"enabled"`
 }
 
 type SupportBundle struct {
@@ -38,6 +39,7 @@ type SupportBundle struct {
 	OrganizationID               uuid.UUID           `db:"organization_id"`
 	CustomerOrganizationID       uuid.UUID           `db:"customer_organization_id"`
 	CreatedByUserAccountID       *uuid.UUID          `db:"created_by_user_account_id"`
+	DeploymentType               DeploymentType      `db:"deployment_type"`
 	Title                        string              `db:"title"`
 	Description                  *string             `db:"description"`
 	Status                       SupportBundleStatus `db:"status"`
