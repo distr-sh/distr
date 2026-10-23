@@ -11,6 +11,7 @@ import rehypeExternalLinks from 'rehype-external-links';
 import starlightLinksValidator from 'starlight-links-validator';
 import starlightLlmsTxt from 'starlight-llms-txt';
 import starlightSidebarTopics from 'starlight-sidebar-topics';
+import {s3Redirects} from './src/integrations/s3-redirects.mjs';
 import {llmsTxtOptions} from './src/llms-txt/options';
 
 const site = 'https://distr.sh';
@@ -61,6 +62,7 @@ export default defineConfig({
         return !excludedSlugs.some(slug => slug === pathname);
       },
     }),
+    s3Redirects(),
     starlight({
       title: 'Distr',
       customCss: ['./src/styles/global.css'],
