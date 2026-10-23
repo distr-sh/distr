@@ -1,0 +1,29 @@
+<details
+  #details
+  class="group overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+  (toggle)="loadContent(details.open)">
+  <summary
+    class="flex w-full cursor-pointer list-none items-center justify-between p-4 text-sm font-medium text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-700 [&::-webkit-details-marker]:hidden">
+    <span>{{ resource().name }}</span>
+    <span class="flex items-center gap-3">
+      @let size = resource().size;
+      @if (size !== undefined) {
+        <span class="text-xs font-normal text-gray-500 dark:text-gray-400">{{ size | bytes }}</span>
+      }
+      <fa-icon
+        [icon]="faChevronRight"
+        class="text-gray-500 transition-transform group-open:rotate-90 dark:text-gray-400" />
+    </span>
+  </summary>
+  @if (content() !== undefined) {
+    <pre
+      class="overflow-x-auto border-t border-gray-200 bg-gray-50 p-4 text-xs wrap-break-word whitespace-pre-wrap text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+      >{{ content() }}</pre>
+  } @else if (loading()) {
+    <div
+      class="flex items-center border-t border-gray-200 p-4 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
+      <fa-icon [icon]="faSpinner" class="me-2 animate-spin" />
+      <span>Loading&hellip;</span>
+    </div>
+  }
+</details>

@@ -65,6 +65,7 @@
 - [SupportBundleConfigurationScript](interfaces/SupportBundleConfigurationScript.md)
 - [SupportBundleDetail](interfaces/SupportBundleDetail.md)
 - [SupportBundleResource](interfaces/SupportBundleResource.md)
+- [SupportBundleResourceSummary](interfaces/SupportBundleResourceSummary.md)
 - [TokenResponse](interfaces/TokenResponse.md)
 - [UpdateDeploymentTargetRequest](interfaces/UpdateDeploymentTargetRequest.md)
 - [UpdateSupportBundleStatusRequest](interfaces/UpdateSupportBundleStatusRequest.md)

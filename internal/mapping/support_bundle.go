@@ -69,20 +69,18 @@ func SupportBundleToAPI(bundle types.SupportBundleWithDetails) api.SupportBundle
 
 func SupportBundleResourceToAPI(resource types.SupportBundleResource) api.SupportBundleResource {
 	return api.SupportBundleResource{
-		ID:          resource.ID,
-		CreatedAt:   resource.CreatedAt,
-		Name:        resource.Name,
-		ContentType: resource.ContentType,
-		Content:     string(resource.Content),
+		SupportBundleResourceSummary: SupportBundleResourceSummaryToAPI(resource.SupportBundleResourceSummary),
+		Content:                      string(resource.Content),
 	}
 }
 
-func SupportBundleResourceToSummaryAPI(resource types.SupportBundleResource) api.SupportBundleResourceSummary {
+func SupportBundleResourceSummaryToAPI(resource types.SupportBundleResourceSummary) api.SupportBundleResourceSummary {
 	return api.SupportBundleResourceSummary{
 		ID:          resource.ID,
 		CreatedAt:   resource.CreatedAt,
 		Name:        resource.Name,
 		ContentType: resource.ContentType,
+		Size:        resource.Size,
 	}
 }
 

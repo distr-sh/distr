@@ -113,15 +113,17 @@ func uploadSupportBundleResourceHandler(r *http.Request) (respond.Responder, err
 			return nil, fmt.Errorf("failed to get secrets: %w", err)
 		} else {
 			resource := types.SupportBundleResource{
-				SupportBundleID: bundle.ID,
-				Name:            name,
-				ContentType:     contentType,
-				Content:         dbcrypto.String(secretsRedactor(secrets).Redact(string(contentBytes))),
+				SupportBundleResourceSummary: types.SupportBundleResourceSummary{
+					SupportBundleID: bundle.ID,
+					Name:            name,
+					ContentType:     contentType,
+				},
+				Content: dbcrypto.String(secretsRedactor(secrets).Redact(string(contentBytes))),
 			}
 			if err := db.CreateSupportBundleResource(ctx, &resource); err != nil {
 				return nil, fmt.Errorf("failed to create support bundle resource: %w", err)
 			} else {
-				return respond.JSON(mapping.SupportBundleResourceToSummaryAPI(resource)), nil
+				return respond.JSON(mapping.SupportBundleResourceSummaryToAPI(resource.SupportBundleResourceSummary)), nil
 			}
 		}
 	}

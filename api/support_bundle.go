@@ -140,9 +140,9 @@ type SupportBundle struct {
 
 type SupportBundleDetail struct {
 	SupportBundle
-	Resources      []SupportBundleResource `json:"resources"`
-	Comments       []SupportBundleComment  `json:"comments"`
-	CollectCommand *string                 `json:"collectCommand,omitempty"`
+	Resources      []SupportBundleResourceSummary `json:"resources"`
+	Comments       []SupportBundleComment         `json:"comments"`
+	CollectCommand *string                        `json:"collectCommand,omitempty"`
 }
 
 type CreateSupportBundleRequest struct {
@@ -172,19 +172,17 @@ type UpdateSupportBundleStatusRequest struct {
 
 // Resource
 
-type SupportBundleResource struct {
-	ID          uuid.UUID                              `json:"id"`
-	CreatedAt   time.Time                              `json:"createdAt"`
-	Name        string                                 `json:"name"`
-	ContentType types.SupportBundleResourceContentType `json:"contentType"`
-	Content     string                                 `json:"content"`
-}
-
 type SupportBundleResourceSummary struct {
 	ID          uuid.UUID                              `json:"id"`
 	CreatedAt   time.Time                              `json:"createdAt"`
 	Name        string                                 `json:"name"`
 	ContentType types.SupportBundleResourceContentType `json:"contentType"`
+	Size        *int64                                 `json:"size,omitempty"`
+}
+
+type SupportBundleResource struct {
+	SupportBundleResourceSummary
+	Content string `json:"content"`
 }
 
 // Comment

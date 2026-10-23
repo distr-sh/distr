@@ -93,6 +93,14 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 				With(option.Request(BundleIDRequest{})).
 				With(option.Response(http.StatusOK, api.SupportBundleDetail{}))
 
+			r.Get("/resources/{resourceId}", respond.Handler(getSupportBundleResourceHandler)).
+				With(option.Description("Get a support bundle resource including its content")).
+				With(option.Request(struct {
+					BundleIDRequest
+					ResourceID uuid.UUID `path:"resourceId"`
+				}{})).
+				With(option.Response(http.StatusOK, api.SupportBundleResource{}))
+
 			r.Get("/download", respond.Handler(downloadSupportBundleResourcesHandler)).
 				With(option.Description("Download all support bundle resources as a zip archive")).
 				With(option.Request(BundleIDRequest{})).
@@ -325,14 +333,14 @@ func getSupportBundleDetailHandler(r *http.Request) (respond.Responder, error) {
 		}
 	}
 
-	if resources, err := db.GetSupportBundleResources(ctx, id); err != nil {
+	if resources, err := db.GetSupportBundleResourceSummaries(ctx, id); err != nil {
 		return nil, fmt.Errorf("failed to get support bundle resources: %w", err)
 	} else if comments, err := db.GetSupportBundleComments(ctx, id); err != nil {
 		return nil, fmt.Errorf("failed to get support bundle comments: %w", err)
 	} else {
 		detail := api.SupportBundleDetail{
 			SupportBundle: mapping.SupportBundleToAPI(*bundle),
-			Resources:     mapping.List(resources, mapping.SupportBundleResourceToAPI),
+			Resources:     mapping.List(resources, mapping.SupportBundleResourceSummaryToAPI),
 			Comments:      mapping.List(comments, mapping.SupportBundleCommentToAPI),
 		}
 		if bundle.Status == types.SupportBundleStatusInitialized && bundle.BundleSecretExpiresAt != nil {
@@ -348,6 +356,24 @@ func getSupportBundleDetailHandler(r *http.Request) (respond.Responder, error) {
 			detail.CollectCommand = &cmd
 		}
 		return respond.JSON(detail), nil
+	}
+}
+
+func getSupportBundleResourceHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+
+	if bundle, resp, err := requireSupportBundle(r); resp != nil || err != nil {
+		return resp, err
+	} else if resourceID, err := uuid.Parse(r.PathValue("resourceId")); err != nil {
+		return supportBundleResourceNotFound, nil
+	} else if resource, err := db.GetSupportBundleResource(ctx, bundle.ID, resourceID); errors.Is(
+		err, distrerr.ErrNotFound,
+	) {
+		return supportBundleResourceNotFound, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to get support bundle resource: %w", err)
+	} else {
+		return respond.JSON(mapping.SupportBundleResourceToAPI(*resource)), nil
 	}
 }
 

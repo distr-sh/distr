@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	. "github.com/onsi/gomega"
@@ -29,8 +30,21 @@ func zipEntries(g Gomega, resources []types.SupportBundleResource) map[string]st
 	return entries
 }
 
+func resource(
+	name string,
+	contentType types.SupportBundleResourceContentType,
+	content string,
+) types.SupportBundleResource {
+	return types.SupportBundleResource{
+		SupportBundleResourceSummary: types.SupportBundleResourceSummary{
+			ID: uuid.New(), Name: name, ContentType: contentType,
+		},
+		Content: dbcrypto.String(content),
+	}
+}
+
 func textResource(name string) types.SupportBundleResource {
-	return types.SupportBundleResource{ID: uuid.New(), Name: name, ContentType: types.SupportBundleResourceContentTypeText}
+	return resource(name, types.SupportBundleResourceContentTypeText, "")
 }
 
 func TestWriteSupportBundleZip_keepsEntriesInsideTheArchive(t *testing.T) {
@@ -65,12 +79,12 @@ func TestWriteSupportBundleZip_namesEntriesByContentType(t *testing.T) {
 	g := NewWithT(t)
 
 	entries := zipEntries(g, []types.SupportBundleResource{
-		{Name: "cluster/nodes", ContentType: types.SupportBundleResourceContentTypeYAML, Content: "first"},
-		{Name: "cluster/nodes.yaml", ContentType: types.SupportBundleResourceContentTypeYAML, Content: "second"},
-		{Name: "cluster/version", ContentType: types.SupportBundleResourceContentTypeJSON},
-		{Name: "pods/web/app", ContentType: types.SupportBundleResourceContentTypeLog},
-		{Name: "container-web-logs", ContentType: types.SupportBundleResourceContentTypeText},
-		{Name: "container-web-logs", ContentType: types.SupportBundleResourceContentTypeText},
+		resource("cluster/nodes", types.SupportBundleResourceContentTypeYAML, "first"),
+		resource("cluster/nodes.yaml", types.SupportBundleResourceContentTypeYAML, "second"),
+		resource("cluster/version", types.SupportBundleResourceContentTypeJSON, ""),
+		resource("pods/web/app", types.SupportBundleResourceContentTypeLog, ""),
+		textResource("container-web-logs"),
+		textResource("container-web-logs"),
 	})
 
 	g.Expect(entries).To(Equal(map[string]string{
