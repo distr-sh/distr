@@ -3,7 +3,7 @@ import {inject, Injectable} from '@angular/core';
 import {CustomerOrganization, PartnerOrganization, SidebarLink, UserAccountWithRole} from '@distr-sh/distr-sdk';
 import posthog from 'posthog-js';
 import {map, Observable, shareReplay, startWith, Subject, switchMap, tap} from 'rxjs';
-import {ContextSwitchTargets} from '../types/context-switch';
+import {LensesResponse} from '../types/lens';
 import {Organization, OrganizationWithUserRole} from '../types/organization';
 
 interface ContextResponse {
@@ -71,8 +71,8 @@ export class ContextService {
     return this.cache.pipe(map((ctx) => ctx.registryHost));
   }
 
-  public getSwitchTargets(): Observable<ContextSwitchTargets> {
-    return this.httpClient.get<ContextSwitchTargets>(`${this.baseUrl}/switch-targets`);
+  public getLenses(): Observable<LensesResponse> {
+    return this.httpClient.get<LensesResponse>(`${this.baseUrl}/lenses`);
   }
 
   public reload() {

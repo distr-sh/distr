@@ -6,14 +6,7 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {
-  faAddressBook,
-  faArrowLeft,
-  faBarsStaggered,
-  faCheck,
-  faChevronDown,
-  faUserCircle,
-} from '@fortawesome/free-solid-svg-icons';
+import {faArrowLeft, faBarsStaggered, faCheck, faChevronDown, faUserCircle} from '@fortawesome/free-solid-svg-icons';
 import {catchError, EMPTY, lastValueFrom, map, of, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {MembershipLabelPipe, organizationKind} from '../../../util/organization-kind';
@@ -26,7 +19,7 @@ import {OrganizationService} from '../../services/organization.service';
 import {SidebarService} from '../../services/sidebar.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
-import {ContextSwitchPortal, ContextSwitchTargets} from '../../types/context-switch';
+import {CustomerLens, LensesResponse} from '../../types/lens';
 import {Organization, OrganizationWithUserRole} from '../../types/organization';
 import {subscriptionRank} from '../../types/subscription';
 import {AvatarComponent} from '../avatar.component';
@@ -39,17 +32,16 @@ import {NavBarSubscriptionBannerComponent} from './nav-bar-subscription-banner/n
 // above this many entries the dropdown gets a search field
 const ORGANIZATION_SEARCH_THRESHOLD = 4;
 
-const NO_SWITCH_TARGETS: ContextSwitchTargets = {organizations: []};
+const NO_LENSES: LensesResponse = {organizations: []};
 
-interface SwitcherPortal extends ContextSwitchPortal {
+interface SwitcherLens extends CustomerLens {
   current: boolean;
 }
 
 interface SwitcherOrganization {
   org: OrganizationWithUserRole;
-  logoUrl?: string;
   current: boolean;
-  portals: SwitcherPortal[];
+  lenses: SwitcherLens[];
 }
 
 interface SwitcherEntry extends SwitcherOrganization {
@@ -121,18 +113,18 @@ export class NavBarComponent implements OnInit {
     return membership ? organizationKind(membership) : 'vendor';
   });
 
-  private readonly switchTargetsRefresh$ = new Subject<void>();
-  private readonly switchTargets = toSignal(
-    this.switchTargetsRefresh$.pipe(
+  private readonly lensesRefresh$ = new Subject<void>();
+  private readonly lenses = toSignal(
+    this.lensesRefresh$.pipe(
       startWith(undefined),
-      switchMap(() => this.ctx.getSwitchTargets().pipe(catchError(() => EMPTY)))
+      switchMap(() => this.ctx.getLenses().pipe(catchError(() => EMPTY)))
     ),
-    {initialValue: NO_SWITCH_TARGETS}
+    {initialValue: NO_LENSES}
   );
-  // The current organization comes first since it holds the portal the session operates in, if any.
+  // The current organization comes first since it holds the lens the session is in, if any.
   protected readonly switcherTree = computed<SwitcherOrganization[]>(() => {
     const current = this.currentOrg();
-    const targets = new Map(this.switchTargets().organizations.map((it) => [it.id, it]));
+    const lensesByOrg = new Map(this.lenses().organizations.map((it) => [it.id, it]));
     return [...this.allOrgs()]
       .sort(
         (a, b) =>
@@ -142,15 +134,13 @@ export class NavBarComponent implements OnInit {
           a.name.localeCompare(b.name)
       )
       .map((org) => {
-        const target = targets.get(org.id!);
         const isCurrentOrg = org.id === current?.id;
         return {
           org,
-          logoUrl: target?.logoUrl,
           current: isCurrentOrg && !this.isLens,
-          portals: (target?.customerOrganizations ?? []).map((portal) => ({
-            ...portal,
-            current: isCurrentOrg && portal.id === current?.customerOrganizationId,
+          lenses: (lensesByOrg.get(org.id!)?.customerOrganizations ?? []).map((lens) => ({
+            ...lens,
+            current: isCurrentOrg && lens.id === current?.customerOrganizationId,
           })),
         };
       });
@@ -163,7 +153,7 @@ export class NavBarComponent implements OnInit {
       (count, entry) =>
         count +
         Number(!entry.current && this.isOrganizationListed()) +
-        entry.portals.filter((portal) => !portal.current).length,
+        entry.lenses.filter((lens) => !lens.current).length,
       0
     )
   );
@@ -191,21 +181,21 @@ export class NavBarComponent implements OnInit {
     source: this.organizationSearchTerm,
     computation: () => new Map(),
   });
-  // With several organizations their portals start collapsed, except for the organization of the portal the session
-  // operates in. A filter shows the matching portals expanded below their organization and all portals collapsed
-  // below an organization that matches by name alone.
+  // With several organizations their lenses start collapsed, except for the organization of the lens the session is
+  // in. A filter shows the matching lenses expanded below their organization and all lenses collapsed below an
+  // organization that matches by name alone.
   protected readonly switcherEntries = computed<SwitcherEntry[]>(() => {
     const tree = this.switcherTree();
     const term = this.organizationSearchTerm();
     const expansion = this.switcherExpansion();
     const collapsible = tree.length > 1;
     return tree.flatMap((entry) => {
-      let portals = entry.portals;
-      let expandedByDefault = portals.some((portal) => portal.current);
+      let lenses = entry.lenses;
+      let expandedByDefault = lenses.some((lens) => lens.current);
       if (term) {
-        const matchingPortals = portals.filter((portal) => portal.name.toLowerCase().includes(term));
-        if (matchingPortals.length > 0) {
-          portals = matchingPortals;
+        const matchingLenses = lenses.filter((lens) => lens.name.toLowerCase().includes(term));
+        if (matchingLenses.length > 0) {
+          lenses = matchingLenses;
           expandedByDefault = true;
         } else if (collapsible && entry.org.name.toLowerCase().includes(term)) {
           expandedByDefault = false;
@@ -213,11 +203,11 @@ export class NavBarComponent implements OnInit {
           return [];
         }
       }
-      const hasToggle = collapsible && portals.length > 0;
+      const hasToggle = collapsible && lenses.length > 0;
       return [
         {
           ...entry,
-          portals,
+          lenses,
           collapsible: hasToggle,
           expanded: !hasToggle || (expansion.get(entry.org.id!) ?? expandedByDefault),
         },
@@ -252,7 +242,7 @@ export class NavBarComponent implements OnInit {
   protected toggleOrganizations() {
     this.organizationSearch.setValue('');
     if (!this.organizationsOpened()) {
-      this.switchTargetsRefresh$.next();
+      this.lensesRefresh$.next();
     }
     this.organizationsOpened.update((opened) => !opened);
   }
@@ -271,14 +261,14 @@ export class NavBarComponent implements OnInit {
   }
 
   protected async switchOrganization(org: Organization) {
-    await this.switchContext(() => this.auth.switchContext(org.id!));
+    await this.switchContextOrEnterLens(() => this.auth.switchContext(org.id!));
   }
 
-  protected async enterLens(org: Organization, portal: SwitcherPortal) {
-    await this.switchContext(() => this.auth.enterLens(portal.id, org.id!));
+  protected async enterLens(org: Organization, lens: SwitcherLens) {
+    await this.switchContextOrEnterLens(() => this.auth.enterLens(lens.id, org.id!));
   }
 
-  private async switchContext(switchFn: () => Promise<void>) {
+  private async switchContextOrEnterLens(switchFn: () => Promise<void>) {
     this.organizationsOpened.set(false);
     try {
       await switchFn();
@@ -297,7 +287,6 @@ export class NavBarComponent implements OnInit {
     location.assign('/login');
   }
 
-  protected readonly faAddressBook = faAddressBook;
   protected readonly faArrowLeft = faArrowLeft;
   protected readonly faCheck = faCheck;
   protected readonly faChevronDown = faChevronDown;

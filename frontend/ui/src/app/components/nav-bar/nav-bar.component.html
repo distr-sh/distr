@@ -151,11 +151,6 @@
                             [attr.aria-current]="entry.current"
                             class="distr-dropdown-item focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
                             role="menuitem">
-                            @if (entry.logoUrl) {
-                              <img [src]="entry.logoUrl" alt="" loading="lazy" class="size-6 shrink-0 object-contain" />
-                            } @else {
-                              <app-avatar [name]="entry.org.name" class="size-6 rounded-sm" />
-                            }
                             <span
                               class="grow flex flex-col text-start text-sm font-medium text-gray-900 dark:text-gray-300"
                               role="none">
@@ -188,7 +183,7 @@
                               [attr.aria-expanded]="entry.expanded"
                               [attr.aria-label]="(entry.expanded ? 'Collapse ' : 'Expand ') + entry.org.name"
                               class="self-stretch flex items-center gap-1.5 ms-1 px-2 rounded-md text-xs text-gray-500 hover:bg-gray-100 focus-visible:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white dark:focus-visible:bg-gray-600 dark:focus-visible:text-white">
-                              {{ entry.portals.length }}
+                              {{ entry.lenses.length }}
                               <fa-icon
                                 [icon]="faChevronDown"
                                 [class.rotate-x-180]="entry.expanded"
@@ -198,22 +193,20 @@
                         </li>
                       }
                       @if (entry.expanded) {
-                        @for (portal of entry.portals; track portal.id) {
-                          <li class="col-start-1" [class.ps-4]="isOrganizationListed()">
+                        @for (lens of entry.lenses; track lens.id) {
+                          <li class="col-start-1">
                             <button
                               type="button"
-                              (click)="enterLens(entry.org, portal)"
-                              [attr.aria-current]="portal.current"
-                              class="distr-dropdown-item ps-3 focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
+                              (click)="enterLens(entry.org, lens)"
+                              [attr.aria-current]="lens.current"
+                              class="distr-dropdown-item focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
                               role="menuitem">
                               <app-avatar
-                                [image]="portal.imageUrl"
-                                [name]="portal.name"
-                                [icon]="faAddressBook"
-                                iconClass="text-[0.625rem]"
+                                [name]="lens.name"
+                                initialsClass="text-[0.625rem]"
                                 class="size-5 rounded-sm" />
-                              <span class="grow" role="none">{{ portal.name }}</span>
-                              @if (portal.current) {
+                              <span class="grow" role="none">{{ lens.name }}</span>
+                              @if (lens.current) {
                                 <fa-icon [icon]="faCheck" class="ps-2 text-primary-600 dark:text-primary-400" />
                               }
                             </button>

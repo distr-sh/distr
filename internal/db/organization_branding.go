@@ -39,31 +39,6 @@ func GetOrganizationBranding(ctx context.Context, organizationID uuid.UUID) (*ty
 	}
 }
 
-// GetOrganizationLogoImageIDs maps each of the organizations that has a branding image to the image that
-// represents it next to its name: the favicon, which is square, where there is one, the logo otherwise.
-func GetOrganizationLogoImageIDs(ctx context.Context, orgIDs []uuid.UUID) (map[uuid.UUID]*uuid.UUID, error) {
-	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(ctx,
-		`SELECT b.organization_id, COALESCE(b.favicon_image_id, b.logo_image_id)
-		FROM OrganizationBranding b
-		WHERE b.organization_id = ANY(@orgIds)
-			AND (b.favicon_image_id IS NOT NULL OR b.logo_image_id IS NOT NULL)`,
-		pgx.NamedArgs{"orgIds": orgIDs},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query OrganizationBranding: %w", err)
-	}
-	result := make(map[uuid.UUID]*uuid.UUID)
-	var orgID, imageID uuid.UUID
-	if _, err := pgx.ForEachRow(rows, []any{&orgID, &imageID}, func() error {
-		result[orgID] = new(imageID)
-		return nil
-	}); err != nil {
-		return nil, fmt.Errorf("failed to collect OrganizationBranding: %w", err)
-	}
-	return result, nil
-}
-
 func UpsertOrganizationBranding(ctx context.Context, b *types.OrganizationBranding) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(

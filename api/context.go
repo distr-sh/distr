@@ -17,18 +17,16 @@ type ContextResponse struct {
 	RegistryHost string `json:"registryHost,omitzero"`
 }
 
-type ContextSwitchTargetsResponse struct {
-	Organizations []ContextSwitchOrganization `json:"organizations"`
+type LensesResponse struct {
+	Organizations []OrganizationLenses `json:"organizations"`
 }
 
-type ContextSwitchOrganization struct {
-	ID                    uuid.UUID             `json:"id"`
-	LogoURL               *string               `json:"logoUrl,omitempty"`
-	CustomerOrganizations []ContextSwitchPortal `json:"customerOrganizations"`
+type OrganizationLenses struct {
+	ID                    uuid.UUID      `json:"id"`
+	CustomerOrganizations []CustomerLens `json:"customerOrganizations"`
 }
 
-type ContextSwitchPortal struct {
-	ID       uuid.UUID `json:"id"`
-	Name     string    `json:"name"`
-	ImageURL *string   `json:"imageUrl,omitempty"`
+type CustomerLens struct {
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
 }

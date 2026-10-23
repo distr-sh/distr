@@ -31,7 +31,7 @@ func ContextRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupHidden(true))
 	r.With(middleware.RequireOrgAndRole).Get("/", respond.Handler(getContextHandler))
 	r.With(middleware.RequireOrgAndRole, middleware.RequireNonAccessToken).
-		Get("/switch-targets", respond.Handler(getContextSwitchTargetsHandler))
+		Get("/lenses", respond.Handler(getLensesHandler))
 }
 
 func getContextHandler(r *http.Request) (respond.Responder, error) {
@@ -112,10 +112,10 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-// getContextSwitchTargetsHandler lists, for the organizations the user may switch to, their logos and the
-// customer organizations whose lens the user may enter there. The memberships decide which, not the
-// organization the session operates in right now, so the list stays the same while the session is in a lens.
-func getContextSwitchTargetsHandler(r *http.Request) (respond.Responder, error) {
+// getLensesHandler lists, for the organizations the user may switch to, the customer organizations whose lens the
+// user may enter there. The memberships decide which, not the organization the request operates in right now, so the
+// list stays the same while the request is in a lens.
+func getLensesHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 
@@ -124,21 +124,15 @@ func getContextSwitchTargetsHandler(r *http.Request) (respond.Responder, error) 
 		return nil, fmt.Errorf("failed to get organizations: %w", err)
 	}
 
-	orgIDs := make([]uuid.UUID, 0, len(orgs))
 	ownLenses := make(map[uuid.UUID]lens.Lens, len(orgs))
 	var lensOrgIDs []uuid.UUID
 	for _, org := range orgs {
-		orgIDs = append(orgIDs, org.ID)
 		ownLenses[org.ID] = lens.Own(org)
 		if auth.IsSuperAdmin() || org.CustomerOrganizationID == nil {
 			lensOrgIDs = append(lensOrgIDs, org.ID)
 		}
 	}
 
-	logoImageIDs, err := db.GetOrganizationLogoImageIDs(ctx, orgIDs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get organization logos: %w", err)
-	}
 	customerOrgs, err := db.GetCustomerOrganizationsByOrganizationIDs(ctx, lensOrgIDs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get customer organizations: %w", err)
@@ -151,11 +145,10 @@ func getContextSwitchTargetsHandler(r *http.Request) (respond.Responder, error) 
 		}
 	}
 
-	response := api.ContextSwitchTargetsResponse{Organizations: []api.ContextSwitchOrganization{}}
+	response := api.LensesResponse{Organizations: []api.OrganizationLenses{}}
 	for _, org := range orgs {
-		if customers := enterableCustomerOrgs[org.ID]; logoImageIDs[org.ID] != nil || len(customers) > 0 {
-			response.Organizations = append(response.Organizations,
-				mapping.ContextSwitchOrganizationToAPI(org.ID, logoImageIDs[org.ID], customers))
+		if customers := enterableCustomerOrgs[org.ID]; len(customers) > 0 {
+			response.Organizations = append(response.Organizations, mapping.OrganizationLensesToAPI(org.ID, customers))
 		}
 	}
 	return respond.JSON(response), nil
