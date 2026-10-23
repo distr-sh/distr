@@ -72,7 +72,7 @@
                   type="button"
                   class="flex items-center text-sm disabled:cursor-default"
                   [disabled]="!canOpenSwitcher()"
-                  [attr.title]="canOpenSwitcher() ? 'Switch organization (' + switcherShortcut + ')' : null"
+                  [attr.title]="canOpenSwitcher() ? 'Switch context (' + switcherShortcut + ')' : null"
                   [attr.aria-expanded]="canOpenSwitcher() ? organizationsOpened() : null"
                   cdkOverlayOrigin
                   #organizationsDropdownTrigger="cdkOverlayOrigin"

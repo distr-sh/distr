@@ -274,7 +274,7 @@ func authEnterLensHandler(r *http.Request) (respond.Responder, error) {
 	} else if ownOrg, resp, err := ownContext(ctx, auth, *auth.CurrentOrgID()); resp != nil || err != nil {
 		return resp, err
 	} else if own := lens.Own(*ownOrg); lens.IsOwn(own, &requested) {
-		return respond.BadRequest("this is your own organization, return to it instead"), nil
+		return respond.BadRequest("this is your own portal, return to it instead"), nil
 	} else if _, err := lens.Enter(ctx, ownOrg.ID, own, auth.IsSuperAdmin(), requested); errors.Is(
 		err, lens.ErrForbidden,
 	) {

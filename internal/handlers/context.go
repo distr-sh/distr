@@ -38,7 +38,7 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 
-	orgs, err := contextOrganizations(ctx, auth)
+	orgs, err := availableContexts(ctx, auth)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get organizations: %w", err)
 	}
@@ -132,9 +132,9 @@ func getLensesHandler(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-// contextOrganizations lists the organizations the user may switch to: every organization for a super admin and
+// availableContexts lists the organizations the user may switch to: every organization for a super admin and
 // the memberships for everyone else, as far as the credential may reveal them.
-func contextOrganizations(ctx context.Context, auth authinfo.AuthInfo) ([]types.OrganizationWithUserRole, error) {
+func availableContexts(ctx context.Context, auth authinfo.AuthInfo) ([]types.OrganizationWithUserRole, error) {
 	var orgs []types.OrganizationWithUserRole
 	var err error
 	if auth.IsSuperAdmin() {
