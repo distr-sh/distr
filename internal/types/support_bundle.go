@@ -1,6 +1,8 @@
 package types
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/distr-sh/distr/internal/dbcrypto"
@@ -61,11 +63,51 @@ type SupportBundleWithDetails struct {
 	StatusChangedByImageID   *uuid.UUID `db:"status_changed_by_image_id"`
 }
 
+type SupportBundleResourceContentType string
+
+const (
+	SupportBundleResourceContentTypeText SupportBundleResourceContentType = "text/plain"
+	SupportBundleResourceContentTypeLog  SupportBundleResourceContentType = "text/x-log"
+	SupportBundleResourceContentTypeYAML SupportBundleResourceContentType = "application/yaml"
+	SupportBundleResourceContentTypeJSON SupportBundleResourceContentType = "application/json"
+)
+
+var ErrInvalidSupportBundleResourceContentType = errors.New("invalid support bundle resource content type")
+
+func ParseSupportBundleResourceContentType(value string) (SupportBundleResourceContentType, error) {
+	switch SupportBundleResourceContentType(value) {
+	case SupportBundleResourceContentTypeText:
+		return SupportBundleResourceContentTypeText, nil
+	case SupportBundleResourceContentTypeLog:
+		return SupportBundleResourceContentTypeLog, nil
+	case SupportBundleResourceContentTypeYAML:
+		return SupportBundleResourceContentTypeYAML, nil
+	case SupportBundleResourceContentTypeJSON:
+		return SupportBundleResourceContentTypeJSON, nil
+	default:
+		return "", fmt.Errorf("%w: %v", ErrInvalidSupportBundleResourceContentType, value)
+	}
+}
+
+func (t SupportBundleResourceContentType) FileExtension() string {
+	switch t {
+	case SupportBundleResourceContentTypeLog:
+		return ".log"
+	case SupportBundleResourceContentTypeYAML:
+		return ".yaml"
+	case SupportBundleResourceContentTypeJSON:
+		return ".json"
+	default:
+		return ".txt"
+	}
+}
+
 type SupportBundleResource struct {
-	ID              uuid.UUID `db:"id"`
-	CreatedAt       time.Time `db:"created_at"`
-	SupportBundleID uuid.UUID `db:"support_bundle_id"`
-	Name            string    `db:"name"`
+	ID              uuid.UUID                        `db:"id"`
+	CreatedAt       time.Time                        `db:"created_at"`
+	SupportBundleID uuid.UUID                        `db:"support_bundle_id"`
+	Name            string                           `db:"name"`
+	ContentType     SupportBundleResourceContentType `db:"content_type"`
 	// The content is a file the collect script gathered verbatim, and is served back as a download
 	// and rendered in a <pre>, so it must not be trimmed if it ever reaches a JSON request body.
 	Content dbcrypto.String `db:"content" trim:"-"`

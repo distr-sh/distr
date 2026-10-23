@@ -173,16 +173,18 @@ type UpdateSupportBundleStatusRequest struct {
 // Resource
 
 type SupportBundleResource struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"createdAt"`
-	Name      string    `json:"name"`
-	Content   string    `json:"content"`
+	ID          uuid.UUID                              `json:"id"`
+	CreatedAt   time.Time                              `json:"createdAt"`
+	Name        string                                 `json:"name"`
+	ContentType types.SupportBundleResourceContentType `json:"contentType"`
+	Content     string                                 `json:"content"`
 }
 
 type SupportBundleResourceSummary struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"createdAt"`
-	Name      string    `json:"name"`
+	ID          uuid.UUID                              `json:"id"`
+	CreatedAt   time.Time                              `json:"createdAt"`
+	Name        string                                 `json:"name"`
+	ContentType types.SupportBundleResourceContentType `json:"contentType"`
 }
 
 // Comment
