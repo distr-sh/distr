@@ -44,6 +44,7 @@ type ControllerDeployment struct {
 	ChartUrl           string         `json:"chartUrl"`
 	ChartName          string         `json:"chartName"`
 	ChartVersion       string         `json:"chartVersion"`
+	ChartDigest        string         `json:"chartDigest,omitempty"`
 	Values             map[string]any `json:"values"`
 	IgnoreRevisionSkew bool           `json:"ignoreRevisionSkew"`
 	HelmOptions        *HelmOptions   `json:"helmOptions,omitempty"`

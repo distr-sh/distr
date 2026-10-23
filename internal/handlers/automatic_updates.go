@@ -177,7 +177,7 @@ func updateDeploymentToLatestVersion(
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		return nil
 	}
-	if _, err := db.CreateDeploymentRevision(ctx, &request); err != nil {
+	if err := createDeploymentRevision(ctx, application.OrganizationID, &request); err != nil {
 		return err
 	}
 

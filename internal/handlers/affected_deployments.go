@@ -238,7 +238,7 @@ func triggerAffectedDeployments(
 			if err := setDeploymentRequestValuesHash(&request, secrets, licenseKeys); err != nil {
 				return err
 			}
-			if _, err := db.CreateDeploymentRevision(ctx, &request); err != nil {
+			if err := createDeploymentRevision(ctx, target.OrganizationID, &request); err != nil {
 				return err
 			}
 		}
