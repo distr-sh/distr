@@ -4,6 +4,7 @@ import {firstValueFrom, Observable, tap} from 'rxjs';
 import {ArtifactEntitlement} from '../types/artifact-entitlement';
 import {DefaultReactiveList} from './cache';
 import {CrudService} from './interfaces';
+import {skipTrim} from './trim.interceptor';
 
 @Injectable({providedIn: 'root'})
 export class ArtifactEntitlementsService implements CrudService<ArtifactEntitlement> {
@@ -26,7 +27,7 @@ export class ArtifactEntitlementsService implements CrudService<ArtifactEntitlem
 
   create(request: ArtifactEntitlement): Observable<ArtifactEntitlement> {
     return this.http
-      .post<ArtifactEntitlement>(this.artifactEntitlementsUrl, request)
+      .post<ArtifactEntitlement>(this.artifactEntitlementsUrl, request, {context: skipTrim('autoAddVersionRegex')})
       .pipe(tap((l) => this.cache.save(l)));
   }
 
@@ -38,7 +39,9 @@ export class ArtifactEntitlementsService implements CrudService<ArtifactEntitlem
 
   update(request: ArtifactEntitlement): Observable<ArtifactEntitlement> {
     return this.http
-      .put<ArtifactEntitlement>(`${this.artifactEntitlementsUrl}/${request.id}`, request)
+      .put<ArtifactEntitlement>(`${this.artifactEntitlementsUrl}/${request.id}`, request, {
+        context: skipTrim('autoAddVersionRegex'),
+      })
       .pipe(tap((l) => this.cache.save(l)));
   }
 }

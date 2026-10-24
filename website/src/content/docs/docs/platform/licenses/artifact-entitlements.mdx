@@ -58,11 +58,8 @@ If you don't see the feature yet, make sure you're on a Pro plan or Pro Trial. O
 4. **Select the Artifact Entitlements tab** and click **"Create Entitlement"**
 5. **Give it a name** (required)
 6. **Set an expiration date** (optional)
-7. **Select an artifact** (required): choose which artifact(s) to include
-   - Add multiple artifacts by clicking **"+ Add Artifact"**
-8. **Choose artifact tags** (required):
-   - **All tags and future tags**: grants access to all current and future tags
-   - **Specific tags**: select individual tags to grant access to
+7. **Select an artifact** (required)
+8. **Choose the tags**: grant **All tags**, or **Specific tags** with the tags you select and optionally an [auto-add tag regex](#auto-add-tag-regex) for future tags
 9. **Save**: click "Save" and you're done
 
 The customer can now access and pull the assigned artifacts and tags directly from your registry through their [customer portal](/docs/platform/customer-portal/).
@@ -72,6 +69,18 @@ The customer can now access and pull the assigned artifacts and tags directly fr
   darkSrc={artifactFormDark}
   alt="Artifact Entitlement create form showing name, expiration date, artifact selector, tag options, and owner field"
 />
+
+## Choosing the granted tags
+
+An entitlement grants either **All tags** of its artifact, which includes every tag you push later, or **Specific tags**. With specific tags, you have to select at least one tag, the customer only gets the tags you select and new tags are not added unless they match the [auto-add tag regex](#auto-add-tag-regex).
+
+## Legacy view for multiple artifacts
+
+An entitlement that bundles several artifacts opens in the legacy view. There you add artifacts with **"+ Add Artifact"** and choose for each one whether it grants all tags or only the tags you select. The legacy view does not support an auto-add tag regex.
+
+## Auto-add tag regex
+
+An entitlement with specific tags can grow with your releases. Enter a regular expression in **Auto-add Tag Regex** next to the tag picker, and every new tag of the artifact whose name matches it is added to the entitlement automatically. The regex is only available for an entitlement with a single artifact. See [Auto-add Regex](/docs/platform/auto-add-regex/) for when it runs, how to write it and examples.
 
 ## Managing existing entitlements
 
@@ -83,7 +92,7 @@ You can view and manage all artifact entitlements for a customer from their deta
 
 ## Best practices
 
-- **Start with broad access**: Consider starting with "All tags and future tags" for new customers, then refine as needed
+- **Start with broad access**: Consider starting with "All tags" for new customers, then refine as needed
 - **Set expiration dates**: Use expiration dates for time-limited access or trial periods
 - **Bundle related artifacts**: Group related artifacts in a single entitlement for easier management
 - **Review regularly**: Periodically review entitlements to ensure they match your current access policies
