@@ -1,5 +1,42 @@
 # Changelog
 
+## [4.7.0](https://github.com/distr-sh/distr/compare/4.6.1...4.7.0) (2026-10-24)
+
+
+### Features
+
+* auto-add new versions to application entitlements by regex ([#3543](https://github.com/distr-sh/distr/issues/3543)) ([34221e6](https://github.com/distr-sh/distr/commit/34221e6a3e1d1c8f0339a0cd404f32a5b498075c))
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/aws/aws-sdk-go-v2/service/s3 to v1.114.4 ([#3604](https://github.com/distr-sh/distr/issues/3604)) ([b92c86c](https://github.com/distr-sh/distr/commit/b92c86c3c2c29d568e6cf91fb36c8ac5f676ff18))
+* **deps:** update module github.com/aws/smithy-go to v1.28.6 ([#3605](https://github.com/distr-sh/distr/issues/3605)) ([19f4136](https://github.com/distr-sh/distr/commit/19f4136a0f6b40224d333a5ff36726835b4cee97))
+* **deps:** update module github.com/compose-spec/compose-go/v2 to v2.16.2 ([#3589](https://github.com/distr-sh/distr/issues/3589)) ([da5f92a](https://github.com/distr-sh/distr/commit/da5f92a7035bae7df7ad12d158134816f492af16))
+* **deps:** update module github.com/docker/cli to v29.9.2+incompatible ([#3590](https://github.com/distr-sh/distr/issues/3590)) ([802b2c7](https://github.com/distr-sh/distr/commit/802b2c755707312ba64ef858f0892224fd0ad64f))
+* **deps:** update module github.com/docker/compose/v5 to v5.6.1 ([#3591](https://github.com/distr-sh/distr/issues/3591)) ([6be5fe6](https://github.com/distr-sh/distr/commit/6be5fe69827d27d2ee488d7b3af99dfa5f5279fb))
+* **deps:** update module github.com/glasskube/pkg/crypto to v0.2.1 ([#3595](https://github.com/distr-sh/distr/issues/3595)) ([493b440](https://github.com/distr-sh/distr/commit/493b440487be8d25b6e4f0c70bc25d4a6003a632))
+* **registry:** adopt bearer auth flow ([#3592](https://github.com/distr-sh/distr/issues/3592)) ([96782b4](https://github.com/distr-sh/distr/commit/96782b4ab1cd8f0555d347eb7dfff368e9f5a954))
+
+
+### Other
+
+* **deps:** update alpine docker tag to v3.24.3 ([#3622](https://github.com/distr-sh/distr/issues/3622)) ([ce3eb98](https://github.com/distr-sh/distr/commit/ce3eb988f3de5bc9285dfd1a8eb220e6e8482e52))
+* **deps:** update angular-cli monorepo to v22.2.4 ([#3616](https://github.com/distr-sh/distr/issues/3616)) ([a1439c1](https://github.com/distr-sh/distr/commit/a1439c1ae6fef07ac1c919192b68b7606ea471f9))
+* **deps:** update axllent/mailpit docker tag to v1.32.0 ([#3620](https://github.com/distr-sh/distr/issues/3620)) ([4879eec](https://github.com/distr-sh/distr/commit/4879eecafb57332cdc981103f3f97768e709ac7b))
+* **deps:** update dependency @angular/cdk to v22.2.4 ([#3593](https://github.com/distr-sh/distr/issues/3593)) ([34707de](https://github.com/distr-sh/distr/commit/34707def06aaf9924983d02c1cad0c23965066c9))
+* **deps:** update dependency postcss to v8.5.31 ([#3582](https://github.com/distr-sh/distr/issues/3582)) ([a734430](https://github.com/distr-sh/distr/commit/a734430c1d2f83066aa3e3ca4a885689ee9b91c3))
+* **deps:** update dependency posthog-js to v1.438.13 ([#3583](https://github.com/distr-sh/distr/issues/3583)) ([34106fe](https://github.com/distr-sh/distr/commit/34106fee8003b9ffe15a9ad7586eec60f20e456d))
+* **deps:** update grafana/loki docker tag to v3.7.9 ([#3588](https://github.com/distr-sh/distr/issues/3588)) ([459dd29](https://github.com/distr-sh/distr/commit/459dd29ff4ef68446f35bc5dd42358b6067e830f))
+* **deps:** update hello-distr ([#3580](https://github.com/distr-sh/distr/issues/3580)) ([3f6a922](https://github.com/distr-sh/distr/commit/3f6a9227e657dec26f5d653961ccb5a30530916d))
+* **deps:** update hello-distr to v0.4.13 ([#3609](https://github.com/distr-sh/distr/issues/3609)) ([9db61f2](https://github.com/distr-sh/distr/commit/9db61f2c83d1b20c95936f0e2708c8acff73be9e))
+* **deps:** update loki docker tag to v19 ([#3571](https://github.com/distr-sh/distr/issues/3571)) ([2ba8746](https://github.com/distr-sh/distr/commit/2ba87464c0605f22b155b4b26a6a9a45d9baa119))
+* **deps:** update loki docker tag to v19.0.3 ([#3581](https://github.com/distr-sh/distr/issues/3581)) ([0e4f228](https://github.com/distr-sh/distr/commit/0e4f228062f6e59d9f9630b1d7bb8c0395e0d746))
+* **deps:** update loki docker tag to v19.1.1 ([#3607](https://github.com/distr-sh/distr/issues/3607)) ([c050e9b](https://github.com/distr-sh/distr/commit/c050e9be347c8951e630ae0bbea4e3d6c1d854f2))
+* **deps:** update pnpm to v12.15.0 ([#3596](https://github.com/distr-sh/distr/issues/3596)) ([26abc7d](https://github.com/distr-sh/distr/commit/26abc7d6facf55fc70e8ee7049a258d9fe9a4930))
+* **deps:** update sentry-javascript monorepo to v11.8.0 ([#3584](https://github.com/distr-sh/distr/issues/3584)) ([7d72f8a](https://github.com/distr-sh/distr/commit/7d72f8a462865141b0b9da79ac543077caf81995))
+* remove create organization feature ([#3578](https://github.com/distr-sh/distr/issues/3578)) ([e476b87](https://github.com/distr-sh/distr/commit/e476b87801b26fc8b7a5a65cdea85d38139c7503))
+
 ## [4.6.1](https://github.com/distr-sh/distr/compare/4.6.0...4.6.1) (2026-10-21)
 
 
