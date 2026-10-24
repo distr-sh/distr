@@ -26,14 +26,6 @@ const (
 	CustomerOrganizationFeatureOidcProviders CustomerOrganizationFeature = "oidc_providers"
 )
 
-// ProCustomerOrganizationFeatures can only be granted by an organization with a pro subscription, since
-// the routes behind them are gated with middleware.ProFeature.
-var ProCustomerOrganizationFeatures = []CustomerOrganizationFeature{
-	CustomerOrganizationFeatureAlerts,
-	CustomerOrganizationFeatureUpdateNotifications,
-	CustomerOrganizationFeatureSupportBundles,
-}
-
 func ParseCustomerOrganizationFeature(value string) (CustomerOrganizationFeature, error) {
 	switch value {
 	case string(CustomerOrganizationFeatureDeploymentTargets):

@@ -677,7 +677,7 @@
             }
           </li>
         }
-        @if (isSupportBundlesFeatureEnabled() && customerFeatures().support_bundles) {
+        @if (customerFeatures().support_bundles) {
           <li>
             <a
               (click)="sidebar.hide()"
