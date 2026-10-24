@@ -92,15 +92,23 @@
                     <ul>
                       @for (f of allCustomerFeatures(); track f.feature) {
                         <li class="w-full border-t first:border-t-0 border-gray-100 dark:border-gray-600">
-                          <label class="distr-dropdown-checkbox-item" [class.ms-4]="f.indent">
+                          <label
+                            class="distr-dropdown-checkbox-item"
+                            [class.ms-4]="f.indent"
+                            [class.opacity-60]="f.requiresPro"
+                            [title]="f.requiresPro ? 'Upgrade to Pro to enable ' + f.label : ''">
                             <input
                               type="checkbox"
-                              [checked]="openCustomerFeaturesDropdownCustomer()?.features?.includes(f.feature)"
+                              [checked]="f.checked"
+                              [disabled]="f.requiresPro"
                               (change)="toggleFeature(customer, f.feature)"
                               class="distr-checkbox" />
                             <span
                               class="w-full py-3 ms-2 pe-1 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-300">
                               {{ f.label }}
+                              @if (f.requiresPro) {
+                                <span class="ms-1 text-xs distr-text-muted">(Pro)</span>
+                              }
                             </span>
                           </label>
                         </li>
