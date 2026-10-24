@@ -2,8 +2,8 @@
   <aside
     id="logo-sidebar"
     class="fixed left-0 bottom-0 z-40 w-64 transition-transform -translate-x-full bg-white border-r border-gray-200 sm:translate-x-0 dark:bg-gray-800 dark:border-gray-700"
-    [class.top-16]="!isSubscriptionBannerVisible()"
-    [class.top-33]="isSubscriptionBannerVisible()"
+    [class.top-16]="!isBannerVisible()"
+    [class.top-33]="isBannerVisible()"
     [class.translate-x-0]="sidebar.showSidebar()"
     [class.-translate-x-full]="!sidebar.showSidebar()"
     aria-label="Sidebar">

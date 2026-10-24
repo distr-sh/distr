@@ -1,6 +1,11 @@
 <nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
   @let organization = currentOrg();
-  @if (isSubscriptionBannerVisible() && organization) {
+  @if (isLens && organization) {
+    <app-nav-bar-lens-banner
+      [organization]="organization"
+      [ownKind]="ownKind()"
+      (leaveLens)="switchOrganization(organization)" />
+  } @else if (isSubscriptionBannerVisible() && organization) {
     <app-nav-bar-subscription-banner
       [organization]="organization"
       [isTrial]="isTrial()"
@@ -66,25 +71,35 @@
                 <button
                   type="button"
                   class="flex items-center text-sm disabled:cursor-default"
-                  [disabled]="!canSwitchOrganization()"
-                  [attr.title]="canSwitchOrganization() ? 'Switch organization (' + switcherShortcut + ')' : null"
-                  [attr.aria-expanded]="canSwitchOrganization() ? organizationsOpened() : null"
+                  [disabled]="!canOpenSwitcher()"
+                  [attr.title]="canOpenSwitcher() ? 'Switch context (' + switcherShortcut + ')' : null"
+                  [attr.aria-expanded]="canOpenSwitcher() ? organizationsOpened() : null"
                   cdkOverlayOrigin
                   #organizationsDropdownTrigger="cdkOverlayOrigin"
                   (click)="toggleOrganizations()">
-                  @if (canSwitchOrganization()) {
+                  @if (canOpenSwitcher()) {
                     <span class="sr-only">Show Organizations</span>
                   }
                   <span class="flex flex-col text-end text-sm font-medium text-gray-900 dark:text-gray-300" role="none">
                     <span class="flex items-center justify-end gap-2" role="none">
                       {{ organization.name }}
-                      @if (auth.isSuperAdmin()) {
+                      @if (isSuperAdmin) {
                         <app-subscription-badge
                           [plan]="organization.subscriptionType"
                           [endsAt]="organization.subscriptionEndsAt" />
                       }
                     </span>
-                    @if (auth.isSuperAdmin()) {
+                    @if (isLens && organization) {
+                      <span class="text-xs font-light text-amber-600 dark:text-amber-400" role="none">
+                        {{ organization | membershipLabel }}
+                        &bull;
+                        @if (isSuperAdmin) {
+                          Super Admin (Read-Only)
+                        } @else {
+                          {{ user.userRole | userRoleLabel }}
+                        }
+                      </span>
+                    } @else if (isSuperAdmin) {
                       <span class="text-xs font-light text-amber-600 dark:text-amber-400" role="none">
                         Super Admin (Read-Only)
                       </span>
@@ -98,7 +113,7 @@
                       </span>
                     }
                   </span>
-                  @if (canSwitchOrganization()) {
+                  @if (canOpenSwitcher()) {
                     <fa-icon
                       class="ml-2 text-gray-900 dark:text-gray-300 transition duration-150 ease-in-out"
                       [class.rotate-x-180]="organizationsOpened()"
@@ -112,6 +127,7 @@
                 (backdropClick)="organizationsOpened.set(false)"
                 [cdkConnectedOverlayBackdropClass]="'transparent'"
                 [cdkConnectedOverlayOrigin]="organizationsDropdownTrigger"
+                [cdkConnectedOverlayPositions]="[{originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top'}]"
                 [cdkConnectedOverlayOpen]="organizationsOpened()">
                 <div
                   class="distr-dropdown-panel my-2 flex flex-col max-h-[80vh]"
@@ -121,46 +137,86 @@
                     <div class="mb-1 min-w-72 shrink-0">
                       <app-search-bar
                         [control]="organizationSearch"
-                        placeholder="Filter organizations"
+                        [placeholder]="switcherFilterLabels().placeholder"
                         [autofocus]="true" />
                     </div>
                   }
-                  <ul class="overflow-y-auto min-h-0" role="none">
-                    @for (org of matchingOrgs(); track org.id) {
-                      <li>
-                        <button
-                          (click)="switchContext(org)"
-                          [title]="'Switch to this organization'"
-                          class="distr-dropdown-item focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
-                          role="menuitem">
-                          <fa-icon class="w-4" [icon]="faShuffle" />
-                          <span
-                            class="flex flex-col text-start text-sm font-medium text-gray-900 dark:text-gray-300"
-                            role="none">
-                            <span class="flex items-center gap-2" role="none">
-                              {{ org.name }}
-                              @if (auth.isSuperAdmin()) {
-                                <app-subscription-badge
-                                  [plan]="org.subscriptionType"
-                                  [endsAt]="org.subscriptionEndsAt" />
-                              }
-                            </span>
-                            <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
-                              @if (!auth.isSuperAdmin()) {
-                                @if (isDifferentOrganizationKind()) {
-                                  {{ org | membershipLabel }}
-                                  &bull;
+                  <ul class="grid grid-cols-[minmax(0,1fr)_auto] gap-y-0.5 overflow-y-auto min-h-0" role="none">
+                    @for (entry of switcherEntries(); track entry.org.id) {
+                      @if (isOrganizationListed()) {
+                        <li class="col-span-2 grid grid-cols-subgrid items-center">
+                          <button
+                            type="button"
+                            (click)="switchOrganization(entry.org)"
+                            [attr.aria-current]="entry.current"
+                            class="distr-dropdown-item focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
+                            role="menuitem">
+                            <span
+                              class="grow flex flex-col text-start text-sm font-medium text-gray-900 dark:text-gray-300"
+                              role="none">
+                              <span class="flex items-center gap-2" role="none">
+                                {{ entry.org.name }}
+                                @if (isSuperAdmin) {
+                                  <app-subscription-badge
+                                    [plan]="entry.org.subscriptionType"
+                                    [endsAt]="entry.org.subscriptionEndsAt" />
                                 }
-                                {{ org.userRole | userRoleLabel }}
+                              </span>
+                              @if (!isSuperAdmin) {
+                                <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
+                                  @if (isDifferentOrganizationKind()) {
+                                    {{ entry.org | membershipLabel }}
+                                    &bull;
+                                  }
+                                  {{ entry.org.userRole | userRoleLabel }}
+                                </span>
                               }
                             </span>
-                          </span>
-                        </button>
-                      </li>
+                            @if (entry.current) {
+                              <fa-icon [icon]="faCheck" class="ps-2 text-primary-600 dark:text-primary-400" />
+                            }
+                          </button>
+                          @if (entry.collapsible) {
+                            <button
+                              type="button"
+                              (click)="toggleSwitcherEntry(entry)"
+                              [attr.aria-expanded]="entry.expanded"
+                              [attr.aria-label]="(entry.expanded ? 'Collapse ' : 'Expand ') + entry.org.name"
+                              class="self-stretch flex items-center gap-1.5 ms-1 px-2 rounded-md text-xs text-gray-500 hover:bg-gray-100 focus-visible:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white dark:focus-visible:bg-gray-600 dark:focus-visible:text-white">
+                              {{ entry.lenses.length }}
+                              <fa-icon
+                                [icon]="faChevronDown"
+                                [class.rotate-x-180]="entry.expanded"
+                                class="transition duration-150 ease-in-out" />
+                            </button>
+                          }
+                        </li>
+                      }
+                      @if (entry.expanded) {
+                        @for (lens of entry.lenses; track lens.id) {
+                          <li class="col-start-1">
+                            <button
+                              type="button"
+                              (click)="enterLens(lens)"
+                              [attr.aria-current]="lens.current"
+                              class="distr-dropdown-item focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
+                              role="menuitem">
+                              <app-avatar
+                                [name]="lens.name"
+                                initialsClass="text-[0.625rem]"
+                                class="size-5 rounded-sm" />
+                              <span class="grow" role="none">{{ lens.name }}</span>
+                              @if (lens.current) {
+                                <fa-icon [icon]="faCheck" class="ps-2 text-primary-600 dark:text-primary-400" />
+                              }
+                            </button>
+                          </li>
+                        }
+                      }
                     } @empty {
-                      <li>
+                      <li class="col-span-2">
                         <div class="px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300" role="menuitem">
-                          No organization matches your filter.
+                          {{ switcherFilterLabels().empty }}
                         </div>
                       </li>
                     }
@@ -215,7 +271,7 @@
                       Edit Your Profile
                     </a>
                   </li>
-                  @if (!auth.isSuperAdmin()) {
+                  @if (!isSuperAdmin && !isLens) {
                     <li>
                       <a
                         (click)="userOpened.set(false)"

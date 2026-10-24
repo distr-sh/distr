@@ -29,6 +29,10 @@ type AuthInfo interface {
 	// account belongs to, or create one.
 	OrganizationScoped() bool
 	IsSuperAdmin() bool
+	// IsLens reports whether the request looks through the lens of a customer organization its user is not a member
+	// of (see lens.Enter). CurrentCustomerOrgID names that organization, so a handler reading it treats the request
+	// like one of a member of it. Only authentication against the database sets this.
+	IsLens() bool
 	Token() any
 }
 
@@ -49,4 +53,7 @@ type AuthInfoWithUserAndOrganization interface {
 	CurrentUser() *types.UserAccount
 	// CurrentCustomerOrg is nil for every member of the vendor or a partner organization.
 	CurrentCustomerOrg() *types.CustomerOrganization
+	// LensCustomerOrg is the customer organization a request looks at through a lens, nil outside of a lens. It is
+	// never set together with CurrentCustomerOrg.
+	LensCustomerOrg() *types.CustomerOrganization
 }

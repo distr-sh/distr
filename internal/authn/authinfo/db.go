@@ -7,14 +7,17 @@ import (
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/distrerr"
+	"github.com/distr-sh/distr/internal/lens"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/google/uuid"
 )
 
 type DbAuthInfo struct {
 	AuthInfo
-	user        *types.UserAccount
-	org         *types.OrganizationWithBranding
-	customerOrg *types.CustomerOrganization
+	user            *types.UserAccount
+	org             *types.OrganizationWithBranding
+	customerOrg     *types.CustomerOrganization
+	lensCustomerOrg *types.CustomerOrganization
 }
 
 func (a DbAuthInfo) CurrentUser() *types.UserAccount {
@@ -23,6 +26,10 @@ func (a DbAuthInfo) CurrentUser() *types.UserAccount {
 
 func (a DbAuthInfo) CurrentCustomerOrg() *types.CustomerOrganization {
 	return a.customerOrg
+}
+
+func (a DbAuthInfo) LensCustomerOrg() *types.CustomerOrganization {
+	return a.lensCustomerOrg
 }
 
 func (a DbAuthInfo) CurrentOrg() *types.Organization {
@@ -46,6 +53,9 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 					return nil, authn.ErrBadAuthentication
 				} else if err != nil {
 					return nil, err
+				} else if !user.IsSuperAdmin {
+					// A token issued before the flag was revoked still carries the claim.
+					return nil, authn.ErrBadAuthentication
 				}
 				org, err := db.GetOrganizationWithBranding(ctx, *a.CurrentOrgID())
 				if errors.Is(err, distrerr.ErrNotFound) {
@@ -53,22 +63,33 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 				} else if err != nil {
 					return nil, err
 				}
+				current, lensCustomerOrg, isLens, err := currentLens(a, lens.Lens{},
+					func(own lens.Lens, customerOrgID uuid.UUID) (*types.CustomerOrganization, error) {
+						return lens.Enter(ctx, org.ID, own, true, customerOrgID)
+					},
+				)
+				if err != nil {
+					return nil, err
+				}
 				return &DbAuthInfo{
 					AuthInfo: &SimpleAuthInfo{
 						userID:                 a.CurrentUserID(),
 						userEmail:              a.CurrentUserEmail(),
 						organizationID:         a.CurrentOrgID(),
-						customerOrganizationID: nil,
+						customerOrganizationID: current.CustomerOrganizationID,
+						partnerOrganizationID:  current.PartnerOrganizationID,
 						emailVerified:          a.CurrentUserEmailVerified(),
 						tokenScope:             a.TokenScope(),
 						isAccessToken:          a.IsAccessToken(),
 						isCustomOIDCSession:    a.IsCustomOIDCSession(),
 						userRole:               nil, // Super admins don't have a role
 						isSuperAdmin:           true,
+						isLens:                 isLens,
 						rawToken:               a.Token(),
 					},
-					user: user,
-					org:  org,
+					user:            user,
+					org:             org,
+					lensCustomerOrg: lensCustomerOrg,
 				}, nil
 			}
 			// Regular users: require org membership and validate role
@@ -77,6 +98,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 					ctx,
 					a.CurrentUserID(),
 					*a.CurrentOrgID(),
+					requestedCustomerOrgID(a),
 				); errors.Is(err, distrerr.ErrNotFound) {
 					return nil, authn.ErrBadAuthentication
 				} else if err != nil {
@@ -87,25 +109,43 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 					// fine (e.g. a PAT scoped to a lower role); above means the
 					// user was demoted after the credential was issued.
 					return nil, authn.ErrBadAuthentication
+				} else if current, lensCustomerOrg, isLens, err := currentLens(
+					a,
+					lens.Lens{
+						CustomerOrganizationID: m.User.CustomerOrganizationID,
+						PartnerOrganizationID:  m.User.PartnerOrganizationID,
+					},
+					func(own lens.Lens, _ uuid.UUID) (*types.CustomerOrganization, error) {
+						if customerOrg := m.RequestedCustomerOrganization; customerOrg == nil ||
+							!lens.MayEnter(own, false, customerOrg.PartnerOrganizationID) {
+							return nil, lens.ErrForbidden
+						} else {
+							return customerOrg, nil
+						}
+					},
+				); err != nil {
+					return nil, err
 				} else {
 					return &DbAuthInfo{
 						AuthInfo: &SimpleAuthInfo{
 							userID:                 a.CurrentUserID(),
 							userEmail:              a.CurrentUserEmail(),
 							organizationID:         a.CurrentOrgID(),
-							customerOrganizationID: m.User.CustomerOrganizationID,
-							partnerOrganizationID:  m.User.PartnerOrganizationID,
+							customerOrganizationID: current.CustomerOrganizationID,
+							partnerOrganizationID:  current.PartnerOrganizationID,
 							emailVerified:          a.CurrentUserEmailVerified(),
 							tokenScope:             a.TokenScope(),
 							isAccessToken:          a.IsAccessToken(),
 							isCustomOIDCSession:    a.IsCustomOIDCSession(),
 							userRole:               a.CurrentUserRole(),
 							isSuperAdmin:           false,
+							isLens:                 isLens,
 							rawToken:               a.Token(),
 						},
-						user:        new(m.User.AsUserAccount()),
-						org:         &m.Organization,
-						customerOrg: m.CustomerOrganization,
+						user:            new(m.User.AsUserAccount()),
+						org:             &m.Organization,
+						customerOrg:     m.CustomerOrganization,
+						lensCustomerOrg: lensCustomerOrg,
 					}, nil
 				}
 			}
@@ -122,6 +162,35 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 		}
 	}
 	return authn.AuthenticatorFunc[AuthInfo, AuthInfoWithUserAndOrganization](fn)
+}
+
+// currentLens returns the lens the authentication looks through, the customer organization of that lens if it is
+// not the own one and whether it is not. A personal access token always looks through its membership's own lens:
+// only a login session enters another one, through the lens endpoint. enter decides whether the lens of a requested
+// customer organization that is not the own one may be entered.
+func currentLens(
+	a AuthInfo,
+	own lens.Lens,
+	enter func(own lens.Lens, customerOrgID uuid.UUID) (*types.CustomerOrganization, error),
+) (lens.Lens, *types.CustomerOrganization, bool, error) {
+	requested := requestedCustomerOrgID(a)
+	if lens.IsOwn(own, requested) {
+		return own, nil, false, nil
+	}
+	customerOrg, err := enter(own, *requested)
+	if errors.Is(err, lens.ErrForbidden) {
+		return lens.Lens{}, nil, false, authn.ErrBadAuthentication
+	} else if err != nil {
+		return lens.Lens{}, nil, false, err
+	}
+	return lens.Customer(*requested), customerOrg, true, nil
+}
+
+func requestedCustomerOrgID(a AuthInfo) *uuid.UUID {
+	if a.IsAccessToken() {
+		return nil
+	}
+	return a.CurrentCustomerOrgID()
 }
 
 type controllerDBAuthInfo struct {

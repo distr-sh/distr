@@ -123,7 +123,7 @@ export class SideBarComponent {
   protected readonly isVendorBillingFeatureEnabled = this.featureFlags.isVendorBillingEnabled;
   protected readonly isPartnerManagementEnabled = this.featureFlags.isPartnerManagementEnabled;
 
-  public readonly isSubscriptionBannerVisible = input<boolean>();
+  public readonly isBannerVisible = input<boolean>();
   public readonly isSidebarVisible = input<boolean>();
 
   protected readonly hasSubscription = this.organizationService.hasSubscription;

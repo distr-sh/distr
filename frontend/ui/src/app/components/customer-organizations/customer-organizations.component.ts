@@ -15,7 +15,15 @@ import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {CustomerOrganization, CustomerOrganizationFeature, CustomerOrganizationWithUsage} from '@distr-sh/distr-sdk';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
-import {faAddressBook, faChevronDown, faEdit, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {
+  faAddressBook,
+  faChevronDown,
+  faEdit,
+  faPlus,
+  faShuffle,
+  faTrash,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, filter, firstValueFrom, map, of, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
@@ -70,6 +78,7 @@ export class CustomerOrganizationsComponent {
   protected readonly faXmark = faXmark;
   protected readonly faEdit = faEdit;
   protected readonly faChevronDown = faChevronDown;
+  protected readonly faShuffle = faShuffle;
 
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   private readonly partnerOrganizationsService = inject(PartnerOrganizationsService);
@@ -211,6 +220,17 @@ export class CustomerOrganizationsComponent {
         },
       })
       .add(() => this.savingCustomerId.set(undefined));
+  }
+
+  protected async enterLens(customer: CustomerOrganization) {
+    try {
+      await this.auth.enterLens(customer.id);
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    }
   }
 
   protected async uploadImage(value: CustomerOrganization): Promise<void> {
