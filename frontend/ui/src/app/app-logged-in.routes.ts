@@ -18,7 +18,6 @@ import {BillingComponent} from './billing/billing.component';
 import {BillingSettingsComponent} from './billing/settings/billing-settings.component';
 import {CustomerOrganizationsComponent} from './components/customer-organizations/customer-organizations.component';
 import {DashboardComponent} from './components/dashboard/dashboard.component';
-import {HomeComponent} from './components/home/home.component';
 import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
 import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
 import {PartnerUsersComponent} from './components/users/partners/partner-users.component';
@@ -26,6 +25,7 @@ import {VendorUsersComponent} from './components/users/vendors/vendor-users.comp
 import {CustomerSettingsComponent} from './customer-settings/customer-settings.component';
 import {DeploymentTargetDetailComponent} from './deployments/deployment-target-details/deployment-target-detail.component';
 import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
+import {CustomerHomePageComponent} from './home/customer/customer-home-page.component';
 import {CustomerLicenseDetailPageComponent} from './licenses/customer-license-detail-page.component';
 import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
 import {VendorLicenseDetailPageComponent} from './licenses/vendor-license-detail-page.component';
@@ -230,9 +230,10 @@ export const routes: Routes = [
       },
       {
         path: 'home',
-        component: HomeComponent,
+        component: CustomerHomePageComponent,
         canActivate: [requireCustomer],
       },
+      {path: 'overview', pathMatch: 'full', redirectTo: 'home'},
       {
         path: 'applications',
         canActivate: [requireVendor],

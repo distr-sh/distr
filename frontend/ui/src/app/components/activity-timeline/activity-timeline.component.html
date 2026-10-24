@@ -1,5 +1,13 @@
-<div class="distr-panel">
-  <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+<div
+  [class.p-6]="variant() === 'panel'"
+  [class.distr-panel]="variant() === 'panel'"
+  [class.p-4]="variant() === 'card'"
+  [class.distr-card]="variant() === 'card'"
+  [class.block]="variant() === 'card'">
+  <h2
+    class="text-lg font-semibold text-gray-900 dark:text-white"
+    [class.mb-4]="variant() === 'panel'"
+    [class.mb-3]="variant() === 'card'">
     @if (icon(); as icon) {
       <fa-icon [icon]="icon" class="mr-2 text-gray-500 dark:text-gray-400" />
     }
@@ -11,28 +19,68 @@
   } @else {
     <ol class="relative border-s border-gray-200 dark:border-gray-600 ms-3">
       @for (entry of entries(); track entry.id) {
-        <li class="mb-6 ms-8">
-          <app-avatar
-            [image]="entry.userImageUrl"
-            [name]="entry.userName"
-            class="absolute -start-4 size-8 rounded-full ring-8 ring-white dark:ring-gray-800 bg-gray-100 dark:bg-gray-700" />
-          <div class="text-sm text-gray-900 dark:text-white">
-            <span class="font-medium">{{ entry.userName || 'Someone' }}</span>
-            {{ entry.action }}
-          </div>
-          <time class="block text-xs text-gray-500 dark:text-gray-400">
-            {{ entry.createdAt | date: 'medium' }}
-          </time>
-          @if (entry.body) {
-            <div
-              class="mt-2 p-3 text-sm text-gray-700 bg-gray-50 rounded-lg dark:bg-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-              {{ entry.body }}
-            </div>
+        <li class="ms-8" [class.mb-6]="variant() === 'panel'" [class.mb-4]="variant() === 'card'">
+          @if (entry.icon; as icon) {
+            <span
+              class="absolute -start-4 flex items-center justify-center size-8 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+              <fa-icon [icon]="icon" class="text-xl" />
+            </span>
+          } @else {
+            <app-avatar
+              [image]="entry.userImageUrl"
+              [name]="entry.userName"
+              [logo]="entry.userImageIsLogo ?? false"
+              class="absolute -start-4 size-8 rounded-full ring-8 ring-white dark:ring-gray-800 bg-gray-100 dark:bg-gray-700" />
+          }
+          @if (entry.link; as link) {
+            <a
+              [routerLink]="link"
+              [queryParams]="entry.queryParams"
+              class="block -m-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+              <ng-container [ngTemplateOutlet]="entryContent" [ngTemplateOutletContext]="{$implicit: entry}" />
+            </a>
+          } @else {
+            <ng-container [ngTemplateOutlet]="entryContent" [ngTemplateOutletContext]="{$implicit: entry}" />
           }
         </li>
       }
     </ol>
   }
+
+  <ng-template #entryContent let-entry>
+    @if (entry.icon) {
+      <div class="text-sm font-semibold text-gray-900 dark:text-white first-letter:uppercase">
+        {{ entry.action }}
+      </div>
+      <div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+        <app-avatar
+          [image]="entry.userImageUrl"
+          [name]="entry.userName"
+          [logo]="entry.userImageIsLogo ?? false"
+          initialsClass="text-[0.5rem]"
+          class="size-5 rounded-full bg-gray-100 dark:bg-gray-700" />
+        <span class="font-medium text-gray-700 dark:text-gray-300">{{ entry.userName || 'Someone' }}</span>
+        <span aria-hidden="true">&middot;</span>
+        <time>{{ entry.createdAt | date: 'medium' }}</time>
+      </div>
+    } @else {
+      <div class="text-sm text-gray-900 dark:text-white">
+        <span class="font-medium">{{ entry.userName || 'Someone' }}</span>
+        {{ entry.action }}
+      </div>
+      <time class="block text-xs text-gray-500 dark:text-gray-400">
+        {{ entry.createdAt | date: 'medium' }}
+      </time>
+    }
+    @if (entry.body) {
+      <div
+        class="mt-2 p-3 text-sm text-gray-700 bg-gray-50 rounded-lg dark:bg-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+        {{ entry.body }}
+      </div>
+    }
+  </ng-template>
+
+  <ng-content />
 
   @if (canComment()) {
     <form [formGroup]="commentForm" (ngSubmit)="submit()" class="mt-2">

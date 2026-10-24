@@ -76,6 +76,13 @@ func ApplicationsRouter(r chiopenapi.Router) {
 							api.PatchImageRequest
 						}{})).
 						With(option.Response(http.StatusOK, api.ApplicationResponse{}))
+					r.Patch("/title-image", respond.Handler(patchTitleImageApplication)).
+						With(option.Description("Update the application title image shown on the Customer Portal home page")).
+						With(option.Request(struct {
+							ApplicationRequest
+							api.PatchImageRequest
+						}{})).
+						With(option.Response(http.StatusOK, api.ApplicationResponse{}))
 				})
 		})
 
@@ -319,30 +326,34 @@ func patchApplication(r *http.Request) (respond.Responder, error) {
 
 func getApplications(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	auth := auth.Authentication.Require(ctx)
-
-	org := auth.CurrentOrg()
-	var err error
-	var applications []types.Application
-	if org.HasFeature(types.FeatureLicensing) && auth.CurrentCustomerOrgID() != nil {
-		// Get applications based on entitlement owner ID only if there is at least one entitlement in the parent organization
-		entitlements, err1 := db.GetApplicationEntitlementsWithOrganizationID(ctx, *auth.CurrentOrgID(), nil)
-		if err1 != nil {
-			return nil, fmt.Errorf("failed to get application entitlements: %w", err1)
-		} else if len(entitlements) > 0 {
-			applications, err = db.GetApplicationsWithEntitlementOwnerID(ctx, *auth.CurrentCustomerOrgID())
-		} else {
-			applications, err = db.GetApplicationsByOrgID(ctx, *auth.CurrentOrgID())
-		}
-	} else {
-		applications, err = db.GetApplicationsByOrgID(ctx, *auth.CurrentOrgID())
-	}
-
-	if err != nil {
+	if applications, err := visibleApplications(ctx); err != nil {
 		return nil, fmt.Errorf("failed to get applications: %w", err)
 	} else {
 		return respond.JSON(mapping.List(applications, applicationMapper(ctx))), nil
 	}
+}
+
+// visibleApplications returns the applications the current user may see, of which a customer sees only
+// the entitled versions. Entitlements restrict a customer only once the vendor has created any.
+func visibleApplications(ctx context.Context) ([]types.Application, error) {
+	auth := auth.Authentication.Require(ctx)
+	if entitled, err := applicationEntitlementsApply(ctx); err != nil {
+		return nil, err
+	} else if entitled && auth.CurrentCustomerOrgID() != nil {
+		return db.GetApplicationsWithEntitlementOwnerID(ctx, *auth.CurrentCustomerOrgID())
+	} else {
+		return db.GetApplicationsByOrgID(ctx, *auth.CurrentOrgID())
+	}
+}
+
+// applicationEntitlementsApply reports whether application entitlements restrict customers, which they do
+// only with licensing enabled and once the vendor has created any.
+func applicationEntitlementsApply(ctx context.Context) (bool, error) {
+	auth := auth.Authentication.Require(ctx)
+	if !auth.CurrentOrg().HasFeature(types.FeatureLicensing) {
+		return false, nil
+	}
+	return db.HasAnyApplicationEntitlement(ctx, *auth.CurrentOrgID())
 }
 
 func getApplication(r *http.Request) (respond.Responder, error) {
@@ -675,6 +686,17 @@ func patchImageApplication(r *http.Request) (respond.Responder, error) {
 	return patchImage(r, func(ctx context.Context, body api.PatchImageRequest) (any, error) {
 		application := internalctx.GetApplication(ctx)
 		if err := db.UpdateApplicationImage(ctx, application, body.ImageID); err != nil {
+			return nil, err
+		} else {
+			return applicationMapper(ctx)(*application), nil
+		}
+	})
+}
+
+func patchTitleImageApplication(r *http.Request) (respond.Responder, error) {
+	return patchImage(r, func(ctx context.Context, body api.PatchImageRequest) (any, error) {
+		application := internalctx.GetApplication(ctx)
+		if err := db.UpdateApplicationTitleImage(ctx, application, body.ImageID); err != nil {
 			return nil, err
 		} else {
 			return applicationMapper(ctx)(*application), nil

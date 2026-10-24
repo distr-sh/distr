@@ -43,6 +43,20 @@ type DeploymentWithLatestRevision struct {
 	CurrentApplicationVersionID *uuid.UUID                `db:"current_application_version_id" json:"currentApplicationVersionId,omitempty"` //nolint:lll
 	//nolint:lll
 	CurrentApplicationVersionName *string `db:"current_application_version_name" json:"currentApplicationVersionName,omitempty"`
+	// DeploymentRevisionCreator is never serialized, since a customer must not learn who works for the
+	// vendor. DeploymentRevisionCreatedBy is the copy a handler fills for a creator the viewer may see.
+	DeploymentRevisionCreator   *DeploymentRevisionCreator `db:"deployment_revision_creator" json:"-"`
+	DeploymentRevisionCreatedBy *DeploymentRevisionCreator `db:"-" json:"deploymentRevisionCreatedBy,omitempty"` //nolint:lll
+}
+
+type DeploymentRevisionCreator struct {
+	ID                     uuid.UUID  `json:"id"`
+	Name                   *string    `json:"name,omitempty"`
+	ImageID                *uuid.UUID `json:"imageId,omitempty"`
+	CustomerOrganizationID *uuid.UUID `json:"-"`
+	PartnerOrganizationID  *uuid.UUID `json:"-"`
+	// Deleted is set for a creator who is no longer a member of the organization.
+	Deleted bool `json:"-"`
 }
 
 // NewestStatus returns the status the controller reported last, no matter which revision it belongs to.

@@ -1,0 +1,60 @@
+<div class="distr-card relative block p-4 hover:shadow-md transition-shadow">
+  <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+    <a routerLink="/support" class="after:absolute after:inset-0">
+      <fa-icon [icon]="faLifeRing" class="me-2 text-gray-500 dark:text-gray-400" />
+      Support bundles
+    </a>
+  </h2>
+
+  @if (supportBundles().length === 0) {
+    <p class="text-sm distr-text-muted">Collect logs and configuration from your environment to share with support.</p>
+    @if (canCreate()) {
+      <button
+        type="button"
+        (click)="openCreateDialog()"
+        class="relative z-10 mt-3 inline-flex items-center py-2 px-4 text-sm distr-btn-secondary hover:text-gray-900 dark:hover:text-white">
+        <fa-icon [icon]="faPlus" class="me-2 text-gray-500 dark:text-gray-400" />
+        Create support bundle
+      </button>
+    }
+  } @else {
+    <ul class="flex flex-col gap-1 -mx-2 text-sm">
+      @for (bundle of visibleSupportBundles(); track bundle.id) {
+        <li>
+          <a
+            [routerLink]="['/support', bundle.id]"
+            class="relative z-10 flex items-start justify-between gap-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+            <div class="min-w-0">
+              <span class="block truncate font-medium text-gray-900 dark:text-white">{{ bundle.title }}</span>
+              <span class="distr-text-muted" [title]="bundle.updatedAt | date: 'medium'">
+                @switch (bundle.status) {
+                  @case ('initialized') {
+                    Created
+                  }
+                  @case ('created') {
+                    Uploaded
+                  }
+                  @case ('resolved') {
+                    Resolved
+                  }
+                  @case ('canceled') {
+                    Canceled
+                  }
+                }
+                {{ bundle.updatedAt | relativeDate }}
+                @if (bundle.updatedBy; as user) {
+                  by {{ user.name }}
+                }
+              </span>
+            </div>
+            <app-support-bundle-status-badge [status]="bundle.status" />
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</div>
+
+<ng-template #createDialog>
+  <app-support-bundle-create-dialog (created)="created.emit()" (closed)="closeCreateDialog()" />
+</ng-template>

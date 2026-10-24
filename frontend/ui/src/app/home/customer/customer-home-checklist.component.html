@@ -1,0 +1,40 @@
+<div class="distr-card block p-4">
+  <div class="flex items-center justify-between gap-4 mb-3">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+      <fa-icon [icon]="faListCheck" class="me-2 text-gray-500 dark:text-gray-400" />
+      Getting started
+    </h2>
+    <span class="text-sm distr-text-muted">{{ doneCount() }} of {{ items().length }} done</span>
+  </div>
+  <ul class="flex flex-col gap-1 -mx-2">
+    @for (item of items(); track item.label) {
+      <li>
+        @if (item.link) {
+          <a
+            [routerLink]="item.link"
+            class="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+            <ng-container [ngTemplateOutlet]="content" [ngTemplateOutletContext]="{$implicit: item}" />
+          </a>
+        } @else {
+          <div class="flex items-start gap-3 p-2">
+            <ng-container [ngTemplateOutlet]="content" [ngTemplateOutletContext]="{$implicit: item}" />
+          </div>
+        }
+      </li>
+    }
+  </ul>
+</div>
+
+<ng-template #content let-item>
+  @if (item.done) {
+    <fa-icon [icon]="faCircleCheck" class="flex items-center h-5 text-green-500" />
+  } @else {
+    <fa-icon [icon]="faCircle" class="flex items-center h-5 text-gray-400 dark:text-gray-500" />
+  }
+  <div class="min-w-0 text-sm">
+    <span class="font-medium text-gray-900 dark:text-white">{{ item.label }}</span>
+    @if (!item.done) {
+      <p class="distr-text-muted">{{ item.hint }}</p>
+    }
+  </div>
+</ng-template>

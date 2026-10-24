@@ -1,0 +1,29 @@
+<a routerLink="/license-keys" class="distr-card block p-4 hover:shadow-md transition-shadow">
+  <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+    <fa-icon [icon]="faKey" class="me-2 text-gray-500 dark:text-gray-400" />
+    License
+  </h2>
+
+  @let s = state();
+  @if (s.type === 'expired') {
+    <app-alert type="error" heading="Expired">
+      {{ s.name }} expired on {{ s.expiresAt | date: 'mediumDate' }}
+    </app-alert>
+  } @else if (s.type === 'not_yet_valid') {
+    <app-alert type="error" heading="Not yet valid">
+      {{ s.name }} becomes valid on {{ s.notBefore | date: 'mediumDate' }}
+    </app-alert>
+  } @else if (s.type === 'expiring') {
+    <app-alert type="warning" [heading]="'Expires ' + (s.expiresAt | relativeDate)">
+      {{ s.name }} on {{ s.expiresAt | date: 'mediumDate' }}
+    </app-alert>
+  } @else {
+    <app-alert type="success" heading="Active">
+      @if (s.type === 'valid_until') {
+        Valid until {{ s.expiresAt | date: 'mediumDate' }}
+      } @else {
+        No expiration date
+      }
+    </app-alert>
+  }
+</a>

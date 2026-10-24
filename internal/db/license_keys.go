@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/distrerr"
@@ -229,6 +230,40 @@ func DeleteLicenseKeyWithID(ctx context.Context, id uuid.UUID) error {
 		return fmt.Errorf("could not delete LicenseKey: %w", distrerr.ErrNotFound)
 	}
 	return nil
+}
+
+// GetCustomerLicenseKeyRevisions returns the newest revisions of the license keys of the customer organization
+// created since, at most limit of them.
+func GetCustomerLicenseKeyRevisions(
+	ctx context.Context,
+	orgID, customerOrgID uuid.UUID,
+	since time.Time,
+	limit int,
+) ([]types.CustomerLicenseKeyRevision, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT lr.id, lr.created_at, lk.id AS license_key_id, lk.name AS license_key_name,
+			EXISTS (
+				SELECT 1 FROM LicenseKeyRevision prev
+				WHERE prev.license_key_id = lr.license_key_id AND prev.created_at < lr.created_at
+			) AS is_update
+		FROM LicenseKey lk
+			JOIN LicenseKeyRevision lr ON lr.license_key_id = lk.id
+		WHERE lk.organization_id = @orgId
+			AND lk.customer_organization_id = @customerOrgId
+			AND lr.created_at > @since
+		ORDER BY lr.created_at DESC
+		LIMIT @limit`,
+		pgx.NamedArgs{"orgId": orgID, "customerOrgId": customerOrgID, "since": since, "limit": limit},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query customer license key revisions: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.CustomerLicenseKeyRevision])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect customer license key revisions: %w", err)
+	}
+	return result, nil
 }
 
 func GetLicenseKeyRevisions(ctx context.Context, licenseKeyID uuid.UUID) ([]types.LicenseKeyRevision, error) {

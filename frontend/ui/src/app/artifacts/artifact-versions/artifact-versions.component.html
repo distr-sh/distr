@@ -28,8 +28,19 @@
                 @if (artifact.public) {
                   <app-artifact-public-badge />
                 }
+                @if (auth.isVendor() && artifact.hiddenInHome) {
+                  <span class="distr-badge distr-badge-neutral">Hidden in home</span>
+                }
               </p>
             </div>
+
+            @if (auth.isVendor()) {
+              <app-title-image-picker
+                class="me-4 self-start"
+                [imageUrl]="artifact.titleImageUrl"
+                [editable]="auth.hasAnyRole('read_write', 'admin')"
+                (picked)="updateTitleImage(artifact, $event)" />
+            }
 
             @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
               <button
@@ -90,6 +101,17 @@
                         }
                       </li>
                     }
+                    <li>
+                      <button class="distr-dropdown-item" (click)="setHiddenInHome(artifact, !artifact.hiddenInHome)">
+                        @if (artifact.hiddenInHome) {
+                          <fa-icon [icon]="faEye" />
+                          Show in home
+                        } @else {
+                          <fa-icon [icon]="faEyeSlash" />
+                          Hide in home
+                        }
+                      </button>
+                    </li>
                     <li>
                       <button class="distr-dropdown-item distr-dropdown-item-danger" (click)="deleteArtifact(artifact)">
                         <fa-icon [icon]="faTrash" />

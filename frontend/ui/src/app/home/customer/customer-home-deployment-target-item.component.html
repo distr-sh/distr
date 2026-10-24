@@ -1,0 +1,77 @@
+@let target = deploymentTarget();
+<a
+  routerLink="/deployments"
+  [queryParams]="{search: target.name}"
+  class="font-semibold text-gray-900 dark:text-white group-hover:underline truncate block after:absolute after:inset-0">
+  {{ target.name }}
+</a>
+
+<div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,26rem),1fr))] gap-x-4 gap-y-2">
+  @for (deployment of target.deployments; track deployment.id) {
+    <div class="flex flex-col sm:flex-row gap-3 min-w-0">
+      <ng-container
+        [ngTemplateOutlet]="image"
+        [ngTemplateOutletContext]="{
+          $implicit: deployment.applicationTitleImageUrl ?? deployment.applicationImageUrl,
+        }" />
+      <dl class="flex-1 min-w-0 grid grid-cols-[auto_1fr] content-start gap-x-4 gap-y-1 text-sm">
+        <dt class="distr-text-muted">Application</dt>
+        <dd class="text-gray-900 dark:text-white font-medium truncate">{{ deployment.applicationName }}</dd>
+
+        @if (deployment.applicationLink) {
+          <dt class="distr-text-muted">Link</dt>
+          <dd class="truncate">
+            <a
+              [href]="deployment.applicationLink"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="relative z-10 text-primary-600 dark:text-primary-400 hover:underline">
+              {{ deployment.applicationLink }}
+              <fa-icon [icon]="faArrowUpRightFromSquare" class="ms-1 text-xs" />
+            </a>
+          </dd>
+        }
+
+        <dt class="distr-text-muted">Version</dt>
+        <dd class="flex flex-wrap items-center gap-2 text-gray-900 dark:text-white">
+          {{ deployment.currentApplicationVersionName ?? deployment.applicationVersionName }}
+          @if (deployment.updateAvailable) {
+            <span class="distr-badge">Update available: {{ deployment.latestApplicationVersionName }}</span>
+          } @else {
+            <span class="distr-badge distr-badge-success">Latest</span>
+          }
+        </dd>
+
+        <dt class="distr-text-muted">Last update</dt>
+        <dd class="text-gray-900 dark:text-white" [title]="deployment.deploymentRevisionCreatedAt | date: 'medium'">
+          {{ deployment.deploymentRevisionCreatedAt | relativeDate }}
+          @if (deployment.deploymentRevisionCreatedBy; as user) {
+            by {{ user.name }}
+          }
+        </dd>
+
+        <dt class="distr-text-muted">Status</dt>
+        <dd class="text-gray-900 dark:text-white">
+          <app-deployment-status-text [deployment]="deployment" />
+        </dd>
+      </dl>
+    </div>
+  } @empty {
+    <div class="flex flex-col sm:flex-row gap-3">
+      <ng-container [ngTemplateOutlet]="image" [ngTemplateOutletContext]="{$implicit: undefined}" />
+      <p class="text-sm distr-text-muted">Nothing deployed yet.</p>
+    </div>
+  }
+</div>
+
+<ng-template #image let-src>
+  <div
+    class="sm:w-48 sm:self-start shrink-0 aspect-video rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 flex items-center justify-center"
+    [class.border]="!src">
+    @if (src) {
+      <img [attr.src]="src | secureImage | async" alt="" class="size-full object-cover" />
+    } @else {
+      <fa-icon [icon]="faServer" size="2x" class="text-gray-400 dark:text-gray-500" />
+    }
+  </div>
+</ng-template>

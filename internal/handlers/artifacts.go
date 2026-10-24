@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
@@ -32,6 +33,9 @@ func ArtifactsRouter(r chiopenapi.Router) {
 	r.Get("/", respond.Handler(getArtifacts)).
 		With(option.Description("List all artifacts")).
 		With(option.Response(http.StatusOK, []api.ArtifactsResponse{}))
+	r.Get("/pull-status", respond.Handler(getArtifactPullStatus)).
+		With(option.Description("Get whether the current user has pulled an artifact of the organization")).
+		With(option.Response(http.StatusOK, api.ArtifactPullStatusResponse{}))
 	r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 		Post("/", respond.Handler(createArtifactHandler)).
 		With(option.Description("Create an artifact")).
@@ -55,9 +59,17 @@ func ArtifactsRouter(r chiopenapi.Router) {
 						api.PatchImageRequest
 					}{})).
 					With(option.Response(http.StatusOK, []api.ArtifactResponse{}))
+				r.Patch("/title-image", respond.Handler(patchTitleImageArtifactHandler)).
+					With(option.Description("Update the artifact title image shown on the Customer Portal home page")).
+					With(option.Request(struct {
+						ArtifactRequest
+						api.PatchImageRequest
+					}{})).
+					With(option.Response(http.StatusOK, api.ArtifactResponse{}))
 				r.Patch("/", respond.Handler(patchArtifactHandler)).
 					With(option.Description(
-						"Update artifact upstream URL and/or authentication, or its public visibility")).
+						"Update artifact upstream URL and/or authentication, its public visibility " +
+							"or whether it is hidden on the Customer Portal home page")).
 					With(option.Request(struct {
 						ArtifactRequest
 						api.PatchArtifactRequest
@@ -78,6 +90,16 @@ func ArtifactsRouter(r chiopenapi.Router) {
 					}{}))
 			})
 	})
+}
+
+func getArtifactPullStatus(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	if hasPulled, err := db.HasUserPulledArtifact(ctx, auth.CurrentUserID(), *auth.CurrentOrgID()); err != nil {
+		return nil, fmt.Errorf("failed to get artifact pull status: %w", err)
+	} else {
+		return respond.JSON(api.ArtifactPullStatusResponse{HasPulled: hasPulled}), nil
+	}
 }
 
 func createArtifactHandler(r *http.Request) (respond.Responder, error) {
@@ -153,27 +175,79 @@ func syncArtifactHandler(r *http.Request) (respond.Responder, error) {
 
 func getArtifacts(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	auth := auth.Authentication.Require(ctx)
-
-	var artifacts []types.ArtifactWithDownloads
-	var err error
-	if auth.CurrentOrg().HasFeature(types.FeatureLicensing) && auth.CurrentCustomerOrgID() != nil {
-		if entitlements, err1 := db.GetArtifactEntitlements(ctx, *auth.CurrentOrgID()); err1 != nil {
-			return nil, fmt.Errorf("failed to get artifact entitlements: %w", err1)
-		} else if len(entitlements) > 0 {
-			artifacts, err = db.GetArtifactsByEntitlementOwnerID(ctx, *auth.CurrentOrgID(), *auth.CurrentCustomerOrgID())
-		} else {
-			artifacts, err = db.GetArtifactsByOrgID(ctx, *auth.CurrentOrgID())
-		}
-	} else {
-		artifacts, err = db.GetArtifactsByOrgID(ctx, *auth.CurrentOrgID())
-	}
-
-	if err != nil {
+	customerOrgID := auth.Authentication.Require(ctx).CurrentCustomerOrgID()
+	if artifacts, err := visibleArtifacts(ctx, customerOrgID); err != nil {
 		return nil, fmt.Errorf("failed to get artifacts: %w", err)
-	} else {
+	} else if customerOrgID == nil {
 		return respond.JSON(mapping.List(artifacts, mapping.ArtifactsWithDownloadsToAPI)), nil
+	} else if result, err := customerArtifactsToAPI(ctx, artifacts, *customerOrgID); err != nil {
+		return nil, err
+	} else {
+		return respond.JSON(result), nil
 	}
+}
+
+func customerArtifactsToAPI(
+	ctx context.Context,
+	artifacts []types.ArtifactWithDownloads,
+	customerOrgID uuid.UUID,
+) ([]api.ArtifactsResponse, error) {
+	auth := auth.Authentication.Require(ctx)
+	licensing := auth.CurrentOrg().HasFeature(types.FeatureLicensing)
+	artifactIDs := make([]uuid.UUID, len(artifacts))
+	for i, artifact := range artifacts {
+		artifactIDs[i] = artifact.ID
+	}
+	pulls, err := db.GetLatestArtifactPullsOfCustomerOrganization(ctx, *auth.CurrentOrgID(), customerOrgID, artifactIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get latest artifact pulls: %w", err)
+	}
+	releaseVersions, err := db.ListArtifactReleaseVersions(ctx, artifactIDs, customerOrgID, licensing)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get artifact versions: %w", err)
+	}
+	versions := types.TaggedArtifactVersionsByArtifact(releaseVersions)
+	result := make([]api.ArtifactsResponse, len(artifacts))
+	for i, artifact := range artifacts {
+		var pull *types.CustomerArtifactPull
+		if j := slices.IndexFunc(pulls, func(p types.CustomerArtifactPull) bool {
+			return p.ArtifactID == artifact.ID
+		}); j >= 0 {
+			pull = &pulls[j]
+		}
+		result[i] = mapping.CustomerArtifactToAPI(artifact, versions[artifact.ID], pull)
+	}
+	return result, nil
+}
+
+// visibleArtifacts returns the artifacts the customer organization may see, or all of them without one.
+// Entitlements restrict a customer only once the vendor has created any.
+func visibleArtifacts(ctx context.Context, customerOrgID *uuid.UUID) ([]types.ArtifactWithDownloads, error) {
+	auth := auth.Authentication.Require(ctx)
+	orgID := *auth.CurrentOrgID()
+	if !auth.CurrentOrg().HasFeature(types.FeatureLicensing) || customerOrgID == nil {
+		return db.GetArtifactsByOrgID(ctx, orgID)
+	}
+	if entitlements, err := db.GetArtifactEntitlements(ctx, orgID); err != nil {
+		return nil, err
+	} else if len(entitlements) == 0 {
+		return db.GetArtifactsByOrgID(ctx, orgID)
+	}
+	return db.GetArtifactsByEntitlementOwnerID(ctx, orgID, *customerOrgID)
+}
+
+// customerArtifactVersions returns the versions of the artifact that the customer organization may pull,
+// which are restricted by entitlements only when licensing is enabled.
+func customerArtifactVersions(
+	ctx context.Context,
+	artifactID, customerOrgID uuid.UUID,
+	licensing bool,
+) ([]types.TaggedArtifactVersion, error) {
+	var licenseOwnerID *uuid.UUID
+	if licensing {
+		licenseOwnerID = &customerOrgID
+	}
+	return db.GetVersionsForArtifact(ctx, artifactID, licenseOwnerID)
 }
 
 func getArtifact(r *http.Request) (respond.Responder, error) {
@@ -185,6 +259,17 @@ func patchImageArtifactHandler(r *http.Request) (respond.Responder, error) {
 	return patchImage(r, func(ctx context.Context, body api.PatchImageRequest) (any, error) {
 		artifact := internalctx.GetArtifact(ctx)
 		if err := db.UpdateArtifactImage(ctx, artifact, body.ImageID); err != nil {
+			return nil, err
+		} else {
+			return mapping.ArtifactToAPI(*artifact), nil
+		}
+	})
+}
+
+func patchTitleImageArtifactHandler(r *http.Request) (respond.Responder, error) {
+	return patchImage(r, func(ctx context.Context, body api.PatchImageRequest) (any, error) {
+		artifact := internalctx.GetArtifact(ctx)
+		if err := db.UpdateArtifactTitleImage(ctx, artifact, body.ImageID); err != nil {
 			return nil, err
 		} else {
 			return mapping.ArtifactToAPI(*artifact), nil
@@ -296,7 +381,14 @@ func patchArtifactHandler(r *http.Request) (respond.Responder, error) {
 			}
 		}
 		if body.Public != nil {
-			return db.UpdateArtifactPublic(ctx, artifact.ID, artifact.OrganizationID, *body.Public)
+			if err := db.UpdateArtifactPublic(ctx, artifact.ID, artifact.OrganizationID, *body.Public); err != nil {
+				return err
+			}
+		}
+		if body.HiddenInHome != nil {
+			return db.UpdateArtifactHiddenInHome(
+				ctx, artifact.ID, artifact.OrganizationID, *body.HiddenInHome,
+			)
 		}
 		return nil
 	}); err != nil {

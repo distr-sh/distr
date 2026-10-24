@@ -1,0 +1,32 @@
+<div class="distr-card p-4 gap-3" role="status">
+  @if (heading(); as heading) {
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+      @if (icon(); as icon) {
+        <fa-icon [icon]="icon" class="me-2 text-gray-500 dark:text-gray-400" />
+      }
+      {{ heading }}
+    </h2>
+  } @else if (row()) {
+    <div class="h-7 w-40 rounded-sm bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+  }
+  @if (row()) {
+    <div class="-mx-2 flex flex-col sm:flex-row gap-3 px-2 py-1.5 sm:min-h-35">
+      <div class="sm:w-48 shrink-0 aspect-video rounded-lg bg-gray-100 dark:bg-gray-700 animate-pulse"></div>
+      <div class="flex-1 min-w-0 flex flex-col gap-3">
+        <div class="h-6 w-48 max-w-full rounded-sm bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+        <ng-container [ngTemplateOutlet]="spinner" />
+      </div>
+    </div>
+  } @else {
+    <div class="flex justify-center py-8">
+      <ng-container [ngTemplateOutlet]="spinner" />
+    </div>
+  }
+</div>
+
+<ng-template #spinner>
+  <div class="flex items-center text-gray-500 dark:text-gray-400">
+    <fa-icon [icon]="faSpinner" class="animate-spin me-2" size="lg" />
+    <span>Loading&hellip;</span>
+  </div>
+</ng-template>

@@ -40,6 +40,21 @@ type HelmOptions struct {
 	ForceConflicts    bool     `db:"helm_options_force_conflicts" json:"forceConflicts"`
 }
 
+// CustomerDeploymentRevision is a deployment revision of a customer organization with what its activity
+// feed shows.
+type CustomerDeploymentRevision struct {
+	ID                     uuid.UUID `db:"id"`
+	CreatedAt              time.Time `db:"created_at"`
+	DeploymentTargetID     uuid.UUID `db:"deployment_target_id"`
+	DeploymentTargetName   string    `db:"deployment_target_name"`
+	ApplicationName        string    `db:"application_name"`
+	ApplicationVersionName string    `db:"application_version_name"`
+	// CreatedByName and CreatedByImageID are only set for a creator who is a member of the customer
+	// organization, since a customer must not learn who works for the vendor.
+	CreatedByName    *string    `db:"created_by_name"`
+	CreatedByImageID *uuid.UUID `db:"created_by_image_id"`
+}
+
 // DeploymentRevisionWithCreator is a deployment revision enriched with the
 // configuration needed to display it (application version, release name, docker
 // type, values) and information about the user who created it.

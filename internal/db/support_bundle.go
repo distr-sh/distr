@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"errors"
 	"fmt"
+	"time"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/distrerr"
@@ -230,6 +231,56 @@ var supportBundleWithDetailsOutputExpr = `
 	scu.name AS status_changed_by_user_name,
 	scu.image_id AS status_changed_by_image_id
 `
+
+// GetCustomerSupportBundleEvents returns the newest creations and status changes of the support bundles of the
+// customer organization since, at most limit of them.
+func GetCustomerSupportBundleEvents(
+	ctx context.Context,
+	orgID, customerOrgID uuid.UUID,
+	since time.Time,
+	limit int,
+) ([]types.CustomerSupportBundleEvent, error) {
+	const customerMember = `
+		LEFT JOIN Organization_UserAccount j
+			ON j.user_account_id = u.id
+				AND j.organization_id = sb.organization_id
+				AND j.customer_organization_id = sb.customer_organization_id`
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT * FROM (
+			SELECT sb.id AS support_bundle_id, sb.created_at, sb.title, NULL::TEXT AS status,
+				CASE WHEN j.user_account_id IS NOT NULL THEN u.name END AS user_name,
+				CASE WHEN j.user_account_id IS NOT NULL THEN u.image_id END AS user_image_id
+			FROM SupportBundle sb
+				LEFT JOIN UserAccount u ON u.id = sb.created_by_user_account_id
+				`+customerMember+`
+			WHERE sb.organization_id = @orgId
+				AND sb.customer_organization_id = @customerOrgId
+				AND sb.created_at > @since
+			UNION ALL
+			SELECT sb.id, sb.status_changed_at, sb.title, sb.status::TEXT,
+				CASE WHEN j.user_account_id IS NOT NULL THEN u.name END,
+				CASE WHEN j.user_account_id IS NOT NULL THEN u.image_id END
+			FROM SupportBundle sb
+				LEFT JOIN UserAccount u ON u.id = sb.status_changed_by_user_account_id
+				`+customerMember+`
+			WHERE sb.organization_id = @orgId
+				AND sb.customer_organization_id = @customerOrgId
+				AND sb.status_changed_at > @since
+		) events
+		ORDER BY created_at DESC
+		LIMIT @limit`,
+		pgx.NamedArgs{"orgId": orgID, "customerOrgId": customerOrgID, "since": since, "limit": limit},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query customer support bundle events: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.CustomerSupportBundleEvent])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect customer support bundle events: %w", err)
+	}
+	return result, nil
+}
 
 func GetSupportBundles(
 	ctx context.Context, orgID uuid.UUID, customerOrgID *uuid.UUID, partnerOrgID *uuid.UUID,

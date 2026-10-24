@@ -173,6 +173,7 @@ func ApiRouter(
 					)
 					r.Route("/controller-versions", handlers.ControllerVersionsRouter)
 					r.Route("/application-entitlements", handlers.ApplicationEntitlementsRouter)
+					r.Route("/activity-feed", handlers.ActivityFeedRouter)
 					r.Route("/applications", handlers.ApplicationsRouter)
 					r.Route("/artifact-entitlements", handlers.ArtifactEntitlementsRouter)
 					r.With(middleware.UseReadonlyDB).Route("/artifact-pulls", handlers.ArtifactPullsRouter)

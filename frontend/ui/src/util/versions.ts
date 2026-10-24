@@ -6,6 +6,7 @@ import {
   VersioningStrategy,
 } from '@distr-sh/distr-sdk';
 import {SemVer} from 'semver';
+import {ApplicationEntitlement} from '../app/types/application-entitlement';
 import {isArchived} from './dates';
 
 export type VersionComparator = (a: ApplicationVersion, b: ApplicationVersion) => number;
@@ -103,6 +104,27 @@ export function latestApplicationVersion(
       (latest, version) => (latest === undefined || compare(version, latest) > 0 ? version : latest),
       undefined
     );
+}
+
+/**
+ * The newest version the deployment is entitled to. A deployment bound to an entitlement is limited to
+ * its versions, of which none means all of them, and every other deployment to the versions of its
+ * application in `applications`, which a customer receives only the entitled ones of.
+ */
+export function latestDeploymentVersion(
+  deployment: DeploymentWithLatestRevision,
+  applications: Application[],
+  entitlements: ApplicationEntitlement[]
+): ApplicationVersion | undefined {
+  const application = applications.find((app) => app.id === deployment.application.id);
+  const entitledVersions = deployment.applicationEntitlementId
+    ? entitlements.find((entitlement) => entitlement.id === deployment.applicationEntitlementId)?.versions
+    : undefined;
+  const candidates = entitledVersions?.length ? entitledVersions : (application?.versions ?? []);
+  return latestApplicationVersion(
+    applicationVersionComparator(application?.versioningStrategy, application?.versions ?? []),
+    candidates
+  );
 }
 
 export function allowsAutomaticUpdates(application: Application): boolean {

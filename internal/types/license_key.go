@@ -21,6 +21,16 @@ type LicenseKey struct {
 	LicenseTemplateID      *uuid.UUID      `db:"license_template_id"     json:"licenseTemplateId,omitempty"`
 }
 
+// CustomerLicenseKeyRevision is a revision of a license key of a customer organization. IsUpdate is set for
+// every revision but the first one, which issued the key.
+type CustomerLicenseKeyRevision struct {
+	ID             uuid.UUID `db:"id"`
+	CreatedAt      time.Time `db:"created_at"`
+	LicenseKeyID   uuid.UUID `db:"license_key_id"`
+	LicenseKeyName string    `db:"license_key_name"`
+	IsUpdate       bool      `db:"is_update"`
+}
+
 type LicenseKeyRevision struct {
 	ID           uuid.UUID       `db:"id"             json:"id"`
 	CreatedAt    time.Time       `db:"created_at"     json:"createdAt"`
