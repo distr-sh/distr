@@ -93,6 +93,7 @@
 - [IsOutdatedResultItem](type-aliases/IsOutdatedResultItem.md)
 - [LatestVersionStrategy](type-aliases/LatestVersionStrategy.md)
 - [LoginResponse](type-aliases/LoginResponse.md)
+- [SupportBundleResourceContentType](type-aliases/SupportBundleResourceContentType.md)
 - [SupportBundleStatus](type-aliases/SupportBundleStatus.md)
 - [UpdateAllDeploymentsResult](type-aliases/UpdateAllDeploymentsResult.md)
 - [UpdateAllDeploymentsSkippedTarget](type-aliases/UpdateAllDeploymentsSkippedTarget.md)
