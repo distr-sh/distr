@@ -217,15 +217,6 @@ var RequireVendorOrPartner = guard(func(r *http.Request) (respond.Responder, err
 	return nil, nil
 })
 
-var RequireCustomer = guard(func(r *http.Request) (respond.Responder, error) {
-	if auth, err := auth.Authentication.Get(r.Context()); err != nil {
-		return nil, err
-	} else if auth.CurrentCustomerOrgID() == nil {
-		return insufficientPermissions, nil
-	}
-	return nil, nil
-})
-
 var Sentry = sentryhttp.New(sentryhttp.Options{Repanic: true}).Handle
 
 // SetSentryUserFromUserAuth sets the authenticated user's identity on the Sentry scope. It

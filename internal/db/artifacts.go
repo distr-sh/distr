@@ -1048,11 +1048,12 @@ func BulkUpsertArtifactVersionParts(ctx context.Context, parts []types.ArtifactV
 // left out: a client pulling by tag always resolves the tag first, which is recorded as well, and the child
 // manifests of an index are only ever pulled by digest.
 // GetFirstArtifactVersionPullsOfCustomerOrganization returns the newest first pulls of the users of the
-// customer organization for each release tag created since, at most limit of them. Restricting the tags to
-// those created since makes the first pull since also the first pull ever.
+// customer organization for each release tag of the artifacts created since, at most limit of them.
+// Restricting the tags to those created since makes the first pull since also the first pull ever.
 func GetFirstArtifactVersionPullsOfCustomerOrganization(
 	ctx context.Context,
 	orgID, customerOrgID uuid.UUID,
+	artifactIDs []uuid.UUID,
 	since time.Time,
 	limit int,
 ) ([]types.FirstArtifactVersionPull, error) {
@@ -1073,13 +1074,20 @@ func GetFirstArtifactVersionPullsOfCustomerOrganization(
 				JOIN Artifact a ON a.id = v.artifact_id
 				JOIN UserAccount u ON u.id = p.useraccount_id
 			WHERE a.organization_id = @orgId
+				AND a.id = any(@artifactIds)
 				AND v.created_at > @since
 				AND `+artifactVersionIsReleaseTagExpr("v")+`
 			ORDER BY v.id, p.useraccount_id, p.created_at
 		) first_pull
 		ORDER BY created_at DESC
 		LIMIT @limit`,
-		pgx.NamedArgs{"orgId": orgID, "customerOrganizationId": customerOrgID, "since": since, "limit": limit},
+		pgx.NamedArgs{
+			"orgId":                  orgID,
+			"customerOrganizationId": customerOrgID,
+			"artifactIds":            artifactIDs,
+			"since":                  since,
+			"limit":                  limit,
+		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query first artifact version pulls: %w", err)

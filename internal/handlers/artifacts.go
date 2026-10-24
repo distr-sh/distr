@@ -175,10 +175,10 @@ func syncArtifactHandler(r *http.Request) (respond.Responder, error) {
 
 func getArtifacts(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	auth := auth.Authentication.Require(ctx)
-	if artifacts, err := visibleArtifacts(ctx); err != nil {
+	customerOrgID := auth.Authentication.Require(ctx).CurrentCustomerOrgID()
+	if artifacts, err := visibleArtifacts(ctx, customerOrgID); err != nil {
 		return nil, fmt.Errorf("failed to get artifacts: %w", err)
-	} else if customerOrgID := auth.CurrentCustomerOrgID(); customerOrgID == nil {
+	} else if customerOrgID == nil {
 		return respond.JSON(mapping.List(artifacts, mapping.ArtifactsWithDownloadsToAPI)), nil
 	} else if result, err := customerArtifactsToAPI(ctx, artifacts, *customerOrgID); err != nil {
 		return nil, err
@@ -220,12 +220,11 @@ func customerArtifactsToAPI(
 	return result, nil
 }
 
-// visibleArtifacts returns the artifacts the current user may see. Entitlements restrict a customer only
-// once the vendor has created any.
-func visibleArtifacts(ctx context.Context) ([]types.ArtifactWithDownloads, error) {
+// visibleArtifacts returns the artifacts the customer organization may see, or all of them without one.
+// Entitlements restrict a customer only once the vendor has created any.
+func visibleArtifacts(ctx context.Context, customerOrgID *uuid.UUID) ([]types.ArtifactWithDownloads, error) {
 	auth := auth.Authentication.Require(ctx)
 	orgID := *auth.CurrentOrgID()
-	customerOrgID := auth.CurrentCustomerOrgID()
 	if !auth.CurrentOrg().HasFeature(types.FeatureLicensing) || customerOrgID == nil {
 		return db.GetArtifactsByOrgID(ctx, orgID)
 	}

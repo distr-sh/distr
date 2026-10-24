@@ -8,6 +8,8 @@ import (
 )
 
 type ActivityFeedEntry struct {
+	// ID is the record the entry comes from, so it is only unique together with Type: the creation and the
+	// status change of a support bundle share the bundle's ID.
 	ID           uuid.UUID              `json:"id"`
 	CreatedAt    time.Time              `json:"createdAt"`
 	Type         activityfeed.EntryType `json:"type"`
