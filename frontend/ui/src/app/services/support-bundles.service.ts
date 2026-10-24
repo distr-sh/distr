@@ -11,6 +11,7 @@ import {
   SupportBundleConfigurationEnvVar,
   SupportBundleConfigurationScript,
   SupportBundleDetail,
+  SupportBundleResource,
   UpdateSupportBundleStatusRequest,
 } from '../types/support-bundle';
 
@@ -69,6 +70,10 @@ export class SupportBundlesService {
 
   public get(id: string) {
     return this.httpClient.get<SupportBundleDetail>(`${baseUrl}/${id}`);
+  }
+
+  public getResource(bundleId: string, resourceId: string) {
+    return this.httpClient.get<SupportBundleResource>(`${baseUrl}/${bundleId}/resources/${resourceId}`);
   }
 
   public downloadResources(id: string) {

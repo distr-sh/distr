@@ -102,12 +102,19 @@ func (t SupportBundleResourceContentType) FileExtension() string {
 	}
 }
 
-type SupportBundleResource struct {
+type SupportBundleResourceSummary struct {
 	ID              uuid.UUID                        `db:"id"`
 	CreatedAt       time.Time                        `db:"created_at"`
 	SupportBundleID uuid.UUID                        `db:"support_bundle_id"`
 	Name            string                           `db:"name"`
 	ContentType     SupportBundleResourceContentType `db:"content_type"`
+	// Size is the length of the content in bytes. It is nil for resources uploaded before it was
+	// recorded, because the content is stored compressed and encrypted and cannot be measured in SQL.
+	Size *int64 `db:"size"`
+}
+
+type SupportBundleResource struct {
+	SupportBundleResourceSummary
 	// The content is a file the collect script gathered verbatim, and is served back as a download
 	// and rendered in a <pre>, so it must not be trimmed if it ever reaches a JSON request body.
 	Content dbcrypto.String `db:"content" trim:"-"`

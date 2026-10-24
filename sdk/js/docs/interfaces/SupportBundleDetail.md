@@ -146,7 +146,7 @@
 
 ### resources
 
-> **resources**: [`SupportBundleResource`](SupportBundleResource.md)[]
+> **resources**: [`SupportBundleResourceSummary`](SupportBundleResourceSummary.md)[]
 
 ---
 

@@ -3,15 +3,7 @@ import {ChangeDetectionStrategy, Component, computed, inject, signal, viewChild}
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {
-  faArrowLeft,
-  faCheck,
-  faChevronRight,
-  faComment,
-  faDownload,
-  faTrash,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
+import {faArrowLeft, faCheck, faComment, faDownload, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
@@ -28,6 +20,7 @@ import {ToastService} from '../../services/toast.service';
 import {SupportBundleDetail} from '../../types/support-bundle';
 import {supportBundleDeleteConfirm} from '../support-bundle-display';
 import {SupportBundleStatusBadgeComponent} from '../support-bundle-status-badge.component';
+import {SupportBundleResourceComponent} from './support-bundle-resource.component';
 
 @Component({
   selector: 'app-support-bundle-detail',
@@ -41,6 +34,7 @@ import {SupportBundleStatusBadgeComponent} from '../support-bundle-status-badge.
     ActivityTimelineComponent,
     PageComponent,
     SupportBundleStatusBadgeComponent,
+    SupportBundleResourceComponent,
   ],
 })
 export class SupportBundleDetailComponent {
@@ -52,7 +46,6 @@ export class SupportBundleDetailComponent {
   protected readonly auth = inject(AuthService);
 
   protected readonly faArrowLeft = faArrowLeft;
-  protected readonly faChevronRight = faChevronRight;
   protected readonly faCheck = faCheck;
   protected readonly faComment = faComment;
   protected readonly faDownload = faDownload;
