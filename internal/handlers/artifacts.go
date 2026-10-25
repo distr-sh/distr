@@ -33,9 +33,6 @@ func ArtifactsRouter(r chiopenapi.Router) {
 	r.Get("/", respond.Handler(getArtifacts)).
 		With(option.Description("List all artifacts")).
 		With(option.Response(http.StatusOK, []api.ArtifactsResponse{}))
-	r.Get("/pull-status", respond.Handler(getArtifactPullStatus)).
-		With(option.Description("Get whether the current user has pulled an artifact of the organization")).
-		With(option.Response(http.StatusOK, api.ArtifactPullStatusResponse{}))
 	r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 		Post("/", respond.Handler(createArtifactHandler)).
 		With(option.Description("Create an artifact")).
@@ -90,16 +87,6 @@ func ArtifactsRouter(r chiopenapi.Router) {
 					}{}))
 			})
 	})
-}
-
-func getArtifactPullStatus(r *http.Request) (respond.Responder, error) {
-	ctx := r.Context()
-	auth := auth.Authentication.Require(ctx)
-	if hasPulled, err := db.HasUserPulledArtifact(ctx, auth.CurrentUserID(), *auth.CurrentOrgID()); err != nil {
-		return nil, fmt.Errorf("failed to get artifact pull status: %w", err)
-	} else {
-		return respond.JSON(api.ArtifactPullStatusResponse{HasPulled: hasPulled}), nil
-	}
 }
 
 func createArtifactHandler(r *http.Request) (respond.Responder, error) {

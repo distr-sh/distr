@@ -72,10 +72,6 @@ export interface ArtifactWithTags extends Artifact {
   versions?: TaggedArtifactVersion[];
 }
 
-export interface ArtifactPullStatus {
-  hasPulled: boolean;
-}
-
 export interface PatchArtifactRequest {
   upstreamUrl?: string | null;
   auth?: ArtifactUpstreamAuth | null;
@@ -97,10 +93,6 @@ export class ArtifactsService {
 
   public list(): Observable<ArtifactWithTags[]> {
     return this.cache.get();
-  }
-
-  public getPullStatus(): Observable<ArtifactPullStatus> {
-    return this.http.get<ArtifactPullStatus>(`${this.artifactsUrl}/pull-status`);
   }
 
   public refresh(): Promise<ArtifactWithTags[]> {

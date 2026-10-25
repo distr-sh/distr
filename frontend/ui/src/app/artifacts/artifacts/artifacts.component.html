@@ -1,5 +1,5 @@
 <app-page>
-  @if (showRegistryHint()) {
+  @if (auth.hasAnyRole('admin') && (!hasSubscription() || hasNoArtifact())) {
     <app-alert type="info" class="mb-4">
       <div>
         @if (registrySlug$ | async; as slug) {

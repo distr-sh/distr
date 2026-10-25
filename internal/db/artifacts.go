@@ -1135,27 +1135,6 @@ func GetLatestArtifactPullsOfCustomerOrganization(
 	return result, nil
 }
 
-func HasUserPulledArtifact(ctx context.Context, userID, orgID uuid.UUID) (bool, error) {
-	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(ctx,
-		`SELECT EXISTS (
-			SELECT 1 FROM ArtifactVersionPull avpl
-				JOIN ArtifactVersion av ON av.id = avpl.artifact_version_id
-				JOIN Artifact a ON a.id = av.artifact_id
-			WHERE avpl.useraccount_id = @userId AND a.organization_id = @orgId
-		)`,
-		pgx.NamedArgs{"userId": userID, "orgId": orgID},
-	)
-	if err != nil {
-		return false, fmt.Errorf("failed to query artifact pulls of user: %w", err)
-	}
-	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[bool])
-	if err != nil {
-		return false, fmt.Errorf("failed to collect artifact pulls of user: %w", err)
-	}
-	return result, nil
-}
-
 func CreateArtifactPullLogEntry(
 	ctx context.Context,
 	versionID,

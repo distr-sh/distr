@@ -35,10 +35,6 @@ type ArtifactResponse struct {
 	HiddenInHome  bool    `json:"hiddenInHome"`
 }
 
-type ArtifactPullStatusResponse struct {
-	HasPulled bool `json:"hasPulled"`
-}
-
 type ArtifactsResponse struct {
 	types.ArtifactWithDownloads
 	ImageUrl      *string `json:"imageUrl,omitempty"`
