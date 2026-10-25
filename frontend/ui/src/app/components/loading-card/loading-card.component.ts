@@ -2,11 +2,12 @@ import {NgTemplateOutlet} from '@angular/common';
 import {booleanAttribute, Component, input} from '@angular/core';
 import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
 import {faSpinner} from '@fortawesome/free-solid-svg-icons';
+import {CardHeadingComponent} from '../card-heading.component';
 
 @Component({
   selector: 'app-loading-card',
   templateUrl: './loading-card.component.html',
-  imports: [NgTemplateOutlet, FaIconComponent],
+  imports: [NgTemplateOutlet, FaIconComponent, CardHeadingComponent],
 })
 export class LoadingCardComponent {
   public readonly heading = input<string>();

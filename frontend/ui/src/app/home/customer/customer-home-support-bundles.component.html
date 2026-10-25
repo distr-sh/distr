@@ -1,9 +1,6 @@
 <div class="distr-card relative block p-4 hover:shadow-md transition-shadow">
-  <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-    <a routerLink="/support" class="after:absolute after:inset-0">
-      <fa-icon [icon]="faLifeRing" class="me-2 text-gray-500 dark:text-gray-400" />
-      Support bundles
-    </a>
+  <h2 appCardHeading [icon]="faLifeRing" class="mb-3">
+    <a routerLink="/support" class="after:absolute after:inset-0">Support bundles</a>
   </h2>
 
   @if (supportBundles().length === 0) {

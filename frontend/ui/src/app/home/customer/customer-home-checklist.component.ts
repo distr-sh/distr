@@ -4,6 +4,7 @@ import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircle} from '@fortawesome/free-regular-svg-icons';
 import {faCircleCheck, faListCheck} from '@fortawesome/free-solid-svg-icons';
+import {CardHeadingComponent} from '../../components/card-heading.component';
 import {CustomerHomeChecklist} from '../../types/customer-home';
 import {CustomerHomePrimarySection} from './customer-home-deployments.component';
 
@@ -17,7 +18,7 @@ interface ChecklistItem {
 @Component({
   selector: 'app-customer-home-checklist',
   templateUrl: './customer-home-checklist.component.html',
-  imports: [NgTemplateOutlet, RouterLink, FaIconComponent],
+  imports: [NgTemplateOutlet, RouterLink, FaIconComponent, CardHeadingComponent],
 })
 export class CustomerHomeChecklistComponent {
   public readonly checklist = input.required<CustomerHomeChecklist>();

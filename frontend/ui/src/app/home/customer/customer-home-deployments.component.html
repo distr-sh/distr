@@ -3,10 +3,7 @@
   @if (section() === 'deployments' && targets.length > 0) {
     <div class="distr-card relative p-4 gap-3">
       <ng-container [ngTemplateOutlet]="menu" />
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white pe-8">
-        <fa-icon [icon]="faDashboard" class="me-2 text-gray-500 dark:text-gray-400" />
-        Deployments
-      </h2>
+      <h2 appCardHeading [icon]="faDashboard" class="pe-8">Deployments</h2>
       <div class="grid grid-cols-1 xl:grid-cols-2 -mx-2">
         @for (target of targets; track target.id) {
           <app-customer-home-deployment-target-item [deploymentTarget]="target" />
@@ -16,10 +13,7 @@
   } @else if (section() === 'artifacts' && artifacts().hasPulled && artifacts().artifacts.length > 0) {
     <div class="distr-card relative p-4 gap-3">
       <ng-container [ngTemplateOutlet]="menu" />
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white pe-8">
-        <fa-icon [icon]="faBox" class="me-2 text-gray-500 dark:text-gray-400" />
-        Artifacts
-      </h2>
+      <h2 appCardHeading [icon]="faBox" class="pe-8">Artifacts</h2>
       <div class="grid grid-cols-1 xl:grid-cols-2 -mx-2">
         @for (artifact of artifacts().artifacts; track artifact.id) {
           <app-customer-home-artifact-item [artifact]="artifact" />

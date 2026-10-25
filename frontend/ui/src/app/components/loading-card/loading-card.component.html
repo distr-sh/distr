@@ -1,11 +1,6 @@
 <div class="distr-card p-4 gap-3" role="status">
   @if (heading(); as heading) {
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-      @if (icon(); as icon) {
-        <fa-icon [icon]="icon" class="me-2 text-gray-500 dark:text-gray-400" />
-      }
-      {{ heading }}
-    </h2>
+    <h2 appCardHeading [icon]="icon()">{{ heading }}</h2>
   } @else if (row()) {
     <div class="h-7 w-40 rounded-sm bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
   }

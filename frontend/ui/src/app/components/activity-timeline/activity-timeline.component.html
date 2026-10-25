@@ -4,13 +4,7 @@
   [class.p-4]="variant() === 'card'"
   [class.distr-card]="variant() === 'card'"
   [class.block]="variant() === 'card'">
-  <h2
-    class="text-lg font-semibold text-gray-900 dark:text-white"
-    [class.mb-4]="variant() === 'panel'"
-    [class.mb-3]="variant() === 'card'">
-    @if (icon(); as icon) {
-      <fa-icon [icon]="icon" class="mr-2 text-gray-500 dark:text-gray-400" />
-    }
+  <h2 appCardHeading [icon]="icon()" [class.mb-4]="variant() === 'panel'" [class.mb-3]="variant() === 'card'">
     {{ heading() }}
   </h2>
 

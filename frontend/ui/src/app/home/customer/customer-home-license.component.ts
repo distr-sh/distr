@@ -1,11 +1,11 @@
 import {DatePipe} from '@angular/common';
 import {Component, computed, input} from '@angular/core';
 import {RouterLink} from '@angular/router';
-import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faKey} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {RelativeDatePipe} from '../../../util/dates';
 import {AlertComponent} from '../../components/alert/alert.component';
+import {CardHeadingComponent} from '../../components/card-heading.component';
 import {CustomerHomeLicense} from '../../types/customer-home';
 
 const expiringSoonDays = 30;
@@ -18,7 +18,7 @@ type LicenseState =
 @Component({
   selector: 'app-customer-home-license',
   templateUrl: './customer-home-license.component.html',
-  imports: [DatePipe, RouterLink, FaIconComponent, RelativeDatePipe, AlertComponent],
+  imports: [DatePipe, RouterLink, RelativeDatePipe, AlertComponent, CardHeadingComponent],
 })
 export class CustomerHomeLicenseComponent {
   public readonly license = input.required<CustomerHomeLicense>();

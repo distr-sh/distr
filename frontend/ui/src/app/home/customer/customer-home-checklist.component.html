@@ -1,9 +1,6 @@
 <div class="distr-card block p-4">
   <div class="flex items-center justify-between gap-4 mb-3">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-      <fa-icon [icon]="faListCheck" class="me-2 text-gray-500 dark:text-gray-400" />
-      Getting started
-    </h2>
+    <h2 appCardHeading [icon]="faListCheck">Getting started</h2>
     <span class="text-sm distr-text-muted">{{ doneCount() }} of {{ items().length }} done</span>
   </div>
   <ul class="flex flex-col gap-1 -mx-2">

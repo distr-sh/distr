@@ -2,10 +2,7 @@
 <a
   [routerLink]="!configured && canConfigure() ? '/notifications/alert-configurations' : '/notifications/history'"
   class="distr-card block p-4 hover:shadow-md transition-shadow">
-  <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-    <fa-icon [icon]="faBell" class="me-2 text-gray-500 dark:text-gray-400" />
-    Alerts
-  </h2>
+  <h2 appCardHeading [icon]="faBell" class="mb-3">Alerts</h2>
 
   @if (configured) {
     <span class="block text-3xl font-bold text-gray-900 dark:text-white">{{ alerts().notificationCount }}</span>

@@ -5,6 +5,7 @@ import {Params, RouterLink} from '@angular/router';
 import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
 import {faPaperPlane} from '@fortawesome/free-solid-svg-icons';
 import {AvatarComponent} from '../avatar.component';
+import {CardHeadingComponent} from '../card-heading.component';
 
 /**
  * A single entry in an activity timeline. Features map their own event or comment type onto
@@ -34,7 +35,15 @@ export interface ActivityTimelineEntry {
   // Without an explicit display the host stays inline, which silently drops the vertical
   // margins that the surrounding space-y and mb utilities put on it.
   host: {class: 'block'},
-  imports: [DatePipe, NgTemplateOutlet, ReactiveFormsModule, RouterLink, FaIconComponent, AvatarComponent],
+  imports: [
+    DatePipe,
+    NgTemplateOutlet,
+    ReactiveFormsModule,
+    RouterLink,
+    FaIconComponent,
+    AvatarComponent,
+    CardHeadingComponent,
+  ],
 })
 export class ActivityTimelineComponent {
   public readonly entries = input.required<ActivityTimelineEntry[]>();

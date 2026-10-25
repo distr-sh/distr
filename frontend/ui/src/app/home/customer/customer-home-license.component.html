@@ -1,8 +1,5 @@
 <a routerLink="/license-keys" class="distr-card block p-4 hover:shadow-md transition-shadow">
-  <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-    <fa-icon [icon]="faKey" class="me-2 text-gray-500 dark:text-gray-400" />
-    License
-  </h2>
+  <h2 appCardHeading [icon]="faKey" class="mb-3">License</h2>
 
   @let s = state();
   @if (s.type === 'expired') {

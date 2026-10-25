@@ -4,6 +4,7 @@ import {Component, inject, input, output, TemplateRef, viewChild} from '@angular
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faBox, faDashboard, faDownload, faPlus} from '@fortawesome/free-solid-svg-icons';
+import {CardHeadingComponent} from '../../components/card-heading.component';
 import {DeploymentWizardComponent} from '../../deployments/deployment-wizard/deployment-wizard.component';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {CustomerHomeArtifacts, CustomerHomeDeploymentTarget} from '../../types/customer-home';
@@ -24,6 +25,7 @@ export type CustomerHomePrimarySection = 'deployments' | 'artifacts' | 'none';
     CustomerHomeArtifactItemComponent,
     CustomerHomeDeploymentTargetItemComponent,
     CustomerHomeMenuComponent,
+    CardHeadingComponent,
   ],
 })
 export class CustomerHomeDeploymentsComponent {
