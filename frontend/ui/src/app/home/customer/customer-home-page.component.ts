@@ -2,7 +2,6 @@ import {NgTemplateOutlet} from '@angular/common';
 import {Component, computed, inject, linkedSignal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {CustomerOrganizationFeature} from '@distr-sh/distr-sdk';
-import {faClockRotateLeft} from '@fortawesome/free-solid-svg-icons';
 import {
   catchError,
   combineLatest,
@@ -100,8 +99,6 @@ export class CustomerHomePageComponent {
   private readonly organizationBranding = inject(OrganizationBrandingService);
   private readonly organizationService = inject(OrganizationService);
   private readonly toast = inject(ToastService);
-
-  protected readonly faClockRotateLeft = faClockRotateLeft;
 
   protected readonly canWrite = this.auth.hasAnyRole('read_write', 'admin');
   protected readonly isAdmin = this.auth.hasRole('admin');

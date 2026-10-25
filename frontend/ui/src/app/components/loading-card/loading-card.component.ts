@@ -1,22 +1,18 @@
-import {NgTemplateOutlet} from '@angular/common';
-import {booleanAttribute, Component, input} from '@angular/core';
-import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
-import {faSpinner} from '@fortawesome/free-solid-svg-icons';
-import {CardHeadingComponent} from '../card-heading.component';
+import {Component, input} from '@angular/core';
+
+export type LoadingCardLayout = 'row' | 'timeline' | 'list';
 
 @Component({
   selector: 'app-loading-card',
   templateUrl: './loading-card.component.html',
-  imports: [NgTemplateOutlet, FaIconComponent, CardHeadingComponent],
+  styleUrl: './loading-card.component.scss',
 })
 export class LoadingCardComponent {
-  public readonly heading = input<string>();
-  public readonly icon = input<IconDefinition>();
   /**
-   * Renders a placeholder with the dimensions of one customer home list row, so the card keeps its height
-   * once the list arrives. Keep it in line with the layout of `app-customer-home-artifact-item`, the shortest row.
+   * `row` has the dimensions of one customer home list row, so the card keeps its height once the list arrives.
+   * Keep it in line with the layout of `app-customer-home-artifact-item`, the shortest row.
    */
-  public readonly row = input(false, {transform: booleanAttribute});
+  public readonly layout = input<LoadingCardLayout>('list');
 
-  protected readonly faSpinner = faSpinner;
+  protected readonly timelineEntries = [0, 1, 2, 3, 4];
 }

@@ -20,7 +20,7 @@
         }
       }
     } @else {
-      <app-loading-card row />
+      <app-loading-card layout="row" />
     }
 
     @if (hasPanels() && activityShown()) {
@@ -41,7 +41,9 @@
 </app-page>
 
 <ng-template #panels>
-  @if (checklist(); as checklist) {
+  @if (checklist() === undefined) {
+    <app-loading-card />
+  } @else if (checklist(); as checklist) {
     @if (checklistSection(); as checklistSection) {
       @if (!checklistCompleted()) {
         <app-customer-home-checklist [checklist]="checklist" [section]="checklistSection" [canInvite]="isAdmin" />
@@ -69,6 +71,6 @@
   @if (activity(); as activity) {
     <app-customer-home-activity [activity]="activity" [vendorName]="vendorName()" [vendorLogo]="vendorLogo()" />
   } @else {
-    <app-loading-card heading="Activity" [icon]="faClockRotateLeft" />
+    <app-loading-card layout="timeline" />
   }
 </ng-template>
