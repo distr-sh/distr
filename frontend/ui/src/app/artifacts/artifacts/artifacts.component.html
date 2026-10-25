@@ -1,5 +1,5 @@
 <app-page>
-  @if (auth.hasAnyRole('admin') && (!hasSubscription() || hasNoArtifact())) {
+  @if (showRegistryHint()) {
     <app-alert type="info" class="mb-4">
       <div>
         @if (registrySlug$ | async; as slug) {
@@ -37,6 +37,7 @@
             <div *appRequireCustomer>
               <div class="font-medium mt-1">
                 After the login you can start pulling images from the registry. For example, you can try the following
+                command:
               </div>
               <code class="mt-1 select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
                 docker pull {{ host }}/{{ slug }}/IMAGE:VERSION

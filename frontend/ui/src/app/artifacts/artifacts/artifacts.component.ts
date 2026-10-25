@@ -81,8 +81,6 @@ export class ArtifactsComponent {
   private createModalRef?: DialogRef;
 
   private readonly artifacts$ = this.artifactsService.list().pipe(takeUntilDestroyed());
-  protected readonly hasNoArtifact = toSignal(this.artifacts$.pipe(map((artifacts) => artifacts.length === 0)));
-
   protected readonly filteredArtifacts = toSignal(
     combineLatest([this.artifacts$, this.filterForm.valueChanges.pipe(startWith(this.filterForm.value))]).pipe(
       map(([artifacts, formValue]) =>
@@ -97,7 +95,12 @@ export class ArtifactsComponent {
   protected readonly registryHost$ = this.contextService.getRegistryHost();
 
   protected readonly auth = inject(AuthService);
-  protected readonly hasSubscription = this.organizationService.hasSubscription;
+  protected readonly showRegistryHint = toSignal(
+    this.contextService
+      .hasPulledArtifact()
+      .pipe(map((hasPulled) => !hasPulled && (this.auth.isVendor() || this.auth.isCustomer()))),
+    {initialValue: false}
+  );
 
   constructor() {
     this.createForm.controls.upstreamAuthType.valueChanges
