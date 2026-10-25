@@ -10,7 +10,7 @@
 // The border is plain CSS in the text color, since the `border` utility pulls a
 // `@property --tw-border-style` block into the component stylesheet.
 :host {
-  @apply flex items-center gap-3 p-4 rounded-lg text-sm font-medium;
+  @apply flex items-center gap-3 rounded-lg p-4 text-sm font-medium;
   border: 1px solid currentcolor;
 }
 

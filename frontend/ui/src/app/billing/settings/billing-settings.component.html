@@ -2,19 +2,19 @@
   <div class="distr-panel">
     <a
       routerLink=".."
-      class="inline-flex items-center mb-4 text-sm font-medium text-primary-700 hover:text-primary-800 dark:text-primary-500 dark:hover:text-primary-400">
+      class="mb-4 inline-flex items-center text-sm font-medium text-primary-700 hover:text-primary-800 dark:text-primary-500 dark:hover:text-primary-400">
       <fa-icon [icon]="faArrowLeft" class="mr-2" />
       Back to Billing
     </a>
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Stripe Webhook</h2>
+    <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Stripe Webhook</h2>
 
     <div class="mb-6">
-      <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+      <p class="mb-2 text-sm text-gray-600 dark:text-gray-400">
         Configure this webhook URL in your Stripe dashboard to trigger automatic license key generation:
       </p>
       <div class="flex items-center gap-2">
         <code
-          class="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm rounded-lg px-3 py-2 font-mono truncate select-all"
+          class="flex-1 truncate rounded-lg bg-gray-100 px-3 py-2 font-mono text-sm text-gray-800 select-all dark:bg-gray-700 dark:text-gray-200"
           >{{ webhookUrl() }}</code
         >
         <button
@@ -22,14 +22,14 @@
           [appClip]="webhookUrl()"
           #clip="clip"
           (click)="clip.writeClip()"
-          class="py-2 px-3 flex items-center text-sm font-medium distr-btn-secondary">
+          class="distr-btn-secondary flex items-center px-3 py-2 text-sm font-medium">
           <fa-icon [icon]="clip.copied() ? faCheck : faCopy" [class.text-green-500]="clip.copied()" />
         </button>
       </div>
     </div>
 
-    <div class="flex items-center gap-2 mb-4">
-      <span class="text-sm text-gray-700 dark:text-gray-300 font-medium">Webhook secret:</span>
+    <div class="mb-4 flex items-center gap-2">
+      <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Webhook secret:</span>
       @if (organization()?.stripeWebhookSecretConfigured) {
         <span class="distr-badge distr-badge-success">
           <fa-icon [icon]="faCircleCheck" />
@@ -42,7 +42,7 @@
 
     @if (auth.hasRole('admin')) {
       <form [formGroup]="webhookForm" (ngSubmit)="saveWebhookSecret()">
-        <label for="webhook-secret" class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label for="webhook-secret" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
           @if (organization()?.stripeWebhookSecretConfigured) {
             Update webhook secret
           } @else {
@@ -61,7 +61,7 @@
           <button
             type="submit"
             [disabled]="webhookForm.invalid || webhookSecretLoading()"
-            class="text-white inline-flex items-center justify-center distr-btn-primary disabled:opacity-60">
+            class="distr-btn-primary inline-flex items-center justify-center text-white disabled:opacity-60">
             Save
           </button>
         </div>
@@ -72,9 +72,9 @@
     }
 
     @if (auth.hasRole('admin') && organization()?.stripeWebhookSecretConfigured) {
-      <h3 class="text-base font-semibold text-gray-900 dark:text-white mt-6 mb-2">Danger Zone</h3>
+      <h3 class="mt-6 mb-2 text-base font-semibold text-gray-900 dark:text-white">Danger Zone</h3>
       <div class="distr-danger-zone">
-        <div class="p-4 flex items-center justify-between dark:text-white">
+        <div class="flex items-center justify-between p-4 dark:text-white">
           <div>
             <div>Remove webhook secret</div>
             <div class="text-xs font-normal text-gray-500 dark:text-gray-400">

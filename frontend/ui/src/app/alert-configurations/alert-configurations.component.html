@@ -5,8 +5,8 @@
       <button
         type="button"
         (click)="showDrawer()"
-        class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
-        <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+        class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:w-auto dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+        <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
         Alert Notification
       </button>
     }
@@ -34,16 +34,16 @@
           class="distr-table-row">
           <td class="distr-table-cell">{{ config.name }}</td>
           <td class="distr-table-cell align-middle">
-            <label class="inline-flex items-center cursor-pointer my-1">
+            <label class="my-1 inline-flex cursor-pointer items-center">
               <input
                 #enabledToggle
                 type="checkbox"
-                class="sr-only peer"
+                class="peer sr-only"
                 aria-label="Enabled"
                 [disabled]="!canEdit"
                 [checked]="config.enabled"
                 (click)="toggleConfigEnabled(config, enabledToggle, $event)" />
-              <div class="distr-toggle peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+              <div class="distr-toggle peer-disabled:cursor-not-allowed peer-disabled:opacity-50"></div>
             </label>
           </td>
           <td class="distr-table-cell">
@@ -51,7 +51,7 @@
           </td>
           <td class="distr-table-cell">{{ getTriggersCount(config) }} enabled</td>
           <td
-            class="distr-table-cell max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
+            class="distr-table-cell max-w-48 overflow-hidden text-ellipsis xl:max-w-58 2xl:max-w-96"
             [title]="getNames(config.deploymentTargets)">
             @for (dt of config.deploymentTargets; track dt.id; let last = $last) {
               <ng-container>{{ dt.name }}</ng-container>
@@ -61,7 +61,7 @@
             }
           </td>
           <td
-            class="distr-table-cell max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
+            class="distr-table-cell max-w-48 overflow-hidden text-ellipsis xl:max-w-58 2xl:max-w-96"
             [title]="getNames(config.userAccounts)">
             @for (user of config.userAccounts; track user.id; let last = $last) {
               <ng-container>{{ user.name || user.email }}</ng-container>
@@ -76,7 +76,7 @@
                 type="button"
                 aria-label="Delete"
                 (click)="deleteConfig(config)"
-                class="py-2 px-3 distr-btn-danger">
+                class="distr-btn-danger px-3 py-2">
                 <fa-icon [icon]="faTrash" class="h-4 w-4" />
               </button>
             }
@@ -84,7 +84,7 @@
         </tr>
       } @empty {
         <tr class="border-t border-gray-200 dark:border-gray-600">
-          <td colspan="7" class="px-4 py-3 font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap text-center">
+          <td colspan="7" class="px-4 py-3 text-center font-medium whitespace-nowrap text-gray-600 dark:text-gray-400">
             No configurations found
           </td>
         </tr>
@@ -95,14 +95,14 @@
 
 <ng-template #editConfigDrawer>
   <div
-    class="h-screen p-4 overflow-y-auto bg-white w-lg dark:bg-gray-800"
+    class="h-screen w-lg overflow-y-auto bg-white p-4 dark:bg-gray-800"
     tabindex="-1"
     aria-labelledby="drawer-right-label"
     animate.enter="animate-fly-in-right"
     animate.leave="animate-fly-out-right">
     <h2
       id="drawer-label"
-      class="inline-flex items-center mb-2 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
+      class="mb-2 inline-flex items-center text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
       Alert Notification
     </h2>
     <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
@@ -112,8 +112,8 @@
       type="button"
       (click)="hideDrawer()"
       aria-controls="manage-deployment-target-drawer"
-      class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
-      <fa-icon [icon]="faXmark" class="w-5 h-5" />
+      class="absolute top-2.5 right-2.5 inline-flex items-center rounded-lg bg-transparent p-1.5 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
+      <fa-icon [icon]="faXmark" class="h-5 w-5" />
       <span class="sr-only">Close menu</span>
     </button>
 
@@ -132,24 +132,24 @@
             placeholder="Name" />
         </div>
 
-        <label class="flex items-center cursor-pointer">
-          <input type="checkbox" class="sr-only peer" formControlName="enabled" />
+        <label class="flex cursor-pointer items-center">
+          <input type="checkbox" class="peer sr-only" formControlName="enabled" />
           <div class="distr-toggle"></div>
           <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enabled</span>
         </label>
 
         <div class="space-y-1">
           <h3 class="text-sm font-medium text-gray-900 dark:text-white">Triggers</h3>
-          <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-3">
-            <label class="inline-flex items-center cursor-pointer">
-              <input type="checkbox" class="sr-only peer" formControlName="statusTriggerEnabled" />
+          <div class="space-y-3 rounded-lg border border-gray-300 p-3 dark:border-gray-600">
+            <label class="inline-flex cursor-pointer items-center">
+              <input type="checkbox" class="peer sr-only" formControlName="statusTriggerEnabled" />
               <div class="distr-toggle"></div>
               <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Deployment status changes</span>
             </label>
 
             <div class="space-y-1">
-              <label class="flex items-center cursor-pointer">
-                <input type="checkbox" class="sr-only peer" formControlName="cpuTriggerEnabled" />
+              <label class="flex cursor-pointer items-center">
+                <input type="checkbox" class="peer sr-only" formControlName="cpuTriggerEnabled" />
                 <div class="distr-toggle"></div>
                 <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">CPU usage threshold</span>
               </label>
@@ -162,9 +162,9 @@
                     min="1"
                     max="100"
                     placeholder="e.g. 80"
-                    class="distr-input rounded-none rounded-s-lg min-w-0 w-20" />
+                    class="distr-input w-20 min-w-0 rounded-none rounded-s-lg" />
                   <span
-                    class="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border border-e-0 border-gray-300 rounded-e-md dark:bg-gray-600 dark:text-gray-400 dark:border-gray-600"
+                    class="inline-flex items-center rounded-e-md border border-e-0 border-gray-300 bg-gray-200 px-3 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-600 dark:text-gray-400"
                     >%
                   </span>
                 </div>
@@ -172,14 +172,14 @@
                   editConfigForm.controls.cpuTriggerThresholdPercent.touched &&
                   editConfigForm.controls.cpuTriggerThresholdPercent.errors
                 ) {
-                  <div class="text-sm text-red-500 pl-14">Enter a value between 1 and 100.</div>
+                  <div class="pl-14 text-sm text-red-500">Enter a value between 1 and 100.</div>
                 }
               }
             </div>
 
             <div class="space-y-1">
-              <label class="flex items-center cursor-pointer">
-                <input type="checkbox" class="sr-only peer" formControlName="memoryTriggerEnabled" />
+              <label class="flex cursor-pointer items-center">
+                <input type="checkbox" class="peer sr-only" formControlName="memoryTriggerEnabled" />
                 <div class="distr-toggle"></div>
                 <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Memory usage threshold</span>
               </label>
@@ -192,9 +192,9 @@
                     min="1"
                     max="100"
                     placeholder="e.g. 80"
-                    class="distr-input rounded-none rounded-s-lg min-w-0 w-20" />
+                    class="distr-input w-20 min-w-0 rounded-none rounded-s-lg" />
                   <span
-                    class="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border border-e-0 border-gray-300 rounded-e-md dark:bg-gray-600 dark:text-gray-400 dark:border-gray-600"
+                    class="inline-flex items-center rounded-e-md border border-e-0 border-gray-300 bg-gray-200 px-3 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-600 dark:text-gray-400"
                     >%
                   </span>
                 </div>
@@ -202,14 +202,14 @@
                   editConfigForm.controls.memoryTriggerThresholdPercent.touched &&
                   editConfigForm.controls.memoryTriggerThresholdPercent.errors
                 ) {
-                  <div class="text-sm text-red-500 pl-14">Enter a value between 1 and 100.</div>
+                  <div class="pl-14 text-sm text-red-500">Enter a value between 1 and 100.</div>
                 }
               }
             </div>
 
             <div class="space-y-1">
-              <label class="flex items-center cursor-pointer">
-                <input type="checkbox" class="sr-only peer" formControlName="diskTriggerEnabled" />
+              <label class="flex cursor-pointer items-center">
+                <input type="checkbox" class="peer sr-only" formControlName="diskTriggerEnabled" />
                 <div class="distr-toggle"></div>
                 <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Disk usage threshold</span>
               </label>
@@ -222,9 +222,9 @@
                     min="1"
                     max="100"
                     placeholder="e.g. 80"
-                    class="distr-input rounded-none rounded-s-lg min-w-0 w-20" />
+                    class="distr-input w-20 min-w-0 rounded-none rounded-s-lg" />
                   <span
-                    class="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border border-e-0 border-gray-300 rounded-e-md dark:bg-gray-600 dark:text-gray-400 dark:border-gray-600"
+                    class="inline-flex items-center rounded-e-md border border-e-0 border-gray-300 bg-gray-200 px-3 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-600 dark:text-gray-400"
                     >%
                   </span>
                 </div>
@@ -232,7 +232,7 @@
                   editConfigForm.controls.diskTriggerThresholdPercent.touched &&
                   editConfigForm.controls.diskTriggerThresholdPercent.errors
                 ) {
-                  <div class="text-sm text-red-500 pl-14">Enter a value between 1 and 100.</div>
+                  <div class="pl-14 text-sm text-red-500">Enter a value between 1 and 100.</div>
                 }
               }
             </div>
@@ -245,20 +245,20 @@
 
         <div class="space-y-1">
           <h3 class="text-sm font-medium text-gray-900 dark:text-white">Deployments</h3>
-          <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-2">
+          <div class="space-y-2 rounded-lg border border-gray-300 p-3 dark:border-gray-600">
             @for (customersEntry of deploymentTargetCustomers(); track customersEntry.customer?.id) {
               <div class="space-y-1">
                 @if (customersEntry.customer; as customer) {
-                  <h4 class="text-sm dark:text-white font-semibold">{{ customer.name }}</h4>
+                  <h4 class="text-sm font-semibold dark:text-white">{{ customer.name }}</h4>
                 }
                 @for (deploymentTarget of customersEntry.deploymentTargets; track deploymentTarget.id) {
-                  <label class="flex items-center w-full">
+                  <label class="flex w-full items-center">
                     <input
                       type="checkbox"
                       class="distr-checkbox"
                       [formControl]="editConfigForm.controls.deploymentTargetIds.controls[deploymentTarget.id!]" />
                     <span
-                      class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 overflow-hidden text-ellipsis"
+                      class="ms-2 overflow-hidden text-sm font-medium text-ellipsis text-gray-900 dark:text-gray-300"
                       >{{ deploymentTarget.name }}</span
                     >
                   </label>
@@ -275,14 +275,14 @@
 
         <div class="space-y-1">
           <h3 class="text-sm font-medium text-gray-900 dark:text-white">Users to notify</h3>
-          <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-1">
+          <div class="space-y-1 rounded-lg border border-gray-300 p-3 dark:border-gray-600">
             @for (user of users(); track user.id) {
-              <label class="flex items-center w-full" [title]="user.email">
+              <label class="flex w-full items-center" [title]="user.email">
                 <input
                   type="checkbox"
                   class="distr-checkbox"
                   [formControl]="editConfigForm.controls.userAccountIds.controls[user.id!]" />
-                <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 overflow-hidden text-ellipsis">{{
+                <span class="ms-2 overflow-hidden text-sm font-medium text-ellipsis text-gray-900 dark:text-gray-300">{{
                   user.name || user.email
                 }}</span>
               </label>
@@ -293,11 +293,11 @@
           }
         </div>
       </div>
-      <div class="mt-8 flex justify-center w-full pb-4 space-x-4 sm:mt-0">
+      <div class="mt-8 flex w-full justify-center space-x-4 pb-4 sm:mt-0">
         <button
           type="submit"
           [disabled]="editFormLoading() || editConfigForm.invalid"
-          class="text-white w-full inline-flex items-center justify-center distr-btn-primary disabled:opacity-50">
+          class="distr-btn-primary inline-flex w-full items-center justify-center text-white disabled:opacity-50">
           <fa-icon [icon]="faPen" class="mr-2" />
           Save
         </button>

@@ -1,64 +1,64 @@
 <div class="sm:max-w-240">
   <div class="space-y-6">
     <ol
-      class="flex flex-col sm:flex-row gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 px-8 dark:border-gray-700 dark:bg-gray-800 justify-center items-center">
+      class="flex flex-col items-center justify-center gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 px-8 sm:flex-row dark:border-gray-700 dark:bg-gray-800">
       <!-- Step 1: Customer (Conditional) -->
       @if (showCustomerStep()) {
         <li
-          class="flex items-center gap-2 flex-1 flex-col"
+          class="flex flex-1 flex-col items-center gap-2"
           [class.text-gray-500]="!isCustomerStep()"
           [class.dark:text-gray-400]="!isCustomerStep()"
           [class.text-blue-700]="isCustomerStep()"
           [class.dark:text-blue-600]="isCustomerStep()">
           <fa-icon [icon]="faAddressBook" />
-          <p class="text-sm font-medium leading-tight">Customer</p>
+          <p class="text-sm leading-tight font-medium">Customer</p>
         </li>
 
-        <div class="hidden h-px shrink-0 bg-gray-200 dark:bg-gray-700 md:block w-8"></div>
+        <div class="hidden h-px w-8 shrink-0 bg-gray-200 md:block dark:bg-gray-700"></div>
       }
 
       <!-- Step 2: Application -->
       <li
-        class="flex items-center gap-2 flex-1 flex-col"
+        class="flex flex-1 flex-col items-center gap-2"
         [class.text-gray-500]="!isApplicationStep()"
         [class.dark:text-gray-400]="!isApplicationStep()"
         [class.text-blue-700]="isApplicationStep()"
         [class.dark:text-blue-600]="isApplicationStep()">
         <fa-icon [icon]="faShip" />
-        <p class="text-sm font-medium leading-tight">Application</p>
+        <p class="text-sm leading-tight font-medium">Application</p>
       </li>
 
-      <div class="hidden h-px shrink-0 bg-gray-200 dark:bg-gray-700 md:block w-8"></div>
+      <div class="hidden h-px w-8 shrink-0 bg-gray-200 md:block dark:bg-gray-700"></div>
 
       <!-- Step 3: Deployment Config -->
       <li
-        class="flex items-center gap-2 flex-1 flex-col"
+        class="flex flex-1 flex-col items-center gap-2"
         [class.text-gray-500]="!isTargetStep()"
         [class.dark:text-gray-400]="!isTargetStep()"
         [class.text-blue-700]="isTargetStep()"
         [class.dark:text-blue-600]="isTargetStep()">
         <fa-icon [icon]="faServer" />
-        <p class="text-sm font-medium leading-tight whitespace-nowrap">Deployment Config</p>
+        <p class="text-sm leading-tight font-medium whitespace-nowrap">Deployment Config</p>
       </li>
 
-      <div class="hidden h-px shrink-0 bg-gray-200 dark:bg-gray-700 md:block w-8"></div>
+      <div class="hidden h-px w-8 shrink-0 bg-gray-200 md:block dark:bg-gray-700"></div>
 
       <!-- Step 4: App Config -->
       <li
-        class="flex items-center gap-2 flex-1 flex-col"
+        class="flex flex-1 flex-col items-center gap-2"
         [class.text-gray-500]="!isConfigurationStep()"
         [class.dark:text-gray-400]="!isConfigurationStep()"
         [class.text-blue-700]="isConfigurationStep()"
         [class.dark:text-blue-600]="isConfigurationStep()">
         <fa-icon [icon]="faCog" />
-        <p class="text-sm font-medium leading-tight whitespace-nowrap">App Config</p>
+        <p class="text-sm leading-tight font-medium whitespace-nowrap">App Config</p>
       </li>
 
-      <div class="hidden h-px shrink-0 bg-gray-200 dark:bg-gray-700 md:block w-8"></div>
+      <div class="hidden h-px w-8 shrink-0 bg-gray-200 md:block dark:bg-gray-700"></div>
 
       <!-- Step 5: Deploy -->
       <li
-        class="flex items-center gap-2 flex-1 flex-col"
+        class="flex flex-1 flex-col items-center gap-2"
         [class.text-gray-500]="!isConnectStep()"
         [class.dark:text-gray-400]="!isConnectStep()"
         [class.text-green-600]="isConnectStep()"
@@ -68,7 +68,7 @@
         } @else {
           <fa-icon [icon]="faNetworkWired" />
         }
-        <p class="text-sm font-medium leading-tight">Deploy</p>
+        <p class="text-sm leading-tight font-medium">Deploy</p>
       </li>
     </ol>
   </div>
@@ -77,18 +77,18 @@
     <form [formGroup]="currentFormGroup()" (ngSubmit)="this.attemptContinueOutput.emit()">
       <ng-container *ngTemplateOutlet="selected ? selected.content : null" />
 
-      <div class="gap-4 flex justify-stretch sm:justify-end mt-4">
+      <div class="mt-4 flex justify-stretch gap-4 sm:justify-end">
         @if (shouldShowBackButton()) {
           <button
             type="button"
             (click)="this.attemptGoBackOutput.emit()"
-            class="flex-1 sm:flex-none text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
+            class="flex-1 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 focus:outline-none sm:flex-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
             Back
           </button>
         }
         <button
           type="submit"
-          class="flex-1 sm:flex-none text-white inline-flex items-center justify-center distr-btn-primary">
+          class="distr-btn-primary inline-flex flex-1 items-center justify-center text-white sm:flex-none">
           @if (isConfigurationStep()) {
             Create Deployment
           } @else {
@@ -100,11 +100,11 @@
   } @else {
     <ng-container *ngTemplateOutlet="selected ? selected.content : null" />
 
-    <div class="gap-4 flex justify-stretch sm:justify-end mt-4">
+    <div class="mt-4 flex justify-stretch gap-4 sm:justify-end">
       <button
         type="button"
         (click)="this.attemptContinueOutput.emit()"
-        class="flex-1 sm:flex-none text-white inline-flex items-center justify-center distr-btn-primary">
+        class="distr-btn-primary inline-flex flex-1 items-center justify-center text-white sm:flex-none">
         Done
       </button>
     </div>

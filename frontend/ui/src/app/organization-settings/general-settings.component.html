@@ -5,19 +5,19 @@
         @case ('docker') {
           This changes how Docker controllers are installed. All customers will receive a shell script instead of a
           plain docker compose command. The install command will change from
-          <code class="px-1 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-600 text-sm font-mono"
+          <code class="rounded-sm bg-gray-100 px-1 py-0.5 font-mono text-sm dark:bg-gray-600"
             >curl ... | docker compose -f - up -d</code
           >
           to
-          <code class="px-1 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-600 text-sm font-mono">curl ... | sh</code>,
+          <code class="rounded-sm bg-gray-100 px-1 py-0.5 font-mono text-sm dark:bg-gray-600">curl ... | sh</code>,
           which wraps docker compose with pre- and post-connect scripts.
         }
         @case ('kubernetes') {
           This changes how Kubernetes controllers are installed. All customers will receive a shell script instead of a
           plain kubectl command. The install command will change from
-          <code class="px-1 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-600 text-sm font-mono">kubectl apply ...</code>
+          <code class="rounded-sm bg-gray-100 px-1 py-0.5 font-mono text-sm dark:bg-gray-600">kubectl apply ...</code>
           to
-          <code class="px-1 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-600 text-sm font-mono">curl ... | sh</code>,
+          <code class="rounded-sm bg-gray-100 px-1 py-0.5 font-mono text-sm dark:bg-gray-600">curl ... | sh</code>,
           which wraps kubectl with pre- and post-connect scripts and requires curl and a POSIX shell.
         }
       }
@@ -145,29 +145,29 @@
         @switch (connectScriptTab()) {
           @case ('docker') {
             <div>
-              <label for="dockerPreConnectScript" class="distr-label flex-grow mb-2">Pre-connect script</label>
+              <label for="dockerPreConnectScript" class="distr-label mb-2 grow">Pre-connect script</label>
               <div
-                class="mb-4 w-full bg-gray-100 rounded-lg border border-gray-200 dark:bg-gray-600 dark:border-gray-600">
-                <div class="py-2 px-4 bg-gray-50 rounded-b-lg dark:bg-gray-700">
+                class="mb-4 w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-600 dark:bg-gray-600">
+                <div class="rounded-b-lg bg-gray-50 px-4 py-2 dark:bg-gray-700">
                   <textarea
                     formControlName="dockerPreConnectScript"
                     id="dockerPreConnectScript"
                     rows="8"
-                    class="block px-0 w-full text-sm text-gray-800 bg-gray-50 border-0 dark:bg-gray-700 focus:ring-0 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"></textarea>
+                    class="block w-full border-0 bg-gray-50 px-0 text-sm text-gray-800 placeholder-gray-500 focus:ring-0 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"></textarea>
                 </div>
               </div>
             </div>
 
             <div>
-              <label for="dockerPostConnectScript" class="distr-label flex-grow mb-2">Post-connect script</label>
+              <label for="dockerPostConnectScript" class="distr-label mb-2 grow">Post-connect script</label>
               <div
-                class="mb-4 w-full bg-gray-100 rounded-lg border border-gray-200 dark:bg-gray-600 dark:border-gray-600">
-                <div class="py-2 px-4 bg-gray-50 rounded-b-lg dark:bg-gray-700">
+                class="mb-4 w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-600 dark:bg-gray-600">
+                <div class="rounded-b-lg bg-gray-50 px-4 py-2 dark:bg-gray-700">
                   <textarea
                     formControlName="dockerPostConnectScript"
                     id="dockerPostConnectScript"
                     rows="8"
-                    class="block px-0 w-full text-sm text-gray-800 bg-gray-50 border-0 dark:bg-gray-700 focus:ring-0 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"></textarea>
+                    class="block w-full border-0 bg-gray-50 px-0 text-sm text-gray-800 placeholder-gray-500 focus:ring-0 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"></textarea>
                 </div>
               </div>
             </div>
@@ -189,29 +189,29 @@
           }
           @case ('kubernetes') {
             <div>
-              <label for="kubernetesPreConnectScript" class="distr-label flex-grow mb-2">Pre-connect script</label>
+              <label for="kubernetesPreConnectScript" class="distr-label mb-2 grow">Pre-connect script</label>
               <div
-                class="mb-4 w-full bg-gray-100 rounded-lg border border-gray-200 dark:bg-gray-600 dark:border-gray-600">
-                <div class="py-2 px-4 bg-gray-50 rounded-b-lg dark:bg-gray-700">
+                class="mb-4 w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-600 dark:bg-gray-600">
+                <div class="rounded-b-lg bg-gray-50 px-4 py-2 dark:bg-gray-700">
                   <textarea
                     formControlName="kubernetesPreConnectScript"
                     id="kubernetesPreConnectScript"
                     rows="8"
-                    class="block px-0 w-full text-sm text-gray-800 bg-gray-50 border-0 dark:bg-gray-700 focus:ring-0 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"></textarea>
+                    class="block w-full border-0 bg-gray-50 px-0 text-sm text-gray-800 placeholder-gray-500 focus:ring-0 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"></textarea>
                 </div>
               </div>
             </div>
 
             <div>
-              <label for="kubernetesPostConnectScript" class="distr-label flex-grow mb-2">Post-connect script</label>
+              <label for="kubernetesPostConnectScript" class="distr-label mb-2 grow">Post-connect script</label>
               <div
-                class="mb-4 w-full bg-gray-100 rounded-lg border border-gray-200 dark:bg-gray-600 dark:border-gray-600">
-                <div class="py-2 px-4 bg-gray-50 rounded-b-lg dark:bg-gray-700">
+                class="mb-4 w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-600 dark:bg-gray-600">
+                <div class="rounded-b-lg bg-gray-50 px-4 py-2 dark:bg-gray-700">
                   <textarea
                     formControlName="kubernetesPostConnectScript"
                     id="kubernetesPostConnectScript"
                     rows="8"
-                    class="block px-0 w-full text-sm text-gray-800 bg-gray-50 border-0 dark:bg-gray-700 focus:ring-0 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"></textarea>
+                    class="block w-full border-0 bg-gray-50 px-0 text-sm text-gray-800 placeholder-gray-500 focus:ring-0 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"></textarea>
                 </div>
               </div>
             </div>
@@ -226,12 +226,12 @@
     }
 
     @if (!auth.isSuperAdmin()) {
-      <div class="flex justify-center w-full space-x-4 mt-4">
+      <div class="mt-4 flex w-full justify-center space-x-4">
         <button
           type="submit"
           [disabled]="formLoading() || form.invalid"
-          class="text-white w-full inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
-          <fa-icon [icon]="faFloppyDisk" size="lg" class="h-4 w-4 mr-2 -ml-0.5 mb-1" />
+          class="distr-btn-primary inline-flex w-full items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-60">
+          <fa-icon [icon]="faFloppyDisk" size="lg" class="mr-2 mb-1 -ml-0.5 h-4 w-4" />
           Save
         </button>
       </div>
@@ -240,6 +240,6 @@
 </form>
 
 @if (!auth.isSuperAdmin()) {
-  <h2 class="text-xl font-bold dark:text-white mt-8 mb-2">Danger Zone</h2>
+  <h2 class="mt-8 mb-2 text-xl font-bold dark:text-white">Danger Zone</h2>
   <app-delete-organization />
 }

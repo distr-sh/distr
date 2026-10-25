@@ -11,8 +11,8 @@
             [title]="quota.isLimitReached() ? 'Customer limit reached' : 'Create Customer'"
             type="button"
             id="createCustomerButton"
-            class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
-            <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+            class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:w-auto dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+            <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
             Create Customer
           </button>
         }
@@ -50,7 +50,7 @@
                     class="size-8 rounded-sm" />
                 </button>
               </td>
-              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+              <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
                 <app-inline-edit
                   [value]="customer.name"
                   [editable]="auth.hasAnyRole('read_write', 'admin')"
@@ -59,18 +59,18 @@
                   [loading]="savingCustomerId() === customer.id"
                   (save)="updateCustomerName(customer, $event)" />
               </td>
-              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+              <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
                 {{ customer.createdAt | date: 'short' }}
               </td>
-              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+              <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
                 <button
-                  class="flex gap-1 items-center py-2 px-3 text-sm font-medium text-center distr-btn-secondary"
+                  class="distr-btn-secondary flex items-center gap-1 px-3 py-2 text-center text-sm font-medium"
                   type="button"
                   cdkOverlayOrigin
                   #dropdownTriggerButton
                   #dropdownTrigger="cdkOverlayOrigin"
                   (click)="showCustomerFeaturesDropdown(customer, dropdownTriggerButton)">
-                  <span class="flex-grow"> {{ customer.features.length }} features enabled </span>
+                  <span class="grow"> {{ customer.features.length }} features enabled </span>
                   <fa-icon
                     class="transition duration-150 ease-in-out"
                     [class.rotate-x-180]="openCustomerFeaturesDropdownId() === customer.id"
@@ -91,7 +91,7 @@
                     class="distr-dropdown-panel w-full">
                     <ul>
                       @for (f of allCustomerFeatures(); track f.feature) {
-                        <li class="w-full border-t first:border-t-0 border-gray-100 dark:border-gray-600">
+                        <li class="w-full border-t border-gray-100 first:border-t-0 dark:border-gray-600">
                           <label class="distr-dropdown-checkbox-item" [class.ms-4]="f.indent">
                             <input
                               type="checkbox"
@@ -99,7 +99,7 @@
                               (change)="toggleFeature(customer, f.feature)"
                               class="distr-checkbox" />
                             <span
-                              class="w-full py-3 ms-2 pe-1 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-300">
+                              class="ms-2 w-full py-3 pe-1 text-sm font-medium whitespace-nowrap text-gray-900 dark:text-gray-300">
                               {{ f.label }}
                             </span>
                           </label>
@@ -110,7 +110,7 @@
                 </ng-template>
               </td>
               @if (auth.isVendor() && featureFlags.isPartnerManagementEnabled()) {
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
                   @if (getPartnerName(customer.partnerOrganizationId); as name) {
                     {{ name }}
                   } @else {
@@ -118,39 +118,39 @@
                   }
 
                   @if (auth.hasAnyRole('read_write', 'admin')) {
-                    <button type="button" class="text-gray-400 ml-1" (click)="showPartnerAssignDialog(customer)">
+                    <button type="button" class="ml-1 text-gray-400" (click)="showPartnerAssignDialog(customer)">
                       <fa-icon [icon]="faEdit" />
                     </button>
                   }
                 </td>
               }
-              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white text-end">
+              <td class="px-4 py-3 text-end font-medium whitespace-nowrap text-gray-900 dark:text-white">
                 {{ customer.userCount | number }}
               </td>
-              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white text-end">
+              <td class="px-4 py-3 text-end font-medium whitespace-nowrap text-gray-900 dark:text-white">
                 {{ customer.deploymentTargetCount | number }}
               </td>
               <td
-                class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
+                class="flex justify-end space-x-2 px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
                 <a
                   [routerLink]="[customer.id, 'users']"
-                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                  class="distr-btn-secondary flex items-center px-3 py-2 text-center text-sm font-medium">
                   Users
                 </a>
                 <a
                   [routerLink]="[customer.id, 'secrets']"
-                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                  class="distr-btn-secondary flex items-center px-3 py-2 text-center text-sm font-medium">
                   Secrets
                 </a>
                 <a
                   [routerLink]="[customer.id, 'links']"
-                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                  class="distr-btn-secondary flex items-center px-3 py-2 text-center text-sm font-medium">
                   Links
                 </a>
                 @if (auth.hasAnyRole('admin') && customer.features.includes('oidc_providers')) {
                   <a
                     [routerLink]="[customer.id, 'settings']"
-                    class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                    class="distr-btn-secondary flex items-center px-3 py-2 text-center text-sm font-medium">
                     Settings
                   </a>
                 }
@@ -159,7 +159,7 @@
                     type="button"
                     aria-label="Delete"
                     (click)="delete(customer)"
-                    class="py-2 px-3 distr-btn-danger">
+                    class="distr-btn-danger px-3 py-2">
                     <fa-icon [icon]="faTrash" class="h-4 w-4" />
                   </button>
                 }
@@ -176,22 +176,22 @@
   <div
     animate.enter="animate-fly-in-top"
     animate.leave="animate-fly-out-top"
-    class="p-4 w-full mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900">
+    class="mt-12 max-h-full w-full rounded-lg bg-white p-4 shadow-sm dark:bg-gray-900">
     <!-- Modal header -->
-    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+    <div class="flex items-center justify-between rounded-t border-b border-gray-200 p-4 md:p-5 dark:border-gray-600">
       <h2 class="text-xl font-semibold text-gray-900 dark:text-white">New Customer</h2>
       <button
         type="button"
         (click)="closeCreateDialog()"
-        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+        class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
         <fa-icon [icon]="faXmark" />
         <span class="sr-only">Close modal</span>
       </button>
     </div>
     <!-- Modal body -->
-    <div class="p-4 md:p-5 space-y-4">
+    <div class="space-y-4 p-4 md:p-5">
       <section class="antialiased">
-        <div class="mx-auto max-w-screen-xl px-4 2xl:px-0">
+        <div class="mx-auto max-w-7xl px-4 2xl:px-0">
           @if (featureFlags.isLicensingEnabled$ | async) {
             <app-alert type="warning" class="mb-4">
               <p>
@@ -218,14 +218,14 @@
                   placeholder="Sustainable Corp Ltd."
                   class="distr-input" />
                 @if (createForm.controls.name.touched && createForm.controls.name.errors?.['required']) {
-                  <span class="text-red-500 text-xs">Name is required</span>
+                  <span class="text-xs text-red-500">Name is required</span>
                 }
               </div>
 
               <button
                 type="submit"
                 [disabled]="createFormLoading"
-                class="self-end text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                class="w-full self-end rounded-lg bg-blue-700 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 focus:outline-none sm:w-auto dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
                 Submit
               </button>
             </div>
@@ -240,31 +240,31 @@
   <div
     animate.enter="animate-fly-in-top"
     animate.leave="animate-fly-out-top"
-    class="p-4 w-full min-w-lg mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900 mt-32 xl:mt-80">
-    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+    class="mt-12 mt-32 max-h-full w-full min-w-lg rounded-lg bg-white p-4 shadow-sm xl:mt-80 dark:bg-gray-900">
+    <div class="flex items-center justify-between rounded-t border-b border-gray-200 p-4 md:p-5 dark:border-gray-600">
       <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Assign Partner</h2>
       <button
         type="button"
         (click)="closePartnerAssignDialog()"
-        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+        class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
         <fa-icon [icon]="faXmark" />
         <span class="sr-only">Close modal</span>
       </button>
     </div>
-    <div class="p-4 md:p-5 space-y-4">
+    <div class="space-y-4 p-4 md:p-5">
       <fieldset class="space-y-2">
         <legend class="block text-sm font-medium text-gray-900 dark:text-white">Partner</legend>
         <ul
-          class="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden divide-y divide-gray-200 dark:divide-gray-600">
+          class="divide-y divide-gray-200 overflow-hidden rounded-lg border border-gray-200 dark:divide-gray-600 dark:border-gray-600">
           <li>
-            <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+            <label class="flex cursor-pointer items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700">
               <input type="radio" [formControl]="partnerAssignControl" value="" class="distr-radio" />
               <span class="text-sm text-gray-900 dark:text-white">None</span>
             </label>
           </li>
           @for (partner of partnerOrganizations(); track partner.id) {
             <li>
-              <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+              <label class="flex cursor-pointer items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700">
                 <input type="radio" [formControl]="partnerAssignControl" [value]="partner.id" class="distr-radio" />
                 <span class="text-sm text-gray-900 dark:text-white">{{ partner.name }}</span>
               </label>
@@ -276,14 +276,14 @@
         <button
           type="button"
           (click)="closePartnerAssignDialog()"
-          class="py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+          class="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
           Cancel
         </button>
         <button
           type="button"
           (click)="submitPartnerAssign()"
           [disabled]="partnerAssignLoading()"
-          class="text-white distr-btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
+          class="distr-btn-primary text-white disabled:cursor-not-allowed disabled:opacity-50">
           Save
         </button>
       </div>

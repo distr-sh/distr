@@ -6,8 +6,8 @@
         @if (auth.isVendor()) {
           <a
             routerLink="/support-bundles/settings"
-            class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-            <fa-icon [icon]="faGear" class="text-gray-500 dark:text-gray-400 mr-2" />
+            class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none md:w-auto dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+            <fa-icon [icon]="faGear" class="mr-2 text-gray-500 dark:text-gray-400" />
             Settings
           </a>
         }
@@ -15,8 +15,8 @@
           <button
             (click)="openDialog(createBundleDialog)"
             type="button"
-            class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-            <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+            class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none md:w-auto dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+            <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
             New Support Bundle
           </button>
         }
@@ -30,7 +30,7 @@
         <a
           alertActions
           routerLink="/support-bundles/settings"
-          class="shrink-0 py-1.5 px-3 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+          class="shrink-0 rounded-lg bg-blue-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 focus:outline-none dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
           Configure
         </a>
       </app-alert>
@@ -75,14 +75,14 @@
                     {{ bundle.lastCommentAt ? (bundle.lastCommentAt | date: 'medium') : '-' }}
                   </td>
                   <td class="px-4 py-3">
-                    <div class="flex gap-2 justify-end">
+                    <div class="flex justify-end gap-2">
                       @if (bundle.resourceCount > 0) {
                         <button
                           type="button"
                           (click)="downloadResources(bundle)"
                           [disabled]="downloadingBundleId() !== null"
                           title="Download resources"
-                          class="py-2 px-3 text-sm distr-btn-secondary">
+                          class="distr-btn-secondary px-3 py-2 text-sm">
                           <fa-icon [icon]="faDownload" class="h-4 w-4" />
                           <span class="sr-only">Download resources</span>
                         </button>
@@ -93,7 +93,7 @@
                           (click)="deleteBundle(bundle)"
                           [disabled]="deletingBundleId() !== null"
                           title="Delete support bundle"
-                          class="py-2 px-3 distr-btn-danger">
+                          class="distr-btn-danger px-3 py-2">
                           <fa-icon [icon]="faTrash" class="h-4 w-4" />
                           <span class="sr-only">Delete support bundle</span>
                         </button>
@@ -112,12 +112,12 @@
       } @else if (auth.isVendor()) {
         <div class="p-8 text-center text-gray-500 dark:text-gray-400">
           <p>No support bundles have been created yet.</p>
-          <p class="text-sm mt-1">Customers with the support bundles feature enabled can create support bundles.</p>
+          <p class="mt-1 text-sm">Customers with the support bundles feature enabled can create support bundles.</p>
         </div>
       } @else if (auth.isPartner()) {
         <div class="p-8 text-center text-gray-500 dark:text-gray-400">
           <p>No support bundles yet.</p>
-          <p class="text-sm mt-1">Support bundles created by your assigned customers will appear here.</p>
+          <p class="mt-1 text-sm">Support bundles created by your assigned customers will appear here.</p>
         </div>
       } @else if (auth.isCustomer()) {
         <div class="p-8 text-center text-gray-500 dark:text-gray-400">
@@ -130,16 +130,16 @@
 
 <ng-template #createBundleDialog>
   <div
-    class="relative p-4 w-full max-w-2xl max-h-full lg:mt-32"
+    class="relative max-h-full w-full max-w-2xl p-4 lg:mt-32"
     animate.enter="animate-fly-in-top"
     animate.leave="animate-fly-out-top">
-    <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
-      <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+    <div class="relative rounded-lg bg-white shadow dark:bg-gray-700">
+      <div class="flex items-center justify-between rounded-t border-b border-gray-200 p-4 md:p-5 dark:border-gray-600">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">New Support Bundle</h3>
         <button
           type="button"
           (click)="closeDialog()"
-          class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+          class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
           <fa-icon [icon]="faXmark" />
           <span class="sr-only">Close dialog</span>
         </button>
@@ -159,8 +159,8 @@
               </p>
               <p>Run the following command on the target system to collect and upload the support bundle:</p>
             </app-alert>
-            <div class="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-600 rounded-lg">
-              <code class="text-sm text-gray-900 dark:text-white break-all flex-1 select-all">{{ cmd }}</code>
+            <div class="flex items-center gap-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-600">
+              <code class="flex-1 text-sm break-all text-gray-900 select-all dark:text-white">{{ cmd }}</code>
               <app-clip [clip]="cmd" />
             </div>
           </div>
@@ -187,14 +187,14 @@
                   placeholder="Optional description of the issue"></textarea>
               </div>
             </div>
-            <div class="flex items-center justify-end pt-4 border-t border-gray-200 dark:border-gray-600 mt-4 gap-2">
-              <button type="button" (click)="closeDialog()" class="py-2.5 px-5 text-sm font-medium distr-btn-secondary">
+            <div class="mt-4 flex items-center justify-end gap-2 border-t border-gray-200 pt-4 dark:border-gray-600">
+              <button type="button" (click)="closeDialog()" class="distr-btn-secondary px-5 py-2.5 text-sm font-medium">
                 Cancel
               </button>
               <button
                 type="submit"
                 [disabled]="createFormLoading || createForm.invalid"
-                class="text-white inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
+                class="distr-btn-primary inline-flex items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-60">
                 <fa-icon [icon]="faPlus" class="me-2" />
                 Create
               </button>

@@ -3,23 +3,23 @@
     <div class="overflow-x-auto">
       <app-tutorial-stepper #stepper class="mx-auto max-w-5xl space-y-6 lg:space-y-8">
         <cdk-step label="Welcome" [stepControl]="welcomeFormGroup">
-          <div class="px-20 py-8 w-full">
+          <div class="w-full px-20 py-8">
             <h3 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Artifact Registry</h3>
 
-            <div class="text-gray-900 dark:text-white mb-12">
+            <div class="mb-12 text-gray-900 dark:text-white">
               <p>In this tutorial you will learn how to make use of the Artifact Registry.</p>
             </div>
 
             <div class="gap-4 sm:flex sm:items-center sm:justify-between">
               <button
                 (click)="navigateToOverviewPage()"
-                class="flex-1 sm:flex-none items-center justify-center w-full rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 sm:w-auto">
+                class="w-full flex-1 items-center justify-center rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100 focus:outline-none sm:w-auto sm:flex-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
                 Exit Tutorial
               </button>
               <button
                 (click)="continueFromWelcome()"
                 type="submit"
-                class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
+                class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 focus:outline-none sm:mt-0 sm:w-auto dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
                 Let's Go
                 <fa-icon class="ml-2" [icon]="faArrowRight" />
               </button>
@@ -27,30 +27,30 @@
           </div>
         </cdk-step>
         <cdk-step label="Prepare Registry" [stepControl]="prepareFormGroup">
-          <div class="p-8 w-full">
+          <div class="w-full p-8">
             <form [formGroup]="prepareFormGroup" (ngSubmit)="continueFromPrepare()">
               <ol
-                class="ml-4 relative text-gray-900 dark:text-white mb-12 border-s border-gray-200 dark:border-gray-700">
-                <li class="mb-10 ms-8">
+                class="relative mb-12 ml-4 border-s border-gray-200 text-gray-900 dark:border-gray-700 dark:text-white">
+                <li class="ms-8 mb-10">
                   <span
-                    class="absolute flex items-center justify-center size-8 bg-gray-100 dark:bg-gray-700 rounded-full -start-4 ring-4 ring-white dark:ring-gray-800">
+                    class="absolute -inset-s-4 flex size-8 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white dark:bg-gray-700 dark:ring-gray-800">
                     <fa-icon [icon]="faLightbulb" />
                   </span>
-                  <h3 class="text-lg font-medium leading-tight">Prepare Registry</h3>
-                  <p class="text-sm mt-2">
+                  <h3 class="text-lg leading-tight font-medium">Prepare Registry</h3>
+                  <p class="mt-2 text-sm">
                     Your organization needs to have a slug in order to use the registry. You only need to do this once
                     for your organization.
                   </p>
                 </li>
-                <li class="mb-10 ms-8">
-                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                <li class="ms-8 mb-10">
+                  <span class="absolute -inset-s-2 mt-0.75 flex items-center justify-center">
                     <input
                       type="checkbox"
                       id="slugDone"
                       [formControl]="prepareFormGroup.controls.slugDone"
                       class="distr-checkbox" />
                   </span>
-                  <label for="slugDone" class="text-lg font-medium leading-tight">Set Organization Slug</label>
+                  <label for="slugDone" class="text-lg leading-tight font-medium">Set Organization Slug</label>
                   <p class="mt-1 text-sm">
                     The slug will be used as part of the url for artifact registry. It must start with a lower case
                     letter or digit and consist only of lowercase letters, digits, as well as the following special
@@ -74,13 +74,13 @@
               <div class="gap-4 sm:flex sm:items-center sm:justify-between">
                 <button
                   cdkStepperPrevious
-                  class="flex-1 sm:flex-none items-center justify-center w-full rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 sm:w-auto">
+                  class="w-full flex-1 items-center justify-center rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100 focus:outline-none sm:w-auto sm:flex-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
                   Back
                 </button>
                 <button
                   type="submit"
                   [disabled]="loading()"
-                  class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
+                  class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 focus:outline-none sm:mt-0 sm:w-auto dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
                   @if (prepareFormGroup.dirty) {
                     Save and Continue
                   } @else {
@@ -94,31 +94,31 @@
         </cdk-step>
 
         <cdk-step label="Login" [stepControl]="loginFormGroup">
-          <div class="p-8 w-full">
+          <div class="w-full p-8">
             <form [formGroup]="loginFormGroup" (ngSubmit)="continueFromLogin()">
               <ol
-                class="ml-4 relative text-gray-900 dark:text-white mb-12 border-s border-gray-200 dark:border-gray-700">
-                <li class="mb-10 ms-8">
+                class="relative mb-12 ml-4 border-s border-gray-200 text-gray-900 dark:border-gray-700 dark:text-white">
+                <li class="ms-8 mb-10">
                   <span
-                    class="absolute flex items-center justify-center size-8 bg-gray-100 dark:bg-gray-700 rounded-full -start-4 ring-4 ring-white dark:ring-gray-800">
+                    class="absolute -inset-s-4 flex size-8 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white dark:bg-gray-700 dark:ring-gray-800">
                     <fa-icon [icon]="faLightbulb" />
                   </span>
-                  <h3 class="text-lg font-medium leading-tight">Login</h3>
-                  <p class="text-sm mt-2">
+                  <h3 class="text-lg leading-tight font-medium">Login</h3>
+                  <p class="mt-2 text-sm">
                     You need to log in to the Distr registry to push and pull artifacts. To do this, you'll create a
                     personal access token that authenticates you with the registry.
                   </p>
                 </li>
 
-                <li class="mb-10 ms-8">
-                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                <li class="ms-8 mb-10">
+                  <span class="absolute -inset-s-2 mt-0.75 flex items-center justify-center">
                     <input
                       type="checkbox"
                       id="tokenDone"
                       [formControl]="loginFormGroup.controls.tokenDone"
                       class="distr-checkbox" />
                   </span>
-                  <label for="tokenDone" class="text-lg font-medium leading-tight"
+                  <label for="tokenDone" class="text-lg leading-tight font-medium"
                     >Create a Personal Access Token</label
                   >
                   <p class="mt-1 text-sm">
@@ -137,7 +137,7 @@
                         type="button"
                         [disabled]="loading()"
                         (click)="createToken()"
-                        class="flex items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
+                        class="flex items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 focus:outline-none sm:mt-0 sm:w-auto dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
                         Create New Token
                       </button>
                     }
@@ -148,15 +148,15 @@
                   }
                 </li>
 
-                <li class="mb-10 ms-8">
-                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                <li class="ms-8 mb-10">
+                  <span class="absolute -inset-s-2 mt-0.75 flex items-center justify-center">
                     <input
                       type="checkbox"
                       id="loginDone"
                       [formControl]="loginFormGroup.controls.loginDone"
                       class="distr-checkbox" />
                   </span>
-                  <label for="loginDone" class="text-lg font-medium leading-tight">Login</label>
+                  <label for="loginDone" class="text-lg leading-tight font-medium">Login</label>
                   <p class="mt-1 text-sm">
                     Now we use the previously created Personal Access Token as password to log in to the registry with
                     this command:
@@ -167,7 +167,7 @@
                       ? createdToken!.key
                       : 'YOUR-ACCESS-TOKEN';
                   @let loginCmd = `echo ${token} | docker login ${host()} --password-stdin -u - `;
-                  <code class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">{{
+                  <code class="mt-2 text-sm whitespace-pre-line text-gray-900 select-all dark:text-gray-200">{{
                     loginCmd
                   }}</code>
                   <app-clip class="mx-2" [clip]="loginCmd" />
@@ -181,13 +181,13 @@
               <div class="gap-4 sm:flex sm:items-center sm:justify-between">
                 <button
                   cdkStepperPrevious
-                  class="flex-1 sm:flex-none items-center justify-center w-full rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 sm:w-auto">
+                  class="w-full flex-1 items-center justify-center rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100 focus:outline-none sm:w-auto sm:flex-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
                   Back
                 </button>
                 <button
                   type="submit"
                   [disabled]="loading()"
-                  class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
+                  class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 focus:outline-none sm:mt-0 sm:w-auto dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
                   @if (prepareFormGroup.dirty) {
                     Save and Continue
                   } @else {
@@ -201,43 +201,43 @@
         </cdk-step>
 
         <cdk-step label="Manage Images" [stepControl]="usageFormGroup">
-          <div class="p-8 w-full">
+          <div class="w-full p-8">
             <form [formGroup]="usageFormGroup" (ngSubmit)="completeAndExit()">
               <ol
-                class="ml-4 relative text-gray-900 dark:text-white mb-12 border-s border-gray-200 dark:border-gray-700">
-                <li class="mb-10 ms-8">
+                class="relative mb-12 ml-4 border-s border-gray-200 text-gray-900 dark:border-gray-700 dark:text-white">
+                <li class="ms-8 mb-10">
                   <span
-                    class="absolute flex items-center justify-center size-8 bg-gray-100 dark:bg-gray-700 rounded-full -start-4 ring-4 ring-white dark:ring-gray-800">
+                    class="absolute -inset-s-4 flex size-8 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white dark:bg-gray-700 dark:ring-gray-800">
                     <fa-icon [icon]="faLightbulb" />
                   </span>
-                  <h3 class="text-lg font-medium leading-tight">Manage Images</h3>
-                  <p class="text-sm mt-2">
+                  <h3 class="text-lg leading-tight font-medium">Manage Images</h3>
+                  <p class="mt-2 text-sm">
                     You are now ready to push and pull images stored to and from the Distr registry.
                   </p>
                 </li>
 
-                <li class="mb-10 ms-8">
-                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                <li class="ms-8 mb-10">
+                  <span class="absolute -inset-s-2 mt-0.75 flex items-center justify-center">
                     <input
                       type="checkbox"
                       id="pullDone"
                       [formControl]="usageFormGroup.controls.pullDone"
                       class="distr-checkbox" />
                   </span>
-                  <label for="pullDone" class="block text-lg font-medium leading-tight"
+                  <label for="pullDone" class="block text-lg leading-tight font-medium"
                     >Pull the hello-distr proxy image from GitHub Container Registry</label
                   >
                   <p class="my-1 text-sm">
                     The hello-distr proxy is one of several images that all belong to the
                     <a
                       href="https://github.com/distr-sh/hello-distr"
-                      class="text-gray-600 dark:text-gray-400 underline"
+                      class="text-gray-600 underline dark:text-gray-400"
                       target="_blank"
                       >hello-distr application</a
                     >. Pull it from the GitHub Container Registry to your machine's docker environment, with:
                   </p>
                   @let pullCmd = `docker pull ${proxyGhcrUrl}`;
-                  <code class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">{{
+                  <code class="mt-2 text-sm whitespace-pre-line text-gray-900 select-all dark:text-gray-200">{{
                     pullCmd
                   }}</code>
                   <app-clip class="mx-2 text-end" [clip]="pullCmd" />
@@ -246,20 +246,20 @@
                   }
                 </li>
 
-                <li class="mb-10 ms-8">
-                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                <li class="ms-8 mb-10">
+                  <span class="absolute -inset-s-2 mt-0.75 flex items-center justify-center">
                     <input
                       type="checkbox"
                       id="tagDone"
                       [formControl]="usageFormGroup.controls.tagDone"
                       class="distr-checkbox" />
                   </span>
-                  <label for="tagDone" class="block text-lg font-medium leading-tight"
+                  <label for="tagDone" class="block text-lg leading-tight font-medium"
                     >Tag the image for your organization</label
                   >
                   <p class="my-1 text-sm">This step will make the sample image "yours":</p>
                   @let tagCmd = `docker tag \\\n  ${proxyGhcrUrl} \\\n  ${proxyDistrUrl()}`;
-                  <code class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-wrap">{{
+                  <code class="mt-2 text-sm whitespace-pre-wrap text-gray-900 select-all dark:text-gray-200">{{
                     tagCmd
                   }}</code>
                   <app-clip class="mx-2" [clip]="tagCmd" />
@@ -268,19 +268,19 @@
                   }
                 </li>
 
-                <li class="mb-10 ms-8">
-                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                <li class="ms-8 mb-10">
+                  <span class="absolute -inset-s-2 mt-0.75 flex items-center justify-center">
                     <input
                       type="checkbox"
                       id="pushDone"
                       [formControl]="usageFormGroup.controls.pushDone"
                       class="distr-checkbox" />
                   </span>
-                  <label for="pushDone" class="block text-lg font-medium leading-tight"
+                  <label for="pushDone" class="block text-lg leading-tight font-medium"
                     >Push the tagged image to the Distr registry</label
                   >
                   @let pushCmd = `docker push ${proxyDistrUrl()}`;
-                  <code class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">{{
+                  <code class="mt-2 text-sm whitespace-pre-line text-gray-900 select-all dark:text-gray-200">{{
                     pushCmd
                   }}</code>
                   <app-clip class="mx-2" [clip]="pushCmd" />
@@ -289,20 +289,20 @@
                   }
                 </li>
 
-                <li class="mb-10 ms-8">
-                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                <li class="ms-8 mb-10">
+                  <span class="absolute -inset-s-2 mt-0.75 flex items-center justify-center">
                     <input
                       type="checkbox"
                       id="exploreDone"
                       [formControl]="usageFormGroup.controls.exploreDone"
                       class="distr-checkbox" />
                   </span>
-                  <label for="exploreDone" class="text-lg font-medium leading-tight"
+                  <label for="exploreDone" class="text-lg leading-tight font-medium"
                     >Pull the image and view download history</label
                   >
                   <p class="mt-1 text-sm">Pull the pushed image:</p>
                   @let exploreCmd = `docker pull ${proxyDistrUrl()}`;
-                  <code class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">{{
+                  <code class="mt-2 text-sm whitespace-pre-line text-gray-900 select-all dark:text-gray-200">{{
                     exploreCmd
                   }}</code>
                   <app-clip class="mx-2" [clip]="exploreCmd" />
@@ -313,7 +313,7 @@
                       Distr registry. To delete the image and its tags, run:
                     </p>
                     @let deleteCmd = `docker image rm --force \\\n  ${proxyDistrUrl()} \\\n  ${proxyGhcrUrl}`;
-                    <code class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-wrap">{{
+                    <code class="mt-2 text-sm whitespace-pre-wrap text-gray-900 select-all dark:text-gray-200">{{
                       deleteCmd
                     }}</code>
                     <app-clip class="mx-2" [clip]="deleteCmd" />
@@ -338,13 +338,13 @@
               <div class="gap-4 sm:flex sm:items-center sm:justify-between">
                 <button
                   cdkStepperPrevious
-                  class="flex-1 sm:flex-none items-center justify-center w-full rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 sm:w-auto">
+                  class="w-full flex-1 items-center justify-center rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100 focus:outline-none sm:w-auto sm:flex-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
                   Back
                 </button>
                 <button
                   [disabled]="loading()"
                   type="submit"
-                  class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
+                  class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 focus:outline-none sm:mt-0 sm:w-auto dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
                   <fa-icon class="mr-2" [icon]="faCheck" />
                   @if (progress?.completedAt) {
                     Done

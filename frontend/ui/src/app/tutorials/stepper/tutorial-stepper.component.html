@@ -1,20 +1,20 @@
 <div class="">
   <div class="space-y-6 sm:space-y-8">
     <ol
-      class="flex flex-col gap-4 rounded-lg p-4 dark:bg-gray-800 sm:justify-center md:flex-row md:items-center lg:gap-6">
+      class="flex flex-col gap-4 rounded-lg p-4 sm:justify-center md:flex-row md:items-center lg:gap-6 dark:bg-gray-800">
       @for (step of steps; track i; let i = $index; let last = $last) {
         <li
           [class.text-gray-500]="!isCurrentStep(i)"
           [class.dark:text-gray-400]="!isCurrentStep(i)"
           [class.text-blue-700]="isCurrentStep(i)"
           [class.dark:text-blue-600]="isCurrentStep(i)"
-          class="flex items-center gap-2 md:flex-1 md:flex-col md:gap-1.5 lg:flex-none text-gray-500 dark:text-gray-400">
+          class="flex items-center gap-2 text-gray-500 md:flex-1 md:flex-col md:gap-1.5 lg:flex-none dark:text-gray-400">
           <fa-icon [icon]="step.completed ? faCircleCheck : faCircle" />
-          <p class="text-sm font-medium leading-tight">{{ step.label }}</p>
+          <p class="text-sm leading-tight font-medium">{{ step.label }}</p>
         </li>
 
         @if (!last) {
-          <div class="hidden h-px w-4 shrink-0 bg-gray-200 dark:bg-gray-700 md:block lg:w-16"></div>
+          <div class="hidden h-px w-4 shrink-0 bg-gray-200 md:block lg:w-16 dark:bg-gray-700"></div>
         }
       }
     </ol>
