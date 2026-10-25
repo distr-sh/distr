@@ -1,5 +1,4 @@
 import {NgTemplateOutlet} from '@angular/common';
-import {HttpErrorResponse} from '@angular/common/http';
 import {Component, computed, inject, linkedSignal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {CustomerOrganizationFeature} from '@distr-sh/distr-sdk';
@@ -11,14 +10,13 @@ import {
   map,
   Observable,
   of,
-  OperatorFunction,
   shareReplay,
   startWith,
   Subject,
   switchMap,
   take,
 } from 'rxjs';
-import {getFormDisplayedError} from '../../../util/errors';
+import {isNotFound, recoverWithToast, toastDisplayedError} from '../../../util/errors';
 import {LoadingCardComponent} from '../../components/loading-card/loading-card.component';
 import {PageComponent} from '../../components/page.component';
 import {AccessTokensService} from '../../services/access-tokens.service';
@@ -143,7 +141,7 @@ export class CustomerHomePageComponent {
         map(([targets, applications, entitlements]) =>
           toCustomerHomeDeploymentTargets(targets, applications, entitlements)
         ),
-        this.recover([])
+        recoverWithToast(this.toast, [])
       )
     )
   );
@@ -153,7 +151,10 @@ export class CustomerHomePageComponent {
   );
 
   protected readonly artifacts = toSignal(
-    this.rawArtifacts$.pipe(map(toCustomerHomeArtifacts), this.recover({artifacts: [], hasPulled: false}))
+    this.rawArtifacts$.pipe(
+      map(toCustomerHomeArtifacts),
+      recoverWithToast(this.toast, {artifacts: [], hasPulled: false})
+    )
   );
 
   private readonly hasApplications = toSignal(
@@ -161,7 +162,7 @@ export class CustomerHomePageComponent {
       this.canWrite
         ? this.applicationsService.list().pipe(
             map((applications) => applications.length > 0),
-            this.recover(false)
+            recoverWithToast(this.toast, false)
           )
         : of(false)
     )
@@ -194,8 +195,8 @@ export class CustomerHomePageComponent {
   private readonly branding = toSignal(
     this.organizationBranding.get().pipe(
       catchError((e) => {
-        if (!(e instanceof HttpErrorResponse && e.status === 404)) {
-          this.showError(e);
+        if (!isNotFound(e)) {
+          toastDisplayedError(this.toast, e);
         }
         return of(undefined);
       })
@@ -245,7 +246,7 @@ export class CustomerHomePageComponent {
       ),
       accessTokenCount: this.accessTokens$.pipe(map((tokens) => tokens.length)),
       artifacts: this.rawArtifacts$,
-    }).pipe(map(toCustomerHomeChecklist), this.recover(null))
+    }).pipe(map(toCustomerHomeChecklist), recoverWithToast(this.toast, null))
   );
   protected readonly checklistCompleted = computed(() => {
     const checklist = this.checklist();
@@ -272,7 +273,7 @@ export class CustomerHomePageComponent {
               map(([licenseKeys, applicationEntitlements, artifactEntitlements]) =>
                 toCustomerHomeLicense(licenseKeys, [...applicationEntitlements, ...artifactEntitlements])
               ),
-              this.recover(undefined)
+              recoverWithToast(this.toast, undefined)
             )
           : of(undefined)
       )
@@ -288,7 +289,7 @@ export class CustomerHomePageComponent {
               this.notificationRecordsService.list(undefined, customerHomeNotificationsSince()),
             ]).pipe(
               map(([configurations, records]) => toCustomerHomeAlerts(configurations, records)),
-              this.recover(undefined)
+              recoverWithToast(this.toast, undefined)
             )
           : of(undefined)
       )
@@ -298,7 +299,7 @@ export class CustomerHomePageComponent {
   protected readonly accessTokens = toSignal(
     this.accessTokens$.pipe(
       map((tokens) => toCustomerHomeAccessTokens(tokens)),
-      this.recover([])
+      recoverWithToast(this.toast, [])
     ),
     {initialValue: []}
   );
@@ -311,7 +312,9 @@ export class CustomerHomePageComponent {
           ? this.reloadSupportBundles$.pipe(
               startWith(undefined),
               switchMap(() =>
-                this.supportBundlesService.list().pipe(map(toCustomerHomeSupportBundles), this.recover([]))
+                this.supportBundlesService
+                  .list()
+                  .pipe(map(toCustomerHomeSupportBundles), recoverWithToast(this.toast, []))
               )
             )
           : of(undefined)
@@ -332,7 +335,7 @@ export class CustomerHomePageComponent {
   );
 
   protected readonly activity = toSignal(
-    this.activityFeedService.list().pipe(map(toCustomerHomeActivity), this.recover([]))
+    this.activityFeedService.list().pipe(map(toCustomerHomeActivity), recoverWithToast(this.toast, []))
   );
   protected readonly activityShown = computed(() => this.activity()?.length !== 0);
   protected readonly vendorName = toSignal(this.organizationService.get().pipe(map((org) => org.name)));
@@ -359,19 +362,5 @@ export class CustomerHomePageComponent {
     enabled: () => Observable<T>
   ): Observable<T> {
     return this.features$.pipe(switchMap((features) => (features.includes(feature) ? enabled() : of(disabled))));
-  }
-
-  private recover<T, F>(fallback: F): OperatorFunction<T, T | F> {
-    return catchError((e) => {
-      this.showError(e);
-      return of(fallback);
-    });
-  }
-
-  private showError(e: unknown) {
-    const msg = getFormDisplayedError(e);
-    if (msg) {
-      this.toast.error(msg);
-    }
   }
 }
