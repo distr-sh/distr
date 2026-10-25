@@ -75,26 +75,21 @@ func ApplicationVersions(versions []types.CustomerApplicationVersion) []Entry {
 	return result
 }
 
-// ArtifactVersions returns the versions of the artifact published since that carry a release tag.
-// versions have to be the versions the customer may pull.
-func ArtifactVersions(
-	artifact types.ArtifactWithDownloads,
-	versions []types.TaggedArtifactVersion,
-	since time.Time,
-) []Entry {
-	var result []Entry
-	for _, version := range versions {
-		if !version.CreatedAt.After(since) {
-			continue
-		} else if _, tag := types.LatestArtifactTag([]types.TaggedArtifactVersion{version}); tag != "" {
-			result = append(result, Entry{
-				ID:         version.ID,
-				CreatedAt:  version.CreatedAt,
-				Type:       EntryTypeArtifactVersionCreated,
-				ResourceID: artifact.ID,
-				Subject:    artifact.Name,
-				Detail:     new(tag),
-			})
+// ArtifactTags returns an entry for every tag, which has to belong to one of the artifacts.
+func ArtifactTags(artifacts []types.ArtifactWithDownloads, tags []types.ArtifactVersion) []Entry {
+	names := make(map[uuid.UUID]string, len(artifacts))
+	for _, artifact := range artifacts {
+		names[artifact.ID] = artifact.Name
+	}
+	result := make([]Entry, len(tags))
+	for i, tag := range tags {
+		result[i] = Entry{
+			ID:         tag.ID,
+			CreatedAt:  tag.CreatedAt,
+			Type:       EntryTypeArtifactVersionCreated,
+			ResourceID: tag.ArtifactID,
+			Subject:    names[tag.ArtifactID],
+			Detail:     new(tag.Name),
 		}
 	}
 	return result

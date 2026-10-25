@@ -44,8 +44,6 @@ export interface Artifact extends BaseArtifact, HasDownloads {
   lastSyncError?: string;
   upstreamAuthType?: UpstreamAuthType;
   /** Only set for a customer. */
-  latestVersionName?: string;
-  /** Only set for a customer. */
   lastPull?: ArtifactLastPull;
 }
 
@@ -55,7 +53,6 @@ export interface ArtifactLastPull {
   pulledByName?: string;
   pulledByImageUrl?: string;
   deploymentTargetName?: string;
-  isLatest: boolean;
 }
 
 export interface TaggedArtifactVersion extends HasDownloads {

@@ -75,13 +75,11 @@ export function toCustomerHomeArtifacts(artifacts: Artifact[]): CustomerHomeArti
         name: artifact.name,
         imageUrl: artifact.imageUrl,
         titleImageUrl: artifact.titleImageUrl,
-        latestVersionName: artifact.latestVersionName,
         lastPull: artifact.lastPull && {
           versionName: artifact.lastPull.versionName,
           createdAt: artifact.lastPull.createdAt,
           pulledBy: user(artifact.lastPull.pulledByName, artifact.lastPull.pulledByImageUrl),
           deploymentTargetName: artifact.lastPull.deploymentTargetName,
-          isLatest: artifact.lastPull.isLatest,
         },
       })),
   };

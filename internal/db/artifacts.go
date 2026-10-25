@@ -126,11 +126,11 @@ func artifactVersionIsTagExpr(alias string) string {
 	return alias + ".name <> " + alias + ".manifest_blob_digest"
 }
 
-// artifactVersionIsReleaseTagExpr matches tags except those matching types.NonReleaseTagPattern.
-func artifactVersionIsReleaseTagExpr(alias string) string {
-	return artifactVersionIsTagExpr(alias) + " AND " + alias + `.name !~ '` + types.NonReleaseTagPattern + `'`
-}
+// versionIsReleaseTagExpr matches the version v when it is a tag that does not match
+// types.NonReleaseTagPattern.
+const versionIsReleaseTagExpr = `v.name <> v.manifest_blob_digest AND v.name !~ '` + types.NonReleaseTagPattern + `'`
 
+//nolint:unparam // the counterpart of artifactVersionIsTagExpr, which takes the alias as well
 func artifactVersionIsDigestExpr(alias string) string {
 	return alias + ".name = " + alias + ".manifest_blob_digest"
 }
@@ -334,9 +334,8 @@ AND EXISTS (
 	AND ` + artifactVersionIsTagExpr("avt") + `
 )`
 
-// ListArtifactReleaseVersions returns the tagged versions of the artifacts, with no more than
-// LatestArtifactTag needs to decide the latest of them. With licensing, only those the customer organization
-// may pull.
+// ListArtifactReleaseVersions returns the tagged versions of the artifacts with their tag names and whether
+// they are signatures. With licensing, only those the customer organization may pull.
 func ListArtifactReleaseVersions(
 	ctx context.Context,
 	artifactIDs []uuid.UUID,
@@ -382,6 +381,49 @@ func ListArtifactReleaseVersions(
 	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ArtifactReleaseVersion])
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect artifact release versions: %w", err)
+	}
+	return result, nil
+}
+
+// GetCustomerArtifactTags returns the newest release tags of the artifacts created since, at most limit of
+// them. With licensing, only those the customer organization may pull.
+func GetCustomerArtifactTags(
+	ctx context.Context,
+	artifactIDs []uuid.UUID,
+	customerOrgID uuid.UUID,
+	licensing bool,
+	since time.Time,
+	limit int,
+) ([]types.ArtifactVersion, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx, `
+		SELECT `+artifactVersionOutputExpr+`
+		FROM ArtifactVersion v
+			JOIN Artifact a ON a.id = v.artifact_id
+			JOIN ArtifactVersion av
+				ON av.artifact_id = v.artifact_id
+					AND av.manifest_blob_digest = v.manifest_blob_digest
+					AND `+artifactVersionIsDigestExpr("av")+`
+		WHERE v.artifact_id = any(@artifactIds)
+			AND v.created_at > @since
+			AND `+versionIsReleaseTagExpr+`
+			AND `+artifactVersionVisibleExpr+`
+		ORDER BY v.created_at DESC
+		LIMIT @limit`,
+		pgx.NamedArgs{
+			"artifactIds":   artifactIDs,
+			"customerOrgId": customerOrgID,
+			"isVendorUser":  !licensing,
+			"since":         since,
+			"limit":         limit,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query artifact tags: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ArtifactVersion])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect artifact tags: %w", err)
 	}
 	return result, nil
 }
@@ -928,7 +970,7 @@ func GetNewestArtifactTag(
 		`SELECT`+artifactVersionOutputExpr+`
 		FROM ArtifactVersion v
 		WHERE v.artifact_id = @artifactId
-			AND `+artifactVersionIsReleaseTagExpr("v")+`
+			AND `+versionIsReleaseTagExpr+`
 			AND (@allVersions OR v.manifest_blob_digest IN (
 				SELECT manifest_blob_digest FROM ArtifactVersion WHERE id = any(@artifactVersionIds)
 			))
@@ -1084,7 +1126,7 @@ func GetFirstArtifactVersionPullsOfCustomerOrganization(
 				AND a.id = any(@artifactIds)
 				AND p.useraccount_id IS NOT NULL
 				AND v.created_at > @since
-				AND `+artifactVersionIsReleaseTagExpr("v")+`
+				AND `+versionIsReleaseTagExpr+`
 			ORDER BY v.id, p.useraccount_id, p.created_at
 		) first_pull
 		ORDER BY created_at DESC
@@ -1124,7 +1166,7 @@ func GetLatestArtifactPullsOfCustomerOrganization(
 			JOIN ArtifactVersionPull p ON p.id = cp.id `+artifactVersionPullJoinExpr+`
 		WHERE a.organization_id = @orgId
 			AND v.artifact_id = any(@artifactIds)
-			AND `+artifactVersionIsReleaseTagExpr("v")+`
+			AND `+versionIsReleaseTagExpr+`
 		ORDER BY v.artifact_id, p.created_at DESC`,
 		pgx.NamedArgs{"orgId": orgID, "customerOrganizationId": customerOrgID, "artifactIds": artifactIDs},
 	)

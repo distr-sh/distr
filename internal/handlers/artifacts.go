@@ -179,7 +179,6 @@ func customerArtifactsToAPI(
 	customerOrgID uuid.UUID,
 ) ([]api.ArtifactsResponse, error) {
 	auth := auth.Authentication.Require(ctx)
-	licensing := auth.CurrentOrg().HasFeature(types.FeatureLicensing)
 	artifactIDs := make([]uuid.UUID, len(artifacts))
 	for i, artifact := range artifacts {
 		artifactIDs[i] = artifact.ID
@@ -188,18 +187,13 @@ func customerArtifactsToAPI(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest artifact pulls: %w", err)
 	}
-	releaseVersions, err := db.ListArtifactReleaseVersions(ctx, artifactIDs, customerOrgID, licensing)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get artifact versions: %w", err)
-	}
-	versions := types.TaggedArtifactVersionsByArtifact(releaseVersions)
 	pullsByArtifact := make(map[uuid.UUID]*types.ArtifactVersionPull, len(pulls))
 	for i := range pulls {
 		pullsByArtifact[pulls[i].Artifact.ID] = &pulls[i]
 	}
 	result := make([]api.ArtifactsResponse, len(artifacts))
 	for i, artifact := range artifacts {
-		result[i] = mapping.CustomerArtifactToAPI(artifact, versions[artifact.ID], pullsByArtifact[artifact.ID])
+		result[i] = mapping.CustomerArtifactToAPI(artifact, pullsByArtifact[artifact.ID])
 	}
 	return result, nil
 }

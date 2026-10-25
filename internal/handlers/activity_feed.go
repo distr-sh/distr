@@ -136,25 +136,17 @@ func artifactActivity(ctx context.Context, customerOrgID uuid.UUID, since time.T
 	for i, artifact := range artifacts {
 		artifactIDs[i] = artifact.ID
 	}
-	releaseVersions, err := db.ListArtifactReleaseVersions(
-		ctx, artifactIDs, customerOrgID, auth.CurrentOrg().HasFeature(types.FeatureLicensing),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get artifact versions: %w", err)
-	}
-	pulls, err := db.GetFirstArtifactVersionPullsOfCustomerOrganization(
+	if tags, err := db.GetCustomerArtifactTags(
+		ctx, artifactIDs, customerOrgID, auth.CurrentOrg().HasFeature(types.FeatureLicensing), since, activityfeed.Limit,
+	); err != nil {
+		return nil, fmt.Errorf("failed to get artifact tags: %w", err)
+	} else if pulls, err := db.GetFirstArtifactVersionPullsOfCustomerOrganization(
 		ctx, orgID, customerOrgID, artifactIDs, since, activityfeed.Limit,
-	)
-	if err != nil {
+	); err != nil {
 		return nil, fmt.Errorf("failed to get first artifact pulls: %w", err)
+	} else {
+		return append(activityfeed.ArtifactTags(artifacts, tags), activityfeed.FirstPulls(pulls)...), nil
 	}
-
-	versions := types.TaggedArtifactVersionsByArtifact(releaseVersions)
-	var result []activityfeed.Entry
-	for _, artifact := range artifacts {
-		result = append(result, activityfeed.ArtifactVersions(artifact, versions[artifact.ID], since)...)
-	}
-	return append(result, activityfeed.FirstPulls(pulls)...), nil
 }
 
 func licenseKeyActivity(ctx context.Context, customerOrgID uuid.UUID, since time.Time) ([]activityfeed.Entry, error) {

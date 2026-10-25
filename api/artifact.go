@@ -40,9 +40,8 @@ type ArtifactsResponse struct {
 	ImageUrl      *string `json:"imageUrl,omitempty"`
 	TitleImageUrl *string `json:"titleImageUrl,omitempty"`
 	HiddenInHome  bool    `json:"hiddenInHome"`
-	// LatestVersionName and LastPull are only set for a customer.
-	LatestVersionName *string           `json:"latestVersionName,omitempty"`
-	LastPull          *ArtifactLastPull `json:"lastPull,omitempty"`
+	// LastPull is only set for a customer.
+	LastPull *ArtifactLastPull `json:"lastPull,omitempty"`
 }
 
 // ArtifactLastPull is the most recent pull of a release tag of the artifact by the customer organization.
@@ -52,7 +51,6 @@ type ArtifactLastPull struct {
 	PulledByName         *string   `json:"pulledByName,omitempty"`
 	PulledByImageUrl     *string   `json:"pulledByImageUrl,omitempty"`
 	DeploymentTargetName *string   `json:"deploymentTargetName,omitempty"`
-	IsLatest             bool      `json:"isLatest"`
 }
 
 type ArtifactVersionPullResponse struct {

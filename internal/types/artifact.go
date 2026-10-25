@@ -1,26 +1,16 @@
 package types
 
 import (
-	"regexp"
-	"slices"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/google/uuid"
 )
 
 // NonReleaseTagPattern matches the tags clients push for signatures and attestations, the OCI referrers
 // fallback tag "sha256-<digest>" and the cosign tags "sha256-<digest>.sig", ".att", ".sbom" and ".cosign",
-// so that these are not mistaken for releases. It is used both in Go and in PostgreSQL, so it must stay
-// within the syntax both understand.
+// so that these are not mistaken for releases. It is a PostgreSQL regular expression.
 const NonReleaseTagPattern = `^sha256-[0-9a-f]{64}(\.(sig|att|sbom|cosign))?$`
-
-var nonReleaseTagRegexp = regexp.MustCompile(NonReleaseTagPattern)
-
-func IsReleaseTag(name string) bool {
-	return !nonReleaseTagRegexp.MatchString(name)
-}
 
 type ManifestType string
 
@@ -99,7 +89,7 @@ type ArtifactWithTaggedVersion struct {
 // SignatureArtifactType is the artifact type of a referrer that marks a version as a signature.
 const SignatureArtifactType = "application/vnd.dev.sigstore.bundle.v0.3+json"
 
-// ArtifactReleaseVersion is a tagged version of an artifact with only what LatestArtifactTag needs.
+// ArtifactReleaseVersion is a tagged version of an artifact with its tag names and whether it is a signature.
 type ArtifactReleaseVersion struct {
 	ArtifactID uuid.UUID `db:"artifact_id"`
 	ID         uuid.UUID `db:"id"`
@@ -108,7 +98,8 @@ type ArtifactReleaseVersion struct {
 	Signature  bool      `db:"signature"`
 }
 
-// TaggedArtifactVersionsByArtifact converts the versions for LatestArtifactTag, grouped by their artifact.
+// TaggedArtifactVersionsByArtifact converts the versions, grouped by their artifact. A version that is not a
+// signature gets the generic type, since its manifest is not loaded.
 func TaggedArtifactVersionsByArtifact(versions []ArtifactReleaseVersion) map[uuid.UUID][]TaggedArtifactVersion {
 	result := make(map[uuid.UUID][]TaggedArtifactVersion)
 	for _, v := range versions {
@@ -122,65 +113,4 @@ func TaggedArtifactVersionsByArtifact(versions []ArtifactReleaseVersion) map[uui
 		result[v.ArtifactID] = append(result[v.ArtifactID], tagged)
 	}
 	return result
-}
-
-// LatestArtifactTag returns the newest of the versions along with the tag to show for it. Signatures and
-// tags that are not release tags are skipped. Versions are ordered by their highest SemVer tag, or by
-// creation as soon as one of the release tags is not a SemVer version. The tag shown is the highest
-// SemVer tag of the version, or its first release tag when it has none.
-func LatestArtifactTag(versions []TaggedArtifactVersion) (*TaggedArtifactVersion, string) {
-	type candidate struct {
-		version *TaggedArtifactVersion
-		semver  *semver.Version
-		tag     string
-	}
-	var candidates []candidate
-	bySemver := true
-	for i := range versions {
-		if versions[i].InferredType == ManifestTypeSignature {
-			continue
-		}
-		var c *candidate
-		for _, tag := range versions[i].Tags {
-			if !IsReleaseTag(tag.Name) {
-				continue
-			} else if c == nil {
-				c = &candidate{version: &versions[i], tag: tag.Name}
-			}
-			if parsed, err := semver.NewVersion(tag.Name); err != nil {
-				bySemver = false
-			} else if c.semver == nil || parsed.GreaterThan(c.semver) {
-				c.semver = parsed
-				c.tag = tag.Name
-			}
-		}
-		if c != nil {
-			candidates = append(candidates, *c)
-		}
-	}
-
-	var latest *candidate
-	for i := range candidates {
-		if c := &candidates[i]; latest == nil ||
-			(bySemver && c.semver.GreaterThan(latest.semver)) ||
-			(!bySemver && c.version.CreatedAt.After(latest.version.CreatedAt)) {
-			latest = c
-		}
-	}
-	if latest == nil {
-		return nil, ""
-	}
-	return latest.version, latest.tag
-}
-
-// ArtifactPullIsLatest reports whether the pulled tag points to latest. A tag that none of the versions
-// carries anymore counts as latest, since there is nothing left to compare it with.
-func ArtifactPullIsLatest(versions []TaggedArtifactVersion, latest *TaggedArtifactVersion, pulledTag string) bool {
-	hasTag := func(v TaggedArtifactVersion) bool {
-		return slices.ContainsFunc(v.Tags, func(t ArtifactVersionTag) bool { return t.Name == pulledTag })
-	}
-	if latest != nil && hasTag(*latest) {
-		return true
-	}
-	return !slices.ContainsFunc(versions, hasTag)
 }

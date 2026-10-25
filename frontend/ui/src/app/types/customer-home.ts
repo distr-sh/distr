@@ -45,7 +45,6 @@ export interface CustomerHomeArtifact {
   name: string;
   imageUrl?: string;
   titleImageUrl?: string;
-  latestVersionName?: string;
   lastPull?: CustomerHomeArtifactPull;
 }
 
@@ -54,7 +53,6 @@ export interface CustomerHomeArtifactPull {
   createdAt: string;
   pulledBy?: CustomerHomeUser;
   deploymentTargetName?: string;
-  isLatest: boolean;
 }
 
 export interface CustomerHomeChecklist {

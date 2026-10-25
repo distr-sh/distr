@@ -62,7 +62,7 @@ func getArtifactsByCustomer(r *http.Request) (respond.Responder, error) {
 }
 
 // pulledArtifactsOfCustomer returns the artifacts the customer organization pulled, each with the version it
-// pulled last and whether that is the latest version the customer may pull.
+// pulled last and the versions it may pull.
 func pulledArtifactsOfCustomer(
 	ctx context.Context,
 	artifacts []types.ArtifactWithDownloads,
@@ -96,11 +96,12 @@ func pulledArtifactsOfCustomer(
 			continue
 		}
 		latestPulledVersion := pull.ArtifactVersion.Name
-		latest, _ := types.LatestArtifactTag(versions[artifact.ID])
 		result = append(result, api.DashboardArtifact{
-			Artifact:            mapping.ArtifactToAPI(types.ArtifactWithTaggedVersion{ArtifactWithDownloads: artifact}),
+			Artifact: mapping.ArtifactToAPI(types.ArtifactWithTaggedVersion{
+				ArtifactWithDownloads: artifact,
+				Versions:              versions[artifact.ID],
+			}),
 			LatestPulledVersion: latestPulledVersion,
-			IsLatest:            types.ArtifactPullIsLatest(versions[artifact.ID], latest, latestPulledVersion),
 		})
 	}
 	return result, nil

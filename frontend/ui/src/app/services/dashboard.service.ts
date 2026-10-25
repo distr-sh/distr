@@ -7,7 +7,6 @@ import {ArtifactWithTags} from './artifacts.service';
 export interface DashboardArtifact {
   artifact: ArtifactWithTags;
   latestPulledVersion: string;
-  isLatest: boolean;
 }
 
 export interface ArtifactsByCustomer {
