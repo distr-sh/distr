@@ -45,9 +45,6 @@
         <dt class="distr-text-muted">Last update</dt>
         <dd class="text-gray-900 dark:text-white" [title]="deployment.deploymentRevisionCreatedAt | date: 'medium'">
           {{ deployment.deploymentRevisionCreatedAt | relativeDate }}
-          @if (deployment.deploymentRevisionCreatedBy; as user) {
-            by {{ user.name }}
-          }
         </dd>
 
         <dt class="distr-text-muted">Status</dt>

@@ -57,10 +57,6 @@ export function toCustomerHomeDeploymentTargets(
         updateAvailable: latest !== undefined && latest.id !== deployment.applicationVersionId,
         deploymentRevisionId: deployment.deploymentRevisionId,
         deploymentRevisionCreatedAt: deployment.deploymentRevisionCreatedAt,
-        deploymentRevisionCreatedBy: user(
-          deployment.deploymentRevisionCreatedBy?.name,
-          deployment.deploymentRevisionCreatedBy?.imageId
-        ),
         currentDeploymentRevisionId: deployment.currentDeploymentRevisionId,
         latestStatus: deployment.latestStatus,
         currentStatus: deployment.currentStatus,

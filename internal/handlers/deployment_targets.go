@@ -114,20 +114,13 @@ func getDeploymentTargets(r *http.Request) (respond.Responder, error) {
 	); err != nil {
 		return nil, fmt.Errorf("failed to get DeploymentTargets: %w", err)
 	} else {
-		mapping.ExposeDeploymentRevisionCreators(
-			deploymentTargets, auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID(),
-		)
 		return respond.JSON(deploymentTargets), nil
 	}
 }
 
 func getDeploymentTarget(r *http.Request) (respond.Responder, error) {
-	ctx := r.Context()
-	auth := auth.Authentication.Require(ctx)
-	dt := *internalctx.GetDeploymentTarget(ctx)
-	targets := []types.DeploymentTargetFull{dt}
-	mapping.ExposeDeploymentRevisionCreators(targets, auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
-	return respond.JSON(targets[0]), nil
+	dt := internalctx.GetDeploymentTarget(r.Context())
+	return respond.JSON(dt), nil
 }
 
 func createDeploymentTarget(r *http.Request) (respond.Responder, error) {

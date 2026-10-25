@@ -42,7 +42,6 @@
 - [CustomerOrganizationWithUsage](interfaces/CustomerOrganizationWithUsage.md)
 - [Deployment](interfaces/Deployment.md)
 - [DeploymentRequest](interfaces/DeploymentRequest.md)
-- [DeploymentRevisionCreatedBy](interfaces/DeploymentRevisionCreatedBy.md)
 - [DeploymentRevisionCreator](interfaces/DeploymentRevisionCreator.md)
 - [DeploymentRevisionResponse](interfaces/DeploymentRevisionResponse.md)
 - [DeploymentRevisionStatus](interfaces/DeploymentRevisionStatus.md)

@@ -6,7 +6,7 @@ import {firstValueFrom} from 'rxjs';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {ImageUploadService} from '../../services/image-upload.service';
 
-const TITLE_IMAGE_ACCEPT_DESCRIPTION = 'SVG, PNG, JPG or GIF (recommended size 960px x 540px, max 1 MiB)';
+const TITLE_IMAGE_ACCEPT_DESCRIPTION = 'SVG, PNG, JPG or GIF (recommended size 960px x 540px, max 500 KiB)';
 
 @Component({
   selector: 'app-title-image-picker',

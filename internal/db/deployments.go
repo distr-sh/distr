@@ -35,9 +35,6 @@ const (
 			JOIN Application a ON av.application_id = a.id
 			LEFT JOIN DeploymentRevision dr_current ON dr_current.id = d.current_deployment_revision_id
 			LEFT JOIN ApplicationVersion av_current ON av_current.id = dr_current.application_version_id
-			LEFT JOIN UserAccount u_dr ON u_dr.id = dr.created_by_user_account_id
-			LEFT JOIN Organization_UserAccount j_dr
-				ON j_dr.user_account_id = u_dr.id AND j_dr.organization_id = a.organization_id
 	`
 )
 
@@ -76,15 +73,7 @@ var deploymentWithLatestRevisionOutputExpr = deploymentOutputExpr + `,
 		dr_current.status_message
 	) END AS current_status,
 	dr_current.application_version_id AS current_application_version_id,
-	av_current.name AS current_application_version_name,
-	CASE WHEN u_dr.id IS NOT NULL THEN (
-		u_dr.id,
-		u_dr.name,
-		u_dr.image_id,
-		j_dr.customer_organization_id,
-		j_dr.partner_organization_id,
-		j_dr.user_account_id IS NULL
-	) END AS deployment_revision_creator
+	av_current.name AS current_application_version_name
 `
 
 func GetDeployment(

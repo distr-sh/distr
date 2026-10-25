@@ -21,24 +21,6 @@ func organizationKindRank(customerOrgID, partnerOrgID *uuid.UUID) int {
 	}
 }
 
-// ExposeDeploymentRevisionCreators fills DeploymentRevisionCreatedBy of every deployment whose revision
-// creator the viewer may see by the rule of DeploymentRevisionToAPI.
-func ExposeDeploymentRevisionCreators(
-	targets []types.DeploymentTargetFull,
-	viewerCustomerOrgID, viewerPartnerOrgID *uuid.UUID,
-) {
-	viewerRank := organizationKindRank(viewerCustomerOrgID, viewerPartnerOrgID)
-	for i := range targets {
-		for j := range targets[i].Deployments {
-			deployment := &targets[i].Deployments[j]
-			if creator := deployment.DeploymentRevisionCreator; creator != nil &&
-				organizationKindRank(creator.CustomerOrganizationID, creator.PartnerOrganizationID) >= viewerRank {
-				deployment.DeploymentRevisionCreatedBy = creator
-			}
-		}
-	}
-}
-
 // DeploymentRevisionToAPI returns a mapper that converts a
 // DeploymentRevisionWithCreator to its API representation. The creator's
 // identity (id, name, email) is only included when the viewer is allowed to see

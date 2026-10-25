@@ -161,7 +161,9 @@ func createFileHandler(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-const maxFileSize = 1024 * 1024
+// maxFileSize has to stay well below the request body limit of the API routes (requestSize1MiB in
+// internal/routing/routing.go), which also counts the multipart encoding around the file.
+const maxFileSize = 500 * 1024
 
 func getFileFromRequest(r *http.Request) (*types.File, error) {
 	if err := r.ParseMultipartForm(maxFileSize); err != nil {
@@ -173,7 +175,7 @@ func getFileFromRequest(r *http.Request) (*types.File, error) {
 	if multiPartFile, fileHeader, err := r.FormFile("file"); err != nil {
 		return nil, errors.New("file not found")
 	} else if fileHeader.Size > maxFileSize {
-		return nil, errors.New("file too large (max 1 MiB)")
+		return nil, errors.New("file too large (max 500 KiB)")
 	} else if data, err := io.ReadAll(multiPartFile); err != nil {
 		return nil, err
 	} else {
