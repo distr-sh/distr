@@ -16,7 +16,7 @@
         <li class="ms-8" [class.mb-6]="variant() === 'panel'" [class.mb-4]="variant() === 'card'">
           @if (entry.icon; as icon) {
             <span
-              class="absolute -start-4 flex items-center justify-center size-8 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+              class="absolute -inset-s-4 flex items-center justify-center size-8 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
               <fa-icon [icon]="icon" class="text-xl" />
             </span>
           } @else {
@@ -24,7 +24,7 @@
               [image]="entry.userImageUrl"
               [name]="entry.userName"
               [imageIsLogo]="entry.userImageIsLogo ?? false"
-              class="absolute -start-4 size-8 rounded-full ring-8 ring-white dark:ring-gray-800 bg-gray-100 dark:bg-gray-700" />
+              class="absolute -inset-s-4 size-8 rounded-full ring-8 ring-white dark:ring-gray-800 bg-gray-100 dark:bg-gray-700" />
           }
           @if (entry.link; as link) {
             <a
