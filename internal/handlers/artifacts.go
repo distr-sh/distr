@@ -236,20 +236,6 @@ func visibleArtifacts(ctx context.Context, customerOrgID *uuid.UUID) ([]types.Ar
 	return db.GetArtifactsByEntitlementOwnerID(ctx, orgID, *customerOrgID)
 }
 
-// customerArtifactVersions returns the versions of the artifact that the customer organization may pull,
-// which are restricted by entitlements only when licensing is enabled.
-func customerArtifactVersions(
-	ctx context.Context,
-	artifactID, customerOrgID uuid.UUID,
-	licensing bool,
-) ([]types.TaggedArtifactVersion, error) {
-	var licenseOwnerID *uuid.UUID
-	if licensing {
-		licenseOwnerID = &customerOrgID
-	}
-	return db.GetVersionsForArtifact(ctx, artifactID, licenseOwnerID)
-}
-
 func getArtifact(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	return respond.JSON(mapping.ArtifactToAPI(*internalctx.GetArtifact(ctx))), nil

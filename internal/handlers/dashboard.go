@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
-	"slices"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
@@ -44,34 +44,64 @@ func getArtifactsByCustomer(r *http.Request) (respond.Responder, error) {
 		for i, artifact := range artifacts {
 			artifactIDs[i] = artifact.ID
 		}
-		result := make([]api.ArtifactsByCustomer, 0)
-		for _, customer := range customers {
-			customerRes := api.ArtifactsByCustomer{Customer: mapping.CustomerOrganizationToAPI(customer.CustomerOrganization)}
-			pulls, err := db.GetLatestArtifactPullsOfCustomerOrganization(ctx, *auth.CurrentOrgID(), customer.ID, artifactIDs)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get latest artifact pulls: %w", err)
-			}
-			for _, artifact := range artifacts {
-				i := slices.IndexFunc(pulls, func(p types.CustomerArtifactPull) bool { return p.ArtifactID == artifact.ID })
-				if i < 0 {
-					continue
+		result := make([]api.ArtifactsByCustomer, len(customers))
+		for i, customer := range customers {
+			if pulledArtifacts, err := pulledArtifactsOfCustomer(
+				ctx, artifacts, artifactIDs, customer.ID, licensing,
+			); err != nil {
+				return nil, err
+			} else {
+				result[i] = api.ArtifactsByCustomer{
+					Customer:  mapping.CustomerOrganizationToAPI(customer.CustomerOrganization),
+					Artifacts: pulledArtifacts,
 				}
-				versions, err := customerArtifactVersions(ctx, artifact.ID, customer.ID, licensing)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get versions for artifact: %w", err)
-				}
-				latest, _ := types.LatestArtifactTag(versions)
-				customerRes.Artifacts = append(customerRes.Artifacts, api.DashboardArtifact{
-					Artifact: mapping.ArtifactToAPI(types.ArtifactWithTaggedVersion{
-						ArtifactWithDownloads: artifact,
-						Versions:              versions,
-					}),
-					LatestPulledVersion: pulls[i].VersionName,
-					IsLatest:            types.ArtifactPullIsLatest(versions, latest, pulls[i].VersionName),
-				})
 			}
-			result = append(result, customerRes)
 		}
 		return respond.JSON(result), nil
 	}
+}
+
+// pulledArtifactsOfCustomer returns the artifacts the customer organization pulled, each with the version it
+// pulled last and whether that is the latest version the customer may pull.
+func pulledArtifactsOfCustomer(
+	ctx context.Context,
+	artifacts []types.ArtifactWithDownloads,
+	artifactIDs []uuid.UUID,
+	customerOrgID uuid.UUID,
+	licensing bool,
+) ([]api.DashboardArtifact, error) {
+	orgID := *auth.Authentication.Require(ctx).CurrentOrgID()
+	pulls, err := db.GetLatestArtifactPullsOfCustomerOrganization(ctx, orgID, customerOrgID, artifactIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get latest artifact pulls: %w", err)
+	} else if len(pulls) == 0 {
+		return nil, nil
+	}
+	pullsByArtifact := make(map[uuid.UUID]types.CustomerArtifactPull, len(pulls))
+	pulledArtifactIDs := make([]uuid.UUID, len(pulls))
+	for i, pull := range pulls {
+		pullsByArtifact[pull.ArtifactID] = pull
+		pulledArtifactIDs[i] = pull.ArtifactID
+	}
+	releaseVersions, err := db.ListArtifactReleaseVersions(ctx, pulledArtifactIDs, customerOrgID, licensing)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get artifact versions: %w", err)
+	}
+
+	versions := types.TaggedArtifactVersionsByArtifact(releaseVersions)
+	var result []api.DashboardArtifact
+	for _, artifact := range artifacts {
+		pull, pulled := pullsByArtifact[artifact.ID]
+		if !pulled {
+			continue
+		}
+		latestPulledVersion := pull.VersionName
+		latest, _ := types.LatestArtifactTag(versions[artifact.ID])
+		result = append(result, api.DashboardArtifact{
+			Artifact:            mapping.ArtifactToAPI(types.ArtifactWithTaggedVersion{ArtifactWithDownloads: artifact}),
+			LatestPulledVersion: latestPulledVersion,
+			IsLatest:            types.ArtifactPullIsLatest(versions[artifact.ID], latest, latestPulledVersion),
+		})
+	}
+	return result, nil
 }
