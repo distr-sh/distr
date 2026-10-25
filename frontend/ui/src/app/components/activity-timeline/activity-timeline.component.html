@@ -23,7 +23,7 @@
             <app-avatar
               [image]="entry.userImageUrl"
               [name]="entry.userName"
-              [logo]="entry.userImageIsLogo ?? false"
+              [imageIsLogo]="entry.userImageIsLogo ?? false"
               class="absolute -start-4 size-8 rounded-full ring-8 ring-white dark:ring-gray-800 bg-gray-100 dark:bg-gray-700" />
           }
           @if (entry.link; as link) {
@@ -50,7 +50,7 @@
         <app-avatar
           [image]="entry.userImageUrl"
           [name]="entry.userName"
-          [logo]="entry.userImageIsLogo ?? false"
+          [imageIsLogo]="entry.userImageIsLogo ?? false"
           initialsClass="text-[0.5rem]"
           class="size-5 rounded-full bg-gray-100 dark:bg-gray-700" />
         <span class="font-medium text-gray-700 dark:text-gray-300">{{ entry.userName || 'Someone' }}</span>
