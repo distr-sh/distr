@@ -74,11 +74,11 @@ const (
 	// is limited to an organization, so a query has to scope the pulled artifact to one.
 	customerOrgPullsExpr = `
 	customer_pull AS (
-		SELECT avpl.id, avpl.created_at, avpl.artifact_version_id, avpl.useraccount_id, avpl.deployment_target_id
+		SELECT avpl.id
 		FROM ArtifactVersionPull avpl
 		WHERE avpl.customer_organization_id = @customerOrganizationId
 		UNION ALL
-		SELECT avpl.id, avpl.created_at, avpl.artifact_version_id, avpl.useraccount_id, avpl.deployment_target_id
+		SELECT avpl.id
 		FROM Organization_UserAccount oua
 			JOIN ArtifactVersionPull avpl
 				ON avpl.useraccount_id = oua.user_account_id AND avpl.customer_organization_id IS NULL
@@ -98,6 +98,26 @@ const (
 		v.manifest_data,
 		v.artifact_id `
 )
+
+// artifactVersionPullOutputExpr selects a types.ArtifactVersionPull by position from the pull p joined by
+// artifactVersionPullJoinExpr.
+var artifactVersionPullOutputExpr = `
+	p.id,
+	p.created_at,
+	p.remote_address,
+	p.anonymous,
+	CASE WHEN u.id IS NOT NULL THEN (` + userAccountOutputExpr + `) ELSE NULL END,
+	CASE WHEN co.id IS NOT NULL THEN (` + customerOrganizationOutputExpr + `) ELSE NULL END,
+	CASE WHEN dt.id IS NOT NULL THEN (dt.id, dt.name) ELSE NULL END,
+	(` + artifactRowOutputExpr + `),
+	(` + artifactVersionOutputExpr + `) `
+
+const artifactVersionPullJoinExpr = `
+	LEFT JOIN UserAccount u ON u.id = p.useraccount_id
+	LEFT JOIN CustomerOrganization co ON co.id = p.customer_organization_id
+	LEFT JOIN DeploymentTarget dt ON dt.id = p.deployment_target_id
+	JOIN ArtifactVersion v ON v.id = p.artifact_version_id
+	JOIN Artifact a ON a.id = v.artifact_id `
 
 // An ArtifactVersion is named either after a tag or, for the row that makes a manifest pullable by
 // digest, after its own manifest digest. Every push creates both, and these expressions are the only
@@ -1043,10 +1063,6 @@ func BulkUpsertArtifactVersionParts(ctx context.Context, parts []types.ArtifactV
 	return nil
 }
 
-// GetLatestArtifactPullsOfCustomerOrganization returns the most recent pull of a release tag by the customer
-// organization for each of the given artifacts that it has pulled at all. Pulls of a manifest by digest are
-// left out: a client pulling by tag always resolves the tag first, which is recorded as well, and the child
-// manifests of an index are only ever pulled by digest.
 // GetFirstArtifactVersionPullsOfCustomerOrganization returns the newest first pulls of the users of the
 // customer organization for each release tag of the artifacts created since, at most limit of them.
 // Restricting the tags to those created since makes the first pull since also the first pull ever.
@@ -1056,25 +1072,17 @@ func GetFirstArtifactVersionPullsOfCustomerOrganization(
 	artifactIDs []uuid.UUID,
 	since time.Time,
 	limit int,
-) ([]types.FirstArtifactVersionPull, error) {
+) ([]types.ArtifactVersionPull, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		`WITH `+customerOrgPullsExpr+`
 		SELECT * FROM (
-			SELECT DISTINCT ON (v.id, p.useraccount_id)
-				p.id,
-				p.created_at,
-				a.id AS artifact_id,
-				a.name AS artifact_name,
-				v.name AS version_name,
-				u.name AS user_name,
-				u.image_id AS user_image_id
-			FROM customer_pull p
-				JOIN ArtifactVersion v ON v.id = p.artifact_version_id
-				JOIN Artifact a ON a.id = v.artifact_id
-				JOIN UserAccount u ON u.id = p.useraccount_id
+			SELECT DISTINCT ON (v.id, p.useraccount_id) `+artifactVersionPullOutputExpr+`
+			FROM customer_pull cp
+				JOIN ArtifactVersionPull p ON p.id = cp.id `+artifactVersionPullJoinExpr+`
 			WHERE a.organization_id = @orgId
 				AND a.id = any(@artifactIds)
+				AND p.useraccount_id IS NOT NULL
 				AND v.created_at > @since
 				AND `+artifactVersionIsReleaseTagExpr("v")+`
 			ORDER BY v.id, p.useraccount_id, p.created_at
@@ -1092,33 +1100,28 @@ func GetFirstArtifactVersionPullsOfCustomerOrganization(
 	if err != nil {
 		return nil, fmt.Errorf("failed to query first artifact version pulls: %w", err)
 	}
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.FirstArtifactVersionPull])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.ArtifactVersionPull])
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect first artifact version pulls: %w", err)
 	}
 	return result, nil
 }
 
+// GetLatestArtifactPullsOfCustomerOrganization returns the most recent pull of a release tag by the customer
+// organization for each of the given artifacts that it has pulled at all. Pulls of a manifest by digest are
+// left out: a client pulling by tag always resolves the tag first, which is recorded as well, and the child
+// manifests of an index are only ever pulled by digest.
 func GetLatestArtifactPullsOfCustomerOrganization(
 	ctx context.Context,
 	orgID, customerOrgID uuid.UUID,
 	artifactIDs []uuid.UUID,
-) ([]types.CustomerArtifactPull, error) {
+) ([]types.ArtifactVersionPull, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		`WITH `+customerOrgPullsExpr+`
-		SELECT DISTINCT ON (v.artifact_id)
-			v.artifact_id,
-			v.name AS version_name,
-			p.created_at,
-			u.name AS user_name,
-			u.image_id AS user_image_id,
-			dt.name AS deployment_target_name
-		FROM customer_pull p
-			JOIN ArtifactVersion v ON v.id = p.artifact_version_id
-			JOIN Artifact a ON a.id = v.artifact_id
-			LEFT JOIN UserAccount u ON u.id = p.useraccount_id
-			LEFT JOIN DeploymentTarget dt ON dt.id = p.deployment_target_id
+		SELECT DISTINCT ON (v.artifact_id) `+artifactVersionPullOutputExpr+`
+		FROM customer_pull cp
+			JOIN ArtifactVersionPull p ON p.id = cp.id `+artifactVersionPullJoinExpr+`
 		WHERE a.organization_id = @orgId
 			AND v.artifact_id = any(@artifactIds)
 			AND `+artifactVersionIsReleaseTagExpr("v")+`
@@ -1128,7 +1131,7 @@ func GetLatestArtifactPullsOfCustomerOrganization(
 	if err != nil {
 		return nil, fmt.Errorf("failed to query latest artifact pulls: %w", err)
 	}
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.CustomerArtifactPull])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.ArtifactVersionPull])
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect latest artifact pulls: %w", err)
 	}
@@ -1411,21 +1414,8 @@ func GetArtifactVersionPulls(
 		args["deploymentTargetId"] = *filter.DeploymentTargetID
 	}
 
-	query := `SELECT
-			p.created_at,
-			p.remote_address,
-			p.anonymous,
-			CASE WHEN u.id IS NOT NULL THEN (` + userAccountOutputExpr + `) ELSE NULL END,
-			CASE WHEN co.id IS NOT NULL THEN (` + customerOrganizationOutputExpr + `) ELSE NULL END,
-			CASE WHEN dt.id IS NOT NULL THEN (dt.id, dt.name) ELSE NULL END,
-			(` + artifactRowOutputExpr + `),
-			(` + artifactVersionOutputExpr + `)
-		FROM ArtifactVersionPull p
-			LEFT JOIN UserAccount u ON u.id = p.useraccount_id
-			LEFT JOIN CustomerOrganization co ON co.id = p.customer_organization_id
-			LEFT JOIN DeploymentTarget dt ON dt.id = p.deployment_target_id
-			JOIN ArtifactVersion v ON v.id = p.artifact_version_id
-			JOIN Artifact a ON a.id = v.artifact_id
+	query := `SELECT ` + artifactVersionPullOutputExpr + `
+		FROM ArtifactVersionPull p ` + artifactVersionPullJoinExpr + `
 		WHERE ` + strings.Join(conditions, " AND ") + `
 		ORDER BY p.created_at DESC
 		LIMIT @count`

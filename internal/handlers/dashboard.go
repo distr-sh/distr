@@ -77,11 +77,11 @@ func pulledArtifactsOfCustomer(
 	} else if len(pulls) == 0 {
 		return nil, nil
 	}
-	pullsByArtifact := make(map[uuid.UUID]types.CustomerArtifactPull, len(pulls))
+	pullsByArtifact := make(map[uuid.UUID]types.ArtifactVersionPull, len(pulls))
 	pulledArtifactIDs := make([]uuid.UUID, len(pulls))
 	for i, pull := range pulls {
-		pullsByArtifact[pull.ArtifactID] = pull
-		pulledArtifactIDs[i] = pull.ArtifactID
+		pullsByArtifact[pull.Artifact.ID] = pull
+		pulledArtifactIDs[i] = pull.Artifact.ID
 	}
 	releaseVersions, err := db.ListArtifactReleaseVersions(ctx, pulledArtifactIDs, customerOrgID, licensing)
 	if err != nil {
@@ -95,7 +95,7 @@ func pulledArtifactsOfCustomer(
 		if !pulled {
 			continue
 		}
-		latestPulledVersion := pull.VersionName
+		latestPulledVersion := pull.ArtifactVersion.Name
 		latest, _ := types.LatestArtifactTag(versions[artifact.ID])
 		result = append(result, api.DashboardArtifact{
 			Artifact:            mapping.ArtifactToAPI(types.ArtifactWithTaggedVersion{ArtifactWithDownloads: artifact}),

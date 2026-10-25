@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"slices"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
@@ -194,15 +193,13 @@ func customerArtifactsToAPI(
 		return nil, fmt.Errorf("failed to get artifact versions: %w", err)
 	}
 	versions := types.TaggedArtifactVersionsByArtifact(releaseVersions)
+	pullsByArtifact := make(map[uuid.UUID]*types.ArtifactVersionPull, len(pulls))
+	for i := range pulls {
+		pullsByArtifact[pulls[i].Artifact.ID] = &pulls[i]
+	}
 	result := make([]api.ArtifactsResponse, len(artifacts))
 	for i, artifact := range artifacts {
-		var pull *types.CustomerArtifactPull
-		if j := slices.IndexFunc(pulls, func(p types.CustomerArtifactPull) bool {
-			return p.ArtifactID == artifact.ID
-		}); j >= 0 {
-			pull = &pulls[j]
-		}
-		result[i] = mapping.CustomerArtifactToAPI(artifact, versions[artifact.ID], pull)
+		result[i] = mapping.CustomerArtifactToAPI(artifact, versions[artifact.ID], pullsByArtifact[artifact.ID])
 	}
 	return result, nil
 }

@@ -96,16 +96,6 @@ type ArtifactWithTaggedVersion struct {
 	Versions []TaggedArtifactVersion `db:"versions" json:"versions"`
 }
 
-// CustomerArtifactPull is the most recent pull of a release tag of an artifact by a customer organization.
-type CustomerArtifactPull struct {
-	ArtifactID           uuid.UUID  `db:"artifact_id"`
-	VersionName          string     `db:"version_name"`
-	CreatedAt            time.Time  `db:"created_at"`
-	UserName             *string    `db:"user_name"`
-	UserImageID          *uuid.UUID `db:"user_image_id"`
-	DeploymentTargetName *string    `db:"deployment_target_name"`
-}
-
 // SignatureArtifactType is the artifact type of a referrer that marks a version as a signature.
 const SignatureArtifactType = "application/vnd.dev.sigstore.bundle.v0.3+json"
 
@@ -132,18 +122,6 @@ func TaggedArtifactVersionsByArtifact(versions []ArtifactReleaseVersion) map[uui
 		result[v.ArtifactID] = append(result[v.ArtifactID], tagged)
 	}
 	return result
-}
-
-// FirstArtifactVersionPull is the first pull of a release tag of an artifact by a user of a customer
-// organization.
-type FirstArtifactVersionPull struct {
-	ID           uuid.UUID  `db:"id"`
-	CreatedAt    time.Time  `db:"created_at"`
-	ArtifactID   uuid.UUID  `db:"artifact_id"`
-	ArtifactName string     `db:"artifact_name"`
-	VersionName  string     `db:"version_name"`
-	UserName     *string    `db:"user_name"`
-	UserImageID  *uuid.UUID `db:"user_image_id"`
 }
 
 // LatestArtifactTag returns the newest of the versions along with the tag to show for it. Signatures and

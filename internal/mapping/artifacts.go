@@ -28,7 +28,7 @@ func ArtifactsWithDownloadsToAPI(a types.ArtifactWithDownloads) api.ArtifactsRes
 func CustomerArtifactToAPI(
 	a types.ArtifactWithDownloads,
 	versions []types.TaggedArtifactVersion,
-	pull *types.CustomerArtifactPull,
+	pull *types.ArtifactVersionPull,
 ) api.ArtifactsResponse {
 	result := ArtifactsWithDownloadsToAPI(a)
 	latest, latestTag := types.LatestArtifactTag(versions)
@@ -37,12 +37,16 @@ func CustomerArtifactToAPI(
 	}
 	if pull != nil {
 		result.LastPull = &api.ArtifactLastPull{
-			VersionName:          pull.VersionName,
-			CreatedAt:            pull.CreatedAt,
-			PulledByName:         pull.UserName,
-			PulledByImageUrl:     CreateImageURL(pull.UserImageID),
-			DeploymentTargetName: pull.DeploymentTargetName,
-			IsLatest:             types.ArtifactPullIsLatest(versions, latest, pull.VersionName),
+			VersionName: pull.ArtifactVersion.Name,
+			CreatedAt:   pull.CreatedAt,
+			IsLatest:    types.ArtifactPullIsLatest(versions, latest, pull.ArtifactVersion.Name),
+		}
+		if pull.UserAccount != nil {
+			result.LastPull.PulledByName = &pull.UserAccount.Name
+			result.LastPull.PulledByImageUrl = CreateImageURL(pull.UserAccount.ImageID)
+		}
+		if pull.DeploymentTarget != nil {
+			result.LastPull.DeploymentTargetName = &pull.DeploymentTarget.Name
 		}
 	}
 	return result

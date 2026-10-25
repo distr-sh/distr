@@ -100,17 +100,19 @@ func ArtifactVersions(
 	return result
 }
 
-func FirstPulls(pulls []types.FirstArtifactVersionPull) []Entry {
+func FirstPulls(pulls []types.ArtifactVersionPull) []Entry {
 	result := make([]Entry, len(pulls))
 	for i, pull := range pulls {
 		result[i] = Entry{
 			ID:         pull.ID,
 			CreatedAt:  pull.CreatedAt,
 			Type:       EntryTypeArtifactVersionFirstPulled,
-			ResourceID: pull.ArtifactID,
-			Subject:    pull.ArtifactName,
-			Detail:     new(pull.VersionName),
-			User:       newUser(pull.UserName, pull.UserImageID),
+			ResourceID: pull.Artifact.ID,
+			Subject:    pull.Artifact.Name,
+			Detail:     new(pull.ArtifactVersion.Name),
+		}
+		if pull.UserAccount != nil {
+			result[i].User = &User{Name: pull.UserAccount.Name, ImageID: pull.UserAccount.ImageID}
 		}
 	}
 	return result
