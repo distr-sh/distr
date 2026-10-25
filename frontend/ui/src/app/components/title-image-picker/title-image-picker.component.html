@@ -2,7 +2,7 @@
   type="button"
   class="w-32 aspect-video shrink-0 rounded-md overflow-hidden border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 flex items-center justify-center text-gray-400 enabled:cursor-pointer enabled:hover:border-primary-500"
   aria-label="Title image"
-  [disabled]="!editable()"
+  [disabled]="!editable"
   (click)="pick()">
   @if (imageUrl(); as url) {
     <img class="size-full object-cover" [attr.src]="url | secureImage | async" alt="Title image" />

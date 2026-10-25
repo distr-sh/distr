@@ -100,8 +100,7 @@ export class CustomerHomePageComponent {
   private readonly organizationService = inject(OrganizationService);
   private readonly toast = inject(ToastService);
 
-  protected readonly canWrite = this.auth.hasAnyRole('read_write', 'admin');
-  protected readonly isAdmin = this.auth.hasRole('admin');
+  private readonly canWrite = this.auth.hasAnyRole('read_write', 'admin');
 
   private readonly customerOrganization$ = this.context.getCustomerOrganization().pipe(take(1), shareReplay(1));
   private readonly features$ = this.customerOrganization$.pipe(

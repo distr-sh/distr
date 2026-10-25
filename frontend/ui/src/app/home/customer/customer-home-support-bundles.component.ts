@@ -5,6 +5,7 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faLifeRing, faPlus} from '@fortawesome/free-solid-svg-icons';
 import {RelativeDatePipe} from '../../../util/dates';
 import {CardHeadingComponent} from '../../components/card-heading.component';
+import {AuthService} from '../../services/auth.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SupportBundleCreateDialogComponent} from '../../support-bundles/create-dialog/support-bundle-create-dialog.component';
 import {SupportBundleStatusBadgeComponent} from '../../support-bundles/support-bundle-status-badge.component';
@@ -29,8 +30,9 @@ export class CustomerHomeSupportBundlesComponent {
   private readonly overlay = inject(OverlayService);
 
   public readonly supportBundles = input.required<CustomerHomeSupportBundle[]>();
-  public readonly canCreate = input.required<boolean>();
   public readonly created = output<void>();
+
+  protected readonly canCreate = inject(AuthService).hasAnyRole('read_write', 'admin');
 
   protected readonly faLifeRing = faLifeRing;
   protected readonly faPlus = faPlus;

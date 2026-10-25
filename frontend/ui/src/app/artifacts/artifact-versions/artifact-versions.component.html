@@ -38,7 +38,6 @@
               <app-title-image-picker
                 class="me-4 self-start"
                 [imageUrl]="artifact.titleImageUrl"
-                [editable]="auth.hasAnyRole('read_write', 'admin')"
                 (picked)="updateTitleImage(artifact, $event)" />
             }
 

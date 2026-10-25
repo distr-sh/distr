@@ -4,12 +4,10 @@ import {DeploymentRevisionStatus, DeploymentStatusType, DeploymentWithLatestRevi
 import {never} from '../../../util/exhaust';
 import {isStale} from '../../../util/model';
 import {AbstractStatusDotDirective} from '../../components/status-dot';
+import {CustomerHomeDeployment} from '../../types/customer-home';
 import {DeploymentStatusBadgeComponent} from '../deployment-status-badge.component';
 
-export type DeploymentStatusSource = Pick<
-  DeploymentWithLatestRevision,
-  'deploymentRevisionId' | 'currentDeploymentRevisionId' | 'latestStatus' | 'currentStatus'
->;
+export type DeploymentStatusSource = DeploymentWithLatestRevision | CustomerHomeDeployment;
 
 function currentStatus(deployment: DeploymentStatusSource): DeploymentRevisionStatus | undefined {
   return deployment.currentStatus ?? deployment.latestStatus;

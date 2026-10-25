@@ -1,10 +1,11 @@
 import {NgTemplateOutlet} from '@angular/common';
-import {Component, computed, input} from '@angular/core';
+import {Component, computed, inject, input} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircle} from '@fortawesome/free-regular-svg-icons';
 import {faCircleCheck, faListCheck} from '@fortawesome/free-solid-svg-icons';
 import {CardHeadingComponent} from '../../components/card-heading.component';
+import {AuthService} from '../../services/auth.service';
 import {CustomerHomeChecklist} from '../../types/customer-home';
 import {CustomerHomePrimarySection} from './customer-home-deployments.component';
 
@@ -21,9 +22,10 @@ interface ChecklistItem {
   imports: [NgTemplateOutlet, RouterLink, FaIconComponent, CardHeadingComponent],
 })
 export class CustomerHomeChecklistComponent {
+  private readonly canInvite = inject(AuthService).hasRole('admin');
+
   public readonly checklist = input.required<CustomerHomeChecklist>();
   public readonly section = input.required<CustomerHomePrimarySection>();
-  public readonly canInvite = input.required<boolean>();
 
   protected readonly faCircle = faCircle;
   protected readonly faCircleCheck = faCircleCheck;
@@ -42,7 +44,7 @@ export class CustomerHomeChecklistComponent {
         label: 'Invite team members',
         hint: 'Give your colleagues access.',
         done: checklist.teamMembersInvited,
-        link: this.canInvite() ? '/users' : undefined,
+        link: this.canInvite ? '/users' : undefined,
       },
     ];
     if (this.section() === 'deployments') {

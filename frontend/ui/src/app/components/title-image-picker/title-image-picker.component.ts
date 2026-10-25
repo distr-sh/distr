@@ -4,6 +4,7 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faImage} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {SecureImagePipe} from '../../../util/secureImage';
+import {AuthService} from '../../services/auth.service';
 import {ImageUploadService} from '../../services/image-upload.service';
 
 const TITLE_IMAGE_ACCEPT_DESCRIPTION = 'SVG, PNG, JPG or GIF (recommended size 960px x 540px, max 500 KiB)';
@@ -16,10 +17,12 @@ const TITLE_IMAGE_ACCEPT_DESCRIPTION = 'SVG, PNG, JPG or GIF (recommended size 9
 })
 export class TitleImagePickerComponent {
   private readonly imageUploadService = inject(ImageUploadService);
+  private readonly auth = inject(AuthService);
 
   public readonly imageUrl = input<string>();
-  public readonly editable = input(false);
   public readonly picked = output<string>();
+
+  protected readonly editable = this.auth.hasAnyRole('read_write', 'admin');
 
   protected readonly faImage = faImage;
 

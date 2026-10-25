@@ -1,6 +1,6 @@
 @let configured = alerts().alertConfigurationCount > 0;
 <a
-  [routerLink]="!configured && canConfigure() ? '/notifications/alert-configurations' : '/notifications/history'"
+  [routerLink]="!configured && canConfigure ? '/notifications/alert-configurations' : '/notifications/history'"
   class="distr-card block p-4 hover:shadow-md transition-shadow">
   <h2 appCardHeading [icon]="faBell" class="mb-3">Alerts</h2>
 
@@ -12,7 +12,7 @@
     </span>
   } @else {
     <p class="text-sm distr-text-muted">You are not notified about problems with your deployments yet.</p>
-    @if (canConfigure()) {
+    @if (canConfigure) {
       <span
         class="mt-3 inline-flex items-center py-2 px-4 text-sm distr-btn-secondary hover:text-gray-900 dark:hover:text-white"
         >Configure alerts</span

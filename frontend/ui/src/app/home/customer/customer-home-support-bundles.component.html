@@ -5,7 +5,7 @@
 
   @if (supportBundles().length === 0) {
     <p class="text-sm distr-text-muted">Collect logs and configuration from your environment to share with support.</p>
-    @if (canCreate()) {
+    @if (canCreate) {
       <button
         type="button"
         (click)="openCreateDialog()"
