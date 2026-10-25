@@ -28,8 +28,8 @@
                 @if (artifact.public) {
                   <app-artifact-public-badge />
                 }
-                @if (auth.isVendor() && artifact.hiddenInHome) {
-                  <span class="distr-badge distr-badge-neutral">Hidden in home</span>
+                @if (auth.isVendor() && !artifact.featured) {
+                  <span class="distr-badge distr-badge-neutral">Not featured</span>
                 }
               </p>
             </div>
@@ -102,13 +102,12 @@
                       </li>
                     }
                     <li>
-                      <button class="distr-dropdown-item" (click)="setHiddenInHome(artifact, !artifact.hiddenInHome)">
-                        @if (artifact.hiddenInHome) {
-                          <fa-icon [icon]="faEye" />
-                          Show in home
+                      <button class="distr-dropdown-item" (click)="setFeatured(artifact, !artifact.featured)">
+                        <fa-icon [icon]="faStar" />
+                        @if (artifact.featured) {
+                          Remove from featured
                         } @else {
-                          <fa-icon [icon]="faEyeSlash" />
-                          Hide in home
+                          Mark as featured
                         }
                       </button>
                     </li>

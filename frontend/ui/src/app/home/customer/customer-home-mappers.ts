@@ -69,7 +69,7 @@ export function toCustomerHomeArtifacts(artifacts: Artifact[]): CustomerHomeArti
   return {
     hasPulled: artifacts.some((artifact) => artifact.lastPull !== undefined),
     artifacts: artifacts
-      .filter((artifact) => !artifact.hiddenInHome)
+      .filter((artifact) => artifact.featured)
       .map((artifact) => ({
         id: artifact.id,
         name: artifact.name,

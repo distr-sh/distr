@@ -31,7 +31,7 @@ var (
 
 func artifactOutputExprWith(upstreamCredential func(EncryptedColumn, string) string) string {
 	return ` a.id, a.created_at, a.organization_id, a.name, a.image_id, a.title_image_id, a.public, ` +
-		`a.hidden_in_home, ` +
+		`a.featured, ` +
 		`a.upstream_url, a.last_synced_at, a.last_sync_error, a.upstream_auth_type, ` +
 		upstreamCredential(artifactUpstreamUsername, "a") + `, ` +
 		upstreamCredential(artifactUpstreamPassword, "a") + ` `
@@ -697,18 +697,18 @@ func UpdateArtifactPublic(ctx context.Context, artifactID, organizationID uuid.U
 	return nil
 }
 
-func UpdateArtifactHiddenInHome(
+func UpdateArtifactFeatured(
 	ctx context.Context,
 	artifactID, organizationID uuid.UUID,
-	hidden bool,
+	featured bool,
 ) error {
 	db := internalctx.GetDb(ctx)
 	_, err := db.Exec(ctx,
-		`UPDATE Artifact SET hidden_in_home = @hidden WHERE id = @id AND organization_id = @organizationId`,
-		pgx.NamedArgs{"id": artifactID, "organizationId": organizationID, "hidden": hidden},
+		`UPDATE Artifact SET featured = @featured WHERE id = @id AND organization_id = @organizationId`,
+		pgx.NamedArgs{"id": artifactID, "organizationId": organizationID, "featured": featured},
 	)
 	if err != nil {
-		return fmt.Errorf("could not update artifact home page visibility: %w", err)
+		return fmt.Errorf("could not update whether the artifact is featured: %w", err)
 	}
 	return nil
 }

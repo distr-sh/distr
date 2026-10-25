@@ -10,7 +10,7 @@ func ArtifactToAPI(a types.ArtifactWithTaggedVersion) api.ArtifactResponse {
 		ArtifactWithTaggedVersion: a,
 		ImageUrl:                  CreateImageURL(a.ImageID),
 		TitleImageUrl:             CreateImageURL(a.TitleImageID),
-		HiddenInHome:              a.HiddenInHome,
+		Featured:                  a.Featured,
 	}
 }
 
@@ -19,7 +19,7 @@ func ArtifactsWithDownloadsToAPI(a types.ArtifactWithDownloads) api.ArtifactsRes
 		ArtifactWithDownloads: a,
 		ImageUrl:              CreateImageURL(a.ImageID),
 		TitleImageUrl:         CreateImageURL(a.TitleImageID),
-		HiddenInHome:          a.HiddenInHome,
+		Featured:              a.Featured,
 	}
 }
 

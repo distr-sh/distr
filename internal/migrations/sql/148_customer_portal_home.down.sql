@@ -8,6 +8,6 @@ DROP INDEX fk_ArtifactVersionPull_useraccount_id;
 CREATE INDEX fk_DeploymentRevision_deployment_id ON DeploymentRevision (deployment_id);
 DROP INDEX idx_deploymentrevision_deployment_id_created_at;
 
-ALTER TABLE Artifact DROP COLUMN hidden_in_home;
+ALTER TABLE Artifact DROP COLUMN featured;
 ALTER TABLE Artifact DROP COLUMN title_image_id;
 ALTER TABLE Application DROP COLUMN title_image_id;

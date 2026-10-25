@@ -1,6 +1,6 @@
 ALTER TABLE Application ADD COLUMN title_image_id UUID REFERENCES File (id) ON DELETE SET NULL;
 ALTER TABLE Artifact ADD COLUMN title_image_id UUID REFERENCES File (id) ON DELETE SET NULL;
-ALTER TABLE Artifact ADD COLUMN hidden_in_home BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE Artifact ADD COLUMN featured BOOLEAN NOT NULL DEFAULT true;
 
 CREATE INDEX fk_Application_title_image_id ON Application (title_image_id) WHERE title_image_id IS NOT NULL;
 CREATE INDEX fk_Artifact_title_image_id ON Artifact (title_image_id) WHERE title_image_id IS NOT NULL;

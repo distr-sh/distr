@@ -22,24 +22,24 @@ type CreateArtifactRequest struct {
 // PatchArtifactRequest supports partial updates: omitted fields are left unchanged.
 // For auth, explicit null clears the credentials.
 type PatchArtifactRequest struct {
-	UpstreamURL  *string                        `json:"upstreamUrl,omitempty"`
-	Auth         Nullable[ArtifactUpstreamAuth] `json:"auth"`
-	Public       *bool                          `json:"public,omitempty"`
-	HiddenInHome *bool                          `json:"hiddenInHome,omitempty"`
+	UpstreamURL *string                        `json:"upstreamUrl,omitempty"`
+	Auth        Nullable[ArtifactUpstreamAuth] `json:"auth"`
+	Public      *bool                          `json:"public,omitempty"`
+	Featured    *bool                          `json:"featured,omitempty"`
 }
 
 type ArtifactResponse struct {
 	types.ArtifactWithTaggedVersion
 	ImageUrl      *string `json:"imageUrl,omitempty"`
 	TitleImageUrl *string `json:"titleImageUrl,omitempty"`
-	HiddenInHome  bool    `json:"hiddenInHome"`
+	Featured      bool    `json:"featured"`
 }
 
 type ArtifactsResponse struct {
 	types.ArtifactWithDownloads
 	ImageUrl      *string `json:"imageUrl,omitempty"`
 	TitleImageUrl *string `json:"titleImageUrl,omitempty"`
-	HiddenInHome  bool    `json:"hiddenInHome"`
+	Featured      bool    `json:"featured"`
 	// LastPull is only set for a customer.
 	LastPull *ArtifactLastPull `json:"lastPull,omitempty"`
 }

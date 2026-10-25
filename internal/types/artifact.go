@@ -29,14 +29,16 @@ const (
 )
 
 type Artifact struct {
-	ID               uuid.UUID         `db:"id" json:"id"`
-	CreatedAt        time.Time         `db:"created_at" json:"createdAt"`
-	OrganizationID   uuid.UUID         `db:"organization_id" json:"-"`
-	Name             string            `db:"name" json:"name"`
-	ImageID          *uuid.UUID        `db:"image_id" json:"-"`
-	TitleImageID     *uuid.UUID        `db:"title_image_id" json:"-"`
-	Public           bool              `db:"public" json:"public"`
-	HiddenInHome     bool              `db:"hidden_in_home" json:"-"`
+	ID             uuid.UUID  `db:"id" json:"id"`
+	CreatedAt      time.Time  `db:"created_at" json:"createdAt"`
+	OrganizationID uuid.UUID  `db:"organization_id" json:"-"`
+	Name           string     `db:"name" json:"name"`
+	ImageID        *uuid.UUID `db:"image_id" json:"-"`
+	TitleImageID   *uuid.UUID `db:"title_image_id" json:"-"`
+	Public         bool       `db:"public" json:"public"`
+	// Featured marks one of the main artifacts of the vendor's applications, which the Customer Portal home
+	// page shows.
+	Featured         bool              `db:"featured" json:"-"`
 	UpstreamURL      *string           `db:"upstream_url" json:"upstreamUrl,omitempty"`
 	LastSyncedAt     *time.Time        `db:"last_synced_at" json:"lastSyncedAt,omitempty"`
 	LastSyncError    *string           `db:"last_sync_error" json:"lastSyncError,omitempty"`

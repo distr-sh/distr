@@ -65,7 +65,7 @@ func ArtifactsRouter(r chiopenapi.Router) {
 				r.Patch("/", respond.Handler(patchArtifactHandler)).
 					With(option.Description(
 						"Update artifact upstream URL and/or authentication, its public visibility " +
-							"or whether it is hidden on the Customer Portal home page")).
+							"or whether it is featured")).
 					With(option.Request(struct {
 						ArtifactRequest
 						api.PatchArtifactRequest
@@ -349,9 +349,9 @@ func patchArtifactHandler(r *http.Request) (respond.Responder, error) {
 				return err
 			}
 		}
-		if body.HiddenInHome != nil {
-			return db.UpdateArtifactHiddenInHome(
-				ctx, artifact.ID, artifact.OrganizationID, *body.HiddenInHome,
+		if body.Featured != nil {
+			return db.UpdateArtifactFeatured(
+				ctx, artifact.ID, artifact.OrganizationID, *body.Featured,
 			)
 		}
 		return nil

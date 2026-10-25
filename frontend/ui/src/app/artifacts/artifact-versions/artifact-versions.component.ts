@@ -10,14 +10,13 @@ import {
   faCheck,
   faCircleExclamation,
   faEllipsisVertical,
-  faEye,
-  faEyeSlash,
   faFileSignature,
   faGlobe,
   faKey,
   faLock,
   faPen,
   faRotate,
+  faStar,
   faTrash,
   faTriangleExclamation,
   faXmark,
@@ -122,8 +121,7 @@ export class ArtifactVersionsComponent {
   protected readonly faCheck = faCheck;
   protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faTriangleExclamation = faTriangleExclamation;
-  protected readonly faEye = faEye;
-  protected readonly faEyeSlash = faEyeSlash;
+  protected readonly faStar = faStar;
 
   protected readonly syncing = signal(false);
 
@@ -373,11 +371,11 @@ export class ArtifactVersionsComponent {
     }
   }
 
-  protected async setHiddenInHome(artifact: ArtifactWithTags, hidden: boolean) {
+  protected async setFeatured(artifact: ArtifactWithTags, featured: boolean) {
     this.showDropdown.set(false);
     try {
-      await firstValueFrom(this.artifacts.patchArtifact(artifact.id, {hiddenInHome: hidden}));
-      this.toast.success(hidden ? 'Artifact is hidden in home' : 'Artifact is shown in home');
+      await firstValueFrom(this.artifacts.patchArtifact(artifact.id, {featured}));
+      this.toast.success(featured ? 'Artifact is featured' : 'Artifact is no longer featured');
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) this.toast.error(msg);

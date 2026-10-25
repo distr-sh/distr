@@ -38,7 +38,7 @@ export interface ArtifactUpstreamAuth {
 
 export interface Artifact extends BaseArtifact, HasDownloads {
   public: boolean;
-  hiddenInHome: boolean;
+  featured: boolean;
   upstreamUrl?: string;
   lastSyncedAt?: string;
   lastSyncError?: string;
@@ -73,7 +73,7 @@ export interface PatchArtifactRequest {
   upstreamUrl?: string | null;
   auth?: ArtifactUpstreamAuth | null;
   public?: boolean;
-  hiddenInHome?: boolean;
+  featured?: boolean;
 }
 
 class ArtifactsReactiveList extends ReactiveList<ArtifactWithTags> {
