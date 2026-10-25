@@ -133,7 +133,7 @@ export class CustomerHomePageComponent {
   private readonly rawDeploymentTargets$ = this.whenFeature('deployment_targets', [], () =>
     this.reloadDeploymentTargets$.pipe(
       startWith(undefined),
-      switchMap(() => this.deploymentTargetsService.poll().pipe(take(1)))
+      switchMap(() => this.deploymentTargetsService.refresh())
     )
   ).pipe(shareReplay({bufferSize: 1, refCount: true}));
 
@@ -239,7 +239,7 @@ export class CustomerHomePageComponent {
     combineLatest({
       user: this.context.getUser(),
       userCount: this.usersService.getUsers().pipe(map((users) => users.length)),
-      deploymentTargets: this.rawDeploymentTargets$.pipe(take(1)),
+      deploymentTargets: this.rawDeploymentTargets$,
       secretCount: this.whenFeature('deployment_targets', 0, () =>
         this.secretsService.list().pipe(map((secrets) => secrets.length))
       ),
