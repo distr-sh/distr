@@ -73,7 +73,9 @@
         <div class="distr-panel">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Description</h2>
           @if (advisory.description) {
-            <div class="markdown text-gray-900 dark:text-white" [innerMarkdown]="advisory.description"></div>
+            <div
+              class="markdown markdown-compact text-gray-900 dark:text-white"
+              [innerMarkdown]="advisory.description"></div>
           } @else {
             <p class="text-sm text-gray-500 dark:text-gray-400">No description provided.</p>
           }

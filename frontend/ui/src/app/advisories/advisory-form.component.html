@@ -77,7 +77,9 @@
               </button>
             </div>
             @if (descriptionPreview()) {
-              <div class="markdown distr-input min-h-40" [innerMarkdown]="form.controls.description.value"></div>
+              <div
+                class="markdown markdown-compact distr-input min-h-40"
+                [innerMarkdown]="form.controls.description.value"></div>
             } @else {
               <textarea
                 formControlName="description"
