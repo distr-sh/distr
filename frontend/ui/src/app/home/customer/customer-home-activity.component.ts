@@ -1,4 +1,6 @@
+import {DatePipe} from '@angular/common';
 import {Component, computed, input, signal} from '@angular/core';
+import {Params, RouterLink} from '@angular/router';
 import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
 import {
   faBox,
@@ -11,16 +13,25 @@ import {
   faKey,
   faLifeRing,
 } from '@fortawesome/free-solid-svg-icons';
+import {RelativeDatePipe} from '../../../util/dates';
 import {never} from '../../../util/exhaust';
-import {
-  ActivityTimelineComponent,
-  ActivityTimelineEntry,
-} from '../../components/activity-timeline/activity-timeline.component';
+import {AvatarComponent} from '../../components/avatar.component';
+import {CardHeadingComponent} from '../../components/card-heading.component';
 import {CustomerHomeActivity} from '../../types/customer-home';
+
+interface ActivityEntry {
+  id: string;
+  createdAt: string;
+  action: string;
+  icon: IconDefinition;
+  link: string;
+  queryParams?: Params;
+  user?: {name: string; imageUrl?: string; isVendor: boolean};
+}
 
 @Component({
   selector: 'app-customer-home-activity',
-  imports: [ActivityTimelineComponent, FaIconComponent],
+  imports: [DatePipe, RouterLink, FaIconComponent, RelativeDatePipe, AvatarComponent, CardHeadingComponent],
   templateUrl: './customer-home-activity.component.html',
 })
 export class CustomerHomeActivityComponent {
@@ -35,22 +46,26 @@ export class CustomerHomeActivityComponent {
   protected readonly collapsedEntryCount = 5;
   protected readonly expanded = signal(false);
 
-  protected readonly entries = computed<ActivityTimelineEntry[]>(() =>
+  protected readonly entries = computed<ActivityEntry[]>(() =>
     this.activity().map((activity) => {
       const byVendor =
         activity.type === 'application_version_created' ||
         activity.type === 'artifact_version_created' ||
         activity.type === 'license_key_created' ||
-        activity.type === 'license_key_updated';
+        activity.type === 'license_key_updated' ||
+        activity.type === 'support_bundle_resolved';
+      const vendorName = this.vendorName();
       return {
         id: `${activity.type}-${activity.id}`,
         createdAt: activity.createdAt,
-        userName: byVendor ? this.vendorName() : activity.user?.name,
-        userImageUrl: byVendor ? this.vendorLogo() : activity.user?.imageUrl,
-        userImageIsLogo: byVendor,
         action: action(activity),
         icon: icon(activity),
         ...link(activity),
+        user: byVendor
+          ? vendorName
+            ? {name: vendorName, imageUrl: this.vendorLogo(), isVendor: true}
+            : undefined
+          : activity.user && {...activity.user, isVendor: false},
       };
     })
   );
@@ -82,7 +97,7 @@ function icon({type}: CustomerHomeActivity): IconDefinition {
   }
 }
 
-function link({type, resourceId, subject}: CustomerHomeActivity): Pick<ActivityTimelineEntry, 'link' | 'queryParams'> {
+function link({type, resourceId, subject}: CustomerHomeActivity): Pick<ActivityEntry, 'link' | 'queryParams'> {
   switch (type) {
     case 'application_version_created':
       return {link: '/deployments', queryParams: {search: subject}};

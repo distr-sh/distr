@@ -1,4 +1,3 @@
-import {NgTemplateOutlet} from '@angular/common';
 import {Component, computed, inject, linkedSignal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {CustomerOrganizationFeature} from '@distr-sh/distr-sdk';
@@ -30,6 +29,7 @@ import {ContextService} from '../../services/context.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
 import {LicenseKeysService} from '../../services/license-keys.service';
+import {UpdateNotificationConfigurationsService} from '../../services/notification-configurations.service';
 import {NotificationRecordsService} from '../../services/notification-records.service';
 import {OrganizationBrandingService} from '../../services/organization-branding.service';
 import {OrganizationService} from '../../services/organization.service';
@@ -56,6 +56,7 @@ import {
   toCustomerHomeSupportBundles,
 } from './customer-home-mappers';
 import {CustomerHomeSupportBundlesComponent} from './customer-home-support-bundles.component';
+import {CustomerHomeUpdateNotificationsComponent} from './customer-home-update-notifications.component';
 
 function storedInstructionsHidden(key: string | undefined): boolean | undefined {
   const stored = key ? sessionStorage.getItem(key) : null;
@@ -66,7 +67,6 @@ function storedInstructionsHidden(key: string | undefined): boolean | undefined 
   selector: 'app-customer-home-page',
   templateUrl: './customer-home-page.component.html',
   imports: [
-    NgTemplateOutlet,
     LoadingCardComponent,
     PageComponent,
     CustomerHomeInstructionsComponent,
@@ -74,6 +74,7 @@ function storedInstructionsHidden(key: string | undefined): boolean | undefined 
     CustomerHomeChecklistComponent,
     CustomerHomeLicenseComponent,
     CustomerHomeAlertsComponent,
+    CustomerHomeUpdateNotificationsComponent,
     CustomerHomeAccessTokensComponent,
     CustomerHomeSupportBundlesComponent,
     CustomerHomeActivityComponent,
@@ -93,6 +94,7 @@ export class CustomerHomePageComponent {
   private readonly accessTokensService = inject(AccessTokensService);
   private readonly licenseKeysService = inject(LicenseKeysService);
   private readonly alertConfigurationsService = inject(AlertConfigurationsService);
+  private readonly updateNotificationConfigurationsService = inject(UpdateNotificationConfigurationsService);
   private readonly notificationRecordsService = inject(NotificationRecordsService);
   private readonly supportBundlesService = inject(SupportBundlesService);
   private readonly activityFeedService = inject(ActivityFeedService);
@@ -224,8 +226,8 @@ export class CustomerHomePageComponent {
     if (this.features() === undefined || this.hasApplications() === undefined) {
       return undefined;
     }
-    if (this.deploymentsEnabled()) {
-      return this.canDeploy() ? 'deployments' : 'none';
+    if (this.canDeploy()) {
+      return 'deployments';
     }
     return this.artifactsEnabled() ? 'artifacts' : 'none';
   });
@@ -276,10 +278,15 @@ export class CustomerHomePageComponent {
     )
   );
 
+  private readonly notificationFeatures$ = combineLatest([
+    this.features$,
+    this.featureFlags.isNotificationsEnabled$.pipe(take(1)),
+  ]).pipe(map(([features, enabled]) => (enabled ? features : [])));
+
   protected readonly alerts = toSignal(
-    combineLatest([this.features$, this.featureFlags.isNotificationsEnabled$.pipe(take(1))]).pipe(
-      switchMap(([features, enabled]) =>
-        enabled && features.includes('alerts')
+    this.notificationFeatures$.pipe(
+      switchMap((features) =>
+        features.includes('alerts')
           ? combineLatest([
               this.alertConfigurationsService.list(),
               this.notificationRecordsService.list(undefined, customerHomeNotificationsSince()),
@@ -290,6 +297,20 @@ export class CustomerHomePageComponent {
           : of(undefined)
       )
     )
+  );
+
+  protected readonly updateNotificationsMissing = toSignal(
+    this.notificationFeatures$.pipe(
+      switchMap((features) =>
+        features.includes('update_notifications')
+          ? this.updateNotificationConfigurationsService.list().pipe(
+              map((configurations) => configurations.length === 0),
+              recoverWithToast(this.toast, false)
+            )
+          : of(false)
+      )
+    ),
+    {initialValue: false}
   );
 
   protected readonly accessTokens = toSignal(
@@ -326,6 +347,7 @@ export class CustomerHomePageComponent {
       (!!this.checklist() && this.checklistSection() !== undefined && !this.checklistCompleted()) ||
       this.license() !== undefined ||
       this.alerts() !== undefined ||
+      this.updateNotificationsMissing() ||
       this.accessTokens().length > 0 ||
       this.supportBundles() !== undefined
   );

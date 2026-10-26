@@ -4,6 +4,7 @@
   class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
   cdkOverlayOrigin
   #trigger="cdkOverlayOrigin"
+  [attr.aria-expanded]="open()"
   (click)="open.set(true)">
   <fa-icon [icon]="faEllipsisVertical" />
   <span class="sr-only">More actions</span>

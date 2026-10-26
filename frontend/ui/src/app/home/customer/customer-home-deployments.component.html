@@ -1,28 +1,32 @@
 @let targets = deploymentTargets();
-<section>
+<section class="relative">
+  @if (instructionsHidden() && section() !== 'none') {
+    <app-customer-home-menu class="absolute top-3 inset-e-3 z-10" (showInstructions)="showInstructions.emit()" />
+  }
   @if (section() === 'deployments' && targets.length > 0) {
-    <div class="distr-card relative p-4 gap-3">
-      <ng-container [ngTemplateOutlet]="menu" />
-      <h2 appCardHeading [icon]="faDashboard" class="pe-8">Deployments</h2>
-      <div class="grid grid-cols-1 xl:grid-cols-2 -mx-2">
+    <div class="distr-card distr-card-hover relative p-4 gap-3">
+      <h2 appCardHeading [icon]="faDashboard" class="pe-8">
+        <a routerLink="/deployments" class="after:absolute after:inset-0">Deployments</a>
+      </h2>
+      <div class="grid grid-cols-1 -mx-2" [class.xl:grid-cols-2]="targets.length > 1">
         @for (target of targets; track target.id) {
           <app-customer-home-deployment-target-item [deploymentTarget]="target" />
         }
       </div>
     </div>
   } @else if (section() === 'artifacts' && artifacts().hasPulled && artifacts().artifacts.length > 0) {
-    <div class="distr-card relative p-4 gap-3">
-      <ng-container [ngTemplateOutlet]="menu" />
-      <h2 appCardHeading [icon]="faBox" class="pe-8">Artifacts</h2>
-      <div class="grid grid-cols-1 xl:grid-cols-2 -mx-2">
+    <div class="distr-card distr-card-hover relative p-4 gap-3">
+      <h2 appCardHeading [icon]="faBox" class="pe-8">
+        <a routerLink="/artifacts" class="after:absolute after:inset-0">Artifacts</a>
+      </h2>
+      <div class="grid grid-cols-1 -mx-2" [class.xl:grid-cols-2]="artifacts().artifacts.length > 1">
         @for (artifact of artifacts().artifacts; track artifact.id) {
           <app-customer-home-artifact-item [artifact]="artifact" />
         }
       </div>
     </div>
   } @else if (section() === 'deployments') {
-    <div class="distr-card relative p-4 items-center gap-3 text-center">
-      <ng-container [ngTemplateOutlet]="menu" />
+    <div class="distr-card p-4 items-center gap-3 text-center">
       <p class="text-gray-900 dark:text-white font-medium">Create your first deployment</p>
       <button
         type="button"
@@ -33,8 +37,7 @@
       </button>
     </div>
   } @else if (section() === 'artifacts') {
-    <div class="distr-card relative p-4 items-center gap-3 text-center">
-      <ng-container [ngTemplateOutlet]="menu" />
+    <div class="distr-card p-4 items-center gap-3 text-center">
       <p class="text-gray-900 dark:text-white font-medium">You have not pulled any artifacts yet.</p>
       <a
         routerLink="/artifacts"
@@ -49,12 +52,6 @@
     </div>
   }
 </section>
-
-<ng-template #menu>
-  @if (instructionsHidden()) {
-    <app-customer-home-menu class="absolute top-3 inset-e-3" (showInstructions)="showInstructions.emit()" />
-  }
-</ng-template>
 
 <ng-template #deploymentWizard>
   <app-deployment-wizard

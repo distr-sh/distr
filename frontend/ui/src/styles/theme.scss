@@ -195,6 +195,11 @@
     @apply cursor-pointer hover:shadow-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-shadow;
   }
 
+  // for a card that links somewhere and holds rows with a hover background of their own
+  .distr-card-hover {
+    @apply hover:shadow-md hover:border-gray-300 dark:hover:border-gray-500 transition;
+  }
+
   // the row above a table or card grid that holds `app-search-bar` and the page actions. Inside a
   // `distr-table-panel` add `p-4`, above a `distr-card-grid` add `mb-4`.
   .distr-toolbar {

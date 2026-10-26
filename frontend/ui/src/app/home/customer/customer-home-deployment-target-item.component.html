@@ -2,18 +2,16 @@
 <a
   routerLink="/deployments"
   [queryParams]="{search: target.name}"
-  class="font-semibold text-gray-900 dark:text-white group-hover:underline truncate block after:absolute after:inset-0">
+  class="font-semibold text-gray-900 dark:text-white truncate block after:absolute after:inset-0">
   {{ target.name }}
 </a>
 
 <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,26rem),1fr))] gap-x-4 gap-y-2">
   @for (deployment of target.deployments; track deployment.id) {
     <div class="flex flex-col sm:flex-row gap-3 min-w-0">
-      <ng-container
-        [ngTemplateOutlet]="image"
-        [ngTemplateOutletContext]="{
-          $implicit: deployment.applicationTitleImageUrl ?? deployment.applicationImageUrl,
-        }" />
+      <app-customer-home-title-image
+        [src]="deployment.applicationTitleImageUrl ?? deployment.applicationImageUrl"
+        [fallbackIcon]="faServer" />
       <dl class="flex-1 min-w-0 grid grid-cols-[auto_1fr] content-start gap-x-4 gap-y-1 text-sm">
         <dt class="distr-text-muted">Application</dt>
         <dd class="text-gray-900 dark:text-white font-medium truncate">{{ deployment.applicationName }}</dd>
@@ -37,15 +35,19 @@
           {{ deployment.currentApplicationVersionName ?? deployment.applicationVersionName }}
           @if (deployment.updateAvailable) {
             <span class="distr-badge">Update available: {{ deployment.latestApplicationVersionName }}</span>
-          } @else {
+          } @else if (deployment.latestApplicationVersionName) {
             <span class="distr-badge distr-badge-success">Latest</span>
           }
         </dd>
 
         <dt class="distr-text-muted">Last update</dt>
-        <dd class="text-gray-900 dark:text-white" [title]="deployment.deploymentRevisionCreatedAt | date: 'medium'">
-          {{ deployment.deploymentRevisionCreatedAt | relativeDate }}
-        </dd>
+        @if (deployment.deploymentRevisionCreatedAt; as createdAt) {
+          <dd class="text-gray-900 dark:text-white" [title]="createdAt | date: 'medium'">
+            {{ createdAt | relativeDate }}
+          </dd>
+        } @else {
+          <dd class="distr-text-muted">Not updated yet</dd>
+        }
 
         <dt class="distr-text-muted">Status</dt>
         <dd class="text-gray-900 dark:text-white">
@@ -55,20 +57,8 @@
     </div>
   } @empty {
     <div class="flex flex-col sm:flex-row gap-3">
-      <ng-container [ngTemplateOutlet]="image" [ngTemplateOutletContext]="{$implicit: undefined}" />
+      <app-customer-home-title-image [fallbackIcon]="faServer" />
       <p class="text-sm distr-text-muted">Nothing deployed yet.</p>
     </div>
   }
 </div>
-
-<ng-template #image let-src>
-  <div
-    class="sm:w-48 sm:self-start shrink-0 aspect-video rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 flex items-center justify-center"
-    [class.border]="!src">
-    @if (src) {
-      <img [attr.src]="src | secureImage | async" alt="" class="size-full object-cover" />
-    } @else {
-      <fa-icon [icon]="faServer" size="2x" class="text-gray-400 dark:text-gray-500" />
-    }
-  </div>
-</ng-template>

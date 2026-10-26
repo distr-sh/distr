@@ -23,51 +23,51 @@
       <app-loading-card layout="row" />
     }
 
-    @if (hasPanels() && activityShown()) {
-      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 items-start">
-        <div class="xl:col-span-2 2xl:col-span-3 grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-3">
-          <ng-container [ngTemplateOutlet]="panels" />
+    @let besideActivity = hasPanels() && activityShown();
+    <div
+      class="grid grid-cols-1 gap-3 items-start"
+      [class.lg:grid-cols-2]="besideActivity"
+      [class.xl:grid-cols-3]="besideActivity">
+      @if (hasPanels()) {
+        <div
+          class="grid grid-cols-1 gap-3"
+          [class.xl:col-span-2]="besideActivity"
+          [class.xl:grid-cols-2]="besideActivity"
+          [class.lg:grid-cols-2]="!besideActivity"
+          [class.xl:grid-cols-3]="!besideActivity">
+          @if (checklist() === undefined) {
+            <app-loading-card />
+          } @else if (checklist(); as checklist) {
+            @if (checklistSection(); as checklistSection) {
+              @if (!checklistCompleted()) {
+                <app-customer-home-checklist [checklist]="checklist" [section]="checklistSection" />
+              }
+            }
+          }
+          @if (license(); as license) {
+            <app-customer-home-license [license]="license" />
+          }
+          @if (alerts(); as alerts) {
+            <app-customer-home-alerts [alerts]="alerts" />
+          }
+          @if (updateNotificationsMissing()) {
+            <app-customer-home-update-notifications />
+          }
+          @if (accessTokens().length > 0) {
+            <app-customer-home-access-tokens [accessTokens]="accessTokens()" />
+          }
+          @if (supportBundles(); as supportBundles) {
+            <app-customer-home-support-bundles [supportBundles]="supportBundles" (created)="reloadSupportBundles()" />
+          }
         </div>
-        <ng-container [ngTemplateOutlet]="activityPanel" />
-      </div>
-    } @else if (hasPanels()) {
-      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
-        <ng-container [ngTemplateOutlet]="panels" />
-      </div>
-    } @else if (activityShown()) {
-      <ng-container [ngTemplateOutlet]="activityPanel" />
-    }
+      }
+      @if (activityShown()) {
+        @if (activity(); as activity) {
+          <app-customer-home-activity [activity]="activity" [vendorName]="vendorName()" [vendorLogo]="vendorLogo()" />
+        } @else {
+          <app-loading-card layout="timeline" />
+        }
+      }
+    </div>
   </div>
 </app-page>
-
-<ng-template #panels>
-  @if (checklist() === undefined) {
-    <app-loading-card />
-  } @else if (checklist(); as checklist) {
-    @if (checklistSection(); as checklistSection) {
-      @if (!checklistCompleted()) {
-        <app-customer-home-checklist [checklist]="checklist" [section]="checklistSection" />
-      }
-    }
-  }
-  @if (license(); as license) {
-    <app-customer-home-license [license]="license" />
-  }
-  @if (alerts(); as alerts) {
-    <app-customer-home-alerts [alerts]="alerts" />
-  }
-  @if (accessTokens().length > 0) {
-    <app-customer-home-access-tokens [accessTokens]="accessTokens()" />
-  }
-  @if (supportBundles(); as supportBundles) {
-    <app-customer-home-support-bundles [supportBundles]="supportBundles" (created)="reloadSupportBundles()" />
-  }
-</ng-template>
-
-<ng-template #activityPanel>
-  @if (activity(); as activity) {
-    <app-customer-home-activity [activity]="activity" [vendorName]="vendorName()" [vendorLogo]="vendorLogo()" />
-  } @else {
-    <app-loading-card layout="timeline" />
-  }
-</ng-template>

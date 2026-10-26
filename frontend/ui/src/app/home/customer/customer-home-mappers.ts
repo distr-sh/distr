@@ -54,7 +54,9 @@ export function toCustomerHomeDeploymentTargets(
         currentApplicationVersionId: deployment.currentApplicationVersionId,
         currentApplicationVersionName: deployment.currentApplicationVersionName,
         latestApplicationVersionName: latest?.name,
-        updateAvailable: latest !== undefined && latest.id !== deployment.applicationVersionId,
+        updateAvailable:
+          latest !== undefined &&
+          latest.id !== (deployment.currentApplicationVersionId ?? deployment.applicationVersionId),
         deploymentRevisionId: deployment.deploymentRevisionId,
         deploymentRevisionCreatedAt: deployment.deploymentRevisionCreatedAt,
         currentDeploymentRevisionId: deployment.currentDeploymentRevisionId,
@@ -156,7 +158,6 @@ export function toCustomerHomeAlerts(
     notificationCount: records.filter((record) => record.type === 'alert' || record.type === 'warning').length,
   };
 }
-
 /** The tokens that have expired or expire within the next days, the soonest first. */
 export function toCustomerHomeAccessTokens(tokens: AccessToken[], now: Dayjs = dayjs()): CustomerHomeAccessToken[] {
   const threshold = now.add(accessTokenExpiryWindowDays, 'day');
@@ -179,9 +180,13 @@ export function toCustomerHomeSupportBundles(bundles: SupportBundle[]): Customer
       title: bundle.title,
       status: bundle.status,
       updatedAt: bundle.statusChangedAt ?? bundle.createdAt,
-      updatedBy: bundle.statusChangedAt
-        ? user(bundle.statusChangedByUserName, bundle.statusChangedByImageUrl)
-        : user(bundle.createdByUserName, bundle.createdByImageUrl),
+      // Only the vendor resolves a bundle, and the customer must not see who of the vendor did.
+      updatedBy:
+        bundle.status === 'resolved'
+          ? undefined
+          : bundle.statusChangedAt
+            ? user(bundle.statusChangedByUserName, bundle.statusChangedByImageUrl)
+            : user(bundle.createdByUserName, bundle.createdByImageUrl),
     }))
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }

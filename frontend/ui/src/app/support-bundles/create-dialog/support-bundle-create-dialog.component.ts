@@ -6,6 +6,7 @@ import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {ClipComponent} from '../../components/clip.component';
+import {ClosableDialog} from '../../components/confirm-dialog/closable-dialog';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {SupportBundlesService} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
@@ -15,7 +16,7 @@ import {ToastService} from '../../services/toast.service';
   templateUrl: './support-bundle-create-dialog.component.html',
   imports: [ReactiveFormsModule, FaIconComponent, ClipComponent, AutotrimDirective, AlertComponent],
 })
-export class SupportBundleCreateDialogComponent {
+export class SupportBundleCreateDialogComponent extends ClosableDialog {
   private readonly svc = inject(SupportBundlesService);
   private readonly toast = inject(ToastService);
 

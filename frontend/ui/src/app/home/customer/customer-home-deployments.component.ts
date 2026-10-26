@@ -1,5 +1,4 @@
 import {GlobalPositionStrategy} from '@angular/cdk/overlay';
-import {NgTemplateOutlet} from '@angular/common';
 import {Component, inject, input, output, TemplateRef, viewChild} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -18,7 +17,6 @@ export type CustomerHomePrimarySection = 'deployments' | 'artifacts' | 'none';
   selector: 'app-customer-home-deployments',
   templateUrl: './customer-home-deployments.component.html',
   imports: [
-    NgTemplateOutlet,
     RouterLink,
     FaIconComponent,
     DeploymentWizardComponent,

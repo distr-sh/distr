@@ -1,7 +1,6 @@
-import {DatePipe, NgTemplateOutlet} from '@angular/common';
+import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, input, output} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {Params, RouterLink} from '@angular/router';
 import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
 import {faPaperPlane} from '@fortawesome/free-solid-svg-icons';
 import {AvatarComponent} from '../avatar.component';
@@ -17,15 +16,9 @@ export interface ActivityTimelineEntry {
   /** Omitted for entries recorded without a user, e.g. automated events. */
   userName?: string;
   userImageUrl?: string;
-  userImageIsLogo?: boolean;
   /** What the user did, phrased to follow the name, e.g. "commented". */
   action: string;
-  /** Represents the action. The action then leads the entry and the user follows below it. */
-  icon?: IconDefinition;
   body?: string;
-  /** Makes the entry a link to the page that shows what it is about. */
-  link?: string;
-  queryParams?: Params;
 }
 
 @Component({
@@ -35,20 +28,10 @@ export interface ActivityTimelineEntry {
   // Without an explicit display the host stays inline, which silently drops the vertical
   // margins that the surrounding space-y and mb utilities put on it.
   host: {class: 'block'},
-  imports: [
-    DatePipe,
-    NgTemplateOutlet,
-    ReactiveFormsModule,
-    RouterLink,
-    FaIconComponent,
-    AvatarComponent,
-    CardHeadingComponent,
-  ],
+  imports: [DatePipe, ReactiveFormsModule, FaIconComponent, AvatarComponent, CardHeadingComponent],
 })
 export class ActivityTimelineComponent {
   public readonly entries = input.required<ActivityTimelineEntry[]>();
-  /** "card" matches the bordered cards of the dashboards. */
-  public readonly variant = input<'panel' | 'card'>('panel');
   public readonly heading = input('Timeline');
   public readonly icon = input<IconDefinition>();
   public readonly emptyText = input('Nothing here yet.');

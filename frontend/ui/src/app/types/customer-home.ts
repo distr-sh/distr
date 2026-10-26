@@ -74,7 +74,6 @@ export interface CustomerHomeAlerts {
   alertConfigurationCount: number;
   notificationCount: number;
 }
-
 export interface CustomerHomeAccessToken {
   id: string;
   label?: string;

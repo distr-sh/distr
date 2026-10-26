@@ -1,0 +1,5 @@
+@if (src(); as src) {
+  <img [attr.src]="src | secureImage | async" alt="" class="size-full object-cover" />
+} @else {
+  <fa-icon [icon]="fallbackIcon()" size="2x" class="text-gray-400 dark:text-gray-500" />
+}

@@ -23,10 +23,6 @@
     h3 {
       @apply text-lg font-semibold;
       @apply mt-4 mb-3;
-
-      &:has(+ ul, + ol) {
-        @apply mb-4;
-      }
     }
 
     h4 {
@@ -38,6 +34,10 @@
     h6 {
       @apply text-sm font-semibold;
       @apply mt-2 mb-2;
+    }
+
+    :is(h2, h3, h4, h5, h6):has(+ ul, + ol) {
+      @apply mb-4;
     }
 
     > :first-child {

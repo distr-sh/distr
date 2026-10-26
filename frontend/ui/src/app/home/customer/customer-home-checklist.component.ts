@@ -1,25 +1,16 @@
-import {NgTemplateOutlet} from '@angular/common';
 import {Component, computed, inject, input} from '@angular/core';
 import {RouterLink} from '@angular/router';
-import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCircle} from '@fortawesome/free-regular-svg-icons';
-import {faCircleCheck, faListCheck} from '@fortawesome/free-solid-svg-icons';
+import {faListCheck} from '@fortawesome/free-solid-svg-icons';
 import {CardHeadingComponent} from '../../components/card-heading.component';
 import {AuthService} from '../../services/auth.service';
 import {CustomerHomeChecklist} from '../../types/customer-home';
+import {CustomerHomeChecklistItem, CustomerHomeChecklistItemComponent} from './customer-home-checklist-item.component';
 import {CustomerHomePrimarySection} from './customer-home-deployments.component';
-
-interface ChecklistItem {
-  label: string;
-  hint: string;
-  done: boolean;
-  link?: string;
-}
 
 @Component({
   selector: 'app-customer-home-checklist',
   templateUrl: './customer-home-checklist.component.html',
-  imports: [NgTemplateOutlet, RouterLink, FaIconComponent, CardHeadingComponent],
+  imports: [RouterLink, CardHeadingComponent, CustomerHomeChecklistItemComponent],
 })
 export class CustomerHomeChecklistComponent {
   private readonly canInvite = inject(AuthService).hasRole('admin');
@@ -27,13 +18,11 @@ export class CustomerHomeChecklistComponent {
   public readonly checklist = input.required<CustomerHomeChecklist>();
   public readonly section = input.required<CustomerHomePrimarySection>();
 
-  protected readonly faCircle = faCircle;
-  protected readonly faCircleCheck = faCircleCheck;
   protected readonly faListCheck = faListCheck;
 
-  protected readonly items = computed<ChecklistItem[]>(() => {
+  protected readonly items = computed<CustomerHomeChecklistItem[]>(() => {
     const checklist = this.checklist();
-    const items: ChecklistItem[] = [
+    const items: CustomerHomeChecklistItem[] = [
       {
         label: 'Complete your profile',
         hint: 'Upload a profile picture or enable multi-factor authentication.',
