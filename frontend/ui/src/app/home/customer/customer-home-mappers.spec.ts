@@ -19,6 +19,19 @@ describe('toCustomerHomeLicense', () => {
     expect(toCustomerHomeLicense([expired], [], now)?.name).toEqual('expired');
   });
 
+  it('should count a key without expiration as valid', () => {
+    expect(toCustomerHomeLicense([expired, {name: 'perpetual'}], [], now)?.name).toEqual('perpetual');
+  });
+
+  it('should let an entitlement that expires before the key decide despite a valid key', () => {
+    const expiringEntitlement = {name: 'expiring', expiresAt: now.add(1, 'week').toDate()};
+    const expiredEntitlement = {name: 'expired entitlement', expiresAt: now.subtract(1, 'day').toDate()};
+    const laterEntitlement = {name: 'later', expiresAt: now.add(1, 'year').toDate()};
+    expect(toCustomerHomeLicense([valid], [laterEntitlement, expiringEntitlement], now)?.name).toEqual('expiring');
+    expect(toCustomerHomeLicense([valid], [expiredEntitlement], now)?.name).toEqual('expired entitlement');
+    expect(toCustomerHomeLicense([valid], [laterEntitlement], now)?.name).toEqual('valid');
+  });
+
   it('should fall back to the entitlement that expires first, one without expiration last', () => {
     const entitlements = [
       {name: 'forever'},

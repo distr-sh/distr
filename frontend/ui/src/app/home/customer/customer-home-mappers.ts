@@ -106,39 +106,39 @@ export function toCustomerHomeChecklist(sources: CustomerHomeChecklistSources): 
 }
 
 /**
- * The license key that decides the license state of the customer: a valid key before one that is not valid
- * yet before an expired one and among those the key that expires last. Without a license key, the
- * entitlement that expires first decides it.
+ * What decides the license state of the customer. License keys replace each other, so only the best one
+ * counts: a valid key before one that is not valid yet before an expired one and among those the key that
+ * expires last. Entitlements cover different applications and artifacts, so each one counts. Of that key
+ * and the entitlements, the most urgent decides: an expired one before a key that is not valid yet before
+ * the one that expires first.
  */
 export function toCustomerHomeLicense(
   licenseKeys: LicenseKey[],
   entitlements: (ApplicationEntitlement | ArtifactEntitlement)[],
   now: Dayjs = dayjs()
 ): CustomerHomeLicense | undefined {
-  const rank = (key: LicenseKey) =>
-    !now.isBefore(key.expiresAt) ? 2 : key.notBefore !== undefined && now.isBefore(key.notBefore) ? 1 : 0;
-  const byName = (a: {name?: string}, b: {name?: string}) => (a.name ?? '').localeCompare(b.name ?? '');
+  const expired = ({expiresAt}: CustomerHomeLicense) => expiresAt !== undefined && !now.isBefore(expiresAt);
+  const notYetValid = ({notBefore}: CustomerHomeLicense) => notBefore !== undefined && now.isBefore(notBefore);
+  const expiry = ({expiresAt}: CustomerHomeLicense) =>
+    expiresAt === undefined ? Number.MAX_SAFE_INTEGER : dayjs(expiresAt).valueOf();
+  const byName = (a: CustomerHomeLicense, b: CustomerHomeLicense) => a.name.localeCompare(b.name);
+
+  const keyRank = (key: CustomerHomeLicense) => (expired(key) ? 2 : notYetValid(key) ? 1 : 0);
   const licenseKey = licenseKeys
-    .filter((key) => key.expiresAt !== undefined)
-    .sort((a, b) => rank(a) - rank(b) || dayjs(b.expiresAt).valueOf() - dayjs(a.expiresAt).valueOf() || byName(a, b))
+    .map((key) => ({name: key.name ?? '', notBefore: key.notBefore, expiresAt: key.expiresAt}))
+    .sort((a, b) => keyRank(a) - keyRank(b) || expiry(b) - expiry(a) || byName(a, b))
     .at(0);
-  if (licenseKey) {
-    return {name: licenseKey.name ?? '', notBefore: licenseKey.notBefore, expiresAt: licenseKey.expiresAt};
-  }
-  const entitlement = [...entitlements]
-    .sort(
-      (a, b) =>
-        (a.expiresAt === undefined ? 1 : 0) - (b.expiresAt === undefined ? 1 : 0) ||
-        dayjs(a.expiresAt).valueOf() - dayjs(b.expiresAt).valueOf() ||
-        byName(a, b)
-    )
-    .at(0);
-  return (
-    entitlement && {
+
+  const urgency = (license: CustomerHomeLicense) => (expired(license) ? 0 : notYetValid(license) ? 1 : 2);
+  return [
+    ...(licenseKey ? [licenseKey] : []),
+    ...entitlements.map((entitlement) => ({
       name: entitlement.name ?? '',
       expiresAt: entitlement.expiresAt && dayjs(entitlement.expiresAt).toISOString(),
-    }
-  );
+    })),
+  ]
+    .sort((a, b) => urgency(a) - urgency(b) || expiry(a) - expiry(b) || byName(a, b))
+    .at(0);
 }
 
 /** The start of the window the alerts panel counts notifications in. */
