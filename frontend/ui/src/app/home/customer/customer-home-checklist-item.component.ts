@@ -1,7 +1,7 @@
 import {Component, input} from '@angular/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircle} from '@fortawesome/free-regular-svg-icons';
-import {faCircleCheck} from '@fortawesome/free-solid-svg-icons';
+import {faChevronRight, faCircleCheck} from '@fortawesome/free-solid-svg-icons';
 
 export interface CustomerHomeChecklistItem {
   label: string;
@@ -21,4 +21,5 @@ export class CustomerHomeChecklistItemComponent {
 
   protected readonly faCircle = faCircle;
   protected readonly faCircleCheck = faCircleCheck;
+  protected readonly faChevronRight = faChevronRight;
 }

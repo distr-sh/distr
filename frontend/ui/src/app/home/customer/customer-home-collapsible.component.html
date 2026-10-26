@@ -3,28 +3,29 @@
   class="flex-1 min-h-0 overflow-hidden transition-[max-height] duration-300 ease-in-out"
   [class.max-h-96]="!expanded()"
   [class.lg:max-h-none]="fill() && !expanded()"
-  [style.max-height.px]="expanded() ? contentHeight() : null">
+  [style.max-height.px]="maxHeight()"
+  (transitionend)="onTransitionEnd($event)">
   <div #content>
     <ng-content />
   </div>
 </div>
 @if (overflowing() && !expanded()) {
   <div
-    class="absolute inset-x-0 bottom-0 h-24 flex items-end justify-center bg-linear-to-t from-white dark:from-gray-800 to-transparent">
+    class="pointer-events-none absolute inset-x-0 bottom-0 h-24 flex items-end justify-center bg-linear-to-t from-white dark:from-gray-800 to-transparent">
     <button
       type="button"
-      (click)="expanded.set(true)"
-      class="py-1.5 px-3 text-sm distr-btn-secondary hover:text-gray-900 dark:hover:text-white">
+      (click)="expand()"
+      class="pointer-events-auto py-1.5 px-3 text-sm distr-btn-secondary hover:text-gray-900 dark:hover:text-white">
       <fa-icon [icon]="faChevronDown" class="me-1" />
       Show more
     </button>
   </div>
 }
-@if (expanded()) {
+@if (expanded() && !collapsing()) {
   <div class="mt-3 flex justify-center">
     <button
       type="button"
-      (click)="expanded.set(false)"
+      (click)="collapse()"
       class="py-1.5 px-3 text-sm distr-btn-secondary hover:text-gray-900 dark:hover:text-white">
       <fa-icon [icon]="faChevronUp" class="me-1" />
       Show less

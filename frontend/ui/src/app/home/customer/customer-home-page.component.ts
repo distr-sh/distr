@@ -137,7 +137,7 @@ export class CustomerHomePageComponent {
   private readonly rawDeploymentTargets$ = this.whenFeature('deployment_targets', [], () =>
     this.reloadDeploymentTargets$.pipe(
       startWith(undefined),
-      switchMap(() => this.deploymentTargetsService.refresh())
+      switchMap(() => from(this.deploymentTargetsService.refresh()).pipe(recoverWithToast(this.toast, [])))
     )
   ).pipe(shareReplay({bufferSize: 1, refCount: true}));
 
@@ -244,10 +244,13 @@ export class CustomerHomePageComponent {
     this.features$,
     this.featureFlags.isNotificationsEnabled$.pipe(take(1)),
   ]).pipe(map(([features, enabled]) => (enabled ? features : [])));
-  private readonly updateNotificationConfigurations$ = this.notificationFeatures$.pipe(
+  private readonly enabledUpdateNotificationConfigurations$ = this.notificationFeatures$.pipe(
     switchMap((features) =>
       features.includes('update_notifications')
-        ? this.updateNotificationConfigurationsService.list().pipe(recoverWithToast(this.toast, undefined))
+        ? this.updateNotificationConfigurationsService.list().pipe(
+            map((configurations) => configurations.filter((configuration) => configuration.enabled)),
+            recoverWithToast(this.toast, undefined)
+          )
         : of(undefined)
     ),
     shareReplay(1)
@@ -263,7 +266,7 @@ export class CustomerHomePageComponent {
       ),
       accessTokenCount: this.accessTokens$.pipe(map((tokens) => tokens.length)),
       artifacts: this.rawArtifacts$,
-      updateNotificationConfigurations: this.updateNotificationConfigurations$,
+      enabledUpdateNotificationConfigurations: this.enabledUpdateNotificationConfigurations$,
     }).pipe(map(toCustomerHomeChecklist), recoverWithToast(this.toast, null))
   );
   protected readonly checklistCompleted = computed(() => {
@@ -325,7 +328,7 @@ export class CustomerHomePageComponent {
   );
 
   private readonly updateNotificationsMissing = toSignal(
-    this.updateNotificationConfigurations$.pipe(map((configurations) => configurations?.length === 0)),
+    this.enabledUpdateNotificationConfigurations$.pipe(map((configurations) => configurations?.length === 0)),
     {initialValue: false}
   );
   /** The checklist prompts for update notifications itself while it is shown. */

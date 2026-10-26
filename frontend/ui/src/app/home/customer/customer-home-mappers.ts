@@ -96,7 +96,7 @@ export interface CustomerHomeChecklistSources {
   accessTokenCount: number;
   artifacts: Artifact[];
   /** Undefined when the customer has no update notifications. */
-  updateNotificationConfigurations: UpdateNotificationConfiguration[] | undefined;
+  enabledUpdateNotificationConfigurations: UpdateNotificationConfiguration[] | undefined;
 }
 
 export function toCustomerHomeChecklist(sources: CustomerHomeChecklistSources): CustomerHomeChecklist {
@@ -108,7 +108,7 @@ export function toCustomerHomeChecklist(sources: CustomerHomeChecklistSources): 
     accessTokenCreated: sources.accessTokenCount > 0,
     artifactPulled: sources.artifacts.some((artifact) => artifact.lastPull !== undefined),
     updateNotificationsConfigured:
-      sources.updateNotificationConfigurations && sources.updateNotificationConfigurations.length > 0,
+      sources.enabledUpdateNotificationConfigurations && sources.enabledUpdateNotificationConfigurations.length > 0,
   };
 }
 

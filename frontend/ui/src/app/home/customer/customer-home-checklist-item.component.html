@@ -11,3 +11,6 @@
     <p class="distr-text-muted">{{ item().hint }}</p>
   }
 </div>
+@if (item().link) {
+  <fa-icon [icon]="faChevronRight" class="ms-auto self-center text-xs text-gray-400 dark:text-gray-500" />
+}

@@ -64,8 +64,5 @@
 </section>
 
 <ng-template #deploymentWizard>
-  <app-deployment-wizard
-    animate.enter="animate-fly-in-top"
-    animate.leave="animate-fly-out-top"
-    (closed)="closeWizard()" />
+  <app-deployment-wizard (closed)="closeWizard()" />
 </ng-template>

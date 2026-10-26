@@ -4,4 +4,6 @@
   <span class="text-3xl font-semibold tracking-wide text-gray-400 dark:text-gray-500 select-none" aria-hidden="true">
     {{ initials }}
   </span>
+} @else if (icon(); as icon) {
+  <fa-icon [icon]="icon" size="2x" class="text-gray-400 dark:text-gray-500" />
 }

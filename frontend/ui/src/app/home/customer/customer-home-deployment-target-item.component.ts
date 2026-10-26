@@ -2,7 +2,7 @@ import {DatePipe} from '@angular/common';
 import {Component, computed, input} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faArrowUpRightFromSquare} from '@fortawesome/free-solid-svg-icons';
+import {faArrowUpRightFromSquare, faServer} from '@fortawesome/free-solid-svg-icons';
 import {RelativeDatePipe} from '../../../util/dates';
 import {DeploymentStatusTextComponent} from '../../deployments/deployment-target-card/deployment-status-text.component';
 import {CustomerHomeDeploymentTarget} from '../../types/customer-home';
@@ -28,5 +28,6 @@ export class CustomerHomeDeploymentTargetItemComponent {
   public readonly deploymentTarget = input.required<CustomerHomeDeploymentTarget>();
 
   protected readonly faArrowUpRightFromSquare = faArrowUpRightFromSquare;
+  protected readonly faServer = faServer;
   protected readonly hasMultipleDeployments = computed(() => this.deploymentTarget().deployments.length > 1);
 }

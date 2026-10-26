@@ -27,7 +27,7 @@ export class SupportBundleCreateDialogComponent extends ClosableDialog {
   protected readonly faXmark = faXmark;
 
   protected readonly form = new FormGroup({
-    title: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
+    title: new FormControl('', {nonNullable: true, validators: [Validators.required, Validators.pattern(/\S/)]}),
     description: new FormControl('', {nonNullable: true}),
   });
   protected readonly loading = signal(false);
