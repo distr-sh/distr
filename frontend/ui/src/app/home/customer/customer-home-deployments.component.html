@@ -1,7 +1,13 @@
 @let targets = deploymentTargets();
+@let menuShown = instructionsHidden() || checklistHidden();
 <section class="relative">
-  @if (instructionsHidden() && section() !== 'none') {
-    <app-customer-home-menu class="absolute top-3 inset-e-3 z-10" (showInstructions)="showInstructions.emit()" />
+  @if (menuShown && section() !== 'none') {
+    <app-customer-home-menu
+      class="absolute top-3 inset-e-3 z-10"
+      [instructionsHidden]="instructionsHidden()"
+      [checklistHidden]="checklistHidden()"
+      (showInstructions)="showInstructions.emit()"
+      (showChecklist)="showChecklist.emit()" />
   }
   @if (section() === 'deployments' && targets.length > 0) {
     <div class="distr-card distr-card-hover relative p-4 gap-3">
@@ -46,9 +52,13 @@
         Pull your first artifact
       </a>
     </div>
-  } @else if (instructionsHidden()) {
+  } @else if (menuShown) {
     <div class="flex justify-end">
-      <app-customer-home-menu (showInstructions)="showInstructions.emit()" />
+      <app-customer-home-menu
+        [instructionsHidden]="instructionsHidden()"
+        [checklistHidden]="checklistHidden()"
+        (showInstructions)="showInstructions.emit()"
+        (showChecklist)="showChecklist.emit()" />
     </div>
   }
 </section>

@@ -15,6 +15,8 @@
             [deploymentTargets]="deploymentTargets"
             [artifacts]="artifacts"
             [instructionsHidden]="instructionsRestorable()"
+            [checklistHidden]="checklistRestorable()"
+            (showChecklist)="setChecklistHidden(false)"
             (deploymentCreated)="reloadDeploymentTargets()"
             (showInstructions)="setInstructionsHidden(false)" />
         }
@@ -23,24 +25,25 @@
       <app-loading-card layout="row" />
     }
 
-    @let besideActivity = hasPanels() && activityShown();
-    <div
-      class="grid grid-cols-1 gap-3 items-start"
-      [class.lg:grid-cols-2]="besideActivity"
-      [class.xl:grid-cols-3]="besideActivity">
-      @if (hasPanels()) {
+    @let besideActivity = panelCount() > 0 && activityShown();
+    @let panelsWide = besideActivity && panelCount() > 1;
+    <div class="grid grid-cols-1 gap-3" [class.lg:grid-cols-2]="besideActivity" [class.xl:grid-cols-3]="panelsWide">
+      @if (panelCount() > 0) {
         <div
-          class="grid grid-cols-1 gap-3"
-          [class.xl:col-span-2]="besideActivity"
-          [class.xl:grid-cols-2]="besideActivity"
+          class="grid grid-cols-1 gap-3 self-start"
+          [class.xl:col-span-2]="panelsWide"
+          [class.xl:grid-cols-2]="panelsWide"
           [class.lg:grid-cols-2]="!besideActivity"
           [class.xl:grid-cols-3]="!besideActivity">
           @if (checklist() === undefined) {
             <app-loading-card />
-          } @else if (checklist(); as checklist) {
-            @if (checklistSection(); as checklistSection) {
-              @if (!checklistCompleted()) {
-                <app-customer-home-checklist [checklist]="checklist" [section]="checklistSection" />
+          } @else if (checklistVisible()) {
+            @if (checklist(); as checklist) {
+              @if (checklistSection(); as checklistSection) {
+                <app-customer-home-checklist
+                  [checklist]="checklist"
+                  [section]="checklistSection"
+                  (dismissed)="setChecklistHidden(true)" />
               }
             }
           }
@@ -50,7 +53,7 @@
           @if (alerts(); as alerts) {
             <app-customer-home-alerts [alerts]="alerts" />
           }
-          @if (updateNotificationsMissing()) {
+          @if (updateNotificationsCardShown()) {
             <app-customer-home-update-notifications />
           }
           @if (accessTokens().length > 0) {
@@ -62,11 +65,17 @@
         </div>
       }
       @if (activityShown()) {
-        @if (activity(); as activity) {
-          <app-customer-home-activity [activity]="activity" [vendorName]="vendorName()" [vendorLogo]="vendorLogo()" />
-        } @else {
-          <app-loading-card layout="timeline" />
-        }
+        <div class="relative">
+          @if (activity(); as activity) {
+            <app-customer-home-activity
+              [activity]="activity"
+              [vendorName]="vendorName()"
+              [vendorLogo]="vendorLogo()"
+              [fillHeight]="besideActivity" />
+          } @else {
+            <app-loading-card layout="timeline" />
+          }
+        </div>
       }
     </div>
   </div>

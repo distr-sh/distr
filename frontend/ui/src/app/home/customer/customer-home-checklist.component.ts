@@ -1,6 +1,7 @@
-import {Component, computed, inject, input} from '@angular/core';
+import {Component, computed, inject, input, output} from '@angular/core';
 import {RouterLink} from '@angular/router';
-import {faListCheck} from '@fortawesome/free-solid-svg-icons';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
+import {faListCheck, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {CardHeadingComponent} from '../../components/card-heading.component';
 import {AuthService} from '../../services/auth.service';
 import {CustomerHomeChecklist} from '../../types/customer-home';
@@ -10,15 +11,17 @@ import {CustomerHomePrimarySection} from './customer-home-deployments.component'
 @Component({
   selector: 'app-customer-home-checklist',
   templateUrl: './customer-home-checklist.component.html',
-  imports: [RouterLink, CardHeadingComponent, CustomerHomeChecklistItemComponent],
+  imports: [RouterLink, FaIconComponent, CardHeadingComponent, CustomerHomeChecklistItemComponent],
 })
 export class CustomerHomeChecklistComponent {
   private readonly canInvite = inject(AuthService).hasRole('admin');
 
   public readonly checklist = input.required<CustomerHomeChecklist>();
   public readonly section = input.required<CustomerHomePrimarySection>();
+  public readonly dismissed = output<void>();
 
   protected readonly faListCheck = faListCheck;
+  protected readonly faXmark = faXmark;
 
   protected readonly items = computed<CustomerHomeChecklistItem[]>(() => {
     const checklist = this.checklist();
@@ -67,6 +70,14 @@ export class CustomerHomeChecklistComponent {
           link: '/artifacts',
         }
       );
+    }
+    if (checklist.updateNotificationsConfigured !== undefined) {
+      items.push({
+        label: 'Set up update notifications',
+        hint: 'Get notified about new versions.',
+        done: checklist.updateNotificationsConfigured,
+        link: '/notifications/updates',
+      });
     }
     return items.sort((a, b) => Number(b.done) - Number(a.done));
   });

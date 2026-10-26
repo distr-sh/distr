@@ -1,5 +1,5 @@
 @let a = artifact();
-<app-customer-home-title-image [src]="a.titleImageUrl ?? a.imageUrl" [fallbackIcon]="faBox" />
+<app-customer-home-title-image [src]="a.titleImageUrl ?? a.imageUrl" [name]="a.name" />
 
 <div class="flex-1 min-w-0">
   <a

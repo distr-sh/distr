@@ -23,11 +23,21 @@
     animate.enter="animate-flip-in-top"
     animate.leave="animate-flip-out-top"
     class="distr-dropdown-panel my-2">
-    <li>
-      <button type="button" (click)="open.set(false); showInstructions.emit()" class="distr-dropdown-item">
-        <fa-icon [icon]="faEye" class="w-4 text-gray-500 dark:text-gray-400" />
-        Show instructions
-      </button>
-    </li>
+    @if (instructionsHidden()) {
+      <li>
+        <button type="button" (click)="open.set(false); showInstructions.emit()" class="distr-dropdown-item">
+          <fa-icon [icon]="faEye" class="w-4 text-gray-500 dark:text-gray-400" />
+          Show instructions
+        </button>
+      </li>
+    }
+    @if (checklistHidden()) {
+      <li>
+        <button type="button" (click)="open.set(false); showChecklist.emit()" class="distr-dropdown-item">
+          <fa-icon [icon]="faListCheck" class="w-4 text-gray-500 dark:text-gray-400" />
+          Show getting started
+        </button>
+      </li>
+    }
   </ul>
 </ng-template>

@@ -58,8 +58,8 @@ import {
 import {CustomerHomeSupportBundlesComponent} from './customer-home-support-bundles.component';
 import {CustomerHomeUpdateNotificationsComponent} from './customer-home-update-notifications.component';
 
-function storedInstructionsHidden(key: string | undefined): boolean | undefined {
-  const stored = key ? sessionStorage.getItem(key) : null;
+function storedFlag(storage: Storage, key: string | undefined): boolean | undefined {
+  const stored = key ? storage.getItem(key) : null;
   return stored === null ? undefined : stored === 'true';
 }
 
@@ -116,6 +116,14 @@ export class CustomerHomePageComponent {
       map((customerOrganization) => `home.instructionsHidden.${customerOrganization?.id ?? 'none'}`)
     )
   );
+  private readonly checklistHiddenKey = toSignal(
+    this.customerOrganization$.pipe(
+      map(
+        (customerOrganization) =>
+          `home.checklistHidden.${customerOrganization?.id ?? 'none'}.${this.auth.getClaims()?.sub ?? 'none'}`
+      )
+    )
+  );
   private readonly deploymentsEnabled = computed(() => this.features()?.includes('deployment_targets') ?? false);
   private readonly artifactsEnabled = computed(() => this.features()?.includes('artifacts') ?? false);
 
@@ -155,24 +163,22 @@ export class CustomerHomePageComponent {
     )
   );
 
-  private readonly hasApplications = toSignal(
-    this.whenFeature('deployment_targets', false, () =>
-      this.canWrite
-        ? this.applicationsService.list().pipe(
-            map((applications) => applications.length > 0),
-            recoverWithToast(this.toast, false)
-          )
-        : of(false)
+  // A customer only receives the applications it is entitled to.
+  private readonly applicationsAvailable$ = this.whenFeature('deployment_targets', false, () =>
+    this.applicationsService.list().pipe(
+      map((applications) => applications.length > 0),
+      recoverWithToast(this.toast, false)
     )
-  );
+  ).pipe(shareReplay(1));
+  private readonly applicationsAvailable = toSignal(this.applicationsAvailable$);
   private readonly canDeploy = computed(
-    () => this.deploymentsEnabled() && this.canWrite && this.hasApplications() === true
+    () => this.deploymentsEnabled() && this.canWrite && this.applicationsAvailable() === true
   );
 
   protected readonly primarySection = computed<CustomerHomePrimarySection | undefined>(() => {
     const targets = this.deploymentTargets();
     const artifacts = this.artifacts();
-    if (!targets || !artifacts || this.hasApplications() === undefined) {
+    if (!targets || !artifacts || this.applicationsAvailable() === undefined) {
       return undefined;
     }
     if (targets.length > 0) {
@@ -203,7 +209,7 @@ export class CustomerHomePageComponent {
   protected readonly vendorLogo = computed(() => this.branding()?.logoImageId);
   protected readonly instructions = computed(() => this.branding()?.description || undefined);
   private readonly instructionsHiddenChoice = linkedSignal(() =>
-    storedInstructionsHidden(this.instructionsHiddenKey())
+    storedFlag(sessionStorage, this.instructionsHiddenKey())
   );
   private readonly instructionsHiddenByDefault = computed(
     () => !!(this.deploymentTargets()?.some((target) => target.deployments.length > 0) || this.artifacts()?.hasPulled)
@@ -223,7 +229,7 @@ export class CustomerHomePageComponent {
   );
 
   protected readonly checklistSection = computed<CustomerHomePrimarySection | undefined>(() => {
-    if (this.features() === undefined || this.hasApplications() === undefined) {
+    if (this.features() === undefined || this.applicationsAvailable() === undefined) {
       return undefined;
     }
     if (this.canDeploy()) {
@@ -233,6 +239,19 @@ export class CustomerHomePageComponent {
   });
 
   private readonly accessTokens$ = this.accessTokensService.list().pipe(shareReplay(1));
+
+  private readonly notificationFeatures$ = combineLatest([
+    this.features$,
+    this.featureFlags.isNotificationsEnabled$.pipe(take(1)),
+  ]).pipe(map(([features, enabled]) => (enabled ? features : [])));
+  private readonly updateNotificationConfigurations$ = this.notificationFeatures$.pipe(
+    switchMap((features) =>
+      features.includes('update_notifications')
+        ? this.updateNotificationConfigurationsService.list().pipe(recoverWithToast(this.toast, undefined))
+        : of(undefined)
+    ),
+    shareReplay(1)
+  );
 
   protected readonly checklist = toSignal(
     combineLatest({
@@ -244,6 +263,7 @@ export class CustomerHomePageComponent {
       ),
       accessTokenCount: this.accessTokens$.pipe(map((tokens) => tokens.length)),
       artifacts: this.rawArtifacts$,
+      updateNotificationConfigurations: this.updateNotificationConfigurations$,
     }).pipe(map(toCustomerHomeChecklist), recoverWithToast(this.toast, null))
   );
   protected readonly checklistCompleted = computed(() => {
@@ -254,9 +274,18 @@ export class CustomerHomePageComponent {
       checklist.profileCompleted &&
       checklist.teamMembersInvited &&
       (section !== 'deployments' || (checklist.deploymentCreated && checklist.secretCreated)) &&
-      (section !== 'artifacts' || (checklist.accessTokenCreated && checklist.artifactPulled))
+      (section !== 'artifacts' || (checklist.accessTokenCreated && checklist.artifactPulled)) &&
+      (checklist.updateNotificationsConfigured ?? true)
     );
   });
+  private readonly checklistDismissed = linkedSignal(
+    () => storedFlag(localStorage, this.checklistHiddenKey()) ?? false
+  );
+  private readonly checklistPending = computed(
+    () => !!this.checklist() && this.checklistSection() !== undefined && !this.checklistCompleted()
+  );
+  protected readonly checklistVisible = computed(() => this.checklistPending() && !this.checklistDismissed());
+  protected readonly checklistRestorable = computed(() => this.checklistPending() && this.checklistDismissed());
 
   protected readonly license = toSignal(
     this.featureFlags.isLicensingEnabled$.pipe(
@@ -278,15 +307,11 @@ export class CustomerHomePageComponent {
     )
   );
 
-  private readonly notificationFeatures$ = combineLatest([
-    this.features$,
-    this.featureFlags.isNotificationsEnabled$.pipe(take(1)),
-  ]).pipe(map(([features, enabled]) => (enabled ? features : [])));
-
+  // Alerts watch deployments through the controller, so they need an application the customer can deploy.
   protected readonly alerts = toSignal(
-    this.notificationFeatures$.pipe(
-      switchMap((features) =>
-        features.includes('alerts')
+    combineLatest([this.notificationFeatures$, this.applicationsAvailable$]).pipe(
+      switchMap(([features, applicationsAvailable]) =>
+        features.includes('alerts') && applicationsAvailable
           ? combineLatest([
               this.alertConfigurationsService.list(),
               this.notificationRecordsService.list(undefined, customerHomeNotificationsSince()),
@@ -299,18 +324,13 @@ export class CustomerHomePageComponent {
     )
   );
 
-  protected readonly updateNotificationsMissing = toSignal(
-    this.notificationFeatures$.pipe(
-      switchMap((features) =>
-        features.includes('update_notifications')
-          ? this.updateNotificationConfigurationsService.list().pipe(
-              map((configurations) => configurations.length === 0),
-              recoverWithToast(this.toast, false)
-            )
-          : of(false)
-      )
-    ),
+  private readonly updateNotificationsMissing = toSignal(
+    this.updateNotificationConfigurations$.pipe(map((configurations) => configurations?.length === 0)),
     {initialValue: false}
+  );
+  /** The checklist prompts for update notifications itself while it is shown. */
+  protected readonly updateNotificationsCardShown = computed(
+    () => this.updateNotificationsMissing() && !this.checklistVisible()
   );
 
   protected readonly accessTokens = toSignal(
@@ -339,17 +359,18 @@ export class CustomerHomePageComponent {
     )
   );
 
-  // The checklist is requested for every customer, so until it has loaded the panels next to the activity
-  // are assumed to exist, which keeps the activity from moving out of the full width once they appear.
-  protected readonly hasPanels = computed(
+  // The checklist is requested for every customer, so until it has loaded it counts as a panel, which keeps the
+  // activity from moving out of the full width once the panels appear.
+  protected readonly panelCount = computed(
     () =>
-      this.checklist() === undefined ||
-      (!!this.checklist() && this.checklistSection() !== undefined && !this.checklistCompleted()) ||
-      this.license() !== undefined ||
-      this.alerts() !== undefined ||
-      this.updateNotificationsMissing() ||
-      this.accessTokens().length > 0 ||
-      this.supportBundles() !== undefined
+      [
+        this.checklist() === undefined || this.checklistVisible(),
+        this.license() !== undefined,
+        this.alerts() !== undefined,
+        this.updateNotificationsCardShown(),
+        this.accessTokens().length > 0,
+        this.supportBundles() !== undefined,
+      ].filter(Boolean).length
   );
 
   protected readonly activity = toSignal(
@@ -364,6 +385,18 @@ export class CustomerHomePageComponent {
       sessionStorage.setItem(key, String(hidden));
     }
     this.instructionsHiddenChoice.set(hidden);
+  }
+
+  protected setChecklistHidden(hidden: boolean) {
+    const key = this.checklistHiddenKey();
+    if (key) {
+      if (hidden) {
+        localStorage.setItem(key, 'true');
+      } else {
+        localStorage.removeItem(key);
+      }
+    }
+    this.checklistDismissed.set(hidden);
   }
 
   protected reloadDeploymentTargets() {

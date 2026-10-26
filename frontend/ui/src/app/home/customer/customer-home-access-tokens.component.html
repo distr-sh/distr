@@ -13,22 +13,27 @@
             <span class="block truncate font-medium text-gray-900 dark:text-white">
               {{ token.label || 'Unnamed token' }}
             </span>
-            @if (token.lastUsedAt; as lastUsedAt) {
-              <span class="distr-text-muted" [title]="lastUsedAt | date: 'medium'">
-                Last used {{ lastUsedAt | relativeDate }}
+            <span class="distr-text-muted">
+              <span [title]="token.expiresAt | date: 'medium'">
+                @if (token.expired) {
+                  Expired
+                } @else {
+                  Expires
+                }
+                {{ token.expiresAt | relativeDate }}
               </span>
-            } @else {
-              <span class="distr-text-muted">Never used</span>
-            }
+              <span aria-hidden="true">&middot;</span>
+              @if (token.lastUsedAt; as lastUsedAt) {
+                <span [title]="lastUsedAt | date: 'medium'">Last used {{ lastUsedAt | relativeDate }}</span>
+              } @else {
+                Never used
+              }
+            </span>
           </div>
           @if (token.expired) {
-            <span class="distr-badge distr-badge-error" [title]="token.expiresAt | date: 'medium'">
-              Expired {{ token.expiresAt | relativeDate }}
-            </span>
+            <span class="distr-badge distr-badge-error">Expired</span>
           } @else {
-            <span class="distr-badge distr-badge-warning" [title]="token.expiresAt | date: 'medium'">
-              Expires {{ token.expiresAt | relativeDate }}
-            </span>
+            <span class="distr-badge distr-badge-warning">Expiring</span>
           }
         </a>
       </li>

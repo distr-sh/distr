@@ -1,50 +1,37 @@
 <div class="distr-card p-4">
   <h2 appCardHeading [icon]="faClockRotateLeft" class="mb-2">Activity</h2>
-  <ul class="flex flex-col gap-1 -mx-2 text-sm">
-    @for (entry of visibleEntries(); track entry.id) {
-      <li>
-        <a
-          [routerLink]="entry.link"
-          [queryParams]="entry.queryParams"
-          class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-          <fa-icon
-            [icon]="entry.icon"
-            class="flex items-center justify-center shrink-0 w-5 text-lg text-gray-500 dark:text-gray-400" />
-          <div class="min-w-0">
-            <p class="font-medium text-gray-900 dark:text-white first-letter:uppercase">{{ entry.action }}</p>
-            <p class="flex flex-wrap items-center gap-1.5 distr-text-muted">
-              @if (entry.user; as user) {
-                <app-avatar
-                  [image]="user.imageUrl"
-                  [name]="user.name"
-                  [imageIsLogo]="user.isVendor"
-                  initialsClass="text-[0.5rem]"
-                  class="size-5 rounded-full bg-gray-100 dark:bg-gray-700" />
-                <span class="font-medium text-gray-700 dark:text-gray-300">{{ user.name }}</span>
-                <span aria-hidden="true">&middot;</span>
-              }
-              <time [attr.datetime]="entry.createdAt" [title]="entry.createdAt | date: 'medium'">
-                {{ entry.createdAt | relativeDate }}
-              </time>
-            </p>
-          </div>
-        </a>
-      </li>
-    }
-  </ul>
-  @if (entries().length > collapsedEntryCount) {
-    <div class="mt-2 flex justify-center">
-      <button
-        type="button"
-        (click)="expanded.update((v) => !v)"
-        class="py-1.5 px-3 text-sm distr-btn-secondary hover:text-gray-900 dark:hover:text-white">
-        <fa-icon [icon]="expanded() ? faChevronUp : faChevronDown" class="me-1" />
-        @if (expanded()) {
-          Show less
-        } @else {
-          Show more
-        }
-      </button>
-    </div>
-  }
+  <app-customer-home-collapsible class="-mx-2" [fill]="fillHeight()" [(expanded)]="expanded">
+    <ul class="flex flex-col gap-1 text-sm">
+      @for (entry of entries(); track entry.id) {
+        <li>
+          <a
+            [routerLink]="entry.link"
+            [queryParams]="entry.queryParams"
+            class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+            <fa-icon
+              [icon]="entry.icon"
+              class="flex items-center justify-center shrink-0 w-5 text-lg text-gray-500 dark:text-gray-400" />
+            <div class="min-w-0">
+              <p class="font-medium text-gray-900 dark:text-white first-letter:uppercase">{{ entry.action }}</p>
+              <p class="flex flex-wrap items-center gap-1.5 distr-text-muted">
+                @if (entry.user; as user) {
+                  <app-avatar
+                    [image]="user.imageUrl"
+                    [name]="user.name"
+                    [imageIsLogo]="user.isVendor"
+                    initialsClass="text-[0.5rem]"
+                    class="size-5 rounded-full bg-gray-100 dark:bg-gray-700" />
+                  <span class="font-medium text-gray-700 dark:text-gray-300">{{ user.name }}</span>
+                  <span aria-hidden="true">&middot;</span>
+                }
+                <time [attr.datetime]="entry.createdAt" [title]="entry.createdAt | date: 'medium'">
+                  {{ entry.createdAt | relativeDate }}
+                </time>
+              </p>
+            </div>
+          </a>
+        </li>
+      }
+    </ul>
+  </app-customer-home-collapsible>
 </div>

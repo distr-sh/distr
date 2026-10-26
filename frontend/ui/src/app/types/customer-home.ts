@@ -62,12 +62,16 @@ export interface CustomerHomeChecklist {
   secretCreated: boolean;
   accessTokenCreated: boolean;
   artifactPulled: boolean;
+  /** Undefined when the customer has no update notifications. */
+  updateNotificationsConfigured?: boolean;
 }
 
 export interface CustomerHomeLicense {
   name: string;
   notBefore?: string;
   expiresAt?: string;
+  /** False when the customer has no license key, so the license keys page has nothing to show. */
+  hasLicenseKeys: boolean;
 }
 
 export interface CustomerHomeAlerts {

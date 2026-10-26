@@ -4,8 +4,6 @@ import {Params, RouterLink} from '@angular/router';
 import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
 import {
   faBox,
-  faChevronDown,
-  faChevronUp,
   faClockRotateLeft,
   faCube,
   faDashboard,
@@ -18,6 +16,7 @@ import {never} from '../../../util/exhaust';
 import {AvatarComponent} from '../../components/avatar.component';
 import {CardHeadingComponent} from '../../components/card-heading.component';
 import {CustomerHomeActivity} from '../../types/customer-home';
+import {CustomerHomeCollapsibleComponent} from './customer-home-collapsible.component';
 
 interface ActivityEntry {
   id: string;
@@ -31,19 +30,34 @@ interface ActivityEntry {
 
 @Component({
   selector: 'app-customer-home-activity',
-  imports: [DatePipe, RouterLink, FaIconComponent, RelativeDatePipe, AvatarComponent, CardHeadingComponent],
+  imports: [
+    DatePipe,
+    RouterLink,
+    FaIconComponent,
+    RelativeDatePipe,
+    AvatarComponent,
+    CardHeadingComponent,
+    CustomerHomeCollapsibleComponent,
+  ],
   templateUrl: './customer-home-activity.component.html',
+  host: {
+    class: 'block',
+    '[class.lg:absolute]': 'fillHeight() && !expanded()',
+    '[class.lg:inset-0]': 'fillHeight() && !expanded()',
+  },
 })
 export class CustomerHomeActivityComponent {
   public readonly activity = input.required<CustomerHomeActivity[]>();
   public readonly vendorName = input<string>();
   public readonly vendorLogo = input<string>();
+  /**
+   * Collapsed, the card takes the height of its positioned parent instead of its own, which places it next to the
+   * other cards at their height. The parent's grid row then has to be sized by those cards alone.
+   */
+  public readonly fillHeight = input(false);
 
-  protected readonly faChevronDown = faChevronDown;
-  protected readonly faChevronUp = faChevronUp;
   protected readonly faClockRotateLeft = faClockRotateLeft;
 
-  protected readonly collapsedEntryCount = 5;
   protected readonly expanded = signal(false);
 
   protected readonly entries = computed<ActivityEntry[]>(() =>
@@ -68,9 +82,6 @@ export class CustomerHomeActivityComponent {
           : activity.user && {...activity.user, isVendor: false},
       };
     })
-  );
-  protected readonly visibleEntries = computed(() =>
-    this.expanded() ? this.entries() : this.entries().slice(0, this.collapsedEntryCount)
   );
 }
 

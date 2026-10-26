@@ -1,5 +1,11 @@
-<a routerLink="/license-keys" class="distr-card distr-card-hover block p-4">
-  <h2 appCardHeading [icon]="faKey" class="mb-3">License</h2>
+<div class="distr-card relative block p-4" [class.distr-card-hover]="license().hasLicenseKeys">
+  <h2 appCardHeading [icon]="faKey" class="mb-3">
+    @if (license().hasLicenseKeys) {
+      <a routerLink="/license-keys" class="after:absolute after:inset-0">License</a>
+    } @else {
+      License
+    }
+  </h2>
 
   @let s = state();
   @if (s.type === 'expired') {
@@ -23,4 +29,4 @@
       }
     </app-alert>
   }
-</a>
+</div>

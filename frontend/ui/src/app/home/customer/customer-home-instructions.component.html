@@ -9,36 +9,10 @@
       <span class="sr-only">Hide instructions</span>
     </button>
   }
-  <div class="relative mx-auto max-w-5xl" [class.pe-8]="dismissible()">
+  <app-customer-home-collapsible class="mx-auto max-w-5xl">
     <div
-      #clip
-      class="overflow-hidden transition-[max-height] duration-300 ease-in-out"
-      [class.max-h-96]="!expanded()"
-      [style.max-height.px]="expanded() ? contentHeight() : null">
-      <div #content class="markdown text-gray-900 dark:text-white" [innerMarkdown]="description()"></div>
-    </div>
-    @if (overflowing() && !expanded()) {
-      <div
-        class="absolute inset-x-0 bottom-0 h-24 flex items-end justify-center bg-linear-to-t from-white dark:from-gray-800 to-transparent">
-        <button
-          type="button"
-          (click)="expanded.set(true)"
-          class="py-1.5 px-3 text-sm distr-btn-secondary hover:text-gray-900 dark:hover:text-white">
-          <fa-icon [icon]="faChevronDown" class="me-1" />
-          Show more
-        </button>
-      </div>
-    }
-  </div>
-  @if (expanded()) {
-    <div class="mt-3 flex justify-center">
-      <button
-        type="button"
-        (click)="expanded.set(false)"
-        class="py-1.5 px-3 text-sm distr-btn-secondary hover:text-gray-900 dark:hover:text-white">
-        <fa-icon [icon]="faChevronUp" class="me-1" />
-        Show less
-      </button>
-    </div>
-  }
+      class="markdown text-gray-900 dark:text-white"
+      [class.pe-8]="dismissible()"
+      [innerMarkdown]="description()"></div>
+  </app-customer-home-collapsible>
 </div>

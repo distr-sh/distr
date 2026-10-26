@@ -33,8 +33,10 @@ export class CustomerHomeDeploymentsComponent {
   public readonly deploymentTargets = input.required<CustomerHomeDeploymentTarget[]>();
   public readonly artifacts = input.required<CustomerHomeArtifacts>();
   public readonly instructionsHidden = input.required<boolean>();
+  public readonly checklistHidden = input.required<boolean>();
   public readonly deploymentCreated = output<void>();
   public readonly showInstructions = output<void>();
+  public readonly showChecklist = output<void>();
 
   protected readonly faBox = faBox;
   protected readonly faDashboard = faDashboard;

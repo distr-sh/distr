@@ -1,6 +1,7 @@
 import {AsyncPipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, input} from '@angular/core';
 import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
+import {initials} from '../../util/initials';
 import {SecureImagePipe} from '../../util/secureImage';
 
 /**
@@ -46,12 +47,5 @@ export class AvatarComponent {
   public readonly iconClass = input<string>('text-lg');
   public readonly initialsClass = input<string>('text-xs');
 
-  protected readonly initials = computed(() =>
-    this.name()
-      ?.split(' ')
-      .map((part) => part.charAt(0))
-      .join('')
-      .toUpperCase()
-      .substring(0, 2)
-  );
+  protected readonly initials = computed(() => initials(this.name()));
 }

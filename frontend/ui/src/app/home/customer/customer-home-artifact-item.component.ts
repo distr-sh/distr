@@ -1,7 +1,6 @@
 import {DatePipe} from '@angular/common';
 import {Component, computed, input} from '@angular/core';
 import {RouterLink} from '@angular/router';
-import {faBox} from '@fortawesome/free-solid-svg-icons';
 import {RelativeDatePipe} from '../../../util/dates';
 import {CustomerHomeArtifact} from '../../types/customer-home';
 import {CustomerHomeTitleImageComponent} from './customer-home-title-image.component';
@@ -17,8 +16,6 @@ import {CustomerHomeTitleImageComponent} from './customer-home-title-image.compo
 })
 export class CustomerHomeArtifactItemComponent {
   public readonly artifact = input.required<CustomerHomeArtifact>();
-
-  protected readonly faBox = faBox;
 
   protected readonly pulledBy = computed(() => {
     const pull = this.artifact().lastPull;

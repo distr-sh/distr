@@ -19,6 +19,7 @@ import {
   CustomerHomeUser,
 } from '../../types/customer-home';
 import {LicenseKey} from '../../types/license-key';
+import {UpdateNotificationConfiguration} from '../../types/notification-configuration';
 import {NotificationRecord} from '../../types/notification-record';
 import {SupportBundle} from '../../types/support-bundle';
 
@@ -94,6 +95,8 @@ export interface CustomerHomeChecklistSources {
   secretCount: number;
   accessTokenCount: number;
   artifacts: Artifact[];
+  /** Undefined when the customer has no update notifications. */
+  updateNotificationConfigurations: UpdateNotificationConfiguration[] | undefined;
 }
 
 export function toCustomerHomeChecklist(sources: CustomerHomeChecklistSources): CustomerHomeChecklist {
@@ -104,6 +107,8 @@ export function toCustomerHomeChecklist(sources: CustomerHomeChecklistSources): 
     secretCreated: sources.secretCount > 0,
     accessTokenCreated: sources.accessTokenCount > 0,
     artifactPulled: sources.artifacts.some((artifact) => artifact.lastPull !== undefined),
+    updateNotificationsConfigured:
+      sources.updateNotificationConfigurations && sources.updateNotificationConfigurations.length > 0,
   };
 }
 
@@ -125,9 +130,10 @@ export function toCustomerHomeLicense(
     expiresAt === undefined ? Number.MAX_SAFE_INTEGER : dayjs(expiresAt).valueOf();
   const byName = (a: CustomerHomeLicense, b: CustomerHomeLicense) => a.name.localeCompare(b.name);
 
+  const hasLicenseKeys = licenseKeys.length > 0;
   const keyRank = (key: CustomerHomeLicense) => (expired(key) ? 2 : notYetValid(key) ? 1 : 0);
   const licenseKey = licenseKeys
-    .map((key) => ({name: key.name ?? '', notBefore: key.notBefore, expiresAt: key.expiresAt}))
+    .map((key) => ({name: key.name ?? '', notBefore: key.notBefore, expiresAt: key.expiresAt, hasLicenseKeys}))
     .sort((a, b) => keyRank(a) - keyRank(b) || expiry(b) - expiry(a) || byName(a, b))
     .at(0);
 
@@ -137,6 +143,7 @@ export function toCustomerHomeLicense(
     ...entitlements.map((entitlement) => ({
       name: entitlement.name ?? '',
       expiresAt: entitlement.expiresAt && dayjs(entitlement.expiresAt).toISOString(),
+      hasLicenseKeys,
     })),
   ]
     .sort((a, b) => urgency(a) - urgency(b) || expiry(a) - expiry(b) || byName(a, b))

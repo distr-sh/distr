@@ -29,7 +29,7 @@ import {
   faUsers,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import {map, of, switchMap} from 'rxjs';
+import {catchError, map, of, switchMap} from 'rxjs';
 import {WEBSITE_URL} from '../../../constants';
 import {buildConfig} from '../../../data';
 import {environment} from '../../../env/env';
@@ -41,6 +41,7 @@ import {
 import {AuthService} from '../../services/auth.service';
 import {ContextService} from '../../services/context.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
+import {LicenseKeysService} from '../../services/license-keys.service';
 import {OrganizationService} from '../../services/organization.service';
 import {SidebarService} from '../../services/sidebar.service';
 import {TutorialsService} from '../../services/tutorials.service';
@@ -73,6 +74,7 @@ export class SideBarComponent {
   private readonly tutorialsService = inject(TutorialsService);
   private readonly featureFlags = inject(FeatureFlagService);
   private readonly contextService = inject(ContextService);
+  private readonly licenseKeysService = inject(LicenseKeysService);
 
   protected readonly buildConfig = buildConfig;
   protected readonly edition = environment.edition;
@@ -117,6 +119,21 @@ export class SideBarComponent {
         )
       : signal(true);
   protected readonly isLicensingFeatureEnabled = toSignal(this.featureFlags.isLicensingEnabled$);
+  // The license keys page lists only license keys, so a customer licensed through entitlements alone would land on
+  // an empty page.
+  protected readonly isCustomerLicensesVisible = toSignal(
+    this.featureFlags.isLicensingEnabled$.pipe(
+      switchMap((enabled) =>
+        enabled && this.auth.isCustomer()
+          ? this.licenseKeysService.list().pipe(
+              map((licenseKeys) => licenseKeys.length > 0),
+              catchError(() => of(false))
+            )
+          : of(false)
+      )
+    ),
+    {initialValue: false}
+  );
   protected readonly isNotificationsFeatureEnabled = toSignal(this.featureFlags.isNotificationsEnabled$);
   protected readonly isSupportBundlesFeatureEnabled = toSignal(this.featureFlags.isSupportBundlesEnabled$);
   protected readonly isVulnerabilitiesFeatureEnabled = this.featureFlags.isVulnerabilitiesEnabled;
