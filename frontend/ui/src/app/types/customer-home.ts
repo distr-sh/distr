@@ -70,6 +70,7 @@ export interface CustomerHomeLicense {
   name: string;
   notBefore?: string;
   expiresAt?: string;
+  entitlement: boolean;
   /** False when the customer has no license key, so the license keys page has nothing to show. */
   hasLicenseKeys: boolean;
 }

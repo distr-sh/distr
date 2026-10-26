@@ -26,7 +26,9 @@ export class CustomerHomeLicenseComponent {
   protected readonly faKey = faKey;
 
   protected readonly state = computed<LicenseState>(() => {
-    const {name, notBefore, expiresAt} = this.license();
+    const license = this.license();
+    const {notBefore, expiresAt} = license;
+    const name = license.entitlement ? 'Entitlement' : license.name;
     if (notBefore !== undefined && dayjs(notBefore).isAfter()) {
       return {type: 'not_yet_valid', name, notBefore};
     }

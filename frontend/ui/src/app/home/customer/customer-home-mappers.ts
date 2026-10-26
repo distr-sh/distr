@@ -133,7 +133,13 @@ export function toCustomerHomeLicense(
   const hasLicenseKeys = licenseKeys.length > 0;
   const keyRank = (key: CustomerHomeLicense) => (expired(key) ? 2 : notYetValid(key) ? 1 : 0);
   const licenseKey = licenseKeys
-    .map((key) => ({name: key.name ?? '', notBefore: key.notBefore, expiresAt: key.expiresAt, hasLicenseKeys}))
+    .map((key) => ({
+      name: key.name ?? '',
+      notBefore: key.notBefore,
+      expiresAt: key.expiresAt,
+      entitlement: false,
+      hasLicenseKeys,
+    }))
     .sort((a, b) => keyRank(a) - keyRank(b) || expiry(b) - expiry(a) || byName(a, b))
     .at(0);
 
@@ -143,6 +149,7 @@ export function toCustomerHomeLicense(
     ...entitlements.map((entitlement) => ({
       name: entitlement.name ?? '',
       expiresAt: entitlement.expiresAt && dayjs(entitlement.expiresAt).toISOString(),
+      entitlement: true,
       hasLicenseKeys,
     })),
   ]
