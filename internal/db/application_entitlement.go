@@ -18,7 +18,7 @@ import (
 var (
 	applicationEntitlementOutputExpr = `
 		al.id, al.created_at, al.name, al.expires_at, al.application_id, al.organization_id,
-		al.customer_organization_id, al.registry_url,
+		al.customer_organization_id, al.registry_url, al.auto_add_version_regex,
 		` + entitlementRegistryUsername.Output("al") + `,
 		` + entitlementRegistryPassword.Output("al") + `
 	`
@@ -80,6 +80,7 @@ func applicationEntitlementArgs(e types.ApplicationEntitlementBase) (pgx.NamedAr
 		"registryUrl":            e.RegistryURL,
 		"registryUsernameEnc":    registryUsernameEnc,
 		"registryPasswordEnc":    registryPasswordEnc,
+		"autoAddVersionRegex":    e.AutoAddVersionRegex,
 	}, nil
 }
 
@@ -104,10 +105,10 @@ func CreateApplicationEntitlement(ctx context.Context, entitlement *types.Applic
 		ctx,
 		`INSERT INTO ApplicationEntitlement AS al (
 			name, expires_at, application_id, organization_id, customer_organization_id, registry_url,
-			registry_username_enc, registry_password_enc
+			registry_username_enc, registry_password_enc, auto_add_version_regex
 		) VALUES (
 			@name, @expiresAt, @applicationId, @organizationId, @customerOrganizationId, @registryUrl,
-			@registryUsernameEnc, @registryPasswordEnc
+			@registryUsernameEnc, @registryPasswordEnc, @autoAddVersionRegex
 		) RETURNING`+applicationEntitlementOutputExpr,
 		args,
 	)
@@ -134,7 +135,8 @@ func UpdateApplicationEntitlement(ctx context.Context, entitlement *types.Applic
 			registry_username = NULL,
 			registry_username_enc = @registryUsernameEnc,
 			registry_password = NULL,
-			registry_password_enc = @registryPasswordEnc
+			registry_password_enc = @registryPasswordEnc,
+			auto_add_version_regex = @autoAddVersionRegex
 		WHERE al.id = @id AND al.organization_id = @organizationId
 		RETURNING`+applicationEntitlementOutputExpr,
 		args,
@@ -160,6 +162,51 @@ func RevokeApplicationEntitlementWithID(ctx context.Context, id uuid.UUID) error
 	} else {
 		return nil
 	}
+}
+
+func GetApplicationEntitlementsWithAutoAddVersionRegex(
+	ctx context.Context,
+	applicationID uuid.UUID,
+) ([]types.ApplicationEntitlementBase, error) {
+	rows, err := internalctx.GetDb(ctx).Query(
+		ctx,
+		`SELECT `+applicationEntitlementOutputExpr+`
+		FROM ApplicationEntitlement al
+		WHERE al.application_id = @applicationId
+			AND al.auto_add_version_regex IS NOT NULL
+			AND EXISTS (
+				SELECT FROM ApplicationEntitlement_ApplicationVersion aeav WHERE aeav.application_entitlement_id = al.id
+			)`,
+		pgx.NamedArgs{"applicationId": applicationID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query ApplicationEntitlement: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ApplicationEntitlementBase])
+	if err != nil {
+		return nil, fmt.Errorf("could not collect ApplicationEntitlement: %w", err)
+	}
+	return result, nil
+}
+
+// AddVersionToApplicationEntitlements reports whether the version was added to any entitlement that did not
+// contain it yet.
+func AddVersionToApplicationEntitlements(
+	ctx context.Context,
+	versionID uuid.UUID,
+	entitlementIDs []uuid.UUID,
+) (bool, error) {
+	cmd, err := internalctx.GetDb(ctx).Exec(
+		ctx,
+		`INSERT INTO ApplicationEntitlement_ApplicationVersion (application_entitlement_id, application_version_id)
+		SELECT unnest(@entitlementIds::UUID[]), @versionId::UUID
+		ON CONFLICT (application_entitlement_id, application_version_id) DO NOTHING`,
+		pgx.NamedArgs{"entitlementIds": entitlementIDs, "versionId": versionID},
+	)
+	if err != nil {
+		return false, fmt.Errorf("could not insert version relations: %w", err)
+	}
+	return cmd.RowsAffected() > 0, nil
 }
 
 func andApplicationIdMatchesOrEmpty(applicationID *uuid.UUID) string {

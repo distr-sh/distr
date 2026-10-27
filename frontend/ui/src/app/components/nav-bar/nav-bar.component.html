@@ -1,4 +1,4 @@
-<nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+<nav class="fixed top-0 z-50 w-full border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
   @let organization = currentOrg();
   @if (isSubscriptionBannerVisible() && organization) {
     <app-nav-bar-subscription-banner
@@ -9,10 +9,10 @@
 
   @if (tutorial()) {
     <div class="relative">
-      <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 mt-8">
+      <div class="absolute top-1/2 left-1/2 mt-8 -translate-x-1/2 -translate-y-1/2 transform">
         <a
           [routerLink]="['tutorials', tutorial()]"
-          class="flex-1 sm:flex-none inline-flex items-center justify-center text-white distr-btn-primary">
+          class="distr-btn-primary inline-flex flex-1 items-center justify-center text-white sm:flex-none">
           <fa-icon [icon]="faArrowLeft" class="me-4" />
           Continue Tutorial</a
         >
@@ -31,19 +31,19 @@
               aria-controls="logo-sidebar"
               type="button"
               (click)="sidebar.toggle()"
-              class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
+              class="inline-flex items-center rounded-lg p-2 text-sm text-gray-500 hover:bg-gray-100 focus:ring-2 focus:ring-gray-200 focus:outline-none sm:hidden dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
               <span class="sr-only">Open sidebar</span>
               <fa-icon [icon]="faBarsStaggered" size="xl" class="h-6 w-6" />
             </button>
           }
-          <a routerLink="/" class="flex ms-2 md:me-24">
-            <img [src]="(logoUrl() | secureImage | async) ?? '/distr-logo.svg'" class="h-8 me-3" alt="" />
-            <h1 class="font-display self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">
+          <a routerLink="/" class="ms-2 flex md:me-24">
+            <img [src]="(logoUrl() | secureImage | async) ?? '/distr-logo.svg'" class="me-3 h-8" alt="" />
+            <h1 class="self-center font-display text-xl font-semibold whitespace-nowrap sm:text-2xl dark:text-white">
               @if (!auth.isCustomer() && !hasCustomLogo()) {
                 Distr
               }
 
-              <small class="ms-2 font-semibold text-gray-500 dark:text-gray-400 hidden sm:inline">
+              <small class="ms-2 hidden font-semibold text-gray-500 sm:inline dark:text-gray-400">
                 @if (auth.isCustomer()) {
                   {{ customerSubtitle() }}
                 } @else if (auth.isPartner()) {
@@ -56,26 +56,29 @@
           </a>
         </div>
         <div class="flex items-center">
-          <div class="flex items-center ms-3">
+          <div class="ms-3 flex items-center">
             <div>
               <app-color-scheme-switcher />
             </div>
 
-            @if (isOrganizationSwitcherVisible()) {
+            @if (organization) {
               <div class="ms-2 me-4">
                 <button
                   type="button"
-                  class="flex items-center text-sm"
-                  [title]="'Switch organization (' + switcherShortcut + ')'"
-                  [attr.aria-expanded]="organizationsOpened()"
+                  class="flex items-center text-sm disabled:cursor-default"
+                  [disabled]="!canSwitchOrganization()"
+                  [attr.title]="canSwitchOrganization() ? 'Switch organization (' + switcherShortcut + ')' : null"
+                  [attr.aria-expanded]="canSwitchOrganization() ? organizationsOpened() : null"
                   cdkOverlayOrigin
                   #organizationsDropdownTrigger="cdkOverlayOrigin"
                   (click)="toggleOrganizations()">
-                  <span class="sr-only">Show Organizations</span>
+                  @if (canSwitchOrganization()) {
+                    <span class="sr-only">Show Organizations</span>
+                  }
                   <span class="flex flex-col text-end text-sm font-medium text-gray-900 dark:text-gray-300" role="none">
                     <span class="flex items-center justify-end gap-2" role="none">
-                      {{ organization?.name }}
-                      @if (organization && auth.isSuperAdmin()) {
+                      {{ organization.name }}
+                      @if (auth.isSuperAdmin()) {
                         <app-subscription-badge
                           [plan]="organization.subscriptionType"
                           [endsAt]="organization.subscriptionEndsAt" />
@@ -87,18 +90,20 @@
                       </span>
                     } @else {
                       <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
-                        @if (isDifferentOrganizationKind() && currentOrg(); as currentOrganization) {
-                          {{ currentOrganization | membershipLabel }}
+                        @if (isDifferentOrganizationKind()) {
+                          {{ organization | membershipLabel }}
                           &bull;
                         }
                         {{ user.userRole | userRoleLabel }}
                       </span>
                     }
                   </span>
-                  <fa-icon
-                    class="ml-2 text-gray-900 dark:text-gray-300 transition duration-150 ease-in-out"
-                    [class.rotate-x-180]="organizationsOpened()"
-                    [icon]="faChevronDown" />
+                  @if (canSwitchOrganization()) {
+                    <fa-icon
+                      class="ml-2 text-gray-900 transition duration-150 ease-in-out dark:text-gray-300"
+                      [class.rotate-x-180]="organizationsOpened()"
+                      [icon]="faChevronDown" />
+                  }
                 </button>
               </div>
               <ng-template
@@ -109,7 +114,7 @@
                 [cdkConnectedOverlayOrigin]="organizationsDropdownTrigger"
                 [cdkConnectedOverlayOpen]="organizationsOpened()">
                 <div
-                  class="distr-dropdown-panel my-2 flex flex-col max-h-[80vh]"
+                  class="distr-dropdown-panel my-2 flex max-h-[80vh] flex-col"
                   animate.enter="animate-flip-in-top"
                   animate.leave="animate-flip-out-top">
                   @if (isOrganizationSearchVisible()) {
@@ -120,79 +125,46 @@
                         [autofocus]="true" />
                     </div>
                   }
-                  @if (availableOrgs().length > 0) {
-                    <ul class="overflow-y-auto min-h-0" role="none">
-                      @for (org of matchingOrgs(); track org.id) {
-                        <li>
-                          <button
-                            (click)="switchContext(org)"
-                            [title]="'Switch to this organization'"
-                            class="distr-dropdown-item focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
-                            role="menuitem">
-                            <fa-icon class="w-4" [icon]="faShuffle" />
-                            <span
-                              class="flex flex-col text-start text-sm font-medium text-gray-900 dark:text-gray-300"
-                              role="none">
-                              <span class="flex items-center gap-2" role="none">
-                                {{ org.name }}
-                                @if (auth.isSuperAdmin()) {
-                                  <app-subscription-badge
-                                    [plan]="org.subscriptionType"
-                                    [endsAt]="org.subscriptionEndsAt" />
-                                }
-                              </span>
-                              <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
-                                @if (!auth.isSuperAdmin()) {
-                                  @if (isDifferentOrganizationKind()) {
-                                    {{ org | membershipLabel }}
-                                    &bull;
-                                  }
-                                  {{ org.userRole | userRoleLabel }}
-                                }
-                              </span>
-                            </span>
-                          </button>
-                        </li>
-                      } @empty {
-                        <li>
-                          <div class="px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300" role="menuitem">
-                            No organization matches your filter.
-                          </div>
-                        </li>
-                      }
-                    </ul>
-                  } @else {
-                    <ul role="none">
-                      <li>
-                        <div
-                          class="flex items-center text-start px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300"
-                          role="menuitem">
-                          @if (auth.isCustomOidcSession()) {
-                            You signed in through your organization's identity provider,<br />
-                            so you cannot switch to another organization or create one.<br />
-                            Sign in with a password to do that.
-                          } @else {
-                            You are not part of any other organization.
-                          }
-                        </div>
-                      </li>
-                    </ul>
-                  }
-                  @if (!auth.isSuperAdmin() && isVendorSomewhere() && canCreateOrganization()) {
-                    <ul class="shrink-0" role="none">
-                      <li class="distr-dropdown-divider"></li>
+                  <ul class="min-h-0 overflow-y-auto" role="none">
+                    @for (org of matchingOrgs(); track org.id) {
                       <li>
                         <button
-                          (click)="showCreateOrgModal()"
-                          type="button"
-                          class="distr-dropdown-item"
+                          (click)="switchContext(org)"
+                          [title]="'Switch to this organization'"
+                          class="distr-dropdown-item focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
                           role="menuitem">
-                          <fa-icon [icon]="faPlus" class="w-4" />
-                          Create Organization
+                          <fa-icon class="w-4" [icon]="faShuffle" />
+                          <span
+                            class="flex flex-col text-start text-sm font-medium text-gray-900 dark:text-gray-300"
+                            role="none">
+                            <span class="flex items-center gap-2" role="none">
+                              {{ org.name }}
+                              @if (auth.isSuperAdmin()) {
+                                <app-subscription-badge
+                                  [plan]="org.subscriptionType"
+                                  [endsAt]="org.subscriptionEndsAt" />
+                              }
+                            </span>
+                            <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
+                              @if (!auth.isSuperAdmin()) {
+                                @if (isDifferentOrganizationKind()) {
+                                  {{ org | membershipLabel }}
+                                  &bull;
+                                }
+                                {{ org.userRole | userRoleLabel }}
+                              }
+                            </span>
+                          </span>
                         </button>
                       </li>
-                    </ul>
-                  }
+                    } @empty {
+                      <li>
+                        <div class="px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300" role="menuitem">
+                          No organization matches your filter.
+                        </div>
+                      </li>
+                    }
+                  </ul>
                 </div>
               </ng-template>
             }
@@ -209,8 +181,8 @@
                 @if (user.imageUrl) {
                   <img class="size-8 rounded-full" [attr.src]="user.imageUrl | secureImage | async" alt="user photo" />
                 } @else {
-                  <div class="shrink-0 text-gray-400 -m-1">
-                    <fa-icon [icon]="faUserCircle" class="text-3xl cursor-pointer" />
+                  <div class="-m-1 shrink-0 text-gray-400">
+                    <fa-icon [icon]="faUserCircle" class="cursor-pointer text-3xl" />
                   </div>
                 }
               </button>
@@ -228,7 +200,7 @@
                 animate.leave="animate-flip-out-top">
                 <div class="px-2 py-1.5" role="none">
                   <p class="text-sm text-gray-900 dark:text-white" role="none">{{ user.name }}</p>
-                  <p class="text-sm font-medium text-gray-900 truncate dark:text-gray-300" role="none">
+                  <p class="truncate text-sm font-medium text-gray-900 dark:text-gray-300" role="none">
                     {{ user.email }}
                   </p>
                 </div>
@@ -269,46 +241,3 @@
     </div>
   }
 </nav>
-
-<ng-template #createOrgModal>
-  <div
-    class="p-4 w-full mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900"
-    animate.enter="animate-fly-in-top"
-    animate.leave="animate-fly-out-top">
-    <!-- Modal header -->
-    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
-      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Create Organization</h2>
-      <button
-        type="button"
-        (click)="closeCreateOrgModal()"
-        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
-        <fa-icon [icon]="faXmark" />
-        <span class="sr-only">Close modal</span>
-      </button>
-    </div>
-    <!-- Modal body -->
-    <div class="p-4 md:p-5 space-y-4">
-      <section class="antialiased">
-        <div class="mx-auto max-w-7xl px-4 2xl:px-0">
-          <form class="mx-auto" (ngSubmit)="submitCreateOrgForm()" [formGroup]="createOrgForm">
-            <div class="flex flex-col space-y-5">
-              <div class="space-y-2">
-                <label for="name" class="distr-label"> Organization Name </label>
-                <input type="text" id="name" formControlName="name" autotrim autocomplete="off" class="distr-input" />
-                @if (createOrgForm.controls.name.invalid && createOrgForm.controls.name.touched) {
-                  <div class="text-sm text-red-600 dark:text-red-500">Field is required.</div>
-                }
-              </div>
-
-              <button
-                type="submit"
-                class="self-end text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                Submit
-              </button>
-            </div>
-          </form>
-        </div>
-      </section>
-    </div>
-  </div>
-</ng-template>

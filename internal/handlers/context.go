@@ -107,6 +107,8 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 		return nil, fmt.Errorf("failed to count billable user accounts: %w", err)
 	} else if customerOrgCount, err := db.CountCustomerOrganizationsByOrganizationID(ctx, orgID); err != nil {
 		return nil, fmt.Errorf("failed to count customer organizations: %w", err)
+	} else if hasPulledArtifact, err := db.HasUserAccountPulledArtifact(ctx, auth.CurrentUserID()); err != nil {
+		return nil, fmt.Errorf("failed to check artifact pulls: %w", err)
 	} else {
 		// The registry host is best-effort: without branding it still resolves custom domains
 		// and falls back to the instance default.
@@ -124,12 +126,12 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 			Organization: mapping.OrganizationToAPI(
 				*auth.CurrentOrg(), billableUserCount, customerOrgCount, controllerRepository,
 			),
-			CustomerOrganization:  customerOrg,
-			PartnerOrganization:   partnerOrg,
-			SidebarLinks:          sidebarLinks,
-			AvailableContexts:     visibleOrganizations(auth, orgs),
-			RegistryHost:          registryHost,
-			CanCreateOrganization: !auth.OrganizationScoped(),
+			CustomerOrganization: customerOrg,
+			PartnerOrganization:  partnerOrg,
+			SidebarLinks:         sidebarLinks,
+			AvailableContexts:    visibleOrganizations(auth, orgs),
+			RegistryHost:         registryHost,
+			HasPulledArtifact:    hasPulledArtifact,
 		}), nil
 	}
 }

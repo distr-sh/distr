@@ -8,8 +8,8 @@
           (click)="openCreateModal(newApplicationModal)"
           type="button"
           id="createApplicationButton"
-          class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-          <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+          class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none md:w-auto dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+          <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
           Add application
         </button>
       </div>
@@ -33,10 +33,10 @@
               <div class="flex flex-wrap items-center gap-2">
                 <div class="flex items-center">
                   <app-application-logo
-                    class="size-8 mr-3 shrink-0"
+                    class="mr-3 size-8 shrink-0"
                     [imageUrl]="application.imageUrl"
                     [type]="application.type" />
-                  <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
+                  <span class="max-w-32 overflow-hidden text-ellipsis sm:max-w-64 lg:max-w-128">
                     {{ application.name }}
                   </span>
                 </div>
@@ -69,15 +69,15 @@
   <div
     animate.enter="animate-fly-in-top"
     animate.leave="animate-fly-out-top"
-    class="p-4 w-140 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
-    <div class="relative w-full max-h-full">
+    class="my-auto max-h-full w-140 overflow-y-auto rounded-lg bg-white p-4 shadow-sm dark:bg-gray-900">
+    <div class="relative max-h-full w-full">
       <div class="relative rounded-lg">
         <div
-          class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+          class="flex items-center justify-between rounded-t border-b border-gray-200 p-4 md:p-5 dark:border-gray-600">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Create Application</h3>
           <button
             type="button"
-            class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+            class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white"
             (click)="hideCreateModal()">
             <fa-icon [icon]="faXmark" />
             <span class="sr-only">Close modal</span>
@@ -87,7 +87,7 @@
         <div class="p-4 md:p-5">
           <form [formGroup]="createApplicationForm" (ngSubmit)="createApplication()">
             <div>
-              <div class="space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
+              <div class="space-y-4 sm:flex sm:space-y-0 sm:space-x-4">
                 <div class="w-full">
                   <label for="name" class="distr-label mb-2">
                     Application Name <span class="text-red-500">*</span>
@@ -109,62 +109,33 @@
               <div class="mt-4">
                 <label class="distr-label mb-2">Application Type <span class="text-red-500">*</span></label>
                 <div class="mb-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div
-                    class="rounded-lg border border-gray-200 bg-gray-50 p-4 ps-4 dark:border-gray-700 dark:bg-gray-800">
-                    <div class="flex items-start">
-                      <div class="flex h-5 items-center">
-                        <input
-                          id="app-type-docker-radio"
-                          [formControl]="createApplicationForm.controls.type"
-                          aria-describedby="app-type-docker-radio-text"
-                          type="radio"
-                          name="appType"
-                          value="docker"
-                          class="distr-radio" />
-                      </div>
-
-                      <div class="ms-4 text-sm">
-                        <label for="app-type-docker-radio" class="font-bold leading-none text-gray-900 dark:text-white"
-                          >Docker Compose</label
-                        >
-                        <p
-                          id="app-type-docker-radio-text"
-                          class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-                          I have a docker compose file.
-                        </p>
-                      </div>
+                  <label class="distr-radio-card">
+                    <input
+                      [formControl]="createApplicationForm.controls.type"
+                      aria-describedby="app-type-docker-radio-text"
+                      type="radio"
+                      name="appType"
+                      value="docker"
+                      class="distr-radio mt-0.5" />
+                    <div class="text-sm">
+                      <span class="font-bold text-gray-900 dark:text-white">Docker Compose</span>
+                      <p id="app-type-docker-radio-text" class="distr-hint mt-1">I have a docker compose file.</p>
                     </div>
-                  </div>
+                  </label>
 
-                  <div
-                    class="rounded-lg border border-gray-200 bg-gray-50 p-4 ps-4 dark:border-gray-700 dark:bg-gray-800">
-                    <div class="flex items-start">
-                      <div class="flex h-5 items-center">
-                        <input
-                          id="app-type-kubernetes-radio"
-                          [formControl]="createApplicationForm.controls.type"
-                          aria-describedby="app-type-kubernetes-radio-text"
-                          type="radio"
-                          name="appType"
-                          value="kubernetes"
-                          class="distr-radio"
-                          checked />
-                      </div>
-
-                      <div class="ms-4 text-sm">
-                        <label
-                          for="app-type-kubernetes-radio"
-                          class="font-bold leading-none text-gray-900 dark:text-white">
-                          Helm / Kubernetes
-                        </label>
-                        <p
-                          id="app-type-kubernetes-radio-text"
-                          class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-                          I have a Helm chart.
-                        </p>
-                      </div>
+                  <label class="distr-radio-card">
+                    <input
+                      [formControl]="createApplicationForm.controls.type"
+                      aria-describedby="app-type-kubernetes-radio-text"
+                      type="radio"
+                      name="appType"
+                      value="kubernetes"
+                      class="distr-radio mt-0.5" />
+                    <div class="text-sm">
+                      <span class="font-bold text-gray-900 dark:text-white">Helm / Kubernetes</span>
+                      <p id="app-type-kubernetes-radio-text" class="distr-hint mt-1">I have a Helm chart.</p>
                     </div>
-                  </div>
+                  </label>
                 </div>
 
                 @if (createApplicationForm.controls.type.invalid && createApplicationForm.controls.type.touched) {
@@ -213,11 +184,11 @@
                 </div>
               }
 
-              <div class="flex justify-stretch sm:justify-end mt-5 space-x-2.5">
+              <div class="mt-5 flex justify-stretch space-x-2.5 sm:justify-end">
                 <button
                   type="submit"
                   [disabled]="createApplicationFormLoading"
-                  class="flex-1 sm:flex-none inline-flex items-center justify-center text-white distr-btn-primary">
+                  class="distr-btn-primary inline-flex flex-1 items-center justify-center text-white sm:flex-none">
                   Create Application
                 </button>
               </div>

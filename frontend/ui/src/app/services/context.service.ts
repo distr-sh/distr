@@ -13,7 +13,7 @@ interface ContextResponse {
   sidebarLinks?: SidebarLink[];
   availableContexts?: OrganizationWithUserRole[];
   registryHost?: string;
-  canCreateOrganization: boolean;
+  hasPulledArtifact: boolean;
 }
 
 /**
@@ -71,8 +71,8 @@ export class ContextService {
     return this.cache.pipe(map((ctx) => ctx.registryHost));
   }
 
-  public canCreateOrganization(): Observable<boolean> {
-    return this.cache.pipe(map((ctx) => ctx.canCreateOrganization));
+  public hasPulledArtifact(): Observable<boolean> {
+    return this.cache.pipe(map((ctx) => ctx.hasPulledArtifact));
   }
 
   public reload() {

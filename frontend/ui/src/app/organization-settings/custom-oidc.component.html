@@ -75,7 +75,7 @@
         }
 
         @if (oidcProvidersEnabled()) {
-          <h4 class="text-base font-semibold text-gray-900 dark:text-white mt-8">Identity Providers</h4>
+          <h4 class="mt-8 text-base font-semibold text-gray-900 dark:text-white">Identity Providers</h4>
           <ng-container [ngTemplateOutlet]="providerSection" [ngTemplateOutletContext]="{$implicit: appDomain()}" />
         }
       </section>
@@ -122,7 +122,7 @@
       }
 
       @if (oidcProvidersEnabled()) {
-        <h4 class="text-base font-semibold text-gray-900 dark:text-white mt-8">Identity Providers</h4>
+        <h4 class="mt-8 text-base font-semibold text-gray-900 dark:text-white">Identity Providers</h4>
         <ng-container
           [ngTemplateOutlet]="providerSection"
           [ngTemplateOutletContext]="{$implicit: customerPortalDomain()}" />
@@ -161,7 +161,7 @@
       <table class="distr-table">
         <thead class="distr-table-head border-t-0">
           <tr>
-            <th scope="col" class="ps-4 py-3 w-px">Enabled</th>
+            <th scope="col" class="w-px py-3 ps-4">Enabled</th>
             <th scope="col" class="px-4 py-3">Provider</th>
             <th scope="col" class="px-4 py-3">Callback URL</th>
             <th scope="col" class="px-4 py-3"></th>
@@ -170,12 +170,12 @@
         <tbody>
           @for (configuration of configurationsFor(domain); track configuration.id) {
             <tr appClickableRow (rowActivate)="showDialog(domain, configuration)" class="distr-table-row">
-              <td class="ps-4 py-3">
-                <label class="inline-flex items-center cursor-pointer align-middle">
+              <td class="py-3 ps-4">
+                <label class="inline-flex cursor-pointer items-center align-middle">
                   <input
                     #enabledToggle
                     type="checkbox"
-                    class="sr-only peer"
+                    class="peer sr-only"
                     aria-label="Enabled"
                     [checked]="configuration.enabled"
                     (click)="toggleEnabled(configuration, enabledToggle, $event)" />
@@ -197,9 +197,9 @@
                 </div>
               </td>
               <td class="px-4 py-3">
-                <div class="inline-flex items-center gap-2 cursor-auto" (click)="$event.stopPropagation()">
+                <div class="inline-flex cursor-auto items-center gap-2" (click)="$event.stopPropagation()">
                   <code
-                    class="font-mono text-xs text-gray-500 dark:text-gray-400 truncate max-w-64"
+                    class="max-w-64 truncate font-mono text-xs text-gray-500 dark:text-gray-400"
                     [title]="configuration.callbackUrl">
                     {{ configuration.callbackUrl }}
                   </code>
@@ -207,11 +207,11 @@
                 </div>
               </td>
               <td class="px-4 py-3">
-                <div class="flex gap-2 justify-end">
+                <div class="flex justify-end gap-2">
                   <button
                     type="button"
                     (click)="test(configuration)"
-                    class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                    class="distr-btn-secondary flex items-center px-3 py-2 text-center text-sm font-medium">
                     <fa-icon [icon]="faPlug" class="mr-2 text-gray-500 dark:text-gray-400" />
                     Test
                   </button>
@@ -219,7 +219,7 @@
                     type="button"
                     aria-label="Delete"
                     (click)="remove(configuration)"
-                    class="py-2 px-3 distr-btn-danger">
+                    class="distr-btn-danger px-3 py-2">
                     <fa-icon [icon]="faTrash" class="h-4 w-4" />
                   </button>
                 </div>
@@ -229,7 +229,7 @@
             <tr class="border-t border-gray-200 dark:border-gray-600">
               <td
                 colspan="4"
-                class="px-4 py-6 font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap text-center">
+                class="px-4 py-6 text-center font-medium whitespace-nowrap text-gray-600 dark:text-gray-400">
                 No identity provider configured
               </td>
             </tr>
@@ -243,7 +243,7 @@
         type="button"
         [disabled]="!domain || !configurable()"
         (click)="showDialog(domain)"
-        class="py-2 px-4 flex items-center text-sm font-medium text-center distr-btn-secondary disabled:opacity-60 disabled:cursor-not-allowed">
+        class="distr-btn-secondary flex items-center px-4 py-2 text-center text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60">
         <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
         Add identity provider
       </button>
@@ -263,17 +263,17 @@
 
 <ng-template #formDialog>
   <div
-    class="p-4 w-4xl max-w-full mt-12 max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900"
+    class="mt-12 max-h-full w-4xl max-w-full overflow-y-auto rounded-lg bg-white p-4 shadow-sm dark:bg-gray-900"
     animate.enter="animate-fly-in-top"
     animate.leave="animate-fly-out-top">
-    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+    <div class="flex items-center justify-between rounded-t border-b border-gray-200 p-4 md:p-5 dark:border-gray-600">
       <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
         {{ editing() ? 'Edit identity provider' : 'Add identity provider' }}
       </h2>
       <button
         type="button"
         (click)="closeDialog()"
-        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+        class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
         <fa-icon [icon]="faXmark" />
         <span class="sr-only">Close modal</span>
       </button>
@@ -311,8 +311,8 @@
 
         <div class="space-y-2">
           <span class="distr-label">Callback URL</span>
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="font-mono text-sm text-gray-900 dark:text-white break-all">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-mono text-sm break-all text-gray-900 dark:text-white">
               <span>{{ callbackUrlPrefix() }}</span>
               @if (editingSlug()) {
                 <input
@@ -334,7 +334,7 @@
                 type="button"
                 title="Edit slug"
                 (click)="editSlug()"
-                class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white">
+                class="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
                 <fa-icon [icon]="faPen" />
                 <span class="sr-only">Edit slug</span>
               </button>
@@ -488,7 +488,7 @@
         <button
           type="submit"
           [disabled]="saving() || form.invalid"
-          class="self-end distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
+          class="distr-btn-primary self-end disabled:cursor-not-allowed disabled:opacity-60">
           {{ editing() ? 'Save' : 'Create' }}
         </button>
       </form>

@@ -43,7 +43,7 @@
                 {originX: 'center', originY: 'top', overlayX: 'center', overlayY: 'bottom'},
               ]">
               <div
-                class="mt-1 px-3 py-2 text-xs font-normal normal-case tracking-normal rounded-lg shadow-lg bg-gray-900 dark:bg-gray-900 text-white max-w-64">
+                class="mt-1 max-w-64 rounded-lg bg-gray-900 px-3 py-2 text-xs font-normal tracking-normal text-white normal-case shadow-lg dark:bg-gray-900">
                 CPU usage in millicores (<code>1000m</code> = one full core), averaged over the last sampling interval.
                 The percentage is relative to the container's CPU limit.
               </div>
@@ -59,7 +59,7 @@
             <th
               scope="colgroup"
               colspan="4"
-              class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              class="px-4 py-2 text-left text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
               {{ group.resource }}
             </th>
           </tr>

@@ -1,5 +1,5 @@
 <div
-  class="flex space-x-1 items-center justify-end rtl:space-x-reverse cursor-default"
+  class="flex cursor-default items-center justify-end space-x-1 rtl:space-x-reverse"
   tabindex="0"
   role="button"
   [attr.aria-haspopup]="'dialog'"
@@ -59,7 +59,7 @@
         </div>
       }
       <div>
-        <span class="inline-block size-2 me-1" [appStatusDot]="metrics().cpuUsage > 0.75 ? 'danger' : 'ok'"></span>
+        <span class="me-1 inline-block size-2" [appStatusDot]="metrics().cpuUsage > 0.75 ? 'danger' : 'ok'"></span>
         <span class="font-semibold">CPU:</span>
         {{ metrics().cpuUsage | percent: '1.1-1' }} of {{ metrics().cpuCoresMillis / 1000 }} Cores
         @if (controllerUsage(); as controller) {
@@ -67,7 +67,7 @@
         }
       </div>
       <div>
-        <span class="inline-block size-2 me-1" [appStatusDot]="metrics().memoryUsage > 0.75 ? 'danger' : 'ok'"></span>
+        <span class="me-1 inline-block size-2" [appStatusDot]="metrics().memoryUsage > 0.75 ? 'danger' : 'ok'"></span>
         <span class="font-semibold">RAM:</span>
         {{ metrics().memoryUsage | percent: '1.1-1' }} of {{ metrics().memoryBytes | bytes: '1.0-0' }}
         @if (controllerUsage(); as controller) {
@@ -79,7 +79,7 @@
       @for (disk of metrics().diskMetrics; track disk.path) {
         @let diskUsage = disk.bytesUsed / disk.bytesTotal;
         <div>
-          <span class="inline-block size-2 me-1" [appStatusDot]="diskUsage > 0.75 ? 'danger' : 'ok'"></span>
+          <span class="me-1 inline-block size-2" [appStatusDot]="diskUsage > 0.75 ? 'danger' : 'ok'"></span>
           <span class="font-semibold">{{ disk.device }}:</span>
           {{ diskUsage | percent: '1.1-1' }} of {{ disk.bytesTotal | bytes: '1.0-0' }}
         </div>
