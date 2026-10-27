@@ -267,7 +267,8 @@ func (h *handler) Put(
 
 // addTagToMatchingEntitlements adds the digest version of a new tag, which is what an entitlement selects, to every
 // entitlement whose auto-add regex matches the tag. It runs in the transaction that creates the tag, so that the
-// notifications sent after it already see the tag as entitled.
+// notifications sent after it already see the tag as entitled. The registry puts the digest reference before the tag
+// in the same transaction, so the digest version exists here.
 func addTagToMatchingEntitlements(ctx context.Context, tag types.ArtifactVersion) error {
 	if tag.IsDigestVersion() {
 		return nil
