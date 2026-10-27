@@ -115,9 +115,10 @@ export class EditArtifactEntitlementComponent
         artifacts: val.artifacts.map((artifact) => {
           return {
             artifactId: artifact.artifact?.id ?? artifact.artifactId ?? '',
+            // Until the tags have loaded, keep the saved selection, since an empty one grants all tags.
             versionIds: artifact.artifact
               ? this.getSelectedVersions(artifact.includeAllTags, artifact.artifactTags, artifact.artifact)
-              : [],
+              : (this.entitlement()?.artifacts?.find((a) => a.artifactId === artifact.artifactId)?.versionIds ?? []),
           };
         }),
         customerOrganizationId: val.customerOrganizationId,
