@@ -1,0 +1,33 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "distr.fullname" . }}
+  labels:
+    {{- include "distr.labels" . | nindent 4 }}
+    app.kubernetes.io/component: distr
+    {{- with .Values.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- /* The component label is required here: the Caddy Services carry the same selector labels. */}}
+  selector:
+    matchLabels:
+      {{- include "distr.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: distr
+  endpoints:
+    - port: metrics
+      path: /metrics
+      {{- with .Values.serviceMonitor.interval }}
+      interval: {{ . }}
+      {{- end }}
+      {{- with .Values.serviceMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ . }}
+      {{- end }}
+      {{- with .Values.serviceMonitor.bearerTokenSecret }}
+      authorization:
+        type: Bearer
+        credentials:
+          {{- toYaml . | nindent 10 }}
+      {{- end }}
+{{- end }}
