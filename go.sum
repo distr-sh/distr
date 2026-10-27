@@ -435,8 +435,8 @@ github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 h1:P6pPBnrTSX3DEVR4fDembhR
 github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0/go.mod h1:vmVJ0l/dxyfGW6FmdpVm2joNMFikkuWg0EoCKLGUMNw=
 github.com/lestrrat-go/dsig v1.4.0 h1:g7LUjK8cT74A5DzBXJI5HzsJuLhoYN0Wzj4nuOMIrH8=
 github.com/lestrrat-go/dsig v1.4.0/go.mod h1:I8Nddg/vN2cUl/h8N7SRRApLnNNeyZPIqLYpvpOtGGo=
-github.com/lestrrat-go/jwx/v4 v4.5.0 h1:lgU8YcqaJo/iZllX4AvSaQTzT2XpWWMrDcPMe6+KzqI=
-github.com/lestrrat-go/jwx/v4 v4.5.0/go.mod h1:HpoztFC5HrNj9iKkZJ3XTQQgzCY2Zto/29n89QhTC10=
+github.com/lestrrat-go/jwx/v4 v4.6.0 h1:Gq/JIOqNb/Fl3Oug5Ylfu/OUNLAnXQM+A8dMOPn4OIc=
+github.com/lestrrat-go/jwx/v4 v4.6.0/go.mod h1:QOCcs9ZL83fD8Abq9mDXLrLT0ObfyINsISiW03PZPMs=
 github.com/lestrrat-go/option/v3 v3.0.0-alpha1 h1:dvdzLwm/Ba5CJUF3jQP7w/iNYSLfy7yyh9XXNa1WjxI=
 github.com/lestrrat-go/option/v3 v3.0.0-alpha1/go.mod h1:5KSg20dfsKkNJtjDmaQRLZVXuUrzuCCcz/gbDK0pfKk=
 github.com/lib/pq v1.10.9/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
@@ -674,8 +674,6 @@ github.com/tonistiigi/vt100 v0.0.0-20240514184818-90bafcd6abab h1:H6aJ0yKQ0gF49Q
 github.com/tonistiigi/vt100 v0.0.0-20240514184818-90bafcd6abab/go.mod h1:ulncasL3N9uLrVann0m+CDlJKWsIAP34MPcOJF6VRvc=
 github.com/ulikunitz/xz v0.5.15 h1:9DNdB5s+SgV3bQ2ApL10xRc35ck0DuIX/isZvIk+ubY=
 github.com/ulikunitz/xz v0.5.15/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
-github.com/valyala/fastjson v1.6.10 h1:/yjJg8jaVQdYR3arGxPE2X5z89xrlhS0eGXdv+ADTh4=
-github.com/valyala/fastjson v1.6.10/go.mod h1:e6FubmQouUNP73jtMLmcbxS6ydWIpOfhz34TSfO3JaE=
 github.com/vbatts/tar-split v0.12.3 h1:Cd46rkGXI3Td4yrVNwU8ripbxFaQbmesqhjBUUYAJSw=
 github.com/vbatts/tar-split v0.12.3/go.mod h1:sQOc6OlqGCr7HkGx/IDBeKiTIvqhmj8KffNhEXG4Nq0=
 github.com/wneessen/go-mail v0.8.1 h1:tVcncj02/QySVFw3zr/kXOzZcuFQqBNT6K+Rbgm/pcM=

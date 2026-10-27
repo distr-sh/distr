@@ -40,7 +40,7 @@ require (
 	github.com/jackc/pgerrcode v0.0.0-20250907135507-afb5586c32a6
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/joho/godotenv v1.5.1
-	github.com/lestrrat-go/jwx/v4 v4.5.0
+	github.com/lestrrat-go/jwx/v4 v4.6.0
 	github.com/moby/moby/api v1.56.1
 	github.com/moby/moby/client v0.6.2
 	github.com/oaswrap/spec v0.5.2
@@ -291,7 +291,6 @@ require (
 	github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea // indirect
 	github.com/tonistiigi/vt100 v0.0.0-20240514184818-90bafcd6abab // indirect
 	github.com/ulikunitz/xz v0.5.15 // indirect
-	github.com/valyala/fastjson v1.6.10 // indirect
 	github.com/wneessen/go-mail v0.8.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xhit/go-str2duration/v2 v2.1.0 // indirect
