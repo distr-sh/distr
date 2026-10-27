@@ -47,19 +47,16 @@ var ControllerAuthentication = authn.New(
 	),
 )
 
-// ArtifactsAuthenticateHeader is the challenge an unauthenticated registry request is answered with.
-// OCI clients send credentials only after they have seen it, so every response that refuses an
-// anonymous request has to carry it, not just the ones this package produces.
-var ArtifactsAuthenticateHeader = http.Header{"WWW-Authenticate": []string{`Basic realm="Distr"`}}
+// AnonymousRegistryToken is the token the registry's token endpoint hands to a client without
+// credentials. A client sends it back as a Bearer token, which the registry treats as no credentials.
+const AnonymousRegistryToken = "anonymous"
 
-// ArtifactsAuthentication supports Basic auth login for OCI clients, where the password should be a PAT.
+// ArtifactsAuthentication supports Basic auth login for OCI clients, where the password should be a PAT
+// or a controller JWT, and the Bearer token the registry's token endpoint hands out for either of them.
 // The given PAT is verified against the database, to make sure that the user still exists.
 var ArtifactsAuthentication = authn.New(
 	authn.Chain(
-		token.NewExtractor(
-			token.WithExtractorFuncs(token.FromBasicAuth()),
-			token.WithErrorHeaders(ArtifactsAuthenticateHeader),
-		),
+		token.NewExtractor(token.WithExtractorFuncs(artifactsCredentialExtractors...)),
 		authn.Alternative[string, authinfo.AuthInfoWithOrganization](
 			// Authenticate UserAccount with PAT
 			authn.Chain4(
@@ -77,6 +74,29 @@ var ArtifactsAuthentication = authn.New(
 		),
 	),
 )
+
+var (
+	registryBearer                = token.FromHeader("Bearer")
+	artifactsCredentialExtractors = []token.TokenExtractorFunc{token.FromBasicAuth(), fromRegistryBearer}
+)
+
+func fromRegistryBearer(r *http.Request) string {
+	if t := registryBearer(r); t != AnonymousRegistryToken {
+		return t
+	}
+	return ""
+}
+
+// ArtifactsCredential returns the credential ArtifactsAuthentication reads from a registry request, or
+// an empty string when it carries none.
+func ArtifactsCredential(r *http.Request) string {
+	for _, fn := range artifactsCredentialExtractors {
+		if t := fn(r); t != "" {
+			return t
+		}
+	}
+	return ""
+}
 
 // ArtifactsPrincipal returns the principal of a registry request, or false when the request carries
 // no credentials, which the registry allows so that public artifacts can be pulled anonymously.

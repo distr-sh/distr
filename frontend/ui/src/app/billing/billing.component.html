@@ -1,14 +1,14 @@
 <app-page>
   <div class="flex flex-col gap-8">
     <div class="distr-table-panel">
-      <div class="flex items-center justify-between mx-4 py-4">
+      <div class="mx-4 flex items-center justify-between py-4">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">License Templates</h2>
         <div class="flex items-center gap-2">
           @if (auth.hasRole('admin')) {
             <a
               routerLink="settings"
-              class="flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-              <fa-icon [icon]="faGear" class="text-gray-500 dark:text-gray-400 mr-2" />
+              class="flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+              <fa-icon [icon]="faGear" class="mr-2 text-gray-500 dark:text-gray-400" />
               Settings
             </a>
           }
@@ -16,8 +16,8 @@
             <button
               (click)="openTemplateDrawer()"
               type="button"
-              class="flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-              <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+              class="flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+              <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
               New Template
             </button>
           }
@@ -29,7 +29,7 @@
           <a
             alertActions
             routerLink="settings"
-            class="shrink-0 py-1.5 px-3 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+            class="shrink-0 rounded-lg bg-blue-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 focus:outline-none dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
             Configure webhook
           </a>
         </app-alert>
@@ -64,7 +64,7 @@
                       type="button"
                       aria-label="Delete"
                       (click)="deleteTemplate(template)"
-                      class="py-2 px-3 distr-btn-danger">
+                      class="distr-btn-danger px-3 py-2">
                       <fa-icon [icon]="faTrash" class="h-4 w-4" />
                     </button>
                   }
@@ -87,24 +87,24 @@
 
 <ng-template #templateDrawer>
   <div
-    class="h-screen p-4 overflow-y-auto bg-white w-160 dark:bg-gray-800"
+    class="h-screen w-160 overflow-y-auto bg-white p-4 dark:bg-gray-800"
     animate.enter="animate-fly-in-right"
     animate.leave="animate-fly-out-right"
     tabindex="-1">
-    <h5 class="inline-flex items-center mb-6 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
+    <h5 class="mb-6 inline-flex items-center text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
       {{ selectedTemplate() ? 'Edit' : 'New' }} License Template
     </h5>
     <button
       type="button"
       (click)="hideDrawer()"
-      class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
-      <fa-icon [icon]="faXmark" class="w-5 h-5" />
+      class="absolute top-2.5 right-2.5 inline-flex items-center rounded-lg bg-transparent p-1.5 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
+      <fa-icon [icon]="faXmark" class="h-5 w-5" />
       <span class="sr-only">Close</span>
     </button>
 
     <form [formGroup]="templateForm" (ngSubmit)="saveTemplate()" class="flex flex-col gap-4">
       <div>
-        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300" for="template-name">Name</label>
+        <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" for="template-name">Name</label>
         <input id="template-name" type="text" formControlName="name" class="distr-input" />
         @if (templateForm.controls.name.invalid && templateForm.controls.name.touched) {
           <p class="mt-1 text-sm text-red-600 dark:text-red-400">Name is required</p>
@@ -112,7 +112,7 @@
       </div>
 
       <div>
-        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300" for="template-grace-period">
+        <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" for="template-grace-period">
           Expiration Grace Period (days)
         </label>
         <input
@@ -127,7 +127,7 @@
       </div>
 
       <div>
-        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300" for="template-payload">
+        <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" for="template-payload">
           Payload Template
         </label>
         <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">
@@ -145,11 +145,11 @@
         }
       </div>
 
-      <div class="flex justify-center w-full pb-4">
+      <div class="flex w-full justify-center pb-4">
         <button
           type="submit"
           [disabled]="templateFormLoading()"
-          class="text-white w-full inline-flex items-center justify-center distr-btn-primary disabled:opacity-60">
+          class="distr-btn-primary inline-flex w-full items-center justify-center text-white disabled:opacity-60">
           <fa-icon [icon]="faPen" class="me-2" />
           Save
         </button>

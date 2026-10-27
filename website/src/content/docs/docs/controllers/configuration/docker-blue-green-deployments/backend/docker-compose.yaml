@@ -1,6 +1,6 @@
 services:
   backend:
-    image: 'ghcr.io/distr-sh/hello-distr/backend:0.4.12'
+    image: 'ghcr.io/distr-sh/hello-distr/backend:0.4.15'
     restart: unless-stopped
     environment:
       DB_URL: postgresql://hello-distr:${POSTGRES_PASSWORD}@postgres/hello-distr?sslmode=disable
