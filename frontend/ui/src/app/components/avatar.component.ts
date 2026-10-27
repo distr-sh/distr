@@ -19,12 +19,12 @@ import {SecureImagePipe} from '../../util/secureImage';
       <img [attr.src]="image()! | secureImage | async" [alt]="name() ?? ''" class="size-full rounded-[inherit]" />
     } @else if (icon(); as fallbackIcon) {
       <span
-        class="size-full rounded-[inherit] bg-gray-400 text-white dark:text-gray-800 flex items-center justify-center">
+        class="flex size-full items-center justify-center rounded-[inherit] bg-gray-400 text-white dark:text-gray-800">
         <fa-icon [icon]="fallbackIcon" [class]="iconClass()" />
       </span>
     } @else {
       <div
-        class="size-full rounded-[inherit] bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 flex items-center justify-center font-medium"
+        class="flex size-full items-center justify-center rounded-[inherit] bg-primary-100 font-medium text-primary-700 dark:bg-primary-900 dark:text-primary-300"
         [class]="initialsClass()">
         {{ initials() ?? '' }}
       </div>

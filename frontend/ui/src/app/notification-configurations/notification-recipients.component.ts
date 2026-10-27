@@ -30,12 +30,12 @@ function groupRank(label: string): number {
     @for (group of groups(); track group.label) {
       <div class="space-y-1">
         @if (showGroupLabels()) {
-          <h4 class="text-sm dark:text-white font-semibold">{{ group.label }}</h4>
+          <h4 class="text-sm font-semibold dark:text-white">{{ group.label }}</h4>
         }
         @for (user of group.users; track user.id) {
-          <label class="flex items-center w-full" [title]="user.email">
+          <label class="flex w-full items-center" [title]="user.email">
             <input type="checkbox" class="distr-checkbox" [formControl]="control().controls[user.id!]" />
-            <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 overflow-hidden text-ellipsis">
+            <span class="ms-2 overflow-hidden text-sm font-medium text-ellipsis text-gray-900 dark:text-gray-300">
               {{ user.name || user.email }}
             </span>
           </label>

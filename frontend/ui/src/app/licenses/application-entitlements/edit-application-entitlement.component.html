@@ -1,6 +1,6 @@
 <form [formGroup]="editForm" class="space-y-4">
-  <div class="space-y-4 mt-4">
-    <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
+  <div class="mt-4 space-y-4">
+    <div class="grid grid-cols-2 space-y-4 sm:flex sm:space-y-0 sm:space-x-4 md:grid-cols-2">
       <div class="w-full">
         <label for="name" class="distr-label mb-2">Name *</label>
         <input formControlName="name" autotrim type="text" id="name" class="distr-input" placeholder="License name" />
@@ -59,7 +59,7 @@
     </div>
 
     @if (editForm.controls.versionScope.value === 'specific') {
-      <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
+      <div class="grid grid-cols-2 space-y-4 sm:flex sm:space-y-0 sm:space-x-4 md:grid-cols-2">
         <div class="w-full">
           <label for="versionsDropdownTrigger" class="distr-label mb-2">Versions</label>
           <button
@@ -71,7 +71,7 @@
             #dropdownTrigger="cdkOverlayOrigin"
             [disabled]="!auth.hasAnyRole('admin', 'read_write')"
             (click)="toggleDropdown()">
-            <span class="flex-grow text-left">
+            <span class="grow text-left">
               <ng-container [ngPlural]="versionsSelected()">
                 <ng-template ngPluralCase="=0">No versions selected</ng-template>
                 <ng-template ngPluralCase="=1">1 version selected</ng-template>
@@ -94,16 +94,16 @@
             [cdkConnectedOverlayMinWidth]="dropdownWidth() + 'px'"
             [cdkConnectedOverlayOpen]="dropdownOpen()">
             <div
-              class="distr-dropdown-panel w-full max-h-128 overflow-y-auto"
+              class="distr-dropdown-panel max-h-128 w-full overflow-y-auto"
               animate.enter="animate-flip-in-top"
               animate.leave="animate-flip-out-top">
               <ul>
                 <ng-container formArrayName="activeVersions">
                   @for (versionCtrl of activeVersionsArray.controls; track i; let i = $index) {
-                    <li class="w-full border-t first:border-t-0 border-gray-100 dark:border-gray-600">
+                    <li class="w-full border-t border-gray-100 first:border-t-0 dark:border-gray-600">
                       <label class="distr-dropdown-checkbox-item">
                         <input type="checkbox" [formControlName]="i" class="distr-checkbox" />
-                        <span class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                        <span class="ms-2 w-full py-3 text-sm font-medium text-gray-900 dark:text-gray-300">
                           {{ selectedSubject()?.versions?.[i]?.name }}
                         </span>
                       </label>
@@ -123,12 +123,12 @@
                           <summary class="select-none">
                             Including {{ includedArchivedVersions().length }} Archived Versions
                           </summary>
-                          <ul class="w-full mt-1">
+                          <ul class="mt-1 w-full">
                             @for (versionCtrl of archivedVersionsArray.controls; track i; let i = $index) {
                               <li class="w-full">
-                                <label class="flex items-center cursor-not-allowed">
+                                <label class="flex cursor-not-allowed items-center">
                                   <input type="checkbox" [formControlName]="i" class="distr-checkbox" />
-                                  <span class="w-full py-1 ms-2 font-medium text-gray-400 dark:text-gray-500">
+                                  <span class="ms-2 w-full py-1 font-medium text-gray-400 dark:text-gray-500">
                                     {{ selectedSubject()?.versions?.[i + activeVersionsArray.length]?.name }}
                                   </span>
                                 </label>
@@ -179,7 +179,7 @@
             [href]="autoAddVersionRegexDocsUrl"
             target="_blank"
             rel="noopener noreferrer"
-            class="text-primary-700 dark:text-primary-400 hover:underline"
+            class="text-primary-700 hover:underline dark:text-primary-400"
             >Learn more</a
           >
         </p>
@@ -187,9 +187,9 @@
     }
   </div>
 
-  <hr class="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
+  <hr class="my-8 h-px border-0 bg-gray-200 dark:bg-gray-700" />
 
-  <h5 class="inline-flex items-center mb-6 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
+  <h5 class="mb-6 inline-flex items-center text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
     External Registry Configuration (Optional)
   </h5>
 
@@ -216,7 +216,7 @@
     }
   </div>
 
-  <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
+  <div class="grid grid-cols-2 space-y-4 sm:flex sm:space-y-0 sm:space-x-4 md:grid-cols-2">
     <div class="w-full">
       <label for="registryUsername" class="distr-label mb-2">Registry Username</label>
       <input

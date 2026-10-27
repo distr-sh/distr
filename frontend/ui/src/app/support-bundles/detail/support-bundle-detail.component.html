@@ -1,11 +1,11 @@
 <app-page>
   @if (bundle(); as bundle) {
     <div class="distr-panel mb-6">
-      <div class="flex items-center justify-between mb-4">
+      <div class="mb-4 flex items-center justify-between">
         <div class="flex items-center">
           <a
             [routerLink]="backRoute"
-            class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mr-3">
+            class="mr-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
             <fa-icon [icon]="faArrowLeft" />
           </a>
           <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
@@ -19,7 +19,7 @@
               type="button"
               (click)="cancelBundle()"
               [disabled]="updatingStatus()"
-              class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
+              class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
               <fa-icon [icon]="faXmark" class="mr-2" />
               Cancel
             </button>
@@ -33,13 +33,13 @@
               type="button"
               (click)="markAsResolved()"
               [disabled]="updatingStatus()"
-              class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
+              class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
               <fa-icon [icon]="faCheck" class="mr-2" />
               Mark as Resolved
             </button>
           }
           @if (auth.hasAnyRole('read_write', 'admin')) {
-            <button type="button" (click)="deleteBundle()" [disabled]="deleting()" class="py-2 px-4 distr-btn-danger">
+            <button type="button" (click)="deleteBundle()" [disabled]="deleting()" class="distr-btn-danger px-4 py-2">
               <fa-icon [icon]="faTrash" class="mr-2" />
               Delete
             </button>
@@ -47,7 +47,7 @@
         </div>
       </div>
       @if (bundle.description) {
-        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">{{ bundle.description }}</p>
+        <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">{{ bundle.description }}</p>
       }
       <p class="text-xs text-gray-500 dark:text-gray-500">
         Created
@@ -72,12 +72,12 @@
       auth.hasAnyRole('read_write', 'admin')
     ) {
       <div class="distr-panel mb-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Collect Command</h2>
-        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+        <h2 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Collect Command</h2>
+        <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">
           Run this command on the target system to collect and upload the support bundle:
         </p>
-        <div class="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <code class="text-sm text-gray-900 dark:text-white break-all flex-1 select-all">{{
+        <div class="flex items-center gap-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-700">
+          <code class="flex-1 text-sm break-all text-gray-900 select-all dark:text-white">{{
             bundle.collectCommand
           }}</code>
           <app-clip [clip]="bundle.collectCommand" />
@@ -86,14 +86,14 @@
     }
 
     <div class="distr-panel mb-6">
-      <div class="flex items-center justify-between mb-4">
+      <div class="mb-4 flex items-center justify-between">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Resources ({{ bundle.resources.length }})</h2>
         @if (bundle.resources.length > 0) {
           <button
             type="button"
             (click)="downloadResources()"
             [disabled]="downloading()"
-            class="inline-flex items-center py-1.5 px-3 text-xs font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
+            class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
             <fa-icon [icon]="faDownload" class="mr-2" />
             Download
           </button>
@@ -104,16 +104,16 @@
       } @else {
         <div class="space-y-3">
           @for (resource of bundle.resources; track resource.id) {
-            <details class="group border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+            <details class="group overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
               <summary
-                class="flex items-center justify-between w-full p-4 cursor-pointer list-none [&::-webkit-details-marker]:hidden text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700">
+                class="flex w-full cursor-pointer list-none items-center justify-between p-4 text-sm font-medium text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-700 [&::-webkit-details-marker]:hidden">
                 <span>{{ resource.name }}</span>
                 <fa-icon
                   [icon]="faChevronRight"
-                  class="text-gray-500 dark:text-gray-400 transition-transform group-open:rotate-90" />
+                  class="text-gray-500 transition-transform group-open:rotate-90 dark:text-gray-400" />
               </summary>
               <pre
-                class="text-xs text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-4 overflow-x-auto whitespace-pre-wrap break-words"
+                class="overflow-x-auto border-t border-gray-200 bg-gray-50 p-4 text-xs wrap-break-word whitespace-pre-wrap text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
                 >{{ resource.content }}</pre>
             </details>
           }

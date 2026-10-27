@@ -6,8 +6,8 @@
         <button
           (click)="openDrawer(manageLicenseDrawer)"
           type="button"
-          class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-          <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+          class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none md:w-auto dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+          <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
           Create License Key
         </button>
       }
@@ -35,15 +35,15 @@
         @for (license of filteredLicenses(); track license.id) {
           <tr class="distr-table-row">
             @if (features.isVendorBillingEnabled()) {
-              <td class="ps-4 py-3 size-0">
+              <td class="size-0 py-3 ps-4">
                 @if (license.id) {
                   <app-uuid [uuid]="license.id" />
                 }
               </td>
             }
-            <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+            <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
               <div class="flex items-center gap-2">
-                <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis block">
+                <span class="block max-w-32 overflow-hidden text-ellipsis sm:max-w-64 lg:max-w-128">
                   {{ license.name }}
                 </span>
               </div>
@@ -52,7 +52,7 @@
               @if (license.name) {
                 <div class="flex items-center gap-2">
                   <code
-                    class="select-all px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600">
+                    class="rounded border border-gray-300 bg-gray-100 px-1 py-0.5 text-sm text-gray-900 select-all dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                     {{ getLicenseKeyReference(license.name) }}
                   </code>
                   <app-clip [clip]="getLicenseKeyReference(license.name)" />
@@ -60,61 +60,61 @@
               }
             </td>
             <td class="px-4 py-3 text-gray-900 dark:text-white">
-              <span class="max-w-48 overflow-hidden text-ellipsis block">
+              <span class="block max-w-48 overflow-hidden text-ellipsis">
                 {{ license.description }}
               </span>
             </td>
             @if ((auth.isVendor() || auth.isPartner()) && !customerOrganizationId()) {
-              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+              <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
                 {{ getOwnerColumn(license.customerOrganizationId) | async }}
               </td>
             }
             <td
-              class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+              class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white"
               [title]="license.expiresAt | date: 'medium'">
               {{ license.expiresAt | date }}
               @if (isExpired(license)) {
-                <span class="ml-1 distr-badge distr-badge-error">
+                <span class="distr-badge distr-badge-error ml-1">
                   <fa-icon [icon]="faCircleExclamation" />
                   Expired
                 </span>
               }
             </td>
             <td
-              class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+              class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white"
               [title]="license.lastRevisedAt | date: 'medium'">
               {{ license.lastRevisedAt | date }}
             </td>
             <td
-              class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
+              class="flex justify-end space-x-2 px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
               <button
                 type="button"
                 (click)="viewLicense(license)"
                 [disabled]="viewLicenseLoading()"
-                class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary disabled:opacity-60">
-                <fa-icon [icon]="faEye" class="h-4 w-4 mr-2 mb-1 text-gray-500 dark:text-gray-400" />
+                class="distr-btn-secondary flex items-center px-3 py-2 text-center text-sm font-medium disabled:opacity-60">
+                <fa-icon [icon]="faEye" class="mr-2 mb-1 h-4 w-4 text-gray-500 dark:text-gray-400" />
                 View License
               </button>
               @if ((auth.isVendor() || auth.isPartner()) && auth.hasAnyRole('read_write', 'admin')) {
                 <button
                   type="button"
                   (click)="openDrawer(manageLicenseDrawer, license)"
-                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                  <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
+                  class="distr-btn-secondary flex items-center px-3 py-2 text-center text-sm font-medium">
+                  <fa-icon [icon]="faPen" class="mr-2 -ml-0.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
                   Edit
                 </button>
                 <button
                   type="button"
                   (click)="duplicateLicense(manageLicenseDrawer, license)"
-                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                  <fa-icon [icon]="faCopy" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
+                  class="distr-btn-secondary flex items-center px-3 py-2 text-center text-sm font-medium">
+                  <fa-icon [icon]="faCopy" class="mr-2 -ml-0.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
                   New from&hellip;
                 </button>
                 <button
                   type="button"
                   aria-label="Delete"
                   (click)="deleteLicense(license)"
-                  class="py-2 px-3 distr-btn-danger">
+                  class="distr-btn-danger px-3 py-2">
                   <fa-icon [icon]="faTrash" class="h-4 w-4" />
                 </button>
               }
@@ -129,21 +129,21 @@
 <ng-template #manageLicenseDrawer>
   <div
     id="manage-license-key-drawer"
-    class="h-screen p-4 overflow-y-auto bg-white w-160 dark:bg-gray-800"
+    class="h-screen w-160 overflow-y-auto bg-white p-4 dark:bg-gray-800"
     animate.enter="animate-fly-in-right"
     animate.leave="animate-fly-out-right"
     tabindex="-1"
     aria-labelledby="license-key-drawer-label">
     <h5
       id="license-key-drawer-label"
-      class="inline-flex items-center mb-6 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
+      class="mb-6 inline-flex items-center text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
       Manage License Key
     </h5>
     <button
       type="button"
       (click)="hideDrawer()"
-      class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
-      <fa-icon [icon]="faXmark" class="w-5 h-5" />
+      class="absolute top-2.5 right-2.5 inline-flex items-center rounded-lg bg-transparent p-1.5 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
+      <fa-icon [icon]="faXmark" class="h-5 w-5" />
       <span class="sr-only">Close menu</span>
     </button>
 
@@ -152,18 +152,18 @@
         <app-edit-license-key formControlName="license" />
         @if (affectedDeployments().length > 0) {
           <app-alert type="warning" heading="Saving will trigger a redeployment on the following deployment targets:">
-            <ul class="mt-2 list-disc list-inside space-y-1">
+            <ul class="mt-2 list-inside list-disc space-y-1">
               @for (d of affectedDeployments(); track d.deploymentId) {
                 <li>{{ d.deploymentTargetName }} ({{ d.applicationName }})</li>
               }
             </ul>
           </app-alert>
         }
-        <div class="flex justify-center w-full pb-4 space-x-4 sm:mt-0">
+        <div class="flex w-full justify-center space-x-4 pb-4 sm:mt-0">
           <button
             type="submit"
             [disabled]="editFormLoading"
-            class="text-white w-full inline-flex items-center justify-center distr-btn-primary">
+            class="distr-btn-primary inline-flex w-full items-center justify-center text-white">
             <fa-icon [icon]="faPen" class="me-2" />
             {{ affectedDeployments().length > 0 ? 'Save and redeploy' : 'Save' }}
           </button>

@@ -1,15 +1,15 @@
 <div class="distr-card font-medium text-gray-900 dark:text-white">
-  <div class="mx-4 my-3 justify-between items-stretch md:flex">
-    <div class="flex gap-3 items-start lg:items-center mb-2 md:mb-0">
+  <div class="mx-4 my-3 items-stretch justify-between md:flex">
+    <div class="mb-2 flex items-start gap-3 md:mb-0 lg:items-center">
       @if (customer().imageUrl; as imageUrl) {
         <img class="size-10 rounded-sm" [attr.src]="imageUrl | secureImage | async" alt="" />
       } @else {
-        <fa-icon [icon]="faAddressBook" class="size-10 flex items-center justify-center text-2xl text-gray-400" />
+        <fa-icon [icon]="faAddressBook" class="flex size-10 items-center justify-center text-2xl text-gray-400" />
       }
       <div>
         <div class="flex gap-2">
           @if (artifacts().length > 0) {
-            <h3 class="font-bold break-all leading-tight">
+            <h3 class="leading-tight font-bold break-all">
               <a
                 routerLink="/artifact-pulls"
                 [queryParams]="{customerOrganizationId: customer().id}"
@@ -18,7 +18,7 @@
               </a>
             </h3>
           } @else {
-            <h3 class="font-bold break-all leading-tight">{{ customer().name }}</h3>
+            <h3 class="leading-tight font-bold break-all">{{ customer().name }}</h3>
           }
         </div>
       </div>
@@ -30,7 +30,7 @@
     <ul>
       @for (artifact of artifacts(); track artifact.artifact.id) {
         <li
-          class="w-full flex gap-3 items-center px-4 py-2 not-first:border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium text-gray-900 whitespace-normal dark:text-white">
+          class="flex w-full items-center gap-3 border-gray-200 px-4 py-2 text-sm font-medium whitespace-normal text-gray-900 not-first:border-t hover:bg-gray-100 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700">
           @if (artifact.artifact.imageUrl) {
             <img class="size-8 rounded-full" [attr.src]="artifact.artifact.imageUrl | secureImage | async" alt="" />
           } @else {
@@ -39,7 +39,7 @@
             </div>
           }
 
-          <div class="leading-tight break-all grow">
+          <div class="grow leading-tight break-all">
             {{ artifact.artifact.name }}
             <span class="distr-badge">{{ artifact.latestPulledVersion }}</span>
           </div>
@@ -57,7 +57,7 @@
       }
     </ul>
   } @else {
-    <div class="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm p-4">
+    <div class="flex flex-1 items-center justify-center p-4 text-sm text-gray-500 dark:text-gray-400">
       No artifacts pulled.
     </div>
   }

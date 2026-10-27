@@ -138,7 +138,7 @@
 
       th,
       td {
-        @apply px-1 border border-gray-200 dark:border-gray-600 dark:text-white;
+        @apply border border-gray-200 px-1 dark:border-gray-600 dark:text-white;
       }
     }
 
