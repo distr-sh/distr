@@ -148,7 +148,10 @@
       <div class="flex flex-col gap-4">
         @switch (entitlementForm()) {
           @case ('standard') {
-            <app-edit-single-artifact-entitlement formControlName="entitlement" (draftChange)="draft.set($event)" />
+            <app-edit-single-artifact-entitlement
+              formControlName="entitlement"
+              (draftChange)="draft.set($event)"
+              (tagsMissingChange)="tagsMissing.set($event)" />
           }
           @case ('legacy') {
             <app-edit-artifact-entitlement formControlName="entitlement" (draftChange)="draft.set($event)" />

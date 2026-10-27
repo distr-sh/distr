@@ -84,21 +84,29 @@ export class ArtifactEntitlementsComponent {
 
   protected readonly entitlementForm = signal<EntitlementForm>('standard');
   protected readonly draft = signal<ArtifactEntitlement | undefined>(undefined);
+  protected readonly tagsMissing = signal(false);
   protected readonly otherEntitlementForm = computed<EntitlementForm>(() =>
     this.entitlementForm() === 'standard' ? 'legacy' : 'standard'
   );
+  private readonly hasAutoAddVersionRegex = computed(() => !!this.draft()?.autoAddVersionRegex);
   protected readonly entitlementFormSwitchDisabled = computed(() =>
     this.entitlementForm() === 'standard'
-      ? !!this.draft()?.autoAddVersionRegex
+      ? this.hasAutoAddVersionRegex() || this.tagsMissing()
       : (this.draft()?.artifacts?.length ?? 0) > 1
   );
   protected readonly entitlementFormSwitchTitle = computed(() => {
-    const disabled = this.entitlementFormSwitchDisabled();
-    return this.otherEntitlementForm() === 'legacy'
-      ? 'The legacy view can bundle multiple artifacts in one entitlement but does not support an auto-add tag regex.' +
-          (disabled ? ' Clear the auto-add tag regex to switch.' : '')
-      : 'The standard view supports an auto-add tag regex but only for an entitlement with a single artifact.' +
-          (disabled ? ' Remove all but one artifact to switch.' : '');
+    if (this.otherEntitlementForm() === 'legacy') {
+      const hint =
+        'The legacy view can bundle multiple artifacts in one entitlement but does not support an auto-add tag regex.';
+      if (this.hasAutoAddVersionRegex()) {
+        return `${hint} Clear the auto-add tag regex to switch.`;
+      } else if (this.tagsMissing()) {
+        return `${hint} To switch, select at least one tag or pick the "All tags" option.`;
+      }
+      return hint;
+    }
+    const hint = 'The standard view supports an auto-add tag regex but only for an entitlement with a single artifact.';
+    return this.entitlementFormSwitchDisabled() ? `${hint} Remove all but one artifact to switch.` : hint;
   });
 
   private manageEntitlementDrawerRef?: DialogRef;
@@ -136,11 +144,13 @@ export class ArtifactEntitlementsComponent {
     this.manageEntitlementDrawerRef?.close();
     this.editForm.reset({entitlement: undefined});
     this.draft.set(undefined);
+    this.tagsMissing.set(false);
   }
 
   protected switchEntitlementForm(form: EntitlementForm) {
     // The form being replaced only reports a valid entitlement to the control, so hand its draft to the new form.
     this.editForm.controls.entitlement.setValue(this.draft(), {emitModelToViewChange: false});
+    this.tagsMissing.set(false);
     this.entitlementForm.set(form);
   }
 

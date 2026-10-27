@@ -111,6 +111,8 @@ export class EditSingleArtifactEntitlementComponent implements OnInit, AfterView
 
   /** Emits the entitlement on every change, also while the form is invalid. */
   readonly draftChange = output<ArtifactEntitlement>();
+  /** Emits whether "Specific tags" is chosen without any tag checked, which the draft cannot tell from all tags. */
+  readonly tagsMissingChange = output<boolean>();
 
   private readonly entitlement = signal<ArtifactEntitlement | undefined>(undefined);
   protected readonly selectedArtifact = signal<ArtifactWithTags | undefined>(undefined);
@@ -152,6 +154,7 @@ export class EditSingleArtifactEntitlementComponent implements OnInit, AfterView
         customerOrganizationId: val.customerOrganizationId,
       };
       this.draftChange.emit(entitlement);
+      this.tagsMissingChange.emit(!allTags && versionIds.length === 0);
       this.onChange(this.editForm.valid ? entitlement : undefined);
       this.onValidatorChange();
     });
