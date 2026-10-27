@@ -307,8 +307,6 @@ func checkRegistryInput(entitlement *types.ApplicationEntitlementWithVersions) e
 	return nil
 }
 
-const maxAutoAddVersionRegexLength = 200
-
 func checkAutoAddVersionRegex(entitlement *types.ApplicationEntitlementWithVersions) error {
 	if entitlement.AutoAddVersionRegex != nil && *entitlement.AutoAddVersionRegex == "" {
 		entitlement.AutoAddVersionRegex = nil
@@ -317,14 +315,8 @@ func checkAutoAddVersionRegex(entitlement *types.ApplicationEntitlementWithVersi
 		return nil
 	} else if len(entitlement.Versions) == 0 {
 		return errors.New("an auto-add version regex requires at least one selected version")
-	} else if strings.TrimSpace(*entitlement.AutoAddVersionRegex) != *entitlement.AutoAddVersionRegex {
-		return errors.New(
-			"the auto-add version regex must not start or end with whitespace, use \\s or [ ] to match a space",
-		)
-	} else if _, err := validation.ParseRegex(*entitlement.AutoAddVersionRegex, maxAutoAddVersionRegexLength); err != nil {
-		return err
 	}
-	return nil
+	return validation.ValidateAutoAddVersionRegex(*entitlement.AutoAddVersionRegex)
 }
 
 func getApplicationEntitlements(r *http.Request) (respond.Responder, error) {

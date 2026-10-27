@@ -102,11 +102,30 @@
     animate.leave="animate-fly-out-right"
     tabindex="-1"
     aria-labelledby="artifact-entitlement-drawer-label">
-    <h5
-      id="artifact-entitlement-drawer-label"
-      class="mb-6 inline-flex items-center text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
-      Manage Artifact Entitlement
-    </h5>
+    <div class="mb-6">
+      <div class="flex items-center gap-3 pe-10">
+        <h5
+          id="artifact-entitlement-drawer-label"
+          class="inline-flex items-center text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
+          Manage Artifact Entitlement
+        </h5>
+        @if (auth.hasAnyRole('admin', 'read_write')) {
+          <button
+            type="button"
+            class="distr-btn-secondary px-2 py-1 text-xs font-medium"
+            [disabled]="entitlementFormSwitchDisabled()"
+            [title]="entitlementFormSwitchTitle()"
+            (click)="switchEntitlementForm(otherEntitlementForm())">
+            Switch to {{ otherEntitlementForm() }} view
+          </button>
+        }
+      </div>
+      @if (drawerCustomerName(); as customerName) {
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          Customer: <span class="font-medium text-gray-900 dark:text-white">{{ customerName }}</span>
+        </p>
+      }
+    </div>
     <button
       type="button"
       (click)="hideDrawer()"
@@ -127,7 +146,17 @@
 
     <form [formGroup]="editForm" (ngSubmit)="saveEntitlement()">
       <div class="flex flex-col gap-4">
-        <app-edit-artifact-entitlement formControlName="entitlement" />
+        @switch (entitlementForm()) {
+          @case ('standard') {
+            <app-edit-single-artifact-entitlement
+              formControlName="entitlement"
+              (draftChange)="draft.set($event)"
+              (tagsMissingChange)="tagsMissing.set($event)" />
+          }
+          @case ('legacy') {
+            <app-edit-artifact-entitlement formControlName="entitlement" (draftChange)="draft.set($event)" />
+          }
+        }
         @if (auth.hasAnyRole('admin', 'read_write')) {
           <div class="flex w-full justify-center space-x-4 pb-4 sm:mt-0">
             <button
