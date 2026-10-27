@@ -3,10 +3,10 @@
     <div class="overflow-x-auto">
       <app-tutorial-stepper #stepper class="mx-auto max-w-5xl space-y-6 lg:space-y-8">
         <cdk-step label="Welcome" [stepControl]="welcomeFormGroup">
-          <div class="px-20 py-8 w-full">
+          <div class="w-full px-20 py-8">
             <h3 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Invite your teammates</h3>
 
-            <div class="text-gray-900 dark:text-white mb-12">
+            <div class="mb-12 text-gray-900 dark:text-white">
               <p>
                 Distr is better with your team. In this tutorial you will invite your colleagues so you can manage your
                 software distribution together.
@@ -21,14 +21,14 @@
               <button
                 (click)="navigateToOverviewPage()"
                 type="button"
-                class="distr-btn-secondary flex-1 sm:flex-none inline-flex items-center justify-center w-full sm:w-auto px-5 py-2.5 text-sm font-medium">
+                class="distr-btn-secondary inline-flex w-full flex-1 items-center justify-center px-5 py-2.5 text-sm font-medium sm:w-auto sm:flex-none">
                 Exit Tutorial
               </button>
               <button
                 (click)="continueFromWelcome()"
                 [disabled]="loading()"
                 type="button"
-                class="distr-btn-primary text-white flex w-full sm:w-auto items-center justify-center">
+                class="distr-btn-primary flex w-full items-center justify-center text-white sm:w-auto">
                 Let's Go
                 <fa-icon class="ml-2" [icon]="faArrowRight" />
               </button>
@@ -36,17 +36,17 @@
           </div>
         </cdk-step>
         <cdk-step label="Invite your team" [stepControl]="inviteFormGroup">
-          <div class="p-8 w-full">
+          <div class="w-full p-8">
             <form [formGroup]="inviteFormGroup" (ngSubmit)="inviteAndComplete()">
               <ol
-                class="ml-4 relative text-gray-900 dark:text-white mb-12 border-s border-gray-200 dark:border-gray-700">
-                <li class="mb-10 ms-8">
+                class="relative mb-12 ml-4 border-s border-gray-200 text-gray-900 dark:border-gray-700 dark:text-white">
+                <li class="ms-8 mb-10">
                   <span
-                    class="absolute flex items-center justify-center size-8 bg-gray-100 dark:bg-gray-700 rounded-full -start-4 ring-4 ring-white dark:ring-gray-800">
+                    class="absolute -inset-s-4 flex size-8 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white dark:bg-gray-700 dark:ring-gray-800">
                     <fa-icon [icon]="faLightbulb" />
                   </span>
-                  <h3 class="text-lg font-medium leading-tight mt-1">Understand the roles</h3>
-                  <p class="text-sm mt-2">Every teammate is assigned a role that defines what they can do in Distr:</p>
+                  <h3 class="mt-1 text-lg leading-tight font-medium">Understand the roles</h3>
+                  <p class="mt-2 text-sm">Every teammate is assigned a role that defines what they can do in Distr:</p>
                   <ul class="mt-3 space-y-2 text-sm">
                     <li>
                       <b>Viewer</b> &ndash; read-only access. Can see applications, deployments and artifacts, but
@@ -61,25 +61,25 @@
                       settings and invite or remove teammates.
                     </li>
                   </ul>
-                  <p class="text-sm mt-3">
+                  <p class="mt-3 text-sm">
                     Learn more about roles and permissions in our
                     <a [href]="rbacDocsUrl" class="text-primary-600 underline" target="_blank">RBAC documentation</a>.
                   </p>
                 </li>
 
-                <li class="mb-10 ms-8">
+                <li class="ms-8 mb-10">
                   <span
-                    class="absolute flex items-center justify-center size-8 bg-gray-100 dark:bg-gray-700 rounded-full -start-4 ring-4 ring-white dark:ring-gray-800">
+                    class="absolute -inset-s-4 flex size-8 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white dark:bg-gray-700 dark:ring-gray-800">
                     <fa-icon [icon]="faUserGroup" />
                   </span>
-                  <h3 class="text-lg font-medium leading-tight mt-1">Add your teammates</h3>
-                  <p class="text-sm mt-2">
+                  <h3 class="mt-1 text-lg leading-tight font-medium">Add your teammates</h3>
+                  <p class="mt-2 text-sm">
                     Enter the name (optional), email and role of each colleague you want to invite, then send the
                     invite. Each teammate will receive an email with a link to join your organization.
                   </p>
 
                   <div class="mt-4 grid grid-cols-[1fr_1fr_12rem_auto] gap-x-3" formArrayName="users">
-                    <div class="col-span-full grid grid-cols-subgrid gap-x-3 mb-2 text-sm font-medium">
+                    <div class="col-span-full mb-2 grid grid-cols-subgrid gap-x-3 text-sm font-medium">
                       <div>Name</div>
                       <div>Email</div>
                       <div>Role</div>
@@ -88,7 +88,7 @@
                     @for (user of users.controls; track user) {
                       <div
                         [formGroupName]="$index"
-                        class="col-span-full grid grid-cols-subgrid gap-x-3 mb-3 items-start">
+                        class="col-span-full mb-3 grid grid-cols-subgrid items-start gap-x-3">
                         <div>
                           <input
                             formControlName="name"
@@ -127,7 +127,7 @@
                       <button
                         type="button"
                         (click)="addUser()"
-                        class="py-2 flex items-center text-sm font-medium text-primary-600 hover:underline">
+                        class="flex items-center py-2 text-sm font-medium text-primary-600 hover:underline">
                         <fa-icon class="mr-2" [icon]="faPlus" />
                         Add another teammate
                       </button>
@@ -140,13 +140,13 @@
                 <button
                   cdkStepperPrevious
                   type="button"
-                  class="distr-btn-secondary flex-1 sm:flex-none inline-flex items-center justify-center w-full sm:w-auto px-5 py-2.5 text-sm font-medium">
+                  class="distr-btn-secondary inline-flex w-full flex-1 items-center justify-center px-5 py-2.5 text-sm font-medium sm:w-auto sm:flex-none">
                   Back
                 </button>
                 <button
                   [disabled]="loading()"
                   type="submit"
-                  class="distr-btn-primary text-white flex w-full sm:w-auto items-center justify-center">
+                  class="distr-btn-primary flex w-full items-center justify-center text-white sm:w-auto">
                   <fa-icon class="mr-2" [icon]="faCheck" />
                   Invite and Complete
                 </button>

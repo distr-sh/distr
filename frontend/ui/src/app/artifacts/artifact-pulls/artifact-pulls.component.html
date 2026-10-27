@@ -1,7 +1,7 @@
 <app-page>
   <div class="distr-table-panel">
     <div
-      class="p-4 flex flex-wrap items-start gap-4 border-b border-gray-200 dark:border-gray-600"
+      class="flex flex-wrap items-start gap-4 border-b border-gray-200 p-4 dark:border-gray-600"
       [formGroup]="filterForm">
       <div>
         <label for="pulls-from" class="distr-label-sm mb-1">From</label>
@@ -10,7 +10,7 @@
           id="pulls-from"
           formControlName="from"
           [max]="filterForm.controls.to.value || today"
-          class="distr-input distr-input-sm w-auto min-w-32 dark:[color-scheme:dark]" />
+          class="distr-input distr-input-sm w-auto min-w-32 dark:scheme-dark" />
       </div>
       <div>
         <label for="pulls-to" class="distr-label-sm mb-1">To</label>
@@ -20,7 +20,7 @@
           formControlName="to"
           [min]="filterForm.controls.from.value || ''"
           [max]="today"
-          class="distr-input distr-input-sm w-auto min-w-32 dark:[color-scheme:dark]" />
+          class="distr-input distr-input-sm w-auto min-w-32 dark:scheme-dark" />
       </div>
       @if (filterOptions(); as options) {
         <div>
@@ -28,7 +28,7 @@
           <select
             id="pulls-customer"
             formControlName="customerOrganizationId"
-            class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
+            class="distr-input distr-input-sm w-auto max-w-48 min-w-32">
             <option value="">All</option>
             @for (opt of options.customerOrganizations; track opt.id) {
               <option [value]="opt.id">{{ opt.name }}</option>
@@ -40,7 +40,7 @@
           <select
             id="pulls-user"
             formControlName="userAccountId"
-            class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
+            class="distr-input distr-input-sm w-auto max-w-48 min-w-32">
             <option value="">All</option>
             <option [value]="anonymousUser">Anonymous</option>
             @for (opt of options.userAccounts; track opt.id) {
@@ -53,7 +53,7 @@
           <select
             id="pulls-deployment"
             formControlName="deploymentTargetId"
-            class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
+            class="distr-input distr-input-sm w-auto max-w-48 min-w-32">
             <option value="">All</option>
             @for (opt of options.deploymentTargets; track opt.id) {
               <option [value]="opt.id">{{ opt.name }}</option>
@@ -65,7 +65,7 @@
           <select
             id="pulls-address"
             formControlName="remoteAddress"
-            class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
+            class="distr-input distr-input-sm w-auto max-w-48 min-w-32">
             <option value="">All</option>
             @for (addr of options.remoteAddresses; track addr) {
               <option [value]="addr">{{ addr }}</option>
@@ -77,7 +77,7 @@
           <select
             id="pulls-artifact"
             formControlName="artifactId"
-            class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
+            class="distr-input distr-input-sm w-auto max-w-48 min-w-32">
             <option value="">All</option>
             @for (opt of options.artifacts; track opt.id) {
               <option [value]="opt.id">{{ opt.name }}</option>
@@ -90,7 +90,7 @@
             <select
               id="pulls-version"
               formControlName="artifactVersionId"
-              class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
+              class="distr-input distr-input-sm w-auto max-w-48 min-w-32">
               <option value="">All</option>
               @for (opt of versionOptions(); track opt.id) {
                 <option [value]="opt.id">{{ formatVersionName(opt.name) }}</option>
@@ -99,7 +99,7 @@
           </div>
         }
       } @else {
-        <div class="self-end flex items-center gap-2 py-2 distr-text-muted">
+        <div class="distr-text-muted flex items-center gap-2 self-end py-2">
           <app-spinner class="size-5" />
           <span class="text-xs">Loading filters&hellip;</span>
         </div>
@@ -109,8 +109,8 @@
           type="button"
           title="Reset"
           (click)="resetFilters()"
-          class="p-2 leading-none flex items-center text-xs font-medium text-center distr-btn-secondary">
-          <fa-icon [icon]="faFilterCircleXmark" class="2xl:mr-2 distr-text-muted" />
+          class="distr-btn-secondary flex items-center p-2 text-center text-xs leading-none font-medium">
+          <fa-icon [icon]="faFilterCircleXmark" class="distr-text-muted 2xl:mr-2" />
           <span class="hidden 2xl:inline">Reset</span>
         </button>
         <button
@@ -118,8 +118,8 @@
           [title]="isExporting() ? 'Exporting…' : 'Export CSV'"
           (click)="exportCsv()"
           [disabled]="isExporting()"
-          class="p-2 leading-none flex items-center text-xs font-medium text-center distr-btn-secondary disabled:opacity-50 disabled:cursor-not-allowed">
-          <fa-icon [icon]="faDownload" class="2xl:mr-2 distr-text-muted" />
+          class="distr-btn-secondary flex items-center p-2 text-center text-xs leading-none font-medium disabled:cursor-not-allowed disabled:opacity-50">
+          <fa-icon [icon]="faDownload" class="distr-text-muted 2xl:mr-2" />
           <span class="hidden 2xl:inline">
             @if (isExporting()) {
               Exporting…
@@ -131,8 +131,8 @@
       </div>
     </div>
     @if (initialLoading()) {
-      <div class="flex justify-center items-center py-8 distr-text-muted">
-        <app-spinner class="size-6 me-2" />
+      <div class="distr-text-muted flex items-center justify-center py-8">
+        <app-spinner class="me-2 size-6" />
         <span>Loading&hellip;</span>
       </div>
     } @else {
@@ -152,17 +152,17 @@
           <tbody>
             @for (pull of pulls(); track pull.createdAt) {
               <tr class="distr-table-row">
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
                   {{ pull.createdAt | date: 'short' }}
                 </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
                   @if (pull.customerOrganizationName) {
                     {{ pull.customerOrganizationName }}
                   } @else {
                     <span class="distr-text-muted">-</span>
                   }
                 </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
                   @if (pull.userAccountName || pull.userAccountEmail) {
                     {{ pull.userAccountName ?? pull.userAccountEmail }}
                   } @else if (pull.anonymous) {
@@ -173,25 +173,25 @@
                     <span class="distr-text-muted">-</span>
                   }
                 </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
                   @if (pull.deploymentTargetName) {
                     {{ pull.deploymentTargetName }}
                   } @else {
                     <span class="distr-text-muted">-</span>
                   }
                 </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
                   @if (pull.remoteAddress) {
                     {{ pull.remoteAddress }}
                   } @else {
                     <span class="distr-text-muted">unknown</span>
                   }
                 </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
                   {{ pull.artifact.name }}
                 </td>
                 <td
-                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+                  class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white"
                   [title]="pull.artifactVersion.name">
                   {{ formatVersionName(pull.artifactVersion.name) }}
                 </td>
@@ -205,10 +205,10 @@
           <button
             type="button"
             [disabled]="loading()"
-            class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary"
+            class="distr-btn-secondary flex items-center px-3 py-2 text-center text-sm font-medium"
             (click)="showMore()">
             @if (loading()) {
-              <app-spinner class="size-4 me-2" />
+              <app-spinner class="me-2 size-4" />
               Loading&hellip;
             } @else {
               Show more

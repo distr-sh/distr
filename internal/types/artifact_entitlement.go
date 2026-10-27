@@ -13,6 +13,7 @@ type ArtifactEntitlementBase struct {
 	ExpiresAt              *time.Time `db:"expires_at" json:"expiresAt,omitempty"`
 	OrganizationID         uuid.UUID  `db:"organization_id" json:"-"`
 	CustomerOrganizationID *uuid.UUID `db:"customer_organization_id" json:"customerOrganizationId,omitempty"`
+	AutoAddVersionRegex    *string    `db:"auto_add_version_regex" json:"autoAddVersionRegex,omitempty" trim:"-"`
 }
 
 type ArtifactEntitlementSelection struct {

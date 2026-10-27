@@ -4,7 +4,18 @@ import (
 	"errors"
 	"fmt"
 	"regexp/syntax"
+	"strings"
 )
+
+const maxAutoAddVersionRegexLength = 200
+
+func ValidateAutoAddVersionRegex(regex string) error {
+	if strings.TrimSpace(regex) != regex {
+		return errors.New("the auto-add regex must not start or end with whitespace, use \\s or [ ] to match a space")
+	}
+	_, err := ParseRegex(regex, maxAutoAddVersionRegexLength)
+	return err
+}
 
 // ParseRegex parses pattern with the flags regexp.Compile uses, so a pattern it accepts compiles.
 func ParseRegex(pattern string, maxLength int) (*syntax.Regexp, error) {

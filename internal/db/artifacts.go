@@ -119,6 +119,18 @@ func GetArtifactsByOrgID(ctx context.Context, orgID uuid.UUID) ([]types.Artifact
 	}
 }
 
+func HasUserAccountPulledArtifact(ctx context.Context, userAccountID uuid.UUID) (bool, error) {
+	db := internalctx.GetDb(ctx)
+	var result bool
+	if err := db.QueryRow(ctx,
+		`SELECT EXISTS (SELECT 1 FROM ArtifactVersionPull WHERE useraccount_id = @userAccountId)`,
+		pgx.NamedArgs{"userAccountId": userAccountID},
+	).Scan(&result); err != nil {
+		return false, fmt.Errorf("failed to query artifact pulls of user account: %w", err)
+	}
+	return result, nil
+}
+
 func GetArtifactsByEntitlementOwnerID(ctx context.Context, orgID uuid.UUID, ownerID uuid.UUID) (
 	[]types.ArtifactWithDownloads, error,
 ) {

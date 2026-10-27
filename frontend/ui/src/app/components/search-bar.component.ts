@@ -13,7 +13,7 @@ let nextId = 0;
   host: {class: 'block w-full md:max-w-md'},
   template: `
     <div class="relative" role="search">
-      <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+      <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
         <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400" />
       </div>
       <label [for]="id" class="sr-only">Search</label>

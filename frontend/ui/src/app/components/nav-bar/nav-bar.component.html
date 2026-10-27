@@ -1,4 +1,4 @@
-<nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+<nav class="fixed top-0 z-50 w-full border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
   @let organization = currentOrg();
   @if (isLens && organization) {
     <app-nav-bar-lens-banner
@@ -14,10 +14,10 @@
 
   @if (tutorial()) {
     <div class="relative">
-      <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 mt-8">
+      <div class="absolute top-1/2 left-1/2 mt-8 -translate-x-1/2 -translate-y-1/2 transform">
         <a
           [routerLink]="['tutorials', tutorial()]"
-          class="flex-1 sm:flex-none inline-flex items-center justify-center text-white distr-btn-primary">
+          class="distr-btn-primary inline-flex flex-1 items-center justify-center text-white sm:flex-none">
           <fa-icon [icon]="faArrowLeft" class="me-4" />
           Continue Tutorial</a
         >
@@ -36,19 +36,19 @@
               aria-controls="logo-sidebar"
               type="button"
               (click)="sidebar.toggle()"
-              class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
+              class="inline-flex items-center rounded-lg p-2 text-sm text-gray-500 hover:bg-gray-100 focus:ring-2 focus:ring-gray-200 focus:outline-none sm:hidden dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
               <span class="sr-only">Open sidebar</span>
               <fa-icon [icon]="faBarsStaggered" size="xl" class="h-6 w-6" />
             </button>
           }
-          <a routerLink="/" class="flex ms-2 md:me-24">
-            <img [src]="(logoUrl() | secureImage | async) ?? '/distr-logo.svg'" class="h-8 me-3" alt="" />
-            <h1 class="font-display self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">
+          <a routerLink="/" class="ms-2 flex md:me-24">
+            <img [src]="(logoUrl() | secureImage | async) ?? '/distr-logo.svg'" class="me-3 h-8" alt="" />
+            <h1 class="self-center font-display text-xl font-semibold whitespace-nowrap sm:text-2xl dark:text-white">
               @if (!auth.isCustomer() && !hasCustomLogo()) {
                 Distr
               }
 
-              <small class="ms-2 font-semibold text-gray-500 dark:text-gray-400 hidden sm:inline">
+              <small class="ms-2 hidden font-semibold text-gray-500 sm:inline dark:text-gray-400">
                 @if (auth.isCustomer()) {
                   {{ customerSubtitle() }}
                 } @else if (auth.isPartner()) {
@@ -61,7 +61,7 @@
           </a>
         </div>
         <div class="flex items-center">
-          <div class="flex items-center ms-3">
+          <div class="ms-3 flex items-center">
             <div>
               <app-color-scheme-switcher />
             </div>
@@ -115,7 +115,7 @@
                   </span>
                   @if (canOpenSwitcher()) {
                     <fa-icon
-                      class="ml-2 text-gray-900 dark:text-gray-300 transition duration-150 ease-in-out"
+                      class="ml-2 text-gray-900 transition duration-150 ease-in-out dark:text-gray-300"
                       [class.rotate-x-180]="organizationsOpened()"
                       [icon]="faChevronDown" />
                   }
@@ -130,7 +130,7 @@
                 [cdkConnectedOverlayPositions]="[{originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top'}]"
                 [cdkConnectedOverlayOpen]="organizationsOpened()">
                 <div
-                  class="distr-dropdown-panel my-2 flex flex-col max-h-[80vh]"
+                  class="distr-dropdown-panel my-2 flex max-h-[80vh] flex-col"
                   animate.enter="animate-flip-in-top"
                   animate.leave="animate-flip-out-top">
                   @if (isOrganizationSearchVisible()) {
@@ -141,7 +141,7 @@
                         [autofocus]="true" />
                     </div>
                   }
-                  <ul class="grid grid-cols-[minmax(0,1fr)_auto] gap-y-0.5 overflow-y-auto min-h-0" role="none">
+                  <ul class="grid min-h-0 grid-cols-[minmax(0,1fr)_auto] gap-y-0.5 overflow-y-auto" role="none">
                     @for (entry of switcherEntries(); track entry.org.id) {
                       @if (isOrganizationListed()) {
                         <li class="col-span-2 grid grid-cols-subgrid items-center">
@@ -152,7 +152,7 @@
                             class="distr-dropdown-item focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
                             role="menuitem">
                             <span
-                              class="grow flex flex-col text-start text-sm font-medium text-gray-900 dark:text-gray-300"
+                              class="flex grow flex-col text-start text-sm font-medium text-gray-900 dark:text-gray-300"
                               role="none">
                               <span class="flex items-center gap-2" role="none">
                                 {{ entry.org.name }}
@@ -182,7 +182,7 @@
                               (click)="toggleSwitcherEntry(entry)"
                               [attr.aria-expanded]="entry.expanded"
                               [attr.aria-label]="(entry.expanded ? 'Collapse ' : 'Expand ') + entry.org.name"
-                              class="self-stretch flex items-center gap-1.5 ms-1 px-2 rounded-md text-xs text-gray-500 hover:bg-gray-100 focus-visible:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white dark:focus-visible:bg-gray-600 dark:focus-visible:text-white">
+                              class="ms-1 flex items-center gap-1.5 self-stretch rounded-md px-2 text-xs text-gray-500 hover:bg-gray-100 focus-visible:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white dark:focus-visible:bg-gray-600 dark:focus-visible:text-white">
                               {{ entry.lenses.length }}
                               <fa-icon
                                 [icon]="faChevronDown"
@@ -237,8 +237,8 @@
                 @if (user.imageUrl) {
                   <img class="size-8 rounded-full" [attr.src]="user.imageUrl | secureImage | async" alt="user photo" />
                 } @else {
-                  <div class="shrink-0 text-gray-400 -m-1">
-                    <fa-icon [icon]="faUserCircle" class="text-3xl cursor-pointer" />
+                  <div class="-m-1 shrink-0 text-gray-400">
+                    <fa-icon [icon]="faUserCircle" class="cursor-pointer text-3xl" />
                   </div>
                 }
               </button>
@@ -256,7 +256,7 @@
                 animate.leave="animate-flip-out-top">
                 <div class="px-2 py-1.5" role="none">
                   <p class="text-sm text-gray-900 dark:text-white" role="none">{{ user.name }}</p>
-                  <p class="text-sm font-medium text-gray-900 truncate dark:text-gray-300" role="none">
+                  <p class="truncate text-sm font-medium text-gray-900 dark:text-gray-300" role="none">
                     {{ user.email }}
                   </p>
                 </div>

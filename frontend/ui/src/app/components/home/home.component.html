@@ -3,7 +3,7 @@
     @if (brandingDescription$ | async; as description) {
       <div class="markdown" [innerMarkdown]="description"></div>
     } @else {
-      <div class="text-gray-500 dark:text-gray-400 italic">
+      <div class="text-gray-500 italic dark:text-gray-400">
         Homepage not yet configured by vendor in branding settings
       </div>
     }

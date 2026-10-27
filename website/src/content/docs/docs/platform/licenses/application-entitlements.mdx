@@ -74,29 +74,7 @@ An entitlement grants either **All versions** of the application, which includes
 
 ## Auto-add version regex
 
-An entitlement for specific versions can grow with your releases. Enter a regular expression in **Auto-add Version Regex**, and every new application version whose name matches it is added to the entitlement automatically. For example, `^2\.\d+\.\d+$` keeps a customer on every `2.x.y` release without you editing the entitlement after each one.
-
-### How matching works
-
-- **When it runs:** The regex is checked whenever you create an application version and whenever you rename one. Setting or changing the regex does not touch existing versions, so select those yourself.
-- **Renamed versions:** A renamed version is added if its new name matches and its previous name did not. A version you removed by hand is therefore not added back by a rename that keeps it matching.
-- **Archived versions:** These are never added.
-- **Syntax:** The regex uses [RE2 syntax](https://github.com/google/re2/wiki/Syntax) and may be up to 200 characters long. Lookaheads and backreferences are not supported. It must not start or end with whitespace; write `\s` or `[ ]` to match a space there.
-- **Partial matches:** The regex matches anywhere in the version name unless you anchor it with `^` and `$`. Matching is case-sensitive; prefix the regex with `(?i)` to ignore case.
-- **At least one version:** An entitlement with an auto-add regex needs at least one selected version, since an entitlement without versions already grants all of them.
-
-An auto-added version is an ordinary entry of the entitlement. The customer can deploy it right away, it is considered for automatic updates and update notifications and you can remove it like any version you selected yourself. Renaming it to a name that no longer matches keeps it in the entitlement.
-
-### Examples
-
-| Regex             | Adds                           | Does not add             |
-| ----------------- | ------------------------------ | ------------------------ |
-| `^2\.\d+\.\d+$`   | `2.0.0`, `2.14.3`              | `12.0.0`, `2.1.0-rc.1`   |
-| `^2\.`            | `2.1.0`, `2.1.0-rc.1`          | `12.0.0`, `v2.1.0`       |
-| `^\d+\.\d+\.\d+$` | `1.4.2`, `3.0.0`               | `1.5.0-beta.1`, `v1.4.2` |
-| `-lts$`           | `3.2.0-lts`                    | `3.2.0`, `3.2.0-lts.1`   |
-| `^[23]\.\d+\.\d+` | `2.1.0`, `3.0.4`, `3.0.4-rc1`  | `4.0.0`, `1.2.3`         |
-| `(?i)^release-`   | `release-2026-10`, `RELEASE-7` | `pre-release-1`          |
+An entitlement for specific versions can grow with your releases. Enter a regular expression in **Auto-add Version Regex**, and every new application version whose name matches it is added to the entitlement automatically. See [Auto-add Regex](/docs/platform/auto-add-regex/) for when it runs, how to write it and examples.
 
 ## OCI registry authentication
 

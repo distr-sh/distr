@@ -1,0 +1,1 @@
+DROP INDEX fk_ArtifactVersionPull_useraccount_id;

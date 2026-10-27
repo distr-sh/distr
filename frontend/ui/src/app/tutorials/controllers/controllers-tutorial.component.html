@@ -3,12 +3,12 @@
     <div class="overflow-x-auto">
       <app-tutorial-stepper #stepper class="mx-auto max-w-5xl space-y-6 lg:space-y-8">
         <cdk-step label="Welcome" [stepControl]="welcomeFormGroup">
-          <div class="px-20 py-8 w-full">
+          <div class="w-full px-20 py-8">
             <h3 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
               Controllers, Applications and Deployments
             </h3>
 
-            <div class="text-gray-900 dark:text-white mb-12">
+            <div class="mb-12 text-gray-900 dark:text-white">
               <p>
                 In this tutorial, you will learn how to set up the Distr controller and deploy a Docker Compose app with
                 it.
@@ -24,13 +24,13 @@
             <div class="gap-4 sm:flex sm:items-center sm:justify-between">
               <button
                 (click)="navigateToOverviewPage()"
-                class="flex-1 sm:flex-none items-center justify-center w-full rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 sm:w-auto">
+                class="w-full flex-1 items-center justify-center rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100 focus:outline-none sm:w-auto sm:flex-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
                 Exit Tutorial
               </button>
               <button
                 (click)="continueFromWelcome()"
                 type="submit"
-                class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
+                class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 focus:outline-none sm:mt-0 sm:w-auto dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
                 Let's Go
                 <fa-icon class="ml-2" [icon]="faArrowRight" />
               </button>
@@ -38,18 +38,18 @@
           </div>
         </cdk-step>
         <cdk-step label="Deploy hello-distr" [stepControl]="deployFormGroup">
-          <div class="p-8 w-full">
+          <div class="w-full p-8">
             <form [formGroup]="deployFormGroup" (ngSubmit)="continueFromDeploy()">
               <ol
-                class="ml-4 relative text-gray-900 dark:text-white mb-12 border-s border-gray-200 dark:border-gray-700">
-                <li class="mb-10 ms-8">
+                class="relative mb-12 ml-4 border-s border-gray-200 text-gray-900 dark:border-gray-700 dark:text-white">
+                <li class="ms-8 mb-10">
                   <span
-                    class="absolute flex items-center justify-center size-8 bg-gray-100 dark:bg-gray-700 rounded-full -start-4 ring-4 ring-white dark:ring-gray-800">
+                    class="absolute -inset-s-4 flex size-8 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white dark:bg-gray-700 dark:ring-gray-800">
                     <fa-icon [icon]="faLightbulb" />
                   </span>
-                  <h3 class="text-lg font-medium leading-tight">Deploy hello-distr</h3>
+                  <h3 class="text-lg leading-tight font-medium">Deploy hello-distr</h3>
                   @if (showMacOsWarning) {
-                    <app-alert type="warning" class="mb-2 mt-2">
+                    <app-alert type="warning" class="mt-2 mb-2">
                       If you are on Mac, please make sure to check
                       <a [href]="websiteUrl + '/docs/controllers/distr-on-macos/'" class="underline" target="_blank"
                         >this guide</a
@@ -58,15 +58,15 @@
                     </app-alert>
                   }
                 </li>
-                <li class="mb-10 ms-8">
-                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                <li class="ms-8 mb-10">
+                  <span class="absolute -inset-s-2 mt-0.75 flex items-center justify-center">
                     <input
                       type="checkbox"
                       id="deployDone"
                       [formControl]="deployFormGroup.controls.deployDone"
                       class="distr-checkbox" />
                   </span>
-                  <label for="deployDone" class="text-lg font-medium leading-tight">Install Controller</label>
+                  <label for="deployDone" class="text-lg leading-tight font-medium">Install Controller</label>
                   <p class="mt-1 text-sm">
                     In your terminal, execute the setup command to start the Distr controller and have it connect to
                     Distr.
@@ -81,14 +81,14 @@
                         type="button"
                         [disabled]="loading()"
                         (click)="requestAccess()"
-                        class="flex items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
+                        class="flex items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 focus:outline-none sm:mt-0 sm:w-auto dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
                         Generate Setup Command
                       </button>
                     }
 
                     @if (connectCommand) {
                       <code
-                        class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line"
+                        class="mt-2 text-sm whitespace-pre-line text-gray-900 select-all dark:text-gray-200"
                         data-ph-mask-text="true">
                         {{ connectCommand }}
                       </code>
@@ -100,15 +100,15 @@
                   }
                 </li>
 
-                <li class="mb-10 ms-8">
-                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                <li class="ms-8 mb-10">
+                  <span class="absolute -inset-s-2 mt-0.75 flex items-center justify-center">
                     <input
                       id="verifyDone"
                       type="checkbox"
                       [formControl]="deployFormGroup.controls.verifyDone"
                       class="distr-checkbox" />
                   </span>
-                  <label for="verifyDone" class="text-lg font-medium leading-tight">Verify Deployment Status</label>
+                  <label for="verifyDone" class="text-lg leading-tight font-medium">Verify Deployment Status</label>
                   <p class="mt-1 text-sm">
                     Now head over to the
                     <a
@@ -126,15 +126,15 @@
                   }
                 </li>
 
-                <li class="mb-10 ms-8">
-                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                <li class="ms-8 mb-10">
+                  <span class="absolute -inset-s-2 mt-0.75 flex items-center justify-center">
                     <input
                       id="dockerPsDone"
                       type="checkbox"
                       [formControl]="deployFormGroup.controls.dockerPsDone"
                       class="distr-checkbox" />
                   </span>
-                  <label for="dockerPsDone" class="text-lg font-medium leading-tight"
+                  <label for="dockerPsDone" class="text-lg leading-tight font-medium"
                     >Check your docker containers</label
                   >
                   <p class="mt-1 text-sm">
@@ -146,15 +146,15 @@
                   }
                 </li>
 
-                <li class="mb-10 ms-8">
-                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                <li class="ms-8 mb-10">
+                  <span class="absolute -inset-s-2 mt-0.75 flex items-center justify-center">
                     <input
                       id="openDone"
                       type="checkbox"
                       [formControl]="deployFormGroup.controls.openDone"
                       class="distr-checkbox" />
                   </span>
-                  <label for="openDone" class="text-lg font-medium leading-tight">Open hello-distr</label>
+                  <label for="openDone" class="text-lg leading-tight font-medium">Open hello-distr</label>
                   <p class="mt-1 text-sm">
                     hello-distr is now deployed on
                     <a href="http://localhost" target="_blank" class="text-primary-600 underline">http://localhost</a>
@@ -168,13 +168,13 @@
               <div class="gap-4 sm:flex sm:items-center sm:justify-between">
                 <button
                   cdkStepperPrevious
-                  class="flex-1 sm:flex-none items-center justify-center w-full rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 sm:w-auto">
+                  class="w-full flex-1 items-center justify-center rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100 focus:outline-none sm:w-auto sm:flex-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
                   Back
                 </button>
                 <button
                   type="submit"
                   [disabled]="loading()"
-                  class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
+                  class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 focus:outline-none sm:mt-0 sm:w-auto dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
                   Continue
                   <fa-icon class="ml-2" [icon]="faArrowRight" />
                 </button>
@@ -184,42 +184,42 @@
         </cdk-step>
 
         <cdk-step label="Automate Releases" [stepControl]="releaseFormGroup">
-          <div class="p-8 w-full">
+          <div class="w-full p-8">
             <form [formGroup]="releaseFormGroup" (ngSubmit)="completeAndExit()">
               <ol
-                class="ml-4 relative text-gray-900 dark:text-white mb-12 border-s border-gray-200 dark:border-gray-700">
-                <li class="mb-10 ms-8">
+                class="relative mb-12 ml-4 border-s border-gray-200 text-gray-900 dark:border-gray-700 dark:text-white">
+                <li class="ms-8 mb-10">
                   <span
-                    class="absolute flex items-center justify-center size-8 bg-gray-100 dark:bg-gray-700 rounded-full -start-4 ring-4 ring-white dark:ring-gray-800">
+                    class="absolute -inset-s-4 flex size-8 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white dark:bg-gray-700 dark:ring-gray-800">
                     <fa-icon [icon]="faLightbulb" />
                   </span>
-                  <h3 class="text-lg font-medium leading-tight">Automate Releases</h3>
-                  <p class="text-sm mt-2">
+                  <h3 class="text-lg leading-tight font-medium">Automate Releases</h3>
+                  <p class="mt-2 text-sm">
                     In this last step, it's time for you to experiment with the hello-distr repository.
                   </p>
-                  <p class="text-sm mt-2">
+                  <p class="mt-2 text-sm">
                     For future releases of your applications (in this case hello-distr), you probaly want to automate
                     the creation of a new Distr application version, to avoid manually copying the released compose file
                     to Distr.
                   </p>
                 </li>
 
-                <li class="mb-10 ms-8">
-                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                <li class="ms-8 mb-10">
+                  <span class="absolute -inset-s-2 mt-0.75 flex items-center justify-center">
                     <input
                       id="forkDone"
                       type="checkbox"
                       [formControl]="releaseFormGroup.controls.forkDone"
                       class="distr-checkbox" />
                   </span>
-                  <label for="forkDone" class="text-lg font-medium leading-tight"
+                  <label for="forkDone" class="text-lg leading-tight font-medium"
                     >Fork the hello-distr Application</label
                   >
                   <p class="mt-1 text-sm">
                     Fork the previously deployed
                     <a
                       href="https://github.com/distr-sh/hello-distr"
-                      class="text-gray-600 dark:text-gray-400 underline"
+                      class="text-gray-600 underline dark:text-gray-400"
                       target="_blank"
                       >hello-distr application</a
                     >
@@ -231,15 +231,15 @@
                   }
                 </li>
 
-                <li class="mb-10 ms-8">
-                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                <li class="ms-8 mb-10">
+                  <span class="absolute -inset-s-2 mt-0.75 flex items-center justify-center">
                     <input
                       id="releaseDone"
                       type="checkbox"
                       [formControl]="releaseFormGroup.controls.releaseDone"
                       class="distr-checkbox" />
                   </span>
-                  <label for="releaseDone" class="text-lg font-medium leading-tight"
+                  <label for="releaseDone" class="text-lg leading-tight font-medium"
                     >Push a hello-distr version to Distr</label
                   >
                   <p class="mt-1 text-sm">
@@ -253,7 +253,7 @@
                       [href]="githubUrl + '/discussions'"
                       target="_blank"
                       rel="noopener noreferrer"
-                      class="text-gray-600 dark:text-gray-400 hover:underline"
+                      class="text-gray-600 hover:underline dark:text-gray-400"
                       >get help</a
                     >
                     in our community forum!
@@ -283,13 +283,13 @@
               <div class="gap-4 sm:flex sm:items-center sm:justify-between">
                 <button
                   cdkStepperPrevious
-                  class="flex-1 sm:flex-none items-center justify-center w-full rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 sm:w-auto">
+                  class="w-full flex-1 items-center justify-center rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100 focus:outline-none sm:w-auto sm:flex-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
                   Back
                 </button>
                 <button
                   [disabled]="loading()"
                   type="submit"
-                  class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
+                  class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 focus:outline-none sm:mt-0 sm:w-auto dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
                   <fa-icon class="mr-2" [icon]="faCheck" />
                   @if (progress?.completedAt) {
                     Done

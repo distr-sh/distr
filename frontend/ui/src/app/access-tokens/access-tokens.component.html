@@ -7,8 +7,8 @@
           (click)="openDrawer(manageApplicationDrawer)"
           type="button"
           id="createTokenButton"
-          class="distr-btn-secondary w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium">
-          <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+          class="distr-btn-secondary flex w-full items-center justify-center px-4 py-2 text-sm font-medium md:w-auto">
+          <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
           Create token
         </button>
       </div>
@@ -30,10 +30,10 @@
         <tbody>
           @for (row of filteredRows(); track row.token.id) {
             <tr [appClickableRow]="['/', 'settings', 'access-tokens', row.token.id]" class="distr-table-row">
-              <td class="distr-table-cell max-w-48 xl:max-w-64 2xl:max-w-96 truncate" [title]="row.token.label">
+              <td class="distr-table-cell max-w-48 truncate xl:max-w-64 2xl:max-w-96" [title]="row.token.label">
                 {{ row.token.label }}
               </td>
-              <td class="px-4 py-3 truncate">
+              <td class="truncate px-4 py-3">
                 @if (row.token.userRole; as r) {
                   {{ r | userRoleLabel }}
                 } @else {
@@ -43,12 +43,12 @@
               <td class="px-4 py-3" [title]="row.token.createdAt | date: 'medium'">
                 {{ row.token.createdAt | date: 'shortDate' }}
               </td>
-              <td class="px-4 py-3 truncate">
+              <td class="truncate px-4 py-3">
                 @for (credential of row.credentials; track $index) {
                   @if (credential.expiresAt; as d) {
                     <span [title]="d | date: 'medium'">{{ d | date: 'shortDate' }}</span>
                     @if (credential.expired) {
-                      <span class="ml-1 distr-badge distr-badge-error">
+                      <span class="distr-badge distr-badge-error ml-1">
                         <fa-icon [icon]="faCircleExclamation" />
                         Expired
                       </span>
@@ -61,17 +61,17 @@
                   }
                 }
               </td>
-              <td class="px-4 py-3 truncate">
+              <td class="truncate px-4 py-3">
                 @if (row.token.lastUsedAt; as d) {
                   {{ d | relativeDate }}
                 } @else {
                   never
                 }
               </td>
-              <td class="px-4 py-3 truncate">
+              <td class="truncate px-4 py-3">
                 {{ row.credentials.length }}
                 @if (row.legacy) {
-                  <span class="ml-1 distr-badge distr-badge-warning">
+                  <span class="distr-badge distr-badge-warning ml-1">
                     <fa-icon [icon]="faTriangleExclamation" />
                     Legacy
                   </span>
@@ -82,7 +82,7 @@
                   type="button"
                   aria-label="Delete"
                   (click)="deleteAccessToken(row)"
-                  class="py-2 px-3 distr-btn-danger">
+                  class="distr-btn-danger px-3 py-2">
                   <fa-icon [icon]="faTrash" class="h-4 w-4" />
                 </button>
               </td>
@@ -99,19 +99,19 @@
     animate.enter="animate-fly-in-right"
     animate.leave="animate-fly-out-right"
     id="manage-application-drawer"
-    class="h-screen p-4 overflow-y-auto bg-white w-80 dark:bg-gray-800"
+    class="h-screen w-80 overflow-y-auto bg-white p-4 dark:bg-gray-800"
     tabindex="-1"
     aria-labelledby="drawer-right-label">
     <h5
       id="drawer-label"
-      class="inline-flex items-center mb-6 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
+      class="mb-6 inline-flex items-center text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
       Create a Personal Access Token
     </h5>
     <button
       type="button"
       (click)="hideDrawer()"
-      class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
-      <fa-icon [icon]="faXmark" class="w-5 h-5" />
+      class="absolute top-2.5 right-2.5 inline-flex items-center rounded-lg bg-transparent p-1.5 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
+      <fa-icon [icon]="faXmark" class="h-5 w-5" />
       <span class="sr-only">Close menu</span>
     </button>
     <form [formGroup]="editForm" (ngSubmit)="createAccessToken()">
@@ -148,11 +148,11 @@
           </p>
         </div>
 
-        <div class="flex justify-center w-full pb-4 space-x-4 sm:mt-0">
+        <div class="flex w-full justify-center space-x-4 pb-4 sm:mt-0">
           <button
             type="submit"
             [disabled]="editFormLoading() || editForm.invalid"
-            class="text-white w-full inline-flex items-center justify-center distr-btn-primary">
+            class="distr-btn-primary inline-flex w-full items-center justify-center text-white">
             <fa-icon [icon]="faPlus" class="me-2" />
             Create
           </button>
