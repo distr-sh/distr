@@ -35,6 +35,7 @@ import dayjs from 'dayjs';
 import {filter, firstValueFrom, switchMap} from 'rxjs';
 import {WEBSITE_URL} from '../../../constants';
 import {isArchived} from '../../../util/dates';
+import {noSurroundingWhitespaceValidator} from '../../../util/validation';
 import {sortApplicationVersions} from '../../../util/versions';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {ExpiresAtPickerComponent} from '../../components/expires-at-picker/expires-at-picker.component';
@@ -54,11 +55,6 @@ const specificVersionsValidator: ValidatorFn = (control) => {
     ...(control.get('archivedVersions') as FormArray).getRawValue(),
   ].some((v) => !!v);
   return versionScope === 'all' || selected ? null : {versionsRequired: true};
-};
-
-const noSurroundingWhitespaceValidator: ValidatorFn = (control) => {
-  const value = control.value as string;
-  return value === value.trim() ? null : {surroundingWhitespace: true};
 };
 
 @Component({
@@ -144,7 +140,7 @@ export class EditApplicationEntitlementComponent implements OnInit, AfterViewIni
   protected readonly dropdownWidth = signal(0);
 
   protected readonly faChevronDown = faChevronDown;
-  protected readonly autoAddVersionRegexDocsUrl = `${WEBSITE_URL}/docs/platform/application-entitlements/#auto-add-version-regex`;
+  protected readonly autoAddVersionRegexDocsUrl = `${WEBSITE_URL}/docs/platform/auto-add-regex/`;
 
   protected readonly dropdownTriggerButton = viewChild<ElementRef<HTMLElement>>('dropdownTriggerButton');
 

@@ -33,7 +33,7 @@ func TestEntitlementsToAutoAddVersionTo(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			g := NewWithT(t)
-			g.Expect(entitlementsToAutoAddVersionTo(t.Context(), entitlements, tc.versionName, tc.previousName)).
+			g.Expect(entitlementsToAutoAddVersionTo(entitlements, tc.versionName, tc.previousName)).
 				To(Equal(tc.expected))
 		})
 	}

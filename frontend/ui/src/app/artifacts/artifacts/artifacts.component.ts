@@ -6,7 +6,7 @@ import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/
 import {Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faBox, faPlus, faTrash, faUserCircle, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, lastValueFrom, map, startWith} from 'rxjs';
+import {combineLatest, lastValueFrom, map, of, startWith} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {AlertComponent} from '../../components/alert/alert.component';
@@ -81,8 +81,6 @@ export class ArtifactsComponent {
   private createModalRef?: DialogRef;
 
   private readonly artifacts$ = this.artifactsService.list().pipe(takeUntilDestroyed());
-  protected readonly hasNoArtifact = toSignal(this.artifacts$.pipe(map((artifacts) => artifacts.length === 0)));
-
   protected readonly filteredArtifacts = toSignal(
     combineLatest([this.artifacts$, this.filterForm.valueChanges.pipe(startWith(this.filterForm.value))]).pipe(
       map(([artifacts, formValue]) =>
@@ -97,7 +95,14 @@ export class ArtifactsComponent {
   protected readonly registryHost$ = this.contextService.getRegistryHost();
 
   protected readonly auth = inject(AuthService);
-  protected readonly hasSubscription = this.organizationService.hasSubscription;
+  protected readonly showRegistryHint = toSignal(
+    this.auth.isVendor() && this.auth.hasAnyRole('read_write', 'admin')
+      ? this.artifacts$.pipe(map((artifacts) => artifacts.length === 0))
+      : this.auth.isCustomer()
+        ? this.contextService.hasPulledArtifact().pipe(map((hasPulled) => !hasPulled))
+        : of(false),
+    {initialValue: false}
+  );
 
   constructor() {
     this.createForm.controls.upstreamAuthType.valueChanges
