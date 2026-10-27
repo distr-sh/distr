@@ -72,7 +72,7 @@ The customer can now access and pull the assigned artifacts and tags directly fr
 
 ## Choosing the granted tags
 
-An entitlement grants either **All tags** of its artifact, which includes every tag you push later, or **Specific tags**. With specific tags, you have to select at least one tag, the customer only gets the tags you select and new tags are not added unless they match the [auto-add tag regex](#auto-add-tag-regex).
+An entitlement grants either **All tags** of its artifact, which includes every tag you push later, or **Specific tags**. With specific tags, you have to select at least one tag. The entitlement grants the manifest each selected tag points to, so the customer also gets every other tag pointing to one of these manifests, including tags you push later. A new tag with a new manifest is only added when it matches the [auto-add tag regex](#auto-add-tag-regex).
 
 ## Legacy view for multiple artifacts
 
