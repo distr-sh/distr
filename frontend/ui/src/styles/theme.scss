@@ -16,7 +16,7 @@
 
 @layer components {
   .distr-checkbox {
-    @apply size-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply size-4 rounded-sm border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-blue-600;
 
     // Flowbite draws the indeterminate dash oversized, and its SVG sits slightly left of
     // centre, so it is scaled down and nudged back to line up with the check mark. The
@@ -29,12 +29,12 @@
   }
 
   .distr-radio {
-    @apply size-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600;
+    @apply size-4 border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-blue-600;
   }
 
   // a `<label>` wrapping a `distr-radio` with a title and a description, one per option of a choice
   .distr-radio-card {
-    @apply flex items-start gap-3 p-4 rounded-lg border border-gray-200 bg-gray-50 cursor-pointer hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 has-checked:border-primary-600 has-checked:ring-1 has-checked:ring-primary-600 dark:has-checked:border-primary-500 dark:has-checked:ring-primary-500 has-disabled:cursor-not-allowed has-disabled:opacity-60;
+    @apply flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 hover:bg-gray-100 has-checked:border-primary-600 has-checked:ring-1 has-checked:ring-primary-600 has-disabled:cursor-not-allowed has-disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:has-checked:border-primary-500 dark:has-checked:ring-primary-500;
   }
 
   .distr-label {
@@ -57,17 +57,17 @@
 
   // the track of a toggle switch, following a `<input type="checkbox" class="sr-only peer">`
   .distr-toggle {
-    @apply relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-blue-300 dark:peer-focus-visible:ring-blue-800 rounded-full dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600;
+    @apply relative h-6 w-11 rounded-full bg-gray-200 peer-checked:bg-blue-600 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-blue-300 after:absolute after:inset-s-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white rtl:peer-checked:after:-translate-x-full dark:border-gray-600 dark:bg-gray-700 dark:peer-checked:bg-blue-600 dark:peer-focus-visible:ring-blue-800;
   }
 
   .distr-input {
-    @apply bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60 disabled:cursor-not-allowed;
+    @apply block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 placeholder-gray-500 focus:border-primary-600 focus:ring-primary-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500;
   }
 
   // for a `distr-input` on a surface that is `dark:bg-gray-700` itself, where the default fill would
   // be the same color as the surface in dark mode. Must stay below `.distr-input` to override it.
   .distr-input-raised {
-    @apply dark:bg-gray-600 dark:border-gray-500;
+    @apply dark:border-gray-500 dark:bg-gray-600;
   }
 
   // a `distr-input` in a compact filter row, next to a button of the same height
@@ -76,19 +76,19 @@
   }
 
   .distr-btn-primary {
-    @apply text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800;
+    @apply rounded-lg bg-primary-700 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 focus:outline-none dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800;
   }
 
   .distr-btn-secondary {
-    @apply text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed;
+    @apply rounded-lg border border-gray-200 bg-white text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700;
   }
 
   .distr-btn-danger {
-    @apply text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900;
+    @apply rounded-lg border border-red-700 text-center text-sm font-medium text-red-700 hover:bg-red-800 hover:text-white focus:ring-4 focus:ring-red-300 focus:outline-none dark:border-red-500 dark:text-red-500 dark:hover:bg-red-600 dark:hover:text-white dark:focus:ring-red-900;
   }
 
   .distr-btn-danger-solid {
-    @apply text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800;
+    @apply rounded-lg bg-red-700 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-red-800 focus:ring-4 focus:ring-red-300 focus:outline-none dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800;
   }
 
   // a one-line caution under a form field, in the colors of a warning `app-alert`
@@ -99,57 +99,57 @@
   // blue unless one of the `distr-badge-<BadgeVariant>` classes below overrides the colors, which
   // only works as long as they come after it
   .distr-badge {
-    @apply inline-flex items-center gap-1 px-2 has-[>fa-icon:first-child]:ps-1.5 py-0.5 rounded-sm text-xs font-medium border bg-blue-100 text-blue-800 border-blue-400 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700;
+    @apply inline-flex items-center gap-1 rounded-sm border border-blue-400 bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 has-[>fa-icon:first-child]:ps-1.5 dark:border-blue-700 dark:bg-blue-900 dark:text-blue-300;
   }
 
   .distr-badge-neutral {
-    @apply bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500;
+    @apply border-gray-300 bg-gray-100 text-gray-800 dark:border-gray-500 dark:bg-gray-600 dark:text-gray-200;
   }
 
   .distr-badge-muted {
-    @apply bg-gray-200 text-gray-500 border-gray-400 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600;
+    @apply border-gray-400 bg-gray-200 text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400;
   }
 
   .distr-badge-success {
-    @apply bg-green-100 text-green-800 border-green-400 dark:bg-green-900 dark:text-green-300 dark:border-green-700;
+    @apply border-green-400 bg-green-100 text-green-800 dark:border-green-700 dark:bg-green-900 dark:text-green-300;
   }
 
   .distr-badge-warning {
-    @apply bg-yellow-100 text-yellow-800 border-yellow-400 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-700;
+    @apply border-yellow-400 bg-yellow-100 text-yellow-800 dark:border-yellow-700 dark:bg-yellow-900 dark:text-yellow-300;
   }
 
   // between warning and error, for a scale that needs one more step (advisory severity "high")
   .distr-badge-severe {
-    @apply bg-orange-100 text-orange-800 border-orange-400 dark:bg-orange-900 dark:text-orange-300 dark:border-orange-700;
+    @apply border-orange-400 bg-orange-100 text-orange-800 dark:border-orange-700 dark:bg-orange-900 dark:text-orange-300;
   }
 
   .distr-badge-error {
-    @apply bg-red-100 text-red-800 border-red-400 dark:bg-red-900 dark:text-red-300 dark:border-red-700;
+    @apply border-red-400 bg-red-100 text-red-800 dark:border-red-700 dark:bg-red-900 dark:text-red-300;
   }
 
   // the overlay panel of a dropdown menu, wrapping a `<ul>` of `distr-dropdown-item`s
   .distr-dropdown-panel {
-    @apply z-10 p-2 origin-top bg-white rounded-lg shadow-md dark:bg-gray-700;
+    @apply z-10 origin-top rounded-lg bg-white p-2 shadow-md dark:bg-gray-700;
   }
 
   // an entry of a `distr-dropdown-panel`, on a `<button>` or an `<a>`. `:enabled` never matches an
   // anchor, so the hover has to be suppressed through `not-disabled:` rather than `enabled:`.
   .distr-dropdown-item {
-    @apply w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-start text-sm text-gray-700 dark:text-gray-200 not-disabled:hover:bg-gray-100 dark:not-disabled:hover:bg-gray-600 dark:not-disabled:hover:text-white disabled:opacity-60 disabled:cursor-not-allowed;
+    @apply flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm text-gray-700 not-disabled:hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-gray-200 dark:not-disabled:hover:bg-gray-600 dark:not-disabled:hover:text-white;
   }
 
   // Both variants must stay below `.distr-dropdown-item` to override its hover.
   .distr-dropdown-item-danger {
-    @apply text-red-700 dark:text-red-500 not-disabled:hover:bg-red-800 not-disabled:hover:text-white dark:not-disabled:hover:bg-red-600;
+    @apply text-red-700 not-disabled:hover:bg-red-800 not-disabled:hover:text-white dark:text-red-500 dark:not-disabled:hover:bg-red-600;
   }
 
   .distr-dropdown-item-warning {
-    @apply text-yellow-500 dark:text-yellow-300 not-disabled:hover:bg-yellow-500 not-disabled:hover:text-white dark:not-disabled:hover:bg-yellow-400;
+    @apply text-yellow-500 not-disabled:hover:bg-yellow-500 not-disabled:hover:text-white dark:text-yellow-300 dark:not-disabled:hover:bg-yellow-400;
   }
 
   // the row of a dropdown whose entries are checkboxes, wrapping the checkbox and its label
   .distr-dropdown-checkbox-item {
-    @apply flex items-center px-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600;
+    @apply flex items-center rounded-md px-2 hover:bg-gray-100 dark:hover:bg-gray-600;
   }
 
   .distr-dropdown-divider {
@@ -158,7 +158,7 @@
 
   // the overlay panel of a tooltip or hover card. Add `max-w-*` where the content is prose.
   .distr-tooltip {
-    @apply p-3 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600;
+    @apply rounded-lg border border-gray-200 bg-white p-3 text-sm font-medium text-gray-900 shadow-lg dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200;
   }
 
   // the white surface of a page. `distr-panel` is padded for prose and forms, `distr-table-panel`
@@ -166,58 +166,58 @@
   // No `overflow-hidden` here, unlike `distr-table-panel`: a padded panel has nothing to clip at its
   // rounded corners, and clipping would break `position: sticky` for its children.
   .distr-panel {
-    @apply relative p-6 bg-white border border-gray-200 rounded-lg shadow-md dark:border-gray-700 dark:bg-gray-800;
+    @apply relative rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800;
   }
 
   .distr-table-panel {
-    @apply relative overflow-hidden bg-white border border-gray-200 rounded-lg shadow-md dark:border-gray-700 dark:bg-gray-800;
+    @apply relative overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-800;
   }
 
   // the panel holding the rows of destructive actions at the end of a settings page
   .distr-danger-zone {
-    @apply flex flex-col rounded-lg border border-red-700 dark:border-red-500 divide-y divide-gray-200 dark:divide-gray-600;
+    @apply flex flex-col divide-y divide-gray-200 rounded-lg border border-red-700 dark:divide-gray-600 dark:border-red-500;
   }
 
   .distr-card-grid {
-    @apply grid items-stretch grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3 4xl:grid-cols-4;
+    @apply grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2 2xl:grid-cols-3 4xl:grid-cols-4;
   }
 
   // for cards whose content is too wide for the columns of `distr-card-grid`
   .distr-card-grid-wide {
-    @apply grid items-stretch grid-cols-1 gap-4 2xl:grid-cols-2;
+    @apply grid grid-cols-1 items-stretch gap-4 2xl:grid-cols-2;
   }
 
   .distr-card {
-    @apply flex flex-col h-full overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 dark:bg-gray-800;
+    @apply flex h-full flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800;
   }
 
   .distr-card-clickable {
-    @apply cursor-pointer hover:shadow-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-shadow;
+    @apply cursor-pointer transition-shadow hover:bg-gray-100 hover:shadow-md dark:hover:bg-gray-700;
   }
 
   // the row above a table or card grid that holds `app-search-bar` and the page actions. Inside a
   // `distr-table-panel` add `p-4`, above a `distr-card-grid` add `mb-4`.
   .distr-toolbar {
-    @apply flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3;
+    @apply flex flex-col items-stretch justify-between gap-3 md:flex-row md:items-center;
   }
 
   .distr-toolbar-actions {
-    @apply w-full md:w-auto flex flex-col md:flex-row items-stretch md:items-center justify-end gap-3 shrink-0;
+    @apply flex w-full shrink-0 flex-col items-stretch justify-end gap-3 md:w-auto md:flex-row md:items-center;
   }
 
   .distr-table {
-    @apply w-full text-sm text-left text-gray-500 dark:text-gray-400;
+    @apply w-full text-left text-sm text-gray-500 dark:text-gray-400;
   }
 
   .distr-table-head {
-    @apply border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400;
+    @apply border-t border-gray-200 bg-gray-100 text-xs text-gray-700 uppercase dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400;
   }
 
   .distr-table-row {
-    @apply border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700;
+    @apply border-t border-gray-200 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700;
   }
 
   .distr-table-cell {
-    @apply px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white;
+    @apply px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white;
   }
 }

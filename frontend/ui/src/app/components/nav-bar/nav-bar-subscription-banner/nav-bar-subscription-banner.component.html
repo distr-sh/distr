@@ -1,8 +1,8 @@
 @if (isSubscriptionExpired()) {
   <div
-    class="flex flex-col justify-between items-start h-17 px-4 w-full sm:gap-8 sm:items-center sm:flex-row bg-gray-50 dark:bg-gray-900 text-red-700 dark:text-red-400 border-b border-gray-200 dark:border-gray-700">
-    <div class="sm:flex items-center">
-      <fa-icon size="lg" [icon]="faCircleExclamation" class="hidden mr-3 mt-1 w-6 h-6 lg:flex" />
+    class="flex h-17 w-full flex-col items-start justify-between border-b border-gray-200 bg-gray-50 px-4 text-red-700 sm:flex-row sm:items-center sm:gap-8 dark:border-gray-700 dark:bg-gray-900 dark:text-red-400">
+    <div class="items-center sm:flex">
+      <fa-icon size="lg" [icon]="faCircleExclamation" class="mt-1 mr-3 hidden h-6 w-6 lg:flex" />
       <p class="text-sm">
         Your <span class="font-semibold uppercase">{{ organization().subscriptionType }}</span> subscription has expired
         on <span class="font-semibold">{{ organization().subscriptionEndsAt | date: 'longDate' }}</span
@@ -18,25 +18,25 @@
     </div>
     <div class="hidden md:flex">
       @if (isVendorAdmin()) {
-        <div class="flex items-center space-x-4 lg:pl-10 shrink-0">
+        <div class="flex shrink-0 items-center space-x-4 lg:pl-10">
           <a
             [href]="websiteUrl + '/contact/'"
             target="_blank"
-            class="text-sm font-medium text-blue-600 dark:text-blue-500 hover:underline"
+            class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-500"
             >Contact Sales</a
           >
         </div>
       }
       @if (isVendorNonAdmin()) {
-        <p class="text-sm text-gray-600 dark:text-gray-400 lg:pl-10">Please contact your administrator to upgrade.</p>
+        <p class="text-sm text-gray-600 lg:pl-10 dark:text-gray-400">Please contact your administrator to upgrade.</p>
       }
     </div>
   </div>
 } @else if (isTrial()) {
   <div
-    class="flex flex-col justify-between items-start h-17 px-4 w-full bg-gray-50 border border-b border-gray-200 sm:gap-8 sm:items-center sm:flex-row dark:border-gray-700 dark:bg-gray-900">
-    <div class="sm:flex items-center">
-      <fa-icon size="lg" [icon]="faCircleInfo" class="hidden mr-3 mt-1 w-6 h-6 lg:flex text-gray-400" />
+    class="flex h-17 w-full flex-col items-start justify-between border border-b border-gray-200 bg-gray-50 px-4 sm:flex-row sm:items-center sm:gap-8 dark:border-gray-700 dark:bg-gray-900">
+    <div class="items-center sm:flex">
+      <fa-icon size="lg" [icon]="faCircleInfo" class="mt-1 mr-3 hidden h-6 w-6 text-gray-400 lg:flex" />
       <div>
         <p class="text-sm text-gray-500 dark:text-gray-300">
           You are currently on the Distr Pro Unlimited trial. Your trial will expire on
@@ -53,16 +53,16 @@
       </div>
     </div>
     @if (isVendorAdmin()) {
-      <div class="hidden md:flex items-center space-x-4 lg:pl-10 shrink-0">
+      <div class="hidden shrink-0 items-center space-x-4 md:flex lg:pl-10">
         <a
           [href]="websiteUrl + '/contact/'"
           target="_blank"
-          class="text-sm font-medium text-blue-600 dark:text-blue-500 hover:underline"
+          class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-500"
           >Contact Sales</a
         >
         <a
           routerLink="/subscription"
-          class="py-2 px-4 text-sm font-medium text-center text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+          class="rounded-lg bg-blue-700 px-4 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 focus:outline-none dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
           >Upgrade Now</a
         >
       </div>

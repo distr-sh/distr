@@ -5,8 +5,8 @@
       <button
         type="button"
         (click)="showDrawer()"
-        class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium distr-btn-secondary">
-        <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+        class="distr-btn-secondary flex w-full items-center justify-center px-4 py-2 text-sm font-medium md:w-auto">
+        <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
         Update Notification
       </button>
     }
@@ -35,28 +35,28 @@
             {{ config.name }}
           </td>
           <td class="distr-table-cell align-middle">
-            <label class="inline-flex items-center cursor-pointer my-1">
+            <label class="my-1 inline-flex cursor-pointer items-center">
               <input
                 #enabledToggle
                 type="checkbox"
-                class="sr-only peer"
+                class="peer sr-only"
                 aria-label="Enabled"
                 [disabled]="!canEdit"
                 [checked]="config.enabled"
                 (click)="toggleConfigEnabled(config, enabledToggle, $event)" />
-              <div class="distr-toggle peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+              <div class="distr-toggle peer-disabled:cursor-not-allowed peer-disabled:opacity-50"></div>
             </label>
           </td>
           <td class="distr-table-cell">
             {{ config.createdAt | date }}
           </td>
           <td
-            class="distr-table-cell max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
+            class="distr-table-cell max-w-48 overflow-hidden text-ellipsis xl:max-w-58 2xl:max-w-96"
             [title]="config.subjectNames">
             {{ config.subjectNames }}
           </td>
           <td
-            class="distr-table-cell max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
+            class="distr-table-cell max-w-48 overflow-hidden text-ellipsis xl:max-w-58 2xl:max-w-96"
             [title]="config.recipientNamesTitle">
             {{ config.recipientNames }}
           </td>
@@ -66,7 +66,7 @@
                 type="button"
                 aria-label="Delete"
                 (click)="deleteConfig(config)"
-                class="py-2 px-3 distr-btn-danger">
+                class="distr-btn-danger px-3 py-2">
                 <fa-icon [icon]="faTrash" class="h-4 w-4" />
               </button>
             }
@@ -74,7 +74,7 @@
         </tr>
       } @empty {
         <tr class="border-t border-gray-200 dark:border-gray-600">
-          <td colspan="6" class="px-4 py-3 font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap text-center">
+          <td colspan="6" class="px-4 py-3 text-center font-medium whitespace-nowrap text-gray-600 dark:text-gray-400">
             No configurations found
           </td>
         </tr>
@@ -85,11 +85,11 @@
 
 <ng-template #editConfigDrawer>
   <div
-    class="h-screen p-4 overflow-y-auto bg-white w-lg dark:bg-gray-800"
+    class="h-screen w-lg overflow-y-auto bg-white p-4 dark:bg-gray-800"
     tabindex="-1"
     animate.enter="animate-fly-in-right"
     animate.leave="animate-fly-out-right">
-    <h2 class="inline-flex items-center mb-2 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
+    <h2 class="mb-2 inline-flex items-center text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
       Update Notification
     </h2>
     <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
@@ -99,8 +99,8 @@
     <button
       type="button"
       (click)="hideDrawer()"
-      class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
-      <fa-icon [icon]="faXmark" class="w-5 h-5" />
+      class="absolute top-2.5 right-2.5 inline-flex items-center rounded-lg bg-transparent p-1.5 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
+      <fa-icon [icon]="faXmark" class="h-5 w-5" />
       <span class="sr-only">Close menu</span>
     </button>
 
@@ -111,8 +111,8 @@
           <input formControlName="name" autotrim type="text" id="name" class="distr-input" placeholder="Name" />
         </div>
 
-        <label class="flex items-center cursor-pointer">
-          <input type="checkbox" class="sr-only peer" formControlName="enabled" />
+        <label class="flex cursor-pointer items-center">
+          <input type="checkbox" class="peer sr-only" formControlName="enabled" />
           <div class="distr-toggle"></div>
           <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enabled</span>
         </label>
@@ -120,9 +120,9 @@
         @if (watchesApplications()) {
           <div class="space-y-1">
             <h3 class="text-sm font-medium text-gray-900 dark:text-white">Applications</h3>
-            <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-2">
+            <div class="space-y-2 rounded-lg border border-gray-300 p-3 dark:border-gray-600">
               @for (application of applications(); track application.id) {
-                <label class="flex items-center gap-2 w-full text-sm font-medium text-gray-900 dark:text-white">
+                <label class="flex w-full items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
                   <input
                     type="checkbox"
                     class="distr-checkbox"
@@ -144,10 +144,10 @@
         @if (watchesArtifacts()) {
           <div class="space-y-1">
             <h3 class="text-sm font-medium text-gray-900 dark:text-white">Artifacts</h3>
-            <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-2">
+            <div class="space-y-2 rounded-lg border border-gray-300 p-3 dark:border-gray-600">
               @for (artifact of artifacts(); track artifact.id) {
                 <label
-                  class="flex items-center gap-2 w-full text-sm font-medium text-gray-900 dark:text-white"
+                  class="flex w-full items-center gap-2 text-sm font-medium text-gray-900 dark:text-white"
                   [title]="
                     artifact.upstreamUrl ? 'An artifact that mirrors an upstream registry cannot be watched.' : ''
                   ">
@@ -157,7 +157,7 @@
                     [formControl]="editConfigForm.controls.artifactIds.controls[artifact.id]" />
                   <app-artifact-logo class="size-6 shrink-0" [imageUrl]="artifact.imageUrl" />
                   @if (artifact.upstreamUrl) {
-                    <span class="truncate distr-text-muted">{{ artifact.name }}</span>
+                    <span class="distr-text-muted truncate">{{ artifact.name }}</span>
                     <span class="distr-badge distr-badge-neutral">pull-through</span>
                   } @else {
                     <span class="truncate">{{ artifact.name }}</span>
@@ -179,7 +179,7 @@
 
         <div class="space-y-1">
           <h3 class="text-sm font-medium text-gray-900 dark:text-white">Users to notify</h3>
-          <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3">
+          <div class="rounded-lg border border-gray-300 p-3 dark:border-gray-600">
             <app-notification-recipients [control]="editConfigForm.controls.userAccountIds" [users]="users()" />
           </div>
           @if (editConfigForm.controls.userAccountIds.touched && editConfigForm.controls.userAccountIds.errors) {
@@ -187,11 +187,11 @@
           }
         </div>
       </div>
-      <div class="mt-8 flex justify-center w-full pb-4 space-x-4 sm:mt-0">
+      <div class="mt-8 flex w-full justify-center space-x-4 pb-4 sm:mt-0">
         <button
           type="submit"
           [disabled]="editFormLoading() || editConfigForm.invalid"
-          class="text-white w-full inline-flex items-center justify-center distr-btn-primary disabled:opacity-50">
+          class="distr-btn-primary inline-flex w-full items-center justify-center text-white disabled:opacity-50">
           <fa-icon [icon]="faPen" class="mr-2" />
           Save
         </button>

@@ -3,12 +3,12 @@
     <div class="overflow-x-auto">
       <app-tutorial-stepper #stepper class="mx-auto max-w-5xl space-y-6 lg:space-y-8">
         <cdk-step label="Welcome" [stepControl]="welcomeFormGroup">
-          <div class="px-20 py-8 w-full">
+          <div class="w-full px-20 py-8">
             <h3 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
               Basic Branding for your Customer Portal
             </h3>
 
-            <div class="text-gray-900 dark:text-white mb-12">
+            <div class="mb-12 text-gray-900 dark:text-white">
               <p>
                 Before we can use the customer portal, we need to set it up. This tutorial will guide you through the
                 process of setting up your Customer Portal and inviting a customer.
@@ -23,14 +23,14 @@
               <button
                 (click)="navigateToOverviewPage()"
                 type="button"
-                class="distr-btn-secondary flex-1 sm:flex-none inline-flex items-center justify-center w-full sm:w-auto px-5 py-2.5 text-sm font-medium">
+                class="distr-btn-secondary inline-flex w-full flex-1 items-center justify-center px-5 py-2.5 text-sm font-medium sm:w-auto sm:flex-none">
                 Exit Tutorial
               </button>
               <button
                 (click)="continueFromWelcome()"
                 [disabled]="loading()"
                 type="button"
-                class="distr-btn-primary text-white flex w-full sm:w-auto items-center justify-center">
+                class="distr-btn-primary flex w-full items-center justify-center text-white sm:w-auto">
                 Let's Go
                 <fa-icon class="ml-2" [icon]="faArrowRight" />
               </button>
@@ -38,21 +38,21 @@
           </div>
         </cdk-step>
         <cdk-step label="Branding Options" [stepControl]="brandingFormGroup">
-          <div class="px-8 py-10 w-full">
+          <div class="w-full px-8 py-10">
             <form [formGroup]="brandingFormGroup" (ngSubmit)="continueFromBranding()">
               <ol
-                class="ml-4 relative text-gray-900 dark:text-white mb-12 border-s border-gray-200 dark:border-gray-700">
+                class="relative mb-12 ml-4 border-s border-gray-200 text-gray-900 dark:border-gray-700 dark:text-white">
                 <li class="ms-8">
                   <span
-                    class="absolute flex items-center justify-center size-8 bg-gray-100 dark:bg-gray-700 rounded-full -start-4 ring-4 ring-white dark:ring-gray-800">
+                    class="absolute -inset-s-4 flex size-8 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white dark:bg-gray-700 dark:ring-gray-800">
                     <fa-icon [icon]="faLightbulb" />
                   </span>
-                  <h3 class="text-lg font-medium leading-tight">Branding Options</h3>
-                  <p class="text-sm mt-2">
+                  <h3 class="text-lg leading-tight font-medium">Branding Options</h3>
+                  <p class="mt-2 text-sm">
                     Imagine you are one of your customers, getting started with self hosting your application: What
                     would you like to see in your Customer Portal?
                   </p>
-                  <p class="text-sm mt-2">
+                  <p class="mt-2 text-sm">
                     Upload your logo and favicon, choose how the portal is named, write a short welcome page and set the
                     browser tab title. All of this is optional and can be changed later on the
                     <a [href]="brandingDocsUrl" class="text-primary-600 underline" target="_blank">Branding page</a>,
@@ -60,7 +60,7 @@
                   </p>
 
                   <app-branding-form
-                    class="block mt-8"
+                    class="mt-8 block"
                     [showCustomDomains]="false"
                     [defaultDescription]="defaultBrandingDescription" />
                 </li>
@@ -70,13 +70,13 @@
                 <button
                   cdkStepperPrevious
                   type="button"
-                  class="distr-btn-secondary flex-1 sm:flex-none inline-flex items-center justify-center w-full sm:w-auto px-5 py-2.5 text-sm font-medium">
+                  class="distr-btn-secondary inline-flex w-full flex-1 items-center justify-center px-5 py-2.5 text-sm font-medium sm:w-auto sm:flex-none">
                   Back
                 </button>
                 <button
                   type="submit"
                   [disabled]="loading()"
-                  class="distr-btn-primary text-white flex w-full sm:w-auto items-center justify-center">
+                  class="distr-btn-primary flex w-full items-center justify-center text-white sm:w-auto">
                   Save and Continue
                   <fa-icon class="ml-2" [icon]="faArrowRight" />
                 </button>
@@ -85,30 +85,30 @@
           </div>
         </cdk-step>
         <cdk-step label="Invite Customer" [stepControl]="inviteFormGroup">
-          <div class="p-8 w-full">
+          <div class="w-full p-8">
             <form [formGroup]="inviteFormGroup" (ngSubmit)="completeAndExit()">
               <ol
-                class="ml-4 relative text-gray-900 dark:text-white mb-12 border-s border-gray-200 dark:border-gray-700">
-                <li class="mb-10 ms-8">
+                class="relative mb-12 ml-4 border-s border-gray-200 text-gray-900 dark:border-gray-700 dark:text-white">
+                <li class="ms-8 mb-10">
                   <span
-                    class="absolute flex items-center justify-center size-8 bg-gray-100 dark:bg-gray-700 rounded-full -start-4 ring-4 ring-white dark:ring-gray-800">
+                    class="absolute -inset-s-4 flex size-8 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white dark:bg-gray-700 dark:ring-gray-800">
                     <fa-icon [icon]="faLightbulb" />
                   </span>
-                  <h3 class="text-lg font-medium leading-tight">Invite Customer</h3>
-                  <p class="text-sm mt-2">
+                  <h3 class="text-lg leading-tight font-medium">Invite Customer</h3>
+                  <p class="mt-2 text-sm">
                     In this step you will invite a new customer and then log in to the Distr Customer Portal.
                   </p>
                 </li>
 
-                <li class="mb-10 ms-8">
-                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                <li class="ms-8 mb-10">
+                  <span class="absolute -inset-s-2 mt-0.75 flex items-center justify-center">
                     <input
                       id="customerOrgDone"
                       type="checkbox"
                       [formControl]="inviteFormGroup.controls.customerCreateDone"
                       class="distr-checkbox" />
                   </span>
-                  <label for="inviteDone" class="text-lg font-medium leading-tight">Create a customer</label>
+                  <label for="inviteDone" class="text-lg leading-tight font-medium">Create a customer</label>
                   <p class="mt-1 text-sm">
                     A customer is a group of users inside your organization who have access to a shared set of
                     deployments and cannot create applications or artifacts.
@@ -126,7 +126,7 @@
                         type="button"
                         [disabled]="loading()"
                         (click)="createCustomerOrganization()"
-                        class="distr-btn-primary text-white ml-4 flex items-center justify-center sm:w-auto">
+                        class="distr-btn-primary ml-4 flex items-center justify-center text-white sm:w-auto">
                         Create
                       </button>
                     }
@@ -136,15 +136,15 @@
                   }
                 </li>
 
-                <li class="mb-10 ms-8">
-                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                <li class="ms-8 mb-10">
+                  <span class="absolute -inset-s-2 mt-0.75 flex items-center justify-center">
                     <input
                       id="inviteDone"
                       type="checkbox"
                       [formControl]="inviteFormGroup.controls.inviteDone"
                       class="distr-checkbox" />
                   </span>
-                  <label for="inviteDone" class="text-lg font-medium leading-tight"
+                  <label for="inviteDone" class="text-lg leading-tight font-medium"
                     >Send the customer invite mail (to yourself)</label
                   >
                   <p class="mt-1 text-sm">For the purpose of this tutorial, make sure to send this mail to yourself.</p>
@@ -166,7 +166,7 @@
                         type="button"
                         [disabled]="loading()"
                         (click)="sendInviteMail()"
-                        class="distr-btn-primary text-white ml-4 flex items-center justify-center sm:w-auto">
+                        class="distr-btn-primary ml-4 flex items-center justify-center text-white sm:w-auto">
                         Send Invite Mail
                       </button>
                     }
@@ -178,15 +178,15 @@
                   }
                 </li>
 
-                <li class="mb-10 ms-8">
-                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                <li class="ms-8 mb-10">
+                  <span class="absolute -inset-s-2 mt-0.75 flex items-center justify-center">
                     <input
                       id="customerConfirmed"
                       type="checkbox"
                       [formControl]="inviteFormGroup.controls.customerConfirmed"
                       class="distr-checkbox" />
                   </span>
-                  <label for="customerConfirmed" class="text-lg font-medium leading-tight"
+                  <label for="customerConfirmed" class="text-lg leading-tight font-medium"
                     >Open the Customer Portal in a different browser</label
                   >
                   <p class="mt-1 text-sm">
@@ -213,13 +213,13 @@
                 <button
                   cdkStepperPrevious
                   type="button"
-                  class="distr-btn-secondary flex-1 sm:flex-none inline-flex items-center justify-center w-full sm:w-auto px-5 py-2.5 text-sm font-medium">
+                  class="distr-btn-secondary inline-flex w-full flex-1 items-center justify-center px-5 py-2.5 text-sm font-medium sm:w-auto sm:flex-none">
                   Back
                 </button>
                 <button
                   [disabled]="loading()"
                   type="submit"
-                  class="distr-btn-primary text-white flex w-full sm:w-auto items-center justify-center">
+                  class="distr-btn-primary flex w-full items-center justify-center text-white sm:w-auto">
                   <fa-icon class="mr-2" [icon]="faCheck" />
                   @if (progress?.completedAt) {
                     Done
