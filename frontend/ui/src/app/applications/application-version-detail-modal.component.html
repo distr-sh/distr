@@ -157,7 +157,7 @@
               @for (resource of detail.resources; track resource.id) {
                 @if (activeTab() === 'resource-' + $index) {
                   <div
-                    class="markdown rounded-lg border border-gray-200 p-4 text-gray-900 dark:border-gray-500 dark:text-white"
+                    class="markdown markdown-compact rounded-lg border border-gray-200 p-4 text-gray-900 dark:border-gray-500 dark:text-white"
                     [innerMarkdown]="resource.content"></div>
                 }
               }
