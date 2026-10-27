@@ -13,7 +13,7 @@ const autoCloseDuration = 5000;
   selector: 'app-toast',
   template: `
     <div
-      class="mb-4 flex w-full max-w-xs items-center gap-3 rounded-lg bg-white p-4 text-gray-500 shadow-sm dark:bg-gray-800 dark:text-gray-400"
+      class="mb-4 flex w-full max-w-xs items-center gap-3 rounded-lg border border-gray-200 bg-white p-4 text-gray-500 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
       role="alert">
       @switch (type()) {
         @case ('error') {
