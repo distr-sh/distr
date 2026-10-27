@@ -29,6 +29,7 @@ import (
 
 func SupportBundlesRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Support Bundles"))
+	r.Use(middleware.SupportBundlesCustomerFeatureMiddleware)
 
 	r.With(middleware.RequireVendor, middleware.RequireOrgAndRole).Route("/configuration", func(r chiopenapi.Router) {
 		r.Get("/", respond.Handler(getSupportBundleConfigurationHandler)).

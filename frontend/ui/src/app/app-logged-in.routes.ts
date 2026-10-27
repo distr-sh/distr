@@ -517,7 +517,7 @@ export const routes: Routes = [
       },
       {
         path: 'support',
-        canActivate: [requireCustomer],
+        canActivate: [requireCustomer, supportBundlesEnabledGuard(), requireCustomerFeature('support_bundles')],
         children: [
           {
             path: '',
