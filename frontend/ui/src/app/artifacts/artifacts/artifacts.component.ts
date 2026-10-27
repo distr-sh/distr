@@ -6,7 +6,7 @@ import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/
 import {Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faBox, faPlus, faTrash, faUserCircle, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, lastValueFrom, map, startWith} from 'rxjs';
+import {combineLatest, lastValueFrom, map, of, startWith} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {AlertComponent} from '../../components/alert/alert.component';
@@ -96,9 +96,11 @@ export class ArtifactsComponent {
 
   protected readonly auth = inject(AuthService);
   protected readonly showRegistryHint = toSignal(
-    this.contextService
-      .hasPulledArtifact()
-      .pipe(map((hasPulled) => !hasPulled && (this.auth.isVendor() || this.auth.isCustomer()))),
+    this.auth.isVendor() && this.auth.hasAnyRole('read_write', 'admin')
+      ? this.artifacts$.pipe(map((artifacts) => artifacts.length === 0))
+      : this.auth.isCustomer()
+        ? this.contextService.hasPulledArtifact().pipe(map((hasPulled) => !hasPulled))
+        : of(false),
     {initialValue: false}
   );
 
