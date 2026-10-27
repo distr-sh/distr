@@ -1,18 +1,18 @@
-<div class="z-50 w-256 max-w-full max-h-full overflow-x-hidden overflow-y-auto">
-  <div class="relative w-full max-h-full">
+<div class="z-50 max-h-full w-256 max-w-full overflow-x-hidden overflow-y-auto">
+  <div class="relative max-h-full w-full">
     <!-- Modal content -->
-    <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
+    <div class="relative rounded-lg bg-white shadow-sm dark:bg-gray-700">
       <!-- Modal header -->
-      <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+      <div class="flex items-center justify-between rounded-t border-b border-gray-200 p-4 md:p-5 dark:border-gray-600">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
           <span class="text-gray-500 dark:text-gray-400">{{ versionDetail().application.name }}</span>
           {{ versionDetail().version.name }}
         </h3>
         <button
           type="button"
-          class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+          class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white"
           (click)="close()">
-          <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+          <svg class="h-3 w-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
             <path
               stroke="currentColor"
               stroke-linecap="round"
@@ -25,14 +25,14 @@
       </div>
 
       <!-- Modal body -->
-      <div class="p-4 md:p-5 space-y-4">
+      <div class="space-y-4 p-4 md:p-5">
         @if (versionDetail(); as detail) {
           <div class="text-gray-500 dark:text-gray-400">
             <div class="flex flex-wrap border-b border-gray-200 dark:border-gray-600">
               <button
                 type="button"
                 (click)="activeTab.set('link')"
-                class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                class="tab-label inline-flex cursor-pointer items-center justify-center rounded-t-lg border-b-2 p-2 text-sm hover:border-gray-300 hover:text-gray-600 dark:hover:text-gray-300"
                 [class.text-blue-600]="activeTab() === 'link'"
                 [class.dark:text-blue-500]="activeTab() === 'link'"
                 [class.border-blue-600]="activeTab() === 'link'"
@@ -44,7 +44,7 @@
                 <button
                   type="button"
                   (click)="activeTab.set('compose')"
-                  class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                  class="tab-label inline-flex cursor-pointer items-center justify-center rounded-t-lg border-b-2 p-2 text-sm hover:border-gray-300 hover:text-gray-600 dark:hover:text-gray-300"
                   [class.text-blue-600]="activeTab() === 'compose'"
                   [class.dark:text-blue-500]="activeTab() === 'compose'"
                   [class.border-blue-600]="activeTab() === 'compose'"
@@ -54,7 +54,7 @@
                 <button
                   type="button"
                   (click)="activeTab.set('environment')"
-                  class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                  class="tab-label inline-flex cursor-pointer items-center justify-center rounded-t-lg border-b-2 p-2 text-sm hover:border-gray-300 hover:text-gray-600 dark:hover:text-gray-300"
                   [class.text-blue-600]="activeTab() === 'environment'"
                   [class.dark:text-blue-500]="activeTab() === 'environment'"
                   [class.border-blue-600]="activeTab() === 'environment'"
@@ -65,7 +65,7 @@
                 <button
                   type="button"
                   (click)="activeTab.set('basevalues')"
-                  class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                  class="tab-label inline-flex cursor-pointer items-center justify-center rounded-t-lg border-b-2 p-2 text-sm hover:border-gray-300 hover:text-gray-600 dark:hover:text-gray-300"
                   [class.text-blue-600]="activeTab() === 'basevalues'"
                   [class.dark:text-blue-500]="activeTab() === 'basevalues'"
                   [class.border-blue-600]="activeTab() === 'basevalues'"
@@ -75,7 +75,7 @@
                 <button
                   type="button"
                   (click)="activeTab.set('customervalues')"
-                  class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                  class="tab-label inline-flex cursor-pointer items-center justify-center rounded-t-lg border-b-2 p-2 text-sm hover:border-gray-300 hover:text-gray-600 dark:hover:text-gray-300"
                   [class.text-blue-600]="activeTab() === 'customervalues'"
                   [class.dark:text-blue-500]="activeTab() === 'customervalues'"
                   [class.border-blue-600]="activeTab() === 'customervalues'"
@@ -88,7 +88,7 @@
                 <button
                   type="button"
                   (click)="activeTab.set('resource-' + $index)"
-                  class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                  class="tab-label inline-flex cursor-pointer items-center justify-center rounded-t-lg border-b-2 p-2 text-sm hover:border-gray-300 hover:text-gray-600 dark:hover:text-gray-300"
                   [class.text-blue-600]="activeTab() === 'resource-' + $index"
                   [class.dark:text-blue-500]="activeTab() === 'resource-' + $index"
                   [class.border-blue-600]="activeTab() === 'resource-' + $index"
@@ -157,7 +157,7 @@
               @for (resource of detail.resources; track resource.id) {
                 @if (activeTab() === 'resource-' + $index) {
                   <div
-                    class="markdown markdown-compact p-4 rounded-lg border border-gray-200 dark:border-gray-500 text-gray-900 dark:text-white"
+                    class="markdown markdown-compact rounded-lg border border-gray-200 p-4 text-gray-900 dark:border-gray-500 dark:text-white"
                     [innerMarkdown]="resource.content"></div>
                 }
               }

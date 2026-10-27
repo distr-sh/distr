@@ -2,7 +2,7 @@
   <div class="distr-panel">
     @if (application$ | async; as application) {
       <nav class="flex justify-between" aria-label="Breadcrumb">
-        <ol class="inline-flex items-center mb-3 sm:mb-0">
+        <ol class="mb-3 inline-flex items-center sm:mb-0">
           <li class="flex items-center">
             <a
               [routerLink]="['/', 'applications']"
@@ -20,7 +20,7 @@
                 #dropdownTrigger="cdkOverlayOrigin"
                 #dropdownTriggerButton
                 (click)="toggleBreadcrumbDropdown()"
-                class="inline-flex items-center px-3 py-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
+                class="inline-flex items-center rounded-lg px-3 py-2 text-center text-sm font-normal text-gray-700 hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 focus:outline-none dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white dark:focus:ring-gray-700">
                 <span class="block max-w-64 overflow-hidden text-ellipsis whitespace-nowrap" [title]="application.name">
                   {{ application.name }}
                 </span>
@@ -56,8 +56,8 @@
           </li>
         </ol>
         @if (auth.hasAnyRole('read_write', 'admin')) {
-          <button type="button" (click)="deleteApplication(application)" class="py-2 px-3 distr-btn-danger">
-            <fa-icon [icon]="faTrash" class="h-4 w-4 mr-2" />
+          <button type="button" (click)="deleteApplication(application)" class="distr-btn-danger px-3 py-2">
+            <fa-icon [icon]="faTrash" class="mr-2 h-4 w-4" />
             Delete Application
           </button>
         }
@@ -68,7 +68,7 @@
           <div class="flex space-x-4">
             <button
               type="button"
-              class="w-16 h-16 rounded-sm cursor-pointer overflow-hidden"
+              class="h-16 w-16 cursor-pointer overflow-hidden rounded-sm"
               (click)="uploadImage(application)"
               [disabled]="!auth.hasAnyRole('read_write', 'admin')">
               @if (application.imageUrl) {
@@ -88,7 +88,7 @@
                 textClass="block max-w-lg overflow-hidden text-ellipsis whitespace-nowrap text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
                 [loading]="savingApplicationName()"
                 (save)="updateApplicationName(application, $event)" />
-              <div class="flex flex-wrap items-center gap-2 mt-1">
+              <div class="mt-1 flex flex-wrap items-center gap-2">
                 @if (application.id) {
                   <app-uuid [uuid]="application.id" [small]="true" />
                 }
@@ -139,18 +139,18 @@
       <div>
         @if ((application.versions || []).length > 0) {
           <form class="flex items-center" [formGroup]="filterForm">
-            <div class="flex items-center h-5">
+            <div class="flex h-5 items-center">
               <input formControlName="showArchived" id="showArchived" type="checkbox" class="distr-checkbox" />
             </div>
-            <div class="ml-3 my-3 text-sm">
+            <div class="my-3 ml-3 text-sm">
               <label for="showArchived" class="text-gray-500 dark:text-gray-300">Show Archived Versions</label>
             </div>
           </form>
 
-          <div class="mb-5 relative overflow-x-auto sm:rounded-lg">
-            <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+          <div class="relative mb-5 overflow-x-auto sm:rounded-lg">
+            <table class="w-full text-left text-sm text-gray-500 rtl:text-right dark:text-gray-400">
               <thead
-                class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-800 dark:text-gray-400">
+                class="border-t border-gray-200 bg-gray-50 text-xs text-gray-700 uppercase dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400">
                 <tr>
                   @if (auth.hasAnyRole('read_write', 'admin')) {
                     <td class="px-1 py-3">
@@ -165,11 +165,11 @@
                     </td>
                   }
                   @if (selectedVersionIds().size > 0) {
-                    <td class="px-3 normal-case text-sm" [attr.colspan]="application.type === 'kubernetes' ? 8 : 5">
+                    <td class="px-3 text-sm normal-case" [attr.colspan]="application.type === 'kubernetes' ? 8 : 5">
                       {{ selectedVersionIds().size }} selected
                       <button
                         (click)="bulkArchiveVersions(application)"
-                        class="py-1 px-3 ms-2 items-center text-sm font-medium text-center distr-btn-secondary">
+                        class="distr-btn-secondary ms-2 items-center px-3 py-1 text-center text-sm font-medium">
                         <fa-icon [icon]="faArchive" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
                         Archive
                       </button>
@@ -207,7 +207,7 @@
                       scope="row"
                       [class.text-gray-900]="!archived"
                       [class.dark:text-white]="!archived"
-                      class="px-6 py-4 font-medium whitespace-nowrap max-w-64"
+                      class="max-w-64 px-6 py-4 font-medium whitespace-nowrap"
                       [title]="version.name">
                       <app-inline-edit
                         [value]="version.name"
@@ -252,21 +252,21 @@
                         @if (!archived) {
                           <button
                             (click)="archiveVersion(application, version)"
-                            class="py-2 px-3 mr-2 items-center text-sm font-medium text-center distr-btn-secondary">
+                            class="distr-btn-secondary mr-2 items-center px-3 py-2 text-center text-sm font-medium">
                             <fa-icon [icon]="faArchive" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
                             Archive
                           </button>
                         } @else {
                           <button
                             (click)="unArchiveVersion(application, version)"
-                            class="py-2 px-3 mr-4 items-center text-sm font-medium text-center distr-btn-secondary">
+                            class="distr-btn-secondary mr-4 items-center px-3 py-2 text-center text-sm font-medium">
                             <fa-icon [icon]="faArchive" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
                             Unarchive
                           </button>
                         }
                         <button
                           type="button"
-                          class="font-medium text-blue-600 dark:text-blue-500 hover:underline"
+                          class="font-medium text-blue-600 hover:underline dark:text-blue-500"
                           (click)="fillVersionFormWith(application, version)">
                           Copy from
                         </button>
@@ -280,7 +280,7 @@
         }
 
         @if (auth.hasAnyRole('read_write', 'admin')) {
-          <h3 class="block mb-2 text-lg font-medium text-gray-900 dark:text-white">
+          <h3 class="mb-2 block text-lg font-medium text-gray-900 dark:text-white">
             <button
               (click)="isVersionFormExpanded.set(!isVersionFormExpanded())"
               [title]="'Click to ' + (isVersionFormExpanded() ? 'hide' : 'show') + ' the version form'">
@@ -296,7 +296,7 @@
         @if (isVersionFormExpanded()) {
           <form [formGroup]="newVersionForm" (ngSubmit)="createVersion(application)">
             <div>
-              <div class="space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
+              <div class="space-y-4 sm:flex sm:space-y-0 sm:space-x-4">
                 <div class="w-full">
                   <label for="applicationVersion" class="distr-label mb-2">Version Name *</label>
                   <input
@@ -312,7 +312,7 @@
                 </div>
               </div>
 
-              <div class="space-y-4 sm:flex sm:space-x-4 sm:space-y-0 mt-4">
+              <div class="mt-4 space-y-4 sm:flex sm:space-y-0 sm:space-x-4">
                 <div class="w-full">
                   <label for="applicationVersionLinkTemplate" class="distr-label mb-2">Link Template</label>
                   <input
@@ -325,7 +325,7 @@
                     class="distr-input" />
                 </div>
               </div>
-              <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 You can use the Go template language to get a dynamic link based on
                 @if (application.type === 'docker') {
                   <span ngNonBindable
@@ -341,8 +341,8 @@
               </div>
 
               @if (application.type === 'kubernetes') {
-                <div class="space-y-4 mt-4">
-                  <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
+                <div class="mt-4 space-y-4">
+                  <div class="grid grid-cols-2 space-y-4 sm:flex sm:space-y-0 sm:space-x-4 md:grid-cols-2">
                     <div class="w-full">
                       <label for="chartTypeSelect" class="distr-label mb-2">Chart Type *</label>
                       <select
@@ -379,7 +379,7 @@
                     </div>
                   </div>
 
-                  <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
+                  <div class="grid grid-cols-2 space-y-4 sm:flex sm:space-y-0 sm:space-x-4 md:grid-cols-2">
                     <div class="w-full">
                       <label for="kubernetesChartUrl" class="distr-label mb-2">Chart URL *</label>
                       <input
@@ -460,7 +460,7 @@
                       >
                       <div
                         id="values-template-description"
-                        class="text-xs text-gray-400 dark:text-gray-500 xl:max-w-1/2">
+                        class="text-xs text-gray-400 xl:max-w-1/2 dark:text-gray-500">
                         Shown to your customers as a hint to supply their own values.yaml.
                         <br />
                         These customer values can override your base values.
@@ -473,7 +473,7 @@
                   </div>
                 </div>
               } @else {
-                <div class="space-y-4 mt-4">
+                <div class="mt-4 space-y-4">
                   <div class="w-full">
                     <label for="compose_input" class="distr-label mb-2">Docker Compose *</label>
                     <app-editor
@@ -481,7 +481,7 @@
                       language="yaml"
                       class="distr-input"
                       [formControl]="newVersionForm.controls.docker.controls.compose" />
-                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       Paste your docker compose file here.
                     </div>
                     @if (
@@ -498,20 +498,20 @@
                       id="compose_template_input"
                       class="distr-input"
                       [formControl]="newVersionForm.controls.docker.controls.template" />
-                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       This template will be shown when somebody deploys this application.
                     </div>
                   </div>
                 </div>
-                <div class="space-y-4 mt-4">
+                <div class="mt-4 space-y-4">
                   <div class="w-full"></div>
                 </div>
               }
-              <div class="space-y-4 mt-4">
+              <div class="mt-4 space-y-4">
                 <label class="distr-label">Additional Resources</label>
                 @for (resource of newVersionForm.controls.resources.controls; track $index) {
                   <div
-                    class="p-4 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 space-y-3">
+                    class="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700">
                     <div class="flex items-center justify-between">
                       <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Resource {{ $index + 1 }}
@@ -534,11 +534,11 @@
                       }
                     </div>
                     <div>
-                      <div class="flex items-end justify-between mb-1">
+                      <div class="mb-1 flex items-end justify-between">
                         <label class="distr-label">Content (Markdown) *</label>
                         <button
                           type="button"
-                          class="py-1 px-2 text-xs font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+                          class="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
                           (click)="toggleResourcePreview($index)">
                           @if (resourcePreviewIndices().has($index)) {
                             Write
@@ -549,7 +549,7 @@
                       </div>
                       @if (resourcePreviewIndices().has($index)) {
                         <div
-                          class="markdown markdown-compact p-2.5 min-h-38 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white"
+                          class="markdown markdown-compact min-h-38 rounded-lg border border-gray-200 p-2.5 text-gray-900 dark:border-gray-600 dark:text-white"
                           [innerMarkdown]="resource.controls.content.value"></div>
                       } @else {
                         <textarea
@@ -562,7 +562,7 @@
                       }
                     </div>
                     <div>
-                      <label class="inline-flex items-center cursor-pointer">
+                      <label class="inline-flex cursor-pointer items-center">
                         <input
                           type="checkbox"
                           [formControl]="resource.controls.visibleToCustomers"
@@ -583,11 +583,11 @@
                 </button>
               </div>
 
-              <div class="flex justify-stretch sm:justify-end mt-5 space-x-2.5">
+              <div class="mt-5 flex justify-stretch space-x-2.5 sm:justify-end">
                 <button
                   type="submit"
                   [disabled]="newVersionFormLoading()"
-                  class="flex-1 sm:flex-none inline-flex items-center justify-center text-white distr-btn-primary">
+                  class="distr-btn-primary inline-flex flex-1 items-center justify-center text-white sm:flex-none">
                   Create New Version
                 </button>
               </div>
