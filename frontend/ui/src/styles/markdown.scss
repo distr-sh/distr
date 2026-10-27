@@ -33,9 +33,13 @@
       @apply mt-3 mb-2;
     }
 
-    h5,
-    h6 {
+    h5 {
       @apply text-sm font-semibold;
+      @apply mt-2 mb-2;
+    }
+
+    h6 {
+      @apply text-sm font-medium text-gray-600 dark:text-gray-300;
       @apply mt-2 mb-2;
     }
 
@@ -54,6 +58,14 @@
 
       h4 {
         @apply text-sm font-semibold;
+      }
+
+      h5 {
+        @apply text-xs font-semibold;
+      }
+
+      h6 {
+        @apply text-xs font-medium text-gray-600 dark:text-gray-300;
       }
     }
 
