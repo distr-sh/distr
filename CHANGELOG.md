@@ -1,5 +1,22 @@
 # Changelog
 
+## [4.7.1](https://github.com/distr-sh/distr/compare/4.7.0...4.7.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* gate customer features with organization features ([#3628](https://github.com/distr-sh/distr/issues/3628)) ([6d23793](https://github.com/distr-sh/distr/commit/6d23793871db82f3969e01214b2de0701df625d0))
+
+
+### Other
+
+* **chart:** add optional `ServiceMonitor` ([#3643](https://github.com/distr-sh/distr/issues/3643)) ([6e6f12d](https://github.com/distr-sh/distr/commit/6e6f12d9d78fd0b97c73754b47701f49e5058c35))
+
+
+### Performance
+
+* **backend:** reduce string allocations on log ingestion ([#3644](https://github.com/distr-sh/distr/issues/3644)) ([a80887a](https://github.com/distr-sh/distr/commit/a80887a54eb715189651f247f4fcf430c0ee1334))
+
 ## [4.7.0](https://github.com/distr-sh/distr/compare/4.6.1...4.7.0) (2026-10-27)
 
 
