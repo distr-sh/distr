@@ -5,7 +5,8 @@
     "pnpmDedupe"
   ],
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    "helpers:pinGitHubActionDigestsToSemver"
   ],
   "timezone": "Europe/Vienna",
   "schedule": [

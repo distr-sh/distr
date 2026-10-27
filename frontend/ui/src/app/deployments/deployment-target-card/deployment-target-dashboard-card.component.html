@@ -2,29 +2,29 @@
   <div
     routerLink="/deployments"
     [queryParams]="{search: deploymentTarget().name}"
-    class="px-4 py-3 flex justify-between items-center min-w-0 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
-    <div class="flex justify-between items-center min-w-0">
-      <div class="flex items-center gap-3 min-w-0">
-        <div class="self-start shrink-0">
+    class="flex min-w-0 cursor-pointer items-center justify-between px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700">
+    <div class="flex min-w-0 items-center justify-between">
+      <div class="flex min-w-0 items-center gap-3">
+        <div class="shrink-0 self-start">
           @if (deploymentTarget().customerOrganization?.imageId; as imageId) {
             <img class="size-10 rounded-sm" [attr.src]="imageId | secureImage | async" alt="" />
           } @else {
             <img
               [ngSrc]="'/' + deploymentTarget().type + '.png'"
               [alt]="deploymentTarget().type"
-              class="size-10 rounded-sm max-w-none"
+              class="size-10 max-w-none rounded-sm"
               height="199"
               width="199" />
           }
         </div>
         <div class="min-w-0">
           @if (deploymentTarget().customerOrganization; as customer) {
-            <h3 class="font-bold leading-tight truncate" [title]="deploymentTarget().name">
+            <h3 class="truncate leading-tight font-bold" [title]="deploymentTarget().name">
               {{ customer.name }}
             </h3>
-            <div class="text-gray-500 dark:text-gray-400 text-sm truncate">{{ deploymentTarget().name }}</div>
+            <div class="truncate text-sm text-gray-500 dark:text-gray-400">{{ deploymentTarget().name }}</div>
           } @else {
-            <h3 class="font-bold truncate" [title]="deploymentTarget().name">
+            <h3 class="truncate font-bold" [title]="deploymentTarget().name">
               {{ deploymentTarget().name }}
             </h3>
           }
@@ -42,21 +42,21 @@
   @if (deploymentTarget().deployments.length > 0) {
     <ul class="overflow-hidden">
       @for (deployment of deploymentTarget().deployments; track deployment.id) {
-        <li class="hover:bg-gray-100 dark:hover:bg-gray-700 not-first:border-t border-gray-200 dark:border-gray-600">
+        <li class="border-gray-200 not-first:border-t hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700">
           <div class="px-4 py-2">
             <div class="flex items-center gap-3 text-sm">
-              <app-deployment-app-name class="flex-1 min-w-0" [deployment]="deployment" />
-              <div class="flex items-center gap-3 shrink-0">
+              <app-deployment-app-name class="min-w-0 flex-1" [deployment]="deployment" />
+              <div class="flex shrink-0 items-center gap-3">
                 <app-deployment-status-text [deployment]="deployment" />
                 @if (deployment.applicationLink) {
                   <a
                     [href]="deployment.applicationLink"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="px-2 py-1 inline-flex items-center text-sm font-medium text-center distr-btn-secondary">
+                    class="distr-btn-secondary inline-flex items-center px-2 py-1 text-center text-sm font-medium">
                     <fa-icon
                       [icon]="faArrowUpRightFromSquare"
-                      class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400" />
+                      class="mr-1 -ml-0.5 h-5 w-5 text-gray-500 dark:text-gray-400" />
                     Open
                   </a>
                 }
@@ -67,7 +67,7 @@
       }
     </ul>
   } @else {
-    <div class="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm p-4">
+    <div class="flex flex-1 items-center justify-center p-4 text-sm text-gray-500 dark:text-gray-400">
       No applications deployed.
     </div>
   }

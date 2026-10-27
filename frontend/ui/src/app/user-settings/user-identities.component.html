@@ -1,7 +1,7 @@
 <div class="space-y-4">
   <h2 class="text-xl font-bold dark:text-white">Connected identities</h2>
 
-  <div class="text-gray-500 text-sm">
+  <div class="text-sm text-gray-500">
     These identities can be used to sign in to Distr. An identity is connected the first time you sign in with it,
     matched to your Distr account by the e-mail address it reports. From then on it stays connected even if the e-mail
     address changes on either side.
@@ -13,13 +13,13 @@
     <ul class="space-y-2">
       @for (identity of oidcIdentities(); track identity.id) {
         <li
-          class="flex items-center gap-4 border border-gray-300 dark:border-gray-600 rounded-lg p-4 text-sm dark:text-white">
-          <fa-icon class="w-4 h-4 flex align-middle" [icon]="providerIcon(identity.provider)" />
+          class="flex items-center gap-4 rounded-lg border border-gray-300 p-4 text-sm dark:border-gray-600 dark:text-white">
+          <fa-icon class="flex h-4 w-4 align-middle" [icon]="providerIcon(identity.provider)" />
           <div class="grow">
             <div class="font-medium">
               {{ providerName(identity) }}
               @if (identity.provider === 'custom' && identity.organizationName; as organizationName) {
-                <span class="ml-2 distr-badge distr-badge-neutral">Managed by {{ organizationName }}</span>
+                <span class="distr-badge distr-badge-neutral ml-2">Managed by {{ organizationName }}</span>
               }
             </div>
             <div class="text-gray-500">{{ identity.email ?? identity.issuer }}</div>
@@ -35,7 +35,7 @@
               type="button"
               [disabled]="formLoading()"
               (click)="showDisconnectOidcIdentityDialog(identity)"
-              class="distr-btn-secondary inline-flex items-center justify-center px-5 py-2.5 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed">
+              class="distr-btn-secondary inline-flex items-center justify-center px-5 py-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60">
               Disconnect
             </button>
           }
@@ -47,21 +47,21 @@
 
 <ng-template #disconnectOidcIdentityDialog>
   <div
-    class="p-4 max-w-lg mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900"
+    class="mt-12 max-h-full max-w-lg rounded-lg bg-white p-4 shadow-sm dark:bg-gray-900"
     animate.enter="animate-fly-in-top"
     animate.leave="animate-fly-out-top">
-    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+    <div class="flex items-center justify-between rounded-t border-b border-gray-200 p-4 md:p-5 dark:border-gray-600">
       <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Disconnect Account</h2>
       <button
         type="button"
         (click)="disconnectOidcIdentityDialogRef?.dismiss()"
-        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+        class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
         <fa-icon [icon]="faXmark" />
         <span class="sr-only">Close modal</span>
       </button>
     </div>
 
-    <div class="p-4 md:p-5 space-y-4">
+    <div class="space-y-4 p-4 md:p-5">
       @if (oidcIdentityToDisconnect(); as identity) {
         <app-alert type="warning">
           You will no longer be able to sign in with {{ providerName(identity) }}. Signing in with it again reconnects
@@ -79,7 +79,7 @@
             type="button"
             [disabled]="formLoading()"
             (click)="disconnectOidcIdentity()"
-            class="distr-btn-danger-solid inline-flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed">
+            class="distr-btn-danger-solid inline-flex items-center justify-center disabled:cursor-not-allowed disabled:opacity-60">
             Disconnect {{ providerName(identity) }}
           </button>
         </div>

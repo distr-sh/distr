@@ -2,28 +2,28 @@
   @if (artifact(); as artifact) {
     <div class="distr-table-panel">
       <div class="overflow-x-auto">
-        <div class="flex flex-col gap-3 py-3 px-6 sm:py-4">
+        <div class="flex flex-col gap-3 px-6 py-3 sm:py-4">
           <div class="flex items-center">
             <div class="shrink-0">
               @if (artifact.imageUrl) {
                 <img
                   (click)="uploadImage(artifact)"
-                  class="w-16 h-16 rounded-sm cursor-pointer"
+                  class="h-16 w-16 cursor-pointer rounded-sm"
                   height="199"
                   width="199"
                   [attr.src]="artifact.imageUrl | secureImage | async"
                   alt="" />
               } @else {
                 <div class="shrink-0 text-gray-900 dark:text-gray-400">
-                  <fa-icon (click)="uploadImage(artifact)" [icon]="faBox" size="xl" class="text-xl cursor-pointer" />
+                  <fa-icon (click)="uploadImage(artifact)" [icon]="faBox" size="xl" class="cursor-pointer text-xl" />
                 </div>
               }
             </div>
-            <div class="flex-1 min-w-0 ms-4">
-              <h2 class="text-2xl font-semibold truncate">
+            <div class="ms-4 min-w-0 flex-1">
+              <h2 class="truncate text-2xl font-semibold">
                 {{ artifact.name }}
               </h2>
-              <p class="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 truncate mt-1">
+              <p class="mt-1 flex items-center gap-1 truncate text-sm text-gray-500 dark:text-gray-400">
                 <app-uuid [uuid]="artifact.id" [small]="true" />
                 @if (artifact.public) {
                   <app-artifact-public-badge />
@@ -34,7 +34,7 @@
             @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
               <button
                 type="button"
-                class="text-gray-500 dark:text-gray-400 self-start px-1"
+                class="self-start px-1 text-gray-500 dark:text-gray-400"
                 cdkOverlayOrigin
                 #dropdownTrigger="cdkOverlayOrigin"
                 (click)="showDropdown.set(true)">
@@ -106,7 +106,7 @@
 
           @if (auth.isVendor() && artifact.upstreamUrl) {
             <div class="flex flex-col gap-1 text-sm">
-              <div class="flex items-center gap-3 flex-wrap">
+              <div class="flex flex-wrap items-center gap-3">
                 <div>
                   <span class="text-gray-500 dark:text-gray-400">Upstream: </span>
                   <span class="font-mono text-gray-900 dark:text-white">{{ artifact.upstreamUrl }}</span>
@@ -125,8 +125,8 @@
               @if (artifact.lastSyncError) {
                 <p class="text-xs text-red-600 dark:text-red-400">{{ artifact.lastSyncError }}</p>
               }
-              <div class="flex items-center gap-3 flex-wrap">
-                <span class="text-gray-500 dark:text-gray-400 text-xs">
+              <div class="flex flex-wrap items-center gap-3">
+                <span class="text-xs text-gray-500 dark:text-gray-400">
                   @if (artifact.lastSyncedAt) {
                     <fa-icon [icon]="faCheck" class="text-green-600 dark:text-green-400" />
                     Last synced {{ artifact.lastSyncedAt | relativeDate }}
@@ -142,7 +142,7 @@
                     type="button"
                     (click)="syncArtifact(artifact)"
                     [disabled]="syncing()"
-                    class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                    class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-50 dark:text-blue-400 dark:hover:text-blue-300">
                     <fa-icon [icon]="faRotate" [class.animate-spin]="syncing()" />
                     Sync now
                   </button>
@@ -160,7 +160,7 @@
           @if (artifactUsage(); as usage) {
             <div class="text-sm">
               <div class="text-gray-500 dark:text-gray-400">Use this artifact with:</div>
-              <div class="font-mono mt-1">
+              <div class="mt-1 font-mono">
                 {{ usage }}
                 <app-clip [clip]="usage" />
               </div>
@@ -173,16 +173,16 @@
       </div>
     </div>
 
-    <div class="mt-4 distr-table-panel">
+    <div class="distr-table-panel mt-4">
       @if (listedVersions().length > 0) {
-        <div class="distr-toolbar p-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="distr-toolbar border-b border-gray-200 p-4 dark:border-gray-700">
           <app-search-bar [control]="searchControl" placeholder="Filter versions by tag or digest" />
         </div>
       }
       <div class="overflow-x-auto">
         @if (listedVersions().length === 0 && artifact.upstreamUrl) {
           <div
-            class="flex flex-col items-center justify-center py-10 px-6 text-center text-gray-500 dark:text-gray-400">
+            class="flex flex-col items-center justify-center px-6 py-10 text-center text-gray-500 dark:text-gray-400">
             <p class="text-sm">
               Versions for this artifact will be automatically synced from
               <span class="font-mono text-gray-700 dark:text-gray-300">{{ artifact.upstreamUrl }}</span
@@ -195,14 +195,14 @@
                   type="button"
                   (click)="syncArtifact(artifact)"
                   [disabled]="syncing()"
-                  class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                  class="text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-50 dark:text-blue-400 dark:hover:text-blue-300">
                   Sync now</button
                 >.
               </p>
             }
           </div>
         } @else if (listedVersions().length > 0 && matchingVersions().length === 0) {
-          <div class="py-10 px-6 text-center text-gray-500 dark:text-gray-400">
+          <div class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
             <p class="text-sm">
               No version matches
               <span class="font-mono text-gray-700 dark:text-gray-300">{{ search() }}</span
@@ -212,10 +212,10 @@
         }
         <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
           @for (version of pagedVersions(); track version.digest) {
-            <li class="py-3 px-6 sm:py-4">
+            <li class="px-6 py-3 sm:py-4">
               <div class="flex items-center gap-2">
-                <div class="flex-1 min-w-0">
-                  <div class="flex flex-row gap-1 flex-wrap items-center">
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-row flex-wrap items-center gap-1">
                     @for (label of version.tags; track label.name) {
                       <span class="distr-badge" [class.distr-badge-success]="label.name === 'latest'">
                         {{ label.name }}
@@ -224,14 +224,14 @@
                             type="button"
                             [attr.aria-label]="'Delete tag ' + label.name"
                             (click)="deleteArtifactTag(artifact, version, label.name)"
-                            class="-mr-1 text-red-400 hover:text-red-600 transition-colors">
+                            class="-mr-1 text-red-400 transition-colors hover:text-red-600">
                             <fa-icon [icon]="faXmark" />
                           </button>
                         }
                       </span>
                     }
                   </div>
-                  <ul class="flex gap-3 mt-1 text-xs font-normal text-gray-500 truncate dark:text-gray-400">
+                  <ul class="mt-1 flex gap-3 truncate text-xs font-normal text-gray-500 dark:text-gray-400">
                     <li>{{ version.createdAt | relativeDate }}</li>
                     @if (version.size > 0) {
                       <li>{{ version.size | bytes }}</li>
@@ -293,15 +293,15 @@
       <div
         animate.enter="animate-fly-in-top"
         animate.leave="animate-fly-out-top"
-        class="p-4 w-128 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
-        <div class="relative w-full max-h-full">
+        class="my-auto max-h-full w-128 overflow-y-auto rounded-lg bg-white p-4 shadow-sm dark:bg-gray-900">
+        <div class="relative max-h-full w-full">
           <div class="relative rounded-lg">
             <div
-              class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+              class="flex items-center justify-between rounded-t border-b border-gray-200 p-4 md:p-5 dark:border-gray-600">
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Upstream URL</h3>
               <button
                 type="button"
-                class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white"
                 (click)="upstreamURLModalRef?.close()">
                 <fa-icon [icon]="faXmark" />
                 <span class="sr-only">Close modal</span>
@@ -336,13 +336,13 @@
                     <button
                       type="button"
                       (click)="upstreamURLModalRef?.close()"
-                      class="py-2 px-4 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700">
+                      class="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
                       Cancel
                     </button>
                     <button
                       type="submit"
                       [disabled]="upstreamURLFormLoading()"
-                      class="py-2 px-4 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                      class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
                       Save
                     </button>
                   </div>
@@ -360,15 +360,15 @@
       <div
         animate.enter="animate-fly-in-top"
         animate.leave="animate-fly-out-top"
-        class="p-4 w-128 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
-        <div class="relative w-full max-h-full">
+        class="my-auto max-h-full w-128 overflow-y-auto rounded-lg bg-white p-4 shadow-sm dark:bg-gray-900">
+        <div class="relative max-h-full w-full">
           <div class="relative rounded-lg">
             <div
-              class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+              class="flex items-center justify-between rounded-t border-b border-gray-200 p-4 md:p-5 dark:border-gray-600">
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Upstream Credentials</h3>
               <button
                 type="button"
-                class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white"
                 (click)="upstreamAuthModalRef?.close()">
                 <fa-icon [icon]="faXmark" />
                 <span class="sr-only">Close modal</span>
@@ -437,13 +437,13 @@
                     <button
                       type="button"
                       (click)="upstreamAuthModalRef?.close()"
-                      class="py-2 px-4 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700">
+                      class="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
                       Cancel
                     </button>
                     <button
                       type="submit"
                       [disabled]="upstreamAuthFormLoading()"
-                      class="py-2 px-4 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                      class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
                       Save
                     </button>
                   </div>
@@ -455,8 +455,8 @@
       </div>
     </ng-template>
   } @else {
-    <div class="flex justify-center items-center py-8 text-gray-500 dark:text-gray-400">
-      <app-spinner class="size-6 me-2" />
+    <div class="flex items-center justify-center py-8 text-gray-500 dark:text-gray-400">
+      <app-spinner class="me-2 size-6" />
       <span>Loading&hellip;</span>
     </div>
   }

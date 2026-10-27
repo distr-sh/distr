@@ -1,9 +1,9 @@
-<div class="z-50 w-256 max-w-full max-h-full overflow-x-hidden overflow-y-auto">
-  <div class="relative w-full max-h-full">
+<div class="z-50 max-h-full w-256 max-w-full overflow-x-hidden overflow-y-auto">
+  <div class="relative max-h-full w-full">
     <!-- Modal content -->
-    <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
+    <div class="relative rounded-lg bg-white shadow-sm dark:bg-gray-700">
       <!-- Modal header -->
-      <div class="flex items-center justify-between p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+      <div class="flex items-center justify-between rounded-t border-b border-gray-200 p-5 dark:border-gray-600">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
           @if (deployment()?.id) {
             Update Deployment
@@ -13,7 +13,7 @@
         </h3>
         <button
           type="button"
-          class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+          class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white"
           (click)="closed.emit()">
           <fa-icon [icon]="faXmark" />
           <span class="sr-only">Close modal</span>
@@ -33,8 +33,8 @@
             [deploymentType]="deploymentTarget().type"
             [customerOrganizationId]="deploymentTarget().customerOrganization?.id"
             [deploymentTargetName]="deploymentTarget().name" />
-          <button type="submit" [disabled]="loading()" class="text-white inline-flex items-center distr-btn-primary">
-            <fa-icon [icon]="faShip" class="h-5 w-5 mr-2 -ml-0.5 dark:text-gray-400" />
+          <button type="submit" [disabled]="loading()" class="distr-btn-primary inline-flex items-center text-white">
+            <fa-icon [icon]="faShip" class="mr-2 -ml-0.5 h-5 w-5 dark:text-gray-400" />
             Deploy
           </button>
         } @else {

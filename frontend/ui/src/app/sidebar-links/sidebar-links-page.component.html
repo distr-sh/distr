@@ -1,8 +1,8 @@
 <app-page>
   <div class="distr-table-panel">
     @if (customerOrganization(); as customer) {
-      <nav class="flex justify-between m-4" aria-label="Breadcrumb">
-        <ol class="inline-flex items-center mb-3 sm:mb-0">
+      <nav class="m-4 flex justify-between" aria-label="Breadcrumb">
+        <ol class="mb-3 inline-flex items-center sm:mb-0">
           <li class="flex items-center">
             <a
               [routerLink]="['/', 'customers']"
@@ -20,7 +20,7 @@
                 #dropdownTrigger="cdkOverlayOrigin"
                 #dropdownTriggerButton
                 (click)="toggleBreadcrumbDropdown()"
-                class="inline-flex items-center px-3 py-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
+                class="inline-flex items-center rounded-lg px-3 py-2 text-center text-sm font-normal text-gray-700 hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 focus:outline-none dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white dark:focus:ring-gray-700">
                 {{ customer.name }}
                 <fa-icon class="ml-2" [icon]="faChevronDown" />
               </button>
@@ -54,8 +54,8 @@
           <button
             type="button"
             (click)="showDialog()"
-            class="flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-            <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+            class="flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+            <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
             Create Link
           </button>
         }
@@ -81,12 +81,12 @@
               class="distr-table-row">
               <td class="distr-table-cell">{{ link.name }}</td>
               <td
-                class="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap max-w-96 overflow-hidden text-ellipsis">
+                class="max-w-96 overflow-hidden px-4 py-3 text-ellipsis whitespace-nowrap text-gray-900 dark:text-white">
                 <a
                   [href]="link.link"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-blue-600 dark:text-blue-400 hover:underline">
+                  class="text-blue-600 hover:underline dark:text-blue-400">
                   {{ link.link }}
                 </a>
               </td>
@@ -99,7 +99,7 @@
                     type="button"
                     aria-label="Delete"
                     (click)="deleteLink(link)"
-                    class="py-2 px-3 distr-btn-danger">
+                    class="distr-btn-danger px-3 py-2">
                     <fa-icon [icon]="faTrash" class="h-4 w-4" />
                   </button>
                 }
@@ -109,7 +109,7 @@
             <tr class="border-t border-gray-200 dark:border-gray-600">
               <td
                 colspan="4"
-                class="px-4 py-3 font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap text-center">
+                class="px-4 py-3 text-center font-medium whitespace-nowrap text-gray-600 dark:text-gray-400">
                 No links found
               </td>
             </tr>
@@ -122,10 +122,10 @@
 
 <ng-template #createUpdateDialog>
   <div
-    class="p-4 w-xl max-w-full mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900"
+    class="mt-12 max-h-full w-xl max-w-full rounded-lg bg-white p-4 shadow-sm dark:bg-gray-900"
     animate.enter="animate-fly-in-top"
     animate.leave="animate-fly-out-top">
-    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+    <div class="flex items-center justify-between rounded-t border-b border-gray-200 p-4 md:p-5 dark:border-gray-600">
       <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
         @if (createUpdateForm.value.id) {
           Edit Link
@@ -136,15 +136,15 @@
       <button
         type="button"
         (click)="closeDialog()"
-        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+        class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
         <fa-icon [icon]="faXmark" />
         <span class="sr-only">Close modal</span>
       </button>
     </div>
 
-    <div class="p-4 md:p-5 space-y-4">
+    <div class="space-y-4 p-4 md:p-5">
       <section class="antialiased">
-        <div class="mx-auto max-w-screen-xl px-4 2xl:px-0">
+        <div class="mx-auto max-w-7xl px-4 2xl:px-0">
           <form class="mx-auto" (ngSubmit)="submitForm()" [formGroup]="createUpdateForm">
             <div class="flex flex-col space-y-5">
               <div class="space-y-2">
@@ -158,7 +158,7 @@
                   placeholder="Documentation"
                   class="distr-input" />
                 @if (createUpdateForm.controls.name.touched && createUpdateForm.controls.name.errors?.['required']) {
-                  <span class="text-red-500 text-xs">Name is required</span>
+                  <span class="text-xs text-red-500">Name is required</span>
                 }
               </div>
 
@@ -173,14 +173,14 @@
                   placeholder="https://example.com/docs"
                   class="distr-input" />
                 @if (createUpdateForm.controls.link.touched && createUpdateForm.controls.link.errors?.['required']) {
-                  <span class="text-red-500 text-xs">Link is required</span>
+                  <span class="text-xs text-red-500">Link is required</span>
                 }
               </div>
 
               <button
                 type="submit"
                 [disabled]="!createUpdateForm.valid"
-                class="self-end text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                class="w-full self-end rounded-lg bg-blue-700 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 focus:outline-none sm:w-auto dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
                 Submit
               </button>
             </div>

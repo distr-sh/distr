@@ -117,16 +117,16 @@
       <button
         type="submit"
         [disabled]="saveLoading() || testLoading()"
-        class="text-white inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
-        <fa-icon [icon]="faFloppyDisk" size="lg" class="h-4 w-4 mr-2 -ml-0.5 mb-1" />
+        class="distr-btn-primary inline-flex items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-60">
+        <fa-icon [icon]="faFloppyDisk" size="lg" class="mr-2 mb-1 -ml-0.5 h-4 w-4" />
         Save
       </button>
       <button
         type="button"
         (click)="sendTest()"
         [disabled]="saveLoading() || testLoading()"
-        class="inline-flex items-center justify-center distr-btn-secondary font-medium text-sm px-5 py-2.5 disabled:opacity-60 disabled:cursor-not-allowed">
-        <fa-icon [icon]="faPaperPlane" size="lg" class="h-4 w-4 mr-2 -ml-0.5 mb-1" />
+        class="distr-btn-secondary inline-flex items-center justify-center px-5 py-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60">
+        <fa-icon [icon]="faPaperPlane" size="lg" class="mr-2 mb-1 -ml-0.5 h-4 w-4" />
         Send test email
       </button>
       @if (configuration()) {
@@ -134,8 +134,8 @@
           type="button"
           (click)="remove()"
           [disabled]="saveLoading() || testLoading()"
-          class="inline-flex items-center justify-center distr-btn-danger px-5 py-2.5 disabled:opacity-60 disabled:cursor-not-allowed">
-          <fa-icon [icon]="faTrash" size="lg" class="h-4 w-4 mr-2 -ml-0.5 mb-1" />
+          class="distr-btn-danger inline-flex items-center justify-center px-5 py-2.5 disabled:cursor-not-allowed disabled:opacity-60">
+          <fa-icon [icon]="faTrash" size="lg" class="mr-2 mb-1 -ml-0.5 h-4 w-4" />
           Remove
         </button>
       }

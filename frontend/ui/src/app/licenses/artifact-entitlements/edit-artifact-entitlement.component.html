@@ -1,6 +1,6 @@
 <form [formGroup]="editForm" class="space-y-4">
-  <div class="space-y-4 mt-4">
-    <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
+  <div class="mt-4 space-y-4">
+    <div class="grid grid-cols-2 space-y-4 sm:flex sm:space-y-0 sm:space-x-4 md:grid-cols-2">
       <div class="w-full">
         <label for="name" class="distr-label mb-2">Name *</label>
         <input formControlName="name" autotrim type="text" id="name" class="distr-input" placeholder="License name" />
@@ -16,7 +16,7 @@
 
     <div>
       <div class="flex">
-        <div class="flex-grow grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
+        <div class="grid grow grid-cols-2 space-y-4 sm:flex sm:space-y-0 sm:space-x-4 md:grid-cols-2">
           <div class="w-full">
             <label class="distr-label mb-2"> Artifact * </label>
           </div>
@@ -29,7 +29,7 @@
       <ng-container formArrayName="artifacts">
         @for (artifactCtrl of editForm.controls.artifacts.controls; track i; let i = $index) {
           <div class="mb-2 flex" [formGroupName]="i">
-            <div class="flex-grow grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
+            <div class="grid grow grid-cols-2 space-y-4 sm:flex sm:space-y-0 sm:space-x-4 md:grid-cols-2">
               <div class="w-full">
                 <select
                   id="artifactId-{{ i }}"
@@ -50,7 +50,7 @@
                   #dropdownTrigger="cdkOverlayOrigin"
                   [disabled]="!auth.hasAnyRole('admin', 'read_write')"
                   (click)="toggleDropdown(i, artifactCtrl)">
-                  <span class="flex-grow text-left"
+                  <span class="grow text-left"
                     >{{
                       artifactCtrl.get('includeAllTags')?.value
                         ? 'All tags and future tags'
@@ -73,11 +73,11 @@
                   [cdkConnectedOverlayMinWidth]="dropdownWidth + 'px'"
                   [cdkConnectedOverlayOpen]="openedArtifactIdx() === i">
                   <div
-                    class="w-full text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600 origin-top"
+                    class="w-full origin-top list-none divide-y divide-gray-100 rounded-sm bg-white text-base shadow-sm dark:divide-gray-600 dark:bg-gray-700"
                     animate.enter="animate-flip-in-top"
                     animate.leave="animate-flip-out-top">
                     <ul
-                      class="w-full max-h-128 overflow-y-auto text-sm font-medium text-gray-900 bg-white border-gray-200 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                      class="max-h-128 w-full overflow-y-auto rounded-lg border-gray-200 bg-white text-sm font-medium text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                       <li class="w-full border-gray-200 dark:border-gray-600">
                         <div class="flex items-center ps-3">
                           <input
@@ -87,7 +87,7 @@
                             class="distr-checkbox" />
                           <label
                             for="all-versions-checkbox"
-                            class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                            class="ms-2 w-full py-3 text-sm font-medium text-gray-900 dark:text-gray-300"
                             >All tags and future tags</label
                           >
                         </div>
@@ -110,9 +110,9 @@
                                 class="distr-checkbox" />
                               <label
                                 for="version-checkbox-{{ tagsIdx }}"
-                                class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                                class="ms-2 w-full py-3 text-sm font-medium text-gray-900 dark:text-gray-300">
                                 @let tag = selectedArtifact?.versions?.[tagsIdx];
-                                <div class="flex-1 min-w-0">
+                                <div class="min-w-0 flex-1">
                                   <div class="flex flex-row gap-1">
                                     @for (label of tag?.tags; track label.name) {
                                       <span class="distr-badge" [class.distr-badge-success]="label.name === 'latest'">
@@ -121,7 +121,7 @@
                                     }
                                   </div>
                                   <ul
-                                    class="flex gap-3 mt-1 text-xs font-normal text-gray-500 truncate dark:text-gray-400">
+                                    class="mt-1 flex gap-3 truncate text-xs font-normal text-gray-500 dark:text-gray-400">
                                     <li>{{ tag!.createdAt | relativeDate }}</li>
                                     <li>
                                       <app-artifacts-hash [hash]="tag!.digest" [expandable]="false" />
@@ -146,7 +146,7 @@
                 <svg
                   aria-hidden="true"
                   xmlns="http://www.w3.org/2000/svg"
-                  class="w-5 h-5"
+                  class="h-5 w-5"
                   viewBox="0 0 20 20"
                   fill="currentColor">
                   <path
@@ -170,7 +170,7 @@
     @if (auth.hasAnyRole('admin', 'read_write')) {
       <button
         (click)="addArtifactGroup()"
-        class="flex items-center pb-2 text-sm font-medium dark:border-gray-600 text-primary-600 dark:text-primary-500 hover:underline">
+        class="flex items-center pb-2 text-sm font-medium text-primary-600 hover:underline dark:border-gray-600 dark:text-primary-500">
         <fa-icon [icon]="faPlus" class="me-1" />
         Add Artifact
       </button>
