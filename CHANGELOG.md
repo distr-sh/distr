@@ -1,5 +1,23 @@
 # Changelog
 
+## [4.7.3](https://github.com/distr-sh/distr/compare/4.7.2...4.7.3) (2026-10-28)
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([#3617](https://github.com/distr-sh/distr/issues/3617)) ([64c99ea](https://github.com/distr-sh/distr/commit/64c99ea957c2436e859137a74a8f09e9339b1a66))
+
+
+### Other
+
+* **deps:** update loki docker tag to v19.4.0 ([#3625](https://github.com/distr-sh/distr/issues/3625)) ([36a5ba7](https://github.com/distr-sh/distr/commit/36a5ba75b65da7e5dc3a6d55610003e4f97a5ae4))
+* send specific update failed & recovered alerts ([#3658](https://github.com/distr-sh/distr/issues/3658)) ([f9905fd](https://github.com/distr-sh/distr/commit/f9905fdc2a756ed12dc1e7adc57c7a9377f4f395))
+
+
+### Performance
+
+* **backend:** reject requests declaring an oversized body before reading it ([#3674](https://github.com/distr-sh/distr/issues/3674)) ([2f77f56](https://github.com/distr-sh/distr/commit/2f77f56903b605916929538ce76507da84fbf742))
+
 ## [4.7.2](https://github.com/distr-sh/distr/compare/4.7.1...4.7.2) (2026-10-28)
 
 
