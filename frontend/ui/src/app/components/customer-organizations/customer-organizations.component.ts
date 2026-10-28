@@ -16,8 +16,9 @@ import {RouterLink} from '@angular/router';
 import {CustomerOrganization, CustomerOrganizationFeature, CustomerOrganizationWithUsage} from '@distr-sh/distr-sdk';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faAddressBook, faChevronDown, faEdit, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, filter, firstValueFrom, map, of, startWith, Subject, switchMap} from 'rxjs';
+import {combineLatest, filter, firstValueFrom, map, of, startWith, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
+import {refreshInBackground} from '../../../util/refresh';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ArtifactEntitlementsService} from '../../services/artifact-entitlements.service';
 import {AuthService} from '../../services/auth.service';
@@ -96,17 +97,13 @@ export class CustomerOrganizationsComponent {
   protected readonly filterForm = this.fb.group({
     search: this.fb.control(''),
   });
-  private readonly refresh$ = new Subject<void>();
   protected readonly customerOrganizations = toSignal(
     combineLatest([
       this.filterForm.valueChanges.pipe(
         map((filter) => filter.search ?? ''),
         startWith('')
       ),
-      this.refresh$.pipe(
-        startWith(undefined),
-        switchMap(() => this.customerOrganizationsService.getCustomerOrganizations())
-      ),
+      this.customerOrganizationsService.getCustomerOrganizations(),
     ]).pipe(
       map(([filter, organizations]) =>
         filter.length > 0
@@ -168,6 +165,10 @@ export class CustomerOrganizationsComponent {
   protected readonly partnerAssignControl = this.fb.control('');
   protected partnerAssignLoading = signal(false);
 
+  constructor() {
+    refreshInBackground(this.customerOrganizationsService.refresh());
+  }
+
   protected showCreateDialog() {
     this.closeCreateDialog();
     this.modalRef = this.overlay.showModal(this.createCustomerDialog());
@@ -198,7 +199,6 @@ export class CustomerOrganizationsComponent {
       );
 
       this.closeCreateDialog();
-      this.refresh$.next();
     } finally {
       this.createFormLoading = false;
     }
@@ -210,10 +210,7 @@ export class CustomerOrganizationsComponent {
       .updateCustomerOrganization(customer.id, {...customer, name})
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
-          this.toast.success('Customer has been updated');
-          this.refresh$.next();
-        },
+        next: () => this.toast.success('Customer has been updated'),
         error: (e) => {
           const msg = getFormDisplayedError(e);
           if (msg) {
@@ -232,7 +229,6 @@ export class CustomerOrganizationsComponent {
     await firstValueFrom(
       this.customerOrganizationsService.updateCustomerOrganization(value.id, {name: value.name, imageId})
     );
-    this.refresh$.next();
   }
 
   protected delete(target: CustomerOrganizationWithUsage): void {
@@ -259,7 +255,6 @@ export class CustomerOrganizationsComponent {
       )
       .subscribe({
         next: () => {
-          this.refresh$.next();
           this.artifactEntitlementsService.refresh();
           this.applicationEntitlementsService.refresh();
         },
@@ -294,7 +289,6 @@ export class CustomerOrganizationsComponent {
         })
       );
       this.toast.success('Customer features updated');
-      this.refresh$.next();
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {
@@ -340,10 +334,9 @@ export class CustomerOrganizationsComponent {
     this.partnerAssignLoading.set(true);
     try {
       await firstValueFrom(
-        this.partnerOrganizationsService.assignCustomerToPartner(customer.id, {partnerOrganizationId})
+        this.customerOrganizationsService.assignCustomerToPartner(customer.id, {partnerOrganizationId})
       );
       this.closePartnerAssignDialog();
-      this.refresh$.next();
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {

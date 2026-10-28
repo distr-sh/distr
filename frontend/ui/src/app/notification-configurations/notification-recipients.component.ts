@@ -4,7 +4,7 @@ import {FormControl, FormRecord, ReactiveFormsModule} from '@angular/forms';
 import {UserAccountWithRole} from '@distr-sh/distr-sdk';
 import {organizationKind} from '../../util/organization-kind';
 import {AuthService} from '../services/auth.service';
-import {CustomerOrganizationsCache} from '../services/customer-organizations.service';
+import {CustomerOrganizationsService} from '../services/customer-organizations.service';
 
 interface RecipientGroup {
   label: string;
@@ -19,11 +19,7 @@ function groupRank(label: string): number {
   return index === -1 ? groupOrder.length : index;
 }
 
-/**
- * The users a notification configuration sends to, grouped by the organization they belong to.
- * The page has to provide `CustomerOrganizationsCache`, which it warms so that opening the drawer
- * needs no request of its own.
- */
+/** The users a notification configuration sends to, grouped by the organization they belong to. */
 @Component({
   selector: 'app-notification-recipients',
   template: `
@@ -51,7 +47,7 @@ export class NotificationRecipientsComponent {
   public readonly users = input.required<UserAccountWithRole[]>();
 
   private readonly auth = inject(AuthService);
-  private readonly customerOrganizations = inject(CustomerOrganizationsCache);
+  private readonly customerOrganizations = inject(CustomerOrganizationsService);
 
   private readonly customers = this.auth.isVendor()
     ? toSignal(this.customerOrganizations.getCustomerOrganizations())
