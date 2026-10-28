@@ -6,7 +6,7 @@ import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-int
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleExclamation, faCopy, faEye, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, shareReplay, switchMap} from 'rxjs';
+import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
@@ -100,9 +100,7 @@ export class LicenseKeysComponent {
 
   private manageLicenseDrawerRef?: DialogRef;
 
-  private readonly customerOrganizations$ = this.customerOrganizationService
-    .getCustomerOrganizations()
-    .pipe(shareReplay(1));
+  private readonly customerOrganizations$ = this.customerOrganizationService.getCustomerOrganizations();
 
   openDrawer(templateRef: TemplateRef<unknown>, license?: LicenseKey) {
     this.hideDrawer();

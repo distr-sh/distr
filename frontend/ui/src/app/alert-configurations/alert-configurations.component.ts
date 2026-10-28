@@ -17,6 +17,7 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {refreshInBackground} from '../../util/refresh';
 import {validateRecordAtLeast} from '../../util/validation';
 import {SearchBarComponent} from '../components/search-bar.component';
 import {ClickableRowDirective} from '../directives/clickable-row.directive';
@@ -77,6 +78,9 @@ export class AlertConfigurationsComponent {
   );
 
   constructor() {
+    if (this.auth.isVendor()) {
+      refreshInBackground(this.customersService.refresh());
+    }
     const thresholdPairs: [FormControl<boolean>, FormControl<number | null>][] = [
       [this.editConfigForm.controls.cpuTriggerEnabled, this.editConfigForm.controls.cpuTriggerThresholdPercent],
       [this.editConfigForm.controls.memoryTriggerEnabled, this.editConfigForm.controls.memoryTriggerThresholdPercent],

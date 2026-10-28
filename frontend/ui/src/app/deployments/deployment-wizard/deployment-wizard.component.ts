@@ -26,6 +26,7 @@ import {faDocker} from '@fortawesome/free-brands-svg-icons';
 import {faAddressBook, faCircleCheck, faDharmachakra, faShip, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, distinctUntilChanged, firstValueFrom, map, of, switchMap, take} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
+import {refreshInBackground} from '../../../util/refresh';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {
   DOCKER_ENDPOINT_REGEX,
@@ -237,6 +238,9 @@ export class DeploymentWizardComponent implements OnInit {
 
   constructor() {
     this.applications.refresh();
+    if (this.showCustomerStep()) {
+      refreshInBackground(this.customerOrganizations.refresh());
+    }
     // Initialize deployment form with initial data reactively
     effect(() => {
       const initialData = this.deploymentFormInitialData();
