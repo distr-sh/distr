@@ -113,6 +113,7 @@ var (
 	metricsEnabled                        bool
 	metricsAddr                           string
 	metricsBearerToken                    *string
+	metricsPprofEnabled                   bool
 	supportBundleLogTailLines             int
 	supportBundleResourceMaxBytes         int
 	supportBundleScriptTimeout            time.Duration
@@ -374,6 +375,7 @@ func Initialize() {
 	metricsEnabled = envutil.GetEnvParsedOrDefault("METRICS_ENABLED", strconv.ParseBool, false)
 	metricsAddr = envutil.GetEnvOrDefault("METRICS_ADDR", ":3000")
 	metricsBearerToken = envutil.GetEnvOrNil("METRICS_BEARER_TOKEN")
+	metricsPprofEnabled = envutil.GetEnvParsedOrDefault("METRICS_PPROF_ENABLED", strconv.ParseBool, false)
 	supportBundleLogTailLines = envutil.GetEnvParsedOrDefault(
 		"SUPPORT_BUNDLE_LOG_TAIL_LINES", envparse.PositiveNumber, 1000,
 	)
@@ -787,6 +789,10 @@ func MetricsAddr() string {
 
 func MetricsBearerToken() *string {
 	return metricsBearerToken
+}
+
+func MetricsPprofEnabled() bool {
+	return metricsPprofEnabled
 }
 
 // SupportBundleLogTailLines is the number of container log lines (per container) collected by the
