@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"maps"
 	"sync/atomic"
 	"time"
@@ -115,10 +114,11 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 					logger.Warn("could not get REST mapping for resource", zap.Error(err))
 					toplevelErr = err
 					break
-				} else if metaObj.GetNamespace() != namespace {
-					resourceName = fmt.Sprintf("%v/%v/%v", restMapping.Resource.Resource, metaObj.GetNamespace(), metaObj.GetName())
 				} else {
-					resourceName = fmt.Sprintf("%v/%v", restMapping.Resource.Resource, metaObj.GetName())
+					resourceName = restMapping.Resource.Resource + "/" + metaObj.GetName()
+					if metaObj.GetNamespace() != namespace {
+						resourceName = metaObj.GetNamespace() + "/" + resourceName
+					}
 				}
 			}
 
