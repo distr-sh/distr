@@ -19,6 +19,6 @@ type ContextResponse struct {
 }
 
 type CustomerLens struct {
-	ID   uuid.UUID `json:"id"`
-	Name string    `json:"name"`
+	CustomerOrganizationID   uuid.UUID `json:"customerOrganizationId"`
+	CustomerOrganizationName string    `json:"customerOrganizationName"`
 }

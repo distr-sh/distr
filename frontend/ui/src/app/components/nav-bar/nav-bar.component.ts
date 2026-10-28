@@ -139,7 +139,10 @@ export class NavBarComponent implements OnInit {
           org,
           current: isCurrentOrg && !this.isLens,
           lenses: isCurrentOrg
-            ? lenses.map((lens) => ({...lens, current: lens.id === current?.customerOrganizationId}))
+            ? lenses.map((lens) => ({
+                ...lens,
+                current: lens.customerOrganizationId === current?.customerOrganizationId,
+              }))
             : [],
         };
       });
@@ -191,7 +194,7 @@ export class NavBarComponent implements OnInit {
       let lenses = entry.lenses;
       let expandedByDefault = lenses.some((lens) => lens.current);
       if (term) {
-        const matchingLenses = lenses.filter((lens) => lens.name.toLowerCase().includes(term));
+        const matchingLenses = lenses.filter((lens) => lens.customerOrganizationName.toLowerCase().includes(term));
         if (matchingLenses.length > 0) {
           lenses = matchingLenses;
           expandedByDefault = true;
@@ -263,7 +266,7 @@ export class NavBarComponent implements OnInit {
   }
 
   protected async enterLens(lens: SwitcherLens) {
-    await this.switchContextOrEnterLens(() => this.auth.enterLens(lens.id));
+    await this.switchContextOrEnterLens(() => this.auth.enterLens(lens.customerOrganizationId));
   }
 
   private async switchContextOrEnterLens(switchFn: () => Promise<void>) {

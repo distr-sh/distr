@@ -7,7 +7,7 @@ import (
 
 func CustomerOrganizationToLens(customerOrg types.CustomerOrganization) api.CustomerLens {
 	return api.CustomerLens{
-		ID:   customerOrg.ID,
-		Name: customerOrg.Name,
+		CustomerOrganizationID:   customerOrg.ID,
+		CustomerOrganizationName: customerOrg.Name,
 	}
 }

@@ -1,4 +1,4 @@
 export interface CustomerLens {
-  id: string;
-  name: string;
+  customerOrganizationId: string;
+  customerOrganizationName: string;
 }

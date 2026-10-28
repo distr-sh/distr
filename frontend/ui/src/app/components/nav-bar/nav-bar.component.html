@@ -193,7 +193,7 @@
                         </li>
                       }
                       @if (entry.expanded) {
-                        @for (lens of entry.lenses; track lens.id) {
+                        @for (lens of entry.lenses; track lens.customerOrganizationId) {
                           <li class="col-start-1">
                             <button
                               type="button"
@@ -202,10 +202,10 @@
                               class="distr-dropdown-item focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
                               role="menuitem">
                               <app-avatar
-                                [name]="lens.name"
+                                [name]="lens.customerOrganizationName"
                                 initialsClass="text-[0.625rem]"
                                 class="size-5 rounded-sm" />
-                              <span class="grow" role="none">{{ lens.name }}</span>
+                              <span class="grow" role="none">{{ lens.customerOrganizationName }}</span>
                               @if (lens.current) {
                                 <fa-icon [icon]="faCheck" class="ps-2 text-primary-600 dark:text-primary-400" />
                               }
