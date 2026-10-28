@@ -32,7 +32,7 @@ import {
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faChevronDown} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {distinctUntilChanged, of, switchMap, tap} from 'rxjs';
+import {catchError, distinctUntilChanged, of, switchMap, tap} from 'rxjs';
 import {WEBSITE_URL} from '../../../constants';
 import {RelativeDatePipe} from '../../../util/dates';
 import {noSurroundingWhitespaceValidator} from '../../../util/validation';
@@ -165,7 +165,9 @@ export class EditSingleArtifactEntitlementComponent implements OnInit, AfterView
           this.selectedArtifact.set(undefined);
           this.editForm.controls.artifactTags.clear({emitEvent: false});
         }),
-        switchMap((artifactId) => (artifactId ? this.artifactsService.getByIdAndCache(artifactId) : of(undefined))),
+        switchMap((artifactId) =>
+          artifactId ? this.artifactsService.get(artifactId).pipe(catchError(() => of(undefined))) : of(undefined)
+        ),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((artifact) => {
