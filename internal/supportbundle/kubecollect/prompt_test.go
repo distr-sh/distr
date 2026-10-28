@@ -35,7 +35,7 @@ func TestPrompter(t *testing.T) {
 
 		g.Expect(p.SelectNamespaces(namespaceOptions, "default")).To(Equal([]string{"kube-system"}))
 		g.Expect(p.Confirm("Collect the logs?")).To(BeFalse())
-		g.Expect(out.String()).To(ContainSubstring("3) shop (shop, redis)"))
+		g.Expect(out.String()).To(ContainSubstring("[3] shop (shop, redis)"))
 		g.Expect(strings.Count(out.String(), "Namespaces to collect")).To(Equal(2))
 		g.Expect(strings.Count(out.String(), "Collect the logs?")).To(Equal(2))
 	})

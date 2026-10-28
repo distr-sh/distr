@@ -281,7 +281,9 @@ func (c *Collector) collectEvents(ctx context.Context, namespace string) error {
 	for omitted := 0; ; {
 		var header string
 		if omitted > 0 {
-			header = fmt.Sprintf("# %d older events omitted to stay within %d bytes\n", omitted, c.Options.MaxResourceBytes)
+			header = fmt.Sprintf(
+				"# --- distr: %d older events omitted to stay within %d bytes ---\n", omitted, c.Options.MaxResourceBytes,
+			)
 		}
 		content, err := yaml.Marshal(map[string]any{"apiVersion": "v1", "kind": "List", "items": objects[omitted:]})
 		if err != nil {

@@ -78,8 +78,8 @@ metadata:
     team: shop
 type: Opaque
 data:
-  password: "[NOT COLLECTED, 8 bytes]"
-  key: "[NOT COLLECTED, 3 bytes]"
+  password: "[REDACTED, 8 bytes]"
+  key: "[REDACTED, 3 bytes]"
 `)))
 	})
 
@@ -90,7 +90,7 @@ data:
 		g.Expect(obj).NotTo(HaveKey("data"))
 		g.Expect(obj).To(HaveKeyWithValue("stringData", map[string]any{
 			"password": "password",
-			"key":      "<binary, 3 bytes>",
+			"key":      "[BINARY, 3 bytes]",
 		}))
 	})
 
@@ -108,7 +108,7 @@ data:
 `)
 			sanitize(obj, Options{IncludeSecretData: true})
 			g.Expect(obj).NotTo(HaveKey("stringData"))
-			g.Expect(obj).To(HaveKeyWithValue("data", map[string]any{"release": "[NOT COLLECTED, 8 bytes]"}))
+			g.Expect(obj).To(HaveKeyWithValue("data", map[string]any{"release": "[REDACTED, 8 bytes]"}))
 		})
 	}
 }
@@ -129,14 +129,14 @@ binaryData:
 		obj := parseObject(g, configMap)
 		sanitize(obj, Options{IncludeConfigMapData: true})
 		g.Expect(obj).To(HaveKeyWithValue("data", map[string]any{"LOG_LEVEL": "debug"}))
-		g.Expect(obj).To(HaveKeyWithValue("binaryData", map[string]any{"logo.png": "[NOT COLLECTED, 3 bytes]"}))
+		g.Expect(obj).To(HaveKeyWithValue("binaryData", map[string]any{"logo.png": "[REDACTED, 3 bytes]"}))
 	})
 
 	t.Run("without data", func(t *testing.T) {
 		g := NewWithT(t)
 		obj := parseObject(g, configMap)
 		sanitize(obj, Options{IncludeConfigMapData: false})
-		g.Expect(obj).To(HaveKeyWithValue("data", map[string]any{"LOG_LEVEL": "[NOT COLLECTED, 5 bytes]"}))
-		g.Expect(obj).To(HaveKeyWithValue("binaryData", map[string]any{"logo.png": "[NOT COLLECTED, 3 bytes]"}))
+		g.Expect(obj).To(HaveKeyWithValue("data", map[string]any{"LOG_LEVEL": "[REDACTED, 5 bytes]"}))
+		g.Expect(obj).To(HaveKeyWithValue("binaryData", map[string]any{"logo.png": "[REDACTED, 3 bytes]"}))
 	})
 }

@@ -4,16 +4,16 @@ import (
 	"errors"
 	"fmt"
 
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/metadata"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
-// KubeContext is the current context of the customer's kubeconfig, which is everything the collector
-// connects with. Nothing is installed in the cluster.
+// KubeContext is the context of the customer's kubeconfig the collector connects with, the current
+// one unless --context names another. Nothing is installed in the cluster.
 type KubeContext struct {
 	Name      string
 	Server    string
@@ -21,24 +21,31 @@ type KubeContext struct {
 	Config    *rest.Config
 }
 
-func LoadKubeContext() (*KubeContext, error) {
-	clientConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-		clientcmd.NewDefaultClientConfigLoadingRules(), &clientcmd.ConfigOverrides{},
-	)
+func LoadKubeContext(configFlags *genericclioptions.ConfigFlags) (*KubeContext, error) {
+	clientConfig := configFlags.ToRawKubeConfigLoader()
 	raw, err := clientConfig.RawConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read the kubeconfig: %w", err)
 	}
-	if raw.CurrentContext == "" {
-		return nil, errors.New("the kubeconfig has no current context, select one with kubectl config use-context")
+	// RawConfig is the kubeconfig as it is on disk, without the --context override.
+	name := raw.CurrentContext
+	if configFlags.Context != nil && *configFlags.Context != "" {
+		name = *configFlags.Context
+	}
+	if name == "" {
+		return nil, errors.New(
+			"the kubeconfig has no current context, select one with --context or kubectl config use-context",
+		)
+	} else if _, ok := raw.Contexts[name]; !ok {
+		return nil, fmt.Errorf("the kubeconfig has no context named %q", name)
 	}
 	namespace, _, err := clientConfig.Namespace()
 	if err != nil {
-		return nil, fmt.Errorf("failed to read the namespace of the current context: %w", err)
+		return nil, fmt.Errorf("failed to read the namespace of the context: %w", err)
 	}
-	config, err := clientConfig.ClientConfig()
+	config, err := configFlags.ToRESTConfig()
 	if err != nil {
-		return nil, fmt.Errorf("failed to load the current context: %w", err)
+		return nil, fmt.Errorf("failed to load the context: %w", err)
 	}
 	// The collector issues hundreds of list and log requests, which the client-go defaults of 5 QPS
 	// would throttle for minutes. Deprecation warnings for listed APIs are of no use to the customer.
@@ -46,13 +53,7 @@ func LoadKubeContext() (*KubeContext, error) {
 	config.Burst = 100
 	config.WarningHandler = rest.NoWarnings{}
 
-	result := KubeContext{Name: raw.CurrentContext, Namespace: namespace, Config: config}
-	if kubeContext, ok := raw.Contexts[raw.CurrentContext]; ok {
-		if cluster, ok := raw.Clusters[kubeContext.Cluster]; ok {
-			result.Server = cluster.Server
-		}
-	}
-	return &result, nil
+	return &KubeContext{Name: name, Server: config.Host, Namespace: namespace, Config: config}, nil
 }
 
 type Clients struct {

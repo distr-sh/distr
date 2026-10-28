@@ -33,9 +33,9 @@ func sanitize(obj map[string]any, opts Options) {
 		sanitizeSecret(obj, opts.IncludeSecretData)
 	case "ConfigMap":
 		if !opts.IncludeConfigMapData {
-			replaceValues(obj, "data", func(value string) string { return notCollected(len(value)) })
+			replaceValues(obj, "data", func(value string) string { return redacted(len(value)) })
 		}
-		replaceValues(obj, "binaryData", func(value string) string { return notCollected(decodedLen(value)) })
+		replaceValues(obj, "binaryData", func(value string) string { return redacted(decodedLen(value)) })
 	}
 }
 
@@ -45,7 +45,7 @@ func sanitizeSecret(obj map[string]any, includeData bool) {
 		includeData = false
 	}
 	if !includeData {
-		replaceValues(obj, "data", func(value string) string { return notCollected(decodedLen(value)) })
+		replaceValues(obj, "data", func(value string) string { return redacted(decodedLen(value)) })
 		return
 	}
 	data, ok := obj["data"].(map[string]any)
@@ -56,9 +56,9 @@ func sanitizeSecret(obj map[string]any, includeData bool) {
 	for key, value := range data {
 		encoded, _ := value.(string)
 		if decoded, err := base64.StdEncoding.DecodeString(encoded); err != nil {
-			stringData[key] = notCollected(len(encoded))
+			stringData[key] = redacted(len(encoded))
 		} else if !isText(decoded) {
-			stringData[key] = fmt.Sprintf("<binary, %d bytes>", len(decoded))
+			stringData[key] = fmt.Sprintf("[BINARY, %d bytes]", len(decoded))
 		} else {
 			stringData[key] = string(decoded)
 		}
@@ -76,8 +76,8 @@ func replaceValues(obj map[string]any, field string, replace func(string) string
 	}
 }
 
-func notCollected(size int) string {
-	return fmt.Sprintf("[NOT COLLECTED, %d bytes]", size)
+func redacted(size int) string {
+	return fmt.Sprintf("[REDACTED, %d bytes]", size)
 }
 
 func decodedLen(encoded string) int {

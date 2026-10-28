@@ -11,7 +11,7 @@ func keepTail(content []byte, maxBytes int) ([]byte, bool) {
 	if len(content) <= maxBytes {
 		return content, false
 	}
-	note := fmt.Appendf(nil, "[cut to the last %d bytes]\n", maxBytes)
+	note := fmt.Appendf(nil, "--- distr: earlier output truncated at %d bytes ---\n", maxBytes)
 	tail := content[len(content)-max(maxBytes-len(note), 0):]
 	if i := bytes.IndexByte(tail, '\n'); i >= 0 && i < len(tail)-1 {
 		tail = tail[i+1:]
@@ -20,11 +20,11 @@ func keepTail(content []byte, maxBytes int) ([]byte, bool) {
 }
 
 // keepHead cuts content to at most maxBytes from its start. What it cuts is no longer valid YAML or
-// JSON, which the note at the top says.
+// JSON, which the comment at the top says.
 func keepHead(content []byte, maxBytes int) ([]byte, bool) {
 	if len(content) <= maxBytes {
 		return content, false
 	}
-	note := fmt.Appendf(nil, "# cut to the first %d bytes, the rest of this file is missing\n", maxBytes)
+	note := fmt.Appendf(nil, "# --- distr: output truncated at %d bytes ---\n", maxBytes)
 	return append(note, content[:max(maxBytes-len(note), 0)]...), true
 }

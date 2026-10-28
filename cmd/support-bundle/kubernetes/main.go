@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"os"
 	"os/signal"
 
 	"github.com/distr-sh/distr/internal/supportbundle/kubecollect"
+	"github.com/spf13/pflag"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/klog/v2"
 )
 
@@ -19,26 +20,28 @@ func main() {
 	klog.LogToStderr(false)
 	klog.SetOutput(io.Discard)
 
+	configFlags := genericclioptions.NewConfigFlags(true)
+	configFlags.AddFlags(pflag.CommandLine)
 	opts := kubecollect.DefaultOptions()
-	output := flag.String("output", "", "directory to write the bundle into")
-	flag.Int64Var(&opts.LogTailLines, "log-tail-lines", opts.LogTailLines,
+	output := pflag.String("output", "", "directory to write the bundle into")
+	pflag.Int64Var(&opts.LogTailLines, "log-tail-lines", opts.LogTailLines,
 		"number of lines collected from the end of every container log")
-	flag.IntVar(&opts.MaxResourceBytes, "max-resource-bytes", opts.MaxResourceBytes,
+	pflag.IntVar(&opts.MaxResourceBytes, "max-resource-bytes", opts.MaxResourceBytes,
 		"maximum size of every file of the bundle")
-	flag.BoolVar(&opts.IncludeConfigMapData, "include-configmap-data", opts.IncludeConfigMapData,
+	pflag.BoolVar(&opts.IncludeConfigMapData, "include-configmap-data", opts.IncludeConfigMapData,
 		"collect the values of ConfigMaps")
-	flag.BoolVar(&opts.IncludeSecretData, "include-secret-data", opts.IncludeSecretData,
+	pflag.BoolVar(&opts.IncludeSecretData, "include-secret-data", opts.IncludeSecretData,
 		"collect the decoded values of Secrets, except service account tokens and Helm releases")
-	flag.Parse()
+	pflag.Parse()
 
 	if *output == "" {
-		fmt.Fprintln(os.Stderr, "--output is required")
-		flag.Usage()
-		os.Exit(2)
+		usageError("--output is required")
+	} else if pflag.NArg() > 0 {
+		usageError(fmt.Sprintf("unexpected arguments: %v", pflag.Args()))
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	err := run(ctx, *output, opts)
+	err := run(ctx, configFlags, *output, opts)
 	cancel()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
@@ -46,8 +49,19 @@ func main() {
 	}
 }
 
-func run(ctx context.Context, output string, opts kubecollect.Options) error {
-	kubeContext, err := kubecollect.LoadKubeContext()
+func usageError(message string) {
+	fmt.Fprintln(os.Stderr, message)
+	pflag.Usage()
+	os.Exit(2)
+}
+
+func run(
+	ctx context.Context,
+	configFlags *genericclioptions.ConfigFlags,
+	output string,
+	opts kubecollect.Options,
+) error {
+	kubeContext, err := kubecollect.LoadKubeContext(configFlags)
 	if err != nil {
 		return err
 	}

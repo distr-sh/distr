@@ -28,9 +28,9 @@ func (p *Prompter) SelectNamespaces(options []NamespaceOption, defaultNamespace 
 	_, _ = fmt.Fprintln(p.out, "Namespaces:")
 	for i, option := range options {
 		if len(option.HelmReleases) > 0 {
-			_, _ = fmt.Fprintf(p.out, "  %3d) %s (%s)\n", i+1, option.Name, strings.Join(option.HelmReleases, ", "))
+			_, _ = fmt.Fprintf(p.out, "  [%d] %s (%s)\n", i+1, option.Name, strings.Join(option.HelmReleases, ", "))
 		} else {
-			_, _ = fmt.Fprintf(p.out, "  %3d) %s\n", i+1, option.Name)
+			_, _ = fmt.Fprintf(p.out, "  [%d] %s\n", i+1, option.Name)
 		}
 	}
 	for {
