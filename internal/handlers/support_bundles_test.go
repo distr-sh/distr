@@ -37,6 +37,7 @@ func TestWriteSupportBundleZip_keepsEntriesInsideTheArchive(t *testing.T) {
 	g := NewWithT(t)
 	blank := textResource("  /  ")
 	longSegment := strings.Repeat("ä", 100)
+	deep := textResource(strings.Repeat(strings.Repeat("a", 128)+"/", 600) + "x")
 
 	entries := zipEntries(g, []types.SupportBundleResource{
 		textResource("../../etc/passwd"),
@@ -46,9 +47,10 @@ func TestWriteSupportBundleZip_keepsEntriesInsideTheArchive(t *testing.T) {
 		textResource("a//b/./c"),
 		textResource(longSegment + "/x"),
 		blank,
+		deep,
 	})
 
-	g.Expect(entries).To(HaveLen(7))
+	g.Expect(entries).To(HaveLen(8))
 	g.Expect(entries).To(HaveKey("etc/passwd.txt"))
 	g.Expect(entries).To(HaveKey("absolute/path.txt"))
 	g.Expect(entries).To(HaveKey("windows/system.txt"))
@@ -56,6 +58,7 @@ func TestWriteSupportBundleZip_keepsEntriesInsideTheArchive(t *testing.T) {
 	g.Expect(entries).To(HaveKey("a/b/c.txt"))
 	g.Expect(entries).To(HaveKey(strings.Repeat("ä", 64) + "/x.txt"))
 	g.Expect(entries).To(HaveKey(blank.ID.String() + ".txt"))
+	g.Expect(entries).To(HaveKey(deep.ID.String() + ".txt"))
 }
 
 func TestWriteSupportBundleZip_namesEntriesByContentType(t *testing.T) {

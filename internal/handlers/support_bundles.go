@@ -403,7 +403,12 @@ func writeSupportBundleZip(w io.Writer, resources []types.SupportBundleResource)
 	return nil
 }
 
-const supportBundleZipSegmentMaxBytes = 128
+const (
+	supportBundleZipSegmentMaxBytes = 128
+	// supportBundleZipPathMaxBytes keeps every entry name far below the 65,535 bytes a zip entry name
+	// may have. Exceeding that fails the archive in the middle of the response.
+	supportBundleZipPathMaxBytes = 1024
+)
 
 // supportBundleZipEntryPath turns a resource name into a relative path that cannot escape the
 // directory the archive is extracted into. Extractors on Windows also split at a backslash and read
@@ -416,10 +421,10 @@ func supportBundleZipEntryPath(name, fallback string) string {
 			segments = append(segments, segment)
 		}
 	}
-	if len(segments) == 0 {
-		return fallback
+	if path := strings.Join(segments, "/"); path != "" && len(path) <= supportBundleZipPathMaxBytes {
+		return path
 	}
-	return strings.Join(segments, "/")
+	return fallback
 }
 
 func truncateUTF8(s string, maxBytes int) string {
