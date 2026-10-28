@@ -98,7 +98,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 					ctx,
 					a.CurrentUserID(),
 					*a.CurrentOrgID(),
-					requestedCustomerOrgID(a),
+					a.CurrentCustomerOrgID(),
 				); errors.Is(err, distrerr.ErrNotFound) {
 					return nil, authn.ErrBadAuthentication
 				} else if err != nil {
@@ -165,15 +165,14 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 }
 
 // currentLens returns the lens the authentication looks through, the customer organization of that lens if it is
-// not the own one and whether it is not. A personal access token always looks through its membership's own lens:
-// only a login session enters another one, through the lens endpoint. enter decides whether the lens of a requested
-// customer organization that is not the own one may be entered.
+// not the own one and whether it is not. enter decides whether the lens of a requested customer organization that is
+// not the own one may be entered.
 func currentLens(
 	a AuthInfo,
 	own lens.Lens,
 	enter func(own lens.Lens, customerOrgID uuid.UUID) (*types.CustomerOrganization, error),
 ) (lens.Lens, *types.CustomerOrganization, bool, error) {
-	requested := requestedCustomerOrgID(a)
+	requested := a.CurrentCustomerOrgID()
 	if lens.IsOwn(own, requested) {
 		return own, nil, false, nil
 	}
@@ -184,13 +183,6 @@ func currentLens(
 		return lens.Lens{}, nil, false, err
 	}
 	return lens.Customer(*requested), customerOrg, true, nil
-}
-
-func requestedCustomerOrgID(a AuthInfo) *uuid.UUID {
-	if a.IsAccessToken() {
-		return nil
-	}
-	return a.CurrentCustomerOrgID()
 }
 
 type controllerDBAuthInfo struct {
