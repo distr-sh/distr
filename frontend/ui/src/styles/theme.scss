@@ -147,6 +147,11 @@
     @apply text-yellow-500 not-disabled:hover:bg-yellow-500 not-disabled:hover:text-white dark:text-yellow-300 dark:not-disabled:hover:bg-yellow-400;
   }
 
+  // an entry of a `distr-dropdown-panel` that cannot be selected, laid out like a `distr-dropdown-item`
+  .distr-dropdown-label {
+    @apply flex w-full items-center gap-2 px-2 py-1.5 text-start text-sm text-gray-700 dark:text-gray-200;
+  }
+
   // the row of a dropdown whose entries are checkboxes, wrapping the checkbox and its label
   .distr-dropdown-checkbox-item {
     @apply flex items-center rounded-md px-2 hover:bg-gray-100 dark:hover:bg-gray-600;

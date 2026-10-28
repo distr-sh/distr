@@ -130,91 +130,71 @@
                 [cdkConnectedOverlayPositions]="[{originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top'}]"
                 [cdkConnectedOverlayOpen]="organizationsOpened()">
                 <div
-                  class="distr-dropdown-panel my-2 flex max-h-[80vh] flex-col"
+                  class="distr-dropdown-panel my-2 flex max-h-[80vh] w-80 flex-col"
                   animate.enter="animate-flip-in-top"
                   animate.leave="animate-flip-out-top">
                   @if (isOrganizationSearchVisible()) {
-                    <div class="mb-1 min-w-72 shrink-0">
+                    <div class="mb-1 shrink-0">
                       <app-search-bar
                         [control]="organizationSearch"
                         [placeholder]="switcherFilterLabels().placeholder"
                         [autofocus]="true" />
                     </div>
                   }
-                  <ul class="grid min-h-0 grid-cols-[minmax(0,1fr)_auto] gap-y-0.5 overflow-y-auto" role="none">
+                  <ul class="flex min-h-0 flex-col gap-y-0.5 overflow-y-auto" role="none">
                     @for (entry of switcherEntries(); track entry.org.id) {
                       @if (isOrganizationListed()) {
-                        <li class="col-span-2 grid grid-cols-subgrid items-center">
-                          <button
-                            type="button"
-                            (click)="switchOrganization(entry.org)"
-                            [attr.aria-current]="entry.current"
-                            class="distr-dropdown-item focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
-                            role="menuitem">
-                            <span
-                              class="flex grow flex-col text-start text-sm font-medium text-gray-900 dark:text-gray-300"
-                              role="none">
-                              <span class="flex items-center gap-2" role="none">
-                                {{ entry.org.name }}
-                                @if (isSuperAdmin) {
-                                  <app-subscription-badge
-                                    [plan]="entry.org.subscriptionType"
-                                    [endsAt]="entry.org.subscriptionEndsAt" />
-                                }
-                              </span>
-                              @if (!isSuperAdmin) {
-                                <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
-                                  @if (isDifferentOrganizationKind()) {
-                                    {{ entry.org | membershipLabel }}
-                                    &bull;
-                                  }
-                                  {{ entry.org.userRole | userRoleLabel }}
-                                </span>
-                              }
-                            </span>
-                            @if (entry.current) {
-                              <fa-icon [icon]="faCheck" class="ps-2 text-primary-600 dark:text-primary-400" />
-                            }
-                          </button>
-                          @if (entry.collapsible) {
+                        <li>
+                          @if (entry.current) {
+                            <div class="group distr-dropdown-label" aria-current="true" role="none">
+                              <ng-container
+                                [ngTemplateOutlet]="organizationLabel"
+                                [ngTemplateOutletContext]="{$implicit: entry.org}" />
+                              <fa-icon
+                                [icon]="faCheck"
+                                class="ps-2 text-gray-500 opacity-0 group-hover:opacity-100 dark:text-gray-400" />
+                            </div>
+                          } @else {
                             <button
                               type="button"
-                              (click)="toggleSwitcherEntry(entry)"
-                              [attr.aria-expanded]="entry.expanded"
-                              [attr.aria-label]="(entry.expanded ? 'Collapse ' : 'Expand ') + entry.org.name"
-                              class="ms-1 flex items-center gap-1.5 self-stretch rounded-md px-2 text-xs text-gray-500 hover:bg-gray-100 focus-visible:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white dark:focus-visible:bg-gray-600 dark:focus-visible:text-white">
-                              {{ entry.lenses.length }}
+                              (click)="switchOrganization(entry.org)"
+                              [title]="'Switch to ' + entry.org.name"
+                              class="group distr-dropdown-item focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
+                              role="menuitem">
+                              <ng-container
+                                [ngTemplateOutlet]="organizationLabel"
+                                [ngTemplateOutletContext]="{$implicit: entry.org}" />
                               <fa-icon
-                                [icon]="faChevronDown"
-                                [class.rotate-x-180]="entry.expanded"
-                                class="transition duration-150 ease-in-out" />
+                                [icon]="faShuffle"
+                                class="ps-2 text-gray-500 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 dark:text-gray-400" />
                             </button>
                           }
                         </li>
                       }
-                      @if (entry.expanded) {
-                        @for (lens of entry.lenses; track lens.customerOrganizationId) {
-                          <li class="col-start-1">
-                            <button
-                              type="button"
-                              (click)="enterLens(lens)"
-                              [attr.aria-current]="lens.current"
-                              class="distr-dropdown-item focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
-                              role="menuitem">
-                              <app-avatar
-                                [name]="lens.customerOrganizationName"
-                                initialsClass="text-[0.625rem]"
-                                class="size-5 rounded-sm" />
-                              <span class="grow" role="none">{{ lens.customerOrganizationName }}</span>
-                              @if (lens.current) {
-                                <fa-icon [icon]="faCheck" class="ps-2 text-primary-600 dark:text-primary-400" />
-                              }
-                            </button>
-                          </li>
-                        }
+                      @for (lens of entry.lenses; track lens.customerOrganizationId) {
+                        <li>
+                          <button
+                            type="button"
+                            (click)="enterLens(lens)"
+                            [title]="'Enter customer lens for ' + lens.customerOrganizationName"
+                            [attr.aria-current]="lens.current"
+                            class="group distr-dropdown-item focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
+                            role="menuitem">
+                            <app-avatar
+                              [name]="lens.customerOrganizationName"
+                              initialsClass="text-[0.625rem]"
+                              class="size-5 rounded-sm" />
+                            <span class="grow" role="none">{{ lens.customerOrganizationName }}</span>
+                            @if (!lens.current) {
+                              <fa-icon
+                                [icon]="faGlasses"
+                                class="ps-2 text-gray-500 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 dark:text-gray-400" />
+                            }
+                          </button>
+                        </li>
                       }
                     } @empty {
-                      <li class="col-span-2">
+                      <li>
                         <div class="px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300" role="menuitem">
                           {{ switcherFilterLabels().empty }}
                         </div>
@@ -297,3 +277,23 @@
     </div>
   }
 </nav>
+
+<ng-template #organizationLabel let-org>
+  <span class="flex grow flex-col text-start text-sm font-medium text-gray-900 dark:text-gray-300" role="none">
+    <span class="flex items-center gap-2" role="none">
+      {{ org.name }}
+      @if (isSuperAdmin) {
+        <app-subscription-badge [plan]="org.subscriptionType" [endsAt]="org.subscriptionEndsAt" />
+      }
+    </span>
+    @if (!isSuperAdmin) {
+      <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
+        @if (isDifferentOrganizationKind()) {
+          {{ org | membershipLabel }}
+          &bull;
+        }
+        {{ org.userRole | userRoleLabel }}
+      </span>
+    }
+  </span>
+</ng-template>

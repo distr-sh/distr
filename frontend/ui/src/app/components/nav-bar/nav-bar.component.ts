@@ -1,12 +1,20 @@
 import {OverlayModule} from '@angular/cdk/overlay';
-import {AsyncPipe} from '@angular/common';
+import {AsyncPipe, NgTemplateOutlet} from '@angular/common';
 import {HttpErrorResponse} from '@angular/common/http';
-import {Component, computed, inject, input, linkedSignal, OnInit, signal} from '@angular/core';
+import {Component, computed, inject, input, OnInit, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faArrowLeft, faBarsStaggered, faCheck, faChevronDown, faUserCircle} from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowLeft,
+  faBarsStaggered,
+  faCheck,
+  faChevronDown,
+  faGlasses,
+  faShuffle,
+  faUserCircle,
+} from '@fortawesome/free-solid-svg-icons';
 import {catchError, EMPTY, lastValueFrom, map, of, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {MembershipLabelPipe, organizationKind} from '../../../util/organization-kind';
@@ -43,11 +51,6 @@ interface SwitcherOrganization {
   lenses: SwitcherLens[];
 }
 
-interface SwitcherEntry extends SwitcherOrganization {
-  collapsible: boolean;
-  expanded: boolean;
-}
-
 @Component({
   selector: 'app-nav-bar',
   templateUrl: './nav-bar.component.html',
@@ -68,6 +71,7 @@ interface SwitcherEntry extends SwitcherOrganization {
     SecureImagePipe,
     SubscriptionBadgeComponent,
     AsyncPipe,
+    NgTemplateOutlet,
     UserRoleLabelPipe,
     MembershipLabelPipe,
   ],
@@ -178,41 +182,17 @@ export class NavBarComponent implements OnInit {
   protected readonly isOrganizationSearchVisible = computed(
     () => this.switchEntryCount() > ORGANIZATION_SEARCH_THRESHOLD
   );
-  // What the user expanded or collapsed, which a new filter discards since it changes what is expanded by default.
-  private readonly switcherExpansion = linkedSignal<string, ReadonlyMap<string, boolean>>({
-    source: this.organizationSearchTerm,
-    computation: () => new Map(),
-  });
-  // With several organizations the lenses start collapsed unless the session is in one of them. A filter shows the
-  // matching lenses expanded and all lenses collapsed when only their organization matches by name.
-  protected readonly switcherEntries = computed<SwitcherEntry[]>(() => {
+  // A filter keeps the matching lenses and an organization that matches by name without its lenses.
+  protected readonly switcherEntries = computed<SwitcherOrganization[]>(() => {
     const tree = this.switcherTree();
     const term = this.organizationSearchTerm();
-    const expansion = this.switcherExpansion();
-    const collapsible = tree.length > 1;
+    if (!term) {
+      return tree;
+    }
     return tree.flatMap((entry) => {
-      let lenses = entry.lenses;
-      let expandedByDefault = lenses.some((lens) => lens.current);
-      if (term) {
-        const matchingLenses = lenses.filter((lens) => lens.customerOrganizationName.toLowerCase().includes(term));
-        if (matchingLenses.length > 0) {
-          lenses = matchingLenses;
-          expandedByDefault = true;
-        } else if (collapsible && entry.org.name.toLowerCase().includes(term)) {
-          expandedByDefault = false;
-        } else {
-          return [];
-        }
-      }
-      const hasToggle = collapsible && lenses.length > 0;
-      return [
-        {
-          ...entry,
-          lenses,
-          collapsible: hasToggle,
-          expanded: !hasToggle || (expansion.get(entry.org.id!) ?? expandedByDefault),
-        },
-      ];
+      const lenses = entry.lenses.filter((lens) => lens.customerOrganizationName.toLowerCase().includes(term));
+      const orgMatches = this.isOrganizationListed() && entry.org.name.toLowerCase().includes(term);
+      return lenses.length > 0 || orgMatches ? [{...entry, lenses}] : [];
     });
   });
 
@@ -257,10 +237,6 @@ export class NavBarComponent implements OnInit {
     this.toggleOrganizations();
   }
 
-  protected toggleSwitcherEntry(entry: SwitcherEntry) {
-    this.switcherExpansion.update((expansion) => new Map(expansion).set(entry.org.id!, !entry.expanded));
-  }
-
   protected async switchOrganization(org: Organization) {
     await this.switchContextOrEnterLens(() => this.auth.switchContext(org.id!));
   }
@@ -291,5 +267,7 @@ export class NavBarComponent implements OnInit {
   protected readonly faArrowLeft = faArrowLeft;
   protected readonly faCheck = faCheck;
   protected readonly faChevronDown = faChevronDown;
+  protected readonly faGlasses = faGlasses;
+  protected readonly faShuffle = faShuffle;
   protected readonly faUserCircle = faUserCircle;
 }
