@@ -125,18 +125,30 @@ func confirmGroups(prompter *kubecollect.Prompter, opts kubecollect.Options) (ku
 	questions := []struct {
 		target   *bool
 		question string
+		onlyIf   *bool
 	}{
 		{
-			&groups.Cluster,
-			"Collect the cluster information (Kubernetes version, nodes, namespaces, custom resource definitions, " +
-				"storage and ingress classes, admission webhooks, persistent volumes of the selected namespaces)?",
+			target: &groups.Cluster,
+			question: "Collect the cluster information (Kubernetes version, nodes, namespaces, custom resource " +
+				"definitions, storage and ingress classes, admission webhooks, persistent volumes of the selected " +
+				"namespaces)?",
 		},
-		{&groups.Resources, fmt.Sprintf(
+		{target: &groups.Resources, question: fmt.Sprintf(
 			"Collect all resources of the selected namespaces? ConfigMap values are %s, Secret values are %s.",
 			included(opts.IncludeConfigMapData), included(opts.IncludeSecretData),
 		)},
-		{&groups.Events, "Collect the events of the selected namespaces?"},
-		{&groups.Logs, fmt.Sprintf(
+		{
+			target:   &groups.HelmReleases,
+			question: "Collect the Helm releases of the selected namespaces (chart and app version, status, history)?",
+		},
+		{
+			target: &groups.HelmValues,
+			question: "Collect the values the Helm releases were installed with? They can contain credentials, " +
+				"and Distr masks only those it recognizes.",
+			onlyIf: &groups.HelmReleases,
+		},
+		{target: &groups.Events, question: "Collect the events of the selected namespaces?"},
+		{target: &groups.Logs, question: fmt.Sprintf(
 			"Collect the last %d lines of every container log, including the previous run of restarted containers?",
 			opts.LogTailLines,
 		)},
@@ -144,7 +156,9 @@ func confirmGroups(prompter *kubecollect.Prompter, opts kubecollect.Options) (ku
 
 	_, _ = fmt.Fprintln(os.Stderr)
 	for _, q := range questions {
-		if answer, err := prompter.Confirm(q.question); err != nil {
+		if q.onlyIf != nil && !*q.onlyIf {
+			continue
+		} else if answer, err := prompter.Confirm(q.question); err != nil {
 			return groups, err
 		} else {
 			*q.target = answer

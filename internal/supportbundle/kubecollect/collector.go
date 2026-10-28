@@ -129,6 +129,11 @@ func (c *Collector) Run(ctx context.Context, namespaces []string, groups Groups)
 				return Result{}, err
 			}
 		}
+		if groups.HelmReleases {
+			if err := c.collectHelmReleases(ctx, namespace, groups.HelmValues); err != nil {
+				return Result{}, err
+			}
+		}
 		if groups.Events {
 			if err := c.collectEvents(ctx, namespace); err != nil {
 				return Result{}, err
@@ -276,6 +281,13 @@ var skippedResources = []schema.GroupResource{
 	{Group: "apps", Resource: "controllerrevisions"},
 	// Leader election and node heartbeats, which change every few seconds.
 	{Group: "coordination.k8s.io", Resource: "leases"},
+}
+
+// resourceFieldSelectors leave out objects whose content another part of the bundle collects. A
+// Helm release Secret holds the whole chart and every rendered manifest, so it is not even
+// downloaded.
+var resourceFieldSelectors = map[schema.GroupVersionResource]string{
+	secretsGVR: "type!=" + string(helmReleaseSecretType),
 }
 
 // namespacedResources is every namespaced resource the cluster serves that can be listed, custom
@@ -481,7 +493,7 @@ func (c *Collector) list(
 	namespace string,
 ) ([]unstructured.Unstructured, error) {
 	var items []unstructured.Unstructured
-	opts := metav1.ListOptions{Limit: listPageSize}
+	opts := metav1.ListOptions{Limit: listPageSize, FieldSelector: resourceFieldSelectors[gvr]}
 	for {
 		list, err := c.Clients.Dynamic.Resource(gvr).Namespace(namespace).List(ctx, opts)
 		if err != nil {

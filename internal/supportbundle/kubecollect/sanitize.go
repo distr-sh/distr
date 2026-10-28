@@ -41,7 +41,7 @@ func sanitize(obj map[string]any, opts Options) {
 
 func sanitizeSecret(obj map[string]any, includeData bool) {
 	switch corev1.SecretType(fmt.Sprint(obj["type"])) {
-	case corev1.SecretTypeServiceAccountToken, corev1.SecretTypeBootstrapToken, "helm.sh/release.v1":
+	case corev1.SecretTypeServiceAccountToken, corev1.SecretTypeBootstrapToken, helmReleaseSecretType:
 		includeData = false
 	}
 	if !includeData {
