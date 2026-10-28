@@ -94,7 +94,9 @@ data:
 		}))
 	})
 
-	for _, secretType := range []string{"helm.sh/release.v1", "kubernetes.io/service-account-token"} {
+	for _, secretType := range []string{
+		"helm.sh/release.v1", "kubernetes.io/service-account-token", "bootstrap.kubernetes.io/token",
+	} {
 		t.Run(secretType+" never with data", func(t *testing.T) {
 			g := NewWithT(t)
 			obj := parseObject(g, `

@@ -1,6 +1,7 @@
 package kubecollect
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -23,6 +24,9 @@ const (
 	// maxLogReadBytes bounds what is read of a single log before it is cut to MaxResourceBytes, since
 	// the tail lines alone do not bound the size of a log with very long lines.
 	maxLogReadBytes = 64 * 1024 * 1024
+	// kubeletLogUnavailable starts the text the kubelet sends with a success status in place of a log
+	// it no longer has, followed by the container ID.
+	kubeletLogUnavailable = "unable to retrieve container logs for "
 )
 
 var (
@@ -459,6 +463,13 @@ func (c *Collector) collectLog(
 	content, err := io.ReadAll(io.LimitReader(stream, maxLogReadBytes))
 	if err != nil {
 		c.problemf("read the logs of %s: %v", name, err)
+		return false, nil
+	} else if bytes.HasPrefix(content, []byte(kubeletLogUnavailable)) {
+		// The kubelet keeps only the latest finished run of a container, so the run before it is
+		// gone while a crashed container waits for its restart. Its current log shows the crash.
+		if !previous {
+			c.problemf("get the logs of %s: the kubelet no longer has them", name)
+		}
 		return false, nil
 	}
 	return true, c.collect(ctx, name, types.SupportBundleResourceContentTypeLog, content)

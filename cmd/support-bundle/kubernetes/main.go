@@ -31,7 +31,7 @@ func main() {
 	pflag.BoolVar(&opts.IncludeConfigMapData, "include-configmap-data", opts.IncludeConfigMapData,
 		"collect the values of ConfigMaps")
 	pflag.BoolVar(&opts.IncludeSecretData, "include-secret-data", opts.IncludeSecretData,
-		"collect the decoded values of Secrets, except service account tokens and Helm releases")
+		"collect the decoded values of Secrets, except service account and bootstrap tokens and Helm releases")
 	pflag.Parse()
 
 	if *output == "" {

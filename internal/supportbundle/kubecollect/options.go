@@ -5,8 +5,8 @@ type Options struct {
 	// MaxResourceBytes caps every file of the bundle, matching what Distr accepts per resource.
 	MaxResourceBytes     int  `json:"maxResourceBytes"`
 	IncludeConfigMapData bool `json:"includeConfigMapData"`
-	// IncludeSecretData uploads Secret values decoded. Service account tokens and Helm releases are
-	// never included.
+	// IncludeSecretData uploads Secret values decoded. Service account and bootstrap tokens and Helm
+	// releases are never included.
 	IncludeSecretData bool `json:"includeSecretData"`
 }
 
