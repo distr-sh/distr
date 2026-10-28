@@ -1,6 +1,6 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {firstValueFrom, Observable, tap} from 'rxjs';
+import {Observable, tap} from 'rxjs';
 import {LicenseTemplate} from '../types/license-template';
 import {DefaultReactiveList} from './cache';
 
@@ -9,16 +9,14 @@ export class LicenseTemplatesService {
   private readonly http = inject(HttpClient);
 
   private readonly templatesUrl = '/api/v1/license-templates';
-  private readonly cache = new DefaultReactiveList(this.http.get<LicenseTemplate[]>(this.templatesUrl));
+  private readonly cache = new DefaultReactiveList(() => this.http.get<LicenseTemplate[]>(this.templatesUrl));
 
   list(): Observable<LicenseTemplate[]> {
     return this.cache.get();
   }
 
   refresh(): Promise<LicenseTemplate[]> {
-    return firstValueFrom(
-      this.http.get<LicenseTemplate[]>(this.templatesUrl).pipe(tap((templates) => this.cache.reset(templates)))
-    );
+    return this.cache.refresh();
   }
 
   create(

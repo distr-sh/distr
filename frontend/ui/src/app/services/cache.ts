@@ -1,65 +1,65 @@
 import {BaseModel, Named} from '@distr-sh/distr-sdk';
-import {concat, map, Observable, scan, shareReplay, Subject} from 'rxjs';
+import {BehaviorSubject, defer, filter, firstValueFrom, Observable} from 'rxjs';
 import {compareBy, distinctBy, Predicate} from '../../util/arrays';
-
-type ReactiveListEvent<T> = {type: 'save' | 'remove'; object: T} | {type: 'reset'; objects: T[]};
 
 export abstract class ReactiveList<T> {
   protected abstract readonly identify: Predicate<T, unknown>;
   protected abstract readonly sortAttr: Predicate<T, string>;
   protected readonly sortInverted: boolean = false;
 
-  private readonly events$ = new Subject<ReactiveListEvent<T>>();
-  private readonly state$: Observable<T[]>;
+  private readonly state$ = new BehaviorSubject<T[] | undefined>(undefined);
+  private requested = false;
+  private inFlight?: Promise<T[]>;
 
-  constructor(private readonly initial$: Observable<T[]>) {
-    // TODO unhandled scenarios: initial request fails or takes too long (probably a task for the callers/components)
-    this.state$ = concat(
-      this.initial$.pipe(map((items) => ({type: 'reset', objects: items}) as ReactiveListEvent<T>)),
-      this.events$
-    ).pipe(
-      scan((state: T[], event: ReactiveListEvent<T>) => {
-        if (event.type === 'reset') {
-          return event.objects;
-        } else if (event.type === 'save') {
-          return distinctBy(this.identify)([event.object, ...state]);
-        } else if (event.type === 'remove') {
-          return state.filter((item) => {
-            return this.identify(item) !== this.identify(event.object!);
-          });
-        } else {
-          console.warn('unsupported/invalid event: ' + event);
-          return state;
+  private readonly items$ = defer(() => {
+    if (!this.requested) {
+      // A failed first load leaves the list empty until the next refresh, and whoever awaits refresh() reports it.
+      this.refresh().catch(() => undefined);
+    }
+    return this.state$;
+  }).pipe(filter((items): items is T[] => items !== undefined));
+
+  constructor(private readonly fetch: () => Observable<T[]>) {}
+
+  /** Concurrent calls share one request, so callers never need to guard against refreshing twice. */
+  public refresh(): Promise<T[]> {
+    this.requested = true;
+    this.inFlight ??= firstValueFrom(this.fetch())
+      .then((items) => {
+        this.reset(items);
+        return this.state$.value!;
+      })
+      .catch((e) => {
+        if (this.state$.value === undefined) {
+          this.requested = false;
         }
-      }, []),
-      map((ls: T[]) => [...ls].sort(compareBy(this.sortAttr, this.sortInverted))),
-      shareReplay(1)
-    );
+        throw e;
+      })
+      .finally(() => (this.inFlight = undefined));
+    return this.inFlight;
   }
 
   public save(arg: T) {
-    this.events$.next({
-      type: 'save',
-      object: arg,
-    });
+    this.next(distinctBy(this.identify)([arg, ...(this.state$.value ?? [])]));
   }
 
   public remove(arg: T) {
-    this.events$.next({
-      type: 'remove',
-      object: arg,
-    });
+    const state = this.state$.value;
+    if (state !== undefined) {
+      this.next(state.filter((item) => this.identify(item) !== this.identify(arg)));
+    }
   }
 
   public reset(arg: T[]) {
-    this.events$.next({
-      type: 'reset',
-      objects: arg,
-    });
+    this.next(arg);
   }
 
   public get(): Observable<T[]> {
-    return this.state$;
+    return this.items$;
+  }
+
+  private next(items: T[]) {
+    this.state$.next([...items].sort(compareBy(this.sortAttr, this.sortInverted)));
   }
 }
 
