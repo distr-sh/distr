@@ -1,5 +1,6 @@
 # build output
 dist/
+s3-redirects.txt
 # generated types
 .astro/
 
