@@ -140,14 +140,6 @@
               </td>
               <td
                 class="flex justify-end space-x-2 px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
-                <button
-                  type="button"
-                  (click)="enterLens(customer)"
-                  title="Open this customer's portal"
-                  class="distr-btn-secondary flex items-center gap-2 px-3 py-2 text-center text-sm font-medium">
-                  <fa-icon [icon]="faGlasses" />
-                  Open Portal
-                </button>
                 <a
                   [routerLink]="[customer.id, 'users']"
                   class="distr-btn-secondary flex items-center px-3 py-2 text-center text-sm font-medium">
