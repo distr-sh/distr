@@ -1,8 +1,6 @@
 package api
 
 import (
-	"errors"
-
 	"github.com/distr-sh/distr/internal/validation"
 	"github.com/google/uuid"
 )
@@ -61,13 +59,20 @@ type AuthSwitchContextRequest struct {
 	OrganizationID uuid.UUID `json:"organizationId"`
 }
 
+func (r *AuthSwitchContextRequest) Validate() error {
+	if r.OrganizationID == uuid.Nil {
+		return validation.NewValidationFailedError("an organization is required")
+	}
+	return nil
+}
+
 type AuthEnterLensRequest struct {
 	CustomerOrganizationID uuid.UUID `json:"customerOrganizationId"`
 }
 
 func (r *AuthEnterLensRequest) Validate() error {
 	if r.CustomerOrganizationID == uuid.Nil {
-		return errors.New("a customer organization is required")
+		return validation.NewValidationFailedError("a customer organization is required")
 	}
 	return nil
 }
