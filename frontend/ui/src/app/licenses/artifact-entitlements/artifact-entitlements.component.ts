@@ -8,6 +8,7 @@ import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observabl
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
+import {refreshInBackground} from '../../../util/refresh';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
 import {ClickableRowDirective} from '../../directives/clickable-row.directive';
@@ -120,6 +121,10 @@ export class ArtifactEntitlementsComponent {
       : undefined;
   });
   private readonly artifacts$ = this.artifactsService.list();
+
+  constructor() {
+    refreshInBackground(this.artifactEntitlementsService.refresh(), this.artifactsService.refresh());
+  }
 
   openDrawer(templateRef: TemplateRef<unknown>, entitlement?: ArtifactEntitlement) {
     this.hideDrawer();

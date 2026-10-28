@@ -2,6 +2,7 @@ import {ChangeDetectionStrategy, Component, computed, inject} from '@angular/cor
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute} from '@angular/router';
 import {combineLatest, map, startWith, Subject, switchMap} from 'rxjs';
+import {refreshInBackground} from '../../../../util/refresh';
 import {UsersService} from '../../../services/users.service';
 import {CustomerBreadcrumbComponent} from '../../customer-breadcrumb.component';
 import {PageComponent} from '../../page.component';
@@ -33,4 +34,8 @@ export class CustomerUsersComponent {
       )
     )
   );
+
+  constructor() {
+    refreshInBackground(this.usersService.refresh());
+  }
 }
