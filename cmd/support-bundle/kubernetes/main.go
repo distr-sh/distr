@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
 
 	"github.com/distr-sh/distr/internal/supportbundle/kubecollect"
 	"github.com/spf13/pflag"
@@ -40,10 +39,9 @@ func main() {
 		usageError(fmt.Sprintf("unexpected arguments: %v", pflag.Args()))
 	}
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	err := run(ctx, configFlags, *output, opts)
-	cancel()
-	if err != nil {
+	// Ctrl+C keeps the default handling and ends the process: the prompts block on the terminal
+	// without a context, and the collector records a canceled request as a problem and continues.
+	if err := run(context.Background(), configFlags, *output, opts); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
