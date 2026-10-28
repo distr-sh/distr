@@ -1,6 +1,6 @@
 import {Component, computed, inject, input, output} from '@angular/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faShuffle} from '@fortawesome/free-solid-svg-icons';
+import {faGlasses} from '@fortawesome/free-solid-svg-icons';
 import {membershipLabel, OrganizationKind} from '../../../../util/organization-kind';
 import {UserRoleLabelPipe} from '../../../../util/user-role';
 import {AuthService} from '../../../services/auth.service';
@@ -20,5 +20,5 @@ export class NavBarLensBannerComponent {
 
   protected readonly lensName = computed(() => membershipLabel(this.organization()));
 
-  protected readonly faShuffle = faShuffle;
+  protected readonly faGlasses = faGlasses;
 }

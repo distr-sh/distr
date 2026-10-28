@@ -19,8 +19,8 @@ import {
   faAddressBook,
   faChevronDown,
   faEdit,
+  faGlasses,
   faPlus,
-  faShuffle,
   faTrash,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
@@ -81,7 +81,7 @@ export class CustomerOrganizationsComponent {
   protected readonly faXmark = faXmark;
   protected readonly faEdit = faEdit;
   protected readonly faChevronDown = faChevronDown;
-  protected readonly faShuffle = faShuffle;
+  protected readonly faGlasses = faGlasses;
 
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   private readonly partnerOrganizationsService = inject(PartnerOrganizationsService);
