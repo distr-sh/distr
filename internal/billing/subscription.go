@@ -7,12 +7,14 @@ import (
 	"slices"
 	"time"
 
+	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/stripe/stripe-go/v86"
 	checkoutsession "github.com/stripe/stripe-go/v86/checkout/session"
 	"github.com/stripe/stripe-go/v86/subscription"
+	"go.uber.org/zap"
 )
 
 func GetSubscriptionType(subscription stripe.Subscription) (*types.SubscriptionType, error) {
@@ -255,6 +257,8 @@ func UpdateSubscription(ctx context.Context, params SubscriptionUpdateParams) (*
 func CancelSubscription(ctx context.Context, subscriptionID string) error {
 	sub, err := subscription.Get(subscriptionID, &stripe.SubscriptionParams{Params: stripe.Params{Context: ctx}})
 	if stripeErr, ok := errors.AsType[*stripe.Error](err); ok && stripeErr.Code == stripe.ErrorCodeResourceMissing {
+		internalctx.GetLogger(ctx).Warn("stripe subscription to cancel not found",
+			zap.String("stripeSubscriptionId", subscriptionID), zap.Error(err))
 		return nil
 	} else if err != nil {
 		return fmt.Errorf("failed to get subscription: %w", err)
