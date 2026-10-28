@@ -1,5 +1,29 @@
 # Changelog
 
+## [4.7.2](https://github.com/distr-sh/distr/compare/4.7.1...4.7.2) (2026-10-28)
+
+
+### Bug Fixes
+
+* **backend:** deleting an organization cancels the stripe subscription ([#3659](https://github.com/distr-sh/distr/issues/3659)) ([93e99b8](https://github.com/distr-sh/distr/commit/93e99b8d5d21d045af3c1b0acf999d88575306b9))
+* **kubernetes-controller:** use existing resource namespace if not empty ([#3661](https://github.com/distr-sh/distr/issues/3661)) ([1280a09](https://github.com/distr-sh/distr/commit/1280a09aaf836fec475b1635ad56c986905da42a))
+
+
+### Other
+
+* **backend:** add optional pprof endpoints on metrics server ([#3669](https://github.com/distr-sh/distr/issues/3669)) ([bc30625](https://github.com/distr-sh/distr/commit/bc3062552b5ba45940be09d904206477f7f58477))
+* **deps:** update dependency autoprefixer to v10.6.2 ([#3649](https://github.com/distr-sh/distr/issues/3649)) ([37eba54](https://github.com/distr-sh/distr/commit/37eba54837c7a9cc2054cb41ee7a31b895e1a809))
+* **deps:** update dependency marked to v18.1.2 ([#3647](https://github.com/distr-sh/distr/issues/3647)) ([f1ac9cb](https://github.com/distr-sh/distr/commit/f1ac9cb2808df6f5cc3ce6fbcfce6617dde775fb))
+* **deps:** update dependency stripe to v1.55.2 ([#3650](https://github.com/distr-sh/distr/issues/3650)) ([24542da](https://github.com/distr-sh/distr/commit/24542daa42d0cd957e027254d566fad86d0900b6))
+* **deps:** update hello-distr to v0.4.16 ([#3653](https://github.com/distr-sh/distr/issues/3653)) ([540c829](https://github.com/distr-sh/distr/commit/540c82910d73cc1c14feda958b70fea956ace0a8))
+* **deps:** update module github.com/go-jose/go-jose/v4 to v4.1.6 [security] ([#3655](https://github.com/distr-sh/distr/issues/3655)) ([1b05629](https://github.com/distr-sh/distr/commit/1b0562946324c5252121e990455de735d59e0820))
+* **deps:** update postgresql docker tag to v18.12.16 ([#3654](https://github.com/distr-sh/distr/issues/3654)) ([f6dc107](https://github.com/distr-sh/distr/commit/f6dc107bb81046fa222ff51a89a4e91e8edc9724))
+
+
+### Docs
+
+* **website:** add Trelent testimonial ([#3648](https://github.com/distr-sh/distr/issues/3648)) ([1853398](https://github.com/distr-sh/distr/commit/1853398b6b5e9530e0391a98f2dc05779604556f))
+
 ## [4.7.1](https://github.com/distr-sh/distr/compare/4.7.0...4.7.1) (2026-10-27)
 
 
