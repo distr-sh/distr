@@ -327,11 +327,12 @@ Sampler variables accept `always_on`, `always_off`, `traceidratio`, `parentbased
 Exposes an internal Prometheus metrics endpoint.
 See [Prometheus Integration](/docs/self-hosting/prometheus/) for details.
 
-| Variable               | Required | Default | Description                                                   |
-| ---------------------- | -------- | ------- | ------------------------------------------------------------- |
-| `METRICS_ENABLED`      | no       | `false` | Enables the Prometheus metrics endpoint.                      |
-| `METRICS_ADDR`         | no       | `:3000` | Address the metrics endpoint listens on.                      |
-| `METRICS_BEARER_TOKEN` | no       | —       | Bearer token required to scrape the metrics endpoint, if set. |
+| Variable                | Required | Default | Description                                                                    |
+| ----------------------- | -------- | ------- | ------------------------------------------------------------------------------ |
+| `METRICS_ENABLED`       | no       | `false` | Enables the Prometheus metrics endpoint.                                       |
+| `METRICS_ADDR`          | no       | `:3000` | Address the metrics endpoint listens on.                                       |
+| `METRICS_BEARER_TOKEN`  | no       | —       | Bearer token required to scrape the metrics endpoint, if set.                  |
+| `METRICS_PPROF_ENABLED` | no       | `false` | Serves Go runtime profiles under `/debug/pprof/` next to the metrics endpoint. |
 
 ## Frontend
 
