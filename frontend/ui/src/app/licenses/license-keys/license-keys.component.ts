@@ -10,15 +10,17 @@ import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observabl
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
-import {refreshInBackground} from '../../../util/refresh';
+import {loadWhileOpen, refreshInBackground} from '../../../util/refresh';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {ClipComponent} from '../../components/clip.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
+import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {UuidComponent} from '../../components/uuid';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
 import {LicenseKeysService} from '../../services/license-keys.service';
+import {LicenseTemplatesService} from '../../services/license-templates.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
 import {AffectedDeployment} from '../../types/affected-deployment';
@@ -39,6 +41,7 @@ import {ViewLicenseKeyModalComponent} from './view-license-key-modal.component';
     ClipComponent,
     SearchBarComponent,
     AlertComponent,
+    SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './license-keys.component.html',
@@ -49,6 +52,7 @@ export class LicenseKeysComponent {
   protected readonly auth = inject(AuthService);
   protected readonly features = inject(FeatureFlagService);
   private readonly licenseKeysService = inject(LicenseKeysService);
+  private readonly licenseTemplatesService = inject(LicenseTemplatesService);
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
   private readonly customerOrganizationService = inject(CustomerOrganizationsService);
@@ -95,6 +99,8 @@ export class LicenseKeysComponent {
   });
   editFormLoading = false;
 
+  protected readonly drawerLoading = signal(false);
+
   constructor() {
     refreshInBackground(this.licenseKeysService.refresh());
     this.editForm.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.affectedDeployments.set([]));
@@ -105,17 +111,49 @@ export class LicenseKeysComponent {
   private readonly customerOrganizations$ = this.customerOrganizationService.getCustomerOrganizations();
 
   openDrawer(templateRef: TemplateRef<unknown>, license?: LicenseKey) {
-    this.hideDrawer();
-    if (license) {
-      this.loadLicense(license);
-    } else if (this.customerOrganizationId()) {
-      this.editForm.patchValue({license: {customerOrganizationId: this.customerOrganizationId()} as LicenseKey});
-    }
-    this.manageLicenseDrawerRef = this.overlay.showDrawer(templateRef);
+    return this.showDrawer(templateRef, license?.id, (fresh) => fresh);
   }
 
-  loadLicense(license: LicenseKey) {
-    this.editForm.patchValue({license});
+  duplicateLicense(templateRef: TemplateRef<unknown>, license: LicenseKey) {
+    return this.showDrawer(templateRef, license.id, (fresh) => ({...fresh, id: undefined, name: ''}));
+  }
+
+  private async showDrawer(
+    templateRef: TemplateRef<unknown>,
+    licenseId: string | undefined,
+    prepare: (license: LicenseKey) => LicenseKey
+  ) {
+    this.hideDrawer();
+    try {
+      const loaded = await loadWhileOpen(
+        this.drawerLoading,
+        () => (this.manageLicenseDrawerRef = this.overlay.showDrawer(templateRef)),
+        Promise.all([
+          this.licenseKeysService.refresh(),
+          this.features.isVendorBillingEnabled() ? this.licenseTemplatesService.refresh() : [],
+        ])
+      );
+      if (loaded === undefined) {
+        return;
+      }
+      if (licenseId) {
+        const license = loaded[0].find((it) => it.id === licenseId);
+        if (!license) {
+          this.toast.error('This license key no longer exists');
+          this.hideDrawer();
+          return;
+        }
+        this.editForm.patchValue({license: prepare(license)});
+      } else if (this.customerOrganizationId()) {
+        this.editForm.patchValue({license: {customerOrganizationId: this.customerOrganizationId()} as LicenseKey});
+      }
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+      this.hideDrawer();
+    }
   }
 
   hideDrawer() {
@@ -173,14 +211,6 @@ export class LicenseKeysComponent {
     return firstValueFrom(this.licenseKeysService.update(id, request, confirm));
   }
 
-  duplicateLicense(templateRef: TemplateRef<unknown>, license: LicenseKey) {
-    this.openDrawer(templateRef, {
-      ...license,
-      id: undefined,
-      name: '',
-    });
-  }
-
   deleteLicense(license: LicenseKey) {
     this.overlay
       .confirm(`Really delete ${license.name}? Note: deleting a license key does not revoke it.`)
@@ -219,26 +249,27 @@ export class LicenseKeysComponent {
       : EMPTY;
   }
 
-  viewLicense(license: LicenseKey) {
+  async viewLicense(license: LicenseKey) {
     this.viewLicenseLoading.set(true);
-    this.licenseKeysService.getToken(license.id!).subscribe({
-      next: ({token}) => {
-        this.viewLicenseLoading.set(false);
-        this.hideViewLicenseModal();
-        this.selectedLicense.set(license);
-        this.selectedToken.set(token);
-        this.viewLicenseModalRef = this.overlay.showModal(this.viewLicenseModalTemplate(), {
-          positionStrategy: new GlobalPositionStrategy().centerHorizontally().centerVertically(),
-        });
-      },
-      error: (e) => {
-        this.viewLicenseLoading.set(false);
-        const msg = getFormDisplayedError(e);
-        if (msg) {
-          this.toast.error(msg);
-        }
-      },
-    });
+    try {
+      const [{token}, licenses] = await Promise.all([
+        firstValueFrom(this.licenseKeysService.getToken(license.id!)),
+        this.licenseKeysService.refresh(),
+      ]);
+      this.hideViewLicenseModal();
+      this.selectedLicense.set(licenses.find((it) => it.id === license.id) ?? license);
+      this.selectedToken.set(token);
+      this.viewLicenseModalRef = this.overlay.showModal(this.viewLicenseModalTemplate(), {
+        positionStrategy: new GlobalPositionStrategy().centerHorizontally().centerVertically(),
+      });
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    } finally {
+      this.viewLicenseLoading.set(false);
+    }
   }
 
   hideViewLicenseModal() {

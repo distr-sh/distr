@@ -29,6 +29,12 @@ export class ApplicationEntitlementsService implements CrudService<ApplicationEn
     return this.cache.refresh();
   }
 
+  get(entitlementId: string): Observable<ApplicationEntitlement> {
+    return this.httpClient
+      .get<ApplicationEntitlement>(`${this.entitlementsUrl}/${entitlementId}`)
+      .pipe(tap((it) => this.cache.save(it)));
+  }
+
   create(entitlement: ApplicationEntitlement): Observable<ApplicationEntitlement> {
     return this.httpClient
       .post<ApplicationEntitlement>(this.entitlementsUrl, entitlement, {context: skipTrim('autoAddVersionRegex')})

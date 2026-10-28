@@ -144,31 +144,37 @@
       </app-alert>
     }
 
-    <form [formGroup]="editForm" (ngSubmit)="saveEntitlement()">
-      <div class="flex flex-col gap-4">
-        @switch (entitlementForm()) {
-          @case ('standard') {
-            <app-edit-single-artifact-entitlement
-              formControlName="entitlement"
-              (draftChange)="draft.set($event)"
-              (tagsMissingChange)="tagsMissing.set($event)" />
-          }
-          @case ('legacy') {
-            <app-edit-artifact-entitlement formControlName="entitlement" (draftChange)="draft.set($event)" />
-          }
-        }
-        @if (auth.hasAnyRole('admin', 'read_write')) {
-          <div class="flex w-full justify-center space-x-4 pb-4 sm:mt-0">
-            <button
-              type="submit"
-              [disabled]="editFormLoading"
-              class="distr-btn-primary inline-flex w-full items-center justify-center text-white">
-              <fa-icon [icon]="faPen" class="me-2" />
-              Save
-            </button>
-          </div>
-        }
+    @if (drawerLoading()) {
+      <div class="flex items-center justify-center py-12">
+        <app-spinner class="size-8" />
       </div>
-    </form>
+    } @else {
+      <form [formGroup]="editForm" (ngSubmit)="saveEntitlement()">
+        <div class="flex flex-col gap-4">
+          @switch (entitlementForm()) {
+            @case ('standard') {
+              <app-edit-single-artifact-entitlement
+                formControlName="entitlement"
+                (draftChange)="draft.set($event)"
+                (tagsMissingChange)="tagsMissing.set($event)" />
+            }
+            @case ('legacy') {
+              <app-edit-artifact-entitlement formControlName="entitlement" (draftChange)="draft.set($event)" />
+            }
+          }
+          @if (auth.hasAnyRole('admin', 'read_write')) {
+            <div class="flex w-full justify-center space-x-4 pb-4 sm:mt-0">
+              <button
+                type="submit"
+                [disabled]="editFormLoading"
+                class="distr-btn-primary inline-flex w-full items-center justify-center text-white">
+                <fa-icon [icon]="faPen" class="me-2" />
+                Save
+              </button>
+            </div>
+          }
+        </div>
+      </form>
+    }
   </div>
 </ng-template>
