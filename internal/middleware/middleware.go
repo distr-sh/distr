@@ -101,6 +101,22 @@ func Split(
 	}
 }
 
+var requestBodyTooLarge = respond.Error(http.StatusRequestEntityTooLarge, "request body too large")
+
+// RequestSize limits the body to limit bytes and rejects a request that declares a longer one before
+// reading it.
+func RequestSize(limit int64) func(http.Handler) http.Handler {
+	return Chain(
+		guard(func(r *http.Request) (respond.Responder, error) {
+			if r.ContentLength > limit {
+				return requestBodyTooLarge, nil
+			}
+			return nil, nil
+		}),
+		middleware.RequestSize(limit),
+	)
+}
+
 func LoggerCtxMiddleware(logger *zap.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
