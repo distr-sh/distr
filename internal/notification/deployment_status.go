@@ -26,9 +26,9 @@ const (
 
 // SendDeploymentStatusNotifications judges staleness by previousStatus, the newest status of any type, because
 // progressing reports prove the controller alive. Error transitions are judged by settledStatus (see
-// [db.GetPreviousDeploymentRevisionStatus]). Any report resolves the open stale warnings of the deployment, and
-// an alert configuration whose warning it resolved gets a recovery notification unless the report calls for an error
-// notification.
+// [db.GetPreviousDeploymentRevisionStatus]), except that a revision applied in place of a failed update also counts as
+// a recovery. Any report resolves the open stale warnings of the deployment, and an alert configuration whose warning
+// it resolved gets a recovery notification unless the report calls for an error notification.
 func SendDeploymentStatusNotifications(
 	ctx context.Context,
 	deploymentTarget types.DeploymentTargetFull,
@@ -59,9 +59,19 @@ func SendDeploymentStatusNotifications(
 		return err
 	}
 
+	var failedUpdateReplaced bool
+	if currentStatus.Type.IsApplied() && (deployment.CurrentDeploymentRevisionID == nil ||
+		*deployment.CurrentDeploymentRevisionID != currentStatus.DeploymentRevisionID) {
+		if failedUpdateReplaced, err = db.HasFailedRevisionSince(
+			ctx, deployment.CurrentDeploymentRevisionID, currentStatus.DeploymentRevisionID,
+		); err != nil {
+			return err
+		}
+	}
+
 	if _, ok := deploymentStatusNotificationFor(
 		previousStatus, settledStatus, currentStatus, deployment.CurrentDeploymentRevisionID,
-		len(resolvedConfigIDs) > 0,
+		failedUpdateReplaced, len(resolvedConfigIDs) > 0,
 	); !ok {
 		log.Debug("notification not needed")
 		return nil
@@ -75,7 +85,7 @@ func SendDeploymentStatusNotifications(
 	for _, config := range configs {
 		kind, ok := deploymentStatusNotificationFor(
 			previousStatus, settledStatus, currentStatus, deployment.CurrentDeploymentRevisionID,
-			slices.Contains(resolvedConfigIDs, config.ID),
+			failedUpdateReplaced, slices.Contains(resolvedConfigIDs, config.ID),
 		)
 		if !ok {
 			continue
@@ -256,13 +266,15 @@ func sendDeploymentStatusNotificationsWithConfig(
 }
 
 // deploymentStatusNotificationFor returns which notification currentStatus calls for. currentRevisionID is the
-// revision the deployment had applied before currentStatus was reported. staleWarningResolved tells whether the
-// report resolved an open stale warning of the alert configuration.
+// revision the deployment had applied before currentStatus was reported. failedUpdateReplaced tells whether
+// currentStatus applies a revision in place of a failed update (see [db.HasFailedRevisionSince]).
+// staleWarningResolved tells whether the report resolved an open stale warning of the alert configuration.
 func deploymentStatusNotificationFor(
 	previousStatus *types.DeploymentRevisionStatus,
 	settledStatus *types.DeploymentRevisionStatus,
 	currentStatus types.DeploymentRevisionStatus,
 	currentRevisionID *uuid.UUID,
+	failedUpdateReplaced bool,
 	staleWarningResolved bool,
 ) (deploymentStatusNotificationKind, bool) {
 	switch {
@@ -271,7 +283,7 @@ func deploymentStatusNotificationFor(
 			return deploymentStatusNotificationUpdateFailed, true
 		}
 		return deploymentStatusNotificationError, true
-	case shouldNotifyErrorRecovered(settledStatus, currentStatus):
+	case failedUpdateReplaced || shouldNotifyErrorRecovered(settledStatus, currentStatus):
 		return deploymentStatusNotificationErrorRecovered, true
 	case staleWarningResolved && currentStatus.Type != types.DeploymentStatusTypeError:
 		return deploymentStatusNotificationStaleRecovered, true
