@@ -32,11 +32,11 @@ func TestDeploymentStatusNotificationFor_StaleRecoveryAfterControllerDiedMidAppl
 	} {
 		current := *status(newRevision, types.DeploymentStatusTypeHealthy, 0)
 
-		kind, ok := deploymentStatusNotificationFor(previous, settled, current, true)
+		kind, ok := deploymentStatusNotificationFor(previous, settled, current, &oldRevision, true)
 		g.Expect(ok).To(BeTrue())
 		g.Expect(kind).To(Equal(deploymentStatusNotificationStaleRecovered))
 
-		_, ok = deploymentStatusNotificationFor(previous, settled, current, false)
+		_, ok = deploymentStatusNotificationFor(previous, settled, current, &oldRevision, false)
 		g.Expect(ok).To(BeFalse())
 	}
 }
@@ -48,13 +48,13 @@ func TestDeploymentStatusNotificationFor_ErrorAfterStaleWarningIsNoRecovery(t *t
 	current := *status(revision, types.DeploymentStatusTypeError, 0)
 
 	kind, ok := deploymentStatusNotificationFor(
-		status(revision, types.DeploymentStatusTypeError, time.Hour), settled, current, true,
+		status(revision, types.DeploymentStatusTypeError, time.Hour), settled, current, &revision, true,
 	)
 	g.Expect(ok).To(BeTrue())
 	g.Expect(kind).To(Equal(deploymentStatusNotificationError))
 
 	_, ok = deploymentStatusNotificationFor(
-		status(revision, types.DeploymentStatusTypeError, 5*time.Second), settled, current, true,
+		status(revision, types.DeploymentStatusTypeError, 5*time.Second), settled, current, &revision, true,
 	)
 	g.Expect(ok).To(BeFalse())
 }
@@ -69,7 +69,7 @@ func TestDeploymentStatusNotificationFor_NoNotificationWhileProgressingAfterOldS
 		types.DeploymentStatusTypeProgressing,
 		types.DeploymentStatusTypeHealthy,
 	} {
-		_, ok := deploymentStatusNotificationFor(previous, settled, *status(revision, current, 0), false)
+		_, ok := deploymentStatusNotificationFor(previous, settled, *status(revision, current, 0), &revision, false)
 		g.Expect(ok).To(BeFalse())
 	}
 }
@@ -81,7 +81,7 @@ func TestDeploymentStatusNotificationFor_NoAlertOnRetriedError(t *testing.T) {
 	settled := status(revision, types.DeploymentStatusTypeError, 10*time.Minute)
 
 	_, ok := deploymentStatusNotificationFor(
-		previous, settled, *status(revision, types.DeploymentStatusTypeError, 0), false,
+		previous, settled, *status(revision, types.DeploymentStatusTypeError, 0), &revision, false,
 	)
 	g.Expect(ok).To(BeFalse())
 }
@@ -95,6 +95,7 @@ func TestDeploymentStatusNotificationFor_ErrorAndRecoveryJudgedBySettledStatus(t
 		previous,
 		status(revision, types.DeploymentStatusTypeHealthy, 10*time.Minute),
 		*status(revision, types.DeploymentStatusTypeError, 0),
+		&revision,
 		false,
 	)
 	g.Expect(ok).To(BeTrue())
@@ -104,8 +105,29 @@ func TestDeploymentStatusNotificationFor_ErrorAndRecoveryJudgedBySettledStatus(t
 		previous,
 		status(revision, types.DeploymentStatusTypeError, 10*time.Minute),
 		*status(revision, types.DeploymentStatusTypeHealthy, 0),
+		&revision,
 		false,
 	)
 	g.Expect(ok).To(BeTrue())
 	g.Expect(kind).To(Equal(deploymentStatusNotificationErrorRecovered))
+}
+
+func TestDeploymentStatusNotificationFor_ErrorKindDependsOnCurrentRevision(t *testing.T) {
+	g := NewWithT(t)
+	oldRevision, newRevision := uuid.New(), uuid.New()
+	previous := status(newRevision, types.DeploymentStatusTypeProgressing, 5*time.Second)
+	current := *status(newRevision, types.DeploymentStatusTypeError, 0)
+
+	for _, tc := range []struct {
+		currentRevisionID *uuid.UUID
+		expected          deploymentStatusNotificationKind
+	}{
+		{nil, deploymentStatusNotificationError},
+		{&oldRevision, deploymentStatusNotificationUpdateFailed},
+		{&newRevision, deploymentStatusNotificationError},
+	} {
+		kind, ok := deploymentStatusNotificationFor(previous, nil, current, tc.currentRevisionID, false)
+		g.Expect(ok).To(BeTrue())
+		g.Expect(kind).To(Equal(tc.expected))
+	}
 }

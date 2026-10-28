@@ -32,6 +32,29 @@ func DeploymentStatusNotificationError(
 	)
 }
 
+func DeploymentStatusNotificationUpdateFailed(
+	ctx context.Context,
+	user types.UserAccount,
+	organization types.Organization,
+	deploymentTarget types.DeploymentTargetFull,
+	deployment types.DeploymentWithLatestRevision,
+	currentStatus types.DeploymentRevisionStatus,
+) error {
+	return sendNotificationWithQuota(ctx, organization.ID, user.Email,
+		mailx.Subject(getDeploymentStatusNotificationSubject(
+			"Update failed",
+			organization,
+			deploymentTarget,
+			deployment,
+		)),
+		mailx.HtmlBodyTemplate(mailtemplates.DeploymentStatusNotificationUpdateFailed(
+			deploymentTarget,
+			deployment,
+			currentStatus,
+		)),
+	)
+}
+
 func DeploymentStatusNotificationStale(
 	ctx context.Context,
 	user types.UserAccount,

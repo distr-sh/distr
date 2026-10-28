@@ -66,6 +66,7 @@ Triggers when a monitored deployment transitions between health states:
 | -------------------------- | ---------------------- |
 | **Running** or **Healthy** | **Stale** or **Error** |
 
+An error while a new version is being rolled out is reported as **Update failed** and tells whether the last applied version is still running.
 A recovery notification is also sent when a deployment returns to a healthy state (**Running** or **Healthy**) after being degraded.
 
 For the full list of deployment statuses, see [Deployment Status](/docs/controllers/logs-and-metrics/#deployment-status).

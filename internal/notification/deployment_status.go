@@ -10,6 +10,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mailsending"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -19,6 +20,7 @@ const (
 	deploymentStatusNotificationStale deploymentStatusNotificationKind = iota
 	deploymentStatusNotificationStaleRecovered
 	deploymentStatusNotificationError
+	deploymentStatusNotificationUpdateFailed
 	deploymentStatusNotificationErrorRecovered
 )
 
@@ -58,7 +60,8 @@ func SendDeploymentStatusNotifications(
 	}
 
 	if _, ok := deploymentStatusNotificationFor(
-		previousStatus, settledStatus, currentStatus, len(resolvedConfigIDs) > 0,
+		previousStatus, settledStatus, currentStatus, deployment.CurrentDeploymentRevisionID,
+		len(resolvedConfigIDs) > 0,
 	); !ok {
 		log.Debug("notification not needed")
 		return nil
@@ -71,7 +74,8 @@ func SendDeploymentStatusNotifications(
 
 	for _, config := range configs {
 		kind, ok := deploymentStatusNotificationFor(
-			previousStatus, settledStatus, currentStatus, slices.Contains(resolvedConfigIDs, config.ID),
+			previousStatus, settledStatus, currentStatus, deployment.CurrentDeploymentRevisionID,
+			slices.Contains(resolvedConfigIDs, config.ID),
 		)
 		if !ok {
 			continue
@@ -193,6 +197,15 @@ func sendDeploymentStatusNotificationsWithConfig(
 				deployment,
 				status,
 			)
+		case deploymentStatusNotificationUpdateFailed:
+			err = mailsending.DeploymentStatusNotificationUpdateFailed(
+				ctx,
+				user,
+				*organization,
+				deploymentTarget,
+				deployment,
+				status,
+			)
 		default:
 			err = mailsending.DeploymentStatusNotificationRecovered(
 				ctx,
@@ -214,7 +227,7 @@ func sendDeploymentStatusNotificationsWithConfig(
 	switch kind {
 	case deploymentStatusNotificationStale:
 		recordType = types.NotificationRecordTypeWarning
-	case deploymentStatusNotificationError:
+	case deploymentStatusNotificationError, deploymentStatusNotificationUpdateFailed:
 		recordType = types.NotificationRecordTypeAlert
 	}
 
@@ -242,16 +255,21 @@ func sendDeploymentStatusNotificationsWithConfig(
 	return nil
 }
 
-// deploymentStatusNotificationFor returns which notification currentStatus calls for. staleWarningResolved tells
-// whether the report resolved an open stale warning of the alert configuration.
+// deploymentStatusNotificationFor returns which notification currentStatus calls for. currentRevisionID is the
+// revision the deployment had applied before currentStatus was reported. staleWarningResolved tells whether the
+// report resolved an open stale warning of the alert configuration.
 func deploymentStatusNotificationFor(
 	previousStatus *types.DeploymentRevisionStatus,
 	settledStatus *types.DeploymentRevisionStatus,
 	currentStatus types.DeploymentRevisionStatus,
+	currentRevisionID *uuid.UUID,
 	staleWarningResolved bool,
 ) (deploymentStatusNotificationKind, bool) {
 	switch {
 	case shouldNotifyError(previousStatus, settledStatus, currentStatus):
+		if currentRevisionID != nil && *currentRevisionID != currentStatus.DeploymentRevisionID {
+			return deploymentStatusNotificationUpdateFailed, true
+		}
 		return deploymentStatusNotificationError, true
 	case shouldNotifyErrorRecovered(settledStatus, currentStatus):
 		return deploymentStatusNotificationErrorRecovered, true
