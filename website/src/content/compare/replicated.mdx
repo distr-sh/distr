@@ -1,6 +1,6 @@
 ---
 title: 'Replicated Alternative 2026: Distr vs Replicated'
-description: 'Distr is an open-source Replicated alternative for Docker Compose and Kubernetes distribution, offline licensing, air-gapped environments and self-hosting.'
+description: 'Distr is an open-source Replicated alternative for Docker Compose and Kubernetes distribution, offline licensing, air-gapped environments and self-hosting, used in production by Ozgar AI, Weave and Basedash.'
 slug: replicated
 competitor: Replicated
 teaser: 'Compare Docker Compose and Kubernetes distribution, air-gapped workflows, licensing, self-hosting and pricing.'
@@ -29,7 +29,20 @@ faqs:
     answer: |
       <p>Docker Compose is an alternative when the application does not require Kubernetes-specific capabilities.</p>
       <p>Instead of provisioning and maintaining a cluster for one application, the vendor can distribute the software as a Docker Compose application on a Linux host.</p>
-      <p>If the application depends on Kubernetes, Replicated Embedded Cluster remains a valid option for customers that do not already operate a cluster.</p>
+      <p>If the application depends on Kubernetes and the customer operates no cluster, Distr can install k3s on the customer's server with the connect command or provision a managed cluster in the customer's cloud account. See <a href="/docs/integrations/k3s/">Cluster Setup with k3s</a>.</p>
+  - question: How does this compare to Replicated Embedded Cluster?
+    answer: |
+      <p>Embedded Cluster installs Kubernetes together with the application on a virtual machine or bare-metal server. Replicated documents these limitations:</p>
+      <ul>
+        <li><a href="https://docs.replicated.com/embedded-cluster/v3/embedded-overview">Embedded Cluster v3</a> is in Beta and does not support disaster recovery.</li>
+        <li>On <a href="https://docs.replicated.com/embedded-cluster/v2/embedded-overview">Embedded Cluster v2</a>, disaster recovery is in Alpha and rollbacks are only supported when the Embedded Cluster configuration does not change.</li>
+        <li>For v2, Replicated also lists that automatic updates are not supported and that installing on STIG- and CIS-hardened OS images is not supported.</li>
+      </ul>
+      <p>Distr installs k3s, a CNCF-certified Kubernetes distribution, on the customer's server with a pre-connect script and then manages the application on it like on any other cluster. k3s itself is upgraded through the system-upgrade-controller, shipped as a Distr application. Customers that already operate a cluster connect it directly.</p>
+  - question: Does Distr support pre-flight checks?
+    answer: |
+      <p>Yes. Vendors configure pre-flight check scripts for Docker and Kubernetes deployment targets. The scripts run before the Distr controller is installed and check requirements such as the Docker or Kubernetes version, CPU, memory, disk space, StorageClasses or permissions. A failing check stops the installation with a clear message.</p>
+      <p>See <a href="/docs/controllers/preflight-checks/">pre-flight checks</a> for example scripts.</p>
   - question: Does Distr fully support Kubernetes?
     answer: |
       <p>Yes. Distr installs and updates Helm applications through its Kubernetes controller. It supports cluster-scoped and namespace-scoped controllers, application versions, release automation, registry authentication, customer entitlements, deployment history, logs, metrics, air-gapped distribution and compatibility reports.</p>
@@ -37,6 +50,15 @@ faqs:
     answer: |
       <p>Yes. Enterprise customers can pull Helm charts, container images and other artifacts from Distr's OCI registry and incorporate them into their existing CI/CD and deployment workflows.</p>
       <p>This allows customers to retain their established artifact promotion, security review and deployment processes while using Distr for software distribution, customer entitlements and authenticated artifact access.</p>
+  - question: Who uses Distr in production?
+    answer: |
+      <p>Software vendors run their self-hosted offerings on Distr in production, among them:</p>
+      <ul>
+        <li><a href="/case-studies/ozgar-ai/">Ozgar AI</a> (enterprise AI) runs repeatable on-premises installs for enterprise engineering teams.</li>
+        <li><a href="/case-studies/weave/">Weave</a> (AI engineering intelligence) delivers a fully self-hosted offering to customers that require the platform inside their own infrastructure.</li>
+        <li><a href="/case-studies/basedash/">Basedash</a> (developer tools) gives every self-hosted customer authenticated registry access.</li>
+      </ul>
+      <p>All stories are collected in the <a href="/case-studies/">case studies</a>.</p>
 ---
 
 import LinkButton from '~/components/overwrites/LinkButton.astro';
@@ -56,7 +78,8 @@ The main differences are:
 - Distr provides a guided installation flow with vendor-defined configuration fields and a generated installation command.
 - Distr is open source and can be self-hosted.
 - Distr publishes pricing that scales with internal users and customer organizations.
-- Replicated can provision an embedded Kubernetes cluster.
+- Distr installs k3s on a customer's server or provisions a managed cluster in the customer's cloud account when there is no cluster.
+- Replicated can provision an embedded Kubernetes cluster with its own installer.
 - Replicated has a longer operating history and a larger provisioned-cluster compatibility-testing service.
 
 Distr adds native Docker Compose and Docker Swarm distribution. Vendors can
@@ -71,8 +94,8 @@ a generated command for installing the application.
 Distr is open source and can run in Distr Cloud or can be self-hosted. Pricing is published and scales with internal users and customer
 organizations.
 
-Replicated provides a comparable Kubernetes distribution workflow, a longer
-operating history and an Embedded Cluster installer that provisions Kubernetes
+Replicated provides a comparable Kubernetes distribution workflow and an
+Embedded Cluster installer that provisions Kubernetes
 together with the application on a customer's virtual machine or bare-metal
 server. Replicated also runs a larger compatibility-testing service that
 provisions real clusters across Kubernetes distributions and versions.
@@ -195,6 +218,7 @@ Distr also supports:
 - Rollback behavior
 - Logs and deployment metrics
 - Air-gapped distribution with Zarf
+- Pre-flight checks for Docker and Kubernetes
 - Kubernetes compatibility reports
 - Customer-visible resources and installation information
 
@@ -238,16 +262,39 @@ application does not depend on Kubernetes-specific capabilities, Docker Compose
 can provide a smaller and easier operating model than provisioning a cluster
 solely for that application.
 
-If the application genuinely requires Kubernetes and the customer has no
-cluster, Replicated Embedded Cluster can be the better fit because it provisions
-Kubernetes together with the application.
-
 <LinkButton
   href="/docs/controllers/docker-controller/"
   variant="secondary"
   icon="lucide:arrow-right"
   iconPlacement="end">
   Docker Controller
+</LinkButton>
+
+### Customers Without a Kubernetes Cluster
+
+Some applications need Kubernetes, and some customers that buy them operate no
+cluster. Distr serves them without a separate installer:
+
+- **k3s on the customer's server.** A Kubernetes pre-connect script installs
+  k3s, a CNCF-certified Kubernetes distribution, and the same connect command
+  then installs the Distr controller. Cluster upgrades ship as a Distr
+  application through the k3s system-upgrade-controller.
+- **A managed cluster in the customer's cloud account.** An infrastructure
+  controller provisions it with OpenTofu, for example Amazon EKS, and the
+  Kubernetes controller deploys the application onto it.
+- **Air-gapped servers.** The Zarf init package installs k3s offline before the
+  application package is deployed.
+
+For production, deploy into the customer's own cluster where one exists.
+Otherwise use k3s on a dedicated server or a managed cluster in the customer's
+cloud account.
+
+<LinkButton
+  href="/docs/integrations/k3s/"
+  variant="secondary"
+  icon="lucide:arrow-right"
+  iconPlacement="end">
+  Cluster Setup with k3s
 </LinkButton>
 
 <TestimonialCTA name="sophris" />
@@ -319,12 +366,7 @@ Distr Cloud and self-hosted paid installations use the same feature model.
   Pricing
 </LinkButton>
 
-## Longer Operating History Versus a Newer Distribution Architecture
-
-Replicated has operated in the self-hosted software distribution category for
-longer and has greater existing market recognition.
-
-Distr is newer, but its architecture reflects a different distribution model.
+## Distribution Architecture for Docker and Kubernetes
 
 Distr manages Docker Compose and Helm applications through lightweight controllers.
 Vendors do not need separate distribution products for single-server, Docker
@@ -342,16 +384,15 @@ Distr's advantages come from this unified architecture, support for more
 deployment environments, simpler installation experience, open-source model,
 self-hosting option and transparent pricing.
 
-Replicated's longer history remains relevant for organizations that prioritize
-an established vendor record, Embedded Cluster or the existing Replicated
-ecosystem.
+Replicated remains the closer fit for organizations that need the cluster inside
+the application installer or are already invested in the Replicated ecosystem.
 
 ## How to Choose
 
 ### Choose Distr when:
 
 - Both Docker Compose and Kubernetes applications must be distributed.
-- Kubernetes distribution is required, but embedded cluster provisioning is not.
+- Kubernetes distribution is required, and customers without a cluster can run k3s on their server or a managed cluster in their cloud account.
 - Vendors want to get POCs live faster on standard Linux virtual machines.
 - Vendors want to offer a simple installation without requiring prospects to operate Kubernetes.
 - Customers should configure only the values exposed by the vendor.
@@ -365,19 +406,18 @@ ecosystem.
 
 ### Choose Replicated when:
 
-- The application requires Kubernetes and customers need the distribution platform to provision the cluster.
+- The application requires Kubernetes and the cluster has to ship inside the same installer as the application.
 - Provisioned compatibility testing across a large matrix of complete Kubernetes environments is a primary requirement.
-- Replicated-specific installers, preflight checks or support tooling are already part of the application architecture.
+- The application is already built on Replicated's installers and tooling.
 - The vendor is already invested in the Replicated ecosystem.
-- A longer operating history is more important than Docker Compose support, open-source platform control, self-hosting, transparent pricing or a simpler customer installation experience.
 
 ## The Bottom Line
 
 Distr and Replicated provide many of the same core capabilities for distributing
 commercial Kubernetes applications.
 
-Replicated's main advantages are its longer operating history, Embedded Cluster
-installer and provisioned-cluster compatibility-testing service.
+Replicated's main advantages are its Embedded Cluster installer and
+provisioned-cluster compatibility-testing service.
 
 Distr's advantages are support for more deployment environments, a simpler and
 more user-friendly installation experience, an open-source and self-hosted
@@ -397,8 +437,8 @@ for POCs and single-server installations, while Helm supports customers that
 already operate Kubernetes. Both models remain connected to the same
 applications, customers, licenses, releases and operational workflows in Distr.
 
-Choose Replicated when the distribution platform must provision Kubernetes
-itself.
+Choose Replicated when the cluster has to ship inside the application installer
+or when provisioned-cluster compatibility testing is a primary requirement.
 
 Choose Distr when the vendor wants one distribution platform across Docker and
 Kubernetes, with guided installation, a focused customer experience,

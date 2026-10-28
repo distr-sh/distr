@@ -1,18 +1,18 @@
 ---
 title: 'Nuon Alternative: Distr vs Nuon'
-description: 'Compare Distr and Nuon for BYOC infrastructure provisioning, application delivery, OpenTofu, Kubernetes, licensing, air-gapped environments and day-two operations.'
+description: 'Compare Distr and Nuon for BYOC infrastructure provisioning, application delivery, OpenTofu, Kubernetes, licensing, air-gapped environments and day-two operations. Distr runs in production at Ozgar AI, Weave and Basedash.'
 slug: nuon
 competitor: Nuon
 heroImage: '/src/assets/compare/nuon.webp'
 teaser: 'Compare open-source infrastructure controllers with a dedicated platform for vendor-operated BYOC.'
 heading: Distr vs Nuon for BYOC Software Distribution
-subheading: 'Distr and Nuon both deploy software into customer-controlled cloud accounts. They differ in infrastructure ownership, operational model and support for distribution outside BYOC on AWS, Azure and Google Cloud.'
+subheading: 'Distr and Nuon both provision infrastructure and deploy software in customer-controlled cloud accounts. They differ in how infrastructure is packaged, which operations workflows come built in and whether the same platform also covers existing clusters, servers and air-gapped networks.'
 faqs:
   - question: Is Distr a Nuon alternative?
     answer: |
       <p>Yes.</p>
       <p>Distr and Nuon can both provision infrastructure and deploy applications inside customer cloud accounts.</p>
-      <p>Distr combines OpenTofu-based infrastructure controllers with application delivery, licensing, artifact access and support for on-premises and air-gapped environments. Nuon provides a more opinionated platform for vendors that operate BYOC installations on AWS, Azure and Google Cloud on behalf of their customers.</p>
+      <p>Distr builds on the deployment workflows a vendor already has: existing OpenTofu or Terraform configurations, Helm charts, Docker Compose files and CI/CD pipelines. Nuon follows a more opinionated process for vendor-operated BYOC, with packaged workflows such as break-glass access and a dedicated action framework.</p>
   - question: Does Distr support BYOC deployments?
     answer: |
       <p>Yes.</p>
@@ -35,12 +35,20 @@ faqs:
       <p>Distr supports customer cloud accounts, existing Kubernetes clusters, Docker hosts, Linux virtual machines, private data centers and air-gapped environments. Distr also supports offline license verification and private artifact distribution.</p>
   - question: When is Nuon the better choice?
     answer: |
-      <p>Nuon is the better choice when BYOC on AWS, Azure or Google Cloud is the primary distribution model and the vendor wants a packaged system for operating every customer environment.</p>
-      <p>Nuon's strengths include approval gates, staged fleet rollouts, release windows, operational actions, break-glass access and integrated drift workflows.</p>
+      <p>Nuon is the better choice for a vendor that builds its BYOC offering from scratch, serves customers only on AWS, Azure and Google Cloud and is happy to run it the way Nuon prescribes. Nuon's process comes with break-glass access, a dedicated action framework, packaged approval workflows and release windows.</p>
   - question: When is Distr the better choice?
     answer: |
-      <p>Distr is the better choice when a vendor wants to reuse existing infrastructure automation or support more than vendor-operated BYOC on AWS, Azure and Google Cloud.</p>
-      <p>Distr supports BYOC alongside existing Kubernetes clusters, Docker, on-premises systems, air-gapped environments, customer-managed CI/CD, software licensing and artifact entitlements.</p>
+      <p>Distr is the better choice when BYOC should fit into the deployment workflows a vendor already runs. Existing OpenTofu or Terraform configurations, Helm charts, Docker Compose files and pipeline templates are reused as they are, and everything ships as standard OCI artifacts, which keeps the vendor independent of any one platform.</p>
+      <p>Distr also reaches further: every cloud with an OpenTofu provider, existing Kubernetes clusters, on-premises servers and fully air-gapped and offline environments.</p>
+  - question: Who uses Distr in production?
+    answer: |
+      <p>Software vendors run their self-hosted offerings on Distr in production, among them:</p>
+      <ul>
+        <li><a href="/case-studies/ozgar-ai/">Ozgar AI</a> (enterprise AI) runs repeatable on-premises installs for enterprise engineering teams.</li>
+        <li><a href="/case-studies/weave/">Weave</a> (AI engineering intelligence) delivers a fully self-hosted offering to customers that require the platform inside their own infrastructure.</li>
+        <li><a href="/case-studies/basedash/">Basedash</a> (developer tools) gives every self-hosted customer authenticated registry access.</li>
+      </ul>
+      <p>All stories are collected in the <a href="/case-studies/">case studies</a>.</p>
 ---
 
 import LinkButton from '~/components/overwrites/LinkButton.astro';
@@ -61,12 +69,16 @@ Azure and Google Cloud. Its advantages include staged fleet rollouts, approval g
 operational actions, release windows, break-glass access and integrated drift
 remediation.
 
-Distr fits vendors that want to reuse existing infrastructure automation and support
-BYOC alongside Kubernetes, Docker, on-premises, air-gapped or customer-operated
-installations.
+Distr fits into the deployment workflows a vendor already has. It reuses existing
+infrastructure code, Helm charts, Compose files and pipeline templates, builds on
+open standards such as OpenTofu and OCI and so keeps lock-in low. Beyond BYOC on any
+cloud with an OpenTofu provider, it covers existing clusters, on-premises servers and
+fully air-gapped and offline installations.
 
-Nuon fits vendors that want a dedicated platform for operating installations on AWS,
-Azure and Google Cloud on their customers' behalf.
+Nuon fits vendors that start their BYOC offering from scratch, serve customers on
+AWS, Azure and Google Cloud only and want a prescribed process to follow, including
+break-glass access, a dedicated action framework, approval workflows and release
+windows.
 
 ## Distr vs Nuon at a Glance
 
@@ -90,26 +102,26 @@ Azure and Google Cloud on their customers' behalf.
 | Operational actions                                 | Application and controller operations       | Dedicated action framework                                   |
 | Break-glass access                                  | No packaged workflow                        | Built-in temporary elevated access                           |
 | Open source                                         | Yes (Apache 2.0)                            | Yes (AGPL)                                                   |
-| Self-hostable control plane                         | Yes                                         | Yes (AWS self-host and Nuon BYOC; Nuon Cloud also available) |
+| Self-hostable platform                              | Yes                                         | Yes (AWS self-host and Nuon BYOC; Nuon Cloud also available) |
 
 ## The Short Answer
 
 Choose Distr when:
 
-- Existing Terraform or OpenTofu configurations should be reused.
-- Infrastructure and application versions should follow one release workflow.
-- BYOC is one of several required deployment models.
+- BYOC should fit into existing deployment workflows and pipeline templates.
+- Existing Terraform or OpenTofu configurations, Helm charts or Compose files should be reused.
+- Open standards and low lock-in matter more than a prescribed process.
+- Customers run on clouds beyond AWS, Azure and Google Cloud.
 - Some customers provide an existing Kubernetes cluster or virtual machine.
-- Docker, on-premises or air-gapped distribution is required.
+- On-premises, fully air-gapped or offline installations are required.
 - Customers may deploy through their own CI/CD pipelines.
-- Software licensing and artifact entitlements are required.
-- Open-source code and control-plane self-hosting matter.
 
 Choose Nuon when:
 
-- BYOC on AWS, Azure or Google Cloud is the primary distribution model.
-- The vendor operates each customer environment as a managed service.
-- Staged fleet rollouts and approval gates are central requirements.
+- The BYOC offering is built from scratch, with no deployment workflows to keep.
+- All customers run on AWS, Azure or Google Cloud.
+- The team wants to follow Nuon's application model and processes.
+- Packaged staged fleet rollouts and approval gates are central requirements.
 - Operational actions need a dedicated execution framework.
 - Release windows and customer-approved updates are required.
 - Break-glass access must be part of the platform.
@@ -252,6 +264,31 @@ central operating requirements.
 Distr has the advantage when the declared OpenTofu configuration should remain
 portable and automatic reconciliation is sufficient.
 
+## Operating Customer-Cloud Installations With Distr
+
+Distr also fits vendors that operate the installation in the customer's cloud
+account themselves. The vendor runs both layers from the Vendor Portal:
+
+- Infrastructure and application ship as versioned Distr applications and roll
+  out through the same deployment workflow.
+- Each customer deployment runs a specific version, and the vendor decides when
+  it moves to the next one.
+- Plan-only mode logs every infrastructure change for review before it is
+  applied.
+- Failed reconciliations show in deployment health and trigger alerts.
+- Deployment logs and status cover the infrastructure and the application.
+
+The customer keeps the cloud credentials and permissions. The vendor needs no
+standing access to the account.
+
+<LinkButton
+  href="/docs/use-cases/byoc-bring-your-own-cloud/"
+  variant="secondary"
+  icon="lucide:arrow-right"
+  iconPlacement="end">
+  BYOC
+</LinkButton>
+
 ## Fleet Operations
 
 Nuon's strongest differentiation appears after the initial installation.
@@ -370,33 +407,33 @@ software distribution.
 
 ## When Distr Is the Better Fit
 
-Choose Distr when the product must support several enterprise distribution models.
+Choose Distr when BYOC should fit into the way the team already ships software.
 
 Distr is a stronger fit when:
 
-- Existing OpenTofu or Terraform configurations should remain portable.
-- Customers have different infrastructure requirements.
-- Some customers expect the vendor to provision infrastructure.
-- Other customers provide an existing cluster or virtual machine.
-- Customers may require Docker or customer-managed CI/CD.
-- On-premises and air-gapped installations are required.
-- Software licensing must work without internet connectivity.
-- Artifact and version access must be controlled per customer.
+- Existing OpenTofu or Terraform configurations, Helm charts and Compose files
+  should be reused and remain portable.
+- Existing CI/CD pipelines and deployment templates should keep working.
+- The platform should build on open standards such as OpenTofu, Helm and OCI, so
+  the vendor can change tools without rewriting its delivery.
+- Customers run on clouds beyond AWS, Azure and Google Cloud.
+- Some customers provide an existing cluster or virtual machine.
+- On-premises, fully air-gapped or offline installations are required.
 - The company wants an open-source, self-hostable platform.
 
-Distr keeps infrastructure provisioning, application delivery, artifact access and
-licensing within one customer and release model.
+Distr adapts to the vendor's workflows rather than prescribing its own, and the same
+platform serves BYOC, self-hosted and air-gapped customers.
 
 ## When Nuon Is the Better Fit
 
-Choose Nuon when the company is building a vendor-operated BYOC service on AWS, Azure
-and Google Cloud.
+Choose Nuon when a vendor builds its BYOC service from the ground up and wants an
+established process to follow.
 
 Nuon is a stronger fit when:
 
-- Every installation runs on AWS, Azure or Google Cloud.
-- The vendor owns day-two operations.
-- Customers expect controlled vendor access.
+- There are no existing deployment workflows to keep.
+- All customers run on AWS, Azure or Google Cloud.
+- Customers expect controlled, temporary vendor access to their accounts.
 - Rollouts require staged installation groups.
 - Customers must approve updates or define release windows.
 - Operational actions must run across customer installations.
@@ -404,29 +441,28 @@ Nuon is a stronger fit when:
 - Drift investigation and remediation are central platform functions.
 - The company prefers Nuon's application model over maintaining independent controllers.
 
-Nuon provides more of the operating structure required to manage customer-cloud
-environments as an ongoing service.
+Nuon provides more packaged operating structure around vendor access, actions and
+release coordination for customer-cloud environments.
 
 ## Final Comparison
 
 Distr and Nuon overlap across infrastructure provisioning and application deployment,
 but they optimize for different distribution strategies.
 
-Distr packages infrastructure as portable OpenTofu controller images. It manages those
-controllers alongside application deployments, customer entitlements, artifacts and
-licenses.
-
-The same Distr platform also supports existing infrastructure, Docker, Kubernetes,
-on-premises systems, air-gapped environments and customer-managed pipelines.
-
-Nuon provides a dedicated platform for vendors that operate applications inside
+Nuon provides a more opinionated process for vendors that operate applications inside
 customer accounts on AWS, Azure and Google Cloud. Its strongest advantages are staged
 fleet rollouts, approval gates, operational actions, release windows, break-glass
 access and integrated drift operations.
 
-Choose Distr when BYOC must coexist with other self-hosted distribution models or when
-existing infrastructure automation should remain portable.
+Distr fits into the deployment workflows a vendor already runs. It packages existing
+infrastructure code as portable OpenTofu controller images, reuses Helm charts,
+Compose files and pipeline templates and builds on open standards, so the vendor is
+not tied to one platform. The same Distr platform also reaches clouds beyond the big
+three, existing clusters, on-premises servers and fully air-gapped and offline
+environments.
 
-Choose Nuon when vendor-operated BYOC on AWS, Azure and Google Cloud is the primary
-distribution model and the company wants a more opinionated operations platform around
-every customer installation.
+Choose Nuon when the BYOC offering starts from scratch, every customer runs on AWS,
+Azure or Google Cloud and the team is happy to adopt Nuon's way of operating it.
+
+Choose Distr when BYOC should fit into existing workflows, when flexibility and low
+lock-in matter or when BYOC is one of several ways customers run the software.

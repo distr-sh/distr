@@ -5,11 +5,18 @@ import type starlightLlmsTxt from 'starlight-llms-txt';
 
 type LlmsTxtOptions = NonNullable<Parameters<typeof starlightLlmsTxt>[0]>;
 
-interface Frontmatter {
-  title: string;
-  description?: string;
+interface EntryFrontmatter {
   slug?: string;
   draft?: boolean;
+}
+
+interface Frontmatter extends EntryFrontmatter {
+  title: string;
+  description?: string;
+}
+
+interface CustomerFrontmatter extends EntryFrontmatter {
+  caseStudy?: {pageTitle: string; pageDescription: string};
 }
 
 const promote = ['docs', 'docs/core-concepts', 'docs/quickstart'];
@@ -21,12 +28,15 @@ const readText = (file: string) =>
 
 // The Astro config cannot query content collections, so this reads the frontmatter itself and derives
 // the entry ID the way Astro's glob loader does: the slug, else the path without extension and /index.
-function readContentPages(collectionDir: string, pattern: string) {
+function readContentPages<T extends EntryFrontmatter = Frontmatter>(
+  collectionDir: string,
+  pattern: string,
+) {
   const dir = new URL(`../content/${collectionDir}/`, import.meta.url);
   return globSync(pattern, {cwd: fileURLToPath(dir)})
     .map(file => {
       const data = parseFrontmatter(readFileSync(new URL(file, dir), 'utf8'))
-        .frontmatter as Frontmatter;
+        .frontmatter as T;
       const id =
         data.slug ?? file.replace(/\.mdx?$/, '').replace(/\/index$/, '');
       return {id, data};
@@ -54,6 +64,23 @@ export function llmsTxtOptions(site: string): LlmsTxtOptions {
       description: data.description,
     }));
 
+  const caseStudyLinks = readContentPages<CustomerFrontmatter>(
+    'customers',
+    '*.md',
+  )
+    .sort((a, b) => collator.compare(a.id, b.id))
+    .flatMap(({id, data}) =>
+      data.caseStudy
+        ? [
+            {
+              label: data.caseStudy.pageTitle,
+              url: `${site}/case-studies/${id}/`,
+              description: data.caseStudy.pageDescription,
+            },
+          ]
+        : [],
+    );
+
   return {
     // The plugin prefixes the description with "> " once, so it has to stay on a single line.
     description: readText('description.md'),
@@ -72,6 +99,7 @@ export function llmsTxtOptions(site: string): LlmsTxtOptions {
           'the machine-readable specification of the Distr REST API on Distr Cloud',
       },
       ...comparePageLinks,
+      ...caseStudyLinks,
       ...docsPageLinks,
     ],
     customSelectors: {all: ['.sl-anchor-link']},
