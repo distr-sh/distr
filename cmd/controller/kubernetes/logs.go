@@ -83,11 +83,11 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 		}
 
 		var resources []runtime.Object
-		if resUnstr, err := GetHelmManifest(ctx, namespace, d.ReleaseName); err != nil {
+		if unstructuredResources, err := GetHelmManifest(ctx, namespace, d.ReleaseName); err != nil {
 			logger.Error("could not get helm manifest for deployment", zap.Error(err))
 			continue
 		} else {
-			resources = FromUnstructuredSlice(resUnstr)
+			resources = FromUnstructuredSlice(unstructuredResources)
 		}
 
 		// A dedicated collector per deployment keeps each deployment's records in their own
@@ -100,19 +100,23 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 		var toplevelErr error
 
 		responseMap := map[corev1.ObjectReference]rest.ResponseWrapper{}
-		resourceNameMap := map[string]string{}
+		resourceNameMap := map[corev1.ObjectReference]string{}
 		for _, obj := range resources {
 			logger := logger.With(zap.String("resourceKind", obj.GetObjectKind().GroupVersionKind().Kind))
 
 			var resourceName string
 			if metaObj, ok := obj.(metav1.Object); ok {
-				metaObj.SetNamespace(namespace)
+				if metaObj.GetNamespace() == "" {
+					metaObj.SetNamespace(namespace)
+				}
 				logger = logger.With(zap.String("resourceName", metaObj.GetName()))
 
 				if restMapping, err := k8sRestMapper.RESTMapping(obj.GetObjectKind().GroupVersionKind().GroupKind()); err != nil {
 					logger.Warn("could not get REST mapping for resource", zap.Error(err))
 					toplevelErr = err
 					break
+				} else if metaObj.GetNamespace() != namespace {
+					resourceName = fmt.Sprintf("%v/%v/%v", restMapping.Resource.Resource, metaObj.GetNamespace(), metaObj.GetName())
 				} else {
 					resourceName = fmt.Sprintf("%v/%v", restMapping.Resource.Resource, metaObj.GetName())
 				}
@@ -140,14 +144,14 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 				}
 			} else {
 				maps.Copy(responseMap, resourceResponseMap)
-				for resource := range resourceResponseMap {
-					resourceNameMap[resource.Name] = resourceName
+				for ref := range resourceResponseMap {
+					resourceNameMap[ref] = resourceName
 				}
 			}
 		}
 
 		for ref, resp := range responseMap {
-			resourceName := resourceNameMap[ref.Name]
+			resourceName := resourceNameMap[ref]
 			if resourceName == "" {
 				// fall back to pod name if no parent resource is available
 				resourceName = ref.Name
