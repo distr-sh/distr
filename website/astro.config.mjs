@@ -429,5 +429,8 @@ export default defineConfig({
 
     // Glossary redirects
     '/glossary/self-managed-software/': '/glossary/self-hosted-software/',
+
+    // Case study redirects
+    '/case-studies/sophris/': '/case-studies/candor/',
   },
 });
