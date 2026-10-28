@@ -7,6 +7,7 @@ import (
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/lens"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/util"
@@ -31,12 +32,12 @@ func authEnterLensHandler(r *http.Request) (respond.Responder, error) {
 		return resp, err
 	} else if own := lens.Own(*ownOrg); lens.IsOwn(own, &requested) {
 		return respond.BadRequest("this is your own portal, return to it instead"), nil
-	} else if _, err := lens.Enter(ctx, ownOrg.ID, own, auth.IsSuperAdmin(), requested); errors.Is(
-		err, lens.ErrForbidden,
-	) {
-		return respond.Forbidden(err.Error()), nil
+	} else if _, err := lens.GetCustomerOrganizationForLens(
+		ctx, ownOrg.ID, own, auth.IsSuperAdmin(), requested,
+	); errors.Is(err, distrerr.ErrNotFound) {
+		return invalidCustomerScope, nil
 	} else if err != nil {
-		return nil, fmt.Errorf("failed to enter lens: %w", err)
+		return nil, fmt.Errorf("failed to get customer organization for lens: %w", err)
 	} else {
 		lensOrg := *ownOrg
 		lensOrg.CustomerOrganizationID = &requested

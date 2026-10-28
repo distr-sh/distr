@@ -2,7 +2,6 @@ package lens
 
 import (
 	"context"
-	"errors"
 
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/distrerr"
@@ -41,30 +40,23 @@ func (l Lens) isVendor() bool {
 	return l.CustomerOrganizationID == nil && l.PartnerOrganizationID == nil
 }
 
-var ErrForbidden = errors.New("you are not allowed to open the portal of this customer")
-
 // IsOwn reports whether a request for the lens of the customer organization requestedCustomerOrgID stays in the own
 // lens, which a request for none does as well.
 func IsOwn(own Lens, requestedCustomerOrgID *uuid.UUID) bool {
 	return requestedCustomerOrgID == nil || util.PtrEq(requestedCustomerOrgID, own.CustomerOrganizationID)
 }
 
-// Enter decides whether a request whose own lens is own may look through the lens of the customer organization
-// customerOrgID, and returns that customer organization. A customer organization that does not belong to the
-// organization is forbidden like one the request may not enter.
-func Enter(
+func GetCustomerOrganizationForLens(
 	ctx context.Context,
 	orgID uuid.UUID,
 	own Lens,
 	isSuperAdmin bool,
 	customerOrgID uuid.UUID,
 ) (*types.CustomerOrganization, error) {
-	if customerOrg, err := db.GetCustomerOrganization(ctx, customerOrgID, orgID); errors.Is(err, distrerr.ErrNotFound) {
-		return nil, ErrForbidden
-	} else if err != nil {
+	if customerOrg, err := db.GetCustomerOrganization(ctx, customerOrgID, orgID); err != nil {
 		return nil, err
 	} else if !MayEnter(own, isSuperAdmin, customerOrg.PartnerOrganizationID) {
-		return nil, ErrForbidden
+		return nil, distrerr.ErrNotFound
 	} else {
 		return customerOrg, nil
 	}

@@ -30,7 +30,7 @@ type AuthInfo interface {
 	OrganizationScoped() bool
 	IsSuperAdmin() bool
 	// IsLens reports whether the request looks through the lens of a customer organization its user is not a member
-	// of (see lens.Enter). CurrentCustomerOrgID names that organization, so a handler reading it treats the request
+	// of (see lens.Lens). CurrentCustomerOrgID names that organization, so a handler reading it treats the request
 	// like one of a member of it. Only authentication against the database sets this.
 	IsLens() bool
 	Token() any

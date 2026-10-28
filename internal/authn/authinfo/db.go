@@ -65,7 +65,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 				}
 				current, lensCustomerOrg, isLens, err := currentLens(a, lens.Lens{},
 					func(own lens.Lens, customerOrgID uuid.UUID) (*types.CustomerOrganization, error) {
-						return lens.Enter(ctx, org.ID, own, true, customerOrgID)
+						return lens.GetCustomerOrganizationForLens(ctx, org.ID, own, true, customerOrgID)
 					},
 				)
 				if err != nil {
@@ -118,7 +118,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 					func(own lens.Lens, _ uuid.UUID) (*types.CustomerOrganization, error) {
 						if customerOrg := m.RequestedCustomerOrganization; customerOrg == nil ||
 							!lens.MayEnter(own, false, customerOrg.PartnerOrganizationID) {
-							return nil, lens.ErrForbidden
+							return nil, distrerr.ErrNotFound
 						} else {
 							return customerOrg, nil
 						}
@@ -177,7 +177,7 @@ func currentLens(
 		return own, nil, false, nil
 	}
 	customerOrg, err := enter(own, *requested)
-	if errors.Is(err, lens.ErrForbidden) {
+	if errors.Is(err, distrerr.ErrNotFound) {
 		return lens.Lens{}, nil, false, authn.ErrBadAuthentication
 	} else if err != nil {
 		return lens.Lens{}, nil, false, err
