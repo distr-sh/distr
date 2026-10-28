@@ -11,15 +11,16 @@ import {
   viewChild,
 } from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
-import {FormBuilder, FormControl, ReactiveFormsModule, Validators} from '@angular/forms';
+import {FormBuilder, FormControl, FormRecord, ReactiveFormsModule, Validators} from '@angular/forms';
 import {CustomerOrganization, DeploymentTarget, Named} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
-import {refreshInBackground} from '../../util/refresh';
+import {loadWhileOpen, refreshInBackground} from '../../util/refresh';
 import {validateRecordAtLeast} from '../../util/validation';
 import {SearchBarComponent} from '../components/search-bar.component';
+import {SpinnerComponent} from '../components/spinner/spinner.component';
 import {ClickableRowDirective} from '../directives/clickable-row.directive';
 import {AlertConfigurationsService} from '../services/alert-configurations.service';
 import {AuthService} from '../services/auth.service';
@@ -34,7 +35,14 @@ import {AlertConfiguration, CreateUpdateAlertConfigurationRequest} from '../type
   selector: 'app-alert-configurations',
   templateUrl: './alert-configurations.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [FaIconComponent, ReactiveFormsModule, DatePipe, SearchBarComponent, ClickableRowDirective],
+  imports: [
+    FaIconComponent,
+    ReactiveFormsModule,
+    DatePipe,
+    SearchBarComponent,
+    ClickableRowDirective,
+    SpinnerComponent,
+  ],
 })
 export class AlertConfigurationsComponent {
   /** customerOrganizationId scopes the page to what one customer is notified about. */
@@ -100,6 +108,7 @@ export class AlertConfigurationsComponent {
     }
   }
   protected readonly editFormLoading = signal(false);
+  protected readonly drawerLoading = signal(false);
   private readonly editConfigDrawerTpl = viewChild.required<TemplateRef<unknown>>('editConfigDrawer');
   private editConfigDrawerRef?: DialogRef;
 
@@ -164,6 +173,30 @@ export class AlertConfigurationsComponent {
   protected async showDrawer(config?: AlertConfiguration) {
     this.hideDrawer();
     this.editConfigForm.reset();
+    const records: FormRecord<FormControl<boolean>>[] = [
+      this.editConfigForm.controls.userAccountIds,
+      this.editConfigForm.controls.deploymentTargetIds,
+    ];
+    for (const record of records) {
+      Object.keys(record.controls).forEach((id) => record.removeControl(id, {emitEvent: false}));
+    }
+    try {
+      const loaded = await loadWhileOpen(
+        this.drawerLoading,
+        () => (this.editConfigDrawerRef = this.overlay.showDrawer(this.editConfigDrawerTpl())),
+        Promise.all([this.usersService.refresh(), this.deploymentTargetsService.refresh()])
+      );
+      if (loaded === undefined) {
+        return;
+      }
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+      this.hideDrawer();
+      return;
+    }
 
     this.users()
       ?.map((user) => user.id)
@@ -191,8 +224,6 @@ export class AlertConfigurationsComponent {
         userAccountIds: config.userAccountIds?.reduce((acc, id) => ({...acc, [id]: true}), {}),
       });
     }
-
-    this.editConfigDrawerRef = this.overlay.showDrawer(this.editConfigDrawerTpl());
   }
 
   protected hideDrawer() {

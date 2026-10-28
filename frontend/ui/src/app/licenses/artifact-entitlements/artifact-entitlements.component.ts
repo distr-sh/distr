@@ -8,9 +8,10 @@ import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observabl
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
-import {refreshInBackground} from '../../../util/refresh';
+import {loadWhileOpen, refreshInBackground} from '../../../util/refresh';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
+import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {ClickableRowDirective} from '../../directives/clickable-row.directive';
 import {ArtifactEntitlementsService} from '../../services/artifact-entitlements.service';
 import {ArtifactsService} from '../../services/artifacts.service';
@@ -36,6 +37,7 @@ type EntitlementForm = 'standard' | 'legacy';
     SearchBarComponent,
     AlertComponent,
     ClickableRowDirective,
+    SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './artifact-entitlements.component.html',
@@ -121,26 +123,44 @@ export class ArtifactEntitlementsComponent {
       : undefined;
   });
   private readonly artifacts$ = this.artifactsService.list();
+  protected readonly drawerLoading = signal(false);
 
   constructor() {
     refreshInBackground(this.artifactEntitlementsService.refresh(), this.artifactsService.refresh());
   }
 
-  openDrawer(templateRef: TemplateRef<unknown>, entitlement?: ArtifactEntitlement) {
+  async openDrawer(templateRef: TemplateRef<unknown>, entitlement?: ArtifactEntitlement) {
     this.hideDrawer();
-    this.entitlementForm.set((entitlement?.artifacts?.length ?? 0) > 1 ? 'legacy' : 'standard');
-    if (entitlement) {
-      this.loadEntitlement(entitlement);
-    } else if (this.customerOrganizationId()) {
-      this.editForm.patchValue({
-        entitlement: {customerOrganizationId: this.customerOrganizationId()} as ArtifactEntitlement,
-      });
+    try {
+      const loaded = await loadWhileOpen(
+        this.drawerLoading,
+        () => (this.manageEntitlementDrawerRef = this.overlay.showDrawer(templateRef)),
+        Promise.all([this.artifactEntitlementsService.refresh(), this.artifactsService.refresh()])
+      );
+      if (loaded === undefined) {
+        return;
+      }
+      const fresh = entitlement && loaded[0].find((it) => it.id === entitlement.id);
+      if (entitlement && !fresh) {
+        this.toast.error('This entitlement no longer exists');
+        this.hideDrawer();
+        return;
+      }
+      this.entitlementForm.set((fresh?.artifacts?.length ?? 0) > 1 ? 'legacy' : 'standard');
+      if (fresh) {
+        this.editForm.patchValue({entitlement: fresh});
+      } else if (this.customerOrganizationId()) {
+        this.editForm.patchValue({
+          entitlement: {customerOrganizationId: this.customerOrganizationId()} as ArtifactEntitlement,
+        });
+      }
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+      this.hideDrawer();
     }
-    this.manageEntitlementDrawerRef = this.overlay.showDrawer(templateRef);
-  }
-
-  loadEntitlement(entitlement: ArtifactEntitlement) {
-    this.editForm.patchValue({entitlement});
   }
 
   hideDrawer() {

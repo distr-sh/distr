@@ -147,29 +147,35 @@
       <span class="sr-only">Close menu</span>
     </button>
 
-    <form [formGroup]="editForm" (ngSubmit)="saveLicense()">
-      <div class="flex flex-col gap-4">
-        <app-edit-license-key formControlName="license" />
-        @if (affectedDeployments().length > 0) {
-          <app-alert type="warning" heading="Saving will trigger a redeployment on the following deployment targets:">
-            <ul class="mt-2 list-inside list-disc space-y-1">
-              @for (d of affectedDeployments(); track d.deploymentId) {
-                <li>{{ d.deploymentTargetName }} ({{ d.applicationName }})</li>
-              }
-            </ul>
-          </app-alert>
-        }
-        <div class="flex w-full justify-center space-x-4 pb-4 sm:mt-0">
-          <button
-            type="submit"
-            [disabled]="editFormLoading"
-            class="distr-btn-primary inline-flex w-full items-center justify-center text-white">
-            <fa-icon [icon]="faPen" class="me-2" />
-            {{ affectedDeployments().length > 0 ? 'Save and redeploy' : 'Save' }}
-          </button>
-        </div>
+    @if (drawerLoading()) {
+      <div class="flex items-center justify-center py-12">
+        <app-spinner class="size-8" />
       </div>
-    </form>
+    } @else {
+      <form [formGroup]="editForm" (ngSubmit)="saveLicense()">
+        <div class="flex flex-col gap-4">
+          <app-edit-license-key formControlName="license" />
+          @if (affectedDeployments().length > 0) {
+            <app-alert type="warning" heading="Saving will trigger a redeployment on the following deployment targets:">
+              <ul class="mt-2 list-inside list-disc space-y-1">
+                @for (d of affectedDeployments(); track d.deploymentId) {
+                  <li>{{ d.deploymentTargetName }} ({{ d.applicationName }})</li>
+                }
+              </ul>
+            </app-alert>
+          }
+          <div class="flex w-full justify-center space-x-4 pb-4 sm:mt-0">
+            <button
+              type="submit"
+              [disabled]="editFormLoading"
+              class="distr-btn-primary inline-flex w-full items-center justify-center text-white">
+              <fa-icon [icon]="faPen" class="me-2" />
+              {{ affectedDeployments().length > 0 ? 'Save and redeploy' : 'Save' }}
+            </button>
+          </div>
+        </div>
+      </form>
+    }
   </div>
 </ng-template>
 

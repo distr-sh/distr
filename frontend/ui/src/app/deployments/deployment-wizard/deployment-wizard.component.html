@@ -13,515 +13,528 @@
 
   <!-- Modal body -->
   <div class="w-full space-y-4 p-4">
-    <section class="antialiased">
-      <div class="mx-auto">
-        <app-deployment-wizard-stepper
-          #stepper
-          (attemptContinue)="attemptContinue()"
-          (attemptGoBack)="attemptGoBack()"
-          [showCustomerStep]="showCustomerStep()"
-          class="mx-auto space-y-6 md:max-w-5xl">
-          <!-- Step 1: Customer Selection (Conditional - Only for Vendors) -->
-          @if (showCustomerStep()) {
-            <cdk-step [stepControl]="customerForm">
-              <div class="mt-4 space-y-6">
-                <div class="w-full space-y-4">
-                  <h3 class="font-normal text-gray-900 dark:text-white">Select Customer</h3>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">
-                    Create the deployment in your vendor organization or choose a customer.
-                  </p>
+    @if (!dataLoaded()) {
+      <div class="flex items-center justify-center py-12">
+        <app-spinner class="size-8" />
+      </div>
+    } @else {
+      <section class="antialiased">
+        <div class="mx-auto">
+          <app-deployment-wizard-stepper
+            #stepper
+            (attemptContinue)="attemptContinue()"
+            (attemptGoBack)="attemptGoBack()"
+            [showCustomerStep]="showCustomerStep()"
+            class="mx-auto space-y-6 md:max-w-5xl">
+            <!-- Step 1: Customer Selection (Conditional - Only for Vendors) -->
+            @if (showCustomerStep()) {
+              <cdk-step [stepControl]="customerForm">
+                <div class="mt-4 space-y-6">
+                  <div class="w-full space-y-4">
+                    <h3 class="font-normal text-gray-900 dark:text-white">Select Customer</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                      Create the deployment in your vendor organization or choose a customer.
+                    </p>
 
-                  <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                    <!-- Vendor Only Option -->
-                    @let org = currentOrganization$ | async;
-                    @let deploymentLimit = org?.subscriptionLimits?.maxDeploymentsPerCustomerOrganization ?? -1;
-                    @if (!auth.isPartner()) {
-                      @if (org) {
-                        @let limitReached = deploymentLimit >= 0 && internalDeploymentCount() >= deploymentLimit;
-                        @let isSelected = customerForm.value.internal;
+                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                      <!-- Vendor Only Option -->
+                      @let org = currentOrganization$ | async;
+                      @let deploymentLimit = org?.subscriptionLimits?.maxDeploymentsPerCustomerOrganization ?? -1;
+                      @if (!auth.isPartner()) {
+                        @if (org) {
+                          @let limitReached = deploymentLimit >= 0 && internalDeploymentCount() >= deploymentLimit;
+                          @let isSelected = customerForm.value.internal;
+                          <button
+                            type="button"
+                            [disabled]="limitReached"
+                            [title]="limitReached ? 'Maximum deployments reached' : ''"
+                            (click)="selectCustomer(null)"
+                            class="relative flex flex-col items-center rounded-lg border px-2 py-4 transition-all hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                            [class.border-primary-600]="isSelected"
+                            [class.bg-primary-50]="isSelected"
+                            [class.dark:bg-primary-900]="isSelected"
+                            [class.border-gray-200]="!isSelected"
+                            [class.bg-white]="!isSelected"
+                            [class.dark:border-gray-700]="!isSelected"
+                            [class.dark:bg-gray-800]="!isSelected">
+                            <!-- Vendor Logo -->
+                            @if (vendorBranding$ | async; as branding) {
+                              <img
+                                [src]="(getVendorLogoUrl(branding) | secureImage | async) ?? '/distr-logo.svg'"
+                                [alt]="org.name"
+                                class="mb-2 h-12 w-12 rounded-lg" />
+                            }
+
+                            <!-- Vendor Name -->
+                            <div
+                              class="mb-1 max-w-full overflow-hidden text-center text-sm font-medium text-ellipsis text-gray-900 dark:text-white">
+                              {{ org.name }}
+                            </div>
+
+                            <!-- Description -->
+                            <div class="text-center text-xs text-gray-500 dark:text-gray-400">Internal deployment</div>
+
+                            <!-- Selection Indicator -->
+                            @if (isSelected) {
+                              <div class="absolute top-2 left-2 text-primary-600 dark:text-primary-400">
+                                <fa-icon [icon]="faCircleCheck" class="h-6 w-6" />
+                              </div>
+                            }
+                          </button>
+                        }
+                      }
+
+                      <!-- Customer Options -->
+                      @for (customer of customerOrganizations$ | async; track customer.id) {
+                        @let deploymentLimitReached =
+                          deploymentLimit >= 0 && customer.deploymentTargetCount >= deploymentLimit;
                         <button
                           type="button"
-                          [disabled]="limitReached"
-                          [title]="limitReached ? 'Maximum deployments reached' : ''"
-                          (click)="selectCustomer(null)"
+                          (click)="selectCustomer(customer)"
+                          [disabled]="deploymentLimitReached"
+                          [title]="deploymentLimitReached ? 'Maximum deployments reached' : ''"
                           class="relative flex flex-col items-center rounded-lg border px-2 py-4 transition-all hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
-                          [class.border-primary-600]="isSelected"
-                          [class.bg-primary-50]="isSelected"
-                          [class.dark:bg-primary-900]="isSelected"
-                          [class.border-gray-200]="!isSelected"
-                          [class.bg-white]="!isSelected"
-                          [class.dark:border-gray-700]="!isSelected"
-                          [class.dark:bg-gray-800]="!isSelected">
-                          <!-- Vendor Logo -->
-                          @if (vendorBranding$ | async; as branding) {
+                          [class.border-primary-600]="customerForm.value.customerOrganizationId === customer.id"
+                          [class.bg-primary-50]="customerForm.value.customerOrganizationId === customer.id"
+                          [class.dark:bg-primary-900]="customerForm.value.customerOrganizationId === customer.id"
+                          [class.border-gray-200]="customerForm.value.customerOrganizationId !== customer.id"
+                          [class.bg-white]="customerForm.value.customerOrganizationId !== customer.id"
+                          [class.dark:border-gray-700]="customerForm.value.customerOrganizationId !== customer.id"
+                          [class.dark:bg-gray-800]="customerForm.value.customerOrganizationId !== customer.id">
+                          <!-- Customer Logo -->
+                          @if (customer.imageUrl) {
                             <img
-                              [src]="(getVendorLogoUrl(branding) | secureImage | async) ?? '/distr-logo.svg'"
-                              [alt]="org.name"
+                              [src]="customer.imageUrl | secureImage | async"
+                              [alt]="customer.name"
                               class="mb-2 h-12 w-12 rounded-lg" />
+                          } @else {
+                            <div
+                              class="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-gray-200 dark:bg-gray-700">
+                              <fa-icon [icon]="faAddressBook" class="text-xl text-gray-400 dark:text-gray-500" />
+                            </div>
                           }
 
-                          <!-- Vendor Name -->
+                          <!-- Customer Name -->
                           <div
                             class="mb-1 max-w-full overflow-hidden text-center text-sm font-medium text-ellipsis text-gray-900 dark:text-white">
-                            {{ org.name }}
+                            {{ customer.name }}
                           </div>
 
-                          <!-- Description -->
-                          <div class="text-center text-xs text-gray-500 dark:text-gray-400">Internal deployment</div>
+                          <!-- Customer Stats -->
+                          <div class="text-center text-xs text-gray-500 dark:text-gray-400">
+                            {{ customer.userCount }} users · {{ customer.deploymentTargetCount }} deployments
+                          </div>
 
                           <!-- Selection Indicator -->
-                          @if (isSelected) {
+                          @if (customerForm.value.customerOrganizationId === customer.id) {
                             <div class="absolute top-2 left-2 text-primary-600 dark:text-primary-400">
                               <fa-icon [icon]="faCircleCheck" class="h-6 w-6" />
                             </div>
                           }
                         </button>
                       }
-                    }
+                    </div>
+                  </div>
+                </div>
+              </cdk-step>
+            }
 
-                    <!-- Customer Options -->
-                    @for (customer of customerOrganizations$ | async; track customer.id) {
-                      @let deploymentLimitReached =
-                        deploymentLimit >= 0 && customer.deploymentTargetCount >= deploymentLimit;
+            <!-- Step 2: Application Selection -->
+            <cdk-step [stepControl]="applicationForm">
+              <div class="mt-4 space-y-6">
+                <div class="w-full space-y-4">
+                  <h3 class="font-normal text-gray-900 dark:text-white">Select Application</h3>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Choose the application you want to deploy</p>
+
+                  <div class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+                    @for (app of filteredApplications$ | async; track app.id) {
                       <button
                         type="button"
-                        (click)="selectCustomer(customer)"
-                        [disabled]="deploymentLimitReached"
-                        [title]="deploymentLimitReached ? 'Maximum deployments reached' : ''"
-                        class="relative flex flex-col items-center rounded-lg border px-2 py-4 transition-all hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
-                        [class.border-primary-600]="customerForm.value.customerOrganizationId === customer.id"
-                        [class.bg-primary-50]="customerForm.value.customerOrganizationId === customer.id"
-                        [class.dark:bg-primary-900]="customerForm.value.customerOrganizationId === customer.id"
-                        [class.border-gray-200]="customerForm.value.customerOrganizationId !== customer.id"
-                        [class.bg-white]="customerForm.value.customerOrganizationId !== customer.id"
-                        [class.dark:border-gray-700]="customerForm.value.customerOrganizationId !== customer.id"
-                        [class.dark:bg-gray-800]="customerForm.value.customerOrganizationId !== customer.id">
-                        <!-- Customer Logo -->
-                        @if (customer.imageUrl) {
+                        (click)="selectApplication(app)"
+                        class="relative flex flex-col items-center rounded-lg border-2 p-4 transition-all hover:shadow-md"
+                        [class.border-primary-600]="applicationForm.value.applicationId === app.id"
+                        [class.bg-primary-50]="applicationForm.value.applicationId === app.id"
+                        [class.dark:bg-primary-900]="applicationForm.value.applicationId === app.id"
+                        [class.border-gray-200]="applicationForm.value.applicationId !== app.id"
+                        [class.bg-white]="applicationForm.value.applicationId !== app.id"
+                        [class.dark:border-gray-700]="applicationForm.value.applicationId !== app.id"
+                        [class.dark:bg-gray-800]="applicationForm.value.applicationId !== app.id">
+                        <!-- Application Image -->
+                        @if (app.imageUrl) {
                           <img
-                            [src]="customer.imageUrl | secureImage | async"
-                            [alt]="customer.name"
+                            [attr.src]="app.imageUrl | secureImage | async"
+                            [alt]="app.name"
                             class="mb-2 h-12 w-12 rounded-lg" />
                         } @else {
                           <div
                             class="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-gray-200 dark:bg-gray-700">
-                            <fa-icon [icon]="faAddressBook" class="text-xl text-gray-400 dark:text-gray-500" />
+                            <fa-icon [icon]="faShip" class="text-xl text-gray-400 dark:text-gray-500" />
                           </div>
                         }
 
-                        <!-- Customer Name -->
-                        <div
-                          class="mb-1 max-w-full overflow-hidden text-center text-sm font-medium text-ellipsis text-gray-900 dark:text-white">
-                          {{ customer.name }}
+                        <!-- Application Name -->
+                        <div class="mb-1 text-center text-sm font-medium text-gray-900 dark:text-white">
+                          {{ app.name }}
                         </div>
 
-                        <!-- Customer Stats -->
+                        <!-- Deployment Type Badge -->
+                        <div class="distr-badge mb-1">
+                          @if (app.type === 'docker') {
+                            <fa-icon [icon]="faDocker" />
+                            Docker
+                          } @else {
+                            <fa-icon [icon]="faDharmachakra" />
+                            Kubernetes
+                          }
+                        </div>
+
+                        <!-- Version Count -->
                         <div class="text-center text-xs text-gray-500 dark:text-gray-400">
-                          {{ customer.userCount }} users · {{ customer.deploymentTargetCount }} deployments
+                          {{ app.versions?.length || 0 }} version{{ (app.versions?.length || 0) !== 1 ? 's' : '' }}
                         </div>
 
                         <!-- Selection Indicator -->
-                        @if (customerForm.value.customerOrganizationId === customer.id) {
+                        @if (applicationForm.value.applicationId === app.id) {
                           <div class="absolute top-2 left-2 text-primary-600 dark:text-primary-400">
                             <fa-icon [icon]="faCircleCheck" class="h-6 w-6" />
                           </div>
                         }
                       </button>
+                    } @empty {
+                      <div class="col-span-2 py-8 text-center md:col-span-3 lg:col-span-4">
+                        <div class="text-gray-500 dark:text-gray-400">
+                          @if (entitlementControlVisible()) {
+                            <p class="mb-1 text-sm font-medium">No application entitlements found</p>
+                            <p class="text-xs">This customer has no entitlement for any applications.</p>
+                          } @else {
+                            <p class="mb-1 text-sm font-medium">No applications found</p>
+                            <p class="text-xs">There are no applications available to deploy.</p>
+                          }
+                        </div>
+                      </div>
                     }
                   </div>
+
+                  @if (
+                    applicationForm.controls.applicationId.invalid && applicationForm.controls.applicationId.touched
+                  ) {
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-500">Please select an application.</p>
+                  }
                 </div>
               </div>
             </cdk-step>
-          }
 
-          <!-- Step 2: Application Selection -->
-          <cdk-step [stepControl]="applicationForm">
-            <div class="mt-4 space-y-6">
-              <div class="w-full space-y-4">
-                <h3 class="font-normal text-gray-900 dark:text-white">Select Application</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Choose the application you want to deploy</p>
+            <!-- Step 3: Deployment Target Configuration -->
+            <cdk-step [stepControl]="deploymentTargetForm">
+              <div class="mt-4 space-y-6">
+                <div class="w-full space-y-4">
+                  <h3 class="font-normal text-gray-900 dark:text-white">Deployment Configuration</h3>
 
-                <div class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-                  @for (app of filteredApplications$ | async; track app.id) {
-                    <button
-                      type="button"
-                      (click)="selectApplication(app)"
-                      class="relative flex flex-col items-center rounded-lg border-2 p-4 transition-all hover:shadow-md"
-                      [class.border-primary-600]="applicationForm.value.applicationId === app.id"
-                      [class.bg-primary-50]="applicationForm.value.applicationId === app.id"
-                      [class.dark:bg-primary-900]="applicationForm.value.applicationId === app.id"
-                      [class.border-gray-200]="applicationForm.value.applicationId !== app.id"
-                      [class.bg-white]="applicationForm.value.applicationId !== app.id"
-                      [class.dark:border-gray-700]="applicationForm.value.applicationId !== app.id"
-                      [class.dark:bg-gray-800]="applicationForm.value.applicationId !== app.id">
-                      <!-- Application Image -->
-                      @if (app.imageUrl) {
-                        <img
-                          [attr.src]="app.imageUrl | secureImage | async"
-                          [alt]="app.name"
-                          class="mb-2 h-12 w-12 rounded-lg" />
-                      } @else {
-                        <div
-                          class="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-gray-200 dark:bg-gray-700">
-                          <fa-icon [icon]="faShip" class="text-xl text-gray-400 dark:text-gray-500" />
-                        </div>
-                      }
-
-                      <!-- Application Name -->
-                      <div class="mb-1 text-center text-sm font-medium text-gray-900 dark:text-white">
-                        {{ app.name }}
-                      </div>
-
-                      <!-- Deployment Type Badge -->
-                      <div class="distr-badge mb-1">
-                        @if (app.type === 'docker') {
-                          <fa-icon [icon]="faDocker" />
-                          Docker
-                        } @else {
-                          <fa-icon [icon]="faDharmachakra" />
-                          Kubernetes
-                        }
-                      </div>
-
-                      <!-- Version Count -->
-                      <div class="text-center text-xs text-gray-500 dark:text-gray-400">
-                        {{ app.versions?.length || 0 }} version{{ (app.versions?.length || 0) !== 1 ? 's' : '' }}
-                      </div>
-
-                      <!-- Selection Indicator -->
-                      @if (applicationForm.value.applicationId === app.id) {
-                        <div class="absolute top-2 left-2 text-primary-600 dark:text-primary-400">
-                          <fa-icon [icon]="faCircleCheck" class="h-6 w-6" />
-                        </div>
-                      }
-                    </button>
-                  } @empty {
-                    <div class="col-span-2 py-8 text-center md:col-span-3 lg:col-span-4">
-                      <div class="text-gray-500 dark:text-gray-400">
-                        @if (entitlementControlVisible()) {
-                          <p class="mb-1 text-sm font-medium">No application entitlements found</p>
-                          <p class="text-xs">This customer has no entitlement for any applications.</p>
-                        } @else {
-                          <p class="mb-1 text-sm font-medium">No applications found</p>
-                          <p class="text-xs">There are no applications available to deploy.</p>
-                        }
-                      </div>
-                    </div>
-                  }
-                </div>
-
-                @if (applicationForm.controls.applicationId.invalid && applicationForm.controls.applicationId.touched) {
-                  <p class="mt-1 text-sm text-red-600 dark:text-red-500">Please select an application.</p>
-                }
-              </div>
-            </div>
-          </cdk-step>
-
-          <!-- Step 3: Deployment Target Configuration -->
-          <cdk-step [stepControl]="deploymentTargetForm">
-            <div class="mt-4 space-y-6">
-              <div class="w-full space-y-4">
-                <h3 class="font-normal text-gray-900 dark:text-white">Deployment Configuration</h3>
-
-                <!-- Deployment Name -->
-                <div>
-                  <label for="controller-name" class="distr-label mb-2"> Deployment Name </label>
-                  <input
-                    [formControl]="deploymentTargetForm.controls.name"
-                    type="text"
-                    id="controller-name"
-                    class="distr-input"
-                    required
-                    autotrim
-                    autocomplete="off" />
-                  @if (deploymentTargetForm.controls.name.invalid && deploymentTargetForm.controls.name.touched) {
-                    <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
-                  }
-                </div>
-
-                <!-- Docker-specific Settings -->
-                @if (selectedDeploymentType() === 'docker') {
+                  <!-- Deployment Name -->
                   <div>
+                    <label for="controller-name" class="distr-label mb-2"> Deployment Name </label>
+                    <input
+                      [formControl]="deploymentTargetForm.controls.name"
+                      type="text"
+                      id="controller-name"
+                      class="distr-input"
+                      required
+                      autotrim
+                      autocomplete="off" />
+                    @if (deploymentTargetForm.controls.name.invalid && deploymentTargetForm.controls.name.touched) {
+                      <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
+                    }
+                  </div>
+
+                  <!-- Docker-specific Settings -->
+                  @if (selectedDeploymentType() === 'docker') {
+                    <div>
+                      <div class="flex items-center">
+                        <input
+                          id="autoheal-enabled"
+                          type="checkbox"
+                          [formControl]="deploymentTargetForm.controls.autohealEnabled"
+                          class="distr-checkbox" />
+                        <label for="autoheal-enabled" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                          Enable autoheal for all containers
+                        </label>
+                      </div>
+                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        When enabled, the autoheal service will automatically restart any unhealthy containers.
+                      </p>
+                    </div>
+
                     <div class="flex items-center">
                       <input
-                        id="autoheal-enabled"
+                        id="image-cleanup-enabled"
                         type="checkbox"
-                        [formControl]="deploymentTargetForm.controls.autohealEnabled"
+                        [formControl]="deploymentTargetForm.controls.imageCleanupEnabled"
                         class="distr-checkbox" />
-                      <label for="autoheal-enabled" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                        Enable autoheal for all containers
+                      <label
+                        for="image-cleanup-enabled"
+                        class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                        Enable container image cleanup
                       </label>
                     </div>
-                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      When enabled, the autoheal service will automatically restart any unhealthy containers.
-                    </p>
-                  </div>
 
-                  <div class="flex items-center">
-                    <input
-                      id="image-cleanup-enabled"
-                      type="checkbox"
-                      [formControl]="deploymentTargetForm.controls.imageCleanupEnabled"
-                      class="distr-checkbox" />
-                    <label
-                      for="image-cleanup-enabled"
-                      class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                      Enable container image cleanup
-                    </label>
-                  </div>
-
-                  <div class="flex items-center">
-                    <input
-                      id="custom-docker-endpoint"
-                      type="checkbox"
-                      [formControl]="deploymentTargetForm.controls.customDockerEndpoint"
-                      class="distr-checkbox" />
-                    <label
-                      for="custom-docker-endpoint"
-                      class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                      Use a custom Docker endpoint
-                    </label>
-                  </div>
-
-                  @if (deploymentTargetForm.controls.dockerEndpoint.enabled) {
-                    <div>
-                      <label for="docker-endpoint" class="distr-label mb-2"> Docker Endpoint </label>
+                    <div class="flex items-center">
                       <input
-                        [formControl]="deploymentTargetForm.controls.dockerEndpoint"
+                        id="custom-docker-endpoint"
+                        type="checkbox"
+                        [formControl]="deploymentTargetForm.controls.customDockerEndpoint"
+                        class="distr-checkbox" />
+                      <label
+                        for="custom-docker-endpoint"
+                        class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                        Use a custom Docker endpoint
+                      </label>
+                    </div>
+
+                    @if (deploymentTargetForm.controls.dockerEndpoint.enabled) {
+                      <div>
+                        <label for="docker-endpoint" class="distr-label mb-2"> Docker Endpoint </label>
+                        <input
+                          [formControl]="deploymentTargetForm.controls.dockerEndpoint"
+                          type="text"
+                          id="docker-endpoint"
+                          class="distr-input"
+                          placeholder="unix:///var/run/docker.sock"
+                          required
+                          autotrim
+                          autocomplete="off" />
+                        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          The Docker socket on the host that the controller should use. Defaults to
+                          <code>unix:///var/run/docker.sock</code>.
+                        </div>
+                        @if (
+                          deploymentTargetForm.controls.dockerEndpoint.invalid &&
+                          deploymentTargetForm.controls.dockerEndpoint.touched
+                        ) {
+                          <p class="mt-1 text-sm text-red-600 dark:text-red-500">
+                            Field is required and must be a unix socket URI.
+                          </p>
+                        }
+                      </div>
+                    }
+                  }
+
+                  <!-- Kubernetes-specific Settings -->
+                  @if (selectedDeploymentType() === 'kubernetes') {
+                    <div>
+                      <label for="namespace" class="distr-label mb-2"> Kubernetes Namespace </label>
+                      <input
+                        [formControl]="deploymentTargetForm.controls.namespace"
                         type="text"
-                        id="docker-endpoint"
+                        id="namespace"
                         class="distr-input"
-                        placeholder="unix:///var/run/docker.sock"
+                        placeholder='A Kubernetes namespace (e.g. "default")'
                         required
                         autotrim
                         autocomplete="off" />
                       <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        The Docker socket on the host that the controller should use. Defaults to
-                        <code>unix:///var/run/docker.sock</code>.
+                        The namespace where the controller and application will be deployed
                       </div>
                       @if (
-                        deploymentTargetForm.controls.dockerEndpoint.invalid &&
-                        deploymentTargetForm.controls.dockerEndpoint.touched
+                        deploymentTargetForm.controls.namespace.invalid &&
+                        deploymentTargetForm.controls.namespace.touched
                       ) {
                         <p class="mt-1 text-sm text-red-600 dark:text-red-500">
-                          Field is required and must be a unix socket URI.
+                          Field is required and must be a valid Kubernetes resource name.
                         </p>
                       }
                     </div>
-                  }
-                }
 
-                <!-- Kubernetes-specific Settings -->
-                @if (selectedDeploymentType() === 'kubernetes') {
-                  <div>
-                    <label for="namespace" class="distr-label mb-2"> Kubernetes Namespace </label>
-                    <input
-                      [formControl]="deploymentTargetForm.controls.namespace"
-                      type="text"
-                      id="namespace"
-                      class="distr-input"
-                      placeholder='A Kubernetes namespace (e.g. "default")'
-                      required
-                      autotrim
-                      autocomplete="off" />
-                    <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      The namespace where the controller and application will be deployed
+                    <div class="flex items-center">
+                      <input
+                        id="cluster-scope"
+                        type="checkbox"
+                        [formControl]="deploymentTargetForm.controls.clusterScope"
+                        class="distr-checkbox" />
+                      <label for="cluster-scope" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                        Enable cluster-scoped permissions
+                      </label>
                     </div>
-                    @if (
-                      deploymentTargetForm.controls.namespace.invalid && deploymentTargetForm.controls.namespace.touched
-                    ) {
-                      <p class="mt-1 text-sm text-red-600 dark:text-red-500">
-                        Field is required and must be a valid Kubernetes resource name.
+                    @if (!deploymentTargetForm.controls.clusterScope.value) {
+                      <p class="text-xs text-gray-500 dark:text-gray-400">
+                        Note: Metrics reporting will not be available for namespace-scoped controllers.
                       </p>
                     }
-                  </div>
 
-                  <div class="flex items-center">
-                    <input
-                      id="cluster-scope"
-                      type="checkbox"
-                      [formControl]="deploymentTargetForm.controls.clusterScope"
-                      class="distr-checkbox" />
-                    <label for="cluster-scope" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                      Enable cluster-scoped permissions
-                    </label>
-                  </div>
-                  @if (!deploymentTargetForm.controls.clusterScope.value) {
-                    <p class="text-xs text-gray-500 dark:text-gray-400">
-                      Note: Metrics reporting will not be available for namespace-scoped controllers.
-                    </p>
-                  }
-
-                  <div class="flex items-center">
-                    <input
-                      id="custom-resources"
-                      type="checkbox"
-                      [formControl]="deploymentTargetForm.controls.customResources"
-                      class="distr-checkbox" />
-                    <label for="custom-resources" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                      Set custom resource requirements for the Distr controller
-                    </label>
-                  </div>
-
-                  @if (deploymentTargetForm.controls.resources.enabled) {
-                    @let resourcesCtrl = deploymentTargetForm.controls.resources;
-
-                    <div class="grid grid-cols-2 gap-4 rounded-md border border-gray-300 p-4 dark:border-gray-700">
-                      <div>
-                        <label for="cpu-request" class="distr-label mb-2"> CPU Request </label>
-                        <input
-                          [formControl]="resourcesCtrl.controls.cpuRequest"
-                          type="text"
-                          id="cpu-request"
-                          class="distr-input"
-                          placeholder="Enter a Kubernetes quantity"
-                          required
-                          autotrim
-                          autocomplete="off" />
-                        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400"></div>
-                        @if (resourcesCtrl.controls.cpuRequest.invalid && resourcesCtrl.controls.cpuRequest.touched) {
-                          <p class="mt-1 text-xs text-red-600 dark:text-red-500">
-                            Field is required and must be a valid Kubernetes quantity.
-                          </p>
-                        }
-                      </div>
-
-                      <div>
-                        <label for="memory-request" class="distr-label mb-2"> Memory Request </label>
-                        <input
-                          [formControl]="resourcesCtrl.controls.memoryRequest"
-                          type="text"
-                          id="memory-request"
-                          class="distr-input"
-                          placeholder="Enter a Kubernetes quantity"
-                          required
-                          autotrim
-                          autocomplete="off" />
-                        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400"></div>
-                        @if (
-                          resourcesCtrl.controls.memoryRequest.invalid && resourcesCtrl.controls.memoryRequest.touched
-                        ) {
-                          <p class="mt-1 text-xs text-red-600 dark:text-red-500">
-                            Field is required and must be a valid Kubernetes quantity.
-                          </p>
-                        }
-                      </div>
-
-                      <div>
-                        <label for="cpu-limit" class="distr-label mb-2"> CPU Limit </label>
-                        <input
-                          [formControl]="resourcesCtrl.controls.cpuLimit"
-                          type="text"
-                          id="cpu-limit"
-                          class="distr-input"
-                          placeholder="Enter a Kubernetes quantity"
-                          required
-                          autotrim
-                          autocomplete="off" />
-                        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400"></div>
-                        @if (resourcesCtrl.controls.cpuLimit.invalid && resourcesCtrl.controls.cpuLimit.touched) {
-                          <p class="mt-1 text-xs text-red-600 dark:text-red-500">
-                            Field is required and must be a valid Kubernetes quantity.
-                          </p>
-                        }
-                      </div>
-
-                      <div>
-                        <label for="memory-limit" class="distr-label mb-2"> Memory Limit </label>
-                        <input
-                          [formControl]="resourcesCtrl.controls.memoryLimit"
-                          type="text"
-                          id="memory-limit"
-                          class="distr-input"
-                          placeholder="Enter a Kubernetes quantity"
-                          required
-                          autotrim
-                          autocomplete="off" />
-                        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400"></div>
-                        @if (resourcesCtrl.controls.memoryLimit.invalid && resourcesCtrl.controls.memoryLimit.touched) {
-                          <p class="mt-1 text-xs text-red-600 dark:text-red-500">
-                            Field is required and must be a valid Kubernetes quantity.
-                          </p>
-                        }
-                      </div>
+                    <div class="flex items-center">
+                      <input
+                        id="custom-resources"
+                        type="checkbox"
+                        [formControl]="deploymentTargetForm.controls.customResources"
+                        class="distr-checkbox" />
+                      <label for="custom-resources" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                        Set custom resource requirements for the Distr controller
+                      </label>
                     </div>
+
+                    @if (deploymentTargetForm.controls.resources.enabled) {
+                      @let resourcesCtrl = deploymentTargetForm.controls.resources;
+
+                      <div class="grid grid-cols-2 gap-4 rounded-md border border-gray-300 p-4 dark:border-gray-700">
+                        <div>
+                          <label for="cpu-request" class="distr-label mb-2"> CPU Request </label>
+                          <input
+                            [formControl]="resourcesCtrl.controls.cpuRequest"
+                            type="text"
+                            id="cpu-request"
+                            class="distr-input"
+                            placeholder="Enter a Kubernetes quantity"
+                            required
+                            autotrim
+                            autocomplete="off" />
+                          <div class="mt-1 text-xs text-gray-500 dark:text-gray-400"></div>
+                          @if (resourcesCtrl.controls.cpuRequest.invalid && resourcesCtrl.controls.cpuRequest.touched) {
+                            <p class="mt-1 text-xs text-red-600 dark:text-red-500">
+                              Field is required and must be a valid Kubernetes quantity.
+                            </p>
+                          }
+                        </div>
+
+                        <div>
+                          <label for="memory-request" class="distr-label mb-2"> Memory Request </label>
+                          <input
+                            [formControl]="resourcesCtrl.controls.memoryRequest"
+                            type="text"
+                            id="memory-request"
+                            class="distr-input"
+                            placeholder="Enter a Kubernetes quantity"
+                            required
+                            autotrim
+                            autocomplete="off" />
+                          <div class="mt-1 text-xs text-gray-500 dark:text-gray-400"></div>
+                          @if (
+                            resourcesCtrl.controls.memoryRequest.invalid && resourcesCtrl.controls.memoryRequest.touched
+                          ) {
+                            <p class="mt-1 text-xs text-red-600 dark:text-red-500">
+                              Field is required and must be a valid Kubernetes quantity.
+                            </p>
+                          }
+                        </div>
+
+                        <div>
+                          <label for="cpu-limit" class="distr-label mb-2"> CPU Limit </label>
+                          <input
+                            [formControl]="resourcesCtrl.controls.cpuLimit"
+                            type="text"
+                            id="cpu-limit"
+                            class="distr-input"
+                            placeholder="Enter a Kubernetes quantity"
+                            required
+                            autotrim
+                            autocomplete="off" />
+                          <div class="mt-1 text-xs text-gray-500 dark:text-gray-400"></div>
+                          @if (resourcesCtrl.controls.cpuLimit.invalid && resourcesCtrl.controls.cpuLimit.touched) {
+                            <p class="mt-1 text-xs text-red-600 dark:text-red-500">
+                              Field is required and must be a valid Kubernetes quantity.
+                            </p>
+                          }
+                        </div>
+
+                        <div>
+                          <label for="memory-limit" class="distr-label mb-2"> Memory Limit </label>
+                          <input
+                            [formControl]="resourcesCtrl.controls.memoryLimit"
+                            type="text"
+                            id="memory-limit"
+                            class="distr-input"
+                            placeholder="Enter a Kubernetes quantity"
+                            required
+                            autotrim
+                            autocomplete="off" />
+                          <div class="mt-1 text-xs text-gray-500 dark:text-gray-400"></div>
+                          @if (
+                            resourcesCtrl.controls.memoryLimit.invalid && resourcesCtrl.controls.memoryLimit.touched
+                          ) {
+                            <p class="mt-1 text-xs text-red-600 dark:text-red-500">
+                              Field is required and must be a valid Kubernetes quantity.
+                            </p>
+                          }
+                        </div>
+                      </div>
+                    }
                   }
-                }
 
-                <!-- Log Collection (all deployment types) -->
-                <div class="flex items-center">
-                  <input
-                    id="logs-enabled"
-                    type="checkbox"
-                    [formControl]="deploymentTargetForm.controls.deploymentLogsEnabled"
-                    class="distr-checkbox" />
-                  <label for="logs-enabled" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                    Enable log collection
-                  </label>
-                </div>
-
-                <!-- Automatic Controller Updates (all deployment types) -->
-                <div>
+                  <!-- Log Collection (all deployment types) -->
                   <div class="flex items-center">
                     <input
-                      id="automatic-updates-enabled"
+                      id="logs-enabled"
                       type="checkbox"
-                      [formControl]="deploymentTargetForm.controls.automaticUpdatesEnabled"
+                      [formControl]="deploymentTargetForm.controls.deploymentLogsEnabled"
                       class="distr-checkbox" />
-                    <label
-                      for="automatic-updates-enabled"
-                      class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                      Enable automatic controller updates
+                    <label for="logs-enabled" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                      Enable log collection
                     </label>
                   </div>
-                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    When enabled, the controller is updated to the latest version as soon as one becomes available.
-                    Updating the controller does not restart or update the deployed application.
-                  </p>
+
+                  <!-- Automatic Controller Updates (all deployment types) -->
+                  <div>
+                    <div class="flex items-center">
+                      <input
+                        id="automatic-updates-enabled"
+                        type="checkbox"
+                        [formControl]="deploymentTargetForm.controls.automaticUpdatesEnabled"
+                        class="distr-checkbox" />
+                      <label
+                        for="automatic-updates-enabled"
+                        class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                        Enable automatic controller updates
+                      </label>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      When enabled, the controller is updated to the latest version as soon as one becomes available.
+                      Updating the controller does not restart or update the deployed application.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </cdk-step>
+            </cdk-step>
 
-          <!-- Step 4: Application Configuration -->
-          <cdk-step [stepControl]="applicationConfigForm">
-            <div class="mt-4 space-y-6">
-              <div class="w-full space-y-4">
-                <h3 class="font-normal text-gray-900 dark:text-white">Application Configuration</h3>
+            <!-- Step 4: Application Configuration -->
+            <cdk-step [stepControl]="applicationConfigForm">
+              <div class="mt-4 space-y-6">
+                <div class="w-full space-y-4">
+                  <h3 class="font-normal text-gray-900 dark:text-white">Application Configuration</h3>
 
-                <!-- Deployment Form -->
-                @if (isApplicationConfigStep() && deploymentFormInitialData()) {
-                  <app-deployment-form
-                    [disableApplicationSelect]="true"
-                    [deploymentType]="selectedDeploymentType()"
-                    [customerOrganizationId]="selectedCustomerOrganizationId()"
-                    [deploymentTargetName]="deploymentTargetForm.value.name ?? ''"
-                    [formControl]="applicationConfigForm.controls.deploymentFormData" />
-                }
-              </div>
-            </div>
-          </cdk-step>
-
-          <!-- Step 5: Success Page -->
-          <cdk-step [stepControl]="connectForm">
-            <div class="mt-12 space-y-6">
-              <div class="space-y-6">
-                <div class="flex flex-col items-center space-y-4 text-center">
-                  <fa-icon [icon]="faCircleCheck" class="mt-4 text-6xl text-green-600 dark:text-green-500" />
-                  <h3 class="text-2xl font-semibold text-gray-900 dark:text-white">Deployment Created Successfully</h3>
-                  <p class="max-w-2xl text-base leading-relaxed text-gray-500 dark:text-gray-400">
-                    Your deployment has been created successfully. To deploy it, please copy and paste the following
-                    command:
-                  </p>
+                  <!-- Deployment Form -->
+                  @if (isApplicationConfigStep() && deploymentFormInitialData()) {
+                    <app-deployment-form
+                      [disableApplicationSelect]="true"
+                      [deploymentType]="selectedDeploymentType()"
+                      [customerOrganizationId]="selectedCustomerOrganizationId()"
+                      [deploymentTargetName]="deploymentTargetForm.value.name ?? ''"
+                      [formControl]="applicationConfigForm.controls.deploymentFormData" />
+                  }
                 </div>
-                @if (selectedDeploymentTarget(); as dt) {
-                  <app-connect-instructions [deploymentTarget]="dt" />
-                }
               </div>
-            </div>
-          </cdk-step>
-        </app-deployment-wizard-stepper>
-      </div>
-    </section>
+            </cdk-step>
+
+            <!-- Step 5: Success Page -->
+            <cdk-step [stepControl]="connectForm">
+              <div class="mt-12 space-y-6">
+                <div class="space-y-6">
+                  <div class="flex flex-col items-center space-y-4 text-center">
+                    <fa-icon [icon]="faCircleCheck" class="mt-4 text-6xl text-green-600 dark:text-green-500" />
+                    <h3 class="text-2xl font-semibold text-gray-900 dark:text-white">
+                      Deployment Created Successfully
+                    </h3>
+                    <p class="max-w-2xl text-base leading-relaxed text-gray-500 dark:text-gray-400">
+                      Your deployment has been created successfully. To deploy it, please copy and paste the following
+                      command:
+                    </p>
+                  </div>
+                  @if (selectedDeploymentTarget(); as dt) {
+                    <app-connect-instructions [deploymentTarget]="dt" />
+                  }
+                </div>
+              </div>
+            </cdk-step>
+          </app-deployment-wizard-stepper>
+        </div>
+      </section>
+    }
   </div>
 </div>
