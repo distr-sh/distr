@@ -325,17 +325,9 @@ func CountAllOrganizations(ctx context.Context) (res int64, err error) {
 }
 
 func GetOrganizationByID(ctx context.Context, orgID uuid.UUID) (*types.Organization, error) {
-	return getOrganizationByID(ctx, orgID, "o.deleted_at IS NULL")
-}
-
-func GetOrganizationByIDIncludingDeleted(ctx context.Context, orgID uuid.UUID) (*types.Organization, error) {
-	return getOrganizationByID(ctx, orgID, "true")
-}
-
-func getOrganizationByID(ctx context.Context, orgID uuid.UUID, condition string) (*types.Organization, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		"SELECT "+organizationOutputExpr+" FROM Organization o WHERE id = @id AND "+condition,
+		"SELECT "+organizationOutputExpr+" FROM Organization o WHERE id = @id AND o.deleted_at IS NULL",
 		pgx.NamedArgs{"id": orgID},
 	)
 	if err != nil {
@@ -348,6 +340,30 @@ func getOrganizationByID(ctx context.Context, orgID uuid.UUID, condition string)
 		return nil, err
 	} else {
 		return &result, nil
+	}
+}
+
+// GetOrganizationByIDIncludingDeleted also returns whether the organization is soft-deleted.
+func GetOrganizationByIDIncludingDeleted(ctx context.Context, orgID uuid.UUID) (*types.Organization, bool, error) {
+	type organizationWithDeleted struct {
+		types.Organization
+		Deleted bool `db:"deleted"`
+	}
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		"SELECT "+organizationOutputExpr+", o.deleted_at IS NOT NULL AS deleted FROM Organization o WHERE id = @id",
+		pgx.NamedArgs{"id": orgID},
+	)
+	if err != nil {
+		return nil, false, err
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[organizationWithDeleted])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, false, fmt.Errorf("%w: organization %v", distrerr.ErrNotFound, orgID)
+	} else if err != nil {
+		return nil, false, err
+	} else {
+		return &result.Organization, result.Deleted, nil
 	}
 }
 
