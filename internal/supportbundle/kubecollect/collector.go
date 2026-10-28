@@ -98,10 +98,18 @@ func (c *Collector) Run(ctx context.Context, namespaces []string, groups Groups)
 		}
 	}
 
+	var resources []schema.GroupVersionResource
+	if groups.Resources {
+		var err error
+		if resources, err = c.namespacedResources(); err != nil {
+			c.problemf("discover the API resources: %v", err)
+		}
+	}
+
 	for _, namespace := range namespaces {
 		c.progressf("Collecting namespace %s", namespace)
 		if groups.Resources {
-			if err := c.collectResources(ctx, namespace); err != nil {
+			if err := c.collectResources(ctx, namespace, resources); err != nil {
 				return Result{}, err
 			}
 		}
@@ -195,11 +203,11 @@ func (c *Collector) collectCluster(ctx context.Context) (*clusterSummary, error)
 	return &cluster, nil
 }
 
-func (c *Collector) collectResources(ctx context.Context, namespace string) error {
-	resources, err := c.namespacedResources()
-	if err != nil {
-		c.problemf("discover the API resources: %v", err)
-	}
+func (c *Collector) collectResources(
+	ctx context.Context,
+	namespace string,
+	resources []schema.GroupVersionResource,
+) error {
 	var objects, kinds int
 	for _, gvr := range resources {
 		items, err := c.list(ctx, gvr, namespace)
