@@ -63,29 +63,39 @@ func getCollectScriptHandler(r *http.Request) (respond.Responder, error) {
 
 	if org, err := db.GetOrganizationWithBranding(ctx, bundle.OrganizationID); err != nil {
 		return nil, fmt.Errorf("failed to get organization: %w", err)
+	} else if envVars, err := getSupportBundleCollectEnvVars(ctx, bundle); err != nil {
+		return nil, err
+	} else if scripts, err := db.GetEnabledSupportBundleConfigurationScripts(
+		ctx, bundle.OrganizationID, bundle.DeploymentType,
+	); err != nil {
+		return nil, fmt.Errorf("failed to get support bundle config scripts: %w", err)
+	} else if script, err := supportbundle.GenerateCollectScript(supportbundle.CollectScriptParams{
+		DeploymentType:       bundle.DeploymentType,
+		BaseURL:              customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding),
+		BundleID:             bundle.ID,
+		BundleSecret:         bundleSecret,
+		EnvVars:              envVars,
+		Scripts:              scripts,
+		LogTailLines:         env.SupportBundleLogTailLines(),
+		ResourceMaxBytes:     env.SupportBundleResourceMaxBytes(),
+		ScriptTimeout:        env.SupportBundleScriptTimeout(),
+		CollectorDownloadURL: supportbundle.CollectorDownloadURL(),
+	}); err != nil {
+		return nil, fmt.Errorf("failed to generate collect script: %w", err)
 	} else {
-		baseURL := customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding)
+		return respond.Stream("text/plain; charset=utf-8", strings.NewReader(script)), nil
+	}
+}
 
-		if envVars, err := db.GetSupportBundleConfigurationEnvVars(ctx, bundle.OrganizationID); err != nil {
-			return nil, fmt.Errorf("failed to get support bundle config env vars: %w", err)
-		} else if scripts, err := db.GetEnabledSupportBundleConfigurationScripts(
-			ctx, bundle.OrganizationID, bundle.DeploymentType,
-		); err != nil {
-			return nil, fmt.Errorf("failed to get support bundle config scripts: %w", err)
-		} else if script, err := supportbundle.GenerateCollectScript(supportbundle.CollectScriptParams{
-			BaseURL:          baseURL,
-			BundleID:         bundle.ID,
-			BundleSecret:     bundleSecret,
-			EnvVars:          envVars,
-			Scripts:          scripts,
-			LogTailLines:     env.SupportBundleLogTailLines(),
-			ResourceMaxBytes: env.SupportBundleResourceMaxBytes(),
-			ScriptTimeout:    env.SupportBundleScriptTimeout(),
-		}); err != nil {
-			return nil, fmt.Errorf("failed to generate collect script: %w", err)
-		} else {
-			return respond.Stream("text/plain; charset=utf-8", strings.NewReader(script)), nil
-		}
+func getSupportBundleCollectEnvVars(
+	ctx context.Context, bundle *types.SupportBundle,
+) ([]types.SupportBundleConfigurationEnvVar, error) {
+	if bundle.DeploymentType != types.DeploymentTypeDocker {
+		return nil, nil
+	} else if envVars, err := db.GetSupportBundleConfigurationEnvVars(ctx, bundle.OrganizationID); err != nil {
+		return nil, fmt.Errorf("failed to get support bundle config env vars: %w", err)
+	} else {
+		return envVars, nil
 	}
 }
 

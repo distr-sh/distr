@@ -9,7 +9,10 @@ newline at its start or end, so the blank lines around them belong to the templa
 need_tty=yes
 _dir=$(mktemp -d)
 _script="${_dir}/distr-collect.sh"
+# dash and other shells skip the EXIT trap when a signal ends them, so exit on the signals instead.
 trap 'rm -rf "$_dir"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 # Write the collect script to a temp file. When piped (curl | sh), the script
 # is run as a child process with /dev/tty as stdin so that interactive prompts
@@ -23,6 +26,8 @@ BUNDLE_SECRET="{{.Token}}"
 
 _tmpdir=$(mktemp -d)
 trap 'rm -rf "$_tmpdir"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 upload_resource_file() {
   _name="$1"
@@ -262,8 +267,8 @@ if [ "$need_tty" = "yes" ] && [ ! -t 0 ]; then
     echo "Unable to run interactively." >&2
     exit 1
   fi
-  sh "$_script" < /dev/tty
+  sh "$_script" "$@" < /dev/tty
 else
-  sh "$_script"
+  sh "$_script" "$@"
 fi
 {{- end}}
