@@ -11,6 +11,8 @@ import (
 
 func TestGenerateContextTokenKeepsCustomOIDCSession(t *testing.T) {
 	g := NewWithT(t)
+	previousSigningKey := signingKey
+	t.Cleanup(func() { signingKey = previousSigningKey })
 	signingKey = func() (jwk.SymmetricKey, error) { return jwk.Import[jwk.SymmetricKey]([]byte("test-secret")) }
 	user := types.UserAccount{ID: uuid.New()}
 	org := types.OrganizationWithUserRole{Organization: types.Organization{ID: uuid.New()}, UserRole: types.UserRoleAdmin}
