@@ -2,6 +2,7 @@ package billing
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"time"
@@ -247,4 +248,24 @@ func UpdateSubscription(ctx context.Context, params SubscriptionUpdateParams) (*
 	}
 
 	return updatedSub, nil
+}
+
+// CancelSubscription cancels the subscription immediately. A subscription that no longer exists or has already
+// ended is left alone, since Stripe rejects cancelling it.
+func CancelSubscription(ctx context.Context, subscriptionID string) error {
+	sub, err := subscription.Get(subscriptionID, &stripe.SubscriptionParams{Params: stripe.Params{Context: ctx}})
+	if stripeErr, ok := errors.AsType[*stripe.Error](err); ok && stripeErr.Code == stripe.ErrorCodeResourceMissing {
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("failed to get subscription: %w", err)
+	} else if sub.Status == stripe.SubscriptionStatusCanceled ||
+		sub.Status == stripe.SubscriptionStatusIncompleteExpired {
+		return nil
+	}
+
+	_, err = subscription.Cancel(subscriptionID, &stripe.SubscriptionCancelParams{Params: stripe.Params{Context: ctx}})
+	if err != nil {
+		return fmt.Errorf("failed to cancel subscription: %w", err)
+	}
+	return nil
 }

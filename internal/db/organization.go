@@ -325,9 +325,17 @@ func CountAllOrganizations(ctx context.Context) (res int64, err error) {
 }
 
 func GetOrganizationByID(ctx context.Context, orgID uuid.UUID) (*types.Organization, error) {
+	return getOrganizationByID(ctx, orgID, "o.deleted_at IS NULL")
+}
+
+func GetOrganizationByIDIncludingDeleted(ctx context.Context, orgID uuid.UUID) (*types.Organization, error) {
+	return getOrganizationByID(ctx, orgID, "true")
+}
+
+func getOrganizationByID(ctx context.Context, orgID uuid.UUID, condition string) (*types.Organization, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		"SELECT "+organizationOutputExpr+" FROM Organization o WHERE id = @id AND o.deleted_at IS NULL",
+		"SELECT "+organizationOutputExpr+" FROM Organization o WHERE id = @id AND "+condition,
 		pgx.NamedArgs{"id": orgID},
 	)
 	if err != nil {
@@ -413,15 +421,20 @@ func DeleteOrganizationsOlderThan(ctx context.Context, minAge time.Duration) (in
 	return rowsAffected, err
 }
 
-func SetOrganizationDeletedAtNow(ctx context.Context, orgID uuid.UUID) error {
+// SetOrganizationDeletedAtNow returns the Stripe subscription ID of the deleted organization, which is nil if
+// it has none or was already deleted.
+func SetOrganizationDeletedAtNow(ctx context.Context, orgID uuid.UUID) (*string, error) {
 	db := internalctx.GetDb(ctx)
-	_, err := db.Exec(
+	var stripeSubscriptionID *string
+	err := db.QueryRow(
 		ctx,
-		"UPDATE Organization SET deleted_at = now() WHERE id = @id AND deleted_at IS NULL",
+		"UPDATE Organization SET deleted_at = now() WHERE id = @id AND deleted_at IS NULL RETURNING stripe_subscription_id",
 		pgx.NamedArgs{"id": orgID},
-	)
-	if err != nil {
-		return fmt.Errorf("could not update Organization: %w", err)
+	).Scan(&stripeSubscriptionID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("could not update Organization: %w", err)
 	}
 
 	RunAfterTx(ctx, func(ctx context.Context) {
@@ -433,5 +446,5 @@ func SetOrganizationDeletedAtNow(ctx context.Context, orgID uuid.UUID) error {
 		}
 	})
 
-	return nil
+	return stripeSubscriptionID, nil
 }
