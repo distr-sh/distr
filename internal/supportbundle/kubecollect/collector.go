@@ -33,6 +33,18 @@ var (
 	crdsGVR       = schema.GroupVersionResource{
 		Group: "apiextensions.k8s.io", Version: "v1", Resource: "customresourcedefinitions",
 	}
+	persistentVolumesGVR = schema.GroupVersionResource{Version: "v1", Resource: "persistentvolumes"}
+	replicaSetsGR        = schema.GroupResource{Group: "apps", Resource: "replicasets"}
+
+	// clusterResources explain why a pod is not scheduled, a volume not bound, an ingress not
+	// served or an object rejected on admission.
+	clusterResources = []schema.GroupVersionResource{
+		{Group: "storage.k8s.io", Version: "v1", Resource: "storageclasses"},
+		persistentVolumesGVR,
+		{Group: "networking.k8s.io", Version: "v1", Resource: "ingressclasses"},
+		{Group: "admissionregistration.k8s.io", Version: "v1", Resource: "validatingwebhookconfigurations"},
+		{Group: "admissionregistration.k8s.io", Version: "v1", Resource: "mutatingwebhookconfigurations"},
+	}
 )
 
 type Collector struct {
@@ -91,7 +103,7 @@ func (c *Collector) Run(ctx context.Context, namespaces []string, groups Groups)
 
 	if groups.Cluster {
 		c.progressf("Collecting cluster information")
-		if cluster, err := c.collectCluster(ctx); err != nil {
+		if cluster, err := c.collectCluster(ctx, namespaces); err != nil {
 			return Result{}, err
 		} else {
 			s.Cluster = cluster
@@ -139,7 +151,7 @@ func (c *Collector) Run(ctx context.Context, namespaces []string, groups Groups)
 	return Result{Collected: c.collected, Problems: len(c.problems)}, nil
 }
 
-func (c *Collector) collectCluster(ctx context.Context) (*clusterSummary, error) {
+func (c *Collector) collectCluster(ctx context.Context, namespaces []string) (*clusterSummary, error) {
 	cluster := clusterSummary{Server: c.Context.Server}
 
 	if version, err := c.Clients.Discovery.ServerVersion(); err != nil {
@@ -172,6 +184,22 @@ func (c *Collector) collectCluster(ctx context.Context) (*clusterSummary, error)
 		c.problemf("list the namespaces: %v", err)
 	} else if err := c.collectList(ctx, "cluster/namespaces.yaml", items); err != nil {
 		return nil, err
+	}
+
+	for _, gvr := range clusterResources {
+		items, err := c.list(ctx, gvr, "")
+		if err != nil {
+			c.problemf("list %s: %v", resourceDir(gvr), err)
+			continue
+		}
+		for _, item := range items {
+			if gvr == persistentVolumesGVR && !slices.Contains(namespaces, claimNamespace(item)) {
+				continue
+			}
+			if err := c.collectObject(ctx, "cluster/"+resourceDir(gvr)+"/"+item.GetName()+".yaml", item); err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	if items, err := c.list(ctx, crdsGVR, ""); err != nil {
@@ -219,6 +247,9 @@ func (c *Collector) collectResources(
 			kinds++
 		}
 		for _, item := range items {
+			if gvr.GroupResource() == replicaSetsGR && scaledDown(item) {
+				continue
+			}
 			name := fmt.Sprintf("namespaces/%s/%s/%s.yaml", namespace, resourceDir(gvr), item.GetName())
 			if err := c.collectObject(ctx, name, item); err != nil {
 				return err
@@ -228,6 +259,19 @@ func (c *Collector) collectResources(
 	}
 	c.progressf("  %d resources of %d kinds", objects, kinds)
 	return nil
+}
+
+// skippedResources are served by every cluster but hold nothing that explains a problem with an
+// application. Events are collected on their own.
+var skippedResources = []schema.GroupResource{
+	{Resource: "events"},
+	{Group: "events.k8s.io", Resource: "events"},
+	// EndpointSlices hold the same addresses, and Endpoints are deprecated since Kubernetes 1.33.
+	{Resource: "endpoints"},
+	// The revision history of StatefulSets and DaemonSets, a copy of every former template.
+	{Group: "apps", Resource: "controllerrevisions"},
+	// Leader election and node heartbeats, which change every few seconds.
+	{Group: "coordination.k8s.io", Resource: "leases"},
 }
 
 // namespacedResources is every namespaced resource the cluster serves that can be listed, custom
@@ -242,8 +286,8 @@ func (c *Collector) namespacedResources() ([]schema.GroupVersionResource, error)
 			continue
 		}
 		for _, resource := range list.APIResources {
-			if strings.Contains(resource.Name, "/") || resource.Name == "events" ||
-				!slices.Contains(resource.Verbs, "list") {
+			if strings.Contains(resource.Name, "/") || !slices.Contains(resource.Verbs, "list") ||
+				slices.Contains(skippedResources, gv.WithResource(resource.Name).GroupResource()) {
 				continue
 			}
 			result = append(result, gv.WithResource(resource.Name))
@@ -253,6 +297,20 @@ func (c *Collector) namespacedResources() ([]schema.GroupVersionResource, error)
 		return strings.Compare(resourceDir(a), resourceDir(b))
 	})
 	return result, err
+}
+
+// scaledDown is true for a ReplicaSet a Deployment keeps from a former rollout, up to ten per
+// Deployment by default. The current ReplicaSet of a Deployment scaled to zero is skipped as well,
+// which the Deployment itself shows.
+func scaledDown(replicaSet unstructured.Unstructured) bool {
+	desired, found, _ := unstructured.NestedInt64(replicaSet.Object, "spec", "replicas")
+	current, _, _ := unstructured.NestedInt64(replicaSet.Object, "status", "replicas")
+	return found && desired == 0 && current == 0
+}
+
+func claimNamespace(persistentVolume unstructured.Unstructured) string {
+	namespace, _, _ := unstructured.NestedString(persistentVolume.Object, "spec", "claimRef", "namespace")
+	return namespace
 }
 
 func resourceDir(gvr schema.GroupVersionResource) string {

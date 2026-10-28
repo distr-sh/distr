@@ -130,7 +130,8 @@ func confirmGroups(prompter *kubecollect.Prompter, opts kubecollect.Options) (ku
 	}{
 		{
 			&groups.Cluster,
-			"Collect the cluster information (Kubernetes version, nodes, namespaces, custom resource definitions)?",
+			"Collect the cluster information (Kubernetes version, nodes, namespaces, custom resource definitions, " +
+				"storage and ingress classes, admission webhooks, persistent volumes of the selected namespaces)?",
 		},
 		{&groups.Resources, fmt.Sprintf(
 			"Collect all resources of the selected namespaces? ConfigMap values are %s, Secret values are %s.",
