@@ -1,0 +1,78 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: Build Support Bundle Collector
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'cmd/support-bundle/**'
+      - 'internal/**'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/build-support-bundle.yaml'
+    tags:
+      - '*'
+  pull_request:
+    paths:
+      - 'cmd/support-bundle/**'
+      - 'internal/**'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/build-support-bundle.yaml'
+
+jobs:
+  build-kubernetes:
+    name: Build Kubernetes collector
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: 'go.mod'
+          check-latest: true
+          cache-dependency-path: |
+            go.sum
+      - name: Generate commit hash
+        id: hash
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      - name: Build Archives
+        run: |
+          for os in linux darwin; do
+            for arch in amd64 arm64; do
+              GOOS="$os" GOARCH="$arch" go build -ldflags="$LDFLAGS" \
+                -o "dist/$os-$arch/kubernetes-support-bundle" ./cmd/support-bundle/kubernetes/
+              tar -czf "dist/kubernetes-support-bundle-$os-$arch.tar.gz" \
+                -C "dist/$os-$arch" kubernetes-support-bundle
+            done
+          done
+          cd dist
+          sha256sum kubernetes-support-bundle-*.tar.gz > kubernetes-support-bundle-checksums.txt
+        env:
+          CGO_ENABLED: '0'
+          LDFLAGS: >-
+            -s -w
+            -X github.com/distr-sh/distr/internal/buildconfig.version=${{ github.ref_name }}
+            -X github.com/distr-sh/distr/internal/buildconfig.commit=${{ steps.hash.outputs.sha_short }}
+      - name: Attest Archives (tag only)
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-checksums: dist/kubernetes-support-bundle-checksums.txt
+      - name: Upload Archives (tag only)
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          gh release upload ${{ github.ref_name }} \
+            dist/kubernetes-support-bundle-*.tar.gz \
+            dist/kubernetes-support-bundle-checksums.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
