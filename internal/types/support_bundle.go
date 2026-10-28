@@ -3,6 +3,7 @@ package types
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/internal/dbcrypto"
@@ -100,6 +101,21 @@ func (t SupportBundleResourceContentType) FileExtension() string {
 	default:
 		return ".txt"
 	}
+}
+
+// SupportBundleResourceContentTypeOfFile is the content type whose FileExtension the name ends with,
+// or plain text.
+func SupportBundleResourceContentTypeOfFile(name string) SupportBundleResourceContentType {
+	for _, contentType := range []SupportBundleResourceContentType{
+		SupportBundleResourceContentTypeLog,
+		SupportBundleResourceContentTypeYAML,
+		SupportBundleResourceContentTypeJSON,
+	} {
+		if strings.HasSuffix(name, contentType.FileExtension()) {
+			return contentType
+		}
+	}
+	return SupportBundleResourceContentTypeText
 }
 
 type SupportBundleResourceSummary struct {
