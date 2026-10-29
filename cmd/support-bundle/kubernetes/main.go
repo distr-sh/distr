@@ -31,6 +31,8 @@ func main() {
 	opts := kubecollect.DefaultOptions()
 	output := pflag.String("output", "", "directory to write the bundle into, and to upload it from when "+
 		uploadURLEnv+" and "+uploadSecretEnv+" are set")
+	writeKubeconfig := pflag.String("write-kubeconfig", "",
+		"file to write a kubeconfig with only the selected context and namespace to, for tools run afterwards")
 	pflag.Int64Var(&opts.LogTailLines, "log-tail-lines", opts.LogTailLines,
 		"number of lines collected from the end of every container log")
 	pflag.IntVar(&opts.MaxResourceBytes, "max-resource-bytes", opts.MaxResourceBytes,
@@ -54,7 +56,7 @@ func main() {
 	// Ctrl+C keeps the default handling and ends the process: the prompts block on the terminal
 	// without a context, and the collector records a canceled request as a problem and continues.
 	// The collect script owns the output directory and removes it when it is interrupted.
-	if err := run(context.Background(), configFlags, *output, opts, uploader); err != nil {
+	if err := run(context.Background(), configFlags, *output, *writeKubeconfig, opts, uploader); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
@@ -82,6 +84,7 @@ func run(
 	ctx context.Context,
 	configFlags *genericclioptions.ConfigFlags,
 	output string,
+	writeKubeconfig string,
 	opts kubecollect.Options,
 	uploader *kubecollect.Uploader,
 ) error {
@@ -92,6 +95,11 @@ func run(
 	kubeContext, err := kubecollect.LoadKubeContext(configFlags)
 	if err != nil {
 		return err
+	}
+	if writeKubeconfig != "" {
+		if err := kubecollect.WriteKubeconfig(configFlags, kubeContext, writeKubeconfig); err != nil {
+			return err
+		}
 	}
 	fmt.Fprintf(os.Stderr, "Context:   %s\nCluster:   %s\nNamespace: %s\n\n",
 		kubeContext.Name, kubeContext.Server, kubeContext.Namespace)
