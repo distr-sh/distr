@@ -1,19 +1,22 @@
 <details
   #details
-  class="group overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
-  (toggle)="loadContent(details.open)">
+  class="border-t border-gray-200 dark:border-gray-700"
+  (toggle)="open.set(details.open); loadContent(details.open)">
   <summary
-    class="flex w-full cursor-pointer list-none items-center justify-between p-4 text-sm font-medium text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-700 [&::-webkit-details-marker]:hidden">
-    <span>{{ resource().name }}</span>
-    <span class="flex items-center gap-3">
-      @let size = resource().size;
-      @if (size !== undefined) {
-        <span class="text-xs font-normal text-gray-500 dark:text-gray-400">{{ size | bytes }}</span>
-      }
+    class="flex w-full cursor-pointer list-none items-center justify-between gap-3 py-3 pr-4 text-sm font-medium text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-700 [&::-webkit-details-marker]:hidden"
+    [style.padding-left.rem]="1 + depth() * 1.25">
+    <span class="flex min-w-0 items-center gap-2">
       <fa-icon
         [icon]="faChevronRight"
-        class="text-gray-500 transition-transform group-open:rotate-90 dark:text-gray-400" />
+        class="text-xs text-gray-500 transition-transform dark:text-gray-400"
+        [class.rotate-90]="open()" />
+      <fa-icon [icon]="faFileLines" class="text-gray-500 dark:text-gray-400" />
+      <span class="truncate" [title]="resource().name">{{ name() }}</span>
     </span>
+    @let size = resource().size;
+    @if (size !== undefined) {
+      <span class="shrink-0 text-xs font-normal text-gray-500 dark:text-gray-400">{{ size | bytes }}</span>
+    }
   </summary>
   @if (content() !== undefined) {
     <pre

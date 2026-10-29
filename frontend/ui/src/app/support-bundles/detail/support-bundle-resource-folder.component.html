@@ -1,0 +1,38 @@
+@if (root()) {
+  <ng-container [ngTemplateOutlet]="children" />
+} @else {
+  <details #details class="border-t border-gray-200 dark:border-gray-700" (toggle)="open.set(details.open)">
+    <summary
+      class="flex w-full cursor-pointer list-none items-center justify-between gap-3 py-3 pr-4 text-sm font-medium text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-700 [&::-webkit-details-marker]:hidden"
+      [style.padding-left.rem]="1 + depth() * 1.25">
+      <span class="flex min-w-0 items-center gap-2">
+        <fa-icon
+          [icon]="faChevronRight"
+          class="text-xs text-gray-500 transition-transform dark:text-gray-400"
+          [class.rotate-90]="open()" />
+        <fa-icon [icon]="open() ? faFolderOpen : faFolder" class="text-gray-500 dark:text-gray-400" />
+        <span class="truncate">{{ folder().name }}</span>
+      </span>
+      <span class="shrink-0 text-xs font-normal text-gray-500 dark:text-gray-400" [ngPlural]="folder().fileCount">
+        <ng-template ngPluralCase="=1">1 file</ng-template>
+        <ng-template ngPluralCase="other">{{ folder().fileCount }} files</ng-template>
+      </span>
+    </summary>
+    @if (open()) {
+      <ng-container [ngTemplateOutlet]="children" />
+    }
+  </details>
+}
+
+<ng-template #children>
+  @for (child of folder().folders; track child.path) {
+    <app-support-bundle-resource-folder [bundleId]="bundleId()" [folder]="child" [depth]="childDepth()" />
+  }
+  @for (file of folder().files; track file.resource.id) {
+    <app-support-bundle-resource
+      [bundleId]="bundleId()"
+      [resource]="file.resource"
+      [name]="file.name"
+      [depth]="childDepth()" />
+  }
+</ng-template>

@@ -117,10 +117,8 @@
       @if (bundle.resources.length === 0) {
         <p class="text-sm text-gray-500 dark:text-gray-400">No resources collected yet.</p>
       } @else {
-        <div class="space-y-3">
-          @for (resource of bundle.resources; track resource.id) {
-            <app-support-bundle-resource [bundleId]="bundle.id" [resource]="resource" />
-          }
+        <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+          <app-support-bundle-resource-folder class="-mt-px" [bundleId]="bundle.id" [folder]="resourceTree()" />
         </div>
       }
     </div>
