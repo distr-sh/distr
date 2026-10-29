@@ -77,11 +77,11 @@
         <label for="smtpPassword" class="distr-label mb-2">Password</label>
         <input
           formControlName="smtpPassword"
-          type="text"
+          type="password"
           name="smtpPassword"
           id="smtpPassword"
           class="distr-input"
-          autocomplete="off"
+          autocomplete="new-password"
           [placeholder]="configuration()?.smtpPasswordSet ? '••••••••' : ''" />
         <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
           @if (configuration()?.smtpPasswordSet) {
