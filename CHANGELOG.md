@@ -1,5 +1,35 @@
 # Changelog
 
+## [4.7.4](https://github.com/distr-sh/distr/compare/4.7.3...4.7.4) (2026-10-29)
+
+
+### Bug Fixes
+
+* **agent:** consider all 4xx errors as rejection when pushing logs ([#3675](https://github.com/distr-sh/distr/issues/3675)) ([6a789dd](https://github.com/distr-sh/distr/commit/6a789dd294cbcb7597e896b484ac90e57ca05316))
+* **deps:** update module github.com/aws/smithy-go to v1.28.7 ([#3686](https://github.com/distr-sh/distr/issues/3686)) ([02e9a28](https://github.com/distr-sh/distr/commit/02e9a2862e97d38860e1521fc64c473853fb72a7))
+* **deps:** update module github.com/go-mailx/mailx-ses to v1.0.15 ([#3687](https://github.com/distr-sh/distr/issues/3687)) ([183ec75](https://github.com/distr-sh/distr/commit/183ec7524c2becec52e50cf1ab92fa49f34a20e6))
+
+
+### Other
+
+* **backend:** add a deployment type to support bundles and their custom scripts ([#3611](https://github.com/distr-sh/distr/issues/3611)) ([b4f466a](https://github.com/distr-sh/distr/commit/b4f466a628f09552111b10a46c348ff7de850c5e))
+* **deps:** update dependency stripe to v1.55.3 ([#3684](https://github.com/distr-sh/distr/issues/3684)) ([9a80696](https://github.com/distr-sh/distr/commit/9a8069605a59733f320a1ef2908ca9f51adf7623))
+* **deps:** update hello-distr to v0.4.17 ([#3679](https://github.com/distr-sh/distr/issues/3679)) ([c8e2ff4](https://github.com/distr-sh/distr/commit/c8e2ff4f9e2e1e04ed2fa1114f4f31eff0a0cb6f))
+* **deps:** update rustfs/rustfs docker tag to v1.0.4 ([#3680](https://github.com/distr-sh/distr/issues/3680)) ([7f54f27](https://github.com/distr-sh/distr/commit/7f54f27b1ffc02e003305436e9f2e9e49dcec0ba))
+* **frontend:** improve support bundle creation flow ([#3676](https://github.com/distr-sh/distr/issues/3676)) ([7071746](https://github.com/distr-sh/distr/commit/707174621f2122720e2779bb86c2658419f11ffa))
+* **frontend:** indicate recently created support bundles ([#3678](https://github.com/distr-sh/distr/issues/3678)) ([bb17581](https://github.com/distr-sh/distr/commit/bb175815c27df388b44ad8a25e2bfc68d4de9e66))
+
+
+### Docs
+
+* **website:** update candor security testimonial ([#3656](https://github.com/distr-sh/distr/issues/3656)) ([69007eb](https://github.com/distr-sh/distr/commit/69007ebc135c1ce1a7570c12436c4ab2f84df998))
+
+
+### Refactoring
+
+* **backend:** split the support bundle collect script into shared and Docker parts ([#3601](https://github.com/distr-sh/distr/issues/3601)) ([79e71c5](https://github.com/distr-sh/distr/commit/79e71c52a60b37e7da992305149502cf3e003e74))
+* **frontend:** extract support bundle custom scripts into their own component ([#3602](https://github.com/distr-sh/distr/issues/3602)) ([d993338](https://github.com/distr-sh/distr/commit/d993338f01c094e1e9323d6f37cd20a37e848ae2))
+
 ## [4.7.3](https://github.com/distr-sh/distr/compare/4.7.2...4.7.3) (2026-10-28)
 
 
