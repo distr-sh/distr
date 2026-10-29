@@ -85,6 +85,10 @@ func run(
 	opts kubecollect.Options,
 	uploader *kubecollect.Uploader,
 ) error {
+	prompter := kubecollect.NewPrompter(os.Stdin, os.Stderr)
+	if err := selectKubeContext(prompter, configFlags); err != nil {
+		return err
+	}
 	kubeContext, err := kubecollect.LoadKubeContext(configFlags)
 	if err != nil {
 		return err
@@ -105,7 +109,6 @@ func run(
 	}
 	kubecollect.AddHelmReleases(ctx, clients, namespaces)
 
-	prompter := kubecollect.NewPrompter(os.Stdin, os.Stderr)
 	selected, err := prompter.SelectNamespaces(namespaces, kubeContext.Namespace)
 	if err != nil {
 		return err
@@ -238,6 +241,31 @@ func formatBytes(n int64) string {
 		exponent++
 	}
 	return fmt.Sprintf("%.1f %ciB", value, "KMG"[exponent])
+}
+
+// selectKubeContext asks for the context unless --context names one or the kubeconfig has only one.
+func selectKubeContext(prompter *kubecollect.Prompter, configFlags *genericclioptions.ConfigFlags) error {
+	if configFlags.Context != nil && *configFlags.Context != "" {
+		return nil
+	}
+	options, current, err := kubecollect.ListKubeContexts(configFlags)
+	if err != nil {
+		return err
+	}
+	var name string
+	switch len(options) {
+	case 0:
+		return nil
+	case 1:
+		name = options[0].Name
+	default:
+		if name, err = prompter.SelectKubeContext(options, current); err != nil {
+			return err
+		}
+		fmt.Fprintln(os.Stderr)
+	}
+	configFlags.Context = &name
+	return nil
 }
 
 func confirmGroups(prompter *kubecollect.Prompter, opts kubecollect.Options) (kubecollect.Groups, error) {
