@@ -16,8 +16,8 @@
       These scripts run on the customer's host when they collect a support bundle.
     }
     @case ('kubernetes') {
-      These scripts run on the customer's machine after the Kubernetes collector, so they can use kubectl and helm with
-      the customer's kubeconfig.
+      These scripts run on the customer's machine after the Kubernetes collector. kubectl and helm in them use the same
+      context and namespace as the collector.
     }
   }
   Everything a script writes to standard output is attached to the bundle as a resource named after the script.
