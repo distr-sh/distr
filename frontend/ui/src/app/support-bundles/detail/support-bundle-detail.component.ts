@@ -13,6 +13,7 @@ import {
 } from '../../components/activity-timeline/activity-timeline.component';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {ClipComponent} from '../../components/clip.component';
+import {DeploymentTypeBadgeComponent} from '../../components/deployment-type-badge.component';
 import {PageComponent} from '../../components/page.component';
 import {AuthService} from '../../services/auth.service';
 import {OverlayService} from '../../services/overlay.service';
@@ -37,6 +38,7 @@ import {SupportBundleResourceComponent} from './support-bundle-resource.componen
     PageComponent,
     SupportBundleStatusBadgeComponent,
     SupportBundleResourceComponent,
+    DeploymentTypeBadgeComponent,
   ],
 })
 export class SupportBundleDetailComponent {

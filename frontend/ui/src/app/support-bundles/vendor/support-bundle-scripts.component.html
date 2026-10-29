@@ -11,9 +11,17 @@
   }
 </div>
 <p class="text-sm text-gray-500 dark:text-gray-400">
-  These scripts run on the customer's host when they collect a support bundle. Everything a script writes to standard
-  output is attached to the bundle as a resource named after the script. Customers see the source of every script and
-  can exclude any of them before it runs.
+  @switch (deploymentType()) {
+    @case ('docker') {
+      These scripts run on the customer's host when they collect a support bundle.
+    }
+    @case ('kubernetes') {
+      These scripts run on the customer's machine after the Kubernetes collector, so they can use kubectl and helm with
+      the customer's kubeconfig.
+    }
+  }
+  Everything a script writes to standard output is attached to the bundle as a resource named after the script.
+  Customers see the source of every script and can exclude any of them before it runs.
 </p>
 
 @if (scripts().length > 0) {

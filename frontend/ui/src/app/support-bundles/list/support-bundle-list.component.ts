@@ -3,6 +3,7 @@ import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRe
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
+import {DeploymentType} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faDownload, faGear, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, map, of, startWith, Subject, switchMap, take} from 'rxjs';
@@ -10,6 +11,7 @@ import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {AlertComponent} from '../../components/alert/alert.component';
+import {DeploymentTypeBadgeComponent} from '../../components/deployment-type-badge.component';
 import {PageComponent} from '../../components/page.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
@@ -37,6 +39,7 @@ import {SupportBundleStatusBadgeComponent} from '../support-bundle-status-badge.
     SearchBarComponent,
     SupportBundleStatusBadgeComponent,
     AlertComponent,
+    DeploymentTypeBadgeComponent,
   ],
 })
 export class SupportBundleListComponent {
@@ -75,7 +78,8 @@ export class SupportBundleListComponent {
       return (
         (bundle.title || '').toLowerCase().includes(q) ||
         (bundle.customerOrganizationName || '').toLowerCase().includes(q) ||
-        bundle.status.toLowerCase().includes(q)
+        bundle.status.toLowerCase().includes(q) ||
+        bundle.deploymentType.includes(q)
       );
     }).pipe(takeUntilDestroyed()),
     {initialValue: [] as SupportBundle[]}
@@ -87,6 +91,7 @@ export class SupportBundleListComponent {
 
   // Create dialog (customer only)
   protected readonly createForm = new FormGroup({
+    deploymentType: new FormControl<DeploymentType>('docker', {nonNullable: true}),
     title: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
     description: new FormControl('', {nonNullable: true}),
   });
@@ -116,6 +121,7 @@ export class SupportBundleListComponent {
     try {
       const bundle = await firstValueFrom(
         this.svc.create({
+          deploymentType: this.createForm.controls.deploymentType.value,
           title: this.createForm.value.title!,
           description: this.createForm.value.description || undefined,
         })
