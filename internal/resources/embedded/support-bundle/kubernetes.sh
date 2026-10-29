@@ -68,7 +68,7 @@ fi
 # last, so the customer can override the vendor's defaults with the same flags.
 echo ""
 DISTR_SUPPORT_BUNDLE_URL="$BASE_URL" DISTR_SUPPORT_BUNDLE_SECRET="$BUNDLE_SECRET" \
-  "$_collector" --output "${_tmpdir}/bundle" \
+  "$_collector" --output "${_tmpdir}/bundle" --write-kubeconfig "${_tmpdir}/kubeconfig" \
   --log-tail-lines {{.LogTail}} --max-resource-bytes {{.ResourceMaxBytes}} \
   --include-configmap-data={{.IncludeConfigMapData}} --include-secret-data={{.IncludeSecretData}} "$@"
 _code=$?
@@ -80,4 +80,8 @@ elif [ "$_code" -ne 0 ]; then
   echo "The support bundle was left open, so the same command can be run again once the problem above is fixed." >&2
   exit 1
 fi
+
+# The vendor's scripts below use kubectl and helm against the context the collector used, even
+# when it is not the current context of the customer's kubeconfig.
+export KUBECONFIG="${_tmpdir}/kubeconfig"
 {{- template "collector-end" .}}
