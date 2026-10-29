@@ -1,28 +1,28 @@
 @if (isSidebarVisible()) {
   <aside
     id="logo-sidebar"
-    class="fixed left-0 bottom-0 z-40 w-64 transition-transform -translate-x-full bg-white border-r border-gray-200 sm:translate-x-0 dark:bg-gray-800 dark:border-gray-700"
-    [class.top-16]="!isSubscriptionBannerVisible()"
-    [class.top-33]="isSubscriptionBannerVisible()"
+    class="fixed bottom-0 left-0 z-40 w-64 -translate-x-full border-r border-gray-200 bg-white transition-transform sm:translate-x-0 dark:border-gray-700 dark:bg-gray-800"
+    [class.top-16]="!isBannerVisible()"
+    [class.top-33]="isBannerVisible()"
     [class.translate-x-0]="sidebar.showSidebar()"
     [class.-translate-x-full]="!sidebar.showSidebar()"
     aria-label="Sidebar">
-    <div class="h-full flex flex-col px-3 py-2 gap-2 overflow-y-auto bg-white dark:bg-gray-800">
-      <ul class="space-y-1 font-medium flex-1" *appRequireVendor>
+    <div class="flex h-full flex-col gap-2 overflow-y-auto bg-white px-3 py-2 dark:bg-gray-800">
+      <ul class="flex-1 space-y-1 font-medium" *appRequireVendor>
         @if (auth.hasAnyRole('admin') && !hasSubscription()) {
           <li>
             <a
               (click)="sidebar.hide()"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               routerLink="/tutorials"
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
               <fa-icon
                 [icon]="faLightbulb"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-              <span class="flex-grow ms-3">Tutorials</span>
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
+              <span class="ms-3 grow">Tutorials</span>
               @if (!isAllTutorialsStarted()) {
-                <span class="w-2.5 h-2.5 mr-1.5 text-xs font-semibold rounded-full bg-blue-700 dark:bg-blue-600"></span>
+                <span class="mr-1.5 h-2.5 w-2.5 rounded-full bg-blue-700 text-xs font-semibold dark:bg-blue-600"></span>
               }
             </a>
           </li>
@@ -32,11 +32,11 @@
             (click)="sidebar.hide()"
             routerLinkActive="bg-gray-100 dark:bg-gray-700"
             routerLink="/dashboard"
-            class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+            class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
             <fa-icon
               [icon]="faDashboard"
               size="lg"
-              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+              class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
             <span class="ms-3">Dashboard</span>
           </a>
         </li>
@@ -46,11 +46,11 @@
             (click)="sidebar.hide()"
             routerLinkActive="bg-gray-100 dark:bg-gray-700"
             routerLink="/applications"
-            class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+            class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
             <fa-icon
               [icon]="faCube"
               size="lg"
-              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+              class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
             <span class="ms-3">Applications</span>
           </a>
         </li>
@@ -60,11 +60,11 @@
             (click)="sidebar.hide()"
             routerLinkActive="bg-gray-100 dark:bg-gray-700"
             routerLink="/deployments"
-            class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+            class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
             <fa-icon
               [icon]="faBoxesStacked"
               size="lg"
-              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+              class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
             <span class="ms-3">Deployments</span>
           </a>
         </li>
@@ -73,13 +73,13 @@
           <button
             type="button"
             (click)="toggle(registrySubMenuOpen)"
-            class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+            class="group flex w-full items-center rounded-lg p-2 text-base text-gray-900 transition duration-75 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
             aria-controls="dropdown-example">
             <fa-icon
               [icon]="faBox"
               size="lg"
-              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-            <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Registry</span>
+              class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
+            <span class="ms-3 flex-1 text-left whitespace-nowrap rtl:text-right">Registry</span>
             <fa-icon
               [icon]="faChevronDown"
               [class.rotate-x-180]="registrySubMenuOpen()"
@@ -92,7 +92,7 @@
                   (click)="sidebar.hide()"
                   routerLinkActive="bg-gray-100 dark:bg-gray-700"
                   routerLink="/artifacts"
-                  class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                  class="group ml-7 flex items-center rounded-lg p-2 pl-4 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
                   <span class="">Artifacts</span>
                 </a>
               </li>
@@ -101,7 +101,7 @@
                   (click)="sidebar.hide()"
                   routerLinkActive="bg-gray-100 dark:bg-gray-700"
                   routerLink="/artifact-pulls"
-                  class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                  class="group ml-7 flex items-center rounded-lg p-2 pl-4 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
                   <span class="">Downloads</span>
                 </a>
               </li>
@@ -115,16 +115,16 @@
               (click)="sidebar.hide()"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               routerLink="/licenses"
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
               <fa-icon
                 [icon]="faKey"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Licenses</span>
             </a>
           } @else {
             <a
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group cursor-pointer"
+              class="group flex cursor-pointer items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
               title="Contact support to enable licensing"
               (click)="toggle(licenseOverlayOpen)"
               cdkOverlayOrigin
@@ -132,9 +132,9 @@
               <fa-icon
                 [icon]="faKey"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-              <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Licenses</span>
-              <app-plan-badge plan="pro" class="ml-2 me-2" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
+              <span class="ms-3 flex-1 text-left whitespace-nowrap rtl:text-right">Licenses</span>
+              <app-plan-badge plan="pro" class="me-2 ml-2" />
               <ng-template
                 cdkConnectedOverlay
                 [cdkConnectedOverlayHasBackdrop]="true"
@@ -156,12 +156,12 @@
             <button
               type="button"
               (click)="toggle(notificationsSubMenuOpen)"
-              class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
+              class="group flex w-full items-center rounded-lg p-2 text-base text-gray-900 transition duration-75 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
               <fa-icon
                 [icon]="faBell"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-              <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Notifications</span>
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
+              <span class="ms-3 flex-1 text-left whitespace-nowrap rtl:text-right">Notifications</span>
               <fa-icon
                 [icon]="faChevronDown"
                 [class.rotate-x-180]="notificationsSubMenuOpen()"
@@ -174,7 +174,7 @@
                     (click)="sidebar.hide()"
                     routerLinkActive="bg-gray-100 dark:bg-gray-700"
                     routerLink="/notifications/alert-configurations"
-                    class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                    class="group ml-7 flex items-center rounded-lg p-2 pl-4 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
                     <span class="">Alerts</span>
                   </a>
                 </li>
@@ -183,7 +183,7 @@
                     (click)="sidebar.hide()"
                     routerLinkActive="bg-gray-100 dark:bg-gray-700"
                     routerLink="/notifications/updates"
-                    class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                    class="group ml-7 flex items-center rounded-lg p-2 pl-4 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
                     <span class="">Updates</span>
                   </a>
                 </li>
@@ -192,7 +192,7 @@
                     (click)="sidebar.hide()"
                     routerLinkActive="bg-gray-100 dark:bg-gray-700"
                     routerLink="/notifications/history"
-                    class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                    class="group ml-7 flex items-center rounded-lg p-2 pl-4 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
                     <span class="">History</span>
                   </a>
                 </li>
@@ -200,7 +200,7 @@
             }
           } @else {
             <a
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group cursor-pointer"
+              class="group flex cursor-pointer items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
               title="Upgrade to Pro to enable notifications"
               (click)="toggle(notificationsOverlayOpen)"
               cdkOverlayOrigin
@@ -208,9 +208,9 @@
               <fa-icon
                 [icon]="faBell"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-              <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Notifications</span>
-              <app-plan-badge plan="pro" class="ml-2 me-2" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
+              <span class="ms-3 flex-1 text-left whitespace-nowrap rtl:text-right">Notifications</span>
+              <app-plan-badge plan="pro" class="me-2 ml-2" />
               <ng-template
                 cdkConnectedOverlay
                 [cdkConnectedOverlayHasBackdrop]="true"
@@ -233,28 +233,28 @@
               (click)="sidebar.hide()"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               routerLink="/billing"
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
               <fa-icon
                 [icon]="faHandHoldingDollar"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Billing</span>
             </a>
           </li>
         }
 
-        <hr class="border-gray-200 dark:border-gray-600 my-4" />
+        <hr class="my-4 border-gray-200 dark:border-gray-600" />
 
         <li>
           <a
-            class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+            class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
             routerLinkActive="bg-gray-100 dark:bg-gray-700"
             (click)="sidebar.hide()"
             routerLink="/customers">
             <fa-icon
               [icon]="faAddressBook"
               size="lg"
-              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+              class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
             <span class="ms-3">Customers</span>
           </a>
         </li>
@@ -262,14 +262,14 @@
         @if (isPartnerManagementEnabled()) {
           <li>
             <a
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               (click)="sidebar.hide()"
               routerLink="/partners">
               <fa-icon
                 [icon]="faBuilding"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Partners</span>
             </a>
           </li>
@@ -278,19 +278,19 @@
         <li>
           @if (isSupportBundlesFeatureEnabled()) {
             <a
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               (click)="sidebar.hide()"
               routerLink="/support-bundles">
               <fa-icon
                 [icon]="faLifeRing"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Support Bundles</span>
             </a>
           } @else {
             <a
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group cursor-pointer"
+              class="group flex cursor-pointer items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
               title="Upgrade to Pro to enable support bundles"
               (click)="toggle(supportBundlesOverlayOpen)"
               cdkOverlayOrigin
@@ -298,9 +298,9 @@
               <fa-icon
                 [icon]="faLifeRing"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-              <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Support Bundles</span>
-              <app-plan-badge plan="pro" class="ml-2 me-2" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
+              <span class="ms-3 flex-1 text-left whitespace-nowrap rtl:text-right">Support Bundles</span>
+              <app-plan-badge plan="pro" class="me-2 ml-2" />
               <ng-template
                 cdkConnectedOverlay
                 [cdkConnectedOverlayHasBackdrop]="true"
@@ -320,14 +320,14 @@
         @if (isVulnerabilitiesFeatureEnabled()) {
           <li>
             <a
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               (click)="sidebar.hide()"
               routerLink="/advisories">
               <fa-icon
                 [icon]="faShieldHalved"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Security Advisories</span>
             </a>
           </li>
@@ -336,14 +336,14 @@
         @if (auth.isSuperAdmin() || auth.hasRole('admin')) {
           <li>
             <a
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               (click)="sidebar.hide()"
               routerLink="/users">
               <fa-icon
                 [icon]="faUsers"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Users</span>
             </a>
           </li>
@@ -351,14 +351,14 @@
 
         <li>
           <a
-            class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+            class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
             routerLinkActive="bg-gray-100 dark:bg-gray-700"
             (click)="sidebar.hide()"
             routerLink="/secrets">
             <fa-icon
               [icon]="faAsterisk"
               size="lg"
-              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+              class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
             <span class="ms-3">Secrets</span>
           </a>
         </li>
@@ -366,14 +366,14 @@
         @if (auth.isSuperAdmin() || auth.hasAnyRole('read_write', 'admin')) {
           <li>
             <a
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               (click)="sidebar.hide()"
               routerLink="/branding">
               <fa-icon
                 [icon]="faPalette"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Branding</span>
             </a>
           </li>
@@ -383,14 +383,14 @@
           @if (edition === 'enterprise') {
             <li>
               <a
-                class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+                class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
                 routerLinkActive="bg-gray-100 dark:bg-gray-700"
                 (click)="sidebar.hide()"
                 routerLink="/subscription">
                 <fa-icon
                   [icon]="faCreditCard"
                   size="lg"
-                  class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                  class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
                 <span class="ms-3">Subscription</span>
               </a>
             </li>
@@ -398,31 +398,31 @@
 
           <li>
             <a
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
               (click)="sidebar.hide()"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               routerLink="/settings/organization">
               <fa-icon
                 [icon]="faGear"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Settings</span>
             </a>
           </li>
         }
       </ul>
 
-      <ul class="space-y-1 font-medium flex-1" *appRequirePartner>
+      <ul class="flex-1 space-y-1 font-medium" *appRequirePartner>
         <li>
           <a
             (click)="sidebar.hide()"
             routerLinkActive="bg-gray-100 dark:bg-gray-700"
             routerLink="/dashboard"
-            class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+            class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
             <fa-icon
               [icon]="faDashboard"
               size="lg"
-              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+              class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
             <span class="ms-3">Dashboard</span>
           </a>
         </li>
@@ -432,11 +432,11 @@
             (click)="sidebar.hide()"
             routerLinkActive="bg-gray-100 dark:bg-gray-700"
             routerLink="/deployments"
-            class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+            class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
             <fa-icon
               [icon]="faBoxesStacked"
               size="lg"
-              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+              class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
             <span class="ms-3">Deployments</span>
           </a>
         </li>
@@ -445,13 +445,13 @@
           <button
             type="button"
             (click)="toggle(registrySubMenuOpen)"
-            class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+            class="group flex w-full items-center rounded-lg p-2 text-base text-gray-900 transition duration-75 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
             aria-controls="dropdown-example">
             <fa-icon
               [icon]="faBox"
               size="lg"
-              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-            <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Registry</span>
+              class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
+            <span class="ms-3 flex-1 text-left whitespace-nowrap rtl:text-right">Registry</span>
             <fa-icon
               [icon]="faChevronDown"
               [class.rotate-x-180]="registrySubMenuOpen()"
@@ -464,7 +464,7 @@
                   (click)="sidebar.hide()"
                   routerLinkActive="bg-gray-100 dark:bg-gray-700"
                   routerLink="/artifacts"
-                  class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                  class="group ml-7 flex items-center rounded-lg p-2 pl-4 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
                   <span class="">Artifacts</span>
                 </a>
               </li>
@@ -473,7 +473,7 @@
                   (click)="sidebar.hide()"
                   routerLinkActive="bg-gray-100 dark:bg-gray-700"
                   routerLink="/artifact-pulls"
-                  class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                  class="group ml-7 flex items-center rounded-lg p-2 pl-4 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
                   <span class="">Downloads</span>
                 </a>
               </li>
@@ -487,11 +487,11 @@
               (click)="sidebar.hide()"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               routerLink="/licenses"
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
               <fa-icon
                 [icon]="faKey"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Licenses</span>
             </a>
           </li>
@@ -503,11 +503,11 @@
               (click)="sidebar.hide()"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               routerLink="/support-bundles"
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
               <fa-icon
                 [icon]="faLifeRing"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Support Bundles</span>
             </a>
           </li>
@@ -519,28 +519,28 @@
               (click)="sidebar.hide()"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               routerLink="/advisories"
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
               <fa-icon
                 [icon]="faShieldHalved"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Security Advisories</span>
             </a>
           </li>
         }
 
-        <hr class="border-gray-200 dark:border-gray-600 my-4" />
+        <hr class="my-4 border-gray-200 dark:border-gray-600" />
 
         <li>
           <a
-            class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+            class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
             routerLinkActive="bg-gray-100 dark:bg-gray-700"
             (click)="sidebar.hide()"
             routerLink="/customers">
             <fa-icon
               [icon]="faAddressBook"
               size="lg"
-              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+              class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
             <span class="ms-3">Customers</span>
           </a>
         </li>
@@ -548,31 +548,31 @@
         @if (auth.hasRole('admin')) {
           <li>
             <a
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               (click)="sidebar.hide()"
               routerLink="/users">
               <fa-icon
                 [icon]="faUsers"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Users</span>
             </a>
           </li>
         }
       </ul>
 
-      <ul class="space-y-1 font-medium flex-1" *appRequireCustomer>
+      <ul class="flex-1 space-y-1 font-medium" *appRequireCustomer>
         <li>
           <a
             (click)="sidebar.hide()"
             routerLinkActive="bg-gray-100 dark:bg-gray-700"
             routerLink="/home"
-            class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+            class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
             <fa-icon
               [icon]="faHome"
               size="lg"
-              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+              class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
             <span class="ms-3">Home</span>
           </a>
         </li>
@@ -583,11 +583,11 @@
               (click)="sidebar.hide()"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               routerLink="/deployments"
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
               <fa-icon
                 [icon]="faDashboard"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Deployments</span>
             </a>
           </li>
@@ -599,11 +599,11 @@
               (click)="sidebar.hide()"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               routerLink="/artifacts"
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
               <fa-icon
                 [icon]="faBox"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Artifacts</span>
             </a>
           </li>
@@ -615,11 +615,11 @@
               (click)="sidebar.hide()"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               routerLink="/license-keys"
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
               <fa-icon
                 [icon]="faKey"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Licenses</span>
             </a>
           </li>
@@ -629,12 +629,12 @@
             <button
               type="button"
               (click)="toggle(notificationsSubMenuOpen)"
-              class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
+              class="group flex w-full items-center rounded-lg p-2 text-base text-gray-900 transition duration-75 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
               <fa-icon
                 [icon]="faBell"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-              <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Notifications</span>
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
+              <span class="ms-3 flex-1 text-left whitespace-nowrap rtl:text-right">Notifications</span>
               <fa-icon
                 [icon]="faChevronDown"
                 [class.rotate-x-180]="notificationsSubMenuOpen()"
@@ -648,7 +648,7 @@
                       (click)="sidebar.hide()"
                       routerLinkActive="bg-gray-100 dark:bg-gray-700"
                       routerLink="/notifications/alert-configurations"
-                      class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                      class="group ml-7 flex items-center rounded-lg p-2 pl-4 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
                       <span>Alerts</span>
                     </a>
                   </li>
@@ -659,7 +659,7 @@
                       (click)="sidebar.hide()"
                       routerLinkActive="bg-gray-100 dark:bg-gray-700"
                       routerLink="/notifications/updates"
-                      class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                      class="group ml-7 flex items-center rounded-lg p-2 pl-4 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
                       <span>Updates</span>
                     </a>
                   </li>
@@ -669,7 +669,7 @@
                     (click)="sidebar.hide()"
                     routerLinkActive="bg-gray-100 dark:bg-gray-700"
                     routerLink="/notifications/history"
-                    class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                    class="group ml-7 flex items-center rounded-lg p-2 pl-4 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
                     <span>History</span>
                   </a>
                 </li>
@@ -677,17 +677,17 @@
             }
           </li>
         }
-        @if (customerFeatures().support_bundles) {
+        @if (isSupportBundlesFeatureEnabled() && customerFeatures().support_bundles) {
           <li>
             <a
               (click)="sidebar.hide()"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               routerLink="/support"
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
               <fa-icon
                 [icon]="faLifeRing"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Support</span>
             </a>
           </li>
@@ -698,28 +698,28 @@
               (click)="sidebar.hide()"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               routerLink="/security"
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
               <fa-icon
                 [icon]="faShieldHalved"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Security</span>
             </a>
           </li>
         }
 
-        <hr class="border-gray-200 dark:border-gray-600 my-4" />
+        <hr class="my-4 border-gray-200 dark:border-gray-600" />
 
         @if (auth.hasRole('admin')) {
           <li>
             <a
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               routerLink="/users">
               <fa-icon
                 [icon]="faUsers"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Users</span>
             </a>
           </li>
@@ -728,14 +728,14 @@
         @if (customerFeatures().deployment_targets) {
           <li>
             <a
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               (click)="sidebar.hide()"
               routerLink="/secrets">
               <fa-icon
                 [icon]="faAsterisk"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Secrets</span>
             </a>
           </li>
@@ -744,13 +744,13 @@
         @if (auth.hasRole('admin') && customerFeatures().oidc_providers) {
           <li>
             <a
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               routerLink="/settings/customer">
               <fa-icon
                 [icon]="faGear"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Settings</span>
             </a>
           </li>
@@ -758,18 +758,18 @@
 
         @for (link of customerOrgLinks(); track link.id; let i = $index) {
           @if (i === 0) {
-            <hr class="border-gray-200 dark:border-gray-600 my-4" />
+            <hr class="my-4 border-gray-200 dark:border-gray-600" />
           }
           <li>
             <a
               [href]="link.link"
               target="_blank"
               rel="noopener noreferrer"
-              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
               <fa-icon
                 [icon]="faArrowUpRightFromSquare"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">{{ link.name }}</span>
             </a>
           </li>
@@ -777,15 +777,15 @@
       </ul>
 
       @if (!auth.isSuperAdmin() && !hasSubscription() && feedbackAlert) {
-        <div id="alert-update" class="p-4 bg-gray-50 rounded-lg dark:bg-gray-700" *appRequireVendor>
-          <div class="flex justify-between items-center mb-3">
+        <div id="alert-update" class="rounded-lg bg-gray-50 p-4 dark:bg-gray-700" *appRequireVendor>
+          <div class="mb-3 flex items-center justify-between">
             <span class="distr-badge distr-badge-neutral mr-2">Talk to founders</span>
             <button
               type="button"
-              class="inline-flex items-center justify-center p-1 w-6 h-6 text-gray-500 bg-gray-50 rounded-lg focus:ring-2 focus:ring-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+              class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-gray-50 p-1 text-gray-500 hover:bg-gray-200 focus:ring-2 focus:ring-gray-400 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
               aria-label="Close"
               (click)="feedbackAlert = false">
-              <fa-icon [icon]="faXmark" class="w-4 h-4" />
+              <fa-icon [icon]="faXmark" class="h-4 w-4" />
             </button>
           </div>
           <div class="mb-3 text-sm text-gray-700 dark:text-gray-300">
@@ -796,7 +796,7 @@
               [href]="websiteUrl + '/blog/distr-v3-release/'"
               target="_blank"
               rel="noopener noreferrer"
-              class="inline-flex items-center text-sm font-medium text-gray-600 dark:text-gray-500 hover:underline">
+              class="inline-flex items-center text-sm font-medium text-gray-600 hover:underline dark:text-gray-500">
               Read the announcement
               <fa-icon [icon]="faArrowRightLong" class="ml-2" />
             </a>
@@ -804,7 +804,7 @@
               href="https://cal.glasskube.com/team/founder/30min"
               target="_blank"
               rel="noopener noreferrer"
-              class="inline-flex items-center text-sm font-medium text-gray-600 dark:text-gray-500 hover:underline">
+              class="inline-flex items-center text-sm font-medium text-gray-600 hover:underline dark:text-gray-500">
               Book a call
               <fa-icon [icon]="faArrowRightLong" class="ml-2" />
             </a>

@@ -11,14 +11,10 @@ DROP INDEX fk_DeploymentRevision_deployment_id;
 
 -- Building an index blocks writes to ArtifactVersionPull, and with them every registry pull, until it is done,
 -- which takes a while on a large table. CONCURRENTLY avoids that but cannot run inside a migration, so on a large
--- installation create these indexes before upgrading and this migration skips them:
+-- installation create this index before upgrading and this migration skips it:
 --
---   CREATE INDEX CONCURRENTLY IF NOT EXISTS fk_ArtifactVersionPull_useraccount_id
---     ON ArtifactVersionPull (useraccount_id);
 --   CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_artifactversionpull_customer_organization_id_created_at
 --     ON ArtifactVersionPull (customer_organization_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS fk_ArtifactVersionPull_useraccount_id ON ArtifactVersionPull (useraccount_id);
-
 CREATE INDEX IF NOT EXISTS idx_artifactversionpull_customer_organization_id_created_at
   ON ArtifactVersionPull (customer_organization_id, created_at DESC);
 DROP INDEX fk_ArtifactVersionPull_customer_organization_id;

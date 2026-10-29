@@ -1,5 +1,5 @@
 import {DatePipe} from '@angular/common';
-import {Component, computed, inject, input, output, TemplateRef, viewChild} from '@angular/core';
+import {Component, computed, inject, input, TemplateRef, viewChild} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faLifeRing, faPlus} from '@fortawesome/free-solid-svg-icons';
@@ -30,7 +30,6 @@ export class CustomerHomeSupportBundlesComponent {
   private readonly overlay = inject(OverlayService);
 
   public readonly supportBundles = input.required<CustomerHomeSupportBundle[]>();
-  public readonly created = output<void>();
 
   protected readonly canCreate = inject(AuthService).hasAnyRole('read_write', 'admin');
 

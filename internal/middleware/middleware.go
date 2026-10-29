@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"net/http"
@@ -99,6 +100,22 @@ func Split(
 			}
 		})
 	}
+}
+
+var requestBodyTooLarge = respond.Error(http.StatusRequestEntityTooLarge, "request body too large")
+
+// RequestSize limits the body to limit bytes and rejects a request that declares a longer one before
+// reading it.
+func RequestSize(limit int64) func(http.Handler) http.Handler {
+	return Chain(
+		guard(func(r *http.Request) (respond.Responder, error) {
+			if r.ContentLength > limit {
+				return requestBodyTooLarge, nil
+			}
+			return nil, nil
+		}),
+		middleware.RequestSize(limit),
+	)
 }
 
 func LoggerCtxMiddleware(logger *zap.Logger) func(next http.Handler) http.Handler {
@@ -202,7 +219,7 @@ var ProFeature = ForbidSubscriptionTypes(types.NonProSubscriptionTypes...)
 var RequireVendor = guard(func(r *http.Request) (respond.Responder, error) {
 	if auth, err := auth.Authentication.Get(r.Context()); err != nil {
 		return nil, err
-	} else if !auth.IsSuperAdmin() && (auth.CurrentCustomerOrgID() != nil || auth.CurrentPartnerOrgID() != nil) {
+	} else if auth.CurrentCustomerOrgID() != nil || auth.CurrentPartnerOrgID() != nil {
 		return insufficientPermissions, nil
 	}
 	return nil, nil
@@ -211,7 +228,7 @@ var RequireVendor = guard(func(r *http.Request) (respond.Responder, error) {
 var RequireVendorOrPartner = guard(func(r *http.Request) (respond.Responder, error) {
 	if auth, err := auth.Authentication.Get(r.Context()); err != nil {
 		return nil, err
-	} else if !auth.IsSuperAdmin() && auth.CurrentCustomerOrgID() != nil {
+	} else if auth.CurrentCustomerOrgID() != nil {
 		return insufficientPermissions, nil
 	}
 	return nil, nil
@@ -300,8 +317,7 @@ func RequireTokenScope(scope authjwt.TokenScope) func(http.Handler) http.Handler
 // A personal access token is one of them.
 var BlockCrossOrganizationAction = guard(func(r *http.Request) (respond.Responder, error) {
 	if auth.Authentication.Require(r.Context()).OrganizationScoped() {
-		return respond.Forbidden("you are signed in with a credential that belongs to a single organization and can " +
-			"therefore only act within that organization"), nil
+		return respond.Forbidden(CrossOrganizationBlockedMessage), nil
 	}
 	return nil, nil
 })
@@ -311,7 +327,11 @@ var BlockCrossOrganizationAction = guard(func(r *http.Request) (respond.Responde
 const (
 	OidcSessionBlockedMessage = "operation not permitted in SSO session. " +
 		"Request a password reset to receive a link to your email address that lets you change them."
-	AccessTokenBlockedMessage = "this cannot be done with an access token. Sign in to Distr to do it."
+	AccessTokenBlockedMessage       = "this cannot be done with an access token. Sign in to Distr to do it."
+	CrossOrganizationBlockedMessage = "you are signed in with a credential that belongs to a single " +
+		"organization and can therefore only act within that organization"
+	LensBlockedMessage = "this cannot be done while you are working in a customer portal. " +
+		"Return to your own portal to do it."
 )
 
 var RequireNonOidcToken = guard(func(r *http.Request) (respond.Responder, error) {
@@ -324,6 +344,15 @@ var RequireNonOidcToken = guard(func(r *http.Request) (respond.Responder, error)
 var RequireNonAccessToken = guard(func(r *http.Request) (respond.Responder, error) {
 	if auth.Authentication.Require(r.Context()).IsAccessToken() {
 		return respond.Forbidden(AccessTokenBlockedMessage), nil
+	}
+	return nil, nil
+})
+
+// RequireNonLensContext rejects a request in a lens for what belongs to the user's membership rather than to the
+// organization the lens shows, such as personal access tokens.
+var RequireNonLensContext = guard(func(r *http.Request) (respond.Responder, error) {
+	if auth.Authentication.Require(r.Context()).IsLens() {
+		return respond.Forbidden(LensBlockedMessage), nil
 	}
 	return nil, nil
 })
@@ -383,7 +412,7 @@ func CustomerFeatureMiddleware(features ...types.CustomerOrganizationFeature) fu
 	return guard(func(r *http.Request) (respond.Responder, error) {
 		if auth, err := auth.Authentication.Get(r.Context()); err != nil {
 			return nil, err
-		} else if customerOrg := auth.CurrentCustomerOrg(); customerOrg != nil &&
+		} else if customerOrg := cmp.Or(auth.LensCustomerOrg(), auth.CurrentCustomerOrg()); customerOrg != nil &&
 			!slices.ContainsFunc(features, customerOrg.HasFeature) {
 			return featureNotEnabled, nil
 		}
@@ -400,6 +429,7 @@ var (
 		types.CustomerOrganizationFeatureAlerts,
 		types.CustomerOrganizationFeatureUpdateNotifications,
 	)
+	SupportBundlesCustomerFeatureMiddleware = CustomerFeatureMiddleware(types.CustomerOrganizationFeatureSupportBundles)
 )
 
 var (

@@ -303,6 +303,23 @@ service:
   # -- Port of the Prometheus metrics server.
   metricsPort: 3000
 
+serviceMonitor:
+  # -- Create a Prometheus Operator
+  # [ServiceMonitor](https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.ServiceMonitor)
+  # that scrapes the metrics port of the Distr Service. Requires the ServiceMonitor CRD and
+  # `METRICS_ENABLED` in `distr.env`, which the chart sets by default.
+  enabled: false
+  # -- Additional labels of the ServiceMonitor, e.g. the label your Prometheus selects
+  # ServiceMonitors by.
+  labels: {}
+  # -- Scrape interval. Empty means the interval configured in Prometheus.
+  interval: ''
+  # -- Scrape timeout. Empty means the timeout configured in Prometheus.
+  scrapeTimeout: ''
+  # -- Key of a Secret in the release namespace holding `METRICS_BEARER_TOKEN`, required when it is
+  # set, e.g. `{name: distr-metrics, key: token}`.
+  bearerTokenSecret: {}
+
 ingress:
   # -- Create an [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) for the
   # Distr Service.

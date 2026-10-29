@@ -2,28 +2,28 @@
 <a
   routerLink="/deployments"
   [queryParams]="{search: target.name}"
-  class="font-semibold text-gray-900 dark:text-white truncate block after:absolute after:inset-0">
+  class="block truncate font-semibold text-gray-900 after:absolute after:inset-0 dark:text-white">
   {{ target.name }}
 </a>
 
 <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,26rem),1fr))] gap-x-4 gap-y-2">
   @for (deployment of target.deployments; track deployment.id) {
-    <div class="flex flex-col sm:flex-row gap-3 min-w-0">
+    <div class="flex min-w-0 flex-col gap-3 sm:flex-row">
       <app-customer-home-title-image
         [src]="deployment.applicationTitleImageUrl ?? deployment.applicationImageUrl"
         [name]="deployment.applicationName" />
-      <dl class="flex-1 min-w-0 grid grid-cols-[auto_1fr] content-start gap-x-4 gap-y-1 text-sm">
+      <dl class="grid min-w-0 flex-1 grid-cols-[auto_1fr] content-start gap-x-4 gap-y-1 text-sm">
         <dt class="distr-text-muted">Application</dt>
-        <dd class="text-gray-900 dark:text-white font-medium truncate">{{ deployment.applicationName }}</dd>
+        <dd class="truncate font-medium text-gray-900 dark:text-white">{{ deployment.applicationName }}</dd>
 
         @if (deployment.applicationLink) {
           <dt class="distr-text-muted">Link</dt>
-          <dd class="text-gray-900 dark:text-white truncate">
+          <dd class="truncate text-gray-900 dark:text-white">
             <a
               [href]="deployment.applicationLink"
               target="_blank"
               rel="noopener noreferrer"
-              class="relative z-10 text-primary-600 dark:text-primary-400 hover:underline">
+              class="relative z-10 text-primary-600 hover:underline dark:text-primary-400">
               {{ deployment.applicationLink }}
               <fa-icon [icon]="faArrowUpRightFromSquare" class="ms-1 text-xs" />
             </a>
@@ -56,9 +56,9 @@
       </dl>
     </div>
   } @empty {
-    <div class="flex flex-col sm:flex-row gap-3">
+    <div class="flex flex-col gap-3 sm:flex-row">
       <app-customer-home-title-image [icon]="faServer" />
-      <p class="text-sm distr-text-muted">Nothing deployed yet.</p>
+      <p class="distr-text-muted text-sm">Nothing deployed yet.</p>
     </div>
   }
 </div>

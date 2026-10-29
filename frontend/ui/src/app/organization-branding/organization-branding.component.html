@@ -1,9 +1,9 @@
 <app-page variant="narrow">
   <div class="distr-panel">
-    <h1 class="mb-2 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white">
+    <h1 class="mb-2 text-3xl leading-none font-extrabold tracking-tight text-gray-900 md:text-4xl dark:text-white">
       Branding
     </h1>
-    <p class="text-gray-500 dark:text-gray-400 mb-6">
+    <p class="mb-6 text-gray-500 dark:text-gray-400">
       Customize how Distr looks for your team and your customers. Upload a logo, set a customer portal name and
       instructions for getting started.
     </p>
@@ -27,8 +27,8 @@
         <button
           type="submit"
           [disabled]="formLoading()"
-          class="w-full mt-8 flex items-center justify-center distr-btn-primary text-white disabled:opacity-60 disabled:cursor-not-allowed">
-          <fa-icon [icon]="faFloppyDisk" size="lg" class="h-4 w-4 mr-2 -ml-0.5 mb-1" />
+          class="distr-btn-primary mt-8 flex w-full items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-60">
+          <fa-icon [icon]="faFloppyDisk" size="lg" class="mr-2 mb-1 -ml-0.5 h-4 w-4" />
           Save
         </button>
       }

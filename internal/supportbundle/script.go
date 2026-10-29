@@ -32,7 +32,7 @@ type collectScriptCustomScript struct {
 	ContentBase64     string
 }
 
-// GenerateCollectScript renders the collect-script.sh template with the given parameters.
+// GenerateCollectScript renders the Docker collect script with the given parameters.
 func GenerateCollectScript(params CollectScriptParams) (string, error) {
 	apiBase := fmt.Sprintf("%s/api/v1/support-bundle-collect/%s", params.BaseURL, params.BundleID.String())
 
@@ -67,7 +67,7 @@ func GenerateCollectScript(params CollectScriptParams) (string, error) {
 		"ScriptTimeoutSeconds": scriptTimeoutSeconds,
 	}
 
-	tmpl, err := resources.GetTemplate("support-bundle/collect-script.sh")
+	tmpl, err := resources.GetTemplate("support-bundle/docker.sh", "support-bundle/common.sh")
 	if err != nil {
 		return "", err
 	}

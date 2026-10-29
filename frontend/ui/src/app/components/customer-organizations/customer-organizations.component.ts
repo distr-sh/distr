@@ -28,6 +28,7 @@ import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {PartnerOrganizationsService} from '../../services/partner-organizations.service';
 import {ToastService} from '../../services/toast.service';
+import {isProSubscription} from '../../types/subscription';
 import {AlertComponent} from '../alert/alert.component';
 import {AvatarComponent} from '../avatar.component';
 import {InlineEditComponent} from '../inline-edit.component';
@@ -43,6 +44,8 @@ const customerFeatureLabels: Record<CustomerOrganizationFeature, string> = {
   support_bundles: 'Support Bundles',
   oidc_providers: 'Identity Provider',
 };
+
+const proCustomerFeatures: CustomerOrganizationFeature[] = ['alerts', 'update_notifications', 'support_bundles'];
 
 @Component({
   templateUrl: './customer-organizations.component.html',
@@ -132,11 +135,19 @@ export class CustomerOrganizationsComponent {
 
   // A customer can only bring its own identity provider while the vendor's own plan includes the
   // machinery, so the checkbox is hidden rather than shown as a grantable feature that the API refuses.
-  protected readonly allCustomerFeatures = computed(() =>
-    this.allCustomerFeaturesList
+  protected readonly allCustomerFeatures = computed(() => {
+    const isPro = isProSubscription(this.organization()?.subscriptionType);
+    const granted = this.openCustomerFeaturesDropdownCustomer()?.features ?? [];
+    return this.allCustomerFeaturesList
       .filter((feature) => feature !== 'oidc_providers' || this.featureFlags.isCustomOidcProvidersEnabled())
-      .map((feature) => ({feature, label: customerFeatureLabels[feature], indent: feature === 'alerts'}))
-  );
+      .map((feature) => ({
+        feature,
+        label: customerFeatureLabels[feature],
+        indent: feature === 'alerts',
+        checked: granted.includes(feature),
+        requiresPro: !isPro && proCustomerFeatures.includes(feature) && !granted.includes(feature),
+      }));
+  });
 
   protected readonly openCustomerFeaturesDropdownId = signal<string | void>(undefined);
   protected readonly openCustomerFeaturesDropdownCustomer = computed(() => {

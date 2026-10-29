@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"github.com/distr-sh/distr/internal/billing"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
@@ -88,21 +90,35 @@ func handleStripeSubscription(ctx context.Context, event stripe.Event) (respond.
 	} else if orgID, err := uuid.Parse(sub.Metadata["organizationId"]); err != nil {
 		log.Warn("subscription event with missing or invalid organizationId", zap.Error(err))
 		return respond.NoContent(), nil
-	} else if err := applyStripeSubscription(ctx, orgID, sub); err != nil {
+	} else if orgDeleted, err := applyStripeSubscription(ctx, orgID, sub); errors.Is(err, distrerr.ErrNotFound) {
+		log.Warn("subscription event for nonexistent organization", zap.Stringer("organizationId", orgID))
+		return respond.NoContent(), nil
+	} else if err != nil {
 		return nil, fmt.Errorf("failed to handle stripe subscription: %w", err)
+	} else if orgDeleted &&
+		sub.Status != stripe.SubscriptionStatusCanceled &&
+		sub.Status != stripe.SubscriptionStatusIncompleteExpired {
+		// A subscription the deletion did not know about yet, e.g. from a checkout completed afterwards
+		log.Info("canceling stripe subscription of deleted organization", zap.Stringer("organizationId", orgID))
+		if err := billing.CancelSubscription(ctx, sub.ID); err != nil {
+			return nil, fmt.Errorf("failed to cancel stripe subscription of deleted organization: %w", err)
+		}
+		return nil, nil
 	} else {
 		return nil, nil
 	}
 }
 
-func applyStripeSubscription(ctx context.Context, orgID uuid.UUID, sub stripe.Subscription) error {
+func applyStripeSubscription(ctx context.Context, orgID uuid.UUID, sub stripe.Subscription) (bool, error) {
 	log := internalctx.GetLogger(ctx)
 
-	return db.RunTxRR(ctx, func(ctx context.Context) error {
-		org, err := db.GetOrganizationByID(ctx, orgID)
+	var orgDeleted bool
+	err := db.RunTxRR(ctx, func(ctx context.Context) error {
+		org, deleted, err := db.GetOrganizationByIDIncludingDeleted(ctx, orgID)
 		if err != nil {
 			return fmt.Errorf("failed to get organization: %w", err)
 		}
+		orgDeleted = deleted
 
 		org.StripeSubscriptionID = &sub.ID
 		org.StripeCustomerID = &sub.Customer.ID
@@ -153,4 +169,5 @@ func applyStripeSubscription(ctx context.Context, orgID uuid.UUID, sub stripe.Su
 
 		return db.UpdateOrganization(ctx, org)
 	})
+	return orgDeleted, err
 }

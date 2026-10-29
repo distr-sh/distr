@@ -1,6 +1,6 @@
 <div
   #clip
-  class="flex-1 min-h-0 overflow-hidden transition-[max-height] duration-300 ease-in-out"
+  class="min-h-0 flex-1 overflow-hidden transition-[max-height] duration-300 ease-in-out"
   [class.max-h-96]="!expanded()"
   [class.lg:max-h-none]="fill() && !expanded()"
   [style.max-height.px]="maxHeight()"
@@ -11,11 +11,11 @@
 </div>
 @if (overflowing() && !expanded()) {
   <div
-    class="pointer-events-none absolute inset-x-0 bottom-0 h-24 flex items-end justify-center bg-linear-to-t from-white dark:from-gray-800 to-transparent">
+    class="pointer-events-none absolute inset-x-0 bottom-0 flex h-24 items-end justify-center bg-linear-to-t from-white to-transparent dark:from-gray-800">
     <button
       type="button"
       (click)="expand()"
-      class="pointer-events-auto py-1.5 px-3 text-sm distr-btn-secondary hover:text-gray-900 dark:hover:text-white">
+      class="distr-btn-secondary pointer-events-auto px-3 py-1.5 text-sm hover:text-gray-900 dark:hover:text-white">
       <fa-icon [icon]="faChevronDown" class="me-1" />
       Show more
     </button>
@@ -26,7 +26,7 @@
     <button
       type="button"
       (click)="collapse()"
-      class="py-1.5 px-3 text-sm distr-btn-secondary hover:text-gray-900 dark:hover:text-white">
+      class="distr-btn-secondary px-3 py-1.5 text-sm hover:text-gray-900 dark:hover:text-white">
       <fa-icon [icon]="faChevronUp" class="me-1" />
       Show less
     </button>

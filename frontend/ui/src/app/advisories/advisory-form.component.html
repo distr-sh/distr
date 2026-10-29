@@ -1,12 +1,12 @@
-<div class="p-4 w-4xl max-w-full my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
-  <div class="flex items-center justify-between p-4 border-b border-gray-200 rounded-t dark:border-gray-600">
+<div class="my-auto max-h-full w-4xl max-w-full overflow-y-auto rounded-lg bg-white p-4 shadow-sm dark:bg-gray-900">
+  <div class="flex items-center justify-between rounded-t border-b border-gray-200 p-4 dark:border-gray-600">
     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
       {{ advisory() ? 'Edit Security Advisory' : 'New Security Advisory' }}
     </h3>
     <button
       type="button"
       (click)="dismissed.emit()"
-      class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+      class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
       <fa-icon [icon]="faXmark" />
       <span class="sr-only">Close dialog</span>
     </button>
@@ -16,7 +16,7 @@
     <app-tab-bar [tabs]="tabs" [(active)]="activeTab">
       <ng-template #tabSuffix let-tab>
         @if (tab.id === 'versions' && selectedCount() > 0) {
-          <span class="ms-2 distr-badge distr-badge-neutral">{{ selectedCount() }}</span>
+          <span class="distr-badge distr-badge-neutral ms-2">{{ selectedCount() }}</span>
         }
       </ng-template>
     </app-tab-bar>
@@ -67,17 +67,19 @@
           </div>
 
           <div>
-            <div class="flex items-center justify-between mb-2">
+            <div class="mb-2 flex items-center justify-between">
               <label for="description" class="distr-label">Description</label>
               <button
                 type="button"
                 (click)="descriptionPreview.set(!descriptionPreview())"
-                class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                class="distr-btn-secondary flex items-center px-3 py-2 text-center text-sm font-medium">
                 {{ descriptionPreview() ? 'Write' : 'Preview' }}
               </button>
             </div>
             @if (descriptionPreview()) {
-              <div class="markdown distr-input min-h-40" [innerMarkdown]="form.controls.description.value"></div>
+              <div
+                class="markdown markdown-compact distr-input min-h-40"
+                [innerMarkdown]="form.controls.description.value"></div>
             } @else {
               <textarea
                 formControlName="description"
@@ -91,7 +93,7 @@
           <div>
             <label for="tagInput" class="distr-label mb-2">Tags</label>
             @if (tags().length > 0) {
-              <div class="flex flex-wrap gap-2 mb-2">
+              <div class="mb-2 flex flex-wrap gap-2">
                 @for (tag of tags(); track tag) {
                   <span class="distr-badge distr-badge-neutral">
                     {{ tag }}
@@ -114,12 +116,12 @@
           </div>
 
           <div>
-            <div class="flex items-center justify-between mb-2">
+            <div class="mb-2 flex items-center justify-between">
               <span class="distr-label">References</span>
               <button
                 type="button"
                 (click)="addReference()"
-                class="py-2 px-3 flex gap-2 items-center text-sm font-medium text-center distr-btn-secondary">
+                class="distr-btn-secondary flex items-center gap-2 px-3 py-2 text-center text-sm font-medium">
                 <fa-icon [icon]="faPlus" />
                 Add reference
               </button>
@@ -157,7 +159,7 @@
           </div>
         </div>
       } @else {
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
           Mark the versions affected by this advisory, and the versions that carry the patch. Affected versions
           determine which customers see the advisory and appear in the impact analysis.
         </p>
@@ -166,12 +168,12 @@
 
         @if (versionsTab() === 'applications') {
           @for (application of applicationsWithSortedVersions(); track application.id) {
-            <div class="border border-gray-200 dark:border-gray-600 rounded-lg mb-2">
+            <div class="mb-2 rounded-lg border border-gray-200 dark:border-gray-600">
               <button
                 type="button"
                 (click)="toggleApplication(application.id!)"
-                class="w-full flex items-center justify-between gap-2 p-3 text-left text-sm font-medium text-gray-900 dark:text-white">
-                <span class="flex items-center gap-2 min-w-0">
+                class="flex w-full items-center justify-between gap-2 p-3 text-left text-sm font-medium text-gray-900 dark:text-white">
+                <span class="flex min-w-0 items-center gap-2">
                   <app-application-logo
                     class="size-6 shrink-0"
                     [imageUrl]="application.imageUrl"
@@ -180,7 +182,7 @@
                   <span class="distr-badge capitalize">{{ application.type }}</span>
                 </span>
                 @let versionCount = application.versions?.length ?? 0;
-                <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                <span class="shrink-0 text-xs text-gray-500 dark:text-gray-400">
                   {{ versionCount }}
                   <ng-container [ngPlural]="versionCount">
                     <ng-template ngPluralCase="=1">version</ng-template>
@@ -190,7 +192,7 @@
               </button>
               @if (expandedApplicationId() === application.id) {
                 <div
-                  class="border-t border-gray-200 dark:border-gray-600 divide-y divide-gray-200 dark:divide-gray-600">
+                  class="divide-y divide-gray-200 border-t border-gray-200 dark:divide-gray-600 dark:border-gray-600">
                   @for (version of application.versions ?? []; track version.id) {
                     <div class="flex items-center justify-between gap-4 p-3">
                       <span class="text-sm text-gray-900 dark:text-white">{{ version.name }}</span>
@@ -212,12 +214,12 @@
           }
         } @else {
           @for (artifact of artifacts(); track artifact.id) {
-            <div class="border border-gray-200 dark:border-gray-600 rounded-lg mb-2">
+            <div class="mb-2 rounded-lg border border-gray-200 dark:border-gray-600">
               <button
                 type="button"
                 (click)="toggleArtifact(artifact.id)"
-                class="w-full flex items-center justify-between gap-2 p-3 text-left text-sm font-medium text-gray-900 dark:text-white">
-                <span class="flex items-center gap-2 min-w-0">
+                class="flex w-full items-center justify-between gap-2 p-3 text-left text-sm font-medium text-gray-900 dark:text-white">
+                <span class="flex min-w-0 items-center gap-2">
                   <app-artifact-logo class="size-6 shrink-0" [imageUrl]="artifact.imageUrl" />
                   <span class="truncate">{{ artifact.name }}</span>
                   @if (artifact.upstreamUrl) {
@@ -226,7 +228,7 @@
                 </span>
                 @let tagCount = artifactTagCount(artifact);
                 @if (tagCount !== null) {
-                  <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                  <span class="shrink-0 text-xs text-gray-500 dark:text-gray-400">
                     {{ tagCount }}
                     <ng-container [ngPlural]="tagCount">
                       <ng-template ngPluralCase="=1">tag</ng-template>
@@ -237,13 +239,13 @@
               </button>
               @if (expandedArtifactId() === artifact.id) {
                 <div
-                  class="border-t border-gray-200 dark:border-gray-600 divide-y divide-gray-200 dark:divide-gray-600">
+                  class="divide-y divide-gray-200 border-t border-gray-200 dark:divide-gray-600 dark:border-gray-600">
                   @if (isLoadingArtifactVersions(artifact.id)) {
                     <p class="p-3 text-sm text-gray-500 dark:text-gray-400">Loading versions...</p>
                   } @else {
                     @for (version of artifactVersions()[artifact.id] ?? []; track version.id) {
                       <div class="flex items-center justify-between gap-4 p-3">
-                        <div class="flex-1 min-w-0">
+                        <div class="min-w-0 flex-1">
                           @if (version.tags.length > 0) {
                             <div class="flex flex-row flex-wrap gap-1">
                               @for (tag of version.tags; track tag.name) {
@@ -253,9 +255,9 @@
                               }
                             </div>
                           } @else {
-                            <span class="text-xs text-gray-500 dark:text-gray-400 italic">Untagged</span>
+                            <span class="text-xs text-gray-500 italic dark:text-gray-400">Untagged</span>
                           }
-                          <ul class="flex gap-3 mt-1 text-xs font-normal text-gray-500 truncate dark:text-gray-400">
+                          <ul class="mt-1 flex gap-3 truncate text-xs font-normal text-gray-500 dark:text-gray-400">
                             <li>{{ version.createdAt | relativeDate }}</li>
                             <li>
                               <app-artifacts-hash [hash]="version.digest" [expandable]="false" />
@@ -285,14 +287,14 @@
       }
     </div>
 
-    <div class="flex items-center justify-end p-4 gap-2">
-      <button type="button" (click)="cancel()" class="py-2.5 px-5 text-sm font-medium distr-btn-secondary">
+    <div class="flex items-center justify-end gap-2 p-4">
+      <button type="button" (click)="cancel()" class="distr-btn-secondary px-5 py-2.5 text-sm font-medium">
         Cancel
       </button>
       <button
         type="submit"
         [disabled]="loading() || form.invalid"
-        class="text-white inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
+        class="distr-btn-primary inline-flex items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-60">
         {{ advisory() ? 'Save' : 'Create' }}
       </button>
     </div>

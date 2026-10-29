@@ -68,7 +68,7 @@ func getCollectScriptHandler(r *http.Request) (respond.Responder, error) {
 		if envVars, err := db.GetSupportBundleConfigurationEnvVars(ctx, bundle.OrganizationID); err != nil {
 			return nil, fmt.Errorf("failed to get support bundle config env vars: %w", err)
 		} else if scripts, err := db.GetEnabledSupportBundleConfigurationScripts(
-			ctx, bundle.OrganizationID,
+			ctx, bundle.OrganizationID, bundle.DeploymentType,
 		); err != nil {
 			return nil, fmt.Errorf("failed to get support bundle config scripts: %w", err)
 		} else if script, err := supportbundle.GenerateCollectScript(supportbundle.CollectScriptParams{

@@ -1,7 +1,7 @@
 @if (src(); as src) {
   <img [attr.src]="src | secureImage | async" alt="" class="size-full object-cover" />
 } @else if (initials(); as initials) {
-  <span class="text-3xl font-semibold tracking-wide text-gray-400 dark:text-gray-500 select-none" aria-hidden="true">
+  <span class="text-3xl font-semibold tracking-wide text-gray-400 select-none dark:text-gray-500" aria-hidden="true">
     {{ initials }}
   </span>
 } @else if (icon(); as icon) {

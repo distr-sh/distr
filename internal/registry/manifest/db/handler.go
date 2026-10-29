@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"slices"
 
 	"github.com/distr-sh/distr/internal/auth"
@@ -248,7 +249,7 @@ func (h *handler) Put(
 			}
 		}
 		created = &version
-		return nil
+		return addTagToMatchingEntitlements(ctx, version)
 	}); err != nil {
 		return err
 	}
@@ -262,4 +263,35 @@ func (h *handler) Put(
 	}
 
 	return nil
+}
+
+// addTagToMatchingEntitlements adds the digest version of a new tag, which is what an entitlement selects, to every
+// entitlement whose auto-add regex matches the tag. It runs in the transaction that creates the tag, so that the
+// notifications sent after it already see the tag as entitled. The registry puts the digest reference before the tag
+// in the same transaction, so the digest version exists here.
+func addTagToMatchingEntitlements(ctx context.Context, tag types.ArtifactVersion) error {
+	if tag.IsDigestVersion() {
+		return nil
+	}
+	// Without the lock, an entitlement switched to all tags concurrently would end up with only this version, because
+	// the insert below does not wait for the edit that removes its versions.
+	if err := db.LockArtifactRows(ctx, []uuid.UUID{tag.ArtifactID}); err != nil {
+		return err
+	}
+	entitlements, err := db.GetArtifactEntitlementsWithAutoAddVersionRegex(ctx, tag.ArtifactID)
+	if err != nil {
+		return err
+	}
+	var entitlementIDs []uuid.UUID
+	for _, entitlement := range entitlements {
+		if re, err := regexp.Compile(*entitlement.AutoAddVersionRegex); err != nil {
+			return fmt.Errorf("could not compile auto-add version regex of artifact entitlement %v: %w", entitlement.ID, err)
+		} else if re.MatchString(tag.Name) {
+			entitlementIDs = append(entitlementIDs, entitlement.ID)
+		}
+	}
+	if len(entitlementIDs) == 0 {
+		return nil
+	}
+	return db.AddVersionToArtifactEntitlements(ctx, tag.ArtifactID, tag.ManifestBlobDigest, entitlementIDs)
 }

@@ -123,9 +123,9 @@ func ApiRouter(
 ) func(r chiopenapi.Router) {
 	// Uploads are limited per file by maxFileSize in internal/handlers/file.go and maxMultipartFileSize in
 	// internal/handlers/util.go, which have to leave room for the multipart encoding within this limit.
-	requestSize1MiB := chimiddleware.RequestSize(1024 * 1024)
-	requestSize10MiB := chimiddleware.RequestSize(10 * 1024 * 1024)
-	requestSize50MiB := chimiddleware.RequestSize(50 * 1024 * 1024)
+	requestSize1MiB := middleware.RequestSize(1024 * 1024)
+	requestSize10MiB := middleware.RequestSize(10 * 1024 * 1024)
+	requestSize50MiB := middleware.RequestSize(50 * 1024 * 1024)
 
 	return func(r chiopenapi.Router) {
 		r.Use(
@@ -200,6 +200,7 @@ func ApiRouter(
 					r.Route("/deployment-targets", handlers.DeploymentTargetsRouter)
 					r.Route("/deployments", handlers.DeploymentsRouter)
 					r.Route("/files", handlers.FileRouter)
+					r.Route("/lenses", handlers.LensesRouter)
 					r.With(middleware.UseReadonlyDB).Route("/notification-records", handlers.NotificationRecordsRouter)
 					r.Route("/organization", handlers.OrganizationRouter)
 					r.Route("/organizations", handlers.OrganizationsRouter)

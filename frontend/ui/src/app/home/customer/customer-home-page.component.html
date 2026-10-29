@@ -60,7 +60,7 @@
             <app-customer-home-access-tokens [accessTokens]="accessTokens()" />
           }
           @if (supportBundles(); as supportBundles) {
-            <app-customer-home-support-bundles [supportBundles]="supportBundles" (created)="reloadSupportBundles()" />
+            <app-customer-home-support-bundles [supportBundles]="supportBundles" />
           }
         </div>
       }

@@ -6,9 +6,9 @@
     @if (hasMore() && !newestFirst() && !paginateForward()) {
       <ng-container *ngTemplateOutlet="loadMoreButton" />
     }
-    <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+    <table class="w-full text-left text-sm text-gray-500 rtl:text-right dark:text-gray-400">
       <thead
-        class="dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-800 dark:text-gray-400 sr-only">
+        class="sr-only bg-gray-50 text-xs text-gray-700 uppercase dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400">
         <tr>
           <th scope="col"></th>
           <th scope="col">Date</th>
@@ -32,24 +32,24 @@
             [class.dark:hover:bg-gray-600]="!pinned"
             [class.hover:bg-yellow-200]="pinned"
             [class.dark:hover:bg-yellow-900]="pinned"
-            class="not-last:border-b border-gray-200 dark:border-gray-600 group">
+            class="group border-gray-200 not-last:border-b dark:border-gray-600">
             <td class="w-0">
               <button
                 type="button"
                 (click)="pin(entry)"
                 [class.invisible]="!pinned"
-                class="group-hover:visible px-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-xs">
+                class="px-1 text-xs text-gray-400 group-hover:visible hover:text-gray-700 dark:hover:text-gray-200">
                 <fa-icon [icon]="pinned ? faThumbtackSlash : faThumbtack" />
               </button>
             </td>
             <th class="px-1 font-medium whitespace-nowrap">{{ entry.date | date: 'medium' }}</th>
             @if (showResourceColumn()) {
-              <td class="px-1 whitespace-nowrap text-xs font-mono" [ngClass]="resourceColorMap()[entry.resource!]">
+              <td class="px-1 font-mono text-xs whitespace-nowrap" [ngClass]="resourceColorMap()[entry.resource!]">
                 {{ entry.resource }}
               </td>
             }
             <td
-              class="uppercase px-1"
+              class="px-1 uppercase"
               [class.text-red-500]="entry.status.toLowerCase().includes('err')"
               [class.dark:text-red-400]="entry.status.toLowerCase().includes('err')"
               [class.text-yellow-600]="entry.status.toLowerCase().includes('warn')"
@@ -58,8 +58,8 @@
               [class.dark:text-blue-500]="entry.status.toLowerCase().includes('info')">
               {{ entry.status }}
             </td>
-            <td class="px-1 max-w-0 w-full" data-ph-mask-text="true">
-              <div class="overflow-x-auto whitespace-pre-wrap font-mono text-gray-900 dark:text-white">
+            <td class="w-full max-w-0 px-1" data-ph-mask-text="true">
+              <div class="overflow-x-auto font-mono whitespace-pre-wrap text-gray-900 dark:text-white">
                 {{ entry.detail }}
               </div>
             </td>
@@ -68,11 +68,11 @@
       </tbody>
     </table>
     @if (showScrollToBottom()) {
-      <div class="sticky bottom-4 flex justify-center z-10">
+      <div class="sticky bottom-4 z-10 flex justify-center">
         <button
           type="button"
           (click)="scrollToBottom()"
-          class="py-2 px-4 flex items-center gap-2 text-xs font-medium text-gray-900 bg-white rounded-full border border-gray-200 shadow-lg hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700">
+          class="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-900 shadow-lg hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700">
           <fa-icon [icon]="faArrowDown" />
           Live logs
         </button>
@@ -88,7 +88,7 @@
     <ng-container *ngTemplateOutlet="liveIndicator" />
   }
 } @else {
-  <output class="flex justify-center items-center gap-2 text-gray-700 dark:text-gray-400">
+  <output class="flex items-center justify-center gap-2 text-gray-700 dark:text-gray-400">
     <app-spinner class="size-8" />
     <span>Loading&hellip;</span>
   </output>
@@ -98,16 +98,16 @@
   @if (sourceWithStatus().loading()) {
     <div class="flex justify-center py-2">
       <output
-        class="flex items-center gap-2 text-gray-700 dark:text-gray-400 text-xs rounded-xl bg-white dark:bg-gray-900 px-3 py-1">
+        class="flex items-center gap-2 rounded-xl bg-white px-3 py-1 text-xs text-gray-700 dark:bg-gray-900 dark:text-gray-400">
         <app-spinner class="size-5" />
         <span>Loading&hellip;</span>
       </output>
     </div>
   } @else if (live()) {
     <div class="flex justify-center py-2">
-      <div class="w-16 h-1 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+      <div class="h-1 w-16 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
         <div
-          class="h-full bg-blue-500 dark:bg-blue-400 transition-[width] duration-100 ease-linear"
+          class="h-full bg-blue-500 transition-[width] duration-100 ease-linear dark:bg-blue-400"
           [style.width.%]="liveProgress()"></div>
       </div>
     </div>
@@ -120,7 +120,7 @@
       (appIntersect)="onLoadMoreVisible($event)"
       [intersectEnabled]="newestFirst() || !live()"
       type="button"
-      class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary"
+      class="distr-btn-secondary flex items-center px-3 py-2 text-center text-sm font-medium"
       (click)="loadMore()">
       {{ paginateForward() ? 'Load newer' : 'Load older' }}
     </button>

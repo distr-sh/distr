@@ -1,6 +1,6 @@
 <button
   type="button"
-  class="w-32 aspect-video shrink-0 rounded-md overflow-hidden border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 flex items-center justify-center text-gray-400 enabled:cursor-pointer enabled:hover:border-primary-500"
+  class="flex aspect-video w-32 shrink-0 items-center justify-center overflow-hidden rounded-md border border-gray-200 bg-gray-50 text-gray-400 enabled:cursor-pointer enabled:hover:border-primary-500 dark:border-gray-600 dark:bg-gray-700"
   aria-label="Choose or change title image"
   [disabled]="!editable"
   (click)="pick()">
@@ -10,7 +10,7 @@
     <fa-icon [icon]="faImage" size="lg" />
   }
 </button>
-<div class="text-xs text-gray-500 dark:text-gray-400 max-w-56">
+<div class="max-w-56 text-xs text-gray-500 dark:text-gray-400">
   <div class="font-medium text-gray-900 dark:text-white">Title image</div>
   This title image is displayed on the customer home page. Recommended 960 x 540 px, max 500 KiB.
 </div>

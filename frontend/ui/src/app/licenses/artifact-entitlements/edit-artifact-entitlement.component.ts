@@ -10,6 +10,7 @@ import {
   Injector,
   OnDestroy,
   OnInit,
+  output,
   signal,
   viewChild,
 } from '@angular/core';
@@ -31,14 +32,13 @@ import {
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faChevronDown, faPen, faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {distinctUntilChanged, first, firstValueFrom, of, Subject, switchMap, takeUntil} from 'rxjs';
+import {distinctUntilChanged, firstValueFrom, of, Subject, switchMap, takeUntil} from 'rxjs';
 import {RelativeDatePipe} from '../../../util/dates';
 import {ArtifactsHashComponent} from '../../artifacts/components';
 import {ExpiresAtPickerComponent} from '../../components/expires-at-picker/expires-at-picker.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ArtifactsService, ArtifactWithTags} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
-import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {ArtifactEntitlement, ArtifactEntitlementSelection} from '../../types/artifact-entitlement';
 
 @Component({
@@ -76,10 +76,7 @@ export class EditArtifactEntitlementComponent
   protected readonly auth = inject(AuthService);
   private readonly destroyed$ = new Subject<void>();
   private readonly artifactsService = inject(ArtifactsService);
-  private readonly customerOrganizationService = inject(CustomerOrganizationsService);
   allArtifacts$ = this.artifactsService.list();
-  customers$ = this.customerOrganizationService.getCustomerOrganizations().pipe(first());
-
   private fb = inject(FormBuilder);
   editForm = this.fb.nonNullable.group({
     id: this.fb.nonNullable.control<string | undefined>(undefined),
@@ -95,6 +92,8 @@ export class EditArtifactEntitlementComponent
   });
   editFormLoading = false;
   readonly entitlement = signal<ArtifactEntitlement | undefined>(undefined);
+  /** Emits the entitlement on every change, also while the form is invalid. */
+  readonly draftChange = output<ArtifactEntitlement>();
 
   readonly openedArtifactIdx = signal<number | undefined>(undefined);
   dropdownWidth: number = 0;
@@ -109,22 +108,23 @@ export class EditArtifactEntitlementComponent
     this.editForm.valueChanges.pipe(takeUntil(this.destroyed$)).subscribe(() => {
       this.onTouched();
       const val = this.editForm.getRawValue();
-      if (this.editForm.valid) {
-        this.onChange({
-          id: val.id,
-          name: val.name,
-          expiresAt: val.expiresAt ? new Date(val.expiresAt) : undefined,
-          artifacts: val.artifacts.map((artifact) => {
-            return {
-              artifactId: artifact.artifact!.id,
-              versionIds: this.getSelectedVersions(artifact.includeAllTags, artifact.artifactTags, artifact.artifact!),
-            };
-          }),
-          customerOrganizationId: val.customerOrganizationId,
-        });
-      } else {
-        this.onChange(undefined);
-      }
+      const entitlement: ArtifactEntitlement = {
+        id: val.id,
+        name: val.name,
+        expiresAt: val.expiresAt ? new Date(val.expiresAt) : undefined,
+        artifacts: val.artifacts.map((artifact) => {
+          return {
+            artifactId: artifact.artifact?.id ?? artifact.artifactId ?? '',
+            // Until the tags have loaded, keep the saved selection, since an empty one grants all tags.
+            versionIds: artifact.artifact
+              ? this.getSelectedVersions(artifact.includeAllTags, artifact.artifactTags, artifact.artifact)
+              : (this.entitlement()?.artifacts?.find((a) => a.artifactId === artifact.artifactId)?.versionIds ?? []),
+          };
+        }),
+        customerOrganizationId: val.customerOrganizationId,
+      };
+      this.draftChange.emit(entitlement);
+      this.onChange(this.editForm.valid ? entitlement : undefined);
       this.onValidatorChange();
     });
   }

@@ -3,9 +3,7 @@ import {inject, Injectable} from '@angular/core';
 import {LoginResponse, TokenResponse, UserRole} from '@distr-sh/distr-sdk';
 import dayjs from 'dayjs';
 import {jwtDecode} from 'jwt-decode';
-import {map, Observable, of, tap, throwError} from 'rxjs';
-import {Organization} from '../types/organization';
-
+import {firstValueFrom, map, Observable, of, tap, throwError} from 'rxjs';
 const tokenStorageKey = 'cloud_token';
 const actionTokenStorageKey = 'distr_action_token';
 const authBaseUrl = '/api/v1/auth';
@@ -21,6 +19,8 @@ export interface JWTClaims {
   scope?: 'password_reset' | 'invite';
   // The custom OIDC configuration that authenticated the session; absent on every other login.
   oidc?: string;
+  // Present while the session is in the lens of a customer organization its user is not a member of.
+  lens?: boolean;
   email_verified: boolean;
   name: string;
   exp: string;
@@ -91,12 +91,10 @@ export class AuthService {
     return this.getClaims()?.is_super_admin === true;
   }
 
-  /**
-   * Whether the session was authenticated by an organization's own identity provider. Such a session stays inside
-   * that organization and cannot change the account's sign-in methods, because the provider is controlled by the
-   * organization rather than by the account's owner. The server enforces both; this only keeps the UI from
-   * offering actions that would be rejected.
-   */
+  public isLens(): boolean {
+    return this.getClaims()?.lens === true;
+  }
+
   public isCustomOidcSession(): boolean {
     return this.getClaims()?.oidc !== undefined;
   }
@@ -228,19 +226,28 @@ export class AuthService {
     return this.httpClient.get<{active: boolean}>(`${authBaseUrl}/status`);
   }
 
-  public switchContext(org: Organization): Observable<boolean> {
-    return this.httpClient
-      .post<TokenResponse | undefined>(`${authBaseUrl}/switch-context`, {organizationId: org.id})
-      .pipe(
-        map((r) => {
-          if (r) {
-            this.token = r.token;
-            this.actionToken = null;
-            return true;
-          }
-          return false;
-        })
-      );
+  public async switchContext(organizationId: string): Promise<void> {
+    if (await this.requestContextToken('switch-context', {organizationId})) {
+      location.assign('/');
+    }
+  }
+
+  /** Enters the lens of a customer organization of the organization the session operates in. */
+  public async enterLens(customerOrganizationId: string): Promise<void> {
+    if (await this.requestContextToken('enter-lens', {customerOrganizationId})) {
+      location.assign('/');
+    }
+  }
+
+  private async requestContextToken(endpoint: 'switch-context' | 'enter-lens', body: object): Promise<boolean> {
+    const response = await firstValueFrom(
+      this.httpClient.post<TokenResponse | null>(`${authBaseUrl}/${endpoint}`, body)
+    );
+    if (response) {
+      this.token = response.token;
+      this.actionToken = null;
+    }
+    return !!response;
   }
 
   public logout(): Observable<void> {
@@ -312,6 +319,7 @@ function authenticatedRoute(req: HttpRequest<unknown>): boolean {
   return (
     !req.url.startsWith(authBaseUrl) ||
     req.url === `${authBaseUrl}/switch-context` ||
+    req.url === `${authBaseUrl}/enter-lens` ||
     req.url === `${authBaseUrl}/status` ||
     req.url.startsWith(`${authBaseUrl}/verify/`) ||
     req.url.startsWith(`${authBaseUrl}/invite/`) ||

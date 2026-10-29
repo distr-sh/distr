@@ -6,8 +6,8 @@
         @if (auth.isVendor()) {
           <a
             routerLink="/support-bundles/settings"
-            class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-            <fa-icon [icon]="faGear" class="text-gray-500 dark:text-gray-400 mr-2" />
+            class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none md:w-auto dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+            <fa-icon [icon]="faGear" class="mr-2 text-gray-500 dark:text-gray-400" />
             Settings
           </a>
         }
@@ -15,8 +15,8 @@
           <button
             (click)="openDialog(createBundleDialog)"
             type="button"
-            class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-            <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+            class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none md:w-auto dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+            <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
             New Support Bundle
           </button>
         }
@@ -30,7 +30,7 @@
         <a
           alertActions
           routerLink="/support-bundles/settings"
-          class="shrink-0 py-1.5 px-3 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+          class="shrink-0 rounded-lg bg-blue-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 focus:outline-none dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
           Configure
         </a>
       </app-alert>
@@ -75,14 +75,14 @@
                     {{ bundle.lastCommentAt ? (bundle.lastCommentAt | date: 'medium') : '-' }}
                   </td>
                   <td class="px-4 py-3">
-                    <div class="flex gap-2 justify-end">
+                    <div class="flex justify-end gap-2">
                       @if (bundle.resourceCount > 0) {
                         <button
                           type="button"
                           (click)="downloadResources(bundle)"
                           [disabled]="downloadingBundleId() !== null"
                           title="Download resources"
-                          class="py-2 px-3 text-sm distr-btn-secondary">
+                          class="distr-btn-secondary px-3 py-2 text-sm">
                           <fa-icon [icon]="faDownload" class="h-4 w-4" />
                           <span class="sr-only">Download resources</span>
                         </button>
@@ -93,7 +93,7 @@
                           (click)="deleteBundle(bundle)"
                           [disabled]="deletingBundleId() !== null"
                           title="Delete support bundle"
-                          class="py-2 px-3 distr-btn-danger">
+                          class="distr-btn-danger px-3 py-2">
                           <fa-icon [icon]="faTrash" class="h-4 w-4" />
                           <span class="sr-only">Delete support bundle</span>
                         </button>
@@ -112,12 +112,12 @@
       } @else if (auth.isVendor()) {
         <div class="p-8 text-center text-gray-500 dark:text-gray-400">
           <p>No support bundles have been created yet.</p>
-          <p class="text-sm mt-1">Customers with the support bundles feature enabled can create support bundles.</p>
+          <p class="mt-1 text-sm">Customers with the support bundles feature enabled can create support bundles.</p>
         </div>
       } @else if (auth.isPartner()) {
         <div class="p-8 text-center text-gray-500 dark:text-gray-400">
           <p>No support bundles yet.</p>
-          <p class="text-sm mt-1">Support bundles created by your assigned customers will appear here.</p>
+          <p class="mt-1 text-sm">Support bundles created by your assigned customers will appear here.</p>
         </div>
       } @else if (auth.isCustomer()) {
         <div class="p-8 text-center text-gray-500 dark:text-gray-400">
@@ -129,5 +129,5 @@
 </app-page>
 
 <ng-template #createBundleDialog>
-  <app-support-bundle-create-dialog (created)="refresh()" (closed)="closeDialog()" />
+  <app-support-bundle-create-dialog (closed)="closeDialog()" />
 </ng-template>

@@ -3,12 +3,12 @@
     <a routerLink="/settings/access-tokens" class="after:absolute after:inset-0">Access tokens</a>
   </h2>
 
-  <ul class="flex flex-col gap-1 -mx-2 text-sm">
+  <ul class="-mx-2 flex flex-col gap-1 text-sm">
     @for (token of tokens(); track token.id) {
       <li>
         <a
           [routerLink]="['/settings/access-tokens', token.id]"
-          class="relative z-10 flex items-start justify-between gap-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+          class="relative z-10 flex items-start justify-between gap-4 rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700">
           <div class="min-w-0">
             <span class="block truncate font-medium text-gray-900 dark:text-white">
               {{ token.label || 'Unnamed token' }}

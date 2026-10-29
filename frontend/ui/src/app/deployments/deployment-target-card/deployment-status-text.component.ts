@@ -57,7 +57,7 @@ export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
   imports: [DeploymentStatusDotDirective, DatePipe, DeploymentStatusBadgeComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
-    <div class="flex gap-1 items-center" [title]="(status()?.createdAt | date: 'short') ?? ''">
+    <div class="flex items-center gap-1" [title]="(status()?.createdAt | date: 'short') ?? ''">
       <div class="size-3" appDeploymentStatusDot [deployment]="deployment()"></div>
       @if (status(); as drs) {
         @if (drs.type === 'error') {

@@ -1,17 +1,17 @@
 @let a = artifact();
 <app-customer-home-title-image [src]="a.titleImageUrl ?? a.imageUrl" [name]="a.name" />
 
-<div class="flex-1 min-w-0">
+<div class="min-w-0 flex-1">
   <a
     [routerLink]="['/artifacts', a.id]"
-    class="font-semibold text-gray-900 dark:text-white truncate block after:absolute after:inset-0">
+    class="block truncate font-semibold text-gray-900 after:absolute after:inset-0 dark:text-white">
     {{ a.name }}
   </a>
 
-  <dl class="py-1 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+  <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 py-1 text-sm">
     @if (a.lastPull; as pull) {
       <dt class="distr-text-muted">Version</dt>
-      <dd class="text-gray-900 dark:text-white truncate">{{ pull.versionName }}</dd>
+      <dd class="truncate text-gray-900 dark:text-white">{{ pull.versionName }}</dd>
 
       <dt class="distr-text-muted">Last pull</dt>
       <dd class="text-gray-900 dark:text-white" [title]="pull.createdAt | date: 'medium'">

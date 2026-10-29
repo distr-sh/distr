@@ -1,7 +1,7 @@
 @reference '../../../styles/tailwind.css';
 
 .skeleton {
-  @apply rounded-sm bg-gray-200 dark:bg-gray-700 animate-pulse;
+  @apply animate-pulse rounded-sm bg-gray-200 dark:bg-gray-700;
 }
 
 .skeleton-image {

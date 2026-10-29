@@ -39,6 +39,14 @@ func FromUserJWT(token jwt.Token) (*SimpleAuthInfo, error) {
 		}
 	}
 
+	if customerOrgIDStr, err := jwt.Get[string](token, authjwt.CustomerOrgIDKey); err == nil {
+		if customerOrgID, err := uuid.Parse(customerOrgIDStr); err != nil {
+			return nil, fmt.Errorf("%w: JWT customerOrgId is invalid: %w", authn.ErrBadAuthentication, err)
+		} else {
+			result.customerOrganizationID = &customerOrgID
+		}
+	}
+
 	if partnerOrgIDStr, err := jwt.Get[string](token, authjwt.PartnerOrgIDKey); err == nil {
 		if partnerOrgID, err := uuid.Parse(partnerOrgIDStr); err != nil {
 			return nil, fmt.Errorf("%w: JWT partnerOrgId is invalid: %w", authn.ErrBadAuthentication, err)

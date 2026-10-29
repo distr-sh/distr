@@ -1,6 +1,6 @@
 <app-page variant="narrow">
   <div class="distr-panel">
-    <h1 class="mb-4 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white">
+    <h1 class="mb-4 text-3xl leading-none font-extrabold tracking-tight text-gray-900 md:text-4xl dark:text-white">
       Subscription
     </h1>
     @if (auth.hasAnyRole('admin')) {
@@ -13,18 +13,18 @@
     }
     @if (subscriptionInfo(); as subscriptionInfoData) {
       <form [formGroup]="form" (ngSubmit)="checkout()">
-        <div class="grid gap-6 mb-4 sm:mb-6 mt-6">
+        <div class="mt-6 mb-4 grid gap-6 sm:mb-6">
           <!-- Current Usage -->
           <div class="space-y-4">
             <h2 class="text-xl font-bold dark:text-white">Current Usage</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div
-                class="grid grid-rows-3 gap-0 py-2 px-4 border border-gray-200 dark:border-gray-700 rounded-lg text-center">
-                <p class="text-sm text-gray-600 dark:text-gray-400 self-center">Users</p>
-                <p class="text-3xl font-bold text-gray-900 dark:text-white self-center">
+                class="grid grid-rows-3 gap-0 rounded-lg border border-gray-200 px-4 py-2 text-center dark:border-gray-700">
+                <p class="self-center text-sm text-gray-600 dark:text-gray-400">Users</p>
+                <p class="self-center text-3xl font-bold text-gray-900 dark:text-white">
                   {{ subscriptionInfoData.currentUserAccountCount }}
                 </p>
-                <p class="text-xs text-gray-500 dark:text-gray-500 self-center">
+                <p class="self-center text-xs text-gray-500 dark:text-gray-500">
                   @if (subscriptionInfoData.subscriptionUserAccountQuantity !== unlimited) {
                     of {{ subscriptionInfoData.subscriptionUserAccountQuantity }} Users used
                   } @else {
@@ -33,12 +33,12 @@
                 </p>
               </div>
               <div
-                class="grid grid-rows-3 gap-0 py-2 px-4 border border-gray-200 dark:border-gray-700 rounded-lg text-center">
-                <p class="text-sm text-gray-600 dark:text-gray-400 self-center">Customers</p>
-                <p class="text-3xl font-bold text-gray-900 dark:text-white self-center">
+                class="grid grid-rows-3 gap-0 rounded-lg border border-gray-200 px-4 py-2 text-center dark:border-gray-700">
+                <p class="self-center text-sm text-gray-600 dark:text-gray-400">Customers</p>
+                <p class="self-center text-3xl font-bold text-gray-900 dark:text-white">
                   {{ subscriptionInfoData.currentCustomerOrganizationCount }}
                 </p>
-                <p class="text-xs text-gray-500 dark:text-gray-500 self-center">
+                <p class="self-center text-xs text-gray-500 dark:text-gray-500">
                   @if (subscriptionInfoData.subscriptionCustomerOrganizationQuantity !== unlimited) {
                     of {{ subscriptionInfoData.subscriptionCustomerOrganizationQuantity }} Customers used
                   } @else {
@@ -47,12 +47,12 @@
                 </p>
               </div>
               <div
-                class="grid grid-rows-3 gap-0 py-2 px-4 border border-gray-200 dark:border-gray-700 rounded-lg text-center">
-                <p class="text-sm text-gray-600 dark:text-gray-400 self-center">Registry Storage</p>
-                <p class="text-3xl font-bold text-gray-900 dark:text-white self-center">
+                class="grid grid-rows-3 gap-0 rounded-lg border border-gray-200 px-4 py-2 text-center dark:border-gray-700">
+                <p class="self-center text-sm text-gray-600 dark:text-gray-400">Registry Storage</p>
+                <p class="self-center text-3xl font-bold text-gray-900 dark:text-white">
                   {{ subscriptionInfoData.currentRegistryStorageBytes | bytes: '1.0-1' }}
                 </p>
-                <p class="text-xs text-gray-500 dark:text-gray-500 self-center">
+                <p class="self-center text-xs text-gray-500 dark:text-gray-500">
                   @if (registryStorageLimit(); as storageLimit) {
                     of {{ storageLimit | bytes: '1.0-0' }} used
                   } @else {
@@ -93,16 +93,16 @@
               <div class="space-y-4">
                 <h2 class="text-xl font-bold dark:text-white">Manage Subscription</h2>
                 <div
-                  class="p-6 bg-linear-to-r from-primary-50 to-blue-50 dark:from-gray-700 dark:to-gray-800 rounded-lg">
-                  <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  class="rounded-lg bg-linear-to-r from-primary-50 to-blue-50 p-6 dark:from-gray-700 dark:to-gray-800">
+                  <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
                     Access the Stripe Customer Portal to manage your subscription, download invoices, and update your
                     payment method.
                   </p>
                   <button
                     type="button"
                     (click)="manageSubscription()"
-                    class="text-white inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-6 py-3 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
-                    <fa-icon [icon]="faCreditCard" size="lg" class="h-4 w-4 mr-2" />
+                    class="inline-flex items-center justify-center rounded-lg bg-primary-700 px-6 py-3 text-center text-sm font-medium text-white hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 focus:outline-none dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+                    <fa-icon [icon]="faCreditCard" size="lg" class="mr-2 h-4 w-4" />
                     Manage Subscription & Billing
                   </button>
                 </div>
@@ -120,7 +120,7 @@
                     >read more</a
                   >).
                 </p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
                     <label for="userAccountQuantity-update" class="distr-label mb-2"> Vendor Team Members * </label>
                     <input
@@ -164,8 +164,8 @@
                     type="button"
                     (click)="updateQuantities()"
                     [disabled]="form.invalid || !hasQuantitiesChanged()"
-                    class="text-white inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-6 py-3 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
-                    <fa-icon [icon]="faShoppingCart" size="lg" class="h-4 w-4 mr-2" />
+                    class="inline-flex items-center justify-center rounded-lg bg-primary-700 px-6 py-3 text-center text-sm font-medium text-white hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+                    <fa-icon [icon]="faShoppingCart" size="lg" class="mr-2 h-4 w-4" />
                     Proceed
                   </button>
                 </div>
@@ -176,11 +176,11 @@
                 <div class="space-y-4">
                   <h2 class="text-xl font-bold dark:text-white">Upgrade to Business</h2>
                   <div
-                    class="p-6 bg-linear-to-r from-primary-50 to-blue-50 dark:from-gray-700 dark:to-gray-800 rounded-lg">
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    class="rounded-lg bg-linear-to-r from-primary-50 to-blue-50 p-6 dark:from-gray-700 dark:to-gray-800">
+                    <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
                       The Distr Business plan is built for vendors distributing at scale:
                     </p>
-                    <ul class="space-y-1 text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    <ul class="mb-4 space-y-1 text-sm text-gray-600 dark:text-gray-400">
                       <li>
                         <fa-icon [icon]="faCheck" class="text-green-500" />
                         {{ getPlanCustomerLimitDescription('business') }} (up from
@@ -193,7 +193,7 @@
                         </li>
                       }
                     </ul>
-                    <div class="flex justify-between items-center">
+                    <div class="flex items-center justify-between">
                       <div>
                         <p class="text-sm text-gray-600 dark:text-gray-400">Estimated Cost</p>
                         <p class="text-3xl font-bold text-gray-900 dark:text-white">
@@ -209,8 +209,8 @@
                         type="button"
                         (click)="upgradeToBusiness()"
                         [disabled]="form.invalid"
-                        class="text-white inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-6 py-3 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
-                        <fa-icon [icon]="faShoppingCart" size="lg" class="h-4 w-4 mr-2" />
+                        class="inline-flex items-center justify-center rounded-lg bg-primary-700 px-6 py-3 text-center text-sm font-medium text-white hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+                        <fa-icon [icon]="faShoppingCart" size="lg" class="mr-2 h-4 w-4" />
                         Upgrade to Business
                       </button>
                     </div>
@@ -220,17 +220,17 @@
             } @else if (isTrialSubscription()) {
               <div class="space-y-4">
                 <h2 class="text-xl font-bold dark:text-white">Choose Your Plan</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <!-- Pro Plan -->
                   <label
                     [class.ring-2]="form.value.subscriptionType === 'pro'"
                     [class.ring-primary-600]="form.value.subscriptionType === 'pro'"
-                    class="flex flex-col p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary-300 dark:border-gray-700 dark:hover:border-primary-700">
+                    class="flex cursor-pointer flex-col rounded-lg border-2 border-gray-200 p-4 hover:border-primary-300 dark:border-gray-700 dark:hover:border-primary-700">
                     <input type="radio" formControlName="subscriptionType" value="pro" class="sr-only" />
-                    <div class="flex justify-between items-start mb-2">
+                    <div class="mb-2 flex items-start justify-between">
                       <h3 class="text-lg font-bold text-gray-900 dark:text-white">Pro</h3>
                     </div>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Production rollouts with governance</p>
+                    <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">Production rollouts with governance</p>
                     <ul class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                       <li>
                         <fa-icon [icon]="faCheck" class="text-green-500" />
@@ -252,13 +252,13 @@
                   <label
                     [class.ring-2]="form.value.subscriptionType === 'business'"
                     [class.ring-primary-600]="form.value.subscriptionType === 'business'"
-                    class="flex flex-col p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary-300 dark:border-gray-700 dark:hover:border-primary-700">
+                    class="flex cursor-pointer flex-col rounded-lg border-2 border-gray-200 p-4 hover:border-primary-300 dark:border-gray-700 dark:hover:border-primary-700">
                     <input type="radio" formControlName="subscriptionType" value="business" class="sr-only" />
-                    <div class="flex justify-between items-start mb-2">
+                    <div class="mb-2 flex items-start justify-between">
                       <h3 class="text-lg font-bold text-gray-900 dark:text-white">Business</h3>
                       <span class="text-sm text-gray-500 dark:text-gray-400">Most Popular</span>
                     </div>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">For vendors distributing at scale</p>
+                    <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">For vendors distributing at scale</p>
                     <ul class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                       <li>
                         <fa-icon [icon]="faCheck" class="text-green-500" />
@@ -282,11 +282,11 @@
               <div class="space-y-4">
                 <h2 class="text-xl font-bold dark:text-white">Billing Period</h2>
                 <div class="flex gap-4">
-                  <label class="flex items-center cursor-pointer">
+                  <label class="flex cursor-pointer items-center">
                     <input type="radio" formControlName="subscriptionPeriod" value="monthly" class="distr-radio" />
                     <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Monthly</span>
                   </label>
-                  <label class="flex items-center cursor-pointer">
+                  <label class="flex cursor-pointer items-center">
                     <input type="radio" formControlName="subscriptionPeriod" value="yearly" class="distr-radio" />
                     <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
                       Yearly
@@ -299,7 +299,7 @@
               <!-- Quantities -->
               <div class="space-y-4">
                 <h2 class="text-xl font-bold dark:text-white">Subscription Quantities</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
                     <label for="userAccountQuantity-checkout" class="distr-label mb-2"> Vendor Team Members * </label>
                     <input
@@ -338,8 +338,8 @@
               </div>
 
               <!-- Price Preview -->
-              <div class="p-6 bg-linear-to-r from-primary-50 to-blue-50 dark:from-gray-700 dark:to-gray-800 rounded-lg">
-                <div class="flex justify-between items-center">
+              <div class="rounded-lg bg-linear-to-r from-primary-50 to-blue-50 p-6 dark:from-gray-700 dark:to-gray-800">
+                <div class="flex items-center justify-between">
                   <div>
                     <p class="text-sm text-gray-600 dark:text-gray-400">Estimated Cost</p>
                     <p class="text-3xl font-bold text-gray-900 dark:text-white">
@@ -352,14 +352,14 @@
                   <button
                     type="submit"
                     [disabled]="form.invalid"
-                    class="text-white inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-6 py-3 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
-                    <fa-icon [icon]="faShoppingCart" size="lg" class="h-4 w-4 mr-2" />
+                    class="inline-flex items-center justify-center rounded-lg bg-primary-700 px-6 py-3 text-center text-sm font-medium text-white hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+                    <fa-icon [icon]="faShoppingCart" size="lg" class="mr-2 h-4 w-4" />
                     Proceed to Checkout
                   </button>
                 </div>
               </div>
 
-              <div class="p-4 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 rounded-lg">
+              <div class="rounded-lg bg-gray-50 p-4 text-sm text-gray-600 dark:bg-gray-900 dark:text-gray-400">
                 <p>
                   <strong>Note:</strong>
                   For Enterprise plans with unlimited usage, please
@@ -375,7 +375,7 @@
     }
 
     @if (isSubscriptionExpired() && (auth.hasAnyRole('admin') || auth.isSuperAdmin())) {
-      <h2 class="text-xl font-bold dark:text-white mt-8 mb-2">Danger Zone</h2>
+      <h2 class="mt-8 mb-2 text-xl font-bold dark:text-white">Danger Zone</h2>
       <app-delete-organization />
     }
   </div>

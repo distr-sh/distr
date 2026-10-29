@@ -23,7 +23,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"go.uber.org/zap"
 )
 
 func ApplicationsRouter(r chiopenapi.Router) {
@@ -597,31 +596,33 @@ func addVersionToMatchingEntitlements(
 	if err != nil {
 		return false, err
 	}
-	entitlementIDs := entitlementsToAutoAddVersionTo(ctx, entitlements, version.Name, previousName)
-	if len(entitlementIDs) == 0 {
+	if entitlementIDs, err := entitlementsToAutoAddVersionTo(entitlements, version.Name, previousName); err != nil {
+		return false, err
+	} else if len(entitlementIDs) == 0 {
 		return false, nil
+	} else {
+		return db.AddVersionToApplicationEntitlements(ctx, version.ID, entitlementIDs)
 	}
-	return db.AddVersionToApplicationEntitlements(ctx, version.ID, entitlementIDs)
 }
 
 // entitlementsToAutoAddVersionTo only picks an entitlement for a renamed version if the previous name did not match
 // yet, so that a version removed by hand is not added back.
 func entitlementsToAutoAddVersionTo(
-	ctx context.Context,
 	entitlements []types.ApplicationEntitlementBase,
 	name string,
 	previousName *string,
-) []uuid.UUID {
+) ([]uuid.UUID, error) {
 	var entitlementIDs []uuid.UUID
 	for _, entitlement := range entitlements {
 		if re, err := regexp.Compile(*entitlement.AutoAddVersionRegex); err != nil {
-			internalctx.GetLogger(ctx).Warn("skipping invalid auto-add version regex",
-				zap.Stringer("applicationEntitlementId", entitlement.ID), zap.Error(err))
+			return nil, fmt.Errorf(
+				"could not compile auto-add version regex of application entitlement %v: %w", entitlement.ID, err,
+			)
 		} else if re.MatchString(name) && (previousName == nil || !re.MatchString(*previousName)) {
 			entitlementIDs = append(entitlementIDs, entitlement.ID)
 		}
 	}
-	return entitlementIDs
+	return entitlementIDs, nil
 }
 
 func getApplicationVersionComposeFile(r *http.Request) (respond.Responder, error) {

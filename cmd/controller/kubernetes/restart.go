@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 
@@ -34,7 +35,10 @@ func ForceRestart(ctx context.Context, namespace string, d ControllerDeployment)
 			logger.Warn("skipping non-metav1 object", zap.Error(err))
 			continue
 		}
-		logger = logger.With(zap.String("resourceName", metaObj.GetName()))
+		resourceNamespace := cmp.Or(metaObj.GetNamespace(), namespace)
+		logger = logger.With(
+			zap.String("resourceNamespace", resourceNamespace),
+			zap.String("resourceName", metaObj.GetName()))
 
 		before, err := runtime.Encode(scheme.DefaultJSONEncoder(), obj)
 		if err != nil {
@@ -75,7 +79,7 @@ func ForceRestart(ctx context.Context, namespace string, d ControllerDeployment)
 
 		var resource dynamic.ResourceInterface
 		if mapping.Scope == meta.RESTScopeNamespace {
-			resource = k8sDynamicClient.Resource(mapping.Resource).Namespace(namespace)
+			resource = k8sDynamicClient.Resource(mapping.Resource).Namespace(resourceNamespace)
 		} else {
 			resource = k8sDynamicClient.Resource(mapping.Resource)
 		}

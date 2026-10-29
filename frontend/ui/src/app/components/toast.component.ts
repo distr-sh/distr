@@ -13,33 +13,33 @@ const autoCloseDuration = 5000;
   selector: 'app-toast',
   template: `
     <div
-      class="flex items-center w-full max-w-xs gap-3 p-4 mb-4 text-gray-500 bg-white rounded-lg shadow-sm dark:text-gray-400 dark:bg-gray-800"
+      class="mb-4 flex w-full max-w-xs items-center gap-3 rounded-lg border border-gray-200 bg-white p-4 text-gray-500 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
       role="alert">
       @switch (type()) {
         @case ('error') {
           <fa-icon
             [icon]="faCircleExclamation"
             size="lg"
-            class="inline-flex items-center justify-center shrink-0 w-8 h-8 rounded-lg text-red-500 dark:bg-red-800 bg-red-100 dark:text-red-200" />
+            class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-500 dark:bg-red-800 dark:text-red-200" />
         }
         @case ('success') {
           <fa-icon
             [icon]="faCircleCheck"
             size="lg"
-            class="inline-flex items-center justify-center shrink-0 w-8 h-8 rounded-lg text-green-500 dark:bg-green-800 bg-green-100 dark:text-green-200" />
+            class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-green-100 text-green-500 dark:bg-green-800 dark:text-green-200" />
         }
         @case ('info') {
           <fa-icon
             [icon]="faCircleInfo"
             size="lg"
-            class="inline-flex items-center justify-center shrink-0 w-8 h-8 rounded-lg text-blue-500 dark:bg-blue-800 bg-blue-100 dark:text-blue-200" />
+            class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-500 dark:bg-blue-800 dark:text-blue-200" />
         }
       }
-      <div class="text-sm font-normal overflow-hidden">{{ message() }}</div>
+      <div class="overflow-hidden text-sm font-normal">{{ message() }}</div>
       <button
         type="button"
         (click)="remove()"
-        class="ms-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex items-center justify-center h-8 w-8 dark:text-gray-500 dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700"
+        class="-mx-1.5 -my-1.5 ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-900 focus:ring-2 focus:ring-gray-300 dark:bg-gray-800 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-white"
         aria-label="Close">
         <span class="sr-only">Close</span>
         <fa-icon [icon]="faXmark" />

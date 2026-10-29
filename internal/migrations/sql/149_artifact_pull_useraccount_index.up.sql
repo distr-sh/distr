@@ -1,0 +1,1 @@
+CREATE INDEX fk_ArtifactVersionPull_useraccount_id ON ArtifactVersionPull (useraccount_id);

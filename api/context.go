@@ -1,6 +1,9 @@
 package api
 
-import "github.com/distr-sh/distr/internal/types"
+import (
+	"github.com/distr-sh/distr/internal/types"
+	"github.com/google/uuid"
+)
 
 type ContextResponse struct {
 	User                 UserAccountResponse              `json:"user"`
@@ -11,5 +14,11 @@ type ContextResponse struct {
 	AvailableContexts    []types.OrganizationWithUserRole `json:"availableContexts,omitempty"`
 	// RegistryHost is the effective registry host of the organization, considering custom
 	// domains and legacy branding domains, falling back to the instance default.
-	RegistryHost string `json:"registryHost,omitzero"`
+	RegistryHost      string `json:"registryHost,omitzero"`
+	HasPulledArtifact bool   `json:"hasPulledArtifact"`
+}
+
+type CustomerLens struct {
+	CustomerOrganizationID   uuid.UUID `json:"customerOrganizationId"`
+	CustomerOrganizationName string    `json:"customerOrganizationName"`
 }

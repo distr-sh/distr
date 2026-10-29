@@ -1,6 +1,6 @@
 import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, viewChild} from '@angular/core';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
@@ -12,13 +12,14 @@ import {
   faTrash,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
+import {firstValueFrom, map, startWith, Subject, switchMap} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
 import {
   ActivityTimelineComponent,
   ActivityTimelineEntry,
 } from '../../components/activity-timeline/activity-timeline.component';
+import {AlertComponent} from '../../components/alert/alert.component';
 import {ClipComponent} from '../../components/clip.component';
 import {PageComponent} from '../../components/page.component';
 import {AuthService} from '../../services/auth.service';
@@ -37,6 +38,7 @@ import {SupportBundleStatusBadgeComponent} from '../support-bundle-status-badge.
     DatePipe,
     RouterLink,
     FaIconComponent,
+    AlertComponent,
     ClipComponent,
     ActivityTimelineComponent,
     PageComponent,
@@ -61,6 +63,10 @@ export class SupportBundleDetailComponent {
   private readonly timeline = viewChild(ActivityTimelineComponent);
 
   protected readonly bundle = signal<SupportBundleDetail | undefined>(undefined);
+  protected readonly justInitialized = toSignal(
+    this.route.queryParamMap.pipe(map((params) => params.get('initialized') === 'true')),
+    {initialValue: false}
+  );
   protected readonly updatingStatus = signal(false);
   protected readonly submittingComment = signal(false);
   protected readonly downloading = signal(false);

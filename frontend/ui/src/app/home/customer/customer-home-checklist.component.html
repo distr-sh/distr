@@ -1,17 +1,17 @@
 <div class="distr-card block p-4">
-  <div class="flex items-center gap-4 mb-3">
+  <div class="mb-3 flex items-center gap-4">
     <h2 appCardHeading [icon]="faListCheck" class="flex-1">Getting started</h2>
-    <span class="text-sm distr-text-muted">{{ doneCount() }} of {{ items().length }} done</span>
+    <span class="distr-text-muted text-sm">{{ doneCount() }} of {{ items().length }} done</span>
     <button
       type="button"
       (click)="dismissed.emit()"
       title="Hide getting started"
-      class="-me-2 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+      class="-me-2 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
       <fa-icon [icon]="faXmark" />
       <span class="sr-only">Hide getting started</span>
     </button>
   </div>
-  <ul class="flex flex-col gap-1 -mx-2">
+  <ul class="-mx-2 flex flex-col gap-1">
     @for (item of items(); track item.label) {
       <li>
         @if (item.link) {

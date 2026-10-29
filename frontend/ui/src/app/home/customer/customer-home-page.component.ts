@@ -344,19 +344,11 @@ export class CustomerHomePageComponent {
     {initialValue: []}
   );
 
-  private readonly reloadSupportBundles$ = new Subject<void>();
   protected readonly supportBundles = toSignal(
     combineLatest([this.features$, this.featureFlags.isSupportBundlesEnabled$.pipe(take(1))]).pipe(
       switchMap(([features, enabled]) =>
         enabled && features.includes('support_bundles')
-          ? this.reloadSupportBundles$.pipe(
-              startWith(undefined),
-              switchMap(() =>
-                this.supportBundlesService
-                  .list()
-                  .pipe(map(toCustomerHomeSupportBundles), recoverWithToast(this.toast, []))
-              )
-            )
+          ? this.supportBundlesService.list().pipe(map(toCustomerHomeSupportBundles), recoverWithToast(this.toast, []))
           : of(undefined)
       )
     )
@@ -404,10 +396,6 @@ export class CustomerHomePageComponent {
 
   protected reloadDeploymentTargets() {
     this.reloadDeploymentTargets$.next();
-  }
-
-  protected reloadSupportBundles() {
-    this.reloadSupportBundles$.next();
   }
 
   private whenFeature<T>(

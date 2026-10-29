@@ -1,7 +1,7 @@
 import {inject} from '@angular/core';
 import {CanActivateFn, Router, Routes} from '@angular/router';
 import {CustomerOrganizationFeature, UserRole} from '@distr-sh/distr-sdk';
-import {firstValueFrom, map} from 'rxjs';
+import {firstValueFrom, switchMap} from 'rxjs';
 import {getRemoteEnvironment} from '../env/remote';
 import {AccessTokenDetailComponent} from './access-tokens/access-token-detail.component';
 import {AccessTokensComponent} from './access-tokens/access-tokens.component';
@@ -97,6 +97,13 @@ const requireVendorOrPartner: CanActivateFn = () => {
 const requireVendorOrCustomer: CanActivateFn = () => {
   const auth = inject(AuthService);
   if (auth.isVendor() || auth.isCustomer()) {
+    return true;
+  }
+  return inject(Router).createUrlTree(['/']);
+};
+
+const requireNonLensContext: CanActivateFn = () => {
+  if (!inject(AuthService).isLens()) {
     return true;
   }
   return inject(Router).createUrlTree(['/']);
@@ -209,11 +216,21 @@ function subscriptionGuard(): CanActivateFn {
     const auth = inject(AuthService);
     const router = inject(Router);
     const organizationService = inject(OrganizationService);
-    return (
-      auth.isCustomer() ||
-      organizationService
-        .get()
-        .pipe(map((org) => (isSubscriptionExpired(org) ? router.createUrlTree(['/subscription']) : true)))
+    if (auth.isCustomer() && !auth.isLens()) {
+      return true;
+    }
+    return organizationService.get().pipe(
+      switchMap(async (org) => {
+        if (!isSubscriptionExpired(org)) {
+          return true;
+        } else if (auth.isLens()) {
+          // a lens cannot reach the subscription page, so the session has to return to the vendor portal first
+          await auth.switchContext(org.id!);
+          return false;
+        } else {
+          return router.createUrlTree(['/subscription']);
+        }
+      })
     );
   };
 }
@@ -433,6 +450,7 @@ export const routes: Routes = [
           },
           {
             path: 'access-tokens',
+            canActivate: [requireNonLensContext],
             children: [
               {
                 path: '',
@@ -518,7 +536,7 @@ export const routes: Routes = [
       },
       {
         path: 'support',
-        canActivate: [requireCustomer],
+        canActivate: [requireCustomer, supportBundlesEnabledGuard(), requireCustomerFeature('support_bundles')],
         children: [
           {
             path: '',

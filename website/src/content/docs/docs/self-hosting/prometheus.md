@@ -12,11 +12,12 @@ Distr exposes a Prometheus-compatible metrics endpoint that can be scraped by an
 
 The metrics endpoint is configured via environment variables:
 
-| Variable               | Default | Description                                                                        |
-| ---------------------- | ------- | ---------------------------------------------------------------------------------- |
-| `METRICS_ENABLED`      | `false` | Enable the metrics HTTP server                                                     |
-| `METRICS_ADDR`         | `:3000` | Address and port the metrics server listens on                                     |
-| `METRICS_BEARER_TOKEN` | (none)  | If set, requires an `Authorization: Bearer <token>` header on every scrape request |
+| Variable                | Default | Description                                                                        |
+| ----------------------- | ------- | ---------------------------------------------------------------------------------- |
+| `METRICS_ENABLED`       | `false` | Enable the metrics HTTP server                                                     |
+| `METRICS_ADDR`          | `:3000` | Address and port the metrics server listens on                                     |
+| `METRICS_BEARER_TOKEN`  | (none)  | If set, requires an `Authorization: Bearer <token>` header on every scrape request |
+| `METRICS_PPROF_ENABLED` | `false` | Serve Go runtime profiles under `/debug/pprof/` on the metrics server              |
 
 ### Docker Compose
 
@@ -33,6 +34,9 @@ METRICS_ENABLED=true
 
 When deploying with the Distr Helm chart, the same environment variables can be set via `distr.env` in your `values.yaml`.
 The metrics server port is configured separately via `service.metricsPort`.
+
+If you run the [Prometheus Operator](https://prometheus-operator.dev/), set `serviceMonitor.enabled` to let the chart create a ServiceMonitor for the Distr pods.
+Add the label your Prometheus selects ServiceMonitors by to `serviceMonitor.labels`, and if `METRICS_BEARER_TOKEN` is set, point `serviceMonitor.bearerTokenSecret` at the Secret key holding it.
 
 An example configuration can be found in
 [`github.com/distr-sh/distr/deploy/charts/distr`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/values.yaml):

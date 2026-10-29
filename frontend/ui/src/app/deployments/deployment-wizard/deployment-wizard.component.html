@@ -1,23 +1,23 @@
 @if (!isClosing()) {
   <div
-    class="p-4 my-auto max-h-full overflow-y-auto max-w-240 bg-white rounded-lg shadow-sm dark:bg-gray-900"
+    class="my-auto max-h-full max-w-240 overflow-y-auto rounded-lg bg-white p-4 shadow-sm dark:bg-gray-900"
     animate.enter="animate-fly-in-top"
     animate.leave="animate-fly-out-top"
     (animationend)="animationComplete()">
     <!-- Modal header -->
-    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+    <div class="flex items-center justify-between rounded-t border-b border-gray-200 p-4 md:p-5 dark:border-gray-600">
       <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Create New Deployment</h2>
       <button
         type="button"
         (click)="close()"
-        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+        class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
         <fa-icon [icon]="faXmark" />
         <span class="sr-only">Close modal</span>
       </button>
     </div>
 
     <!-- Modal body -->
-    <div class="p-4 space-y-4 w-full">
+    <div class="w-full space-y-4 p-4">
       <section class="antialiased">
         <div class="mx-auto">
           <app-deployment-wizard-stepper
@@ -25,18 +25,18 @@
             (attemptContinue)="attemptContinue()"
             (attemptGoBack)="attemptGoBack()"
             [showCustomerStep]="showCustomerStep()"
-            class="mx-auto md:max-w-5xl space-y-6">
+            class="mx-auto space-y-6 md:max-w-5xl">
             <!-- Step 1: Customer Selection (Conditional - Only for Vendors) -->
             @if (showCustomerStep()) {
               <cdk-step [stepControl]="customerForm">
-                <div class="space-y-6 mt-4">
-                  <div class="space-y-4 w-full">
+                <div class="mt-4 space-y-6">
+                  <div class="w-full space-y-4">
                     <h3 class="font-normal text-gray-900 dark:text-white">Select Customer</h3>
                     <p class="text-sm text-gray-500 dark:text-gray-400">
                       Create the deployment in your vendor organization or choose a customer.
                     </p>
 
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                       <!-- Vendor Only Option -->
                       @let org = currentOrganization$ | async;
                       @let deploymentLimit = org?.subscriptionLimits?.maxDeploymentsPerCustomerOrganization ?? -1;
@@ -49,7 +49,7 @@
                             [disabled]="limitReached"
                             [title]="limitReached ? 'Maximum deployments reached' : ''"
                             (click)="selectCustomer(null)"
-                            class="relative flex flex-col items-center py-4 px-2 rounded-lg border transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="relative flex flex-col items-center rounded-lg border px-2 py-4 transition-all hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                             [class.border-primary-600]="isSelected"
                             [class.bg-primary-50]="isSelected"
                             [class.dark:bg-primary-900]="isSelected"
@@ -62,22 +62,22 @@
                               <img
                                 [src]="(getVendorLogoUrl(branding) | secureImage | async) ?? '/distr-logo.svg'"
                                 [alt]="org.name"
-                                class="w-12 h-12 mb-2 rounded-lg" />
+                                class="mb-2 h-12 w-12 rounded-lg" />
                             }
 
                             <!-- Vendor Name -->
                             <div
-                              class="text-sm font-medium text-gray-900 dark:text-white text-center mb-1 max-w-full overflow-hidden text-ellipsis">
+                              class="mb-1 max-w-full overflow-hidden text-center text-sm font-medium text-ellipsis text-gray-900 dark:text-white">
                               {{ org.name }}
                             </div>
 
                             <!-- Description -->
-                            <div class="text-xs text-gray-500 dark:text-gray-400 text-center">Internal deployment</div>
+                            <div class="text-center text-xs text-gray-500 dark:text-gray-400">Internal deployment</div>
 
                             <!-- Selection Indicator -->
                             @if (isSelected) {
                               <div class="absolute top-2 left-2 text-primary-600 dark:text-primary-400">
-                                <fa-icon [icon]="faCircleCheck" class="w-6 h-6" />
+                                <fa-icon [icon]="faCircleCheck" class="h-6 w-6" />
                               </div>
                             }
                           </button>
@@ -93,7 +93,7 @@
                           (click)="selectCustomer(customer)"
                           [disabled]="deploymentLimitReached"
                           [title]="deploymentLimitReached ? 'Maximum deployments reached' : ''"
-                          class="relative flex flex-col items-center py-4 px-2 rounded-lg border transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                          class="relative flex flex-col items-center rounded-lg border px-2 py-4 transition-all hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                           [class.border-primary-600]="customerForm.value.customerOrganizationId === customer.id"
                           [class.bg-primary-50]="customerForm.value.customerOrganizationId === customer.id"
                           [class.dark:bg-primary-900]="customerForm.value.customerOrganizationId === customer.id"
@@ -106,29 +106,29 @@
                             <img
                               [src]="customer.imageUrl | secureImage | async"
                               [alt]="customer.name"
-                              class="w-12 h-12 mb-2 rounded-lg" />
+                              class="mb-2 h-12 w-12 rounded-lg" />
                           } @else {
                             <div
-                              class="w-12 h-12 mb-2 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                              class="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-gray-200 dark:bg-gray-700">
                               <fa-icon [icon]="faAddressBook" class="text-xl text-gray-400 dark:text-gray-500" />
                             </div>
                           }
 
                           <!-- Customer Name -->
                           <div
-                            class="text-sm font-medium text-gray-900 dark:text-white text-center mb-1 max-w-full overflow-hidden text-ellipsis">
+                            class="mb-1 max-w-full overflow-hidden text-center text-sm font-medium text-ellipsis text-gray-900 dark:text-white">
                             {{ customer.name }}
                           </div>
 
                           <!-- Customer Stats -->
-                          <div class="text-xs text-gray-500 dark:text-gray-400 text-center">
+                          <div class="text-center text-xs text-gray-500 dark:text-gray-400">
                             {{ customer.userCount }} users · {{ customer.deploymentTargetCount }} deployments
                           </div>
 
                           <!-- Selection Indicator -->
                           @if (customerForm.value.customerOrganizationId === customer.id) {
                             <div class="absolute top-2 left-2 text-primary-600 dark:text-primary-400">
-                              <fa-icon [icon]="faCircleCheck" class="w-6 h-6" />
+                              <fa-icon [icon]="faCircleCheck" class="h-6 w-6" />
                             </div>
                           }
                         </button>
@@ -141,17 +141,17 @@
 
             <!-- Step 2: Application Selection -->
             <cdk-step [stepControl]="applicationForm">
-              <div class="space-y-6 mt-4">
-                <div class="space-y-4 w-full">
+              <div class="mt-4 space-y-6">
+                <div class="w-full space-y-4">
                   <h3 class="font-normal text-gray-900 dark:text-white">Select Application</h3>
                   <p class="text-sm text-gray-500 dark:text-gray-400">Choose the application you want to deploy</p>
 
-                  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  <div class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
                     @for (app of filteredApplications$ | async; track app.id) {
                       <button
                         type="button"
                         (click)="selectApplication(app)"
-                        class="relative flex flex-col items-center p-4 rounded-lg border-2 transition-all hover:shadow-md"
+                        class="relative flex flex-col items-center rounded-lg border-2 p-4 transition-all hover:shadow-md"
                         [class.border-primary-600]="applicationForm.value.applicationId === app.id"
                         [class.bg-primary-50]="applicationForm.value.applicationId === app.id"
                         [class.dark:bg-primary-900]="applicationForm.value.applicationId === app.id"
@@ -164,16 +164,16 @@
                           <img
                             [attr.src]="app.imageUrl | secureImage | async"
                             [alt]="app.name"
-                            class="w-12 h-12 mb-2 rounded-lg" />
+                            class="mb-2 h-12 w-12 rounded-lg" />
                         } @else {
                           <div
-                            class="w-12 h-12 mb-2 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                            class="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-gray-200 dark:bg-gray-700">
                             <fa-icon [icon]="faShip" class="text-xl text-gray-400 dark:text-gray-500" />
                           </div>
                         }
 
                         <!-- Application Name -->
-                        <div class="text-sm font-medium text-gray-900 dark:text-white text-center mb-1">
+                        <div class="mb-1 text-center text-sm font-medium text-gray-900 dark:text-white">
                           {{ app.name }}
                         </div>
 
@@ -189,25 +189,25 @@
                         </div>
 
                         <!-- Version Count -->
-                        <div class="text-xs text-gray-500 dark:text-gray-400 text-center">
+                        <div class="text-center text-xs text-gray-500 dark:text-gray-400">
                           {{ app.versions?.length || 0 }} version{{ (app.versions?.length || 0) !== 1 ? 's' : '' }}
                         </div>
 
                         <!-- Selection Indicator -->
                         @if (applicationForm.value.applicationId === app.id) {
                           <div class="absolute top-2 left-2 text-primary-600 dark:text-primary-400">
-                            <fa-icon [icon]="faCircleCheck" class="w-6 h-6" />
+                            <fa-icon [icon]="faCircleCheck" class="h-6 w-6" />
                           </div>
                         }
                       </button>
                     } @empty {
-                      <div class="col-span-2 md:col-span-3 lg:col-span-4 text-center py-8">
+                      <div class="col-span-2 py-8 text-center md:col-span-3 lg:col-span-4">
                         <div class="text-gray-500 dark:text-gray-400">
                           @if (entitlementControlVisible()) {
-                            <p class="text-sm font-medium mb-1">No application entitlements found</p>
+                            <p class="mb-1 text-sm font-medium">No application entitlements found</p>
                             <p class="text-xs">This customer has no entitlement for any applications.</p>
                           } @else {
-                            <p class="text-sm font-medium mb-1">No applications found</p>
+                            <p class="mb-1 text-sm font-medium">No applications found</p>
                             <p class="text-xs">There are no applications available to deploy.</p>
                           }
                         </div>
@@ -226,8 +226,8 @@
 
             <!-- Step 3: Deployment Target Configuration -->
             <cdk-step [stepControl]="deploymentTargetForm">
-              <div class="space-y-6 mt-4">
-                <div class="space-y-4 w-full">
+              <div class="mt-4 space-y-6">
+                <div class="w-full space-y-4">
                   <h3 class="font-normal text-gray-900 dark:text-white">Deployment Configuration</h3>
 
                   <!-- Deployment Name -->
@@ -259,7 +259,7 @@
                           Enable autoheal for all containers
                         </label>
                       </div>
-                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                         When enabled, the autoheal service will automatically restart any unhealthy containers.
                       </p>
                     </div>
@@ -302,7 +302,7 @@
                           required
                           autotrim
                           autocomplete="off" />
-                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                           The Docker socket on the host that the controller should use. Defaults to
                           <code>unix:///var/run/docker.sock</code>.
                         </div>
@@ -331,7 +331,7 @@
                         required
                         autotrim
                         autocomplete="off" />
-                      <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                         The namespace where the controller and application will be deployed
                       </div>
                       @if (
@@ -374,7 +374,7 @@
                     @if (deploymentTargetForm.controls.resources.enabled) {
                       @let resourcesCtrl = deploymentTargetForm.controls.resources;
 
-                      <div class="grid grid-cols-2 gap-4 border border-gray-300 dark:border-gray-700 rounded-md p-4">
+                      <div class="grid grid-cols-2 gap-4 rounded-md border border-gray-300 p-4 dark:border-gray-700">
                         <div>
                           <label for="cpu-request" class="distr-label mb-2"> CPU Request </label>
                           <input
@@ -386,7 +386,7 @@
                             required
                             autotrim
                             autocomplete="off" />
-                          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1"></div>
+                          <div class="mt-1 text-xs text-gray-500 dark:text-gray-400"></div>
                           @if (resourcesCtrl.controls.cpuRequest.invalid && resourcesCtrl.controls.cpuRequest.touched) {
                             <p class="mt-1 text-xs text-red-600 dark:text-red-500">
                               Field is required and must be a valid Kubernetes quantity.
@@ -405,7 +405,7 @@
                             required
                             autotrim
                             autocomplete="off" />
-                          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1"></div>
+                          <div class="mt-1 text-xs text-gray-500 dark:text-gray-400"></div>
                           @if (
                             resourcesCtrl.controls.memoryRequest.invalid && resourcesCtrl.controls.memoryRequest.touched
                           ) {
@@ -426,7 +426,7 @@
                             required
                             autotrim
                             autocomplete="off" />
-                          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1"></div>
+                          <div class="mt-1 text-xs text-gray-500 dark:text-gray-400"></div>
                           @if (resourcesCtrl.controls.cpuLimit.invalid && resourcesCtrl.controls.cpuLimit.touched) {
                             <p class="mt-1 text-xs text-red-600 dark:text-red-500">
                               Field is required and must be a valid Kubernetes quantity.
@@ -445,7 +445,7 @@
                             required
                             autotrim
                             autocomplete="off" />
-                          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1"></div>
+                          <div class="mt-1 text-xs text-gray-500 dark:text-gray-400"></div>
                           @if (
                             resourcesCtrl.controls.memoryLimit.invalid && resourcesCtrl.controls.memoryLimit.touched
                           ) {
@@ -484,7 +484,7 @@
                         Enable automatic controller updates
                       </label>
                     </div>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       When enabled, the controller is updated to the latest version as soon as one becomes available.
                       Updating the controller does not restart or update the deployed application.
                     </p>
@@ -495,8 +495,8 @@
 
             <!-- Step 4: Application Configuration -->
             <cdk-step [stepControl]="applicationConfigForm">
-              <div class="space-y-6 mt-4">
-                <div class="space-y-4 w-full">
+              <div class="mt-4 space-y-6">
+                <div class="w-full space-y-4">
                   <h3 class="font-normal text-gray-900 dark:text-white">Application Configuration</h3>
 
                   <!-- Deployment Form -->
@@ -514,14 +514,14 @@
 
             <!-- Step 5: Success Page -->
             <cdk-step [stepControl]="connectForm">
-              <div class="space-y-6 mt-12">
+              <div class="mt-12 space-y-6">
                 <div class="space-y-6">
-                  <div class="flex flex-col items-center text-center space-y-4">
-                    <fa-icon [icon]="faCircleCheck" class="text-green-600 dark:text-green-500 text-6xl mt-4" />
+                  <div class="flex flex-col items-center space-y-4 text-center">
+                    <fa-icon [icon]="faCircleCheck" class="mt-4 text-6xl text-green-600 dark:text-green-500" />
                     <h3 class="text-2xl font-semibold text-gray-900 dark:text-white">
                       Deployment Created Successfully
                     </h3>
-                    <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400 max-w-2xl">
+                    <p class="max-w-2xl text-base leading-relaxed text-gray-500 dark:text-gray-400">
                       Your deployment has been created successfully. To deploy it, please copy and paste the following
                       command:
                     </p>
