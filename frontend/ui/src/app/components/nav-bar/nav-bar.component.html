@@ -146,13 +146,11 @@
                       @if (isOrganizationListed()) {
                         <li>
                           @if (entry.current) {
-                            <div class="group distr-dropdown-label" aria-current="true" role="none">
+                            <div class="distr-dropdown-label" aria-current="true" role="none">
                               <ng-container
                                 [ngTemplateOutlet]="organizationLabel"
                                 [ngTemplateOutletContext]="{$implicit: entry.org}" />
-                              <fa-icon
-                                [icon]="faCheck"
-                                class="ps-2 text-gray-500 opacity-0 group-hover:opacity-100 dark:text-gray-400" />
+                              <fa-icon [icon]="faCheck" class="ps-2 text-gray-500 dark:text-gray-400" />
                             </div>
                           } @else {
                             <button
@@ -173,24 +171,28 @@
                       }
                       @for (lens of entry.lenses; track lens.customerOrganizationId) {
                         <li>
-                          <button
-                            type="button"
-                            (click)="enterLens(lens)"
-                            [title]="'Enter customer lens for ' + lens.customerOrganizationName"
-                            [attr.aria-current]="lens.current"
-                            class="group distr-dropdown-item focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
-                            role="menuitem">
-                            <app-avatar
-                              [name]="lens.customerOrganizationName"
-                              initialsClass="text-[0.625rem]"
-                              class="size-5 rounded-sm" />
-                            <span class="grow" role="none">{{ lens.customerOrganizationName }}</span>
-                            @if (!lens.current) {
+                          @if (lens.current) {
+                            <div class="distr-dropdown-label" aria-current="true" role="none">
+                              <ng-container
+                                [ngTemplateOutlet]="lensLabel"
+                                [ngTemplateOutletContext]="{$implicit: lens}" />
+                              <fa-icon [icon]="faGlasses" class="ps-2 text-gray-500 dark:text-gray-400" />
+                            </div>
+                          } @else {
+                            <button
+                              type="button"
+                              (click)="enterLens(lens)"
+                              [title]="'Enter customer lens for ' + lens.customerOrganizationName"
+                              class="group distr-dropdown-item focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
+                              role="menuitem">
+                              <ng-container
+                                [ngTemplateOutlet]="lensLabel"
+                                [ngTemplateOutletContext]="{$implicit: lens}" />
                               <fa-icon
                                 [icon]="faGlasses"
                                 class="ps-2 text-gray-500 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 dark:text-gray-400" />
-                            }
-                          </button>
+                            </button>
+                          }
                         </li>
                       }
                     } @empty {
@@ -296,4 +298,9 @@
       </span>
     }
   </span>
+</ng-template>
+
+<ng-template #lensLabel let-lens>
+  <app-avatar [name]="lens.customerOrganizationName" initialsClass="text-[0.625rem]" class="size-5 rounded-sm" />
+  <span class="grow" role="none">{{ lens.customerOrganizationName }}</span>
 </ng-template>
