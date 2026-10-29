@@ -17,6 +17,7 @@ type frontendEnvironmentResponse struct {
 	PosthogUIHost         *string  `json:"posthogUiHost,omitempty"`
 	RegistryHost          string   `json:"registryHost"`
 	CustomDomainTarget    *string  `json:"customDomainTarget,omitempty"`
+	TermsOfServiceURL     *string  `json:"termsOfServiceUrl,omitempty"`
 }
 
 func InternalRouter(r chi.Router) {
@@ -33,5 +34,6 @@ func getFrontendEnvironmentHandler(r *http.Request) (respond.Responder, error) {
 		PosthogUIHost:         env.FrontendPosthogUIHost(),
 		RegistryHost:          env.RegistryHost(),
 		CustomDomainTarget:    env.CustomDomainTarget(),
+		TermsOfServiceURL:     env.FrontendTermsOfServiceURL(),
 	}), nil
 }

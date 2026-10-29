@@ -1,0 +1,112 @@
+---
+title: Data Processing Agreement
+description: Data Processing Agreement for Distr
+slug: data-processing-agreement
+hideSidebar: true
+head:
+  - tag: meta
+    attrs:
+      name: robots
+      content: noindex
+sidebar:
+  label: Data Processing Agreement
+  order: 3
+---
+
+**Last Updated:** October 29, 2026
+
+## Using this DPA
+
+This DPA has 2 parts: (1) the Key Terms on this Cover Page and (2) the [Common Paper DPA Standard Terms Version 1.1](https://commonpaper.com/standards/data-processing-agreement/1.1/) ("DPA Standard Terms"), which is incorporated by reference. If there is any inconsistency between the parts of the DPA, the Cover Page will control over the DPA Standard Terms. Capitalized words that are highlighted in the DPA Standard Terms have the meanings given on the Cover Page. However, if the Cover Page omits or does not define a highlighted word, the default meaning will be "none" or "not applicable" and the correlating clause, sentence, or section does not apply to this Agreement. All other capitalized words have the meanings given in the DPA Standard Terms or the Agreement.
+
+## Key Terms
+
+**Agreement:** This DPA supplements the [Distr Terms of Service](/terms-of-service/) between Glasskube, Inc. and Customer, or the separate Order Form for Distr that Customer signed with Glasskube, Inc.
+
+**Approved Subprocessors:**
+
+| Subprocessor                       | Country of location                  | Processing task                                                                       |
+| ---------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------- |
+| Amazon Web Services, Inc.          | Germany                              | Hosting of the Cloud Service, including its databases and storage, and email delivery |
+| Stripe, Inc.                       | United States                        | Payment processing and billing                                                        |
+| PostHog, Inc.                      | Germany                              | Product analytics                                                                     |
+| Functional Software, Inc. (Sentry) | Germany                              | Error monitoring                                                                      |
+| Cloudflare, Inc.                   | United States and its global network | Protection of the sign-up and login against automated abuse                           |
+| Slack Technologies, LLC            | United States                        | Communication with Customer for technical support                                     |
+
+**Provider Security Contact:** support@distr.sh
+
+**Security Policy:** Provider will use commercially reasonable efforts to secure the Service from unauthorized access, alteration, or use and other unlawful tampering.
+
+**Service Provider Relationship:** To the extent California Consumer Privacy Act, Cal. Civ. Code § 1798.100 et seq ("CCPA") applies, the parties acknowledge and agree that Provider is a service provider and is receiving Personal Data from Customer to provide the Service as agreed in the Agreement and detailed below (see Nature and Purpose of Processing), which constitutes a limited and specified business purpose. Provider will not sell or share any Personal Data provided by Customer under the Agreement. In addition, Provider will not retain, use, or disclose any Personal Data provided by Customer under the Agreement except as necessary for providing the Service for Customer, as stated in the Agreement, or as permitted by Applicable Data Protection Laws. Provider certifies that it understands the restrictions of this paragraph and will comply with all Applicable Data Protection Laws. Provider will notify Customer if it can no longer meet its obligation under the CCPA.
+
+## Restricted Transfers
+
+**Governing Member State:**
+
+- **EEA Transfers:** Ireland
+- **UK Transfers:** England and Wales
+
+**Data Exporter:**
+
+- **Name:** Customer
+- **Address:** The address Customer provides in its account or billing details
+- **Contact Person:** The person who accepted the Agreement on behalf of Customer, at the main email address for Customer's account
+- **Activities relevant to transfer:** See Annex I(B)
+- **Role:** Controller
+
+**Data Importer:**
+
+- **Name:** Provider
+- **Address:** 1 Mid America Plaza, 3rd Floor, PMB 0704, Oakbrook Terrace, IL 60181, United States
+- **Contact Person:** Louis Weston, Co-Founder, at the address above or office@glasskube.com
+- **Activities relevant to transfer:** See Annex I(B)
+- **Role:** Processor
+
+## Annex I(B): Description of Transfer and Processing Activities
+
+**Service:** The Cloud Service as defined in the Agreement.
+
+**Categories of Data Subjects:**
+
+- Customer's employees, such as the users of Customer's organization
+- Customer's end users or customers, such as the users of the customer organizations Customer manages in the Service
+
+**Categories of Personal Data:**
+
+- Contact information such as name and email address
+- Transactional information such as account information or purchases
+- User activity and analysis such as device information or IP address
+- Personal data that Customer includes in Customer Content, such as deployment logs, configuration or artifacts
+
+**Is special category data Processed?** No
+
+**Frequency of Transfer:** Continuous
+
+**Nature and Purpose of Processing:** Provider will Process Customer Personal Data as instructed in Section 2.3 of the DPA Standard Terms. The nature of processing includes:
+
+- Receiving data, including collection, accessing, retrieval, recording, and data entry
+- Holding data, including storage, organization, and structuring
+- Updating data, including correcting, adaptation, alteration, alignment, and combination
+- Protecting data, including restricting, encrypting, and security testing
+- Sharing data, including disclosure, dissemination, allowing access, or otherwise making available
+- Erasing data, including destruction and deletion
+
+**Duration of Processing:** Provider will process Customer Personal Data as long as required (i) to conduct the Processing activities instructed in Section 2.2(a)-(d) of the Standard Terms; or (ii) by Applicable Laws.
+
+**Competent Supervisory Authority:** The supervisory authority will be the supervisory authority of the data exporter, as determined in accordance with Clause 13 of the EEA SCCs or the relevant provision of the UK Addendum.
+
+## Technical and Organizational Security Measures
+
+- See Security Policy
+- **Pseudonymization and encryption of personal data:** Passwords are hashed with Argon2id. Secrets and credentials stored in the Service are encrypted in the database.
+- **Ability to restore the availability of and access to Customer Personal Data in a timely manner following a physical or technical incident:** The databases of the Service are backed up regularly.
+- **User identification and authorization process and protection:** Users sign in with a password or through single sign-on and can enable multi-factor authentication. Access tokens are stored as hashes only. Roles (read only, read and write, administrator) limit what each user can do in an organization.
+- **Protecting Customer Personal Data during transmission (in transit):** Connections to the Service, including those from Distr Controllers, are encrypted with TLS.
+- **Physical security where Customer Personal Data is processed:** Customer Personal Data is processed in data centers operated by Amazon Web Services, which is responsible for their physical security.
+
+---
+
+Provider and Customer have not changed the DPA Standard Terms except for the details on the Cover Page above. Customer enters into this DPA by accepting the Agreement.
+
+This DPA is based on the Common Paper Data Processing Agreement Standard Terms Version 1.1, free to use under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).

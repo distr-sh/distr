@@ -11,6 +11,7 @@ import (
 	"github.com/distr-sh/distr/internal/billing"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/handlerutil"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/subscription"
@@ -56,6 +57,7 @@ func CreateSubscriptionHandler(r *http.Request) (respond.Responder, error) {
 		UserAccountQty:          body.UserAccountQty,
 		Currency:                "usd",
 		SuccessURL:              fmt.Sprintf("%v/subscription/callback", handlerutil.GetRequestSchemeAndHost(r)),
+		RequireTermsOfService:   env.FrontendTermsOfServiceURL() != nil,
 	}); err != nil {
 		return nil, fmt.Errorf("failed to create checkout session: %w", err)
 	} else {

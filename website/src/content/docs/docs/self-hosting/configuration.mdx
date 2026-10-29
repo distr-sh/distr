@@ -338,13 +338,14 @@ See [Prometheus Integration](/docs/self-hosting/prometheus/) for details.
 
 These values are injected into the compiled frontend at runtime.
 
-| Variable                            | Required | Default | Description                                       |
-| ----------------------------------- | -------- | ------- | ------------------------------------------------- |
-| `FRONTEND_SENTRY_DSN`               | no       | —       | Sentry DSN for frontend error reporting.          |
-| `FRONTEND_SENTRY_TRACE_SAMPLE_RATE` | no       | —       | Frontend trace sample rate (`0.0`–`1.0`).         |
-| `FRONTEND_POSTHOG_TOKEN`            | no       | —       | PostHog project API token for frontend analytics. |
-| `FRONTEND_POSTHOG_API_HOST`         | no       | —       | PostHog API host.                                 |
-| `FRONTEND_POSTHOG_UI_HOST`          | no       | —       | PostHog UI host.                                  |
+| Variable                            | Required | Default | Description                                                                                                                               |
+| ----------------------------------- | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `FRONTEND_SENTRY_DSN`               | no       | —       | Sentry DSN for frontend error reporting.                                                                                                  |
+| `FRONTEND_SENTRY_TRACE_SAMPLE_RATE` | no       | —       | Frontend trace sample rate (`0.0`–`1.0`).                                                                                                 |
+| `FRONTEND_POSTHOG_TOKEN`            | no       | —       | PostHog project API token for frontend analytics.                                                                                         |
+| `FRONTEND_POSTHOG_API_HOST`         | no       | —       | PostHog API host.                                                                                                                         |
+| `FRONTEND_POSTHOG_UI_HOST`          | no       | —       | PostHog UI host.                                                                                                                          |
+| `FRONTEND_TERMS_OF_SERVICE_URL`     | no       | —       | URL of terms that users must accept to sign up. Setting it also requires accepting the terms of service configured in Stripe at checkout. |
 
 ## Licensing & Billing
 

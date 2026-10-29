@@ -88,6 +88,27 @@
               <span class="text-sm text-red-500">Password mismatch</span>
             }
           </div>
+          @if (termsOfServiceUrl(); as url) {
+            <div>
+              <div class="flex items-center">
+                <input id="terms-accepted" type="checkbox" formControlName="termsAccepted" class="distr-checkbox" />
+                <label for="terms-accepted" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                  I agree to the
+                  <a
+                    [href]="url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="font-medium text-primary-600 hover:underline dark:text-primary-500"
+                    >Terms of Service</a
+                  >
+                  <span class="text-red-500">*</span>
+                </label>
+              </div>
+              @if (form.controls.termsAccepted.touched && form.controls.termsAccepted.invalid) {
+                <span class="text-sm text-red-500">Please accept the Terms of Service to create an account</span>
+              }
+            </div>
+          }
           @if (turnstileSiteKey(); as siteKey) {
             <app-turnstile class="-mt-2 mb-2 md:-mt-3 md:mb-3" [siteKey]="siteKey" (token)="onTurnstileToken($event)" />
           }
@@ -98,6 +119,7 @@
             Create an account
           </button>
           <app-oidc-buttons
+            (click)="requireTermsForOidc($event)"
             class="block space-y-4 empty:hidden md:space-y-6"
             label="Or sign up with one of these:"
             flow="registration" />
