@@ -173,15 +173,7 @@
                       </div>
 
                       <!-- Deployment Type Badge -->
-                      <div class="distr-badge mb-1">
-                        @if (app.type === 'docker') {
-                          <fa-icon [icon]="faDocker" />
-                          Docker
-                        } @else {
-                          <fa-icon [icon]="faDharmachakra" />
-                          Kubernetes
-                        }
-                      </div>
+                      <app-deployment-type-badge class="mb-1" [type]="app.type" />
 
                       <!-- Version Count -->
                       <div class="text-center text-xs text-gray-500 dark:text-gray-400">
