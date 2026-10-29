@@ -237,6 +237,22 @@ func RemoveOrganizationFeaturesWithSubscriptionType(
 	return nil
 }
 
+func GetOrganizationIDsWithoutFeature(ctx context.Context, feature types.Feature) ([]uuid.UUID, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT id FROM Organization WHERE deleted_at IS NULL AND NOT @feature::FEATURE = ANY(features)`,
+		pgx.NamedArgs{"feature": feature},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query Organization: %w", err)
+	}
+	if result, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID]); err != nil {
+		return nil, fmt.Errorf("could not collect Organization IDs: %w", err)
+	} else {
+		return result, nil
+	}
+}
+
 // ApplyPlanToAllOrganizations is the bulk equivalent of [types.Organization.ApplyPlan]: it puts
 // every organization on the given plan and adds its features without removing any other.
 func ApplyPlanToAllOrganizations(ctx context.Context, plan types.SubscriptionPlan) error {

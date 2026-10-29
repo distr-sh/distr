@@ -547,7 +547,7 @@ export const routes: Routes = [
       },
       {
         path: 'security',
-        canActivate: [requireCustomer, vulnerabilitiesEnabledGuard()],
+        canActivate: [requireCustomer, vulnerabilitiesEnabledGuard(), requireCustomerFeature('vulnerabilities')],
         children: [
           {
             path: '',

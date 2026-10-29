@@ -64,7 +64,7 @@ func ReconcileEditionFeatures(ctx context.Context) error {
 				zap.String("subscription_period", string(plan.Period)),
 				zap.Time("subscription_ends_at", plan.EndsAt),
 			)
-			if err := db.ApplyPlanToAllOrganizations(ctx, plan); err != nil {
+			if err := applyPlanToAllOrganizations(ctx, plan); err != nil {
 				return err
 			}
 

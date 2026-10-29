@@ -28,7 +28,8 @@ import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {PartnerOrganizationsService} from '../../services/partner-organizations.service';
 import {ToastService} from '../../services/toast.service';
-import {isProSubscription} from '../../types/subscription';
+import {Feature} from '../../types/organization';
+import {isProSubscription, SubscriptionType} from '../../types/subscription';
 import {AlertComponent} from '../alert/alert.component';
 import {AvatarComponent} from '../avatar.component';
 import {InlineEditComponent} from '../inline-edit.component';
@@ -43,9 +44,16 @@ const customerFeatureLabels: Record<CustomerOrganizationFeature, string> = {
   update_notifications: 'Update Notifications',
   support_bundles: 'Support Bundles',
   oidc_providers: 'Identity Provider',
+  vulnerabilities: 'Security',
 };
 
 const proCustomerFeatures: CustomerOrganizationFeature[] = ['alerts', 'update_notifications', 'support_bundles'];
+
+// A Business customer feature is unlocked by the organization feature behind it rather than by the plan.
+const businessCustomerFeatures: Partial<Record<CustomerOrganizationFeature, Feature>> = {
+  vulnerabilities: 'vulnerabilities',
+  oidc_providers: 'custom_oidc_providers',
+};
 
 @Component({
   templateUrl: './customer-organizations.component.html',
@@ -130,23 +138,33 @@ export class CustomerOrganizationsComponent {
     'artifacts',
     'update_notifications',
     'support_bundles',
+    'vulnerabilities',
     'oidc_providers',
   ];
 
-  // A customer can only bring its own identity provider while the vendor's own plan includes the
-  // machinery, so the checkbox is hidden rather than shown as a grantable feature that the API refuses.
   protected readonly allCustomerFeatures = computed(() => {
     const isPro = isProSubscription(this.organization()?.subscriptionType);
+    const organizationFeatures = this.organization()?.features ?? [];
     const granted = this.openCustomerFeaturesDropdownCustomer()?.features ?? [];
-    return this.allCustomerFeaturesList
-      .filter((feature) => feature !== 'oidc_providers' || this.featureFlags.isCustomOidcProvidersEnabled())
-      .map((feature) => ({
-        feature,
-        label: customerFeatureLabels[feature],
-        indent: feature === 'alerts',
-        checked: granted.includes(feature),
-        requiresPro: !isPro && proCustomerFeatures.includes(feature) && !granted.includes(feature),
-      }));
+    const requiredPlan = (feature: CustomerOrganizationFeature): SubscriptionType | undefined => {
+      const businessFeature = businessCustomerFeatures[feature];
+      if (granted.includes(feature)) {
+        return undefined;
+      } else if (proCustomerFeatures.includes(feature)) {
+        return isPro ? undefined : 'pro';
+      } else if (businessFeature) {
+        return organizationFeatures.includes(businessFeature) ? undefined : 'business';
+      } else {
+        return undefined;
+      }
+    };
+    return this.allCustomerFeaturesList.map((feature) => ({
+      feature,
+      label: customerFeatureLabels[feature],
+      indent: feature === 'alerts',
+      checked: granted.includes(feature),
+      requiredPlan: requiredPlan(feature),
+    }));
   });
 
   protected readonly openCustomerFeaturesDropdownId = signal<string | void>(undefined);
