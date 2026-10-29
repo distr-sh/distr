@@ -90,7 +90,7 @@
               <div class="mt-8 flex w-full justify-center space-x-4 sm:mt-0">
                 <button
                   type="button"
-                  (click)="save()"
+                  (click)="saveEnvVarConfiguration()"
                   [disabled]="saving() || duplicateIndices.size > 0 || envVarsArray.pristine"
                   class="distr-btn-primary inline-flex w-full items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-60">
                   <fa-icon [icon]="faFloppyDisk" class="mr-2" />
@@ -104,7 +104,50 @@
               deploymentType="docker" />
           }
           @case ('kubernetes') {
-            <app-support-bundle-scripts deploymentType="kubernetes" />
+            <h2 class="text-xl font-bold dark:text-white">ConfigMap and Secret Values</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              Choose whether Kubernetes support bundles include the values of ConfigMaps and Secrets. Without them, the
+              bundle still lists every ConfigMap and Secret with its keys, but shows each value as [REDACTED] with its
+              size. Customers see this choice before anything is collected and can change it when they run the collect
+              command.
+            </p>
+
+            <form [formGroup]="kubernetesForm" class="space-y-3">
+              <label class="inline-flex cursor-pointer items-center">
+                <input type="checkbox" class="peer sr-only" formControlName="includeConfigMapData" />
+                <div class="distr-toggle"></div>
+                <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Collect ConfigMap values</span>
+              </label>
+              <div>
+                <label class="inline-flex cursor-pointer items-center">
+                  <input type="checkbox" class="peer sr-only" formControlName="includeSecretData" />
+                  <div class="distr-toggle"></div>
+                  <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Collect Secret values</span>
+                </label>
+                @if (kubernetesForm.controls.includeSecretData.value) {
+                  <p class="distr-hint-warning mt-1">
+                    Secret values are uploaded in plain text. Service account and bootstrap tokens are always redacted.
+                  </p>
+                }
+              </div>
+            </form>
+
+            @if (auth.hasAnyRole('read_write', 'admin')) {
+              <div class="mt-8 flex w-full justify-center space-x-4 sm:mt-0">
+                <button
+                  type="button"
+                  (click)="saveKubernetesConfiguration()"
+                  [disabled]="saving() || kubernetesForm.pristine"
+                  class="distr-btn-primary inline-flex w-full items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-60">
+                  <fa-icon [icon]="faFloppyDisk" class="mr-2" />
+                  Save
+                </button>
+              </div>
+            }
+
+            <app-support-bundle-scripts
+              class="mt-8 border-t border-gray-200 pt-8 dark:border-gray-700"
+              deploymentType="kubernetes" />
           }
         }
       </div>

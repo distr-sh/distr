@@ -44,6 +44,11 @@ func (r *CreateUpdateSupportBundleConfigurationRequest) Validate() error {
 	return nil
 }
 
+type SupportBundleKubernetesConfiguration struct {
+	IncludeConfigMapData bool `json:"includeConfigMapData"`
+	IncludeSecretData    bool `json:"includeSecretData"`
+}
+
 var scriptNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9 ._-]*$`)
 
 const (

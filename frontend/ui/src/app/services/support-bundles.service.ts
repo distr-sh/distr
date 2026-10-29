@@ -11,6 +11,7 @@ import {
   SupportBundleConfigurationEnvVar,
   SupportBundleConfigurationScript,
   SupportBundleDetail,
+  SupportBundleKubernetesConfiguration,
   SupportBundleResource,
   UpdateSupportBundleStatusRequest,
 } from '../types/support-bundle';
@@ -46,6 +47,14 @@ export class SupportBundlesService {
 
   public updateConfiguration(request: CreateUpdateSupportBundleConfigurationRequest) {
     return this.httpClient.put<SupportBundleConfigurationEnvVar[]>(`${baseUrl}/configuration`, request);
+  }
+
+  public getKubernetesConfiguration() {
+    return this.httpClient.get<SupportBundleKubernetesConfiguration>(`${baseUrl}/configuration/kubernetes`);
+  }
+
+  public updateKubernetesConfiguration(request: SupportBundleKubernetesConfiguration) {
+    return this.httpClient.put<SupportBundleKubernetesConfiguration>(`${baseUrl}/configuration/kubernetes`, request);
   }
 
   public getScripts() {

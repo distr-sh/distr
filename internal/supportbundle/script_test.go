@@ -116,6 +116,7 @@ func TestGenerateCollectScript_kubernetesCollector(t *testing.T) {
 				BaseURL:              server.URL,
 				BundleID:             bundleID,
 				BundleSecret:         "secret",
+				Kubernetes:           types.SupportBundleKubernetesConfiguration{IncludeSecretData: true},
 				LogTailLines:         100,
 				ResourceMaxBytes:     1024,
 				CollectorDownloadURL: server.URL + "/releases",
@@ -141,6 +142,7 @@ func TestGenerateCollectScript_kubernetesCollector(t *testing.T) {
 			g.Expect(strings.Fields(string(args))).To(HaveExactElements(
 				"--output", HaveSuffix("/bundle"),
 				"--log-tail-lines", "100", "--max-resource-bytes", "1024",
+				"--include-configmap-data=false", "--include-secret-data=true",
 				"--context", "prod",
 			))
 			g.Expect(os.ReadFile(filepath.Join(dir, "env"))).To(BeEquivalentTo(

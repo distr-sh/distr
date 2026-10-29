@@ -25,6 +25,17 @@ type SupportBundleConfigurationEnvVar struct {
 	Redacted       bool      `db:"redacted"`
 }
 
+type SupportBundleKubernetesConfiguration struct {
+	OrganizationID       uuid.UUID `db:"organization_id"`
+	IncludeConfigMapData bool      `db:"include_configmap_data"`
+	IncludeSecretData    bool      `db:"include_secret_data"`
+}
+
+// DefaultSupportBundleKubernetesConfiguration applies to an organization that never saved one.
+func DefaultSupportBundleKubernetesConfiguration(orgID uuid.UUID) SupportBundleKubernetesConfiguration {
+	return SupportBundleKubernetesConfiguration{OrganizationID: orgID, IncludeConfigMapData: true}
+}
+
 type SupportBundleConfigurationScript struct {
 	ID             uuid.UUID      `db:"id"`
 	CreatedAt      time.Time      `db:"created_at"`
