@@ -88,32 +88,35 @@ func ExistsSupportBundleConfigurationEnvVars(ctx context.Context, orgID uuid.UUI
 }
 
 const supportBundleConfigurationScriptOutputExpr = `
-	id, created_at, organization_id, name, description, content, enabled
+	id, created_at, organization_id, deployment_type, name, description, content, enabled
 `
 
 func GetSupportBundleConfigurationScripts(
 	ctx context.Context, orgID uuid.UUID,
 ) ([]types.SupportBundleConfigurationScript, error) {
-	return getSupportBundleConfigurationScripts(ctx, orgID, false)
+	return getSupportBundleConfigurationScripts(ctx, orgID, nil)
 }
 
 func GetEnabledSupportBundleConfigurationScripts(
-	ctx context.Context, orgID uuid.UUID,
+	ctx context.Context, orgID uuid.UUID, deploymentType types.DeploymentType,
 ) ([]types.SupportBundleConfigurationScript, error) {
-	return getSupportBundleConfigurationScripts(ctx, orgID, true)
+	return getSupportBundleConfigurationScripts(ctx, orgID, &deploymentType)
 }
 
+// getSupportBundleConfigurationScripts returns every script of the organization, or only the enabled
+// scripts of enabledOfType when it is set.
 func getSupportBundleConfigurationScripts(
-	ctx context.Context, orgID uuid.UUID, enabledOnly bool,
+	ctx context.Context, orgID uuid.UUID, enabledOfType *types.DeploymentType,
 ) ([]types.SupportBundleConfigurationScript, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
 		fmt.Sprintf(`SELECT %v
 		FROM SupportBundleConfigurationScript
-		WHERE organization_id = @orgId AND (NOT @enabledOnly OR enabled)
+		WHERE organization_id = @orgId
+			AND (@enabledOfType::DEPLOYMENT_TYPE IS NULL OR (enabled AND deployment_type = @enabledOfType))
 		ORDER BY name`, supportBundleConfigurationScriptOutputExpr),
-		pgx.NamedArgs{"orgId": orgID, "enabledOnly": enabledOnly},
+		pgx.NamedArgs{"orgId": orgID, "enabledOfType": enabledOfType},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not query support bundle config scripts: %w", err)
@@ -132,15 +135,16 @@ func CreateSupportBundleConfigurationScript(
 	rows, err := db.Query(
 		ctx,
 		fmt.Sprintf(`INSERT INTO SupportBundleConfigurationScript
-			(organization_id, name, description, content, enabled)
-		VALUES (@orgId, @name, @description, @content, @enabled)
+			(organization_id, deployment_type, name, description, content, enabled)
+		VALUES (@orgId, @deploymentType, @name, @description, @content, @enabled)
 		RETURNING %v`, supportBundleConfigurationScriptOutputExpr),
 		pgx.NamedArgs{
-			"orgId":       script.OrganizationID,
-			"name":        script.Name,
-			"description": script.Description,
-			"content":     script.Content,
-			"enabled":     script.Enabled,
+			"orgId":          script.OrganizationID,
+			"deploymentType": script.DeploymentType,
+			"name":           script.Name,
+			"description":    script.Description,
+			"content":        script.Content,
+			"enabled":        script.Enabled,
 		},
 	)
 	if err != nil {
@@ -163,16 +167,18 @@ func UpdateSupportBundleConfigurationScript(
 	rows, err := db.Query(
 		ctx,
 		fmt.Sprintf(`UPDATE SupportBundleConfigurationScript
-		SET name = @name, description = @description, content = @content, enabled = @enabled
+		SET deployment_type = @deploymentType, name = @name, description = @description, content = @content,
+			enabled = @enabled
 		WHERE id = @id AND organization_id = @orgId
 		RETURNING %v`, supportBundleConfigurationScriptOutputExpr),
 		pgx.NamedArgs{
-			"id":          script.ID,
-			"orgId":       script.OrganizationID,
-			"name":        script.Name,
-			"description": script.Description,
-			"content":     script.Content,
-			"enabled":     script.Enabled,
+			"id":             script.ID,
+			"orgId":          script.OrganizationID,
+			"deploymentType": script.DeploymentType,
+			"name":           script.Name,
+			"description":    script.Description,
+			"content":        script.Content,
+			"enabled":        script.Enabled,
 		},
 	)
 	if err != nil {
@@ -214,6 +220,7 @@ var supportBundleWithDetailsOutputExpr = `
 	sb.organization_id,
 	sb.customer_organization_id,
 	sb.created_by_user_account_id,
+	sb.deployment_type,
 	sb.title,
 	sb.description,
 	sb.status,
@@ -302,7 +309,7 @@ func GetSupportBundleByBundleSecret(
 	rows, err := db.Query(
 		ctx,
 		`SELECT id, created_at, organization_id, customer_organization_id,
-			created_by_user_account_id, title, description, status,
+			created_by_user_account_id, deployment_type, title, description, status,
 			`+supportBundleSecret.Output("sb")+`, bundle_secret_expires_at,
 			status_changed_by_user_account_id, status_changed_at
 		FROM SupportBundle sb
@@ -336,18 +343,19 @@ func CreateSupportBundle(ctx context.Context, bundle *types.SupportBundle) error
 	rows, err := db.Query(
 		ctx,
 		`INSERT INTO SupportBundle AS sb
-			(organization_id, customer_organization_id, created_by_user_account_id,
+			(organization_id, customer_organization_id, created_by_user_account_id, deployment_type,
 			title, description, bundle_secret_enc, bundle_secret_expires_at)
-		VALUES (@orgId, @customerOrgId, @userId, @title, @description,
+		VALUES (@orgId, @customerOrgId, @userId, @deploymentType, @title, @description,
 			@bundleSecretEnc, @bundleSecretExpiresAt)
 		RETURNING id, created_at, organization_id, customer_organization_id,
-			created_by_user_account_id, title, description, status,
+			created_by_user_account_id, deployment_type, title, description, status,
 			`+supportBundleSecret.Output("sb")+`, bundle_secret_expires_at,
 			status_changed_by_user_account_id, status_changed_at`,
 		pgx.NamedArgs{
 			"orgId":                 bundle.OrganizationID,
 			"customerOrgId":         bundle.CustomerOrganizationID,
 			"userId":                bundle.CreatedByUserAccountID,
+			"deploymentType":        bundle.DeploymentType,
 			"title":                 bundle.Title,
 			"description":           bundle.Description,
 			"bundleSecretEnc":       bundleSecretEnc,
