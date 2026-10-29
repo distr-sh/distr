@@ -129,7 +129,9 @@ export class CustomerHomePageComponent {
 
   private readonly applicationEntitlements$ = this.featureFlags.isLicensingEnabled$.pipe(
     take(1),
-    switchMap((enabled) => (enabled ? this.applicationEntitlementsService.list() : of([]))),
+    switchMap((enabled) =>
+      enabled ? this.applicationEntitlementsService.list().pipe(recoverWithToast(this.toast, [])) : of([])
+    ),
     shareReplay(1)
   );
 
@@ -152,16 +154,11 @@ export class CustomerHomePageComponent {
     )
   );
 
-  private readonly rawArtifacts$ = this.whenFeature('artifacts', [], () => from(this.artifactsService.refresh())).pipe(
-    shareReplay(1)
-  );
+  private readonly rawArtifacts$ = this.whenFeature('artifacts', [], () =>
+    from(this.artifactsService.refresh()).pipe(recoverWithToast(this.toast, []))
+  ).pipe(shareReplay(1));
 
-  protected readonly artifacts = toSignal(
-    this.rawArtifacts$.pipe(
-      map(toCustomerHomeArtifacts),
-      recoverWithToast(this.toast, {artifacts: [], hasPulled: false})
-    )
-  );
+  protected readonly artifacts = toSignal(this.rawArtifacts$.pipe(map(toCustomerHomeArtifacts)));
 
   // A customer only receives the applications it is entitled to.
   private readonly applicationsAvailable$ = this.whenFeature('deployment_targets', false, () =>
@@ -238,7 +235,10 @@ export class CustomerHomePageComponent {
     return this.artifactsEnabled() ? 'artifacts' : 'none';
   });
 
-  private readonly accessTokens$ = this.accessTokensService.list().pipe(shareReplay(1));
+  private readonly accessTokens$ = (this.auth.isLens() ? of([]) : this.accessTokensService.list()).pipe(
+    recoverWithToast(this.toast, []),
+    shareReplay(1)
+  );
 
   private readonly notificationFeatures$ = combineLatest([
     this.features$,
@@ -337,10 +337,7 @@ export class CustomerHomePageComponent {
   );
 
   protected readonly accessTokens = toSignal(
-    this.accessTokens$.pipe(
-      map((tokens) => toCustomerHomeAccessTokens(tokens)),
-      recoverWithToast(this.toast, [])
-    ),
+    this.accessTokens$.pipe(map((tokens) => toCustomerHomeAccessTokens(tokens))),
     {initialValue: []}
   );
 
