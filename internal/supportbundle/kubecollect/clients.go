@@ -3,6 +3,8 @@ package kubecollect
 import (
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/discovery"
@@ -10,15 +12,44 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/metadata"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
-// KubeContext is the context of the customer's kubeconfig the collector connects with, the current
-// one unless --context names another. Nothing is installed in the cluster.
+// KubeContext is the context of the customer's kubeconfig the collector connects with, the one
+// --context names or the customer selects. Nothing is installed in the cluster.
 type KubeContext struct {
 	Name      string
 	Server    string
 	Namespace string
 	Config    *rest.Config
+}
+
+type KubeContextOption struct {
+	Name   string
+	Server string
+}
+
+// ListKubeContexts returns the contexts of the kubeconfig sorted by name and the current one.
+func ListKubeContexts(configFlags *genericclioptions.ConfigFlags) ([]KubeContextOption, string, error) {
+	// ConfigFlags keeps the loader of its first use, which has the --context of that moment, so the
+	// kubeconfig is read here without it to let the selected context take effect afterwards.
+	rules := clientcmd.NewDefaultClientConfigLoadingRules()
+	if configFlags.KubeConfig != nil {
+		rules.ExplicitPath = *configFlags.KubeConfig
+	}
+	raw, err := rules.Load()
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to read the kubeconfig: %w", err)
+	}
+	options := make([]KubeContextOption, 0, len(raw.Contexts))
+	for _, name := range slices.Sorted(maps.Keys(raw.Contexts)) {
+		option := KubeContextOption{Name: name}
+		if cluster, ok := raw.Clusters[raw.Contexts[name].Cluster]; ok {
+			option.Server = cluster.Server
+		}
+		options = append(options, option)
+	}
+	return options, raw.CurrentContext, nil
 }
 
 func LoadKubeContext(configFlags *genericclioptions.ConfigFlags) (*KubeContext, error) {
@@ -33,9 +64,7 @@ func LoadKubeContext(configFlags *genericclioptions.ConfigFlags) (*KubeContext, 
 		name = *configFlags.Context
 	}
 	if name == "" {
-		return nil, errors.New(
-			"the kubeconfig has no current context, select one with --context or kubectl config use-context",
-		)
+		return nil, errors.New("the kubeconfig has no context, select another one with --kubeconfig")
 	} else if _, ok := raw.Contexts[name]; !ok {
 		return nil, fmt.Errorf("the kubeconfig has no context named %q", name)
 	}
