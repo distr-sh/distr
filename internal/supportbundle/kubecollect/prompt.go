@@ -24,6 +24,57 @@ func NewPrompter(in io.Reader, out io.Writer) *Prompter {
 	return &Prompter{in: bufio.NewReader(in), out: out}
 }
 
+// SelectKubeContext offers the current context as the default, or no default when the kubeconfig
+// has none or names one it does not contain.
+func (p *Prompter) SelectKubeContext(options []KubeContextOption, current string) (string, error) {
+	_, _ = fmt.Fprintln(p.out, "Contexts:")
+	for i, option := range options {
+		if option.Server != "" {
+			_, _ = fmt.Fprintf(p.out, "  [%d] %s (%s)\n", i+1, option.Name, option.Server)
+		} else {
+			_, _ = fmt.Fprintf(p.out, "  [%d] %s\n", i+1, option.Name)
+		}
+	}
+	if !slices.ContainsFunc(options, func(o KubeContextOption) bool { return o.Name == current }) {
+		current = ""
+	}
+	for {
+		if current != "" {
+			_, _ = fmt.Fprintf(p.out, "Context to collect from, as a number or name [%s]: ", current)
+		} else {
+			_, _ = fmt.Fprint(p.out, "Context to collect from, as a number or name: ")
+		}
+		answer, err := p.readLine()
+		if err != nil {
+			return "", err
+		}
+		if selected, err := parseKubeContextSelection(answer, options, current); err != nil {
+			_, _ = fmt.Fprintln(p.out, err)
+		} else {
+			return selected, nil
+		}
+	}
+}
+
+func parseKubeContextSelection(answer string, options []KubeContextOption, current string) (string, error) {
+	if answer == "" {
+		if current == "" {
+			return "", errors.New("select a context from the list")
+		}
+		return current, nil
+	}
+	if n, err := strconv.Atoi(answer); err == nil {
+		if n < 1 || n > len(options) {
+			return "", fmt.Errorf("%d is not a number from the list", n)
+		}
+		return options[n-1].Name, nil
+	}
+	if !slices.ContainsFunc(options, func(o KubeContextOption) bool { return o.Name == answer }) {
+		return "", fmt.Errorf("%q is not a context from the list", answer)
+	}
+	return answer, nil
+}
+
 func (p *Prompter) SelectNamespaces(options []NamespaceOption, defaultNamespace string) ([]string, error) {
 	_, _ = fmt.Fprintln(p.out, "Namespaces:")
 	for i, option := range options {

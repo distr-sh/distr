@@ -27,7 +27,38 @@ func TestParseNamespaceSelection(t *testing.T) {
 	g.Expect(err).To(MatchError(ContainSubstring(`"monitoring" is not a namespace from the list`)))
 }
 
+var kubeContextOptions = []KubeContextOption{
+	{Name: "dev", Server: "https://dev.example.com"},
+	{Name: "prod", Server: "https://prod.example.com"},
+}
+
+func TestParseKubeContextSelection(t *testing.T) {
+	g := NewWithT(t)
+
+	g.Expect(parseKubeContextSelection("", kubeContextOptions, "dev")).To(Equal("dev"))
+	g.Expect(parseKubeContextSelection("2", kubeContextOptions, "dev")).To(Equal("prod"))
+	g.Expect(parseKubeContextSelection("prod", kubeContextOptions, "")).To(Equal("prod"))
+
+	_, err := parseKubeContextSelection("", kubeContextOptions, "")
+	g.Expect(err).To(MatchError("select a context from the list"))
+	_, err = parseKubeContextSelection("3", kubeContextOptions, "dev")
+	g.Expect(err).To(MatchError(ContainSubstring("3 is not a number from the list")))
+	_, err = parseKubeContextSelection("staging", kubeContextOptions, "dev")
+	g.Expect(err).To(MatchError(ContainSubstring(`"staging" is not a context from the list`)))
+}
+
 func TestPrompter(t *testing.T) {
+	t.Run("offers no default for a current context missing from the kubeconfig", func(t *testing.T) {
+		g := NewWithT(t)
+		var out strings.Builder
+		p := NewPrompter(strings.NewReader("\n2\n"), &out)
+
+		g.Expect(p.SelectKubeContext(kubeContextOptions, "deleted")).To(Equal("prod"))
+		g.Expect(out.String()).To(ContainSubstring("[1] dev (https://dev.example.com)"))
+		g.Expect(out.String()).NotTo(ContainSubstring("[deleted]"))
+		g.Expect(strings.Count(out.String(), "Context to collect from")).To(Equal(2))
+	})
+
 	t.Run("asks again after an invalid answer", func(t *testing.T) {
 		g := NewWithT(t)
 		var out strings.Builder
