@@ -8,11 +8,11 @@ export abstract class ReactiveList<T> {
   protected readonly sortInverted: boolean = false;
 
   private readonly state$ = new BehaviorSubject<T[] | undefined>(undefined);
-  private requested = false;
+  private loaded = false;
   private inFlight?: Promise<T[]>;
 
   private readonly items$ = defer(() => {
-    if (!this.requested) {
+    if (!this.loaded) {
       // A failed first load leaves the list empty until the next refresh, and whoever awaits refresh() reports it.
       this.refresh().catch(() => undefined);
     }
@@ -23,17 +23,10 @@ export abstract class ReactiveList<T> {
 
   /** Concurrent calls share one request, so callers never need to guard against refreshing twice. */
   public refresh(): Promise<T[]> {
-    this.requested = true;
     this.inFlight ??= firstValueFrom(this.fetch())
       .then((items) => {
         this.reset(items);
         return this.state$.value!;
-      })
-      .catch((e) => {
-        if (this.state$.value === undefined) {
-          this.requested = false;
-        }
-        throw e;
       })
       .finally(() => (this.inFlight = undefined));
     return this.inFlight;
@@ -51,6 +44,7 @@ export abstract class ReactiveList<T> {
   }
 
   public reset(arg: T[]) {
+    this.loaded = true;
     this.next(arg);
   }
 
