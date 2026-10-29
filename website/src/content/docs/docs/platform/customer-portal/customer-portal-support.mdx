@@ -30,14 +30,26 @@ As an end customer, you can create support bundles to share diagnostic data with
 ## Creating a support bundle
 
 1. Navigate to **Support** in the sidebar and click **New Support Bundle**.
-2. Enter a **Title** (required) and an optional **Description** of the issue.
-3. Click **Create**. Distr generates a one-time `curl` command valid for 24 hours.
-4. Run the command on the affected deployment host. The interactive script will:
-   - List available Docker containers and prompt for which ones to exclude
-   - Show environment variable groups that will be collected, with redacted values already masked, and prompt for which groups to exclude
-   - Show the full source of any diagnostic script your vendor configured and prompt for which ones to exclude, then run the rest and show you their output before uploading it
-   - Upload the remaining data to Distr
-5. Nothing runs or is sent until you confirm each section.
+2. Choose **Docker** or **Kubernetes** as the **Deployment Type**, enter a **Title** (required) and an optional **Description** of the issue.
+3. Click **Create**. Distr opens the new bundle and shows a one-time `curl` command valid for 24 hours.
+4. Run the command. Nothing runs or is sent until you confirm each section.
+
+For a **Docker** bundle, run the command on the affected deployment host. The interactive script will:
+
+- List available Docker containers and prompt for which ones to exclude
+- Show environment variable groups that will be collected, with redacted values already masked, and prompt for which groups to exclude
+- Show the full source of any diagnostic script your vendor configured and prompt for which ones to exclude, then run the rest and show you their output before uploading it
+- Upload the remaining data to Distr
+
+For a **Kubernetes** bundle, run the command on a machine with access to the cluster, such as the one you run `kubectl` from. The machine needs access to `github.com`, where the script downloads the Kubernetes collector from. Nothing is installed in the cluster. The interactive script will:
+
+- Ask for the kubectl context to collect from, unless your kubeconfig has only one
+- List the namespaces of the cluster with their Helm releases and ask which ones to collect
+- Ask for every part of the bundle whether to collect it: the cluster information, the resources of the namespaces, the Helm releases and their values, the events and the container logs
+- Write the files to a temporary directory, where you can look through them and edit or delete any of them before you confirm the upload
+- Show the full source of any diagnostic script your vendor configured and prompt for which ones to exclude, then run the rest against the same context
+
+To collect from a context without being asked, append `-s --` and the option to the command: `curl -fsSL '...' | sh -s -- --context prod`. See [Kubernetes bundles](/docs/platform/support-bundles/#kubernetes-bundles) for every option, the permissions the collector needs and what the collected resources contain.
 
 <Aside type="tip">
   The collect command is shown in the Customer Portal after creating the bundle
@@ -49,7 +61,7 @@ As an end customer, you can create support bundles to share diagnostic data with
 
 After the collection script runs, the bundle status changes from **Initialized** to **Created**. Click on any bundle to open the detail view where you can:
 
-- View all collected resources (container logs, environment variables, script output)
+- View all collected resources (container logs, environment variables, Kubernetes resources, script output)
 - Exchange comments with your vendor's support team
 - Track the bundle status (Initialized, Created, Resolved, Canceled)
 
