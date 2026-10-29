@@ -32,7 +32,7 @@ require (
 	github.com/go-co-op/gocron/v2 v2.22.0
 	github.com/go-logr/zapr v1.3.0
 	github.com/go-mailx/mailx v1.0.2
-	github.com/go-mailx/mailx-ses v1.0.14
+	github.com/go-mailx/mailx-ses v1.0.15
 	github.com/go-mailx/mailx-smtp v1.0.5
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/golang-migrate/migrate/v4 v4.20.1
