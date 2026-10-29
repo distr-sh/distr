@@ -37,7 +37,7 @@ export class NavShellComponent {
   );
 
   protected readonly isSidebarVisible = computed(() => {
-    return !this.isSubscriptionExpired() || this.auth.isCustomer();
+    return !this.isSubscriptionExpired() || (this.auth.isCustomer() && !this.auth.isLens());
   });
 
   protected readonly isSubscriptionBannerVisible = computed(() => {

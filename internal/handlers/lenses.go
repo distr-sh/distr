@@ -28,6 +28,8 @@ func getLensesHandler(r *http.Request) (respond.Responder, error) {
 	auth := auth.Authentication.Require(ctx)
 	if ownOrg, resp, err := ownContext(ctx, auth, *auth.CurrentOrgID()); resp != nil || err != nil {
 		return resp, err
+	} else if !ownOrg.HasActiveSubscription() {
+		return respond.JSON([]api.CustomerLens{}), nil
 	} else if customerOrgs, err := db.GetCustomerOrganizationsByOrganizationID(ctx, ownOrg.ID); err != nil {
 		return nil, fmt.Errorf("failed to get customer organizations: %w", err)
 	} else {

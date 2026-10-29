@@ -47,6 +47,8 @@ func lensContext(
 ) (*types.OrganizationWithUserRole, respond.Responder, error) {
 	if ownOrg, resp, err := ownContext(ctx, auth, *auth.CurrentOrgID()); resp != nil || err != nil {
 		return nil, resp, err
+	} else if !ownOrg.HasActiveSubscription() {
+		return nil, respond.Forbidden("the subscription of your organization has expired"), nil
 	} else if resp, err := authorizeLens(ctx, auth, *ownOrg, customerOrgID); resp != nil || err != nil {
 		return nil, resp, err
 	} else {
