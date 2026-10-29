@@ -67,7 +67,10 @@
         auth.isCustomer() &&
         auth.hasAnyRole('read_write', 'admin')
       ) {
-        <app-alert type="success" heading="Support bundle initialized" class="mt-4">
+        <app-alert
+          [type]="justInitialized() ? 'success' : 'info'"
+          [heading]="justInitialized() ? 'Support bundle successfully initialized' : 'Support bundle initialized'"
+          class="mt-4">
           <p>
             The resources still need to be collected and uploaded. The script lets you exclude the system information
             and any containers, environment variables or vendor scripts that you do not want to share.

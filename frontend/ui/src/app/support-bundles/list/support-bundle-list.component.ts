@@ -122,7 +122,7 @@ export class SupportBundleListComponent {
       );
       this.closeDialog();
       this.toast.success('Support bundle created');
-      await this.router.navigate([this.routePrefix, bundle.id]);
+      await this.router.navigate([this.routePrefix, bundle.id], {queryParams: {initialized: true}});
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {
