@@ -139,7 +139,7 @@ func TestGenerateCollectScript_kubernetesCollector(t *testing.T) {
 			args, err := os.ReadFile(filepath.Join(dir, "args"))
 			g.Expect(err).NotTo(HaveOccurred())
 			g.Expect(strings.Fields(string(args))).To(HaveExactElements(
-				"--output", HaveSuffix("/bundle"),
+				"--output", HaveSuffix("/bundle"), "--write-kubeconfig", HaveSuffix("/kubeconfig"),
 				"--log-tail-lines", "100", "--max-resource-bytes", "1024",
 				"--context", "prod",
 			))
