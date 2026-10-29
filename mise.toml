@@ -11,7 +11,7 @@ helm-docs = "1.14.2"
 "github:losisin/helm-values-schema-json" = "2.6.0"
 watchexec = "2.8.0"
 pnpm = "12.15.0"
-stripe = "1.55.2"
+stripe = "1.55.3"
 "go:github.com/go-delve/delve/cmd/dlv" = "1.27.2"
 git-lfs = "3.8.1"
 
