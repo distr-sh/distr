@@ -16,7 +16,7 @@ func keepTail(r io.Reader, maxBytes int) ([]byte, error) {
 	for {
 		n, err := r.Read(chunk)
 		content = append(content, chunk[:n]...)
-		if len(content) > 2*maxBytes {
+		if len(content)-maxBytes > maxBytes {
 			content = append(content[:0], content[len(content)-maxBytes:]...)
 			cut = true
 		}
