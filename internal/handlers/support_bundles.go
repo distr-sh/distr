@@ -12,6 +12,7 @@ import (
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/contenttype"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
@@ -117,7 +118,7 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 			r.Get("/download", respond.Handler(downloadSupportBundleResourcesHandler)).
 				With(option.Description("Download all support bundle resources as a zip archive")).
 				With(option.Request(BundleIDRequest{})).
-				With(option.Response(http.StatusOK, nil, option.ContentType("application/zip")))
+				With(option.Response(http.StatusOK, nil, option.ContentType(contenttype.MediaTypeZIP)))
 
 			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 				Patch("/status", respond.Handler(updateSupportBundleStatusHandler)).
@@ -425,7 +426,7 @@ func downloadSupportBundleResourcesHandler(r *http.Request) (respond.Responder, 
 	} else if resources, err := db.GetSupportBundleResources(ctx, bundle.ID); err != nil {
 		return nil, fmt.Errorf("failed to get support bundle resources: %w", err)
 	} else {
-		return respond.Writer("application/zip", func(w io.Writer) (respond.Responder, error) {
+		return respond.Writer(contenttype.MediaTypeZIP, func(w io.Writer) (respond.Responder, error) {
 			if err := writeSupportBundleZip(w, resources); err != nil {
 				return nil, fmt.Errorf("failed to write zip archive: %w", err)
 			}
@@ -444,7 +445,7 @@ func writeSupportBundleZip(w io.Writer, resources []types.SupportBundleResource)
 
 	usedNames := make(map[string]struct{})
 	for _, resource := range resources {
-		extension := resource.ContentType.FileExtension()
+		extension := types.SupportBundleResourceFileExtension(resource.ContentType)
 		name := strings.TrimSuffix(supportBundleZipEntryPath(resource.Name, resource.ID.String()), extension)
 		entryName := name + extension
 		for count := 2; ; count++ {

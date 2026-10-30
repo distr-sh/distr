@@ -35,7 +35,7 @@ type BundleFile struct {
 	Name        string
 	Path        string
 	Size        int64
-	ContentType types.SupportBundleResourceContentType
+	ContentType string
 }
 
 // ListBundleFiles lists the regular files below dir. The customer may have edited or deleted files
@@ -135,7 +135,7 @@ func (u Uploader) upload(ctx context.Context, file BundleFile) error {
 	form := multipart.NewWriter(&body)
 	if err := form.WriteField("name", file.Name); err != nil {
 		return err
-	} else if err := form.WriteField("contentType", string(file.ContentType)); err != nil {
+	} else if err := form.WriteField("contentType", file.ContentType); err != nil {
 		return err
 	} else if part, err := form.CreateFormFile("content", path.Base(file.Name)); err != nil {
 		return err

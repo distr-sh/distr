@@ -10,7 +10,7 @@ import (
 	"io"
 	"slices"
 
-	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/contenttype"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
@@ -128,13 +128,13 @@ func (c *Collector) collectHelmReleases(ctx context.Context, namespace string, v
 			History:       revisions,
 		}); err != nil {
 			return err
-		} else if err := c.collect(ctx, dir+"release.yaml", types.SupportBundleResourceContentTypeYAML, content); err != nil {
+		} else if err := c.collect(ctx, dir+"release.yaml", contenttype.MediaTypeYAML, content); err != nil {
 			return err
 		}
 		if values {
 			if content, err := yaml.Marshal(release.Config); err != nil {
 				return err
-			} else if err := c.collect(ctx, dir+"values.yaml", types.SupportBundleResourceContentTypeYAML, content); err != nil {
+			} else if err := c.collect(ctx, dir+"values.yaml", contenttype.MediaTypeYAML, content); err != nil {
 				return err
 			}
 		}
