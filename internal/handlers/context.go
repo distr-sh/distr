@@ -1,13 +1,15 @@
 package handlers
 
 import (
+	"cmp"
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/authn/authinfo"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/controllermanifest"
 	"github.com/distr-sh/distr/internal/customdomains"
@@ -18,7 +20,6 @@ import (
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
-	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
 	"go.uber.org/zap"
@@ -34,56 +35,29 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 
-	var orgs []types.OrganizationWithUserRole
-	var err error
-
-	// Super admins get all organizations
-	if auth.IsSuperAdmin() {
-		orgs, err = db.GetAllOrganizationsForSuperAdmin(ctx)
-	} else {
-		orgs, err = db.GetOrganizationsForUser(ctx, auth.CurrentUserID())
-	}
-
+	orgs, err := availableContexts(ctx, auth)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get organizations: %w", err)
 	}
 
-	var joinDate time.Time
-	var userRole *types.UserRole
-	var customerOrgID *uuid.UUID
-	var partnerOrgID *uuid.UUID
-
-	if auth.IsSuperAdmin() {
-		// Super admins: use current org's creation time as join date, no role
-		joinDate = auth.CurrentOrg().CreatedAt
-		userRole = new(types.UserRoleAdmin)
-	} else {
-		// Regular users: find their actual join date and role
+	// Super admins have no role and no membership, so they are shown as admins who joined with the organization
+	userRole := types.UserRoleAdmin
+	joinDate := auth.CurrentOrg().CreatedAt
+	if !auth.IsSuperAdmin() {
+		userRole = *auth.CurrentUserRole()
 		for _, org := range orgs {
 			if org.ID == *auth.CurrentOrgID() {
 				joinDate = org.JoinedOrgAt
-				userRole = &org.UserRole
-				customerOrgID = org.CustomerOrganizationID
-				partnerOrgID = org.PartnerOrganizationID
 				break
 			}
-		}
-		if userRole == nil {
-			userRole = auth.CurrentUserRole()
 		}
 	}
 
 	var customerOrg *api.CustomerOrganization
 	var sidebarLinks []api.SidebarLink
-	if customerOrgID != nil {
-		if co, err := db.GetCustomerOrganizationByID(ctx, *customerOrgID); err != nil {
-			log.Error("failed to get customer organization", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-		} else {
-			mapped := mapping.CustomerOrganizationToAPI(co.CustomerOrganization)
-			customerOrg = &mapped
-		}
-		if links, err := db.GetSidebarLinks(ctx, *customerOrgID); err != nil {
+	if co := cmp.Or(auth.LensCustomerOrg(), auth.CurrentCustomerOrg()); co != nil {
+		customerOrg = new(mapping.CustomerOrganizationToAPI(*co))
+		if links, err := db.GetSidebarLinks(ctx, co.ID); err != nil {
 			log.Error("failed to get sidebar links", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 		} else {
@@ -92,13 +66,12 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 	}
 
 	var partnerOrg *api.PartnerOrganization
-	if partnerOrgID != nil {
+	if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
 		if po, err := db.GetPartnerOrganizationByID(ctx, *partnerOrgID); err != nil {
 			log.Error("failed to get partner organization", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 		} else {
-			mapped := mapping.PartnerOrganizationToAPI(po.PartnerOrganization)
-			partnerOrg = &mapped
+			partnerOrg = new(mapping.PartnerOrganizationToAPI(po.PartnerOrganization))
 		}
 	}
 
@@ -121,7 +94,9 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 
 		return respond.JSON(api.ContextResponse{
 			User: mapping.UserAccountToAPI(
-				auth.CurrentUser().AsUserAccountWithRole(*userRole, customerOrgID, auth.CurrentPartnerOrgID(), joinDate),
+				auth.CurrentUser().AsUserAccountWithRole(
+					userRole, auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID(), joinDate,
+				),
 			),
 			Organization: mapping.OrganizationToAPI(
 				*auth.CurrentOrg(), billableUserCount, customerOrgCount, controllerRepository,
@@ -129,9 +104,25 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 			CustomerOrganization: customerOrg,
 			PartnerOrganization:  partnerOrg,
 			SidebarLinks:         sidebarLinks,
-			AvailableContexts:    visibleOrganizations(auth, orgs),
+			AvailableContexts:    orgs,
 			RegistryHost:         registryHost,
 			HasPulledArtifact:    hasPulledArtifact,
 		}), nil
 	}
+}
+
+// availableContexts lists the organizations the user may switch to: every organization for a super admin and
+// the memberships for everyone else, as far as the credential may reveal them.
+func availableContexts(ctx context.Context, auth authinfo.AuthInfo) ([]types.OrganizationWithUserRole, error) {
+	var orgs []types.OrganizationWithUserRole
+	var err error
+	if auth.IsSuperAdmin() {
+		orgs, err = db.GetAllOrganizationsForSuperAdmin(ctx)
+	} else {
+		orgs, err = db.GetOrganizationsForUser(ctx, auth.CurrentUserID())
+	}
+	if err != nil {
+		return nil, err
+	}
+	return visibleOrganizations(auth, orgs), nil
 }
