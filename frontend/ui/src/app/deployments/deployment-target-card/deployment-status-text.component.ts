@@ -3,11 +3,36 @@ import {ChangeDetectionStrategy, Component, computed, Directive, input} from '@a
 import {DeploymentRevisionStatus, DeploymentStatusType, DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {never} from '../../../util/exhaust';
 import {isStale} from '../../../util/model';
+import {MultiSelectOption} from '../../components/multi-select/multi-select.component';
 import {AbstractStatusDotDirective} from '../../components/status-dot';
 import {DeploymentStatusBadgeComponent} from '../deployment-status-badge.component';
 
 function currentStatus(deployment: DeploymentWithLatestRevision): DeploymentRevisionStatus | undefined {
   return deployment.currentStatus ?? deployment.latestStatus;
+}
+
+export type DeploymentDisplayStatus = DeploymentStatusType | 'stale' | 'none';
+
+export const deploymentDisplayStatusSelectOptions: MultiSelectOption<DeploymentDisplayStatus>[] = [
+  {value: 'healthy', label: 'Healthy'},
+  {value: 'running', label: 'Running'},
+  {value: 'progressing', label: 'Progressing'},
+  {value: 'stale', label: 'Stale'},
+  {value: 'error', label: 'Error'},
+  {value: 'none', label: 'No status'},
+];
+
+export function deploymentDisplayStatus(deployment: DeploymentWithLatestRevision): DeploymentDisplayStatus {
+  const s = currentStatus(deployment);
+  if (s === undefined) {
+    return 'none';
+  } else if (s.type === 'error') {
+    return 'error';
+  } else if (isStale(s)) {
+    return 'stale';
+  } else {
+    return s.type;
+  }
 }
 
 interface PendingUpdate {
@@ -30,21 +55,22 @@ function pendingUpdate(deployment: DeploymentWithLatestRevision): PendingUpdate 
 export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
   public readonly deployment = input.required<DeploymentWithLatestRevision>();
   protected override style = computed(() => {
-    const s = currentStatus(this.deployment());
-    if (s === undefined) {
-      return 'unknown';
-    } else if (s.type === 'error') {
-      return 'danger';
-    } else if (isStale(s)) {
-      return 'warning';
-    } else if (s.type === 'progressing') {
-      return 'info';
-    } else if (s.type === 'running') {
-      return 'ok-circle';
-    } else if (s.type === 'healthy') {
-      return 'ok';
-    } else {
-      return never(s.type);
+    const status = deploymentDisplayStatus(this.deployment());
+    switch (status) {
+      case 'none':
+        return 'unknown';
+      case 'error':
+        return 'danger';
+      case 'stale':
+        return 'warning';
+      case 'progressing':
+        return 'info';
+      case 'running':
+        return 'ok-circle';
+      case 'healthy':
+        return 'ok';
+      default:
+        return never(status);
     }
   });
 }
@@ -56,20 +82,25 @@ export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
   template: `
     <div class="flex items-center gap-1" [title]="(status()?.createdAt | date: 'short') ?? ''">
       <div class="size-3" appDeploymentStatusDot [deployment]="deployment()"></div>
-      @if (status(); as drs) {
-        @if (drs.type === 'error') {
+      @switch (displayStatus()) {
+        @case ('error') {
           Error
-        } @else if (stale()) {
+        }
+        @case ('stale') {
           Stale
-        } @else if (drs.type === 'progressing') {
+        }
+        @case ('progressing') {
           Progressing
-        } @else if (drs.type === 'running') {
+        }
+        @case ('running') {
           Running
-        } @else {
+        }
+        @case ('healthy') {
           Healthy
         }
-      } @else {
-        No status
+        @default {
+          No status
+        }
       }
       @if (pending(); as pending) {
         <app-deployment-status-badge [status]="pending.type" class="ms-2" [title]="pending.message">
@@ -86,9 +117,6 @@ export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
 export class DeploymentStatusTextComponent {
   public readonly deployment = input.required<DeploymentWithLatestRevision>();
   protected readonly status = computed(() => currentStatus(this.deployment()));
-  protected readonly stale = computed(() => {
-    const status = this.status();
-    return status !== undefined && isStale(status);
-  });
+  protected readonly displayStatus = computed(() => deploymentDisplayStatus(this.deployment()));
   protected readonly pending = computed(() => pendingUpdate(this.deployment()));
 }
