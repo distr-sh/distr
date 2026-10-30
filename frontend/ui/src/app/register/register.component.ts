@@ -47,6 +47,8 @@ export class RegisterComponent implements OnInit {
   protected readonly loading = signal(false);
 
   protected readonly turnstileSiteKey = computed(() => this.portalService.loginConfig().turnstileSiteKey);
+  protected readonly termsOfServiceUrl = computed(() => this.portalService.loginConfig().termsOfServiceUrl);
+  protected readonly privacyPolicyUrl = computed(() => this.portalService.loginConfig().privacyPolicyUrl);
   private readonly turnstile = viewChild(TurnstileComponent);
   private readonly turnstileToken = signal<string | undefined>(undefined);
 
