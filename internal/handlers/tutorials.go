@@ -16,7 +16,6 @@ import (
 	"github.com/distr-sh/distr/internal/resources"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
@@ -189,7 +188,7 @@ func createHelloDistrDeploymentAndRevision(ctx context.Context, appVersionID uui
 		ApplicationVersionID: appVersionID,
 		DeploymentTargetID:   dtID,
 		EnvFileData:          []byte(helloDistrEnvironment),
-		DockerType:           util.PtrTo(types.DockerTypeCompose),
+		DockerType:           new(types.DockerTypeCompose),
 		Trigger:              types.DeploymentRevisionTriggerUser,
 	}
 	if err := db.CreateDeployment(ctx, deploymentRequest); err != nil {

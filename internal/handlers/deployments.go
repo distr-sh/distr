@@ -113,9 +113,7 @@ func saveDeployment(ctx context.Context, request api.DeploymentRequest) (respond
 		&request, validationResult.Secrets, validationResult.LicenseKeys,
 	); err != nil {
 		return deploymentValuesError(err, "invalid deployment values")
-	} else if resp, err := createOrUpdateDeployment(
-		ctx, &request, validationResult.AutomaticApplicationUpdatesEnabled,
-	); resp != nil || err != nil {
+	} else if resp, err := createOrUpdateDeployment(ctx, &request, validationResult); resp != nil || err != nil {
 		return resp, err
 	} else if _, err := db.CreateDeploymentRevision(ctx, &request); err != nil {
 		return nil, fmt.Errorf("failed to create deployment revision: %w", err)
@@ -127,11 +125,15 @@ func saveDeployment(ctx context.Context, request api.DeploymentRequest) (respond
 func createOrUpdateDeployment(
 	ctx context.Context,
 	request *api.DeploymentRequest,
-	automaticUpdates bool,
+	validationResult *deploymentRequestValidationResult,
 ) (respond.Responder, error) {
 	authInfo := auth.Authentication.Require(ctx)
 	if request.DeploymentID == nil {
-		request.AutomaticApplicationUpdatesEnabled = &automaticUpdates
+		// The docker controller skips a deployment without a docker type, and it cannot be set later.
+		if validationResult.Target.Type == types.DeploymentTypeDocker && request.DockerType == nil {
+			request.DockerType = new(types.DockerTypeCompose)
+		}
+		request.AutomaticApplicationUpdatesEnabled = &validationResult.AutomaticApplicationUpdatesEnabled
 		if err := db.CreateDeployment(ctx, request); errors.Is(err, distrerr.ErrConflict) {
 			return respond.BadRequest("release name must be unique per deployment target"), nil
 		} else if err != nil {
