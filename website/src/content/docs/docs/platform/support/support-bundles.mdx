@@ -127,7 +127,7 @@ The collector tells the customer which values it collects before anything is col
 
 ### Configure custom scripts
 
-Environment variables, logs and resources do not always answer the question you need answered. Each tab of the **Settings** page has its own custom scripts. Everything a script writes to standard output is shown to the customer and, once they confirm, attached to the bundle as a resource named after the script.
+Environment variables, logs and resources do not always answer the question you need answered. Each tab of the **Settings** page has its own custom scripts. What a script writes to standard output is attached to the bundle as a resource named after the script, once the customer has seen its first 30 lines and confirmed the upload.
 
 Docker scripts run on the customer's host during collection. Kubernetes scripts run on the customer's machine after the collector. While they run, `KUBECONFIG` points to a kubeconfig that holds only the context and namespace the collector used, so `kubectl` and `helm` reach the same cluster and namespace without any arguments. Check that `kubectl` or `helm` is installed before relying on it.
 
