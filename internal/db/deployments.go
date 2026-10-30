@@ -53,6 +53,7 @@ var deploymentWithLatestRevisionOutputExpr = deploymentOutputExpr + `,
 		dr.helm_options_cleanup_on_failure,
 		dr.helm_options_force_conflicts
 	) END AS helm_options,
+	dr.chart_digest AS chart_digest,
 	a.id AS application_id,
 	a.name AS application_name,
 	(` + applicationOutputExpr + `) AS application,
@@ -359,7 +360,11 @@ func DeleteDeploymentWithID(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentRequest) (*types.DeploymentRevision, error) {
+func CreateDeploymentRevision(
+	ctx context.Context,
+	request *api.DeploymentRequest,
+	chartDigest *types.Digest,
+) (*types.DeploymentRevision, error) {
 	deploymentID := dbcrypto.ScopeOf(request.DeploymentID)
 	valuesYamlEnc, err := deploymentValuesYaml.EncryptBytes(request.ValuesYaml, deploymentID)
 	if err != nil {
@@ -380,6 +385,7 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 		"ignoreRevisionSkew":     request.IgnoreRevisionSkew,
 		"createdByUserAccountId": request.CreatedByUserAccountID,
 		"trigger":                request.Trigger,
+		"chartDigest":            chartDigest,
 	}
 
 	if request.HelmOptions != nil {
@@ -409,7 +415,8 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 				helm_options_cleanup_on_failure,
 				helm_options_force_conflicts,
 				created_by_user_account_id,
-				trigger
+				trigger,
+				chart_digest
 			) VALUES (
 				@deploymentId,
 				@applicationVersionId,
@@ -424,7 +431,8 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 				@helmOptionsCleanupOnFailure,
 				@helmOptionsForceConflicts,
 				@createdByUserAccountId,
-				@trigger
+				@trigger,
+				@chartDigest
 			) RETURNING
 				dr.id,
 				dr.created_at,
@@ -435,6 +443,7 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 				dr.ignore_revision_skew,
 				dr.created_by_user_account_id,
 				dr.trigger,
+				dr.chart_digest,
 				CASE WHEN dr.helm_options_timeout IS NOT NULL THEN (
 					dr.helm_options_timeout,
 					dr.helm_options_wait_strategy,

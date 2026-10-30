@@ -191,6 +191,8 @@ func main() {
 					logger.Warn("could not uninstall old deployment", zap.Error(err))
 				} else if err := DeleteDeployment(ctx, res.Namespace, existing); err != nil {
 					logger.Warn("could not delete old ControllerDeployment resource", zap.Error(err))
+				} else if err := chartCache.Delete(existing.ID); err != nil {
+					logger.Warn("could not delete cached chart of old deployment", zap.Error(err))
 				}
 				registryAuthErrors.Delete(existing.ID)
 			}
