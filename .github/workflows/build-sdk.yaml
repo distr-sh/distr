@@ -10,6 +10,7 @@ on:
       - '.github/workflows/build-sdk.yaml'
     tags:
       - '*'
+      - '!*-rc.*'
   pull_request:
     paths:
       - sdk/**

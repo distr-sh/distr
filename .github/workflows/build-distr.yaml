@@ -104,7 +104,10 @@ jobs:
             suffix: -ee
             images: |
               ghcr.io/distr-sh/distr-ee
-              registry.distr.sh/enterprise/distr-ee
+            distr-registry-image: registry.distr.sh/enterprise/distr-ee
+        exclude:
+          - edition:
+              name: ${{ contains(github.ref_name, '-rc.') && 'community' || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -250,8 +253,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Login to Distr Registry (tag only)
-        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+      - name: Login to Distr Registry (non-rc tag only)
+        if: ${{ startsWith(github.ref, 'refs/tags/') && !contains(github.ref_name, '-rc.') }}
         uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: registry.distr.sh
@@ -265,7 +268,9 @@ jobs:
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
-          images: ${{ matrix.edition.images }}
+          images: |
+            ${{ matrix.edition.images }}
+            ${{ !contains(github.ref_name, '-rc.') && matrix.edition.distr-registry-image || '' }}
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}

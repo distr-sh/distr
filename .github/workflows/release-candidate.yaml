@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: Trigger Release Candidate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  tag:
+    name: Tag release candidate
+    if: github.ref == 'refs/heads/main'
+    timeout-minutes: 2
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Tag the version of the release-please pull request
+        env:
+          # a tag created with the GITHUB_TOKEN would not trigger the tag builds
+          GH_TOKEN: ${{ secrets.GLASSKUBE_BOT_SECRET }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          version="$(gh pr list --head release-please--branches--main --json title --jq '.[0].title | split(" ") | last')"
+          rc_count="$(gh api "repos/$GH_REPO/git/matching-refs/tags/$version-rc." --jq length)"
+          tag="$version-rc.$((rc_count + 1))"
+          gh api "repos/$GH_REPO/git/refs" --silent -f ref="refs/tags/$tag" -f sha="$GITHUB_SHA"
+          echo "Tagged $GITHUB_SHA as $tag" >> "$GITHUB_STEP_SUMMARY"
