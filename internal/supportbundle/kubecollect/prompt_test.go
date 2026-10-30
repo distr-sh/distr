@@ -75,10 +75,11 @@ func TestPrompter(t *testing.T) {
 
 	t.Run("takes the default for an empty answer", func(t *testing.T) {
 		g := NewWithT(t)
-		p := NewPrompter(strings.NewReader("\n\n"), io.Discard)
+		p := NewPrompter(strings.NewReader("\n\n\n"), io.Discard)
 
 		g.Expect(p.SelectNamespaces(namespaceOptions, "shop")).To(Equal([]string{"shop"}))
 		g.Expect(p.Confirm("Collect the logs?")).To(BeTrue())
+		g.Expect(p.ConfirmDefaultNo("Collect the Helm values?")).To(BeFalse())
 	})
 
 	t.Run("accepts a last answer without a newline", func(t *testing.T) {

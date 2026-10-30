@@ -165,9 +165,10 @@ func confirmGroups(prompter *kubecollect.Prompter, opts kubecollect.Options) (ku
 	}
 	var groups kubecollect.Groups
 	questions := []struct {
-		target   *bool
-		question string
-		onlyIf   *bool
+		target    *bool
+		question  string
+		onlyIf    *bool
+		defaultNo bool
 	}{
 		{
 			target: &groups.Cluster,
@@ -187,7 +188,8 @@ func confirmGroups(prompter *kubecollect.Prompter, opts kubecollect.Options) (ku
 			target: &groups.HelmValues,
 			question: "Collect the values the Helm releases were installed with? They can contain credentials, " +
 				"and Distr masks only those it recognizes.",
-			onlyIf: &groups.HelmReleases,
+			onlyIf:    &groups.HelmReleases,
+			defaultNo: true,
 		},
 		{target: &groups.Events, question: "Collect the events of the selected namespaces?"},
 		{target: &groups.Logs, question: fmt.Sprintf(
@@ -198,9 +200,13 @@ func confirmGroups(prompter *kubecollect.Prompter, opts kubecollect.Options) (ku
 
 	_, _ = fmt.Fprintln(os.Stderr)
 	for _, q := range questions {
+		confirm := prompter.Confirm
+		if q.defaultNo {
+			confirm = prompter.ConfirmDefaultNo
+		}
 		if q.onlyIf != nil && !*q.onlyIf {
 			continue
-		} else if answer, err := prompter.Confirm(q.question); err != nil {
+		} else if answer, err := confirm(q.question); err != nil {
 			return groups, err
 		} else {
 			*q.target = answer

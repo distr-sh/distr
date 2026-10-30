@@ -122,14 +122,28 @@ func parseNamespaceSelection(answer string, options []NamespaceOption, defaultNa
 }
 
 func (p *Prompter) Confirm(question string) (bool, error) {
+	return p.confirm(question, true)
+}
+
+func (p *Prompter) ConfirmDefaultNo(question string) (bool, error) {
+	return p.confirm(question, false)
+}
+
+func (p *Prompter) confirm(question string, defaultAnswer bool) (bool, error) {
+	options := "[Y/n]"
+	if !defaultAnswer {
+		options = "[y/N]"
+	}
 	for {
-		_, _ = fmt.Fprintf(p.out, "%s [Y/n]: ", question)
+		_, _ = fmt.Fprintf(p.out, "%s %s: ", question, options)
 		answer, err := p.readLine()
 		if err != nil {
 			return false, err
 		}
 		switch strings.ToLower(answer) {
-		case "", "y", "yes":
+		case "":
+			return defaultAnswer, nil
+		case "y", "yes":
 			return true, nil
 		case "n", "no":
 			return false, nil
