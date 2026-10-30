@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/contenttype"
 	. "github.com/onsi/gomega"
 )
 
@@ -92,7 +92,7 @@ func TestUploaderStopsWhenRejected(t *testing.T) {
 		path := filepath.Join(dir, fmt.Sprintf("%02d.yaml", i))
 		g.Expect(os.WriteFile(path, []byte("kind: Pod\n"), 0o644)).To(Succeed())
 		files = append(files, BundleFile{
-			Name: filepath.Base(path), Path: path, ContentType: types.SupportBundleResourceContentTypeYAML,
+			Name: filepath.Base(path), Path: path, ContentType: contenttype.MediaTypeYAML,
 		})
 	}
 

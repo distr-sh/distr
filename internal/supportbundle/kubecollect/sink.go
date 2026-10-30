@@ -5,14 +5,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-
-	"github.com/distr-sh/distr/internal/types"
 )
 
 // Sink receives every file of a bundle. The name is a slash-separated path including the file
 // extension, which is also the name of the resource in Distr.
 type Sink interface {
-	Write(ctx context.Context, name string, contentType types.SupportBundleResourceContentType, content []byte) error
+	Write(ctx context.Context, name string, contentType string, content []byte) error
 }
 
 // DirSink writes the bundle into a local directory.
@@ -20,7 +18,7 @@ type DirSink struct {
 	Dir string
 }
 
-func (s DirSink) Write(_ context.Context, name string, _ types.SupportBundleResourceContentType, content []byte) error {
+func (s DirSink) Write(_ context.Context, name string, _ string, content []byte) error {
 	local := filepath.FromSlash(name)
 	if !filepath.IsLocal(local) {
 		return fmt.Errorf("refusing to write %q outside of %s", name, s.Dir)

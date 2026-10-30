@@ -76,7 +76,7 @@
   }
 
   .distr-btn-primary {
-    @apply rounded-lg bg-primary-700 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 focus:outline-none dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800;
+    @apply rounded-lg bg-primary-700 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800;
   }
 
   .distr-btn-secondary {
@@ -145,6 +145,11 @@
 
   .distr-dropdown-item-warning {
     @apply text-yellow-500 not-disabled:hover:bg-yellow-500 not-disabled:hover:text-white dark:text-yellow-300 dark:not-disabled:hover:bg-yellow-400;
+  }
+
+  // an entry of a `distr-dropdown-panel` that cannot be selected, laid out like a `distr-dropdown-item`
+  .distr-dropdown-label {
+    @apply flex w-full items-center gap-2 px-2 py-1.5 text-start text-sm text-gray-700 dark:text-gray-200;
   }
 
   // the row of a dropdown whose entries are checkboxes, wrapping the checkbox and its label
