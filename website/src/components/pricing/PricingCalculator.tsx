@@ -334,10 +334,13 @@ export default function PricingCalculator() {
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-y-0">
           {/* Pro Plan */}
           <div
-            class={`mt-12 flex flex-col lg:grid lg:grid-rows-subgrid lg:row-span-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 transition-all ${
+            class={`mt-3 flex flex-col lg:grid lg:grid-rows-subgrid lg:row-span-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg border-2 border-accent-600 relative transition-all ${
               shouldBlurPro ? 'opacity-50 blur-sm pointer-events-none' : ''
             }`}>
-            <div class="flex justify-start items-center flex-col px-6 pt-12 pb-6 text-center">
+            <div class="absolute top-0 left-0 right-0 bg-accent-600 text-white pt-1.5 pb-3.5 text-base font-medium shadow-md text-center w-full rounded-t-md">
+              Most popular
+            </div>
+            <div class="relative mt-9 rounded-t-lg bg-white dark:bg-gray-900 flex justify-start items-center flex-col px-6 pt-12 pb-6 text-center">
               <h3 class="text-xl font-semibold">Pro</h3>
               <p class="mb-0 mt-1 text-sm text-gray-600 dark:text-gray-400">
                 Distr Cloud or Self-Hosted
@@ -437,13 +440,10 @@ export default function PricingCalculator() {
 
           {/* Business Plan */}
           <div
-            class={`mt-3 flex flex-col lg:grid lg:grid-rows-subgrid lg:row-span-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg border-2 border-accent-600 relative transition-all ${
+            class={`mt-12 flex flex-col lg:grid lg:grid-rows-subgrid lg:row-span-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 transition-all ${
               shouldBlurBusiness ? 'opacity-50 blur-sm pointer-events-none' : ''
             }`}>
-            <div class="absolute top-0 left-0 right-0 bg-accent-600 text-white pt-1.5 pb-3.5 text-base font-medium shadow-md text-center w-full rounded-t-md">
-              Most popular
-            </div>
-            <div class="relative mt-9 rounded-t-lg bg-white dark:bg-gray-900 flex justify-start items-center flex-col px-6 pt-12 pb-6 text-center">
+            <div class="flex justify-start items-center flex-col px-6 pt-12 pb-6 text-center">
               <h3 class="text-xl font-semibold">Business</h3>
               <p class="mb-0 mt-1 text-sm text-gray-600 dark:text-gray-400">
                 Distr Cloud or Self-Hosted
