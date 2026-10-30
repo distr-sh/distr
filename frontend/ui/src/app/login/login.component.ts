@@ -85,7 +85,7 @@ export class LoginComponent implements OnInit {
         this.toast.success('Your password has been updated, you can now log in.');
         break;
       case 'session-expired':
-        this.toast.success('You have been logged out because your session has expired.');
+        this.toast.info('You have been logged out because your session has expired.');
         break;
       case 'oidc-failed':
         this.toast.error(
