@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"archive/zip"
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/contenttype"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
@@ -97,7 +97,7 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 			r.Get("/download", respond.Handler(downloadSupportBundleResourcesHandler)).
 				With(option.Description("Download all support bundle resources as a zip archive")).
 				With(option.Request(BundleIDRequest{})).
-				With(option.Response(http.StatusOK, nil, option.ContentType("application/zip")))
+				With(option.Response(http.StatusOK, nil, option.ContentType(contenttype.MediaTypeZIP)))
 
 			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 				Patch("/status", respond.Handler(updateSupportBundleStatusHandler)).
@@ -354,18 +354,18 @@ func getSupportBundleDetailHandler(r *http.Request) (respond.Responder, error) {
 
 func downloadSupportBundleResourcesHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	var buffer bytes.Buffer
 
 	if bundle, resp, err := requireSupportBundle(r); resp != nil || err != nil {
 		return resp, err
 	} else if resources, err := db.GetSupportBundleResources(ctx, bundle.ID); err != nil {
 		return nil, fmt.Errorf("failed to get support bundle resources: %w", err)
-	} else if err := writeSupportBundleZip(&buffer, resources); err != nil {
-		return nil, fmt.Errorf("failed to build zip archive: %w", err)
 	} else {
-		filename := supportBundleZipFileName(bundle)
-		return respond.Stream("application/zip", &buffer).
-			WithHeader("Content-Disposition", attachment(filename)), nil
+		return respond.Writer(contenttype.MediaTypeZIP, func(w io.Writer) (respond.Responder, error) {
+			if err := writeSupportBundleZip(w, resources); err != nil {
+				return nil, fmt.Errorf("failed to write zip archive: %w", err)
+			}
+			return nil, nil
+		}).WithHeader("Content-Disposition", attachment(supportBundleZipFileName(bundle))), nil
 	}
 }
 
@@ -379,13 +379,14 @@ func writeSupportBundleZip(w io.Writer, resources []types.SupportBundleResource)
 
 	usedNames := make(map[string]struct{})
 	for _, resource := range resources {
-		name := supportBundleZipEntryName(resource.Name, resource.ID.String())
-		entryName := name + ".txt"
+		extension := types.SupportBundleResourceFileExtension(resource.ContentType)
+		name := strings.TrimSuffix(supportBundleZipEntryPath(resource.Name, resource.ID.String()), extension)
+		entryName := name + extension
 		for count := 2; ; count++ {
 			if _, exists := usedNames[entryName]; !exists {
 				break
 			}
-			entryName = fmt.Sprintf("%s-%d.txt", name, count)
+			entryName = fmt.Sprintf("%s-%d%s", name, count, extension)
 		}
 		usedNames[entryName] = struct{}{}
 		entry, err := zipWriter.CreateHeader(&zip.FileHeader{
@@ -403,22 +404,42 @@ func writeSupportBundleZip(w io.Writer, resources []types.SupportBundleResource)
 	return nil
 }
 
-func supportBundleZipEntryName(name, fallback string) string {
-	var b strings.Builder
-	for _, r := range name {
-		if b.Len() >= 128 {
+const (
+	supportBundleZipSegmentMaxBytes = 128
+	// supportBundleZipPathMaxBytes keeps every entry name far below the 65,535 bytes a zip entry name
+	// may have. Exceeding that fails the archive in the middle of the response.
+	supportBundleZipPathMaxBytes = 1024
+)
+
+// supportBundleZipEntryPath turns a resource name into a relative path that cannot escape the
+// directory the archive is extracted into. Extractors on Windows also split at a backslash and read
+// a colon as a drive letter, so a backslash separates segments and a colon is replaced.
+func supportBundleZipEntryPath(name, fallback string) string {
+	var segments []string
+	for segment := range strings.FieldsFuncSeq(name, func(r rune) bool { return r == '/' || r == '\\' }) {
+		segment = strings.TrimSpace(truncateUTF8(strings.ReplaceAll(segment, ":", "-"), supportBundleZipSegmentMaxBytes))
+		if segment != "" && segment != "." && segment != ".." {
+			segments = append(segments, segment)
+		}
+	}
+	if path := strings.Join(segments, "/"); path != "" && len(path) <= supportBundleZipPathMaxBytes {
+		return path
+	}
+	return fallback
+}
+
+func truncateUTF8(s string, maxBytes int) string {
+	if len(s) <= maxBytes {
+		return s
+	}
+	cut := 0
+	for i := range s {
+		if i > maxBytes {
 			break
 		}
-		if r == '/' || r == '\\' {
-			r = '-'
-		}
-		b.WriteRune(r)
+		cut = i
 	}
-	name = strings.TrimSpace(b.String())
-	if name == "" {
-		return fallback
-	}
-	return name
+	return s[:cut]
 }
 
 func supportBundleZipFileName(bundle *types.SupportBundleWithDetails) string {

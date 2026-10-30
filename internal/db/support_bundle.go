@@ -434,7 +434,7 @@ func GetSupportBundleResources(ctx context.Context, bundleID uuid.UUID) ([]types
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`SELECT id, created_at, support_bundle_id, name, `+supportBundleResourceContent.Output("r")+`
+		`SELECT id, created_at, support_bundle_id, name, content_type, `+supportBundleResourceContent.Output("r")+`
 		FROM SupportBundleResource r
 		WHERE support_bundle_id = @bundleId
 		ORDER BY created_at`,
@@ -458,13 +458,14 @@ func CreateSupportBundleResource(ctx context.Context, resource *types.SupportBun
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`INSERT INTO SupportBundleResource AS r (support_bundle_id, name, content_enc)
-		VALUES (@bundleId, @name, @contentEnc)
-		RETURNING id, created_at, support_bundle_id, name, `+supportBundleResourceContent.Output("r"),
+		`INSERT INTO SupportBundleResource AS r (support_bundle_id, name, content_type, content_enc)
+		VALUES (@bundleId, @name, @contentType, @contentEnc)
+		RETURNING id, created_at, support_bundle_id, name, content_type, `+supportBundleResourceContent.Output("r"),
 		pgx.NamedArgs{
-			"bundleId":   resource.SupportBundleID,
-			"name":       resource.Name,
-			"contentEnc": contentEnc,
+			"bundleId":    resource.SupportBundleID,
+			"name":        resource.Name,
+			"contentType": resource.ContentType,
+			"contentEnc":  contentEnc,
 		},
 	)
 	if err != nil {
