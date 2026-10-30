@@ -1,8 +1,10 @@
 package kubecollect
 
 import (
+	"io"
 	"strings"
 	"testing"
+	"testing/iotest"
 
 	. "github.com/onsi/gomega"
 )
@@ -15,16 +17,19 @@ func TestKeepTail(t *testing.T) {
 		log.WriteString("line\n")
 	}
 
-	content, cut := keepTail([]byte(log.String()), 200)
-	g.Expect(cut).To(BeTrue())
-	g.Expect(len(content)).To(BeNumerically("<=", 200))
-	g.Expect(string(content)).To(HavePrefix("--- distr: earlier output truncated at 200 bytes ---\n"))
-	_, tail, _ := strings.Cut(string(content), "\n")
-	g.Expect(log.String()).To(HaveSuffix("\n"+tail), "the tail starts at a line")
+	for _, reader := range []io.Reader{
+		strings.NewReader(log.String()),
+		iotest.OneByteReader(strings.NewReader(log.String())),
+	} {
+		content, err := keepTail(reader, 200)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(len(content)).To(BeNumerically("<=", 200))
+		g.Expect(string(content)).To(HavePrefix("--- distr: earlier output truncated at 200 bytes ---\n"))
+		_, tail, _ := strings.Cut(string(content), "\n")
+		g.Expect(log.String()).To(HaveSuffix("\n"+tail), "the tail starts at a line")
+	}
 
-	content, cut = keepTail([]byte("short\n"), 200)
-	g.Expect(cut).To(BeFalse())
-	g.Expect(string(content)).To(Equal("short\n"))
+	g.Expect(keepTail(strings.NewReader("short\n"), 200)).To(Equal([]byte("short\n")))
 }
 
 func TestKeepHead(t *testing.T) {
