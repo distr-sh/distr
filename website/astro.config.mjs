@@ -11,6 +11,7 @@ import rehypeExternalLinks from 'rehype-external-links';
 import starlightLinksValidator from 'starlight-links-validator';
 import starlightLlmsTxt from 'starlight-llms-txt';
 import starlightSidebarTopics from 'starlight-sidebar-topics';
+import {llmsTxtComparePages} from './src/llms-txt/compare-pages';
 import {llmsTxtOptions} from './src/llms-txt/options';
 
 const site = 'https://distr.sh';
@@ -316,6 +317,7 @@ export default defineConfig({
       ],
     }),
     mdx(),
+    llmsTxtComparePages(),
   ],
   markdown: {
     processor: unified({
