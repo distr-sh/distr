@@ -87,6 +87,63 @@ func ExistsSupportBundleConfigurationEnvVars(ctx context.Context, orgID uuid.UUI
 	return exists, nil
 }
 
+const supportBundleKubernetesConfigurationOutputExpr = `
+	c.organization_id, c.include_configmap_data, c.include_secret_data
+`
+
+func GetSupportBundleKubernetesConfiguration(
+	ctx context.Context, orgID uuid.UUID,
+) (*types.SupportBundleKubernetesConfiguration, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT `+supportBundleKubernetesConfigurationOutputExpr+`
+		FROM SupportBundleKubernetesConfiguration c
+		WHERE c.organization_id = @orgId`,
+		pgx.NamedArgs{"orgId": orgID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query support bundle Kubernetes configuration: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.SupportBundleKubernetesConfiguration])
+	if errors.Is(err, pgx.ErrNoRows) {
+		result = types.DefaultSupportBundleKubernetesConfiguration(orgID)
+	} else if err != nil {
+		return nil, fmt.Errorf("could not get support bundle Kubernetes configuration: %w", err)
+	}
+	return &result, nil
+}
+
+func UpsertSupportBundleKubernetesConfiguration(
+	ctx context.Context, config *types.SupportBundleKubernetesConfiguration,
+) error {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`INSERT INTO SupportBundleKubernetesConfiguration AS c
+			(organization_id, include_configmap_data, include_secret_data)
+		VALUES (@orgId, @includeConfigMapData, @includeSecretData)
+		ON CONFLICT (organization_id) DO UPDATE SET
+			include_configmap_data = excluded.include_configmap_data,
+			include_secret_data = excluded.include_secret_data
+		RETURNING `+supportBundleKubernetesConfigurationOutputExpr,
+		pgx.NamedArgs{
+			"orgId":                config.OrganizationID,
+			"includeConfigMapData": config.IncludeConfigMapData,
+			"includeSecretData":    config.IncludeSecretData,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("could not upsert support bundle Kubernetes configuration: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.SupportBundleKubernetesConfiguration])
+	if err != nil {
+		return fmt.Errorf("could not upsert support bundle Kubernetes configuration: %w", err)
+	}
+	*config = result
+	return nil
+}
+
 const supportBundleConfigurationScriptOutputExpr = `
 	id, created_at, organization_id, deployment_type, name, description, content, enabled
 `

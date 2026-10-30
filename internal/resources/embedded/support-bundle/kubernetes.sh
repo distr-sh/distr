@@ -64,11 +64,13 @@ else
 fi
 
 # The collector writes the bundle into the temp dir, which is removed on exit, and asks before it
-# uploads anything. Arguments passed to this script (sh -s -- --context prod) go to the collector.
+# uploads anything. Arguments passed to this script (sh -s -- --context prod) go to the collector
+# last, so the customer can override the vendor's defaults with the same flags.
 echo ""
 DISTR_SUPPORT_BUNDLE_URL="$BASE_URL" DISTR_SUPPORT_BUNDLE_SECRET="$BUNDLE_SECRET" \
   "$_collector" --output "${_tmpdir}/bundle" --write-kubeconfig "${_tmpdir}/kubeconfig" \
-  --log-tail-lines {{.LogTail}} --max-resource-bytes {{.ResourceMaxBytes}} "$@"
+  --log-tail-lines {{.LogTail}} --max-resource-bytes {{.ResourceMaxBytes}} \
+  --include-configmap-data={{.IncludeConfigMapData}} --include-secret-data={{.IncludeSecretData}} "$@"
 _code=$?
 if [ "$_code" -eq 126 ]; then
   echo "Error: the collector cannot be executed from ${_tmpdir}." >&2

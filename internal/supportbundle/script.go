@@ -22,7 +22,9 @@ type CollectScriptParams struct {
 	BundleSecret   string
 	// EnvVars are only collected by the Docker collect script. The Kubernetes one uploads the full
 	// pod specs instead.
-	EnvVars              []types.SupportBundleConfigurationEnvVar
+	EnvVars []types.SupportBundleConfigurationEnvVar
+	// Kubernetes is only read by the Kubernetes collect script.
+	Kubernetes           types.SupportBundleKubernetesConfiguration
 	Scripts              []types.SupportBundleConfigurationScript
 	LogTailLines         int
 	ResourceMaxBytes     int
@@ -78,6 +80,8 @@ func GenerateCollectScript(params CollectScriptParams) (string, error) {
 		"BaseURL":              apiBase,
 		"Token":                params.BundleSecret,
 		"EnvVars":              params.EnvVars,
+		"IncludeConfigMapData": params.Kubernetes.IncludeConfigMapData,
+		"IncludeSecretData":    params.Kubernetes.IncludeSecretData,
 		"Scripts":              scripts,
 		"LogTail":              params.LogTailLines,
 		"ResourceMaxBytes":     params.ResourceMaxBytes,

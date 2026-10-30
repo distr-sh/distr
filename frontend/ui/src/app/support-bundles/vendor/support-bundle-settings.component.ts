@@ -14,7 +14,7 @@ import {RouterLink} from '@angular/router';
 import {DeploymentType} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faArrowLeft, faFileImport, faFloppyDisk, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {firstValueFrom} from 'rxjs';
+import {firstValueFrom, forkJoin} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {PageComponent} from '../../components/page.component';
 import {TabBarComponent, TabItem} from '../../components/tab-bar.component';
@@ -89,6 +89,10 @@ export class SupportBundleSettingsComponent {
   protected readonly saving = signal(false);
 
   protected readonly envVarsArray = new FormArray<EnvVarFormGroup>([], {validators: uniqueNamesValidator()});
+  protected readonly kubernetesForm = this.fb.group({
+    includeConfigMapData: this.fb.control(true),
+    includeSecretData: this.fb.control(false),
+  });
 
   protected get duplicateIndices(): Set<number> {
     const errors = this.envVarsArray.errors;
@@ -99,15 +103,15 @@ export class SupportBundleSettingsComponent {
   }
 
   constructor() {
-    this.svc
-      .getConfiguration()
+    forkJoin([this.svc.getConfiguration(), this.svc.getKubernetesConfiguration()])
       .pipe(takeUntilDestroyed())
       .subscribe({
-        next: (envVars) => {
+        next: ([envVars, kubernetesConfiguration]) => {
           for (const envVar of envVars) {
             this.addEnvVar(envVar);
           }
           this.envVarsArray.markAsPristine();
+          this.kubernetesForm.reset(kubernetesConfiguration);
           this.loading.set(false);
         },
         error: (e) => {
@@ -134,29 +138,39 @@ export class SupportBundleSettingsComponent {
     this.envVarsArray.markAsDirty();
   }
 
-  protected async save() {
-    if (await this.persistConfiguration()) {
-      this.toast.success('Support bundle configuration saved');
-    }
-  }
-
-  private async persistConfiguration(): Promise<boolean> {
+  protected async saveEnvVarConfiguration(successMessage = 'Support bundle configuration saved') {
     this.saving.set(true);
     const envVars: SupportBundleConfigurationEnvVar[] = this.envVarsArray.controls.map((group) => ({
       name: group.controls.name.value,
       redacted: group.controls.redacted.value,
     }));
-
     try {
       await firstValueFrom(this.svc.updateConfiguration({envVars}));
       this.envVarsArray.markAsPristine();
-      return true;
+      this.toast.success(successMessage);
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {
         this.toast.error(msg);
       }
-      return false;
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected async saveKubernetesConfiguration() {
+    this.saving.set(true);
+    try {
+      const configuration = await firstValueFrom(
+        this.svc.updateKubernetesConfiguration(this.kubernetesForm.getRawValue())
+      );
+      this.kubernetesForm.reset(configuration);
+      this.toast.success('Support bundle configuration saved');
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
     } finally {
       this.saving.set(false);
     }
@@ -202,9 +216,7 @@ export class SupportBundleSettingsComponent {
     this.closeImportModal();
     if (added > 0) {
       this.envVarsArray.markAsDirty();
-    }
-    if (added > 0 && (await this.persistConfiguration())) {
-      this.toast.success(`Imported and saved ${added} variable${added > 1 ? 's' : ''}`);
+      await this.saveEnvVarConfiguration(`Imported and saved ${added} variable${added > 1 ? 's' : ''}`);
     }
   }
 }

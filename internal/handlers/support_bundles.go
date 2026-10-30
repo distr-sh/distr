@@ -43,6 +43,19 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 				With(option.Response(http.StatusOK, []api.SupportBundleConfigurationEnvVar{}))
 		})
 
+		r.Route("/kubernetes", func(r chiopenapi.Router) {
+			r.Get("/", respond.Handler(getSupportBundleKubernetesConfigurationHandler)).
+				With(option.Description("Get the support bundle configuration for Kubernetes")).
+				With(option.Response(http.StatusOK, api.SupportBundleKubernetesConfiguration{}))
+
+			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
+				r.Put("/", respond.Handler(updateSupportBundleKubernetesConfigurationHandler)).
+					With(option.Description("Update the support bundle configuration for Kubernetes")).
+					With(option.Request(api.SupportBundleKubernetesConfiguration{})).
+					With(option.Response(http.StatusOK, api.SupportBundleKubernetesConfiguration{}))
+			})
+		})
+
 		r.Route("/scripts", func(r chiopenapi.Router) {
 			r.Get("/", respond.Handler(getSupportBundleConfigurationScriptsHandler)).
 				With(option.Description("List support bundle custom scripts")).
@@ -169,6 +182,33 @@ func createOrUpdateSupportBundleConfigurationHandler(r *http.Request) (respond.R
 			return nil, fmt.Errorf("failed to get support bundle config env vars: %w", err)
 		} else {
 			return respond.JSON(mapping.SupportBundleConfigurationEnvVarsToAPI(savedEnvVars)), nil
+		}
+	}
+}
+
+func getSupportBundleKubernetesConfigurationHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	a := auth.Authentication.Require(ctx)
+
+	if config, err := db.GetSupportBundleKubernetesConfiguration(ctx, *a.CurrentOrgID()); err != nil {
+		return nil, fmt.Errorf("failed to get support bundle Kubernetes configuration: %w", err)
+	} else {
+		return respond.JSON(mapping.SupportBundleKubernetesConfigurationToAPI(*config)), nil
+	}
+}
+
+func updateSupportBundleKubernetesConfigurationHandler(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	a := auth.Authentication.Require(ctx)
+
+	if request, resp := decodeJSON[api.SupportBundleKubernetesConfiguration](r); resp != nil {
+		return resp, nil
+	} else {
+		config := mapping.SupportBundleKubernetesConfigurationToInternal(request, *a.CurrentOrgID())
+		if err := db.UpsertSupportBundleKubernetesConfiguration(ctx, &config); err != nil {
+			return nil, fmt.Errorf("failed to save support bundle Kubernetes configuration: %w", err)
+		} else {
+			return respond.JSON(mapping.SupportBundleKubernetesConfigurationToAPI(config)), nil
 		}
 	}
 }

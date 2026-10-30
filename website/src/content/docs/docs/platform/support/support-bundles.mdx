@@ -14,26 +14,73 @@ import listVendorDark from '~/assets/docs/platform/support/support-bundles/suppo
 import settingsLight from '~/assets/docs/platform/support/support-bundles/support-bundle-settings-light.png';
 import settingsDark from '~/assets/docs/platform/support/support-bundles/support-bundle-settings-dark.png';
 
-Support Bundles give your customers a structured way to share diagnostic data when they report an issue. A customer initializes a bundle, runs a single `curl` command on their deployment host, and the collected data appears in your Vendor Portal. Nothing is uploaded without the customer's explicit approval.
+Support Bundles give your customers a structured way to share diagnostic data when they report an issue. A customer initializes a bundle, runs a single `curl` command, and the collected data appears in your Vendor Portal. For a Docker deployment the command runs on the deployment host, for a Kubernetes deployment on a machine with access to the cluster. Nothing is uploaded without the customer's explicit approval.
 
 <Aside type="note">
-  Support Bundles are currently available for **Docker-based deployments only**
-  on the Trial, Pro, and Enterprise plans. For access to Kubernetes Support
-  Bundles, contact us at [support@distr.sh](mailto:support@distr.sh). The
-  feature must be enabled per customer organization before customers can use it.
-  See [Enabling features per
+  Support Bundles are available for Docker and Kubernetes deployments on the
+  Trial, Pro and Enterprise plans. The feature must be enabled per customer
+  organization before customers can use it. See [Enabling features per
   customer](/docs/platform/customer-management/#enabling-and-disabling-features-per-customer).
 </Aside>
 
 ## How it works
 
-1. The customer creates a support bundle from the Customer Portal, giving it a title and optional description.
+1. The customer creates a support bundle from the Customer Portal, choosing Docker or Kubernetes and giving it a title and optional description.
 2. Distr generates a one-time `curl` command tied to that bundle. The command is valid for 24 hours.
-3. The customer runs the command on the affected host. An interactive script launches and shows the customer exactly what will be collected: the available Docker containers, the environment variable groups (with redacted values already masked) and the source of every custom script you configured. The customer can exclude any containers, env var groups or scripts before anything runs or is sent.
+3. The customer runs the command. An interactive script shows the customer what will be collected and lets them exclude parts of it before anything runs or is sent. See [Docker bundles](#docker-bundles) and [Kubernetes bundles](#kubernetes-bundles) for what each collects.
 4. Once the script finishes, the bundle appears in the Vendor Portal with all collected resources attached.
 5. You and the customer can exchange comments on the bundle. When the issue is resolved, you mark it as resolved.
 
 Every collected resource is limited to 1 MiB by default, and container logs additionally to the most recent 1000 lines per container. Container logs keep the most recent output, script output the first, and a truncated resource says so in its content. On a self-hosted instance, both limits can be changed with [`SUPPORT_BUNDLE_RESOURCE_MAX_BYTES` and `SUPPORT_BUNDLE_LOG_TAIL_LINES`](/docs/self-hosting/configuration/#support-bundles).
+
+## Docker bundles
+
+The customer runs the command on the affected host. The script shows the available Docker containers, the environment variable groups (with redacted values already masked) and the source of every custom script you configured. The customer can exclude any containers, env var groups or scripts before anything runs or is sent.
+
+## Kubernetes bundles
+
+The customer runs the command on a machine with access to the cluster, typically the one they run `kubectl` from. Nothing is installed in the cluster. The machine needs Linux or macOS on amd64 or arm64 with `curl`, `tar` and `sha256sum` or `shasum`.
+
+The script downloads the Kubernetes collector of your Distr version from the [Distr releases on GitHub](https://github.com/distr-sh/distr/releases) and checks it against the checksums of the release before running it, so the machine needs access to `github.com`. The collector then:
+
+1. Asks for the kubectl context to collect from when the kubeconfig has more than one, with the current context as the default.
+2. Lists the namespaces of the cluster together with the Helm releases in them and asks which namespaces to collect, with the namespace of the context as the default.
+3. Asks for every part of the bundle whether to collect it:
+   - the cluster information: the Kubernetes version, nodes, namespaces, custom resource definitions, storage and ingress classes, admission webhooks and the persistent volumes of the selected namespaces
+   - all resources of the selected namespaces, custom resources included
+   - the Helm releases with their chart and app version, status and history, and separately the values they were installed with
+   - the events of the selected namespaces
+   - the last 1000 lines of every container log, including the previous run of restarted containers
+4. Writes the files to a temporary directory and lets the customer look through them and edit or delete any of them before they confirm the upload.
+
+After the upload, the script runs the [custom scripts](#configure-custom-scripts) of the Kubernetes tab, which the customer can exclude just like on Docker. Anything the cluster refuses or fails to return is recorded in `collection-errors.txt` in the bundle, and the collection continues. `summary.yaml` records the context, the namespaces and the parts that were collected.
+
+### What the resources contain
+
+The collector stores every object as YAML as the cluster returns it, without its managed fields and its `kubectl.kubernetes.io/last-applied-configuration` annotation. That annotation is a full copy of the object, so it would carry ConfigMap and Secret values past the settings below. Endpoints, controller revisions, leases, the ReplicaSets of former rollouts and the Secrets Helm stores its releases in are left out, since they explain nothing that the rest of the bundle does not.
+
+Whether ConfigMap and Secret values are collected depends on the [ConfigMap and Secret settings](#configure-configmap-and-secret-values). Values that are not collected show up as `[REDACTED, <size> bytes]`, so the keys stay visible. Service account and bootstrap tokens are always redacted.
+
+The environment variables in pod specs are collected as they are specified, since a pod spec only holds what the deployment set. The [environment variable list](#configure-environment-variables) applies to Docker only, and the [redaction](#redaction) below masks the values of variables whose name suggests a credential.
+
+### Permissions
+
+The collector only reads, with the credentials of the selected context. It needs `list` on the resources of the selected namespaces, `get` on `pods/log` and `list` on Secrets to find the Helm releases. The cluster information needs read access to the cluster-scoped resources listed above. A customer who can read their namespaces only still gets a useful bundle, and what is missing is recorded in `collection-errors.txt`. The built-in `view` ClusterRole does not grant access to Secrets, so it leaves out the Secrets and the Helm releases.
+
+### Options
+
+The customer can pass arguments to the collector by appending `-s --` and the arguments to the `sh` at the end of the command:
+
+```sh
+curl -fsSL '<collect script URL>' | sh -s -- --context prod
+```
+
+| Option                                 | Effect                                                                                                            |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `--context <name>`                     | Collect from this context without asking.                                                                         |
+| `--kubeconfig <path>`                  | Read this kubeconfig instead of the default one.                                                                  |
+| `--include-configmap-data=true\|false` | Collect ConfigMap values or not, overriding the [settings](#configure-configmap-and-secret-values) of the vendor. |
+| `--include-secret-data=true\|false`    | Collect Secret values or not, overriding the [settings](#configure-configmap-and-secret-values) of the vendor.    |
 
 ## Redaction
 
@@ -52,9 +99,11 @@ The same redaction applies to deployment logs and controller logs. Redaction is 
 
 ## Vendor setup
 
+In the Vendor Portal sidebar, navigate to **Support Bundles**, then click **Settings**. The settings have a **Docker** and a **Kubernetes** tab, one for each kind of bundle.
+
 ### Configure environment variables
 
-In the Vendor Portal sidebar, navigate to **Support Bundles**, then click **Settings**. You can configure which environment variables should be collected from the host and containers. The script collects only the variables on this list. Variables marked as **Redacted** have their values replaced with `[REDACTED]` in the collected data. The customer sees the redacted placeholder before confirming the upload.
+On the **Docker** tab, you can configure which environment variables should be collected from the host and containers. The script collects only the variables on this list. Variables marked as **Redacted** have their values replaced with `[REDACTED]` in the collected data. The customer sees the redacted placeholder before confirming the upload.
 
 If no environment variables are configured, the script only collects container logs from running containers.
 
@@ -70,13 +119,21 @@ Toggle **Redacted** for any variable whose value should not appear in collected 
 
 Click **Save** when done.
 
+### Configure ConfigMap and Secret values
+
+On the **Kubernetes** tab, choose whether Kubernetes bundles include the values of ConfigMaps and Secrets. ConfigMap values are collected by default and Secret values are not. Without them, a bundle still lists the ConfigMaps and Secrets with their keys, but shows each value as `[REDACTED]` with its size. Collected Secret values are uploaded decoded in plain text, so only turn them on when you need them.
+
+The collector tells the customer which values it collects before anything is collected, and the customer can override your choice with the [options](#options) `--include-configmap-data` and `--include-secret-data`. Click **Save** when done.
+
 ### Configure custom scripts
 
-Environment variables and container logs do not always answer the question you need answered. In the same **Settings** page you can add custom scripts that run on the customer's host during collection. Everything a script writes to standard output is attached to the bundle as a resource named after the script.
+Environment variables, logs and resources do not always answer the question you need answered. Each tab of the **Settings** page has its own custom scripts. What a script writes to standard output is attached to the bundle as a resource named after the script, once the customer has seen its first 30 lines and confirmed the upload.
+
+Docker scripts run on the customer's host during collection. Kubernetes scripts run on the customer's machine after the collector. While they run, `KUBECONFIG` points to a kubeconfig that holds only the context and namespace the collector used, so `kubectl` and `helm` reach the same cluster and namespace without any arguments. Check that `kubectl` or `helm` is installed before relying on it.
 
 Click **Add Script** and give it a name, an optional description and the script body. The name is what the resource is called in the bundle and in the downloaded archive, so pick something you will recognise later, such as `database-status`. The description is shown to the customer next to the script.
 
-A script runs with the interpreter named in its shebang, so `#!/usr/bin/env bash` gets you Bash. Without a shebang it runs with `sh`. Keep in mind that you are writing for the customer's host, not yours: check that a command exists before relying on it, and do not assume Bash is installed.
+A script runs with the interpreter named in its shebang, so `#!/usr/bin/env bash` gets you Bash. Without a shebang it runs with `sh`. Keep in mind that you are writing for the customer's machine, not yours: check that a command exists before relying on it, and do not assume Bash is installed.
 
 Use the **Enabled** toggle to park a script without deleting it. Disabled scripts are never sent to a customer.
 
@@ -105,11 +162,11 @@ In the Vendor Portal, navigate to **Support Bundles** to see all bundles across 
   alt="Support Bundles list in the Vendor Portal"
 />
 
-The list shows each bundle's title, customer, status, resource count, comment count, and when it was last updated. Click any bundle to open the detail view.
+The list shows each bundle's title, type, customer, status, resource count, comment count and when it was last updated. Click any bundle to open the detail view.
 
 In the detail view:
 
-- **Collected resources** are listed under **Resources**. Click any resource name to expand and read its content.
+- **Collected resources** are listed under **Resources** as a folder tree. Click a folder to open it and a file to read its content.
 - **Comments** appear below the resources. Both vendor and customer users can leave comments.
 - Click **Mark as Resolved** to close the bundle once the issue is addressed.
 - Click **Delete** to remove the bundle. The list has a delete button on every row as well.

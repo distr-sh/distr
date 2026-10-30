@@ -68,6 +68,8 @@ func getCollectScriptHandler(r *http.Request) (respond.Responder, error) {
 		return nil, fmt.Errorf("failed to get organization: %w", err)
 	} else if envVars, err := getSupportBundleCollectEnvVars(ctx, bundle); err != nil {
 		return nil, err
+	} else if kubernetesConfig, err := db.GetSupportBundleKubernetesConfiguration(ctx, bundle.OrganizationID); err != nil {
+		return nil, fmt.Errorf("failed to get support bundle Kubernetes configuration: %w", err)
 	} else if scripts, err := db.GetEnabledSupportBundleConfigurationScripts(
 		ctx, bundle.OrganizationID, bundle.DeploymentType,
 	); err != nil {
@@ -78,6 +80,7 @@ func getCollectScriptHandler(r *http.Request) (respond.Responder, error) {
 		BundleID:             bundle.ID,
 		BundleSecret:         bundleSecret,
 		EnvVars:              envVars,
+		Kubernetes:           *kubernetesConfig,
 		Scripts:              scripts,
 		LogTailLines:         env.SupportBundleLogTailLines(),
 		ResourceMaxBytes:     env.SupportBundleResourceMaxBytes(),

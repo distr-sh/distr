@@ -17,6 +17,26 @@ func SupportBundleConfigurationEnvVarsToAPI(
 	})
 }
 
+func SupportBundleKubernetesConfigurationToAPI(
+	config types.SupportBundleKubernetesConfiguration,
+) api.SupportBundleKubernetesConfiguration {
+	return api.SupportBundleKubernetesConfiguration{
+		IncludeConfigMapData: config.IncludeConfigMapData,
+		IncludeSecretData:    config.IncludeSecretData,
+	}
+}
+
+func SupportBundleKubernetesConfigurationToInternal(
+	request api.SupportBundleKubernetesConfiguration,
+	orgID uuid.UUID,
+) types.SupportBundleKubernetesConfiguration {
+	return types.SupportBundleKubernetesConfiguration{
+		OrganizationID:       orgID,
+		IncludeConfigMapData: request.IncludeConfigMapData,
+		IncludeSecretData:    request.IncludeSecretData,
+	}
+}
+
 func SupportBundleConfigurationScriptToAPI(
 	script types.SupportBundleConfigurationScript,
 ) api.SupportBundleConfigurationScript {
