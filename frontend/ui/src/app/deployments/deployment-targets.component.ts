@@ -11,7 +11,7 @@ import {
   TemplateRef,
   viewChild,
 } from '@angular/core';
-import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup} from '@angular/forms';
 import {ActivatedRoute} from '@angular/router';
 import {
@@ -22,16 +22,18 @@ import {
 } from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faChevronDown, faPlus} from '@fortawesome/free-solid-svg-icons';
-import {catchError, combineLatest, combineLatestWith, first, map, Observable, of} from 'rxjs';
+import {catchError, combineLatest, combineLatestWith, first, map, Observable, of, shareReplay, switchMap} from 'rxjs';
 import {compareBy} from '../../util/arrays';
 import {filteredByFormControl} from '../../util/filter';
 import {SecureImagePipe} from '../../util/secureImage';
+import {MultiSelectComponent, MultiSelectOption} from '../components/multi-select/multi-select.component';
 import {PageComponent} from '../components/page.component';
 import {QuotaLimitComponent} from '../components/quota-limit.component';
 import {SearchBarComponent} from '../components/search-bar.component';
 import {ApplicationsService} from '../services/applications.service';
 import {AuthService} from '../services/auth.service';
 import {ContextService} from '../services/context.service';
+import {CustomerOrganizationsService} from '../services/customer-organizations.service';
 import {DeploymentTargetsMetricsService} from '../services/deployment-target-metrics.service';
 import {DeploymentTargetsService} from '../services/deployment-targets.service';
 import {OrganizationService} from '../services/organization.service';
@@ -51,6 +53,8 @@ export interface CustomerDeploymentTargets {
 }
 
 const localStoragerCollapsedCustomerIds = 'collapsedCustomerIds';
+// customer organization ids are UUIDs, so this cannot collide with one
+const internalCustomerOption = 'internal';
 
 @Component({
   selector: 'app-deployment-targets',
@@ -65,6 +69,7 @@ const localStoragerCollapsedCustomerIds = 'collapsedCustomerIds';
     QuotaLimitComponent,
     PageComponent,
     SearchBarComponent,
+    MultiSelectComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './deployment-targets.component.html',
@@ -76,6 +81,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   private readonly deploymentTargets = inject(DeploymentTargetsService);
   private readonly deploymentTargetMetrics = inject(DeploymentTargetsMetricsService);
   private readonly organizationService = inject(OrganizationService);
+  private readonly customerOrganizations = inject(CustomerOrganizationsService);
   private readonly context = inject(ContextService);
   private readonly route = inject(ActivatedRoute);
 
@@ -108,7 +114,35 @@ export class DeploymentTargetsComponent implements AfterViewInit {
     search: new FormControl(''),
   });
 
-  readonly deploymentTargets$ = this.deploymentTargets.poll().pipe(takeUntilDestroyed());
+  protected readonly canFilterByCustomer = this.auth.isVendor() || this.auth.isPartner();
+  protected readonly selectedCustomerIds = signal<string[]>([]);
+
+  protected readonly customerSelectOptions = toSignal(
+    this.canFilterByCustomer
+      ? this.customerOrganizations.getCustomerOrganizations().pipe(
+          map((customers) => [
+            // Only vendors have deployment targets that belong to no customer.
+            ...(this.auth.isVendor() ? [{value: internalCustomerOption, label: 'Internal'}] : []),
+            ...[...customers]
+              .sort(compareBy((co) => co.name))
+              .map<MultiSelectOption>((co) => ({value: co.id, label: co.name})),
+          ]),
+          catchError(() => of([]))
+        )
+      : of([]),
+    {initialValue: []}
+  );
+
+  readonly deploymentTargets$ = toObservable(this.selectedCustomerIds).pipe(
+    switchMap((ids) =>
+      this.deploymentTargets.poll({
+        customerOrganizationIds: ids.filter((id) => id !== internalCustomerOption),
+        internal: ids.includes(internalCustomerOption),
+      })
+    ),
+    shareReplay({bufferSize: 1, refCount: true}),
+    takeUntilDestroyed()
+  );
   readonly deploymentTargetMetrics$ = this.deploymentTargetMetrics.poll().pipe(
     takeUntilDestroyed(),
     catchError(() => of([]))
