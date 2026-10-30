@@ -105,7 +105,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   selectedApplicationVersionId = signal<string | undefined>(undefined);
 
   readonly filterForm = new FormGroup({
-    search: new FormControl(this.route.snapshot.queryParamMap.get('search') ?? ''),
+    search: new FormControl(''),
   });
 
   readonly deploymentTargets$ = this.deploymentTargets.poll().pipe(takeUntilDestroyed());
@@ -173,6 +173,10 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   constructor() {
     // The cached list decides whether a deployment is shown as outdated, so it has to be current when the page opens.
     this.applications.refresh();
+    // The component is reused when only the query changes, e.g. when the sidebar links to the page it is on.
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed())
+      .subscribe((params) => this.filterForm.controls.search.setValue(params.get('search') ?? ''));
     effect(() => localStorage.setItem(localStoragerCollapsedCustomerIds, JSON.stringify(this.collapsedCustomerIds())));
   }
 
