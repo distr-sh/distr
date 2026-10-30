@@ -24,8 +24,8 @@ func (s DirSink) Write(_ context.Context, name string, _ string, content []byte)
 		return fmt.Errorf("refusing to write %q outside of %s", name, s.Dir)
 	}
 	path := filepath.Join(s.Dir, local)
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return err
 	}
-	return os.WriteFile(path, content, 0o644)
+	return os.WriteFile(path, content, 0o600)
 }

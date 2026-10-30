@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"strings"
@@ -18,6 +19,8 @@ import (
 const (
 	uploadURLEnv    = "DISTR_SUPPORT_BUNDLE_URL"
 	uploadSecretEnv = "DISTR_SUPPORT_BUNDLE_SECRET"
+	// minResourceBytes leaves room for the note that says a file was cut.
+	minResourceBytes = 1024
 )
 
 func main() {
@@ -47,6 +50,10 @@ func main() {
 		usageError("--output is required")
 	} else if pflag.NArg() > 0 {
 		usageError(fmt.Sprintf("unexpected arguments: %v", pflag.Args()))
+	} else if opts.LogTailLines < 0 {
+		usageError("--log-tail-lines must not be negative")
+	} else if opts.MaxResourceBytes < minResourceBytes {
+		usageError(fmt.Sprintf("--max-resource-bytes must be at least %d", minResourceBytes))
 	}
 	uploader, err := uploaderFromEnv()
 	if err != nil {
@@ -88,6 +95,12 @@ func run(
 	opts kubecollect.Options,
 	uploader *kubecollect.Uploader,
 ) error {
+	if entries, err := os.ReadDir(output); err == nil && len(entries) > 0 {
+		return fmt.Errorf("%s is not empty, write the bundle into a new or empty directory", output)
+	} else if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return err
+	}
+
 	prompter := kubecollect.NewPrompter(os.Stdin, os.Stderr)
 	if err := selectKubeContext(prompter, configFlags); err != nil {
 		return err
@@ -141,7 +154,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	if result.Collected == 0 {
+	if result.Collected == 0 && result.Problems > 0 {
 		return fmt.Errorf("nothing could be collected, see %s/collection-errors.txt", output)
 	}
 	if uploader == nil {
@@ -285,9 +298,10 @@ func confirmGroups(prompter *kubecollect.Prompter, opts kubecollect.Options) (ku
 	}
 	var groups kubecollect.Groups
 	questions := []struct {
-		target   *bool
-		question string
-		onlyIf   *bool
+		target    *bool
+		question  string
+		onlyIf    *bool
+		defaultNo bool
 	}{
 		{
 			target: &groups.Cluster,
@@ -307,7 +321,8 @@ func confirmGroups(prompter *kubecollect.Prompter, opts kubecollect.Options) (ku
 			target: &groups.HelmValues,
 			question: "Collect the values the Helm releases were installed with? They can contain credentials, " +
 				"and Distr masks only those it recognizes.",
-			onlyIf: &groups.HelmReleases,
+			onlyIf:    &groups.HelmReleases,
+			defaultNo: true,
 		},
 		{target: &groups.Events, question: "Collect the events of the selected namespaces?"},
 		{target: &groups.Logs, question: fmt.Sprintf(
@@ -318,9 +333,13 @@ func confirmGroups(prompter *kubecollect.Prompter, opts kubecollect.Options) (ku
 
 	_, _ = fmt.Fprintln(os.Stderr)
 	for _, q := range questions {
+		confirm := prompter.Confirm
+		if q.defaultNo {
+			confirm = prompter.ConfirmDefaultNo
+		}
 		if q.onlyIf != nil && !*q.onlyIf {
 			continue
-		} else if answer, err := prompter.Confirm(q.question); err != nil {
+		} else if answer, err := confirm(q.question); err != nil {
 			return groups, err
 		} else {
 			*q.target = answer
