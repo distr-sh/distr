@@ -29,7 +29,7 @@ require (
 	github.com/glasskube/pkg/seekbuf v0.1.2
 	github.com/go-chi/chi/v5 v5.5.0
 	github.com/go-chi/httprate v0.16.1
-	github.com/go-co-op/gocron/v2 v2.22.0
+	github.com/go-co-op/gocron/v2 v2.23.0
 	github.com/go-logr/zapr v1.3.0
 	github.com/go-mailx/mailx v1.0.2
 	github.com/go-mailx/mailx-ses v1.0.15
