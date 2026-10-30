@@ -63,11 +63,16 @@ export interface CreateSupportBundleResponse extends SupportBundle {
 
 export type SupportBundleResourceContentType = 'text/plain' | 'text/x-log' | 'application/yaml' | 'application/json';
 
-export interface SupportBundleResource {
+export interface SupportBundleResourceSummary {
   id: string;
   createdAt: string;
   name: string;
   contentType: SupportBundleResourceContentType;
+  /** The size of the content in bytes. Missing for resources uploaded before it was recorded. */
+  size?: number;
+}
+
+export interface SupportBundleResource extends SupportBundleResourceSummary {
   content: string;
 }
 
@@ -81,7 +86,7 @@ export interface SupportBundleComment {
 }
 
 export interface SupportBundleDetail extends SupportBundle {
-  resources: SupportBundleResource[];
+  resources: SupportBundleResourceSummary[];
   comments: SupportBundleComment[];
   collectCommand?: string;
 }

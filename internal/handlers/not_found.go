@@ -30,6 +30,7 @@ var (
 	secretNotFound                          = respond.NotFound("secret not found")
 	sidebarLinkNotFound                     = respond.NotFound("sidebar link not found")
 	supportBundleNotFound                   = respond.NotFound("support bundle not found")
+	supportBundleResourceNotFound           = respond.NotFound("support bundle resource not found")
 	supportBundleScriptNotFound             = respond.NotFound("script not found")
 	tutorialProgressNotFound                = respond.NotFound("tutorial progress not found")
 	updateNotificationConfigurationNotFound = respond.NotFound("update notification configuration not found")
