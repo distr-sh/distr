@@ -173,11 +173,11 @@ type UpdateSupportBundleStatusRequest struct {
 // Resource
 
 type SupportBundleResourceSummary struct {
-	ID          uuid.UUID                              `json:"id"`
-	CreatedAt   time.Time                              `json:"createdAt"`
-	Name        string                                 `json:"name"`
-	ContentType types.SupportBundleResourceContentType `json:"contentType"`
-	Size        *int64                                 `json:"size,omitempty"`
+	ID          uuid.UUID `json:"id"`
+	CreatedAt   time.Time `json:"createdAt"`
+	Name        string    `json:"name"`
+	ContentType string    `json:"contentType"`
+	Size        *int64    `json:"size,omitempty"`
 }
 
 type SupportBundleResource struct {

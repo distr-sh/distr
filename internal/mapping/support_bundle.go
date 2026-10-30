@@ -79,7 +79,7 @@ func SupportBundleResourceSummaryToAPI(resource types.SupportBundleResourceSumma
 		ID:          resource.ID,
 		CreatedAt:   resource.CreatedAt,
 		Name:        resource.Name,
-		ContentType: resource.ContentType,
+		ContentType: types.ParseSupportBundleResourceContentType(resource.ContentType),
 		Size:        resource.Size,
 	}
 }
