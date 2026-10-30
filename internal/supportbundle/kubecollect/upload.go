@@ -179,6 +179,7 @@ func (u Uploader) upload(ctx context.Context, file BundleFile) error {
 // rejectsEveryUpload tells the client errors apart that depend on the bundle or the secret rather
 // than on the file, since the requests differ in nothing else.
 func rejectsEveryUpload(status int) bool {
-	return status >= http.StatusBadRequest && status < http.StatusInternalServerError &&
-		status != http.StatusRequestEntityTooLarge && status != http.StatusTooManyRequests
+	return status >= http.StatusBadRequest && status < http.StatusInternalServerError && !slices.Contains(
+		[]int{http.StatusRequestTimeout, http.StatusRequestEntityTooLarge, http.StatusTooManyRequests}, status,
+	)
 }

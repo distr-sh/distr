@@ -1,7 +1,7 @@
 @if (root()) {
   <ng-container [ngTemplateOutlet]="children" />
 } @else {
-  <details #details class="border-t border-gray-200 dark:border-gray-700" (toggle)="open.set(details.open)">
+  <details #details class="border-t border-gray-200 dark:border-gray-700" (toggle)="toggled(details.open)">
     <summary
       class="flex w-full cursor-pointer list-none items-center justify-between gap-3 py-3 pr-4 text-sm font-medium text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-700 [&::-webkit-details-marker]:hidden"
       [style.padding-left.rem]="1 + depth() * 1.25">
@@ -18,7 +18,7 @@
         <ng-template ngPluralCase="other">{{ folder().fileCount }} files</ng-template>
       </span>
     </summary>
-    @if (open()) {
+    @if (opened()) {
       <ng-container [ngTemplateOutlet]="children" />
     }
   </details>

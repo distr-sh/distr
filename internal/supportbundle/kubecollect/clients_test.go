@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -39,7 +38,7 @@ func TestWriteKubeconfig(t *testing.T) {
 	kubeconfig := filepath.Join(dir, "config")
 	g.Expect(os.WriteFile(kubeconfig, []byte(twoContextKubeconfig), 0o600)).To(Succeed())
 
-	configFlags := genericclioptions.NewConfigFlags(true)
+	configFlags := NewConfigFlags()
 	configFlags.KubeConfig = &kubeconfig
 	configFlags.Context = new("prod")
 	configFlags.Namespace = new("payments")

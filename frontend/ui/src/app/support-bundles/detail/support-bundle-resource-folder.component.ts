@@ -21,6 +21,16 @@ export class SupportBundleResourceFolderComponent {
   protected readonly faFolderOpen = faFolderOpen;
 
   protected readonly open = signal(false);
+  // The children stay rendered once the folder was opened, so that closing it keeps the content the
+  // files loaded and which of them are open.
+  protected readonly opened = signal(false);
   protected readonly root = computed(() => this.folder().path === '');
   protected readonly childDepth = computed(() => (this.root() ? 0 : this.depth() + 1));
+
+  protected toggled(open: boolean): void {
+    this.open.set(open);
+    if (open) {
+      this.opened.set(true);
+    }
+  }
 }
