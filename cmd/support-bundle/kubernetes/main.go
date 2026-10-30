@@ -29,7 +29,7 @@ func main() {
 	klog.LogToStderr(false)
 	klog.SetOutput(io.Discard)
 
-	configFlags := genericclioptions.NewConfigFlags(true)
+	configFlags := kubecollect.NewConfigFlags()
 	configFlags.AddFlags(pflag.CommandLine)
 	opts := kubecollect.DefaultOptions()
 	output := pflag.String("output", "", "directory to write the bundle into, and to upload it from when "+
