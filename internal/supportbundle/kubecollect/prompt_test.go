@@ -20,6 +20,8 @@ func TestParseNamespaceSelection(t *testing.T) {
 	g.Expect(parseNamespaceSelection("  ", namespaceOptions, "shop")).To(Equal([]string{"shop"}))
 	g.Expect(parseNamespaceSelection("3, kube-system 3,shop", namespaceOptions, "default")).
 		To(Equal([]string{"shop", "kube-system"}))
+	g.Expect(parseNamespaceSelection("1", append(namespaceOptions, NamespaceOption{Name: "1"}), "default")).
+		To(Equal([]string{"1"}))
 
 	_, err := parseNamespaceSelection("4", namespaceOptions, "default")
 	g.Expect(err).To(MatchError(ContainSubstring("4 is not a number from the list")))
@@ -73,10 +75,11 @@ func TestPrompter(t *testing.T) {
 
 	t.Run("takes the default for an empty answer", func(t *testing.T) {
 		g := NewWithT(t)
-		p := NewPrompter(strings.NewReader("\n\n"), io.Discard)
+		p := NewPrompter(strings.NewReader("\n\n\n"), io.Discard)
 
 		g.Expect(p.SelectNamespaces(namespaceOptions, "shop")).To(Equal([]string{"shop"}))
 		g.Expect(p.Confirm("Collect the logs?")).To(BeTrue())
+		g.Expect(p.ConfirmDefaultNo("Collect the Helm values?")).To(BeFalse())
 	})
 
 	t.Run("accepts a last answer without a newline", func(t *testing.T) {

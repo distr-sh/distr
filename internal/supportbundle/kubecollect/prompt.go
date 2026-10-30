@@ -63,16 +63,15 @@ func parseKubeContextSelection(answer string, options []KubeContextOption, curre
 		}
 		return current, nil
 	}
-	if n, err := strconv.Atoi(answer); err == nil {
-		if n < 1 || n > len(options) {
-			return "", fmt.Errorf("%d is not a number from the list", n)
-		}
+	if slices.ContainsFunc(options, func(o KubeContextOption) bool { return o.Name == answer }) {
+		return answer, nil
+	} else if n, err := strconv.Atoi(answer); err != nil {
+		return "", fmt.Errorf("%q is not a context from the list", answer)
+	} else if n < 1 || n > len(options) {
+		return "", fmt.Errorf("%d is not a number from the list", n)
+	} else {
 		return options[n-1].Name, nil
 	}
-	if !slices.ContainsFunc(options, func(o KubeContextOption) bool { return o.Name == answer }) {
-		return "", fmt.Errorf("%q is not a context from the list", answer)
-	}
-	return answer, nil
 }
 
 func (p *Prompter) SelectNamespaces(options []NamespaceOption, defaultNamespace string) ([]string, error) {
@@ -106,13 +105,14 @@ func parseNamespaceSelection(answer string, options []NamespaceOption, defaultNa
 	var selected []string
 	for _, token := range tokens {
 		name := token
-		if n, err := strconv.Atoi(token); err == nil {
-			if n < 1 || n > len(options) {
+		if !slices.ContainsFunc(options, func(o NamespaceOption) bool { return o.Name == token }) {
+			if n, err := strconv.Atoi(token); err != nil {
+				return nil, fmt.Errorf("%q is not a namespace from the list", token)
+			} else if n < 1 || n > len(options) {
 				return nil, fmt.Errorf("%d is not a number from the list", n)
+			} else {
+				name = options[n-1].Name
 			}
-			name = options[n-1].Name
-		} else if !slices.ContainsFunc(options, func(o NamespaceOption) bool { return o.Name == token }) {
-			return nil, fmt.Errorf("%q is not a namespace from the list", token)
 		}
 		if !slices.Contains(selected, name) {
 			selected = append(selected, name)
@@ -122,14 +122,28 @@ func parseNamespaceSelection(answer string, options []NamespaceOption, defaultNa
 }
 
 func (p *Prompter) Confirm(question string) (bool, error) {
+	return p.confirm(question, true)
+}
+
+func (p *Prompter) ConfirmDefaultNo(question string) (bool, error) {
+	return p.confirm(question, false)
+}
+
+func (p *Prompter) confirm(question string, defaultAnswer bool) (bool, error) {
+	options := "[Y/n]"
+	if !defaultAnswer {
+		options = "[y/N]"
+	}
 	for {
-		_, _ = fmt.Fprintf(p.out, "%s [Y/n]: ", question)
+		_, _ = fmt.Fprintf(p.out, "%s %s: ", question, options)
 		answer, err := p.readLine()
 		if err != nil {
 			return false, err
 		}
 		switch strings.ToLower(answer) {
-		case "", "y", "yes":
+		case "":
+			return defaultAnswer, nil
+		case "y", "yes":
 			return true, nil
 		case "n", "no":
 			return false, nil
