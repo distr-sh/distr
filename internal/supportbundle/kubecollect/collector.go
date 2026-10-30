@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/internal/buildconfig"
-	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/contenttype"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -148,12 +148,12 @@ func (c *Collector) Run(ctx context.Context, namespaces []string, groups Groups)
 
 	if content, err := yaml.Marshal(s); err != nil {
 		return Result{}, err
-	} else if err := c.write(ctx, "summary.yaml", types.SupportBundleResourceContentTypeYAML, content); err != nil {
+	} else if err := c.write(ctx, "summary.yaml", contenttype.MediaTypeYAML, content); err != nil {
 		return Result{}, err
 	}
 	if len(c.problems) > 0 {
 		content := []byte(strings.Join(c.problems, "\n") + "\n")
-		if err := c.write(ctx, "collection-errors.txt", types.SupportBundleResourceContentTypeText, content); err != nil {
+		if err := c.write(ctx, "collection-errors.txt", contenttype.MediaTypeTextPlain, content); err != nil {
 			return Result{}, err
 		}
 	}
@@ -168,7 +168,7 @@ func (c *Collector) collectCluster(ctx context.Context, namespaces []string) (*c
 	} else if content, err := json.MarshalIndent(version, "", "  "); err != nil {
 		return nil, err
 	} else if err := c.collect(
-		ctx, "cluster/version.json", types.SupportBundleResourceContentTypeJSON, content,
+		ctx, "cluster/version.json", contenttype.MediaTypeJSON, content,
 	); err != nil {
 		return nil, err
 	} else {
@@ -231,7 +231,7 @@ func (c *Collector) collectCluster(ctx context.Context, namespaces []string) (*c
 		if content, err := yaml.Marshal(crds); err != nil {
 			return nil, err
 		} else if err := c.collect(
-			ctx, "cluster/crds.yaml", types.SupportBundleResourceContentTypeYAML, content,
+			ctx, "cluster/crds.yaml", contenttype.MediaTypeYAML, content,
 		); err != nil {
 			return nil, err
 		}
@@ -366,7 +366,7 @@ func (c *Collector) collectEvents(ctx context.Context, namespace string) error {
 		if len(header)+len(content) <= c.Options.MaxResourceBytes || omitted == len(objects) {
 			c.progressf("  %d events", len(objects)-omitted)
 			name := "namespaces/" + namespace + "/events.yaml"
-			return c.collect(ctx, name, types.SupportBundleResourceContentTypeYAML, append([]byte(header), content...))
+			return c.collect(ctx, name, contenttype.MediaTypeYAML, append([]byte(header), content...))
 		}
 		omitted += max(1, (len(objects)-omitted)/4)
 	}
@@ -484,7 +484,7 @@ func (c *Collector) collectLog(
 		}
 		return false, nil
 	}
-	return true, c.collect(ctx, name, types.SupportBundleResourceContentTypeLog, content)
+	return true, c.collect(ctx, name, contenttype.MediaTypeTextXLog, content)
 }
 
 func (c *Collector) list(
@@ -511,7 +511,7 @@ func (c *Collector) collectObject(ctx context.Context, name string, item unstruc
 	if content, err := yaml.Marshal(item.Object); err != nil {
 		return err
 	} else {
-		return c.collect(ctx, name, types.SupportBundleResourceContentTypeYAML, content)
+		return c.collect(ctx, name, contenttype.MediaTypeYAML, content)
 	}
 }
 
@@ -524,14 +524,14 @@ func (c *Collector) collectList(ctx context.Context, name string, items []unstru
 	if content, err := yaml.Marshal(map[string]any{"apiVersion": "v1", "kind": "List", "items": objects}); err != nil {
 		return err
 	} else {
-		return c.collect(ctx, name, types.SupportBundleResourceContentTypeYAML, content)
+		return c.collect(ctx, name, contenttype.MediaTypeYAML, content)
 	}
 }
 
 func (c *Collector) collect(
 	ctx context.Context,
 	name string,
-	contentType types.SupportBundleResourceContentType,
+	contentType string,
 	content []byte,
 ) error {
 	if err := c.write(ctx, name, contentType, content); err != nil {
@@ -544,10 +544,10 @@ func (c *Collector) collect(
 func (c *Collector) write(
 	ctx context.Context,
 	name string,
-	contentType types.SupportBundleResourceContentType,
+	contentType string,
 	content []byte,
 ) error {
-	if contentType == types.SupportBundleResourceContentTypeLog {
+	if contentType == contenttype.MediaTypeTextXLog {
 		content, _ = keepTail(content, c.Options.MaxResourceBytes)
 	} else if cut, ok := keepHead(content, c.Options.MaxResourceBytes); ok {
 		c.problemf("%s is larger than %d bytes and was cut", name, c.Options.MaxResourceBytes)
