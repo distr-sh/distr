@@ -105,7 +105,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   selectedApplicationVersionId = signal<string | undefined>(undefined);
 
   readonly filterForm = new FormGroup({
-    search: new FormControl(''),
+    search: new FormControl(this.route.snapshot.queryParamMap.get('search') ?? ''),
   });
 
   readonly deploymentTargets$ = this.deploymentTargets.poll().pipe(takeUntilDestroyed());
