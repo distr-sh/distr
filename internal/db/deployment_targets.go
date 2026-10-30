@@ -67,11 +67,19 @@ const (
 	` + deploymentTargetJoinExpr
 )
 
+// DeploymentTargetFilter narrows the deployment targets a caller can see down to those of any of
+// CustomerOrganizationIDs and, with Internal, those of no customer. A zero filter matches all.
+type DeploymentTargetFilter struct {
+	CustomerOrganizationIDs []uuid.UUID
+	Internal                bool
+}
+
 func GetDeploymentTargets(
 	ctx context.Context,
 	orgID uuid.UUID,
 	customerOrgID *uuid.UUID,
 	partnerOrgID *uuid.UUID,
+	filter DeploymentTargetFilter,
 ) ([]types.DeploymentTargetFull, error) {
 	db := internalctx.GetDb(ctx)
 	isVendor := customerOrgID == nil && partnerOrgID == nil
@@ -79,8 +87,19 @@ func GetDeploymentTargets(
 		"SELECT"+deploymentTargetFullOutputExpr+"FROM"+deploymentTargetFromExpr+
 			"WHERE dt.organization_id = @orgId "+
 			"AND (@isVendor OR dt.customer_organization_id = @customerOrgId OR co.partner_organization_id = @partnerOrgId) "+
+			"AND (NOT @filterActive "+
+			"OR (@filterInternal AND dt.customer_organization_id IS NULL) "+
+			"OR dt.customer_organization_id = ANY(@filterCustomerOrgIds::uuid[])) "+
 			"ORDER BY co.name, dt.name",
-		pgx.NamedArgs{"orgId": orgID, "customerOrgId": customerOrgID, "isVendor": isVendor, "partnerOrgId": partnerOrgID},
+		pgx.NamedArgs{
+			"orgId":                orgID,
+			"customerOrgId":        customerOrgID,
+			"isVendor":             isVendor,
+			"partnerOrgId":         partnerOrgID,
+			"filterActive":         filter.Internal || len(filter.CustomerOrganizationIDs) > 0,
+			"filterInternal":       filter.Internal,
+			"filterCustomerOrgIds": filter.CustomerOrganizationIDs,
+		},
 	); err != nil {
 		return nil, fmt.Errorf("failed to query DeploymentTargets: %w", err)
 	} else if result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.DeploymentTargetFull]); err != nil {
