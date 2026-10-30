@@ -379,14 +379,12 @@ func (s *lokiStore) push(ctx context.Context, orgID uuid.UUID, streams map[strin
 		return fmt.Errorf("could not marshal loki push request: %w", err)
 	}
 
-	req, err := s.newRequest(ctx, orgID, http.MethodPost, "/loki/api/v1/push", nil)
+	req, err := s.newRequest(ctx, orgID, http.MethodPost, "/loki/api/v1/push", nil, bytes.NewReader(data))
 	if err != nil {
 		return err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Body = io.NopCloser(bytes.NewReader(data))
-	req.ContentLength = int64(len(data))
 	resp, err := s.client.Do(req)
 	if err != nil {
 		return fmt.Errorf("loki push failed: %w", err)
@@ -456,7 +454,7 @@ func (s *lokiStore) queryRange(
 		zap.Int("limit", limit), zap.String("direction", lokiDirection))
 	began := time.Now()
 
-	req, err := s.newRequest(ctx, orgID, http.MethodGet, "/loki/api/v1/query_range", params)
+	req, err := s.newRequest(ctx, orgID, http.MethodGet, "/loki/api/v1/query_range", params, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -537,7 +535,7 @@ func (s *lokiStore) series(
 		"end":     []string{strconv.FormatInt(end.UnixNano()+1, 10)},
 	}
 
-	req, err := s.newRequest(ctx, orgID, http.MethodGet, "/loki/api/v1/series", params)
+	req, err := s.newRequest(ctx, orgID, http.MethodGet, "/loki/api/v1/series", params, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -580,13 +578,14 @@ func (s *lokiStore) newRequest(
 	orgID uuid.UUID,
 	method, path string,
 	params url.Values,
+	body io.Reader,
 ) (*http.Request, error) {
 	requestURL := strings.TrimSuffix(s.config.URL, "/") + path
 	if len(params) > 0 {
 		requestURL += "?" + params.Encode()
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, requestURL, nil)
+	req, err := http.NewRequestWithContext(ctx, method, requestURL, body)
 	if err != nil {
 		return nil, fmt.Errorf("could not create loki request: %w", err)
 	}
