@@ -2,6 +2,7 @@ package types
 
 import (
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/internal/contenttype"
@@ -88,6 +89,21 @@ func SupportBundleResourceFileExtension(contentType string) string {
 	default:
 		return ".txt"
 	}
+}
+
+// SupportBundleResourceContentTypeOfFile is the content type whose SupportBundleResourceFileExtension
+// the name ends with, or plain text.
+func SupportBundleResourceContentTypeOfFile(name string) string {
+	for _, contentType := range []string{
+		contenttype.MediaTypeTextXLog,
+		contenttype.MediaTypeYAML,
+		contenttype.MediaTypeJSON,
+	} {
+		if strings.HasSuffix(name, SupportBundleResourceFileExtension(contentType)) {
+			return contentType
+		}
+	}
+	return contenttype.MediaTypeTextPlain
 }
 
 type SupportBundleResourceSummary struct {

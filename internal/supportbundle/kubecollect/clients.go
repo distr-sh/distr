@@ -13,6 +13,7 @@ import (
 	"k8s.io/client-go/metadata"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 // KubeContext is the context of the customer's kubeconfig the collector connects with, the one
@@ -29,15 +30,16 @@ type KubeContextOption struct {
 	Server string
 }
 
+// NewConfigFlags has only the flags that select a context of the kubeconfig. Flags like --server or
+// --token would change what the collector connects with but not the context WriteKubeconfig hands
+// on, so the scripts run afterwards would reach another cluster or act as another user.
+func NewConfigFlags() *genericclioptions.ConfigFlags {
+	return &genericclioptions.ConfigFlags{KubeConfig: new(""), Context: new(""), Namespace: new("")}
+}
+
 // ListKubeContexts returns the contexts of the kubeconfig sorted by name and the current one.
 func ListKubeContexts(configFlags *genericclioptions.ConfigFlags) ([]KubeContextOption, string, error) {
-	// ConfigFlags keeps the loader of its first use, which has the --context of that moment, so the
-	// kubeconfig is read here without it to let the selected context take effect afterwards.
-	rules := clientcmd.NewDefaultClientConfigLoadingRules()
-	if configFlags.KubeConfig != nil {
-		rules.ExplicitPath = *configFlags.KubeConfig
-	}
-	raw, err := rules.Load()
+	raw, err := configFlags.ToRawKubeConfigLoader().RawConfig()
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to read the kubeconfig: %w", err)
 	}
@@ -83,6 +85,28 @@ func LoadKubeContext(configFlags *genericclioptions.ConfigFlags) (*KubeContext, 
 	config.WarningHandler = rest.NoWarnings{}
 
 	return &KubeContext{Name: name, Server: config.Host, Namespace: namespace, Config: config}, nil
+}
+
+// WriteKubeconfig writes a kubeconfig holding only the collector's context, with its namespace and
+// with the files it references inlined, so that kubectl and helm run afterwards reach the same
+// cluster and namespace whatever the current context of the customer's kubeconfig is.
+func WriteKubeconfig(configFlags *genericclioptions.ConfigFlags, kubeContext *KubeContext, path string) error {
+	raw, err := configFlags.ToRawKubeConfigLoader().RawConfig()
+	if err != nil {
+		return fmt.Errorf("failed to read the kubeconfig: %w", err)
+	}
+	config := raw.DeepCopy()
+	config.CurrentContext = kubeContext.Name
+	if err := clientcmdapi.MinifyConfig(config); err != nil {
+		return fmt.Errorf("failed to reduce the kubeconfig to the context: %w", err)
+	} else if err := clientcmdapi.FlattenConfig(config); err != nil {
+		return fmt.Errorf("failed to inline the files the kubeconfig references: %w", err)
+	}
+	config.Contexts[kubeContext.Name].Namespace = kubeContext.Namespace
+	if err := clientcmd.WriteToFile(*config, path); err != nil {
+		return fmt.Errorf("failed to write the kubeconfig: %w", err)
+	}
+	return nil
 }
 
 type Clients struct {
