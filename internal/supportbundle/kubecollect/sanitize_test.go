@@ -131,7 +131,23 @@ binaryData:
 		obj := parseObject(g, configMap)
 		sanitize(obj, Options{IncludeConfigMapData: true})
 		g.Expect(obj).To(HaveKeyWithValue("data", map[string]any{"LOG_LEVEL": "debug"}))
-		g.Expect(obj).To(HaveKeyWithValue("binaryData", map[string]any{"logo.png": "[REDACTED, 3 bytes]"}))
+		g.Expect(obj).To(HaveKeyWithValue("binaryData", map[string]any{"logo.png": "[BINARY, 3 bytes]"}))
+	})
+
+	t.Run("Helm release", func(t *testing.T) {
+		g := NewWithT(t)
+		obj := parseObject(g, `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sh.helm.release.v1.shop.v1
+  labels:
+    owner: helm
+data:
+  release: H4sIAAAA
+`)
+		sanitize(obj, Options{IncludeConfigMapData: true})
+		g.Expect(obj).To(HaveKeyWithValue("data", map[string]any{"release": "[REDACTED, 8 bytes]"}))
 	})
 
 	t.Run("without data", func(t *testing.T) {

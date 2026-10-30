@@ -3,9 +3,13 @@ package kubecollect
 import (
 	"context"
 	"slices"
+	"sync"
 
+	"golang.org/x/sync/errgroup"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+const helmReleaseLookupConcurrency = 8
 
 type NamespaceOption struct {
 	Name         string
@@ -29,6 +33,7 @@ func ListNamespaces(ctx context.Context, clients *Clients) ([]NamespaceOption, e
 // their metadata finds the releases without downloading any Secret data. The names are only a hint,
 // so a namespace the customer may not list Secrets in simply shows none.
 func AddHelmReleases(ctx context.Context, clients *Clients, options []NamespaceOption) {
+	var mu sync.Mutex
 	releases := map[string][]string{}
 	add := func(namespace string) bool {
 		list, err := clients.Metadata.Resource(secretsGVR).Namespace(namespace).
@@ -36,6 +41,8 @@ func AddHelmReleases(ctx context.Context, clients *Clients, options []NamespaceO
 		if err != nil {
 			return false
 		}
+		mu.Lock()
+		defer mu.Unlock()
 		for _, secret := range list.Items {
 			if name := secret.Labels["name"]; name != "" && !slices.Contains(releases[secret.Namespace], name) {
 				releases[secret.Namespace] = append(releases[secret.Namespace], name)
@@ -44,9 +51,17 @@ func AddHelmReleases(ctx context.Context, clients *Clients, options []NamespaceO
 		return true
 	}
 	if !add(metav1.NamespaceAll) {
+		// Someone who may not list Secrets cluster-wide is often refused in most namespaces too, and
+		// the customer waits for these lists before the namespace prompt appears.
+		var group errgroup.Group
+		group.SetLimit(helmReleaseLookupConcurrency)
 		for _, option := range options {
-			add(option.Name)
+			group.Go(func() error {
+				add(option.Name)
+				return nil
+			})
 		}
+		_ = group.Wait()
 	}
 	for i := range options {
 		options[i].HelmReleases = releases[options[i].Name]

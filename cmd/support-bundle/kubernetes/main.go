@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 
 	"github.com/distr-sh/distr/internal/supportbundle/kubecollect"
@@ -12,6 +13,9 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/klog/v2"
 )
+
+// minResourceBytes leaves room for the note that says a file was cut.
+const minResourceBytes = 1024
 
 func main() {
 	// client-go logs through klog, for example when it retries a request, which would interleave with
@@ -37,6 +41,10 @@ func main() {
 		usageError("--output is required")
 	} else if pflag.NArg() > 0 {
 		usageError(fmt.Sprintf("unexpected arguments: %v", pflag.Args()))
+	} else if opts.LogTailLines < 0 {
+		usageError("--log-tail-lines must not be negative")
+	} else if opts.MaxResourceBytes < minResourceBytes {
+		usageError(fmt.Sprintf("--max-resource-bytes must be at least %d", minResourceBytes))
 	}
 
 	// Ctrl+C keeps the default handling and ends the process: the prompts block on the terminal
@@ -59,6 +67,12 @@ func run(
 	output string,
 	opts kubecollect.Options,
 ) error {
+	if entries, err := os.ReadDir(output); err == nil && len(entries) > 0 {
+		return fmt.Errorf("%s is not empty, write the bundle into a new or empty directory", output)
+	} else if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return err
+	}
+
 	prompter := kubecollect.NewPrompter(os.Stdin, os.Stderr)
 	if err := selectKubeContext(prompter, configFlags); err != nil {
 		return err
@@ -107,7 +121,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	if result.Collected == 0 {
+	if result.Collected == 0 && result.Problems > 0 {
 		return fmt.Errorf("nothing could be collected, see %s/collection-errors.txt", output)
 	}
 	fmt.Fprintf(os.Stderr, "\nCollected %d files into %s.\n", result.Collected, output)

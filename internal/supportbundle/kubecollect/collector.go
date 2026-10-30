@@ -21,9 +21,6 @@ import (
 
 const (
 	listPageSize = 500
-	// maxLogReadBytes bounds what is read of a single log before it is cut to MaxResourceBytes, since
-	// the tail lines alone do not bound the size of a log with very long lines.
-	maxLogReadBytes = 64 * 1024 * 1024
 	// kubeletLogUnavailable starts the text the kubelet sends with a success status in place of a log
 	// it no longer has, followed by the container ID.
 	kubeletLogUnavailable = "unable to retrieve container logs for "
@@ -460,7 +457,7 @@ func (c *Collector) collectLog(
 		return false, nil
 	}
 	defer stream.Close()
-	content, err := io.ReadAll(io.LimitReader(stream, maxLogReadBytes))
+	content, err := keepTail(stream, c.Options.MaxResourceBytes)
 	if err != nil {
 		c.problemf("read the logs of %s: %v", name, err)
 		return false, nil
@@ -535,9 +532,7 @@ func (c *Collector) write(
 	contentType string,
 	content []byte,
 ) error {
-	if contentType == contenttype.MediaTypeTextXLog {
-		content, _ = keepTail(content, c.Options.MaxResourceBytes)
-	} else if cut, ok := keepHead(content, c.Options.MaxResourceBytes); ok {
+	if cut, ok := keepHead(content, c.Options.MaxResourceBytes); ok {
 		c.problemf("%s is larger than %d bytes and was cut", name, c.Options.MaxResourceBytes)
 		content = cut
 	}

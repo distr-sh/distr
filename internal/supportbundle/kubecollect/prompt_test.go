@@ -20,6 +20,8 @@ func TestParseNamespaceSelection(t *testing.T) {
 	g.Expect(parseNamespaceSelection("  ", namespaceOptions, "shop")).To(Equal([]string{"shop"}))
 	g.Expect(parseNamespaceSelection("3, kube-system 3,shop", namespaceOptions, "default")).
 		To(Equal([]string{"shop", "kube-system"}))
+	g.Expect(parseNamespaceSelection("1", append(namespaceOptions, NamespaceOption{Name: "1"}), "default")).
+		To(Equal([]string{"1"}))
 
 	_, err := parseNamespaceSelection("4", namespaceOptions, "default")
 	g.Expect(err).To(MatchError(ContainSubstring("4 is not a number from the list")))
