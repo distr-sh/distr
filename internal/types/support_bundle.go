@@ -1,6 +1,7 @@
 package types
 
 import (
+	"slices"
 	"time"
 
 	"github.com/distr-sh/distr/internal/contenttype"
@@ -70,10 +71,8 @@ var SupportBundleResourceContentTypes = []string{
 }
 
 func ParseSupportBundleResourceContentType(value string) string {
-	for _, contentType := range SupportBundleResourceContentTypes {
-		if value == contentType {
-			return value
-		}
+	if slices.Contains(SupportBundleResourceContentTypes, value) {
+		return value
 	}
 	return contenttype.MediaTypeTextPlain
 }
