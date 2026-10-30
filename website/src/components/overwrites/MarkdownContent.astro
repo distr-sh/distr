@@ -1,0 +1,21 @@
+---
+import Default from '@astrojs/starlight/components/MarkdownContent.astro';
+
+const {entry, lastUpdated} = Astro.locals.starlightRoute;
+const showLastUpdated = entry.data.lastUpdatedAtTop && lastUpdated;
+---
+
+<Default>
+  {showLastUpdated && (
+    <p>
+      <strong>Last Updated:</strong>{' '}
+      <time datetime={lastUpdated.toISOString()}>
+        {lastUpdated.toLocaleDateString('en-US', {
+          dateStyle: 'long',
+          timeZone: 'UTC',
+        })}
+      </time>
+    </p>
+  )}
+  <slot />
+</Default>

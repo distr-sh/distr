@@ -54,6 +54,8 @@ export default defineConfig({
           '/get-started/',
           '/docs/',
           '/demo/success/',
+          '/terms-of-service/',
+          '/data-processing-agreement/',
         ];
         const url = new URL(page);
         const pathname = url.pathname;
@@ -89,6 +91,7 @@ export default defineConfig({
         Head: './src/components/overwrites/Head.astro',
         Header: './src/components/overwrites/Header.astro',
         PageTitle: './src/components/overwrites/PageTitle.astro',
+        MarkdownContent: './src/components/overwrites/MarkdownContent.astro',
         ContentPanel: './src/components/overwrites/ContentPanel.astro',
         Footer: './src/components/overwrites/Footer.astro',
         Sidebar: './src/components/overwrites/Sidebar.astro',
@@ -293,7 +296,13 @@ export default defineConfig({
             },
           ],
           {
-            exclude: ['**/privacy-policy', '**/404', '**/changelog'],
+            exclude: [
+              '**/privacy-policy',
+              '**/terms-of-service',
+              '**/data-processing-agreement',
+              '**/404',
+              '**/changelog',
+            ],
           },
         ),
         starlightLinksValidator({
@@ -432,5 +441,10 @@ export default defineConfig({
 
     // Case study redirects
     '/case-studies/sophris/': '/case-studies/candor/',
+
+    // Legal page short links
+    '/tos/': '/terms-of-service/',
+    '/dpa/': '/data-processing-agreement/',
+    '/pp/': '/privacy-policy/',
   },
 });
