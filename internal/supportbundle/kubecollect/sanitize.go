@@ -7,6 +7,7 @@ import (
 	"unicode/utf8"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 const lastAppliedConfigurationAnnotation = "kubectl.kubernetes.io/last-applied-configuration"
@@ -32,10 +33,15 @@ func sanitize(obj map[string]any, opts Options) {
 	case "Secret":
 		sanitizeSecret(obj, opts.IncludeSecretData)
 	case "ConfigMap":
-		if !opts.IncludeConfigMapData {
+		// Helm's ConfigMap storage driver keeps every release in a ConfigMap labeled owner=helm, with
+		// the values and the rendered manifest in it.
+		owner, _, _ := unstructured.NestedString(obj, "metadata", "labels", "owner")
+		if owner == "helm" || !opts.IncludeConfigMapData {
 			replaceValues(obj, "data", func(value string) string { return redacted(len(value)) })
+			replaceValues(obj, "binaryData", func(value string) string { return redacted(decodedLen(value)) })
+		} else {
+			replaceValues(obj, "binaryData", func(value string) string { return binary(decodedLen(value)) })
 		}
-		replaceValues(obj, "binaryData", func(value string) string { return redacted(decodedLen(value)) })
 	}
 }
 
@@ -58,7 +64,7 @@ func sanitizeSecret(obj map[string]any, includeData bool) {
 		if decoded, err := base64.StdEncoding.DecodeString(encoded); err != nil {
 			stringData[key] = redacted(len(encoded))
 		} else if !isText(decoded) {
-			stringData[key] = fmt.Sprintf("[BINARY, %d bytes]", len(decoded))
+			stringData[key] = binary(len(decoded))
 		} else {
 			stringData[key] = string(decoded)
 		}
@@ -78,6 +84,10 @@ func replaceValues(obj map[string]any, field string, replace func(string) string
 
 func redacted(size int) string {
 	return fmt.Sprintf("[REDACTED, %d bytes]", size)
+}
+
+func binary(size int) string {
+	return fmt.Sprintf("[BINARY, %d bytes]", size)
 }
 
 func decodedLen(encoded string) int {
