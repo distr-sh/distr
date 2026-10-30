@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/distr-sh/distr/internal/contenttype"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	. "github.com/onsi/gomega"
@@ -30,7 +31,7 @@ func zipEntries(g Gomega, resources []types.SupportBundleResource) map[string]st
 }
 
 func textResource(name string) types.SupportBundleResource {
-	return types.SupportBundleResource{ID: uuid.New(), Name: name, ContentType: types.SupportBundleResourceContentTypeText}
+	return types.SupportBundleResource{ID: uuid.New(), Name: name, ContentType: contenttype.MediaTypeTextPlain}
 }
 
 func TestWriteSupportBundleZip_keepsEntriesInsideTheArchive(t *testing.T) {
@@ -65,12 +66,12 @@ func TestWriteSupportBundleZip_namesEntriesByContentType(t *testing.T) {
 	g := NewWithT(t)
 
 	entries := zipEntries(g, []types.SupportBundleResource{
-		{Name: "cluster/nodes", ContentType: types.SupportBundleResourceContentTypeYAML, Content: "first"},
-		{Name: "cluster/nodes.yaml", ContentType: types.SupportBundleResourceContentTypeYAML, Content: "second"},
-		{Name: "cluster/version", ContentType: types.SupportBundleResourceContentTypeJSON},
-		{Name: "pods/web/app", ContentType: types.SupportBundleResourceContentTypeLog},
-		{Name: "container-web-logs", ContentType: types.SupportBundleResourceContentTypeText},
-		{Name: "container-web-logs", ContentType: types.SupportBundleResourceContentTypeText},
+		{Name: "cluster/nodes", ContentType: contenttype.MediaTypeYAML, Content: "first"},
+		{Name: "cluster/nodes.yaml", ContentType: contenttype.MediaTypeYAML, Content: "second"},
+		{Name: "cluster/version", ContentType: contenttype.MediaTypeJSON},
+		{Name: "pods/web/app", ContentType: contenttype.MediaTypeTextXLog},
+		{Name: "container-web-logs", ContentType: contenttype.MediaTypeTextPlain},
+		{Name: "container-web-logs", ContentType: contenttype.MediaTypeTextPlain},
 	})
 
 	g.Expect(entries).To(Equal(map[string]string{

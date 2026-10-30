@@ -72,7 +72,7 @@ func SupportBundleResourceToAPI(resource types.SupportBundleResource) api.Suppor
 		ID:          resource.ID,
 		CreatedAt:   resource.CreatedAt,
 		Name:        resource.Name,
-		ContentType: resource.ContentType,
+		ContentType: types.ParseSupportBundleResourceContentType(resource.ContentType),
 		Content:     string(resource.Content),
 	}
 }
@@ -82,7 +82,7 @@ func SupportBundleResourceToSummaryAPI(resource types.SupportBundleResource) api
 		ID:          resource.ID,
 		CreatedAt:   resource.CreatedAt,
 		Name:        resource.Name,
-		ContentType: resource.ContentType,
+		ContentType: types.ParseSupportBundleResourceContentType(resource.ContentType),
 	}
 }
 
