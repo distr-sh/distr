@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/respond"
+	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v86"
@@ -158,6 +160,7 @@ func applyStripeSubscription(ctx context.Context, orgID uuid.UUID, sub stripe.Su
 			plan.Period = subscriptionPeriod
 		}
 
+		previousFeatures := slices.Clone(org.Features)
 		org.ApplyPlan(plan)
 
 		log.Info("updated organization subscription",
@@ -167,7 +170,10 @@ func applyStripeSubscription(ctx context.Context, orgID uuid.UUID, sub stripe.Su
 			zap.Int64("userAccountQty", org.SubscriptionUserAccountQty.Value()),
 			zap.Int64("customerOrganizationQty", org.SubscriptionCustomerOrganizationQty.Value()))
 
-		return db.UpdateOrganization(ctx, org)
+		if err := db.UpdateOrganization(ctx, org); err != nil {
+			return err
+		}
+		return subscription.GrantCustomerFeatures(ctx, org, previousFeatures)
 	})
 	return orgDeleted, err
 }
