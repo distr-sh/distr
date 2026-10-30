@@ -65,7 +65,7 @@ The environment variables in pod specs are collected as they are specified, sinc
 
 ### Permissions
 
-The collector only reads, with the credentials of the selected context. It needs `get` and `list` on the resources of the selected namespaces, `get` on `pods/log` and `list` on Secrets to find the Helm releases. The cluster information needs read access to the cluster-scoped resources listed above. A customer who can read their namespaces only still gets a useful bundle, and what is missing is recorded in `collection-errors.txt`. The built-in `view` ClusterRole does not grant access to Secrets, so it leaves out the Secrets and the Helm releases.
+The collector only reads, with the credentials of the selected context. It needs `list` on the resources of the selected namespaces, `get` on `pods/log` and `list` on Secrets to find the Helm releases. The cluster information needs read access to the cluster-scoped resources listed above. A customer who can read their namespaces only still gets a useful bundle, and what is missing is recorded in `collection-errors.txt`. The built-in `view` ClusterRole does not grant access to Secrets, so it leaves out the Secrets and the Helm releases.
 
 ### Options
 
@@ -121,13 +121,13 @@ Click **Save** when done.
 
 ### Configure ConfigMap and Secret values
 
-On the **Kubernetes** tab, choose whether Kubernetes bundles include the values of ConfigMaps and Secrets. ConfigMap values are collected by default and Secret values are not. Without them, a bundle still lists every ConfigMap and Secret with its keys, but shows each value as `[REDACTED]` with its size. Collected Secret values are uploaded decoded in plain text, so only turn them on when you need them.
+On the **Kubernetes** tab, choose whether Kubernetes bundles include the values of ConfigMaps and Secrets. ConfigMap values are collected by default and Secret values are not. Without them, a bundle still lists the ConfigMaps and Secrets with their keys, but shows each value as `[REDACTED]` with its size. Collected Secret values are uploaded decoded in plain text, so only turn them on when you need them.
 
 The collector tells the customer which values it collects before anything is collected, and the customer can override your choice with the [options](#options) `--include-configmap-data` and `--include-secret-data`. Click **Save** when done.
 
 ### Configure custom scripts
 
-Environment variables, logs and resources do not always answer the question you need answered. Each tab of the **Settings** page has its own custom scripts. Everything a script writes to standard output is attached to the bundle as a resource named after the script.
+Environment variables, logs and resources do not always answer the question you need answered. Each tab of the **Settings** page has its own custom scripts. Everything a script writes to standard output is shown to the customer and, once they confirm, attached to the bundle as a resource named after the script.
 
 Docker scripts run on the customer's host during collection. Kubernetes scripts run on the customer's machine after the collector. While they run, `KUBECONFIG` points to a kubeconfig that holds only the context and namespace the collector used, so `kubectl` and `helm` reach the same cluster and namespace without any arguments. Check that `kubectl` or `helm` is installed before relying on it.
 
