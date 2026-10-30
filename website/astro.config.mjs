@@ -91,6 +91,7 @@ export default defineConfig({
         Head: './src/components/overwrites/Head.astro',
         Header: './src/components/overwrites/Header.astro',
         PageTitle: './src/components/overwrites/PageTitle.astro',
+        MarkdownContent: './src/components/overwrites/MarkdownContent.astro',
         ContentPanel: './src/components/overwrites/ContentPanel.astro',
         Footer: './src/components/overwrites/Footer.astro',
         Sidebar: './src/components/overwrites/Sidebar.astro',
@@ -440,5 +441,10 @@ export default defineConfig({
 
     // Case study redirects
     '/case-studies/sophris/': '/case-studies/candor/',
+
+    // Legal page short links
+    '/tos/': '/terms-of-service/',
+    '/dpa/': '/data-processing-agreement/',
+    '/pp/': '/privacy-policy/',
   },
 });
