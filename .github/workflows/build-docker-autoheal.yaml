@@ -33,7 +33,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Login to Distr Registry (tag only)
-        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        if: ${{ startsWith(github.ref, 'refs/tags/') && !contains(github.ref_name, '-rc.') }}
         uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: registry.distr.sh
@@ -49,7 +49,7 @@ jobs:
         with:
           images: |
             ghcr.io/distr-sh/distr/docker-autoheal
-            registry.distr.sh/distr/docker-autoheal
+            ${{ !contains(github.ref_name, '-rc.') && 'registry.distr.sh/distr/docker-autoheal' || '' }}
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
