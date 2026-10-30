@@ -66,7 +66,8 @@ For example, if a commit should be added to version 1.2.3, it must be pushed to 
 
 ## Pre-Releases
 
-Creating pre-releases can be useful if you need to test the current state of the main branch in a demo environment or test artifact building.
-To do this, create a `v*.*.*-rc.x` branch (for example, `v2.1.0-rc.x`).
-For release-please to create a new release branch in the correct format, change `"prerelease": true` and `"versioning": "prerelease"` in the `release-please-config.json`.
-This will also automatically mark your GitHub release as pre-release.
+Every release is tested on demo as a release candidate before it ships to customers.
+Run the "Trigger Release Candidate" workflow on `main` to tag the current commit as `X.Y.Z-rc.N`, where `X.Y.Z` is the version of the open release-please pull request.
+The tag builds the enterprise edition, the controllers and the Helm chart and pushes them to `ghcr.io` only, never to `registry.distr.sh`, so a release candidate never reaches customers.
+It creates no GitHub release and no SDK release.
+Once the release candidate works on demo, merge the release-please pull request to release it.

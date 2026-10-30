@@ -122,7 +122,8 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Login to Distr Registry
+      - name: Login to Distr Registry (non-rc tag only)
+        if: ${{ !contains(github.ref_name, '-rc.') }}
         uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: registry.distr.sh
@@ -136,7 +137,7 @@ jobs:
         with:
           images: |
             ${{ env.REGISTRY_IMAGE }}
-            registry.distr.sh/distr/${{ matrix.controller }}
+            ${{ !contains(github.ref_name, '-rc.') && format('registry.distr.sh/distr/{0}', matrix.controller) || '' }}
           tags: |
             type=ref,event=branch
             type=sha,event=branch

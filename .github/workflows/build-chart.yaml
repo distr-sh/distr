@@ -46,7 +46,12 @@ jobs:
           helm repo add rustfs https://charts.rustfs.com/
           helm dependency build deploy/charts/distr
           helm lint --strict deploy/charts/distr
-          helm package deploy/charts/distr
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            # release candidate tags do not bump Chart.yaml
+            helm package deploy/charts/distr --version "$GITHUB_REF_NAME" --app-version "$GITHUB_REF_NAME"
+          else
+            helm package deploy/charts/distr
+          fi
       - name: Render the example values against the schema
         run: |
           for values in deploy/charts/distr/examples/*/*.yaml; do
@@ -59,8 +64,8 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Login to Distr Registry (tag or manual only)
-        if: ${{ startsWith(github.ref, 'refs/tags/') || inputs.publish }}
+      - name: Login to Distr Registry (non-rc tag or manual only)
+        if: ${{ (startsWith(github.ref, 'refs/tags/') || inputs.publish) && !contains(github.ref_name, '-rc.') }}
         uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: registry.distr.sh
@@ -90,6 +95,9 @@ jobs:
                 --certificate-oidc-issuer "$CERTIFICATE_OIDC_ISSUER" \
                 "ghcr.io/distr-sh/charts/distr@${digest}" > /dev/null
 
+              if [[ "$GITHUB_REF_NAME" == *-rc.* ]]; then
+                continue
+              fi
               helm push "$chart" oci://registry.distr.sh/enterprise/charts 2>&1 | tee push.log
               digest="$(awk '/^Digest: /{print $2}' push.log)"
               cosign sign --yes "registry.distr.sh/enterprise/charts/distr@${digest}"
