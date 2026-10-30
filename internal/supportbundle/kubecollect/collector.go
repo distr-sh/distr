@@ -1,0 +1,553 @@
+package kubecollect
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"slices"
+	"strings"
+	"time"
+
+	"github.com/distr-sh/distr/internal/buildconfig"
+	"github.com/distr-sh/distr/internal/contenttype"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/yaml"
+)
+
+const (
+	listPageSize = 500
+	// kubeletLogUnavailable starts the text the kubelet sends with a success status in place of a log
+	// it no longer has, followed by the container ID.
+	kubeletLogUnavailable = "unable to retrieve container logs for "
+)
+
+var (
+	nodesGVR      = schema.GroupVersionResource{Version: "v1", Resource: "nodes"}
+	namespacesGVR = schema.GroupVersionResource{Version: "v1", Resource: "namespaces"}
+	eventsGVR     = schema.GroupVersionResource{Version: "v1", Resource: "events"}
+	secretsGVR    = schema.GroupVersionResource{Version: "v1", Resource: "secrets"}
+	crdsGVR       = schema.GroupVersionResource{
+		Group: "apiextensions.k8s.io", Version: "v1", Resource: "customresourcedefinitions",
+	}
+	persistentVolumesGVR = schema.GroupVersionResource{Version: "v1", Resource: "persistentvolumes"}
+	replicaSetsGR        = schema.GroupResource{Group: "apps", Resource: "replicasets"}
+
+	// clusterResources explain why a pod is not scheduled, a volume not bound, an ingress not
+	// served or an object rejected on admission.
+	clusterResources = []schema.GroupVersionResource{
+		{Group: "storage.k8s.io", Version: "v1", Resource: "storageclasses"},
+		persistentVolumesGVR,
+		{Group: "networking.k8s.io", Version: "v1", Resource: "ingressclasses"},
+		{Group: "admissionregistration.k8s.io", Version: "v1", Resource: "validatingwebhookconfigurations"},
+		{Group: "admissionregistration.k8s.io", Version: "v1", Resource: "mutatingwebhookconfigurations"},
+	}
+)
+
+type Collector struct {
+	Clients  *Clients
+	Context  *KubeContext
+	Options  Options
+	Sink     Sink
+	Progress io.Writer
+
+	collected int
+	problems  []string
+}
+
+type Result struct {
+	// Collected is the number of files with collected data, not counting the summary and the
+	// collection errors.
+	Collected int
+	Problems  int
+}
+
+type summary struct {
+	CollectorVersion string          `json:"collectorVersion"`
+	CollectedAt      time.Time       `json:"collectedAt"`
+	Context          string          `json:"context"`
+	Namespaces       []string        `json:"namespaces"`
+	Collected        Groups          `json:"collected"`
+	Options          Options         `json:"options"`
+	Cluster          *clusterSummary `json:"cluster,omitempty"`
+}
+
+type clusterSummary struct {
+	Server            string `json:"server,omitempty"`
+	KubernetesVersion string `json:"kubernetesVersion,omitempty"`
+	Distribution      string `json:"distribution"`
+}
+
+type crdSummary struct {
+	Name     string   `json:"name"`
+	Group    string   `json:"group"`
+	Kind     string   `json:"kind"`
+	Scope    string   `json:"scope"`
+	Versions []string `json:"versions"`
+}
+
+// Run collects the bundle into the sink. Everything the cluster refuses or fails to return is
+// recorded in collection-errors.txt and the run continues. Only a failure of the sink aborts it.
+func (c *Collector) Run(ctx context.Context, namespaces []string, groups Groups) (Result, error) {
+	s := summary{
+		CollectorVersion: buildconfig.Version(),
+		CollectedAt:      time.Now().UTC(),
+		Context:          c.Context.Name,
+		Namespaces:       namespaces,
+		Collected:        groups,
+		Options:          c.Options,
+	}
+
+	if groups.Cluster {
+		c.progressf("Collecting cluster information")
+		if cluster, err := c.collectCluster(ctx, namespaces); err != nil {
+			return Result{}, err
+		} else {
+			s.Cluster = cluster
+		}
+	}
+
+	var resources []schema.GroupVersionResource
+	if groups.Resources {
+		var err error
+		if resources, err = c.namespacedResources(); err != nil {
+			c.problemf("discover the API resources: %v", err)
+		}
+	}
+
+	for _, namespace := range namespaces {
+		c.progressf("Collecting namespace %s", namespace)
+		if groups.Resources {
+			if err := c.collectResources(ctx, namespace, resources); err != nil {
+				return Result{}, err
+			}
+		}
+		if groups.Events {
+			if err := c.collectEvents(ctx, namespace); err != nil {
+				return Result{}, err
+			}
+		}
+		if groups.Logs {
+			if err := c.collectLogs(ctx, namespace); err != nil {
+				return Result{}, err
+			}
+		}
+	}
+
+	if content, err := yaml.Marshal(s); err != nil {
+		return Result{}, err
+	} else if err := c.write(ctx, "summary.yaml", contenttype.MediaTypeYAML, content); err != nil {
+		return Result{}, err
+	}
+	if len(c.problems) > 0 {
+		content := []byte(strings.Join(c.problems, "\n") + "\n")
+		if err := c.write(ctx, "collection-errors.txt", contenttype.MediaTypeTextPlain, content); err != nil {
+			return Result{}, err
+		}
+	}
+	return Result{Collected: c.collected, Problems: len(c.problems)}, nil
+}
+
+func (c *Collector) collectCluster(ctx context.Context, namespaces []string) (*clusterSummary, error) {
+	cluster := clusterSummary{Server: c.Context.Server}
+
+	if version, err := c.Clients.Discovery.ServerVersion(); err != nil {
+		c.problemf("get the server version: %v", err)
+	} else if content, err := json.MarshalIndent(version, "", "  "); err != nil {
+		return nil, err
+	} else if err := c.collect(
+		ctx, "cluster/version.json", contenttype.MediaTypeJSON, content,
+	); err != nil {
+		return nil, err
+	} else {
+		cluster.KubernetesVersion = version.GitVersion
+	}
+
+	var nodes []node
+	if items, err := c.list(ctx, nodesGVR, ""); err != nil {
+		c.problemf("list the nodes: %v", err)
+	} else {
+		for _, item := range items {
+			providerID, _, _ := unstructured.NestedString(item.Object, "spec", "providerID")
+			nodes = append(nodes, node{Name: item.GetName(), Labels: item.GetLabels(), ProviderID: providerID})
+			if err := c.collectObject(ctx, "cluster/nodes/"+item.GetName()+".yaml", item); err != nil {
+				return nil, err
+			}
+		}
+	}
+	cluster.Distribution = detectDistribution(cluster.KubernetesVersion, nodes)
+
+	if items, err := c.list(ctx, namespacesGVR, ""); err != nil {
+		c.problemf("list the namespaces: %v", err)
+	} else if err := c.collectList(ctx, "cluster/namespaces.yaml", items); err != nil {
+		return nil, err
+	}
+
+	for _, gvr := range clusterResources {
+		items, err := c.list(ctx, gvr, "")
+		if err != nil {
+			c.problemf("list %s: %v", resourceDir(gvr), err)
+			continue
+		}
+		for _, item := range items {
+			if gvr == persistentVolumesGVR && !slices.Contains(namespaces, claimNamespace(item)) {
+				continue
+			}
+			if err := c.collectObject(ctx, "cluster/"+resourceDir(gvr)+"/"+item.GetName()+".yaml", item); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if items, err := c.list(ctx, crdsGVR, ""); err != nil {
+		c.problemf("list the custom resource definitions: %v", err)
+	} else {
+		crds := make([]crdSummary, 0, len(items))
+		for _, item := range items {
+			crd := crdSummary{Name: item.GetName()}
+			crd.Group, _, _ = unstructured.NestedString(item.Object, "spec", "group")
+			crd.Kind, _, _ = unstructured.NestedString(item.Object, "spec", "names", "kind")
+			crd.Scope, _, _ = unstructured.NestedString(item.Object, "spec", "scope")
+			versions, _, _ := unstructured.NestedSlice(item.Object, "spec", "versions")
+			for _, version := range versions {
+				if v, ok := version.(map[string]any); ok {
+					crd.Versions = append(crd.Versions, fmt.Sprint(v["name"]))
+				}
+			}
+			crds = append(crds, crd)
+		}
+		if content, err := yaml.Marshal(crds); err != nil {
+			return nil, err
+		} else if err := c.collect(
+			ctx, "cluster/crds.yaml", contenttype.MediaTypeYAML, content,
+		); err != nil {
+			return nil, err
+		}
+	}
+
+	return &cluster, nil
+}
+
+func (c *Collector) collectResources(
+	ctx context.Context,
+	namespace string,
+	resources []schema.GroupVersionResource,
+) error {
+	var objects, kinds int
+	for _, gvr := range resources {
+		items, err := c.list(ctx, gvr, namespace)
+		if err != nil {
+			c.problemf("list %s in namespace %s: %v", resourceDir(gvr), namespace, err)
+			continue
+		}
+		if len(items) > 0 {
+			kinds++
+		}
+		for _, item := range items {
+			if gvr.GroupResource() == replicaSetsGR && scaledDown(item) {
+				continue
+			}
+			name := fmt.Sprintf("namespaces/%s/%s/%s.yaml", namespace, resourceDir(gvr), item.GetName())
+			if err := c.collectObject(ctx, name, item); err != nil {
+				return err
+			}
+			objects++
+		}
+	}
+	c.progressf("  %d resources of %d kinds", objects, kinds)
+	return nil
+}
+
+// skippedResources are served by every cluster but hold nothing that explains a problem with an
+// application. Events are collected on their own.
+var skippedResources = []schema.GroupResource{
+	{Resource: "events"},
+	{Group: "events.k8s.io", Resource: "events"},
+	// EndpointSlices hold the same addresses, and Endpoints are deprecated since Kubernetes 1.33.
+	{Resource: "endpoints"},
+	// The revision history of StatefulSets and DaemonSets, a copy of every former template.
+	{Group: "apps", Resource: "controllerrevisions"},
+	// Leader election and node heartbeats, which change every few seconds.
+	{Group: "coordination.k8s.io", Resource: "leases"},
+}
+
+// namespacedResources is every namespaced resource the cluster serves that can be listed, custom
+// resources included. Discovery returns what it found even when some API groups fail, which is
+// common for aggregated APIs whose backing service is down.
+func (c *Collector) namespacedResources() ([]schema.GroupVersionResource, error) {
+	lists, err := c.Clients.Discovery.ServerPreferredNamespacedResources()
+	var result []schema.GroupVersionResource
+	for _, list := range lists {
+		gv, parseErr := schema.ParseGroupVersion(list.GroupVersion)
+		if parseErr != nil || gv.Group == "metrics.k8s.io" {
+			continue
+		}
+		for _, resource := range list.APIResources {
+			if strings.Contains(resource.Name, "/") || !slices.Contains(resource.Verbs, "list") ||
+				slices.Contains(skippedResources, gv.WithResource(resource.Name).GroupResource()) {
+				continue
+			}
+			result = append(result, gv.WithResource(resource.Name))
+		}
+	}
+	slices.SortFunc(result, func(a, b schema.GroupVersionResource) int {
+		return strings.Compare(resourceDir(a), resourceDir(b))
+	})
+	return result, err
+}
+
+// scaledDown is true for a ReplicaSet a Deployment keeps from a former rollout, up to ten per
+// Deployment by default. The current ReplicaSet of a Deployment scaled to zero is skipped as well,
+// which the Deployment itself shows.
+func scaledDown(replicaSet unstructured.Unstructured) bool {
+	desired, found, _ := unstructured.NestedInt64(replicaSet.Object, "spec", "replicas")
+	current, _, _ := unstructured.NestedInt64(replicaSet.Object, "status", "replicas")
+	return found && desired == 0 && current == 0
+}
+
+func claimNamespace(persistentVolume unstructured.Unstructured) string {
+	namespace, _, _ := unstructured.NestedString(persistentVolume.Object, "spec", "claimRef", "namespace")
+	return namespace
+}
+
+func resourceDir(gvr schema.GroupVersionResource) string {
+	if gvr.Group == "" {
+		return gvr.Resource
+	}
+	return gvr.Resource + "." + gvr.Group
+}
+
+func (c *Collector) collectEvents(ctx context.Context, namespace string) error {
+	items, err := c.list(ctx, eventsGVR, namespace)
+	if err != nil {
+		c.problemf("list the events in namespace %s: %v", namespace, err)
+		return nil
+	}
+	slices.SortStableFunc(items, func(a, b unstructured.Unstructured) int {
+		return eventTime(a).Compare(eventTime(b))
+	})
+	objects := make([]map[string]any, len(items))
+	for i, item := range items {
+		sanitize(item.Object, c.Options)
+		objects[i] = item.Object
+	}
+
+	// Drop the oldest events until the newest ones fit, since a truncated YAML list would be invalid.
+	for omitted := 0; ; {
+		var header string
+		if omitted > 0 {
+			header = fmt.Sprintf(
+				"# --- distr: %d older events omitted to stay within %d bytes ---\n", omitted, c.Options.MaxResourceBytes,
+			)
+		}
+		content, err := yaml.Marshal(map[string]any{"apiVersion": "v1", "kind": "List", "items": objects[omitted:]})
+		if err != nil {
+			return err
+		}
+		if len(header)+len(content) <= c.Options.MaxResourceBytes || omitted == len(objects) {
+			c.progressf("  %d events", len(objects)-omitted)
+			name := "namespaces/" + namespace + "/events.yaml"
+			return c.collect(ctx, name, contenttype.MediaTypeYAML, append([]byte(header), content...))
+		}
+		omitted += max(1, (len(objects)-omitted)/4)
+	}
+}
+
+func eventTime(event unstructured.Unstructured) time.Time {
+	for _, field := range [][]string{{"lastTimestamp"}, {"eventTime"}, {"metadata", "creationTimestamp"}} {
+		if value, _, _ := unstructured.NestedString(event.Object, field...); value != "" {
+			if t, err := time.Parse(time.RFC3339Nano, value); err == nil {
+				return t
+			}
+		}
+	}
+	return time.Time{}
+}
+
+func (c *Collector) collectLogs(ctx context.Context, namespace string) error {
+	var pods []corev1.Pod
+	opts := metav1.ListOptions{Limit: listPageSize}
+	for {
+		list, err := c.Clients.Kubernetes.CoreV1().Pods(namespace).List(ctx, opts)
+		if err != nil {
+			c.problemf("list the pods in namespace %s for their logs: %v", namespace, err)
+			return nil
+		}
+		pods = append(pods, list.Items...)
+		if opts.Continue = list.Continue; opts.Continue == "" {
+			break
+		}
+	}
+
+	var logs int
+	for _, pod := range pods {
+		for _, container := range podContainers(pod) {
+			status := container.status
+			if status == nil ||
+				(status.State.Waiting != nil && status.RestartCount == 0 && status.LastTerminationState.Terminated == nil) {
+				continue
+			}
+			base := fmt.Sprintf("namespaces/%s/pods/%s/%s", namespace, pod.Name, container.name)
+			if collected, err := c.collectLog(ctx, pod, container.name, false, base+".log"); err != nil {
+				return err
+			} else if collected {
+				logs++
+			}
+			if status.RestartCount > 0 || status.LastTerminationState.Terminated != nil {
+				if collected, err := c.collectLog(ctx, pod, container.name, true, base+".previous.log"); err != nil {
+					return err
+				} else if collected {
+					logs++
+				}
+			}
+		}
+	}
+	c.progressf("  %d container logs of %d pods", logs, len(pods))
+	return nil
+}
+
+type podContainer struct {
+	name   string
+	status *corev1.ContainerStatus
+}
+
+func podContainers(pod corev1.Pod) []podContainer {
+	find := func(statuses []corev1.ContainerStatus, name string) *corev1.ContainerStatus {
+		for i := range statuses {
+			if statuses[i].Name == name {
+				return &statuses[i]
+			}
+		}
+		return nil
+	}
+	result := make(
+		[]podContainer, 0,
+		len(pod.Spec.InitContainers)+len(pod.Spec.Containers)+len(pod.Spec.EphemeralContainers),
+	)
+	for _, container := range pod.Spec.InitContainers {
+		result = append(result, podContainer{container.Name, find(pod.Status.InitContainerStatuses, container.Name)})
+	}
+	for _, container := range pod.Spec.Containers {
+		result = append(result, podContainer{container.Name, find(pod.Status.ContainerStatuses, container.Name)})
+	}
+	for _, container := range pod.Spec.EphemeralContainers {
+		result = append(result, podContainer{container.Name, find(pod.Status.EphemeralContainerStatuses, container.Name)})
+	}
+	return result
+}
+
+func (c *Collector) collectLog(
+	ctx context.Context,
+	pod corev1.Pod,
+	container string,
+	previous bool,
+	name string,
+) (bool, error) {
+	stream, err := c.Clients.Kubernetes.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
+		Container: container,
+		Previous:  previous,
+		TailLines: &c.Options.LogTailLines,
+	}).Stream(ctx)
+	if err != nil {
+		c.problemf("get the logs of %s: %v", name, err)
+		return false, nil
+	}
+	defer stream.Close()
+	content, err := keepTail(stream, c.Options.MaxResourceBytes)
+	if err != nil {
+		c.problemf("read the logs of %s: %v", name, err)
+		return false, nil
+	} else if bytes.HasPrefix(content, []byte(kubeletLogUnavailable)) {
+		// The kubelet keeps only the latest finished run of a container, so the run before it is
+		// gone while a crashed container waits for its restart. Its current log shows the crash.
+		if !previous {
+			c.problemf("get the logs of %s: the kubelet no longer has them", name)
+		}
+		return false, nil
+	}
+	return true, c.collect(ctx, name, contenttype.MediaTypeTextXLog, content)
+}
+
+func (c *Collector) list(
+	ctx context.Context,
+	gvr schema.GroupVersionResource,
+	namespace string,
+) ([]unstructured.Unstructured, error) {
+	var items []unstructured.Unstructured
+	opts := metav1.ListOptions{Limit: listPageSize}
+	for {
+		list, err := c.Clients.Dynamic.Resource(gvr).Namespace(namespace).List(ctx, opts)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, list.Items...)
+		if opts.Continue = list.GetContinue(); opts.Continue == "" {
+			return items, nil
+		}
+	}
+}
+
+func (c *Collector) collectObject(ctx context.Context, name string, item unstructured.Unstructured) error {
+	sanitize(item.Object, c.Options)
+	if content, err := yaml.Marshal(item.Object); err != nil {
+		return err
+	} else {
+		return c.collect(ctx, name, contenttype.MediaTypeYAML, content)
+	}
+}
+
+func (c *Collector) collectList(ctx context.Context, name string, items []unstructured.Unstructured) error {
+	objects := make([]map[string]any, len(items))
+	for i, item := range items {
+		sanitize(item.Object, c.Options)
+		objects[i] = item.Object
+	}
+	if content, err := yaml.Marshal(map[string]any{"apiVersion": "v1", "kind": "List", "items": objects}); err != nil {
+		return err
+	} else {
+		return c.collect(ctx, name, contenttype.MediaTypeYAML, content)
+	}
+}
+
+func (c *Collector) collect(
+	ctx context.Context,
+	name string,
+	contentType string,
+	content []byte,
+) error {
+	if err := c.write(ctx, name, contentType, content); err != nil {
+		return err
+	}
+	c.collected++
+	return nil
+}
+
+func (c *Collector) write(
+	ctx context.Context,
+	name string,
+	contentType string,
+	content []byte,
+) error {
+	if cut, ok := keepHead(content, c.Options.MaxResourceBytes); ok {
+		c.problemf("%s is larger than %d bytes and was cut", name, c.Options.MaxResourceBytes)
+		content = cut
+	}
+	if err := c.Sink.Write(ctx, name, contentType, content); err != nil {
+		return fmt.Errorf("failed to write %s: %w", name, err)
+	}
+	return nil
+}
+
+func (c *Collector) problemf(format string, args ...any) {
+	c.problems = append(c.problems, fmt.Sprintf(format, args...))
+}
+
+func (c *Collector) progressf(format string, args ...any) {
+	if c.Progress != nil {
+		_, _ = fmt.Fprintf(c.Progress, format+"\n", args...)
+	}
+}

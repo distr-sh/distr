@@ -56,6 +56,7 @@ require (
 	github.com/shirou/gopsutil/v4 v4.26.9
 	github.com/sirupsen/logrus v1.10.2
 	github.com/spf13/cobra v1.10.2
+	github.com/spf13/pflag v1.0.10
 	github.com/stripe/stripe-go/v86 v86.4.2
 	go.opentelemetry.io/collector/component v1.70.0
 	go.opentelemetry.io/collector/confmap v1.70.0
@@ -79,9 +80,11 @@ require (
 	k8s.io/apimachinery v0.37.2
 	k8s.io/cli-runtime v0.37.2
 	k8s.io/client-go v0.37.2
+	k8s.io/klog/v2 v2.140.0
 	k8s.io/kubectl v0.37.2
 	k8s.io/metrics v0.37.2
 	oras.land/oras-go/v2 v2.6.4
+	sigs.k8s.io/yaml v1.6.0
 )
 
 require (
@@ -278,7 +281,6 @@ require (
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
-	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/stretchr/testify v1.12.1 // indirect
 	github.com/tetratelabs/wabin v0.0.0-20230304001439-f6f874872834 // indirect
 	github.com/tetratelabs/wazero v1.12.0 // indirect
@@ -344,7 +346,6 @@ require (
 	k8s.io/apiserver v0.37.1 // indirect
 	k8s.io/component-base v0.37.2 // indirect
 	k8s.io/component-helpers v0.37.2 // indirect
-	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260721132016-d427ff9ee9ad // indirect
 	k8s.io/utils v0.0.0-20260626114624-be93311217bd // indirect
 	sigs.k8s.io/controller-runtime v0.25.2 // indirect
@@ -353,6 +354,5 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.21.2 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.4.2 // indirect
-	sigs.k8s.io/yaml v1.6.0 // indirect
 	tags.cncf.io/container-device-interface v1.1.1 // indirect
 )
