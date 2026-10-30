@@ -38,6 +38,8 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 | `ENABLE_QUERY_LOGGING`                | no       | `false`   | Logs all database queries. Intended for debugging only.                                                                                                                 |
 | `MAINTENANCE_MODE`                    | no       | `false`   | Answers every API and registry request with 503, see below. The frontend keeps being served.                                                                            |
 | `SUPPORT_EMAIL`                       | no       | —         | Address users can contact for help, offered as a `mailto:` link where the frontend mentions support. Unset means support is mentioned without a link.                   |
+| `TERMS_OF_SERVICE_URL`                | no       | —         | URL of the terms of service that the registration page says users agree to by creating an account. Unset means the registration page mentions no terms.                 |
+| `PRIVACY_POLICY_URL`                  | no       | —         | URL of the privacy policy that the registration page links to. Unset means the registration page mentions no privacy policy.                                            |
 
 ### Sign-up modes
 

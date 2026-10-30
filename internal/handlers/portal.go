@@ -123,6 +123,8 @@ func portalLoginConfig(ctx context.Context, host portalHost) api.PortalLoginConf
 	return api.PortalLoginConfig{
 		Registration:         host.registrationMode(),
 		TurnstileSiteKey:     host.turnstileSiteKey(),
+		TermsOfServiceURL:    env.TermsOfServiceURL(),
+		PrivacyPolicyURL:     env.PrivacyPolicyURL(),
 		OIDCGithubEnabled:    env.OIDCGithubEnabled(),
 		OIDCGoogleEnabled:    env.OIDCGoogleEnabled(),
 		OIDCMicrosoftEnabled: env.OIDCMicrosoftEnabled(),
