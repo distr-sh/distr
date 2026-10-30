@@ -104,9 +104,6 @@ type CheckoutSessionParams struct {
 	UserAccountQty          int64
 	Currency                string
 	SuccessURL              string
-	// RequireTermsOfService needs a terms of service URL in the public details of the Stripe account,
-	// otherwise Stripe rejects the checkout session.
-	RequireTermsOfService bool
 }
 
 func CreateCheckoutSession(ctx context.Context, params CheckoutSessionParams) (*stripe.CheckoutSession, error) {
@@ -125,12 +122,6 @@ func CreateCheckoutSession(ctx context.Context, params CheckoutSessionParams) (*
 				"organizationId": params.OrganizationID,
 			},
 		},
-	}
-
-	if params.RequireTermsOfService {
-		sessionParams.ConsentCollection = &stripe.CheckoutSessionConsentCollectionParams{
-			TermsOfService: new(string(stripe.CheckoutSessionConsentCollectionTermsOfServiceRequired)),
-		}
 	}
 
 	if params.CustomerOrganizationQty > 0 {

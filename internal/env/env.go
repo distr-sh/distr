@@ -53,7 +53,6 @@ var (
 	frontendPosthogToken                  *string
 	frontendPosthogAPIHost                *string
 	frontendPosthogUIHost                 *string
-	frontendTermsOfServiceURL             *string
 	userEmailVerificationRequired         bool
 	serverShutdownDelayDuration           *time.Duration
 	registration                          RegistrationMode
@@ -300,7 +299,6 @@ func Initialize() {
 	frontendPosthogToken = envutil.GetEnvOrNil("FRONTEND_POSTHOG_TOKEN")
 	frontendPosthogAPIHost = envutil.GetEnvOrNil("FRONTEND_POSTHOG_API_HOST")
 	frontendPosthogUIHost = envutil.GetEnvOrNil("FRONTEND_POSTHOG_UI_HOST")
-	frontendTermsOfServiceURL = envutil.GetEnvOrNil("FRONTEND_TERMS_OF_SERVICE_URL")
 
 	cleanupDeploymentTargetMetricsCron = envutil.GetEnvOrNil("CLEANUP_DEPLOYMENT_TARGET_METRICS_CRON")
 	cleanupDeploymentTargetMetricsTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_DEPLOYMENT_TARGET_METRICS_TIMEOUT",
@@ -554,10 +552,6 @@ func FrontendPosthogAPIHost() *string {
 
 func FrontendPosthogUIHost() *string {
 	return frontendPosthogUIHost
-}
-
-func FrontendTermsOfServiceURL() *string {
-	return frontendTermsOfServiceURL
 }
 
 func UserEmailVerificationRequired() bool {

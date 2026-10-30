@@ -3,17 +3,15 @@ import {
   Component,
   computed,
   DestroyRef,
-  effect,
   inject,
   OnInit,
   signal,
   viewChild,
 } from '@angular/core';
-import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
-import {firstValueFrom, from, take} from 'rxjs';
-import {getRemoteEnvironment} from '../../env/remote';
+import {firstValueFrom, take} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {OidcButtonsComponent} from '../components/oidc-buttons.component';
 import {PortalLogoComponent} from '../components/portal-logo/portal-logo.component';
@@ -52,9 +50,6 @@ export class RegisterComponent implements OnInit {
   private readonly turnstile = viewChild(TurnstileComponent);
   private readonly turnstileToken = signal<string | undefined>(undefined);
 
-  private readonly remoteEnv = toSignal(from(getRemoteEnvironment()));
-  protected readonly termsOfServiceUrl = computed(() => this.remoteEnv()?.termsOfServiceUrl);
-
   public readonly form = new FormGroup(
     {
       email: new FormControl('', [Validators.required, Validators.email]),
@@ -62,21 +57,9 @@ export class RegisterComponent implements OnInit {
       organizationName: new FormControl<string | undefined>(undefined),
       password: new FormControl('', [Validators.required, Validators.minLength(8)]),
       passwordConfirm: new FormControl('', [Validators.required]),
-      termsAccepted: new FormControl({value: false, disabled: true}, Validators.requiredTrue),
     },
     (control) => (control.value.password === control.value.passwordConfirm ? null : {passwordMismatch: 'error'})
   );
-
-  constructor() {
-    effect(() => {
-      const termsAccepted = this.form.controls.termsAccepted;
-      if (this.termsOfServiceUrl()) {
-        termsAccepted.enable();
-      } else {
-        termsAccepted.disable();
-      }
-    });
-  }
 
   ngOnInit() {
     const email = this.route.snapshot.queryParamMap.get('email');
@@ -93,14 +76,6 @@ export class RegisterComponent implements OnInit {
 
   protected onTurnstileToken(token: string | undefined): void {
     this.turnstileToken.set(token);
-  }
-
-  protected requireTermsForOidc(event: MouseEvent): void {
-    const termsAccepted = this.form.controls.termsAccepted;
-    if (termsAccepted.invalid) {
-      event.preventDefault();
-      termsAccepted.markAsTouched();
-    }
   }
 
   public async submit(): Promise<void> {

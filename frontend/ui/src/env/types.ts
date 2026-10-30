@@ -14,5 +14,4 @@ export interface RemoteEnvironment {
   readonly posthogUiHost?: string;
   readonly registryHost: string;
   readonly customDomainTarget?: string;
-  readonly termsOfServiceUrl?: string;
 }
