@@ -65,6 +65,7 @@
           <div class="mt-4">
             @if (activeTab() === 'token') {
               <pre
+                data-ph-mask-text="true"
                 class="max-h-96 overflow-y-auto rounded-lg border border-gray-300 bg-gray-50 p-4 font-mono text-sm break-all whitespace-pre-wrap text-gray-900 select-all dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                 >{{ token() }}</pre>
               <button

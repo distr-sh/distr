@@ -1,10 +1,9 @@
 package types
 
 import (
-	"errors"
-	"fmt"
 	"time"
 
+	"github.com/distr-sh/distr/internal/contenttype"
 	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/google/uuid"
 )
@@ -63,39 +62,29 @@ type SupportBundleWithDetails struct {
 	StatusChangedByImageID   *uuid.UUID `db:"status_changed_by_image_id"`
 }
 
-type SupportBundleResourceContentType string
-
-const (
-	SupportBundleResourceContentTypeText SupportBundleResourceContentType = "text/plain"
-	SupportBundleResourceContentTypeLog  SupportBundleResourceContentType = "text/x-log"
-	SupportBundleResourceContentTypeYAML SupportBundleResourceContentType = "application/yaml"
-	SupportBundleResourceContentTypeJSON SupportBundleResourceContentType = "application/json"
-)
-
-var ErrInvalidSupportBundleResourceContentType = errors.New("invalid support bundle resource content type")
-
-func ParseSupportBundleResourceContentType(value string) (SupportBundleResourceContentType, error) {
-	switch SupportBundleResourceContentType(value) {
-	case SupportBundleResourceContentTypeText:
-		return SupportBundleResourceContentTypeText, nil
-	case SupportBundleResourceContentTypeLog:
-		return SupportBundleResourceContentTypeLog, nil
-	case SupportBundleResourceContentTypeYAML:
-		return SupportBundleResourceContentTypeYAML, nil
-	case SupportBundleResourceContentTypeJSON:
-		return SupportBundleResourceContentTypeJSON, nil
-	default:
-		return "", fmt.Errorf("%w: %v", ErrInvalidSupportBundleResourceContentType, value)
-	}
+var SupportBundleResourceContentTypes = []string{
+	contenttype.MediaTypeTextPlain,
+	contenttype.MediaTypeTextXLog,
+	contenttype.MediaTypeYAML,
+	contenttype.MediaTypeJSON,
 }
 
-func (t SupportBundleResourceContentType) FileExtension() string {
-	switch t {
-	case SupportBundleResourceContentTypeLog:
+func ParseSupportBundleResourceContentType(value string) string {
+	for _, contentType := range SupportBundleResourceContentTypes {
+		if value == contentType {
+			return value
+		}
+	}
+	return contenttype.MediaTypeTextPlain
+}
+
+func SupportBundleResourceFileExtension(contentType string) string {
+	switch contentType {
+	case contenttype.MediaTypeTextXLog:
 		return ".log"
-	case SupportBundleResourceContentTypeYAML:
+	case contenttype.MediaTypeYAML:
 		return ".yaml"
-	case SupportBundleResourceContentTypeJSON:
+	case contenttype.MediaTypeJSON:
 		return ".json"
 	default:
 		return ".txt"
@@ -103,11 +92,11 @@ func (t SupportBundleResourceContentType) FileExtension() string {
 }
 
 type SupportBundleResourceSummary struct {
-	ID              uuid.UUID                        `db:"id"`
-	CreatedAt       time.Time                        `db:"created_at"`
-	SupportBundleID uuid.UUID                        `db:"support_bundle_id"`
-	Name            string                           `db:"name"`
-	ContentType     SupportBundleResourceContentType `db:"content_type"`
+	ID              uuid.UUID `db:"id"`
+	CreatedAt       time.Time `db:"created_at"`
+	SupportBundleID uuid.UUID `db:"support_bundle_id"`
+	Name            string    `db:"name"`
+	ContentType     string    `db:"content_type"`
 	// Size is the length of the content in bytes. It is nil for resources uploaded before it was
 	// recorded, because the content is stored compressed and encrypted and cannot be measured in SQL.
 	Size *int64 `db:"size"`
