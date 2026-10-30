@@ -1,7 +1,7 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {UserAccountWithRole, UserRole} from '@distr-sh/distr-sdk';
-import {filter, firstValueFrom, map, merge, Observable, of, shareReplay, Subject, switchMap, tap} from 'rxjs';
+import {filter, map, merge, Observable, of, shareReplay, Subject, switchMap, tap} from 'rxjs';
 import {ReactiveList} from './cache';
 import {ContextService} from './context.service';
 
@@ -33,7 +33,7 @@ export class UsersService {
   private readonly baseUrl = '/api/v1/user-accounts';
   private readonly httpClient = inject(HttpClient);
   private readonly contextService = inject(ContextService);
-  private readonly cache = new UserAccountsReactiveList(this.httpClient.get<UserAccountWithRole[]>(this.baseUrl));
+  private readonly cache = new UserAccountsReactiveList(() => this.httpClient.get<UserAccountWithRole[]>(this.baseUrl));
 
   private readonly userAccountUpdates$ = new Subject<UserAccountWithRole>();
   private readonly self$ = this.contextService.getUser().pipe(
@@ -50,9 +50,7 @@ export class UsersService {
   }
 
   public refresh(): Promise<UserAccountWithRole[]> {
-    return firstValueFrom(
-      this.httpClient.get<UserAccountWithRole[]>(this.baseUrl).pipe(tap((users) => this.cache.reset(users)))
-    );
+    return this.cache.refresh();
   }
 
   public addUser(request: CreateUserAccountRequest): Observable<UserAccountInvitationResponse> {
