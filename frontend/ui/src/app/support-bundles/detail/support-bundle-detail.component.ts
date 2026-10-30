@@ -13,6 +13,7 @@ import {
 } from '../../components/activity-timeline/activity-timeline.component';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {ClipComponent} from '../../components/clip.component';
+import {DeploymentTypeBadgeComponent} from '../../components/deployment-type-badge.component';
 import {PageComponent} from '../../components/page.component';
 import {AuthService} from '../../services/auth.service';
 import {OverlayService} from '../../services/overlay.service';
@@ -21,7 +22,8 @@ import {ToastService} from '../../services/toast.service';
 import {SupportBundleDetail} from '../../types/support-bundle';
 import {supportBundleDeleteConfirm} from '../support-bundle-display';
 import {SupportBundleStatusBadgeComponent} from '../support-bundle-status-badge.component';
-import {SupportBundleResourceComponent} from './support-bundle-resource.component';
+import {buildResourceTree} from './resource-tree';
+import {SupportBundleResourceFolderComponent} from './support-bundle-resource-folder.component';
 
 @Component({
   selector: 'app-support-bundle-detail',
@@ -36,7 +38,8 @@ import {SupportBundleResourceComponent} from './support-bundle-resource.componen
     ActivityTimelineComponent,
     PageComponent,
     SupportBundleStatusBadgeComponent,
-    SupportBundleResourceComponent,
+    SupportBundleResourceFolderComponent,
+    DeploymentTypeBadgeComponent,
   ],
 })
 export class SupportBundleDetailComponent {
@@ -69,6 +72,8 @@ export class SupportBundleDetailComponent {
     const bundle = this.bundle();
     return bundle?.title || `Support Bundle ${bundle?.id.substring(0, 8)}`;
   });
+
+  protected readonly resourceTree = computed(() => buildResourceTree(this.bundle()?.resources ?? []));
 
   protected readonly timelineEntries = computed<ActivityTimelineEntry[]>(() =>
     (this.bundle()?.comments ?? []).map((comment) => ({

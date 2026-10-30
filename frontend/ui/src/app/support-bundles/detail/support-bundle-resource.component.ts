@@ -1,6 +1,6 @@
 import {Component, inject, input, signal} from '@angular/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faChevronRight, faSpinner} from '@fortawesome/free-solid-svg-icons';
+import {faChevronRight, faFileLines, faSpinner} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {BytesPipe} from '../../../util/units';
@@ -20,10 +20,14 @@ export class SupportBundleResourceComponent {
 
   public readonly bundleId = input.required<string>();
   public readonly resource = input.required<SupportBundleResourceSummary>();
+  public readonly name = input.required<string>();
+  public readonly depth = input(0);
 
   protected readonly faChevronRight = faChevronRight;
+  protected readonly faFileLines = faFileLines;
   protected readonly faSpinner = faSpinner;
 
+  protected readonly open = signal(false);
   protected readonly content = signal<string | undefined>(undefined);
   protected readonly loading = signal(false);
 

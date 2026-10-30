@@ -6,92 +6,107 @@
       <fa-icon [icon]="faArrowLeft" class="mr-2" />
       Back to Support Bundles
     </a>
-    <h1
-      class="mb-4 border-b border-gray-200 pb-4 text-3xl leading-none font-extrabold tracking-tight text-gray-900 md:text-4xl dark:border-gray-700 dark:text-white">
+    <h1 class="mb-6 text-3xl leading-none font-extrabold tracking-tight text-gray-900 md:text-4xl dark:text-white">
       Support Bundle Settings
     </h1>
-    @if (!loading()) {
-      <div class="mt-6 space-y-4">
-        <div class="flex items-center justify-between">
-          <h2 class="text-xl font-bold dark:text-white">Environment Variables</h2>
-          @if (auth.hasAnyRole('read_write', 'admin')) {
-            <div class="flex gap-2">
-              <button
-                type="button"
-                (click)="openImportModal(importModal)"
-                [disabled]="envVarsArray.dirty"
-                [attr.title]="envVarsArray.dirty ? 'Save pending changes before importing' : null"
-                class="inline-flex items-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
-                <fa-icon [icon]="faFileImport" class="mr-2 text-gray-500 dark:text-gray-400" />
-                Import
-              </button>
-              <button
-                type="button"
-                (click)="addEnvVar()"
-                class="inline-flex items-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
-                <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
-                Add Variable
-              </button>
-            </div>
-          }
-        </div>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          These environment variables are collected from the host and from Docker containers when customers create
-          support bundles. Only the variables listed below are collected, and variables marked as redacted have their
-          values replaced with [REDACTED]. Distr additionally masks the customer's secrets and common credential
-          patterns in every collected resource.
-        </p>
 
-        @if (envVarsArray.length > 0) {
-          <div class="space-y-3">
-            @for (group of envVarsArray.controls; track $index) {
-              <div class="flex items-center gap-4">
-                <div class="flex-1">
-                  <input
-                    type="text"
-                    autotrim
-                    [formControl]="group.controls.name"
-                    placeholder="Variable name"
-                    class="distr-input"
-                    [class.border-red-500]="duplicateIndices.has($index)"
-                    [class.dark:border-red-500]="duplicateIndices.has($index)" />
-                  @if (duplicateIndices.has($index)) {
-                    <p class="mt-1 text-sm text-red-600 dark:text-red-500">Duplicate variable name</p>
-                  }
-                </div>
-                <label class="inline-flex cursor-pointer items-center">
-                  <input type="checkbox" class="peer sr-only" [formControl]="group.controls.redacted" />
-                  <div class="distr-toggle"></div>
-                  <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Redacted</span>
-                </label>
-                @if (auth.hasAnyRole('read_write', 'admin')) {
-                  <button type="button" (click)="removeEnvVar($index)" class="distr-btn-danger px-3 py-2">
-                    <fa-icon [icon]="faTrash" class="h-4 w-4" />
+    <app-tab-bar [tabs]="deploymentTypeTabs" [(active)]="deploymentTypeTab" />
+
+    @if (!loading()) {
+      <div
+        role="tabpanel"
+        class="space-y-4 pt-6"
+        [id]="'tabpanel-' + deploymentTypeTab()"
+        [attr.aria-labelledby]="'tab-' + deploymentTypeTab()">
+        @switch (deploymentTypeTab()) {
+          @case ('docker') {
+            <div class="flex items-center justify-between">
+              <h2 class="text-xl font-bold dark:text-white">Environment Variables</h2>
+              @if (auth.hasAnyRole('read_write', 'admin')) {
+                <div class="flex gap-2">
+                  <button
+                    type="button"
+                    (click)="openImportModal(importModal)"
+                    [disabled]="envVarsArray.dirty"
+                    [attr.title]="envVarsArray.dirty ? 'Save pending changes before importing' : null"
+                    class="inline-flex items-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+                    <fa-icon [icon]="faFileImport" class="mr-2 text-gray-500 dark:text-gray-400" />
+                    Import
                   </button>
+                  <button
+                    type="button"
+                    (click)="addEnvVar()"
+                    class="inline-flex items-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+                    <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
+                    Add Variable
+                  </button>
+                </div>
+              }
+            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              These environment variables are collected from the host and from Docker containers when customers create
+              support bundles. Only the variables listed below are collected, and variables marked as redacted have
+              their values replaced with [REDACTED]. Distr additionally masks the customer's secrets and common
+              credential patterns in every collected resource.
+            </p>
+
+            @if (envVarsArray.length > 0) {
+              <div class="space-y-3">
+                @for (group of envVarsArray.controls; track $index) {
+                  <div class="flex items-center gap-4">
+                    <div class="flex-1">
+                      <input
+                        type="text"
+                        autotrim
+                        [formControl]="group.controls.name"
+                        placeholder="Variable name"
+                        class="distr-input"
+                        [class.border-red-500]="duplicateIndices.has($index)"
+                        [class.dark:border-red-500]="duplicateIndices.has($index)" />
+                      @if (duplicateIndices.has($index)) {
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-500">Duplicate variable name</p>
+                      }
+                    </div>
+                    <label class="inline-flex cursor-pointer items-center">
+                      <input type="checkbox" class="peer sr-only" [formControl]="group.controls.redacted" />
+                      <div class="distr-toggle"></div>
+                      <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Redacted</span>
+                    </label>
+                    @if (auth.hasAnyRole('read_write', 'admin')) {
+                      <button type="button" (click)="removeEnvVar($index)" class="distr-btn-danger px-3 py-2">
+                        <fa-icon [icon]="faTrash" class="h-4 w-4" />
+                      </button>
+                    }
+                  </div>
                 }
               </div>
+            } @else {
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                No environment variables configured. Click "Add Variable" to add one.
+              </p>
             }
-          </div>
-        } @else {
-          <p class="text-sm text-gray-500 dark:text-gray-400">
-            No environment variables configured. Click "Add Variable" to add one.
-          </p>
-        }
 
-        @if (auth.hasAnyRole('read_write', 'admin')) {
-          <div class="mt-8 flex w-full justify-center space-x-4 sm:mt-0">
-            <button
-              type="button"
-              (click)="save()"
-              [disabled]="saving() || duplicateIndices.size > 0 || envVarsArray.pristine"
-              class="distr-btn-primary inline-flex w-full items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-60">
-              <fa-icon [icon]="faFloppyDisk" class="mr-2" />
-              Save
-            </button>
-          </div>
-        }
+            @if (auth.hasAnyRole('read_write', 'admin')) {
+              <div class="mt-8 flex w-full justify-center space-x-4 sm:mt-0">
+                <button
+                  type="button"
+                  (click)="save()"
+                  [disabled]="saving() || duplicateIndices.size > 0 || envVarsArray.pristine"
+                  class="distr-btn-primary inline-flex w-full items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-60">
+                  <fa-icon [icon]="faFloppyDisk" class="mr-2" />
+                  Save
+                </button>
+              </div>
+            }
 
-        <app-support-bundle-scripts class="mt-8 border-t border-gray-200 pt-8 dark:border-gray-700" />
+            <app-support-bundle-scripts
+              class="mt-8 border-t border-gray-200 pt-8 dark:border-gray-700"
+              deploymentType="docker" />
+          }
+          @case ('kubernetes') {
+            <app-support-bundle-scripts deploymentType="kubernetes" />
+          }
+        }
       </div>
     }
   </div>

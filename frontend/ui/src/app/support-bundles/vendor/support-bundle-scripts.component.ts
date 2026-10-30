@@ -1,6 +1,7 @@
-import {ChangeDetectionStrategy, Component, inject, signal, TemplateRef} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, input, signal, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
+import {DeploymentType} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
@@ -32,7 +33,12 @@ export class SupportBundleScriptsComponent {
   private readonly toast = inject(ToastService);
   private readonly overlay = inject(OverlayService);
 
-  protected readonly scripts = signal<SupportBundleConfigurationScript[]>([]);
+  public readonly deploymentType = input.required<DeploymentType>();
+
+  private readonly allScripts = signal<SupportBundleConfigurationScript[]>([]);
+  protected readonly scripts = computed(() =>
+    this.allScripts().filter((script) => script.deploymentType === this.deploymentType())
+  );
   protected readonly savingScript = signal(false);
   protected readonly scriptForm = this.fb.group({
     name: this.fb.control('', Validators.required),
@@ -48,7 +54,7 @@ export class SupportBundleScriptsComponent {
       .getScripts()
       .pipe(takeUntilDestroyed())
       .subscribe({
-        next: (scripts) => this.scripts.set(scripts),
+        next: (scripts) => this.allScripts.set(scripts),
         error: (e) => {
           const msg = getFormDisplayedError(e);
           if (msg) {
@@ -82,6 +88,7 @@ export class SupportBundleScriptsComponent {
     }
     const description = this.scriptForm.controls.description.value.trim();
     const request = {
+      deploymentType: this.deploymentType(),
       name: this.scriptForm.controls.name.value,
       description: description || undefined,
       content: this.scriptForm.controls.content.value,
@@ -93,10 +100,10 @@ export class SupportBundleScriptsComponent {
       const edited = this.editedScript;
       if (edited) {
         const updated = await firstValueFrom(this.svc.updateScript(edited.id, request));
-        this.scripts.update((scripts) => scripts.map((s) => (s.id === updated.id ? updated : s)));
+        this.allScripts.update((scripts) => scripts.map((s) => (s.id === updated.id ? updated : s)));
       } else {
         const created = await firstValueFrom(this.svc.createScript(request));
-        this.scripts.update((scripts) => [...scripts, created]);
+        this.allScripts.update((scripts) => [...scripts, created]);
       }
       this.sortScripts();
       this.closeScriptModal();
@@ -115,13 +122,14 @@ export class SupportBundleScriptsComponent {
     try {
       const updated = await firstValueFrom(
         this.svc.updateScript(script.id, {
+          deploymentType: script.deploymentType,
           name: script.name,
           description: script.description,
           content: script.content,
           enabled: !script.enabled,
         })
       );
-      this.scripts.update((scripts) => scripts.map((s) => (s.id === updated.id ? updated : s)));
+      this.allScripts.update((scripts) => scripts.map((s) => (s.id === updated.id ? updated : s)));
     } catch (e) {
       toggle.checked = script.enabled;
       const msg = getFormDisplayedError(e);
@@ -140,7 +148,7 @@ export class SupportBundleScriptsComponent {
     }
     try {
       await firstValueFrom(this.svc.deleteScript(script.id));
-      this.scripts.update((scripts) => scripts.filter((s) => s.id !== script.id));
+      this.allScripts.update((scripts) => scripts.filter((s) => s.id !== script.id));
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {
@@ -151,6 +159,6 @@ export class SupportBundleScriptsComponent {
 
   // The collect script runs the scripts ordered by name, so the list has to show them in that order.
   private sortScripts() {
-    this.scripts.update((scripts) => [...scripts].sort((a, b) => a.name.localeCompare(b.name)));
+    this.allScripts.update((scripts) => [...scripts].sort((a, b) => a.name.localeCompare(b.name)));
   }
 }

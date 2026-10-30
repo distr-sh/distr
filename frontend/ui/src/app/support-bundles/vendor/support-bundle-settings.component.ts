@@ -11,11 +11,13 @@ import {
   ValidatorFn,
 } from '@angular/forms';
 import {RouterLink} from '@angular/router';
+import {DeploymentType} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faArrowLeft, faFileImport, faFloppyDisk, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {PageComponent} from '../../components/page.component';
+import {TabBarComponent, TabItem} from '../../components/tab-bar.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AuthService} from '../../services/auth.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
@@ -60,6 +62,7 @@ function uniqueNamesValidator(): ValidatorFn {
     RouterLink,
     PageComponent,
     SupportBundleScriptsComponent,
+    TabBarComponent,
   ],
 })
 export class SupportBundleSettingsComponent {
@@ -75,6 +78,12 @@ export class SupportBundleSettingsComponent {
   private readonly svc = inject(SupportBundlesService);
   private readonly toast = inject(ToastService);
   private readonly overlay = inject(OverlayService);
+
+  protected readonly deploymentTypeTabs: TabItem<DeploymentType>[] = [
+    {id: 'docker', label: 'Docker'},
+    {id: 'kubernetes', label: 'Kubernetes'},
+  ];
+  protected readonly deploymentTypeTab = signal<DeploymentType>('docker');
 
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
