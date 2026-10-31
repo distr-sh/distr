@@ -9,6 +9,7 @@ import {faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {lastValueFrom, Observable, Subject, takeUntil} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {filteredByFormControl} from '../../util/filter';
+import {refreshInBackground} from '../../util/refresh';
 import {SelectableVersioningStrategy} from '../../util/versions';
 import {SearchBarComponent} from '../components/search-bar.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
@@ -65,6 +66,10 @@ export class ApplicationsComponent implements OnDestroy {
 
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
+
+  constructor() {
+    refreshInBackground(this.applications.refresh());
+  }
 
   ngOnDestroy() {
     this.destroyed$.next();

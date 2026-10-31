@@ -8,6 +8,7 @@ import {catchError, combineLatest, EMPTY, filter, first, firstValueFrom, map, Ob
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
+import {refreshInBackground} from '../../../util/refresh';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
 import {ClickableRowDirective} from '../../directives/clickable-row.directive';
@@ -80,6 +81,10 @@ export class ApplicationEntitlementsComponent {
   editFormLoading = false;
 
   private manageEntitlementDrawerRef?: DialogRef;
+
+  constructor() {
+    refreshInBackground(this.applicationEntitlementsService.refresh(), this.applicationsService.refresh());
+  }
 
   protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faPen = faPen;

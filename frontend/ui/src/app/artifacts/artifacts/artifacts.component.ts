@@ -24,6 +24,7 @@ import {CustomerOrganizationsService} from '../../services/customer-organization
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
+import {UsersService} from '../../services/users.service';
 import {
   ArtifactPublicBadgeComponent,
   ArtifactsDownloadCountComponent,
@@ -56,6 +57,7 @@ import {
 })
 export class ArtifactsComponent {
   private readonly artifactsService = inject(ArtifactsService);
+  private readonly usersService = inject(UsersService);
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
@@ -106,9 +108,10 @@ export class ArtifactsComponent {
   );
 
   constructor() {
-    if (this.auth.isVendor()) {
-      refreshInBackground(this.customerOrganizationsService.refresh());
-    }
+    refreshInBackground(
+      this.artifactsService.refresh(),
+      ...(this.auth.isVendor() ? [this.usersService.refresh(), this.customerOrganizationsService.refresh()] : [])
+    );
     this.createForm.controls.upstreamAuthType.valueChanges
       .pipe(startWith(this.createForm.controls.upstreamAuthType.value), takeUntilDestroyed())
       .subscribe((t) => {

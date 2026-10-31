@@ -10,6 +10,7 @@ import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observabl
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
+import {refreshInBackground} from '../../../util/refresh';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {ClipComponent} from '../../components/clip.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
@@ -95,6 +96,7 @@ export class LicenseKeysComponent {
   editFormLoading = false;
 
   constructor() {
+    refreshInBackground(this.licenseKeysService.refresh());
     this.editForm.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.affectedDeployments.set([]));
   }
 

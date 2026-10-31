@@ -4,6 +4,7 @@ import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faBuilding} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, map, startWith, Subject, switchMap} from 'rxjs';
+import {refreshInBackground} from '../../../../util/refresh';
 import {PartnerOrganizationsService} from '../../../services/partner-organizations.service';
 import {UsersService} from '../../../services/users.service';
 import {PageComponent} from '../../page.component';
@@ -43,4 +44,8 @@ export class PartnerUsersComponent {
       map(([users, partnerOrganizationId]) => users.filter((it) => it.partnerOrganizationId === partnerOrganizationId))
     )
   );
+
+  constructor() {
+    refreshInBackground(this.usersService.refresh());
+  }
 }
