@@ -33,6 +33,7 @@ import {
   KUBERNETES_RESOURCE_NAME_REGEX,
   RESOURCE_QUANTITY_REGEX,
 } from '../../../util/validation';
+import {ClosableDialog} from '../../components/confirm-dialog/closable-dialog';
 import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
@@ -63,7 +64,7 @@ import {DeploymentWizardStepperComponent} from './deployment-wizard-stepper.comp
     DeploymentFormComponent,
   ],
 })
-export class DeploymentWizardComponent implements OnInit {
+export class DeploymentWizardComponent extends ClosableDialog implements OnInit {
   protected readonly faXmark = faXmark;
   protected readonly faShip = faShip;
   protected readonly faDocker = faDocker;
@@ -236,6 +237,7 @@ export class DeploymentWizardComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
+    super();
     this.applications.refresh();
     // Initialize deployment form with initial data reactively
     effect(() => {

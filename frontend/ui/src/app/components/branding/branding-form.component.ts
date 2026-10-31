@@ -42,7 +42,7 @@ export class BrandingFormComponent implements OnInit {
   protected readonly faCheck = faCheck;
   protected readonly faCircleXmark = faCircleXmark;
 
-  /** Welcome page content prefilled for organizations that have not written one yet. */
+  /** Instructions prefilled for organizations that have not written one yet. */
   readonly defaultDescription = input('');
   readonly showCustomDomains = input(true);
 

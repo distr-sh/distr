@@ -15,6 +15,7 @@ type ApplicationResponse struct {
 	Type                  types.DeploymentType         `json:"type"`
 	ImageID               *uuid.UUID                   `json:"imageId,omitempty"`
 	ImageUrl              *string                      `json:"imageUrl,omitempty"`
+	TitleImageUrl         *string                      `json:"titleImageUrl,omitempty"`
 	VersioningStrategy    types.VersioningStrategy     `json:"versioningStrategy"`
 	AllowAutomaticUpdates bool                         `json:"allowAutomaticUpdates"`
 	Versions              []ApplicationVersionResponse `json:"versions"`

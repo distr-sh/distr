@@ -80,9 +80,6 @@
   </ng-template>
 
   <ng-template #deploymentWizard>
-    <app-deployment-wizard
-      animate.enter="animate-fly-in-top"
-      animate.leave="animate-fly-out-top"
-      (closed)="hideModal()" />
+    <app-deployment-wizard (closed)="hideModal()" />
   </ng-template>
 </app-page>

@@ -23,12 +23,13 @@ import (
 
 func ArtifactEntitlementsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Artifacts", "Licensing"))
-	r.Use(middleware.RequireOrgAndRole, middleware.RequireVendorOrPartner,
-		middleware.LicensingFeatureFlagEnabledMiddleware)
+	r.Use(middleware.RequireOrgAndRole, middleware.LicensingFeatureFlagEnabledMiddleware)
 	r.Get("/", respond.Handler(getArtifactEntitlements)).
 		With(option.Description("List all artifact entitlements")).
 		With(option.Response(http.StatusOK, []types.ArtifactEntitlement{}))
-	r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
+	r.With(
+		middleware.RequireVendorOrPartner, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin,
+	).Group(func(r chiopenapi.Router) {
 		r.Post("/", respond.Handler(createArtifactEntitlement)).
 			With(option.Description("Create a new artifact entitlement")).
 			With(option.Request(types.ArtifactEntitlement{})).
@@ -61,7 +62,9 @@ func getArtifactEntitlements(r *http.Request) (respond.Responder, error) {
 		entitlements []types.ArtifactEntitlement
 		err          error
 	)
-	if partnerOrgID := authCtx.CurrentPartnerOrgID(); partnerOrgID != nil {
+	if customerOrgID := authCtx.CurrentCustomerOrgID(); customerOrgID != nil {
+		entitlements, err = db.GetArtifactEntitlementsByCustomerOrgID(ctx, *customerOrgID, *authCtx.CurrentOrgID())
+	} else if partnerOrgID := authCtx.CurrentPartnerOrgID(); partnerOrgID != nil {
 		entitlements, err = db.GetArtifactEntitlementsByPartnerOrgID(ctx, *partnerOrgID, *authCtx.CurrentOrgID())
 	} else {
 		entitlements, err = db.GetArtifactEntitlements(ctx, *authCtx.CurrentOrgID())

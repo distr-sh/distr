@@ -133,7 +133,9 @@ export class DeploymentTargetsComponent implements AfterViewInit {
     this.filterForm.controls.search,
     (dt, search) =>
       !search ||
-      [dt.name, dt.customerOrganization?.name].some((it) => it?.toLowerCase()?.includes(search.toLowerCase()) ?? false)
+      [dt.name, dt.customerOrganization?.name, ...dt.deployments.map((d) => d.application.name)].some(
+        (it) => it?.toLowerCase()?.includes(search.toLowerCase()) ?? false
+      )
   ).pipe(
     combineLatestWith(this.deploymentTargetMetrics$),
     map(([deploymentTargets, deploymentTargetMetrics]) =>

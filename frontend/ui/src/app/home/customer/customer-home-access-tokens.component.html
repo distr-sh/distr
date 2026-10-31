@@ -1,0 +1,42 @@
+<div class="distr-card distr-card-hover relative block p-4">
+  <h2 appCardHeading [icon]="faCode" class="mb-3">
+    <a routerLink="/settings/access-tokens" class="after:absolute after:inset-0">Access tokens</a>
+  </h2>
+
+  <ul class="-mx-2 flex flex-col gap-1 text-sm">
+    @for (token of tokens(); track token.id) {
+      <li>
+        <a
+          [routerLink]="['/settings/access-tokens', token.id]"
+          class="relative z-10 flex items-start justify-between gap-4 rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+          <div class="min-w-0">
+            <span class="block truncate font-medium text-gray-900 dark:text-white">
+              {{ token.label || 'Unnamed token' }}
+            </span>
+            <span class="distr-text-muted">
+              <span [title]="token.expiresAt | date: 'medium'">
+                @if (token.expired) {
+                  Expired
+                } @else {
+                  Expires
+                }
+                {{ token.expiresAt | relativeDate }}
+              </span>
+              <span aria-hidden="true">&middot;</span>
+              @if (token.lastUsedAt; as lastUsedAt) {
+                <span [title]="lastUsedAt | date: 'medium'">Last used {{ lastUsedAt | relativeDate }}</span>
+              } @else {
+                Never used
+              }
+            </span>
+          </div>
+          @if (token.expired) {
+            <span class="distr-badge distr-badge-error">Expired</span>
+          } @else {
+            <span class="distr-badge distr-badge-warning">Expiring</span>
+          }
+        </a>
+      </li>
+    }
+  </ul>
+</div>

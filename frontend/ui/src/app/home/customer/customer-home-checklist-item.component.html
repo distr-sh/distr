@@ -1,0 +1,16 @@
+@if (item().done) {
+  <fa-icon [icon]="faCircleCheck" class="flex h-5 items-center text-green-500" />
+  <span class="sr-only">Completed:</span>
+} @else {
+  <fa-icon [icon]="faCircle" class="flex h-5 items-center text-gray-400 dark:text-gray-500" />
+  <span class="sr-only">Not completed:</span>
+}
+<div class="min-w-0 text-sm">
+  <span class="font-medium text-gray-900 dark:text-white">{{ item().label }}</span>
+  @if (!item().done) {
+    <p class="distr-text-muted">{{ item().hint }}</p>
+  }
+</div>
+@if (item().link) {
+  <fa-icon [icon]="faChevronRight" class="ms-auto self-center text-xs text-gray-400 dark:text-gray-500" />
+}

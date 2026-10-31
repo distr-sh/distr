@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"maps"
 	"text/template"
+	"time"
 
 	"github.com/compose-spec/compose-go/v2/dotenv"
 	"github.com/distr-sh/distr/api"
@@ -507,6 +508,52 @@ func GetLatestDeploymentRevisionIDs(ctx context.Context, deploymentID uuid.UUID,
 	result, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
 	if err != nil {
 		return nil, fmt.Errorf("could not collect DeploymentRevision: %w", err)
+	}
+	return result, nil
+}
+
+// GetCustomerDeploymentRevisions returns the newest deployment revisions of the customer organization created
+// since, at most limit of them.
+func GetCustomerDeploymentRevisions(
+	ctx context.Context,
+	orgID, customerOrgID uuid.UUID,
+	since time.Time,
+	limit int,
+) ([]types.CustomerDeploymentRevision, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT
+			dr.id,
+			dr.created_at,
+			dt.id AS deployment_target_id,
+			dt.name AS deployment_target_name,
+			a.name AS application_name,
+			av.name AS application_version_name,
+			CASE WHEN j.customer_organization_id IS NOT NULL THEN u.name END AS created_by_name,
+			CASE WHEN j.customer_organization_id IS NOT NULL THEN u.image_id END AS created_by_image_id
+		FROM DeploymentTarget dt
+			JOIN Deployment d ON d.deployment_target_id = dt.id
+			JOIN DeploymentRevision dr ON dr.deployment_id = d.id
+			JOIN ApplicationVersion av ON av.id = dr.application_version_id
+			JOIN Application a ON a.id = av.application_id
+			LEFT JOIN UserAccount u ON u.id = dr.created_by_user_account_id
+			LEFT JOIN Organization_UserAccount j
+				ON j.user_account_id = u.id
+					AND j.organization_id = dt.organization_id
+					AND j.customer_organization_id = dt.customer_organization_id
+		WHERE dt.organization_id = @orgId
+			AND dt.customer_organization_id = @customerOrgId
+			AND dr.created_at > @since
+		ORDER BY dr.created_at DESC
+		LIMIT @limit`,
+		pgx.NamedArgs{"orgId": orgID, "customerOrgId": customerOrgID, "since": since, "limit": limit},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query customer deployment revisions: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.CustomerDeploymentRevision])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect customer deployment revisions: %w", err)
 	}
 	return result, nil
 }

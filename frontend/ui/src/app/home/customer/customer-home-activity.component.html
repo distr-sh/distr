@@ -1,0 +1,37 @@
+<div class="distr-card p-4">
+  <h2 appCardHeading [icon]="faClockRotateLeft" class="mb-2">Activity</h2>
+  <app-customer-home-collapsible class="-mx-2" [fill]="fillHeight()" [(expanded)]="expanded">
+    <ul class="flex flex-col gap-1 text-sm">
+      @for (entry of entries(); track entry.id) {
+        <li>
+          <a
+            [routerLink]="entry.link"
+            [queryParams]="entry.queryParams"
+            class="flex items-center gap-3 rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+            <fa-icon
+              [icon]="entry.icon"
+              class="flex w-5 shrink-0 items-center justify-center text-lg text-gray-500 dark:text-gray-400" />
+            <div class="min-w-0">
+              <p class="font-medium text-gray-900 first-letter:uppercase dark:text-white">{{ entry.action }}</p>
+              <p class="distr-text-muted flex flex-wrap items-center gap-1.5">
+                @if (entry.user; as user) {
+                  <app-avatar
+                    [image]="user.imageUrl"
+                    [name]="user.name"
+                    [imageIsLogo]="user.isVendor"
+                    initialsClass="text-[0.5rem]"
+                    class="size-5 rounded-full bg-gray-100 dark:bg-gray-700" />
+                  <span class="font-medium text-gray-700 dark:text-gray-300">{{ user.name }}</span>
+                  <span aria-hidden="true">&middot;</span>
+                }
+                <time [attr.datetime]="entry.createdAt" [title]="entry.createdAt | date: 'medium'">
+                  {{ entry.createdAt | relativeDate }}
+                </time>
+              </p>
+            </div>
+          </a>
+        </li>
+      }
+    </ul>
+  </app-customer-home-collapsible>
+</div>

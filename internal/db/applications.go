@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/distrerr"
@@ -18,7 +19,7 @@ import (
 const (
 	// The column order is part of the contract with types.Application: this expression is also
 	// selected as a composite row, which pgx scans positionally.
-	applicationOutputExpr = `a.id, a.created_at, a.organization_id, a.name, a.type, a.image_id,
+	applicationOutputExpr = `a.id, a.created_at, a.organization_id, a.name, a.type, a.image_id, a.title_image_id,
 		a.versioning_strategy, a.allow_automatic_updates`
 	applicationVersionCreatorOutputExpr = `av.created_by_user_account_id, u.name AS created_by_name,
 		u.email AS created_by_email, u.image_id AS created_by_image_id`
@@ -161,6 +162,59 @@ func mergeApplications(applications []types.Application) []types.Application {
 		}
 	}
 	return util.GetValues(applicationMap)
+}
+
+// GetCustomerApplicationVersions returns the newest versions released since that the customer organization
+// may deploy, at most limit of them. Archived versions are left out, and with entitledOnly so are the versions
+// no valid entitlement of the customer covers.
+func GetCustomerApplicationVersions(
+	ctx context.Context,
+	orgID, customerOrgID uuid.UUID,
+	entitledOnly bool,
+	since time.Time,
+	limit int,
+) ([]types.CustomerApplicationVersion, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT av.id, av.created_at, a.id AS application_id, a.name AS application_name, av.name
+		FROM Application a
+			JOIN ApplicationVersion av ON av.application_id = a.id
+		WHERE a.organization_id = @orgId
+			AND av.created_at > @since
+			AND av.archived_at IS NULL
+			AND (NOT @entitledOnly OR EXISTS (
+				SELECT 1 FROM ApplicationEntitlement al
+				WHERE al.application_id = a.id
+					AND al.customer_organization_id = @customerOrgId
+					AND (al.expires_at IS NULL OR al.expires_at > now())
+					AND (
+						NOT EXISTS (
+							SELECT 1 FROM ApplicationEntitlement_ApplicationVersion alav
+							WHERE alav.application_entitlement_id = al.id
+						) OR EXISTS (
+							SELECT 1 FROM ApplicationEntitlement_ApplicationVersion alav
+							WHERE alav.application_entitlement_id = al.id AND alav.application_version_id = av.id
+						)
+					)
+			))
+		ORDER BY av.created_at DESC
+		LIMIT @limit`,
+		pgx.NamedArgs{
+			"orgId":         orgID,
+			"customerOrgId": customerOrgID,
+			"entitledOnly":  entitledOnly,
+			"since":         since,
+			"limit":         limit,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query customer application versions: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.CustomerApplicationVersion])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect customer application versions: %w", err)
+	}
+	return result, nil
 }
 
 func GetApplicationsWithEntitlementOwnerID(
@@ -422,6 +476,18 @@ func UpdateApplicationImage(ctx context.Context, application *types.Application,
 	)
 	if err := row.Scan(&application.ImageID); err != nil {
 		return fmt.Errorf("could not save image id to application: %w", err)
+	}
+	return nil
+}
+
+func UpdateApplicationTitleImage(ctx context.Context, application *types.Application, imageID uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	row := db.QueryRow(ctx,
+		`UPDATE Application SET title_image_id = @imageId WHERE id = @id RETURNING title_image_id`,
+		pgx.NamedArgs{"imageId": imageID, "id": application.ID},
+	)
+	if err := row.Scan(&application.TitleImageID); err != nil {
+		return fmt.Errorf("could not save title image id to application: %w", err)
 	}
 	return nil
 }

@@ -1,0 +1,36 @@
+<div class="distr-card gap-3 p-4" role="status">
+  <span class="sr-only">Loading&hellip;</span>
+  <div class="skeleton h-7 w-40"></div>
+  @switch (layout()) {
+    @case ('row') {
+      <div class="-mx-2 flex flex-col gap-3 px-2 py-1.5 sm:min-h-35 sm:flex-row">
+        <div class="skeleton skeleton-image aspect-video shrink-0 sm:w-48 sm:self-start"></div>
+        <div class="flex min-w-0 flex-1 flex-col gap-2">
+          <div class="skeleton h-6 w-48 max-w-full"></div>
+          <div class="skeleton h-4 w-64 max-w-full"></div>
+          <div class="skeleton h-4 w-40 max-w-full"></div>
+        </div>
+      </div>
+    }
+    @case ('timeline') {
+      <div class="flex flex-col gap-4">
+        @for (entry of timelineEntries; track entry) {
+          <div class="flex items-start gap-3">
+            <div class="skeleton skeleton-avatar size-8 shrink-0"></div>
+            <div class="flex min-w-0 flex-1 flex-col gap-2 pt-1">
+              <div class="skeleton h-4 w-3/4"></div>
+              <div class="skeleton h-3 w-1/2"></div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+    @case ('list') {
+      <div class="flex flex-col gap-2">
+        <div class="skeleton h-4 w-full"></div>
+        <div class="skeleton h-4 w-5/6"></div>
+        <div class="skeleton h-4 w-2/3"></div>
+      </div>
+    }
+  }
+</div>
