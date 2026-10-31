@@ -104,98 +104,104 @@
       <span class="sr-only">Close menu</span>
     </button>
 
-    <form [formGroup]="editConfigForm" (ngSubmit)="saveConfig()">
-      <div class="mb-4 space-y-4">
-        <div>
-          <label for="name" class="distr-label mb-2">Name</label>
-          <input formControlName="name" autotrim type="text" id="name" class="distr-input" placeholder="Name" />
-        </div>
+    @if (drawerLoading()) {
+      <div class="flex items-center justify-center py-12">
+        <app-spinner class="size-8" />
+      </div>
+    } @else {
+      <form [formGroup]="editConfigForm" (ngSubmit)="saveConfig()">
+        <div class="mb-4 space-y-4">
+          <div>
+            <label for="name" class="distr-label mb-2">Name</label>
+            <input formControlName="name" autotrim type="text" id="name" class="distr-input" placeholder="Name" />
+          </div>
 
-        <label class="flex cursor-pointer items-center">
-          <input type="checkbox" class="peer sr-only" formControlName="enabled" />
-          <div class="distr-toggle"></div>
-          <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enabled</span>
-        </label>
+          <label class="flex cursor-pointer items-center">
+            <input type="checkbox" class="peer sr-only" formControlName="enabled" />
+            <div class="distr-toggle"></div>
+            <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enabled</span>
+          </label>
 
-        @if (watchesApplications()) {
-          <div class="space-y-1">
-            <h3 class="text-sm font-medium text-gray-900 dark:text-white">Applications</h3>
-            <div class="space-y-2 rounded-lg border border-gray-300 p-3 dark:border-gray-600">
-              @for (application of applications(); track application.id) {
-                <label class="flex w-full items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
-                  <input
-                    type="checkbox"
-                    class="distr-checkbox"
-                    [formControl]="editConfigForm.controls.applicationIds.controls[application.id!]" />
-                  <app-application-logo
-                    class="size-6 shrink-0"
-                    [imageUrl]="application.imageUrl"
-                    [type]="application.type!" />
-                  <span class="truncate">{{ application.name }}</span>
-                  <span class="distr-badge capitalize">{{ application.type }}</span>
-                </label>
-              } @empty {
-                <p class="text-sm text-gray-500 dark:text-gray-400">No applications to notify about.</p>
-              }
+          @if (watchesApplications()) {
+            <div class="space-y-1">
+              <h3 class="text-sm font-medium text-gray-900 dark:text-white">Applications</h3>
+              <div class="space-y-2 rounded-lg border border-gray-300 p-3 dark:border-gray-600">
+                @for (application of applications(); track application.id) {
+                  <label class="flex w-full items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
+                    <input
+                      type="checkbox"
+                      class="distr-checkbox"
+                      [formControl]="editConfigForm.controls.applicationIds.controls[application.id!]" />
+                    <app-application-logo
+                      class="size-6 shrink-0"
+                      [imageUrl]="application.imageUrl"
+                      [type]="application.type!" />
+                    <span class="truncate">{{ application.name }}</span>
+                    <span class="distr-badge capitalize">{{ application.type }}</span>
+                  </label>
+                } @empty {
+                  <p class="text-sm text-gray-500 dark:text-gray-400">No applications to notify about.</p>
+                }
+              </div>
             </div>
-          </div>
-        }
-
-        @if (watchesArtifacts()) {
-          <div class="space-y-1">
-            <h3 class="text-sm font-medium text-gray-900 dark:text-white">Artifacts</h3>
-            <div class="space-y-2 rounded-lg border border-gray-300 p-3 dark:border-gray-600">
-              @for (artifact of artifacts(); track artifact.id) {
-                <label
-                  class="flex w-full items-center gap-2 text-sm font-medium text-gray-900 dark:text-white"
-                  [title]="
-                    artifact.upstreamUrl ? 'An artifact that mirrors an upstream registry cannot be watched.' : ''
-                  ">
-                  <input
-                    type="checkbox"
-                    class="distr-checkbox"
-                    [formControl]="editConfigForm.controls.artifactIds.controls[artifact.id]" />
-                  <app-artifact-logo class="size-6 shrink-0" [imageUrl]="artifact.imageUrl" />
-                  @if (artifact.upstreamUrl) {
-                    <span class="distr-text-muted truncate">{{ artifact.name }}</span>
-                    <span class="distr-badge distr-badge-neutral">pull-through</span>
-                  } @else {
-                    <span class="truncate">{{ artifact.name }}</span>
-                  }
-                </label>
-              } @empty {
-                <p class="text-sm text-gray-500 dark:text-gray-400">No artifacts to notify about.</p>
-              }
-            </div>
-          </div>
-        }
-
-        @if (
-          (editConfigForm.controls.applicationIds.touched || editConfigForm.controls.artifactIds.touched) &&
-          editConfigForm.errors?.['noTargets']
-        ) {
-          <div class="text-sm text-red-500">Check at least one application or artifact.</div>
-        }
-
-        <div class="space-y-1">
-          <h3 class="text-sm font-medium text-gray-900 dark:text-white">Users to notify</h3>
-          <div class="rounded-lg border border-gray-300 p-3 dark:border-gray-600">
-            <app-notification-recipients [control]="editConfigForm.controls.userAccountIds" [users]="users()" />
-          </div>
-          @if (editConfigForm.controls.userAccountIds.touched && editConfigForm.controls.userAccountIds.errors) {
-            <div class="text-sm text-red-500">Check at least one user.</div>
           }
+
+          @if (watchesArtifacts()) {
+            <div class="space-y-1">
+              <h3 class="text-sm font-medium text-gray-900 dark:text-white">Artifacts</h3>
+              <div class="space-y-2 rounded-lg border border-gray-300 p-3 dark:border-gray-600">
+                @for (artifact of artifacts(); track artifact.id) {
+                  <label
+                    class="flex w-full items-center gap-2 text-sm font-medium text-gray-900 dark:text-white"
+                    [title]="
+                      artifact.upstreamUrl ? 'An artifact that mirrors an upstream registry cannot be watched.' : ''
+                    ">
+                    <input
+                      type="checkbox"
+                      class="distr-checkbox"
+                      [formControl]="editConfigForm.controls.artifactIds.controls[artifact.id]" />
+                    <app-artifact-logo class="size-6 shrink-0" [imageUrl]="artifact.imageUrl" />
+                    @if (artifact.upstreamUrl) {
+                      <span class="distr-text-muted truncate">{{ artifact.name }}</span>
+                      <span class="distr-badge distr-badge-neutral">pull-through</span>
+                    } @else {
+                      <span class="truncate">{{ artifact.name }}</span>
+                    }
+                  </label>
+                } @empty {
+                  <p class="text-sm text-gray-500 dark:text-gray-400">No artifacts to notify about.</p>
+                }
+              </div>
+            </div>
+          }
+
+          @if (
+            (editConfigForm.controls.applicationIds.touched || editConfigForm.controls.artifactIds.touched) &&
+            editConfigForm.errors?.['noTargets']
+          ) {
+            <div class="text-sm text-red-500">Check at least one application or artifact.</div>
+          }
+
+          <div class="space-y-1">
+            <h3 class="text-sm font-medium text-gray-900 dark:text-white">Users to notify</h3>
+            <div class="rounded-lg border border-gray-300 p-3 dark:border-gray-600">
+              <app-notification-recipients [control]="editConfigForm.controls.userAccountIds" [users]="users()" />
+            </div>
+            @if (editConfigForm.controls.userAccountIds.touched && editConfigForm.controls.userAccountIds.errors) {
+              <div class="text-sm text-red-500">Check at least one user.</div>
+            }
+          </div>
         </div>
-      </div>
-      <div class="mt-8 flex w-full justify-center space-x-4 pb-4 sm:mt-0">
-        <button
-          type="submit"
-          [disabled]="editFormLoading() || editConfigForm.invalid"
-          class="distr-btn-primary inline-flex w-full items-center justify-center text-white disabled:opacity-50">
-          <fa-icon [icon]="faPen" class="mr-2" />
-          Save
-        </button>
-      </div>
-    </form>
+        <div class="mt-8 flex w-full justify-center space-x-4 pb-4 sm:mt-0">
+          <button
+            type="submit"
+            [disabled]="editFormLoading() || editConfigForm.invalid"
+            class="distr-btn-primary inline-flex w-full items-center justify-center text-white disabled:opacity-50">
+            <fa-icon [icon]="faPen" class="mr-2" />
+            Save
+          </button>
+        </div>
+      </form>
+    }
   </div>
 </ng-template>

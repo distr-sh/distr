@@ -102,58 +102,66 @@
       <span class="sr-only">Close</span>
     </button>
 
-    <form [formGroup]="templateForm" (ngSubmit)="saveTemplate()" class="flex flex-col gap-4">
-      <div>
-        <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" for="template-name">Name</label>
-        <input id="template-name" type="text" formControlName="name" class="distr-input" />
-        @if (templateForm.controls.name.invalid && templateForm.controls.name.touched) {
-          <p class="mt-1 text-sm text-red-600 dark:text-red-400">Name is required</p>
-        }
+    @if (drawerLoading()) {
+      <div class="flex items-center justify-center py-12">
+        <app-spinner class="size-8" />
       </div>
+    } @else {
+      <form [formGroup]="templateForm" (ngSubmit)="saveTemplate()" class="flex flex-col gap-4">
+        <div>
+          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" for="template-name"
+            >Name</label
+          >
+          <input id="template-name" type="text" formControlName="name" class="distr-input" />
+          @if (templateForm.controls.name.invalid && templateForm.controls.name.touched) {
+            <p class="mt-1 text-sm text-red-600 dark:text-red-400">Name is required</p>
+          }
+        </div>
 
-      <div>
-        <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" for="template-grace-period">
-          Expiration Grace Period (days)
-        </label>
-        <input
-          id="template-grace-period"
-          type="number"
-          min="0"
-          formControlName="expirationGracePeriodDays"
-          class="distr-input" />
-        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          Added to the subscription period end to calculate when the license expires.
-        </p>
-      </div>
+        <div>
+          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" for="template-grace-period">
+            Expiration Grace Period (days)
+          </label>
+          <input
+            id="template-grace-period"
+            type="number"
+            min="0"
+            formControlName="expirationGracePeriodDays"
+            class="distr-input" />
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Added to the subscription period end to calculate when the license expires.
+          </p>
+        </div>
 
-      <div>
-        <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" for="template-payload">
-          Payload Template
-        </label>
-        <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">
-          Go template that produces a JSON payload. The Stripe subscription is available as <code>.</code>. Available
-          functions: <code>hasItem "lookup_key_1" "lookup_key_2"</code> and <code>itemQuantity "lookup_key"</code>.
-        </p>
-        <textarea
-          id="template-payload"
-          formControlName="payloadTemplate"
-          rows="12"
-          class="distr-input font-mono"
-          [attr.placeholder]="payloadTemplatePlaceholder"></textarea>
-        @if (templateForm.controls.payloadTemplate.invalid && templateForm.controls.payloadTemplate.touched) {
-          <p class="mt-1 text-sm text-red-600 dark:text-red-400">Payload template is required</p>
-        }
-      </div>
+        <div>
+          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" for="template-payload">
+            Payload Template
+          </label>
+          <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">
+            Go template that produces a JSON payload. The Stripe subscription is available as <code>.</code>. Available
+            functions: <code>hasItem "lookup_key_1" "lookup_key_2"</code> and <code>itemQuantity "lookup_key"</code>.
+          </p>
+          <textarea
+            id="template-payload"
+            formControlName="payloadTemplate"
+            rows="12"
+            class="distr-input font-mono"
+            [attr.placeholder]="payloadTemplatePlaceholder"></textarea>
+          @if (templateForm.controls.payloadTemplate.invalid && templateForm.controls.payloadTemplate.touched) {
+            <p class="mt-1 text-sm text-red-600 dark:text-red-400">Payload template is required</p>
+          }
+        </div>
 
-      <div class="flex w-full justify-center pb-4">
-        <button
-          type="submit"
-          [disabled]="templateFormLoading()"
-          class="distr-btn-primary inline-flex w-full items-center justify-center text-white disabled:opacity-60">
-          <fa-icon [icon]="faPen" class="me-2" />
-          Save
-        </button>
-      </div>
-    </form>
+        <div class="flex w-full justify-center pb-4">
+          <button
+            type="submit"
+            [disabled]="templateFormLoading()"
+            class="distr-btn-primary inline-flex w-full items-center justify-center text-white disabled:opacity-60">
+            <fa-icon [icon]="faPen" class="me-2" />
+            Save
+          </button>
+        </div>
+      </form>
+    }
   </div>
 </ng-template>

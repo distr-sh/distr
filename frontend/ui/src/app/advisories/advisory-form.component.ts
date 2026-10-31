@@ -19,6 +19,7 @@ import {sortApplicationVersions} from '../../util/versions';
 import {ApplicationLogoComponent} from '../applications/components';
 import {ArtifactLogoComponent, ArtifactsHashComponent} from '../artifacts/components';
 import {PillTabBarComponent} from '../components/pill-tab-bar.component';
+import {SpinnerComponent} from '../components/spinner/spinner.component';
 import {TabBarComponent, TabItem} from '../components/tab-bar.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
@@ -75,6 +76,7 @@ export interface AdvisoryFormDraft {
     NgPluralCase,
     TabBarComponent,
     PillTabBarComponent,
+    SpinnerComponent,
   ],
 })
 export class AdvisoryFormComponent {
@@ -130,6 +132,7 @@ export class AdvisoryFormComponent {
   protected readonly activeTab = signal<'details' | 'versions'>('details');
   protected readonly descriptionPreview = signal(false);
   protected readonly loading = signal(false);
+  protected readonly dataLoaded = signal(false);
 
   protected readonly tags = signal<string[]>([]);
   protected readonly tagInput = new FormControl('', {nonNullable: true});
@@ -154,6 +157,7 @@ export class AdvisoryFormComponent {
   private restored = false;
 
   constructor() {
+    this.refreshCachedLists();
     effect(() => {
       if (this.restored) {
         return;
@@ -203,6 +207,19 @@ export class AdvisoryFormComponent {
       this.versionsTab();
       this.emitDraft();
     });
+  }
+
+  private async refreshCachedLists() {
+    try {
+      await Promise.all([this.applicationsService.refresh(), this.artifactsService.refresh()]);
+      this.dataLoaded.set(true);
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+      this.dismissed.emit();
+    }
   }
 
   protected addReference(url = '', label = ''): void {

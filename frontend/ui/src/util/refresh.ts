@@ -1,4 +1,5 @@
-import {inject} from '@angular/core';
+import {inject, WritableSignal} from '@angular/core';
+import {DialogRef} from '../app/services/overlay.service';
 import {ToastService} from '../app/services/toast.service';
 import {getFormDisplayedError} from './errors';
 
@@ -14,4 +15,29 @@ export function refreshInBackground(...refreshes: Promise<unknown>[]): void {
       toast.error(msg);
     }
   });
+}
+
+/**
+ * Opens an overlay with `loading` set and keeps it set while `load` runs. Resolves to `undefined` when the overlay was
+ * closed in the meantime, so the caller does not fill a form nobody sees anymore.
+ */
+export async function loadWhileOpen<T, R>(
+  loading: WritableSignal<boolean>,
+  open: () => DialogRef<R>,
+  load: Promise<T>
+): Promise<T | undefined> {
+  loading.set(true);
+  let isOpen = true;
+  const subscription = open()
+    .result()
+    .subscribe(() => (isOpen = false));
+  try {
+    const result = await load;
+    return isOpen ? result : undefined;
+  } finally {
+    subscription.unsubscribe();
+    if (isOpen) {
+      loading.set(false);
+    }
+  }
 }
