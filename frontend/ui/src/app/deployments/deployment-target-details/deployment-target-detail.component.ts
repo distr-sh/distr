@@ -184,7 +184,7 @@ export class DeploymentTargetDetailComponent {
     return new Date(value);
   }
 
-  private readonly deploymentTargets$ = this.deploymentTargetsService.list();
+  private readonly deploymentTargets$ = this.deploymentTargetsService.poll();
   protected readonly deploymentTargets = toSignal(this.deploymentTargets$, {initialValue: []});
   protected readonly selectedDeploymentTarget = toSignal(
     combineLatest([this.deploymentTargets$, this.deploymentTargetId$]).pipe(

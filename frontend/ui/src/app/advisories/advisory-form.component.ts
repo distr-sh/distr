@@ -252,7 +252,7 @@ export class AdvisoryFormComponent {
     }
     this.loadingArtifactIds.update((ids) => new Set(ids).add(next));
     try {
-      const artifact = await firstValueFrom(this.artifactsService.getByIdAndCache(next));
+      const artifact = await firstValueFrom(this.artifactsService.get(next));
       this.artifactVersions.update((versions) => ({...versions, [next]: artifact?.versions ?? []}));
     } catch (e) {
       // Leave the key absent so that reopening the accordion retries.

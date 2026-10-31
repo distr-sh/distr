@@ -32,7 +32,7 @@ import {
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faChevronDown, faPen, faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {distinctUntilChanged, firstValueFrom, of, Subject, switchMap, takeUntil} from 'rxjs';
+import {catchError, distinctUntilChanged, firstValueFrom, of, Subject, switchMap, takeUntil} from 'rxjs';
 import {RelativeDatePipe} from '../../../util/dates';
 import {ArtifactsHashComponent} from '../../artifacts/components';
 import {ExpiresAtPickerComponent} from '../../components/expires-at-picker/expires-at-picker.component';
@@ -227,7 +227,9 @@ export class EditArtifactEntitlementComponent
           return artifacts.find((a) => a.id === artifactId);
         }),
         // TODO calls are made multiple times right now !
-        switchMap((artifact) => (artifact ? this.artifactsService.getByIdAndCache(artifact.id) : of(undefined)))
+        switchMap((artifact) =>
+          artifact ? this.artifactsService.get(artifact.id).pipe(catchError(() => of(undefined))) : of(undefined)
+        )
       )
       .subscribe((selectedArtifact) => {
         artifactGroup.controls.artifact.patchValue(selectedArtifact);

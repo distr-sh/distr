@@ -35,6 +35,8 @@ import {
   lastValueFrom,
   map,
   Observable,
+  of,
+  shareReplay,
   startWith,
   Subject,
   switchMap,
@@ -120,13 +122,20 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
       this.newVersionForm.reset();
       this.newVersionFormLoading.set(false);
     }),
-    combineLatestWith(this.applications$),
-    map(([id, applications]) => applications.find((a) => a.id === id)),
+    switchMap((id) =>
+      id
+        ? this.applicationService.get(id).pipe(
+            switchMap(() => this.applications$.pipe(map((applications) => applications.find((a) => a.id === id)))),
+            catchError(() => of(undefined))
+          )
+        : of(undefined)
+    ),
     tap((app) => {
       if (app) {
         this.enableTypeSpecificGroups(app);
       }
-    })
+    }),
+    shareReplay({bufferSize: 1, refCount: true})
   );
   readonly visibleVersions$ = this.application$.pipe(
     combineLatestWith(this.filterForm.valueChanges.pipe(startWith({showArchived: false}))),

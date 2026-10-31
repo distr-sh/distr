@@ -1,6 +1,6 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {map, Observable, of, switchMap, tap} from 'rxjs';
+import {concat, map, Observable, of, switchMap, tap} from 'rxjs';
 import {ReactiveList} from './cache';
 
 export interface HasDownloads {
@@ -83,18 +83,21 @@ export class ArtifactsService {
     return this.cache.refresh();
   }
 
-  public getByIdAndCache(id: string): Observable<ArtifactWithTags | undefined> {
-    return this.list().pipe(
-      map((ls) => ls.find((a) => a.id === id)),
-      switchMap((existing) => {
-        if (existing?.versions !== undefined) {
-          return of(existing);
-        } else if (existing) {
-          return this.http.get<ArtifactWithTags>(`${this.artifactsUrl}/${id}`).pipe(tap((a) => this.cache.save(a)));
-        } else {
-          return of(undefined);
-        }
-      })
+  public get(id: string): Observable<ArtifactWithTags> {
+    return this.http.get<ArtifactWithTags>(`${this.artifactsUrl}/${id}`).pipe(tap((a) => this.cache.save(a)));
+  }
+
+  /**
+   * Fetches the artifact and then follows its cache entry. The list endpoint returns artifacts without versions, so
+   * an entry that a list refresh has replaced is fetched again.
+   */
+  public watch(id: string): Observable<ArtifactWithTags | undefined> {
+    return concat(
+      this.get(id),
+      this.list().pipe(
+        map((ls) => ls.find((a) => a.id === id)),
+        switchMap((existing) => (existing && existing.versions === undefined ? this.get(id) : of(existing)))
+      )
     );
   }
 
@@ -134,15 +137,9 @@ export class ArtifactsService {
       .pipe(tap((it) => this.cache.save(it)));
   }
 
-  public deleteArtifactTag(artifact: ArtifactWithTags, tagName: string) {
-    return this.http.delete<void>(`${this.artifactsUrl}/${artifact.id}/tags/${encodeURIComponent(tagName)}`).pipe(
-      tap(() => {
-        artifact.versions = (artifact.versions ?? []).map((version) => {
-          version.tags = version.tags.filter((tag) => tag.name !== tagName);
-          return version;
-        });
-        this.cache.save(artifact);
-      })
-    );
+  public deleteArtifactTag(artifact: ArtifactWithTags, tagName: string): Observable<void> {
+    return this.http
+      .delete<void>(`${this.artifactsUrl}/${artifact.id}/tags/${encodeURIComponent(tagName)}`)
+      .pipe(switchMap(() => this.get(artifact.id).pipe(map(() => undefined))));
   }
 }
