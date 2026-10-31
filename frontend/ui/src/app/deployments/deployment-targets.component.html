@@ -14,6 +14,22 @@
           [options]="customerSelectOptions()"
           [(selected)]="selectedCustomerIds" />
       }
+
+      <app-multi-select
+        class="shrink-0 md:w-40"
+        idPrefix="application-filter"
+        placeholder="All applications"
+        itemLabel="applications"
+        [options]="applicationSelectOptions()"
+        [(selected)]="selectedApplicationIds" />
+
+      <app-multi-select
+        class="shrink-0 md:w-40"
+        idPrefix="status-filter"
+        placeholder="All statuses"
+        itemLabel="statuses"
+        [options]="statusSelectOptions"
+        [(selected)]="selectedStatuses" />
     </div>
 
     <div class="distr-toolbar-actions">

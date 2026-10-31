@@ -40,6 +40,11 @@ import {OrganizationService} from '../services/organization.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {DeploymentTargetLatestMetrics} from '../types/deployment-target-metrics';
 import {DeploymentModalComponent} from './deployment-modal.component';
+import {
+  DeploymentDisplayStatus,
+  deploymentDisplayStatus,
+  deploymentDisplayStatusSelectOptions,
+} from './deployment-target-card/deployment-status-text.component';
 import {DeploymentTargetCardComponent} from './deployment-target-card/deployment-target-card.component';
 import {DeploymentWizardComponent} from './deployment-wizard/deployment-wizard.component';
 
@@ -116,6 +121,9 @@ export class DeploymentTargetsComponent implements AfterViewInit {
 
   protected readonly canFilterByCustomer = this.auth.isVendor() || this.auth.isPartner();
   protected readonly selectedCustomerIds = signal<string[]>([]);
+  protected readonly selectedApplicationIds = signal<string[]>([]);
+  protected readonly selectedStatuses = signal<DeploymentDisplayStatus[]>([]);
+  protected readonly statusSelectOptions = deploymentDisplayStatusSelectOptions;
 
   protected readonly customerSelectOptions = toSignal(
     this.canFilterByCustomer
@@ -132,6 +140,22 @@ export class DeploymentTargetsComponent implements AfterViewInit {
       : of([]),
     {initialValue: []}
   );
+
+  private readonly applications$ = this.applications.list();
+
+  protected readonly applicationSelectOptions = toSignal(
+    this.applications$.pipe(
+      map((apps) =>
+        apps.flatMap<MultiSelectOption>((app) => (app.id ? [{value: app.id, label: app.name ?? app.id}] : []))
+      )
+    ),
+    {initialValue: []}
+  );
+
+  private readonly deploymentFilter = computed(() => ({
+    applicationIds: this.selectedApplicationIds(),
+    statuses: this.selectedStatuses(),
+  }));
 
   readonly deploymentTargets$ = toObservable(this.selectedCustomerIds).pipe(
     switchMap((ids) =>
@@ -169,6 +193,15 @@ export class DeploymentTargetsComponent implements AfterViewInit {
       !search ||
       [dt.name, dt.customerOrganization?.name].some((it) => it?.toLowerCase()?.includes(search.toLowerCase()) ?? false)
   ).pipe(
+    combineLatestWith(toObservable(this.deploymentFilter)),
+    map(([deploymentTargets, {applicationIds, statuses}]) =>
+      deploymentTargets.filter(
+        (dt) =>
+          (applicationIds.length === 0 ||
+            dt.deployments.some((d) => d.application.id !== undefined && applicationIds.includes(d.application.id))) &&
+          (statuses.length === 0 || dt.deployments.some((d) => statuses.includes(deploymentDisplayStatus(d))))
+      )
+    ),
     combineLatestWith(this.deploymentTargetMetrics$),
     map(([deploymentTargets, deploymentTargetMetrics]) =>
       deploymentTargets.map((dt) => ({
@@ -201,8 +234,6 @@ export class DeploymentTargetsComponent implements AfterViewInit {
       ).filter((it) => it.deploymentTargets.length > 0)
     )
   );
-
-  private readonly applications$ = this.applications.list();
 
   constructor() {
     // The cached list decides whether a deployment is shown as outdated, so it has to be current when the page opens.
