@@ -1,4 +1,4 @@
-import {HttpClient, HttpErrorResponse} from '@angular/common/http';
+import {HttpClient, HttpErrorResponse, HttpParams} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {
   CreateDeploymentTargetRequest,
@@ -11,6 +11,11 @@ import {
 } from '@distr-sh/distr-sdk';
 import {EMPTY, merge, Observable, retry, shareReplay, Subject, switchMap, tap, timer} from 'rxjs';
 import {ReactiveList} from './cache';
+
+export interface DeploymentTargetFilter {
+  customerOrganizationIds: string[];
+  internal: boolean;
+}
 
 class DeploymentTargetsReactiveList extends ReactiveList<DeploymentTarget> {
   protected override identify = (dt: DeploymentTarget) => dt.id;
@@ -29,15 +34,8 @@ export class DeploymentTargetsService {
   );
 
   private readonly pollRefresh$ = new Subject<void>();
-  private readonly sharedPolling$ = merge(timer(0, 5000), this.pollRefresh$).pipe(
-    switchMap(() => this.httpClient.get<DeploymentTarget[]>(this.deploymentTargetsBaseUrl)),
+  private readonly sharedPolling$ = this.createPolling(new HttpParams()).pipe(
     tap((dts) => this.cache.reset(dts)),
-    retry({
-      delay: (e, c) =>
-        e instanceof HttpErrorResponse && (!e.status || e.status >= 500)
-          ? timer(Math.min(Math.pow(c, 2), 30) * 1000)
-          : EMPTY,
-    }),
     shareReplay({
       bufferSize: 1,
       refCount: true,
@@ -48,8 +46,36 @@ export class DeploymentTargetsService {
     return this.cache.get();
   }
 
-  poll(): Observable<DeploymentTarget[]> {
-    return this.sharedPolling$;
+  /**
+   * Polls the deployment targets of the given customers plus, with `internal`, those of no customer, or all
+   * of them when the filter is empty. Only the unfiltered poll updates the cached list.
+   */
+  poll(
+    filter: DeploymentTargetFilter = {customerOrganizationIds: [], internal: false}
+  ): Observable<DeploymentTarget[]> {
+    if (filter.customerOrganizationIds.length === 0 && !filter.internal) {
+      return this.sharedPolling$;
+    }
+    let params = new HttpParams();
+    for (const id of filter.customerOrganizationIds) {
+      params = params.append('customerOrganizationId', id);
+    }
+    if (filter.internal) {
+      params = params.set('internal', true);
+    }
+    return this.createPolling(params);
+  }
+
+  private createPolling(params: HttpParams): Observable<DeploymentTarget[]> {
+    return merge(timer(0, 5000), this.pollRefresh$).pipe(
+      switchMap(() => this.httpClient.get<DeploymentTarget[]>(this.deploymentTargetsBaseUrl, {params})),
+      retry({
+        delay: (e, c) =>
+          e instanceof HttpErrorResponse && (!e.status || e.status >= 500)
+            ? timer(Math.min(Math.pow(c, 2), 30) * 1000)
+            : EMPTY,
+      })
+    );
   }
 
   create(request: CreateDeploymentTargetRequest): Observable<DeploymentTarget> {

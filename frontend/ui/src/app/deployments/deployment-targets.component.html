@@ -1,6 +1,20 @@
 <app-page>
   <div class="distr-toolbar mb-4">
-    <app-search-bar [control]="filterForm.controls.search" placeholder="Filter deployments" />
+    <div class="flex grow flex-col items-stretch gap-3 md:flex-row md:items-center">
+      <app-search-bar [control]="filterForm.controls.search" placeholder="Filter deployments" />
+
+      @if (canFilterByCustomer) {
+        <app-multi-select
+          class="shrink-0 md:w-40"
+          idPrefix="customer-filter"
+          placeholder="All customers"
+          itemLabel="customers"
+          searchPlaceholder="Search customers"
+          [searchable]="true"
+          [options]="customerSelectOptions()"
+          [(selected)]="selectedCustomerIds" />
+      }
+    </div>
 
     <div class="distr-toolbar-actions">
       @if (auth.hasAnyRole('read_write', 'admin')) {

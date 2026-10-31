@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
@@ -29,6 +30,7 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 	r.Use(middleware.RequireOrgAndRole)
 	r.Get("/", respond.Handler(getDeploymentTargets)).
 		With(option.Description("List all deployment targets")).
+		With(option.Request(api.ListDeploymentTargetsRequest{})).
 		With(option.Response(http.StatusOK, []types.DeploymentTargetFull{}))
 	r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 		Post("/", respond.Handler(createDeploymentTarget)).
@@ -106,15 +108,39 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 func getDeploymentTargets(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
-	if deploymentTargets, err := db.GetDeploymentTargets(
+	if filter, resp, err := deploymentTargetFilter(r); resp != nil || err != nil {
+		return resp, err
+	} else if deploymentTargets, err := db.GetDeploymentTargets(
 		ctx,
 		*auth.CurrentOrgID(),
 		auth.CurrentCustomerOrgID(),
 		auth.CurrentPartnerOrgID(),
+		filter,
 	); err != nil {
 		return nil, fmt.Errorf("failed to get DeploymentTargets: %w", err)
 	} else {
 		return respond.JSON(deploymentTargets), nil
+	}
+}
+
+func deploymentTargetFilter(r *http.Request) (db.DeploymentTargetFilter, respond.Responder, error) {
+	internal, err := QueryParam(r, "internal", strconv.ParseBool)
+	if err != nil && !errors.Is(err, ErrParamNotDefined) {
+		return db.DeploymentTargetFilter{}, respond.BadRequest("internal must be true or false"), nil
+	}
+	request := api.ListDeploymentTargetsRequest{
+		CustomerOrganizationID: r.URL.Query()["customerOrganizationId"],
+		Internal:               internal,
+	}
+	if customerOrgIDs, err := request.ParseCustomerOrganizationIDs(); err != nil {
+		return db.DeploymentTargetFilter{}, respond.BadRequest(err.Error()), nil
+	} else {
+		for _, id := range customerOrgIDs {
+			if _, resp, err := customerScope(r.Context(), &id); resp != nil || err != nil {
+				return db.DeploymentTargetFilter{}, resp, err
+			}
+		}
+		return db.DeploymentTargetFilter{CustomerOrganizationIDs: customerOrgIDs, Internal: request.Internal}, nil, nil
 	}
 }
 
