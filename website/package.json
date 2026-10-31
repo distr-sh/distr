@@ -53,7 +53,7 @@
     "prettier": "^3.9.6",
     "prettier-plugin-astro": "^1.0.0",
     "prettier-plugin-organize-imports": "^4.3.0",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.0"
   },
   "packageManager": "pnpm@12.16.1",
   "engines": {
