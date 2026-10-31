@@ -4,6 +4,7 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faBoxesStacked, faChevronDown} from '@fortawesome/free-solid-svg-icons';
+import {refreshInBackground} from '../../util/refresh';
 import {PageComponent} from '../components/page.component';
 import {CustomerOrganizationsService} from '../services/customer-organizations.service';
 import {ApplicationEntitlementsComponent} from './application-entitlements/application-entitlements.component';
@@ -43,6 +44,10 @@ export class VendorLicenseDetailPageComponent {
   protected readonly dropdownTriggerButton = viewChild.required<ElementRef<HTMLElement>>('dropdownTriggerButton');
   protected readonly breadcrumbDropdown = signal(false);
   breadcrumbDropdownWidth = 0;
+
+  constructor() {
+    refreshInBackground(this.customerOrganizationsService.refresh());
+  }
 
   protected toggleBreadcrumbDropdown() {
     this.breadcrumbDropdown.update((v) => !v);
