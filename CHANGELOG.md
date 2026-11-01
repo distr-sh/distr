@@ -1,5 +1,40 @@
 # Changelog
 
+## [4.8.0](https://github.com/distr-sh/distr/compare/4.7.4...4.8.0) (2026-11-01)
+
+
+### Features
+
+* customer lens ([#3496](https://github.com/distr-sh/distr/issues/3496)) ([71f2f2e](https://github.com/distr-sh/distr/commit/71f2f2e70e3615fc5d46c3b4b73d8ee39792c7da))
+
+
+### Bug Fixes
+
+* **backend:** retry loki pushes on a closed connection ([#3706](https://github.com/distr-sh/distr/issues/3706)) ([5aba1bc](https://github.com/distr-sh/distr/commit/5aba1bc58741241e3f973c7ec5241a5a13327fdb))
+* **deps:** update kubernetes monorepo to v0.37.2 ([#3699](https://github.com/distr-sh/distr/issues/3699)) ([dac1f7c](https://github.com/distr-sh/distr/commit/dac1f7c19ec221d1048d8dc24649c43be7021618))
+* **deps:** update module cloud.google.com/go/kms to v1.36.1 ([#3700](https://github.com/distr-sh/distr/issues/3700)) ([f7b12b2](https://github.com/distr-sh/distr/commit/f7b12b259bd30d012c864e3c89b25935a02c160c))
+* **deps:** update module github.com/go-co-op/gocron/v2 to v2.23.0 ([#3702](https://github.com/distr-sh/distr/issues/3702)) ([b554524](https://github.com/distr-sh/distr/commit/b5545247b97e781654b46769a26b09e43bc2711a))
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.164.1 ([#3703](https://github.com/distr-sh/distr/issues/3703)) ([e10fc53](https://github.com/distr-sh/distr/commit/e10fc53f75c24a35b022790fbef2bcdb938b2e6d))
+
+
+### Other
+
+* **deps:** update angular-cli monorepo to v22.2.5 ([#3696](https://github.com/distr-sh/distr/issues/3696)) ([b4b2a67](https://github.com/distr-sh/distr/commit/b4b2a6710a80a6f1e6e5af08c49f688c827b4d9f))
+* **deps:** update dependency @angular/cdk to v22.2.5 ([#3698](https://github.com/distr-sh/distr/issues/3698)) ([76043b1](https://github.com/distr-sh/distr/commit/76043b1fb09b80d1698d3a63e168699d6c5226e7))
+* **deps:** update dependency postcss to v8.5.32 ([#3730](https://github.com/distr-sh/distr/issues/3730)) ([d25c6bf](https://github.com/distr-sh/distr/commit/d25c6bfda13c5fe40413e45ee710a9d98a093378))
+* **frontend:** logout is now an info toast ([#3707](https://github.com/distr-sh/distr/issues/3707)) ([79161ee](https://github.com/distr-sh/distr/commit/79161ee6a61a094756ee373dea1be1edbb760150))
+
+
+### Docs
+
+* **website:** add Terms of Service and Data Processing Agreement ([#3697](https://github.com/distr-sh/distr/issues/3697)) ([9f3a439](https://github.com/distr-sh/distr/commit/9f3a43943e771ac8d86d3f559c686d2a9b8d5b87))
+* **website:** make the pro Plan the most popular one ([#3704](https://github.com/distr-sh/distr/issues/3704)) ([b9f8c34](https://github.com/distr-sh/distr/commit/b9f8c3443d88c8d967cdbc07fa39b42ee1e882ff))
+
+
+### Refactoring
+
+* **frontend:** let ReactiveList own refresh with shared in-flight requests ([#3662](https://github.com/distr-sh/distr/issues/3662)) ([d23d0c6](https://github.com/distr-sh/distr/commit/d23d0c64da3c3dbd41f4422fc680d87519bce515))
+
 ## [4.7.4](https://github.com/distr-sh/distr/compare/4.7.3...4.7.4) (2026-10-29)
 
 
