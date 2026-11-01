@@ -1,0 +1,68 @@
+@let targets = deploymentTargets();
+@let menuShown = instructionsHidden() || checklistHidden();
+<section class="relative">
+  @if (menuShown && section() !== 'none') {
+    <app-customer-home-menu
+      class="absolute inset-e-3 top-3 z-10"
+      [instructionsHidden]="instructionsHidden()"
+      [checklistHidden]="checklistHidden()"
+      (showInstructions)="showInstructions.emit()"
+      (showChecklist)="showChecklist.emit()" />
+  }
+  @if (section() === 'deployments' && targets.length > 0) {
+    <div class="distr-card distr-card-hover relative gap-3 p-4">
+      <h2 appCardHeading [icon]="faDashboard" class="pe-8">
+        <a routerLink="/deployments" class="after:absolute after:inset-0">Deployments</a>
+      </h2>
+      <div class="-mx-2 grid grid-cols-1" [class.xl:grid-cols-2]="targets.length > 1">
+        @for (target of targets; track target.id) {
+          <app-customer-home-deployment-target-item [deploymentTarget]="target" />
+        }
+      </div>
+    </div>
+  } @else if (section() === 'artifacts' && artifacts().hasPulled && artifacts().artifacts.length > 0) {
+    <div class="distr-card distr-card-hover relative gap-3 p-4">
+      <h2 appCardHeading [icon]="faBox" class="pe-8">
+        <a routerLink="/artifacts" class="after:absolute after:inset-0">Artifacts</a>
+      </h2>
+      <div class="-mx-2 grid grid-cols-1" [class.xl:grid-cols-2]="artifacts().artifacts.length > 1">
+        @for (artifact of artifacts().artifacts; track artifact.id) {
+          <app-customer-home-artifact-item [artifact]="artifact" />
+        }
+      </div>
+    </div>
+  } @else if (section() === 'deployments') {
+    <div class="distr-card items-center gap-3 p-4 text-center">
+      <p class="font-medium text-gray-900 dark:text-white">Create your first deployment</p>
+      <button
+        type="button"
+        (click)="openWizard()"
+        class="distr-btn-secondary flex items-center px-4 py-2 text-sm hover:text-gray-900 dark:hover:text-white">
+        <fa-icon [icon]="faPlus" class="me-2 text-gray-500 dark:text-gray-400" />
+        Deployment
+      </button>
+    </div>
+  } @else if (section() === 'artifacts') {
+    <div class="distr-card items-center gap-3 p-4 text-center">
+      <p class="font-medium text-gray-900 dark:text-white">You have not pulled any artifacts yet.</p>
+      <a
+        routerLink="/artifacts"
+        class="distr-btn-secondary flex items-center px-4 py-2 text-sm hover:text-gray-900 dark:hover:text-white">
+        <fa-icon [icon]="faDownload" class="me-2 text-gray-500 dark:text-gray-400" />
+        Pull your first artifact
+      </a>
+    </div>
+  } @else if (menuShown) {
+    <div class="flex justify-end">
+      <app-customer-home-menu
+        [instructionsHidden]="instructionsHidden()"
+        [checklistHidden]="checklistHidden()"
+        (showInstructions)="showInstructions.emit()"
+        (showChecklist)="showChecklist.emit()" />
+    </div>
+  }
+</section>
+
+<ng-template #deploymentWizard>
+  <app-deployment-wizard (closed)="closeWizard()" />
+</ng-template>

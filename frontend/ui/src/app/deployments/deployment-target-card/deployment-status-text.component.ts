@@ -4,9 +4,12 @@ import {DeploymentRevisionStatus, DeploymentStatusType, DeploymentWithLatestRevi
 import {never} from '../../../util/exhaust';
 import {isStale} from '../../../util/model';
 import {AbstractStatusDotDirective} from '../../components/status-dot';
+import {CustomerHomeDeployment} from '../../types/customer-home';
 import {DeploymentStatusBadgeComponent} from '../deployment-status-badge.component';
 
-function currentStatus(deployment: DeploymentWithLatestRevision): DeploymentRevisionStatus | undefined {
+export type DeploymentStatusSource = DeploymentWithLatestRevision | CustomerHomeDeployment;
+
+function currentStatus(deployment: DeploymentStatusSource): DeploymentRevisionStatus | undefined {
   return deployment.currentStatus ?? deployment.latestStatus;
 }
 
@@ -15,7 +18,7 @@ interface PendingUpdate {
   message: string;
 }
 
-function pendingUpdate(deployment: DeploymentWithLatestRevision): PendingUpdate | undefined {
+function pendingUpdate(deployment: DeploymentStatusSource): PendingUpdate | undefined {
   const {currentDeploymentRevisionId, deploymentRevisionId, latestStatus} = deployment;
   if (!currentDeploymentRevisionId || currentDeploymentRevisionId === deploymentRevisionId) {
     return undefined;
@@ -28,7 +31,7 @@ function pendingUpdate(deployment: DeploymentWithLatestRevision): PendingUpdate 
 
 @Directive({selector: '[appDeploymentStatusDot]'})
 export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
-  public readonly deployment = input.required<DeploymentWithLatestRevision>();
+  public readonly deployment = input.required<DeploymentStatusSource>();
   protected override style = computed(() => {
     const s = currentStatus(this.deployment());
     if (s === undefined) {
@@ -84,7 +87,7 @@ export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
   `,
 })
 export class DeploymentStatusTextComponent {
-  public readonly deployment = input.required<DeploymentWithLatestRevision>();
+  public readonly deployment = input.required<DeploymentStatusSource>();
   protected readonly status = computed(() => currentStatus(this.deployment()));
   protected readonly stale = computed(() => {
     const status = this.status();

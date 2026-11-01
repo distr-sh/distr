@@ -1,0 +1,18 @@
+<div class="distr-card relative block p-4">
+  @if (dismissible()) {
+    <button
+      type="button"
+      (click)="dismissed.emit()"
+      title="Hide instructions"
+      class="absolute inset-e-3 top-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
+      <fa-icon [icon]="faXmark" />
+      <span class="sr-only">Hide instructions</span>
+    </button>
+  }
+  <app-customer-home-collapsible class="mx-auto max-w-5xl">
+    <div
+      class="markdown text-gray-900 dark:text-white"
+      [class.pe-8]="dismissible()"
+      [innerMarkdown]="description()"></div>
+  </app-customer-home-collapsible>
+</div>

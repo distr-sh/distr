@@ -1,0 +1,22 @@
+@let configured = alerts().alertConfigurationCount > 0;
+<a
+  [routerLink]="!configured && canConfigure ? '/notifications/alert-configurations' : '/notifications/history'"
+  class="distr-card distr-card-hover block p-4">
+  <h2 appCardHeading [icon]="faBell" class="mb-3">Alerts</h2>
+
+  @if (configured) {
+    <span class="block text-3xl font-bold text-gray-900 dark:text-white">{{ alerts().notificationCount }}</span>
+    <span class="distr-text-muted block text-sm" [ngPlural]="alerts().notificationCount">
+      <ng-template ngPluralCase="=1">alert or warning in the last 7 days</ng-template>
+      <ng-template ngPluralCase="other">alerts and warnings in the last 7 days</ng-template>
+    </span>
+  } @else {
+    <p class="distr-text-muted text-sm">You are not notified about problems with your deployments yet.</p>
+    @if (canConfigure) {
+      <span
+        class="distr-btn-secondary mt-3 inline-flex items-center px-4 py-2 text-sm hover:text-gray-900 dark:hover:text-white"
+        >Configure alerts</span
+      >
+    }
+  }
+</a>

@@ -7,6 +7,11 @@ import (
 	"github.com/google/uuid"
 )
 
+// NonReleaseTagPattern matches the tags clients push for signatures and attestations, the OCI referrers
+// fallback tag "sha256-<digest>" and the cosign tags "sha256-<digest>.sig", ".att", ".sbom" and ".cosign",
+// so that these are not mistaken for releases. It is a PostgreSQL regular expression.
+const NonReleaseTagPattern = `^sha256-[0-9a-f]{64}(\.(sig|att|sbom|cosign))?$`
+
 type ManifestType string
 
 const (
@@ -24,12 +29,16 @@ const (
 )
 
 type Artifact struct {
-	ID               uuid.UUID         `db:"id" json:"id"`
-	CreatedAt        time.Time         `db:"created_at" json:"createdAt"`
-	OrganizationID   uuid.UUID         `db:"organization_id" json:"-"`
-	Name             string            `db:"name" json:"name"`
-	ImageID          *uuid.UUID        `db:"image_id" json:"-"`
-	Public           bool              `db:"public" json:"public"`
+	ID             uuid.UUID  `db:"id" json:"id"`
+	CreatedAt      time.Time  `db:"created_at" json:"createdAt"`
+	OrganizationID uuid.UUID  `db:"organization_id" json:"-"`
+	Name           string     `db:"name" json:"name"`
+	ImageID        *uuid.UUID `db:"image_id" json:"-"`
+	TitleImageID   *uuid.UUID `db:"title_image_id" json:"-"`
+	Public         bool       `db:"public" json:"public"`
+	// Featured marks one of the main artifacts of the vendor's applications, which the Customer Portal home
+	// page shows.
+	Featured         bool              `db:"featured" json:"-"`
 	UpstreamURL      *string           `db:"upstream_url" json:"upstreamUrl,omitempty"`
 	LastSyncedAt     *time.Time        `db:"last_synced_at" json:"lastSyncedAt,omitempty"`
 	LastSyncError    *string           `db:"last_sync_error" json:"lastSyncError,omitempty"`
@@ -77,4 +86,33 @@ type ArtifactWithDownloads struct {
 type ArtifactWithTaggedVersion struct {
 	ArtifactWithDownloads
 	Versions []TaggedArtifactVersion `db:"versions" json:"versions"`
+}
+
+// SignatureArtifactType is the artifact type of a referrer that marks a version as a signature.
+const SignatureArtifactType = "application/vnd.dev.sigstore.bundle.v0.3+json"
+
+// ArtifactReleaseVersion is a tagged version of an artifact with its tag names and whether it is a signature.
+type ArtifactReleaseVersion struct {
+	ArtifactID uuid.UUID `db:"artifact_id"`
+	ID         uuid.UUID `db:"id"`
+	CreatedAt  time.Time `db:"created_at"`
+	TagNames   []string  `db:"tag_names"`
+	Signature  bool      `db:"signature"`
+}
+
+// TaggedArtifactVersionsByArtifact converts the versions, grouped by their artifact. A version that is not a
+// signature gets the generic type, since its manifest is not loaded.
+func TaggedArtifactVersionsByArtifact(versions []ArtifactReleaseVersion) map[uuid.UUID][]TaggedArtifactVersion {
+	result := make(map[uuid.UUID][]TaggedArtifactVersion)
+	for _, v := range versions {
+		tagged := TaggedArtifactVersion{ID: v.ID, CreatedAt: v.CreatedAt, InferredType: ManifestTypeGeneric}
+		if v.Signature {
+			tagged.InferredType = ManifestTypeSignature
+		}
+		for _, name := range v.TagNames {
+			tagged.Tags = append(tagged.Tags, ArtifactVersionTag{Name: name})
+		}
+		result[v.ArtifactID] = append(result[v.ArtifactID], tagged)
+	}
+	return result
 }

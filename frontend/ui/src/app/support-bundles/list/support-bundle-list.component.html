@@ -129,56 +129,5 @@
 </app-page>
 
 <ng-template #createBundleDialog>
-  <div
-    class="mt-12 max-h-full w-xl max-w-full rounded-lg bg-white p-4 shadow-sm dark:bg-gray-900"
-    animate.enter="animate-fly-in-top"
-    animate.leave="animate-fly-out-top">
-    <div class="flex items-center justify-between rounded-t border-b border-gray-200 p-4 md:p-5 dark:border-gray-600">
-      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">New Support Bundle</h2>
-      <button
-        type="button"
-        (click)="closeDialog()"
-        class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
-        <fa-icon [icon]="faXmark" />
-        <span class="sr-only">Close dialog</span>
-      </button>
-    </div>
-    <div class="p-4 md:p-5">
-      <form [formGroup]="createForm" (ngSubmit)="createBundle()">
-        <div class="space-y-4">
-          <div>
-            <label for="title" class="distr-label mb-2"> Title <span class="text-red-500">*</span> </label>
-            <input
-              formControlName="title"
-              autotrim
-              type="text"
-              id="title"
-              class="distr-input"
-              placeholder="Title for this support bundle" />
-          </div>
-          <div>
-            <label for="description" class="distr-label mb-2"> Description </label>
-            <textarea
-              formControlName="description"
-              id="description"
-              rows="4"
-              class="distr-input"
-              placeholder="Optional description of the issue"></textarea>
-          </div>
-        </div>
-        <div class="mt-4 flex items-center justify-end gap-2 border-t border-gray-200 pt-4 dark:border-gray-600">
-          <button type="button" (click)="closeDialog()" class="distr-btn-secondary px-5 py-2.5 text-sm font-medium">
-            Cancel
-          </button>
-          <button
-            type="submit"
-            [disabled]="createFormLoading || createForm.invalid"
-            class="distr-btn-primary inline-flex items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-60">
-            <fa-icon [icon]="faPlus" class="me-2" />
-            Create
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
+  <app-support-bundle-create-dialog (closed)="closeDialog()" />
 </ng-template>

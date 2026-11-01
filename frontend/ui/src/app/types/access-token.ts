@@ -1,4 +1,5 @@
 import {BaseModel, UserRole} from '@distr-sh/distr-sdk';
+import dayjs, {Dayjs} from 'dayjs';
 
 export type AccessTokenSecretSlot = 1 | 2;
 
@@ -28,6 +29,28 @@ export interface AccessToken extends BaseModel {
   userRole?: UserRole;
   legacyKey?: AccessTokenLegacyKey;
   secrets: AccessTokenSecret[];
+}
+
+/**
+ * The next expiration among the credentials of the token that still authenticate, or undefined when none of
+ * them expires. Once every credential has expired, the last expiration. A credential that expired while
+ * another one still authenticates is ignored as a completed rotation.
+ */
+export function nextAccessTokenExpiry(token: AccessToken, now: Dayjs = dayjs()): string | undefined {
+  const expirations = [...(token.legacyKey ? [token.legacyKey] : []), ...token.secrets].map(
+    (credential) => credential.expiresAt
+  );
+  const valid = expirations.filter((expiresAt) => expiresAt === undefined || now.isBefore(expiresAt));
+  if (valid.length > 0) {
+    return valid
+      .filter((expiresAt) => expiresAt !== undefined)
+      .sort((a, b) => dayjs(a).valueOf() - dayjs(b).valueOf())
+      .at(0);
+  }
+  return expirations
+    .filter((expiresAt) => expiresAt !== undefined)
+    .sort((a, b) => dayjs(b).valueOf() - dayjs(a).valueOf())
+    .at(0);
 }
 
 export interface AccessTokenWithKey extends AccessToken {

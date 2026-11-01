@@ -9,7 +9,7 @@ import {
   PatchDeploymentRequest,
   UpdateDeploymentTargetRequest,
 } from '@distr-sh/distr-sdk';
-import {EMPTY, merge, Observable, retry, shareReplay, Subject, switchMap, tap, timer} from 'rxjs';
+import {EMPTY, firstValueFrom, merge, Observable, retry, shareReplay, Subject, switchMap, tap, timer} from 'rxjs';
 import {ReactiveList} from './cache';
 
 class DeploymentTargetsReactiveList extends ReactiveList<DeploymentTarget> {
@@ -46,6 +46,14 @@ export class DeploymentTargetsService {
 
   list(): Observable<DeploymentTarget[]> {
     return this.cache.get();
+  }
+
+  refresh(): Promise<DeploymentTarget[]> {
+    return firstValueFrom(
+      this.httpClient
+        .get<DeploymentTarget[]>(this.deploymentTargetsBaseUrl)
+        .pipe(tap((deploymentTargets) => this.cache.reset(deploymentTargets)))
+    );
   }
 
   poll(): Observable<DeploymentTarget[]> {

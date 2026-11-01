@@ -121,6 +121,8 @@ func ApiRouter(
 	prometheusCollector *prometheus.DistrCollector,
 	logStore logstore.LogStore,
 ) func(r chiopenapi.Router) {
+	// Uploads are limited per file by maxFileSize in internal/handlers/file.go and maxMultipartFileSize in
+	// internal/handlers/util.go, which have to leave room for the multipart encoding within this limit.
 	requestSize1MiB := middleware.RequestSize(1024 * 1024)
 	requestSize10MiB := middleware.RequestSize(10 * 1024 * 1024)
 	requestSize50MiB := middleware.RequestSize(50 * 1024 * 1024)
@@ -173,6 +175,7 @@ func ApiRouter(
 					)
 					r.Route("/controller-versions", handlers.ControllerVersionsRouter)
 					r.Route("/application-entitlements", handlers.ApplicationEntitlementsRouter)
+					r.Route("/activity-feed", handlers.ActivityFeedRouter)
 					r.Route("/applications", handlers.ApplicationsRouter)
 					r.Route("/artifact-entitlements", handlers.ArtifactEntitlementsRouter)
 					r.With(middleware.UseReadonlyDB).Route("/artifact-pulls", handlers.ArtifactPullsRouter)

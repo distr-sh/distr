@@ -28,8 +28,18 @@
                 @if (artifact.public) {
                   <app-artifact-public-badge />
                 }
+                @if (auth.isVendor() && !artifact.featured) {
+                  <span class="distr-badge distr-badge-neutral">Not featured</span>
+                }
               </p>
             </div>
+
+            @if (auth.isVendor()) {
+              <app-title-image-picker
+                class="me-4 self-start"
+                [imageUrl]="artifact.titleImageUrl"
+                (picked)="updateTitleImage(artifact, $event)" />
+            }
 
             @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
               <button
@@ -90,6 +100,16 @@
                         }
                       </li>
                     }
+                    <li>
+                      <button class="distr-dropdown-item" (click)="setFeatured(artifact, !artifact.featured)">
+                        <fa-icon [icon]="faStar" />
+                        @if (artifact.featured) {
+                          Remove from featured
+                        } @else {
+                          Mark as featured
+                        }
+                      </button>
+                    </li>
                     <li>
                       <button class="distr-dropdown-item distr-dropdown-item-danger" (click)="deleteArtifact(artifact)">
                         <fa-icon [icon]="faTrash" />

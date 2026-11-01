@@ -145,13 +145,18 @@ func attachment(filename string) string {
 	return fmt.Sprintf("attachment; filename=\"%s\"", filename)
 }
 
-// readMultipartFile reads the optional YAML file formKey of at most 100 KiB from a multipart form.
+// maxMultipartFileSize has to stay well below the request body limit of the API routes (requestSize1MiB in
+// internal/routing/routing.go), which counts every file of a request together with the multipart encoding
+// around them. An application version is created with up to three of them.
+const maxMultipartFileSize = 100 * 1024
+
+// readMultipartFile reads the optional YAML file formKey of at most maxMultipartFileSize from a multipart form.
 func readMultipartFile(r *http.Request, formKey string) ([]byte, respond.Responder, error) {
 	if file, head, err := r.FormFile(formKey); errors.Is(err, http.ErrMissingFile) {
 		return nil, nil, nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get file %v from upload: %w", formKey, err)
-	} else if head.Size > 102400 {
+	} else if head.Size > maxMultipartFileSize {
 		return nil, respond.Error(http.StatusRequestEntityTooLarge, "file too large (max 100 KiB)"), nil
 	} else if err := contenttype.IsYaml(head.Header); err != nil {
 		return nil, respond.Error(http.StatusUnsupportedMediaType, err.Error()), nil

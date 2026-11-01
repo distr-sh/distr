@@ -16,6 +16,7 @@ import {
   faLock,
   faPen,
   faRotate,
+  faStar,
   faTrash,
   faTriangleExclamation,
   faXmark,
@@ -42,6 +43,7 @@ import {PageComponent} from '../../components/page.component';
 import {PaginationComponent} from '../../components/pagination.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
+import {TitleImagePickerComponent} from '../../components/title-image-picker/title-image-picker.component';
 import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {RequireVendorDirective} from '../../directives/required-role.directive';
@@ -89,6 +91,7 @@ import {
     PageComponent,
     SearchBarComponent,
     PaginationComponent,
+    TitleImagePickerComponent,
   ],
   templateUrl: './artifact-versions.component.html',
   providers: [CustomerOrganizationsCache],
@@ -118,6 +121,7 @@ export class ArtifactVersionsComponent {
   protected readonly faCheck = faCheck;
   protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faTriangleExclamation = faTriangleExclamation;
+  protected readonly faStar = faStar;
 
   protected readonly syncing = signal(false);
 
@@ -356,6 +360,26 @@ export class ArtifactVersionsComponent {
       return;
     }
     await firstValueFrom(this.artifacts.patchImage(data.id!, fileId));
+  }
+
+  protected async updateTitleImage(artifact: ArtifactWithTags, fileId: string) {
+    try {
+      await firstValueFrom(this.artifacts.patchTitleImage(artifact.id, fileId));
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) this.toast.error(msg);
+    }
+  }
+
+  protected async setFeatured(artifact: ArtifactWithTags, featured: boolean) {
+    this.showDropdown.set(false);
+    try {
+      await firstValueFrom(this.artifacts.patchArtifact(artifact.id, {featured}));
+      this.toast.success(featured ? 'Artifact is featured' : 'Artifact is no longer featured');
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) this.toast.error(msg);
+    }
   }
 
   public deleteArtifact(artifact: ArtifactWithTags): void {

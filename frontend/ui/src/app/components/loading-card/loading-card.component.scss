@@ -1,0 +1,13 @@
+@reference '../../../styles/tailwind.css';
+
+.skeleton {
+  @apply animate-pulse rounded-sm bg-gray-200 dark:bg-gray-700;
+}
+
+.skeleton-image {
+  @apply rounded-lg;
+}
+
+.skeleton-avatar {
+  @apply rounded-full;
+}

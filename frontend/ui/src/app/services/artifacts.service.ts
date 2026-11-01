@@ -20,6 +20,7 @@ export interface BaseArtifact {
   id: string;
   name: string;
   imageUrl?: string;
+  titleImageUrl?: string;
 }
 
 export interface BaseArtifactVersion {
@@ -37,10 +38,21 @@ export interface ArtifactUpstreamAuth {
 
 export interface Artifact extends BaseArtifact, HasDownloads {
   public: boolean;
+  featured: boolean;
   upstreamUrl?: string;
   lastSyncedAt?: string;
   lastSyncError?: string;
   upstreamAuthType?: UpstreamAuthType;
+  /** Only set for a customer. */
+  lastPull?: ArtifactLastPull;
+}
+
+export interface ArtifactLastPull {
+  versionName: string;
+  createdAt: string;
+  pulledByName?: string;
+  pulledByImageUrl?: string;
+  deploymentTargetName?: string;
 }
 
 export interface TaggedArtifactVersion extends HasDownloads {
@@ -61,6 +73,7 @@ export interface PatchArtifactRequest {
   upstreamUrl?: string | null;
   auth?: ArtifactUpstreamAuth | null;
   public?: boolean;
+  featured?: boolean;
 }
 
 class ArtifactsReactiveList extends ReactiveList<ArtifactWithTags> {
@@ -101,6 +114,12 @@ export class ArtifactsService {
   public patchImage(artifactsId: string, imageId: string) {
     return this.http
       .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactsId}/image`, {imageId})
+      .pipe(tap((it) => this.cache.save(it)));
+  }
+
+  public patchTitleImage(artifactId: string, imageId: string) {
+    return this.http
+      .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}/title-image`, {imageId})
       .pipe(tap((it) => this.cache.save(it)));
   }
 

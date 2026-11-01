@@ -1,0 +1,64 @@
+@let target = deploymentTarget();
+<a
+  routerLink="/deployments"
+  [queryParams]="{search: target.name}"
+  class="block truncate font-semibold text-gray-900 after:absolute after:inset-0 dark:text-white">
+  {{ target.name }}
+</a>
+
+<div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,26rem),1fr))] gap-x-4 gap-y-2">
+  @for (deployment of target.deployments; track deployment.id) {
+    <div class="flex min-w-0 flex-col gap-3 sm:flex-row">
+      <app-customer-home-title-image
+        [src]="deployment.applicationTitleImageUrl ?? deployment.applicationImageUrl"
+        [name]="deployment.applicationName" />
+      <dl class="grid min-w-0 flex-1 grid-cols-[auto_1fr] content-start gap-x-4 gap-y-1 text-sm">
+        <dt class="distr-text-muted">Application</dt>
+        <dd class="truncate font-medium text-gray-900 dark:text-white">{{ deployment.applicationName }}</dd>
+
+        @if (deployment.applicationLink) {
+          <dt class="distr-text-muted">Link</dt>
+          <dd class="truncate text-gray-900 dark:text-white">
+            <a
+              [href]="deployment.applicationLink"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="relative z-10 text-primary-600 hover:underline dark:text-primary-400">
+              {{ deployment.applicationLink }}
+              <fa-icon [icon]="faArrowUpRightFromSquare" class="ms-1 text-xs" />
+            </a>
+          </dd>
+        }
+
+        <dt class="distr-text-muted">Version</dt>
+        <dd class="flex flex-wrap items-center gap-2 text-gray-900 dark:text-white">
+          {{ deployment.currentApplicationVersionName ?? deployment.applicationVersionName }}
+          @if (deployment.updateAvailable) {
+            <span class="distr-badge">Update available: {{ deployment.latestApplicationVersionName }}</span>
+          } @else if (deployment.latestApplicationVersionName) {
+            <span class="distr-badge distr-badge-success">Latest</span>
+          }
+        </dd>
+
+        <dt class="distr-text-muted">Last update</dt>
+        @if (deployment.deploymentRevisionCreatedAt; as createdAt) {
+          <dd class="text-gray-900 dark:text-white" [title]="createdAt | date: 'medium'">
+            {{ createdAt | relativeDate }}
+          </dd>
+        } @else {
+          <dd class="distr-text-muted">Not updated yet</dd>
+        }
+
+        <dt class="distr-text-muted">Status</dt>
+        <dd class="text-gray-900 dark:text-white">
+          <app-deployment-status-text [deployment]="deployment" />
+        </dd>
+      </dl>
+    </div>
+  } @empty {
+    <div class="flex flex-col gap-3 sm:flex-row">
+      <app-customer-home-title-image [icon]="faServer" />
+      <p class="distr-text-muted text-sm">Nothing deployed yet.</p>
+    </div>
+  }
+</div>
