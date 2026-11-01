@@ -8,7 +8,7 @@ allowBuilds:
   protobufjs: false
 overrides:
   dompurify@<=3.4.16: ^3.4.17
-  fast-uri@>=3.0.0 <3.1.9: ^3.1.9
+  fast-uri@>=3.0.0 <3.1.9: ^4.0.0
   postcss-selector-parser@<7.1.6: ^7.1.6
   postcss@<=8.5.22: ^8.5.23
   undici@<6.28.1: ^6.28.1
