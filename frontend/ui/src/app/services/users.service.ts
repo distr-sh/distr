@@ -1,4 +1,4 @@
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpErrorResponse, HttpStatusCode} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {UserAccountWithRole, UserRole} from '@distr-sh/distr-sdk';
 import {filter, map, merge, Observable, of, shareReplay, Subject, switchMap, tap} from 'rxjs';
@@ -21,6 +21,15 @@ export interface PatchUserAccountRequest {
 export interface UserAccountInvitationResponse {
   user: UserAccountWithRole;
   inviteUrl?: string;
+}
+
+/** The user account was created, but the invitation email could not be sent. */
+export interface InviteMailNotSentError extends HttpErrorResponse {
+  error: UserAccountInvitationResponse;
+}
+
+export function isInviteMailNotSentError(e: unknown): e is InviteMailNotSentError {
+  return e instanceof HttpErrorResponse && e.status === HttpStatusCode.FailedDependency;
 }
 
 class UserAccountsReactiveList extends ReactiveList<UserAccountWithRole> {
@@ -55,11 +64,20 @@ export class UsersService {
 
   public addUser(request: CreateUserAccountRequest): Observable<UserAccountInvitationResponse> {
     return this.httpClient.post<UserAccountInvitationResponse>(this.baseUrl, request).pipe(
-      tap((it) => {
-        this.cache.save(it.user);
-        this.contextService.reload();
+      tap({
+        next: (it) => this.onUserAdded(it),
+        error: (e) => {
+          if (isInviteMailNotSentError(e)) {
+            this.onUserAdded(e.error);
+          }
+        },
       })
     );
+  }
+
+  private onUserAdded(response: UserAccountInvitationResponse) {
+    this.cache.save(response.user);
+    this.contextService.reload();
   }
 
   public resendInvitation(user: UserAccountWithRole): Observable<UserAccountInvitationResponse> {

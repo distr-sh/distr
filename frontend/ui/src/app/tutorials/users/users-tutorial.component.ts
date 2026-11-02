@@ -16,7 +16,7 @@ import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {PlaceholderDirective} from '../../directives/placeholder.directive';
 import {ToastService} from '../../services/toast.service';
 import {TutorialsService} from '../../services/tutorials.service';
-import {UsersService} from '../../services/users.service';
+import {isInviteMailNotSentError, UsersService} from '../../services/users.service';
 import {TutorialProgress} from '../../types/tutorials';
 import {TutorialStepperComponent} from '../stepper/tutorial-stepper.component';
 
@@ -161,6 +161,7 @@ export class UsersTutorialComponent implements OnInit {
     this.loading.set(true);
     const invitedEmails: string[] = [];
     const failedEmails: string[] = [];
+    const mailNotSentEmails: string[] = [];
     let firstError: unknown;
     try {
       for (const group of toInvite) {
@@ -169,14 +170,19 @@ export class UsersTutorialComponent implements OnInit {
         const userRole = group.get('userRole')!.value as UserRole;
         try {
           await lastValueFrom(this.usersService.addUser({email, name, userRole}));
-          invitedEmails.push(email);
-          const idx = this.users.controls.indexOf(group);
-          if (idx >= 0) {
-            this.users.removeAt(idx);
-          }
         } catch (e) {
-          failedEmails.push(email);
-          firstError ??= e;
+          if (isInviteMailNotSentError(e)) {
+            mailNotSentEmails.push(email);
+          } else {
+            failedEmails.push(email);
+            firstError ??= e;
+            continue;
+          }
+        }
+        invitedEmails.push(email);
+        const idx = this.users.controls.indexOf(group);
+        if (idx >= 0) {
+          this.users.removeAt(idx);
         }
       }
 
@@ -206,7 +212,14 @@ export class UsersTutorialComponent implements OnInit {
 
       if (failedEmails.length > 0) {
         this.toast.error(`Some invites could not be sent: ${failedEmails.join(', ')}`);
-      } else {
+      }
+      if (mailNotSentEmails.length > 0) {
+        this.toast.error(
+          `Some users have been added, but their invitation email could not be sent: ${mailNotSentEmails.join(', ')}. ` +
+            'You can resend the invitation from the users page.'
+        );
+      }
+      if (failedEmails.length === 0 && mailNotSentEmails.length === 0) {
         this.toast.success('Your teammates have been invited. Good job!');
       }
       this.navigateToOverviewPage();

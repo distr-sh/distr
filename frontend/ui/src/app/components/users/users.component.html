@@ -133,7 +133,7 @@
     <div class="space-y-4 p-4 md:p-5">
       <section class="antialiased">
         <div class="mx-auto max-w-7xl px-4 2xl:px-0">
-          @if (!inviteUrl) {
+          @if (!inviteUrl() && !inviteMailNotSentLabel()) {
             <form class="mx-auto" (ngSubmit)="submitInviteForm()" [formGroup]="inviteForm">
               <div class="flex flex-col space-y-5">
                 <div class="space-y-2">
@@ -211,15 +211,23 @@
             </form>
           } @else {
             <div class="flex flex-col">
-              <app-alert type="success" [heading]="inviteHeading()" class="mb-4">
-                They can finalize their account using this link:
-                <div class="flex">
-                  <pre class="overflow-x-auto text-ellipsis">{{ inviteUrl }}</pre>
-                  <button type="button" class="text-gray-900 dark:text-white" (click)="copyInviteUrl()">
-                    <fa-icon [icon]="faClipboard" />
-                  </button>
-                </div>
-              </app-alert>
+              @if (inviteMailNotSentLabel(); as label) {
+                <app-alert type="warning" heading="The invitation email could not be sent" class="mb-4">
+                  {{ label }} has been added to the organization, but the invitation email could not be delivered. You
+                  can resend the invitation from the user list.
+                </app-alert>
+              }
+              @if (inviteUrl(); as inviteUrl) {
+                <app-alert type="success" [heading]="inviteHeading()" class="mb-4">
+                  They can finalize their account using this link:
+                  <div class="flex">
+                    <pre class="overflow-x-auto text-ellipsis">{{ inviteUrl }}</pre>
+                    <button type="button" class="text-gray-900 dark:text-white" (click)="copyInviteUrl()">
+                      <fa-icon [icon]="faClipboard" />
+                    </button>
+                  </div>
+                </app-alert>
+              }
               <button
                 type="button"
                 class="w-full self-end rounded-lg bg-blue-700 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 focus:outline-none sm:w-auto dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
