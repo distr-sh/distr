@@ -28,6 +28,7 @@ import {
   lastValueFrom,
   map,
   NEVER,
+  of,
   startWith,
   switchMap,
   tap,
@@ -160,7 +161,7 @@ export class ArtifactVersionsComponent {
     this.route.params.pipe(
       map((params) => params['id']?.trim()),
       distinctUntilChanged(),
-      switchMap((id) => this.artifacts.getByIdAndCache(id)),
+      switchMap((id) => this.artifacts.watch(id).pipe(catchError(() => of(undefined)))),
       map((artifact) => {
         if (artifact) {
           return {
