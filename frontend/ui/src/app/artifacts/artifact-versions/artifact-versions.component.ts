@@ -388,12 +388,17 @@ export class ArtifactVersionsComponent {
 
   public deleteArtifactTag(artifact: ArtifactWithTags, version: TaggedArtifactVersion, tagName: string): void {
     const digest = shortDigest(version.digest);
+    const isLastTag = (artifact.versions ?? []).flatMap((v) => v.tags).length === 1;
     this.overlay
       .confirm({
         message: {
           message: `This will untag "${tagName}" from ${artifact.name}. Are you sure?`,
-          alert:
-            version.tags.length > 1
+          alert: isLastTag
+            ? {
+                type: 'warning',
+                message: `Since this is the last tag of ${artifact.name}, the entire artifact including all its versions will be deleted as well. Users will no longer be able to download this artifact.`,
+              }
+            : version.tags.length > 1
               ? {
                   type: 'info',
                   message: `The digest ${digest} stays available under its other tags.`,
@@ -414,7 +419,14 @@ export class ArtifactVersionsComponent {
           }
           return NEVER;
         }),
-        tap(() => this.toast.success(`Tag "${tagName}" removed successfully`))
+        switchMap(async (artifactDeleted) => {
+          if (artifactDeleted) {
+            this.toast.success(`Tag "${tagName}" and artifact ${artifact.name} deleted successfully`);
+            await this.router.navigate(['/artifacts']);
+          } else {
+            this.toast.success(`Tag "${tagName}" removed successfully`);
+          }
+        })
       )
       .subscribe();
   }

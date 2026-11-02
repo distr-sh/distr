@@ -21,5 +21,6 @@ type ManifestHandler interface {
 	ListDigests(ctx context.Context, name string) ([]digest.Digest, error)
 	Get(ctx context.Context, name string, reference string) (*Manifest, error)
 	Put(ctx context.Context, name string, reference string, manifest Manifest, blobs []Blob) error
-	Delete(ctx context.Context, name string, reference string) error
+	// Delete reports whether deleting the reference deleted the whole repository with it.
+	Delete(ctx context.Context, name string, reference string) (bool, error)
 }

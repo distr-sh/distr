@@ -486,7 +486,7 @@ func (handler *manifests) handlePut(resp http.ResponseWriter, req *http.Request,
 }
 
 func (handler *manifests) handleDelete(resp http.ResponseWriter, req *http.Request, repo, target string) *regError {
-	err := handler.manifestHandler.Delete(req.Context(), repo, target)
+	repositoryDeleted, err := handler.manifestHandler.Delete(req.Context(), repo, target)
 	if err != nil {
 		if errors.Is(err, imanifest.ErrNameUnknown) {
 			return regErrNameUnknown
@@ -503,6 +503,11 @@ func (handler *manifests) handleDelete(resp http.ResponseWriter, req *http.Reque
 		return regErrInternal(err)
 	}
 
+	if repositoryDeleted {
+		resp.Header().Add("Warning", fmt.Sprintf(
+			`299 - "%s was the last tag of %s, so the repository has been deleted as well"`, target, repo,
+		))
+	}
 	resp.WriteHeader(http.StatusAccepted)
 	return nil
 }

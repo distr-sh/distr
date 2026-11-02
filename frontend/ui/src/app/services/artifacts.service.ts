@@ -1,6 +1,6 @@
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {concat, map, Observable, of, switchMap, tap} from 'rxjs';
+import {catchError, concat, map, Observable, of, switchMap, tap, throwError} from 'rxjs';
 import {ReactiveList} from './cache';
 
 export interface HasDownloads {
@@ -137,9 +137,21 @@ export class ArtifactsService {
       .pipe(tap((it) => this.cache.save(it)));
   }
 
-  public deleteArtifactTag(artifact: ArtifactWithTags, tagName: string): Observable<void> {
-    return this.http
-      .delete<void>(`${this.artifactsUrl}/${artifact.id}/tags/${encodeURIComponent(tagName)}`)
-      .pipe(switchMap(() => this.get(artifact.id).pipe(map(() => undefined))));
+  /** Emits whether deleting the tag deleted the artifact as well, which happens for its last tag. */
+  public deleteArtifactTag(artifact: ArtifactWithTags, tagName: string): Observable<boolean> {
+    return this.http.delete<void>(`${this.artifactsUrl}/${artifact.id}/tags/${encodeURIComponent(tagName)}`).pipe(
+      switchMap(() =>
+        this.get(artifact.id).pipe(
+          map(() => false),
+          catchError((e) => {
+            if (e instanceof HttpErrorResponse && e.status === 404) {
+              this.cache.remove(artifact);
+              return of(true);
+            }
+            return throwError(() => e);
+          })
+        )
+      )
+    );
   }
 }
