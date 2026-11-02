@@ -76,7 +76,17 @@ export function llmsTxtOptions(site: string): LlmsTxtOptions {
     ],
     customSelectors: {all: ['.sl-anchor-link']},
     promote,
-    demote: ['changelog', 'privacy-policy'],
-    exclude: ['changelog', 'privacy-policy'],
+    demote: [
+      'changelog',
+      'privacy-policy',
+      'terms-of-service',
+      'data-processing-agreement',
+    ],
+    exclude: [
+      'changelog',
+      'privacy-policy',
+      'terms-of-service',
+      'data-processing-agreement',
+    ],
   };
 }

@@ -3,6 +3,7 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {faUsers} from '@fortawesome/free-solid-svg-icons';
 import {startWith, Subject, switchMap} from 'rxjs';
 import {organizationKind} from '../../../../util/organization-kind';
+import {refreshInBackground} from '../../../../util/refresh';
 import {AuthService} from '../../../services/auth.service';
 import {UsersService} from '../../../services/users.service';
 import {OrganizationScopeNavComponent} from '../../organization-scope-nav.component';
@@ -38,4 +39,8 @@ export class VendorUsersComponent {
     }
     return all;
   });
+
+  constructor() {
+    refreshInBackground(this.usersService.refresh());
+  }
 }

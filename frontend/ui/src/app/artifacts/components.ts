@@ -6,7 +6,7 @@ import {faBox, faDownload, faEllipsis, faGlobe, faUserCircle} from '@fortawesome
 import {shortDigest} from '../../util/digest';
 import {SecureImagePipe} from '../../util/secureImage';
 import {HasDownloads} from '../services/artifacts.service';
-import {CustomerOrganizationsCache} from '../services/customer-organizations.service';
+import {CustomerOrganizationsService} from '../services/customer-organizations.service';
 import {UsersService} from '../services/users.service';
 
 @Component({
@@ -106,7 +106,7 @@ export class ArtifactsDownloadedByComponent {
   public readonly source = input.required<HasDownloads>();
 
   private readonly usersService = inject(UsersService);
-  private readonly customerOrganizationsService = inject(CustomerOrganizationsCache);
+  private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
 
   private readonly users = toSignal(this.usersService.getUsers());
   private readonly customerOrganizations = toSignal(this.customerOrganizationsService.getCustomerOrganizations());
