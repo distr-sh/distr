@@ -1,6 +1,6 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {firstValueFrom, Observable, tap} from 'rxjs';
+import {Observable, tap} from 'rxjs';
 import {AffectedDeployment} from '../types/affected-deployment';
 import {CreateLicenseKeyRequest, LicenseKey, LicenseKeyRevision, UpdateLicenseKeyRequest} from '../types/license-key';
 import {DefaultReactiveList} from './cache';
@@ -14,14 +14,14 @@ export class LicenseKeysService {
   private readonly http = inject(HttpClient);
 
   private readonly licenseKeysUrl = '/api/v1/license-keys';
-  private readonly cache = new DefaultReactiveList(this.http.get<LicenseKey[]>(this.licenseKeysUrl));
+  private readonly cache = new DefaultReactiveList(() => this.http.get<LicenseKey[]>(this.licenseKeysUrl));
 
   public list(): Observable<LicenseKey[]> {
     return this.cache.get();
   }
 
   refresh(): Promise<LicenseKey[]> {
-    return firstValueFrom(this.http.get<LicenseKey[]>(this.licenseKeysUrl).pipe(tap((keys) => this.cache.reset(keys))));
+    return this.cache.refresh();
   }
 
   create(request: CreateLicenseKeyRequest): Observable<LicenseKey> {

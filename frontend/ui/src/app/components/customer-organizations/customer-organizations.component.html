@@ -95,19 +95,19 @@
                           <label
                             class="distr-dropdown-checkbox-item"
                             [class.ms-4]="f.indent"
-                            [class.opacity-60]="f.requiresPro"
-                            [title]="f.requiresPro ? 'Upgrade to Pro to enable ' + f.label : ''">
+                            [class.opacity-60]="f.requiredPlan"
+                            [title]="f.requiredPlan ? 'Upgrade your plan to enable ' + f.label : ''">
                             <input
                               type="checkbox"
                               [checked]="f.checked"
-                              [disabled]="f.requiresPro"
+                              [disabled]="!!f.requiredPlan"
                               (change)="toggleFeature(customer, f.feature)"
                               class="distr-checkbox" />
                             <span
                               class="ms-2 w-full py-3 pe-1 text-sm font-medium whitespace-nowrap text-gray-900 dark:text-gray-300">
                               {{ f.label }}
-                              @if (f.requiresPro) {
-                                <span class="distr-text-muted ms-1 text-xs">(Pro)</span>
+                              @if (f.requiredPlan) {
+                                <span class="distr-text-muted ms-1 text-xs capitalize">({{ f.requiredPlan }})</span>
                               }
                             </span>
                           </label>

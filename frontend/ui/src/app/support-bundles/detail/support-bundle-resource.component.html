@@ -8,7 +8,7 @@
     <span class="flex items-center gap-3">
       @let size = resource().size;
       @if (size !== undefined) {
-        <span class="text-xs font-normal text-gray-500 dark:text-gray-400">{{ size | bytes }}</span>
+        <span class="text-xs font-normal text-gray-500 dark:text-gray-400">{{ size | bytes: '1.0-0' }}</span>
       }
       <fa-icon
         [icon]="faChevronRight"

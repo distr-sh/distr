@@ -25,6 +25,7 @@ import {faChevronDown, faPlus} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, combineLatestWith, first, map, Observable, of} from 'rxjs';
 import {compareBy} from '../../util/arrays';
 import {filteredByFormControl} from '../../util/filter';
+import {refreshInBackground} from '../../util/refresh';
 import {SecureImagePipe} from '../../util/secureImage';
 import {PageComponent} from '../components/page.component';
 import {QuotaLimitComponent} from '../components/quota-limit.component';
@@ -171,8 +172,11 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   private readonly applications$ = this.applications.list();
 
   constructor() {
-    // The cached list decides whether a deployment is shown as outdated, so it has to be current when the page opens.
-    this.applications.refresh();
+    refreshInBackground(this.applications.refresh());
+    // The component is reused when only the query changes, e.g. when the sidebar links to the page it is on.
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed())
+      .subscribe((params) => this.filterForm.controls.search.setValue(params.get('search') ?? ''));
     effect(() => localStorage.setItem(localStoragerCollapsedCustomerIds, JSON.stringify(this.collapsedCustomerIds())));
   }
 
