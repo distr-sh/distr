@@ -106,6 +106,7 @@ export class SideBarComponent {
   protected readonly licenseOverlayOpen = signal(false);
   protected readonly notificationsOverlayOpen = signal(false);
   protected readonly supportBundlesOverlayOpen = signal(false);
+  protected readonly advisoriesOverlayOpen = signal(false);
 
   protected readonly isAllTutorialsStarted =
     this.auth.isVendor() && this.auth.hasAnyRole('admin')
