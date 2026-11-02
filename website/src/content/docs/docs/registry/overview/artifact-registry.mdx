@@ -173,6 +173,7 @@ You can delete individual tags from an artifact through the API and UI. However,
 Tag deletion succeeds when all of these conditions are met:
 
 - The tag exists, and at least one other tag remains for the artifact
+- The artifact is not a [pull-through cache](/docs/registry/pull-through-cache/)
 - No [artifact entitlement](/docs/platform/artifact-entitlements/) grants all versions of the artifact
 - If an entitlement grants exactly the version the tag points at, another tag must point at that version as well
 

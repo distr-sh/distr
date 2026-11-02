@@ -105,14 +105,14 @@ func authorizeOrganization(org *types.Organization, n *name.Name, authorizePubli
 	}
 }
 
-// authorizeUpstreamWrite rejects a push to a pull-through cache artifact.
+// authorizeUpstreamWrite rejects a push to or a deletion from a pull-through cache artifact.
 func authorizeUpstreamWrite(ctx context.Context, n *name.Name) error {
 	if artifact, err := db.GetArtifactByName(ctx, n.OrgName, n.ArtifactName); err != nil {
 		if !errors.Is(err, distrerr.ErrNotFound) {
 			return err
 		}
 	} else if artifact.UpstreamURL != nil {
-		return NewErrAccessDenied("cannot push to a pull-through cache artifact")
+		return NewErrAccessDenied("cannot push to or delete from a pull-through cache artifact")
 	}
 	return nil
 }

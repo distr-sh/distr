@@ -221,6 +221,10 @@ func deleteArtifactTagHandler(r *http.Request) (respond.Responder, error) {
 
 	if tagName := r.PathValue("tagName"); tagName == "" {
 		return artifactTagNotFound, nil
+	} else if artifact.UpstreamURL != nil {
+		return respond.BadRequest(
+			"cannot delete a tag of a pull-through cache artifact, its tags are synced from the upstream registry",
+		), nil
 	} else if err := db.DeleteArtifactTag(ctx, artifact.ID, tagName); errors.Is(err, distrerr.ErrNotFound) {
 		return artifactTagNotFound, nil
 	} else if errors.Is(err, distrerr.ErrBadRequest) {
