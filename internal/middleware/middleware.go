@@ -429,7 +429,8 @@ var (
 		types.CustomerOrganizationFeatureAlerts,
 		types.CustomerOrganizationFeatureUpdateNotifications,
 	)
-	SupportBundlesCustomerFeatureMiddleware = CustomerFeatureMiddleware(types.CustomerOrganizationFeatureSupportBundles)
+	SupportBundlesCustomerFeatureMiddleware  = CustomerFeatureMiddleware(types.CustomerOrganizationFeatureSupportBundles)
+	VulnerabilitiesCustomerFeatureMiddleware = CustomerFeatureMiddleware(types.CustomerOrganizationFeatureVulnerabilities)
 )
 
 var (

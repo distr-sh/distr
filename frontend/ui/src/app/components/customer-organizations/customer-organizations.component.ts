@@ -16,8 +16,9 @@ import {RouterLink} from '@angular/router';
 import {CustomerOrganization, CustomerOrganizationFeature, CustomerOrganizationWithUsage} from '@distr-sh/distr-sdk';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faAddressBook, faChevronDown, faEdit, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, filter, firstValueFrom, map, of, startWith, Subject, switchMap} from 'rxjs';
+import {combineLatest, filter, firstValueFrom, map, of, startWith, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
+import {refreshInBackground} from '../../../util/refresh';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ArtifactEntitlementsService} from '../../services/artifact-entitlements.service';
 import {AuthService} from '../../services/auth.service';
@@ -28,7 +29,8 @@ import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {PartnerOrganizationsService} from '../../services/partner-organizations.service';
 import {ToastService} from '../../services/toast.service';
-import {isProSubscription} from '../../types/subscription';
+import {Feature} from '../../types/organization';
+import {isProSubscription, SubscriptionType} from '../../types/subscription';
 import {AlertComponent} from '../alert/alert.component';
 import {AvatarComponent} from '../avatar.component';
 import {InlineEditComponent} from '../inline-edit.component';
@@ -43,9 +45,16 @@ const customerFeatureLabels: Record<CustomerOrganizationFeature, string> = {
   update_notifications: 'Update Notifications',
   support_bundles: 'Support Bundles',
   oidc_providers: 'Identity Provider',
+  vulnerabilities: 'Security',
 };
 
 const proCustomerFeatures: CustomerOrganizationFeature[] = ['alerts', 'update_notifications', 'support_bundles'];
+
+// A Business customer feature is unlocked by the organization feature behind it rather than by the plan.
+const businessCustomerFeatures: Partial<Record<CustomerOrganizationFeature, Feature>> = {
+  vulnerabilities: 'vulnerabilities',
+  oidc_providers: 'custom_oidc_providers',
+};
 
 @Component({
   templateUrl: './customer-organizations.component.html',
@@ -96,17 +105,13 @@ export class CustomerOrganizationsComponent {
   protected readonly filterForm = this.fb.group({
     search: this.fb.control(''),
   });
-  private readonly refresh$ = new Subject<void>();
   protected readonly customerOrganizations = toSignal(
     combineLatest([
       this.filterForm.valueChanges.pipe(
         map((filter) => filter.search ?? ''),
         startWith('')
       ),
-      this.refresh$.pipe(
-        startWith(undefined),
-        switchMap(() => this.customerOrganizationsService.getCustomerOrganizations())
-      ),
+      this.customerOrganizationsService.getCustomerOrganizations(),
     ]).pipe(
       map(([filter, organizations]) =>
         filter.length > 0
@@ -130,23 +135,33 @@ export class CustomerOrganizationsComponent {
     'artifacts',
     'update_notifications',
     'support_bundles',
+    'vulnerabilities',
     'oidc_providers',
   ];
 
-  // A customer can only bring its own identity provider while the vendor's own plan includes the
-  // machinery, so the checkbox is hidden rather than shown as a grantable feature that the API refuses.
   protected readonly allCustomerFeatures = computed(() => {
     const isPro = isProSubscription(this.organization()?.subscriptionType);
+    const organizationFeatures = this.organization()?.features ?? [];
     const granted = this.openCustomerFeaturesDropdownCustomer()?.features ?? [];
-    return this.allCustomerFeaturesList
-      .filter((feature) => feature !== 'oidc_providers' || this.featureFlags.isCustomOidcProvidersEnabled())
-      .map((feature) => ({
-        feature,
-        label: customerFeatureLabels[feature],
-        indent: feature === 'alerts',
-        checked: granted.includes(feature),
-        requiresPro: !isPro && proCustomerFeatures.includes(feature) && !granted.includes(feature),
-      }));
+    const requiredPlan = (feature: CustomerOrganizationFeature): SubscriptionType | undefined => {
+      const businessFeature = businessCustomerFeatures[feature];
+      if (granted.includes(feature)) {
+        return undefined;
+      } else if (proCustomerFeatures.includes(feature)) {
+        return isPro ? undefined : 'pro';
+      } else if (businessFeature) {
+        return organizationFeatures.includes(businessFeature) ? undefined : 'business';
+      } else {
+        return undefined;
+      }
+    };
+    return this.allCustomerFeaturesList.map((feature) => ({
+      feature,
+      label: customerFeatureLabels[feature],
+      indent: feature === 'alerts',
+      checked: granted.includes(feature),
+      requiredPlan: requiredPlan(feature),
+    }));
   });
 
   protected readonly openCustomerFeaturesDropdownId = signal<string | void>(undefined);
@@ -167,6 +182,10 @@ export class CustomerOrganizationsComponent {
   private readonly selectedCustomerForPartner = signal<CustomerOrganization | undefined>(undefined);
   protected readonly partnerAssignControl = this.fb.control('');
   protected partnerAssignLoading = signal(false);
+
+  constructor() {
+    refreshInBackground(this.customerOrganizationsService.refresh());
+  }
 
   protected showCreateDialog() {
     this.closeCreateDialog();
@@ -198,7 +217,6 @@ export class CustomerOrganizationsComponent {
       );
 
       this.closeCreateDialog();
-      this.refresh$.next();
     } finally {
       this.createFormLoading = false;
     }
@@ -210,10 +228,7 @@ export class CustomerOrganizationsComponent {
       .updateCustomerOrganization(customer.id, {...customer, name})
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
-          this.toast.success('Customer has been updated');
-          this.refresh$.next();
-        },
+        next: () => this.toast.success('Customer has been updated'),
         error: (e) => {
           const msg = getFormDisplayedError(e);
           if (msg) {
@@ -232,7 +247,6 @@ export class CustomerOrganizationsComponent {
     await firstValueFrom(
       this.customerOrganizationsService.updateCustomerOrganization(value.id, {name: value.name, imageId})
     );
-    this.refresh$.next();
   }
 
   protected delete(target: CustomerOrganizationWithUsage): void {
@@ -259,7 +273,6 @@ export class CustomerOrganizationsComponent {
       )
       .subscribe({
         next: () => {
-          this.refresh$.next();
           this.artifactEntitlementsService.refresh();
           this.applicationEntitlementsService.refresh();
         },
@@ -294,7 +307,6 @@ export class CustomerOrganizationsComponent {
         })
       );
       this.toast.success('Customer features updated');
-      this.refresh$.next();
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {
@@ -340,10 +352,9 @@ export class CustomerOrganizationsComponent {
     this.partnerAssignLoading.set(true);
     try {
       await firstValueFrom(
-        this.partnerOrganizationsService.assignCustomerToPartner(customer.id, {partnerOrganizationId})
+        this.customerOrganizationsService.assignCustomerToPartner(customer.id, {partnerOrganizationId})
       );
       this.closePartnerAssignDialog();
-      this.refresh$.next();
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {

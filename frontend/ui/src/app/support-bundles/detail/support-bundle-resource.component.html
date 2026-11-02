@@ -15,7 +15,7 @@
     </span>
     @let size = resource().size;
     @if (size !== undefined) {
-      <span class="shrink-0 text-xs font-normal text-gray-500 dark:text-gray-400">{{ size | bytes }}</span>
+      <span class="shrink-0 text-xs font-normal text-gray-500 dark:text-gray-400">{{ size | bytes: '1.0-0' }}</span>
     }
   </summary>
   @if (content() !== undefined) {
