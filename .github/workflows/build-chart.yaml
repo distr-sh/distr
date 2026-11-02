@@ -50,7 +50,7 @@ jobs:
           helm repo add rustfs https://charts.rustfs.com/
           helm dependency build deploy/charts/distr
           helm lint --strict deploy/charts/distr
-          if [ "$GITHUB_REF_TYPE" = tag ]; then
+          if [[ "$GITHUB_REF_NAME" == *-rc.* ]]; then
             # release candidate tags do not bump Chart.yaml
             helm package deploy/charts/distr --version "$GITHUB_REF_NAME" --app-version "$GITHUB_REF_NAME"
           else
