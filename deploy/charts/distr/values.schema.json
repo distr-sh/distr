@@ -963,6 +963,31 @@
         }
       }
     },
+    "serviceMonitor": {
+      "type": "object",
+      "properties": {
+        "bearerTokenSecret": {
+          "description": "Key of a Secret in the release namespace holding `METRICS_BEARER_TOKEN`, required when it is set, e.g. `{name: distr-metrics, key: token}`.",
+          "type": "object"
+        },
+        "enabled": {
+          "description": "Create a Prometheus Operator [ServiceMonitor](https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.ServiceMonitor) that scrapes the metrics port of the Distr Service. Requires the ServiceMonitor CRD and `METRICS_ENABLED` in `distr.env`, which the chart sets by default.",
+          "type": "boolean"
+        },
+        "interval": {
+          "description": "Scrape interval. Empty means the interval configured in Prometheus.",
+          "type": "string"
+        },
+        "labels": {
+          "description": "Additional labels of the ServiceMonitor, e.g. the label your Prometheus selects ServiceMonitors by.",
+          "type": "object"
+        },
+        "scrapeTimeout": {
+          "description": "Scrape timeout. Empty means the timeout configured in Prometheus.",
+          "type": "string"
+        }
+      }
+    },
     "startupProbe": {
       "description": "[Startup probe](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/) of the Distr container. It allows up to 5 minutes (failureThreshold * periodSeconds) for Distr to come up before the liveness and readiness probes take over.",
       "type": "object",

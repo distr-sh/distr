@@ -94,6 +94,16 @@
 
 ---
 
+### deploymentType
+
+> **deploymentType**: [`DeploymentType`](../type-aliases/DeploymentType.md)
+
+#### Inherited from
+
+[`SupportBundle`](SupportBundle.md).[`deploymentType`](SupportBundle.md#deploymenttype)
+
+---
+
 ### description?
 
 > `optional` **description?**: `string`
@@ -136,7 +146,7 @@
 
 ### resources
 
-> **resources**: [`SupportBundleResource`](SupportBundleResource.md)[]
+> **resources**: [`SupportBundleResourceSummary`](SupportBundleResourceSummary.md)[]
 
 ---
 

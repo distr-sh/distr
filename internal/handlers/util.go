@@ -13,10 +13,11 @@ import (
 
 	"github.com/distr-sh/distr/internal/contenttype"
 	"github.com/distr-sh/distr/internal/db"
-	"github.com/distr-sh/distr/internal/handlerutil"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/validation"
 )
+
+const maxFilterLength = 200
 
 type TimeseriesRequest struct {
 	TimeseriesRangeRequest
@@ -71,7 +72,7 @@ func parseTimeseriesRange(r *http.Request) (timeseriesRange, error) {
 	}
 	filter := r.FormValue("filter")
 	if filter != "" {
-		if err := handlerutil.ValidateFilterRegex(filter); err != nil {
+		if _, err := validation.ParseRegex(filter, maxFilterLength); err != nil {
 			return timeseriesRange{}, err
 		}
 	}

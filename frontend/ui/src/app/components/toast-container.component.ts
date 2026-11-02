@@ -1,11 +1,11 @@
-import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
+import {Component, inject} from '@angular/core';
 import {ToastService} from '../services/toast.service';
 import {ToastComponent} from './toast.component';
 
 @Component({
   selector: 'app-toast-container',
   template: `
-    <div class="fixed bottom-4 right-4 z-1001 flex flex-col items-end pointer-events-none">
+    <div class="pointer-events-none fixed right-4 bottom-4 z-1001 flex flex-col items-end">
       @for (toast of toastService.toasts(); track toast.id) {
         <app-toast
           [id]="toast.id"
@@ -18,7 +18,6 @@ import {ToastComponent} from './toast.component';
       }
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [ToastComponent],
 })
 export class ToastContainerComponent {

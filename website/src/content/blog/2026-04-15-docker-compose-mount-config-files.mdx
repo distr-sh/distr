@@ -23,6 +23,8 @@ import {Aside, Code} from '@astrojs/starlight/components';
 import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
 import postgresConfigsCompose from './2026-04-15-docker-compose-postgres-config-file/docker-compose.yaml?raw';
 import postgresBindMountCompose from './2026-04-15-docker-compose-postgres-config-file/docker-compose-bind-mount.yaml?raw';
+import postgresSecretsCompose from './2026-04-15-docker-compose-postgres-config-file/docker-compose-secrets.yaml?raw';
+import postgresDockerfile from './2026-04-15-docker-compose-postgres-config-file/Dockerfile?raw';
 
 I am Philip, an engineer working at Distr, which helps software and AI companies distribute their applications to self-hosted environments.
 Our Open Source Software Distribution platform is available on GitHub ([`github.com/distr-sh/distr`](https://github.com/distr-sh/distr)) and orchestrates both Docker Compose and Kubernetes deployments.
@@ -94,16 +96,11 @@ Bind mounts are fine for local development, internal deployments where the Compo
 
 The second option builds a custom image on top of the upstream `postgres` image with the configuration file baked in.
 
-```dockerfile
-# Dockerfile
-FROM postgres:17-alpine
-COPY postgresql.conf /etc/postgresql/postgresql.conf
-CMD ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
-```
+<Code code={postgresDockerfile} lang="dockerfile" title="Dockerfile" />
 
 ### Setting Up the Custom Postgres Image
 
-You build and push this image to your registry, reference it from the Compose file with something like `image: myregistry/postgres-tuned:17`, and drop the bind mount entirely. The config file is frozen into the image layers and ships wherever the image does.
+You build and push this image to your registry, reference it from the Compose file with something like `image: myregistry/postgres-tuned:18`, and drop the bind mount entirely. The config file is frozen into the image layers and ships wherever the image does.
 
 ### Tradeoffs of the Custom Image Approach
 
@@ -200,28 +197,11 @@ Docker Compose has a separate [`secrets`](https://docs.docker.com/reference/comp
 
 A common pattern for Postgres is to keep the tuning file in `configs:` and the database password in `secrets:`:
 
-```yaml
-services:
-  postgres:
-    image: postgres:17-alpine
-    environment:
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
-      POSTGRES_DB: app
-    configs:
-      - source: postgresql.conf
-        target: /etc/postgresql/postgresql.conf
-    secrets:
-      - postgres_password
-
-configs:
-  postgresql.conf:
-    file: ./postgresql.conf
-
-secrets:
-  postgres_password:
-    file: ./postgres_password.txt
-```
+<Code
+  code={postgresSecretsCompose}
+  lang="yaml"
+  title="docker-compose.yaml (configs and secrets)"
+/>
 
 The Postgres image honors `*_FILE` variants of its environment variables and reads the value from the file at the given path, so the plaintext password never appears in the Compose file or in `docker inspect` output.
 

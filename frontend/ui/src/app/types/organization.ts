@@ -23,7 +23,7 @@ export interface SubscriptionLimits {
   logQueryWindowSeconds: number;
 }
 
-export interface CreateUpdateOrganizationRequest {
+export interface UpdateOrganizationRequest {
   name: string;
   slug?: string;
   dockerPreConnectScript?: string;
@@ -33,6 +33,7 @@ export interface CreateUpdateOrganizationRequest {
   kubernetesPostConnectScript?: string;
   artifactVersionMutable: boolean;
   prePostScriptsEnabled: boolean;
+  controllerImageRepository?: string;
 }
 
 export interface Organization extends BaseModel, Named {
@@ -52,6 +53,8 @@ export interface Organization extends BaseModel, Named {
   kubernetesPreConnectScript?: string;
   kubernetesPostConnectScript?: string;
   stripeWebhookSecretConfigured: boolean;
+  controllerImageRepository?: string;
+  defaultControllerImageRepository: string;
 }
 
 export interface OrganizationWithUserRole extends Organization {

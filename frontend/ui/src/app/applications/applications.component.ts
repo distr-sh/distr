@@ -2,21 +2,19 @@ import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, inject, input, OnDestroy, TemplateRef} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {Router, RouterLink} from '@angular/router';
+import {Router} from '@angular/router';
 import {Application, DeploymentType} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faBox, faBoxArchive, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {lastValueFrom, Observable, Subject, takeUntil} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {filteredByFormControl} from '../../util/filter';
+import {refreshInBackground} from '../../util/refresh';
 import {SelectableVersioningStrategy} from '../../util/versions';
 import {SearchBarComponent} from '../components/search-bar.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
-import {
-  PermissionsDirective,
-  RequireRoleDirective,
-  RequireVendorDirective,
-} from '../directives/required-role.directive';
+import {ClickableRowDirective} from '../directives/clickable-row.directive';
+import {PermissionsDirective} from '../directives/required-role.directive';
 import {ApplicationsService} from '../services/applications.service';
 import {FeatureFlagService} from '../services/feature-flag.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
@@ -32,10 +30,8 @@ import {ApplicationLogoComponent} from './components';
     FaIconComponent,
     OverlayModule,
     AutotrimDirective,
-    RequireVendorDirective,
-    RequireRoleDirective,
     PermissionsDirective,
-    RouterLink,
+    ClickableRowDirective,
     ApplicationLogoComponent,
     SearchBarComponent,
   ],
@@ -46,10 +42,7 @@ export class ApplicationsComponent implements OnDestroy {
   readonly fullVersion = input<boolean>(false);
   private readonly router = inject(Router);
   protected readonly faPlus = faPlus;
-  protected readonly faPen = faPen;
   protected readonly faXmark = faXmark;
-  protected readonly faBoxArchive = faBoxArchive;
-  protected readonly faTrash = faTrash;
 
   private readonly destroyed$ = new Subject<void>();
   private readonly applications = inject(ApplicationsService);
@@ -73,6 +66,10 @@ export class ApplicationsComponent implements OnDestroy {
 
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
+
+  constructor() {
+    refreshInBackground(this.applications.refresh());
+  }
 
   ngOnDestroy() {
     this.destroyed$.next();
@@ -118,6 +115,4 @@ export class ApplicationsComponent implements OnDestroy {
       }
     }
   }
-
-  protected readonly faBox = faBox;
 }

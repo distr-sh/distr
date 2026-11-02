@@ -90,6 +90,6 @@ func TestVendorResolversIgnoreCustomerPortalDomains(t *testing.T) {
 
 	t.Run("registry domain", func(t *testing.T) {
 		g := NewWithT(t)
-		g.Expect(registryDomainOrDefault(portalOnly, nil)).NotTo(ContainSubstring("portal.vendor.com"))
+		g.Expect(registryDomain(portalOnly, nil)).To(BeNil())
 	})
 }

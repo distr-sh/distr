@@ -3,13 +3,12 @@ import {DatePipe} from '@angular/common';
 import {Component, computed, inject, signal, TemplateRef} from '@angular/core';
 import {rxResource, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
-import {Router, RouterLink} from '@angular/router';
+import {Router} from '@angular/router';
 import {UserRole} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faCircleExclamation,
   faClipboard,
-  faPen,
   faPlus,
   faTrash,
   faTriangleExclamation,
@@ -25,6 +24,7 @@ import {PageComponent} from '../components/page.component';
 import {SearchBarComponent} from '../components/search-bar.component';
 import {UserRoleSelectComponent} from '../components/user-role-select.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {ClickableRowDirective} from '../directives/clickable-row.directive';
 import {AccessTokensService} from '../services/access-tokens.service';
 import {AuthService} from '../services/auth.service';
 import {CreatedAccessTokenStore} from '../services/created-access-token.service';
@@ -54,7 +54,7 @@ interface AccessTokenRow {
     DatePipe,
     AutotrimDirective,
     OverlayModule,
-    RouterLink,
+    ClickableRowDirective,
     RelativeDatePipe,
     ExpiresAtPickerComponent,
     SearchBarComponent,
@@ -65,7 +65,6 @@ interface AccessTokenRow {
   templateUrl: './access-tokens.component.html',
 })
 export class AccessTokensComponent {
-  protected readonly faPen = faPen;
   protected readonly faTrash = faTrash;
   protected readonly faPlus = faPlus;
   protected readonly faXmark = faXmark;

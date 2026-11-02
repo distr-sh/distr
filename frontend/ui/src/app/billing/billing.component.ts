@@ -1,3 +1,4 @@
+import {NgPlural, NgPluralCase} from '@angular/common';
 import {ChangeDetectionStrategy, Component, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
@@ -6,8 +7,11 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faGear, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {catchError, EMPTY, filter, firstValueFrom, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {loadWhileOpen, refreshInBackground} from '../../util/refresh';
 import {AlertComponent} from '../components/alert/alert.component';
 import {PageComponent} from '../components/page.component';
+import {SpinnerComponent} from '../components/spinner/spinner.component';
+import {ClickableRowDirective} from '../directives/clickable-row.directive';
 import {AuthService} from '../services/auth.service';
 import {LicenseTemplatesService} from '../services/license-templates.service';
 import {OrganizationService} from '../services/organization.service';
@@ -19,7 +23,17 @@ import {LicenseTemplate} from '../types/license-template';
   selector: 'app-billing',
   templateUrl: './billing.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [FaIconComponent, ReactiveFormsModule, RouterLink, PageComponent, AlertComponent],
+  imports: [
+    FaIconComponent,
+    ReactiveFormsModule,
+    RouterLink,
+    PageComponent,
+    AlertComponent,
+    NgPlural,
+    NgPluralCase,
+    ClickableRowDirective,
+    SpinnerComponent,
+  ],
 })
 export class BillingComponent {
   protected readonly auth = inject(AuthService);
@@ -28,6 +42,8 @@ export class BillingComponent {
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder).nonNullable;
+
+  protected readonly canEdit = this.auth.hasAnyRole('read_write', 'admin');
 
   protected readonly faGear = faGear;
   protected readonly faPen = faPen;
@@ -40,6 +56,7 @@ export class BillingComponent {
 
   protected readonly selectedTemplate = signal<LicenseTemplate | undefined>(undefined);
   protected readonly templateFormLoading = signal(false);
+  protected readonly drawerLoading = signal(false);
 
   private drawerRef?: DialogRef;
   private readonly templateDrawerTemplate = viewChild.required<TemplateRef<unknown>>('templateDrawer');
@@ -55,19 +72,43 @@ export class BillingComponent {
   "seats": {{ itemQuantity "seats" }}
 }`;
 
-  openTemplateDrawer(template?: LicenseTemplate) {
+  constructor() {
+    refreshInBackground(this.templatesService.refresh());
+  }
+
+  async openTemplateDrawer(template?: LicenseTemplate) {
     this.hideDrawer();
     this.selectedTemplate.set(template);
-    if (template) {
-      this.templateForm.patchValue({
-        name: template.name,
-        payloadTemplate: template.payloadTemplate,
-        expirationGracePeriodDays: template.expirationGracePeriodDays,
-      });
-    } else {
-      this.templateForm.reset({expirationGracePeriodDays: 0});
+    const open = () => (this.drawerRef = this.overlay.showDrawer(this.templateDrawerTemplate()));
+    if (!template) {
+      this.drawerLoading.set(false);
+      open();
+      return;
     }
-    this.drawerRef = this.overlay.showDrawer(this.templateDrawerTemplate());
+    try {
+      const templates = await loadWhileOpen(this.drawerLoading, open, this.templatesService.refresh());
+      if (templates === undefined) {
+        return;
+      }
+      const fresh = templates.find((it) => it.id === template.id);
+      if (!fresh) {
+        this.toast.error('This template no longer exists');
+        this.hideDrawer();
+        return;
+      }
+      this.selectedTemplate.set(fresh);
+      this.templateForm.patchValue({
+        name: fresh.name,
+        payloadTemplate: fresh.payloadTemplate,
+        expirationGracePeriodDays: fresh.expirationGracePeriodDays,
+      });
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+      this.hideDrawer();
+    }
   }
 
   hideDrawer() {

@@ -1,19 +1,19 @@
 import {CdkConnectedOverlay, CdkOverlayOrigin} from '@angular/cdk/overlay';
-import {AsyncPipe} from '@angular/common';
+import {AsyncPipe, NgPlural, NgPluralCase} from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
-  effect,
+  DestroyRef,
   ElementRef,
   forwardRef,
   inject,
   Injector,
-  OnDestroy,
   OnInit,
   signal,
   viewChild,
 } from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {
   ControlValueAccessor,
   FormArray,
@@ -25,29 +25,45 @@ import {
   TouchedChangeEvent,
   ValidationErrors,
   Validator,
+  ValidatorFn,
   Validators,
 } from '@angular/forms';
 import {Application, ApplicationVersion} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faChevronDown, faPen, faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faChevronDown} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {combineLatestWith, filter, first, firstValueFrom, Subject, switchMap, takeUntil} from 'rxjs';
+import {filter, firstValueFrom, switchMap} from 'rxjs';
+import {WEBSITE_URL} from '../../../constants';
 import {isArchived} from '../../../util/dates';
+import {noSurroundingWhitespaceValidator} from '../../../util/validation';
 import {sortApplicationVersions} from '../../../util/versions';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {ExpiresAtPickerComponent} from '../../components/expires-at-picker/expires-at-picker.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ApplicationsService} from '../../services/applications.service';
 import {AuthService} from '../../services/auth.service';
-import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {ApplicationEntitlement} from '../../types/application-entitlement';
 import {ArtifactEntitlement} from '../../types/artifact-entitlement';
+
+type VersionScope = 'all' | 'specific';
+
+// An entitlement without versions grants all of them, so "Specific versions" needs at least one.
+const specificVersionsValidator: ValidatorFn = (control) => {
+  const versionScope = control.get('versionScope')?.value as VersionScope;
+  const selected = [
+    ...(control.get('activeVersions') as FormArray).getRawValue(),
+    ...(control.get('archivedVersions') as FormArray).getRawValue(),
+  ].some((v) => !!v);
+  return versionScope === 'all' || selected ? null : {versionsRequired: true};
+};
 
 @Component({
   selector: 'app-edit-application-entitlement',
   templateUrl: './edit-application-entitlement.component.html',
   imports: [
     AsyncPipe,
+    NgPlural,
+    NgPluralCase,
     AutotrimDirective,
     ExpiresAtPickerComponent,
     ReactiveFormsModule,
@@ -70,116 +86,95 @@ import {ArtifactEntitlement} from '../../types/artifact-entitlement';
     },
   ],
 })
-export class EditApplicationEntitlementComponent
-  implements OnInit, OnDestroy, AfterViewInit, ControlValueAccessor, Validator
-{
+export class EditApplicationEntitlementComponent implements OnInit, AfterViewInit, ControlValueAccessor, Validator {
   private readonly injector = inject(Injector);
-  private readonly destroyed$ = new Subject<void>();
+  private readonly destroyRef = inject(DestroyRef);
   private readonly applicationsService = inject(ApplicationsService);
-  private readonly customerOrganizationService = inject(CustomerOrganizationsService);
   protected readonly auth = inject(AuthService);
 
   applications$ = this.applicationsService.list();
-  customers$ = this.customerOrganizationService.getCustomerOrganizations().pipe(first());
-
   private fb = inject(FormBuilder);
-  editForm = this.fb.nonNullable.group({
-    id: this.fb.nonNullable.control<string | undefined>(undefined),
-    name: this.fb.nonNullable.control<string | undefined>(undefined, Validators.required),
-    expiresAt: this.fb.nonNullable.control(''),
-    subjectId: this.fb.nonNullable.control<string | undefined>(undefined, Validators.required),
-    includeAllItems: this.fb.nonNullable.control<boolean>(true, Validators.required),
-    activeVersions: this.fb.array<boolean>([]),
-    archivedVersions: this.fb.array<boolean>([]),
-    customerOrganizationId: this.fb.nonNullable.control<string | undefined>(undefined),
-    registry: this.fb.nonNullable.group(
-      {
-        url: this.fb.nonNullable.control(''),
-        username: this.fb.nonNullable.control(''),
-        password: this.fb.nonNullable.control(''),
-      },
-      {
-        validators: (control) => {
-          if (!control.get('url')?.value && !control.get('username')?.value && !control.get('password')?.value) {
-            return null;
-          }
-          if (control.get('url')?.value && control.get('username')?.value && control.get('password')?.value) {
-            return null;
-          }
-          return {
-            required: true,
-          };
+  editForm = this.fb.nonNullable.group(
+    {
+      id: this.fb.nonNullable.control<string | undefined>(undefined),
+      name: this.fb.nonNullable.control<string | undefined>(undefined, Validators.required),
+      expiresAt: this.fb.nonNullable.control(''),
+      subjectId: this.fb.nonNullable.control<string | undefined>(undefined, Validators.required),
+      versionScope: this.fb.nonNullable.control<VersionScope>('all'),
+      activeVersions: this.fb.array<boolean>([]),
+      archivedVersions: this.fb.array<boolean>([]),
+      autoAddVersionRegex: this.fb.nonNullable.control('', [
+        Validators.maxLength(200),
+        noSurroundingWhitespaceValidator,
+      ]),
+      customerOrganizationId: this.fb.nonNullable.control<string | undefined>(undefined),
+      registry: this.fb.nonNullable.group(
+        {
+          url: this.fb.nonNullable.control(''),
+          username: this.fb.nonNullable.control(''),
+          password: this.fb.nonNullable.control(''),
         },
-      }
-    ),
-  });
-  editFormLoading = false;
+        {
+          validators: (control) => {
+            if (!control.get('url')?.value && !control.get('username')?.value && !control.get('password')?.value) {
+              return null;
+            }
+            if (control.get('url')?.value && control.get('username')?.value && control.get('password')?.value) {
+              return null;
+            }
+            return {
+              required: true,
+            };
+          },
+        }
+      ),
+    },
+    {validators: specificVersionsValidator}
+  );
   readonly entitlement = signal<ApplicationEntitlement | undefined>(undefined);
   readonly selectedSubject = signal<Application | undefined>(undefined);
   readonly includedArchivedVersions = signal<ApplicationVersion[]>([]);
 
-  dropdownOpen = signal(false);
-  protected subjectItemsSelected = 0;
-
-  dropdownWidth: number = 0;
+  readonly dropdownOpen = signal(false);
+  protected readonly versionsSelected = signal(0);
+  protected readonly dropdownWidth = signal(0);
 
   protected readonly faChevronDown = faChevronDown;
-  protected readonly faPlus = faPlus;
-  protected readonly faXmark = faXmark;
-  protected readonly faPen = faPen;
+  protected readonly autoAddVersionRegexDocsUrl = `${WEBSITE_URL}/docs/platform/auto-add-regex/`;
 
-  protected readonly dropdownTriggerButton = viewChild.required<ElementRef<HTMLElement>>('dropdownTriggerButton');
+  protected readonly dropdownTriggerButton = viewChild<ElementRef<HTMLElement>>('dropdownTriggerButton');
 
   constructor() {
-    effect(() => {
-      if (!this.dropdownOpen()) {
-        if (
-          !this.editForm.controls.includeAllItems.value &&
-          !this.editForm.controls.activeVersions.value.some((v) => !!v) &&
-          !this.editForm.controls.archivedVersions.getRawValue().some((v) => !!v)
-        ) {
-          this.editForm.controls.includeAllItems.patchValue(true);
-        }
-      }
-    });
-
     if (!this.auth.hasAnyRole('admin', 'read_write')) {
       this.editForm.disable({emitEvent: false});
     }
   }
 
   ngOnInit() {
-    this.editForm.controls.includeAllItems.valueChanges.pipe(takeUntil(this.destroyed$)).subscribe((includeAll) => {
-      if (includeAll) {
-        this.editForm.controls.activeVersions.controls.forEach((c) => c.patchValue(false, {emitEvent: false}));
-      }
-    });
-    this.editForm.controls.activeVersions.valueChanges
-      .pipe(takeUntil(this.destroyed$), combineLatestWith(this.editForm.controls.archivedVersions.valueChanges))
-      .subscribe(([active, _]) => {
-        const archived = this.editForm.controls.archivedVersions.getRawValue();
-        if (this.editForm.controls.includeAllItems.value && (active.some((v) => !!v) || archived.some((v) => !!v))) {
-          this.editForm.controls.includeAllItems.patchValue(false, {emitEvent: false});
+    this.editForm.controls.versionScope.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((versionScope) => {
+        const autoAddVersionRegex = this.editForm.controls.autoAddVersionRegex;
+        if (versionScope === 'all') {
+          autoAddVersionRegex.disable({emitEvent: false});
+        } else if (this.editForm.enabled) {
+          autoAddVersionRegex.enable({emitEvent: false});
         }
       });
-    this.editForm.valueChanges.pipe(takeUntil(this.destroyed$)).subscribe(() => {
+    this.editForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.onTouched();
       const val = this.editForm.getRawValue();
-      if (!val.includeAllItems) {
-        this.subjectItemsSelected =
-          val.activeVersions.filter((v) => !!v).length + val.archivedVersions.filter((v) => !!v).length;
-      }
+      const allVersions = val.versionScope === 'all';
+      const versions = allVersions ? [] : this.getSelectedVersions(val.activeVersions, val.archivedVersions);
+      this.versionsSelected.set(versions.length);
       if (this.editForm.valid) {
         this.onChange({
           id: val.id,
           name: val.name,
           expiresAt: val.expiresAt ? new Date(val.expiresAt) : undefined,
           applicationId: val.subjectId,
-          versions: this.getSelectedVersions(
-            val.includeAllItems!,
-            val.activeVersions ?? [],
-            val.archivedVersions ?? []
-          ),
+          versions,
+          autoAddVersionRegex: (!allVersions && val.autoAddVersionRegex) || undefined,
           customerOrganizationId: val.customerOrganizationId,
           registryUrl: val.registry.url?.trim() || undefined,
           registryUsername: val.registry.username?.trim() || undefined,
@@ -192,7 +187,7 @@ export class EditApplicationEntitlementComponent
     });
     this.editForm.controls.subjectId.valueChanges
       .pipe(
-        takeUntil(this.destroyed$),
+        takeUntilDestroyed(this.destroyRef),
         switchMap(async (subjectId) => {
           const apps = await firstValueFrom(this.applicationsService.list());
           return apps.find((a) => a.id === subjectId);
@@ -211,15 +206,13 @@ export class EditApplicationEntitlementComponent
         this.activeVersionsArray.clear({emitEvent: activeVersions.length === 0});
         this.archivedVersionsArray.clear({emitEvent: archivedVersions.length === 0});
 
-        const entitledVersions = (this.entitlement() as ApplicationEntitlement)?.versions;
-        let anySelected = false;
+        const entitledVersions = this.entitlement()?.versions;
         const archivedSelected = [];
 
         for (let i = 0; i < activeVersions.length; i++) {
           const version = activeVersions[i];
           const selected = !!entitledVersions?.some((v) => v.id === version.id);
           this.activeVersionsArray.push(this.fb.control(selected), {emitEvent: i === activeVersions.length - 1});
-          anySelected = anySelected || selected;
         }
 
         for (let i = 0; i < archivedVersions.length; i++) {
@@ -231,44 +224,22 @@ export class EditApplicationEntitlementComponent
           const ctrl = this.fb.control(selected);
           ctrl.disable();
           this.archivedVersionsArray.push(ctrl, {emitEvent: i === archivedVersions.length - 1});
-          anySelected = anySelected || selected;
         }
 
         this.includedArchivedVersions.set(archivedSelected);
-        if (!anySelected) {
-          this.editForm.controls.includeAllItems.patchValue(true);
-        }
       });
   }
 
-  selectedApplication(): Application | undefined {
-    return this.selectedSubject() as Application;
-  }
-
   private getSelectedVersions(
-    includeAllVersions: boolean,
     activeVersionControls: (boolean | null)[],
     archivedVersionControls: (boolean | null)[]
   ): ApplicationVersion[] {
-    if (includeAllVersions) {
-      return [];
-    }
-    const app = this.selectedApplication();
+    const app = this.selectedSubject();
     const activeSelected = activeVersionControls
-      .map((v, idx) => {
-        if (v) {
-          return app?.versions?.[idx];
-        }
-        return undefined;
-      })
+      .map((v, idx) => (v ? app?.versions?.[idx] : undefined))
       .filter((v) => !!v);
     const archivedSelected = archivedVersionControls
-      .map((v, idx) => {
-        if (v) {
-          return app?.versions?.[idx + activeVersionControls.length];
-        }
-        return undefined;
-      })
+      .map((v, idx) => (v ? app?.versions?.[idx + activeVersionControls.length] : undefined))
       .filter((v) => !!v);
     return [...activeSelected, ...archivedSelected];
   }
@@ -277,7 +248,7 @@ export class EditApplicationEntitlementComponent
     // from https://github.com/angular/angular/issues/45089
     this.injector
       .get(NgControl)
-      .control!.events.pipe(takeUntil(this.destroyed$))
+      .control!.events.pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((event) => {
         if (event instanceof TouchedChangeEvent) {
           if (event.touched) {
@@ -289,14 +260,10 @@ export class EditApplicationEntitlementComponent
 
   toggleDropdown() {
     this.dropdownOpen.update((v) => !v);
-    if (this.dropdownOpen()) {
-      this.dropdownWidth = this.dropdownTriggerButton().nativeElement.getBoundingClientRect().width;
+    const trigger = this.dropdownTriggerButton();
+    if (this.dropdownOpen() && trigger) {
+      this.dropdownWidth.set(trigger.nativeElement.getBoundingClientRect().width);
     }
-  }
-
-  ngOnDestroy() {
-    this.destroyed$.next();
-    this.destroyed$.complete();
   }
 
   get activeVersionsArray() {
@@ -323,7 +290,7 @@ export class EditApplicationEntitlementComponent
     this.onChange = fn;
   }
 
-  registerOnTouched(fn: any): void {
+  registerOnTouched(fn: () => void): void {
     this.onTouched = fn;
   }
 
@@ -337,7 +304,8 @@ export class EditApplicationEntitlementComponent
         subjectId: entitlement.applicationId,
         activeVersions: [], // will be set by on-change,
         archivedVersions: [], // will be set by on-change,
-        includeAllItems: (entitlement.versions ?? []).length === 0,
+        versionScope: entitlement.versions?.length ? 'specific' : 'all',
+        autoAddVersionRegex: entitlement.autoAddVersionRegex ?? '',
         customerOrganizationId: entitlement.customerOrganizationId,
         registry: {
           url: entitlement.registryUrl || '',

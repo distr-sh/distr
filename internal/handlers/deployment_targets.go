@@ -135,27 +135,10 @@ func createDeploymentTarget(r *http.Request) (respond.Responder, error) {
 	} else {
 		dt := mapping.CreateDeploymentTargetToInternal(request)
 		dt.ControllerVersionID = &controllerVersion.ID
-		requestedCustomerOrgID := dt.CustomerOrganizationID
-		if auth.CurrentPartnerOrgID() != nil && requestedCustomerOrgID == nil {
-			return respond.Forbidden("partner users must assign a deployment target to a customer"), nil
-		}
 
-		if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
-			customerOrgID := auth.CurrentCustomerOrgID()
-
-			if requestedCustomerOrgID != nil {
-				if err := db.ValidateCustomerOrgBelongsToOrg(ctx, *requestedCustomerOrgID, *auth.CurrentOrgID()); err != nil {
-					return respond.Forbidden("customer organization does not belong to organization"), nil
-				}
-				if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
-					co, err := db.GetCustomerOrganizationByID(ctx, *requestedCustomerOrgID)
-					if err != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-						return notAssignedToPartner, nil
-					}
-				}
-				customerOrgID = requestedCustomerOrgID
-			}
-
+		if customerOrgID, resp, err := customerScope(ctx, dt.CustomerOrganizationID); resp != nil || err != nil {
+			return resp, err
+		} else if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 			if limitReached, err := subscription.IsDeploymentTargetLimitReached(
 				ctx, *auth.CurrentOrg(), customerOrgID,
 			); err != nil {
@@ -211,10 +194,8 @@ func deleteDeploymentTarget(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	dt := internalctx.GetDeploymentTarget(ctx)
 	auth := auth.Authentication.Require(ctx)
-	if dt.OrganizationID != *auth.CurrentOrgID() {
+	if dt.OrganizationID != *auth.CurrentOrgID() || !isDeploymentTargetVisible(ctx, dt) {
 		return deploymentTargetNotFound, nil
-	} else if !isDeploymentTargetVisible(ctx, dt) {
-		return respond.Forbidden("must be vendor or creator"), nil
 	} else if err := db.DeleteDeploymentTargetWithID(ctx, dt.ID); err != nil {
 		return nil, fmt.Errorf("error deleting deployment target: %w", err)
 	} else {

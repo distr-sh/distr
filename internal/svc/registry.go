@@ -23,6 +23,7 @@ import (
 	"github.com/distr-sh/distr/internal/server"
 	"github.com/distr-sh/distr/internal/tracers"
 	"github.com/go-chi/chi/v5"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-mailx/mailx"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
@@ -219,6 +220,9 @@ func (r *Registry) GetMetricsRouter() http.Handler {
 
 	h := promhttp.HandlerFor(r.promRegistry, promhttp.HandlerOpts{})
 	m.Get("/metrics", h.ServeHTTP)
+	if env.MetricsPprofEnabled() {
+		m.Mount("/debug", chimiddleware.Profiler())
+	}
 	return m
 }
 

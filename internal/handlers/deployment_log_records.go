@@ -59,8 +59,8 @@ func exportDeploymentLogsHandler(r *http.Request) (respond.Responder, error) {
 		return respond.BadRequest(err.Error()), nil
 	} else if dt, err := db.GetDeploymentTargetForDeploymentID(ctx, deployment.ID); err != nil {
 		return nil, fmt.Errorf("failed to get deployment target: %w", err)
-	} else if secrets, err := db.GetSecretsForDeploymentTarget(ctx, dt.DeploymentTarget); err != nil {
-		return nil, fmt.Errorf("failed to get secrets: %w", err)
+	} else if redactor, err := queryTimeRedactor(ctx, dt.DeploymentTarget); err != nil {
+		return nil, err
 	} else {
 		var records iter.Seq2[logstore.DeploymentLogRecord, error] = noRecords
 		if !queryRange.IsEmpty() {
@@ -76,10 +76,9 @@ func exportDeploymentLogsHandler(r *http.Request) (respond.Responder, error) {
 		}
 
 		filename := fmt.Sprintf("%s_%s.log", time.Now().Format("2006-01-02"), strings.Join(resources, "_"))
-		replacer := secretReplacer(secrets)
 		return logExport(filename, records, func(record logstore.DeploymentLogRecord) string {
 			return fmt.Sprintf("[%s] [%s] %s\n",
-				record.Timestamp.Format(time.RFC3339), record.Severity, replacer.Replace(record.Body))
+				record.Timestamp.Format(time.RFC3339), record.Severity, redactor.Redact(record.Body))
 		}), nil
 	}
 }
@@ -102,8 +101,8 @@ func getDeploymentLogsHandler(r *http.Request) (respond.Responder, error) {
 		return respond.JSON([]api.DeploymentLogRecord{}), nil
 	} else if dt, err := db.GetDeploymentTargetForDeploymentID(ctx, deployment.ID); err != nil {
 		return nil, fmt.Errorf("failed to get deployment target: %w", err)
-	} else if secrets, err := db.GetSecretsForDeploymentTarget(ctx, dt.DeploymentTarget); err != nil {
-		return nil, fmt.Errorf("failed to get secrets: %w", err)
+	} else if redactor, err := queryTimeRedactor(ctx, dt.DeploymentTarget); err != nil {
+		return nil, err
 	} else if records, err := util.SeqCollect(logstore.FromContext(ctx).QueryDeploymentLogRecords(
 		ctx, org.ID, logstore.DeploymentLogQuery{
 			DeploymentID: deployment.ID,
@@ -121,7 +120,6 @@ func getDeploymentLogsHandler(r *http.Request) (respond.Responder, error) {
 			return nil, fmt.Errorf("failed to get log records: %w", err)
 		}
 	} else {
-		replacer := secretReplacer(secrets)
 		response := make([]api.DeploymentLogRecord, len(records))
 		for i, record := range records {
 			response[i] = api.DeploymentLogRecord{
@@ -131,23 +129,9 @@ func getDeploymentLogsHandler(r *http.Request) (respond.Responder, error) {
 				Resource:             record.Resource,
 				Timestamp:            record.Timestamp,
 				Severity:             record.Severity,
-				Body:                 replacer.Replace(record.Body),
+				Body:                 redactor.Redact(record.Body),
 			}
 		}
 		return respond.JSON(response), nil
 	}
-}
-
-func secretReplacer(secrets []types.SecretWithUpdatedBy) *strings.Replacer {
-	pairs := make([]string, 0, 2*len(secrets))
-	for _, secret := range secrets {
-		if secret.Value == "" {
-			continue
-		}
-		pairs = append(pairs, string(secret.Value), "********")
-	}
-	if len(pairs) == 0 {
-		return strings.NewReplacer()
-	}
-	return strings.NewReplacer(pairs...)
 }

@@ -11,8 +11,8 @@
           [title]="quota.isLimitReached() ? 'Limit reached' : ''"
           type="button"
           id="createDeploymentTargetButton2"
-          class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
-          <fa-icon [icon]="plusIcon" class="text-gray-500 dark:text-gray-400 mr-2" />
+          class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:w-auto dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+          <fa-icon [icon]="plusIcon" class="mr-2 text-gray-500 dark:text-gray-400" />
           New Deployment
         </button>
       }
@@ -27,9 +27,9 @@
     @let isCollapsed = customerOrgId && collapsedCustomerIds().includes(customerOrgId);
 
     @if ((auth.isVendor() || auth.isPartner()) && customerDeploymentTargets.customerOrganization; as customer) {
-      <div class="flex flex-row gap-2 items-start mb-3 mt-6" [class.items-center]="isCollapsed">
+      <div class="mt-6 mb-3 flex flex-row items-start gap-2" [class.items-center]="isCollapsed">
         <button
-          class="inline-flex items-center text-gray-900 text-xl dark:text-white"
+          class="inline-flex items-center text-xl text-gray-900 dark:text-white"
           (click)="toggleCustomerCollapsed(customer.id)">
           <fa-icon
             [icon]="faChevronDown"
@@ -37,13 +37,13 @@
             class="transition duration-150 ease-in-out" />
         </button>
         <div
-          class="flex gap-2 items-center"
+          class="flex items-center gap-2"
           [class.flex-col]="!isCollapsed"
           [class.items-start]="!isCollapsed"
           [class.gap-8]="isCollapsed">
-          <h2 class="text-xl font-extrabold leading-none tracking-tight text-gray-900 md:text-2xl dark:text-white">
+          <h2 class="text-xl leading-none font-extrabold tracking-tight text-gray-900 md:text-2xl dark:text-white">
             @if (customer.imageId) {
-              <img class="inline size-8 rounded-sm me-1" [attr.src]="customer.imageId | secureImage | async" alt="" />
+              <img class="me-1 inline size-8 rounded-sm" [attr.src]="customer.imageId | secureImage | async" alt="" />
             }
 
             {{ customer.name }}

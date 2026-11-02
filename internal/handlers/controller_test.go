@@ -4,19 +4,20 @@ import (
 	"testing"
 
 	"github.com/distr-sh/distr/api"
+	"github.com/distr-sh/distr/internal/redact"
 	. "github.com/onsi/gomega"
 )
 
 func TestSanitizeLogRecords(t *testing.T) {
 	t.Run("nil pointer is a no-op", func(t *testing.T) {
 		g := NewWithT(t)
-		g.Expect(func() { sanitizeLogRecords(nil) }).NotTo(Panic())
+		g.Expect(func() { sanitizeLogRecords(nil, redact.New()) }).NotTo(Panic())
 	})
 
 	t.Run("empty slice remains empty", func(t *testing.T) {
 		g := NewWithT(t)
 		records := []api.DeploymentLogRecord{}
-		records = sanitizeLogRecords(records)
+		records = sanitizeLogRecords(records, redact.New())
 		g.Expect(records).To(BeEmpty())
 	})
 
@@ -26,7 +27,7 @@ func TestSanitizeLogRecords(t *testing.T) {
 			{Body: "hello world"},
 			{Body: "another log line"},
 		}
-		records = sanitizeLogRecords(records)
+		records = sanitizeLogRecords(records, redact.New())
 		g.Expect(records).To(HaveLen(2))
 		g.Expect(records[0].Body).To(Equal("hello world"))
 		g.Expect(records[1].Body).To(Equal("another log line"))
@@ -39,7 +40,7 @@ func TestSanitizeLogRecords(t *testing.T) {
 			{Body: "\x00leading"},
 			{Body: "trailing\x00"},
 		}
-		records = sanitizeLogRecords(records)
+		records = sanitizeLogRecords(records, redact.New())
 		g.Expect(records).To(HaveLen(3))
 		g.Expect(records[0].Body).To(Equal("hello"))
 		g.Expect(records[1].Body).To(Equal("leading"))
@@ -53,7 +54,7 @@ func TestSanitizeLogRecords(t *testing.T) {
 			{Body: "\x00\x00\x00"},
 			{Body: "keep me too"},
 		}
-		records = sanitizeLogRecords(records)
+		records = sanitizeLogRecords(records, redact.New())
 		g.Expect(records).To(HaveLen(2))
 		g.Expect(records[0].Body).To(Equal("keep me"))
 		g.Expect(records[1].Body).To(Equal("keep me too"))
@@ -65,7 +66,7 @@ func TestSanitizeLogRecords(t *testing.T) {
 			{Body: ""},
 			{Body: "non-empty"},
 		}
-		records = sanitizeLogRecords(records)
+		records = sanitizeLogRecords(records, redact.New())
 		g.Expect(records).To(HaveLen(1))
 		g.Expect(records[0].Body).To(Equal("non-empty"))
 	})

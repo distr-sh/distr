@@ -95,22 +95,29 @@ func ControllerDomainOrDefault(ctx context.Context, orgID uuid.UUID, b *types.Or
 }
 
 func RegistryDomainOrDefault(ctx context.Context, orgID uuid.UUID, b *types.OrganizationBranding) string {
-	return registryDomainOrDefault(customDomains(ctx, orgID, nil), b)
+	if d := RegistryDomain(ctx, orgID, b); d != nil {
+		return *d
+	}
+	return env.RegistryHost()
 }
 
-func registryDomainOrDefault(vendorDomains []types.CustomDomain, b *types.OrganizationBranding) string {
+func RegistryDomain(ctx context.Context, orgID uuid.UUID, b *types.OrganizationBranding) *string {
+	return registryDomain(customDomains(ctx, orgID, nil), b)
+}
+
+func registryDomain(vendorDomains []types.CustomDomain, b *types.OrganizationBranding) *string {
 	if d := domainOfType(vendorDomains, types.DomainTypeRegistry); d != nil {
-		return *d
+		return d
 	}
 	// Every custom domain serves registry traffic under /v2/ via the Caddy path routing, so the
 	// app domain is a valid registry host too.
 	if d := domainOfType(vendorDomains, types.DomainTypeApp); d != nil {
-		return *d
+		return d
 	}
 	if b != nil && b.RegistryDomain != nil {
-		return *b.RegistryDomain
+		return b.RegistryDomain
 	}
-	return env.RegistryHost()
+	return nil
 }
 
 // customDomains returns the domains that may be used in outbound URLs, which is why it drops the

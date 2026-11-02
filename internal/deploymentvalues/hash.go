@@ -37,7 +37,7 @@ func RenderAndHash(
 		d.GetEnvFileData(),
 		secrets,
 		licenseKeys,
-		escapeNewlines,
+		EscapeNewlines,
 	); err != nil {
 		return result, err
 	}

@@ -40,7 +40,9 @@ func UserAccountsRouter(r chiopenapi.Router) {
 			Post("/", respond.Handler(createUserAccountHandler)).
 			With(option.Description("Create a new user account")).
 			With(option.Request(api.CreateUserAccountRequest{})).
-			With(option.Response(http.StatusOK, api.CreateUserAccountResponse{}))
+			With(option.Response(http.StatusOK, api.CreateUserAccountResponse{})).
+			With(option.Response(http.StatusFailedDependency, api.CreateUserAccountResponse{},
+				option.ContentDescription("The user account was created but the invitation email could not be sent")))
 		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Route("/{userId}", func(r chiopenapi.Router) {
 			type UserAccountRequest struct {
 				UserId string `json:"-" path:"userId"`
@@ -75,7 +77,9 @@ func UserAccountsRouter(r chiopenapi.Router) {
 				Post("/invite", respond.Handler(resendUserInviteHandler)).
 				With(option.Description("Resend user invite")).
 				With(option.Request(UserAccountRequest{})).
-				With(option.Response(http.StatusOK, api.CreateUserAccountResponse{}))
+				With(option.Response(http.StatusOK, api.CreateUserAccountResponse{})).
+				With(option.Response(http.StatusFailedDependency, "", option.ContentType("text/plain"),
+					option.ContentDescription("The invitation email could not be sent")))
 		})
 	})
 }
@@ -134,10 +138,11 @@ func createUserAccountHandler(r *http.Request) (respond.Responder, error) {
 	// An invite link lets its holder set the account's password, so the one in the response is only for an account
 	// created here.
 	var emailInviteURL, responseInviteURL string
+	var organization *types.OrganizationWithBranding
 
 	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
-		organization, err := db.GetOrganizationWithBranding(ctx, *auth.CurrentOrgID())
-		if err != nil {
+		var err error
+		if organization, err = db.GetOrganizationWithBranding(ctx, *auth.CurrentOrgID()); err != nil {
 			return nil, fmt.Errorf("failed to get org with branding: %w", err)
 		} else if body.UserRole != types.UserRoleAdmin && !organization.SubscriptionType.IsPro() {
 			return respond.Forbidden("creating non-admin users requires a pro subscription"), nil
@@ -187,25 +192,29 @@ func createUserAccountHandler(r *http.Request) (respond.Responder, error) {
 			}
 		}
 
-		if err := mailsending.SendUserInviteMail(
-			ctx,
-			userAccount,
-			*organization,
-			body.CustomerOrganizationID,
-			emailInviteURL,
-		); err != nil {
-			return nil, fmt.Errorf("failed to send user invite mail: %w", err)
-		}
-
 		return nil, nil
 	}); resp != nil || err != nil {
 		return resp, err
+	}
+
+	// The mail is sent after the commit, so that a failing mail server cannot undo the user.
+	response := api.CreateUserAccountResponse{
+		User: mapping.UserAccountToAPI(userAccount.AsUserAccountWithRole(
+			body.UserRole, body.CustomerOrganizationID, body.PartnerOrganizationID, time.Now())),
+		InviteURL: responseInviteURL,
+	}
+	if err := mailsending.SendUserInviteMail(
+		ctx,
+		userAccount,
+		*organization,
+		body.CustomerOrganizationID,
+		emailInviteURL,
+	); errors.Is(err, mailsending.ErrInviteMailNotSent) {
+		return respond.JSON(response).WithStatus(http.StatusFailedDependency), nil
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to send user invite mail: %w", err)
 	} else {
-		return respond.JSON(api.CreateUserAccountResponse{
-			User: mapping.UserAccountToAPI(userAccount.AsUserAccountWithRole(
-				body.UserRole, body.CustomerOrganizationID, body.PartnerOrganizationID, time.Now())),
-			InviteURL: responseInviteURL,
-		}), nil
+		return respond.JSON(response), nil
 	}
 }
 
@@ -271,10 +280,9 @@ func getVerifiedCustomerOrganization(
 		return nil, customerDoesNotExist, nil
 	}
 
-	// Partner users can only create users in customers assigned to their partner org.
 	partnerOrgID := auth.CurrentPartnerOrgID()
 	if partnerOrgID != nil && !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
-		return nil, notAssignedToPartner, nil
+		return nil, customerDoesNotExist, nil
 	}
 
 	return co, nil, nil
@@ -379,7 +387,9 @@ func resendUserInviteHandler(r *http.Request) (respond.Responder, error) {
 		*organization,
 		userAccount.CustomerOrganizationID,
 		emailInviteURL,
-	); err != nil {
+	); errors.Is(err, mailsending.ErrInviteMailNotSent) {
+		return respond.Error(http.StatusFailedDependency, "the invitation email could not be sent"), nil
+	} else if err != nil {
 		return nil, fmt.Errorf("failed to send user invite mail: %w", err)
 	} else {
 		return respond.JSON(api.CreateUserAccountResponse{User: mapping.UserAccountToAPI(*userAccount)}), nil

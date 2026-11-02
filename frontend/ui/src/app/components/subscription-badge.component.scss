@@ -16,7 +16,7 @@
 // triple the rules below. The gray of the base rule is what community and a running trial get,
 // since neither is a paid plan.
 :host {
-  @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium capitalize;
+  @apply inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium capitalize;
   @apply bg-gray-100 text-gray-800;
   border: 1px solid color-mix(in oklab, currentcolor 30%, transparent);
 

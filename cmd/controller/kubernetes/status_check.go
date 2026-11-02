@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"sync"
@@ -129,39 +130,57 @@ func CheckReleaseStatus(ctx context.Context, namespace, releaseName string) (str
 		return "", fmt.Errorf("could not get helm manifest: %w", err)
 	}
 	for _, resource := range resources {
-		logger.Sugar().Debugf("check status for %v %v", resource.GetKind(), resource.GetName())
-		if err := CheckStatus(ctx, namespace, resource); err != nil {
+		resourceNamespace := cmp.Or(resource.GetNamespace(), namespace)
+		if err := CheckStatus(ctx, resourceNamespace, resource); err != nil {
 			return "", fmt.Errorf("resource status error: %w", err)
 		}
 	}
 	return fmt.Sprintf("status check passed. %v resources healthy", len(resources)), nil
 }
 
-func CheckStatus(ctx context.Context, namespace string, resource *unstructured.Unstructured) error {
-	switch resource.GetKind() {
-	case "Deployment":
+var statusCheckers = map[string]func(ctx context.Context, namespace string, resource *unstructured.Unstructured) error{
+	"Deployment": func(ctx context.Context, namespace string, resource *unstructured.Unstructured) error {
 		if deployment, err := k8sClient.AppsV1().Deployments(namespace).
 			Get(ctx, resource.GetName(), metav1.GetOptions{}); err != nil {
 			return err
 		} else if deployment.Status.ReadyReplicas < *deployment.Spec.Replicas {
 			return ReplicasError(resource, deployment.Status.ReadyReplicas, *deployment.Spec.Replicas)
 		}
-	case "StatefulSet":
+		return nil
+	},
+	"StatefulSet": func(ctx context.Context, namespace string, resource *unstructured.Unstructured) error {
 		if statefulSet, err := k8sClient.AppsV1().StatefulSets(namespace).
 			Get(ctx, resource.GetName(), metav1.GetOptions{}); err != nil {
 			return err
 		} else if statefulSet.Status.ReadyReplicas < *statefulSet.Spec.Replicas {
 			return ReplicasError(resource, statefulSet.Status.ReadyReplicas, *statefulSet.Spec.Replicas)
 		}
-	case "DaemonSet":
+		return nil
+	},
+	"DaemonSet": func(ctx context.Context, namespace string, resource *unstructured.Unstructured) error {
 		if daemonSet, err := k8sClient.AppsV1().DaemonSets(namespace).
 			Get(ctx, resource.GetName(), metav1.GetOptions{}); err != nil {
 			return err
 		} else if daemonSet.Status.NumberUnavailable > 0 {
 			return ReplicasError(resource, daemonSet.Status.NumberReady, daemonSet.Status.DesiredNumberScheduled)
 		}
+		return nil
+	},
+}
+
+func CheckStatus(ctx context.Context, namespace string, resource *unstructured.Unstructured) error {
+	logger := logger.With(
+		zap.String("resourceKind", resource.GetKind()),
+		zap.String("resourceNamespace", namespace),
+		zap.String("resourceName", resource.GetName()))
+
+	if checker, ok := statusCheckers[resource.GetKind()]; !ok {
+		logger.Debug("status check not implemented for this resource kind")
+		return nil
+	} else {
+		logger.Debug("checking status")
+		return checker(ctx, namespace, resource)
 	}
-	return nil
 }
 
 func ReplicasError(resource *unstructured.Unstructured, ready, desired int32) error {

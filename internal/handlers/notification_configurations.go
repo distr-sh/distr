@@ -27,13 +27,13 @@ func UpdateNotificationConfigurationsRouter(r chiopenapi.Router) {
 		With(option.Request(customerScopeQuery{})).
 		With(option.Response(http.StatusOK, []api.UpdateNotificationConfiguration{}))
 
-	r.With(middleware.RequireReadWriteOrAdmin).
+	r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 		Post("/", respond.Handler(createUpdateNotificationConfigurationHandler)).
 		With(option.Description("create a new update notification configuration")).
 		With(option.Request(api.CreateUpdateNotificationConfigurationRequest{})).
 		With(option.Response(http.StatusOK, api.UpdateNotificationConfiguration{}))
 
-	r.With(middleware.RequireReadWriteOrAdmin).
+	r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 		Route("/{id}", func(r chiopenapi.Router) {
 			r.Put("/", respond.Handler(updateUpdateNotificationConfigurationHandler)).
 				With(option.Description("update an existing update notification configuration")).

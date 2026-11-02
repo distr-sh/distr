@@ -1,8 +1,8 @@
 <div class="distr-card font-medium text-gray-900 dark:text-white">
-  <div class="mx-4 my-3 flex items-center min-w-0">
+  <div class="mx-4 my-3 flex min-w-0 items-center">
     <div class="min-w-0">
       <a routerLink="/support-bundles" class="hover:underline">
-        <h3 class="font-bold truncate" [title]="customerName()">
+        <h3 class="truncate font-bold" [title]="customerName()">
           {{ customerName() }}
         </h3>
       </a>
@@ -14,13 +14,13 @@
     <ul class="overflow-hidden">
       @for (bundle of bundles(); track bundle.id) {
         <li
-          class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-200 dark:border-gray-600 cursor-pointer">
+          class="cursor-pointer border-t border-gray-200 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700">
           <a [routerLink]="'/support-bundles/' + bundle.id" class="block px-4 py-2">
             <div class="flex items-center gap-3 text-sm">
-              <div class="flex-1 min-w-0 truncate">
+              <div class="min-w-0 flex-1 truncate">
                 {{ bundle.title || bundle.id.substring(0, 8) }}
               </div>
-              <div class="flex items-center gap-2 shrink-0">
+              <div class="flex shrink-0 items-center gap-2">
                 <span class="text-xs text-gray-500 dark:text-gray-400">{{ bundle.resourceCount }} resources</span>
                 <app-support-bundle-status-badge [status]="bundle.status" />
               </div>
@@ -30,7 +30,7 @@
       }
     </ul>
   } @else {
-    <div class="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm p-4">
+    <div class="flex flex-1 items-center justify-center p-4 text-sm text-gray-500 dark:text-gray-400">
       No support bundles.
     </div>
   }

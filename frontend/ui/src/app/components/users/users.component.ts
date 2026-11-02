@@ -1,16 +1,5 @@
 import {AsyncPipe, DatePipe} from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  inject,
-  input,
-  output,
-  signal,
-  TemplateRef,
-  viewChild,
-} from '@angular/core';
+import {Component, computed, DestroyRef, inject, input, output, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {UserAccountWithRole, UserRole} from '@distr-sh/distr-sdk';
@@ -32,13 +21,12 @@ import {filteredByFormControl} from '../../../util/filter';
 import {UserRoleLabelPipe} from '../../../util/user-role';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {PlaceholderDirective} from '../../directives/placeholder.directive';
-import {RequireVendorDirective} from '../../directives/required-role.directive';
 import {AuthService} from '../../services/auth.service';
 import {ImageUploadService} from '../../services/image-upload.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
-import {UsersService} from '../../services/users.service';
+import {isInviteMailNotSentError, UsersService} from '../../services/users.service';
 import {isProSubscription} from '../../types/subscription';
 import {AlertComponent} from '../alert/alert.component';
 import {AvatarComponent} from '../avatar.component';
@@ -54,7 +42,6 @@ import {UserRoleSelectComponent} from '../user-role-select.component';
     AsyncPipe,
     DatePipe,
     ReactiveFormsModule,
-    RequireVendorDirective,
     AutotrimDirective,
     PlaceholderDirective,
     AvatarComponent,
@@ -65,7 +52,6 @@ import {UserRoleSelectComponent} from '../user-role-select.component';
     SearchBarComponent,
     AlertComponent,
   ],
-  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './users.component.html',
 })
 export class UsersComponent {
@@ -120,7 +106,12 @@ export class UsersComponent {
     name: this.fb.control<string | undefined>(undefined),
     userRole: this.fb.control<UserRole>('admin', Validators.required),
   });
-  protected inviteUrl: string | null = null;
+  protected readonly inviteUrl = signal<string | null>(null);
+  protected readonly inviteMailNotSentUser = signal<UserAccountWithRole | null>(null);
+  protected readonly inviteMailNotSentLabel = computed(() => {
+    const user = this.inviteMailNotSentUser();
+    return user ? this.userLabel(user) : null;
+  });
 
   protected readonly organization = toSignal(this.organizationService.get());
 
@@ -224,27 +215,35 @@ export class UsersComponent {
             partnerOrganizationId: this.partnerOrganizationId(),
           })
         );
-        this.inviteUrl = result.inviteUrl ?? null;
-        if (!this.inviteUrl) {
-          const label =
-            result.user.customerOrganizationId !== undefined
-              ? 'Customer'
-              : result.user.partnerOrganizationId !== undefined
-                ? 'Partner'
-                : 'User';
-          this.toast.success(`${label} has been added to the organization`);
+        this.inviteUrl.set(result.inviteUrl ?? null);
+        if (!result.inviteUrl) {
+          this.toast.success(`${this.userLabel(result.user)} has been added to the organization`);
           this.closeInviteDialog();
         }
         this.refresh.emit();
       } catch (e) {
-        const msg = getFormDisplayedError(e);
-        if (msg) {
-          this.toast.error(msg);
+        if (isInviteMailNotSentError(e)) {
+          this.inviteUrl.set(e.error.inviteUrl ?? null);
+          this.inviteMailNotSentUser.set(e.error.user);
+          this.refresh.emit();
+        } else {
+          const msg = getFormDisplayedError(e);
+          if (msg) {
+            this.toast.error(msg);
+          }
         }
       } finally {
         this.inviteFormLoading.set(false);
       }
     }
+  }
+
+  private userLabel(user: UserAccountWithRole): string {
+    return user.customerOrganizationId !== undefined
+      ? 'Customer'
+      : user.partnerOrganizationId !== undefined
+        ? 'Partner'
+        : 'User';
   }
 
   public async uploadImage(data: UserAccountWithRole) {
@@ -289,13 +288,15 @@ export class UsersComponent {
 
   public closeInviteDialog(): void {
     this.modalRef?.close();
-    this.inviteUrl = null;
+    this.inviteUrl.set(null);
+    this.inviteMailNotSentUser.set(null);
     this.inviteForm.reset();
   }
 
   public copyInviteUrl(): void {
-    if (this.inviteUrl) {
-      navigator.clipboard.writeText(this.inviteUrl);
+    const inviteUrl = this.inviteUrl();
+    if (inviteUrl) {
+      navigator.clipboard.writeText(inviteUrl);
       this.toast.success('Invite URL has been copied');
     }
   }

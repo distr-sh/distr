@@ -5,6 +5,7 @@ import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faBoxesStacked, faChevronDown} from '@fortawesome/free-solid-svg-icons';
 import {map, of, switchMap} from 'rxjs';
+import {refreshInBackground} from '../../util/refresh';
 import {PageComponent} from '../components/page.component';
 import {CustomOidcComponent} from '../organization-settings/custom-oidc.component';
 import {ContextService} from '../services/context.service';
@@ -56,6 +57,12 @@ export class CustomerSettingsComponent {
   protected readonly dropdownTriggerButton = viewChild<ElementRef<HTMLElement>>('dropdownTriggerButton');
   protected readonly breadcrumbDropdown = signal(false);
   breadcrumbDropdownWidth = 0;
+
+  constructor() {
+    if (this.route.snapshot.paramMap.has('customerOrganizationId')) {
+      refreshInBackground(this.customerOrganizationsService.refresh());
+    }
+  }
 
   protected toggleBreadcrumbDropdown() {
     this.breadcrumbDropdown.update((v) => !v);

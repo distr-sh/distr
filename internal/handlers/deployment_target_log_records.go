@@ -33,6 +33,8 @@ func getDeploymentTargetLogRecordsHandler(r *http.Request) (respond.Responder, e
 		return respond.BadRequest(err.Error()), nil
 	} else if queryRange.IsEmpty() {
 		return respond.JSON(mapping.List(nil, mapping.DeploymentTargetLogRecordToAPI)), nil
+	} else if redactor, err := queryTimeRedactor(ctx, deploymentTarget.DeploymentTarget); err != nil {
+		return nil, err
 	} else if records, err := util.SeqCollect(logstore.FromContext(ctx).QueryDeploymentTargetLogRecords(
 		ctx, org.ID, logstore.DeploymentTargetLogQuery{
 			DeploymentTargetID: deploymentTarget.ID,
@@ -49,6 +51,9 @@ func getDeploymentTargetLogRecordsHandler(r *http.Request) (respond.Responder, e
 			return nil, fmt.Errorf("failed to get deployment target log records: %w", err)
 		}
 	} else {
+		for i := range records {
+			records[i].Body = redactor.Redact(records[i].Body)
+		}
 		return respond.JSON(mapping.List(records, mapping.DeploymentTargetLogRecordToAPI)), nil
 	}
 }
@@ -60,6 +65,8 @@ func exportDeploymentTargetLogRecordsHandler(r *http.Request) (respond.Responder
 
 	if queryRange, err := parseLogQueryRange(r, org.SubscriptionType); err != nil {
 		return respond.BadRequest(err.Error()), nil
+	} else if redactor, err := queryTimeRedactor(ctx, deploymentTarget.DeploymentTarget); err != nil {
+		return nil, err
 	} else {
 		var records iter.Seq2[logstore.DeploymentTargetLogRecord, error] = noRecords
 		if !queryRange.IsEmpty() {
@@ -78,7 +85,7 @@ func exportDeploymentTargetLogRecordsHandler(r *http.Request) (respond.Responder
 		filename := fmt.Sprintf("%s_controller.log", time.Now().Format("2006-01-02"))
 		return logExport(filename, records, func(record logstore.DeploymentTargetLogRecord) string {
 			return fmt.Sprintf("%s\t%s\t%s\n",
-				record.Timestamp.Format(time.RFC3339), record.Severity, strings.TrimSpace(record.Body))
+				record.Timestamp.Format(time.RFC3339), record.Severity, strings.TrimSpace(redactor.Redact(record.Body)))
 		}), nil
 	}
 }

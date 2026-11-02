@@ -74,6 +74,9 @@ func (r *registry) v2(resp http.ResponseWriter, req *http.Request) *regError {
 		}
 	}
 
+	if isToken(req) {
+		return handleToken(resp, req)
+	}
 	if isBlob(req) {
 		return r.blobs.handle(resp, req)
 	}
@@ -120,7 +123,7 @@ func (r *registry) root(resp http.ResponseWriter, req *http.Request) {
 		default:
 			log.Debug("registry request rejected")
 		}
-		_ = rerr.Write(resp)
+		_ = rerr.Write(resp, req)
 	}
 }
 
@@ -180,6 +183,7 @@ func NewDefault(
 			// The OCI registry always uses the primary db: container clients rely on read-after-write
 			// consistency (push then pull/HEAD, multi-arch, signing), which a lagging replica would break.
 			middleware.ContextInjectorMiddleware(pool, nil, mailer, nil, nil, nil),
+			passwordGrant,
 			middleware.Split(
 				requiresAuthentication,
 				middleware.Chain(

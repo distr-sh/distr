@@ -7,16 +7,10 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
-// BlobHandler represents a minimal blob storage backend, capable of serving
-// blob contents.
+// BlobHandler represents a blob storage backend capable of serving blob contents and metadata.
 type BlobHandler interface {
 	// Get gets the blob contents, or errNotFound if the blob wasn't found.
 	Get(ctx context.Context, repo string, h digest.Digest, allowRedirect bool) (io.ReadCloser, error)
-}
-
-// BlobStatHandler is an extension interface representing a blob storage
-// backend that can serve metadata about blobs.
-type BlobStatHandler interface {
 	// Stat returns the size of the blob, or errNotFound if the blob wasn't
 	// found, or redirectError if the blob can be found elsewhere.
 	Stat(ctx context.Context, repo string, h digest.Digest) (int64, error)

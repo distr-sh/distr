@@ -15,14 +15,14 @@ import {SecureImagePipe} from '../../../util/secureImage';
         @if (application().imageId; as imageId) {
           <img class="size-8 rounded-sm" [attr.src]="imageId | secureImage | async" alt="" />
         } @else {
-          <fa-icon class="text-gray-500 dark:text-gray-400 text-2xl" [icon]="faShip" />
+          <fa-icon class="text-2xl text-gray-500 dark:text-gray-400" [icon]="faShip" />
         }
       </div>
-      <div class="flex-1 min-w-0">
-        <div class="font-medium text-gray-900 dark:text-white truncate break-all" [title]="application().name">
+      <div class="min-w-0 flex-1">
+        <div class="truncate font-medium break-all text-gray-900 dark:text-white" [title]="application().name">
           {{ application().name }}
         </div>
-        <div class="text-gray-500 dark:text-gray-400 text-xs truncate break-all" [title]="applicationVersionName()">
+        <div class="truncate text-xs break-all text-gray-500 dark:text-gray-400" [title]="applicationVersionName()">
           {{ applicationVersionName() }}
         </div>
       </div>

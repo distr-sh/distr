@@ -18,6 +18,9 @@ tags:
   - Self-Hosted
 ---
 
+import {Code} from '@astrojs/starlight/components';
+import dockerCompose from './2025-11-17-docker-compose-vs-kubernetes/docker-compose.yaml?raw';
+
 # Docker Compose vs Kubernetes: A Practical Decision Guide for Software Distribution
 
 Your first enterprise customer wants the software on-premise. Now you have to pick: Docker Compose or Kubernetes. That call ripples into sales velocity, support load, and how painful scaling gets two years in. The right answer depends less on orchestration theology than on who your customers actually are and what they're set up to run.
@@ -81,32 +84,7 @@ Multiply that across every support ticket for the next three years. Support team
 
 ### Docker Compose distribution architecture
 
-```yaml
-version: '3.8'
-
-services:
-  app:
-    image: registry.distr.sh/yourcompany/app:${VERSION:-latest}
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - LICENSE_KEY=${LICENSE_KEY}
-    ports:
-      - '80:8080'
-    volumes:
-      - app_data:/data
-    restart: unless-stopped
-
-  postgres:
-    image: postgres:14
-    environment:
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  app_data:
-  postgres_data:
-```
+<Code code={dockerCompose} lang="yaml" title="docker-compose.yaml" />
 
 That's roughly 80% of distribution use cases.
 

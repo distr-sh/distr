@@ -1,0 +1,191 @@
+---
+title: Docker Blue-Green Deployments
+description: Ship downtime-free deployments on Docker. Run two versions of an application side by side on one deployment target, shift traffic between them by weight and roll back instantly.
+slug: docs/controllers/docker-blue-green-deployments
+sidebar:
+  label: Docker Blue-Green Deployments
+  order: 7
+---
+
+import {Aside, Code, Steps, TabItem, Tabs} from '@astrojs/starlight/components';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import dockerBlueGreenDeploymentsLight from '~/assets/docs/controllers/configuration/docker-blue-green-deployments/docker-blue-green-deployments-light.webp';
+import dockerBlueGreenDeploymentsDark from '~/assets/docs/controllers/configuration/docker-blue-green-deployments/docker-blue-green-deployments-dark.webp';
+import proxyCompose from './docker-blue-green-deployments/proxy/docker-compose.yaml?raw';
+import proxyCaddyfile from './docker-blue-green-deployments/proxy/Caddyfile?raw';
+import proxyEnv from './docker-blue-green-deployments/proxy/.env?raw';
+import databaseCompose from './docker-blue-green-deployments/database/docker-compose.yaml?raw';
+import databaseEnv from './docker-blue-green-deployments/database/.env?raw';
+import backendCompose from './docker-blue-green-deployments/backend/docker-compose.yaml?raw';
+import backendEnv from './docker-blue-green-deployments/backend/.env?raw';
+
+Blue-green deployments update an application without downtime.
+The new version starts next to the one that currently serves traffic and only receives requests once it is healthy.
+No request fails during the switch, and the old version keeps running until you no longer need it.
+Rolling back means sending the traffic back, which causes no downtime either.
+
+With Distr you set this up on any Docker deployment target by splitting the application into several deployments: a reverse proxy, a database and two slots of your application called **blue** and **green**.
+A single controller manages all of them, so every step of a rollout is an ordinary deployment update in Distr.
+
+## How the blue-green setup is structured
+
+<ThemedImage
+  lightSrc={dockerBlueGreenDeploymentsLight}
+  darkSrc={dockerBlueGreenDeploymentsDark}
+  alt="Blue-green deployment diagram: on one deployment target, a Caddy proxy sends 90 percent of the requests to the blue slot on version 1.4.0 and 10 percent to the green slot on version 1.5.0, and both slots use the same database"
+  dropShadow={false}
+/>
+
+| Service    | Deployment                | Role                                                                                                                                     |
+| ---------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `caddy`    | Proxy                     | Receives all requests and splits them between the slots by weight. Its deployment creates the Docker network the other deployments join. |
+| `routing`  | Proxy                     | Hands Caddy new weights without restarting it.                                                                                           |
+| `postgres` | Database                  | Holds the data both slots share. It stays deployed for the lifetime of the setup.                                                        |
+| `backend`  | Backend with `SLOT=blue`  | One slot, running one version of your application.                                                                                       |
+| `backend`  | Backend with `SLOT=green` | The other slot, running the next version during a rollout.                                                                               |
+
+The blue and green slots are two deployments of the same Distr application, each on its own version.
+Distr runs every deployment as a Docker Compose project of its own, so the deployments reach each other through a shared Docker network that the proxy deployment creates and the others declare as `external`.
+
+The proxy in this guide is [Caddy](https://caddyserver.com/docs/), which supports weighted load balancing and health checks per slot.
+Any reverse proxy with weighted upstreams works the same way.
+The application in the slots is the backend of [hello-distr](https://github.com/distr-sh/hello-distr), our example application.
+
+## Prerequisites
+
+- A Docker deployment target. See [Create a Deployment](/docs/controllers/deployment/).
+
+To run your own application in the slots instead of the hello-distr backend, it needs an endpoint that answers with a 2xx status once the application is ready to serve requests. It must not publish host ports or set `container_name` either, since both slots run on the same host at the same time. Only the proxy publishes ports.
+
+## Step 1: Create the proxy application
+
+Create a Docker application named **Proxy** in Distr and add a version with the following Compose file and environment template.
+The Caddyfile tab shows the Caddy configuration that the Compose file embeds as the `caddyfile` config.
+
+<Tabs>
+  <TabItem label="docker-compose.yaml">
+    <Code code={proxyCompose} lang="yaml" />
+  </TabItem>
+  <TabItem label="Caddyfile">
+    <Code code={proxyCaddyfile} lang="txt" />
+  </TabItem>
+  <TabItem label=".env">
+    <Code code={proxyEnv} lang="dotenv" />
+  </TabItem>
+</Tabs>
+
+What each part does:
+
+- `networks.hello-distr.name` gives the shared network a fixed name. Without it, Compose prefixes the network name with the project name. Distr sets a different project name for every deployment, so the other deployments would not find the network. Replace `hello-distr` with a name unique to your application.
+- `caddy` is the proxy. It waits until the Caddyfile is in the `routing` volume, then serves it and never restarts while you shift traffic.
+- `routing` writes the Caddyfile into the `routing` volume, tells Caddy to reload it through the admin socket in the same volume and then keeps running. A weight change recreates only this container. If Caddy took the weights itself, every change would recreate the `caddy` container and drop all open connections, and Caddy has no production-ready way to watch its config file instead. After the reload, Caddy sends new requests according to the new weights and finishes the ones in flight.
+- `weighted_round_robin` splits the requests between the slots in proportion to `BLUE_WEIGHT` and `GREEN_WEIGHT`. A slot with weight `0` gets no new requests. Caddy also skips a slot whose health check on `health_uri` fails, so if a slot goes down during a rollout, the other one takes over its share.
+- `backend-blue` and `backend-green` are the network aliases the two slots register on the shared network. For your own application, adjust the port and `health_uri`.
+
+<Aside type="tip">
+  The weights are deployment variables, so you or your customer change them in
+  the Distr UI like any other configuration value. Distr records every change in
+  the [deployment history](/docs/controllers/deployment/#deployment-history).
+</Aside>
+
+## Step 2: Create the database application
+
+Keep the data both slots read and write in a deployment of its own, so replacing a slot leaves it alone.
+This example uses PostgreSQL. Create a Docker application named **Database** with this version:
+
+<Tabs>
+  <TabItem label="docker-compose.yaml">
+    <Code code={databaseCompose} lang="yaml" />
+  </TabItem>
+  <TabItem label=".env">
+    <Code code={databaseEnv} lang="dotenv" />
+  </TabItem>
+</Tabs>
+
+The password comes from a [Distr secret](/docs/controllers/secrets/), so the database and both slots share it and it never shows up in a deployment configuration. Since the slots put the password into a connection URL, choose one without characters that have a meaning in URLs, such as `/`, `#`, `@` or `:`.
+
+<Aside type="caution">
+  Undeploying a deployment removes its volumes. Keep the database deployment in
+  place across rollouts and only ever undeploy the slots.
+</Aside>
+
+## Step 3: Create the backend application
+
+Create a Docker application named **Backend**. Both slots run the same Compose file. A `SLOT` variable decides which alias the slot registers on the shared network and therefore which of the proxy's weights applies to it.
+
+<Tabs>
+  <TabItem label="docker-compose.yaml">
+    <Code code={backendCompose} lang="yaml" />
+  </TabItem>
+  <TabItem label=".env">
+    <Code code={backendEnv} lang="dotenv" />
+  </TabItem>
+</Tabs>
+
+Distr reports the Docker health check as the deployment's status, so a slot shows as **Healthy** once it can take traffic. The hello-distr backend answers on `/health` only once it reaches the database. Its image ships Python but neither `curl` nor `wget`, so the check calls the endpoint from Python. For your own application, use a command that exists in its image.
+
+Add one application version per release as usual, each pinning its image tag, for example `0.4.8` and `0.4.9`.
+
+## Step 4: Deploy the setup
+
+Create the first three deployments on the same deployment target. The green slot follows with the first rollout. For the first deployment, follow [Create a Deployment](/docs/controllers/deployment/). For the others, use **+ Deploy App** on the deployment target card.
+
+<Steps>
+
+1. Deploy the **Proxy** with `BLUE_WEIGHT=100` and `GREEN_WEIGHT=0`. It creates the shared network.
+
+2. Deploy the **Database**.
+
+3. Deploy the **Backend** with `SLOT=blue` and the version you currently ship, and name the deployment after its slot, for example `backend blue`.
+
+</Steps>
+
+The order matters only for the network. A deployment that joins it before it exists fails with `network hello-distr declared as external, but could not be found`, and the controller retries it on its next cycle until the proxy has created the network.
+
+Once all three deployments are **Healthy**, every request on port 80 goes to the blue slot, and `http://<host>/latest-message` answers with `hello distr!`.
+
+## Step 5: Roll out a new version
+
+<Steps>
+
+1. Deploy the **Backend** a second time with `SLOT=green` and the new version, and wait until the deployment is **Healthy**. Green now runs in the idle slot but gets no traffic yet.
+
+2. Update the proxy deployment to `BLUE_WEIGHT=90` and `GREEN_WEIGHT=10`. One in ten requests now reaches the new version. Watch its [logs and metrics](/docs/controllers/logs-and-metrics/) and raise its share in as many steps as you like.
+
+3. To switch over, update the proxy deployment to `BLUE_WEIGHT=0` and `GREEN_WEIGHT=100`. All requests now reach the new version, and the old one keeps running.
+
+4. If something goes wrong, set the weights back to `100` and `0` while the blue slot is still deployed. All traffic moves back to the old version at once, since nothing has to start.
+
+5. Once you trust the new version, undeploy the blue slot or keep it for the next rollout.
+
+</Steps>
+
+The slots take turns from then on. For the next release, update the idle slot to the new version (or deploy it again if you undeployed it) and repeat the weight changes in the opposite direction.
+
+<Aside type="caution">
+  Give a slot weight only after its deployment is **Healthy**. Caddy treats a
+  slot as up until its first health check fails, so a slot that is not running
+  yet still receives its share of requests for up to one health check interval.
+</Aside>
+
+## Keep both versions compatible with the data
+
+During a rollout both versions read and write the same database. Every database change a release brings has to work with the version before it:
+
+- Add columns and tables in one release and start using them in the next.
+- Remove what the old version still reads only in a release after the one that stopped reading it.
+- Run migrations in a way that does not lock tables the running version needs.
+
+A migration that breaks the old version also breaks the rollback, since rolling back only moves traffic and leaves the data as it is.
+
+## Automate the rollout
+
+Every step above is a deployment created or updated in Distr, so a release pipeline can run a rollout through the [Distr API](/docs/integrations/api/) or the [Distr SDK](/docs/integrations/sdk/). Leave [automatic updates](/docs/controllers/deployment/#automatic-updates) off for the two slots, since they would move both slots to the latest version at the same time.
+
+## Related
+
+- [Docker Environment Variables](/docs/controllers/docker-env/): define the environment templates used for the weights and the slot
+- [Secrets Management](/docs/controllers/secrets/): share credentials between the database and the slots
+- [Logs & Metrics](/docs/controllers/logs-and-metrics/): watch the new version while it receives a share of the traffic
+- [Mounting Configuration Files in Docker Compose](/blog/docker-compose-mount-config-files/) (blog post): ship a config file like the Caddyfile inside the Compose file
+- [Adding Cron Jobs to a Docker Compose application](/blog/docker-compose-cron-jobs/) (blog post): run scheduled jobs next to your application

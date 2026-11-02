@@ -20,7 +20,7 @@ func EnvFileReplaceSecrets(
 		return nil, nil
 	} else if tpl, err := parseTemplateBytes("envFile", data); err != nil {
 		return nil, fmt.Errorf("%w: deployment env file template parsing error: %w", ErrInvalidTemplate, err)
-	} else if td, err := getTemplateData(secrets, licenseKeys, withValueInterceptor(escapeNewlines)); err != nil {
+	} else if td, err := getTemplateData(secrets, licenseKeys, withValueInterceptor(EscapeNewlines)); err != nil {
 		return nil, fmt.Errorf("deployment env file template data error: %w", err)
 	} else if data, err := executeTemplate(tpl, td); err != nil {
 		return nil, fmt.Errorf("%w: deployment env file template execution error: %w", ErrInvalidTemplate, err)
@@ -29,6 +29,8 @@ func EnvFileReplaceSecrets(
 	}
 }
 
-func escapeNewlines(v string) string {
+// EscapeNewlines is how a secret appears in a rendered env file, and therefore in the environment
+// of a container that reads it unquoted.
+func EscapeNewlines(v string) string {
 	return strings.ReplaceAll(v, "\n", "\\n")
 }

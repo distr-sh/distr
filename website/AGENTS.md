@@ -1,7 +1,8 @@
 # Agent Instructions
 
-- For imports of Astro components or TypeScript data, always use `~/` and not relative paths.
-- Don't do any shortcuts by adding files to `.prettierignore` or similar.
-- Always use `pnpm` for package management and execute commands using `pnpm run`, don't use `npm` or `yarn`.
-- `pnpm format` deletes every image in `src/assets` that no page, post or component references (`pnpm images:prune`). Reference an image before you add it, and use `pnpm images:unused` to list orphans without deleting them.
-- Blog subheadings should always include a specific reference to the topic rather than using generic titles like "Architecture", "How It Works", or "Implementation". For example, use "How Traefik and Docker Swarm routing works" instead of "How It Works", or "Basic Docker Swarm routing architecture" instead of "Architecture".
+- Import Astro components and TypeScript data via `~/`, not relative paths.
+- Never add files to `.prettierignore` or similar as a shortcut.
+- Use `pnpm run`, never `npm` or `yarn`.
+- `pnpm format` deletes unreferenced images in `src/assets`. Reference an image before adding it; `pnpm images:unused` lists orphans.
+- Keep example files (Compose, `.env`, Helm, Dockerfile, configs) out of fenced code blocks. Save each one under its real name in a folder named after the page, import it with `?raw` and render it with `<Code>`.
+- Give blog subheadings a specific topic, e.g. "How Traefik and Docker Swarm routing works" instead of "How It Works".

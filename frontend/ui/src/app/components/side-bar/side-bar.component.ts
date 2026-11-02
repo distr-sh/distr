@@ -106,6 +106,7 @@ export class SideBarComponent {
   protected readonly licenseOverlayOpen = signal(false);
   protected readonly notificationsOverlayOpen = signal(false);
   protected readonly supportBundlesOverlayOpen = signal(false);
+  protected readonly advisoriesOverlayOpen = signal(false);
 
   protected readonly isAllTutorialsStarted =
     this.auth.isVendor() && this.auth.hasAnyRole('admin')
@@ -123,7 +124,7 @@ export class SideBarComponent {
   protected readonly isVendorBillingFeatureEnabled = this.featureFlags.isVendorBillingEnabled;
   protected readonly isPartnerManagementEnabled = this.featureFlags.isPartnerManagementEnabled;
 
-  public readonly isSubscriptionBannerVisible = input<boolean>();
+  public readonly isBannerVisible = input<boolean>();
   public readonly isSidebarVisible = input<boolean>();
 
   protected readonly hasSubscription = this.organizationService.hasSubscription;

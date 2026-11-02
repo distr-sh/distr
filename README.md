@@ -40,7 +40,7 @@ Distr is the open-source platform to ship self-hosted software. Start simple, sc
 
 Community Edition is free and Apache-2.0. Paid plans start at $80/month on Distr Cloud, or fully self-hosted with a license key. See https://distr.sh/pricing/.
 
-Check out the hosted version at https://distr.sh/get-started/.
+Check out the hosted version at https://distr.sh/onboarding/.
 
 ## Why Distr
 

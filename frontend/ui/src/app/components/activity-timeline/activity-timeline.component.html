@@ -1,5 +1,5 @@
 <div class="distr-panel">
-  <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+  <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
     @if (icon(); as icon) {
       <fa-icon [icon]="icon" class="mr-2 text-gray-500 dark:text-gray-400" />
     }
@@ -9,13 +9,13 @@
   @if (entries().length === 0) {
     <p class="text-sm text-gray-500 dark:text-gray-400">{{ emptyText() }}</p>
   } @else {
-    <ol class="relative border-s border-gray-200 dark:border-gray-600 ms-3">
+    <ol class="relative ms-3 border-s border-gray-200 dark:border-gray-600">
       @for (entry of entries(); track entry.id) {
-        <li class="mb-6 ms-8">
+        <li class="ms-8 mb-6">
           <app-avatar
             [image]="entry.userImageUrl"
             [name]="entry.userName"
-            class="absolute -start-4 size-8 rounded-full ring-8 ring-white dark:ring-gray-800 bg-gray-100 dark:bg-gray-700" />
+            class="absolute -inset-s-4 size-8 rounded-full bg-gray-100 ring-8 ring-white dark:bg-gray-700 dark:ring-gray-800" />
           <div class="text-sm text-gray-900 dark:text-white">
             <span class="font-medium">{{ entry.userName || 'Someone' }}</span>
             {{ entry.action }}
@@ -25,7 +25,7 @@
           </time>
           @if (entry.body) {
             <div
-              class="mt-2 p-3 text-sm text-gray-700 bg-gray-50 rounded-lg dark:bg-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+              class="mt-2 rounded-lg bg-gray-50 p-3 text-sm whitespace-pre-wrap text-gray-700 dark:bg-gray-700 dark:text-gray-300">
               {{ entry.body }}
             </div>
           }
@@ -43,12 +43,12 @@
         (keydown.control.enter)="$event.preventDefault(); submit()"
         (keydown.meta.enter)="$event.preventDefault(); submit()"
         class="distr-input"></textarea>
-      <div class="flex items-center justify-end gap-3 mt-3">
+      <div class="mt-3 flex items-center justify-end gap-3">
         <span class="text-xs text-gray-500 dark:text-gray-400">Ctrl + Enter</span>
         <button
           type="submit"
           [disabled]="submitting() || commentForm.invalid"
-          class="text-white inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
+          class="distr-btn-primary inline-flex items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-60">
           <fa-icon [icon]="faPaperPlane" class="mr-2" />
           Comment
         </button>

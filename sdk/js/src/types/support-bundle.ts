@@ -1,3 +1,5 @@
+import {DeploymentType} from './deployment';
+
 export type SupportBundleStatus = 'initialized' | 'created' | 'resolved' | 'canceled';
 
 export interface SupportBundleConfigurationEnvVar {
@@ -12,6 +14,7 @@ export interface CreateUpdateSupportBundleConfigurationRequest {
 export interface SupportBundleConfigurationScript {
   id: string;
   createdAt: string;
+  deploymentType: DeploymentType;
   name: string;
   description?: string;
   content: string;
@@ -19,6 +22,8 @@ export interface SupportBundleConfigurationScript {
 }
 
 export interface CreateUpdateSupportBundleConfigurationScriptRequest {
+  /** Defaults to `docker`. */
+  deploymentType?: DeploymentType;
   name: string;
   description?: string;
   content: string;
@@ -33,6 +38,7 @@ export interface SupportBundle {
   createdByUserAccountId?: string;
   createdByUserName?: string;
   createdByImageUrl?: string;
+  deploymentType: DeploymentType;
   title: string;
   description?: string;
   status: SupportBundleStatus;
@@ -45,6 +51,8 @@ export interface SupportBundle {
 }
 
 export interface CreateSupportBundleRequest {
+  /** Defaults to `docker`. */
+  deploymentType?: DeploymentType;
   title: string;
   description?: string;
 }
@@ -53,10 +61,18 @@ export interface CreateSupportBundleResponse extends SupportBundle {
   collectCommand: string;
 }
 
-export interface SupportBundleResource {
+export type SupportBundleResourceContentType = 'text/plain' | 'text/x-log' | 'application/yaml' | 'application/json';
+
+export interface SupportBundleResourceSummary {
   id: string;
   createdAt: string;
   name: string;
+  contentType: SupportBundleResourceContentType;
+  /** The size of the content in bytes. Missing for resources uploaded before it was recorded. */
+  size?: number;
+}
+
+export interface SupportBundleResource extends SupportBundleResourceSummary {
   content: string;
 }
 
@@ -70,7 +86,7 @@ export interface SupportBundleComment {
 }
 
 export interface SupportBundleDetail extends SupportBundle {
-  resources: SupportBundleResource[];
+  resources: SupportBundleResourceSummary[];
   comments: SupportBundleComment[];
   collectCommand?: string;
 }

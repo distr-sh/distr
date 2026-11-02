@@ -19,7 +19,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/registry/authz"
 	registryerror "github.com/distr-sh/distr/internal/registry/error"
@@ -29,15 +28,14 @@ type regError struct {
 	Status  int
 	Code    string
 	Message string
-	Header  http.Header
 	Error   error
 }
 
-func (r *regError) Write(resp http.ResponseWriter) error {
-	for key, values := range r.Header {
-		for _, value := range values {
-			resp.Header().Add(key, value)
-		}
+// Write answers the request with the error. A 401 carries the authentication challenge, since OCI
+// clients send their credentials only after they have seen it.
+func (r *regError) Write(resp http.ResponseWriter, req *http.Request) error {
+	if r.Status == http.StatusUnauthorized {
+		resp.Header().Set("WWW-Authenticate", bearerChallenge(req))
 	}
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteHeader(r.Status)
@@ -150,26 +148,18 @@ var regErrRateLimited = &regError{
 	Status:  http.StatusUnauthorized,
 	Code:    "UNAUTHORIZED",
 	Message: "anonymous pull rate limit exceeded, authenticate to raise it",
-	Header:  auth.ArtifactsAuthenticateHeader,
 }
 
 var regErrUnauthorized = &regError{
 	Status:  http.StatusUnauthorized,
 	Code:    "UNAUTHORIZED",
 	Message: "authentication required",
-	Header:  auth.ArtifactsAuthenticateHeader,
 }
 
-// regErrCredentialsRequired answers a request the registry refuses before it knows which artifact is
-// meant, the API version check being the one an OCI client makes first. The Docker CLI takes that
-// answer for every repository, so the message names the setup that pulls a public artifact anyway.
-// The challenge header is already on the response, since the authentication middleware writes it.
-var regErrCredentialsRequired = &regError{
-	Status: http.StatusUnauthorized,
-	Code:   "UNAUTHORIZED",
-	Message: "authentication required. A public artifact needs no credentials, but the Docker CLI pulls one " +
-		"only with the containerd image store, not with the legacy overlay2 storage driver: " +
-		"https://docs.docker.com/engine/storage/containerd/",
+var regErrUnsupportedGrantType = &regError{
+	Status:  http.StatusBadRequest,
+	Code:    "UNSUPPORTED",
+	Message: "unsupported grant type",
 }
 
 // regErrAuthz maps an authorization error of a route that names an artifact.

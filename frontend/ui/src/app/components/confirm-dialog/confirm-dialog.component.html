@@ -1,24 +1,24 @@
 @if (!isClosing()) {
   <div
-    class="relative p-4 w-full max-w-2xl max-h-full lg:mt-32"
+    class="relative max-h-full w-full max-w-2xl p-4 lg:mt-32"
     animate.enter="animate-fly-in-top"
     animate.leave="animate-fly-out-top"
     (animationend)="animationComplete()">
     <!-- Modal content -->
-    <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
+    <div class="relative rounded-lg bg-white shadow-sm dark:bg-gray-700">
       <!-- Modal header -->
-      <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+      <div class="flex items-center justify-between rounded-t border-b border-gray-200 p-4 md:p-5 dark:border-gray-600">
         <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Confirm</h3>
         <button
           type="button"
-          class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+          class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white"
           (click)="dialogRef.dismiss()">
           <fa-icon [icon]="faXmark" />
           <span class="sr-only">Close modal</span>
         </button>
       </div>
       <!-- Modal body -->
-      <div class="p-4 md:p-5 space-y-4">
+      <div class="space-y-4 p-4 md:p-5">
         @if (data.message?.alert; as alert) {
           <app-alert [type]="alert.type">{{ alert.message }}</app-alert>
         }
@@ -50,18 +50,18 @@
       </div>
       <!-- Modal footer -->
       <div
-        class="flex items-center justify-end p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600 gap-2">
+        class="flex items-center justify-end gap-2 rounded-b border-t border-gray-200 p-4 md:p-5 dark:border-gray-600">
         <button
           (click)="dialogRef.close(false)"
           type="button"
-          class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+          class="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
           {{ data.cancelLabel ?? 'Cancel' }}
         </button>
         <button
           (click)="dialogRef.close(true)"
           type="button"
           [disabled]="confirmDisabled()"
-          class="text-white distr-btn-primary">
+          class="distr-btn-primary text-white">
           {{ data.confirmLabel ?? 'Confirm' }}
         </button>
       </div>

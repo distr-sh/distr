@@ -26,44 +26,44 @@
     <div class="overflow-x-auto">
       <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
         @for (tutorial of tutorialsService.tutorialsProgress$ | async; track tutorial.id) {
-          <li class="py-3 px-6 sm:py-4">
+          <li class="px-6 py-3 sm:py-4">
             <div class="flex items-center">
               <div class="shrink-0 text-gray-900 dark:text-white">
-                <fa-icon class="text-xl inline-block h-5 w-5" [icon]="tutorial.icon" />
+                <fa-icon class="inline-block h-5 w-5 text-xl" [icon]="tutorial.icon" />
               </div>
-              <div class="flex-1 min-w-0 ms-4">
+              <div class="ms-4 min-w-0 flex-1">
                 <a
-                  class="font-medium text-gray-900 truncate dark:text-white hover:underline hover:text-blue-600 dark:hover:text-blue-500"
+                  class="truncate font-medium text-gray-900 hover:text-blue-600 hover:underline dark:text-white dark:hover:text-blue-500"
                   [routerLink]="
                     tutorial?.progress?.completedAt ? tutorial.completedRoute : ['/', 'tutorials', tutorial.id]
                   ">
                   {{ tutorial.name }}
                 </a>
                 @if (tutorial?.progress?.createdAt && !tutorial?.progress?.completedAt) {
-                  <span class="ml-4 me-2 distr-badge">In Progress</span>
+                  <span class="distr-badge me-2 ml-4">In Progress</span>
                 } @else if (tutorial?.progress?.completedAt) {
-                  <span class="ml-4 distr-badge distr-badge-success">
+                  <span class="distr-badge distr-badge-success ml-4">
                     <fa-icon [icon]="faCircleCheck" />
                     Completed
                   </span>
                 }
-                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   {{ tutorial.description }}
                 </div>
                 <div></div>
               </div>
-              <div class="flex justify-stretch sm:justify-end space-x-2.5">
+              <div class="flex justify-stretch space-x-2.5 sm:justify-end">
                 @if (tutorial?.progress?.completedAt) {
                   <a
                     [routerLink]="tutorial.completedRoute"
-                    class="flex-1 sm:flex-none inline-flex items-center justify-center text-white distr-btn-primary">
+                    class="distr-btn-primary inline-flex flex-1 items-center justify-center text-white sm:flex-none">
                     View
                     <fa-icon class="ml-2" [icon]="faArrowRight" />
                   </a>
                 } @else {
                   <a
                     [routerLink]="['/', 'tutorials', tutorial.id]"
-                    class="flex-1 sm:flex-none inline-flex items-center justify-center text-white distr-btn-primary">
+                    class="distr-btn-primary inline-flex flex-1 items-center justify-center text-white sm:flex-none">
                     @if (tutorial?.progress?.createdAt) {
                       Resume Tutorial
                     } @else {

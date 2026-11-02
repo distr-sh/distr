@@ -8,11 +8,11 @@
           </code>
         </pre>
       </div>
-      <div class="absolute top-2 end-2">
+      <div class="absolute inset-e-2 top-2">
         <button
           (click)="copyConnectCommand()"
           type="button"
-          class="text-gray-900 dark:text-gray-400 m-0.5 hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 rounded-lg py-2 px-2.5 inline-flex items-center justify-center bg-white border-gray-200 border">
+          class="m-0.5 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-gray-900 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700">
           <span class="inline-flex items-center">
             @if (!commandCopied) {
               <fa-icon [icon]="faClipboard" class="mr-2" />

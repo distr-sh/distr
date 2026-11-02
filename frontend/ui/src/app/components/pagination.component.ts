@@ -20,11 +20,7 @@ import {faChevronLeft, faChevronRight} from '@fortawesome/free-solid-svg-icons';
       <span class="font-medium text-gray-900 dark:text-white">{{ total() }}</span>
     </p>
     <nav class="flex items-center gap-3" aria-label="Pagination">
-      <button
-        type="button"
-        class="distr-btn-secondary  py-2 px-3 "
-        [disabled]="page() === 0"
-        (click)="goTo(page() - 1)">
+      <button type="button" class="distr-btn-secondary px-3 py-2" [disabled]="page() === 0" (click)="goTo(page() - 1)">
         <fa-icon [icon]="faChevronLeft" />
       </button>
       <span>
@@ -35,7 +31,7 @@ import {faChevronLeft, faChevronRight} from '@fortawesome/free-solid-svg-icons';
       </span>
       <button
         type="button"
-        class="distr-btn-secondary  py-2 px-3 "
+        class="distr-btn-secondary px-3 py-2"
         [disabled]="page() >= pageCount() - 1"
         (click)="goTo(page() + 1)">
         <fa-icon [icon]="faChevronRight" />

@@ -1,0 +1,22 @@
+services:
+  app:
+    image: registry.distr.sh/yourcompany/app:${VERSION:-latest}
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - LICENSE_KEY=${LICENSE_KEY}
+    ports:
+      - '80:8080'
+    volumes:
+      - 'app:/data'
+    restart: unless-stopped
+
+  postgres:
+    image: 'postgres:18.6-alpine3.24'
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - 'postgres:/var/lib/postgresql/'
+
+volumes:
+  app:
+  postgres:
