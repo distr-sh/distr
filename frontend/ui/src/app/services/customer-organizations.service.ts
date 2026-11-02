@@ -33,7 +33,7 @@ export class CustomerOrganizationsService {
   ): Observable<CustomerOrganization> {
     return this.httpClient.post<CustomerOrganization>(baseUrl, request).pipe(
       tap((it) => {
-        this.cache.save({...it, userCount: 0, deploymentTargetCount: 0});
+        this.cache.save({userCount: 0, deploymentTargetCount: 0, ...it});
         this.contextService.reload();
       })
     );

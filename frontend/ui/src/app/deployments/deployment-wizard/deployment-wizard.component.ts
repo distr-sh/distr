@@ -237,7 +237,7 @@ export class DeploymentWizardComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
-    this.applications.refresh();
+    refreshInBackground(this.applications.refresh());
     if (this.showCustomerStep()) {
       refreshInBackground(this.customerOrganizations.refresh());
     }

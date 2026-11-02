@@ -26,14 +26,12 @@ export class OrganizationScopeNavComponent {
   private readonly auth = inject(AuthService);
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   private readonly customerOrganizations = toSignal(
-    this.auth.isVendor() || this.auth.isPartner()
-      ? this.customerOrganizationsService.getCustomerOrganizations()
-      : of([])
+    !this.auth.isCustomer() ? this.customerOrganizationsService.getCustomerOrganizations() : of([])
   );
   protected readonly firstCustomerOrganization = computed(() => this.customerOrganizations()?.[0]);
 
   constructor() {
-    if (this.auth.isVendor() || this.auth.isPartner()) {
+    if (!this.auth.isCustomer()) {
       refreshInBackground(this.customerOrganizationsService.refresh());
     }
   }
