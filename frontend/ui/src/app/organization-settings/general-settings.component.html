@@ -146,30 +146,20 @@
           @case ('docker') {
             <div>
               <label for="dockerPreConnectScript" class="distr-label mb-2 grow">Pre-connect script</label>
-              <div
-                class="mb-4 w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-600 dark:bg-gray-600">
-                <div class="rounded-b-lg bg-gray-50 px-4 py-2 dark:bg-gray-700">
-                  <textarea
-                    formControlName="dockerPreConnectScript"
-                    id="dockerPreConnectScript"
-                    rows="8"
-                    class="block w-full border-0 bg-gray-50 px-0 text-sm text-gray-800 placeholder-gray-500 focus:ring-0 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"></textarea>
-                </div>
-              </div>
+              <app-editor
+                id="dockerPreConnectScript"
+                language="shell"
+                formControlName="dockerPreConnectScript"
+                class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [&_.cm-editor]:min-h-40" />
             </div>
 
             <div>
               <label for="dockerPostConnectScript" class="distr-label mb-2 grow">Post-connect script</label>
-              <div
-                class="mb-4 w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-600 dark:bg-gray-600">
-                <div class="rounded-b-lg bg-gray-50 px-4 py-2 dark:bg-gray-700">
-                  <textarea
-                    formControlName="dockerPostConnectScript"
-                    id="dockerPostConnectScript"
-                    rows="8"
-                    class="block w-full border-0 bg-gray-50 px-0 text-sm text-gray-800 placeholder-gray-500 focus:ring-0 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"></textarea>
-                </div>
-              </div>
+              <app-editor
+                id="dockerPostConnectScript"
+                language="shell"
+                formControlName="dockerPostConnectScript"
+                class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [&_.cm-editor]:min-h-40" />
             </div>
 
             <div>
@@ -190,30 +180,20 @@
           @case ('kubernetes') {
             <div>
               <label for="kubernetesPreConnectScript" class="distr-label mb-2 grow">Pre-connect script</label>
-              <div
-                class="mb-4 w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-600 dark:bg-gray-600">
-                <div class="rounded-b-lg bg-gray-50 px-4 py-2 dark:bg-gray-700">
-                  <textarea
-                    formControlName="kubernetesPreConnectScript"
-                    id="kubernetesPreConnectScript"
-                    rows="8"
-                    class="block w-full border-0 bg-gray-50 px-0 text-sm text-gray-800 placeholder-gray-500 focus:ring-0 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"></textarea>
-                </div>
-              </div>
+              <app-editor
+                id="kubernetesPreConnectScript"
+                language="shell"
+                formControlName="kubernetesPreConnectScript"
+                class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [&_.cm-editor]:min-h-40" />
             </div>
 
             <div>
               <label for="kubernetesPostConnectScript" class="distr-label mb-2 grow">Post-connect script</label>
-              <div
-                class="mb-4 w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-600 dark:bg-gray-600">
-                <div class="rounded-b-lg bg-gray-50 px-4 py-2 dark:bg-gray-700">
-                  <textarea
-                    formControlName="kubernetesPostConnectScript"
-                    id="kubernetesPostConnectScript"
-                    rows="8"
-                    class="block w-full border-0 bg-gray-50 px-0 text-sm text-gray-800 placeholder-gray-500 focus:ring-0 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"></textarea>
-                </div>
-              </div>
+              <app-editor
+                id="kubernetesPostConnectScript"
+                language="shell"
+                formControlName="kubernetesPostConnectScript"
+                class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [&_.cm-editor]:min-h-40" />
             </div>
 
             <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
