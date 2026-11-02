@@ -60,6 +60,9 @@ export interface CustomerDeploymentTargets {
 const localStoragerCollapsedCustomerIds = 'collapsedCustomerIds';
 // customer organization ids are UUIDs, so this cannot collide with one
 const internalCustomerOption = 'internal';
+const deploymentDisplayStatusLabels = new Map(
+  deploymentDisplayStatusSelectOptions.map((option) => [option.value, option.label])
+);
 
 @Component({
   selector: 'app-deployment-targets',
@@ -189,9 +192,17 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   protected readonly filteredDeploymentTargets$: Observable<CustomerDeploymentTargets[]> = filteredByFormControl(
     this.deploymentTargets$,
     this.filterForm.controls.search,
-    (dt, search) =>
-      !search ||
-      [dt.name, dt.customerOrganization?.name].some((it) => it?.toLowerCase()?.includes(search.toLowerCase()) ?? false)
+    (dt, search) => {
+      const query = search.toLowerCase();
+      return [
+        dt.name,
+        dt.customerOrganization?.name ?? 'Internal',
+        ...dt.deployments.flatMap((d) => [
+          d.application.name,
+          deploymentDisplayStatusLabels.get(deploymentDisplayStatus(d)),
+        ]),
+      ].some((it) => it?.toLowerCase().includes(query) ?? false);
+    }
   ).pipe(
     combineLatestWith(toObservable(this.deploymentFilter)),
     map(([deploymentTargets, {applicationIds, statuses}]) =>
