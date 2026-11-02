@@ -82,14 +82,12 @@ describe('UpdateNotificationsComponent', () => {
     return buttons.find((button) => button.textContent?.trim() === text)!;
   }
 
-  it('opens the drawer from the cache with applications and artifacts', async () => {
+  it('opens the drawer once applications and artifacts are refreshed', async () => {
     await load();
     buttonWithText('Update Notification').click();
     await settle();
 
-    // The drawer is rendered before the refresh behind it has answered, and the recipient list
-    // needs no request of its own.
-    expect(document.body.textContent).toContain('Users to notify');
+    expect(document.body.textContent).not.toContain('Users to notify');
     flushPicklists();
     await settle();
 
@@ -240,12 +238,7 @@ describe('UpdateNotificationsComponent scoped to a customer', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(document.body.textContent).toContain('alpha-app');
-    expect(document.body.textContent).not.toContain('other-app');
-    expect(document.body.textContent).toContain('Customer User');
-    expect(document.body.textContent).not.toContain('Vendor User');
-
-    // The refresh behind the drawer finds an entitlement granted since the page was loaded.
+    // The refresh before the drawer renders finds an entitlement granted since the page was loaded.
     httpTesting.expectOne('/api/v1/applications').flush([
       {id: entitledApplicationId, name: 'alpha-app', type: 'docker', versions: []},
       {id: '99999999-9999-9999-9999-999999999999', name: 'other-app', type: 'docker', versions: []},
@@ -256,15 +249,17 @@ describe('UpdateNotificationsComponent scoped to a customer', () => {
     ]);
     httpTesting.expectOne('/api/v1/artifacts').flush([]);
     httpTesting.expectOne('/api/v1/artifact-entitlements').flush([]);
-    httpTesting
-      .expectOne('/api/v1/user-accounts')
-      .flush([
-        {id: customerUserId, email: 'customer@b.c', name: 'Customer User', userRole: 'admin', customerOrganizationId},
-      ]);
+    httpTesting.expectOne('/api/v1/user-accounts').flush([
+      {id: '22222222-2222-2222-2222-222222222222', email: 'vendor@b.c', name: 'Vendor User', userRole: 'admin'},
+      {id: customerUserId, email: 'customer@b.c', name: 'Customer User', userRole: 'admin', customerOrganizationId},
+    ]);
     await fixture.whenStable();
     fixture.detectChanges();
 
+    expect(document.body.textContent).toContain('alpha-app');
     expect(document.body.textContent).toContain('other-app');
+    expect(document.body.textContent).toContain('Customer User');
+    expect(document.body.textContent).not.toContain('Vendor User');
 
     const nameInput = document.body.querySelector('#name') as HTMLInputElement;
     nameInput.value = 'for the customer';

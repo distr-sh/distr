@@ -48,6 +48,10 @@ export class DeploymentTargetsService {
     return this.cache.get();
   }
 
+  refresh(): Promise<DeploymentTarget[]> {
+    return this.cache.refresh();
+  }
+
   poll(): Observable<DeploymentTarget[]> {
     return this.sharedPolling$;
   }

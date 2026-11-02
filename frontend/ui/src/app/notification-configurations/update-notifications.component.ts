@@ -16,11 +16,12 @@ import {compareBy} from '../../util/arrays';
 import {isExpired} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {checkedIds, checkedRecord} from '../../util/formRecord';
-import {refreshInBackground} from '../../util/refresh';
+import {loadWhileOpen, refreshInBackground} from '../../util/refresh';
 import {validateRecordAtLeast} from '../../util/validation';
 import {ApplicationLogoComponent} from '../applications/components';
 import {ArtifactLogoComponent} from '../artifacts/components';
 import {SearchBarComponent} from '../components/search-bar.component';
+import {SpinnerComponent} from '../components/spinner/spinner.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {ClickableRowDirective} from '../directives/clickable-row.directive';
 import {ApplicationEntitlementsService} from '../services/application-entitlements.service';
@@ -53,6 +54,7 @@ type NotificationKind = 'application' | 'artifact';
     ApplicationLogoComponent,
     ArtifactLogoComponent,
     NotificationRecipientsComponent,
+    SpinnerComponent,
   ],
 })
 export class UpdateNotificationsComponent {
@@ -207,6 +209,7 @@ export class UpdateNotificationsComponent {
   });
 
   protected readonly editFormLoading = signal(false);
+  protected readonly drawerLoading = signal(false);
   private readonly togglingConfigIds = new Set<string>();
 
   protected readonly editConfigForm = this.fb.group(
@@ -239,8 +242,32 @@ export class UpdateNotificationsComponent {
     this.removePicklistControls();
 
     const kinds = this.kinds();
-    this.syncPicklistControls(config);
+    const refreshesEntitlements = !!this.customerOrganizationId() && !this.auth.isCustomer();
+    try {
+      const loaded = await loadWhileOpen(
+        this.drawerLoading,
+        () => (this.editConfigDrawerRef = this.overlay.showDrawer(this.editConfigDrawerTpl())),
+        Promise.all([
+          kinds.includes('application') ? this.applicationsService.refresh() : [],
+          kinds.includes('application') && refreshesEntitlements ? this.applicationEntitlementsService.refresh() : [],
+          kinds.includes('artifact') ? this.artifactsService.refresh() : [],
+          kinds.includes('artifact') && refreshesEntitlements ? this.artifactEntitlementsService.refresh() : [],
+          this.usersService.refresh(),
+        ])
+      );
+      if (loaded === undefined) {
+        return;
+      }
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+      this.hideDrawer();
+      return;
+    }
 
+    this.syncPicklistControls(config);
     if (config) {
       this.editConfigForm.patchValue({
         id: config.id,
@@ -250,26 +277,6 @@ export class UpdateNotificationsComponent {
         artifactIds: checkedRecord(config.artifacts.map((it) => it.id)),
         userAccountIds: checkedRecord(config.recipients.map((it) => it.id)),
       });
-    }
-
-    const drawerRef = (this.editConfigDrawerRef = this.overlay.showDrawer(this.editConfigDrawerTpl()));
-
-    // The drawer shows the lists the page has loaded already. The refresh runs behind it and only
-    // adds what is missing and drops what is gone, so a box ticked in the meantime survives it.
-    const refreshesEntitlements = !!this.customerOrganizationId() && !this.auth.isCustomer();
-    await Promise.all([
-      kinds.includes('application') ? this.applicationsService.refresh() : Promise.resolve(),
-      kinds.includes('application') && refreshesEntitlements
-        ? this.applicationEntitlementsService.refresh()
-        : Promise.resolve(),
-      kinds.includes('artifact') ? this.artifactsService.refresh() : Promise.resolve(),
-      kinds.includes('artifact') && refreshesEntitlements
-        ? this.artifactEntitlementsService.refresh()
-        : Promise.resolve(),
-      this.usersService.refresh(),
-    ]);
-    if (this.editConfigDrawerRef === drawerRef) {
-      this.syncPicklistControls(config);
     }
   }
 
