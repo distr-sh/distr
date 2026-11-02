@@ -18,6 +18,7 @@ import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faBoxesStacked, faChevronDown, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, firstValueFrom, of, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {refreshInBackground} from '../../util/refresh';
 import {PageComponent} from '../components/page.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {ClickableRowDirective} from '../directives/clickable-row.directive';
@@ -65,6 +66,10 @@ export class SidebarLinksPageComponent {
     const id = this.customerOrganizationId();
     return this.customerOrganizations()?.find((org) => org.id === id);
   });
+
+  constructor() {
+    refreshInBackground(this.customerOrganizationsService.refresh());
+  }
 
   protected readonly refresh$ = new Subject<void>();
 
