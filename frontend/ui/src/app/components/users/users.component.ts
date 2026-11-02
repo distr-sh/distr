@@ -21,7 +21,6 @@ import {filteredByFormControl} from '../../../util/filter';
 import {UserRoleLabelPipe} from '../../../util/user-role';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {PlaceholderDirective} from '../../directives/placeholder.directive';
-import {RequireVendorDirective} from '../../directives/required-role.directive';
 import {AuthService} from '../../services/auth.service';
 import {ImageUploadService} from '../../services/image-upload.service';
 import {OrganizationService} from '../../services/organization.service';
@@ -43,7 +42,6 @@ import {UserRoleSelectComponent} from '../user-role-select.component';
     AsyncPipe,
     DatePipe,
     ReactiveFormsModule,
-    RequireVendorDirective,
     AutotrimDirective,
     PlaceholderDirective,
     AvatarComponent,
@@ -109,7 +107,11 @@ export class UsersComponent {
     userRole: this.fb.control<UserRole>('admin', Validators.required),
   });
   protected readonly inviteUrl = signal<string | null>(null);
-  protected readonly inviteMailNotSentLabel = signal<string | null>(null);
+  protected readonly inviteMailNotSentUser = signal<UserAccountWithRole | null>(null);
+  protected readonly inviteMailNotSentLabel = computed(() => {
+    const user = this.inviteMailNotSentUser();
+    return user ? this.userLabel(user) : null;
+  });
 
   protected readonly organization = toSignal(this.organizationService.get());
 
@@ -222,7 +224,7 @@ export class UsersComponent {
       } catch (e) {
         if (isInviteMailNotSentError(e)) {
           this.inviteUrl.set(e.error.inviteUrl ?? null);
-          this.inviteMailNotSentLabel.set(this.userLabel(e.error.user));
+          this.inviteMailNotSentUser.set(e.error.user);
           this.refresh.emit();
         } else {
           const msg = getFormDisplayedError(e);
@@ -287,7 +289,7 @@ export class UsersComponent {
   public closeInviteDialog(): void {
     this.modalRef?.close();
     this.inviteUrl.set(null);
-    this.inviteMailNotSentLabel.set(null);
+    this.inviteMailNotSentUser.set(null);
     this.inviteForm.reset();
   }
 
