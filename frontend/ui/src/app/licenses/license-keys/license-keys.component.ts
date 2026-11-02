@@ -256,8 +256,13 @@ export class LicenseKeysComponent {
         firstValueFrom(this.licenseKeysService.getToken(license.id!)),
         this.licenseKeysService.refresh(),
       ]);
+      const fresh = licenses.find((it) => it.id === license.id);
+      if (!fresh) {
+        this.toast.error('This license key no longer exists');
+        return;
+      }
       this.hideViewLicenseModal();
-      this.selectedLicense.set(licenses.find((it) => it.id === license.id) ?? license);
+      this.selectedLicense.set(fresh);
       this.selectedToken.set(token);
       this.viewLicenseModalRef = this.overlay.showModal(this.viewLicenseModalTemplate(), {
         positionStrategy: new GlobalPositionStrategy().centerHorizontally().centerVertically(),

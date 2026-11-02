@@ -129,21 +129,20 @@
       <span class="sr-only">Close menu</span>
     </button>
 
-    @if ((entitlements$ | async)?.length === 0) {
-      <app-alert
-        type="warning"
-        heading="Creating your first entitlement will restrict what all your customers see."
-        class="mb-4">
-        After you created your first entitlement your customers will only see applications which they have a valid
-        entitlement for. Without any entitlement your customers will see all applications and versions.
-      </app-alert>
-    }
-
     @if (drawerLoading()) {
       <div class="flex items-center justify-center py-12">
         <app-spinner class="size-8" />
       </div>
     } @else {
+      @if ((entitlements$ | async)?.length === 0) {
+        <app-alert
+          type="warning"
+          heading="Creating your first entitlement will restrict what all your customers see."
+          class="mb-4">
+          After you created your first entitlement your customers will only see applications which they have a valid
+          entitlement for. Without any entitlement your customers will see all applications and versions.
+        </app-alert>
+      }
       <form [formGroup]="editForm" (ngSubmit)="saveEntitlement()">
         <div class="flex flex-col gap-4">
           <app-edit-application-entitlement formControlName="entitlement" />

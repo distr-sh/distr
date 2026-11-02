@@ -19,7 +19,8 @@ export function refreshInBackground(...refreshes: Promise<unknown>[]): void {
 
 /**
  * Opens an overlay with `loading` set and keeps it set while `load` runs. Resolves to `undefined` when the overlay was
- * closed in the meantime, so the caller does not fill a form nobody sees anymore.
+ * closed in the meantime, even if `load` failed, so the caller neither fills a form nobody sees anymore nor closes an
+ * overlay opened since.
  */
 export async function loadWhileOpen<T, R>(
   loading: WritableSignal<boolean>,
@@ -32,7 +33,12 @@ export async function loadWhileOpen<T, R>(
     .result()
     .subscribe(() => (isOpen = false));
   try {
-    const result = await load;
+    const result = await load.catch((e) => {
+      if (isOpen) {
+        throw e;
+      }
+      return undefined;
+    });
     return isOpen ? result : undefined;
   } finally {
     subscription.unsubscribe();
