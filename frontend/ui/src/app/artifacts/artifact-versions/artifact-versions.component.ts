@@ -62,6 +62,7 @@ import {ImageUploadService} from '../../services/image-upload.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
+import {UsersService} from '../../services/users.service';
 import {
   ArtifactPublicBadgeComponent,
   ArtifactsDownloadCountComponent,
@@ -97,6 +98,7 @@ import {
 export class ArtifactVersionsComponent {
   protected readonly auth = inject(AuthService);
   private readonly artifacts = inject(ArtifactsService);
+  private readonly usersService = inject(UsersService);
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -142,7 +144,7 @@ export class ArtifactVersionsComponent {
 
   constructor() {
     if (this.auth.isVendor()) {
-      refreshInBackground(this.customerOrganizationsService.refresh());
+      refreshInBackground(this.usersService.refresh(), this.customerOrganizationsService.refresh());
     }
     this.upstreamAuthForm.controls.upstreamAuthType.valueChanges
       .pipe(startWith(this.upstreamAuthForm.controls.upstreamAuthType.value), takeUntilDestroyed())

@@ -7,6 +7,7 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faGear, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {catchError, EMPTY, filter, firstValueFrom, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {refreshInBackground} from '../../util/refresh';
 import {AlertComponent} from '../components/alert/alert.component';
 import {PageComponent} from '../components/page.component';
 import {ClickableRowDirective} from '../directives/clickable-row.directive';
@@ -67,6 +68,10 @@ export class BillingComponent {
   "plan": "{{ if hasItem "business" }}business{{ else }}pro{{ end }}",
   "seats": {{ itemQuantity "seats" }}
 }`;
+
+  constructor() {
+    refreshInBackground(this.templatesService.refresh());
+  }
 
   openTemplateDrawer(template?: LicenseTemplate) {
     this.hideDrawer();
