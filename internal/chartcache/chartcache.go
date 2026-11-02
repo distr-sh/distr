@@ -1,151 +1,114 @@
-// Package chartcache keeps the Helm chart of the last revision of every deployment, so that the Kubernetes
-// controller neither pulls the chart again while it retries a revision nor fails to apply a revision that only
-// changes values while the chart's registry is unreachable.
+// Package chartcache keeps the Kubernetes controller from pulling a Helm chart again that it already has, since a
+// failing revision is retried on every loop and would otherwise pull its chart each time.
 package chartcache
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"io"
-	"io/fs"
+	"encoding/hex"
 	"os"
-	"path/filepath"
+	"sync"
 
 	"github.com/google/uuid"
+	"github.com/opencontainers/go-digest"
 	"go.uber.org/zap"
+	"helm.sh/helm/v4/pkg/downloader"
 )
-
-const (
-	chartFileName = "chart.tgz"
-	entryFileName = "entry.json"
-)
-
-type Chart struct {
-	URL     string `json:"url"`
-	Name    string `json:"name"`
-	Version string `json:"version"`
-	Digest  string `json:"digest,omitempty"`
-}
-
-type entry struct {
-	RevisionID uuid.UUID `json:"revisionId"`
-	Chart      Chart     `json:"chart"`
-}
 
 type Cache struct {
-	Dir string
+	content downloader.Cache
+	mu      sync.Mutex
+	pulled  map[uuid.UUID]pulledChart
 }
 
-// Locate returns the path of the chart archive for a revision of a deployment. It calls pull, which returns the
-// path of a freshly pulled archive, unless the cached chart has the same digest or, for a chart without a digest,
-// was cached for the same revision. A new revision of a chart without a digest always pulls, because a mutable
-// artifact version may have been overwritten since, and falls back to the cached chart only if the pull fails and
-// the chart reference is unchanged.
-func (c Cache) Locate(
+type pulledChart struct {
+	revisionID uuid.UUID
+	path       string
+}
+
+// New returns a cache that stores charts with a digest in Helm's content cache at contentDir, where they outlive the
+// controller process, and remembers the chart of every other revision in memory.
+func New(contentDir string) *Cache {
+	return &Cache{content: &downloader.DiskCache{Root: contentDir}, pulled: map[uuid.UUID]pulledChart{}}
+}
+
+// Locate returns the path of the chart archive for a revision of a deployment. It calls pull, which returns the path
+// of a freshly pulled archive, unless the content cache holds the chart's digest or, for a chart without a digest,
+// the chart was pulled for the same revision before.
+func (c *Cache) Locate(
 	logger *zap.Logger,
 	deploymentID uuid.UUID,
 	revisionID uuid.UUID,
-	chart Chart,
+	chartDigest string,
 	pull func() (string, error),
 ) (string, error) {
-	cached, err := c.readEntry(deploymentID)
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		logger.Warn("could not read chart cache entry", zap.Error(err))
-	}
-	cachedChartMatches := cached != nil && cached.Chart == chart
-
-	if cachedChartMatches && (chart.Digest != "" || cached.RevisionID == revisionID) {
-		logger.Debug("using cached chart")
-		return c.chartPath(deploymentID), nil
-	}
-
-	pulledPath, pullErr := pull()
-	if pullErr != nil {
-		if !cachedChartMatches {
-			return "", pullErr
-		}
-		logger.Warn("could not pull chart, using cached chart", zap.Error(pullErr))
-		pulledPath = ""
-	}
-
-	if err := c.write(deploymentID, entry{RevisionID: revisionID, Chart: chart}, pulledPath); err != nil {
-		logger.Warn("could not write chart cache entry", zap.Error(err))
-		if pulledPath != "" {
-			return pulledPath, nil
-		}
-	}
-	return c.chartPath(deploymentID), nil
-}
-
-func (c Cache) Delete(deploymentID uuid.UUID) error {
-	return os.RemoveAll(c.entryDir(deploymentID))
-}
-
-func (c Cache) entryDir(deploymentID uuid.UUID) string {
-	return filepath.Join(c.Dir, deploymentID.String())
-}
-
-func (c Cache) chartPath(deploymentID uuid.UUID) string {
-	return filepath.Join(c.entryDir(deploymentID), chartFileName)
-}
-
-func (c Cache) readEntry(deploymentID uuid.UUID) (*entry, error) {
-	if _, err := os.Stat(c.chartPath(deploymentID)); err != nil {
-		return nil, err
-	}
-	data, err := os.ReadFile(filepath.Join(c.entryDir(deploymentID), entryFileName))
-	if err != nil {
-		return nil, err
-	}
-	var e entry
-	if err := json.Unmarshal(data, &e); err != nil {
-		return nil, err
-	}
-	return &e, nil
-}
-
-// write replaces the chart archive with the one at chartPath, unless it is empty, and then the entry. The entry is
-// removed before the archive is replaced, so that a crash never leaves an entry describing another archive.
-func (c Cache) write(deploymentID uuid.UUID, e entry, chartPath string) error {
-	dir := c.entryDir(deploymentID)
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return err
-	}
-	if chartPath != "" {
-		if err := os.Remove(filepath.Join(dir, entryFileName)); err != nil && !errors.Is(err, fs.ErrNotExist) {
-			return err
-		}
-		if src, err := os.Open(chartPath); err != nil {
-			return err
+	if chartDigest != "" {
+		if key, err := contentKey(chartDigest); err != nil {
+			logger.Warn("could not use chart digest as cache key", zap.Error(err))
 		} else {
-			err := writeFileAtomic(filepath.Join(dir, chartFileName), src)
-			_ = src.Close()
-			if err != nil {
-				return err
-			}
+			return c.locateByDigest(logger, key, pull)
 		}
 	}
-	if data, err := json.Marshal(e); err != nil {
-		return err
+
+	c.mu.Lock()
+	cached, ok := c.pulled[deploymentID]
+	c.mu.Unlock()
+	if ok && cached.revisionID == revisionID {
+		if _, err := os.Stat(cached.path); err == nil {
+			return cached.path, nil
+		}
+	}
+
+	path, err := pull()
+	if err != nil {
+		return "", err
+	}
+	c.mu.Lock()
+	c.pulled[deploymentID] = pulledChart{revisionID: revisionID, path: path}
+	c.mu.Unlock()
+	return path, nil
+}
+
+func (c *Cache) Forget(deploymentID uuid.UUID) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	delete(c.pulled, deploymentID)
+}
+
+// locateByDigest stores the pulled archive under the manifest digest itself, since Helm stores a chart pulled by
+// digest under the hash of the archive and so never finds it by the manifest digest again.
+func (c *Cache) locateByDigest(
+	logger *zap.Logger,
+	key [32]byte,
+	pull func() (string, error),
+) (string, error) {
+	if path, err := c.content.Get(key, downloader.CacheChart); err == nil {
+		return path, nil
+	}
+	pulledPath, err := pull()
+	if err != nil {
+		return "", err
+	}
+	f, err := os.Open(pulledPath)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = f.Close() }()
+	if path, err := c.content.Put(key, f, downloader.CacheChart); err != nil {
+		logger.Warn("could not put chart into cache", zap.Error(err))
+		return pulledPath, nil
 	} else {
-		return writeFileAtomic(filepath.Join(dir, entryFileName), bytes.NewReader(data))
+		return path, nil
 	}
 }
 
-func writeFileAtomic(path string, r io.Reader) error {
-	tmp, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path)+".*.tmp")
+func contentKey(chartDigest string) ([32]byte, error) {
+	var key [32]byte
+	d, err := digest.Parse(chartDigest)
 	if err != nil {
-		return err
+		return key, err
+	} else if d.Algorithm() != digest.SHA256 {
+		return key, digest.ErrDigestUnsupported
 	}
-	defer func() { _ = os.Remove(tmp.Name()) }()
-	if _, err := io.Copy(tmp, r); err != nil {
-		_ = tmp.Close()
-		return fmt.Errorf("could not write %v: %w", path, err)
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	return os.Rename(tmp.Name(), path)
+	b, err := hex.DecodeString(d.Encoded())
+	copy(key[:], b)
+	return key, err
 }

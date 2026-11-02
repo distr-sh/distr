@@ -100,7 +100,7 @@ The controller runs the following loop at the interval defined by `DISTR_CONTROL
 3. Install or upgrade Helm releases that are in the list. If images need pulling, the controller reports status `PROGRESSING`.
 4. Send the Helm output to `DISTR_STATUS_ENDPOINT`, reporting the deployment's status.
 
-The controller keeps the chart of each deployment's latest revision in its cache volume. Charts stored in the Distr registry are pinned to the digest their version pointed to when the revision was created, so the controller pulls each chart once and reuses it for every later revision with the same digest, online or offline. For other charts, retrying a revision reuses the cached chart, and a new revision pulls the chart again. If the registry is unreachable and the chart URL, name and version are unchanged, the controller applies the new revision with the cached chart, so changed values can be deployed while offline. The cache volume is an `emptyDir`, so it is emptied when the controller pod is recreated.
+Charts stored in the Distr registry are pinned to the digest their version pointed to when the revision was created. The controller keeps them in its cache volume and pulls each digest only once, so every later revision with the same chart is applied without contacting the registry, online or offline. The cache volume is an `emptyDir`, so it is emptied when the controller pod is recreated. Other charts are pulled once per revision, and retrying a failed revision reuses the chart pulled for it.
 
 An install or upgrade that has not finished after 10 minutes is reported as an error rather than left in `PROGRESSING`. The deployment's Helm options set that timeout per deployment.
 

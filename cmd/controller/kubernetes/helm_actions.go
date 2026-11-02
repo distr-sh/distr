@@ -16,7 +16,6 @@ import (
 	"helm.sh/helm/v4/pkg/chart"
 	"helm.sh/helm/v4/pkg/chart/loader"
 	"helm.sh/helm/v4/pkg/cli"
-	"helm.sh/helm/v4/pkg/helmpath"
 	"helm.sh/helm/v4/pkg/kube"
 	"helm.sh/helm/v4/pkg/registry"
 	"helm.sh/helm/v4/pkg/release"
@@ -25,7 +24,7 @@ import (
 
 var (
 	helmEnvSettings = cli.New()
-	chartCache      = chartcache.Cache{Dir: helmpath.CachePath("charts")}
+	chartCache      = chartcache.New(helmEnvSettings.ContentCache)
 )
 
 const helmUpgradeInstallTimeout = 10 * time.Minute
@@ -98,12 +97,15 @@ func RunHelmPreflight(
 	deployment api.ControllerDeployment,
 ) (chart.Charter, error) {
 	chartName := deployment.ChartName
+	chartDigest := ""
 	action.Version = deployment.ChartVersion
 	if registry.IsOCI(deployment.ChartUrl) {
 		chartName = deployment.ChartUrl
 		if deployment.ChartDigest != "" {
-			// Given a version as well, Helm resolves the tag against the registry on every pull.
-			chartName += "@" + deployment.ChartDigest
+			// Given a version as well, Helm resolves the tag against the registry on every pull and fails once the
+			// tag has been moved to another digest.
+			chartDigest = deployment.ChartDigest
+			chartName += "@" + chartDigest
 			action.Version = ""
 		}
 	} else {
@@ -113,12 +115,7 @@ func RunHelmPreflight(
 		logger.With(zap.String("deploymentId", deployment.ID.String())),
 		deployment.ID,
 		deployment.RevisionID,
-		chartcache.Chart{
-			URL:     deployment.ChartUrl,
-			Name:    deployment.ChartName,
-			Version: deployment.ChartVersion,
-			Digest:  deployment.ChartDigest,
-		},
+		chartDigest,
 		func() (string, error) { return action.LocateChart(chartName, helmEnvSettings) },
 	)
 	if err != nil {
