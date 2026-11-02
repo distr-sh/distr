@@ -4,12 +4,14 @@ import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-int
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleExclamation, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, shareReplay, switchMap} from 'rxjs';
+import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
+import {loadWhileOpen, refreshInBackground} from '../../../util/refresh';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
+import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {ClickableRowDirective} from '../../directives/clickable-row.directive';
 import {ArtifactEntitlementsService} from '../../services/artifact-entitlements.service';
 import {ArtifactsService} from '../../services/artifacts.service';
@@ -35,6 +37,7 @@ type EntitlementForm = 'standard' | 'legacy';
     SearchBarComponent,
     AlertComponent,
     ClickableRowDirective,
+    SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './artifact-entitlements.component.html',
@@ -111,9 +114,7 @@ export class ArtifactEntitlementsComponent {
 
   private manageEntitlementDrawerRef?: DialogRef;
 
-  private readonly customerOrganizations$ = this.customerOrganizationService
-    .getCustomerOrganizations()
-    .pipe(shareReplay(1));
+  private readonly customerOrganizations$ = this.customerOrganizationService.getCustomerOrganizations();
   private readonly customerOrganizations = toSignal(this.customerOrganizations$);
   protected readonly drawerCustomerName = computed(() => {
     const customerOrganizationId = this.draft()?.customerOrganizationId;
@@ -122,22 +123,44 @@ export class ArtifactEntitlementsComponent {
       : undefined;
   });
   private readonly artifacts$ = this.artifactsService.list();
+  protected readonly drawerLoading = signal(false);
 
-  openDrawer(templateRef: TemplateRef<unknown>, entitlement?: ArtifactEntitlement) {
-    this.hideDrawer();
-    this.entitlementForm.set((entitlement?.artifacts?.length ?? 0) > 1 ? 'legacy' : 'standard');
-    if (entitlement) {
-      this.loadEntitlement(entitlement);
-    } else if (this.customerOrganizationId()) {
-      this.editForm.patchValue({
-        entitlement: {customerOrganizationId: this.customerOrganizationId()} as ArtifactEntitlement,
-      });
-    }
-    this.manageEntitlementDrawerRef = this.overlay.showDrawer(templateRef);
+  constructor() {
+    refreshInBackground(this.artifactEntitlementsService.refresh(), this.artifactsService.refresh());
   }
 
-  loadEntitlement(entitlement: ArtifactEntitlement) {
-    this.editForm.patchValue({entitlement});
+  async openDrawer(templateRef: TemplateRef<unknown>, entitlement?: ArtifactEntitlement) {
+    this.hideDrawer();
+    try {
+      const loaded = await loadWhileOpen(
+        this.drawerLoading,
+        () => (this.manageEntitlementDrawerRef = this.overlay.showDrawer(templateRef)),
+        Promise.all([this.artifactEntitlementsService.refresh(), this.artifactsService.refresh()])
+      );
+      if (loaded === undefined) {
+        return;
+      }
+      const fresh = entitlement && loaded[0].find((it) => it.id === entitlement.id);
+      if (entitlement && !fresh) {
+        this.toast.error('This entitlement no longer exists');
+        this.hideDrawer();
+        return;
+      }
+      this.entitlementForm.set((fresh?.artifacts?.length ?? 0) > 1 ? 'legacy' : 'standard');
+      if (fresh) {
+        this.editForm.patchValue({entitlement: fresh});
+      } else if (this.customerOrganizationId()) {
+        this.editForm.patchValue({
+          entitlement: {customerOrganizationId: this.customerOrganizationId()} as ArtifactEntitlement,
+        });
+      }
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+      this.hideDrawer();
+    }
   }
 
   hideDrawer() {

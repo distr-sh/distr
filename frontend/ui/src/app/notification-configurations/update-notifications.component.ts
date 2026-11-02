@@ -1,6 +1,6 @@
 import {DatePipe} from '@angular/common';
 import {Component, computed, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
-import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
+import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   FormBuilder,
@@ -16,10 +16,12 @@ import {compareBy} from '../../util/arrays';
 import {isExpired} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {checkedIds, checkedRecord} from '../../util/formRecord';
+import {loadWhileOpen, refreshInBackground} from '../../util/refresh';
 import {validateRecordAtLeast} from '../../util/validation';
 import {ApplicationLogoComponent} from '../applications/components';
 import {ArtifactLogoComponent} from '../artifacts/components';
 import {SearchBarComponent} from '../components/search-bar.component';
+import {SpinnerComponent} from '../components/spinner/spinner.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {ClickableRowDirective} from '../directives/clickable-row.directive';
 import {ApplicationEntitlementsService} from '../services/application-entitlements.service';
@@ -28,7 +30,7 @@ import {ArtifactEntitlementsService} from '../services/artifact-entitlements.ser
 import {ArtifactsService} from '../services/artifacts.service';
 import {AuthService} from '../services/auth.service';
 import {ContextService} from '../services/context.service';
-import {CustomerOrganizationsCache} from '../services/customer-organizations.service';
+import {CustomerOrganizationsService} from '../services/customer-organizations.service';
 import {UpdateNotificationConfigurationsService} from '../services/notification-configurations.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
@@ -42,7 +44,6 @@ type NotificationKind = 'application' | 'artifact';
 @Component({
   selector: 'app-update-notifications',
   templateUrl: './update-notifications.component.html',
-  providers: [CustomerOrganizationsCache],
   imports: [
     FaIconComponent,
     ReactiveFormsModule,
@@ -53,6 +54,7 @@ type NotificationKind = 'application' | 'artifact';
     ApplicationLogoComponent,
     ArtifactLogoComponent,
     NotificationRecipientsComponent,
+    SpinnerComponent,
   ],
 })
 export class UpdateNotificationsComponent {
@@ -68,7 +70,7 @@ export class UpdateNotificationsComponent {
   private readonly artifactEntitlementsService = inject(ArtifactEntitlementsService);
   private readonly usersService = inject(UsersService);
   private readonly context = inject(ContextService);
-  private readonly customerOrganizations = inject(CustomerOrganizationsCache);
+  private readonly customerOrganizations = inject(CustomerOrganizationsService);
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
@@ -207,6 +209,7 @@ export class UpdateNotificationsComponent {
   });
 
   protected readonly editFormLoading = signal(false);
+  protected readonly drawerLoading = signal(false);
   private readonly togglingConfigIds = new Set<string>();
 
   protected readonly editConfigForm = this.fb.group(
@@ -228,9 +231,8 @@ export class UpdateNotificationsComponent {
   private editConfigDrawerRef?: DialogRef;
 
   constructor() {
-    // Warms the cache the recipient list reads, which it would otherwise fill on its first render.
-    if (this.auth.isVendor()) {
-      this.customerOrganizations.getCustomerOrganizations().pipe(takeUntilDestroyed()).subscribe();
+    if (!this.auth.isCustomer()) {
+      refreshInBackground(this.customerOrganizations.refresh());
     }
   }
 
@@ -240,8 +242,32 @@ export class UpdateNotificationsComponent {
     this.removePicklistControls();
 
     const kinds = this.kinds();
-    this.syncPicklistControls(config);
+    const refreshesEntitlements = !!this.customerOrganizationId() && !this.auth.isCustomer();
+    try {
+      const loaded = await loadWhileOpen(
+        this.drawerLoading,
+        () => (this.editConfigDrawerRef = this.overlay.showDrawer(this.editConfigDrawerTpl())),
+        Promise.all([
+          kinds.includes('application') ? this.applicationsService.refresh() : [],
+          kinds.includes('application') && refreshesEntitlements ? this.applicationEntitlementsService.refresh() : [],
+          kinds.includes('artifact') ? this.artifactsService.refresh() : [],
+          kinds.includes('artifact') && refreshesEntitlements ? this.artifactEntitlementsService.refresh() : [],
+          this.usersService.refresh(),
+        ])
+      );
+      if (loaded === undefined) {
+        return;
+      }
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+      this.hideDrawer();
+      return;
+    }
 
+    this.syncPicklistControls(config);
     if (config) {
       this.editConfigForm.patchValue({
         id: config.id,
@@ -251,26 +277,6 @@ export class UpdateNotificationsComponent {
         artifactIds: checkedRecord(config.artifacts.map((it) => it.id)),
         userAccountIds: checkedRecord(config.recipients.map((it) => it.id)),
       });
-    }
-
-    const drawerRef = (this.editConfigDrawerRef = this.overlay.showDrawer(this.editConfigDrawerTpl()));
-
-    // The drawer shows the lists the page has loaded already. The refresh runs behind it and only
-    // adds what is missing and drops what is gone, so a box ticked in the meantime survives it.
-    const refreshesEntitlements = !!this.customerOrganizationId() && !this.auth.isCustomer();
-    await Promise.all([
-      kinds.includes('application') ? this.applicationsService.refresh() : Promise.resolve(),
-      kinds.includes('application') && refreshesEntitlements
-        ? this.applicationEntitlementsService.refresh()
-        : Promise.resolve(),
-      kinds.includes('artifact') ? this.artifactsService.refresh() : Promise.resolve(),
-      kinds.includes('artifact') && refreshesEntitlements
-        ? this.artifactEntitlementsService.refresh()
-        : Promise.resolve(),
-      this.usersService.refresh(),
-    ]);
-    if (this.editConfigDrawerRef === drawerRef) {
-      this.syncPicklistControls(config);
     }
   }
 

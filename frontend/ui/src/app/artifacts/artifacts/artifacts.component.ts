@@ -8,6 +8,7 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faBox, faPlus, faTrash, faUserCircle, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, lastValueFrom, map, of, startWith} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
+import {refreshInBackground} from '../../../util/refresh';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {PageComponent} from '../../components/page.component';
@@ -19,10 +20,11 @@ import {RequireCustomerDirective, RequireVendorDirective} from '../../directives
 import {ArtifactsService, ArtifactUpstreamAuth, UpstreamAuthType} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
 import {ContextService} from '../../services/context.service';
-import {CustomerOrganizationsCache} from '../../services/customer-organizations.service';
+import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
+import {UsersService} from '../../services/users.service';
 import {
   ArtifactPublicBadgeComponent,
   ArtifactsDownloadCountComponent,
@@ -52,10 +54,11 @@ import {
   ],
   templateUrl: './artifacts.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  providers: [CustomerOrganizationsCache],
 })
 export class ArtifactsComponent {
   private readonly artifactsService = inject(ArtifactsService);
+  private readonly usersService = inject(UsersService);
+  private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
@@ -105,6 +108,10 @@ export class ArtifactsComponent {
   );
 
   constructor() {
+    refreshInBackground(
+      this.artifactsService.refresh(),
+      ...(this.auth.isVendor() ? [this.usersService.refresh(), this.customerOrganizationsService.refresh()] : [])
+    );
     this.createForm.controls.upstreamAuthType.valueChanges
       .pipe(startWith(this.createForm.controls.upstreamAuthType.value), takeUntilDestroyed())
       .subscribe((t) => {
