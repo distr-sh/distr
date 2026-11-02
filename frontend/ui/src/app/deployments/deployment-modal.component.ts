@@ -81,14 +81,13 @@ export class DeploymentModalComponent {
         this.applications.refresh(),
         ...(licensingEnabled ? [this.applicationEntitlements.refresh()] : []),
       ]);
+      this.dataLoaded.set(true);
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {
         this.toast.error(msg);
       }
-    } finally {
-      // Falling back to the cached list still lets the user deploy, which a modal stuck on a spinner would not.
-      this.dataLoaded.set(true);
+      this.closed.emit();
     }
   }
 
