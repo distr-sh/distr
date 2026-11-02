@@ -35,6 +35,7 @@ import {
 import {RelativeDatePipe} from '../../../util/dates';
 import {shortDigest} from '../../../util/digest';
 import {getFormDisplayedError} from '../../../util/errors';
+import {refreshInBackground} from '../../../util/refresh';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {BytesPipe} from '../../../util/units';
 import {ClipComponent} from '../../components/clip.component';
@@ -55,7 +56,7 @@ import {
 } from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
 import {ContextService} from '../../services/context.service';
-import {CustomerOrganizationsCache} from '../../services/customer-organizations.service';
+import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {ImageUploadService} from '../../services/image-upload.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
@@ -91,11 +92,11 @@ import {
     PaginationComponent,
   ],
   templateUrl: './artifact-versions.component.html',
-  providers: [CustomerOrganizationsCache],
 })
 export class ArtifactVersionsComponent {
   protected readonly auth = inject(AuthService);
   private readonly artifacts = inject(ArtifactsService);
+  private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly organization = inject(OrganizationService);
@@ -139,6 +140,9 @@ export class ArtifactVersionsComponent {
   protected upstreamAuthModalRef?: DialogRef;
 
   constructor() {
+    if (this.auth.isVendor()) {
+      refreshInBackground(this.customerOrganizationsService.refresh());
+    }
     this.upstreamAuthForm.controls.upstreamAuthType.valueChanges
       .pipe(startWith(this.upstreamAuthForm.controls.upstreamAuthType.value), takeUntilDestroyed())
       .subscribe((authType) => {
