@@ -33,6 +33,12 @@ export class ApplicationsService implements CrudService<Application> {
       .pipe(tap((it) => this.cache.save(it)));
   }
 
+  watch(applicationId: string): Observable<Application | undefined> {
+    return this.get(applicationId).pipe(
+      switchMap(() => this.list().pipe(map((applications) => applications.find((a) => a.id === applicationId))))
+    );
+  }
+
   create(application: Application): Observable<Application> {
     return this.httpClient.post<Application>(this.applicationsUrl, application).pipe(tap((it) => this.cache.save(it)));
   }

@@ -122,14 +122,7 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
       this.newVersionForm.reset();
       this.newVersionFormLoading.set(false);
     }),
-    switchMap((id) =>
-      id
-        ? this.applicationService.get(id).pipe(
-            switchMap(() => this.applications$.pipe(map((applications) => applications.find((a) => a.id === id)))),
-            catchError(() => of(undefined))
-          )
-        : of(undefined)
-    ),
+    switchMap((id) => (id ? this.applicationService.watch(id).pipe(catchError(() => of(undefined))) : of(undefined))),
     tap((app) => {
       if (app) {
         this.enableTypeSpecificGroups(app);
