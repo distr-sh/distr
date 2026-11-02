@@ -16,6 +16,10 @@ on:
       - '.github/workflows/mise-renovate.yaml'
       - renovate.json
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   install:
     name: Install
