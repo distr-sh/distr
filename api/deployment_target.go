@@ -144,7 +144,7 @@ type DeploymentRequest struct {
 	ApplicationEntitlementID *uuid.UUID                      `json:"applicationEntitlementId"`
 	ReleaseName              *string                         `json:"releaseName"`
 	ValuesYaml               []byte                          `json:"valuesYaml"`
-	DockerType               *types.DockerType               `json:"dockerType"`
+	DockerType               *types.DockerType               `json:"dockerType" description:"Defaults to compose on docker targets, cannot change later"` //nolint:lll
 	EnvFileData              []byte                          `json:"envFileData"`
 	ForceRestart             bool                            `json:"forceRestart"`
 	IgnoreRevisionSkew       bool                            `json:"ignoreRevisionSkew"`

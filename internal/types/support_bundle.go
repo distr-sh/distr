@@ -1,8 +1,10 @@
 package types
 
 import (
+	"slices"
 	"time"
 
+	"github.com/distr-sh/distr/internal/contenttype"
 	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/google/uuid"
 )
@@ -73,11 +75,46 @@ type SupportBundleWithDetails struct {
 	StatusChangedByImageID   *uuid.UUID `db:"status_changed_by_image_id"`
 }
 
-type SupportBundleResource struct {
+var SupportBundleResourceContentTypes = []string{
+	contenttype.MediaTypeTextPlain,
+	contenttype.MediaTypeTextXLog,
+	contenttype.MediaTypeYAML,
+	contenttype.MediaTypeJSON,
+}
+
+func ParseSupportBundleResourceContentType(value string) string {
+	if slices.Contains(SupportBundleResourceContentTypes, value) {
+		return value
+	}
+	return contenttype.MediaTypeTextPlain
+}
+
+func SupportBundleResourceFileExtension(contentType string) string {
+	switch contentType {
+	case contenttype.MediaTypeTextXLog:
+		return ".log"
+	case contenttype.MediaTypeYAML:
+		return ".yaml"
+	case contenttype.MediaTypeJSON:
+		return ".json"
+	default:
+		return ".txt"
+	}
+}
+
+type SupportBundleResourceSummary struct {
 	ID              uuid.UUID `db:"id"`
 	CreatedAt       time.Time `db:"created_at"`
 	SupportBundleID uuid.UUID `db:"support_bundle_id"`
 	Name            string    `db:"name"`
+	ContentType     string    `db:"content_type"`
+	// Size is the length of the content in bytes. It is nil for resources uploaded before it was
+	// recorded, because the content is stored compressed and encrypted and cannot be measured in SQL.
+	Size *int64 `db:"size"`
+}
+
+type SupportBundleResource struct {
+	SupportBundleResourceSummary
 	// The content is a file the collect script gathered verbatim, and is served back as a download
 	// and rendered in a <pre>, so it must not be trimmed if it ever reaches a JSON request body.
 	Content dbcrypto.String `db:"content" trim:"-"`

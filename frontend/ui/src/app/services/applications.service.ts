@@ -6,7 +6,7 @@ import {
   ApplicationVersionResource,
   PatchApplicationRequest,
 } from '@distr-sh/distr-sdk';
-import {catchError, firstValueFrom, Observable, of, tap, throwError} from 'rxjs';
+import {catchError, map, Observable, of, switchMap, tap, throwError} from 'rxjs';
 import {DefaultReactiveList} from './cache';
 import {CrudService} from './interfaces';
 
@@ -17,15 +17,25 @@ export class ApplicationsService implements CrudService<Application> {
   private readonly httpClient = inject(HttpClient);
 
   private readonly applicationsUrl = '/api/v1/applications';
-  private readonly cache = new DefaultReactiveList(this.httpClient.get<Application[]>(this.applicationsUrl));
+  private readonly cache = new DefaultReactiveList(() => this.httpClient.get<Application[]>(this.applicationsUrl));
 
   list(): Observable<Application[]> {
     return this.cache.get();
   }
 
   refresh(): Promise<Application[]> {
-    return firstValueFrom(
-      this.httpClient.get<Application[]>(this.applicationsUrl).pipe(tap((apps) => this.cache.reset(apps)))
+    return this.cache.refresh();
+  }
+
+  get(applicationId: string): Observable<Application> {
+    return this.httpClient
+      .get<Application>(`${this.applicationsUrl}/${applicationId}`)
+      .pipe(tap((it) => this.cache.save(it)));
+  }
+
+  watch(applicationId: string): Observable<Application | undefined> {
+    return this.get(applicationId).pipe(
+      switchMap(() => this.list().pipe(map((applications) => applications.find((a) => a.id === applicationId))))
     );
   }
 
@@ -118,29 +128,13 @@ export class ApplicationsService implements CrudService<Application> {
     formData.append('applicationversion', JSON.stringify(applicationVersion));
     return this.httpClient
       .post<ApplicationVersion>(`${this.applicationsUrl}/${application.id}/versions`, formData)
-      .pipe(
-        tap((it) => {
-          application.versions = [...(application.versions || []), it];
-          this.cache.save(application);
-        })
-      );
+      .pipe(switchMap((it) => this.get(application.id!).pipe(map(() => it))));
   }
 
   updateApplicationVersion(app: Application, version: ApplicationVersion): Observable<ApplicationVersion> {
     return this.httpClient
       .put<ApplicationVersion>(`${this.applicationsUrl}/${app.id}/versions/${version.id}`, version)
-      .pipe(
-        tap((it) => {
-          app.versions = (app.versions ?? []).map((av) => {
-            if (av.id === it.id) {
-              return it;
-            } else {
-              return av;
-            }
-          });
-          this.cache.save(app);
-        })
-      );
+      .pipe(switchMap((it) => this.get(app.id!).pipe(map(() => it))));
   }
 
   public patchImage(artifactsId: string, imageId: string) {

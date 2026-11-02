@@ -29,6 +29,7 @@ import {
   lastValueFrom,
   map,
   NEVER,
+  of,
   startWith,
   switchMap,
   tap,
@@ -36,6 +37,7 @@ import {
 import {RelativeDatePipe} from '../../../util/dates';
 import {shortDigest} from '../../../util/digest';
 import {getFormDisplayedError} from '../../../util/errors';
+import {refreshInBackground} from '../../../util/refresh';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {BytesPipe} from '../../../util/units';
 import {ClipComponent} from '../../components/clip.component';
@@ -57,11 +59,12 @@ import {
 } from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
 import {ContextService} from '../../services/context.service';
-import {CustomerOrganizationsCache} from '../../services/customer-organizations.service';
+import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {ImageUploadService} from '../../services/image-upload.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
+import {UsersService} from '../../services/users.service';
 import {
   ArtifactPublicBadgeComponent,
   ArtifactsDownloadCountComponent,
@@ -94,11 +97,12 @@ import {
     TitleImagePickerComponent,
   ],
   templateUrl: './artifact-versions.component.html',
-  providers: [CustomerOrganizationsCache],
 })
 export class ArtifactVersionsComponent {
   protected readonly auth = inject(AuthService);
   private readonly artifacts = inject(ArtifactsService);
+  private readonly usersService = inject(UsersService);
+  private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly organization = inject(OrganizationService);
@@ -143,6 +147,9 @@ export class ArtifactVersionsComponent {
   protected upstreamAuthModalRef?: DialogRef;
 
   constructor() {
+    if (this.auth.isVendor()) {
+      refreshInBackground(this.usersService.refresh(), this.customerOrganizationsService.refresh());
+    }
     this.upstreamAuthForm.controls.upstreamAuthType.valueChanges
       .pipe(startWith(this.upstreamAuthForm.controls.upstreamAuthType.value), takeUntilDestroyed())
       .subscribe((authType) => {
@@ -160,7 +167,7 @@ export class ArtifactVersionsComponent {
     this.route.params.pipe(
       map((params) => params['id']?.trim()),
       distinctUntilChanged(),
-      switchMap((id) => this.artifacts.getByIdAndCache(id)),
+      switchMap((id) => this.artifacts.watch(id).pipe(catchError(() => of(undefined)))),
       map((artifact) => {
         if (artifact) {
           return {

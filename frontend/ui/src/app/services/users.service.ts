@@ -1,7 +1,7 @@
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpErrorResponse, HttpStatusCode} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {UserAccountWithRole, UserRole} from '@distr-sh/distr-sdk';
-import {filter, firstValueFrom, map, merge, Observable, of, shareReplay, Subject, switchMap, tap} from 'rxjs';
+import {filter, map, merge, Observable, of, shareReplay, Subject, switchMap, tap} from 'rxjs';
 import {ReactiveList} from './cache';
 import {ContextService} from './context.service';
 
@@ -23,6 +23,15 @@ export interface UserAccountInvitationResponse {
   inviteUrl?: string;
 }
 
+/** The user account was created, but the invitation email could not be sent. */
+export interface InviteMailNotSentError extends HttpErrorResponse {
+  error: UserAccountInvitationResponse;
+}
+
+export function isInviteMailNotSentError(e: unknown): e is InviteMailNotSentError {
+  return e instanceof HttpErrorResponse && e.status === HttpStatusCode.FailedDependency;
+}
+
 class UserAccountsReactiveList extends ReactiveList<UserAccountWithRole> {
   protected override identify = (u: UserAccountWithRole) => u.id;
   protected override sortAttr = (u: UserAccountWithRole) => u.name ?? u.email;
@@ -33,7 +42,7 @@ export class UsersService {
   private readonly baseUrl = '/api/v1/user-accounts';
   private readonly httpClient = inject(HttpClient);
   private readonly contextService = inject(ContextService);
-  private readonly cache = new UserAccountsReactiveList(this.httpClient.get<UserAccountWithRole[]>(this.baseUrl));
+  private readonly cache = new UserAccountsReactiveList(() => this.httpClient.get<UserAccountWithRole[]>(this.baseUrl));
 
   private readonly userAccountUpdates$ = new Subject<UserAccountWithRole>();
   private readonly self$ = this.contextService.getUser().pipe(
@@ -50,18 +59,25 @@ export class UsersService {
   }
 
   public refresh(): Promise<UserAccountWithRole[]> {
-    return firstValueFrom(
-      this.httpClient.get<UserAccountWithRole[]>(this.baseUrl).pipe(tap((users) => this.cache.reset(users)))
-    );
+    return this.cache.refresh();
   }
 
   public addUser(request: CreateUserAccountRequest): Observable<UserAccountInvitationResponse> {
     return this.httpClient.post<UserAccountInvitationResponse>(this.baseUrl, request).pipe(
-      tap((it) => {
-        this.cache.save(it.user);
-        this.contextService.reload();
+      tap({
+        next: (it) => this.onUserAdded(it),
+        error: (e) => {
+          if (isInviteMailNotSentError(e)) {
+            this.onUserAdded(e.error);
+          }
+        },
       })
     );
+  }
+
+  private onUserAdded(response: UserAccountInvitationResponse) {
+    this.cache.save(response.user);
+    this.contextService.reload();
   }
 
   public resendInvitation(user: UserAccountWithRole): Observable<UserAccountInvitationResponse> {

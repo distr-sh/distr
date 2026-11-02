@@ -9,9 +9,11 @@ import (
 const (
 	MediaTypeJSON             = "application/json"
 	MediaTypeYAML             = "application/yaml"
+	MediaTypeZIP              = "application/zip"
 	MediaTypeOctetStream      = "application/octet-stream"
 	MediaTypeTextYAML         = "text/yaml"
 	MediaTypeTextPlain        = "text/plain"
+	MediaTypeTextXLog         = "text/x-log"
 	MediaTypeTextXYaml        = "text/x-yaml"
 	MediaTypeApplicationXYaml = "application/x-yaml"
 )

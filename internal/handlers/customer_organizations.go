@@ -105,6 +105,7 @@ func createCustomerOrganizationHandler(r *http.Request) (respond.Responder, erro
 			Name:                  request.Name,
 			ImageID:               request.ImageID,
 			PartnerOrganizationID: auth.CurrentPartnerOrgID(),
+			Features:              types.DefaultCustomerOrganizationFeatures(auth.CurrentOrg()),
 		}
 
 		if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
@@ -150,12 +151,8 @@ func updateCustomerOrganizationHandler(r *http.Request) (respond.Responder, erro
 			features = request.Features
 		}
 
-		// The customer's providers are configured on the vendor's own plan, so the vendor cannot hand
-		// out a feature it does not have itself. This cannot live in request.Validate(), which sees
-		// neither the context nor the organization.
-		if slices.Contains(features, types.CustomerOrganizationFeatureOidcProviders) &&
-			!auth.CurrentOrg().HasFeature(types.FeatureCustomOidcProviders) {
-			return respond.Forbidden("the custom identity provider feature is not available on your plan"), nil
+		if resp := checkBusinessCustomerOrganizationFeatures(auth.CurrentOrg(), features); resp != nil {
+			return resp, nil
 		}
 
 		if resp, err := checkProCustomerOrganizationFeatures(ctx, id, features); resp != nil || err != nil {
@@ -206,6 +203,24 @@ func checkProCustomerOrganizationFeatures(
 		}
 	}
 	return nil, nil
+}
+
+// checkBusinessCustomerOrganizationFeatures rejects a Business customer feature whose organization
+// feature the vendor does not have, since the vendor cannot hand out what it lacks itself.
+func checkBusinessCustomerOrganizationFeatures(
+	org *types.Organization,
+	features []types.CustomerOrganizationFeature,
+) respond.Responder {
+	for _, feature := range features {
+		if required, ok := types.BusinessCustomerOrganizationFeatures[feature]; !ok || org.HasFeature(required) {
+			continue
+		} else if feature == types.CustomerOrganizationFeatureOidcProviders {
+			return respond.Forbidden("the custom identity provider feature is not available on your plan")
+		} else {
+			return respond.Forbidden("security advisories are not available on your plan")
+		}
+	}
+	return nil
 }
 
 func assignCustomerToPartnerHandler(r *http.Request) (respond.Responder, error) {

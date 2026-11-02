@@ -226,6 +226,7 @@ export class DistrService {
     await this.client.createOrUpdateDeployment({
       deploymentTargetId: deploymentTarget.id!,
       applicationVersionId: versionId,
+      dockerType: target.type === 'docker' ? 'compose' : undefined,
       releaseName: kubernetesDeployment?.releaseName,
       valuesYaml: kubernetesDeployment?.valuesYaml ? toBase64(kubernetesDeployment.valuesYaml) : undefined,
     });

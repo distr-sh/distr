@@ -9,7 +9,7 @@ import {
   PatchDeploymentRequest,
   UpdateDeploymentTargetRequest,
 } from '@distr-sh/distr-sdk';
-import {EMPTY, firstValueFrom, merge, Observable, retry, shareReplay, Subject, switchMap, tap, timer} from 'rxjs';
+import {EMPTY, merge, Observable, retry, shareReplay, Subject, switchMap, tap, timer} from 'rxjs';
 import {ReactiveList} from './cache';
 
 class DeploymentTargetsReactiveList extends ReactiveList<DeploymentTarget> {
@@ -24,7 +24,7 @@ export class DeploymentTargetsService {
   private readonly deploymentTargetsBaseUrl = '/api/v1/deployment-targets';
   private readonly deploymentsBaseUrl = '/api/v1/deployments';
   private readonly httpClient = inject(HttpClient);
-  private readonly cache = new DeploymentTargetsReactiveList(
+  private readonly cache = new DeploymentTargetsReactiveList(() =>
     this.httpClient.get<DeploymentTarget[]>(this.deploymentTargetsBaseUrl)
   );
 
@@ -49,11 +49,7 @@ export class DeploymentTargetsService {
   }
 
   refresh(): Promise<DeploymentTarget[]> {
-    return firstValueFrom(
-      this.httpClient
-        .get<DeploymentTarget[]>(this.deploymentTargetsBaseUrl)
-        .pipe(tap((deploymentTargets) => this.cache.reset(deploymentTargets)))
-    );
+    return this.cache.refresh();
   }
 
   poll(): Observable<DeploymentTarget[]> {

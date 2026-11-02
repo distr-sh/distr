@@ -4,6 +4,7 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faBoxesStacked, faChevronDown} from '@fortawesome/free-solid-svg-icons';
+import {refreshInBackground} from '../../util/refresh';
 import {CustomerOrganizationsService} from '../services/customer-organizations.service';
 
 /** The breadcrumb of a page that shows one customer's rows, with the dropdown to switch customer. */
@@ -29,6 +30,10 @@ export class CustomerBreadcrumbComponent {
   private readonly dropdownTriggerButton = viewChild.required<ElementRef<HTMLElement>>('dropdownTriggerButton');
   protected readonly dropdownOpen = signal(false);
   protected readonly dropdownWidth = signal(0);
+
+  constructor() {
+    refreshInBackground(this.customerOrganizationsService.refresh());
+  }
 
   protected toggleDropdown() {
     this.dropdownOpen.update((open) => !open);

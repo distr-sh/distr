@@ -317,8 +317,8 @@
           }
         </li>
 
-        @if (isVulnerabilitiesFeatureEnabled()) {
-          <li>
+        <li>
+          @if (isVulnerabilitiesFeatureEnabled()) {
             <a
               class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
@@ -330,8 +330,34 @@
                 class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <span class="ms-3">Security Advisories</span>
             </a>
-          </li>
-        }
+          } @else {
+            <a
+              class="group flex cursor-pointer items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+              title="Upgrade to Business to enable security advisories"
+              (click)="toggle(advisoriesOverlayOpen)"
+              cdkOverlayOrigin
+              #advisoriesTooltipTrigger="cdkOverlayOrigin">
+              <fa-icon
+                [icon]="faShieldHalved"
+                size="lg"
+                class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
+              <span class="ms-3 flex-1 text-left whitespace-nowrap rtl:text-right">Security Advisories</span>
+              <app-plan-badge plan="business" class="me-2 ml-2" />
+              <ng-template
+                cdkConnectedOverlay
+                [cdkConnectedOverlayHasBackdrop]="true"
+                (backdropClick)="toggle(advisoriesOverlayOpen)"
+                [cdkConnectedOverlayOrigin]="advisoriesTooltipTrigger"
+                [cdkConnectedOverlayBackdropClass]="'transparent'"
+                [cdkConnectedOverlayPositions]="[
+                  {originX: 'end', overlayX: 'start', originY: 'center', overlayY: 'center'},
+                ]"
+                [cdkConnectedOverlayOpen]="advisoriesOverlayOpen()">
+                <app-plan-feature-hint plan="business" />
+              </ng-template>
+            </a>
+          }
+        </li>
 
         @if (auth.isSuperAdmin() || auth.hasRole('admin')) {
           <li>
@@ -692,7 +718,7 @@
             </a>
           </li>
         }
-        @if (isVulnerabilitiesFeatureEnabled()) {
+        @if (isVulnerabilitiesFeatureEnabled() && customerFeatures().vulnerabilities) {
           <li>
             <a
               (click)="sidebar.hide()"

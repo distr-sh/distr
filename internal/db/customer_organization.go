@@ -54,16 +54,39 @@ func ValidateCustomerOrgBelongsToOrg(ctx context.Context, customerOrgID uuid.UUI
 	return nil
 }
 
+// AddCustomerOrganizationFeature adds the feature to every customer of the given organizations
+// that does not have it yet.
+func AddCustomerOrganizationFeature(
+	ctx context.Context,
+	organizationIDs []uuid.UUID,
+	feature types.CustomerOrganizationFeature,
+) error {
+	db := internalctx.GetDb(ctx)
+	_, err := db.Exec(ctx,
+		`UPDATE CustomerOrganization
+		SET features = array_append(features, @feature::CUSTOMER_ORGANIZATION_FEATURE)
+		WHERE organization_id = ANY(@organizationIds::UUID[])
+			AND NOT @feature::CUSTOMER_ORGANIZATION_FEATURE = ANY(features)`,
+		pgx.NamedArgs{"organizationIds": organizationIDs, "feature": feature},
+	)
+	if err != nil {
+		return fmt.Errorf("could not update CustomerOrganization features: %w", err)
+	}
+	return nil
+}
+
 func CreateCustomerOrganization(ctx context.Context, customerOrg *types.CustomerOrganization) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		"INSERT INTO CustomerOrganization AS co (organization_id, image_id, name, partner_organization_id) "+
-			"VALUES (@organizationId, @imageId, @name, @partnerOrganizationId) RETURNING "+customerOrganizationOutputExpr,
+		"INSERT INTO CustomerOrganization AS co (organization_id, image_id, name, partner_organization_id, features) "+
+			"VALUES (@organizationId, @imageId, @name, @partnerOrganizationId, @features) "+
+			"RETURNING "+customerOrganizationOutputExpr,
 		pgx.NamedArgs{
 			"organizationId":        customerOrg.OrganizationID,
 			"imageId":               customerOrg.ImageID,
 			"name":                  customerOrg.Name,
 			"partnerOrganizationId": customerOrg.PartnerOrganizationID,
+			"features":              customerOrg.Features,
 		},
 	)
 	if err != nil {
