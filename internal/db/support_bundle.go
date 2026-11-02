@@ -430,14 +430,39 @@ func ClearSupportBundleBundleSecret(ctx context.Context, bundleID uuid.UUID) err
 
 // Resources
 
+const supportBundleResourceSummaryOutputExpr = `r.id, r.created_at, r.support_bundle_id, r.name, r.content_type, r.size`
+
+func GetSupportBundleResourceSummaries(
+	ctx context.Context,
+	bundleID uuid.UUID,
+) ([]types.SupportBundleResourceSummary, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT `+supportBundleResourceSummaryOutputExpr+`
+		FROM SupportBundleResource r
+		WHERE r.support_bundle_id = @bundleId
+		ORDER BY r.created_at`,
+		pgx.NamedArgs{"bundleId": bundleID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query support bundle resources: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.SupportBundleResourceSummary])
+	if err != nil {
+		return nil, fmt.Errorf("could not get support bundle resources: %w", err)
+	}
+	return result, nil
+}
+
 func GetSupportBundleResources(ctx context.Context, bundleID uuid.UUID) ([]types.SupportBundleResource, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`SELECT id, created_at, support_bundle_id, name, content_type, `+supportBundleResourceContent.Output("r")+`
+		`SELECT `+supportBundleResourceSummaryOutputExpr+`, `+supportBundleResourceContent.Output("r")+`
 		FROM SupportBundleResource r
-		WHERE support_bundle_id = @bundleId
-		ORDER BY created_at`,
+		WHERE r.support_bundle_id = @bundleId
+		ORDER BY r.created_at`,
 		pgx.NamedArgs{"bundleId": bundleID},
 	)
 	if err != nil {
@@ -450,6 +475,30 @@ func GetSupportBundleResources(ctx context.Context, bundleID uuid.UUID) ([]types
 	return result, nil
 }
 
+func GetSupportBundleResource(
+	ctx context.Context,
+	bundleID, resourceID uuid.UUID,
+) (*types.SupportBundleResource, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT `+supportBundleResourceSummaryOutputExpr+`, `+supportBundleResourceContent.Output("r")+`
+		FROM SupportBundleResource r
+		WHERE r.support_bundle_id = @bundleId AND r.id = @resourceId`,
+		pgx.NamedArgs{"bundleId": bundleID, "resourceId": resourceID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query support bundle resource: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[types.SupportBundleResource])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, distrerr.ErrNotFound
+	} else if err != nil {
+		return nil, fmt.Errorf("could not get support bundle resource: %w", err)
+	}
+	return result, nil
+}
+
 func CreateSupportBundleResource(ctx context.Context, resource *types.SupportBundleResource) error {
 	contentEnc, err := supportBundleResourceContent.Encrypt(resource.Content, resource.SupportBundleID)
 	if err != nil {
@@ -458,13 +507,14 @@ func CreateSupportBundleResource(ctx context.Context, resource *types.SupportBun
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`INSERT INTO SupportBundleResource AS r (support_bundle_id, name, content_type, content_enc)
-		VALUES (@bundleId, @name, @contentType, @contentEnc)
-		RETURNING id, created_at, support_bundle_id, name, content_type, `+supportBundleResourceContent.Output("r"),
+		`INSERT INTO SupportBundleResource AS r (support_bundle_id, name, content_type, size, content_enc)
+		VALUES (@bundleId, @name, @contentType, @size, @contentEnc)
+		RETURNING `+supportBundleResourceSummaryOutputExpr+`, `+supportBundleResourceContent.Output("r"),
 		pgx.NamedArgs{
 			"bundleId":    resource.SupportBundleID,
 			"name":        resource.Name,
 			"contentType": resource.ContentType,
+			"size":        int64(len(resource.Content)),
 			"contentEnc":  contentEnc,
 		},
 	)
