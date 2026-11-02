@@ -1,6 +1,6 @@
 import {DatePipe} from '@angular/common';
 import {Component, computed, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
-import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
+import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   FormBuilder,
@@ -16,6 +16,7 @@ import {compareBy} from '../../util/arrays';
 import {isExpired} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {checkedIds, checkedRecord} from '../../util/formRecord';
+import {refreshInBackground} from '../../util/refresh';
 import {validateRecordAtLeast} from '../../util/validation';
 import {ApplicationLogoComponent} from '../applications/components';
 import {ArtifactLogoComponent} from '../artifacts/components';
@@ -28,7 +29,7 @@ import {ArtifactEntitlementsService} from '../services/artifact-entitlements.ser
 import {ArtifactsService} from '../services/artifacts.service';
 import {AuthService} from '../services/auth.service';
 import {ContextService} from '../services/context.service';
-import {CustomerOrganizationsCache} from '../services/customer-organizations.service';
+import {CustomerOrganizationsService} from '../services/customer-organizations.service';
 import {UpdateNotificationConfigurationsService} from '../services/notification-configurations.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
@@ -42,7 +43,6 @@ type NotificationKind = 'application' | 'artifact';
 @Component({
   selector: 'app-update-notifications',
   templateUrl: './update-notifications.component.html',
-  providers: [CustomerOrganizationsCache],
   imports: [
     FaIconComponent,
     ReactiveFormsModule,
@@ -68,7 +68,7 @@ export class UpdateNotificationsComponent {
   private readonly artifactEntitlementsService = inject(ArtifactEntitlementsService);
   private readonly usersService = inject(UsersService);
   private readonly context = inject(ContextService);
-  private readonly customerOrganizations = inject(CustomerOrganizationsCache);
+  private readonly customerOrganizations = inject(CustomerOrganizationsService);
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
@@ -228,9 +228,8 @@ export class UpdateNotificationsComponent {
   private editConfigDrawerRef?: DialogRef;
 
   constructor() {
-    // Warms the cache the recipient list reads, which it would otherwise fill on its first render.
-    if (this.auth.isVendor()) {
-      this.customerOrganizations.getCustomerOrganizations().pipe(takeUntilDestroyed()).subscribe();
+    if (!this.auth.isCustomer()) {
+      refreshInBackground(this.customerOrganizations.refresh());
     }
   }
 
