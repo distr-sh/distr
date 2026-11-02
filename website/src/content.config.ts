@@ -114,6 +114,7 @@ export const collections = {
     schema: docsSchema({
       extend: z.object({
         hideSidebar: z.boolean().default(false),
+        lastUpdatedAtTop: z.boolean().default(false),
       }),
     }),
   }),

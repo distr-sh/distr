@@ -6,7 +6,7 @@ import {
   ApplicationVersionResource,
   PatchApplicationRequest,
 } from '@distr-sh/distr-sdk';
-import {catchError, firstValueFrom, Observable, of, tap, throwError} from 'rxjs';
+import {catchError, Observable, of, tap, throwError} from 'rxjs';
 import {DefaultReactiveList} from './cache';
 import {CrudService} from './interfaces';
 
@@ -17,16 +17,14 @@ export class ApplicationsService implements CrudService<Application> {
   private readonly httpClient = inject(HttpClient);
 
   private readonly applicationsUrl = '/api/v1/applications';
-  private readonly cache = new DefaultReactiveList(this.httpClient.get<Application[]>(this.applicationsUrl));
+  private readonly cache = new DefaultReactiveList(() => this.httpClient.get<Application[]>(this.applicationsUrl));
 
   list(): Observable<Application[]> {
     return this.cache.get();
   }
 
   refresh(): Promise<Application[]> {
-    return firstValueFrom(
-      this.httpClient.get<Application[]>(this.applicationsUrl).pipe(tap((apps) => this.cache.reset(apps)))
-    );
+    return this.cache.refresh();
   }
 
   create(application: Application): Observable<Application> {

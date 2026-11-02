@@ -48,7 +48,9 @@
           <p class="font-semibold">Store these codes in a safe place. You won't be able to see them again.</p>
 
           <div class="mt-4">
-            <div class="grid grid-cols-2 gap-2 font-mono text-sm text-gray-900 dark:text-white">
+            <div
+              class="grid grid-cols-2 gap-2 font-mono text-sm text-gray-900 dark:text-white"
+              data-ph-mask-text="true">
               @for (code of codes; track code) {
                 <div class="rounded-md border border-gray-200 p-2 dark:border-gray-700">
                   {{ code }}
@@ -114,9 +116,10 @@
       <div class="text-sm dark:text-white">
         Scan the QR code below with your authenticator app and enter the generated code to enable MFA.
       </div>
-      <img [src]="mfaSetupData.qrCodeUrl" alt="MFA QR Code" class="rounded-lg bg-white p-2" />
+      <img [src]="mfaSetupData.qrCodeUrl" alt="MFA QR Code" class="ph-no-capture rounded-lg bg-white p-2" />
       <div class="text-sm text-gray-500">
-        Setup key for manual configuration: <code class="select-all">{{ mfaSetupData.secret }}</code>
+        Setup key for manual configuration:
+        <code class="select-all" data-ph-mask-text="true">{{ mfaSetupData.secret }}</code>
       </div>
 
       <form [formGroup]="setupMfaForm" (ngSubmit)="enableMfa()">

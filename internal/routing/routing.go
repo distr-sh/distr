@@ -197,6 +197,7 @@ func ApiRouter(
 					r.Route("/deployment-targets", handlers.DeploymentTargetsRouter)
 					r.Route("/deployments", handlers.DeploymentsRouter)
 					r.Route("/files", handlers.FileRouter)
+					r.Route("/lenses", handlers.LensesRouter)
 					r.With(middleware.UseReadonlyDB).Route("/notification-records", handlers.NotificationRecordsRouter)
 					r.Route("/organization", handlers.OrganizationRouter)
 					r.Route("/organizations", handlers.OrganizationsRouter)

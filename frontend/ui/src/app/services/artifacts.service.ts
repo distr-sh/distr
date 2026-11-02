@@ -1,6 +1,6 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {firstValueFrom, map, Observable, of, switchMap, tap} from 'rxjs';
+import {map, Observable, of, switchMap, tap} from 'rxjs';
 import {ReactiveList} from './cache';
 
 export interface HasDownloads {
@@ -73,16 +73,14 @@ class ArtifactsReactiveList extends ReactiveList<ArtifactWithTags> {
 export class ArtifactsService {
   private readonly artifactsUrl = '/api/v1/artifacts';
   private readonly http = inject(HttpClient);
-  private readonly cache = new ArtifactsReactiveList(this.http.get<ArtifactWithTags[]>(this.artifactsUrl));
+  private readonly cache = new ArtifactsReactiveList(() => this.http.get<ArtifactWithTags[]>(this.artifactsUrl));
 
   public list(): Observable<ArtifactWithTags[]> {
     return this.cache.get();
   }
 
   public refresh(): Promise<ArtifactWithTags[]> {
-    return firstValueFrom(
-      this.http.get<ArtifactWithTags[]>(this.artifactsUrl).pipe(tap((artifacts) => this.cache.reset(artifacts)))
-    );
+    return this.cache.refresh();
   }
 
   public getByIdAndCache(id: string): Observable<ArtifactWithTags | undefined> {

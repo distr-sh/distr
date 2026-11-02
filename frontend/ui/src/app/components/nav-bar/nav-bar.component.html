@@ -1,6 +1,11 @@
 <nav class="fixed top-0 z-50 w-full border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
   @let organization = currentOrg();
-  @if (isSubscriptionBannerVisible() && organization) {
+  @if (isLens && organization) {
+    <app-nav-bar-lens-banner
+      [organization]="organization"
+      [ownKind]="ownKind()"
+      (leaveLens)="switchOrganization(organization)" />
+  } @else if (isSubscriptionBannerVisible() && organization) {
     <app-nav-bar-subscription-banner
       [organization]="organization"
       [isTrial]="isTrial()"
@@ -66,25 +71,35 @@
                 <button
                   type="button"
                   class="flex items-center text-sm disabled:cursor-default"
-                  [disabled]="!canSwitchOrganization()"
-                  [attr.title]="canSwitchOrganization() ? 'Switch organization (' + switcherShortcut + ')' : null"
-                  [attr.aria-expanded]="canSwitchOrganization() ? organizationsOpened() : null"
+                  [disabled]="!canOpenSwitcher()"
+                  [attr.title]="canOpenSwitcher() ? 'Switch context (' + switcherShortcut + ')' : null"
+                  [attr.aria-expanded]="canOpenSwitcher() ? organizationsOpened() : null"
                   cdkOverlayOrigin
                   #organizationsDropdownTrigger="cdkOverlayOrigin"
                   (click)="toggleOrganizations()">
-                  @if (canSwitchOrganization()) {
-                    <span class="sr-only">Show Organizations</span>
+                  @if (canOpenSwitcher()) {
+                    <span class="sr-only">Show context switcher</span>
                   }
                   <span class="flex flex-col text-end text-sm font-medium text-gray-900 dark:text-gray-300" role="none">
                     <span class="flex items-center justify-end gap-2" role="none">
                       {{ organization.name }}
-                      @if (auth.isSuperAdmin()) {
+                      @if (isSuperAdmin) {
                         <app-subscription-badge
                           [plan]="organization.subscriptionType"
                           [endsAt]="organization.subscriptionEndsAt" />
                       }
                     </span>
-                    @if (auth.isSuperAdmin()) {
+                    @if (isLens && organization) {
+                      <span class="text-xs font-light text-amber-600 dark:text-amber-400" role="none">
+                        {{ organization | membershipLabel }}
+                        &bull;
+                        @if (isSuperAdmin) {
+                          Super Admin (Read-Only)
+                        } @else {
+                          {{ user.userRole | userRoleLabel }}
+                        }
+                      </span>
+                    } @else if (isSuperAdmin) {
                       <span class="text-xs font-light text-amber-600 dark:text-amber-400" role="none">
                         Super Admin (Read-Only)
                       </span>
@@ -98,7 +113,7 @@
                       </span>
                     }
                   </span>
-                  @if (canSwitchOrganization()) {
+                  @if (canOpenSwitcher()) {
                     <fa-icon
                       class="ml-2 text-gray-900 transition duration-150 ease-in-out dark:text-gray-300"
                       [class.rotate-x-180]="organizationsOpened()"
@@ -112,55 +127,78 @@
                 (backdropClick)="organizationsOpened.set(false)"
                 [cdkConnectedOverlayBackdropClass]="'transparent'"
                 [cdkConnectedOverlayOrigin]="organizationsDropdownTrigger"
+                [cdkConnectedOverlayPositions]="[{originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top'}]"
                 [cdkConnectedOverlayOpen]="organizationsOpened()">
                 <div
-                  class="distr-dropdown-panel my-2 flex max-h-[80vh] flex-col"
+                  class="distr-dropdown-panel my-2 flex max-h-[80vh] w-80 flex-col"
                   animate.enter="animate-flip-in-top"
                   animate.leave="animate-flip-out-top">
                   @if (isOrganizationSearchVisible()) {
-                    <div class="mb-1 min-w-72 shrink-0">
+                    <div class="mb-1 shrink-0">
                       <app-search-bar
                         [control]="organizationSearch"
-                        placeholder="Filter organizations"
+                        [placeholder]="switcherFilterLabels().placeholder"
                         [autofocus]="true" />
                     </div>
                   }
-                  <ul class="min-h-0 overflow-y-auto" role="none">
-                    @for (org of matchingOrgs(); track org.id) {
-                      <li>
-                        <button
-                          (click)="switchContext(org)"
-                          [title]="'Switch to this organization'"
-                          class="distr-dropdown-item focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
-                          role="menuitem">
-                          <fa-icon class="w-4" [icon]="faShuffle" />
-                          <span
-                            class="flex flex-col text-start text-sm font-medium text-gray-900 dark:text-gray-300"
-                            role="none">
-                            <span class="flex items-center gap-2" role="none">
-                              {{ org.name }}
-                              @if (auth.isSuperAdmin()) {
-                                <app-subscription-badge
-                                  [plan]="org.subscriptionType"
-                                  [endsAt]="org.subscriptionEndsAt" />
-                              }
-                            </span>
-                            <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
-                              @if (!auth.isSuperAdmin()) {
-                                @if (isDifferentOrganizationKind()) {
-                                  {{ org | membershipLabel }}
-                                  &bull;
-                                }
-                                {{ org.userRole | userRoleLabel }}
-                              }
-                            </span>
-                          </span>
-                        </button>
-                      </li>
+                  <ul class="flex min-h-0 flex-col gap-y-0.5 overflow-y-auto" role="none">
+                    @for (entry of switcherEntries(); track entry.org.id) {
+                      @if (isOrganizationListed()) {
+                        <li>
+                          @if (entry.current) {
+                            <div class="distr-dropdown-label" aria-current="true" role="none">
+                              <ng-container
+                                [ngTemplateOutlet]="organizationLabel"
+                                [ngTemplateOutletContext]="{$implicit: entry.org}" />
+                              <fa-icon [icon]="faCheck" class="ps-2 text-gray-500 dark:text-gray-400" />
+                            </div>
+                          } @else {
+                            <button
+                              type="button"
+                              (click)="switchOrganization(entry.org)"
+                              [title]="'Switch to ' + entry.org.name"
+                              class="group distr-dropdown-item focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
+                              role="menuitem">
+                              <ng-container
+                                [ngTemplateOutlet]="organizationLabel"
+                                [ngTemplateOutletContext]="{$implicit: entry.org}" />
+                              <fa-icon
+                                [icon]="faShuffle"
+                                class="ps-2 text-gray-500 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 dark:text-gray-400" />
+                            </button>
+                          }
+                        </li>
+                      }
+                      @for (lens of entry.lenses; track lens.customerOrganizationId) {
+                        <li>
+                          @if (lens.current) {
+                            <div class="distr-dropdown-label" aria-current="true" role="none">
+                              <ng-container
+                                [ngTemplateOutlet]="lensLabel"
+                                [ngTemplateOutletContext]="{$implicit: lens}" />
+                              <fa-icon [icon]="faGlasses" class="ps-2 text-gray-500 dark:text-gray-400" />
+                            </div>
+                          } @else {
+                            <button
+                              type="button"
+                              (click)="enterLens(lens)"
+                              [title]="'Enter customer lens for ' + lens.customerOrganizationName"
+                              class="group distr-dropdown-item focus:bg-gray-100 dark:focus:bg-gray-600 dark:focus:text-white"
+                              role="menuitem">
+                              <ng-container
+                                [ngTemplateOutlet]="lensLabel"
+                                [ngTemplateOutletContext]="{$implicit: lens}" />
+                              <fa-icon
+                                [icon]="faGlasses"
+                                class="ps-2 text-gray-500 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 dark:text-gray-400" />
+                            </button>
+                          }
+                        </li>
+                      }
                     } @empty {
                       <li>
                         <div class="px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300" role="menuitem">
-                          No organization matches your filter.
+                          {{ switcherFilterLabels().empty }}
                         </div>
                       </li>
                     }
@@ -215,7 +253,7 @@
                       Edit Your Profile
                     </a>
                   </li>
-                  @if (!auth.isSuperAdmin()) {
+                  @if (!isSuperAdmin && !isLens) {
                     <li>
                       <a
                         (click)="userOpened.set(false)"
@@ -241,3 +279,28 @@
     </div>
   }
 </nav>
+
+<ng-template #organizationLabel let-org>
+  <span class="flex grow flex-col text-start text-sm font-medium text-gray-900 dark:text-gray-300" role="none">
+    <span class="flex items-center gap-2" role="none">
+      {{ org.name }}
+      @if (isSuperAdmin) {
+        <app-subscription-badge [plan]="org.subscriptionType" [endsAt]="org.subscriptionEndsAt" />
+      }
+    </span>
+    @if (!isSuperAdmin) {
+      <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
+        @if (isDifferentOrganizationKind()) {
+          {{ org | membershipLabel }}
+          &bull;
+        }
+        {{ org.userRole | userRoleLabel }}
+      </span>
+    }
+  </span>
+</ng-template>
+
+<ng-template #lensLabel let-lens>
+  <app-avatar [name]="lens.customerOrganizationName" initialsClass="text-[0.625rem]" class="size-5 rounded-sm" />
+  <span class="grow" role="none">{{ lens.customerOrganizationName }}</span>
+</ng-template>

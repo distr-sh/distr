@@ -24,7 +24,7 @@ export class DeploymentTargetsService {
   private readonly deploymentTargetsBaseUrl = '/api/v1/deployment-targets';
   private readonly deploymentsBaseUrl = '/api/v1/deployments';
   private readonly httpClient = inject(HttpClient);
-  private readonly cache = new DeploymentTargetsReactiveList(
+  private readonly cache = new DeploymentTargetsReactiveList(() =>
     this.httpClient.get<DeploymentTarget[]>(this.deploymentTargetsBaseUrl)
   );
 

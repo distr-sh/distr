@@ -59,6 +59,24 @@ type AuthSwitchContextRequest struct {
 	OrganizationID uuid.UUID `json:"organizationId"`
 }
 
+func (r *AuthSwitchContextRequest) Validate() error {
+	if r.OrganizationID == uuid.Nil {
+		return validation.NewValidationFailedError("an organization is required")
+	}
+	return nil
+}
+
+type AuthEnterLensRequest struct {
+	CustomerOrganizationID uuid.UUID `json:"customerOrganizationId"`
+}
+
+func (r *AuthEnterLensRequest) Validate() error {
+	if r.CustomerOrganizationID == uuid.Nil {
+		return validation.NewValidationFailedError("a customer organization is required")
+	}
+	return nil
+}
+
 type AuthAcceptInviteRequest struct {
 	Name     *string `json:"name"`
 	Password string  `json:"password"`
