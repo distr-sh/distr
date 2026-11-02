@@ -1,20 +1,9 @@
 import {Component, computed, inject, linkedSignal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {CustomerOrganizationFeature} from '@distr-sh/distr-sdk';
-import {
-  catchError,
-  combineLatest,
-  from,
-  map,
-  Observable,
-  of,
-  shareReplay,
-  startWith,
-  Subject,
-  switchMap,
-  take,
-} from 'rxjs';
+import {catchError, combineLatest, firstValueFrom, map, Observable, of, shareReplay, switchMap, take} from 'rxjs';
 import {isNotFound, recoverWithToast, toastDisplayedError} from '../../../util/errors';
+import {refreshInBackground} from '../../../util/refresh';
 import {LoadingCardComponent} from '../../components/loading-card/loading-card.component';
 import {PageComponent} from '../../components/page.component';
 import {AccessTokensService} from '../../services/access-tokens.service';
@@ -127,45 +116,33 @@ export class CustomerHomePageComponent {
   private readonly deploymentsEnabled = computed(() => this.features()?.includes('deployment_targets') ?? false);
   private readonly artifactsEnabled = computed(() => this.features()?.includes('artifacts') ?? false);
 
-  private readonly applicationEntitlements$ = this.featureFlags.isLicensingEnabled$.pipe(
-    take(1),
-    switchMap((enabled) =>
-      enabled ? this.applicationEntitlementsService.list().pipe(recoverWithToast(this.toast, [])) : of([])
-    ),
-    shareReplay(1)
+  private readonly licensingEnabled$ = this.featureFlags.isLicensingEnabled$.pipe(take(1), shareReplay(1));
+
+  private readonly applicationEntitlements$ = this.licensingEnabled$.pipe(
+    switchMap((enabled) => (enabled ? this.applicationEntitlementsService.list() : of([])))
   );
 
-  private readonly reloadDeploymentTargets$ = new Subject<void>();
   private readonly rawDeploymentTargets$ = this.whenFeature('deployment_targets', [], () =>
-    this.reloadDeploymentTargets$.pipe(
-      startWith(undefined),
-      switchMap(() => from(this.deploymentTargetsService.refresh()).pipe(recoverWithToast(this.toast, [])))
-    )
-  ).pipe(shareReplay({bufferSize: 1, refCount: true}));
+    this.deploymentTargetsService.list()
+  );
 
   protected readonly deploymentTargets = toSignal(
     this.whenFeature('deployment_targets', [], () =>
       combineLatest([this.rawDeploymentTargets$, this.applicationsService.list(), this.applicationEntitlements$]).pipe(
         map(([targets, applications, entitlements]) =>
           toCustomerHomeDeploymentTargets(targets, applications, entitlements)
-        ),
-        recoverWithToast(this.toast, [])
+        )
       )
     )
   );
 
-  private readonly rawArtifacts$ = this.whenFeature('artifacts', [], () =>
-    from(this.artifactsService.refresh()).pipe(recoverWithToast(this.toast, []))
-  ).pipe(shareReplay(1));
+  private readonly rawArtifacts$ = this.whenFeature('artifacts', [], () => this.artifactsService.list());
 
   protected readonly artifacts = toSignal(this.rawArtifacts$.pipe(map(toCustomerHomeArtifacts)));
 
   // A customer only receives the applications it is entitled to.
   private readonly applicationsAvailable$ = this.whenFeature('deployment_targets', false, () =>
-    this.applicationsService.list().pipe(
-      map((applications) => applications.length > 0),
-      recoverWithToast(this.toast, false)
-    )
+    this.applicationsService.list().pipe(map((applications) => applications.length > 0))
   ).pipe(shareReplay(1));
   private readonly applicationsAvailable = toSignal(this.applicationsAvailable$);
   private readonly canDeploy = computed(
@@ -291,8 +268,7 @@ export class CustomerHomePageComponent {
   protected readonly checklistRestorable = computed(() => this.checklistPending() && this.checklistDismissed());
 
   protected readonly license = toSignal(
-    this.featureFlags.isLicensingEnabled$.pipe(
-      take(1),
+    this.licensingEnabled$.pipe(
       switchMap((enabled) =>
         enabled
           ? combineLatest([
@@ -302,8 +278,7 @@ export class CustomerHomePageComponent {
             ]).pipe(
               map(([licenseKeys, applicationEntitlements, artifactEntitlements]) =>
                 toCustomerHomeLicense(licenseKeys, [...applicationEntitlements, ...artifactEntitlements])
-              ),
-              recoverWithToast(this.toast, undefined)
+              )
             )
           : of(undefined)
       )
@@ -365,9 +340,7 @@ export class CustomerHomePageComponent {
       ].filter(Boolean).length
   );
 
-  protected readonly activity = toSignal(
-    this.activityFeedService.list().pipe(map(toCustomerHomeActivity), recoverWithToast(this.toast, []))
-  );
+  protected readonly activity = toSignal(this.activityFeedService.list().pipe(map(toCustomerHomeActivity)));
   protected readonly activityShown = computed(() => this.activity()?.length !== 0);
   protected readonly vendorName = toSignal(this.organizationService.get().pipe(map((org) => org.name)));
 
@@ -391,8 +364,42 @@ export class CustomerHomePageComponent {
     this.checklistDismissed.set(hidden);
   }
 
-  protected reloadDeploymentTargets() {
-    this.reloadDeploymentTargets$.next();
+  constructor() {
+    const features = firstValueFrom(this.features$);
+    const licensingEnabled = firstValueFrom(this.licensingEnabled$);
+    refreshInBackground(
+      this.usersService.refresh(),
+      this.activityFeedService.refresh(),
+      this.refreshIf(
+        features.then((it) => it.includes('deployment_targets')),
+        () => this.deploymentTargetsService.refresh(),
+        () => this.applicationsService.refresh()
+      ),
+      this.refreshIf(
+        features.then((it) => it.includes('artifacts')),
+        () => this.artifactsService.refresh()
+      ),
+      this.refreshIf(
+        licensingEnabled,
+        () => this.applicationEntitlementsService.refresh(),
+        () => this.licenseKeysService.refresh(),
+        () => this.artifactEntitlementsService.refresh()
+      )
+    );
+  }
+
+  protected async reloadDeploymentTargets() {
+    try {
+      await this.deploymentTargetsService.refresh();
+    } catch (e) {
+      toastDisplayedError(this.toast, e);
+    }
+  }
+
+  private async refreshIf(enabled: Promise<boolean>, ...refreshes: (() => Promise<unknown>)[]): Promise<void> {
+    if (await enabled) {
+      await Promise.all(refreshes.map((refresh) => refresh()));
+    }
   }
 
   private whenFeature<T>(
