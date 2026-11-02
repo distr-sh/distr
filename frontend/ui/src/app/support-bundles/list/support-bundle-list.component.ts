@@ -2,7 +2,7 @@ import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {RouterLink} from '@angular/router';
+import {Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faDownload, faGear, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, map, of, startWith, Subject, switchMap, take} from 'rxjs';
@@ -10,10 +10,10 @@ import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {AlertComponent} from '../../components/alert/alert.component';
-import {ClipComponent} from '../../components/clip.component';
 import {PageComponent} from '../../components/page.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
+import {ClickableRowDirective} from '../../directives/clickable-row.directive';
 import {AuthService} from '../../services/auth.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService, supportBundleZipFileName} from '../../services/support-bundles.service';
@@ -31,8 +31,8 @@ import {SupportBundleStatusBadgeComponent} from '../support-bundle-status-badge.
     ReactiveFormsModule,
     RouterLink,
     FaIconComponent,
-    ClipComponent,
     AutotrimDirective,
+    ClickableRowDirective,
     PageComponent,
     SearchBarComponent,
     SupportBundleStatusBadgeComponent,
@@ -44,6 +44,7 @@ export class SupportBundleListComponent {
   private readonly svc = inject(SupportBundlesService);
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
+  private readonly router = inject(Router);
 
   protected readonly faDownload = faDownload;
   protected readonly faGear = faGear;
@@ -90,13 +91,11 @@ export class SupportBundleListComponent {
     description: new FormControl('', {nonNullable: true}),
   });
   protected createFormLoading = false;
-  protected collectCommand = signal<string | null>(null);
   private dialogRef: DialogRef | null = null;
 
   openDialog(templateRef: TemplateRef<unknown>) {
     this.closeDialog();
     this.createForm.reset();
-    this.collectCommand.set(null);
     this.dialogRef = this.overlay.showModal(templateRef);
     this.dialogRef
       .result()
@@ -115,15 +114,15 @@ export class SupportBundleListComponent {
     }
     this.createFormLoading = true;
     try {
-      const response = await firstValueFrom(
+      const bundle = await firstValueFrom(
         this.svc.create({
           title: this.createForm.value.title!,
           description: this.createForm.value.description || undefined,
         })
       );
-      this.collectCommand.set(response.collectCommand);
+      this.closeDialog();
       this.toast.success('Support bundle created');
-      this.refresh$.next();
+      await this.router.navigate([this.routePrefix, bundle.id], {queryParams: {initialized: true}});
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {
@@ -136,8 +135,7 @@ export class SupportBundleListComponent {
 
   protected readonly downloadingBundleId = signal<string | null>(null);
 
-  protected async downloadResources(bundle: SupportBundle, event: Event): Promise<void> {
-    event.stopPropagation();
+  protected async downloadResources(bundle: SupportBundle): Promise<void> {
     if (this.downloadingBundleId() !== null) {
       return;
     }
@@ -159,8 +157,7 @@ export class SupportBundleListComponent {
 
   protected readonly deletingBundleId = signal<string | null>(null);
 
-  protected async deleteBundle(bundle: SupportBundle, event: Event): Promise<void> {
-    event.stopPropagation();
+  protected async deleteBundle(bundle: SupportBundle): Promise<void> {
     if (this.deletingBundleId() !== null) {
       return;
     }

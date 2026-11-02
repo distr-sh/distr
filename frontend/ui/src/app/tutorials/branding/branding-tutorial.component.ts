@@ -16,7 +16,7 @@ import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {ToastService} from '../../services/toast.service';
 import {TutorialsService} from '../../services/tutorials.service';
-import {UsersService} from '../../services/users.service';
+import {isInviteMailNotSentError, UsersService} from '../../services/users.service';
 import {TutorialProgress} from '../../types/tutorials';
 import {TutorialStepperComponent} from '../stepper/tutorial-stepper.component';
 import {getExistingTask, getLastExistingTask} from '../utils';
@@ -234,16 +234,26 @@ export class BrandingTutorialComponent implements OnInit {
       this.loading.set(true);
       try {
         const email = this.inviteFormGroup.value.customerEmail!;
-        await lastValueFrom(
-          this.usersService.addUser({
-            email,
-            customerOrganizationId: this.customerOrganization?.id,
-            userRole: 'admin',
-          })
-        );
+        try {
+          await lastValueFrom(
+            this.usersService.addUser({
+              email,
+              customerOrganizationId: this.customerOrganization?.id,
+              userRole: 'admin',
+            })
+          );
+          this.toast.success('Invite email has been sent');
+        } catch (e) {
+          if (!isInviteMailNotSentError(e)) {
+            throw e;
+          }
+          this.toast.error(
+            'The customer has been added, but the invitation email could not be sent. ' +
+              'You can resend the invitation from the customer users page.'
+          );
+        }
         this.inviteFormGroup.controls.inviteDone.patchValue(true);
         this.inviteFormGroup.markAsPristine();
-        this.toast.success('Invite email has been sent');
         this.progress = await lastValueFrom(
           this.tutorialsService.save(tutorialId, {
             stepId: customerStep,

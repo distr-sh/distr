@@ -7,16 +7,16 @@
         <div class="flex items-start gap-4">
           <div class="relative shrink-0">
             @if (generalForm.value.imageId) {
-              <img [src]="generalForm.value.imageId | secureImage | async" class="rounded-full size-24" />
+              <img [src]="generalForm.value.imageId | secureImage | async" class="size-24 rounded-full" />
             } @else {
               <div
-                class="flex items-center justify-center text-gray-400 size-24 rounded-full border dark:border-gray-600">
+                class="flex size-24 items-center justify-center rounded-full border text-gray-400 dark:border-gray-600">
                 <fa-icon [icon]="faUser" size="3x" />
               </div>
             }
             <button
               type="button"
-              class="absolute bottom-0.5 right-0.5 inline-flex items-center justify-center rounded-full size-6 text-xs distr-btn-secondary dark:text-white"
+              class="distr-btn-secondary absolute right-0.5 bottom-0.5 inline-flex size-6 items-center justify-center rounded-full text-xs dark:text-white"
               (click)="showProfilePictureDialog()">
               <span class="sr-only">Edit profile picture</span>
               <fa-icon [icon]="faPen" />
@@ -40,11 +40,11 @@
         </div>
       </div>
 
-      <div class="flex justify-center w-full space-x-4 mt-8">
+      <div class="mt-8 flex w-full justify-center space-x-4">
         <button
           type="submit"
           [disabled]="formLoading() || generalForm.invalid || generalForm.pristine"
-          class="distr-btn-primary w-full inline-flex items-center justify-center px-5 py-2.5 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed">
+          class="distr-btn-primary inline-flex w-full items-center justify-center px-5 py-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60">
           Save
         </button>
       </div>
@@ -55,7 +55,7 @@
     <div class="space-y-4">
       <h2 class="text-xl font-bold dark:text-white">E-Mail Address</h2>
 
-      <div class="text-gray-500 text-sm">
+      <div class="text-sm text-gray-500">
         Your E-Mail address is used for notifications and transactional communications. Additionally, it is used as your
         login handle.
       </div>
@@ -64,9 +64,9 @@
         <div class="distr-label">Current E-Mail address</div>
 
         <div
-          class="flex items-baseline gap-2 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white p-4 rounded-lg text-sm">
+          class="flex items-baseline gap-2 rounded-lg border border-gray-300 p-4 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
           {{ user()?.email }}
-          <span class="me-2 distr-badge distr-badge-success">Verified</span>
+          <span class="distr-badge distr-badge-success me-2">Verified</span>
         </div>
       </div>
 
@@ -85,14 +85,14 @@
             <button
               type="submit"
               [disabled]="formLoading() || emailForm.invalid || emailForm.pristine"
-              class="distr-btn-secondary flex-0 w-full inline-flex items-center justify-center px-5 py-2.5 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed">
+              class="distr-btn-secondary inline-flex w-full flex-0 items-center justify-center px-5 py-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60">
               Verify
             </button>
           </div>
           @if (emailForm.controls.email.errors?.['email'] && emailForm.controls.email.touched) {
-            <div class="text-red-500 text-sm">Invalid E-Mail Address</div>
+            <div class="text-sm text-red-500">Invalid E-Mail Address</div>
           }
-          <div class="text-gray-500 text-sm">Your e-mail address will be updated after successful verification.</div>
+          <div class="text-sm text-gray-500">Your e-mail address will be updated after successful verification.</div>
         </div>
       }
     </div>

@@ -15,13 +15,14 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {AlertComponent} from '../components/alert/alert.component';
 import {ClipComponent} from '../components/clip.component';
 import {SearchBarComponent} from '../components/search-bar.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {ClickableRowDirective} from '../directives/clickable-row.directive';
 import {AuthService} from '../services/auth.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {SecretsService} from '../services/secrets.service';
@@ -36,6 +37,7 @@ import {Secret} from '../types/secret';
     ReactiveFormsModule,
     DatePipe,
     AutotrimDirective,
+    ClickableRowDirective,
     ClipComponent,
     SearchBarComponent,
     AlertComponent,
@@ -48,6 +50,7 @@ export class SecretsComponent {
   public readonly refresh = output();
 
   protected readonly auth = inject(AuthService);
+  protected readonly canEdit = this.auth.hasAnyRole('read_write', 'admin');
   private readonly overlay = inject(OverlayService);
   private readonly secretsService = inject(SecretsService);
   private readonly toast = inject(ToastService);
@@ -61,7 +64,6 @@ export class SecretsComponent {
   protected readonly faXmark = faXmark;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
-  protected readonly faPen = faPen;
   private readonly createUpdateDialog = viewChild.required<TemplateRef<unknown>>('createUpdateDialog');
   private dialogRef?: DialogRef;
   protected readonly affectedDeployments = signal<AffectedDeployment[]>([]);

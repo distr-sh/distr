@@ -6,7 +6,7 @@ import {faBox, faDownload, faEllipsis, faGlobe, faUserCircle} from '@fortawesome
 import {shortDigest} from '../../util/digest';
 import {SecureImagePipe} from '../../util/secureImage';
 import {HasDownloads} from '../services/artifacts.service';
-import {CustomerOrganizationsCache} from '../services/customer-organizations.service';
+import {CustomerOrganizationsService} from '../services/customer-organizations.service';
 import {UsersService} from '../services/users.service';
 
 @Component({
@@ -47,7 +47,7 @@ export class ArtifactPublicBadgeComponent {
 @Component({
   selector: 'app-artifacts-download-count',
   template: `
-    <div class="inline-flex items-center text-sm text-gray-500 truncate dark:text-gray-400">
+    <div class="inline-flex items-center truncate text-sm text-gray-500 dark:text-gray-400">
       <fa-icon class="me-1" [icon]="faDownload" />
       {{ source().downloadsTotal }}
     </div>
@@ -75,11 +75,11 @@ interface ShownDownloader {
 @Component({
   selector: 'app-artifacts-downloaded-by',
   template: `
-    <div class="flex -space-x-3 hover:-space-x-1 rtl:space-x-reverse justify-end">
+    <div class="flex justify-end -space-x-3 hover:-space-x-1 rtl:space-x-reverse">
       @for (downloader of shownDownloaders(); track downloader.id) {
         @if (downloader.imageUrl; as imageUrl) {
           <img
-            class="size-8 border-2 border-white rounded-full dark:border-gray-800 transition-all duration-100 ease-in-out"
+            class="size-8 rounded-full border-2 border-white transition-all duration-100 ease-in-out dark:border-gray-800"
             [attr.src]="imageUrl | secureImage | async"
             [title]="downloader.title" />
         } @else {
@@ -93,7 +93,7 @@ interface ShownDownloader {
       @if (remainingCount(); as count) {
         @if (count > 0) {
           <div
-            class="flex items-center justify-center size-8 text-xs font-medium text-white bg-gray-500 dark:bg-gray-700 border-2 border-white rounded-full dark:border-gray-800 transition-all duration-100 ease-in-out">
+            class="flex size-8 items-center justify-center rounded-full border-2 border-white bg-gray-500 text-xs font-medium text-white transition-all duration-100 ease-in-out dark:border-gray-800 dark:bg-gray-700">
             +{{ count }}
           </div>
         }
@@ -106,7 +106,7 @@ export class ArtifactsDownloadedByComponent {
   public readonly source = input.required<HasDownloads>();
 
   private readonly usersService = inject(UsersService);
-  private readonly customerOrganizationsService = inject(CustomerOrganizationsCache);
+  private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
 
   private readonly users = toSignal(this.usersService.getUsers());
   private readonly customerOrganizations = toSignal(this.customerOrganizationsService.getCustomerOrganizations());
@@ -153,7 +153,7 @@ export class ArtifactsDownloadedByComponent {
     @if (expandable()) {
       <button
         type="button"
-        class="inline-flex items-center justify-center h-3.5 ms-1 px-1 rounded-xs bg-gray-200 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600"
+        class="ms-1 inline-flex h-3.5 items-center justify-center rounded-xs bg-gray-200 px-1 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600"
         (click)="showFull.set(!showFull())">
         <fa-icon [icon]="faEllipsis" />
       </button>
@@ -176,7 +176,7 @@ export class ArtifactsHashComponent {
   template: `
     <app-artifact-logo class="size-10 shrink-0" [imageUrl]="imageUrl()" />
     <div class="min-w-0">
-      <div class="flex items-baseline gap-2 min-w-0" [title]="label()">
+      <div class="flex min-w-0 items-baseline gap-2" [title]="label()">
         <span class="truncate">{{ name() }}</span>
         @if (digest(); as digest) {
           <span class="shrink-0 text-xs text-gray-500 dark:text-gray-400">
@@ -185,7 +185,7 @@ export class ArtifactsHashComponent {
         }
       </div>
       @if (tags().length > 0) {
-        <div class="flex flex-row flex-wrap gap-1 mt-1">
+        <div class="mt-1 flex flex-row flex-wrap gap-1">
           @for (tag of tags(); track tag) {
             <span
               class="distr-badge inline-block max-w-40 truncate"

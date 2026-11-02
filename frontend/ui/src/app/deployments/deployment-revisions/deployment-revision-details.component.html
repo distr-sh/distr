@@ -20,7 +20,7 @@
           @let createdByKind = createdBy | organizationKind;
           @let targetKind = deploymentTarget() | organizationKind;
           @if (createdBy.name || createdBy.email) {
-            <div class="flex items-center gap-1 mt-0.5">
+            <div class="mt-0.5 flex items-center gap-1">
               <app-avatar
                 [image]="createdBy.imageId"
                 [name]="createdBy.name || createdBy.email"
@@ -29,7 +29,7 @@
               @if (createdBy.deleted) {
                 <span class="text-gray-500 dark:text-gray-400">(deleted)</span>
               } @else if (createdByKind !== targetKind) {
-                <span class="capitalize text-gray-500 dark:text-gray-400">({{ createdByKind }})</span>
+                <span class="text-gray-500 capitalize dark:text-gray-400">({{ createdByKind }})</span>
               }
             </div>
           } @else {
@@ -53,14 +53,14 @@
 
   @if (rev.latestStatus; as status) {
     <div>
-      <span class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Latest status</span>
+      <span class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Latest status</span>
       <div>
         <app-deployment-status-badge [status]="status.type" />
         on {{ status.createdAt | date: 'medium' }}
       </div>
       @if (status.message) {
         <div
-          class="mt-1 border border-gray-200 dark:border-gray-600 rounded-lg p-2 font-mono text-xs text-gray-500 dark:text-gray-400 max-h-40 overflow-y-auto wrap-break-word">
+          class="mt-1 max-h-40 overflow-y-auto rounded-lg border border-gray-200 p-2 font-mono text-xs wrap-break-word text-gray-500 dark:border-gray-600 dark:text-gray-400">
           {{ status.message }}
         </div>
       }
@@ -69,17 +69,17 @@
 
   @if (isKubernetes()) {
     <div>
-      <span class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Values</span>
+      <span class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Values</span>
       <app-editor
         [formControl]="valuesControl"
         language="yaml"
-        class="block border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden max-h-80 overflow-y-auto" />
+        class="block max-h-80 overflow-hidden overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-600" />
     </div>
 
     @if (rev.helmOptions; as helmOptions) {
       <div>
-        <span class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Helm options</span>
-        <div class="grid grid-cols-2 gap-2 border border-gray-200 dark:border-gray-600 rounded-lg p-2">
+        <span class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Helm options</span>
+        <div class="grid grid-cols-2 gap-2 rounded-lg border border-gray-200 p-2 dark:border-gray-600">
           <div>
             <span class="block text-xs text-gray-500 dark:text-gray-400">Timeout</span>
             <div>{{ helmOptions.timeout }}</div>
@@ -113,10 +113,10 @@
     }
   } @else {
     <div>
-      <span class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Environment</span>
+      <span class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Environment</span>
       <app-editor
         [formControl]="envControl"
-        class="block border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden max-h-80 overflow-y-auto" />
+        class="block max-h-80 overflow-hidden overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-600" />
     </div>
   }
 

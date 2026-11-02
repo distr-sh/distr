@@ -2,6 +2,7 @@ package registry
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/internal/auth"
@@ -19,7 +20,7 @@ func requiresAuthentication(r *http.Request) bool {
 // format of the distribution spec, which is what an OCI client reads.
 func useRegistryErrorFormat() {
 	auth.ArtifactsAuthentication.SetUnauthorizedHandler(func(w http.ResponseWriter, r *http.Request) {
-		_ = regErrCredentialsRequired.Write(w)
+		_ = regErrUnauthorized.Write(w, r)
 	})
 }
 
@@ -62,23 +63,25 @@ func rateLimitAnonymous(limits env.AnonymousRateLimits) func(http.Handler) http.
 	}
 }
 
-// hasCredentials reports whether the request is worth authenticating. An OCI client that has no
-// credentials for the registry still sends an empty Basic header when it sees a Basic challenge
-// (containers/image does), so that counts as anonymous rather than as a failed login.
+// hasCredentials reports whether the request is worth authenticating. An empty Basic header, which
+// containers/image sends when it holds no credentials, and the anonymous token of the token endpoint
+// count as anonymous rather than as a failed login.
 func hasCredentials(r *http.Request) bool {
 	if _, password, ok := r.BasicAuth(); ok {
 		return password != ""
 	}
-	return r.Header.Get("Authorization") != ""
+	authorization := r.Header.Get("Authorization")
+	return authorization != "" && !strings.EqualFold(authorization, "Bearer "+auth.AnonymousRegistryToken)
 }
 
 // allowsAnonymous lists the routes that name an artifact, which is what makes the authorizer able
-// to decide anonymous access at all. The catalog belongs to the organization rather than to an
-// artifact and must stay out, as must the ping: OCI clients record the authentication challenge
-// from the /v2/ response alone, so a 200 there would leave a client that holds credentials with no
-// challenge to answer and it would never send them, breaking every private pull.
+// to decide anonymous access at all, and the token endpoint, which hands an anonymous client its
+// token. The catalog belongs to the organization rather than to an artifact and must stay out, as
+// must the ping: OCI clients record the authentication challenge from the /v2/ response alone, so a
+// 200 there would leave a client that holds credentials with no challenge to answer and it would
+// never send them, breaking every private pull.
 func allowsAnonymous(r *http.Request) bool {
-	return isManifest(r) || isBlob(r) || isTags(r) || isReferrers(r)
+	return isManifest(r) || isBlob(r) || isTags(r) || isReferrers(r) || isToken(r)
 }
 
 // isManifestOrListing groups the requests a client makes to find out what an artifact holds, which

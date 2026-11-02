@@ -1,0 +1,129 @@
+<div class="flex items-center justify-between">
+  <h2 class="text-xl font-bold dark:text-white">Custom Scripts</h2>
+  @if (auth.hasAnyRole('read_write', 'admin')) {
+    <button
+      type="button"
+      (click)="openScriptModal(scriptModal)"
+      class="inline-flex items-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+      <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
+      Add Script
+    </button>
+  }
+</div>
+<p class="text-sm text-gray-500 dark:text-gray-400">
+  These scripts run on the customer's host when they collect a support bundle. Everything a script writes to standard
+  output is attached to the bundle as a resource named after the script. Customers see the source of every script and
+  can exclude any of them before it runs.
+</p>
+
+@if (scripts().length > 0) {
+  <div class="space-y-3">
+    @for (script of scripts(); track script.id) {
+      <div class="flex items-center gap-4 rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-medium text-gray-900 dark:text-white">{{ script.name }}</p>
+          @if (script.description) {
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ script.description }}</p>
+          }
+        </div>
+        <label class="inline-flex cursor-pointer items-center">
+          <input
+            #enabledToggle
+            type="checkbox"
+            class="peer sr-only"
+            [checked]="script.enabled"
+            [disabled]="!auth.hasAnyRole('read_write', 'admin')"
+            (change)="toggleScriptEnabled(script, enabledToggle)" />
+          <div class="distr-toggle"></div>
+          <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Enabled</span>
+        </label>
+        @if (auth.hasAnyRole('read_write', 'admin')) {
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              (click)="openScriptModal(scriptModal, script)"
+              class="distr-btn-secondary px-3 py-2 text-sm font-medium">
+              <fa-icon [icon]="faPen" class="h-4 w-4" />
+            </button>
+            <button type="button" (click)="deleteScript(script)" class="distr-btn-danger px-3 py-2">
+              <fa-icon [icon]="faTrash" class="h-4 w-4" />
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+} @else {
+  <p class="text-sm text-gray-500 dark:text-gray-400">No custom scripts configured. Click "Add Script" to add one.</p>
+}
+
+<ng-template #scriptModal>
+  <div
+    class="relative max-h-full w-3xl max-w-full p-4 lg:mt-16"
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top">
+    <div class="relative rounded-lg bg-white p-4 shadow dark:bg-gray-900">
+      <div class="flex items-center justify-between rounded-t border-b border-gray-200 p-4 md:p-5 dark:border-gray-600">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Custom Script</h3>
+        <button
+          type="button"
+          (click)="closeScriptModal()"
+          class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
+          <fa-icon [icon]="faXmark" />
+          <span class="sr-only">Close modal</span>
+        </button>
+      </div>
+      <form [formGroup]="scriptForm" (ngSubmit)="saveScript()">
+        <div class="space-y-4 p-4 md:p-5">
+          <div>
+            <label for="scriptName" class="distr-label mb-1">Name <span class="text-red-500">*</span></label>
+            <input
+              id="scriptName"
+              type="text"
+              autotrim
+              maxlength="64"
+              formControlName="name"
+              placeholder="database-status"
+              class="distr-input" />
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              The collected output is attached to the bundle under this name.
+            </p>
+            @if (scriptForm.controls.name.touched && scriptForm.controls.name.errors) {
+              <p class="mt-1 text-xs text-red-500">Please enter a name.</p>
+            }
+          </div>
+          <div>
+            <label for="scriptDescription" class="distr-label mb-1">Description</label>
+            <input
+              id="scriptDescription"
+              type="text"
+              autotrim
+              maxlength="256"
+              formControlName="description"
+              placeholder="Shown to the customer before the script runs"
+              class="distr-input" />
+          </div>
+          <div>
+            <label for="scriptContent" class="distr-label mb-1">Script</label>
+            <app-editor
+              id="scriptContent"
+              language="shell"
+              formControlName="content"
+              class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0" />
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Runs with the interpreter from its shebang, or with <code>sh</code> when it has none.
+            </p>
+          </div>
+          <label class="inline-flex cursor-pointer items-center">
+            <input type="checkbox" class="peer sr-only" formControlName="enabled" />
+            <div class="distr-toggle"></div>
+            <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Enabled</span>
+          </label>
+        </div>
+        <div class="flex items-center justify-end border-t border-gray-200 p-4 md:p-5 dark:border-gray-600">
+          <button type="submit" [disabled]="savingScript()" class="distr-btn-primary text-white">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</ng-template>

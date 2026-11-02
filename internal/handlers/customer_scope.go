@@ -85,8 +85,6 @@ func customerScope(ctx context.Context, requested *uuid.UUID) (*uuid.UUID, respo
 	}
 }
 
-var notAssignedToPartner = respond.Forbidden("customer is not assigned to your partner organization")
-
 // checkReachableByPartner answers with rejection for a partner user when a resource belongs to no
 // customer or to one that is not assigned to the partner organization.
 func checkReachableByPartner(

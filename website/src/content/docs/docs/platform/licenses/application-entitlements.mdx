@@ -57,7 +57,7 @@ If you don't see the feature yet, make sure you're on a Pro plan or Pro Trial. O
 5. **Give it a name**
 6. **Set an expiration date** (optional)
 7. **Assign to an application**
-8. **Choose the version/s** you want to grant the customer access to
+8. **Choose the versions**: grant all versions, or select specific ones and optionally an auto-add regex for future versions
 9. **Save**: click "Save" and you're done
 
 The customer can now access and deploy the assigned application version/s directly from their [customer portal](/docs/platform/customer-portal/).
@@ -67,6 +67,14 @@ The customer can now access and deploy the assigned application version/s direct
   darkSrc={entitlementFormDark}
   alt="Application Entitlement create form showing name, expiration date, application selector, version picker, and optional registry credentials"
 />
+
+## Choosing the granted versions
+
+An entitlement grants either **All versions** of the application, which includes every version you create later, or **Specific versions**. With specific versions, you have to select at least one version, the customer only gets the versions you select and new versions are not added unless they match the [auto-add version regex](#auto-add-version-regex).
+
+## Auto-add version regex
+
+An entitlement for specific versions can grow with your releases. Enter a regular expression in **Auto-add Version Regex**, and every new application version whose name matches it is added to the entitlement automatically. See [Auto-add Regex](/docs/platform/auto-add-regex/) for when it runs, how to write it and examples.
 
 ## OCI registry authentication
 

@@ -1,32 +1,31 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {firstValueFrom, Observable, tap} from 'rxjs';
+import {Observable, tap} from 'rxjs';
 import {ArtifactEntitlement} from '../types/artifact-entitlement';
 import {DefaultReactiveList} from './cache';
 import {CrudService} from './interfaces';
+import {skipTrim} from './trim.interceptor';
 
 @Injectable({providedIn: 'root'})
 export class ArtifactEntitlementsService implements CrudService<ArtifactEntitlement> {
   private readonly http = inject(HttpClient);
 
   private readonly artifactEntitlementsUrl = '/api/v1/artifact-entitlements';
-  private readonly cache = new DefaultReactiveList(this.http.get<ArtifactEntitlement[]>(this.artifactEntitlementsUrl));
+  private readonly cache = new DefaultReactiveList(() =>
+    this.http.get<ArtifactEntitlement[]>(this.artifactEntitlementsUrl)
+  );
 
   public list(): Observable<ArtifactEntitlement[]> {
     return this.cache.get();
   }
 
   refresh(): Promise<ArtifactEntitlement[]> {
-    return firstValueFrom(
-      this.http
-        .get<ArtifactEntitlement[]>(this.artifactEntitlementsUrl)
-        .pipe(tap((entitlements) => this.cache.reset(entitlements)))
-    );
+    return this.cache.refresh();
   }
 
   create(request: ArtifactEntitlement): Observable<ArtifactEntitlement> {
     return this.http
-      .post<ArtifactEntitlement>(this.artifactEntitlementsUrl, request)
+      .post<ArtifactEntitlement>(this.artifactEntitlementsUrl, request, {context: skipTrim('autoAddVersionRegex')})
       .pipe(tap((l) => this.cache.save(l)));
   }
 
@@ -38,7 +37,9 @@ export class ArtifactEntitlementsService implements CrudService<ArtifactEntitlem
 
   update(request: ArtifactEntitlement): Observable<ArtifactEntitlement> {
     return this.http
-      .put<ArtifactEntitlement>(`${this.artifactEntitlementsUrl}/${request.id}`, request)
+      .put<ArtifactEntitlement>(`${this.artifactEntitlementsUrl}/${request.id}`, request, {
+        context: skipTrim('autoAddVersionRegex'),
+      })
       .pipe(tap((l) => this.cache.save(l)));
   }
 }

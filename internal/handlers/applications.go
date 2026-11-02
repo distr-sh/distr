@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"slices"
 
 	"github.com/distr-sh/distr/api"
@@ -442,10 +443,16 @@ func createApplicationVersion(r *http.Request) (respond.Responder, error) {
 	); err != nil {
 		return respond.BadRequest(err.Error()), nil
 	} else if err := db.RunTx(ctx, func(ctx context.Context) error {
+		if err := db.LockApplicationExclusive(ctx, application.ID); err != nil {
+			return err
+		}
 		if err := db.CreateApplicationVersion(ctx, &applicationVersion); err != nil {
 			return err
 		}
 		if err := db.CreateApplicationVersionResources(ctx, applicationVersion.ID, resources); err != nil {
+			return err
+		}
+		if _, err := addVersionToMatchingEntitlements(ctx, applicationVersion, nil); err != nil {
 			return err
 		}
 		return triggerAutomaticApplicationUpdates(
@@ -517,15 +524,26 @@ func updateApplicationVersion(r *http.Request) (respond.Responder, error) {
 	}); existingIndex < 0 {
 		return applicationVersionNotFound, nil
 	} else {
+		previousName := existing.Versions[existingIndex].Name
 		updatedVersion := mapping.UpdateApplicationVersionToInternal(request, existing.Versions[existingIndex])
 		updated := *existing
 		updated.Versions = slices.Clone(existing.Versions)
 		updated.Versions[existingIndex] = updatedVersion
+		var autoAdded bool
 		if err := types.ValidateVersionsForStrategy(updated.VersioningStrategy, updated.Versions); err != nil {
 			return respond.BadRequest(err.Error()), nil
 		} else if err := db.RunTx(ctx, func(ctx context.Context) error {
+			if err := db.LockApplicationExclusive(ctx, existing.ID); err != nil {
+				return err
+			}
 			if err := db.UpdateApplicationVersion(ctx, &updatedVersion); err != nil {
 				return err
+			}
+			if updatedVersion.Name != previousName {
+				var err error
+				if autoAdded, err = addVersionToMatchingEntitlements(ctx, updatedVersion, &previousName); err != nil {
+					return err
+				}
 			}
 			return triggerAutomaticApplicationUpdates(
 				ctx, auth.CurrentOrg(), existing.ID, new(auth.CurrentUserID()))
@@ -536,9 +554,64 @@ func updateApplicationVersion(r *http.Request) (respond.Responder, error) {
 		} else if err != nil {
 			return nil, fmt.Errorf("could not update applicationversion: %w", err)
 		} else {
+			if autoAdded {
+				notification.Dispatch(ctx, func(ctx context.Context) error {
+					return notification.SendApplicationUpdateAvailableNotifications(ctx, updatedVersion)
+				})
+			}
 			return respond.JSON(applicationVersionMapper(ctx)(updatedVersion)), nil
 		}
 	}
+}
+
+// addVersionToMatchingEntitlements has to run in the transaction that creates or renames the version and before
+// automatic updates are triggered, so that those already see the version as entitled. It reports whether the version
+// was added to any entitlement.
+func addVersionToMatchingEntitlements(
+	ctx context.Context,
+	version types.ApplicationVersion,
+	previousName *string,
+) (bool, error) {
+	// The entitlement form cannot deselect an archived version, so one added here could not be removed again.
+	if version.ArchivedAt != nil {
+		return false, nil
+	}
+	// Without the lock, an entitlement switched to all versions concurrently would end up with only this version,
+	// because the insert below does not wait for the edit that removes its versions.
+	if err := db.LockApplicationExclusive(ctx, version.ApplicationID); err != nil {
+		return false, err
+	}
+	entitlements, err := db.GetApplicationEntitlementsWithAutoAddVersionRegex(ctx, version.ApplicationID)
+	if err != nil {
+		return false, err
+	}
+	if entitlementIDs, err := entitlementsToAutoAddVersionTo(entitlements, version.Name, previousName); err != nil {
+		return false, err
+	} else if len(entitlementIDs) == 0 {
+		return false, nil
+	} else {
+		return db.AddVersionToApplicationEntitlements(ctx, version.ID, entitlementIDs)
+	}
+}
+
+// entitlementsToAutoAddVersionTo only picks an entitlement for a renamed version if the previous name did not match
+// yet, so that a version removed by hand is not added back.
+func entitlementsToAutoAddVersionTo(
+	entitlements []types.ApplicationEntitlementBase,
+	name string,
+	previousName *string,
+) ([]uuid.UUID, error) {
+	var entitlementIDs []uuid.UUID
+	for _, entitlement := range entitlements {
+		if re, err := regexp.Compile(*entitlement.AutoAddVersionRegex); err != nil {
+			return nil, fmt.Errorf(
+				"could not compile auto-add version regex of application entitlement %v: %w", entitlement.ID, err,
+			)
+		} else if re.MatchString(name) && (previousName == nil || !re.MatchString(*previousName)) {
+			entitlementIDs = append(entitlementIDs, entitlement.ID)
+		}
+	}
+	return entitlementIDs, nil
 }
 
 func getApplicationVersionComposeFile(r *http.Request) (respond.Responder, error) {

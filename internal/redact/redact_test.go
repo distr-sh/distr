@@ -68,6 +68,14 @@ func TestRedact(t *testing.T) {
 	}
 }
 
+func TestRedact_copiesInputWithoutCredentialsAtMostOnce(t *testing.T) {
+	g := NewWithT(t)
+	r := redact.New("hunter2", "s3cr3t")
+	line := "2026-10-27T13:37:00Z INFO GET /api/v1/orders?page=3 status=200 duration=12ms user=4711"
+
+	g.Expect(testing.AllocsPerRun(100, func() { r.Redact(line) })).To(BeNumerically("<=", 1))
+}
+
 func TestRedact_keepsReferencesToCredentials(t *testing.T) {
 	g := NewWithT(t)
 	r := redact.New()

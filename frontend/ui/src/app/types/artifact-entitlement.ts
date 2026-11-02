@@ -9,4 +9,5 @@ export interface ArtifactEntitlement extends BaseModel, Named {
   expiresAt?: Date;
   artifacts?: ArtifactEntitlementSelection[];
   customerOrganizationId?: string;
+  autoAddVersionRegex?: string;
 }

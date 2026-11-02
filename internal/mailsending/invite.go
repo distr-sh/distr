@@ -2,6 +2,8 @@ package mailsending
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
@@ -13,6 +15,10 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
+
+// ErrInviteMailNotSent wraps the error of a mail server that rejected or never received the
+// invite mail, as opposed to a failure to prepare it.
+var ErrInviteMailNotSent = errors.New("invite mail could not be sent")
 
 func SendUserInviteMail(
 	ctx context.Context,
@@ -65,12 +71,12 @@ func SendUserInviteMail(
 				ctx, userAccount, organization, customerOrgID, *currentUser, targetOrgName, inviteURL),
 		),
 	); err != nil {
-		log.Error(
+		log.Warn(
 			"could not send invite mail",
 			zap.Error(err),
 			zap.String("user", userAccount.Email),
 		)
-		return err
+		return fmt.Errorf("%w: %w", ErrInviteMailNotSent, err)
 	} else {
 		log.Info("invite mail has been sent", zap.String("user", userAccount.Email))
 		return nil

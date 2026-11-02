@@ -92,7 +92,7 @@ func SettingsRouter(r chiopenapi.Router) {
 		// holds one has no business minting another, so these endpoints are not part of the API.
 		r.WithOptions(option.GroupHidden())
 
-		r.Use(middleware.RequireOrgAndRole, middleware.RequireNonAccessToken)
+		r.Use(middleware.RequireOrgAndRole, middleware.RequireNonAccessToken, middleware.RequireNonLensContext)
 
 		r.Get("/", respond.Handler(getAccessTokensHandler))
 

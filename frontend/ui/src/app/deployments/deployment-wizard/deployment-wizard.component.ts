@@ -34,6 +34,7 @@ import {
   RESOURCE_QUANTITY_REGEX,
 } from '../../../util/validation';
 import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
+import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
@@ -61,6 +62,7 @@ import {DeploymentWizardStepperComponent} from './deployment-wizard-stepper.comp
     AutotrimDirective,
     SecureImagePipe,
     DeploymentFormComponent,
+    SpinnerComponent,
   ],
 })
 export class DeploymentWizardComponent implements OnInit {
@@ -233,10 +235,11 @@ export class DeploymentWizardComponent implements OnInit {
   }
 
   private loading = false;
+  protected readonly dataLoaded = signal(false);
   private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
-    this.applications.refresh();
+    this.refreshCachedLists();
     // Initialize deployment form with initial data reactively
     effect(() => {
       const initialData = this.deploymentFormInitialData();
@@ -251,6 +254,24 @@ export class DeploymentWizardComponent implements OnInit {
       this.selectedCustomerOrganizationId();
       this.applicationForm.reset();
     });
+  }
+
+  private async refreshCachedLists() {
+    try {
+      const licensingEnabled = await firstValueFrom(this.featureFlags.isLicensingEnabled$);
+      await Promise.all([
+        this.applications.refresh(),
+        ...(licensingEnabled ? [this.applicationEntitlements.refresh()] : []),
+        ...(this.showCustomerStep() ? [this.customerOrganizations.refresh()] : []),
+      ]);
+      this.dataLoaded.set(true);
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+      this.closed.emit();
+    }
   }
 
   ngOnInit() {

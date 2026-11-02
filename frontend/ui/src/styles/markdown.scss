@@ -6,44 +6,71 @@
     h4,
     h5,
     h6 {
-      @apply font-display;
-      @apply dark:text-white;
-
-      &:not(h1) {
-        @apply font-bold;
-        @apply mb-1;
-      }
+      @apply text-gray-900 dark:text-white;
     }
 
     h1 {
-      @apply font-extrabold;
-      @apply text-4xl;
-      @apply mt-6;
-      @apply mb-4;
+      @apply text-2xl font-bold;
+      @apply mt-6 mb-4;
     }
 
     h2 {
-      @apply text-3xl;
-      @apply mt-5;
-      @apply mb-4;
+      @apply text-xl font-bold;
+      @apply mt-5 mb-3;
     }
 
     h3 {
-      @apply text-2xl;
-      @apply mt-4;
-      @apply mb-2;
+      @apply text-lg font-semibold;
+      @apply mt-4 mb-3;
+
+      &:has(+ ul, + ol) {
+        @apply mb-4;
+      }
     }
 
     h4 {
-      @apply text-xl;
-      @apply mt-3;
-      @apply mb-2;
+      @apply text-base font-semibold;
+      @apply mt-3 mb-2;
     }
 
     h5 {
-      @apply text-lg;
-      @apply mt-2;
-      @apply mb-1;
+      @apply text-sm font-semibold;
+      @apply mt-2 mb-2;
+    }
+
+    h6 {
+      @apply text-sm font-medium text-gray-600 dark:text-gray-300;
+      @apply mt-2 mb-2;
+    }
+
+    &.markdown-compact {
+      h1 {
+        @apply text-xl font-bold;
+      }
+
+      h2 {
+        @apply text-lg font-semibold;
+      }
+
+      h3 {
+        @apply text-base font-semibold;
+      }
+
+      h4 {
+        @apply text-sm font-semibold;
+      }
+
+      h5 {
+        @apply text-xs font-semibold;
+      }
+
+      h6 {
+        @apply text-xs font-medium text-gray-600 dark:text-gray-300;
+      }
+    }
+
+    > :first-child {
+      @apply mt-0;
     }
 
     pre {
@@ -109,8 +136,18 @@
       @apply mb-3;
     }
 
+    pre,
+    blockquote {
+      @apply my-5;
+    }
+
+    blockquote > :last-child {
+      @apply mb-0;
+    }
+
     a {
       @apply text-primary-600;
+      @apply dark:text-primary-400;
       @apply underline;
     }
 
@@ -138,7 +175,7 @@
 
       th,
       td {
-        @apply px-1 border border-gray-200 dark:border-gray-600 dark:text-white;
+        @apply border border-gray-200 px-1 dark:border-gray-600 dark:text-white;
       }
     }
 

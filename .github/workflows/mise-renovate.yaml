@@ -16,6 +16,10 @@ on:
       - '.github/workflows/mise-renovate.yaml'
       - renovate.json
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   install:
     name: Install
@@ -26,6 +30,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install mise
-        uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
       - name: Validate renovate.json
         run: mise run lint:renovate-config

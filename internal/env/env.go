@@ -68,6 +68,7 @@ var (
 	artifactTagsDefaultLimitPerOrg        int
 	registryUpstreamSyncCron              *string
 	registryUpstreamSyncTimeout           time.Duration
+	registryUpstreamBlobFetchTimeout      time.Duration
 	cleanupDeploymentTargetMetricsCron    *string
 	cleanupDeploymentTargetMetricsTimeout time.Duration
 	cleanupOIDCStateCron                  *string
@@ -112,6 +113,7 @@ var (
 	metricsEnabled                        bool
 	metricsAddr                           string
 	metricsBearerToken                    *string
+	metricsPprofEnabled                   bool
 	supportBundleLogTailLines             int
 	supportBundleResourceMaxBytes         int
 	supportBundleScriptTimeout            time.Duration
@@ -260,6 +262,9 @@ func Initialize() {
 	registryUpstreamSyncTimeout = envutil.GetEnvParsedOrDefault(
 		"REGISTRY_UPSTREAM_SYNC_TIMEOUT", envparse.PositiveDuration, 10*time.Minute,
 	)
+	registryUpstreamBlobFetchTimeout = envutil.GetEnvParsedOrDefault(
+		"REGISTRY_UPSTREAM_BLOB_FETCH_TIMEOUT", envparse.PositiveDuration, time.Hour,
+	)
 
 	sentryDSN = envutil.GetEnv("SENTRY_DSN")
 	sentryDebug = envutil.GetEnvParsedOrDefault("SENTRY_DEBUG", strconv.ParseBool, false)
@@ -370,6 +375,7 @@ func Initialize() {
 	metricsEnabled = envutil.GetEnvParsedOrDefault("METRICS_ENABLED", strconv.ParseBool, false)
 	metricsAddr = envutil.GetEnvOrDefault("METRICS_ADDR", ":3000")
 	metricsBearerToken = envutil.GetEnvOrNil("METRICS_BEARER_TOKEN")
+	metricsPprofEnabled = envutil.GetEnvParsedOrDefault("METRICS_PPROF_ENABLED", strconv.ParseBool, false)
 	supportBundleLogTailLines = envutil.GetEnvParsedOrDefault(
 		"SUPPORT_BUNDLE_LOG_TAIL_LINES", envparse.PositiveNumber, 1000,
 	)
@@ -604,6 +610,10 @@ func RegistryUpstreamSyncTimeout() time.Duration {
 	return registryUpstreamSyncTimeout
 }
 
+func RegistryUpstreamBlobFetchTimeout() time.Duration {
+	return registryUpstreamBlobFetchTimeout
+}
+
 func OtelControllerSampler() *SamplerConfig {
 	return otelControllerSampler
 }
@@ -779,6 +789,10 @@ func MetricsAddr() string {
 
 func MetricsBearerToken() *string {
 	return metricsBearerToken
+}
+
+func MetricsPprofEnabled() bool {
+	return metricsPprofEnabled
 }
 
 // SupportBundleLogTailLines is the number of container log lines (per container) collected by the

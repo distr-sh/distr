@@ -18,7 +18,7 @@ import {PlanBadgeComponent} from './plan-badge.component';
         [href]="websiteUrl + '/pricing/'"
         target="_blank"
         rel="noopener noreferrer"
-        class="text-gray-600 dark:text-gray-400 hover:underline"
+        class="text-gray-600 hover:underline dark:text-gray-400"
         >pricing page</a
       >.
     </div>

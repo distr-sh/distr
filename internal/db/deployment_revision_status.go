@@ -71,6 +71,36 @@ func UpdateDeploymentRevisionStatus(
 	return &status, nil
 }
 
+// HasFailedRevisionSince reports whether the deployment of the given revision has a revision that is newer than
+// sinceRevisionID and older than the given revision and whose settled status is error. Such a revision is a failed
+// update that the given revision replaces. A nil sinceRevisionID sets no lower bound.
+func HasFailedRevisionSince(ctx context.Context, sinceRevisionID *uuid.UUID, revisionID uuid.UUID) (bool, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT EXISTS (
+			SELECT 1
+			FROM DeploymentRevision r
+				JOIN DeploymentRevision dr ON dr.deployment_id = r.deployment_id AND dr.created_at < r.created_at
+			WHERE r.id = @revisionId
+				AND dr.settled_status_type = 'error'
+				AND (
+					@sinceRevisionId::UUID IS NULL
+					OR dr.created_at > (SELECT created_at FROM DeploymentRevision WHERE id = @sinceRevisionId)
+				)
+		)`,
+		pgx.NamedArgs{"revisionId": revisionID, "sinceRevisionId": sinceRevisionID},
+	)
+	if err != nil {
+		return false, fmt.Errorf("failed to query failed DeploymentRevisions: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[bool])
+	if err != nil {
+		return false, fmt.Errorf("failed to collect failed DeploymentRevisions: %w", err)
+	}
+	return result, nil
+}
+
 // GetPreviousDeploymentRevisionStatus returns the status that a new status of the given revision is compared
 // with to decide about notifications: the settled status of the same revision or, if it has none yet, the
 // settled status of the deployment's current revision. It never compares with the newest status across all

@@ -18,6 +18,10 @@ on:
       - 'docker-autoheal/**'
       - 'sdk/**'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate-migrations:
     name: Validate migrations
@@ -244,7 +248,7 @@ jobs:
 
       - name: Login to GitHub Container Registry (tag only)
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -252,7 +256,7 @@ jobs:
 
       - name: Login to Distr Registry (tag only)
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: registry.distr.sh
           username: ${{ github.actor }}

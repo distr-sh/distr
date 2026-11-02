@@ -43,7 +43,7 @@ Distr enables software and AI companies to distribute applications to self-manag
 - **Container registry:** Distribute OCI-compatible artifacts (Docker images, Helm charts, Terraform modules)
   with built-in granular access control and analytics.
 - Access the API using our [**rich SDK**](https://distr.sh/docs/integrations/sdk/)
-- Fully Open Source and [self-hostable](https://distr.sh/docs/self-hosting/getting-started/)
+- Fully Open Source and [self-hostable](https://distr.sh/docs/self-hosting/)
 
 Check out the hosted version at https://distr.sh/get-started/.
 
@@ -121,9 +121,9 @@ func ApiRouter(
 	prometheusCollector *prometheus.DistrCollector,
 	logStore logstore.LogStore,
 ) func(r chiopenapi.Router) {
-	requestSize1MiB := chimiddleware.RequestSize(1024 * 1024)
-	requestSize10MiB := chimiddleware.RequestSize(10 * 1024 * 1024)
-	requestSize50MiB := chimiddleware.RequestSize(50 * 1024 * 1024)
+	requestSize1MiB := middleware.RequestSize(1024 * 1024)
+	requestSize10MiB := middleware.RequestSize(10 * 1024 * 1024)
+	requestSize50MiB := middleware.RequestSize(50 * 1024 * 1024)
 
 	return func(r chiopenapi.Router) {
 		r.Use(
@@ -197,6 +197,7 @@ func ApiRouter(
 					r.Route("/deployment-targets", handlers.DeploymentTargetsRouter)
 					r.Route("/deployments", handlers.DeploymentsRouter)
 					r.Route("/files", handlers.FileRouter)
+					r.Route("/lenses", handlers.LensesRouter)
 					r.With(middleware.UseReadonlyDB).Route("/notification-records", handlers.NotificationRecordsRouter)
 					r.Route("/organization", handlers.OrganizationRouter)
 					r.Route("/organizations", handlers.OrganizationsRouter)
@@ -208,7 +209,7 @@ func ApiRouter(
 					r.Route("/license-templates", handlers.LicenseTemplatesRouter)
 					r.Route("/licenses", handlers.LicensesRouter)
 					r.Route("/user-accounts", handlers.UserAccountsRouter)
-					r.With(middleware.VulnerabilitiesFeatureMiddleware).
+					r.With(middleware.VulnerabilitiesFeatureMiddleware, middleware.VulnerabilitiesCustomerFeatureMiddleware).
 						Route("/advisories", handlers.AdvisoriesRouter)
 				})
 			})

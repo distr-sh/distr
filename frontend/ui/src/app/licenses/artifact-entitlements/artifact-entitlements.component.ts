@@ -1,15 +1,18 @@
 import {AsyncPipe, DatePipe} from '@angular/common';
-import {ChangeDetectionStrategy, Component, inject, input, TemplateRef} from '@angular/core';
-import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
+import {ChangeDetectionStrategy, Component, computed, inject, input, signal, TemplateRef} from '@angular/core';
+import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCircleExclamation, faEye, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, shareReplay, switchMap} from 'rxjs';
+import {faCircleExclamation, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
+import {loadWhileOpen, refreshInBackground} from '../../../util/refresh';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
+import {SpinnerComponent} from '../../components/spinner/spinner.component';
+import {ClickableRowDirective} from '../../directives/clickable-row.directive';
 import {ArtifactEntitlementsService} from '../../services/artifact-entitlements.service';
 import {ArtifactsService} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
@@ -18,6 +21,9 @@ import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
 import {ArtifactEntitlement, ArtifactEntitlementSelection} from '../../types/artifact-entitlement';
 import {EditArtifactEntitlementComponent} from './edit-artifact-entitlement.component';
+import {EditSingleArtifactEntitlementComponent} from './edit-single-artifact-entitlement.component';
+
+type EntitlementForm = 'standard' | 'legacy';
 
 @Component({
   selector: 'app-artifact-entitlements',
@@ -27,8 +33,11 @@ import {EditArtifactEntitlementComponent} from './edit-artifact-entitlement.comp
     FaIconComponent,
     DatePipe,
     EditArtifactEntitlementComponent,
+    EditSingleArtifactEntitlementComponent,
     SearchBarComponent,
     AlertComponent,
+    ClickableRowDirective,
+    SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './artifact-entitlements.component.html',
@@ -43,8 +52,9 @@ export class ArtifactEntitlementsComponent {
   private readonly customerOrganizationService = inject(CustomerOrganizationsService);
   private readonly artifactsService = inject(ArtifactsService);
 
+  protected readonly canOpenDetails = this.auth.isVendor() || this.auth.isPartner();
+
   protected readonly faCircleExclamation = faCircleExclamation;
-  protected readonly faEye = faEye;
   protected readonly faPen = faPen;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
@@ -75,32 +85,96 @@ export class ArtifactEntitlementsComponent {
   });
   editFormLoading = false;
 
+  protected readonly entitlementForm = signal<EntitlementForm>('standard');
+  protected readonly draft = signal<ArtifactEntitlement | undefined>(undefined);
+  protected readonly tagsMissing = signal(false);
+  protected readonly otherEntitlementForm = computed<EntitlementForm>(() =>
+    this.entitlementForm() === 'standard' ? 'legacy' : 'standard'
+  );
+  private readonly hasAutoAddVersionRegex = computed(() => !!this.draft()?.autoAddVersionRegex);
+  protected readonly entitlementFormSwitchDisabled = computed(() =>
+    this.entitlementForm() === 'standard'
+      ? this.hasAutoAddVersionRegex() || this.tagsMissing()
+      : (this.draft()?.artifacts?.length ?? 0) > 1
+  );
+  protected readonly entitlementFormSwitchTitle = computed(() => {
+    if (this.otherEntitlementForm() === 'legacy') {
+      const hint =
+        'The legacy view can bundle multiple artifacts in one entitlement but does not support an auto-add tag regex.';
+      if (this.hasAutoAddVersionRegex()) {
+        return `${hint} Clear the auto-add tag regex to switch.`;
+      } else if (this.tagsMissing()) {
+        return `${hint} To switch, select at least one tag or pick the "All tags" option.`;
+      }
+      return hint;
+    }
+    const hint = 'The standard view supports an auto-add tag regex but only for an entitlement with a single artifact.';
+    return this.entitlementFormSwitchDisabled() ? `${hint} Remove all but one artifact to switch.` : hint;
+  });
+
   private manageEntitlementDrawerRef?: DialogRef;
 
-  private readonly customerOrganizations$ = this.customerOrganizationService
-    .getCustomerOrganizations()
-    .pipe(shareReplay(1));
+  private readonly customerOrganizations$ = this.customerOrganizationService.getCustomerOrganizations();
+  private readonly customerOrganizations = toSignal(this.customerOrganizations$);
+  protected readonly drawerCustomerName = computed(() => {
+    const customerOrganizationId = this.draft()?.customerOrganizationId;
+    return customerOrganizationId
+      ? this.customerOrganizations()?.find((c) => c.id === customerOrganizationId)?.name
+      : undefined;
+  });
   private readonly artifacts$ = this.artifactsService.list();
+  protected readonly drawerLoading = signal(false);
 
-  openDrawer(templateRef: TemplateRef<unknown>, entitlement?: ArtifactEntitlement) {
-    this.hideDrawer();
-    if (entitlement) {
-      this.loadEntitlement(entitlement);
-    } else if (this.customerOrganizationId()) {
-      this.editForm.patchValue({
-        entitlement: {customerOrganizationId: this.customerOrganizationId()} as ArtifactEntitlement,
-      });
-    }
-    this.manageEntitlementDrawerRef = this.overlay.showDrawer(templateRef);
+  constructor() {
+    refreshInBackground(this.artifactEntitlementsService.refresh(), this.artifactsService.refresh());
   }
 
-  loadEntitlement(entitlement: ArtifactEntitlement) {
-    this.editForm.patchValue({entitlement});
+  async openDrawer(templateRef: TemplateRef<unknown>, entitlement?: ArtifactEntitlement) {
+    this.hideDrawer();
+    try {
+      const loaded = await loadWhileOpen(
+        this.drawerLoading,
+        () => (this.manageEntitlementDrawerRef = this.overlay.showDrawer(templateRef)),
+        Promise.all([this.artifactEntitlementsService.refresh(), this.artifactsService.refresh()])
+      );
+      if (loaded === undefined) {
+        return;
+      }
+      const fresh = entitlement && loaded[0].find((it) => it.id === entitlement.id);
+      if (entitlement && !fresh) {
+        this.toast.error('This entitlement no longer exists');
+        this.hideDrawer();
+        return;
+      }
+      this.entitlementForm.set((fresh?.artifacts?.length ?? 0) > 1 ? 'legacy' : 'standard');
+      if (fresh) {
+        this.editForm.patchValue({entitlement: fresh});
+      } else if (this.customerOrganizationId()) {
+        this.editForm.patchValue({
+          entitlement: {customerOrganizationId: this.customerOrganizationId()} as ArtifactEntitlement,
+        });
+      }
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+      this.hideDrawer();
+    }
   }
 
   hideDrawer() {
     this.manageEntitlementDrawerRef?.close();
     this.editForm.reset({entitlement: undefined});
+    this.draft.set(undefined);
+    this.tagsMissing.set(false);
+  }
+
+  protected switchEntitlementForm(form: EntitlementForm) {
+    // The form being replaced only reports a valid entitlement to the control, so hand its draft to the new form.
+    this.editForm.controls.entitlement.setValue(this.draft(), {emitModelToViewChange: false});
+    this.tagsMissing.set(false);
+    this.entitlementForm.set(form);
   }
 
   async saveEntitlement() {

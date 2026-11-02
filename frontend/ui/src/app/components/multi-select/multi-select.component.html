@@ -4,7 +4,7 @@
   #origin="cdkOverlayOrigin"
   #trigger
   (click)="toggleOpen()"
-  class="distr-input inline-flex items-center justify-between gap-2 p-2 font-normal text-left text-gray-700 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white dark:focus:ring-gray-700">
+  class="distr-input inline-flex items-center justify-between gap-2 p-2 text-left font-normal text-gray-700 hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 focus:outline-none dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white dark:focus:ring-gray-700">
   <span class="truncate">{{ triggerLabel() }}</span>
   <fa-icon class="transition duration-150 ease-in-out" [class.rotate-x-180]="open()" [icon]="faChevronDown" />
 </button>
@@ -18,7 +18,7 @@
   [cdkConnectedOverlayMinWidth]="width + 'px'"
   [cdkConnectedOverlayOpen]="open()">
   <div
-    class="z-10 w-full max-h-128 overflow-y-auto bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700 origin-top"
+    class="z-10 max-h-128 w-full origin-top divide-y divide-gray-100 overflow-y-auto rounded-lg bg-white shadow-xs dark:bg-gray-700"
     animate.enter="animate-flip-in-top"
     animate.leave="animate-flip-out-top">
     <ul class="p-2 text-sm text-gray-700 dark:text-gray-200">
@@ -34,7 +34,7 @@
               class="distr-checkbox" />
             <label
               [for]="idPrefix() + '-all'"
-              class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+              class="ms-2 w-full py-3 text-sm font-medium text-gray-900 dark:text-gray-300">
               @if (allSelected()) {
                 Select none
               } @else {
@@ -55,7 +55,7 @@
               class="distr-checkbox" />
             <label
               [for]="idPrefix() + '-' + option.value"
-              class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+              class="ms-2 w-full py-3 text-sm font-medium text-gray-900 dark:text-gray-300">
               {{ option.label }}
             </label>
           </div>

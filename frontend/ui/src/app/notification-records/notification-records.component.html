@@ -13,7 +13,7 @@
     <tbody>
       @for (record of rows(); track record.id) {
         <tr class="distr-table-row">
-          <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+          <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
             {{ record.createdAt | date: 'short' }}
           </td>
           <td class="px-4 py-3 whitespace-nowrap">
@@ -33,7 +33,7 @@
             }
           </td>
           <td
-            class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
+            class="max-w-48 overflow-hidden px-4 py-3 font-medium text-ellipsis whitespace-nowrap text-gray-900 xl:max-w-58 2xl:max-w-96 dark:text-white"
             [title]="record.customerNamesTitle">
             @if (record.customerNames) {
               {{ record.customerNames }}
@@ -42,7 +42,7 @@
             }
           </td>
           <td
-            class="px-4 py-3 font-medium text-gray-900 dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
+            class="max-w-48 overflow-hidden px-4 py-3 font-medium text-ellipsis text-gray-900 xl:max-w-58 2xl:max-w-96 dark:text-white">
             @if (record.artifactVersionId) {
               {{ record.artifactName }}:{{ record.artifactVersionName }}
             } @else if (record.updateNotificationConfigurationId) {
@@ -55,7 +55,7 @@
             }
           </td>
           <td
-            class="px-4 py-3 font-medium text-gray-900 whitespace-pre-wrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
+            class="max-w-48 overflow-hidden px-4 py-3 font-medium text-ellipsis whitespace-pre-wrap text-gray-900 xl:max-w-58 2xl:max-w-96 dark:text-white">
             @switch (record.type) {
               @case ('alert') {
                 <span class="text-red-800 dark:text-red-400">Alert:</span>
@@ -99,7 +99,7 @@
               Stale
             }
           </td>
-          <td class="px-4 py-3 font-medium text-gray-900 whitespace-pre-wrap dark:text-white">
+          <td class="px-4 py-3 font-medium whitespace-pre-wrap text-gray-900 dark:text-white">
             @if (record.deliveryError; as deliveryError) {
               <div>{{ deliveryError }}</div>
             } @else {

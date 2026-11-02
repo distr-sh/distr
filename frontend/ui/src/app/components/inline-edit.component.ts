@@ -25,7 +25,12 @@ export type InlineEditDisplayTag = 'span' | 'h3';
   imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, AutofocusDirective],
   template: `
     @if (editing()) {
-      <form class="flex" [formGroup]="form" (ngSubmit)="submit()" (focusout)="onFocusOut($event)">
+      <form
+        class="flex"
+        [formGroup]="form"
+        (ngSubmit)="submit()"
+        (focusout)="onFocusOut($event)"
+        (click)="$event.stopPropagation()">
         <input
           formControlName="value"
           autotrim
@@ -33,13 +38,13 @@ export type InlineEditDisplayTag = 'span' | 'h3';
           type="text"
           [placeholder]="placeholder()"
           (keydown.escape)="cancel()"
-          class="distr-input rounded-none rounded-s-lg field-sizing-content"
-          [class]="size() === 'lg' ? 'min-w-48 max-w-md' : 'min-w-32 max-w-xs'" />
+          class="distr-input field-sizing-content rounded-none rounded-s-lg"
+          [class]="size() === 'lg' ? 'max-w-md min-w-48' : 'max-w-xs min-w-32'" />
         <button
           type="submit"
           [disabled]="loading() || saveDisabled()"
           (pointerdown)="$event.preventDefault()"
-          class="distr-btn-primary text-white rounded-none rounded-e-lg disabled:opacity-60 disabled:cursor-not-allowed"
+          class="distr-btn-primary rounded-none rounded-e-lg text-white disabled:cursor-not-allowed disabled:opacity-60"
           [class]="size() === 'lg' ? 'px-4' : 'px-3'">
           <fa-icon [icon]="faCheck" />
         </button>
@@ -56,7 +61,11 @@ export type InlineEditDisplayTag = 'span' | 'h3';
           <span class="text-gray-500">{{ emptyLabel() }}</span>
         }
         @if (editable()) {
-          <button type="button" aria-label="Edit" (click)="enable()" class="text-gray-900 dark:text-gray-400 ms-2">
+          <button
+            type="button"
+            aria-label="Edit"
+            (click)="$event.stopPropagation(); enable()"
+            class="ms-2 text-gray-900 dark:text-gray-400">
             <fa-icon [icon]="faPen" />
           </button>
         }

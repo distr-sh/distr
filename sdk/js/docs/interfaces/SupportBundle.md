@@ -55,6 +55,12 @@
 
 ---
 
+### deploymentType
+
+> **deploymentType**: [`DeploymentType`](../type-aliases/DeploymentType.md)
+
+---
+
 ### description?
 
 > `optional` **description?**: `string`

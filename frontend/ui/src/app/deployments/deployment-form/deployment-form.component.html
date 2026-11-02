@@ -1,4 +1,4 @@
-<div class="grid gap-4 mb-4 grid-cols-2" [formGroup]="deployForm">
+<div class="mb-4 grid grid-cols-2 gap-4" [formGroup]="deployForm">
   <div class="col-span-2 sm:col-span-1">
     <label for="applicationId" class="distr-label mb-2"> Application </label>
     <select id="applicationId" formControlName="applicationId" class="distr-input distr-input-raised">
@@ -66,7 +66,7 @@
           <button
             type="button"
             (click)="activeTab.set('environment')"
-            class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+            class="tab-label inline-flex cursor-pointer items-center justify-center rounded-t-lg border-b-2 p-2 text-sm hover:border-gray-300 hover:text-gray-600 dark:hover:text-gray-300"
             [class.text-blue-600]="activeTab() === 'environment'"
             [class.dark:text-blue-500]="activeTab() === 'environment'"
             [class.border-blue-600]="activeTab() === 'environment'"
@@ -76,7 +76,7 @@
           <button
             type="button"
             (click)="activeTab.set('compose')"
-            class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+            class="tab-label inline-flex cursor-pointer items-center justify-center rounded-t-lg border-b-2 p-2 text-sm hover:border-gray-300 hover:text-gray-600 dark:hover:text-gray-300"
             [class.text-blue-600]="activeTab() === 'compose'"
             [class.dark:text-blue-500]="activeTab() === 'compose'"
             [class.border-blue-600]="activeTab() === 'compose'"
@@ -88,7 +88,7 @@
           <button
             type="button"
             (click)="activeTab.set('values')"
-            class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+            class="tab-label inline-flex cursor-pointer items-center justify-center rounded-t-lg border-b-2 p-2 text-sm hover:border-gray-300 hover:text-gray-600 dark:hover:text-gray-300"
             [class.text-blue-600]="activeTab() === 'values'"
             [class.dark:text-blue-500]="activeTab() === 'values'"
             [class.border-blue-600]="activeTab() === 'values'"
@@ -100,7 +100,7 @@
           <button
             type="button"
             (click)="activeTab.set('resource-' + $index)"
-            class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+            class="tab-label inline-flex cursor-pointer items-center justify-center rounded-t-lg border-b-2 p-2 text-sm hover:border-gray-300 hover:text-gray-600 dark:hover:text-gray-300"
             [class.text-blue-600]="activeTab() === 'resource-' + $index"
             [class.dark:text-blue-500]="activeTab() === 'resource-' + $index"
             [class.border-blue-600]="activeTab() === 'resource-' + $index"
@@ -169,7 +169,7 @@
         @for (resource of resources(); track resource.id) {
           @if (activeTab() === 'resource-' + $index) {
             <div
-              class="markdown p-4 rounded-lg border border-gray-200 dark:border-gray-500 text-gray-900 dark:text-white"
+              class="markdown markdown-compact rounded-lg border border-gray-200 p-4 text-gray-900 dark:border-gray-500 dark:text-white"
               [innerMarkdown]="resource.content"></div>
           }
         }
@@ -179,19 +179,19 @@
 
   @if (swarmModeVisible$ | async) {
     <div class="col-span-2">
-      <label class="inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
+      <label class="inline-flex items-center not-has-disabled:cursor-pointer has-disabled:opacity-60">
         <input type="checkbox" class="distr-checkbox" formControlName="swarmMode" />
         <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Swarm mode</span>
       </label>
       @if (deployForm.controls.swarmMode.value) {
-        <p class="mt-1 distr-hint-warning">Container image cleanup is not supported in swarm mode.</p>
+        <p class="distr-hint-warning mt-1">Container image cleanup is not supported in swarm mode.</p>
       }
     </div>
   }
 
   @if (deployForm.controls.automaticApplicationUpdatesEnabled.enabled) {
     <div class="col-span-2">
-      <label class="inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
+      <label class="inline-flex items-center not-has-disabled:cursor-pointer has-disabled:opacity-60">
         <input type="checkbox" class="distr-checkbox" formControlName="automaticApplicationUpdatesEnabled" />
         <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enable automatic updates</span>
       </label>
@@ -204,7 +204,7 @@
 
   @if (deployForm.controls.ignoreRevisionSkew.enabled) {
     <div class="col-span-2">
-      <label class="inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
+      <label class="inline-flex items-center not-has-disabled:cursor-pointer has-disabled:opacity-60">
         <input type="checkbox" class="distr-checkbox" formControlName="ignoreRevisionSkew" />
         <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Ignore Helm revision skew</span>
       </label>
@@ -216,7 +216,7 @@
 
   @if (deployForm.controls.forceRestart.enabled) {
     <div class="col-span-2">
-      <label class="inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
+      <label class="inline-flex items-center not-has-disabled:cursor-pointer has-disabled:opacity-60">
         <input type="checkbox" class="distr-checkbox" formControlName="forceRestart" />
         <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Force restart</span>
       </label>
@@ -225,7 +225,7 @@
 
   @if (deployForm.controls.helmOptionsEnabled.enabled) {
     <div class="col-span-2 space-y-2">
-      <label class="inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
+      <label class="inline-flex items-center not-has-disabled:cursor-pointer has-disabled:opacity-60">
         <input type="checkbox" class="distr-checkbox" formControlName="helmOptionsEnabled" />
         <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Customize Helm options</span>
       </label>
@@ -233,7 +233,7 @@
       @if (deployForm.controls.helmOptions.enabled) {
         @let fg = deployForm.controls.helmOptions;
         <fieldset
-          class="py-3 px-4 grid gap-4 grid-cols-1 md:grid-cols-2 rounded-lg border border-gray-300 dark:border-gray-500"
+          class="grid grid-cols-1 gap-4 rounded-lg border border-gray-300 px-4 py-3 md:grid-cols-2 dark:border-gray-500"
           formGroupName="helmOptions">
           <legend class="sr-only">Helm options</legend>
 
@@ -264,20 +264,20 @@
             }
           </div>
 
-          <label class="col-span-2 inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
+          <label class="col-span-2 inline-flex items-center not-has-disabled:cursor-pointer has-disabled:opacity-60">
             <input type="checkbox" class="distr-checkbox" formControlName="rollbackOnFailure" />
             <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Rollback on failure</span>
           </label>
-          <label class="col-span-2 inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
+          <label class="col-span-2 inline-flex items-center not-has-disabled:cursor-pointer has-disabled:opacity-60">
             <input type="checkbox" class="distr-checkbox" formControlName="cleanupOnFailure" />
             <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Cleanup on failure</span>
           </label>
-          <label class="col-span-2 inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
+          <label class="col-span-2 inline-flex items-center not-has-disabled:cursor-pointer has-disabled:opacity-60">
             <input type="checkbox" class="distr-checkbox" formControlName="forceConflicts" />
             <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Force conflicts</span>
           </label>
 
-          <div class="col-span-2 distr-hint">
+          <div class="distr-hint col-span-2">
             Please refer to the
             <a
               class="font-medium text-primary-600 hover:underline dark:text-primary-500"

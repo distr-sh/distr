@@ -1,0 +1,50 @@
+---
+title: Auto-add Regex
+description: Learn how an auto-add regex adds new application versions and artifact tags to an entitlement automatically.
+slug: docs/platform/auto-add-regex
+sidebar:
+  label: Auto-add Regex
+  order: 4
+---
+
+An entitlement that grants specific versions or tags can grow with your releases. Give it an auto-add regex, and every new application version or artifact tag whose name matches is added to the entitlement automatically. For example, `^2\.\d+\.\d+$` keeps a customer on every `2.x.y` release without you editing the entitlement after each one.
+
+Enter the regex in **Auto-add Version Regex** of an [application entitlement](/docs/platform/application-entitlements/) or in **Auto-add Tag Regex** of an [artifact entitlement](/docs/platform/artifact-entitlements/). An entitlement with an auto-add regex needs at least one selected version or tag, since an entitlement without any already grants all of them, including future ones. On an artifact entitlement, the regex is only available for an entitlement with a single artifact.
+
+Setting or changing the regex does not touch existing versions or tags, so select those yourself.
+
+## When it runs
+
+### Application entitlements
+
+- **New versions:** The regex is checked whenever you create an application version.
+- **Renamed versions:** A renamed version is added if its new name matches and its previous name did not. A version you removed by hand is therefore not added back by a rename that keeps it matching.
+- **Archived versions:** These are never added.
+
+### Artifact entitlements
+
+- **New tags:** The regex is checked whenever you push a tag that did not exist yet, or move a tag to a new manifest when [mutable tags](/docs/registry/#artifact-details) are enabled. Tags synced from an upstream registry are not matched.
+- **What is added:** The manifest the tag points to is added to the entitlement, just like selecting it in the tag picker. Every other tag pointing to the same manifest becomes available to the customer as well.
+
+## Writing the regex
+
+- **Syntax:** The regex uses [RE2 syntax](https://github.com/google/re2/wiki/Syntax) and may be up to 200 characters long. Lookaheads and backreferences are not supported. It must not start or end with whitespace; write `\s` or `[ ]` to match a space there.
+- **Partial matches:** The regex matches anywhere in the name unless you anchor it with `^` and `$`. Matching is case-sensitive; prefix the regex with `(?i)` to ignore case.
+
+## Auto-added entries
+
+An auto-added version or tag is an ordinary entry of the entitlement, and you can remove it like any entry you selected yourself.
+
+- **Application versions:** The customer can deploy the version right away, and it is considered for automatic updates and update notifications. Renaming it to a name that no longer matches keeps it in the entitlement.
+- **Artifact tags:** The customer can pull the tag right away, and it is considered for update notifications.
+
+## Examples
+
+| Regex             | Adds                           | Does not add             |
+| ----------------- | ------------------------------ | ------------------------ |
+| `^2\.\d+\.\d+$`   | `2.0.0`, `2.14.3`              | `12.0.0`, `2.1.0-rc.1`   |
+| `^2\.`            | `2.1.0`, `2.1.0-rc.1`          | `12.0.0`, `v2.1.0`       |
+| `^\d+\.\d+\.\d+$` | `1.4.2`, `3.0.0`               | `1.5.0-beta.1`, `v1.4.2` |
+| `-lts$`           | `3.2.0-lts`                    | `3.2.0`, `3.2.0-lts.1`   |
+| `^[23]\.\d+\.\d+` | `2.1.0`, `3.0.4`, `3.0.4-rc1`  | `4.0.0`, `1.2.3`         |
+| `(?i)^release-`   | `release-2026-10`, `RELEASE-7` | `pre-release-1`          |

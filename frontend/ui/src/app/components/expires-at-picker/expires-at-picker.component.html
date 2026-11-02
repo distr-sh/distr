@@ -2,13 +2,13 @@
 @if (pastDate()) {
   <p class="mt-1 text-sm text-red-600 dark:text-red-500">The expiration date must be in the future.</p>
 }
-<div class="flex flex-wrap gap-2 mt-2">
+<div class="mt-2 flex flex-wrap gap-2">
   @for (preset of presets; track preset.label) {
     <button
       type="button"
       [disabled]="control.disabled"
       (click)="control.setValue(preset.date)"
-      class="text-gray-900 hover:border-primary-600 focus:ring-4 focus:outline-none focus:ring-primary-300 leading-5 rounded-lg text-xs px-3 py-0.5 transition-colors disabled:opacity-60 dark:text-white dark:hover:border-primary-500 dark:focus:ring-primary-800"
+      class="rounded-lg px-3 py-0.5 text-xs leading-5 text-gray-900 transition-colors hover:border-primary-600 focus:ring-4 focus:ring-primary-300 focus:outline-none disabled:opacity-60 dark:text-white dark:hover:border-primary-500 dark:focus:ring-primary-800"
       [class]="
         control.value === preset.date
           ? 'border-2 border-primary-600 font-semibold dark:border-primary-500'
@@ -22,7 +22,7 @@
       type="button"
       [disabled]="control.disabled"
       (click)="control.setValue('')"
-      class="text-gray-900 hover:border-primary-600 focus:ring-4 focus:outline-none focus:ring-primary-300 leading-5 rounded-lg text-xs px-3 py-0.5 transition-colors disabled:opacity-60 dark:text-white dark:hover:border-primary-500 dark:focus:ring-primary-800"
+      class="rounded-lg px-3 py-0.5 text-xs leading-5 text-gray-900 transition-colors hover:border-primary-600 focus:ring-4 focus:ring-primary-300 focus:outline-none disabled:opacity-60 dark:text-white dark:hover:border-primary-500 dark:focus:ring-primary-800"
       [class]="
         control.value === ''
           ? 'border-2 border-primary-600 font-semibold dark:border-primary-500'

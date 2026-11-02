@@ -282,6 +282,14 @@ func DeploymentStatusNotificationError(
 	return deploymentStatusNotification("error", deploymentTarget, deployment, nil, &currentStatus)
 }
 
+func DeploymentStatusNotificationUpdateFailed(
+	deploymentTarget types.DeploymentTargetFull,
+	deployment types.DeploymentWithLatestRevision,
+	currentStatus types.DeploymentRevisionStatus,
+) (*template.Template, any) {
+	return deploymentStatusNotification("update_failed", deploymentTarget, deployment, nil, &currentStatus)
+}
+
 func DeploymentStatusNotificationStale(
 	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,

@@ -17,6 +17,8 @@
             <strong>Event type:</strong>
             {{ if eq .EventType "error" }}
               <span class="text-danger">ERROR</span>
+            {{ else if eq .EventType "update_failed" }}
+              <span class="text-danger">UPDATE FAILED</span>
             {{ else if eq .EventType "stale" }}
               <span class="text-warning">STALE</span>
             {{ else if eq .EventType "recovered" }}
@@ -39,7 +41,7 @@
             <strong>Affected application:</strong>
             {{ .Deployment.Application.Name }}@{{ .Deployment.ApplicationVersionName }}
           </li>
-          {{ if or (eq .EventType "error") (eq .EventType "recovered") }}
+          {{ if or (eq .EventType "error") (eq .EventType "update_failed") (eq .EventType "recovered") }}
             <li>
               <strong>Timestamp:</strong>
               {{ .CurrentStatus.CreatedAt }}
@@ -55,6 +57,27 @@
             </li>
           {{ end }}
         </ul>
+
+        {{ if eq .EventType "update_failed" }}
+          {{ with .Deployment.CurrentStatus }}
+            <p>
+              The last applied version
+              {{ with $.Deployment.CurrentApplicationVersionName }}{{ . }}{{ end }}
+              {{ if eq .Type "error" }}
+                has an error as well:
+                {{ .Message }}
+              {{ else if .IsStale }}
+                is stale. Its last status update was at {{ .CreatedAt }}.
+              {{ else if eq .Type "progressing" }}
+                is progressing:
+                {{ .Message }}
+              {{ else }}
+                is still running.
+              {{ end }}
+            </p>
+          {{ end }}
+        {{ end }}
+
 
         <p>This is an automated alert.</p>
 

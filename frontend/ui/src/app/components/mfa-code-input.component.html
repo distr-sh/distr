@@ -14,12 +14,12 @@ This is needed because some interpret the phrase "recovery code" as conflicting 
     placeholder="Enter code"
     required />
 </div>
-<div class="text-xs text-gray-500 mt-1 space-y-1">
+<div class="mt-1 space-y-1 text-xs text-gray-500">
   <p>You can use a code from your authenticator app or a one-time recovery code.</p>
   <p>
     If you lost access to your authenticator app and recovery codes, please contact our
     @if (supportEmail(); as email) {
-      <a class="font-medium text-blue-600 dark:text-blue-500 hover:underline" href="mailto:{{ email }}">support</a>
+      <a class="font-medium text-blue-600 hover:underline dark:text-blue-500" href="mailto:{{ email }}">support</a>
     } @else {
       support
     }

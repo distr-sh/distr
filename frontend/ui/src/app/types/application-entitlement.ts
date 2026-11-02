@@ -5,6 +5,7 @@ export interface ApplicationEntitlement extends BaseModel, Named {
   applicationId?: string;
   application?: Application;
   versions?: ApplicationVersion[];
+  autoAddVersionRegex?: string;
   customerOrganizationId?: string;
   customerOrganization?: CustomerOrganization;
 

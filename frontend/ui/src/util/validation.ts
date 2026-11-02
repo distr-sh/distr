@@ -69,6 +69,11 @@ export function jsonObjectValidator(control: AbstractControl): ValidationErrors 
   }
 }
 
+export const noSurroundingWhitespaceValidator: ValidatorFn = (control) => {
+  const value = control.value as string;
+  return value === value.trim() ? null : {surroundingWhitespace: true};
+};
+
 export function validateRecordAtLeast(minRequiredCount: number, evalFunc: (v: any) => unknown = (v) => v): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     if (control instanceof FormRecord) {

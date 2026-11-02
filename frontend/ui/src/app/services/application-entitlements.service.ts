@@ -1,9 +1,10 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {firstValueFrom, Observable, tap} from 'rxjs';
+import {Observable, tap} from 'rxjs';
 import {ApplicationEntitlement} from '../types/application-entitlement';
 import {DefaultReactiveList} from './cache';
 import {CrudService} from './interfaces';
+import {skipTrim} from './trim.interceptor';
 
 @Injectable({
   providedIn: 'root',
@@ -12,7 +13,9 @@ export class ApplicationEntitlementsService implements CrudService<ApplicationEn
   private readonly httpClient = inject(HttpClient);
 
   private readonly entitlementsUrl = '/api/v1/application-entitlements';
-  private readonly cache = new DefaultReactiveList(this.httpClient.get<ApplicationEntitlement[]>(this.entitlementsUrl));
+  private readonly cache = new DefaultReactiveList(() =>
+    this.httpClient.get<ApplicationEntitlement[]>(this.entitlementsUrl)
+  );
 
   list(applicationId?: string): Observable<ApplicationEntitlement[]> {
     if (applicationId) {
@@ -23,22 +26,26 @@ export class ApplicationEntitlementsService implements CrudService<ApplicationEn
   }
 
   refresh(): Promise<ApplicationEntitlement[]> {
-    return firstValueFrom(
-      this.httpClient
-        .get<ApplicationEntitlement[]>(this.entitlementsUrl)
-        .pipe(tap((entitlements) => this.cache.reset(entitlements)))
-    );
+    return this.cache.refresh();
+  }
+
+  get(entitlementId: string): Observable<ApplicationEntitlement> {
+    return this.httpClient
+      .get<ApplicationEntitlement>(`${this.entitlementsUrl}/${entitlementId}`)
+      .pipe(tap((it) => this.cache.save(it)));
   }
 
   create(entitlement: ApplicationEntitlement): Observable<ApplicationEntitlement> {
     return this.httpClient
-      .post<ApplicationEntitlement>(this.entitlementsUrl, entitlement)
+      .post<ApplicationEntitlement>(this.entitlementsUrl, entitlement, {context: skipTrim('autoAddVersionRegex')})
       .pipe(tap((it) => this.cache.save(it)));
   }
 
   update(entitlement: ApplicationEntitlement): Observable<ApplicationEntitlement> {
     return this.httpClient
-      .put<ApplicationEntitlement>(`${this.entitlementsUrl}/${entitlement.id}`, entitlement)
+      .put<ApplicationEntitlement>(`${this.entitlementsUrl}/${entitlement.id}`, entitlement, {
+        context: skipTrim('autoAddVersionRegex'),
+      })
       .pipe(tap((it) => this.cache.save(it)));
   }
 

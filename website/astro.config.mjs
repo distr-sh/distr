@@ -55,6 +55,8 @@ export default defineConfig({
           '/get-started/',
           '/docs/',
           '/demo/success/',
+          '/terms-of-service/',
+          '/data-processing-agreement/',
         ];
         const url = new URL(page);
         const pathname = url.pathname;
@@ -91,6 +93,7 @@ export default defineConfig({
         Head: './src/components/overwrites/Head.astro',
         Header: './src/components/overwrites/Header.astro',
         PageTitle: './src/components/overwrites/PageTitle.astro',
+        MarkdownContent: './src/components/overwrites/MarkdownContent.astro',
         ContentPanel: './src/components/overwrites/ContentPanel.astro',
         Footer: './src/components/overwrites/Footer.astro',
         Sidebar: './src/components/overwrites/Sidebar.astro',
@@ -256,6 +259,15 @@ export default defineConfig({
                   ],
                 },
                 {
+                  label: 'Kubernetes Cluster Setup',
+                  items: [
+                    {
+                      label: 'Cluster Setup with k3s',
+                      link: '/docs/integrations/k3s/',
+                    },
+                  ],
+                },
+                {
                   label: 'Amazon Elastic Container Service (ECS)',
                   items: [
                     {
@@ -295,13 +307,20 @@ export default defineConfig({
             },
           ],
           {
-            exclude: ['**/privacy-policy', '**/404', '**/changelog'],
+            exclude: [
+              '**/privacy-policy',
+              '**/terms-of-service',
+              '**/data-processing-agreement',
+              '**/404',
+              '**/changelog',
+            ],
           },
         ),
         starlightLinksValidator({
           exclude: [
             '/',
             '/compare/**',
+            '/case-studies{,/**}',
             '/contact/',
             '/pricing/',
             '/blog/**',
@@ -340,7 +359,8 @@ export default defineConfig({
     '/docs/getting-started/how-it-works/': '/docs/core-concepts/',
     '/docs/getting-started/core-concepts/': '/docs/core-concepts/',
     '/docs/getting-started/quickstart/': '/docs/quickstart/',
-    '/docs/getting-started/deployment-methods/': '/docs/subscription/',
+    '/docs/getting-started/deployment-methods/':
+      '/docs/subscription/#distr-cloud-or-self-hosted',
     '/docs/privacy-policy/': '/privacy-policy/',
 
     // product/ redirects
@@ -378,11 +398,12 @@ export default defineConfig({
     '/docs/guides/docker-secrets/': '/docs/controllers/docker-compose-secrets/',
     '/docs/guides/container-registry-for-end-customers/':
       '/docs/platform/customer-portal/registry/',
-    '/docs/guides/license-mgmt/': '/docs/platform/application-entitlements/',
+    '/docs/guides/license-mgmt/': '/docs/platform/license-management/',
     '/docs/guides/application-licenses/':
       '/docs/platform/application-entitlements/',
     '/docs/guides/artifact-licenses/': '/docs/platform/artifact-entitlements/',
-    '/docs/guides/onboarding-a-new-customer/': '/docs/platform/rbac/',
+    '/docs/guides/onboarding-a-new-customer/':
+      '/docs/platform/customer-management/',
     '/docs/guides/onboarding-a-docker-app/': '/docs/controllers/application/',
     '/docs/guides/onboarding-a-helm-app/': '/docs/controllers/application/',
     '/docs/guides/distr-on-macos/': '/docs/controllers/distr-on-macos/',
@@ -431,5 +452,13 @@ export default defineConfig({
 
     // Glossary redirects
     '/glossary/self-managed-software/': '/glossary/self-hosted-software/',
+
+    // Case study redirects
+    '/case-studies/sophris/': '/case-studies/candor/',
+
+    // Legal page short links
+    '/tos/': '/terms-of-service/',
+    '/dpa/': '/data-processing-agreement/',
+    '/pp/': '/privacy-policy/',
   },
 });
