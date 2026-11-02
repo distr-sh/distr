@@ -167,9 +167,11 @@
                       ? createdToken!.key
                       : 'YOUR-ACCESS-TOKEN';
                   @let loginCmd = `echo ${token} | docker login ${host()} --password-stdin -u - `;
-                  <code class="mt-2 text-sm whitespace-pre-line text-gray-900 select-all dark:text-gray-200">{{
-                    loginCmd
-                  }}</code>
+                  <code
+                    class="mt-2 text-sm whitespace-pre-line text-gray-900 select-all dark:text-gray-200"
+                    data-ph-mask-text="true"
+                    >{{ loginCmd }}</code
+                  >
                   <app-clip class="mx-2" [clip]="loginCmd" />
 
                   @if (loginFormGroup.controls.loginDone.touched && loginFormGroup.controls.loginDone.invalid) {

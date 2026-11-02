@@ -69,14 +69,22 @@
     },
     {
       "matchFileNames": ["website/**"],
+      "semanticCommitType": "build",
+      "semanticCommitScope": "website"
+    },
+    {
+      "matchFileNames": ["website/**"],
       "matchPackageNames": [
         "!pnpm",
         "!distr-sh/hello-distr",
         "!ghcr.io/distr-sh/hello-distr/**"
       ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
       "groupName": "website dependencies",
-      "semanticCommitType": "build",
-      "semanticCommitScope": "website"
+      "automerge": true
     },
     {
       "matchManagers": [

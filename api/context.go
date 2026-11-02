@@ -1,6 +1,9 @@
 package api
 
-import "github.com/distr-sh/distr/internal/types"
+import (
+	"github.com/distr-sh/distr/internal/types"
+	"github.com/google/uuid"
+)
 
 type ContextResponse struct {
 	User                 UserAccountResponse              `json:"user"`
@@ -13,4 +16,9 @@ type ContextResponse struct {
 	// domains and legacy branding domains, falling back to the instance default.
 	RegistryHost      string `json:"registryHost,omitzero"`
 	HasPulledArtifact bool   `json:"hasPulledArtifact"`
+}
+
+type CustomerLens struct {
+	CustomerOrganizationID   uuid.UUID `json:"customerOrganizationId"`
+	CustomerOrganizationName string    `json:"customerOrganizationName"`
 }

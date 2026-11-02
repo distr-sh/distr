@@ -53,13 +53,17 @@ func AuthRouter(r chiopenapi.Router) {
 	r.Route("/oidc", AuthOIDCRouter)
 	r.Post("/register", respond.Handler(authRegisterHandler))
 	r.Post("/reset", respond.Handler(authResetPasswordHandler))
-	r.With(
-		auth.Authentication.Middleware,
-		middleware.SetSentryUserFromUserAuth,
-		middleware.RequireEmailVerified,
-		middleware.RequireOrgAndRole,
-		middleware.BlockCrossOrganizationAction,
-	).Post("/switch-context", respond.Handler(authSwitchContextHandler))
+	r.Group(func(r chiopenapi.Router) {
+		r.Use(
+			auth.Authentication.Middleware,
+			middleware.SetSentryUserFromUserAuth,
+			middleware.RequireEmailVerified,
+			middleware.RequireOrgAndRole,
+			middleware.RequireNonAccessToken,
+		)
+		r.Post("/switch-context", respond.Handler(authSwitchContextHandler))
+		r.Post("/enter-lens", respond.Handler(authEnterLensHandler))
+	})
 	r.Group(func(r chiopenapi.Router) {
 		r.Use(auth.Authentication.Middleware, middleware.SetSentryUserFromUserAuth)
 
@@ -219,56 +223,6 @@ func setPasswordAndLogin(
 		}
 
 		return respond.JSON(api.AuthLoginResponse{Token: token}), nil
-	}
-}
-
-func authSwitchContextHandler(r *http.Request) (respond.Responder, error) {
-	ctx := r.Context()
-	auth := auth.Authentication.Require(ctx)
-	if request, resp := decodeJSON[api.AuthSwitchContextRequest](r); resp != nil {
-		return resp, nil
-	} else if request.OrganizationID == uuid.Nil {
-		return respond.BadRequest("bad request"), nil
-	} else if *auth.CurrentOrgID() == request.OrganizationID {
-		return respond.NoContent(), nil
-	} else if auth.IsSuperAdmin() {
-		// Super admins can switch to any organization
-		if user, err := db.GetUserAccountByID(ctx, auth.CurrentUserID()); err != nil {
-			return nil, fmt.Errorf("failed to get user account: %w", err)
-		} else if org, err := db.GetOrganizationByID(ctx, request.OrganizationID); errors.Is(err, distrerr.ErrNotFound) {
-			return organizationNotFound, nil
-		} else if err != nil {
-			return nil, fmt.Errorf("failed to get organization: %w", err)
-		} else if _, tokenString, err := authjwt.GenerateDefaultToken(*user, types.OrganizationWithUserRole{
-			Organization:           *org,
-			UserRole:               types.UserRole(""), // Super admins don't have a role
-			CustomerOrganizationID: nil,
-		}); err != nil {
-			return nil, fmt.Errorf("failed to generate token: %w", err)
-		} else if err := db.UpdateUserAccountLastUsedOrganizationID(ctx, user.ID, request.OrganizationID); err != nil {
-			return nil, fmt.Errorf("failed to update last used organization ID: %w", err)
-		} else {
-			return respond.JSON(api.AuthLoginResponse{Token: tokenString}), nil
-		}
-	} else {
-		// Regular users: validate membership
-		if user, org, err := db.GetUserAccountAndOrg(
-			ctx, auth.CurrentUserID(), request.OrganizationID); errors.Is(err, distrerr.ErrNotFound) {
-			return respond.BadRequest("bad request"), nil
-		} else if err != nil {
-			return nil, fmt.Errorf("context switch failed: %w", err)
-		} else if _, tokenString, err := authjwt.GenerateDefaultToken(user.AsUserAccount(), types.OrganizationWithUserRole{
-			Organization:           org.Organization,
-			UserRole:               user.UserRole,
-			CustomerOrganizationID: user.CustomerOrganizationID,
-			PartnerOrganizationID:  user.PartnerOrganizationID,
-		}); err != nil {
-			return nil, fmt.Errorf("failed to generate token: %w", err)
-		} else if err := db.UpdateUserAccountLastUsedOrganizationID(ctx, user.ID, request.OrganizationID); err != nil {
-			return nil, fmt.Errorf("failed to update last used organization ID: %w", err)
-		} else {
-			return respond.JSON(api.AuthLoginResponse{Token: tokenString}), nil
-		}
 	}
 }
 

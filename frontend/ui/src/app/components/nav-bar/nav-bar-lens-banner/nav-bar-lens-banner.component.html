@@ -1,0 +1,35 @@
+<div
+  class="flex h-17 w-full items-center justify-between gap-4 border-b border-gray-200 bg-gray-50 px-4 md:gap-8 dark:border-gray-700 dark:bg-gray-900">
+  <div class="flex items-center">
+    <fa-icon [icon]="faGlasses" class="mr-3 hidden text-amber-600 lg:inline dark:text-amber-400" />
+    <div class="text-sm">
+      <p class="font-semibold text-amber-700 dark:text-amber-400">Customer Lens</p>
+      <p class="text-gray-700 dark:text-gray-300">
+        @if (isSuperAdmin) {
+          You are viewing the customer portal of
+          <span class="font-semibold text-gray-900 dark:text-white">{{ lensName() }}</span> with read-only access.
+        } @else {
+          You are working in the customer portal of
+          <span class="font-semibold text-gray-900 dark:text-white">{{ lensName() }}</span
+          ><span class="hidden md:inline">
+            with your
+            <span class="font-semibold text-gray-900 dark:text-white">{{
+              organization().userRole | userRoleLabel
+            }}</span>
+            role. Changes you make here apply to {{ lensName() }}</span
+          >.
+        }
+      </p>
+    </div>
+  </div>
+  <button type="button" (click)="leaveLens.emit()" class="distr-btn-secondary shrink-0 px-3 py-2 text-sm font-medium">
+    @switch (ownKind()) {
+      @case ('partner') {
+        Return to Partner Portal
+      }
+      @default {
+        Return to Vendor Portal
+      }
+    }
+  </button>
+</div>

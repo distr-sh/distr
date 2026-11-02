@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
 )

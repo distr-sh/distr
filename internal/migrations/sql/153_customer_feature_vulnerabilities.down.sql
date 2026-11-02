@@ -1,0 +1,2 @@
+-- Enum values cannot be removed without recreating the type, which would fail for every value a
+-- later migration added. The added value is harmless when unused.

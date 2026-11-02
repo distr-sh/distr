@@ -8,6 +8,7 @@ import (
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/billing"
 	"github.com/distr-sh/distr/internal/controllermanifest"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
@@ -196,8 +197,17 @@ func deleteOrganizationHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 
-	if err := db.SetOrganizationDeletedAtNow(ctx, *auth.CurrentOrgID()); err != nil {
-		return nil, fmt.Errorf("could not soft-delete organization: %w", err)
+	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
+		if stripeSubscriptionID, err := db.SetOrganizationDeletedAtNow(ctx, *auth.CurrentOrgID()); err != nil {
+			return nil, fmt.Errorf("could not soft-delete organization: %w", err)
+		} else if stripeSubscriptionID != nil && *stripeSubscriptionID != "" {
+			if err := billing.CancelSubscription(ctx, *stripeSubscriptionID); err != nil {
+				return nil, fmt.Errorf("could not cancel stripe subscription: %w", err)
+			}
+		}
+		return nil, nil
+	}); resp != nil || err != nil {
+		return resp, err
 	} else {
 		return respond.NoContent(), nil
 	}

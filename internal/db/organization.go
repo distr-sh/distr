@@ -237,6 +237,22 @@ func RemoveOrganizationFeaturesWithSubscriptionType(
 	return nil
 }
 
+func GetOrganizationIDsWithoutFeature(ctx context.Context, feature types.Feature) ([]uuid.UUID, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT id FROM Organization WHERE deleted_at IS NULL AND NOT @feature::FEATURE = ANY(features)`,
+		pgx.NamedArgs{"feature": feature},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query Organization: %w", err)
+	}
+	if result, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID]); err != nil {
+		return nil, fmt.Errorf("could not collect Organization IDs: %w", err)
+	} else {
+		return result, nil
+	}
+}
+
 // ApplyPlanToAllOrganizations is the bulk equivalent of [types.Organization.ApplyPlan]: it puts
 // every organization on the given plan and adds its features without removing any other.
 func ApplyPlanToAllOrganizations(ctx context.Context, plan types.SubscriptionPlan) error {
@@ -343,6 +359,30 @@ func GetOrganizationByID(ctx context.Context, orgID uuid.UUID) (*types.Organizat
 	}
 }
 
+// GetOrganizationByIDIncludingDeleted also returns whether the organization is soft-deleted.
+func GetOrganizationByIDIncludingDeleted(ctx context.Context, orgID uuid.UUID) (*types.Organization, bool, error) {
+	type organizationWithDeleted struct {
+		types.Organization
+		Deleted bool `db:"deleted"`
+	}
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		"SELECT "+organizationOutputExpr+", o.deleted_at IS NOT NULL AS deleted FROM Organization o WHERE id = @id",
+		pgx.NamedArgs{"id": orgID},
+	)
+	if err != nil {
+		return nil, false, err
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[organizationWithDeleted])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, false, fmt.Errorf("%w: organization %v", distrerr.ErrNotFound, orgID)
+	} else if err != nil {
+		return nil, false, err
+	} else {
+		return &result.Organization, result.Deleted, nil
+	}
+}
+
 func GetOrganizationWithBranding(ctx context.Context, orgID uuid.UUID) (*types.OrganizationWithBranding, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
@@ -413,15 +453,20 @@ func DeleteOrganizationsOlderThan(ctx context.Context, minAge time.Duration) (in
 	return rowsAffected, err
 }
 
-func SetOrganizationDeletedAtNow(ctx context.Context, orgID uuid.UUID) error {
+// SetOrganizationDeletedAtNow returns the Stripe subscription ID of the deleted organization, which is nil if
+// it has none or was already deleted.
+func SetOrganizationDeletedAtNow(ctx context.Context, orgID uuid.UUID) (*string, error) {
 	db := internalctx.GetDb(ctx)
-	_, err := db.Exec(
+	var stripeSubscriptionID *string
+	err := db.QueryRow(
 		ctx,
-		"UPDATE Organization SET deleted_at = now() WHERE id = @id AND deleted_at IS NULL",
+		"UPDATE Organization SET deleted_at = now() WHERE id = @id AND deleted_at IS NULL RETURNING stripe_subscription_id",
 		pgx.NamedArgs{"id": orgID},
-	)
-	if err != nil {
-		return fmt.Errorf("could not update Organization: %w", err)
+	).Scan(&stripeSubscriptionID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("could not update Organization: %w", err)
 	}
 
 	RunAfterTx(ctx, func(ctx context.Context) {
@@ -433,5 +478,5 @@ func SetOrganizationDeletedAtNow(ctx context.Context, orgID uuid.UUID) error {
 		}
 	})
 
-	return nil
+	return stripeSubscriptionID, nil
 }

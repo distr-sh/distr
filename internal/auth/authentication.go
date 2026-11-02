@@ -129,6 +129,8 @@ func recordAuthInfo(ctx context.Context, info authinfo.AuthInfo) {
 		}
 		f.OrganizationID = info.CurrentOrgID()
 		f.CustomerOrganizationID = info.CurrentCustomerOrgID()
+		f.PartnerOrganizationID = info.CurrentPartnerOrgID()
+		f.Lens = info.IsLens()
 		if deploymentTargetID := info.CurrentDeploymentTargetID(); deploymentTargetID != nil {
 			f.DeploymentTargetID = deploymentTargetID
 		} else {

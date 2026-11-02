@@ -1,24 +1,17 @@
 import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, viewChild} from '@angular/core';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {
-  faArrowLeft,
-  faCheck,
-  faChevronRight,
-  faComment,
-  faDownload,
-  faTrash,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
-import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
+import {faArrowLeft, faCheck, faComment, faDownload, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {firstValueFrom, map, startWith, Subject, switchMap} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
 import {
   ActivityTimelineComponent,
   ActivityTimelineEntry,
 } from '../../components/activity-timeline/activity-timeline.component';
+import {AlertComponent} from '../../components/alert/alert.component';
 import {ClipComponent} from '../../components/clip.component';
 import {PageComponent} from '../../components/page.component';
 import {AuthService} from '../../services/auth.service';
@@ -28,6 +21,7 @@ import {ToastService} from '../../services/toast.service';
 import {SupportBundleDetail} from '../../types/support-bundle';
 import {supportBundleDeleteConfirm} from '../support-bundle-display';
 import {SupportBundleStatusBadgeComponent} from '../support-bundle-status-badge.component';
+import {SupportBundleResourceComponent} from './support-bundle-resource.component';
 
 @Component({
   selector: 'app-support-bundle-detail',
@@ -37,10 +31,12 @@ import {SupportBundleStatusBadgeComponent} from '../support-bundle-status-badge.
     DatePipe,
     RouterLink,
     FaIconComponent,
+    AlertComponent,
     ClipComponent,
     ActivityTimelineComponent,
     PageComponent,
     SupportBundleStatusBadgeComponent,
+    SupportBundleResourceComponent,
   ],
 })
 export class SupportBundleDetailComponent {
@@ -52,7 +48,6 @@ export class SupportBundleDetailComponent {
   protected readonly auth = inject(AuthService);
 
   protected readonly faArrowLeft = faArrowLeft;
-  protected readonly faChevronRight = faChevronRight;
   protected readonly faCheck = faCheck;
   protected readonly faComment = faComment;
   protected readonly faDownload = faDownload;
@@ -61,6 +56,10 @@ export class SupportBundleDetailComponent {
   private readonly timeline = viewChild(ActivityTimelineComponent);
 
   protected readonly bundle = signal<SupportBundleDetail | undefined>(undefined);
+  protected readonly justInitialized = toSignal(
+    this.route.queryParamMap.pipe(map((params) => params.get('initialized') === 'true')),
+    {initialValue: false}
+  );
   protected readonly updatingStatus = signal(false);
   protected readonly submittingComment = signal(false);
   protected readonly downloading = signal(false);

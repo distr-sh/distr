@@ -12,11 +12,12 @@ Distr exposes a Prometheus-compatible metrics endpoint that can be scraped by an
 
 The metrics endpoint is configured via environment variables:
 
-| Variable               | Default | Description                                                                        |
-| ---------------------- | ------- | ---------------------------------------------------------------------------------- |
-| `METRICS_ENABLED`      | `false` | Enable the metrics HTTP server                                                     |
-| `METRICS_ADDR`         | `:3000` | Address and port the metrics server listens on                                     |
-| `METRICS_BEARER_TOKEN` | (none)  | If set, requires an `Authorization: Bearer <token>` header on every scrape request |
+| Variable                | Default | Description                                                                        |
+| ----------------------- | ------- | ---------------------------------------------------------------------------------- |
+| `METRICS_ENABLED`       | `false` | Enable the metrics HTTP server                                                     |
+| `METRICS_ADDR`          | `:3000` | Address and port the metrics server listens on                                     |
+| `METRICS_BEARER_TOKEN`  | (none)  | If set, requires an `Authorization: Bearer <token>` header on every scrape request |
+| `METRICS_PPROF_ENABLED` | `false` | Serve Go runtime profiles under `/debug/pprof/` on the metrics server              |
 
 ### Docker Compose
 

@@ -121,10 +121,7 @@ func (c *Client) ExportDeploymentLogs(ctx context.Context, records []api.Deploym
 	} else {
 		req.Header.Set("Content-Type", "application/json")
 		if resp, err := c.doAuthenticated(ctx, req, true); err != nil {
-			if statusErr, ok := errors.AsType[*httpstatus.StatusError](err); ok &&
-				statusErr.StatusCode == http.StatusBadRequest {
-				// The server rejected the batch as invalid; surface it as a permanent
-				// rejection so the collector drops it instead of retrying forever.
+			if rejected(err) {
 				return fmt.Errorf("%w: %w", deploymentlogs.ErrRecordsRejected, err)
 			}
 			return err
@@ -144,10 +141,7 @@ func (c *Client) ExportDeploymentTargetLogs(records ...api.DeploymentTargetLogRe
 	} else {
 		req.Header.Set("Content-Type", "application/json")
 		if resp, err := c.doAuthenticated(context.TODO(), req, false); err != nil {
-			if statusErr, ok := errors.AsType[*httpstatus.StatusError](err); ok &&
-				statusErr.StatusCode == http.StatusBadRequest {
-				// The server rejected the batch as invalid; surface it as a permanent
-				// rejection so the collector drops it instead of retrying forever.
+			if rejected(err) {
 				return fmt.Errorf("%w: %w", deploymenttargetlogs.ErrRecordsRejected, err)
 			}
 			return err
@@ -156,6 +150,15 @@ func (c *Client) ExportDeploymentTargetLogs(records ...api.DeploymentTargetLogRe
 		}
 		return nil
 	}
+}
+
+// rejected reports whether the server refused a batch for good, so that retrying it would fail
+// forever and block all newer logs. 408 and 429 ask the client to retry instead.
+func rejected(err error) bool {
+	statusErr, ok := errors.AsType[*httpstatus.StatusError](err)
+	return ok && statusErr.StatusCode >= 400 && statusErr.StatusCode < 500 &&
+		statusErr.StatusCode != http.StatusRequestTimeout &&
+		statusErr.StatusCode != http.StatusTooManyRequests
 }
 
 func (c *Client) Login(ctx context.Context) error {
