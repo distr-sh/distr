@@ -17,6 +17,7 @@ import {OidcButtonsComponent} from '../components/oidc-buttons.component';
 import {PortalLogoComponent} from '../components/portal-logo/portal-logo.component';
 import {TurnstileComponent} from '../components/turnstile.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
 import {PlaceholderDirective} from '../directives/placeholder.directive';
 import {AuthService} from '../services/auth.service';
 import {PortalService} from '../services/portal.service';
@@ -28,6 +29,7 @@ import {ToastService} from '../services/toast.service';
     RouterLink,
     ReactiveFormsModule,
     AutotrimDirective,
+    InnerMarkdownDirective,
     PlaceholderDirective,
     OidcButtonsComponent,
     PortalLogoComponent,
@@ -47,8 +49,7 @@ export class RegisterComponent implements OnInit {
   protected readonly loading = signal(false);
 
   protected readonly turnstileSiteKey = computed(() => this.portalService.loginConfig().turnstileSiteKey);
-  protected readonly termsOfServiceUrl = computed(() => this.portalService.loginConfig().termsOfServiceUrl);
-  protected readonly privacyPolicyUrl = computed(() => this.portalService.loginConfig().privacyPolicyUrl);
+  protected readonly legalText = computed(() => this.portalService.loginConfig().legalText);
   private readonly turnstile = viewChild(TurnstileComponent);
   private readonly turnstileToken = signal<string | undefined>(undefined);
 

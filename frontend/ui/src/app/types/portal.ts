@@ -9,8 +9,7 @@ export type RegistrationMode = 'enabled' | 'hidden' | 'disabled';
 export interface PortalLoginConfig {
   registration: RegistrationMode;
   turnstileSiteKey?: string;
-  termsOfServiceUrl?: string;
-  privacyPolicyUrl?: string;
+  legalText?: string;
   oidcGithubEnabled: boolean;
   oidcGoogleEnabled: boolean;
   oidcMicrosoftEnabled: boolean;
