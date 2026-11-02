@@ -14,6 +14,12 @@
 
 ---
 
+### contentType
+
+> **contentType**: [`SupportBundleResourceContentType`](../type-aliases/SupportBundleResourceContentType.md)
+
+---
+
 ### createdAt
 
 > **createdAt**: `string`

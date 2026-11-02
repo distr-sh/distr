@@ -61,10 +61,13 @@ export interface CreateSupportBundleResponse extends SupportBundle {
   collectCommand: string;
 }
 
+export type SupportBundleResourceContentType = 'text/plain' | 'text/x-log' | 'application/yaml' | 'application/json';
+
 export interface SupportBundleResource {
   id: string;
   createdAt: string;
   name: string;
+  contentType: SupportBundleResourceContentType;
   content: string;
 }
 

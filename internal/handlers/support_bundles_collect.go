@@ -1,14 +1,17 @@
 package handlers
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/contenttype"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
@@ -43,8 +46,9 @@ func SupportBundleScriptRouter(r chiopenapi.Router) {
 			With(option.Description("Upload a support bundle resource")).
 			With(option.Request(struct {
 				BundleIDRequest
-				Name    string `formData:"name"`
-				Content string `formData:"content"`
+				Name        string `formData:"name"`
+				ContentType string `formData:"contentType"`
+				Content     string `formData:"content"`
 			}{}, option.ContentType("multipart/form-data"))).
 			With(option.Response(http.StatusOK, api.SupportBundleResourceSummary{}))
 
@@ -100,6 +104,10 @@ func uploadSupportBundleResourceHandler(r *http.Request) (respond.Responder, err
 		return respond.Error(http.StatusRequestEntityTooLarge, "request body too large"), nil
 	} else if name := strings.TrimSpace(r.FormValue("name")); name == "" {
 		return respond.BadRequest("name is required"), nil
+	} else if contentType := cmp.Or(r.FormValue("contentType"), contenttype.MediaTypeTextPlain); !slices.Contains(
+		types.SupportBundleResourceContentTypes, contentType,
+	) {
+		return respond.BadRequest("unsupported content type"), nil
 	} else if file, _, err := r.FormFile("content"); err != nil {
 		return respond.BadRequest("content file is required"), nil
 	} else {
@@ -112,6 +120,7 @@ func uploadSupportBundleResourceHandler(r *http.Request) (respond.Responder, err
 			resource := types.SupportBundleResource{
 				SupportBundleID: bundle.ID,
 				Name:            name,
+				ContentType:     contentType,
 				Content:         dbcrypto.String(secretsRedactor(secrets).Redact(string(contentBytes))),
 			}
 			if err := db.CreateSupportBundleResource(ctx, &resource); err != nil {
