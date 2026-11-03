@@ -1514,6 +1514,11 @@ func DeleteArtifactTag(ctx context.Context, artifact *types.Artifact, tagName st
 		if err := LockArtifactExclusive(ctx, artifactID); err != nil {
 			return err
 		}
+		// A push locks the artifact row in GetOrCreateArtifact until it commits, so waiting for it here
+		// keeps the check for other tags below from missing a tag pushed concurrently.
+		if err := LockArtifactRows(ctx, []uuid.UUID{artifactID}); err != nil {
+			return err
+		}
 
 		version, err := GetArtifactVersionByName(ctx, artifactID, tagName)
 		if err != nil {
