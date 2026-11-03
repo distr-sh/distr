@@ -1,0 +1,24 @@
+{
+  "groups": {
+    "group:support": ["alice@example.com", "bob@example.com"]
+  },
+  "tagOwners": {
+    "tag:customer-acme": ["autogroup:admin"]
+  },
+  "grants": [
+    {
+      "src": ["group:support"],
+      "dst": ["tag:customer-acme"],
+      "ip": ["tcp:22", "tcp:2375"]
+    }
+  ],
+  "ssh": [
+    {
+      "action": "check",
+      "src": ["group:support"],
+      "dst": ["tag:customer-acme"],
+      "users": ["root"],
+      "checkPeriod": "12h"
+    }
+  ]
+}

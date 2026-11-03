@@ -1,0 +1,23 @@
+services:
+  tailscale:
+    image: tailscale/tailscale:v1.104.4
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY:?}
+      TS_HOSTNAME: ${TS_HOSTNAME:?}
+      TS_SERVE_CONFIG: /config/serve.json
+    configs:
+      - source: tailscale-serve
+        target: /config/serve.json
+    restart: unless-stopped
+  docker-socket:
+    image: alpine/socat:1.8.1.3
+    command: tcp-listen:2375,bind=127.0.0.1,fork,reuseaddr unix-connect:/var/run/docker.sock
+    network_mode: service:tailscale
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+configs:
+  tailscale-serve:
+    content: |
+      {"TCP": {"2375": {"TCPForward": "127.0.0.1:2375"}}}
