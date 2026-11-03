@@ -16,7 +16,7 @@ export const products: Product[] = [
   {
     title: 'Automatic Updates',
     description:
-      'New - Let deployments follow the latest version of their application, so every release rolls out without a manual update',
+      'New - Keep deployments on the latest eligible version of their application without manual updates',
     value: 'refresh-cw',
     href: '/docs/controllers/deployment/#automatic-updates',
   },

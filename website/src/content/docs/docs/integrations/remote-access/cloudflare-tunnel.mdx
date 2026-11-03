@@ -83,8 +83,8 @@ It also runs two replicas by default, more than a tunnel for debugging needs.
 Deploy the application to the customer's Kubernetes deployment target with **+ Deploy App**.
 Once the pod runs, the Cloudflare dashboard shows the tunnel as healthy.
 
-The pod connects out to Cloudflare on port 7844 and to the API server.
-Customers who restrict egress with NetworkPolicies have to allow both.
+The pod connects out to Cloudflare on port 7844 and to the API server, and it resolves both names through the cluster DNS.
+Customers who restrict egress with NetworkPolicies have to allow both connections and DNS on port 53 over UDP and TCP.
 
 ## Giving your support team access
 

@@ -37,6 +37,9 @@ The customer's container joins your tailnet, not the customer's.
 Each customer gets a tag, which keeps their container apart from other customers and from the rest of your tailnet.
 Only your support team may connect to it.
 
+Your support engineers need Tailscale installed on their own machines and signed in to your tailnet.
+Keep [MagicDNS](https://tailscale.com/kb/1081/magicdns) enabled, which it is by default, so that the device names used below resolve.
+
 ### 1. Write the access policy
 
 Add a group for your support team, a tag for the customer, a grant and an SSH rule to the [tailnet policy file](https://tailscale.com/kb/1337/policy-syntax):
