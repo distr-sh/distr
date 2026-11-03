@@ -53,7 +53,8 @@
                 <div
                   class="distr-dropdown-panel"
                   animate.enter="animate-flip-in-top"
-                  animate.leave="animate-flip-out-top">
+                  animate.leave="animate-flip-out-top"
+                  (click)="showDropdown.set(false)">
                   <ul aria-labelledby="dropdownDefaultButton">
                     @if (artifact.upstreamUrl) {
                       <li>

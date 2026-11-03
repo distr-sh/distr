@@ -193,6 +193,7 @@ func main() {
 					logger.Warn("could not delete old ControllerDeployment resource", zap.Error(err))
 				}
 				registryAuthErrors.Delete(existing.ID)
+				chartCache.Forget(existing.ID)
 			}
 		}
 
