@@ -168,6 +168,8 @@ The Distr registry protects artifacts and tags that are referenced in entitlemen
 
 You can delete individual tags from an artifact through the API, the UI and the registry itself (`DELETE /v2/<name>/manifests/<tag>`). However, the system enforces several validation rules to prevent breaking customer access.
 
+Only named tags such as `v1.0.0` can be deleted. A digest reference (`sha256:…`) is rejected with `400 Bad Request`, which also affects clients that resolve a tag to its digest before deleting it.
+
 #### When Tag Deletion is Allowed
 
 Tag deletion succeeds when all of these conditions are met:
