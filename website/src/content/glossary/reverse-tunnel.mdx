@@ -69,14 +69,15 @@ Every node connects outbound to the coordination server and to its peers, and wh
 | Approach        | Who opens the connection     | What becomes reachable        | Firewall change                 |
 | --------------- | ---------------------------- | ----------------------------- | ------------------------------- |
 | Port forwarding | The client, from outside     | One port on one host          | Inbound rule on the router      |
-| VPN             | The client, to a VPN gateway | Usually a whole network       | Inbound port for the gateway    |
+| Gateway VPN     | The client, to a VPN gateway | Usually a whole network       | Inbound port for the gateway    |
 | Reverse tunnel  | The agent, from inside       | The service the agent exposes | None, as long as egress is open |
 
 Port forwarding maps a port on the router or firewall to a host behind it.
 It needs an inbound rule and a public address, and anyone on the internet can reach the port unless something else restricts it.
 
-A VPN connects a device or another network to the private network.
+A gateway VPN connects a device or another network to the private network.
 Its users can usually reach far more than one service, and its gateway has to accept inbound connections.
+Mesh VPNs such as Tailscale connect outbound instead, which is why they work much like a reverse tunnel from the firewall's point of view.
 
 A reverse tunnel exposes only what the agent forwards and needs no inbound rule.
 It is the usual choice when the network belongs to someone else, for example when a software vendor needs [remote access](/glossary/vendor-remote-access/) to an installation in a customer's environment.
