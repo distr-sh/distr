@@ -521,8 +521,8 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/oaswrap/spec v0.5.2 h1:gTS3rfN4ILylm9Lb5vXGgUZDU0SKNwSo50PTKKBLOYs=
 github.com/oaswrap/spec v0.5.2/go.mod h1:Nhujx0ByH1JcyQjjNfCS7XpibCcVVdBk+Zi6balxJmg=
-github.com/oaswrap/spec-ui v0.2.1 h1:FDqXeIHxsYymw+MgqmC+vqAW/GRrA/2L52IF53paioM=
-github.com/oaswrap/spec-ui v0.2.1/go.mod h1:D8EnD6zbYJ3q65wdltw6QHXfw+nut5XwSSA1xtlSEQQ=
+github.com/oaswrap/spec-ui v0.2.2 h1:0+ng/drv04YUKENdcu+0CQN1/DTB/iZ9Tksg/q11h6s=
+github.com/oaswrap/spec-ui v0.2.2/go.mod h1:D8EnD6zbYJ3q65wdltw6QHXfw+nut5XwSSA1xtlSEQQ=
 github.com/oaswrap/spec/adapter/chiopenapi v0.5.2 h1:qptbcHdF26a/JkxU30kxLBk+vRMESwzcjhQgsEOhSC0=
 github.com/oaswrap/spec/adapter/chiopenapi v0.5.2/go.mod h1:iwayBykysuu4KRy/Du17XvC/H+YDFe9XoyxcPnAOa2c=
 github.com/onsi/ginkgo v1.16.5 h1:8xi0RTUf59SOSfEtZMvwTvXYMzG4gV23XVHOZiXNtnE=

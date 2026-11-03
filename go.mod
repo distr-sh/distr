@@ -44,7 +44,7 @@ require (
 	github.com/moby/moby/api v1.56.1
 	github.com/moby/moby/client v0.6.2
 	github.com/oaswrap/spec v0.5.2
-	github.com/oaswrap/spec-ui v0.2.1
+	github.com/oaswrap/spec-ui v0.2.2
 	github.com/oaswrap/spec/adapter/chiopenapi v0.5.2
 	github.com/onsi/gomega v1.44.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.164.1
