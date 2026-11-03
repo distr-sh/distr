@@ -1,6 +1,6 @@
-import {HttpClient, HttpErrorResponse} from '@angular/common/http';
+import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {catchError, concat, map, Observable, of, switchMap, tap, throwError} from 'rxjs';
+import {concat, map, Observable, of, switchMap, tap} from 'rxjs';
 import {ReactiveList} from './cache';
 
 export interface HasDownloads {
@@ -62,6 +62,8 @@ export interface PatchArtifactRequest {
   auth?: ArtifactUpstreamAuth | null;
   public?: boolean;
 }
+
+export type DeleteArtifactTagResponse = {artifactDeleted: true} | {artifactDeleted: false; artifact: ArtifactWithTags};
 
 class ArtifactsReactiveList extends ReactiveList<ArtifactWithTags> {
   protected override identify = (a: ArtifactWithTags) => a.id;
@@ -137,21 +139,17 @@ export class ArtifactsService {
       .pipe(tap((it) => this.cache.save(it)));
   }
 
-  /** Emits whether deleting the tag deleted the artifact as well, which happens for its last tag. */
-  public deleteArtifactTag(artifact: ArtifactWithTags, tagName: string): Observable<boolean> {
-    return this.http.delete<void>(`${this.artifactsUrl}/${artifact.id}/tags/${encodeURIComponent(tagName)}`).pipe(
-      switchMap(() =>
-        this.get(artifact.id).pipe(
-          map(() => false),
-          catchError((e) => {
-            if (e instanceof HttpErrorResponse && e.status === 404) {
-              this.cache.remove(artifact);
-              return of(true);
-            }
-            return throwError(() => e);
-          })
-        )
-      )
-    );
+  public deleteArtifactTag(artifact: ArtifactWithTags, tagName: string): Observable<DeleteArtifactTagResponse> {
+    return this.http
+      .delete<DeleteArtifactTagResponse>(`${this.artifactsUrl}/${artifact.id}/tags/${encodeURIComponent(tagName)}`)
+      .pipe(
+        tap((res) => {
+          if (res.artifactDeleted) {
+            this.cache.remove(artifact);
+          } else {
+            this.cache.save(res.artifact);
+          }
+        })
+      );
   }
 }
