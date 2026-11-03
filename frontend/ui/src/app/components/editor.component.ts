@@ -85,6 +85,7 @@ export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor 
           ])
         ),
         highlightSpecialChars(),
+        EditorView.theme({'.cm-content': {minHeight: 'var(--editor-min-height, 100%)'}}),
         keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
         EditorView.updateListener.of((update) => {
           this.onTouched();
