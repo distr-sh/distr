@@ -17,6 +17,7 @@ import (
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
@@ -27,6 +28,8 @@ const (
 	cacheControlPrivateFile = "max-age=31536000, private, immutable"
 	cacheControlPublicFile  = "max-age=31536000, public, immutable"
 )
+
+var imageDoesNotExist = respond.BadRequest("image does not exist")
 
 func FileRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Files"))
@@ -45,9 +48,6 @@ func FileRouter(r chiopenapi.Router) {
 				With(option.Description("Get a file by ID")).
 				With(option.Request(FileIDRequest{})).
 				With(option.Response(http.StatusOK, nil))
-			r.Delete("/", respond.Handler(deleteFileHandler)).
-				With(option.Description("Delete a file")).
-				With(option.Request(FileIDRequest{}))
 		})
 	})
 }
@@ -123,23 +123,6 @@ func getFileHandler(r *http.Request) (respond.Responder, error) {
 		WithHeader("Cache-Control", cacheControlPrivateFile), nil
 }
 
-func deleteFileHandler(r *http.Request) (respond.Responder, error) {
-	ctx := r.Context()
-	file := internalctx.GetFile(ctx)
-
-	if err := db.DeleteFileWithID(ctx, file.ID); err != nil {
-		if errors.Is(err, distrerr.ErrNotFound) {
-			return respond.NoContent(), nil
-		} else if errors.Is(err, distrerr.ErrConflict) {
-			return respond.BadRequest("file is still in use"), nil
-		} else {
-			return nil, fmt.Errorf("error deleting file: %w", err)
-		}
-	} else {
-		return respond.NoContent(), nil
-	}
-}
-
 func createFileHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 
@@ -209,14 +192,35 @@ func fileMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {
 	}
 }
 
+// requireImageOwnedBy rejects an image that does not belong to organizationID, where nil stands for a file
+// without an organization, which is what an avatar is.
+func requireImageOwnedBy(
+	ctx context.Context,
+	imageID uuid.UUID,
+	organizationID *uuid.UUID,
+) (respond.Responder, error) {
+	if file, err := db.GetFileMetadataWithID(ctx, imageID); errors.Is(err, distrerr.ErrNotFound) {
+		return imageDoesNotExist, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to get image: %w", err)
+	} else if !util.PtrEq(file.OrganizationID, organizationID) {
+		return imageDoesNotExist, nil
+	} else {
+		return nil, nil
+	}
+}
+
 func patchImage(
 	r *http.Request,
+	owner *uuid.UUID,
 	update func(ctx context.Context, body api.PatchImageRequest) (any, error),
 ) (respond.Responder, error) {
 	if body, resp := decodeJSON[api.PatchImageRequest](r); resp != nil {
 		return resp, nil
 	} else if body.ImageID == uuid.Nil {
 		return respond.BadRequest("imageId can not be empty"), nil
+	} else if resp, err := requireImageOwnedBy(r.Context(), body.ImageID, owner); resp != nil || err != nil {
+		return resp, err
 	} else if result, err := update(r.Context(), body); err != nil {
 		return nil, fmt.Errorf("error patching image id: %w", err)
 	} else {

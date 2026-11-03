@@ -430,7 +430,7 @@ func deleteUserAccountHandler(r *http.Request) (respond.Responder, error) {
 }
 
 func patchImageUserAccount(r *http.Request) (respond.Responder, error) {
-	return patchImage(r, func(ctx context.Context, body api.PatchImageRequest) (any, error) {
+	return patchImage(r, nil, func(ctx context.Context, body api.PatchImageRequest) (any, error) {
 		user := internalctx.GetUserAccount(ctx)
 		if err := db.UpdateUserAccountImage(ctx, user, body.ImageID); err != nil {
 			return nil, err
