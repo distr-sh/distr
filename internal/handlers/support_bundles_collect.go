@@ -21,6 +21,7 @@ import (
 	"github.com/distr-sh/distr/internal/supportbundle"
 	"github.com/distr-sh/distr/internal/supportbundle/resourcetype"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
@@ -86,7 +87,7 @@ func getCollectScriptHandler(r *http.Request) (respond.Responder, error) {
 		LogTailLines:         env.SupportBundleLogTailLines(),
 		ResourceMaxBytes:     env.SupportBundleResourceMaxBytes(),
 		ScriptTimeout:        env.SupportBundleScriptTimeout(),
-		CollectorDownloadURL: supportbundle.CollectorDownloadURL(),
+		CollectorDownloadURL: util.PtrDerefOr(env.SupportCollectorDownloadURL(), supportbundle.CollectorDownloadURL()),
 	}); err != nil {
 		return nil, fmt.Errorf("failed to generate collect script: %w", err)
 	} else {

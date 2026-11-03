@@ -90,7 +90,10 @@ run = 'go build -ldflags="{{vars.ldflags}}" -o dist/kubernetes-controller ./cmd/
 depends = ["go-tidy"]
 
 [tasks."build:support-collector"]
-run = 'go build -ldflags="{{vars.ldflags}}" -o dist/support-collector ./cmd/support-collector'
+run = [
+  'go build -ldflags="{{vars.ldflags}}" -o dist/support-collector ./cmd/support-collector',
+  'hack/package-support-collector.sh',
+]
 env = { CGO_ENABLED = "0" }
 depends = ["go-tidy"]
 
@@ -181,6 +184,7 @@ Try "mise run distr help" to explore the available commands.
 Protip: "mise watch -r distr serve" to auto-reload on code changes.
 """
 depends = ["go-tidy", "build:frontend:dev"]
+env = { SUPPORT_COLLECTOR_DOWNLOAD_URL = 'file://{{config_root}}/dist/support-collector-release' }
 # sources are what "mise watch" reacts to. The empty outputs keep mise from
 # skipping the task as up-to-date when they have not changed since the last run.
 sources = ["api/**/*.go", "cmd/**/*.go", "internal/**/*.go"]
