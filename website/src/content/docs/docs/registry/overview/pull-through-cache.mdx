@@ -133,6 +133,9 @@ curl -X POST https://app.distr.sh/api/v1/artifacts/<artifactId>/sync \
   -H "Authorization: AccessToken <token>"
 ```
 
+You can delete a synced tag like any other tag, but the next sync restores it unless it has been removed from the upstream repository.
+The last tag of a pull-through cache artifact cannot be deleted; delete the artifact instead.
+
 ## Monitoring sync status
 
 The artifact details page shows:

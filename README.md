@@ -44,7 +44,9 @@ Check out the hosted version at https://distr.sh/onboarding/.
 
 ## Why Distr
 
-Shipping into customer-controlled environments starts with a Helm chart or a Compose file. It ends with license keys, per-customer artifact entitlements, version tracking across every install, update orchestration, and a way to debug a deployment you cannot SSH into. Distr is that layer, running today in GovCloud and defense, regulated banking, health tech, manufacturing, enterprise AI, and developer tools.
+Shipping into customer-controlled environments starts with a Helm chart or a Compose file. It ends with license keys, per-customer artifact entitlements, version tracking across every install, update orchestration, and a way to debug a deployment you cannot SSH into. Distr is that layer, running today in GovCloud and defense, regulated banking, health tech, manufacturing, enterprise AI and developer tools.
+
+Vendors running Distr in production include [Ozgar AI](https://distr.sh/case-studies/ozgar-ai/) (enterprise AI), [Weave](https://distr.sh/case-studies/weave/) (AI engineering intelligence) and [Basedash](https://distr.sh/case-studies/basedash/) (developer tools). More stories are collected in the [case studies](https://distr.sh/case-studies/).
 
 **Use cases include:**
 

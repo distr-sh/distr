@@ -63,6 +63,8 @@ export interface PatchArtifactRequest {
   public?: boolean;
 }
 
+export type DeleteArtifactTagResponse = {artifactDeleted: true} | {artifactDeleted: false; artifact: ArtifactWithTags};
+
 class ArtifactsReactiveList extends ReactiveList<ArtifactWithTags> {
   protected override identify = (a: ArtifactWithTags) => a.id;
   protected override sortAttr = (a: ArtifactWithTags) => a.versions?.[0]?.createdAt ?? '';
@@ -137,9 +139,17 @@ export class ArtifactsService {
       .pipe(tap((it) => this.cache.save(it)));
   }
 
-  public deleteArtifactTag(artifact: ArtifactWithTags, tagName: string): Observable<void> {
+  public deleteArtifactTag(artifact: ArtifactWithTags, tagName: string): Observable<DeleteArtifactTagResponse> {
     return this.http
-      .delete<void>(`${this.artifactsUrl}/${artifact.id}/tags/${encodeURIComponent(tagName)}`)
-      .pipe(switchMap(() => this.get(artifact.id).pipe(map(() => undefined))));
+      .delete<DeleteArtifactTagResponse>(`${this.artifactsUrl}/${artifact.id}/tags/${encodeURIComponent(tagName)}`)
+      .pipe(
+        tap((res) => {
+          if (res.artifactDeleted) {
+            this.cache.remove(artifact);
+          } else {
+            this.cache.save(res.artifact);
+          }
+        })
+      );
   }
 }

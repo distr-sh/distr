@@ -119,6 +119,8 @@ spec:
           env:
             - name: DOCKER_CONFIG
               value: /opt/config/.docker/
+            - name: HELM_CACHE_HOME
+              value: /.cache/helm/
             - name: DISTR_CONTROLLER_CONFIG_DIRS
               value: |
                 /opt/config/.controller/env

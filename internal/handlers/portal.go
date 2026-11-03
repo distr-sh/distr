@@ -74,6 +74,13 @@ func (h portalHost) turnstileSiteKey() *string {
 	return env.TurnstileSiteKey()
 }
 
+func (h portalHost) registrationLegalText() *string {
+	if !h.registrationAllowed() {
+		return nil
+	}
+	return env.RegistrationLegalText()
+}
+
 func PublicPortalRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Portal"))
 	r.Get("/", respond.Handler(getPortalHandler)).
@@ -123,6 +130,7 @@ func portalLoginConfig(ctx context.Context, host portalHost) api.PortalLoginConf
 	return api.PortalLoginConfig{
 		Registration:         host.registrationMode(),
 		TurnstileSiteKey:     host.turnstileSiteKey(),
+		LegalText:            host.registrationLegalText(),
 		OIDCGithubEnabled:    env.OIDCGithubEnabled(),
 		OIDCGoogleEnabled:    env.OIDCGoogleEnabled(),
 		OIDCMicrosoftEnabled: env.OIDCMicrosoftEnabled(),

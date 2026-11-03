@@ -21,5 +21,12 @@ type ManifestHandler interface {
 	ListDigests(ctx context.Context, name string) ([]digest.Digest, error)
 	Get(ctx context.Context, name string, reference string) (*Manifest, error)
 	Put(ctx context.Context, name string, reference string, manifest Manifest, blobs []Blob) error
-	Delete(ctx context.Context, name string, reference string) error
+	Delete(ctx context.Context, name string, reference string) (DeleteResult, error)
+}
+
+type DeleteResult struct {
+	RepositoryDeleted bool
+	// SyncedFromUpstream means the repository is a pull-through cache, whose next sync restores the
+	// deleted reference unless it has been removed from the upstream repository.
+	SyncedFromUpstream bool
 }

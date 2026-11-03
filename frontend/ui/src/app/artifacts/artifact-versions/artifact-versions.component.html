@@ -53,7 +53,8 @@
                 <div
                   class="distr-dropdown-panel"
                   animate.enter="animate-flip-in-top"
-                  animate.leave="animate-flip-out-top">
+                  animate.leave="animate-flip-out-top"
+                  (click)="showDropdown.set(false)">
                   <ul aria-labelledby="dropdownDefaultButton">
                     @if (artifact.upstreamUrl) {
                       <li>
@@ -219,7 +220,7 @@
                     @for (label of version.tags; track label.name) {
                       <span class="distr-badge" [class.distr-badge-success]="label.name === 'latest'">
                         {{ label.name }}
-                        @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
+                        @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin') && canDeleteTags()) {
                           <button
                             type="button"
                             [attr.aria-label]="'Delete tag ' + label.name"
