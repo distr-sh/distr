@@ -1,4 +1,4 @@
-package kubecollect
+package supportcollector
 
 import (
 	"bytes"
@@ -153,7 +153,7 @@ func (u Uploader) upload(ctx context.Context, file BundleFile) error {
 	}
 	request.URL.RawQuery = url.Values{"bundleSecret": {u.Secret}}.Encode()
 	request.Header.Set("Content-Type", form.FormDataContentType())
-	request.Header.Set("User-Agent", "DistrSupportBundleCollector/"+buildconfig.Version())
+	request.Header.Set("User-Agent", "DistrSupportCollector/"+buildconfig.Version())
 
 	response, err := u.Client.Do(request)
 	if urlErr, ok := errors.AsType[*url.Error](err); ok {

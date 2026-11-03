@@ -41,7 +41,7 @@ The customer runs the command on the affected host. The script shows the availab
 
 The customer runs the command on a machine with access to the cluster, typically the one they run `kubectl` from. Nothing is installed in the cluster. The machine needs Linux or macOS on amd64 or arm64 with `curl`, `tar`, `base64` and `sha256sum` or `shasum`.
 
-The script downloads the Kubernetes collector of your Distr version from the [Distr releases on GitHub](https://github.com/distr-sh/distr/releases) and checks it against the checksums of the release before running it, so the machine needs access to `github.com`. The collector then:
+The script downloads the support collector of your Distr version from the [Distr releases on GitHub](https://github.com/distr-sh/distr/releases) and checks it against the checksums of the release before running it, so the machine needs access to `github.com`. The collector then:
 
 1. Asks for the kubectl context to collect from when the kubeconfig has more than one, with the current context as the default.
 2. Lists the namespaces of the cluster together with the Helm releases in them and asks which namespaces to collect, with the namespace of the context as the default.
@@ -65,11 +65,11 @@ The environment variables in pod specs are collected as they are specified, sinc
 
 ### Permissions
 
-The collector only reads, with the credentials of the selected context. It needs `list` on the resources of the selected namespaces, `get` on `pods/log` and `list` on Secrets to find the Helm releases. The cluster information needs read access to the cluster-scoped resources listed above. A customer who can read their namespaces only still gets a useful bundle, and what is missing is recorded in `collection-errors.txt`. The built-in `view` ClusterRole does not grant access to Secrets, so it leaves out the Secrets and the Helm releases.
+The support collector only reads, with the credentials of the selected context. It needs `list` on the resources of the selected namespaces, `get` on `pods/log` and `list` on Secrets to find the Helm releases. The cluster information needs read access to the cluster-scoped resources listed above. A customer who can read their namespaces only still gets a useful bundle, and what is missing is recorded in `collection-errors.txt`. The built-in `view` ClusterRole does not grant access to Secrets, so it leaves out the Secrets and the Helm releases.
 
 ### Options
 
-The customer can pass arguments to the collector by appending `-s --` and the arguments to the `sh` at the end of the command:
+The customer can pass arguments to the support collector by appending `-s --` and the arguments to the `sh` at the end of the command:
 
 ```sh
 curl -fsSL '<collect script URL>' | sh -s -- --context prod
@@ -123,13 +123,13 @@ Click **Save** when done.
 
 On the **Kubernetes** tab, choose whether Kubernetes bundles include the values of ConfigMaps and Secrets. ConfigMap values are collected by default and Secret values are not. Without them, a bundle still lists the ConfigMaps and Secrets with their keys, but shows each value as `[REDACTED, <size> bytes]`. Collected Secret values are uploaded decoded in plain text, so only turn them on when you need them.
 
-The collector tells the customer which values it collects before anything is collected, and the customer can override your choice with the [options](#options) `--include-configmap-data` and `--include-secret-data`. Click **Save** when done.
+The support collector tells the customer which values it collects before anything is collected, and the customer can override your choice with the [options](#options) `--include-configmap-data` and `--include-secret-data`. Click **Save** when done.
 
 ### Configure custom scripts
 
 Environment variables, logs and resources do not always answer the question you need answered. Each tab of the **Settings** page has its own custom scripts. What a script writes to standard output is attached to the bundle as a resource named after the script, once the customer has seen its first 30 lines and confirmed the upload.
 
-Docker scripts run on the customer's host during collection. Kubernetes scripts run on the customer's machine after the collector. While they run, `KUBECONFIG` points to a kubeconfig that holds only the context and namespace the collector used, so `kubectl` and `helm` reach the same cluster and namespace without any arguments. Check that `kubectl` or `helm` is installed before relying on it.
+Docker scripts run on the customer's host during collection. Kubernetes scripts run on the customer's machine after the support collector. While they run, `KUBECONFIG` points to a kubeconfig that holds only the context and namespace the collector used, so `kubectl` and `helm` reach the same cluster and namespace without any arguments. Check that `kubectl` or `helm` is installed before relying on it.
 
 Click **Add Script** and give it a name, an optional description and the script body. The name is what the resource is called in the bundle and in the downloaded archive, so pick something you will recognise later, such as `database-status`. The description is shown to the customer next to the script.
 

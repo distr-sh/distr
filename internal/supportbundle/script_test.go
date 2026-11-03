@@ -66,11 +66,11 @@ func TestGenerateCollectScript_syntax(t *testing.T) {
 }
 
 // The Kubernetes collect script runs a binary it downloads, so it must refuse one whose checksum
-// does not match, and leave the bundle open when it does not get to run the collector.
-func TestGenerateCollectScript_kubernetesCollector(t *testing.T) {
+// does not match, and leave the bundle open when it does not get to run the support collector.
+func TestGenerateCollectScript_supportCollector(t *testing.T) {
 	platform := runtime.GOOS + "-" + runtime.GOARCH
 	if !slices.Contains([]string{"linux-amd64", "linux-arm64", "darwin-amd64", "darwin-arm64"}, platform) {
-		t.Skipf("no collector is released for %s", platform)
+		t.Skipf("no support collector is released for %s", platform)
 	}
 	for _, tool := range []string{"sh", "curl", "tar"} {
 		if _, err := exec.LookPath(tool); err != nil {
@@ -82,7 +82,7 @@ func TestGenerateCollectScript_kubernetesCollector(t *testing.T) {
 			t.Skip("neither sha256sum nor shasum is available")
 		}
 	}
-	archiveName := "kubernetes-support-bundle-" + platform + ".tar.gz"
+	archiveName := "support-collector-" + platform + ".tar.gz"
 
 	for name, tampered := range map[string]bool{"verified": false, "tampered": true} {
 		t.Run(name, func(t *testing.T) {
@@ -102,7 +102,7 @@ func TestGenerateCollectScript_kubernetesCollector(t *testing.T) {
 			mux.HandleFunc("GET /releases/"+archiveName, func(w http.ResponseWriter, r *http.Request) {
 				_, _ = w.Write(archive)
 			})
-			mux.HandleFunc("GET /releases/kubernetes-support-bundle-checksums.txt",
+			mux.HandleFunc("GET /releases/support-collector-checksums.txt",
 				func(w http.ResponseWriter, r *http.Request) {
 					_, _ = fmt.Fprintf(w, "%s  %s\n", hex.EncodeToString(checksum[:]), archiveName)
 				})
@@ -126,7 +126,7 @@ func TestGenerateCollectScript_kubernetesCollector(t *testing.T) {
 			g.Expect(os.WriteFile(file, []byte(innerCollectScript(g, script)), 0o600)).To(Succeed())
 
 			cmd := exec.Command("sh", file, "--context", "prod")
-			cmd.Env = append(os.Environ(), "DISTR_SUPPORT_BUNDLE_COLLECTOR=")
+			cmd.Env = append(os.Environ(), "DISTR_SUPPORT_COLLECTOR=")
 			out, err := cmd.CombinedOutput()
 
 			if tampered {
@@ -158,7 +158,7 @@ func collectorArchive(g *WithT, collector string) []byte {
 	gz := gzip.NewWriter(&buf)
 	archive := tar.NewWriter(gz)
 	g.Expect(archive.WriteHeader(&tar.Header{
-		Name: "kubernetes-support-bundle", Mode: 0o755, Size: int64(len(collector)), Typeflag: tar.TypeReg,
+		Name: "support-collector", Mode: 0o755, Size: int64(len(collector)), Typeflag: tar.TypeReg,
 	})).To(Succeed())
 	_, err := archive.Write([]byte(collector))
 	g.Expect(err).NotTo(HaveOccurred())

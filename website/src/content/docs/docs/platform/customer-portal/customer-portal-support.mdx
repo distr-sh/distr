@@ -41,7 +41,7 @@ For a **Docker** bundle, run the command on the affected deployment host. The in
 - Show the full source of any diagnostic script your vendor configured and prompt for which ones to exclude, then run the rest and show you their output before uploading it
 - Upload the remaining data to Distr
 
-For a **Kubernetes** bundle, run the command on a machine with access to the cluster, such as the one you run `kubectl` from. The machine needs access to `github.com`, where the script downloads the Kubernetes collector from. Nothing is installed in the cluster. The interactive script will:
+For a **Kubernetes** bundle, run the command on a machine with access to the cluster, such as the one you run `kubectl` from. The machine needs access to `github.com`, where the script downloads the support collector from. Nothing is installed in the cluster. The interactive script will:
 
 - Ask for the kubectl context to collect from, unless your kubeconfig has only one
 - List the namespaces of the cluster with their Helm releases and ask which ones to collect

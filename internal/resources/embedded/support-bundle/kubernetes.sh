@@ -1,6 +1,6 @@
 {{template "collector-start" .}}
 
-# The collector is released with Distr. Download the build for this platform and check it against
+# The support collector is released with Distr. Download the build for this platform and check it against
 # the checksums of the same release before running it.
 COLLECTOR_DOWNLOAD_URL="{{.CollectorDownloadURL}}"
 
@@ -9,7 +9,7 @@ collector_platform() {
     Linux) _os=linux ;;
     Darwin) _os=darwin ;;
     *)
-      echo "Error: the Kubernetes collector is not available for $(uname -s)." >&2
+      echo "Error: the support collector is not available for $(uname -s)." >&2
       return 1
       ;;
   esac
@@ -17,7 +17,7 @@ collector_platform() {
     x86_64|amd64) _arch=amd64 ;;
     aarch64|arm64) _arch=arm64 ;;
     *)
-      echo "Error: the Kubernetes collector is not available for $(uname -m)." >&2
+      echo "Error: the support collector is not available for $(uname -m)." >&2
       return 1
       ;;
   esac
@@ -34,33 +34,33 @@ sha256_of() {
   fi
 }
 
-if [ -n "${DISTR_SUPPORT_BUNDLE_COLLECTOR:-}" ]; then
-  _collector="$DISTR_SUPPORT_BUNDLE_COLLECTOR"
-  echo "Using the collector at ${_collector}"
+if [ -n "${DISTR_SUPPORT_COLLECTOR:-}" ]; then
+  _collector="$DISTR_SUPPORT_COLLECTOR"
+  echo "Using the support collector at ${_collector}"
 else
   _platform=$(collector_platform) || exit 1
-  _archive="kubernetes-support-bundle-${_platform}.tar.gz"
-  echo "Downloading the Kubernetes collector for ${_platform}..."
+  _archive="support-collector-${_platform}.tar.gz"
+  echo "Downloading the support collector for ${_platform}..."
   if ! curl -fsSL -o "${_tmpdir}/${_archive}" "${COLLECTOR_DOWNLOAD_URL}/${_archive}" ||
-    ! curl -fsSL -o "${_tmpdir}/checksums.txt" "${COLLECTOR_DOWNLOAD_URL}/kubernetes-support-bundle-checksums.txt"; then
-    echo "Error: the collector could not be downloaded from ${COLLECTOR_DOWNLOAD_URL}." >&2
+    ! curl -fsSL -o "${_tmpdir}/checksums.txt" "${COLLECTOR_DOWNLOAD_URL}/support-collector-checksums.txt"; then
+    echo "Error: the support collector could not be downloaded from ${COLLECTOR_DOWNLOAD_URL}." >&2
     echo "Allow this machine to reach it, then run the command again." >&2
     exit 1
   fi
   _expected=$(awk -v name="$_archive" '$2 == name { print $1 }' "${_tmpdir}/checksums.txt")
   if ! _actual=$(sha256_of "${_tmpdir}/${_archive}"); then
-    echo "Error: neither sha256sum nor shasum is available to verify the collector." >&2
+    echo "Error: neither sha256sum nor shasum is available to verify the support collector." >&2
     exit 1
   elif [ -z "$_expected" ] || [ "$_expected" != "$_actual" ]; then
-    echo "Error: the downloaded collector does not match the checksum of its release." >&2
+    echo "Error: the downloaded support collector does not match the checksum of its release." >&2
     exit 1
   fi
   mkdir "${_tmpdir}/collector"
   if ! tar -xzf "${_tmpdir}/${_archive}" -C "${_tmpdir}/collector"; then
-    echo "Error: the downloaded collector could not be unpacked." >&2
+    echo "Error: the downloaded support collector could not be unpacked." >&2
     exit 1
   fi
-  _collector="${_tmpdir}/collector/kubernetes-support-bundle"
+  _collector="${_tmpdir}/collector/support-collector"
 fi
 
 # The collector writes the bundle into the temp dir, which is removed on exit, and asks before it
@@ -73,7 +73,7 @@ DISTR_SUPPORT_BUNDLE_URL="$BASE_URL" DISTR_SUPPORT_BUNDLE_SECRET="$BUNDLE_SECRET
   --include-configmap-data={{.IncludeConfigMapData}} --include-secret-data={{.IncludeSecretData}} "$@"
 _code=$?
 if [ "$_code" -eq 126 ]; then
-  echo "Error: the collector cannot be executed from ${_tmpdir}." >&2
+  echo "Error: the support collector cannot be executed from ${_tmpdir}." >&2
   echo "Set TMPDIR to a directory that allows running programs, then run the command again." >&2
   exit 1
 elif [ "$_code" -ne 0 ]; then

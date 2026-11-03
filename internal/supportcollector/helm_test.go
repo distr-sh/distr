@@ -1,4 +1,4 @@
-package kubecollect
+package supportcollector
 
 import (
 	"os"

@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/distr-sh/distr/internal/supportbundle/kubecollect"
+	"github.com/distr-sh/distr/internal/supportcollector"
 	"github.com/spf13/pflag"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/klog/v2"
@@ -29,9 +29,9 @@ func main() {
 	klog.LogToStderr(false)
 	klog.SetOutput(io.Discard)
 
-	configFlags := kubecollect.NewConfigFlags()
+	configFlags := supportcollector.NewConfigFlags()
 	configFlags.AddFlags(pflag.CommandLine)
-	opts := kubecollect.DefaultOptions()
+	opts := supportcollector.DefaultOptions()
 	output := pflag.String("output", "", "directory to write the bundle into, and to upload it from when "+
 		uploadURLEnv+" and "+uploadSecretEnv+" are set")
 	writeKubeconfig := pflag.String("write-kubeconfig", "",
@@ -77,14 +77,14 @@ func usageError(message string) {
 
 // uploaderFromEnv takes the bundle from the environment rather than from flags, so that the secret
 // does not show up in the process list.
-func uploaderFromEnv() (*kubecollect.Uploader, error) {
+func uploaderFromEnv() (*supportcollector.Uploader, error) {
 	uploadURL, secret := os.Getenv(uploadURLEnv), os.Getenv(uploadSecretEnv)
 	if uploadURL == "" && secret == "" {
 		return nil, nil
 	} else if uploadURL == "" || secret == "" {
 		return nil, fmt.Errorf("%s and %s must be set together", uploadURLEnv, uploadSecretEnv)
 	}
-	return &kubecollect.Uploader{URL: uploadURL, Secret: secret, Client: http.DefaultClient}, nil
+	return &supportcollector.Uploader{URL: uploadURL, Secret: secret, Client: http.DefaultClient}, nil
 }
 
 func run(
@@ -92,8 +92,8 @@ func run(
 	configFlags *genericclioptions.ConfigFlags,
 	output string,
 	writeKubeconfig string,
-	opts kubecollect.Options,
-	uploader *kubecollect.Uploader,
+	opts supportcollector.Options,
+	uploader *supportcollector.Uploader,
 ) error {
 	if entries, err := os.ReadDir(output); err == nil && len(entries) > 0 {
 		return fmt.Errorf("%s is not empty, write the bundle into a new or empty directory", output)
@@ -101,34 +101,34 @@ func run(
 		return err
 	}
 
-	prompter := kubecollect.NewPrompter(os.Stdin, os.Stderr)
+	prompter := supportcollector.NewPrompter(os.Stdin, os.Stderr)
 	if err := selectKubeContext(prompter, configFlags); err != nil {
 		return err
 	}
-	kubeContext, err := kubecollect.LoadKubeContext(configFlags)
+	kubeContext, err := supportcollector.LoadKubeContext(configFlags)
 	if err != nil {
 		return err
 	}
 	if writeKubeconfig != "" {
-		if err := kubecollect.WriteKubeconfig(configFlags, kubeContext, writeKubeconfig); err != nil {
+		if err := supportcollector.WriteKubeconfig(configFlags, kubeContext, writeKubeconfig); err != nil {
 			return err
 		}
 	}
 	fmt.Fprintf(os.Stderr, "Context:   %s\nCluster:   %s\nNamespace: %s\n\n",
 		kubeContext.Name, kubeContext.Server, kubeContext.Namespace)
 
-	clients, err := kubecollect.NewClients(kubeContext.Config)
+	clients, err := supportcollector.NewClients(kubeContext.Config)
 	if err != nil {
 		return err
 	}
 
-	namespaces, err := kubecollect.ListNamespaces(ctx, clients)
+	namespaces, err := supportcollector.ListNamespaces(ctx, clients)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "The namespaces of the cluster cannot be listed (%v),\n", err)
 		fmt.Fprintf(os.Stderr, "so only the namespace of the context is offered.\n\n")
-		namespaces = []kubecollect.NamespaceOption{{Name: kubeContext.Namespace}}
+		namespaces = []supportcollector.NamespaceOption{{Name: kubeContext.Namespace}}
 	}
-	kubecollect.AddHelmReleases(ctx, clients, namespaces)
+	supportcollector.AddHelmReleases(ctx, clients, namespaces)
 
 	selected, err := prompter.SelectNamespaces(namespaces, kubeContext.Namespace)
 	if err != nil {
@@ -143,11 +143,11 @@ func run(
 		return errors.New("nothing was selected to collect")
 	}
 
-	collector := kubecollect.Collector{
+	collector := supportcollector.Collector{
 		Clients:  clients,
 		Context:  kubeContext,
 		Options:  opts,
-		Sink:     kubecollect.DirSink{Dir: output},
+		Sink:     supportcollector.DirSink{Dir: output},
 		Progress: os.Stderr,
 	}
 	result, err := collector.Run(ctx, selected, groups)
@@ -169,12 +169,12 @@ func run(
 
 func confirmAndUpload(
 	ctx context.Context,
-	prompter *kubecollect.Prompter,
-	uploader kubecollect.Uploader,
+	prompter *supportcollector.Prompter,
+	uploader supportcollector.Uploader,
 	dir string,
-	result kubecollect.Result,
+	result supportcollector.Result,
 ) error {
-	files, err := kubecollect.ListBundleFiles(dir)
+	files, err := supportcollector.ListBundleFiles(dir)
 	if err != nil {
 		return err
 	}
@@ -192,7 +192,7 @@ func confirmAndUpload(
 		return nil
 	}
 
-	if files, err = kubecollect.ListBundleFiles(dir); err != nil {
+	if files, err = supportcollector.ListBundleFiles(dir); err != nil {
 		return err
 	} else if len(files) == 0 {
 		fmt.Fprintln(os.Stderr, "Nothing was uploaded, since no files are left.")
@@ -214,7 +214,7 @@ func confirmAndUpload(
 
 // printBundleParts sums the files up per namespace, the cluster information and each file at the
 // top of the bundle.
-func printBundleParts(files []kubecollect.BundleFile) {
+func printBundleParts(files []supportcollector.BundleFile) {
 	type part struct {
 		name  string
 		files int
@@ -265,11 +265,11 @@ func formatBytes(n int64) string {
 }
 
 // selectKubeContext asks for the context unless --context names one or the kubeconfig has only one.
-func selectKubeContext(prompter *kubecollect.Prompter, configFlags *genericclioptions.ConfigFlags) error {
+func selectKubeContext(prompter *supportcollector.Prompter, configFlags *genericclioptions.ConfigFlags) error {
 	if configFlags.Context != nil && *configFlags.Context != "" {
 		return nil
 	}
-	options, current, err := kubecollect.ListKubeContexts(configFlags)
+	options, current, err := supportcollector.ListKubeContexts(configFlags)
 	if err != nil {
 		return err
 	}
@@ -289,14 +289,17 @@ func selectKubeContext(prompter *kubecollect.Prompter, configFlags *genericcliop
 	return nil
 }
 
-func confirmGroups(prompter *kubecollect.Prompter, opts kubecollect.Options) (kubecollect.Groups, error) {
+func confirmGroups(
+	prompter *supportcollector.Prompter,
+	opts supportcollector.Options,
+) (supportcollector.Groups, error) {
 	included := func(include bool) string {
 		if include {
 			return "included"
 		}
 		return "not included"
 	}
-	var groups kubecollect.Groups
+	var groups supportcollector.Groups
 	questions := []struct {
 		target    *bool
 		question  string

@@ -1,4 +1,4 @@
-package kubecollect
+package supportcollector
 
 type Options struct {
 	LogTailLines int64 `json:"logTailLines"`

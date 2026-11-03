@@ -89,8 +89,8 @@ depends = ["go-tidy"]
 run = 'go build -ldflags="{{vars.ldflags}}" -o dist/kubernetes-controller ./cmd/controller/kubernetes'
 depends = ["go-tidy"]
 
-[tasks."build:support-bundle:kubernetes"]
-run = 'go build -ldflags="{{vars.ldflags}}" -o dist/kubernetes-support-bundle ./cmd/support-bundle/kubernetes'
+[tasks."build:support-collector"]
+run = 'go build -ldflags="{{vars.ldflags}}" -o dist/support-collector ./cmd/support-collector'
 env = { CGO_ENABLED = "0" }
 depends = ["go-tidy"]
 
@@ -196,8 +196,8 @@ run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/controller/docker/ run'
 [tasks."run:controller:kubernetes"]
 run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/controller/kubernetes/ run'
 
-[tasks."run:support-bundle:kubernetes"]
-run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/support-bundle/kubernetes/'
+[tasks."run:support-collector"]
+run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/support-collector/'
 
 [tasks."docker-build:distr"]
 depends = "build:distr:enterprise"
