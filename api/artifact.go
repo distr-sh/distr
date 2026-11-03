@@ -35,6 +35,11 @@ type ArtifactResponse struct {
 	Featured      bool    `json:"featured"`
 }
 
+type DeleteArtifactTagResponse struct {
+	ArtifactDeleted bool              `json:"artifactDeleted"`
+	Artifact        *ArtifactResponse `json:"artifact,omitempty"`
+}
+
 type ArtifactsResponse struct {
 	types.ArtifactWithDownloads
 	ImageUrl      *string `json:"imageUrl,omitempty"`

@@ -193,6 +193,7 @@ func main() {
 					logger.Warn("could not delete old ControllerDeployment resource", zap.Error(err))
 				}
 				registryAuthErrors.Delete(existing.ID)
+				chartCache.Forget(existing.ID)
 			}
 		}
 
@@ -454,8 +455,12 @@ func ensureImagePullSecret(ctx context.Context, namespace string, deployment api
 	// However, be aware that this will not work when running the controller locally when a docker credential helper
 	// is installed.
 	dockerConfigPath := controllerauth.DockerConfigPath(deployment)
+	// The config only exists after a login, and the secret has to exist without one, since the chart values
+	// reference it.
 	dockerConfigData, err := os.ReadFile(dockerConfigPath)
-	if err != nil {
+	if errors.Is(err, os.ErrNotExist) {
+		dockerConfigData = []byte(`{"auths":{}}`)
+	} else if err != nil {
 		return fmt.Errorf("failed to read docker config from %v: %w", dockerConfigPath, err)
 	}
 	secretName := PullSecretName(deployment.ReleaseName)

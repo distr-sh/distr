@@ -18,7 +18,9 @@ type Action string
 const (
 	ActionRead  Action = "read"
 	ActionWrite Action = "write"
-	ActionStat  Action = "stat"
+	// ActionDelete needs the same permissions as ActionWrite, but is also allowed on a pull-through cache artifact.
+	ActionDelete Action = "delete"
+	ActionStat   Action = "stat"
 )
 
 type Authorizer interface {
@@ -129,7 +131,7 @@ func (a *authorizer) Authorize(ctx context.Context, nameStr string, action Actio
 		return authorizeAnonymous(ctx, n, action)
 	}
 
-	if action == ActionWrite {
+	if action == ActionWrite || action == ActionDelete {
 		if err := authorizeWrite(principal); err != nil {
 			return err
 		}
@@ -161,7 +163,7 @@ func (a *authorizer) AuthorizeReference(ctx context.Context, nameStr string, ref
 		return authorizeAnonymous(ctx, n, action)
 	}
 
-	if action == ActionWrite {
+	if action == ActionWrite || action == ActionDelete {
 		if err := authorizeWrite(principal); err != nil {
 			return err
 		}

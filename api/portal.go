@@ -14,6 +14,7 @@ type PortalResponse struct {
 type PortalLoginConfig struct {
 	Registration         env.RegistrationMode `json:"registration"`
 	TurnstileSiteKey     *string              `json:"turnstileSiteKey,omitempty"`
+	LegalText            *string              `json:"legalText,omitempty"`
 	OIDCGithubEnabled    bool                 `json:"oidcGithubEnabled"`
 	OIDCGoogleEnabled    bool                 `json:"oidcGoogleEnabled"`
 	OIDCMicrosoftEnabled bool                 `json:"oidcMicrosoftEnabled"`

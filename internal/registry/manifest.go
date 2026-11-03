@@ -123,7 +123,7 @@ func (handler *manifests) handle(resp http.ResponseWriter, req *http.Request) *r
 		}
 		return handler.handlePut(resp, req, repo, target)
 	case http.MethodDelete:
-		if err := handler.authz.AuthorizeReference(req.Context(), repo, target, authz.ActionWrite); err != nil {
+		if err := handler.authz.AuthorizeReference(req.Context(), repo, target, authz.ActionDelete); err != nil {
 			return regErrAuthz(err)
 		}
 		return handler.handleDelete(resp, req, repo, target)
@@ -486,7 +486,7 @@ func (handler *manifests) handlePut(resp http.ResponseWriter, req *http.Request,
 }
 
 func (handler *manifests) handleDelete(resp http.ResponseWriter, req *http.Request, repo, target string) *regError {
-	err := handler.manifestHandler.Delete(req.Context(), repo, target)
+	result, err := handler.manifestHandler.Delete(req.Context(), repo, target)
 	if err != nil {
 		if errors.Is(err, imanifest.ErrNameUnknown) {
 			return regErrNameUnknown
@@ -503,8 +503,23 @@ func (handler *manifests) handleDelete(resp http.ResponseWriter, req *http.Reque
 		return regErrInternal(err)
 	}
 
+	if result.RepositoryDeleted {
+		addWarningf(resp, "%s was the last tag of %s, so the repository has been deleted as well", target, repo)
+	}
+	if result.SyncedFromUpstream {
+		addWarningf(resp,
+			"%s is a pull-through cache, so the next sync restores %s "+
+				"unless it has been removed from the upstream repository",
+			repo, target,
+		)
+	}
 	resp.WriteHeader(http.StatusAccepted)
 	return nil
+}
+
+// addWarningf quotes the whole message, since its arguments may contain characters that a quoted-string must escape.
+func addWarningf(resp http.ResponseWriter, format string, args ...any) {
+	resp.Header().Add("Warning", fmt.Sprintf("299 - %q", fmt.Sprintf(format, args...)))
 }
 
 // checkIncompatibleManifest rejects a manifest Distr cannot store and returns its subject, if any.

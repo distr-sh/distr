@@ -14,6 +14,14 @@ func ArtifactToAPI(a types.ArtifactWithTaggedVersion) api.ArtifactResponse {
 	}
 }
 
+// DeleteArtifactTagToAPI takes the artifact that remains after the deletion, nil if the deletion removed it.
+func DeleteArtifactTagToAPI(remaining *types.ArtifactWithTaggedVersion) api.DeleteArtifactTagResponse {
+	if remaining == nil {
+		return api.DeleteArtifactTagResponse{ArtifactDeleted: true}
+	}
+	return api.DeleteArtifactTagResponse{Artifact: new(ArtifactToAPI(*remaining))}
+}
+
 func ArtifactsWithDownloadsToAPI(a types.ArtifactWithDownloads) api.ArtifactsResponse {
 	return api.ArtifactsResponse{
 		ArtifactWithDownloads: a,

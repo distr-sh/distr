@@ -43,7 +43,7 @@ Distr enables software and AI companies to distribute applications to self-manag
 - **Container registry:** Distribute OCI-compatible artifacts (Docker images, Helm charts, Terraform modules)
   with built-in granular access control and analytics.
 - Access the API using our [**rich SDK**](https://distr.sh/docs/integrations/sdk/)
-- Fully Open Source and [self-hostable](https://distr.sh/docs/self-hosting/getting-started/)
+- Fully Open Source and [self-hostable](https://distr.sh/docs/self-hosting/)
 
 Check out the hosted version at https://distr.sh/get-started/.
 

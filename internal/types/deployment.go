@@ -36,6 +36,7 @@ type DeploymentWithLatestRevision struct {
 	ForceRestart            bool                      `db:"force_restart" json:"forceRestart"`
 	IgnoreRevisionSkew      bool                      `db:"ignore_revision_skew" json:"ignoreRevisionSkew"`
 	HelmOptions             *HelmOptions              `db:"helm_options" json:"helmOptions,omitempty"`
+	ChartDigest             *Digest                   `db:"chart_digest" json:"-"`
 	// CurrentDeploymentRevisionID is the revision a controller last reported as applied, which differs
 	// from DeploymentRevisionID while a newer revision is being rolled out or has failed.
 	CurrentDeploymentRevisionID *uuid.UUID                `db:"current_deployment_revision_id" json:"currentDeploymentRevisionId,omitempty"` //nolint:lll

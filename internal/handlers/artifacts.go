@@ -83,7 +83,8 @@ func ArtifactsRouter(r chiopenapi.Router) {
 					With(option.Request(struct {
 						ArtifactRequest
 						TagName string `path:"tagName"`
-					}{}))
+					}{})).
+					With(option.Response(http.StatusOK, api.DeleteArtifactTagResponse{}))
 			})
 	})
 }
@@ -270,7 +271,9 @@ func deleteArtifactTagHandler(r *http.Request) (respond.Responder, error) {
 
 	if tagName := r.PathValue("tagName"); tagName == "" {
 		return artifactTagNotFound, nil
-	} else if err := db.DeleteArtifactTag(ctx, artifact.ID, tagName); errors.Is(err, distrerr.ErrNotFound) {
+	} else if artifactDeleted, err := db.DeleteArtifactTag(
+		ctx, &artifact.Artifact, tagName,
+	); errors.Is(err, distrerr.ErrNotFound) {
 		return artifactTagNotFound, nil
 	} else if errors.Is(err, distrerr.ErrBadRequest) {
 		return respond.BadRequest(err.Error()), nil
@@ -278,8 +281,12 @@ func deleteArtifactTagHandler(r *http.Request) (respond.Responder, error) {
 		return respond.Conflict(err.Error()), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("error deleting artifact tag: %w", err)
+	} else if artifactDeleted {
+		return respond.JSON(mapping.DeleteArtifactTagToAPI(nil)), nil
+	} else if result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil); err != nil {
+		return nil, fmt.Errorf("failed to fetch artifact after deleting tag: %w", err)
 	} else {
-		return respond.NoContent(), nil
+		return respond.JSON(mapping.DeleteArtifactTagToAPI(result)), nil
 	}
 }
 

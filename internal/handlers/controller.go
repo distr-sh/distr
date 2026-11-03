@@ -222,6 +222,9 @@ func controllerResourcesHandler(r *http.Request) (respond.Responder, error) {
 				controllerDeployment.ReleaseName = *deployment.ReleaseName
 				controllerDeployment.ChartUrl = *appVersion.ChartUrl
 				controllerDeployment.ChartVersion = *appVersion.ChartVersion
+				if deployment.ChartDigest != nil {
+					controllerDeployment.ChartDigest = string(*deployment.ChartDigest)
+				}
 				if versionValues, err := appVersion.ParsedValuesFile(); err != nil {
 					return nil, fmt.Errorf("parse error: %w", err)
 				} else if deploymentValues, err := deploymentvalues.ParsedValuesFileReplaceSecrets(
