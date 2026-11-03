@@ -22,6 +22,10 @@ on:
         type: boolean
         default: false
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-chart:
     name: Build
@@ -34,7 +38,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install mise
-        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        uses: jdx/mise-action@6612f0ef07ed2a736cd1e00a94a065522dd41195 # v5.2.5
         with:
           install_args: 'helm github:losisin/helm-values-schema-json'
       - name: Check that the values schema is up to date
@@ -46,7 +50,12 @@ jobs:
           helm repo add rustfs https://charts.rustfs.com/
           helm dependency build deploy/charts/distr
           helm lint --strict deploy/charts/distr
-          helm package deploy/charts/distr
+          if [[ "$GITHUB_REF_NAME" == *-rc.* ]]; then
+            # release candidate tags do not bump Chart.yaml
+            helm package deploy/charts/distr --version "$GITHUB_REF_NAME" --app-version "$GITHUB_REF_NAME"
+          else
+            helm package deploy/charts/distr
+          fi
       - name: Render the example values against the schema
         run: |
           for values in deploy/charts/distr/examples/*/*.yaml; do
@@ -59,8 +68,8 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Login to Distr Registry (tag or manual only)
-        if: ${{ startsWith(github.ref, 'refs/tags/') || inputs.publish }}
+      - name: Login to Distr Registry (non-rc tag or manual only)
+        if: ${{ (startsWith(github.ref, 'refs/tags/') || inputs.publish) && !contains(github.ref_name, '-rc.') }}
         uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: registry.distr.sh
@@ -90,6 +99,9 @@ jobs:
                 --certificate-oidc-issuer "$CERTIFICATE_OIDC_ISSUER" \
                 "ghcr.io/distr-sh/charts/distr@${digest}" > /dev/null
 
+              if [[ "$GITHUB_REF_NAME" == *-rc.* ]]; then
+                continue
+              fi
               helm push "$chart" oci://registry.distr.sh/enterprise/charts 2>&1 | tee push.log
               digest="$(awk '/^Digest: /{print $2}' push.log)"
               cosign sign --yes "registry.distr.sh/enterprise/charts/distr@${digest}"

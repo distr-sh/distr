@@ -53,10 +53,17 @@ export interface CreateSupportBundleResponse extends SupportBundle {
   collectCommand: string;
 }
 
-export interface SupportBundleResource {
+export type SupportBundleResourceContentType = 'text/plain' | 'text/x-log' | 'application/yaml' | 'application/json';
+
+export interface SupportBundleResourceSummary {
   id: string;
   createdAt: string;
   name: string;
+  contentType: SupportBundleResourceContentType;
+  size?: number;
+}
+
+export interface SupportBundleResource extends SupportBundleResourceSummary {
   content: string;
 }
 
@@ -70,7 +77,7 @@ export interface SupportBundleComment {
 }
 
 export interface SupportBundleDetail extends SupportBundle {
-  resources: SupportBundleResource[];
+  resources: SupportBundleResourceSummary[];
   comments: SupportBundleComment[];
   collectCommand?: string;
 }

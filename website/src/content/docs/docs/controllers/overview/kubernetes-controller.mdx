@@ -56,6 +56,8 @@ spec:
           env:
             - name: DOCKER_CONFIG
               value: /opt/config/.docker/
+            - name: HELM_CACHE_HOME
+              value: /.cache/helm/
             - name: DISTR_CONTROLLER_CONFIG_DIRS
               value: |
                 /opt/config/.controller/env
@@ -97,6 +99,8 @@ The controller runs the following loop at the interval defined by `DISTR_CONTROL
 2. Uninstall Helm releases that are no longer in the list (undeployed)
 3. Install or upgrade Helm releases that are in the list. If images need pulling, the controller reports status `PROGRESSING`.
 4. Send the Helm output to `DISTR_STATUS_ENDPOINT`, reporting the deployment's status.
+
+Charts stored in the Distr registry are pinned to the digest their version pointed to when the revision was created. The controller keeps them in its cache volume and pulls each digest only once, so every later revision with the same chart is applied without contacting the registry, online or offline. The cache volume is an `emptyDir`, so it is emptied when the controller pod is recreated. Other charts are pulled once per revision, and retrying a failed revision reuses the chart pulled for it.
 
 An install or upgrade that has not finished after 10 minutes is reported as an error rather than left in `PROGRESSING`. The deployment's Helm options set that timeout per deployment.
 

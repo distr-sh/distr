@@ -9,6 +9,7 @@ import (
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/chartdigest"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/deploymentvalues"
@@ -113,25 +114,41 @@ func saveDeployment(ctx context.Context, request api.DeploymentRequest) (respond
 		&request, validationResult.Secrets, validationResult.LicenseKeys,
 	); err != nil {
 		return deploymentValuesError(err, "invalid deployment values")
-	} else if resp, err := createOrUpdateDeployment(
-		ctx, &request, validationResult.AutomaticApplicationUpdatesEnabled,
-	); resp != nil || err != nil {
+	} else if resp, err := createOrUpdateDeployment(ctx, &request, validationResult); resp != nil || err != nil {
 		return resp, err
-	} else if _, err := db.CreateDeploymentRevision(ctx, &request); err != nil {
-		return nil, fmt.Errorf("failed to create deployment revision: %w", err)
+	} else if err := createDeploymentRevision(
+		ctx, *auth.Authentication.Require(ctx).CurrentOrgID(), &request,
+	); err != nil {
+		return nil, err
 	} else {
 		return nil, nil
+	}
+}
+
+func createDeploymentRevision(ctx context.Context, organizationID uuid.UUID, request *api.DeploymentRequest) error {
+	if version, err := db.GetApplicationVersion(ctx, request.ApplicationVersionID); err != nil {
+		return fmt.Errorf("failed to get application version: %w", err)
+	} else if chartDigest, err := chartdigest.Resolve(ctx, organizationID, *version); err != nil {
+		return fmt.Errorf("failed to resolve chart digest: %w", err)
+	} else if _, err := db.CreateDeploymentRevision(ctx, request, chartDigest); err != nil {
+		return fmt.Errorf("failed to create deployment revision: %w", err)
+	} else {
+		return nil
 	}
 }
 
 func createOrUpdateDeployment(
 	ctx context.Context,
 	request *api.DeploymentRequest,
-	automaticUpdates bool,
+	validationResult *deploymentRequestValidationResult,
 ) (respond.Responder, error) {
 	authInfo := auth.Authentication.Require(ctx)
 	if request.DeploymentID == nil {
-		request.AutomaticApplicationUpdatesEnabled = &automaticUpdates
+		// The docker controller skips a deployment without a docker type, and it cannot be set later.
+		if validationResult.Target.Type == types.DeploymentTypeDocker && request.DockerType == nil {
+			request.DockerType = new(types.DockerTypeCompose)
+		}
+		request.AutomaticApplicationUpdatesEnabled = &validationResult.AutomaticApplicationUpdatesEnabled
 		if err := db.CreateDeployment(ctx, request); errors.Is(err, distrerr.ErrConflict) {
 			return respond.BadRequest("release name must be unique per deployment target"), nil
 		} else if err != nil {

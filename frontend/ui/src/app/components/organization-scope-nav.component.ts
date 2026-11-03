@@ -4,6 +4,7 @@ import {RouterLink} from '@angular/router';
 import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
 import {faArrowRight} from '@fortawesome/free-solid-svg-icons';
 import {of} from 'rxjs';
+import {refreshInBackground} from '../../util/refresh';
 import {AuthService} from '../services/auth.service';
 import {CustomerOrganizationsService} from '../services/customer-organizations.service';
 
@@ -25,9 +26,13 @@ export class OrganizationScopeNavComponent {
   private readonly auth = inject(AuthService);
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   private readonly customerOrganizations = toSignal(
-    this.auth.isVendor() || this.auth.isPartner()
-      ? this.customerOrganizationsService.getCustomerOrganizations()
-      : of([])
+    !this.auth.isCustomer() ? this.customerOrganizationsService.getCustomerOrganizations() : of([])
   );
   protected readonly firstCustomerOrganization = computed(() => this.customerOrganizations()?.[0]);
+
+  constructor() {
+    if (!this.auth.isCustomer()) {
+      refreshInBackground(this.customerOrganizationsService.refresh());
+    }
+  }
 }
