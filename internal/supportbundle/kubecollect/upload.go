@@ -147,11 +147,11 @@ func (u Uploader) upload(ctx context.Context, file BundleFile) error {
 
 	ctx, cancel := context.WithTimeout(ctx, uploadRequestTimeout)
 	defer cancel()
-	requestURL := u.URL + "/resources?" + url.Values{"bundleSecret": {u.Secret}}.Encode()
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, requestURL, &body)
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, u.URL+"/resources", &body)
 	if err != nil {
 		return err
 	}
+	request.URL.RawQuery = url.Values{"bundleSecret": {u.Secret}}.Encode()
 	request.Header.Set("Content-Type", form.FormDataContentType())
 	request.Header.Set("User-Agent", "DistrSupportBundleCollector/"+buildconfig.Version())
 

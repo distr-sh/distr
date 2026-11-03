@@ -39,7 +39,7 @@ The customer runs the command on the affected host. The script shows the availab
 
 ## Kubernetes bundles
 
-The customer runs the command on a machine with access to the cluster, typically the one they run `kubectl` from. Nothing is installed in the cluster. The machine needs Linux or macOS on amd64 or arm64 with `curl`, `tar` and `sha256sum` or `shasum`.
+The customer runs the command on a machine with access to the cluster, typically the one they run `kubectl` from. Nothing is installed in the cluster. The machine needs Linux or macOS on amd64 or arm64 with `curl`, `tar`, `base64` and `sha256sum` or `shasum`.
 
 The script downloads the Kubernetes collector of your Distr version from the [Distr releases on GitHub](https://github.com/distr-sh/distr/releases) and checks it against the checksums of the release before running it, so the machine needs access to `github.com`. The collector then:
 
@@ -53,7 +53,7 @@ The script downloads the Kubernetes collector of your Distr version from the [Di
    - the last 1000 lines of every container log, including the previous run of restarted containers
 4. Writes the files to a temporary directory and lets the customer look through them and edit or delete any of them before they confirm the upload.
 
-After the upload, the script runs the [custom scripts](#configure-custom-scripts) of the Kubernetes tab, which the customer can exclude just like on Docker. Anything the cluster refuses or fails to return is recorded in `collection-errors.txt` in the bundle, and the collection continues. `summary.yaml` records the context, the namespaces and the parts that were collected.
+After the upload, the script runs the [custom scripts](#configure-custom-scripts) of the Kubernetes tab, which the customer can exclude just like on Docker. Anything the cluster refuses or fails to return is recorded in `collection-errors.txt` in the bundle, and the collection continues. `summary.yaml` records the context, the namespaces and the parts the customer selected.
 
 ### What the resources contain
 
@@ -121,7 +121,7 @@ Click **Save** when done.
 
 ### Configure ConfigMap and Secret values
 
-On the **Kubernetes** tab, choose whether Kubernetes bundles include the values of ConfigMaps and Secrets. ConfigMap values are collected by default and Secret values are not. Without them, a bundle still lists the ConfigMaps and Secrets with their keys, but shows each value as `[REDACTED]` with its size. Collected Secret values are uploaded decoded in plain text, so only turn them on when you need them.
+On the **Kubernetes** tab, choose whether Kubernetes bundles include the values of ConfigMaps and Secrets. ConfigMap values are collected by default and Secret values are not. Without them, a bundle still lists the ConfigMaps and Secrets with their keys, but shows each value as `[REDACTED, <size> bytes]`. Collected Secret values are uploaded decoded in plain text, so only turn them on when you need them.
 
 The collector tells the customer which values it collects before anything is collected, and the customer can override your choice with the [options](#options) `--include-configmap-data` and `--include-secret-data`. Click **Save** when done.
 

@@ -17,7 +17,11 @@ export function buildResourceTree(resources: SupportBundleResourceSummary[]): Su
   const root = newFolder('', '');
   const folders = new Map<string, SupportBundleResourceFolder>();
   for (const resource of resources) {
-    const segments = resource.name.split('/').filter((segment) => segment !== '');
+    // The same segments the downloaded archive uses (supportBundleZipEntryPath), so the tree matches it.
+    const segments = resource.name
+      .split(/[/\\]/)
+      .map((segment) => segment.trim())
+      .filter((segment) => segment !== '' && segment !== '.' && segment !== '..');
     const name = segments.pop() ?? resource.name;
     let folder = root;
     folder.fileCount++;

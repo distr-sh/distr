@@ -28,11 +28,16 @@ describe('buildResourceTree', () => {
     expect(defaultNamespace.folders[0].folders[0].files.map((file) => file.name)).toEqual(['nginx']);
   });
 
-  it('keeps names without a folder at the top level and ignores empty segments', () => {
-    const tree = buildResourceTree([resource('system-info'), resource('/logs//web')]);
+  it('keeps names without a folder at the top level and drops the segments the archive drops', () => {
+    const tree = buildResourceTree([
+      resource('system-info'),
+      resource('/logs//web'),
+      resource('logs\\ ./db'),
+      resource('../logs/../cache'),
+    ]);
 
     expect(tree.files.map((file) => file.name)).toEqual(['system-info']);
     expect(tree.folders.map((folder) => folder.path)).toEqual(['logs']);
-    expect(tree.folders[0].files.map((file) => file.name)).toEqual(['web']);
+    expect(tree.folders[0].files.map((file) => file.name)).toEqual(['web', 'db', 'cache']);
   });
 });
