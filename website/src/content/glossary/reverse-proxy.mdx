@@ -11,13 +11,13 @@ shortDefinition: 'A reverse proxy is a server that accepts requests on behalf of
 lastUpdated: 2026-11-03
 faq:
   - question: What is a reverse proxy?
-    answer: 'A reverse proxy is a server that sits in front of one or more backend services, accepts requests from clients and forwards them to the right backend. Clients only ever talk to the proxy. Caddy, Traefik, NGINX, HAProxy and Envoy are common examples.'
+    answer: 'A reverse proxy is a server that sits in front of one or more backend services, accepts requests from clients and forwards them to the right backend. Clients only ever talk to the proxy. Caddy, Traefik, HAProxy and Envoy are common examples.'
   - question: What is the difference between a forward proxy and a reverse proxy?
     answer: 'A forward proxy acts for the clients, for example a company proxy that all outgoing web traffic passes through. A reverse proxy acts for the servers: it receives requests from the internet and forwards them to backends that clients never reach directly.'
   - question: Is a load balancer a reverse proxy?
     answer: 'A layer 7 load balancer that reads HTTP requests is a reverse proxy with a focus on spreading load. A layer 4 load balancer only forwards TCP or UDP connections and does not see the requests, so it cannot route by path or set headers.'
   - question: Should self-hosted software ship its own reverse proxy?
-    answer: 'For Docker Compose, shipping an optional proxy such as Caddy gives customers HTTPS out of the box, as long as they can turn it off and use their own. For Kubernetes, ship Ingress or Gateway API resources with a configurable class and leave the controller to the cluster.'
+    answer: 'For Docker Compose, shipping an optional proxy such as Caddy gives customers HTTPS out of the box, as long as they can turn it off and use their own. For Kubernetes, leave the proxy to the cluster, which usually offers Ingress or the Gateway API, and make the routing in your chart configurable.'
   - question: Why does my application see the wrong client IP behind a reverse proxy?
     answer: "Behind a proxy, every request comes from the proxy's address. The proxy passes the original client address in the `X-Forwarded-For` header, and the application has to read it from there, trusting only the entries added by proxies it knows."
 ---
@@ -45,17 +45,14 @@ On the way through, a proxy can add headers, compress responses, limit request r
 
 ## Common Reverse Proxies
 
-| Proxy                                  | Known for                                                             |
-| -------------------------------------- | --------------------------------------------------------------------- |
-| [Caddy](https://caddyserver.com)       | Automatic HTTPS with almost no configuration                          |
-| [Traefik](https://traefik.io/traefik/) | Configuration from Docker labels and Kubernetes resources             |
-| [NGINX](https://nginx.org)             | Performance and the most widely known configuration format            |
-| [HAProxy](https://www.haproxy.org)     | High-throughput load balancing on layer 4 and layer 7                 |
-| [Envoy](https://www.envoyproxy.io)     | The data plane of many service meshes and Gateway API implementations |
+| Proxy                                  | Known for                                                     |
+| -------------------------------------- | ------------------------------------------------------------- |
+| [Caddy](https://caddyserver.com)       | Automatic HTTPS with almost no configuration                  |
+| [Traefik](https://traefik.io/traefik/) | Configuration from Docker labels and Kubernetes resources     |
+| [HAProxy](https://www.haproxy.org)     | High-throughput load balancing on layer 4 and layer 7         |
+| [Envoy](https://www.envoyproxy.io)     | The data plane of many service meshes and Kubernetes gateways |
 
-In Kubernetes, the reverse proxy is the Ingress controller or Gateway API implementation of the cluster.
-Applications describe their routes as `Ingress` or `HTTPRoute` resources, and the controller configures the proxy from them.
-The Kubernetes project retired the community ingress-nginx controller in March 2026 and points its users to the Gateway API.
+In Kubernetes, the cluster provides the reverse proxy through Ingress or the Gateway API, and applications only declare the routes they need.
 
 ## Reverse Proxy vs. Load Balancer vs. Reverse Tunnel
 
@@ -76,8 +73,8 @@ A Caddy service in the Compose file gives the customer HTTPS on their own domain
 Many customers already run a proxy or a load balancer, though, so make the bundled one optional and document how to run the application behind theirs.
 
 For Kubernetes, leave the proxy to the cluster.
-Clusters come with an Ingress controller or a Gateway API implementation, and a second one installed by your [Helm chart](/glossary/helm-chart/) needs cluster-wide permissions and a load balancer of its own, which a shared cluster rarely allows.
-Ship an `Ingress` or `HTTPRoute` in the chart, disabled or enabled by a value, and let the customer set the class, the hostname, the TLS secret and any annotations their controller needs.
+Most clusters already offer Ingress or the Gateway API, and a proxy installed by your [Helm chart](/glossary/helm-chart/) would need cluster-wide permissions and a load balancer of its own, which a shared cluster rarely allows.
+Ship the routing in the chart as an option, and let the customer set the hostname, the TLS certificate and whatever else their setup needs.
 
 ### What to Get Right Behind a Proxy
 
@@ -90,11 +87,11 @@ The application has to read these headers, but only when they come from a proxy 
 The backend receives plain HTTP and cannot tell from the request whether users reach it over HTTPS.
 Let customers configure the public URL, and build redirects, links in emails and OAuth callbacks from it.
 
-WebSockets need the `Upgrade` and `Connection` headers passed through.
-NGINX only does that with explicit configuration, and by default it closes a proxied connection that stays idle for 60 seconds, which cuts off long polling and log streams.
+WebSockets need the `Upgrade` and `Connection` headers passed through, and some proxies only do that when configured to.
+Proxies also close connections that stay idle for too long, which cuts off long polling and log streams.
 
-NGINX also rejects request bodies larger than 1 MB by default and answers with `413 Request Entity Too Large`.
-File uploads and container image pushes need a higher `client_max_body_size`.
+Many proxies limit the size of a request body and answer larger requests with `413 Request Entity Too Large`.
+File uploads and container image pushes need that limit raised.
 Exports and other long-running requests need a proxy timeout longer than the request takes.
 
 Customers who run their own proxy hit these settings one by one, so write down what your application needs for the common proxies.
