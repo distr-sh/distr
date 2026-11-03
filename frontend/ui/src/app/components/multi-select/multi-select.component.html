@@ -13,20 +13,22 @@
   cdkConnectedOverlay
   [cdkConnectedOverlayHasBackdrop]="true"
   (backdropClick)="open.set(false)"
+  (detach)="open.set(false)"
   [cdkConnectedOverlayBackdropClass]="'transparent'"
   [cdkConnectedOverlayOrigin]="origin"
   [cdkConnectedOverlayMinWidth]="width + 'px'"
+  [cdkConnectedOverlayScrollStrategy]="scrollStrategy"
   [cdkConnectedOverlayOpen]="open()">
   <div
-    class="z-10 max-h-128 w-full origin-top divide-y divide-gray-100 overflow-y-auto rounded-lg bg-white shadow-xs dark:divide-gray-600 dark:bg-gray-700"
+    class="z-10 flex max-h-128 w-full origin-top flex-col divide-y divide-gray-100 rounded-lg bg-white shadow-xs dark:divide-gray-600 dark:bg-gray-700"
     animate.enter="animate-flip-in-top"
     animate.leave="animate-flip-out-top">
     @if (isSearchVisible()) {
-      <div class="p-2">
-        <app-search-bar [control]="search" [placeholder]="searchPlaceholder()" [autofocus]="true" />
+      <div class="shrink-0 p-2">
+        <app-search-bar [control]="search" [placeholder]="searchPlaceholder()" [autofocus]="true" [hotkey]="false" />
       </div>
     }
-    <ul class="p-2 text-sm text-gray-700 dark:text-gray-200">
+    <ul class="min-h-0 overflow-y-auto p-2 text-sm text-gray-700 dark:text-gray-200">
       @if (visibleOptions().length > 1) {
         <li class="w-full">
           <div class="distr-dropdown-checkbox-item">
