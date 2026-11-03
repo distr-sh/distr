@@ -1,4 +1,4 @@
-{{template "collector-start" .}}
+{{template "collect-script-start" .}}
 
 # The support collector is released with Distr. Download the build for this platform and check it against
 # the checksums of the same release before running it.
@@ -84,4 +84,4 @@ fi
 # The vendor's scripts below use kubectl and helm against the context the collector used, even
 # when it is not the current context of the customer's kubeconfig.
 export KUBECONFIG="${_tmpdir}/kubeconfig"
-{{- template "collector-end" .}}
+{{- template "collect-script-end" .}}

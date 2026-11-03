@@ -13,8 +13,8 @@ import (
 
 var ErrNoAnswer = errors.New("the input ended without an answer")
 
-// Prompter asks the customer on the terminal. The bootstrap script runs the collector with its input
-// read from /dev/tty, because its own input is the script piped into sh.
+// Prompter asks the customer on the terminal. The collect script runs the support collector with its
+// input read from /dev/tty, because its own input is the script piped into sh.
 type Prompter struct {
 	in  *bufio.Reader
 	out io.Writer

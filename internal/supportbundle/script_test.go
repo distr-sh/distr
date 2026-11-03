@@ -30,8 +30,8 @@ const (
 	collectScriptHeredocEnd   = "\nDISTR_COLLECT_EOF\n"
 )
 
-// The collector doing the actual work sits inside a quoted heredoc, so nothing parses it until a
-// customer runs it on their host. Render the collector of every deployment type both with and
+// The collect script doing the actual work sits inside a quoted heredoc, so nothing parses it until
+// a customer runs it on their host. Render the collect script of every deployment type both with and
 // without custom scripts and check that each one is valid shell.
 func TestGenerateCollectScript_syntax(t *testing.T) {
 	for _, deploymentType := range []types.DeploymentType{types.DeploymentTypeDocker, types.DeploymentTypeKubernetes} {
@@ -167,7 +167,7 @@ func collectorArchive(g *WithT, collector string) []byte {
 	return buf.Bytes()
 }
 
-// innerCollectScript returns the collector that the outer script writes to a temp file.
+// innerCollectScript returns the collect script that the outer script writes to a temp file.
 func innerCollectScript(g *WithT, script string) string {
 	start := strings.Index(script, collectScriptHeredocStart)
 	g.Expect(start).ToNot(Equal(-1), "collect script is not written with the expected heredoc")
