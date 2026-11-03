@@ -47,7 +47,7 @@
               <td
                 class="px-1 font-mono text-xs whitespace-nowrap"
                 [ngClass]="resourceColorMap()[entry.resource!]"
-                [innerText]="entry.resource"></td>
+                [textContent]="entry.resource"></td>
             }
             <td
               class="px-1 uppercase"
@@ -57,7 +57,7 @@
               [class.dark:text-yellow-500]="entry.status.toLowerCase().includes('warn')"
               [class.text-blue-600]="entry.status.toLowerCase().includes('info')"
               [class.dark:text-blue-500]="entry.status.toLowerCase().includes('info')"
-              [innerText]="entry.status"></td>
+              [textContent]="entry.status"></td>
             <td class="w-full max-w-0 px-1" data-ph-mask-text="true">
               <div
                 class="overflow-x-auto font-mono whitespace-pre-wrap text-gray-900 dark:text-white"
