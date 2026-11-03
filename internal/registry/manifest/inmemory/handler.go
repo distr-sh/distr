@@ -21,12 +21,12 @@ func NewManifestHandler() manifest.ManifestHandler {
 }
 
 // Delete implements manifest.ManifestHandler.
-func (h *handler) Delete(ctx context.Context, name string, reference string) (bool, error) {
+func (h *handler) Delete(ctx context.Context, name string, reference string) (manifest.DeleteResult, error) {
 	if _, err := h.Get(ctx, name, reference); err != nil {
-		return false, err
+		return manifest.DeleteResult{}, err
 	}
 	delete(h.manifests[name], reference)
-	return false, nil
+	return manifest.DeleteResult{}, nil
 }
 
 // Get implements manifest.ManifestHandler.

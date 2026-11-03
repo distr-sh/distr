@@ -38,29 +38,36 @@ func entitlementCustomerOrgID(ctx context.Context) *uuid.UUID {
 }
 
 // Delete removes a manifest by tag reference.
-func (h *handler) Delete(ctx context.Context, nameStr string, reference string) (bool, error) {
+func (h *handler) Delete(ctx context.Context, nameStr string, reference string) (manifest.DeleteResult, error) {
 	if _, err := digest.Parse(reference); err == nil {
-		return false, distrerr.NewBadRequest("digest-based deletion is not supported, delete by tag instead")
+		return manifest.DeleteResult{}, distrerr.NewBadRequest(
+			"digest-based deletion is not supported, delete by tag instead",
+		)
 	}
 
 	n, err := name.Parse(nameStr)
 	if err != nil {
-		return false, fmt.Errorf("%w: %w", manifest.ErrNameUnknown, err)
+		return manifest.DeleteResult{}, fmt.Errorf("%w: %w", manifest.ErrNameUnknown, err)
 	}
 
 	artifact, err := db.GetArtifactByName(ctx, n.OrgName, n.ArtifactName)
 	if err != nil {
 		if errors.Is(err, distrerr.ErrNotFound) {
-			return false, fmt.Errorf("%w: %w", manifest.ErrNameUnknown, err)
+			return manifest.DeleteResult{}, fmt.Errorf("%w: %w", manifest.ErrNameUnknown, err)
 		}
-		return false, err
+		return manifest.DeleteResult{}, err
 	}
 
-	artifactDeleted, err := db.DeleteArtifactTag(ctx, artifact.ID, reference)
+	artifactDeleted, err := db.DeleteArtifactTag(ctx, artifact, reference)
 	if errors.Is(err, distrerr.ErrNotFound) {
-		return false, fmt.Errorf("%w: %w", manifest.ErrManifestUnknown, err)
+		return manifest.DeleteResult{}, fmt.Errorf("%w: %w", manifest.ErrManifestUnknown, err)
+	} else if err != nil {
+		return manifest.DeleteResult{}, err
 	}
-	return artifactDeleted, err
+	return manifest.DeleteResult{
+		RepositoryDeleted:  artifactDeleted,
+		SyncedFromUpstream: artifact.UpstreamURL != nil,
+	}, nil
 }
 
 // Get implements manifest.ManifestHandler.

@@ -1505,8 +1505,10 @@ func DeleteArtifactVersion(ctx context.Context, artifactID uuid.UUID, tagName st
 }
 
 // DeleteArtifactTag deletes a tag of an artifact, together with every version that only the deleted
-// tag referenced. Deleting the last tag deletes the whole artifact, which the result reports.
-func DeleteArtifactTag(ctx context.Context, artifactID uuid.UUID, tagName string) (bool, error) {
+// tag referenced. Deleting the last tag deletes the whole artifact, which the result reports. The last
+// tag of a pull-through cache artifact cannot be deleted, since that would delete its upstream configuration.
+func DeleteArtifactTag(ctx context.Context, artifact *types.Artifact, tagName string) (bool, error) {
+	artifactID := artifact.ID
 	artifactDeleted := false
 	err := RunTx(ctx, func(ctx context.Context) error {
 		if err := LockArtifactExclusive(ctx, artifactID); err != nil {
@@ -1533,6 +1535,10 @@ func DeleteArtifactTag(ctx context.Context, artifactID uuid.UUID, tagName string
 
 		if isLast, err := IsLastTagOfArtifact(ctx, artifactID, tagName); err != nil {
 			return err
+		} else if isLast && artifact.UpstreamURL != nil {
+			return distrerr.NewConflict(
+				"cannot delete the last tag of a pull-through cache artifact, delete the artifact instead",
+			)
 		} else if isLast {
 			if isReferenced, err := ArtifactIsReferencedInEntitlements(ctx, artifactID); err != nil {
 				return err

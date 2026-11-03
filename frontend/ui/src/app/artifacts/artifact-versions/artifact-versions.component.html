@@ -220,7 +220,7 @@
                     @for (label of version.tags; track label.name) {
                       <span class="distr-badge" [class.distr-badge-success]="label.name === 'latest'">
                         {{ label.name }}
-                        @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
+                        @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin') && canDeleteTags()) {
                           <button
                             type="button"
                             [attr.aria-label]="'Delete tag ' + label.name"

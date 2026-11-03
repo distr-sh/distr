@@ -221,7 +221,7 @@ func deleteArtifactTagHandler(r *http.Request) (respond.Responder, error) {
 
 	if tagName := r.PathValue("tagName"); tagName == "" {
 		return artifactTagNotFound, nil
-	} else if _, err := db.DeleteArtifactTag(ctx, artifact.ID, tagName); errors.Is(err, distrerr.ErrNotFound) {
+	} else if _, err := db.DeleteArtifactTag(ctx, &artifact.Artifact, tagName); errors.Is(err, distrerr.ErrNotFound) {
 		return artifactTagNotFound, nil
 	} else if errors.Is(err, distrerr.ErrBadRequest) {
 		return respond.BadRequest(err.Error()), nil

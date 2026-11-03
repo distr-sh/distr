@@ -179,6 +179,11 @@ export class ArtifactVersionsComponent {
     )
   );
 
+  protected readonly canDeleteTags = computed(() => {
+    const artifact = this.artifact();
+    return !artifact?.upstreamUrl || artifact.versions.flatMap((v) => v.tags).length > 1;
+  });
+
   /** The versions the list shows, each paired with the signature that covers it. */
   protected readonly listedVersions = computed(() => {
     const versions = this.artifact()?.versions;
@@ -393,20 +398,25 @@ export class ArtifactVersionsComponent {
       .confirm({
         message: {
           message: `This will untag "${tagName}" from ${artifact.name}. Are you sure?`,
-          alert: isLastTag
+          alert: artifact.upstreamUrl
             ? {
                 type: 'warning',
-                message: `Since this is the last tag of ${artifact.name}, the entire artifact including all its versions will be deleted as well. Users will no longer be able to download this artifact.`,
+                message: `${artifact.name} is a pull-through cache, so the next sync restores "${tagName}" unless it has been removed from the upstream repository.`,
               }
-            : version.tags.length > 1
+            : isLastTag
               ? {
-                  type: 'info',
-                  message: `The digest ${digest} stays available under its other tags.`,
-                }
-              : {
                   type: 'warning',
-                  message: `Since this is its only tag, the digest ${digest} may be deleted as well, unless it is still referenced by a multi-arch index.`,
-                },
+                  message: `Since this is the last tag of ${artifact.name}, the entire artifact including all its versions will be deleted as well. Users will no longer be able to download this artifact.`,
+                }
+              : version.tags.length > 1
+                ? {
+                    type: 'info',
+                    message: `The digest ${digest} stays available under its other tags.`,
+                  }
+                : {
+                    type: 'warning',
+                    message: `Since this is its only tag, the digest ${digest} may be deleted as well, unless it is still referenced by a multi-arch index.`,
+                  },
         },
       })
       .pipe(

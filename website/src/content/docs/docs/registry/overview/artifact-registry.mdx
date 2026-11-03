@@ -179,6 +179,7 @@ Tag deletion succeeds when all of these conditions are met:
 
 Deleting the last tag of an artifact deletes the entire artifact, as described in [Deleting Artifacts](#deleting-artifacts).
 When this happens through the registry API, the response carries a `Warning` header saying so.
+A [pull-through cache](/docs/registry/pull-through-cache/) artifact is the exception: its last tag cannot be deleted, and the next sync restores a deleted tag unless it has been removed from the upstream repository.
 
 <Aside type="tip">
   The system distinguishes between regular tags (like `v1.0.0`, `latest`) and
