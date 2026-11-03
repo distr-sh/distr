@@ -44,8 +44,7 @@ func stripeWebhookHandler(r *http.Request) (respond.Responder, error) {
 	event, err := webhook.ConstructEvent(payload, r.Header.Get("Stripe-Signature"), *endpointSecret)
 	if err != nil {
 		log.Warn("webhook signature verification failed", zap.Error(err))
-		if env.StripeWebhookVersionMismatchBehavior() == env.StripeWebhookVersionMismatchBehaviorIgnore &&
-			event.APIVersion != "" && !strings.HasSuffix(event.APIVersion, "."+stripe.APIMajorVersion) {
+		if isIgnoredStripeVersionMismatch(event) {
 			return respond.Status(http.StatusOK), nil
 		}
 		return respond.Status(http.StatusBadRequest), nil
@@ -78,6 +77,11 @@ func stripeWebhookHandler(r *http.Request) (respond.Responder, error) {
 	}
 
 	return respond.Status(http.StatusOK), nil
+}
+
+func isIgnoredStripeVersionMismatch(event stripe.Event) bool {
+	return env.StripeWebhookVersionMismatchBehavior() == env.StripeWebhookVersionMismatchBehaviorIgnore &&
+		event.APIVersion != "" && !strings.HasSuffix(event.APIVersion, "."+stripe.APIMajorVersion)
 }
 
 // handleStripeSubscription applies the subscription of event to its organization, unless it answers
