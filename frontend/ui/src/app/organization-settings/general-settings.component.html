@@ -135,75 +135,75 @@
           once a script is configured for it, or for Docker when it should run with sudo.
         </p>
       </div>
-    </div>
 
-    @if (isPrePostScriptEnabled()) {
-      <div class="space-y-4">
-        <h2 class="text-xl font-bold dark:text-white">Pre-/post-connect scripts</h2>
-        <app-pill-tab-bar [tabs]="connectScriptTabs" [(active)]="connectScriptTab" />
+      @if (isPrePostScriptEnabled()) {
+        <div class="space-y-4">
+          <h3 class="text-lg font-bold dark:text-white">Pre-/post-connect scripts</h3>
+          <app-pill-tab-bar [tabs]="connectScriptTabs" [(active)]="connectScriptTab" />
 
-        @switch (connectScriptTab()) {
-          @case ('docker') {
-            <div>
-              <label for="dockerPreConnectScript" class="distr-label mb-2 grow">Pre-connect script</label>
-              <app-editor
-                id="dockerPreConnectScript"
-                language="shell"
-                formControlName="dockerPreConnectScript"
-                class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [&_.cm-editor]:min-h-40" />
-            </div>
-
-            <div>
-              <label for="dockerPostConnectScript" class="distr-label mb-2 grow">Post-connect script</label>
-              <app-editor
-                id="dockerPostConnectScript"
-                language="shell"
-                formControlName="dockerPostConnectScript"
-                class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [&_.cm-editor]:min-h-40" />
-            </div>
-
-            <div>
-              <div class="flex items-center">
-                <input
-                  formControlName="dockerConnectScriptIsSudo"
-                  id="dockerConnectScriptIsSudo"
-                  type="checkbox"
-                  class="distr-checkbox" />
-                <label
-                  for="dockerConnectScriptIsSudo"
-                  class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                  Script should be run with sudo
-                </label>
+          @switch (connectScriptTab()) {
+            @case ('docker') {
+              <div>
+                <label for="dockerPreConnectScript" class="distr-label mb-2 grow">Pre-connect script</label>
+                <app-editor
+                  id="dockerPreConnectScript"
+                  language="shell"
+                  formControlName="dockerPreConnectScript"
+                  class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [&_.cm-editor]:min-h-40" />
               </div>
-            </div>
-          }
-          @case ('kubernetes') {
-            <div>
-              <label for="kubernetesPreConnectScript" class="distr-label mb-2 grow">Pre-connect script</label>
-              <app-editor
-                id="kubernetesPreConnectScript"
-                language="shell"
-                formControlName="kubernetesPreConnectScript"
-                class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [&_.cm-editor]:min-h-40" />
-            </div>
 
-            <div>
-              <label for="kubernetesPostConnectScript" class="distr-label mb-2 grow">Post-connect script</label>
-              <app-editor
-                id="kubernetesPostConnectScript"
-                language="shell"
-                formControlName="kubernetesPostConnectScript"
-                class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [&_.cm-editor]:min-h-40" />
-            </div>
+              <div>
+                <label for="dockerPostConnectScript" class="distr-label mb-2 grow">Post-connect script</label>
+                <app-editor
+                  id="dockerPostConnectScript"
+                  language="shell"
+                  formControlName="dockerPostConnectScript"
+                  class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [&_.cm-editor]:min-h-40" />
+              </div>
 
-            <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-              The scripts run in a POSIX shell with the customer's kubeconfig. The namespace of the deployment target is
-              available as <code>$DISTR_NAMESPACE</code>.
-            </p>
+              <div>
+                <div class="flex items-center">
+                  <input
+                    formControlName="dockerConnectScriptIsSudo"
+                    id="dockerConnectScriptIsSudo"
+                    type="checkbox"
+                    class="distr-checkbox" />
+                  <label
+                    for="dockerConnectScriptIsSudo"
+                    class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                    Script should be run with sudo
+                  </label>
+                </div>
+              </div>
+            }
+            @case ('kubernetes') {
+              <div>
+                <label for="kubernetesPreConnectScript" class="distr-label mb-2 grow">Pre-connect script</label>
+                <app-editor
+                  id="kubernetesPreConnectScript"
+                  language="shell"
+                  formControlName="kubernetesPreConnectScript"
+                  class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [&_.cm-editor]:min-h-40" />
+              </div>
+
+              <div>
+                <label for="kubernetesPostConnectScript" class="distr-label mb-2 grow">Post-connect script</label>
+                <app-editor
+                  id="kubernetesPostConnectScript"
+                  language="shell"
+                  formControlName="kubernetesPostConnectScript"
+                  class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [&_.cm-editor]:min-h-40" />
+              </div>
+
+              <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+                The scripts run in a POSIX shell with the customer's kubeconfig. The namespace of the deployment target
+                is available as <code>$DISTR_NAMESPACE</code>.
+              </p>
+            }
           }
-        }
-      </div>
-    }
+        </div>
+      }
+    </div>
 
     @if (!auth.isSuperAdmin()) {
       <div class="mt-4 flex w-full justify-center space-x-4">
