@@ -48,6 +48,7 @@ import {ViewLicenseKeyModalComponent} from './view-license-key-modal.component';
 })
 export class LicenseKeysComponent {
   readonly customerOrganizationId = input<string>();
+  readonly hotkey = input(true);
 
   protected readonly auth = inject(AuthService);
   protected readonly features = inject(FeatureFlagService);

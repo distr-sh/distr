@@ -45,17 +45,19 @@ function isBehindOverlay(element: Element): boolean {
         [formControl]="control()"
         [placeholder]="placeholder()"
         [autofocus]="autofocus()"
-        aria-keyshortcuts="/"
+        [attr.aria-keyshortcuts]="hotkey() ? '/' : null"
         autotrim
         type="search"
         class="peer distr-input p-2 pl-10 placeholder-shown:pr-10" />
-      <div
-        class="pointer-events-none absolute inset-y-0 right-0 hidden items-center pr-3 peer-placeholder-shown:flex peer-focus:hidden">
-        <kbd
-          class="rounded-sm border border-gray-200 bg-gray-100 px-1.5 font-sans text-xs text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
-          /
-        </kbd>
-      </div>
+      @if (hotkey()) {
+        <div
+          class="pointer-events-none absolute inset-y-0 right-0 hidden items-center pr-3 peer-placeholder-shown:flex peer-focus:hidden">
+          <kbd
+            class="rounded-sm border border-gray-200 bg-gray-100 px-1.5 font-sans text-xs text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
+            /
+          </kbd>
+        </div>
+      }
     </div>
   `,
 })
@@ -63,6 +65,7 @@ export class SearchBarComponent {
   public readonly control = input.required<FormControl>();
   public readonly placeholder = input.required<string>();
   public readonly autofocus = input(false);
+  public readonly hotkey = input(true);
 
   private readonly input = viewChild.required<ElementRef<HTMLInputElement>>('input');
 
@@ -74,6 +77,7 @@ export class SearchBarComponent {
   protected onDocumentKeydown(event: KeyboardEvent): void {
     const input = this.input().nativeElement;
     if (
+      !this.hotkey() ||
       event.defaultPrevented ||
       event.key !== '/' ||
       event.ctrlKey ||
