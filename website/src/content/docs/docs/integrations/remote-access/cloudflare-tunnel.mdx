@@ -14,7 +14,7 @@ With this setup, a [Cloudflare Tunnel](https://developers.cloudflare.com/cloudfl
 Read the [Remote Access Overview](/docs/integrations/remote-access/) first.
 It explains how the remote access application runs next to your application and how the customer creates the `vendor-support` ServiceAccount, which decides what your support team may do.
 
-The tunnel is a single cloudflared Deployment in the namespace of your application.
+The [tunnel](/glossary/reverse-tunnel/) is a single cloudflared Deployment in the namespace of your application.
 Its ServiceAccount has no permissions at all, so it runs on a namespace-scoped deployment target.
 
 <Aside type="note">
