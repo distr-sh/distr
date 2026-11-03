@@ -79,6 +79,10 @@ A gateway VPN connects a device or another network to the private network.
 Its users can usually reach far more than one service, and its gateway has to accept inbound connections.
 Mesh VPNs such as Tailscale connect outbound instead, which is why they work much like a reverse tunnel from the firewall's point of view.
 
+A [reverse proxy](/glossary/reverse-proxy/) sounds similar but works the other way round.
+It accepts inbound connections and forwards them to backends it can reach, so the proxy itself has to be reachable.
+Tunnel services often run one at the relay: Cloudflare's edge, for example, terminates TLS for a hostname before sending the request through the tunnel.
+
 A reverse tunnel exposes only what the agent forwards and needs no inbound rule.
 It is the usual choice when the network belongs to someone else, for example when a software vendor needs [remote access](/glossary/vendor-remote-access/) to an installation in a customer's environment.
 

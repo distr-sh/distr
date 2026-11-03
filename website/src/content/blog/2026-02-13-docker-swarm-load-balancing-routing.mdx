@@ -77,7 +77,7 @@ The routing mesh is convenient but has significant limitations for production wo
 4. **No sticky sessions.** The built-in load balancer cannot maintain session affinity, which breaks stateful applications and WebSocket connections.
 5. **No SSL termination.** You need to handle TLS at the application level or add a reverse proxy.
 
-These limitations are exactly why a reverse proxy like Traefik, Caddy, or Nginx is almost always needed in production.
+These limitations are exactly why a [reverse proxy](/glossary/reverse-proxy/) like Traefik, Caddy, or Nginx is almost always needed in production.
 
 ## Approach 1: Built-in Routing Mesh
 

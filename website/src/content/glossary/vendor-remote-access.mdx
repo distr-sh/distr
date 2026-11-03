@@ -43,7 +43,7 @@ Other problems only show up on the running system:
 
 - A container cannot reach the database, and only a request from inside the network shows whether DNS, a firewall or the credentials are at fault.
 - A migration hangs, and you need to see which query it waits for.
-- An ingress or load balancer in front of the application rewrites a header, and the application logs look fine.
+- An ingress or [reverse proxy](/glossary/reverse-proxy/) in front of the application rewrites a header, and the application logs look fine.
 - A cluster runs a policy engine or a service mesh that the vendor never tested against.
 
 Without access, each of these checks becomes another round trip: the vendor writes down a command, the customer runs it, pastes the output and waits for the next one.
