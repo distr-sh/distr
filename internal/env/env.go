@@ -61,6 +61,7 @@ var (
 	turnstileSiteKey                      *string
 	turnstileSecret                       *string
 	supportEmail                          *string
+	registrationLegalText                 *string
 	registryEnabled                       bool
 	registryS3Config                      S3Config
 	registryScratchDir                    *string
@@ -193,6 +194,9 @@ func Initialize() {
 	}
 	if email := envutil.GetEnv("SUPPORT_EMAIL"); email != "" {
 		supportEmail = &email
+	}
+	if text := envutil.GetEnv("REGISTRATION_LEGAL_TEXT"); text != "" {
+		registrationLegalText = &text
 	}
 	inviteTokenValidDuration = envutil.GetEnvParsedOrDefault(
 		"INVITE_TOKEN_VALID_DURATION", envparse.PositiveDuration, 24*time.Hour,
@@ -584,6 +588,10 @@ func TurnstileSecret() *string {
 
 func SupportEmail() *string {
 	return supportEmail
+}
+
+func RegistrationLegalText() *string {
+	return registrationLegalText
 }
 
 func RegistryEnabled() bool {
