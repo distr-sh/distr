@@ -14,6 +14,18 @@ function isEditable(target: EventTarget | null): boolean {
   );
 }
 
+function isBehindOverlay(element: Element): boolean {
+  const backdrops = document.querySelectorAll('.cdk-overlay-backdrop');
+  const backdrop = backdrops.item(backdrops.length - 1);
+  if (!backdrop) {
+    return false;
+  }
+  // The CDK prepends the backdrop to the overlay host when it renders the overlay as a popover and
+  // inserts it right before the host when the browser lacks the Popover API.
+  const overlay = backdrop.closest('.cdk-overlay-popover') ?? backdrop.nextElementSibling;
+  return !overlay?.contains(element);
+}
+
 @Component({
   selector: 'app-search-bar',
   imports: [ReactiveFormsModule, FaIconComponent, AutofocusDirective, AutotrimDirective],
@@ -58,7 +70,7 @@ export class SearchBarComponent {
   protected readonly id = `search-bar-${nextId++}`;
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
 
-  /** Focuses the first visible search bar of the page when "/" is pressed outside of a text field. */
+  /** Focuses the first visible search bar of the topmost layer when "/" is pressed outside of a text field. */
   protected onDocumentKeydown(event: KeyboardEvent): void {
     const input = this.input().nativeElement;
     if (
@@ -68,6 +80,7 @@ export class SearchBarComponent {
       event.metaKey ||
       event.altKey ||
       isEditable(event.target) ||
+      isBehindOverlay(input) ||
       !input.checkVisibility()
     ) {
       return;
