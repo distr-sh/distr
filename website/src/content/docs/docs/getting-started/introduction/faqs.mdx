@@ -41,6 +41,21 @@ sidebar:
 
 <details>
   <summary>
+    Can my support team access a customer environment to debug it?
+  </summary>
+  <p>
+    Not by default. The Distr controller only connects outbound to Distr and
+    gives you no way into the customer's infrastructure. Logs, metrics and
+    [support bundles](/docs/platform/support-bundles/) cover most support cases.
+    When they do not, and the customer agrees, you can deploy Tailscale or a
+    Cloudflare Tunnel as a Distr application next to your application and
+    undeploy it once the case is closed. See [Remote Access for
+    Debugging](/docs/integrations/remote-access/).
+  </p>
+</details>
+
+<details>
+  <summary>
     Can I simulate a target environment on a MacOS machine for testing purposes?
   </summary>
   <p>
