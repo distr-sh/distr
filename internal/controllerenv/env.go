@@ -18,6 +18,11 @@ var (
 	DistrRegistryPlainHTTP = envutil.GetEnvParsedOrDefault("DISTR_REGISTRY_PLAIN_HTTP", strconv.ParseBool, false)
 )
 
+// The controller manifests set DISTR_REGISTRY_HOST only when Distr runs the built-in registry.
+func DistrRegistryEnabled() bool {
+	return DistrRegistryHost != ""
+}
+
 // ControllerName is read on every call, since the controller updates its environment when its config map changes.
 func ControllerName() string {
 	return envutil.GetEnv("DISTR_CONTROLLER_NAME")
