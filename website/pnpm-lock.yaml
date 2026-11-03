@@ -214,6 +214,9 @@ importers:
       github-buttons:
         specifier: ^2.33.0
         version: 2.33.1
+      hast-util-select:
+        specifier: ^6.0.4
+        version: 6.0.4
       marked:
         specifier: ^18.0.13
         version: 18.1.2
@@ -226,6 +229,18 @@ importers:
       rehype-external-links:
         specifier: ^3.0.0
         version: 3.0.0
+      rehype-parse:
+        specifier: ^9.0.1
+        version: 9.0.1
+      rehype-remark:
+        specifier: ^10.0.1
+        version: 10.0.1
+      remark-gfm:
+        specifier: ^4.0.1
+        version: 4.0.1(supports-color@10.2.2)
+      remark-stringify:
+        specifier: ^11.0.0
+        version: 11.0.0
       sharp:
         specifier: ^0.35.4
         version: 0.35.5(@types/node@24.13.4)
@@ -241,6 +256,12 @@ importers:
       tailwindcss:
         specifier: ^4.3.3
         version: 4.3.3
+      unified:
+        specifier: ^11.0.5
+        version: 11.0.5
+      unist-util-remove:
+        specifier: ^4.0.0
+        version: 4.0.0
     devDependencies:
       '@astrojs/check':
         specifier: ^0.9.10

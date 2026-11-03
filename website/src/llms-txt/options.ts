@@ -44,6 +44,11 @@ function readContentPages<T extends EntryFrontmatter = Frontmatter>(
     .filter(page => !page.data.draft);
 }
 
+export const comparePages = () =>
+  readContentPages('compare', '*.{md,mdx}').sort((a, b) =>
+    collator.compare(a.id, b.id),
+  );
+
 const rank = (id: string) =>
   promote.includes(id) ? promote.indexOf(id) : Infinity;
 
@@ -56,13 +61,11 @@ export function llmsTxtOptions(site: string): LlmsTxtOptions {
       description: data.description,
     }));
 
-  const comparePageLinks = readContentPages('compare', '*.{md,mdx}')
-    .sort((a, b) => collator.compare(a.id, b.id))
-    .map(({id, data}) => ({
-      label: data.title,
-      url: `${site}/compare/${id}/`,
-      description: data.description,
-    }));
+  const comparePageLinks = comparePages().map(({id, data}) => ({
+    label: data.title,
+    url: `${site}/compare/${id}/`,
+    description: data.description,
+  }));
 
   const caseStudyLinks = readContentPages<CustomerFrontmatter>(
     'customers',
