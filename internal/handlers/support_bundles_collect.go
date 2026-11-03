@@ -19,6 +19,7 @@ import (
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/supportbundle"
+	"github.com/distr-sh/distr/internal/supportbundle/resourcetype"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -118,7 +119,7 @@ func uploadSupportBundleResourceHandler(r *http.Request) (respond.Responder, err
 	} else if name := strings.TrimSpace(r.FormValue("name")); name == "" {
 		return respond.BadRequest("name is required"), nil
 	} else if contentType := cmp.Or(r.FormValue("contentType"), contenttype.MediaTypeTextPlain); !slices.Contains(
-		types.SupportBundleResourceContentTypes, contentType,
+		resourcetype.ContentTypes, contentType,
 	) {
 		return respond.BadRequest("unsupported content type"), nil
 	} else if file, _, err := r.FormFile("content"); err != nil {

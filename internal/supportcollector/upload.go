@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/internal/buildconfig"
-	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/supportbundle/resourcetype"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -57,7 +57,7 @@ func ListBundleFiles(dir string) ([]BundleFile, error) {
 				Name:        name,
 				Path:        filePath,
 				Size:        info.Size(),
-				ContentType: types.SupportBundleResourceContentTypeOfFile(name),
+				ContentType: resourcetype.ContentTypeOfFile(name),
 			})
 			return nil
 		}

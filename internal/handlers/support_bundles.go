@@ -21,6 +21,7 @@ import (
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/security"
+	"github.com/distr-sh/distr/internal/supportbundle/resourcetype"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -445,7 +446,7 @@ func writeSupportBundleZip(w io.Writer, resources []types.SupportBundleResource)
 
 	usedNames := make(map[string]struct{})
 	for _, resource := range resources {
-		extension := types.SupportBundleResourceFileExtension(resource.ContentType)
+		extension := resourcetype.FileExtension(resource.ContentType)
 		name := strings.TrimSuffix(supportBundleZipEntryPath(resource.Name, resource.ID.String()), extension)
 		entryName := name + extension
 		for count := 2; ; count++ {

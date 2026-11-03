@@ -1,11 +1,8 @@
 package types
 
 import (
-	"slices"
-	"strings"
 	"time"
 
-	"github.com/distr-sh/distr/internal/contenttype"
 	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/google/uuid"
 )
@@ -73,48 +70,6 @@ type SupportBundleWithDetails struct {
 	LastCommentAt            *time.Time `db:"last_comment_at"`
 	StatusChangedByUserName  *string    `db:"status_changed_by_user_name"`
 	StatusChangedByImageID   *uuid.UUID `db:"status_changed_by_image_id"`
-}
-
-var SupportBundleResourceContentTypes = []string{
-	contenttype.MediaTypeTextPlain,
-	contenttype.MediaTypeTextXLog,
-	contenttype.MediaTypeYAML,
-	contenttype.MediaTypeJSON,
-}
-
-func ParseSupportBundleResourceContentType(value string) string {
-	if slices.Contains(SupportBundleResourceContentTypes, value) {
-		return value
-	}
-	return contenttype.MediaTypeTextPlain
-}
-
-func SupportBundleResourceFileExtension(contentType string) string {
-	switch contentType {
-	case contenttype.MediaTypeTextXLog:
-		return ".log"
-	case contenttype.MediaTypeYAML:
-		return ".yaml"
-	case contenttype.MediaTypeJSON:
-		return ".json"
-	default:
-		return ".txt"
-	}
-}
-
-// SupportBundleResourceContentTypeOfFile is the content type whose SupportBundleResourceFileExtension
-// the name ends with, or plain text.
-func SupportBundleResourceContentTypeOfFile(name string) string {
-	for _, contentType := range []string{
-		contenttype.MediaTypeTextXLog,
-		contenttype.MediaTypeYAML,
-		contenttype.MediaTypeJSON,
-	} {
-		if strings.HasSuffix(name, SupportBundleResourceFileExtension(contentType)) {
-			return contentType
-		}
-	}
-	return contenttype.MediaTypeTextPlain
 }
 
 type SupportBundleResourceSummary struct {
