@@ -253,6 +253,9 @@ func DockerConfigEnv(deployment api.ControllerDeployment) []string {
 // hasRegistryImages parses the compose file in order to check whether one of the services uses an image hosted on
 // [controllerenv.DistrRegistryHost].
 func hasRegistryImages(deployment api.ControllerDeployment) bool {
+	if !controllerenv.DistrRegistryEnabled() {
+		return false
+	}
 	var compose struct {
 		Services map[string]struct {
 			Image string
