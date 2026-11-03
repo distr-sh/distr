@@ -2,25 +2,19 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/distr-sh/distr/internal/supportcollector"
 	"github.com/spf13/pflag"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/klog/v2"
 )
 
 const (
 	uploadURLEnv    = "DISTR_SUPPORT_BUNDLE_URL"
 	uploadSecretEnv = "DISTR_SUPPORT_BUNDLE_SECRET"
-	// minResourceBytes leaves room for the note that says a file was cut.
-	minResourceBytes = 1024
 )
 
 func main() {
@@ -29,12 +23,15 @@ func main() {
 	klog.LogToStderr(false)
 	klog.SetOutput(io.Discard)
 
-	configFlags := supportcollector.NewConfigFlags()
-	configFlags.AddFlags(pflag.CommandLine)
-	opts := supportcollector.DefaultOptions()
-	output := pflag.String("output", "", "directory to write the bundle into, and to upload it from when "+
+	config := supportcollector.Config{
+		ConfigFlags: supportcollector.NewConfigFlags(),
+		Options:     supportcollector.DefaultOptions(),
+	}
+	opts := &config.Options
+	config.ConfigFlags.AddFlags(pflag.CommandLine)
+	pflag.StringVar(&config.Output, "output", "", "directory to write the bundle into, and to upload it from when "+
 		uploadURLEnv+" and "+uploadSecretEnv+" are set")
-	writeKubeconfig := pflag.String("write-kubeconfig", "",
+	pflag.StringVar(&config.WriteKubeconfig, "write-kubeconfig", "",
 		"file to write a kubeconfig with only the selected context and namespace to, for tools run afterwards")
 	pflag.Int64Var(&opts.LogTailLines, "log-tail-lines", opts.LogTailLines,
 		"number of lines collected from the end of every container log")
@@ -46,24 +43,25 @@ func main() {
 		"collect the decoded values of Secrets, except service account and bootstrap tokens and Helm releases")
 	pflag.Parse()
 
-	if *output == "" {
+	if config.Output == "" {
 		usageError("--output is required")
 	} else if pflag.NArg() > 0 {
 		usageError(fmt.Sprintf("unexpected arguments: %v", pflag.Args()))
 	} else if opts.LogTailLines < 0 {
 		usageError("--log-tail-lines must not be negative")
-	} else if opts.MaxResourceBytes < minResourceBytes {
-		usageError(fmt.Sprintf("--max-resource-bytes must be at least %d", minResourceBytes))
+	} else if opts.MaxResourceBytes < supportcollector.MinResourceBytes {
+		usageError(fmt.Sprintf("--max-resource-bytes must be at least %d", supportcollector.MinResourceBytes))
 	}
-	uploader, err := uploaderFromEnv()
-	if err != nil {
+	if uploader, err := uploaderFromEnv(); err != nil {
 		usageError(err.Error())
+	} else {
+		config.Uploader = uploader
 	}
 
 	// Ctrl+C keeps the default handling and ends the process: the prompts block on the terminal
 	// without a context, and the collector records a canceled request as a problem and continues.
 	// The collect script owns the output directory and removes it when it is interrupted.
-	if err := run(context.Background(), configFlags, *output, *writeKubeconfig, opts, uploader); err != nil {
+	if err := supportcollector.Run(context.Background(), config, os.Stdin, os.Stderr); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
@@ -85,269 +83,4 @@ func uploaderFromEnv() (*supportcollector.Uploader, error) {
 		return nil, fmt.Errorf("%s and %s must be set together", uploadURLEnv, uploadSecretEnv)
 	}
 	return &supportcollector.Uploader{URL: uploadURL, Secret: secret, Client: http.DefaultClient}, nil
-}
-
-func run(
-	ctx context.Context,
-	configFlags *genericclioptions.ConfigFlags,
-	output string,
-	writeKubeconfig string,
-	opts supportcollector.Options,
-	uploader *supportcollector.Uploader,
-) error {
-	if entries, err := os.ReadDir(output); err == nil && len(entries) > 0 {
-		return fmt.Errorf("%s is not empty, write the bundle into a new or empty directory", output)
-	} else if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return err
-	}
-
-	prompter := supportcollector.NewPrompter(os.Stdin, os.Stderr)
-	if err := selectKubeContext(prompter, configFlags); err != nil {
-		return err
-	}
-	kubeContext, err := supportcollector.LoadKubeContext(configFlags)
-	if err != nil {
-		return err
-	}
-	if writeKubeconfig != "" {
-		if err := supportcollector.WriteKubeconfig(configFlags, kubeContext, writeKubeconfig); err != nil {
-			return err
-		}
-	}
-	fmt.Fprintf(os.Stderr, "Context:   %s\nCluster:   %s\nNamespace: %s\n\n",
-		kubeContext.Name, kubeContext.Server, kubeContext.Namespace)
-
-	clients, err := supportcollector.NewClients(kubeContext.Config)
-	if err != nil {
-		return err
-	}
-
-	namespaces, err := supportcollector.ListNamespaces(ctx, clients)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "The namespaces of the cluster cannot be listed (%v),\n", err)
-		fmt.Fprintf(os.Stderr, "so only the namespace of the context is offered.\n\n")
-		namespaces = []supportcollector.NamespaceOption{{Name: kubeContext.Namespace}}
-	}
-	supportcollector.AddHelmReleases(ctx, clients, namespaces)
-
-	selected, err := prompter.SelectNamespaces(namespaces, kubeContext.Namespace)
-	if err != nil {
-		return err
-	}
-
-	groups, err := confirmGroups(prompter, opts)
-	if err != nil {
-		return err
-	}
-	if !groups.Any() {
-		return errors.New("nothing was selected to collect")
-	}
-
-	collector := supportcollector.Collector{
-		Clients:  clients,
-		Context:  kubeContext,
-		Options:  opts,
-		Sink:     supportcollector.DirSink{Dir: output},
-		Progress: os.Stderr,
-	}
-	result, err := collector.Run(ctx, selected, groups)
-	if err != nil {
-		return err
-	}
-	if result.Collected == 0 && result.Problems > 0 {
-		return fmt.Errorf("nothing could be collected, see %s/collection-errors.txt", output)
-	}
-	if uploader == nil {
-		fmt.Fprintf(os.Stderr, "\nCollected %d files into %s.\n", result.Collected, output)
-		if result.Problems > 0 {
-			fmt.Fprintf(os.Stderr, "%d parts could not be collected, see collection-errors.txt.\n", result.Problems)
-		}
-		return nil
-	}
-	return confirmAndUpload(ctx, prompter, *uploader, output, result)
-}
-
-func confirmAndUpload(
-	ctx context.Context,
-	prompter *supportcollector.Prompter,
-	uploader supportcollector.Uploader,
-	dir string,
-	result supportcollector.Result,
-) error {
-	files, err := supportcollector.ListBundleFiles(dir)
-	if err != nil {
-		return err
-	}
-	fmt.Fprintln(os.Stderr, "\nCollected:")
-	printBundleParts(files)
-	if result.Problems > 0 {
-		fmt.Fprintf(os.Stderr, "%d parts could not be collected, see collection-errors.txt.\n", result.Problems)
-	}
-	fmt.Fprintf(os.Stderr, "\nThe files are in %s.\n", dir)
-	fmt.Fprintln(os.Stderr, "You can look through them now, and edit or delete any you do not want to upload.")
-	if upload, err := prompter.Confirm("Upload the files that are left to Distr?"); err != nil {
-		return err
-	} else if !upload {
-		fmt.Fprintln(os.Stderr, "Nothing was uploaded.")
-		return nil
-	}
-
-	if files, err = supportcollector.ListBundleFiles(dir); err != nil {
-		return err
-	} else if len(files) == 0 {
-		fmt.Fprintln(os.Stderr, "Nothing was uploaded, since no files are left.")
-		return nil
-	}
-	uploaded, err := uploader.Upload(ctx, files, func(done int) {
-		fmt.Fprintf(os.Stderr, "\rUploading %d of %d files", done, len(files))
-	})
-	fmt.Fprintln(os.Stderr)
-	if err != nil {
-		return err
-	}
-	for _, failure := range uploaded.Failed {
-		fmt.Fprintf(os.Stderr, "  Warning: failed to upload %s\n", failure)
-	}
-	fmt.Fprintf(os.Stderr, "Uploaded %d of %d files.\n", uploaded.Uploaded, len(files))
-	return nil
-}
-
-// printBundleParts sums the files up per namespace, the cluster information and each file at the
-// top of the bundle.
-func printBundleParts(files []supportcollector.BundleFile) {
-	type part struct {
-		name  string
-		files int
-		bytes int64
-	}
-	var parts []*part
-	byName := make(map[string]*part)
-	for _, file := range files {
-		segments := strings.SplitN(file.Name, "/", 3)
-		name := segments[0]
-		if name == "namespaces" && len(segments) == 3 {
-			name = "namespace " + segments[1]
-		}
-		if byName[name] == nil {
-			byName[name] = &part{name: name}
-			parts = append(parts, byName[name])
-		}
-		byName[name].files++
-		byName[name].bytes += file.Size
-	}
-	width := 0
-	for _, p := range parts {
-		width = max(width, len(p.name))
-	}
-	for _, p := range parts {
-		fmt.Fprintf(os.Stderr, "  %-*s  %5d %-5s  %s\n", width, p.name, p.files, filesWord(p.files), formatBytes(p.bytes))
-	}
-}
-
-func filesWord(count int) string {
-	if count == 1 {
-		return "file"
-	}
-	return "files"
-}
-
-func formatBytes(n int64) string {
-	const unit = 1024
-	if n < unit {
-		return fmt.Sprintf("%d B", n)
-	}
-	value, exponent := float64(n)/unit, 0
-	for value >= unit && exponent < 2 {
-		value /= unit
-		exponent++
-	}
-	return fmt.Sprintf("%.1f %ciB", value, "KMG"[exponent])
-}
-
-// selectKubeContext asks for the context unless --context names one or the kubeconfig has only one.
-func selectKubeContext(prompter *supportcollector.Prompter, configFlags *genericclioptions.ConfigFlags) error {
-	if configFlags.Context != nil && *configFlags.Context != "" {
-		return nil
-	}
-	options, current, err := supportcollector.ListKubeContexts(configFlags)
-	if err != nil {
-		return err
-	}
-	var name string
-	switch len(options) {
-	case 0:
-		return nil
-	case 1:
-		name = options[0].Name
-	default:
-		if name, err = prompter.SelectKubeContext(options, current); err != nil {
-			return err
-		}
-		fmt.Fprintln(os.Stderr)
-	}
-	configFlags.Context = &name
-	return nil
-}
-
-func confirmGroups(
-	prompter *supportcollector.Prompter,
-	opts supportcollector.Options,
-) (supportcollector.Groups, error) {
-	included := func(include bool) string {
-		if include {
-			return "included"
-		}
-		return "not included"
-	}
-	var groups supportcollector.Groups
-	questions := []struct {
-		target    *bool
-		question  string
-		onlyIf    *bool
-		defaultNo bool
-	}{
-		{
-			target: &groups.Cluster,
-			question: "Collect the cluster information (Kubernetes version, nodes, namespaces, custom resource " +
-				"definitions, storage and ingress classes, admission webhooks, persistent volumes of the selected " +
-				"namespaces)?",
-		},
-		{target: &groups.Resources, question: fmt.Sprintf(
-			"Collect all resources of the selected namespaces? ConfigMap values are %s, Secret values are %s.",
-			included(opts.IncludeConfigMapData), included(opts.IncludeSecretData),
-		)},
-		{
-			target:   &groups.HelmReleases,
-			question: "Collect the Helm releases of the selected namespaces (chart and app version, status, history)?",
-		},
-		{
-			target: &groups.HelmValues,
-			question: "Collect the values the Helm releases were installed with? They can contain credentials, " +
-				"and Distr masks only those it recognizes.",
-			onlyIf:    &groups.HelmReleases,
-			defaultNo: true,
-		},
-		{target: &groups.Events, question: "Collect the events of the selected namespaces?"},
-		{target: &groups.Logs, question: fmt.Sprintf(
-			"Collect the last %d lines of every container log, including the previous run of restarted containers?",
-			opts.LogTailLines,
-		)},
-	}
-
-	_, _ = fmt.Fprintln(os.Stderr)
-	for _, q := range questions {
-		confirm := prompter.Confirm
-		if q.defaultNo {
-			confirm = prompter.ConfirmDefaultNo
-		}
-		if q.onlyIf != nil && !*q.onlyIf {
-			continue
-		} else if answer, err := confirm(q.question); err != nil {
-			return groups, err
-		} else {
-			*q.target = answer
-		}
-	}
-	_, _ = fmt.Fprintln(os.Stderr)
-	return groups, nil
 }

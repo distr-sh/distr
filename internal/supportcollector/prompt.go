@@ -121,6 +121,66 @@ func parseNamespaceSelection(answer string, options []NamespaceOption, defaultNa
 	return selected, nil
 }
 
+func (p *Prompter) ConfirmGroups(opts Options) (Groups, error) {
+	included := func(include bool) string {
+		if include {
+			return "included"
+		}
+		return "not included"
+	}
+	var groups Groups
+	questions := []struct {
+		target    *bool
+		question  string
+		onlyIf    *bool
+		defaultNo bool
+	}{
+		{
+			target: &groups.Cluster,
+			question: "Collect the cluster information (Kubernetes version, nodes, namespaces, custom resource " +
+				"definitions, storage and ingress classes, admission webhooks, persistent volumes of the selected " +
+				"namespaces)?",
+		},
+		{target: &groups.Resources, question: fmt.Sprintf(
+			"Collect all resources of the selected namespaces? ConfigMap values are %s, Secret values are %s.",
+			included(opts.IncludeConfigMapData), included(opts.IncludeSecretData),
+		)},
+		{
+			target:   &groups.HelmReleases,
+			question: "Collect the Helm releases of the selected namespaces (chart and app version, status, history)?",
+		},
+		{
+			target: &groups.HelmValues,
+			question: "Collect the values the Helm releases were installed with? They can contain credentials, " +
+				"and Distr masks only those it recognizes.",
+			onlyIf:    &groups.HelmReleases,
+			defaultNo: true,
+		},
+		{target: &groups.Events, question: "Collect the events of the selected namespaces?"},
+		{target: &groups.Logs, question: fmt.Sprintf(
+			"Collect the last %d lines of every container log, including the previous run of restarted containers?",
+			opts.LogTailLines,
+		)},
+	}
+
+	_, _ = fmt.Fprintln(p.out)
+	for _, q := range questions {
+		confirm := p.Confirm
+		if q.defaultNo {
+			confirm = p.ConfirmDefaultNo
+		}
+		if q.onlyIf != nil && !*q.onlyIf {
+			continue
+		} else if answer, err := confirm(q.question); err != nil {
+			return groups, err
+		} else {
+			*q.target = answer
+		}
+	}
+	_, _ = fmt.Fprintln(p.out)
+	return groups, nil
+}
+
 func (p *Prompter) Confirm(question string) (bool, error) {
 	return p.confirm(question, true)
 }

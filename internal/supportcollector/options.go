@@ -1,5 +1,8 @@
 package supportcollector
 
+// MinResourceBytes leaves room for the note that says a file was cut.
+const MinResourceBytes = 1024
+
 type Options struct {
 	LogTailLines int64 `json:"logTailLines"`
 	// MaxResourceBytes caps every file of the bundle, matching what Distr accepts per resource.
