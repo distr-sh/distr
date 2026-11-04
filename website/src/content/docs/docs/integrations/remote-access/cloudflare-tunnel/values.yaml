@@ -1,0 +1,7 @@
+cloudflare:
+  tunnel_token: '{{ .Secrets.CLOUDFLARE_TUNNEL_TOKEN }}'
+
+image:
+  tag: 2026.10.7
+
+replicaCount: 1

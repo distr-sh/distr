@@ -1,0 +1,174 @@
+---
+title: Docker Compose with Tailscale
+description: Debug a customer's Docker Compose installation through Tailscale, with a shell over Tailscale SSH or the Docker socket forwarded to your own Docker CLI.
+slug: docs/integrations/remote-access/tailscale
+sidebar:
+  label: Docker Compose with Tailscale
+---
+
+import {Aside, Code, Steps, TabItem, Tabs} from '@astrojs/starlight/components';
+import policy from './tailscale/policy.hujson?raw';
+import shellDockerfile from './tailscale/shell/Dockerfile?raw';
+import shellCompose from './tailscale/shell/docker-compose.yaml?raw';
+import shellEnv from './tailscale/shell/.env?raw';
+import socketCompose from './tailscale/socket/docker-compose.yaml?raw';
+import socketEnv from './tailscale/socket/.env?raw';
+
+With this setup, a Tailscale container on the customer's Docker deployment target joins your [tailnet](https://tailscale.com/kb/1136/tailnet), and your support engineers reach the host's Docker engine through it.
+Read the [Remote Access Overview](/docs/integrations/remote-access/) first.
+It explains how the remote access application runs next to your application and what access to the Docker socket means.
+
+There are two ways to reach the Docker engine:
+
+- [A shell over Tailscale SSH](#option-1-a-shell-over-tailscale-ssh) in a container that ships the Docker CLI.
+- [The forwarded Docker socket](#option-2-the-forwarded-docker-socket), which the Docker CLI on your own machine connects to.
+
+<Aside type="note">
+  For Kubernetes deployment targets, use [Cloudflare
+  Tunnel](/docs/integrations/remote-access/cloudflare-tunnel/) instead. The
+  overview explains [why the Tailscale Kubernetes operator does not fit a
+  customer's
+  cluster](/docs/integrations/remote-access/#why-cloudflare-tunnel-for-kubernetes).
+</Aside>
+
+## Preparing your tailnet
+
+The customer's container joins your tailnet, not the customer's.
+Each customer gets a tag, which keeps their container apart from other customers and from the rest of your tailnet.
+Only your support team may connect to it.
+
+Your support engineers need Tailscale installed on their own machines and signed in to your tailnet.
+Keep [MagicDNS](https://tailscale.com/kb/1081/magicdns) enabled, which it is by default, so that the device names used below resolve.
+
+### 1. Write the access policy
+
+Add a group for your support team, a tag for the customer, a grant and an SSH rule to the [tailnet policy file](https://tailscale.com/kb/1337/policy-syntax):
+
+<Code code={policy} lang="json" title="policy.hujson" />
+
+The grant opens port 22 of the customer's container for Tailscale SSH and port 2375 for the forwarded socket, and only to your support team.
+The SSH rule logs them in as `root` in that container, and `check` makes them authenticate again every 12 hours.
+
+<Aside type="danger">
+  No rule may give `tag:customer-acme` access to anything. A new tailnet comes
+  with a default rule that allows all traffic. Remove it, or the customer's host
+  can reach every device in your tailnet.
+</Aside>
+
+For the next customer, add another tag such as `tag:customer-globex` with its own grant and SSH rule.
+
+### 2. Create an auth key
+
+In the Tailscale admin console, generate an [auth key](https://tailscale.com/kb/1085/auth-keys) under **Settings** > **Keys** with these settings:
+
+- **Reusable**, so the container can register again after a restart.
+- **Ephemeral**, so the device disappears from your tailnet shortly after the container stops.
+- **Pre-approved**, if your tailnet requires device approval.
+- **Tags**: `tag:customer-acme`.
+
+### 3. Store the auth key in Distr
+
+Open **Customers**, click **Manage secrets** next to the customer and create the secret `TAILSCALE_AUTHKEY` with the auth key as its value.
+The Compose files below read it through the `.env` template.
+
+## Option 1: a shell over Tailscale SSH
+
+[Tailscale SSH](https://tailscale.com/kb/1193/tailscale-ssh) runs inside the Tailscale container, and that is where your support engineer's shell opens.
+The official image has no Docker CLI, so you build a small image that adds it.
+
+### 1. Build the image and push it to Distr
+
+<Code code={shellDockerfile} lang="dockerfile" title="Dockerfile" />
+
+Build it for the platforms of your customers and push it to the [Distr registry](/docs/registry/):
+
+```shell
+docker buildx build --platform linux/amd64,linux/arm64 \
+  --tag registry.distr.sh/your-org/remote-access:1.104.4 --push .
+```
+
+The Distr controller pulls images from the Distr registry with its own credentials.
+If you use [artifact entitlements](/docs/platform/artifact-entitlements/), grant the customer the image.
+You can also make it a [public artifact](/docs/registry/#public-artifacts), because it contains nothing but Tailscale and the Docker CLI.
+
+### 2. Create the application
+
+Create a Docker application called **Remote Access** and add a version with this Compose file and this **Template for Environment File**:
+
+<Tabs>
+  <TabItem label="docker-compose.yaml">
+    <Code code={shellCompose} lang="yaml" />
+  </TabItem>
+  <TabItem label=".env">
+    <Code code={shellEnv} lang="dotenv" />
+  </TabItem>
+</Tabs>
+
+`TS_EXTRA_ARGS: --ssh` turns on the Tailscale SSH server.
+The mounted socket connects the Docker CLI in the container to the host's Docker engine.
+`TS_HOSTNAME` is the name of the device in your tailnet; set a different one for each customer when you deploy.
+
+### 3. Deploy and connect
+
+Deploy the application to the customer's deployment target with **+ Deploy App**.
+Once the deployment is running, the device `acme-debug` appears in your tailnet, and your support engineer connects to it:
+
+```shell
+tailscale ssh root@acme-debug
+```
+
+In that shell, the Docker CLI talks to the host's Docker engine:
+
+```shell
+docker ps
+docker logs --tail 100 distr-1a2b3c4d-backend-1
+docker exec -it distr-1a2b3c4d-backend-1 sh
+```
+
+The Distr controller runs each deployment as a Compose project named `distr-<short-deployment-id>`, and the container names start with that prefix.
+
+## Option 2: the forwarded Docker socket
+
+Here your support engineer works with the Docker CLI on their own machine, where their usual tools and scripts are.
+You do not need an image of your own for this option.
+
+### 1. Create the application
+
+Create a Docker application called **Remote Access** and add a version with this Compose file and this **Template for Environment File**:
+
+<Tabs>
+  <TabItem label="docker-compose.yaml">
+    <Code code={socketCompose} lang="yaml" />
+  </TabItem>
+  <TabItem label=".env">
+    <Code code={socketEnv} lang="dotenv" />
+  </TabItem>
+</Tabs>
+
+The `docker-socket` container shares the network of the `tailscale` container and serves the mounted socket on `127.0.0.1:2375`.
+Neither the host nor any other container can reach that address.
+[Tailscale Serve](https://tailscale.com/kb/1312/serve) forwards port 2375 of the device in your tailnet to it, as configured in the `TS_SERVE_CONFIG` file.
+Deploy this version in regular Compose mode, because Docker Swarm does not support `network_mode: service:`.
+
+### 2. Deploy and connect
+
+Deploy the application to the customer's deployment target with **+ Deploy App**.
+Your support engineer then creates a Docker context for the customer on their own machine and uses it like a local Docker engine:
+
+```shell
+docker context create acme --docker host=tcp://acme-debug:2375
+docker --context acme ps
+docker --context acme logs --tail 100 distr-1a2b3c4d-backend-1
+docker --context acme exec -it distr-1a2b3c4d-backend-1 sh
+```
+
+The Docker API on port 2375 is unencrypted.
+The connection still runs inside Tailscale's WireGuard tunnel, and only devices the grant admits can open it.
+
+## Closing access
+
+Undeploy the remote access application when the support case is closed.
+The container stops, and Tailscale removes the ephemeral device from your tailnet shortly after.
+To lock out a customer's container right away, remove the device in the Tailscale admin console and revoke the auth key.
+Create a new key and update the secret before the next support case.
+Your support engineer removes the Docker context with `docker context rm acme`.

@@ -1,0 +1,10 @@
+services:
+  tailscale:
+    image: registry.distr.sh/your-org/remote-access:1.104.4
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY:?}
+      TS_HOSTNAME: ${TS_HOSTNAME:?}
+      TS_EXTRA_ARGS: --ssh
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
