@@ -22,5 +22,5 @@ jobs:
           version="$(gh pr list --head release-please--branches--main --json title --jq '.[0].title | split(" ") | last')"
           rc_count="$(gh api "repos/$GH_REPO/git/matching-refs/tags/$version-rc." --jq length)"
           tag="$version-rc.$((rc_count + 1))"
-          gh release create "$tag" --target "$GITHUB_SHA" --prerelease --latest=false --title "$tag" --generate-notes
+          gh release create "$tag" --target "$GITHUB_SHA" --prerelease --latest=false --title "v$tag" --generate-notes
           echo "Tagged and pre-released $GITHUB_SHA as $tag" >> "$GITHUB_STEP_SUMMARY"
