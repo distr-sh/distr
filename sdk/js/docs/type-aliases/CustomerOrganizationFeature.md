@@ -6,4 +6,4 @@
 
 # Type Alias: CustomerOrganizationFeature
 
-> **CustomerOrganizationFeature** = `"deployment_targets"` \| `"artifacts"` \| `"alerts"` \| `"update_notifications"` \| `"support_bundles"` \| `"oidc_providers"` \| `"vulnerabilities"`
+> **CustomerOrganizationFeature** = `"deployment_targets"` \| `"artifacts"` \| `"alerts"` \| `"update_notifications"` \| `"support_bundles"` \| `"settings"` \| `"oidc_providers"` \| `"vulnerabilities"`

@@ -216,6 +216,8 @@ func checkBusinessCustomerOrganizationFeatures(
 			continue
 		} else if feature == types.CustomerOrganizationFeatureOidcProviders {
 			return respond.Forbidden("the custom identity provider feature is not available on your plan")
+		} else if feature == types.CustomerOrganizationFeatureSettings {
+			return respond.Forbidden("customer settings are not available on your plan")
 		} else {
 			return respond.Forbidden("security advisories are not available on your plan")
 		}

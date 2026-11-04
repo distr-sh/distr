@@ -18,8 +18,12 @@ const (
 	// of its own users hears about a new application or artifact version.
 	CustomerOrganizationFeatureUpdateNotifications CustomerOrganizationFeature = "update_notifications"
 	CustomerOrganizationFeatureSupportBundles      CustomerOrganizationFeature = "support_bundles"
-	// CustomerOrganizationFeatureOidcProviders lets admins of the customer organization
-	// configure their own portal domain and their own OIDC providers on it.
+	// CustomerOrganizationFeatureSettings gives admins of the customer organization a settings page,
+	// on which they configure e.g. the controller image repository of their deployment targets.
+	CustomerOrganizationFeatureSettings CustomerOrganizationFeature = "settings"
+	// CustomerOrganizationFeatureOidcProviders lets admins of the customer organization configure
+	// their own portal domain and their own OIDC providers on it. It requires
+	// CustomerOrganizationFeatureSettings, since both are configured on the settings page.
 	CustomerOrganizationFeatureOidcProviders CustomerOrganizationFeature = "oidc_providers"
 	// CustomerOrganizationFeatureVulnerabilities shares its name with FeatureVulnerabilities, whose
 	// customer side it gates.
@@ -39,6 +43,7 @@ var ProCustomerOrganizationFeatures = []CustomerOrganizationFeature{
 var BusinessCustomerOrganizationFeatures = map[CustomerOrganizationFeature]Feature{
 	CustomerOrganizationFeatureVulnerabilities: FeatureVulnerabilities,
 	CustomerOrganizationFeatureOidcProviders:   FeatureCustomOidcProviders,
+	CustomerOrganizationFeatureSettings:        FeatureCustomerSettings,
 }
 
 type GrantedCustomerOrganizationFeature struct {
@@ -92,6 +97,8 @@ func ParseCustomerOrganizationFeature(value string) (CustomerOrganizationFeature
 		return CustomerOrganizationFeatureUpdateNotifications, nil
 	case string(CustomerOrganizationFeatureSupportBundles):
 		return CustomerOrganizationFeatureSupportBundles, nil
+	case string(CustomerOrganizationFeatureSettings):
+		return CustomerOrganizationFeatureSettings, nil
 	case string(CustomerOrganizationFeatureOidcProviders):
 		return CustomerOrganizationFeatureOidcProviders, nil
 	case string(CustomerOrganizationFeatureVulnerabilities):

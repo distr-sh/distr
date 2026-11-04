@@ -15,6 +15,9 @@ type CustomerOrganization struct {
 	Name                  string                        `db:"name" json:"name"`
 	Features              []CustomerOrganizationFeature `db:"features" json:"features"`
 	PartnerOrganizationID *uuid.UUID                    `db:"partner_organization_id" json:"partnerOrganizationId,omitempty"` //nolint:lll
+	// ControllerImageRepository overrides the controller image repository of the vendor organization
+	// for the deployment targets of this customer.
+	ControllerImageRepository *string `db:"controller_image_repository" json:"-"`
 }
 
 func (co *CustomerOrganization) HasFeature(feature CustomerOrganizationFeature) bool {

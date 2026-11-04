@@ -104,7 +104,7 @@ A domain is only used for links, mails, controller manifests and registry URLs o
   immediately and its TLS certificate is no longer renewed.
 </Aside>
 
-A customer that needs its own hostname and its own identity provider, rather than sharing your customer portal domain, can get one: grant it the Custom Identity Provider feature in the customer list, described in [Custom Identity Provider](/docs/platform/custom-identity-provider/#letting-a-customer-bring-its-own-provider).
+A customer that needs its own hostname and its own identity provider, rather than sharing your customer portal domain, can get one: grant it the **Identity Provider** feature in the customer list, described in [Custom Identity Provider](/docs/platform/custom-identity-provider/#letting-a-customer-bring-its-own-provider).
 
 <Aside type="caution" title="Login methods on your custom domain">
   The Google, GitHub and Microsoft sign-in buttons are configured for the Distr
@@ -126,6 +126,10 @@ Self-hosted instances pull them from `ghcr.io/distr-sh/distr` unless the instanc
 
 To have your customers pull them from another registry, enable **Use an external controller repository** under **Settings → Organization → General** and enter its host and an optional path (e.g. `registry.distr.sh/your-org`).
 The setting applies to all of your customers.
+
+A single customer can pull from a repository of its own, so that its deployment targets show neither Distr nor your registry domain.
+Grant the customer the **Settings** feature in the customer list (requires the Business plan), then set the repository under **Settings** in its row of the customer list, or let its administrators set it on their own **Settings** page.
+It takes precedence over the repository of your organization.
 
 Only the prefix can be changed. Distr appends the image names `docker-controller`, `docker-autoheal` and `kubernetes-controller` with the controller version as the tag, so your registry has to host the images under these names.
 They have to be publicly available there, or every deployment target needs access to the registry before you save it.

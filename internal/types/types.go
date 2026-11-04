@@ -135,6 +135,7 @@ const (
 	FeatureCustomEmails        Feature = "custom_emails"
 	FeatureCustomOidcProviders Feature = "custom_oidc_providers"
 	FeatureAutoUpdates         Feature = "auto_updates"
+	FeatureCustomerSettings    Feature = "customer_settings"
 )
 
 // ProFeatures is the set of features granted to organizations with a paid (pro) subscription.
@@ -150,6 +151,7 @@ var BusinessFeatures = []Feature{
 	FeatureCustomEmails,
 	FeatureCustomOidcProviders,
 	FeatureAutoUpdates,
+	FeatureCustomerSettings,
 }
 
 // FeaturesForSubscriptionType returns the features granted by a subscription type.

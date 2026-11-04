@@ -1,0 +1,52 @@
+@if (settings(); as settings) {
+  <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
+    <h2 class="text-xl font-bold dark:text-white">Controllers</h2>
+    <div>
+      <input
+        formControlName="controllerImageRepositoryEnabled"
+        id="customerControllerImageRepositoryEnabled"
+        type="checkbox"
+        class="distr-checkbox" />
+      <label
+        for="customerControllerImageRepositoryEnabled"
+        class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+        Use an external controller repository
+      </label>
+      <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
+        By default, controller images are pulled from
+        <code class="font-mono">{{ settings.defaultControllerImageRepository }}</code
+        >.
+        <a
+          [href]="controllerRepositoryDocsUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-primary-600 hover:underline dark:text-primary-500"
+          >Learn more</a
+        >
+      </p>
+      @if (isControllerImageRepositoryEnabled()) {
+        <input
+          formControlName="controllerImageRepository"
+          autotrim
+          type="text"
+          id="customerControllerImageRepository"
+          aria-label="Controller repository"
+          placeholder="registry.example.com/distr"
+          class="distr-input" />
+      }
+    </div>
+    <button
+      type="submit"
+      [disabled]="formLoading()"
+      class="distr-btn-primary inline-flex w-full items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-60">
+      <fa-icon [icon]="faFloppyDisk" size="lg" class="mr-2 mb-1 -ml-0.5 h-4 w-4" />
+      Save
+    </button>
+  </form>
+} @else if (loadFailed()) {
+  <app-alert type="error">Settings could not be loaded.</app-alert>
+} @else {
+  <div class="flex justify-center py-4 text-gray-500 dark:text-gray-400">
+    <fa-icon [icon]="faSpinner" class="animate-spin" size="lg" />
+  </div>
+}
