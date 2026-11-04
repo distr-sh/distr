@@ -151,12 +151,10 @@ func artifactActivity(ctx context.Context, customerOrgID uuid.UUID, since time.T
 
 func licenseKeyActivity(ctx context.Context, customerOrgID uuid.UUID, since time.Time) ([]activityfeed.Entry, error) {
 	auth := auth.Authentication.Require(ctx)
-	if revisions, err := db.GetCustomerLicenseKeyRevisions(
-		ctx, *auth.CurrentOrgID(), customerOrgID, since, activityfeed.Limit,
-	); err != nil {
-		return nil, fmt.Errorf("failed to get license key revisions: %w", err)
+	if keys, err := db.GetLicenseKeysByCustomerOrgID(ctx, customerOrgID, *auth.CurrentOrgID()); err != nil {
+		return nil, fmt.Errorf("failed to get license keys: %w", err)
 	} else {
-		return activityfeed.LicenseKeyRevisions(revisions), nil
+		return activityfeed.LicenseKeys(keys, since), nil
 	}
 }
 

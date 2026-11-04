@@ -129,20 +129,26 @@ func DeploymentRevisions(revisions []types.CustomerDeploymentRevision) []Entry {
 	return result
 }
 
-func LicenseKeyRevisions(revisions []types.CustomerLicenseKeyRevision) []Entry {
-	result := make([]Entry, len(revisions))
-	for i, revision := range revisions {
-		entryType := EntryTypeLicenseKeyCreated
-		if revision.IsUpdate {
-			entryType = EntryTypeLicenseKeyUpdated
+// LicenseKeys returns an entry for the latest revision of every key revised since. A key without a license
+// template is created together with its first revision in one transaction, so the two share a timestamp until
+// the key is revised again. The first revision of a key with a template comes later and counts as an update.
+func LicenseKeys(keys []types.LicenseKey, since time.Time) []Entry {
+	result := make([]Entry, 0, len(keys))
+	for _, key := range keys {
+		if key.LastRevisedAt == nil || !key.LastRevisedAt.After(since) {
+			continue
 		}
-		result[i] = Entry{
-			ID:         revision.ID,
-			CreatedAt:  revision.CreatedAt,
+		entryType := EntryTypeLicenseKeyUpdated
+		if key.LastRevisedAt.Equal(key.CreatedAt) {
+			entryType = EntryTypeLicenseKeyCreated
+		}
+		result = append(result, Entry{
+			ID:         key.ID,
+			CreatedAt:  *key.LastRevisedAt,
 			Type:       entryType,
-			ResourceID: revision.LicenseKeyID,
-			Subject:    revision.LicenseKeyName,
-		}
+			ResourceID: key.ID,
+			Subject:    key.Name,
+		})
 	}
 	return result
 }
