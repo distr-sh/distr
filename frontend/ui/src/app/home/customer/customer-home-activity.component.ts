@@ -133,25 +133,25 @@ function link({type, resourceId, subject}: CustomerHomeActivity): Pick<ActivityE
 function action({type, subject, detail}: CustomerHomeActivity): string {
   switch (type) {
     case 'application_version_created':
-      return `released version ${detail} of ${subject}`;
+      return `version ${detail} of ${subject} released`;
     case 'artifact_version_created':
-      return `published ${subject}:${detail}`;
+      return `artifact ${subject}:${detail} published`;
     case 'artifact_version_first_pulled':
-      return `pulled ${subject}:${detail} for the first time`;
+      return `artifact ${subject}:${detail} pulled for the first time`;
     case 'deployment_revision_created':
-      return `deployed ${subject} ${detail}`;
+      return `version ${detail} of ${subject} deployed`;
     case 'license_key_created':
-      return `issued the license key ${subject}`;
+      return `license key ${subject} issued`;
     case 'license_key_updated':
-      return `updated the license key ${subject}`;
+      return `license key ${subject} updated`;
     case 'support_bundle_created':
-      return `created the support bundle ${subject}`;
+      return `support bundle ${subject} created`;
     case 'support_bundle_uploaded':
-      return `uploaded the support bundle ${subject}`;
+      return `support bundle ${subject} uploaded`;
     case 'support_bundle_resolved':
-      return `resolved the support bundle ${subject}`;
+      return `support bundle ${subject} resolved`;
     case 'support_bundle_canceled':
-      return `canceled the support bundle ${subject}`;
+      return `support bundle ${subject} canceled`;
     default:
       return never(type);
   }
