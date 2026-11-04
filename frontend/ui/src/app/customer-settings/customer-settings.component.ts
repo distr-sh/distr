@@ -57,6 +57,12 @@ export class CustomerSettingsComponent {
       )
     )
   );
+  protected readonly switcherCustomers = computed(() =>
+    (this.customerOrganizations() ?? []).map((customer) => ({
+      customer,
+      settingsEnabled: customer.features.includes('settings'),
+    }))
+  );
   protected readonly customerOrganization = computed(() => {
     const id = this.customerOrganizationId();
     return this.customerOrganizations()?.find((org) => org.id === id);
