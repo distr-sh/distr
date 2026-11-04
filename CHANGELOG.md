@@ -1,5 +1,86 @@
 # Changelog
 
+## [4.8.0](https://github.com/distr-sh/distr/compare/4.7.4...4.8.0) (2026-11-04)
+
+
+### Features
+
+* add per-customer controller image repository  ([#3767](https://github.com/distr-sh/distr/issues/3767)) ([792e719](https://github.com/distr-sh/distr/commit/792e7193483163a27ff18a9776d022c51466357f))
+* customer lens ([#3496](https://github.com/distr-sh/distr/issues/3496)) ([71f2f2e](https://github.com/distr-sh/distr/commit/71f2f2e70e3615fc5d46c3b4b73d8ee39792c7da))
+* **frontend:** refresh cached lists in the background on list pages ([#3665](https://github.com/distr-sh/distr/issues/3665)) ([39fccb3](https://github.com/distr-sh/distr/commit/39fccb3da6ea4ef62f1b8ecb9763fccef12fa096))
+* **frontend:** wait for fresh data before drawers and modals render their forms ([#3666](https://github.com/distr-sh/distr/issues/3666)) ([d79dcbd](https://github.com/distr-sh/distr/commit/d79dcbd7987dd54ac8583181d7320eb12336445a))
+* load support bundle resource content on demand ([#3615](https://github.com/distr-sh/distr/issues/3615)) ([4414f57](https://github.com/distr-sh/distr/commit/4414f57686933be5d491c4705eeaaf2c3491b39c))
+
+
+### Bug Fixes
+
+* **backend:** change default docker type for new docker deployments to compose ([#3545](https://github.com/distr-sh/distr/issues/3545)) ([c05bac7](https://github.com/distr-sh/distr/commit/c05bac77f2596e7231fad5138abf7c38ba3add8b))
+* **backend:** retry loki pushes on a closed connection ([#3706](https://github.com/distr-sh/distr/issues/3706)) ([5aba1bc](https://github.com/distr-sh/distr/commit/5aba1bc58741241e3f973c7ec5241a5a13327fdb))
+* **backend:** send logo as mail attachment instead of data uri ([#3766](https://github.com/distr-sh/distr/issues/3766)) ([4b0d6f5](https://github.com/distr-sh/distr/commit/4b0d6f5242048d708127dd2046105cde997e1fba))
+* **controller:** skip the Distr registry login when the registry is disabled ([#3748](https://github.com/distr-sh/distr/issues/3748)) ([27f9afb](https://github.com/distr-sh/distr/commit/27f9afb5a9e61727ea87825f199b4a1f6a6680d8))
+* **deps:** update aws-sdk-go-v2 monorepo ([#3685](https://github.com/distr-sh/distr/issues/3685)) ([dbb0283](https://github.com/distr-sh/distr/commit/dbb0283907d2164c72b55bcf6e35afcc8fce7c62))
+* **deps:** update kubernetes monorepo to v0.37.2 ([#3699](https://github.com/distr-sh/distr/issues/3699)) ([dac1f7c](https://github.com/distr-sh/distr/commit/dac1f7c19ec221d1048d8dc24649c43be7021618))
+* **deps:** update module cloud.google.com/go/kms to v1.36.1 ([#3700](https://github.com/distr-sh/distr/issues/3700)) ([f7b12b2](https://github.com/distr-sh/distr/commit/f7b12b259bd30d012c864e3c89b25935a02c160c))
+* **deps:** update module github.com/go-co-op/gocron/v2 to v2.23.0 ([#3702](https://github.com/distr-sh/distr/issues/3702)) ([b554524](https://github.com/distr-sh/distr/commit/b5545247b97e781654b46769a26b09e43bc2711a))
+* **deps:** update module github.com/jackc/pgx/v5 to v5.12.0 ([#3744](https://github.com/distr-sh/distr/issues/3744)) ([434c78e](https://github.com/distr-sh/distr/commit/434c78efdc100f4b2ce6cb7846158f1f373f3bbc))
+* **deps:** update module github.com/oaswrap/spec-ui to v0.2.2 ([#3742](https://github.com/distr-sh/distr/issues/3742)) ([7962214](https://github.com/distr-sh/distr/commit/7962214a01ab112ae7a738a0280eb7553e7c73f5))
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.164.1 ([#3703](https://github.com/distr-sh/distr/issues/3703)) ([e10fc53](https://github.com/distr-sh/distr/commit/e10fc53f75c24a35b022790fbef2bcdb938b2e6d))
+* **deps:** update module github.com/shirou/gopsutil/v4 to v4.26.10 ([#3731](https://github.com/distr-sh/distr/issues/3731)) ([e54c0bb](https://github.com/distr-sh/distr/commit/e54c0bb77aa926862e6697d35c44f1faeb8e7562))
+* **deps:** update module oras.land/oras-go/v2 to v2.7.0 ([#3721](https://github.com/distr-sh/distr/issues/3721)) ([0be2b85](https://github.com/distr-sh/distr/commit/0be2b8508b5a248d355cfba2cd0c96eb497d111a))
+* **frontend:** remove artifical whitespace in log viewer ([#3756](https://github.com/distr-sh/distr/issues/3756)) ([020d091](https://github.com/distr-sh/distr/commit/020d09162ea20207847bbf6e35831f1af4133fa1))
+* **frontend:** update deployment search when the search query parameter changes ([#3710](https://github.com/distr-sh/distr/issues/3710)) ([7cb5324](https://github.com/distr-sh/distr/commit/7cb53242af4673e54a262d5c9242cb90a3624ca5))
+* prevent user creation blocked by email sending errors ([#3733](https://github.com/distr-sh/distr/issues/3733)) ([4bbb886](https://github.com/distr-sh/distr/commit/4bbb886a4bc3de9543f848e2a86f6741048b2ebb))
+
+
+### Other
+
+* add a customer filter to the deployments page ([#3713](https://github.com/distr-sh/distr/issues/3713)) ([87b9ca0](https://github.com/distr-sh/distr/commit/87b9ca0e94df57186389ab9a53ffe73ab298fd56))
+* add vulnerability customer organization feature ([#3692](https://github.com/distr-sh/distr/issues/3692)) ([f0f65be](https://github.com/distr-sh/distr/commit/f0f65beb464f66f90eb581d3e8fa7f74ad2013a2))
+* **backend:** add a content type to support bundle resources ([#3613](https://github.com/distr-sh/distr/issues/3613)) ([7892e6b](https://github.com/distr-sh/distr/commit/7892e6bbd263ce3c6e71b83ecfaa6f4b9e020337))
+* **deps:** update angular monorepo to v22.2.4 ([#3720](https://github.com/distr-sh/distr/issues/3720)) ([ae299b0](https://github.com/distr-sh/distr/commit/ae299b03a61d9e138638544bff179cba7c4d64b7))
+* **deps:** update angular-cli monorepo to v22.2.5 ([#3696](https://github.com/distr-sh/distr/issues/3696)) ([b4b2a67](https://github.com/distr-sh/distr/commit/b4b2a6710a80a6f1e6e5af08c49f688c827b4d9f))
+* **deps:** update axllent/mailpit docker tag to v1.33.0 ([#3743](https://github.com/distr-sh/distr/issues/3743)) ([3bee2f3](https://github.com/distr-sh/distr/commit/3bee2f3b1953f990698a960699372ebc6a9232da))
+* **deps:** update dependency @angular/cdk to v22.2.5 ([#3698](https://github.com/distr-sh/distr/issues/3698)) ([76043b1](https://github.com/distr-sh/distr/commit/76043b1fb09b80d1698d3a63e168699d6c5226e7))
+* **deps:** update dependency marked to v18.1.3 ([#3763](https://github.com/distr-sh/distr/issues/3763)) ([1c62d03](https://github.com/distr-sh/distr/commit/1c62d03bcfefa461ca771c7a13ab1838828c43b2))
+* **deps:** update dependency postcss to v8.5.32 ([#3730](https://github.com/distr-sh/distr/issues/3730)) ([d25c6bf](https://github.com/distr-sh/distr/commit/d25c6bfda13c5fe40413e45ee710a9d98a093378))
+* **deps:** update dependency semver to v7.8.6 ([#3761](https://github.com/distr-sh/distr/issues/3761)) ([3e558e3](https://github.com/distr-sh/distr/commit/3e558e30fcfcab5b26f39f2a992cdee5912168cc))
+* **deps:** update dependency stripe to v1.55.6 ([#3728](https://github.com/distr-sh/distr/issues/3728)) ([6d424e2](https://github.com/distr-sh/distr/commit/6d424e2a5f70ccf16358f7aeea514c810c1af92d))
+* **deps:** update dependency tslib to v2.9.1 ([#3729](https://github.com/distr-sh/distr/issues/3729)) ([555ca9f](https://github.com/distr-sh/distr/commit/555ca9f92e70b1f18e9aad4856565ede9f1cefbf))
+* **deps:** update loki docker tag to v20 ([#3745](https://github.com/distr-sh/distr/issues/3745)) ([5560cc4](https://github.com/distr-sh/distr/commit/5560cc41e3a94a32c32332ed5137f524cb6e80fc))
+* **deps:** update postgresql docker tag to v18.12.17 ([#3764](https://github.com/distr-sh/distr/issues/3764)) ([2b33cf6](https://github.com/distr-sh/distr/commit/2b33cf67a23abd56b54105c9629d8e3e424803c1))
+* **deps:** update tailwindcss monorepo to v4.3.4 ([#3765](https://github.com/distr-sh/distr/issues/3765)) ([a026a9d](https://github.com/distr-sh/distr/commit/a026a9de7494366a1bc60c9e90fdd4b54cf13a2c))
+* **frontend:** add a search input to the multi-select dropdown ([#3712](https://github.com/distr-sh/distr/issues/3712)) ([6a7244e](https://github.com/distr-sh/distr/commit/6a7244eebeb938e82b4db2036b5c3864d0be4f4c))
+* **frontend:** cache customer organizations ([#3663](https://github.com/distr-sh/distr/issues/3663)) ([0f04007](https://github.com/distr-sh/distr/commit/0f04007e10a0c07252292675a7bdb3dcdee7e9f1))
+* **frontend:** close dropdown menu on any action ([#3734](https://github.com/distr-sh/distr/issues/3734)) ([975d30f](https://github.com/distr-sh/distr/commit/975d30ffd661f7dfdf56c3b61c9adb51ff276dab))
+* **frontend:** focus the search input with the slash hotkey ([#3711](https://github.com/distr-sh/distr/issues/3711)) ([ef722d6](https://github.com/distr-sh/distr/commit/ef722d672c4435780d7abd4e411d775720ee44db))
+* **frontend:** logout is now an info toast ([#3707](https://github.com/distr-sh/distr/issues/3707)) ([79161ee](https://github.com/distr-sh/distr/commit/79161ee6a61a094756ee373dea1be1edbb760150))
+* **frontend:** simplify license table ([#3755](https://github.com/distr-sh/distr/issues/3755)) ([cd43aed](https://github.com/distr-sh/distr/commit/cd43aed13cc4e1b418f62dcfd11ddd1604947b00))
+* **frontend:** use editor component for pre- and post-connect scripts ([#3739](https://github.com/distr-sh/distr/issues/3739)) ([d2ee240](https://github.com/distr-sh/distr/commit/d2ee2407bd99b45f697dc115197511660c835211))
+* **kubernetes-controller:** pin helm charts to their digest and cache them ([#3614](https://github.com/distr-sh/distr/issues/3614)) ([27a7fc9](https://github.com/distr-sh/distr/commit/27a7fc9c7902600296021c8cdb60d764e823ed88))
+* registration page legal text ([#3708](https://github.com/distr-sh/distr/issues/3708)) ([85351e2](https://github.com/distr-sh/distr/commit/85351e2346d450c3d04b33e762bd9196f2a5ce67))
+* **registry:** add support for deleting the last tag of an artifact ([#3737](https://github.com/distr-sh/distr/issues/3737)) ([2635de6](https://github.com/distr-sh/distr/commit/2635de6be17fa3234bea7631a1b7dd6ba3f236c8))
+
+
+### Docs
+
+* add a naming rule for boolean variables ([#3768](https://github.com/distr-sh/distr/issues/3768)) ([86da0f8](https://github.com/distr-sh/distr/commit/86da0f82f501917ef007e4f8dc012a3fa39a4678))
+* **api:** describe the multipart form for new application versions in the OpenAPI spec ([#3544](https://github.com/distr-sh/distr/issues/3544)) ([858849c](https://github.com/distr-sh/distr/commit/858849cac6ca203e5021fe9a496b9e42c701ca19))
+* **website:** add agent rule against naming ingress-nginx for Kubernetes ([#3757](https://github.com/distr-sh/distr/issues/3757)) ([0e2e76f](https://github.com/distr-sh/distr/commit/0e2e76f05e320b7c6b38205e0147957c5683758c))
+* **website:** add remote access documentation ([#3749](https://github.com/distr-sh/distr/issues/3749)) ([973260b](https://github.com/distr-sh/distr/commit/973260b6fe0b5040ad44f7d93bd1f2cba03e0c83))
+* **website:** add reverse proxy glossary entry ([#3753](https://github.com/distr-sh/distr/issues/3753)) ([46d46a2](https://github.com/distr-sh/distr/commit/46d46a2cd359d0af57553aa2274a9abbff9f96c2))
+* **website:** add reverse tunnel glossary entry ([#3751](https://github.com/distr-sh/distr/issues/3751)) ([aa5d20d](https://github.com/distr-sh/distr/commit/aa5d20d1d12ed29d65900d210908848d95a4cea5))
+* **website:** add support bundle glossary entry ([#3752](https://github.com/distr-sh/distr/issues/3752)) ([23860a3](https://github.com/distr-sh/distr/commit/23860a3dd94780dc44d3c7ca7e3fafdea4f3c72b))
+* **website:** add Terms of Service and Data Processing Agreement ([#3697](https://github.com/distr-sh/distr/issues/3697)) ([9f3a439](https://github.com/distr-sh/distr/commit/9f3a43943e771ac8d86d3f559c686d2a9b8d5b87))
+* **website:** add vendor remote access glossary entry ([#3750](https://github.com/distr-sh/distr/issues/3750)) ([c865e2d](https://github.com/distr-sh/distr/commit/c865e2d5e6d85dd26b593415d6c9a183a84f47d0))
+* **website:** document k3s and air-gapped Compose paths, sharpen comparisons ([#3562](https://github.com/distr-sh/distr/issues/3562)) ([d077b65](https://github.com/distr-sh/distr/commit/d077b657be7cd98212ce36c1e6cce58f5500f65a))
+* **website:** make the pro Plan the most popular one ([#3704](https://github.com/distr-sh/distr/issues/3704)) ([b9f8c34](https://github.com/distr-sh/distr/commit/b9f8c3443d88c8d967cdbc07fa39b42ee1e882ff))
+
+
+### Refactoring
+
+* **frontend:** let ReactiveList own refresh with shared in-flight requests ([#3662](https://github.com/distr-sh/distr/issues/3662)) ([d23d0c6](https://github.com/distr-sh/distr/commit/d23d0c64da3c3dbd41f4422fc680d87519bce515))
+* **frontend:** load detail entities with get(id) and save them back to the cache ([#3664](https://github.com/distr-sh/distr/issues/3664)) ([2573f4b](https://github.com/distr-sh/distr/commit/2573f4b12a40018ff3ee9d7665961d221040a33f))
+
 ## [4.7.4](https://github.com/distr-sh/distr/compare/4.7.3...4.7.4) (2026-10-29)
 
 
