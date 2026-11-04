@@ -69,8 +69,9 @@
 
   @if (isKubernetes()) {
     <div>
-      <span class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Values</span>
+      <span #valuesLabel class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Values</span>
       <app-editor
+        [label]="valuesLabel"
         [formControl]="valuesControl"
         language="yaml"
         class="block max-h-80 overflow-hidden overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-600" />
@@ -113,8 +114,9 @@
     }
   } @else {
     <div>
-      <span class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Environment</span>
+      <span #environmentLabel class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Environment</span>
       <app-editor
+        [label]="environmentLabel"
         [formControl]="envControl"
         class="block max-h-80 overflow-hidden overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-600" />
     </div>

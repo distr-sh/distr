@@ -441,7 +441,7 @@
 
                   <div class="w-full">
                     <div class="mb-2">
-                      <label for="base_values_input" class="distr-label" aria-describedby="base-values-description"
+                      <label #baseValuesLabel class="distr-label" aria-describedby="base-values-description"
                         >Base Values</label
                       >
                       <div id="base-values-description" class="text-xs text-gray-400 dark:text-gray-500">
@@ -451,7 +451,7 @@
                       </div>
                     </div>
                     <app-editor
-                      id="base_values_input"
+                      [label]="baseValuesLabel"
                       language="yaml"
                       class="distr-input"
                       [formControl]="newVersionForm.controls.kubernetes.controls.baseValues" />
@@ -459,7 +459,7 @@
 
                   <div class="w-full">
                     <div class="mb-2">
-                      <label for="template_input" class="distr-label" aria-describedby="values-template-description"
+                      <label #templateLabel class="distr-label" aria-describedby="values-template-description"
                         >Template for Customer Values</label
                       >
                       <div
@@ -471,7 +471,7 @@
                       </div>
                     </div>
                     <app-editor
-                      id="template_input"
+                      [label]="templateLabel"
                       class="distr-input"
                       [formControl]="newVersionForm.controls.kubernetes.controls.template" />
                   </div>
@@ -479,9 +479,9 @@
               } @else {
                 <div class="mt-4 space-y-4">
                   <div class="w-full">
-                    <label for="compose_input" class="distr-label mb-2">Docker Compose *</label>
+                    <label #composeLabel class="distr-label mb-2">Docker Compose *</label>
                     <app-editor
-                      id="compose_input"
+                      [label]="composeLabel"
                       language="yaml"
                       class="distr-input"
                       [formControl]="newVersionForm.controls.docker.controls.compose" />
@@ -497,9 +497,9 @@
                   </div>
 
                   <div class="w-full">
-                    <label for="compose_template_input" class="distr-label mb-2">Template for Environment File</label>
+                    <label #composeTemplateLabel class="distr-label mb-2">Template for Environment File</label>
                     <app-editor
-                      id="compose_template_input"
+                      [label]="composeTemplateLabel"
                       class="distr-input"
                       [formControl]="newVersionForm.controls.docker.controls.template" />
                     <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
