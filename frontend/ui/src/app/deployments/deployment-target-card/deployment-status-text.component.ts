@@ -22,6 +22,10 @@ export const deploymentDisplayStatusSelectOptions: MultiSelectOption<DeploymentD
   {value: 'none', label: 'No status'},
 ];
 
+export function isDeploymentDisplayStatus(value: string): value is DeploymentDisplayStatus {
+  return deploymentDisplayStatusSelectOptions.some((option) => option.value === value);
+}
+
 export function deploymentDisplayStatus(deployment: DeploymentWithLatestRevision): DeploymentDisplayStatus {
   const s = currentStatus(deployment);
   if (s === undefined) {

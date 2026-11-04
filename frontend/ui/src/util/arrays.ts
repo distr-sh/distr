@@ -12,6 +12,10 @@ export function compareBy<T>(predicate: Predicate<T, string>, inverted: boolean 
   return (a, b) => mod * predicate(a).localeCompare(predicate(b));
 }
 
+export function arraysEqual<T>(a: T[], b: T[]): boolean {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+
 export function maxBy<T, E>(
   input: T[],
   predicate: Predicate<T, E>,
