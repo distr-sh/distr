@@ -1,5 +1,15 @@
-import {OverlayModule} from '@angular/cdk/overlay';
-import {ChangeDetectionStrategy, Component, computed, ElementRef, input, model, signal, viewChild} from '@angular/core';
+import {Overlay, OverlayModule} from '@angular/cdk/overlay';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  input,
+  model,
+  signal,
+  viewChild,
+} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -41,6 +51,9 @@ export class MultiSelectComponent<T extends string = string> {
 
   protected readonly open = signal(false);
   protected width = 0;
+  // The overlay container stacks above the fixed nav bar, so a panel following its trigger while the
+  // page scrolls would slide over the nav bar.
+  protected readonly scrollStrategy = inject(Overlay).scrollStrategies.block();
   private readonly trigger = viewChild.required<ElementRef<HTMLElement>>('trigger');
 
   protected readonly search = new FormControl<string>('', {nonNullable: true});
@@ -49,7 +62,7 @@ export class MultiSelectComponent<T extends string = string> {
   });
   protected readonly isSearchVisible = computed(() => this.searchable() && this.options().length > SEARCH_THRESHOLD);
   protected readonly visibleOptions = computed(() => {
-    const term = this.searchTerm();
+    const term = this.isSearchVisible() ? this.searchTerm() : '';
     return term ? this.options().filter((option) => option.label.toLowerCase().includes(term)) : this.options();
   });
 

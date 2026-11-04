@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/distr-sh/distr/internal/types"
@@ -21,6 +22,26 @@ func validateDeploymentType(deploymentType types.DeploymentType) error {
 		return validation.NewValidationFailedError(err.Error())
 	}
 	return nil
+}
+
+// ListDeploymentTargetsRequest holds the filters of the list endpoint. A deployment target matches
+// when it belongs to any of the given customers, or to none if Internal is set. Omitting both
+// disables the filter.
+type ListDeploymentTargetsRequest struct {
+	CustomerOrganizationID []string `query:"customerOrganizationId"`
+	Internal               bool     `query:"internal"`
+}
+
+func (r *ListDeploymentTargetsRequest) ParseCustomerOrganizationIDs() ([]uuid.UUID, error) {
+	var ids []uuid.UUID
+	for _, value := range r.CustomerOrganizationID {
+		if id, err := uuid.Parse(value); err != nil {
+			return nil, validation.NewValidationFailedError("customerOrganizationId must be a valid UUID")
+		} else if !slices.Contains(ids, id) {
+			ids = append(ids, id)
+		}
+	}
+	return ids, nil
 }
 
 type DeploymentTargetResources struct {
