@@ -46,6 +46,9 @@ const readOnlyExtension: Extension = [
 })
 export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
   language = input<EditorLanguage>();
+  // Takes the place of `<label for>`, which only applies to labelable elements and so not to the
+  // contenteditable CodeMirror edits.
+  label = input<HTMLElement>();
   private readonly host = inject(ElementRef);
   private view!: EditorView;
   private readonly readOnlyCompartment = new Compartment();
@@ -98,9 +101,16 @@ export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor 
       ],
       parent: this.host.nativeElement,
     });
+
+    const label = this.label();
+    if (label) {
+      this.view.contentDOM.ariaLabelledByElements = [label];
+      label.addEventListener('click', this.focus);
+    }
   }
 
   ngOnDestroy() {
+    this.label()?.removeEventListener('click', this.focus);
     this.view.destroy();
   }
 
@@ -122,6 +132,8 @@ export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor 
       effects: this.readOnlyCompartment.reconfigure(isDisabled ? readOnlyExtension : []),
     });
   }
+
+  private readonly focus = () => this.view.focus();
 
   private onChange = (_: any) => {};
 

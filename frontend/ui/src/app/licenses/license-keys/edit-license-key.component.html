@@ -77,8 +77,9 @@
       }
 
       <div>
-        <label for="payload" class="distr-label mb-2">Payload (JSON) *</label>
+        <label #payloadLabel class="distr-label mb-2">Payload (JSON) *</label>
         <app-editor
+          [label]="payloadLabel"
           formControlName="payload"
           language="json"
           class="block w-full rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900 [--editor-min-height:--spacing(32)] dark:border-gray-600 dark:bg-gray-700 dark:text-white [&_.cm-editor.cm-focused]:outline-none" />

@@ -144,18 +144,18 @@
           @switch (connectScriptTab()) {
             @case ('docker') {
               <div>
-                <label for="dockerPreConnectScript" class="distr-label mb-2 grow">Pre-connect script</label>
+                <label #dockerPreConnectScriptLabel class="distr-label mb-2 grow">Pre-connect script</label>
                 <app-editor
-                  id="dockerPreConnectScript"
+                  [label]="dockerPreConnectScriptLabel"
                   language="shell"
                   formControlName="dockerPreConnectScript"
                   class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [--editor-min-height:--spacing(40)]" />
               </div>
 
               <div>
-                <label for="dockerPostConnectScript" class="distr-label mb-2 grow">Post-connect script</label>
+                <label #dockerPostConnectScriptLabel class="distr-label mb-2 grow">Post-connect script</label>
                 <app-editor
-                  id="dockerPostConnectScript"
+                  [label]="dockerPostConnectScriptLabel"
                   language="shell"
                   formControlName="dockerPostConnectScript"
                   class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [--editor-min-height:--spacing(40)]" />
@@ -178,18 +178,18 @@
             }
             @case ('kubernetes') {
               <div>
-                <label for="kubernetesPreConnectScript" class="distr-label mb-2 grow">Pre-connect script</label>
+                <label #kubernetesPreConnectScriptLabel class="distr-label mb-2 grow">Pre-connect script</label>
                 <app-editor
-                  id="kubernetesPreConnectScript"
+                  [label]="kubernetesPreConnectScriptLabel"
                   language="shell"
                   formControlName="kubernetesPreConnectScript"
                   class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [--editor-min-height:--spacing(40)]" />
               </div>
 
               <div>
-                <label for="kubernetesPostConnectScript" class="distr-label mb-2 grow">Post-connect script</label>
+                <label #kubernetesPostConnectScriptLabel class="distr-label mb-2 grow">Post-connect script</label>
                 <app-editor
-                  id="kubernetesPostConnectScript"
+                  [label]="kubernetesPostConnectScriptLabel"
                   language="shell"
                   formControlName="kubernetesPostConnectScript"
                   class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [--editor-min-height:--spacing(40)]" />
