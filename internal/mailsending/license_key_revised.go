@@ -35,7 +35,7 @@ func SendLicenseKeyRevisedCustomer(
 	if err := mailer.Send(ctx,
 		mailx.To(user.Email),
 		mailx.Subject(fmt.Sprintf("License key updated: %s", licenseKey.Name)),
-		mailx.HtmlBodyTemplate(mailtemplates.LicenseKeyRevisedCustomer(licenseKey, revision, payloadFormatted, token)),
+		mailtemplates.LicenseKeyRevisedCustomer(licenseKey, revision, payloadFormatted, token),
 	); err != nil {
 		log.Error("could not send license key revised mail to customer user",
 			zap.Error(err),
@@ -73,9 +73,7 @@ func SendLicenseKeyRevisedVendor(
 	if err := mailer.Send(ctx,
 		mailx.To(user.Email),
 		mailx.Subject(subject),
-		mailx.HtmlBodyTemplate(
-			mailtemplates.LicenseKeyRevisedVendor(licenseKey, revision, payloadFormatted, customerOrgName),
-		),
+		mailtemplates.LicenseKeyRevisedVendor(licenseKey, revision, payloadFormatted, customerOrgName),
 	); err != nil {
 		log.Error("could not send license key revised mail to vendor user",
 			zap.Error(err),

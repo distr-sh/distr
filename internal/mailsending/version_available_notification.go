@@ -20,9 +20,9 @@ func ApplicationUpdateAvailableNotification(
 	return sendNotificationWithQuota(ctx, organization.ID, recipient.Email,
 		mailx.Subject(fmt.Sprintf("[%v] Update available: %v %v",
 			organization.Name, application.Name, versionName)),
-		mailx.HtmlBodyTemplate(mailtemplates.ApplicationUpdateAvailableNotification(
+		mailtemplates.ApplicationUpdateAvailableNotification(
 			ctx, recipient, organization, application, versionName, deployments,
-		)),
+		),
 	)
 }
 
@@ -36,8 +36,8 @@ func ArtifactVersionAvailableNotification(
 	return sendNotificationWithQuota(ctx, organization.ID, recipient.Email,
 		mailx.Subject(fmt.Sprintf("[%v] New version available: %v:%v",
 			organization.Name, artifact.Name, versionName)),
-		mailx.HtmlBodyTemplate(mailtemplates.ArtifactVersionAvailableNotification(
+		mailtemplates.ArtifactVersionAvailableNotification(
 			ctx, recipient, organization, artifact, versionName,
-		)),
+		),
 	)
 }

@@ -409,7 +409,7 @@ func authResetPasswordHandler(r *http.Request) (respond.Responder, error) {
 			}
 		}
 		mailOpts = append(mailOpts,
-			mailx.HtmlBodyTemplate(mailtemplates.PasswordReset(ctx, *user, organization, customerOrgID, token)))
+			mailtemplates.PasswordReset(ctx, *user, organization, customerOrgID, token))
 		if err := mailer.Send(ctx, mailOpts...); err != nil {
 			return nil, fmt.Errorf("could not send reset mail: %w", err)
 		} else {

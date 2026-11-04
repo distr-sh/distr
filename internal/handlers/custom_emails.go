@@ -120,9 +120,7 @@ func testCustomEmailConfigurationHandler(r *http.Request) (respond.Responder, er
 	} else if err := mailer.Send(ctx,
 		mailx.To(auth.CurrentUser().Email),
 		mailx.Subject("Distr email configuration test"),
-		mailx.HtmlBodyTemplate(
-			mailtemplates.CustomEmailTest(ctx, *auth.CurrentUser(), *auth.CurrentOrgWithBranding(), config),
-		),
+		mailtemplates.CustomEmailTest(ctx, *auth.CurrentUser(), *auth.CurrentOrgWithBranding(), config),
 	); err != nil {
 		log.Info("custom email configuration test failed", zap.Error(err))
 		return respond.BadRequest(err.Error()), nil

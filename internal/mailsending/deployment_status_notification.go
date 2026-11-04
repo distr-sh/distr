@@ -24,11 +24,11 @@ func DeploymentStatusNotificationError(
 			deploymentTarget,
 			deployment,
 		)),
-		mailx.HtmlBodyTemplate(mailtemplates.DeploymentStatusNotificationError(
+		mailtemplates.DeploymentStatusNotificationError(
 			deploymentTarget,
 			deployment,
 			currentStatus,
-		)),
+		),
 	)
 }
 
@@ -47,11 +47,11 @@ func DeploymentStatusNotificationUpdateFailed(
 			deploymentTarget,
 			deployment,
 		)),
-		mailx.HtmlBodyTemplate(mailtemplates.DeploymentStatusNotificationUpdateFailed(
+		mailtemplates.DeploymentStatusNotificationUpdateFailed(
 			deploymentTarget,
 			deployment,
 			currentStatus,
-		)),
+		),
 	)
 }
 
@@ -70,11 +70,11 @@ func DeploymentStatusNotificationStale(
 			deploymentTarget,
 			deployment,
 		)),
-		mailx.HtmlBodyTemplate(mailtemplates.DeploymentStatusNotificationStale(
+		mailtemplates.DeploymentStatusNotificationStale(
 			deploymentTarget,
 			deployment,
 			previousStatus,
-		)),
+		),
 	)
 }
 
@@ -93,11 +93,11 @@ func DeploymentStatusNotificationRecovered(
 			deploymentTarget,
 			deployment,
 		)),
-		mailx.HtmlBodyTemplate(mailtemplates.DeploymentStatusNotificationRecovered(
+		mailtemplates.DeploymentStatusNotificationRecovered(
 			deploymentTarget,
 			deployment,
 			currentStatus,
-		)),
+		),
 	)
 }
 
