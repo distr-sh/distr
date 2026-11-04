@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"cmp"
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -11,7 +11,6 @@ import (
 	"github.com/distr-sh/distr/internal/activityfeed"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
-	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
@@ -25,8 +24,7 @@ func ActivityFeedRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupHidden(true))
 	r.With(middleware.RequireOrgAndRole, middleware.UseReadonlyDB).
 		Get("/", respond.Handler(getActivityFeed)).
-		With(option.Description("List the recent activity of a customer organization")).
-		With(option.Request(customerScopeQuery{})).
+		With(option.Description("List the recent activity of the current customer organization")).
 		With(option.Response(http.StatusOK, []api.ActivityFeedEntry{}))
 }
 
@@ -34,12 +32,13 @@ type activitySource func(ctx context.Context, customerOrgID uuid.UUID, since tim
 
 func getActivityFeed(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	org := auth.Authentication.Require(ctx).CurrentOrg()
+	auth := auth.Authentication.Require(ctx)
+	org := auth.CurrentOrg()
 	since := time.Now().Add(-activityfeed.Window)
 
-	customerOrg, resp, err := activityFeedCustomer(r)
-	if resp != nil || err != nil {
-		return resp, err
+	customerOrg := cmp.Or(auth.LensCustomerOrg(), auth.CurrentCustomerOrg())
+	if customerOrg == nil {
+		return respond.BadRequest("the activity feed is only available in a customer organization"), nil
 	}
 
 	var entries []activityfeed.Entry
@@ -52,13 +51,13 @@ func getActivityFeed(r *http.Request) (respond.Responder, error) {
 		return err
 	}
 
-	deployments := customerOrg.HasFeature(types.CustomerOrganizationFeatureDeploymentTargets)
-	artifacts := customerOrg.HasFeature(types.CustomerOrganizationFeatureArtifacts)
-	if err := collect(deployments, applicationVersionActivity); err != nil {
+	deploymentsEnabled := customerOrg.HasFeature(types.CustomerOrganizationFeatureDeploymentTargets)
+	artifactsEnabled := customerOrg.HasFeature(types.CustomerOrganizationFeatureArtifacts)
+	if err := collect(deploymentsEnabled, applicationVersionActivity); err != nil {
 		return nil, err
-	} else if err := collect(deployments, deploymentRevisionActivity); err != nil {
+	} else if err := collect(deploymentsEnabled, deploymentRevisionActivity); err != nil {
 		return nil, err
-	} else if err := collect(artifacts, artifactActivity); err != nil {
+	} else if err := collect(artifactsEnabled, artifactActivity); err != nil {
 		return nil, err
 	} else if err := collect(org.HasFeature(types.FeatureLicensing), licenseKeyActivity); err != nil {
 		return nil, err
@@ -72,37 +71,16 @@ func getActivityFeed(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-// activityFeedCustomer returns the customer organization of a customer user, or the one a vendor or partner
-// user asks for.
-func activityFeedCustomer(r *http.Request) (*types.CustomerOrganization, respond.Responder, error) {
-	ctx := r.Context()
-	if customerOrgID, resp, err := customerScopeFromQuery(r); resp != nil || err != nil {
-		return nil, resp, err
-	} else if customerOrgID == nil {
-		return nil, respond.BadRequest("customer organization ID is required"), nil
-	} else if customerOrg := auth.Authentication.Require(ctx).CurrentCustomerOrg(); customerOrg != nil {
-		return customerOrg, nil, nil
-	} else if customerOrg, err := db.GetCustomerOrganizationByID(ctx, *customerOrgID); errors.Is(
-		err, distrerr.ErrNotFound,
-	) {
-		return nil, invalidCustomerScope, nil
-	} else if err != nil {
-		return nil, nil, fmt.Errorf("failed to get customer organization: %w", err)
-	} else {
-		return &customerOrg.CustomerOrganization, nil, nil
-	}
-}
-
 func applicationVersionActivity(
 	ctx context.Context,
 	customerOrgID uuid.UUID,
 	since time.Time,
 ) ([]activityfeed.Entry, error) {
 	auth := auth.Authentication.Require(ctx)
-	if entitledOnly, err := applicationEntitlementsApply(ctx); err != nil {
+	if shouldGetEntitledOnly, err := applicationEntitlementsApply(ctx); err != nil {
 		return nil, fmt.Errorf("failed to check for application entitlements: %w", err)
 	} else if versions, err := db.GetApplicationVersionsEntitledToCustomer(
-		ctx, *auth.CurrentOrgID(), customerOrgID, entitledOnly, since, activityfeed.Limit,
+		ctx, *auth.CurrentOrgID(), customerOrgID, shouldGetEntitledOnly, since, activityfeed.Limit,
 	); err != nil {
 		return nil, fmt.Errorf("failed to get application versions: %w", err)
 	} else {
