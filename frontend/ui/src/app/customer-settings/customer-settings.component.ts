@@ -10,11 +10,19 @@ import {PageComponent} from '../components/page.component';
 import {CustomOidcComponent} from '../organization-settings/custom-oidc.component';
 import {ContextService} from '../services/context.service';
 import {CustomerOrganizationsService} from '../services/customer-organizations.service';
+import {CustomerControllerSettingsComponent} from './customer-controller-settings.component';
 
 @Component({
   selector: 'app-customer-settings',
   templateUrl: './customer-settings.component.html',
-  imports: [CustomOidcComponent, RouterLink, FontAwesomeModule, OverlayModule, PageComponent],
+  imports: [
+    CustomerControllerSettingsComponent,
+    CustomOidcComponent,
+    RouterLink,
+    FontAwesomeModule,
+    OverlayModule,
+    PageComponent,
+  ],
 })
 export class CustomerSettingsComponent {
   protected readonly faBoxesStacked = faBoxesStacked;
@@ -53,6 +61,11 @@ export class CustomerSettingsComponent {
     const id = this.customerOrganizationId();
     return this.customerOrganizations()?.find((org) => org.id === id);
   });
+  protected readonly oidcProvidersEnabled = computed(() =>
+    (this.vendorScoped() ? this.customerOrganization() : this.contextCustomerOrganization())?.features?.includes(
+      'oidc_providers'
+    )
+  );
 
   protected readonly dropdownTriggerButton = viewChild<ElementRef<HTMLElement>>('dropdownTriggerButton');
   protected readonly breadcrumbDropdown = signal(false);

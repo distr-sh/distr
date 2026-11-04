@@ -155,7 +155,7 @@
                   class="distr-btn-secondary flex items-center px-3 py-2 text-center text-sm font-medium">
                   Links
                 </a>
-                @if (auth.hasAnyRole('admin') && customer.features.includes('oidc_providers')) {
+                @if (auth.hasAnyRole('admin') && customer.features.includes('settings')) {
                   <a
                     [routerLink]="[customer.id, 'settings']"
                     class="distr-btn-secondary flex items-center px-3 py-2 text-center text-sm font-medium">

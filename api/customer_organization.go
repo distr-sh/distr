@@ -16,11 +16,16 @@ type CreateUpdateCustomerOrganizationRequest struct {
 	Features []types.CustomerOrganizationFeature `json:"features,omitempty"`
 }
 
+var customerOrganizationFeatureDependencies = map[types.CustomerOrganizationFeature]types.CustomerOrganizationFeature{
+	types.CustomerOrganizationFeatureAlerts:        types.CustomerOrganizationFeatureDeploymentTargets,
+	types.CustomerOrganizationFeatureOidcProviders: types.CustomerOrganizationFeatureSettings,
+}
+
 func (r *CreateUpdateCustomerOrganizationRequest) Validate() error {
-	if slices.Contains(r.Features, types.CustomerOrganizationFeatureAlerts) &&
-		!slices.Contains(r.Features, types.CustomerOrganizationFeatureDeploymentTargets) {
-		return validation.NewValidationFailedError(fmt.Sprintf("feature %v requires feature %v",
-			types.CustomerOrganizationFeatureAlerts, types.CustomerOrganizationFeatureDeploymentTargets))
+	for _, feature := range r.Features {
+		if required, ok := customerOrganizationFeatureDependencies[feature]; ok && !slices.Contains(r.Features, required) {
+			return validation.NewValidationFailedError(fmt.Sprintf("feature %v requires feature %v", feature, required))
+		}
 	}
 
 	return nil

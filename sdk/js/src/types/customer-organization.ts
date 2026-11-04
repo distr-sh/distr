@@ -6,6 +6,7 @@ export type CustomerOrganizationFeature =
   | 'alerts'
   | 'update_notifications'
   | 'support_bundles'
+  | 'settings'
   | 'oidc_providers'
   | 'vulnerabilities';
 

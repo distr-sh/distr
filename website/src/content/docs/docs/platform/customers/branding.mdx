@@ -127,6 +127,10 @@ Self-hosted instances pull them from `ghcr.io/distr-sh/distr` unless the instanc
 To have your customers pull them from another registry, enable **Use an external controller repository** under **Settings → Organization → General** and enter its host and an optional path (e.g. `registry.distr.sh/your-org`).
 The setting applies to all of your customers.
 
+A single customer can pull from a repository of its own, so that its deployment targets show neither Distr nor your registry domain.
+Grant the customer the **Settings** feature in the customer list (requires the Business plan), then set the repository under **Settings** in its row of the customer list, or let its administrators set it on their own **Settings** page.
+It takes precedence over the repository of your organization.
+
 Only the prefix can be changed. Distr appends the image names `docker-controller`, `docker-autoheal` and `kubernetes-controller` with the controller version as the tag, so your registry has to host the images under these names.
 They have to be publicly available there, or every deployment target needs access to the registry before you save it.
 A new repository applies when a deployment target connects and at its next controller update.

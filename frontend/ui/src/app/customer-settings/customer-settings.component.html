@@ -54,7 +54,12 @@
     }
 
     @if (customerOrganizationId(); as customerOrganizationId) {
-      <app-custom-oidc [customerOrganizationId]="customerOrganizationId" />
+      <div class="flex flex-col gap-10">
+        <app-customer-controller-settings [customerOrganizationId]="customerOrganizationId" />
+        @if (oidcProvidersEnabled()) {
+          <app-custom-oidc [customerOrganizationId]="customerOrganizationId" />
+        }
+      </div>
     }
   </div>
 </app-page>

@@ -22,7 +22,8 @@ const (
 		co.image_id,
 		co.name,
 		co.features,
-		co.partner_organization_id
+		co.partner_organization_id,
+		co.controller_image_repository
 	`
 	customerOrganizationWithUsageOutputExpr = customerOrganizationOutputExpr + `,
 		count(distinct(oua.user_account_id)) as user_count,
@@ -198,6 +199,30 @@ func CountCustomerOrganizationsByOrganizationID(ctx context.Context, organizatio
 		return 0, fmt.Errorf("could not count CustomerOrganizations: %w", err)
 	} else {
 		return count, nil
+	}
+}
+
+func UpdateCustomerOrganizationControllerImageRepository(
+	ctx context.Context,
+	id uuid.UUID,
+	repository *string,
+) (*types.CustomerOrganization, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		"UPDATE CustomerOrganization AS co SET controller_image_repository = @repository "+
+			"WHERE co.id = @id RETURNING "+customerOrganizationOutputExpr,
+		pgx.NamedArgs{"id": id, "repository": repository},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not update CustomerOrganization: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[types.CustomerOrganization])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, distrerr.ErrNotFound
+	} else if err != nil {
+		return nil, fmt.Errorf("could not collect CustomerOrganization: %w", err)
+	} else {
+		return result, nil
 	}
 }
 

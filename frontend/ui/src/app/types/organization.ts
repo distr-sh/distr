@@ -12,7 +12,8 @@ export type Feature =
   | 'vulnerabilities'
   | 'custom_emails'
   | 'custom_oidc_providers'
-  | 'auto_updates';
+  | 'auto_updates'
+  | 'customer_settings';
 
 export interface SubscriptionLimits {
   maxCustomerOrganizations: number;

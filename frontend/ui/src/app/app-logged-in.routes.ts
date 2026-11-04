@@ -167,9 +167,22 @@ function customOidcProvidersEnabledGuard(): CanActivateFn {
 function customerSettingsEnabledGuard(): CanActivateFn {
   return async () => {
     const contextService = inject(ContextService);
+    const featureFlags = inject(FeatureFlagService);
     const router = inject(Router);
     const customerOrganization = await firstValueFrom(contextService.getCustomerOrganization());
-    return customerOrganization?.features?.includes('oidc_providers') || router.createUrlTree(['/']);
+    return (
+      ((await firstValueFrom(featureFlags.isCustomerSettingsEnabled$)) &&
+        customerOrganization?.features?.includes('settings')) ||
+      router.createUrlTree(['/'])
+    );
+  };
+}
+
+function customerSettingsFeatureGuard(): CanActivateFn {
+  return async () => {
+    const featureFlags = inject(FeatureFlagService);
+    const router = inject(Router);
+    return (await firstValueFrom(featureFlags.isCustomerSettingsEnabled$)) || router.createUrlTree(['/customers']);
   };
 }
 
@@ -314,7 +327,7 @@ export const routes: Routes = [
           {
             path: 'settings',
             component: CustomerSettingsComponent,
-            canActivate: [customOidcProvidersEnabledGuard()],
+            canActivate: [requiredRoleGuard('admin'), customerSettingsFeatureGuard()],
           },
           {path: '', pathMatch: 'full', redirectTo: 'users'},
         ],

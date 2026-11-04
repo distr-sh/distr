@@ -106,6 +106,8 @@ You can control which features are available to each customer organization. The 
 - **Update Notifications**: deciding which of their own users hears about a new application or artifact version
 - **Support Bundles**: ability to create and submit diagnostic bundles
 - **Security**: access to the security advisories you publish (requires the Business plan)
+- **Settings**: a settings page for the customer's administrators, where they choose the [controller image repository](/docs/platform/branding/#controller-image-repository) of their deployment targets (requires the Business plan)
+- **Identity Provider**: a [portal domain and identity provider](/docs/platform/user-management/custom-identity-provider/#letting-a-customer-bring-its-own-provider) of the customer's own, configured on its settings page (requires Settings and the Business plan)
 
 Each customer has a **Features** button in the customer list showing how many features are currently enabled. Click it to open a dropdown where you can check or uncheck individual features.
 
@@ -118,6 +120,7 @@ Each customer has a **Features** button in the customer list showing how many fe
 A few things to note:
 
 - **Alerts** depends on **Deployments**. Enabling Alerts automatically enables Deployments; disabling Deployments automatically disables Alerts.
+- **Identity Provider** depends on **Settings** in the same way.
 - **Support Bundles** and **Artifacts** are independent and can be toggled without affecting other features.
 - **Update Notifications** covers whichever of **Deployments** and **Artifacts** the customer also has, since a customer can only watch what it can reach.
 - **Deployments** and **Artifacts** are enabled by default for new customers. **Alerts**, **Update Notifications** and **Support Bundles** must be explicitly enabled.
