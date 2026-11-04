@@ -81,14 +81,14 @@
               <app-editor
                 language="json"
                 [formControl]="payloadControl"
-                class="block w-full rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900 [--editor-min-height:--spacing(32)] dark:border-gray-600 dark:bg-gray-700 dark:text-white [&_.cm-editor.cm-focused]:outline-none" />
+                class="block w-full rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900 [--editor-min-height:--spacing(32)] dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
             }
 
             @if (activeTab() === 'decoded') {
               <app-editor
                 language="json"
                 [formControl]="decodedControl"
-                class="block w-full rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900 [--editor-min-height:--spacing(32)] dark:border-gray-600 dark:bg-gray-700 dark:text-white [&_.cm-editor.cm-focused]:outline-none" />
+                class="block w-full rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900 [--editor-min-height:--spacing(32)] dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
             }
 
             @if (activeTab() === 'revisions') {
