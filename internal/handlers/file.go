@@ -212,16 +212,17 @@ func requireImageOwnedBy(
 
 func patchImage(
 	r *http.Request,
-	owner *uuid.UUID,
+	ownerOrganizationID *uuid.UUID,
 	update func(ctx context.Context, body api.PatchImageRequest) (any, error),
 ) (respond.Responder, error) {
+	ctx := r.Context()
 	if body, resp := decodeJSON[api.PatchImageRequest](r); resp != nil {
 		return resp, nil
 	} else if body.ImageID == uuid.Nil {
 		return respond.BadRequest("imageId can not be empty"), nil
-	} else if resp, err := requireImageOwnedBy(r.Context(), body.ImageID, owner); resp != nil || err != nil {
+	} else if resp, err := requireImageOwnedBy(ctx, body.ImageID, ownerOrganizationID); resp != nil || err != nil {
 		return resp, err
-	} else if result, err := update(r.Context(), body); err != nil {
+	} else if result, err := update(ctx, body); err != nil {
 		return nil, fmt.Errorf("error patching image id: %w", err)
 	} else {
 		return respond.JSON(result), nil
