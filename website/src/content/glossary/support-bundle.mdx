@@ -19,7 +19,7 @@ faq:
   - question: What is the difference between a support bundle and remote access?
     answer: 'A support bundle is a snapshot that the customer collects and hands over. Remote access gives the vendor a live look at the running system. Bundles work everywhere, including air-gapped environments, but only answer the questions the collection anticipated.'
   - question: Which tools create support bundles?
-    answer: 'On Linux hosts, `sos report` collects system diagnostics. For Kubernetes, `kubectl cluster-info dump` writes the state of a cluster and the open source Troubleshoot project collects and analyzes bundles from a spec. Software distribution platforms such as Distr let customers create bundles from their portal.'
+    answer: 'On Linux hosts, `sos report` collects system diagnostics. For Kubernetes, `kubectl cluster-info dump` writes the state of a cluster. Software distribution platforms such as Distr let customers create bundles from their portal.'
 ---
 
 ## What Is a Support Bundle?
@@ -80,7 +80,6 @@ The collector runs on the host itself, often as a script the customer downloads.
 In Kubernetes, a bundle collects the pods, events, logs and resource status of the application's namespace.
 Many also record the Kubernetes version and the capacity of the nodes.
 `kubectl cluster-info dump` writes much of this without extra tooling.
-The open source [Troubleshoot](https://troubleshoot.sh) project runs as the `kubectl support-bundle` plugin and adds collectors, redactors and analyzers that you define in a spec.
 
 For plain Linux hosts, [`sos report`](https://github.com/sosreport/sos) has collected system diagnostics for support cases for many years.
 
