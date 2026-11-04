@@ -268,7 +268,7 @@ importers:
         version: 7.8.2
       semver:
         specifier: ^7.8.5
-        version: 7.8.5
+        version: 7.8.6
       tslib:
         specifier: ^2.8.1
         version: 2.9.1
@@ -3127,6 +3127,11 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  semver@7.8.6:
+    resolution: {integrity: sha512-9lpSSU4Mly3mrtruwLs1eLK6+gzbzqeBFwRNjIjE+9LuDpWdYctrQlQ3ej1Ilgi7gknpsTRnPoLP8DpCHqHIJw==}
+    engines: {node: '>=10'}
+    hasBin: true
+
   sift-string@0.0.2:
     resolution: {integrity: sha512-cOWdhRSgl6neRIgTCLdqsKgQQGnkF92+PzVKpRJEnVVZvFs/mLipRanroOO+2Lp6Kv4vWk/3wMnRylTne0jksQ==}
 
@@ -3601,7 +3606,7 @@ snapshots:
       chokidar: 5.0.0
       convert-source-map: 1.9.0
       reflect-metadata: 0.2.2
-      semver: 7.8.5
+      semver: 7.8.6
       tslib: 2.9.1
       yargs: 18.1.0
     optionalDependencies:
@@ -3720,7 +3725,7 @@ snapshots:
       import-meta-resolve: 4.2.0
       json5: 2.2.3
       obug: 2.1.4
-      semver: 7.8.5
+      semver: 7.8.6
 
   '@babel/core@8.0.5':
     dependencies:
@@ -5334,7 +5339,7 @@ snapshots:
       '@babel/parser': 7.29.7
       '@istanbuljs/schema': 0.1.6
       istanbul-lib-coverage: 3.2.2
-      semver: 7.8.5
+      semver: 7.8.6
     transitivePeerDependencies:
       - supports-color
     optional: true
@@ -5592,7 +5597,7 @@ snapshots:
     dependencies:
       hosted-git-info: 10.1.1
       proc-log: 7.0.0
-      semver: 7.8.5
+      semver: 7.8.6
       validate-npm-package-name: 8.0.0
 
   nth-check@3.0.1:
@@ -5923,6 +5928,8 @@ snapshots:
   semver@7.7.1: {}
 
   semver@7.8.5: {}
+
+  semver@7.8.6: {}
 
   sift-string@0.0.2: {}
 
