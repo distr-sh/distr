@@ -6,6 +6,7 @@ import {faFloppyDisk, faSpinner} from '@fortawesome/free-solid-svg-icons';
 import {catchError, EMPTY, firstValueFrom, startWith, switchMap} from 'rxjs';
 import {WEBSITE_URL} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
+import {AlertComponent} from '../components/alert/alert.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {CustomerSettingsService} from '../services/customer-settings.service';
 import {ToastService} from '../services/toast.service';
@@ -14,7 +15,7 @@ import {CustomerSettings} from '../types/customer-settings';
 @Component({
   selector: 'app-customer-controller-settings',
   templateUrl: './customer-controller-settings.component.html',
-  imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective],
+  imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, AlertComponent],
 })
 export class CustomerControllerSettingsComponent {
   protected readonly faFloppyDisk = faFloppyDisk;
@@ -29,6 +30,7 @@ export class CustomerControllerSettingsComponent {
   protected readonly controllerRepositoryDocsUrl = `${WEBSITE_URL}/docs/platform/branding/#controller-image-repository`;
   protected readonly settings = signal<CustomerSettings | undefined>(undefined);
   protected readonly formLoading = signal(false);
+  protected readonly loadFailed = signal(false);
 
   protected readonly form = this.fb.group({
     controllerImageRepositoryEnabled: this.fb.control(false),
@@ -47,8 +49,10 @@ export class CustomerControllerSettingsComponent {
       .pipe(
         switchMap((id) => {
           this.settings.set(undefined);
+          this.loadFailed.set(false);
           return this.customerSettingsService.get(id).pipe(
             catchError((e) => {
+              this.loadFailed.set(true);
               const msg = getFormDisplayedError(e);
               if (msg) {
                 this.toast.error(msg);
