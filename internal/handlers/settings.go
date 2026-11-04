@@ -195,9 +195,9 @@ func userSettingsUpdateEmailHandler(r *http.Request) (respond.Responder, error) 
 		} else if err := mailer.Send(ctx,
 			mailx.To(body.Email),
 			mailx.Subject("[Action required] Distr E-Mail address change"),
-			mailx.HtmlBodyTemplate(mailtemplates.UpdateEmail(
+			mailtemplates.UpdateEmail(
 				ctx, *user, *auth.CurrentOrgWithBranding(), auth.CurrentCustomerOrgID(), token,
-			)),
+			),
 		); err != nil {
 			return nil, fmt.Errorf("failed to send email verification: %w", err)
 		} else {
