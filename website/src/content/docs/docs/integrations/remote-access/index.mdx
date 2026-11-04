@@ -11,7 +11,7 @@ import vendorSupportRbac from './vendor-support-rbac.yaml?raw';
 
 Logs, metrics and [support bundles](/docs/platform/support-bundles/) answer most questions about a customer installation.
 For the rest, your support engineers need [remote access](/glossary/vendor-remote-access/) to look at the running containers themselves.
-Customer environments rarely accept inbound connections, so this guide uses a tunnel instead: it connects outbound from the customer environment to [Tailscale](https://tailscale.com) or [Cloudflare](https://www.cloudflare.com), and your support team comes in from there.
+Customer environments rarely accept inbound connections, so this guide uses a [reverse tunnel](/glossary/reverse-tunnel/) instead: it connects outbound from the customer environment to [Tailscale](https://tailscale.com) or [Cloudflare](https://www.cloudflare.com), and your support team comes in from there.
 
 You ship the tunnel like your application, as a Distr application that the Distr controller in the customer environment deploys.
 

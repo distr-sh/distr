@@ -76,7 +76,7 @@ Cross-account cloud roles are the norm for [BYOC](/glossary/byoc-definition/) de
 The customer creates a role that the vendor may assume, and the IAM policy of that role decides what the vendor can do.
 Emergency access with wider permissions often lives in a separate break-glass role that someone on the customer's side has to approve.
 
-Tunnels that connect outbound run a small agent next to the application, for example Tailscale, a Cloudflare Tunnel or ngrok.
+[Tunnels that connect outbound](/glossary/reverse-tunnel/) run a small agent next to the application, for example Tailscale, a Cloudflare Tunnel or ngrok.
 The agent opens the connection from inside the customer's network, so the customer opens no inbound port.
 The vendor's engineers reach the host or service the tunnel exposes and nothing else.
 Access platforms such as Teleport build on the same idea and add session recording and short-lived certificates.
