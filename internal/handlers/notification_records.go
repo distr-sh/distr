@@ -35,7 +35,8 @@ func getNotificationRecordsHandler(r *http.Request) (respond.Responder, error) {
 
 	var after *time.Time
 	if value, err := QueryParam(r, "after", ParseTimeFunc(time.RFC3339Nano)); err == nil {
-		after = &value
+		// pgx encodes a TIMESTAMP parameter with its wall clock time and drops the offset.
+		after = new(value.UTC())
 	} else if !errors.Is(err, ErrParamNotDefined) {
 		return respond.BadRequest("after must be a valid date"), nil
 	}
