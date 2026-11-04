@@ -135,95 +135,75 @@
           once a script is configured for it, or for Docker when it should run with sudo.
         </p>
       </div>
+
+      @if (isPrePostScriptEnabled()) {
+        <div class="space-y-4">
+          <h3 class="text-lg font-bold dark:text-white">Pre-/post-connect scripts</h3>
+          <app-pill-tab-bar [tabs]="connectScriptTabs" [(active)]="connectScriptTab" />
+
+          @switch (connectScriptTab()) {
+            @case ('docker') {
+              <div>
+                <label #dockerPreConnectScriptLabel class="distr-label mb-2 grow">Pre-connect script</label>
+                <app-editor
+                  [label]="dockerPreConnectScriptLabel"
+                  language="shell"
+                  formControlName="dockerPreConnectScript"
+                  class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [--editor-min-height:--spacing(40)]" />
+              </div>
+
+              <div>
+                <label #dockerPostConnectScriptLabel class="distr-label mb-2 grow">Post-connect script</label>
+                <app-editor
+                  [label]="dockerPostConnectScriptLabel"
+                  language="shell"
+                  formControlName="dockerPostConnectScript"
+                  class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [--editor-min-height:--spacing(40)]" />
+              </div>
+
+              <div>
+                <div class="flex items-center">
+                  <input
+                    formControlName="dockerConnectScriptIsSudo"
+                    id="dockerConnectScriptIsSudo"
+                    type="checkbox"
+                    class="distr-checkbox" />
+                  <label
+                    for="dockerConnectScriptIsSudo"
+                    class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                    Script should be run with sudo
+                  </label>
+                </div>
+              </div>
+            }
+            @case ('kubernetes') {
+              <div>
+                <label #kubernetesPreConnectScriptLabel class="distr-label mb-2 grow">Pre-connect script</label>
+                <app-editor
+                  [label]="kubernetesPreConnectScriptLabel"
+                  language="shell"
+                  formControlName="kubernetesPreConnectScript"
+                  class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [--editor-min-height:--spacing(40)]" />
+              </div>
+
+              <div>
+                <label #kubernetesPostConnectScriptLabel class="distr-label mb-2 grow">Post-connect script</label>
+                <app-editor
+                  [label]="kubernetesPostConnectScriptLabel"
+                  language="shell"
+                  formControlName="kubernetesPostConnectScript"
+                  class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [--editor-min-height:--spacing(40)]" />
+              </div>
+
+              <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+                The scripts run in a POSIX shell with the customer's kubeconfig. The namespace of the deployment target
+                is available as <code>$DISTR_NAMESPACE</code>.
+              </p>
+            }
+          }
+        </div>
+      }
     </div>
-
-    @if (isPrePostScriptEnabled()) {
-      <div class="space-y-4">
-        <h2 class="text-xl font-bold dark:text-white">Pre-/post-connect scripts</h2>
-        <app-pill-tab-bar [tabs]="connectScriptTabs" [(active)]="connectScriptTab" />
-
-        @switch (connectScriptTab()) {
-          @case ('docker') {
-            <div>
-              <label for="dockerPreConnectScript" class="distr-label mb-2 grow">Pre-connect script</label>
-              <div
-                class="mb-4 w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-600 dark:bg-gray-600">
-                <div class="rounded-b-lg bg-gray-50 px-4 py-2 dark:bg-gray-700">
-                  <textarea
-                    formControlName="dockerPreConnectScript"
-                    id="dockerPreConnectScript"
-                    rows="8"
-                    class="block w-full border-0 bg-gray-50 px-0 text-sm text-gray-800 placeholder-gray-500 focus:ring-0 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"></textarea>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label for="dockerPostConnectScript" class="distr-label mb-2 grow">Post-connect script</label>
-              <div
-                class="mb-4 w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-600 dark:bg-gray-600">
-                <div class="rounded-b-lg bg-gray-50 px-4 py-2 dark:bg-gray-700">
-                  <textarea
-                    formControlName="dockerPostConnectScript"
-                    id="dockerPostConnectScript"
-                    rows="8"
-                    class="block w-full border-0 bg-gray-50 px-0 text-sm text-gray-800 placeholder-gray-500 focus:ring-0 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"></textarea>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div class="flex items-center">
-                <input
-                  formControlName="dockerConnectScriptIsSudo"
-                  id="dockerConnectScriptIsSudo"
-                  type="checkbox"
-                  class="distr-checkbox" />
-                <label
-                  for="dockerConnectScriptIsSudo"
-                  class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                  Script should be run with sudo
-                </label>
-              </div>
-            </div>
-          }
-          @case ('kubernetes') {
-            <div>
-              <label for="kubernetesPreConnectScript" class="distr-label mb-2 grow">Pre-connect script</label>
-              <div
-                class="mb-4 w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-600 dark:bg-gray-600">
-                <div class="rounded-b-lg bg-gray-50 px-4 py-2 dark:bg-gray-700">
-                  <textarea
-                    formControlName="kubernetesPreConnectScript"
-                    id="kubernetesPreConnectScript"
-                    rows="8"
-                    class="block w-full border-0 bg-gray-50 px-0 text-sm text-gray-800 placeholder-gray-500 focus:ring-0 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"></textarea>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label for="kubernetesPostConnectScript" class="distr-label mb-2 grow">Post-connect script</label>
-              <div
-                class="mb-4 w-full rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-600 dark:bg-gray-600">
-                <div class="rounded-b-lg bg-gray-50 px-4 py-2 dark:bg-gray-700">
-                  <textarea
-                    formControlName="kubernetesPostConnectScript"
-                    id="kubernetesPostConnectScript"
-                    rows="8"
-                    class="block w-full border-0 bg-gray-50 px-0 text-sm text-gray-800 placeholder-gray-500 focus:ring-0 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"></textarea>
-                </div>
-              </div>
-            </div>
-
-            <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-              The scripts run in a POSIX shell with the customer's kubeconfig. The namespace of the deployment target is
-              available as <code>$DISTR_NAMESPACE</code>.
-            </p>
-          }
-        }
-      </div>
-    }
 
     @if (!auth.isSuperAdmin()) {
       <div class="mt-4 flex w-full justify-center space-x-4">

@@ -22,19 +22,13 @@ import {never} from '../../util/exhaust';
 
 export type EditorLanguage = 'yaml' | 'json' | 'shell';
 
-// The content stays contenteditable when read-only (see setDisabledState), so the browser would
-// keep drawing its blinking caret and suggest that the editor accepts input.
-const readOnlyExtension: Extension = [
-  EditorState.readOnly.of(true),
-  EditorView.theme({'.cm-content': {caretColor: 'transparent'}}),
-];
-
 @Component({
   selector: 'app-editor',
   template: '',
-  // `.cm-content` is contenteditable, so the browser draws the caret with the inherited
-  // `caret-color`, which the read-only extension above overrides.
-  host: {class: 'font-mono caret-gray-900 dark:caret-white'},
+  host: {
+    class:
+      'font-mono focus-within:border-primary-600 focus-within:ring-1 focus-within:ring-primary-600 dark:focus-within:border-primary-500 dark:focus-within:ring-primary-500',
+  },
   changeDetection: ChangeDetectionStrategy.Eager,
   providers: [
     {
@@ -46,6 +40,8 @@ const readOnlyExtension: Extension = [
 })
 export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
   language = input<EditorLanguage>();
+  // Names the editor and focuses it on click, which `<label for>` cannot do for CodeMirror's contenteditable.
+  label = input<HTMLElement>();
   private readonly host = inject(ElementRef);
   private view!: EditorView;
   private readonly readOnlyCompartment = new Compartment();
@@ -85,6 +81,13 @@ export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor 
           ])
         ),
         highlightSpecialChars(),
+        EditorView.theme({
+          '&.cm-focused': {outline: 'none'},
+          // `inherit` replaces the black caret of CodeMirror's light base theme with the text color.
+          '.cm-content': {caretColor: 'inherit', minHeight: 'var(--editor-min-height, 100%)'},
+          // Read-only content stays contenteditable, so the browser would keep drawing a blinking caret.
+          '.cm-content[aria-readonly=true]': {caretColor: 'transparent'},
+        }),
         keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
         EditorView.updateListener.of((update) => {
           this.onTouched();
@@ -97,9 +100,16 @@ export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor 
       ],
       parent: this.host.nativeElement,
     });
+
+    const label = this.label();
+    if (label) {
+      this.view.contentDOM.ariaLabelledByElements = [label];
+      label.addEventListener('click', this.focus);
+    }
   }
 
   ngOnDestroy() {
+    this.label()?.removeEventListener('click', this.focus);
     this.view.destroy();
   }
 
@@ -118,9 +128,11 @@ export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor 
 
   setDisabledState(isDisabled: boolean) {
     this.view.dispatch({
-      effects: this.readOnlyCompartment.reconfigure(isDisabled ? readOnlyExtension : []),
+      effects: this.readOnlyCompartment.reconfigure(isDisabled ? EditorState.readOnly.of(true) : []),
     });
   }
+
+  private readonly focus = () => this.view.focus();
 
   private onChange = (_: any) => {};
 
