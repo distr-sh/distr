@@ -397,9 +397,9 @@ func ListArtifactReleaseVersions(
 	return result, nil
 }
 
-// GetCustomerArtifactTags returns the newest release tags of the artifacts created since, at most limit of
-// them. With licensing, only those the customer organization may pull.
-func GetCustomerArtifactTags(
+// GetArtifactTagsEntitledToCustomer returns the newest release tags of the artifacts created since, at most
+// limit of them. With licensing, only those the customer organization may pull.
+func GetArtifactTagsEntitledToCustomer(
 	ctx context.Context,
 	artifactIDs []uuid.UUID,
 	customerOrgID uuid.UUID,
@@ -1147,9 +1147,8 @@ func BulkUpsertArtifactVersionParts(ctx context.Context, parts []types.ArtifactV
 	return nil
 }
 
-// GetFirstArtifactVersionPullsOfCustomerOrganization returns the newest first pulls of the users of the
-// customer organization for each release tag of the artifacts created since, at most limit of them.
-// Restricting the tags to those created since makes the first pull since also the first pull ever.
+// GetFirstArtifactVersionPullsOfCustomerOrganization returns when each user of the customer organization first
+// pulled each release tag created within the time window.
 func GetFirstArtifactVersionPullsOfCustomerOrganization(
 	ctx context.Context,
 	orgID, customerOrgID uuid.UUID,

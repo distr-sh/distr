@@ -101,7 +101,7 @@ func applicationVersionActivity(
 	auth := auth.Authentication.Require(ctx)
 	if entitledOnly, err := applicationEntitlementsApply(ctx); err != nil {
 		return nil, fmt.Errorf("failed to check for application entitlements: %w", err)
-	} else if versions, err := db.GetCustomerApplicationVersions(
+	} else if versions, err := db.GetApplicationVersionsEntitledToCustomer(
 		ctx, *auth.CurrentOrgID(), customerOrgID, entitledOnly, since, activityfeed.Limit,
 	); err != nil {
 		return nil, fmt.Errorf("failed to get application versions: %w", err)
@@ -136,7 +136,7 @@ func artifactActivity(ctx context.Context, customerOrgID uuid.UUID, since time.T
 	for i, artifact := range artifacts {
 		artifactIDs[i] = artifact.ID
 	}
-	if tags, err := db.GetCustomerArtifactTags(
+	if tags, err := db.GetArtifactTagsEntitledToCustomer(
 		ctx, artifactIDs, customerOrgID, auth.CurrentOrg().HasFeature(types.FeatureLicensing), since, activityfeed.Limit,
 	); err != nil {
 		return nil, fmt.Errorf("failed to get artifact tags: %w", err)

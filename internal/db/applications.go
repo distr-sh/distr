@@ -164,10 +164,10 @@ func mergeApplications(applications []types.Application) []types.Application {
 	return util.GetValues(applicationMap)
 }
 
-// GetCustomerApplicationVersions returns the newest versions released since that the customer organization
-// may deploy, at most limit of them. Archived versions are left out, and with entitledOnly so are the versions
-// no valid entitlement of the customer covers.
-func GetCustomerApplicationVersions(
+// GetApplicationVersionsEntitledToCustomer returns the newest versions released since that the customer
+// organization may deploy, at most limit of them. Archived versions are left out, and with entitledOnly so are
+// the versions no valid entitlement of the customer covers.
+func GetApplicationVersionsEntitledToCustomer(
 	ctx context.Context,
 	orgID, customerOrgID uuid.UUID,
 	entitledOnly bool,
