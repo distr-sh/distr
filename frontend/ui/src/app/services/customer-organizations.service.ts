@@ -66,8 +66,14 @@ export class CustomerOrganizationsService {
     );
   }
 
-  // The response of a write carries no usage counts, so the cached entry keeps its own.
+  // The response of a write carries no usage counts, so the cached entry keeps its own. Everything else
+  // comes from the response, since it omits unset fields that the cached entry may still have.
   private saveUpdated(updated: CustomerOrganization) {
-    this.cache.save({userCount: 0, deploymentTargetCount: 0, ...this.cache.find(updated.id), ...updated});
+    const cached = this.cache.find(updated.id);
+    this.cache.save({
+      ...updated,
+      userCount: cached?.userCount ?? 0,
+      deploymentTargetCount: cached?.deploymentTargetCount ?? 0,
+    });
   }
 }
