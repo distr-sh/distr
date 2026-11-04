@@ -1,21 +1,40 @@
-import {GlobalPositionStrategy} from '@angular/cdk/overlay';
+import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {HttpErrorResponse} from '@angular/common/http';
-import {ChangeDetectionStrategy, Component, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  signal,
+  TemplateRef,
+  viewChild,
+} from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCircleExclamation, faCopy, faEye, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {
+  faCircleExclamation,
+  faClipboard,
+  faCopy,
+  faEllipsisVertical,
+  faEye,
+  faPen,
+  faPlus,
+  faTrash,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {loadWhileOpen, refreshInBackground} from '../../../util/refresh';
 import {AlertComponent} from '../../components/alert/alert.component';
-import {ClipComponent} from '../../components/clip.component';
+import {ClipComponent, ClipDirective} from '../../components/clip.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
-import {UuidComponent} from '../../components/uuid';
+import {ClickableRowDirective} from '../../directives/clickable-row.directive';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
@@ -37,8 +56,10 @@ import {ViewLicenseKeyModalComponent} from './view-license-key-modal.component';
     FaIconComponent,
     EditLicenseKeyComponent,
     ViewLicenseKeyModalComponent,
-    UuidComponent,
     ClipComponent,
+    ClipDirective,
+    ClickableRowDirective,
+    OverlayModule,
     SearchBarComponent,
     AlertComponent,
     SpinnerComponent,
@@ -64,8 +85,15 @@ export class LicenseKeysComponent {
   protected readonly faXmark = faXmark;
   protected readonly faCopy = faCopy;
   protected readonly faEye = faEye;
+  protected readonly faEllipsisVertical = faEllipsisVertical;
+  protected readonly faClipboard = faClipboard;
   protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly isExpired = isExpired;
+
+  private readonly isVendorOrPartner = this.auth.isVendor() || this.auth.isPartner();
+  protected readonly canManage = this.isVendorOrPartner && this.auth.hasAnyRole('read_write', 'admin');
+  protected readonly canCopyId = computed(() => this.isVendorOrPartner && this.features.isVendorBillingEnabled());
+  protected readonly showDropdownForId = signal<string | undefined>(undefined);
 
   protected readonly selectedLicense = signal<LicenseKey | undefined>(undefined);
   protected readonly selectedToken = signal<string | undefined>(undefined);
@@ -251,6 +279,9 @@ export class LicenseKeysComponent {
   }
 
   async viewLicense(license: LicenseKey) {
+    if (this.viewLicenseLoading()) {
+      return;
+    }
     this.viewLicenseLoading.set(true);
     try {
       const [{token}, licenses] = await Promise.all([
