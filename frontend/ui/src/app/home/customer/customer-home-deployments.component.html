@@ -34,21 +34,16 @@
   } @else if (section() === 'deployments') {
     <div class="distr-card items-center gap-3 p-4 text-center">
       <p class="font-medium text-gray-900 dark:text-white">Create your first deployment</p>
-      <button
-        type="button"
-        (click)="openWizard()"
-        class="distr-btn-secondary flex items-center px-4 py-2 text-sm hover:text-gray-900 dark:hover:text-white">
-        <fa-icon [icon]="faPlus" class="me-2 text-gray-500 dark:text-gray-400" />
+      <button type="button" (click)="openWizard()" class="distr-btn-secondary distr-home-card-action flex items-center">
+        <fa-icon [icon]="faPlus" class="distr-home-icon me-2" />
         Deployment
       </button>
     </div>
   } @else if (section() === 'artifacts') {
     <div class="distr-card items-center gap-3 p-4 text-center">
       <p class="font-medium text-gray-900 dark:text-white">You have not pulled any artifacts yet.</p>
-      <a
-        routerLink="/artifacts"
-        class="distr-btn-secondary flex items-center px-4 py-2 text-sm hover:text-gray-900 dark:hover:text-white">
-        <fa-icon [icon]="faDownload" class="me-2 text-gray-500 dark:text-gray-400" />
+      <a routerLink="/artifacts" class="distr-btn-secondary distr-home-card-action flex items-center">
+        <fa-icon [icon]="faDownload" class="distr-home-icon me-2" />
         Pull your first artifact
       </a>
     </div>

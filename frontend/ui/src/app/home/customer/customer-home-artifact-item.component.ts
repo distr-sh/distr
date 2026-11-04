@@ -10,8 +10,7 @@ import {CustomerHomeTitleImageComponent} from './customer-home-title-image.compo
   templateUrl: './customer-home-artifact-item.component.html',
   imports: [DatePipe, RouterLink, RelativeDatePipe, CustomerHomeTitleImageComponent],
   host: {
-    class:
-      'relative z-10 flex flex-col sm:flex-row gap-3 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700',
+    class: 'distr-home-row relative z-10 flex-col sm:flex-row px-2 py-1.5',
   },
 })
 export class CustomerHomeArtifactItemComponent {

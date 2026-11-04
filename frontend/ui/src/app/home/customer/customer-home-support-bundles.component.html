@@ -9,21 +9,21 @@
       <button
         type="button"
         (click)="openCreateDialog()"
-        class="distr-btn-secondary relative z-10 mt-3 inline-flex items-center px-4 py-2 text-sm hover:text-gray-900 dark:hover:text-white">
-        <fa-icon [icon]="faPlus" class="me-2 text-gray-500 dark:text-gray-400" />
+        class="distr-btn-secondary distr-home-card-action relative z-10 mt-3 inline-flex items-center">
+        <fa-icon [icon]="faPlus" class="distr-home-icon me-2" />
         Create support bundle
       </button>
     }
   } @else {
-    <ul class="-mx-2 flex flex-col gap-1 text-sm">
+    <ul class="distr-home-list -mx-2">
       @for (bundle of visibleSupportBundles(); track bundle.id) {
         <li>
           <a
             [routerLink]="['/support', bundle.id]"
-            class="relative z-10 flex items-start justify-between gap-4 rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+            class="distr-home-row relative z-10 items-start justify-between gap-4">
             <div class="min-w-0">
-              <span class="block truncate font-medium text-gray-900 dark:text-white">{{ bundle.title }}</span>
-              <span class="distr-text-muted" [title]="bundle.updatedAt | date: 'medium'">
+              <span class="distr-home-row-title block truncate">{{ bundle.title }}</span>
+              <span class="distr-home-row-meta" [title]="bundle.updatedAt | date: 'medium'">
                 @switch (bundle.status) {
                   @case ('initialized') {
                     Created

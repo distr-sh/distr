@@ -20,7 +20,7 @@ import {CustomerHomeTitleImageComponent} from './customer-home-title-image.compo
     CustomerHomeTitleImageComponent,
   ],
   host: {
-    class: 'relative z-10 flex flex-col gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700',
+    class: 'distr-home-row relative z-10 flex-col gap-2 px-2 py-1.5',
     '[class.xl:col-span-2]': 'hasMultipleDeployments()',
   },
 })
