@@ -42,6 +42,7 @@ import {EditApplicationEntitlementComponent} from './edit-application-entitlemen
 })
 export class ApplicationEntitlementsComponent {
   readonly customerOrganizationId = input<string>();
+  readonly hotkey = input(true);
 
   protected readonly auth = inject(AuthService);
   private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);

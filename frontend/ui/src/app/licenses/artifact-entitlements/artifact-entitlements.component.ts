@@ -44,6 +44,7 @@ type EntitlementForm = 'standard' | 'legacy';
 })
 export class ArtifactEntitlementsComponent {
   readonly customerOrganizationId = input<string>();
+  readonly hotkey = input(true);
 
   protected readonly auth = inject(AuthService);
   private readonly artifactEntitlementsService = inject(ArtifactEntitlementsService);
