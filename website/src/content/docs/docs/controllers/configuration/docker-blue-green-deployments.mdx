@@ -24,7 +24,7 @@ The new version starts next to the one that currently serves traffic and only re
 No request fails during the switch, and the old version keeps running until you no longer need it.
 Rolling back means sending the traffic back, which causes no downtime either.
 
-With Distr you set this up on any Docker deployment target by splitting the application into several deployments: a reverse proxy, a database and two slots of your application called **blue** and **green**.
+With Distr you set this up on any Docker deployment target by splitting the application into several deployments: a [reverse proxy](/glossary/reverse-proxy/), a database and two slots of your application called **blue** and **green**.
 A single controller manages all of them, so every step of a rollout is an ordinary deployment update in Distr.
 
 ## How the blue-green setup is structured

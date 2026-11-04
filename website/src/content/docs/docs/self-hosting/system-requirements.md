@@ -61,7 +61,7 @@ The redirect is enabled by default and can be turned off with `REGISTRY_S3_ALLOW
 
 ## Networking and ports
 
-Distr exposes two HTTP endpoints: the app (web UI and API) and the registry (OCI artifacts). Both are typically served under separate hostnames and put behind a TLS-terminating reverse proxy (Caddy in our Docker Compose setup, an Ingress controller in Kubernetes).
+Distr exposes two HTTP endpoints: the app (web UI and API) and the registry (OCI artifacts). Both are typically served under separate hostnames and put behind a TLS-terminating [reverse proxy](/glossary/reverse-proxy/) (Caddy in our Docker Compose setup, an Ingress controller in Kubernetes).
 
 Regardless of how you deploy, make sure the following is in place:
 
