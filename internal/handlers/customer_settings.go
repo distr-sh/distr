@@ -66,7 +66,7 @@ func updateCustomerSettingsHandler(r *http.Request) (respond.Responder, error) {
 	} else if err := body.Validate(); err != nil {
 		return respond.BadRequest(err.Error()), nil
 	} else if updated, err := db.UpdateCustomerOrganizationControllerImageRepository(
-		ctx, customerOrg.ID, body.ControllerImageRepository,
+		ctx, customerOrg.ID, *auth.Authentication.Require(ctx).CurrentOrgID(), body.ControllerImageRepository,
 	); errors.Is(err, distrerr.ErrNotFound) {
 		return customerOrganizationNotFound, nil
 	} else if err != nil {

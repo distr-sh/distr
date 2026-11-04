@@ -204,14 +204,14 @@ func CountCustomerOrganizationsByOrganizationID(ctx context.Context, organizatio
 
 func UpdateCustomerOrganizationControllerImageRepository(
 	ctx context.Context,
-	id uuid.UUID,
+	id, orgID uuid.UUID,
 	repository *string,
 ) (*types.CustomerOrganization, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		"UPDATE CustomerOrganization AS co SET controller_image_repository = @repository "+
-			"WHERE co.id = @id RETURNING "+customerOrganizationOutputExpr,
-		pgx.NamedArgs{"id": id, "repository": repository},
+			"WHERE co.id = @id AND co.organization_id = @orgId RETURNING "+customerOrganizationOutputExpr,
+		pgx.NamedArgs{"id": id, "orgId": orgID, "repository": repository},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not update CustomerOrganization: %w", err)
