@@ -4,7 +4,7 @@ import {RouterLink} from '@angular/router';
 import {faBell} from '@fortawesome/free-solid-svg-icons';
 import {CardHeadingComponent} from '../../components/card-heading.component';
 import {AuthService} from '../../services/auth.service';
-import {CustomerHomeAlerts} from '../../types/customer-home';
+import {CustomerHomeAlerts} from './customer-home';
 
 @Component({
   selector: 'app-customer-home-alerts',

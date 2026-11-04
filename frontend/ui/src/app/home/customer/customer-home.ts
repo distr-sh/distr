@@ -1,5 +1,6 @@
 import {DeploymentRevisionStatus, DeploymentType} from '@distr-sh/distr-sdk';
-import {SupportBundleStatus} from './support-bundle';
+import {ActivityFeedEntryType} from '../../types/activity-feed';
+import {SupportBundleStatus} from '../../types/support-bundle';
 
 export interface CustomerHomeUser {
   name: string;
@@ -94,22 +95,10 @@ export interface CustomerHomeSupportBundle {
   updatedBy?: CustomerHomeUser;
 }
 
-export type CustomerHomeActivityType =
-  | 'application_version_created'
-  | 'artifact_version_created'
-  | 'artifact_version_first_pulled'
-  | 'deployment_revision_created'
-  | 'license_key_created'
-  | 'license_key_updated'
-  | 'support_bundle_created'
-  | 'support_bundle_uploaded'
-  | 'support_bundle_resolved'
-  | 'support_bundle_canceled';
-
 export interface CustomerHomeActivity {
   id: string;
   createdAt: string;
-  type: CustomerHomeActivityType;
+  type: ActivityFeedEntryType;
   resourceId: string;
   subject: string;
   detail?: string;

@@ -2,11 +2,15 @@ import {Application, DeploymentTarget, UserAccount} from '@distr-sh/distr-sdk';
 import dayjs, {Dayjs} from 'dayjs';
 import {latestDeploymentVersion} from '../../../util/versions';
 import {Artifact} from '../../services/artifacts.service';
-import {AccessToken, nextAccessTokenExpiry} from '../../types/access-token';
+import {AccessToken} from '../../types/access-token';
 import {ActivityFeedEntry} from '../../types/activity-feed';
 import {AlertConfiguration} from '../../types/alert-configuration';
 import {ApplicationEntitlement} from '../../types/application-entitlement';
 import {ArtifactEntitlement} from '../../types/artifact-entitlement';
+import {LicenseKey} from '../../types/license-key';
+import {UpdateNotificationConfiguration} from '../../types/notification-configuration';
+import {NotificationRecord} from '../../types/notification-record';
+import {SupportBundle} from '../../types/support-bundle';
 import {
   CustomerHomeAccessToken,
   CustomerHomeActivity,
@@ -17,11 +21,7 @@ import {
   CustomerHomeLicense,
   CustomerHomeSupportBundle,
   CustomerHomeUser,
-} from '../../types/customer-home';
-import {LicenseKey} from '../../types/license-key';
-import {UpdateNotificationConfiguration} from '../../types/notification-configuration';
-import {NotificationRecord} from '../../types/notification-record';
-import {SupportBundle} from '../../types/support-bundle';
+} from './customer-home';
 
 const accessTokenExpiryWindowDays = 7;
 const notificationWindowDays = 7;
@@ -172,6 +172,29 @@ export function toCustomerHomeAlerts(
     notificationCount: records.filter((record) => record.type === 'alert' || record.type === 'warning').length,
   };
 }
+
+/**
+ * The next expiration among the credentials of the token that still authenticate, or undefined when none of
+ * them expires. Once every credential has expired, the last expiration. A credential that expired while
+ * another one still authenticates is ignored as a completed rotation.
+ */
+export function nextAccessTokenExpiry(token: AccessToken, now: Dayjs = dayjs()): string | undefined {
+  const expirations = [...(token.legacyKey ? [token.legacyKey] : []), ...token.secrets].map(
+    (credential) => credential.expiresAt
+  );
+  const valid = expirations.filter((expiresAt) => expiresAt === undefined || now.isBefore(expiresAt));
+  if (valid.length > 0) {
+    return valid
+      .filter((expiresAt) => expiresAt !== undefined)
+      .sort((a, b) => dayjs(a).valueOf() - dayjs(b).valueOf())
+      .at(0);
+  }
+  return expirations
+    .filter((expiresAt) => expiresAt !== undefined)
+    .sort((a, b) => dayjs(b).valueOf() - dayjs(a).valueOf())
+    .at(0);
+}
+
 /** The tokens that have expired or expire within the next days, the soonest first. */
 export function toCustomerHomeAccessTokens(tokens: AccessToken[], now: Dayjs = dayjs()): CustomerHomeAccessToken[] {
   const threshold = now.add(accessTokenExpiryWindowDays, 'day');

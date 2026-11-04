@@ -2,7 +2,7 @@ import {DatePipe} from '@angular/common';
 import {Component, computed, input} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {RelativeDatePipe} from '../../../util/dates';
-import {CustomerHomeArtifact} from '../../types/customer-home';
+import {CustomerHomeArtifact} from './customer-home';
 import {CustomerHomeTitleImageComponent} from './customer-home-title-image.component';
 
 @Component({

@@ -4,7 +4,7 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faListCheck, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {CardHeadingComponent} from '../../components/card-heading.component';
 import {AuthService} from '../../services/auth.service';
-import {CustomerHomeChecklist} from '../../types/customer-home';
+import {CustomerHomeChecklist} from './customer-home';
 import {CustomerHomeChecklistItem, CustomerHomeChecklistItemComponent} from './customer-home-checklist-item.component';
 import {CustomerHomePrimarySection} from './customer-home-deployments.component';
 

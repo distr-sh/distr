@@ -5,7 +5,7 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faArrowUpRightFromSquare, faServer} from '@fortawesome/free-solid-svg-icons';
 import {RelativeDatePipe} from '../../../util/dates';
 import {DeploymentStatusTextComponent} from '../../deployments/deployment-target-card/deployment-status-text.component';
-import {CustomerHomeDeploymentTarget} from '../../types/customer-home';
+import {CustomerHomeDeploymentTarget} from './customer-home';
 import {CustomerHomeTitleImageComponent} from './customer-home-title-image.component';
 
 @Component({

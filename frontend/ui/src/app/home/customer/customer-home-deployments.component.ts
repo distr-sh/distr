@@ -6,7 +6,7 @@ import {faBox, faDashboard, faDownload, faPlus} from '@fortawesome/free-solid-sv
 import {CardHeadingComponent} from '../../components/card-heading.component';
 import {DeploymentWizardComponent} from '../../deployments/deployment-wizard/deployment-wizard.component';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
-import {CustomerHomeArtifacts, CustomerHomeDeploymentTarget} from '../../types/customer-home';
+import {CustomerHomeArtifacts, CustomerHomeDeploymentTarget} from './customer-home';
 import {CustomerHomeArtifactItemComponent} from './customer-home-artifact-item.component';
 import {CustomerHomeDeploymentTargetItemComponent} from './customer-home-deployment-target-item.component';
 import {CustomerHomeMenuComponent} from './customer-home-menu.component';

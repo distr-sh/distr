@@ -15,7 +15,7 @@ import {RelativeDatePipe} from '../../../util/dates';
 import {never} from '../../../util/exhaust';
 import {AvatarComponent} from '../../components/avatar.component';
 import {CardHeadingComponent} from '../../components/card-heading.component';
-import {CustomerHomeActivity} from '../../types/customer-home';
+import {CustomerHomeActivity} from './customer-home';
 import {CustomerHomeCollapsibleComponent} from './customer-home-collapsible.component';
 
 interface ActivityEntry {

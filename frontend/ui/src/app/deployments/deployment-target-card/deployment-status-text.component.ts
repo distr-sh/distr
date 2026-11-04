@@ -4,7 +4,7 @@ import {DeploymentRevisionStatus, DeploymentStatusType, DeploymentWithLatestRevi
 import {never} from '../../../util/exhaust';
 import {isStale} from '../../../util/model';
 import {AbstractStatusDotDirective} from '../../components/status-dot';
-import {CustomerHomeDeployment} from '../../types/customer-home';
+import {CustomerHomeDeployment} from '../../home/customer/customer-home';
 import {DeploymentStatusBadgeComponent} from '../deployment-status-badge.component';
 
 export type DeploymentStatusSource = DeploymentWithLatestRevision | CustomerHomeDeployment;

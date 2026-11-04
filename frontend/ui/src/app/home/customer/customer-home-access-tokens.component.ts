@@ -5,7 +5,7 @@ import {faCode} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {RelativeDatePipe} from '../../../util/dates';
 import {CardHeadingComponent} from '../../components/card-heading.component';
-import {CustomerHomeAccessToken} from '../../types/customer-home';
+import {CustomerHomeAccessToken} from './customer-home';
 
 @Component({
   selector: 'app-customer-home-access-tokens',

@@ -9,7 +9,7 @@ import {AuthService} from '../../services/auth.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SupportBundleCreateDialogComponent} from '../../support-bundles/create-dialog/support-bundle-create-dialog.component';
 import {SupportBundleStatusBadgeComponent} from '../../support-bundles/support-bundle-status-badge.component';
-import {CustomerHomeSupportBundle} from '../../types/customer-home';
+import {CustomerHomeSupportBundle} from './customer-home';
 
 const maxSupportBundles = 5;
 

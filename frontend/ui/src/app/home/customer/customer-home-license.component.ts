@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 import {RelativeDatePipe} from '../../../util/dates';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {CardHeadingComponent} from '../../components/card-heading.component';
-import {CustomerHomeLicense} from '../../types/customer-home';
+import {CustomerHomeLicense} from './customer-home';
 
 const expiringSoonDays = 30;
 
