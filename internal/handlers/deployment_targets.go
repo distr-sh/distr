@@ -108,8 +108,8 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 func getDeploymentTargets(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
-	if filter, resp, err := deploymentTargetFilter(r); resp != nil || err != nil {
-		return resp, err
+	if filter, resp := deploymentTargetFilter(r); resp != nil {
+		return resp, nil
 	} else if deploymentTargets, err := db.GetDeploymentTargets(
 		ctx,
 		*auth.CurrentOrgID(),
@@ -123,24 +123,19 @@ func getDeploymentTargets(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-func deploymentTargetFilter(r *http.Request) (db.DeploymentTargetFilter, respond.Responder, error) {
+func deploymentTargetFilter(r *http.Request) (db.DeploymentTargetFilter, respond.Responder) {
 	internal, err := QueryParam(r, "internal", strconv.ParseBool)
 	if err != nil && !errors.Is(err, ErrParamNotDefined) {
-		return db.DeploymentTargetFilter{}, respond.BadRequest("internal must be true or false"), nil
+		return db.DeploymentTargetFilter{}, respond.BadRequest("internal must be true or false")
 	}
 	request := api.ListDeploymentTargetsRequest{
 		CustomerOrganizationID: r.URL.Query()["customerOrganizationId"],
 		Internal:               internal,
 	}
 	if customerOrgIDs, err := request.ParseCustomerOrganizationIDs(); err != nil {
-		return db.DeploymentTargetFilter{}, respond.BadRequest(err.Error()), nil
+		return db.DeploymentTargetFilter{}, respond.BadRequest(err.Error())
 	} else {
-		for _, id := range customerOrgIDs {
-			if _, resp, err := customerScope(r.Context(), &id); resp != nil || err != nil {
-				return db.DeploymentTargetFilter{}, resp, err
-			}
-		}
-		return db.DeploymentTargetFilter{CustomerOrganizationIDs: customerOrgIDs, Internal: request.Internal}, nil, nil
+		return db.DeploymentTargetFilter{CustomerOrganizationIDs: customerOrgIDs, Internal: request.Internal}, nil
 	}
 }
 
