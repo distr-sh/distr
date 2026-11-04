@@ -1,0 +1,98 @@
+---
+title: 'Support Bundle: Diagnostics for Software in Customer Environments'
+slug: support-bundle
+description: 'A support bundle is an archive of logs, configuration and system information that a customer collects from an installation and shares with the software vendor. Learn what goes into one, how redaction works and when a bundle is not enough.'
+term: Support Bundle
+alternateNames:
+  - Diagnostic Bundle
+  - Diagnostics Package
+  - Troubleshooting Bundle
+shortDefinition: 'A support bundle is a snapshot of logs, configuration and system information that a customer collects from an installation and shares with the software vendor. It lets the vendor diagnose an issue without access to the environment.'
+lastUpdated: 2026-11-03
+faq:
+  - question: What is a support bundle?
+    answer: 'A support bundle is an archive of logs, configuration, versions and system information collected from one installation of a piece of software. The customer generates it, reviews it and sends it to the vendor, who uses it to diagnose an issue without access to the environment.'
+  - question: What does a support bundle contain?
+    answer: 'Typically the logs of every component, the versions running, configuration with secrets redacted, the state of containers or Kubernetes resources and host details such as disk space, memory and kernel version. Many tools also run checks, for example whether the database is reachable.'
+  - question: Are support bundles safe to share?
+    answer: 'Only after redaction. A good collector masks passwords, tokens, keys and credentials in URLs before anything leaves the host, and shows the customer what it collected. Pattern-based redaction can miss values, so vendors should also mark sensitive settings explicitly.'
+  - question: What is the difference between a support bundle and remote access?
+    answer: 'A support bundle is a snapshot that the customer collects and hands over. Remote access gives the vendor a live look at the running system. Bundles work everywhere, including air-gapped environments, but only answer the questions the collection anticipated.'
+  - question: Which tools create support bundles?
+    answer: 'On Linux hosts, `sos report` collects system diagnostics. For Kubernetes, `kubectl cluster-info dump` writes the state of a cluster. Software distribution platforms such as Distr let customers create bundles from their portal.'
+---
+
+## What Is a Support Bundle?
+
+A **support bundle** is an archive of logs, configuration and system information collected from one installation of a piece of software.
+The customer generates it, reviews it and sends it to the vendor, who uses it to find out what went wrong.
+
+The vendor of [self-hosted software](/glossary/self-hosted-software/) cannot look at the installation itself.
+It runs in the customer's data center, cloud account or [air-gapped](/glossary/air-gapped-meaning/) network, and the vendor has no access to it by default.
+Without a bundle, every question becomes a round trip: the vendor asks for a log, the customer pastes part of it into a ticket, and then the vendor asks for the next one.
+
+## What Goes Into a Support Bundle
+
+A bundle holds what a support engineer would check first:
+
+- the recent logs of every component
+- the versions of the application, its dependencies, the container runtime or Kubernetes and the operating system
+- the configuration, with every secret masked
+- the runtime state, such as which containers run and how often they restarted, or the pods, events and resource status in a Kubernetes namespace
+- host details like disk space, memory, CPU, kernel version and clock synchronization
+- the results of checks the vendor wrote for its application, for example whether the database is reachable or a migration finished
+
+A generic dump of the host rarely contains the one setting that explains the issue.
+The vendor knows its software, so the collection works best when the vendor defines it.
+
+## Redaction and Customer Consent
+
+A support bundle leaves the customer's environment, and secrets must not leave with it.
+
+Collectors redact before they store or upload anything.
+They mask the values of known secrets, credentials in connection strings and URLs, keys whose names end in `password`, `token` or `secret` and well-known token formats.
+Redaction by pattern can miss a value, so the vendor should also mark the settings it knows to be sensitive.
+
+The customer decides what gets shared.
+A good collection process shows the customer what it is about to collect, lets them leave parts out and uploads only after they confirm.
+Security teams are much more willing to approve bundles they can review first.
+
+## Support Bundles vs. Remote Access
+
+A support bundle shows the installation as it was at the moment of collection, and only the parts the collection asked for.
+
+[Vendor remote access](/glossary/vendor-remote-access/) gives a support engineer a live look instead: a shell on the host or `kubectl` access to a namespace, usually through a tunnel the customer approves for one support case.
+
+|                      | Support bundle                        | Remote access                      |
+| -------------------- | ------------------------------------- | ---------------------------------- |
+| What the vendor sees | A snapshot the customer collected     | The running system                 |
+| Works air-gapped     | Yes, the customer hands over a file   | No                                 |
+| Customer effort      | Run one command and review the result | Approve and later close the access |
+| Best for             | Most support cases                    | Issues that only show up live      |
+
+Vendors usually rely on bundles first and keep remote access for the cases a bundle cannot solve.
+
+## Support Bundles for Docker and Kubernetes
+
+On a Docker host, a bundle collects the logs and state of the application's containers, selected environment variables and host details.
+The collector runs on the host itself, often as a script the customer downloads.
+
+In Kubernetes, a bundle collects the pods, events, logs and resource status of the application's namespace.
+Many also record the Kubernetes version and the capacity of the nodes.
+`kubectl cluster-info dump` writes much of this without extra tooling.
+
+For plain Linux hosts, [`sos report`](https://github.com/sosreport/sos) has collected system diagnostics for support cases for many years.
+
+## Support Bundles with Distr
+
+With [Distr support bundles](/docs/platform/support-bundles/), the customer creates a bundle in the Customer Portal and describes the issue.
+Distr generates a one-time `curl` command for it.
+The script that command starts on the host lists the containers, environment variables and custom scripts it is about to collect, and the customer can leave any of them out before anything runs or is sent.
+
+Distr redacts every resource before storing it, including the values of the customer's secrets.
+The vendor decides which environment variables get collected and can add scripts for checks that only it knows to run.
+Both sides can comment on the bundle until the vendor marks it as resolved.
+
+Support bundles are available for Docker deployments, and for Kubernetes deployments on request.
+For issues a snapshot does not explain, the [remote access guide](/docs/integrations/remote-access/) shows how to give your support team temporary access with the customer's consent.
+[Support Bundles: Structured Diagnostics Without Giving Up SSH](/blog/support-bundles/) explains why we built the feature.
