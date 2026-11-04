@@ -168,7 +168,7 @@ importers:
     dependencies:
       semver:
         specifier: ^7.6.3
-        version: 7.8.5
+        version: 7.8.6
     devDependencies:
       '@types/semver':
         specifier: ^7.5.8
@@ -296,8 +296,8 @@ packages:
     engines: {node: 20 || >=22}
     hasBin: true
 
-  semver@7.8.5:
-    resolution: {integrity: sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==}
+  semver@7.8.6:
+    resolution: {integrity: sha512-9lpSSU4Mly3mrtruwLs1eLK6+gzbzqeBFwRNjIjE+9LuDpWdYctrQlQ3ej1Ilgi7gknpsTRnPoLP8DpCHqHIJw==}
     engines: {node: '>=10'}
     hasBin: true
 
@@ -427,7 +427,7 @@ snapshots:
       glob: 13.0.3
       package-json-from-dist: 1.0.1
 
-  semver@7.8.5: {}
+  semver@7.8.6: {}
 
   typedoc-plugin-markdown@4.14.1(typedoc@0.28.20(typescript@6.0.3)):
     dependencies:

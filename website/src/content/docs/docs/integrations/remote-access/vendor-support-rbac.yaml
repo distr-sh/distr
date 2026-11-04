@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vendor-support
+  namespace: acme
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vendor-support
+  namespace: acme
+rules:
+  - apiGroups: ['']
+    resources:
+      - pods
+      - pods/log
+      - services
+      - endpoints
+      - configmaps
+      - persistentvolumeclaims
+      - events
+    verbs: [get, list, watch]
+  - apiGroups: [apps]
+    resources: [deployments, statefulsets, daemonsets, replicasets]
+    verbs: [get, list, watch]
+  - apiGroups: [batch]
+    resources: [jobs, cronjobs]
+    verbs: [get, list, watch]
+  # Delete this rule to keep the vendor out of the containers.
+  - apiGroups: ['']
+    resources: [pods/exec, pods/portforward]
+    verbs: [get, create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vendor-support
+  namespace: acme
+subjects:
+  - kind: ServiceAccount
+    name: vendor-support
+    namespace: acme
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vendor-support

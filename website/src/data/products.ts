@@ -14,6 +14,13 @@ export const products: Product[] = [
     href: '/docs/controllers/',
   },
   {
+    title: 'Automatic Updates',
+    description:
+      'New - Keep deployments on the latest eligible version of their application without manual updates',
+    value: 'refresh-cw',
+    href: '/docs/controllers/deployment/#automatic-updates',
+  },
+  {
     title: 'Customer Portal',
     description:
       'Where customers can download Artifacts and manage their Applications',
@@ -42,11 +49,25 @@ export const products: Product[] = [
     href: '/docs/controllers/alerts/',
   },
   {
+    title: 'Update Notifications',
+    description:
+      'New - Email selected users when a new version of an application or an artifact is available',
+    value: 'megaphone',
+    href: '/docs/controllers/update-notifications/',
+  },
+  {
     title: 'Logs and Metrics',
     description:
       'Collect Logs and Metrics in realtime and directly download them as bundle for better Customer support',
     value: 'chart-line',
     href: '/docs/controllers/logs-and-metrics/',
+  },
+  {
+    title: 'Remote Access',
+    description:
+      'New - Debug customer installations through a Tailscale or Cloudflare tunnel that the customer approves and can revoke',
+    value: 'square-terminal',
+    href: '/docs/integrations/remote-access/',
   },
   {
     title: 'Compatibility Matrix',

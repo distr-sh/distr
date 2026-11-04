@@ -1,6 +1,9 @@
 <div class="distr-table-panel">
   <div class="distr-toolbar p-4">
-    <app-search-bar [control]="filterForm.controls.search" placeholder="Filter application entitlements" />
+    <app-search-bar
+      [control]="filterForm.controls.search"
+      placeholder="Filter application entitlements"
+      [hotkey]="hotkey()" />
     <div class="distr-toolbar-actions">
       @if ((auth.isVendor() || auth.isPartner()) && auth.hasAnyRole('read_write', 'admin')) {
         <button
