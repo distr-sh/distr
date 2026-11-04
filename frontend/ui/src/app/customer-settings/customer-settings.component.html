@@ -37,11 +37,23 @@
                   animate.leave="animate-flip-out-top"
                   class="distr-dropdown-panel w-full">
                   <ul aria-labelledby="dropdownDefault">
-                    @for (customer of customerOrganizations(); track customer.id) {
+                    @for (item of switcherCustomers(); track item.customer.id) {
                       <li>
-                        <a class="distr-dropdown-item" [routerLink]="['/', 'customers', customer.id, 'settings']">{{
-                          customer.name
-                        }}</a>
+                        @if (item.settingsEnabled) {
+                          <a
+                            class="distr-dropdown-item"
+                            [routerLink]="['/', 'customers', item.customer.id, 'settings']"
+                            >{{ item.customer.name }}</a
+                          >
+                        } @else {
+                          <button
+                            type="button"
+                            disabled
+                            class="distr-dropdown-item"
+                            title="Settings are not enabled for this customer">
+                            {{ item.customer.name }}
+                          </button>
+                        }
                       </li>
                     }
                   </ul>
@@ -54,7 +66,12 @@
     }
 
     @if (customerOrganizationId(); as customerOrganizationId) {
-      <app-custom-oidc [customerOrganizationId]="customerOrganizationId" />
+      <div class="flex flex-col gap-10">
+        <app-customer-controller-settings [customerOrganizationId]="customerOrganizationId" />
+        @if (oidcProvidersEnabled()) {
+          <app-custom-oidc [customerOrganizationId]="customerOrganizationId" />
+        }
+      </div>
     }
   </div>
 </app-page>

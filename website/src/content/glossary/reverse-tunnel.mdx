@@ -1,0 +1,108 @@
+---
+title: 'Reverse Tunnel: Reaching a Service Behind a Firewall Without Opening a Port'
+slug: reverse-tunnel
+description: 'A reverse tunnel connects outbound from a private network and carries traffic back in, so a service behind NAT or a firewall becomes reachable without an inbound port. Learn how reverse tunnels work, how they differ from VPNs and port forwarding and what to secure.'
+term: Reverse Tunnel
+alternateNames:
+  - Reverse SSH Tunnel
+  - Outbound Tunnel
+  - Remote Port Forwarding
+shortDefinition: 'A reverse tunnel is a connection that a host inside a private network opens to a server outside it, and that then carries traffic from the outside back to a service on the inside. It makes the service reachable without opening an inbound port in the firewall.'
+lastUpdated: 2026-11-03
+faq:
+  - question: What is a reverse tunnel?
+    answer: 'A reverse tunnel is a connection that a host inside a private network opens to a relay outside it. Clients connect to the relay, and the relay sends their traffic back through that connection to a service on the inside. The private network never accepts an inbound connection.'
+  - question: How do I create a reverse SSH tunnel?
+    answer: 'Run `ssh -R 8080:localhost:80 user@relay.example.com` on the host inside the private network. Connections to port 8080 on the relay are then forwarded to port 80 on that host. Tools such as autossh restart the tunnel when the connection drops.'
+  - question: Does a reverse tunnel bypass the firewall?
+    answer: 'It does not break the firewall, but it works around its inbound rules: the firewall only sees an outbound connection, which most networks allow. That is why security teams want to know about every tunnel, and why some networks block or inspect outbound traffic to tunnel providers.'
+  - question: What is the difference between a reverse tunnel and a VPN?
+    answer: 'A VPN connects whole networks or a device to a network, so its users can usually reach many hosts. A reverse tunnel exposes one service or host through a single outbound connection. Mesh VPNs such as Tailscale blur the line, since they also connect outbound and can be limited to single hosts and ports.'
+  - question: Are reverse tunnels secure?
+    answer: 'They can be, if the tunnel exposes only the service it is meant for, its credential is stored like any other secret and access is enforced at the relay, for example with Cloudflare Access or a Tailscale access policy. A tunnel without access control makes the service reachable by anyone who finds the relay address.'
+---
+
+## What Is a Reverse Tunnel?
+
+A **reverse tunnel** is a connection that a host inside a private network opens to a server outside it.
+Once that connection is up, the outside server sends traffic back through it to a service on the inside.
+The service becomes reachable from outside, although the private network never accepts an inbound connection.
+
+"Reverse" refers to the direction of the connection.
+Normally the client reaches out to the server.
+With a reverse tunnel, the side that offers the service dials out first and keeps the connection open, and clients reach the service through the relay at the other end.
+
+## How a Reverse Tunnel Works
+
+1. An agent inside the private network opens an outbound connection to a relay and keeps it alive.
+2. The relay accepts that connection and listens for clients. It can be a server you run yourself or a service such as Cloudflare or ngrok.
+3. A client connects to the relay, which forwards the traffic through the open connection to the agent. The agent passes it on to the target service.
+
+Firewalls and NAT gateways track connections, and they let replies through on any connection that a host on the inside opened.
+Every request that comes through the tunnel travels inside such a connection, so the firewall has nothing to block.
+
+The simplest reverse tunnel is OpenSSH's remote port forwarding:
+
+```sh
+ssh -N -R 8080:localhost:80 user@relay.example.com
+```
+
+The host inside the private network runs this command.
+Connections to port 8080 on the relay are then forwarded to port 80 on that host.
+By default the relay binds the port to its loopback interface only, and the `GatewayPorts` setting in its `sshd_config` decides whether other machines may connect.
+
+## Reverse Tunnel Tools
+
+- OpenSSH's `ssh -R`, often wrapped in autossh so the tunnel comes back after a dropped connection.
+- [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/), whose `cloudflared` daemon opens outbound connections to Cloudflare's network on port 7844. Cloudflare routes requests for a hostname through them, and Cloudflare Access can require a login before a request reaches the tunnel.
+- [ngrok](https://ngrok.com), an agent that gives a local service a public URL. Developers use it a lot for testing webhooks.
+- frp and inlets, where you run the relay on a server of your own.
+- [AWS Systems Manager Session Manager](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager.html). The SSM agent on an instance connects outbound to AWS and gives you a shell without an open SSH port.
+- Konnectivity, which some managed Kubernetes services run on their nodes. Its agent dials out to the control plane, so the API server can reach the nodes for `kubectl logs` and `kubectl exec` without a route into the node network.
+
+[Tailscale](https://tailscale.com) is a mesh VPN built on WireGuard, not a tunnel in the narrow sense.
+To the customer's firewall it looks much the same, though.
+Every node connects outbound to the coordination server and to its peers, and where a direct connection fails, traffic goes through Tailscale's DERP relays over HTTPS.
+
+## Reverse Tunnel vs. VPN vs. Port Forwarding
+
+| Approach        | Who opens the connection     | What becomes reachable        | Firewall change                 |
+| --------------- | ---------------------------- | ----------------------------- | ------------------------------- |
+| Port forwarding | The client, from outside     | One port on one host          | Inbound rule on the router      |
+| Gateway VPN     | The client, to a VPN gateway | Usually a whole network       | Inbound port for the gateway    |
+| Reverse tunnel  | The agent, from inside       | The service the agent exposes | None, as long as egress is open |
+
+Port forwarding maps a port on the router or firewall to a host behind it.
+It needs an inbound rule and a public address, and anyone on the internet can reach the port unless something else restricts it.
+
+A gateway VPN connects a device or another network to the private network.
+Its users can usually reach far more than one service, and its gateway has to accept inbound connections.
+Mesh VPNs such as Tailscale connect outbound instead, which is why they work much like a reverse tunnel from the firewall's point of view.
+
+A [reverse proxy](/glossary/reverse-proxy/) sounds similar but works the other way round.
+It accepts inbound connections and forwards them to backends it can reach, so the proxy itself has to be reachable.
+Tunnel services often run one at the relay: Cloudflare's edge, for example, terminates TLS for a hostname before sending the request through the tunnel.
+
+A reverse tunnel exposes only what the agent forwards and needs no inbound rule.
+It is the usual choice when the network belongs to someone else, for example when a software vendor needs [remote access](/glossary/vendor-remote-access/) to an installation in a customer's environment.
+
+## Security Considerations
+
+With a reverse tunnel, the relay decides who gets in, not the customer's firewall.
+Securing the tunnel therefore starts at the relay:
+
+- Forward a single host and port instead of a SOCKS proxy or a whole subnet, so nobody can use the tunnel to reach other systems in the network.
+- Put an identity check in front of the tunnel, such as Cloudflare Access or a Tailscale access policy. Without one, anyone who learns the relay address reaches the service.
+- Store the tunnel token or auth key like any other secret, since whoever holds it can run a connector for that tunnel. Keep one per installation and rotate it when someone who knew it leaves.
+- Tell the security team about the tunnel. It works around their inbound firewall rules, so they want to know that it exists, who uses it and when it ends. Some organizations block or inspect outbound traffic to tunnel providers for this reason.
+- Stop the tunnel once the work it was opened for is done.
+
+## Reverse Tunnels and Distr
+
+The [Distr](/docs/) controller in a customer's environment also connects outbound only, but it is not a tunnel.
+It fetches the desired state of its deployments from Distr and reports status, logs and metrics back, and Distr never connects to it.
+The vendor cannot use that connection to reach the customer's infrastructure.
+
+When a support case does need live access, the vendor adds a reverse tunnel deliberately.
+It deploys Tailscale or a Cloudflare Tunnel as a separate Distr application next to its own, with the customer's consent and a credential that belongs to that customer only.
+The [remote access guide](/docs/integrations/remote-access/) shows both setups and how the customer closes the tunnel by undeploying it.

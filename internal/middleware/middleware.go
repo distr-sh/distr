@@ -431,6 +431,7 @@ var (
 	)
 	SupportBundlesCustomerFeatureMiddleware  = CustomerFeatureMiddleware(types.CustomerOrganizationFeatureSupportBundles)
 	VulnerabilitiesCustomerFeatureMiddleware = CustomerFeatureMiddleware(types.CustomerOrganizationFeatureVulnerabilities)
+	SettingsCustomerFeatureMiddleware        = CustomerFeatureMiddleware(types.CustomerOrganizationFeatureSettings)
 )
 
 var (
@@ -442,6 +443,7 @@ var (
 	CustomEmailsFeatureMiddleware         = FeatureFlagMiddleware(types.FeatureCustomEmails)
 	CustomOidcProvidersFeatureMiddleware  = FeatureFlagMiddleware(types.FeatureCustomOidcProviders)
 	AutoUpdatesFeatureMiddleware          = FeatureFlagMiddleware(types.FeatureAutoUpdates)
+	CustomerSettingsFeatureMiddleware     = FeatureFlagMiddleware(types.FeatureCustomerSettings)
 )
 
 // RequireCustomDomainsConfigured rejects requests unless the instance itself is set up for custom

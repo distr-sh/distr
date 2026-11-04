@@ -22,9 +22,9 @@ func DeploymentTargetMetricsNotificationAlert(
 ) error {
 	return sendNotificationWithQuota(ctx, organization.ID, user.Email,
 		mailx.Subject(getDeploymentTargetMetricsNotificationSubject("Alert", metricType, organization, deploymentTarget)),
-		mailx.HtmlBodyTemplate(mailtemplates.DeploymentTargetMetricsNotificationAlert(
+		mailtemplates.DeploymentTargetMetricsNotificationAlert(
 			deploymentTarget, metricType, diskDevice, diskPath, threshold, usagePercent,
-		)),
+		),
 	)
 }
 
@@ -41,9 +41,9 @@ func DeploymentTargetMetricsNotificationResolved(
 ) error {
 	return sendNotificationWithQuota(ctx, organization.ID, user.Email,
 		mailx.Subject(getDeploymentTargetMetricsNotificationSubject("Resolved", metricType, organization, deploymentTarget)),
-		mailx.HtmlBodyTemplate(mailtemplates.DeploymentTargetMetricsNotificationResolved(
+		mailtemplates.DeploymentTargetMetricsNotificationResolved(
 			deploymentTarget, metricType, diskDevice, diskPath, threshold, usagePercent,
-		)),
+		),
 	)
 }
 

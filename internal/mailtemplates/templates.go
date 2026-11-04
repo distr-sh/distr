@@ -3,23 +3,30 @@ package mailtemplates
 import (
 	"context"
 	"embed"
-	"encoding/base64"
-	"fmt"
 	"html/template"
 	"io/fs"
 	"net/url"
 	"path"
 
+	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/go-mailx/mailx"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
+
+// logoContentID has to match the "cid:" reference in fragments/logo.html.
+const logoContentID = "logo"
 
 var (
 	//go:embed templates/*
 	embeddedFS embed.FS
+
+	//go:embed images/distr-logo.png
+	distrLogoPNG []byte
 
 	templates *template.Template
 	funcMap   = template.FuncMap{
@@ -57,25 +64,40 @@ func parse(fsys fs.FS, patterns ...string) (*template.Template, error) {
 	return t, nil
 }
 
-// BrandingLogoDataURL loads the branding logo file and returns it as a base64 data URL, so it can be
-// embedded directly into e-mails (the file endpoint requires authentication and can not be linked to).
-func BrandingLogoDataURL(ctx context.Context, branding *types.OrganizationBranding) *string {
-	if branding == nil {
-		return nil
-	}
-	return fileDataURL(ctx, branding.LogoImageID)
+// htmlBody renders the named template with the Distr logo, which fragments/logo.html references as
+// an inline image because Gmail does not display data URLs.
+func htmlBody(name string, data map[string]any) mailx.MailOpt {
+	return htmlBodyWithLogo(name, data, "Distr", "image/png", distrLogoPNG)
 }
 
-func fileDataURL(ctx context.Context, imageID *uuid.UUID) *string {
-	if imageID == nil {
-		return nil
+// brandedHTMLBody renders the named template with the branding logo of the organization, falling
+// back to the Distr logo.
+func brandedHTMLBody(
+	ctx context.Context,
+	name string,
+	data map[string]any,
+	organization *types.OrganizationWithBranding,
+) mailx.MailOpt {
+	if organization != nil && organization.Branding != nil && organization.Branding.LogoImageID != nil {
+		logoID := *organization.Branding.LogoImageID
+		if file, err := db.GetFileWithID(ctx, logoID); err != nil {
+			internalctx.GetLogger(ctx).Warn("could not load branding logo for mail, using Distr logo instead",
+				zap.String("template", name),
+				zap.Stringer("fileId", logoID),
+				zap.Error(err))
+		} else {
+			return htmlBodyWithLogo(name, data, organization.Name, file.ContentType, file.Data)
+		}
 	}
-	file, err := db.GetFileWithID(ctx, *imageID)
-	if err != nil {
-		return nil
+	return htmlBody(name, data)
+}
+
+func htmlBodyWithLogo(name string, data map[string]any, alt, contentType string, logo []byte) mailx.MailOpt {
+	data["LogoAlt"] = alt
+	return func(mail *mailx.Mail) {
+		mailx.HtmlBodyTemplate(templates.Lookup(name), data)(mail)
+		mailx.Inline(logoContentID, contentType, logo)(mail)
 	}
-	dataURL := fmt.Sprintf("data:%s;base64,%s", file.ContentType, base64.StdEncoding.EncodeToString(file.Data))
-	return &dataURL
 }
 
 func InviteUser(
@@ -86,18 +108,16 @@ func InviteUser(
 	invitingUser types.UserAccount,
 	targetOrgName string,
 	inviteURL string,
-) (*template.Template, any) {
-	return templates.Lookup("invite-user.html"),
-		map[string]any{
-			"UserAccount":   userAccount,
-			"Organization":  organization,
-			"InvitingUser":  invitingUser,
-			"TargetOrgName": targetOrgName,
-			"Host": customdomains.CustomerPortalDomainOrDefault(
-				ctx, organization.ID, customerOrgID, organization.Branding),
-			"InviteURL":   inviteURL,
-			"LogoDataUrl": BrandingLogoDataURL(ctx, organization.Branding),
-		}
+) mailx.MailOpt {
+	return brandedHTMLBody(ctx, "invite-user.html", map[string]any{
+		"UserAccount":   userAccount,
+		"Organization":  organization,
+		"InvitingUser":  invitingUser,
+		"TargetOrgName": targetOrgName,
+		"Host": customdomains.CustomerPortalDomainOrDefault(
+			ctx, organization.ID, customerOrgID, organization.Branding),
+		"InviteURL": inviteURL,
+	}, &organization)
 }
 
 func VerifyEmail(
@@ -107,20 +127,19 @@ func VerifyEmail(
 	customerOrgID *uuid.UUID,
 	token string,
 	greetWithOrgName bool,
-) (*template.Template, any) {
+) mailx.MailOpt {
 	signature := "Distr"
 	if greetWithOrgName && org.Name != "" && org.Name != userAccount.Email {
 		signature = org.Name
 	}
 
-	return templates.Lookup("verify-email-registration.html"), map[string]any{
+	return brandedHTMLBody(ctx, "verify-email-registration.html", map[string]any{
 		"UserAccount":  userAccount,
 		"Organization": org,
 		"Signature":    signature,
 		"Host":         customdomains.CustomerPortalDomainOrDefault(ctx, org.ID, customerOrgID, org.Branding),
 		"Token":        token,
-		"LogoDataUrl":  BrandingLogoDataURL(ctx, org.Branding),
-	}
+	}, &org)
 }
 
 func PasswordReset(
@@ -129,21 +148,18 @@ func PasswordReset(
 	organization *types.OrganizationWithBranding,
 	customerOrgID *uuid.UUID,
 	token string,
-) (*template.Template, any) {
+) mailx.MailOpt {
 	host := env.Host()
-	var branding *types.OrganizationBranding
 	if organization != nil {
 		host = customdomains.CustomerPortalDomainOrDefault(
 			ctx, organization.ID, customerOrgID, organization.Branding)
-		branding = organization.Branding
 	}
-	return templates.Lookup("password-reset.html"), map[string]any{
+	return brandedHTMLBody(ctx, "password-reset.html", map[string]any{
 		"UserAccount":  userAccount,
 		"Organization": organization,
 		"Host":         host,
 		"Token":        token,
-		"LogoDataUrl":  BrandingLogoDataURL(ctx, branding),
-	}
+	}, organization)
 }
 
 func UpdateEmail(
@@ -152,14 +168,13 @@ func UpdateEmail(
 	org types.OrganizationWithBranding,
 	customerOrgID *uuid.UUID,
 	token string,
-) (*template.Template, any) {
-	return templates.Lookup("update-email.html"), map[string]any{
+) mailx.MailOpt {
+	return brandedHTMLBody(ctx, "update-email.html", map[string]any{
 		"UserAccount":  userAccount,
 		"Organization": org,
 		"Host":         customdomains.CustomerPortalDomainOrDefault(ctx, org.ID, customerOrgID, org.Branding),
 		"Token":        token,
-		"LogoDataUrl":  BrandingLogoDataURL(ctx, org.Branding),
-	}
+	}, &org)
 }
 
 func CustomEmailTest(
@@ -167,17 +182,16 @@ func CustomEmailTest(
 	userAccount types.UserAccount,
 	org types.OrganizationWithBranding,
 	config types.CustomEmailConfiguration,
-) (*template.Template, any) {
-	return templates.Lookup("custom-email-test.html"), map[string]any{
+) mailx.MailOpt {
+	return brandedHTMLBody(ctx, "custom-email-test.html", map[string]any{
 		"UserAccount":   userAccount,
 		"Organization":  org,
 		"Configuration": config,
 		// Distr reports the result of the test to the admin, so the organization name must not be
 		// used as the signature here.
-		"Signature":   "Distr",
-		"Host":        customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding),
-		"LogoDataUrl": BrandingLogoDataURL(ctx, org.Branding),
-	}
+		"Signature": "Distr",
+		"Host":      customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding),
+	}, &org)
 }
 
 func DeploymentTargetMetricsNotificationAlert(
@@ -187,7 +201,7 @@ func DeploymentTargetMetricsNotificationAlert(
 	diskPath string,
 	threshold int,
 	usagePercent int64,
-) (*template.Template, any) {
+) mailx.MailOpt {
 	return deploymentTargetMetricsNotification(
 		false, deploymentTarget, metricType, diskDevice, diskPath, threshold, usagePercent,
 	)
@@ -200,7 +214,7 @@ func DeploymentTargetMetricsNotificationResolved(
 	diskPath string,
 	threshold int,
 	usagePercent int64,
-) (*template.Template, any) {
+) mailx.MailOpt {
 	return deploymentTargetMetricsNotification(
 		true, deploymentTarget, metricType, diskDevice, diskPath, threshold, usagePercent,
 	)
@@ -214,8 +228,8 @@ func deploymentTargetMetricsNotification(
 	diskPath string,
 	threshold int,
 	usagePercent int64,
-) (*template.Template, any) {
-	return templates.Lookup("deployment-target-metrics-notification.html"), map[string]any{
+) mailx.MailOpt {
+	return htmlBody("deployment-target-metrics-notification.html", map[string]any{
 		"Resolved":         resolved,
 		"DeploymentTarget": deploymentTarget,
 		"MetricType":       metricType,
@@ -223,7 +237,7 @@ func deploymentTargetMetricsNotification(
 		"DiskPath":         diskPath,
 		"Threshold":        threshold,
 		"UsagePercent":     usagePercent,
-	}
+	})
 }
 
 func ApplicationUpdateAvailableNotification(
@@ -233,17 +247,16 @@ func ApplicationUpdateAvailableNotification(
 	application types.NotificationApplication,
 	versionName string,
 	deployments []types.DeploymentPendingUpdate,
-) (*template.Template, any) {
-	return templates.Lookup("application-update-notification.html"), map[string]any{
+) mailx.MailOpt {
+	return brandedHTMLBody(ctx, "application-update-notification.html", map[string]any{
 		"UserAccount":   recipient,
 		"Organization":  organization,
 		"Host":          notificationHost(ctx, organization, recipient),
-		"LogoDataUrl":   BrandingLogoDataURL(ctx, organization.Branding),
 		"Application":   application,
 		"VersionName":   versionName,
 		"Deployments":   deployments,
 		"ShowCustomers": recipient.CustomerOrganizationID == nil,
-	}
+	}, &organization)
 }
 
 func ArtifactVersionAvailableNotification(
@@ -252,15 +265,14 @@ func ArtifactVersionAvailableNotification(
 	organization types.OrganizationWithBranding,
 	artifact types.NotificationArtifact,
 	versionName string,
-) (*template.Template, any) {
-	return templates.Lookup("artifact-version-notification.html"), map[string]any{
+) mailx.MailOpt {
+	return brandedHTMLBody(ctx, "artifact-version-notification.html", map[string]any{
 		"UserAccount":  recipient,
 		"Organization": organization,
 		"Host":         notificationHost(ctx, organization, recipient),
-		"LogoDataUrl":  BrandingLogoDataURL(ctx, organization.Branding),
 		"Artifact":     artifact,
 		"VersionName":  versionName,
-	}
+	}, &organization)
 }
 
 // notificationHost resolves the host a recipient reaches this organization on. A vendor or partner
@@ -278,7 +290,7 @@ func DeploymentStatusNotificationError(
 	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
 	currentStatus types.DeploymentRevisionStatus,
-) (*template.Template, any) {
+) mailx.MailOpt {
 	return deploymentStatusNotification("error", deploymentTarget, deployment, nil, &currentStatus)
 }
 
@@ -286,7 +298,7 @@ func DeploymentStatusNotificationUpdateFailed(
 	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
 	currentStatus types.DeploymentRevisionStatus,
-) (*template.Template, any) {
+) mailx.MailOpt {
 	return deploymentStatusNotification("update_failed", deploymentTarget, deployment, nil, &currentStatus)
 }
 
@@ -294,7 +306,7 @@ func DeploymentStatusNotificationStale(
 	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
 	previousStatus types.DeploymentRevisionStatus,
-) (*template.Template, any) {
+) mailx.MailOpt {
 	return deploymentStatusNotification("stale", deploymentTarget, deployment, &previousStatus, nil)
 }
 
@@ -302,7 +314,7 @@ func DeploymentStatusNotificationRecovered(
 	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
 	currentStatus types.DeploymentRevisionStatus,
-) (*template.Template, any) {
+) mailx.MailOpt {
 	return deploymentStatusNotification("recovered", deploymentTarget, deployment, nil, &currentStatus)
 }
 
@@ -311,13 +323,13 @@ func LicenseKeyRevisedCustomer(
 	revision types.LicenseKeyRevision,
 	payloadFormatted string,
 	token string,
-) (*template.Template, any) {
-	return templates.Lookup("license-key-revised-customer.html"), map[string]any{
+) mailx.MailOpt {
+	return htmlBody("license-key-revised-customer.html", map[string]any{
 		"LicenseKey":       licenseKey,
 		"Revision":         revision,
 		"PayloadFormatted": payloadFormatted,
 		"Token":            token,
-	}
+	})
 }
 
 func LicenseKeyRevisedVendor(
@@ -325,13 +337,13 @@ func LicenseKeyRevisedVendor(
 	revision types.LicenseKeyRevision,
 	payloadFormatted string,
 	customerOrgName string,
-) (*template.Template, any) {
-	return templates.Lookup("license-key-revised-vendor.html"), map[string]any{
+) mailx.MailOpt {
+	return htmlBody("license-key-revised-vendor.html", map[string]any{
 		"LicenseKey":       licenseKey,
 		"Revision":         revision,
 		"PayloadFormatted": payloadFormatted,
 		"CustomerOrgName":  customerOrgName,
-	}
+	})
 }
 
 func deploymentStatusNotification(
@@ -340,12 +352,12 @@ func deploymentStatusNotification(
 	deployment types.DeploymentWithLatestRevision,
 	previousStatus *types.DeploymentRevisionStatus,
 	currentStatus *types.DeploymentRevisionStatus,
-) (*template.Template, any) {
-	return templates.Lookup("deployment-status-notification.html"), map[string]any{
+) mailx.MailOpt {
+	return htmlBody("deployment-status-notification.html", map[string]any{
 		"EventType":        eventType,
 		"DeploymentTarget": deploymentTarget,
 		"Deployment":       deployment,
 		"PreviousStatus":   previousStatus,
 		"CurrentStatus":    currentStatus,
-	}
+	})
 }

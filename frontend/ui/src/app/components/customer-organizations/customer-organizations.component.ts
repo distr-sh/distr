@@ -44,6 +44,7 @@ const customerFeatureLabels: Record<CustomerOrganizationFeature, string> = {
   alerts: 'Alerts',
   update_notifications: 'Update Notifications',
   support_bundles: 'Support Bundles',
+  settings: 'Settings',
   oidc_providers: 'Identity Provider',
   vulnerabilities: 'Security',
 };
@@ -53,6 +54,7 @@ const proCustomerFeatures: CustomerOrganizationFeature[] = ['alerts', 'update_no
 // A Business customer feature is unlocked by the organization feature behind it rather than by the plan.
 const businessCustomerFeatures: Partial<Record<CustomerOrganizationFeature, Feature>> = {
   vulnerabilities: 'vulnerabilities',
+  settings: 'customer_settings',
   oidc_providers: 'custom_oidc_providers',
 };
 
@@ -136,6 +138,7 @@ export class CustomerOrganizationsComponent {
     'update_notifications',
     'support_bundles',
     'vulnerabilities',
+    'settings',
     'oidc_providers',
   ];
 
@@ -158,7 +161,7 @@ export class CustomerOrganizationsComponent {
     return this.allCustomerFeaturesList.map((feature) => ({
       feature,
       label: customerFeatureLabels[feature],
-      indent: feature === 'alerts',
+      indent: feature === 'alerts' || feature === 'oidc_providers',
       checked: granted.includes(feature),
       requiredPlan: requiredPlan(feature),
     }));
@@ -291,11 +294,15 @@ export class CustomerOrganizationsComponent {
       featureSet.delete(feature);
       if (feature === 'deployment_targets') {
         featureSet.delete('alerts');
+      } else if (feature === 'settings') {
+        featureSet.delete('oidc_providers');
       }
     } else {
       featureSet.add(feature);
       if (feature === 'alerts') {
         featureSet.add('deployment_targets');
+      } else if (feature === 'oidc_providers') {
+        featureSet.add('settings');
       }
     }
 

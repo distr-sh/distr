@@ -37,6 +37,8 @@ export class FeatureFlagService {
   public readonly isAutoUpdatesEnabled$ = this.hasFeature('auto_updates');
   public readonly isAutoUpdatesEnabled = toSignal(this.isAutoUpdatesEnabled$, {initialValue: false});
 
+  public readonly isCustomerSettingsEnabled$ = this.hasFeature('customer_settings');
+
   public readonly isNotificationsEnabled$ = this.forbidSubscriptionType(...NON_PRO_SUBSCRIPTION_TYPES);
 
   public readonly isSupportBundlesEnabled$ = this.forbidSubscriptionType(...NON_PRO_SUBSCRIPTION_TYPES);
