@@ -1,14 +1,15 @@
 package main
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 
 	"github.com/distr-sh/distr/internal/supportcollector"
-	"github.com/spf13/pflag"
+	"github.com/distr-sh/distr/internal/util"
+	"github.com/spf13/cobra"
 	"k8s.io/klog/v2"
 )
 
@@ -23,54 +24,58 @@ func main() {
 	klog.LogToStderr(false)
 	klog.SetOutput(io.Discard)
 
+	if err := newCommand().Execute(); err != nil {
+		os.Exit(1)
+	}
+}
+
+func newCommand() *cobra.Command {
 	config := supportcollector.Config{
 		ConfigFlags: supportcollector.NewConfigFlags(),
 		Options:     supportcollector.DefaultOptions(),
 	}
 	opts := &config.Options
-	config.ConfigFlags.AddFlags(pflag.CommandLine)
-	pflag.StringVar(&config.Output, "output", "", "directory to write the bundle into, and to upload it from when "+
+	cmd := &cobra.Command{
+		Use:   "support-collector",
+		Short: "Collect a Distr support bundle from a Kubernetes cluster",
+		Args:  cobra.NoArgs,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if opts.LogTailLines < 0 {
+				return errors.New("--log-tail-lines must not be negative")
+			} else if opts.MaxResourceBytes < supportcollector.MinResourceBytes {
+				return fmt.Errorf("--max-resource-bytes must be at least %d", supportcollector.MinResourceBytes)
+			} else if uploader, err := uploaderFromEnv(); err != nil {
+				return err
+			} else {
+				config.Uploader = uploader
+				return nil
+			}
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.SilenceUsage = true
+			// Ctrl+C keeps the default handling and ends the process: the prompts block on the terminal
+			// without a context, and the collector records a canceled request as a problem and continues.
+			// The collect script owns the output directory and removes it when it is interrupted.
+			return supportcollector.Run(cmd.Context(), config, os.Stdin, os.Stderr)
+		},
+	}
+
+	flags := cmd.Flags()
+	config.ConfigFlags.AddFlags(flags)
+	flags.StringVar(&config.Output, "output", "", "directory to write the bundle into, and to upload it from when "+
 		uploadURLEnv+" and "+uploadSecretEnv+" are set")
-	pflag.StringVar(&config.WriteKubeconfig, "write-kubeconfig", "",
+	flags.StringVar(&config.WriteKubeconfig, "write-kubeconfig", "",
 		"file to write a kubeconfig with only the selected context and namespace to, for tools run afterwards")
-	pflag.Int64Var(&opts.LogTailLines, "log-tail-lines", opts.LogTailLines,
+	flags.Int64Var(&opts.LogTailLines, "log-tail-lines", opts.LogTailLines,
 		"number of lines collected from the end of every container log")
-	pflag.IntVar(&opts.MaxResourceBytes, "max-resource-bytes", opts.MaxResourceBytes,
+	flags.IntVar(&opts.MaxResourceBytes, "max-resource-bytes", opts.MaxResourceBytes,
 		"maximum size of every file of the bundle")
-	pflag.BoolVar(&opts.IncludeConfigMapData, "include-configmap-data", opts.IncludeConfigMapData,
+	flags.BoolVar(&opts.IncludeConfigMapData, "include-configmap-data", opts.IncludeConfigMapData,
 		"collect the values of ConfigMaps")
-	pflag.BoolVar(&opts.IncludeSecretData, "include-secret-data", opts.IncludeSecretData,
+	flags.BoolVar(&opts.IncludeSecretData, "include-secret-data", opts.IncludeSecretData,
 		"collect the decoded values of Secrets, except service account and bootstrap tokens and Helm releases")
-	pflag.Parse()
-
-	if config.Output == "" {
-		usageError("--output is required")
-	} else if pflag.NArg() > 0 {
-		usageError(fmt.Sprintf("unexpected arguments: %v", pflag.Args()))
-	} else if opts.LogTailLines < 0 {
-		usageError("--log-tail-lines must not be negative")
-	} else if opts.MaxResourceBytes < supportcollector.MinResourceBytes {
-		usageError(fmt.Sprintf("--max-resource-bytes must be at least %d", supportcollector.MinResourceBytes))
-	}
-	if uploader, err := uploaderFromEnv(); err != nil {
-		usageError(err.Error())
-	} else {
-		config.Uploader = uploader
-	}
-
-	// Ctrl+C keeps the default handling and ends the process: the prompts block on the terminal
-	// without a context, and the collector records a canceled request as a problem and continues.
-	// The collect script owns the output directory and removes it when it is interrupted.
-	if err := supportcollector.Run(context.Background(), config, os.Stdin, os.Stderr); err != nil {
-		fmt.Fprintln(os.Stderr, "Error:", err)
-		os.Exit(1)
-	}
-}
-
-func usageError(message string) {
-	fmt.Fprintln(os.Stderr, message)
-	pflag.Usage()
-	os.Exit(2)
+	util.Must(cmd.MarkFlagRequired("output"))
+	return cmd
 }
 
 // uploaderFromEnv takes the bundle from the environment rather than from flags, so that the secret
