@@ -70,10 +70,7 @@ func GenerateCollectScript(params CollectScriptParams) (string, error) {
 
 	// timeout(1) takes whole seconds, and rounding down could turn a configured limit into 0, which
 	// disables the limit instead of tightening it.
-	scriptTimeoutSeconds := int(math.Ceil(params.ScriptTimeout.Seconds()))
-	if scriptTimeoutSeconds < 0 {
-		scriptTimeoutSeconds = 0
-	}
+	scriptTimeoutSeconds := max(int(math.Ceil(params.ScriptTimeout.Seconds())), 0)
 
 	data := map[string]any{
 		"BundleID":             params.BundleID.String(),
