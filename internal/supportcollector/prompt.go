@@ -40,7 +40,7 @@ func (p *Prompter) SelectKubeContext(options []KubeContextOption, current string
 	}
 	for {
 		if current != "" {
-			_, _ = fmt.Fprintf(p.out, "Context to collect from, as a number or name [%s]: ", current)
+			_, _ = fmt.Fprintf(p.out, "Context to collect from, as a number or name, or press Enter for %q: ", current)
 		} else {
 			_, _ = fmt.Fprint(p.out, "Context to collect from, as a number or name: ")
 		}
@@ -78,13 +78,15 @@ func (p *Prompter) SelectNamespaces(options []NamespaceOption, defaultNamespace 
 	_, _ = fmt.Fprintln(p.out, "Namespaces:")
 	for i, option := range options {
 		if len(option.HelmReleases) > 0 {
-			_, _ = fmt.Fprintf(p.out, "  [%d] %s (%s)\n", i+1, option.Name, strings.Join(option.HelmReleases, ", "))
+			_, _ = fmt.Fprintf(p.out, "  [%d] %s (Helm releases: %s)\n",
+				i+1, option.Name, strings.Join(option.HelmReleases, ", "))
 		} else {
 			_, _ = fmt.Fprintf(p.out, "  [%d] %s\n", i+1, option.Name)
 		}
 	}
 	for {
-		_, _ = fmt.Fprintf(p.out, "Namespaces to collect, as numbers or names separated by commas [%s]: ", defaultNamespace)
+		_, _ = fmt.Fprintf(p.out, "Namespaces to collect, as numbers or names separated by commas, or press Enter for %q: ",
+			defaultNamespace)
 		answer, err := p.readLine()
 		if err != nil {
 			return nil, err

@@ -57,7 +57,7 @@ func TestPrompter(t *testing.T) {
 
 		g.Expect(p.SelectKubeContext(kubeContextOptions, "deleted")).To(Equal("prod"))
 		g.Expect(out.String()).To(ContainSubstring("[1] dev (https://dev.example.com)"))
-		g.Expect(out.String()).NotTo(ContainSubstring("[deleted]"))
+		g.Expect(out.String()).NotTo(ContainSubstring(`press Enter for "deleted"`))
 		g.Expect(strings.Count(out.String(), "Context to collect from")).To(Equal(2))
 	})
 
@@ -68,7 +68,7 @@ func TestPrompter(t *testing.T) {
 
 		g.Expect(p.SelectNamespaces(namespaceOptions, "default")).To(Equal([]string{"kube-system"}))
 		g.Expect(p.Confirm("Collect the logs?")).To(BeFalse())
-		g.Expect(out.String()).To(ContainSubstring("[3] shop (shop, redis)"))
+		g.Expect(out.String()).To(ContainSubstring("[3] shop (Helm releases: shop, redis)"))
 		g.Expect(strings.Count(out.String(), "Namespaces to collect")).To(Equal(2))
 		g.Expect(strings.Count(out.String(), "Collect the logs?")).To(Equal(2))
 	})
