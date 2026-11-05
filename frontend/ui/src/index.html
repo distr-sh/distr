@@ -7,6 +7,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="icon" type="image/png" href="favicon.png" />
+    <script>
+      // A bundle fails to load while a rolling update serves two versions. Angular cannot recover from a failed entry
+      // bundle because it never boots, so this lives outside the app, and the lazy routes call it through
+      // util/chunk-reload.ts. The notice is styled inline because the stylesheet may be what failed, and it names no
+      // product because portals are white-labeled.
+      (function () {
+        const stateKey = 'distr-asset-reload';
+        const reloadDelaysMs = [0, 5000, 15000];
+        const resetAfterMs = 60000;
+        let isReloadScheduled = false;
+
+        function showNotice(text) {
+          const notice = document.createElement('div');
+          notice.textContent = text;
+          notice.style.cssText =
+            'position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;' +
+            'background:Canvas;color:CanvasText;font:14px system-ui,sans-serif';
+          document.documentElement.append(notice);
+        }
+
+        window.reloadAfterAssetError = function () {
+          if (isReloadScheduled) {
+            return true;
+          }
+          if (!navigator.onLine) {
+            return false;
+          }
+          const {attempts = 0, at = 0} = JSON.parse(sessionStorage.getItem(stateKey) ?? '{}');
+          const attempt = Date.now() - at > resetAfterMs ? 0 : attempts;
+          if (attempt >= reloadDelaysMs.length) {
+            showNotice('The page could not be loaded. Please reload it to try again.');
+            return false;
+          }
+          const delay = reloadDelaysMs[attempt];
+          sessionStorage.setItem(stateKey, JSON.stringify({attempts: attempt + 1, at: Date.now() + delay}));
+          if (delay > 0) {
+            showNotice('Loading the latest version…');
+          }
+          isReloadScheduled = true;
+          setTimeout(() => location.reload(), delay);
+          return true;
+        };
+
+        function reloadOnEntryAssetError(event) {
+          const target = event.target;
+          if (
+            (target instanceof HTMLScriptElement && target.type === 'module') ||
+            (target instanceof HTMLLinkElement && target.rel === 'stylesheet')
+          ) {
+            window.reloadAfterAssetError();
+          }
+        }
+        window.addEventListener('error', reloadOnEntryAssetError, true);
+        window.addEventListener('load', () => window.removeEventListener('error', reloadOnEntryAssetError, true));
+      })();
+    </script>
   </head>
   <body class="bg-gray-50 dark:bg-gray-900">
     <app-root class=""></app-root>
