@@ -40,7 +40,9 @@ func newCommand() *cobra.Command {
 		Short: "Collect a Distr support bundle from a Kubernetes cluster",
 		Args:  cobra.NoArgs,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if opts.LogTailLines < 0 {
+			if config.Output == "" {
+				return errors.New("--output must not be empty")
+			} else if opts.LogTailLines < 0 {
 				return errors.New("--log-tail-lines must not be negative")
 			} else if opts.MaxResourceBytes < supportcollector.MinResourceBytes {
 				return fmt.Errorf("--max-resource-bytes must be at least %d", supportcollector.MinResourceBytes)
