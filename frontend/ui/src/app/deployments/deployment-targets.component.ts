@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup} from '@angular/forms';
-import {ActivatedRoute} from '@angular/router';
+import {ActivatedRoute, Params, Router} from '@angular/router';
 import {
   ApplicationVersion,
   CustomerOrganization,
@@ -22,8 +22,20 @@ import {
 } from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faChevronDown, faPlus} from '@fortawesome/free-solid-svg-icons';
-import {catchError, combineLatest, combineLatestWith, first, map, Observable, of, shareReplay, switchMap} from 'rxjs';
-import {compareBy} from '../../util/arrays';
+import {
+  catchError,
+  combineLatest,
+  combineLatestWith,
+  debounceTime,
+  distinctUntilChanged,
+  first,
+  map,
+  Observable,
+  of,
+  shareReplay,
+  switchMap,
+} from 'rxjs';
+import {arraysEqual, compareBy} from '../../util/arrays';
 import {filteredByFormControl} from '../../util/filter';
 import {refreshInBackground} from '../../util/refresh';
 import {SecureImagePipe} from '../../util/secureImage';
@@ -41,6 +53,12 @@ import {OrganizationService} from '../services/organization.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {DeploymentTargetLatestMetrics} from '../types/deployment-target-metrics';
 import {DeploymentModalComponent} from './deployment-modal.component';
+import {
+  DeploymentDisplayStatus,
+  deploymentDisplayStatus,
+  deploymentDisplayStatusSelectOptions,
+  isDeploymentDisplayStatus,
+} from './deployment-target-card/deployment-status-text.component';
 import {DeploymentTargetCardComponent} from './deployment-target-card/deployment-target-card.component';
 import {DeploymentWizardComponent} from './deployment-wizard/deployment-wizard.component';
 
@@ -85,6 +103,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   private readonly customerOrganizations = inject(CustomerOrganizationsService);
   private readonly context = inject(ContextService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   protected readonly plusIcon = faPlus;
   protected readonly faChevronDown = faChevronDown;
@@ -116,7 +135,28 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   });
 
   protected readonly canFilterByCustomer = this.auth.isVendor() || this.auth.isPartner();
-  protected readonly selectedCustomerIds = signal<string[]>([]);
+  private readonly queryParams = toSignal(this.route.queryParamMap, {requireSync: true});
+  // Equal by content, so that changing one filter does not restart the poll that depends on another.
+  protected readonly selectedCustomerIds = computed(
+    () => {
+      const params = this.queryParams();
+      return this.canFilterByCustomer
+        ? [
+            ...(params.get('internal') === 'true' ? [internalCustomerOption] : []),
+            ...params.getAll('customerOrganizationId'),
+          ]
+        : [];
+    },
+    {equal: arraysEqual}
+  );
+  protected readonly selectedApplicationIds = computed(() => this.queryParams().getAll('applicationId'), {
+    equal: arraysEqual,
+  });
+  protected readonly selectedStatuses = computed(
+    () => this.queryParams().getAll('status').filter(isDeploymentDisplayStatus),
+    {equal: arraysEqual}
+  );
+  protected readonly statusSelectOptions = deploymentDisplayStatusSelectOptions;
 
   protected readonly customerSelectOptions = toSignal(
     this.canFilterByCustomer
@@ -133,6 +173,22 @@ export class DeploymentTargetsComponent implements AfterViewInit {
       : of([]),
     {initialValue: []}
   );
+
+  private readonly applications$ = this.applications.list();
+
+  protected readonly applicationSelectOptions = toSignal(
+    this.applications$.pipe(
+      map((apps) =>
+        apps.flatMap<MultiSelectOption>((app) => (app.id ? [{value: app.id, label: app.name ?? app.id}] : []))
+      )
+    ),
+    {initialValue: []}
+  );
+
+  private readonly deploymentFilter = computed(() => ({
+    applicationIds: this.selectedApplicationIds(),
+    statuses: this.selectedStatuses(),
+  }));
 
   readonly deploymentTargets$ = toObservable(this.selectedCustomerIds).pipe(
     switchMap((ids) =>
@@ -154,6 +210,14 @@ export class DeploymentTargetsComponent implements AfterViewInit {
     const org = this.organization();
     return !(org && org.subscriptionLimits) ? undefined : org.subscriptionLimits.maxDeploymentsPerCustomerOrganization;
   });
+  protected readonly toolbarLimit = computed(() => {
+    const customerIds = this.selectedCustomerIds();
+    if (this.auth.isPartner() || (customerIds.length > 0 && !customerIds.includes(internalCustomerOption))) {
+      return undefined;
+    } else {
+      return this.limit();
+    }
+  });
   protected readonly count = toSignal(
     combineLatest([this.deploymentTargets$, this.context.getUser()]).pipe(
       map(
@@ -161,6 +225,19 @@ export class DeploymentTargetsComponent implements AfterViewInit {
       )
     ),
     {initialValue: 0}
+  );
+  protected readonly customerDeploymentTargetCounts = toSignal(
+    this.deploymentTargets$.pipe(
+      map((targets) =>
+        targets.reduce<Record<string, number>>((counts, dt) => {
+          if (dt.customerOrganization) {
+            counts[dt.customerOrganization.id] = (counts[dt.customerOrganization.id] ?? 0) + 1;
+          }
+          return counts;
+        }, {})
+      )
+    ),
+    {initialValue: {} as Record<string, number>}
   );
 
   protected readonly filteredDeploymentTargets$: Observable<CustomerDeploymentTargets[]> = filteredByFormControl(
@@ -170,6 +247,19 @@ export class DeploymentTargetsComponent implements AfterViewInit {
       !search ||
       [dt.name, dt.customerOrganization?.name].some((it) => it?.toLowerCase()?.includes(search.toLowerCase()) ?? false)
   ).pipe(
+    combineLatestWith(toObservable(this.deploymentFilter)),
+    map(([deploymentTargets, {applicationIds, statuses}]) =>
+      applicationIds.length === 0 && statuses.length === 0
+        ? deploymentTargets
+        : deploymentTargets.filter((dt) =>
+            dt.deployments.some(
+              (d) =>
+                (applicationIds.length === 0 ||
+                  (d.application.id !== undefined && applicationIds.includes(d.application.id))) &&
+                (statuses.length === 0 || statuses.includes(deploymentDisplayStatus(d)))
+            )
+          )
+    ),
     combineLatestWith(this.deploymentTargetMetrics$),
     map(([deploymentTargets, deploymentTargetMetrics]) =>
       deploymentTargets.map((dt) => ({
@@ -203,15 +293,45 @@ export class DeploymentTargetsComponent implements AfterViewInit {
     )
   );
 
-  private readonly applications$ = this.applications.list();
-
   constructor() {
     refreshInBackground(this.applications.refresh());
+    const search = this.filterForm.controls.search;
     // The component is reused when only the query changes, e.g. when the sidebar links to the page it is on.
     this.route.queryParamMap
-      .pipe(takeUntilDestroyed())
-      .subscribe((params) => this.filterForm.controls.search.setValue(params.get('search') ?? ''));
+      .pipe(
+        map((params) => params.get('search') ?? ''),
+        distinctUntilChanged(),
+        takeUntilDestroyed()
+      )
+      .subscribe((value) => {
+        if (value !== search.value) {
+          search.setValue(value);
+        }
+      });
+    search.valueChanges
+      .pipe(debounceTime(300), takeUntilDestroyed())
+      .subscribe((value) => this.setQueryParams({search: value || null}));
     effect(() => localStorage.setItem(localStoragerCollapsedCustomerIds, JSON.stringify(this.collapsedCustomerIds())));
+  }
+
+  protected selectCustomers(ids: string[]) {
+    const customerOrganizationIds = ids.filter((id) => id !== internalCustomerOption);
+    this.setQueryParams({
+      customerOrganizationId: customerOrganizationIds.length > 0 ? customerOrganizationIds : null,
+      internal: ids.includes(internalCustomerOption) || null,
+    });
+  }
+
+  protected selectApplications(ids: string[]) {
+    this.setQueryParams({applicationId: ids.length > 0 ? ids : null});
+  }
+
+  protected selectStatuses(statuses: DeploymentDisplayStatus[]) {
+    this.setQueryParams({status: statuses.length > 0 ? statuses : null});
+  }
+
+  private setQueryParams(queryParams: Params) {
+    this.router.navigate([], {relativeTo: this.route, queryParams, queryParamsHandling: 'merge', replaceUrl: true});
   }
 
   ngAfterViewInit() {
