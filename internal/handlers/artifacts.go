@@ -232,8 +232,8 @@ func patchImageArtifactHandler(r *http.Request) (respond.Responder, error) {
 }
 
 func patchTitleImageArtifactHandler(r *http.Request) (respond.Responder, error) {
-	return patchImage(r, func(ctx context.Context, body api.PatchImageRequest) (any, error) {
-		artifact := internalctx.GetArtifact(ctx)
+	artifact := internalctx.GetArtifact(r.Context())
+	return patchImage(r, &artifact.OrganizationID, func(ctx context.Context, body api.PatchImageRequest) (any, error) {
 		if err := db.UpdateArtifactTitleImage(ctx, artifact, body.ImageID); err != nil {
 			return nil, err
 		} else {
