@@ -219,6 +219,11 @@
 
 <ng-template #viewLicenseModal>
   @if (selectedLicense(); as license) {
-    <app-view-license-key-modal [license]="license" [token]="selectedToken()!" (closed)="hideViewLicenseModal()" />
+    <app-view-license-key-modal
+      [license]="license"
+      [token]="selectedToken()!"
+      (closed)="hideViewLicenseModal()"
+      animate.enter="animate-fly-in-top"
+      animate.leave="animate-fly-out-top" />
   }
 </ng-template>
