@@ -17,8 +17,9 @@ interface ResolvedBranding {
 }
 
 /**
- * Resolves the portal branding (browser tab title and favicon) and applies it to the document. Runs on app boot,
- * so it also affects the login page where no user is authenticated. Branding is resolved from two sources:
+ * Resolves the portal branding (the brand part of the browser tab title and the favicon) and applies the favicon to
+ * the document, while `PageTitleStrategy` combines the title with the route's. Runs on app boot, so it also affects
+ * the login page where no user is authenticated. Branding is resolved from two sources:
  *
  * 1. The custom app domain (host), which applies to everyone visiting it regardless of authentication.
  * 2. The organization the user is currently logged in with, which takes precedence once authenticated.
@@ -49,6 +50,8 @@ export class PortalBrandingService {
   readonly logoUrl = this.logoUrlSignal.asReadonly();
   private readonly customDomainSignal = signal(false);
   readonly customDomain = this.customDomainSignal.asReadonly();
+  private readonly pageTitleSignal = signal(this.defaultTitle);
+  readonly pageTitle = this.pageTitleSignal.asReadonly();
 
   constructor() {
     this.applyTrigger
@@ -95,7 +98,7 @@ export class PortalBrandingService {
   }
 
   private applyBranding({pageTitle, faviconUrl, logoUrl, customDomain}: ResolvedBranding): void {
-    this.title.setTitle(pageTitle || this.defaultTitle);
+    this.pageTitleSignal.set(pageTitle || this.defaultTitle);
     if (faviconUrl) {
       this.setFavicon(faviconUrl);
     } else {

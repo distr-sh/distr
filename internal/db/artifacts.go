@@ -2010,24 +2010,32 @@ func GetPullThroughBlobSize(ctx context.Context, orgSlug, artifactName, blobDige
 // Manifest blobs are included because blob cleanup considers them referenced just like part blobs.
 // Blobs are deduplicated by digest, so a blob shared between artifact versions, or one that is both
 // a version manifest and a part of a multi-arch index, is only counted once.
+// A version of a pull-through artifact only counts once it has been pulled, since the sync records
+// its blobs without fetching them and only the first pull stores them.
 func GetRegistryStorageUsage(ctx context.Context, orgID uuid.UUID) (int64, error) {
 	db := internalctx.GetDb(ctx)
 	var size int64
 	err := db.QueryRow(ctx, `
+		WITH stored_versions AS (
+			SELECT av.id, av.manifest_blob_digest, av.manifest_blob_size
+			FROM ArtifactVersion av
+			JOIN Artifact a ON a.id = av.artifact_id
+			WHERE a.organization_id = @orgId
+				AND (
+					a.upstream_url IS NULL
+					OR EXISTS (SELECT 1 FROM ArtifactVersionPull p WHERE p.artifact_version_id = av.id)
+				)
+		)
 		SELECT COALESCE(SUM(distinct_blobs.artifact_blob_size), 0)
 		FROM (
 			SELECT blobs.artifact_blob_digest, MAX(blobs.artifact_blob_size) AS artifact_blob_size
 			FROM (
 				SELECT avp.artifact_blob_digest, avp.artifact_blob_size
 				FROM ArtifactVersionPart avp
-				JOIN ArtifactVersion av ON av.id = avp.artifact_version_id
-				JOIN Artifact a ON a.id = av.artifact_id
-				WHERE a.organization_id = @orgId
+				JOIN stored_versions sv ON sv.id = avp.artifact_version_id
 				UNION ALL
-				SELECT av.manifest_blob_digest, av.manifest_blob_size
-				FROM ArtifactVersion av
-				JOIN Artifact a ON a.id = av.artifact_id
-				WHERE a.organization_id = @orgId
+				SELECT sv.manifest_blob_digest, sv.manifest_blob_size
+				FROM stored_versions sv
 			) AS blobs
 			GROUP BY blobs.artifact_blob_digest
 		) AS distinct_blobs`,

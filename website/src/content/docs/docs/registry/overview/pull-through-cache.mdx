@@ -20,6 +20,7 @@ This lets you consolidate all image pulls through a single registry endpoint wit
 ## How it works
 
 After a sync, Distr stores the tag list and manifest metadata from the upstream. Blob data (layers, image configs) is fetched from the upstream on first pull and cached in the Distr registry. Subsequent pulls are served entirely from Distr.
+A synced tag counts toward your registry storage only once it has been pulled.
 
 <Aside type="note">
   Pull counts and download analytics work the same way for pull-through
