@@ -152,6 +152,11 @@
     @apply flex w-full items-center gap-2 px-2 py-1.5 text-start text-sm text-gray-700 dark:text-gray-200;
   }
 
+  // the selected entry of a `distr-dropdown-panel`, highlighted like a hovered `distr-dropdown-item`
+  .distr-dropdown-label-current {
+    @apply rounded-md bg-gray-100 dark:bg-gray-600 dark:text-white;
+  }
+
   // the row of a dropdown whose entries are checkboxes, wrapping the checkbox and its label
   .distr-dropdown-checkbox-item {
     @apply flex items-center rounded-md px-2 hover:bg-gray-100 dark:hover:bg-gray-600;

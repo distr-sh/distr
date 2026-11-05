@@ -147,7 +147,10 @@
                       @if (isOrganizationListed()) {
                         <li>
                           @if (entry.current) {
-                            <div class="distr-dropdown-label" aria-current="true" role="none">
+                            <div
+                              class="distr-dropdown-label distr-dropdown-label-current"
+                              aria-current="true"
+                              role="none">
                               <ng-container
                                 [ngTemplateOutlet]="organizationLabel"
                                 [ngTemplateOutletContext]="{$implicit: entry.org}" />
@@ -173,7 +176,10 @@
                       @for (lens of entry.lenses; track lens.customerOrganizationId) {
                         <li>
                           @if (lens.current) {
-                            <div class="distr-dropdown-label" aria-current="true" role="none">
+                            <div
+                              class="distr-dropdown-label distr-dropdown-label-current"
+                              aria-current="true"
+                              role="none">
                               <ng-container
                                 [ngTemplateOutlet]="lensLabel"
                                 [ngTemplateOutletContext]="{$implicit: lens}" />
