@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/distr-sh/distr/internal/supportcollector"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/spf13/cobra"
 	"k8s.io/klog/v2"
 )
@@ -41,7 +40,7 @@ func newCommand() *cobra.Command {
 		Args:  cobra.NoArgs,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if config.Output == "" {
-				return errors.New("--output must not be empty")
+				return errors.New("--output is required")
 			} else if opts.LogTailLines < 0 {
 				return errors.New("--log-tail-lines must not be negative")
 			} else if opts.MaxResourceBytes < supportcollector.MinResourceBytes {
@@ -76,7 +75,6 @@ func newCommand() *cobra.Command {
 		"collect the values of ConfigMaps")
 	flags.BoolVar(&opts.IncludeSecretData, "include-secret-data", opts.IncludeSecretData,
 		"collect the decoded values of Secrets, except service account and bootstrap tokens and Helm releases")
-	util.Must(cmd.MarkFlagRequired("output"))
 	return cmd
 }
 
