@@ -10,7 +10,7 @@
       (showChecklist)="showChecklist.emit()" />
   }
   @if (section() === 'deployments' && targets.length > 0) {
-    <div class="distr-card distr-card-hover relative gap-3 p-4">
+    <div class="distr-card relative gap-3 p-4">
       <h2 appCardHeading [icon]="faDashboard" class="pe-8">
         <a routerLink="/deployments" class="after:absolute after:inset-0">Deployments</a>
       </h2>
@@ -21,7 +21,7 @@
       </div>
     </div>
   } @else if (section() === 'artifacts' && artifacts().hasPulled && artifacts().artifacts.length > 0) {
-    <div class="distr-card distr-card-hover relative gap-3 p-4">
+    <div class="distr-card relative gap-3 p-4">
       <h2 appCardHeading [icon]="faBox" class="pe-8">
         <a routerLink="/artifacts" class="after:absolute after:inset-0">Artifacts</a>
       </h2>
