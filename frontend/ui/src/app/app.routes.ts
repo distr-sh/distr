@@ -8,6 +8,8 @@ import {
   Routes,
 } from '@angular/router';
 import {firstValueFrom} from 'rxjs';
+import {reloadOnChunkLoadError} from '../util/chunk-reload';
+import {NavShellComponent} from './components/nav-shell.component';
 import {ForgotComponent} from './forgot/forgot.component';
 import {InviteComponent} from './invite/invite.component';
 import {LoginComponent} from './login/login.component';
@@ -113,8 +115,8 @@ export const routes: Routes = [
       {path: 'join', component: InviteComponent, canActivate: [inviteComponentGuard]},
       {
         path: '',
-        loadComponent: () => import('./components/nav-shell.component').then((m) => m.NavShellComponent),
-        loadChildren: () => import('./app-logged-in.routes').then((m) => m.routes),
+        component: NavShellComponent,
+        loadChildren: () => import('./app-logged-in.routes').then((m) => m.routes).catch(reloadOnChunkLoadError),
       },
     ],
   },

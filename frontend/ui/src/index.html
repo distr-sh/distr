@@ -7,6 +7,110 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="icon" type="image/png" href="favicon.png" />
+    <style>
+      /* Plain CSS because the app stylesheet may be what failed. */
+      #upgrade-notice {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483647;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        text-align: center;
+        background: oklch(98.5% 0.002 247.839);
+        color: oklch(55.1% 0.027 264.364);
+        font:
+          0.875rem/1.25rem Inter,
+          system-ui,
+          sans-serif;
+
+        & h1 {
+          margin: 0;
+          color: oklch(21% 0.034 264.665);
+          font-size: 1.5rem;
+          line-height: 2rem;
+          font-weight: 700;
+        }
+
+        & p {
+          max-width: 24rem;
+          margin: 0;
+        }
+
+        & .spinner {
+          width: 2rem;
+          height: 2rem;
+          border: 3px solid oklch(92.8% 0.006 264.531);
+          border-top-color: oklch(54.6% 0.245 262.881);
+          border-radius: 50%;
+          animation: upgrade-notice-spin 1s linear infinite;
+        }
+
+        &.dark {
+          background: oklch(21% 0.034 264.665);
+          color: oklch(70.7% 0.022 261.325);
+
+          & h1 {
+            color: white;
+          }
+
+          & .spinner {
+            border-color: oklch(44.6% 0.03 256.802);
+            border-top-color: oklch(54.6% 0.245 262.881);
+          }
+        }
+      }
+
+      @keyframes upgrade-notice-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+    <script>
+      // Outside Angular, which never boots when an entry bundle fails.
+      (function () {
+        const reloadIntervalMs = 5 * 1000; // 5 seconds
+        let isReloadScheduled = false;
+
+        // Mirrors ColorSchemeService, which is not running when the entry bundles failed.
+        function isDarkColorScheme() {
+          const colorScheme = localStorage.getItem('COLOR_SCHEME');
+          return colorScheme === 'dark' || (colorScheme !== '' && matchMedia('(prefers-color-scheme: dark)').matches);
+        }
+
+        window.reloadAfterAssetError = function () {
+          if (isReloadScheduled || !navigator.onLine) {
+            return;
+          }
+          isReloadScheduled = true;
+          const notice = document.createElement('div');
+          notice.id = 'upgrade-notice';
+          notice.classList.toggle('dark', isDarkColorScheme());
+          notice.innerHTML =
+            '<div class="spinner"></div>' +
+            "<h1>We'll be right back</h1>" +
+            '<p>This page is being upgraded to a new version and will reload automatically once it is ready.</p>';
+          document.documentElement.append(notice);
+          setTimeout(() => location.reload(), reloadIntervalMs);
+        };
+
+        function reloadOnEntryAssetError(event) {
+          const target = event.target;
+          if (
+            (target instanceof HTMLScriptElement && target.type === 'module') ||
+            (target instanceof HTMLLinkElement && target.rel === 'stylesheet')
+          ) {
+            window.reloadAfterAssetError();
+          }
+        }
+        window.addEventListener('error', reloadOnEntryAssetError, true);
+        window.addEventListener('load', () => window.removeEventListener('error', reloadOnEntryAssetError, true));
+      })();
+    </script>
   </head>
   <body class="bg-gray-50 dark:bg-gray-900">
     <app-root class=""></app-root>
