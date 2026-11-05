@@ -7,11 +7,12 @@ import {
   provideAppInitializer,
   provideZoneChangeDetection,
 } from '@angular/core';
-import {provideRouter} from '@angular/router';
+import {provideRouter, TitleStrategy} from '@angular/router';
 import * as Sentry from '@sentry/angular';
 import {routes} from './app.routes';
 import {tokenInterceptor} from './services/auth.service';
 import {errorToastInterceptor} from './services/error-toast.interceptor';
+import {PageTitleStrategy} from './services/page-title.strategy';
 import {PortalBrandingService} from './services/portal-branding.service';
 import {trimInterceptor} from './services/trim.interceptor';
 
@@ -23,6 +24,7 @@ export const appConfig: ApplicationConfig = {
     },
     provideZoneChangeDetection({eventCoalescing: true}),
     provideRouter(routes),
+    {provide: TitleStrategy, useExisting: PageTitleStrategy},
     provideHttpClient(withInterceptors([tokenInterceptor, trimInterceptor, errorToastInterceptor])),
     provideAppInitializer(async () => inject(Sentry.TraceService)),
     provideAppInitializer(() => {
