@@ -2,57 +2,93 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Distr</title>
+    <title></title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="icon" type="image/png" href="favicon.png" />
+    <style>
+      /* Plain CSS because the app stylesheet may be what failed. */
+      .upgrade-notice {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483647;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        text-align: center;
+        background: oklch(98.5% 0.002 247.839);
+        color: oklch(55.1% 0.027 264.364);
+        font:
+          0.875rem/1.25rem Inter,
+          system-ui,
+          sans-serif;
+      }
+      .upgrade-notice h1 {
+        margin: 0;
+        color: oklch(21% 0.034 264.665);
+        font-size: 1.5rem;
+        line-height: 2rem;
+        font-weight: 700;
+      }
+      .upgrade-notice p {
+        max-width: 24rem;
+        margin: 0;
+      }
+      .upgrade-notice.dark {
+        background: oklch(21% 0.034 264.665);
+        color: oklch(70.7% 0.022 261.325);
+      }
+      .upgrade-notice.dark h1 {
+        color: white;
+      }
+      .upgrade-notice-spinner {
+        width: 2rem;
+        height: 2rem;
+        border: 3px solid oklch(92.8% 0.006 264.531);
+        border-top-color: oklch(54.6% 0.245 262.881);
+        border-radius: 50%;
+        animation: upgrade-notice-spin 1s linear infinite;
+      }
+      .upgrade-notice.dark .upgrade-notice-spinner {
+        border-color: oklch(44.6% 0.03 256.802);
+        border-top-color: oklch(54.6% 0.245 262.881);
+      }
+      @keyframes upgrade-notice-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
     <script>
-      // A bundle fails to load while a rolling update serves two versions. Angular cannot recover from a failed entry
-      // bundle because it never boots, so this lives outside the app, and the lazy routes call it through
-      // util/chunk-reload.ts. The notice is styled inline because the stylesheet may be what failed, and it names no
-      // product because portals are white-labeled.
+      // Outside Angular, which never boots when an entry bundle fails.
       (function () {
-        const stateKey = 'distr-asset-reload';
-        const reloadDelaysMs = [0, 5000, 15000];
-        const resetAfterMs = 60000;
+        const reloadIntervalMs = 3000;
         let isReloadScheduled = false;
-        let hasReloadScheduleEnded = false;
 
-        function showNotice(text) {
-          const notice = document.createElement('div');
-          notice.textContent = text;
-          notice.style.cssText =
-            'position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;' +
-            'background:Canvas;color:CanvasText;font:14px system-ui,sans-serif';
-          document.documentElement.append(notice);
+        // Mirrors ColorSchemeService, which is not running when the entry bundles failed.
+        function isDarkColorScheme() {
+          const colorScheme = localStorage.getItem('COLOR_SCHEME');
+          return colorScheme === 'dark' || (colorScheme !== '' && matchMedia('(prefers-color-scheme: dark)').matches);
         }
 
         window.reloadAfterAssetError = function () {
-          if (isReloadScheduled || hasReloadScheduleEnded) {
-            return isReloadScheduled;
-          }
-          if (!navigator.onLine) {
-            return false;
-          }
-          const {attempts = 0, at = 0} = JSON.parse(sessionStorage.getItem(stateKey) ?? '{}');
-          const attempt = Date.now() - at > resetAfterMs ? 0 : attempts;
-          if (attempt >= reloadDelaysMs.length) {
-            // A manual reload starts a new round of retries. hasReloadScheduleEnded keeps further errors on this page
-            // from starting one on their own, which would loop.
-            sessionStorage.removeItem(stateKey);
-            hasReloadScheduleEnded = true;
-            showNotice('The page could not be loaded. Please reload it to try again.');
-            return false;
-          }
-          const delay = reloadDelaysMs[attempt];
-          sessionStorage.setItem(stateKey, JSON.stringify({attempts: attempt + 1, at: Date.now() + delay}));
-          if (delay > 0) {
-            showNotice('Loading the latest version…');
+          if (isReloadScheduled || !navigator.onLine) {
+            return;
           }
           isReloadScheduled = true;
-          setTimeout(() => location.reload(), delay);
-          return true;
+          const notice = document.createElement('div');
+          notice.className = 'upgrade-notice';
+          notice.classList.toggle('dark', isDarkColorScheme());
+          notice.innerHTML =
+            '<div class="upgrade-notice-spinner"></div>' +
+            "<h1>We'll be right back</h1>" +
+            '<p>This page is being upgraded to a new version and will reload automatically once it is ready.</p>';
+          document.documentElement.append(notice);
+          setTimeout(() => location.reload(), reloadIntervalMs);
         };
 
         function reloadOnEntryAssetError(event) {

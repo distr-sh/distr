@@ -325,8 +325,7 @@ func staticFileHandler(fsys fs.FS) http.HandlerFunc {
 		if info, err := fs.Stat(fsys, strings.TrimPrefix(r.URL.Path, "/")); err == nil && !info.IsDir() {
 			server.ServeHTTP(w, r)
 		} else if middleware.IsAssetPath(r.URL.Path) {
-			// Overrides the max-age the cache middleware already set: during a rolling update the asset
-			// exists on the other replica, so the miss must not be cached under its URL.
+			// Overrides the max-age of the cache middleware, since another replica may have the asset.
 			w.Header().Set("Cache-Control", "no-store")
 			http.NotFound(w, r)
 		} else {
