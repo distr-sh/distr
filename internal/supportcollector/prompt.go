@@ -132,10 +132,9 @@ func (p *Prompter) ConfirmGroups(opts Options) (Groups, error) {
 	}
 	var groups Groups
 	questions := []struct {
-		target    *bool
-		question  string
-		onlyIf    *bool
-		defaultNo bool
+		target   *bool
+		question string
+		onlyIf   *bool
 	}{
 		{
 			target: &groups.Cluster,
@@ -155,8 +154,7 @@ func (p *Prompter) ConfirmGroups(opts Options) (Groups, error) {
 			target: &groups.HelmValues,
 			question: "Collect the values the Helm releases were installed with? They can contain credentials, " +
 				"and Distr masks only those it recognizes.",
-			onlyIf:    &groups.HelmReleases,
-			defaultNo: true,
+			onlyIf: &groups.HelmReleases,
 		},
 		{target: &groups.Events, question: "Collect the events of the selected namespaces?"},
 		{target: &groups.Logs, question: fmt.Sprintf(
@@ -167,13 +165,9 @@ func (p *Prompter) ConfirmGroups(opts Options) (Groups, error) {
 
 	_, _ = fmt.Fprintln(p.out)
 	for _, q := range questions {
-		confirm := p.Confirm
-		if q.defaultNo {
-			confirm = p.ConfirmDefaultNo
-		}
 		if q.onlyIf != nil && !*q.onlyIf {
 			continue
-		} else if answer, err := confirm(q.question); err != nil {
+		} else if answer, err := p.Confirm(q.question); err != nil {
 			return groups, err
 		} else {
 			*q.target = answer
@@ -184,28 +178,14 @@ func (p *Prompter) ConfirmGroups(opts Options) (Groups, error) {
 }
 
 func (p *Prompter) Confirm(question string) (bool, error) {
-	return p.confirm(question, true)
-}
-
-func (p *Prompter) ConfirmDefaultNo(question string) (bool, error) {
-	return p.confirm(question, false)
-}
-
-func (p *Prompter) confirm(question string, defaultAnswer bool) (bool, error) {
-	options := "[Y/n]"
-	if !defaultAnswer {
-		options = "[y/N]"
-	}
 	for {
-		_, _ = fmt.Fprintf(p.out, "%s %s: ", question, options)
+		_, _ = fmt.Fprintf(p.out, "%s [Y/n]: ", question)
 		answer, err := p.readLine()
 		if err != nil {
 			return false, err
 		}
 		switch strings.ToLower(answer) {
-		case "":
-			return defaultAnswer, nil
-		case "y", "yes":
+		case "", "y", "yes":
 			return true, nil
 		case "n", "no":
 			return false, nil
