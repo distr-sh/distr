@@ -77,9 +77,9 @@ type summary struct {
 }
 
 type clusterSummary struct {
-	Server            string `json:"server,omitempty"`
-	KubernetesVersion string `json:"kubernetesVersion,omitempty"`
-	Distribution      string `json:"distribution"`
+	Server            string       `json:"server,omitempty"`
+	KubernetesVersion string       `json:"kubernetesVersion,omitempty"`
+	Distribution      Distribution `json:"distribution"`
 }
 
 type crdSummary struct {
