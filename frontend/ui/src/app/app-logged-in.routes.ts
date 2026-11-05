@@ -260,11 +260,13 @@ export const routes: Routes = [
       },
       {
         path: 'home',
+        title: 'Home',
         component: HomeComponent,
         canActivate: [requireCustomer],
       },
       {
         path: 'applications',
+        title: 'Applications',
         canActivate: [requireVendor],
         children: [
           {
@@ -280,6 +282,7 @@ export const routes: Routes = [
       },
       {
         path: 'deployments',
+        title: 'Deployments',
         children: [
           {path: '', pathMatch: 'full', component: DeploymentTargetsComponent},
           {path: ':deploymentTargetId', component: DeploymentTargetDetailComponent},
@@ -287,6 +290,7 @@ export const routes: Routes = [
       },
       {
         path: 'artifacts',
+        title: 'Artifacts',
         children: [
           {path: '', pathMatch: 'full', component: ArtifactsComponent},
           {path: ':id', component: ArtifactVersionsComponent},
@@ -294,16 +298,19 @@ export const routes: Routes = [
       },
       {
         path: 'artifact-pulls',
+        title: 'Downloads',
         component: ArtifactPullsComponent,
         canActivate: [requireVendorOrPartner],
       },
       {
         path: 'customers',
+        title: 'Customers',
         component: CustomerOrganizationsComponent,
         canActivate: [requireVendorOrPartner],
       },
       {
         path: 'customers/:customerOrganizationId',
+        title: 'Customers',
         canActivate: [requireVendorOrPartner],
         children: [
           {path: 'users', component: CustomerUsersComponent},
@@ -334,11 +341,13 @@ export const routes: Routes = [
       },
       {
         path: 'partners',
+        title: 'Partners',
         component: PartnerOrganizationsComponent,
         canActivate: [requireVendor, partnerManagementEnabledGuard()],
       },
       {
         path: 'partners/:partnerOrganizationId',
+        title: 'Partners',
         canActivate: [requireVendor, partnerManagementEnabledGuard()],
         children: [
           {path: 'users', component: PartnerUsersComponent},
@@ -347,26 +356,31 @@ export const routes: Routes = [
       },
       {
         path: 'users',
+        title: 'Users',
         component: VendorUsersComponent,
         canActivate: [requiredRoleGuard('admin')],
       },
       {
         path: 'secrets',
+        title: 'Secrets',
         component: SecretsPage,
       },
       {
         path: 'license-keys',
+        title: 'Licenses',
         component: CustomerLicenseDetailPageComponent,
         canActivate: [requireCustomer, licensingEnabledGuard()],
       },
       {
         path: 'branding',
+        title: 'Branding',
         component: OrganizationBrandingComponent,
         data: {userRole: 'vendor'},
         canActivate: [requireVendor, requiredRoleGuard('read_write', 'admin')],
       },
       {
         path: 'billing',
+        title: 'Billing',
         canActivate: [requireVendor, vendorBillingEnabledGuard()],
         children: [
           {
@@ -383,6 +397,7 @@ export const routes: Routes = [
       },
       {
         path: 'licenses',
+        title: 'Licenses',
         canActivate: [requireVendorOrPartner, licensingEnabledGuard()],
         data: {userRole: 'vendor'},
         children: [
@@ -407,11 +422,13 @@ export const routes: Routes = [
           },
           {
             path: 'customer',
+            title: 'Settings',
             component: CustomerSettingsComponent,
             canActivate: [requireCustomer, requiredRoleGuard('admin'), customerSettingsEnabledGuard()],
           },
           {
             path: 'organization',
+            title: 'Organization Settings',
             component: OrganizationSettingsComponent,
             data: {userRole: 'vendor'},
             canActivate: [requireVendor, requiredRoleGuard('admin')],
@@ -439,6 +456,7 @@ export const routes: Routes = [
           },
           {
             path: 'profile',
+            title: 'User Settings',
             component: UserSettingsComponent,
             children: [
               {
@@ -462,6 +480,7 @@ export const routes: Routes = [
           },
           {
             path: 'access-tokens',
+            title: 'Access Tokens',
             canActivate: [requireNonLensContext],
             children: [
               {
@@ -479,6 +498,7 @@ export const routes: Routes = [
       },
       {
         path: 'tutorials',
+        title: 'Tutorials',
         canActivate: [requireVendor, requiredRoleGuard('admin')],
         children: [
           {
@@ -511,16 +531,19 @@ export const routes: Routes = [
         children: [
           {
             path: 'alert-configurations',
+            title: 'Alerts',
             canActivate: [requireCustomerFeature('alerts')],
             component: AlertConfigurationsPageComponent,
           },
           {
             path: 'updates',
+            title: 'Update Notifications',
             canActivate: [requireCustomerFeature('update_notifications')],
             component: UpdateNotificationsPageComponent,
           },
           {
             path: 'history',
+            title: 'Notification History',
             canActivate: [requireCustomerFeature('alerts', 'update_notifications')],
             component: NotificationRecordsPageComponent,
           },
@@ -528,6 +551,7 @@ export const routes: Routes = [
       },
       {
         path: 'support-bundles',
+        title: 'Support Bundles',
         canActivate: [requireVendorOrPartner, supportBundlesEnabledGuard()],
         children: [
           {
@@ -537,6 +561,7 @@ export const routes: Routes = [
           },
           {
             path: 'settings',
+            title: 'Support Bundle Settings',
             component: SupportBundleSettingsComponent,
             canActivate: [requireVendor, requiredRoleGuard('read_write', 'admin')],
           },
@@ -548,6 +573,7 @@ export const routes: Routes = [
       },
       {
         path: 'support',
+        title: 'Support',
         canActivate: [requireCustomer, supportBundlesEnabledGuard(), requireCustomerFeature('support_bundles')],
         children: [
           {
@@ -563,6 +589,7 @@ export const routes: Routes = [
       },
       {
         path: 'advisories',
+        title: 'Security Advisories',
         canActivate: [requireVendorOrPartner, vulnerabilitiesEnabledGuard()],
         children: [
           {
@@ -578,6 +605,7 @@ export const routes: Routes = [
       },
       {
         path: 'security',
+        title: 'Security',
         canActivate: [requireCustomer, vulnerabilitiesEnabledGuard(), requireCustomerFeature('vulnerabilities')],
         children: [
           {
@@ -595,6 +623,7 @@ export const routes: Routes = [
   },
   {
     path: 'subscription',
+    title: 'Subscription',
     canActivate: [requireVendor],
     children: [
       {
