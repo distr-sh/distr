@@ -17,6 +17,7 @@
         const reloadDelaysMs = [0, 5000, 15000];
         const resetAfterMs = 60000;
         let isReloadScheduled = false;
+        let hasReloadScheduleEnded = false;
 
         function showNotice(text) {
           const notice = document.createElement('div');
@@ -28,8 +29,8 @@
         }
 
         window.reloadAfterAssetError = function () {
-          if (isReloadScheduled) {
-            return true;
+          if (isReloadScheduled || hasReloadScheduleEnded) {
+            return isReloadScheduled;
           }
           if (!navigator.onLine) {
             return false;
@@ -37,6 +38,10 @@
           const {attempts = 0, at = 0} = JSON.parse(sessionStorage.getItem(stateKey) ?? '{}');
           const attempt = Date.now() - at > resetAfterMs ? 0 : attempts;
           if (attempt >= reloadDelaysMs.length) {
+            // A manual reload starts a new round of retries. hasReloadScheduleEnded keeps further errors on this page
+            // from starting one on their own, which would loop.
+            sessionStorage.removeItem(stateKey);
+            hasReloadScheduleEnded = true;
             showNotice('The page could not be loaded. Please reload it to try again.');
             return false;
           }
