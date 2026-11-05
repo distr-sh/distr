@@ -183,8 +183,10 @@
     @apply flex flex-col divide-y divide-gray-200 rounded-lg border border-red-700 dark:divide-gray-600 dark:border-red-500;
   }
 
+  // as many columns as fit at 24rem each (or the full width when narrower), stretched to fill the row;
+  // based on the grid's own width rather than the viewport, since the page width is capped
   .distr-card-grid {
-    @apply grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2 2xl:grid-cols-3 4xl:grid-cols-4;
+    @apply grid grid-cols-[repeat(auto-fill,minmax(min(24rem,100%),1fr))] items-stretch gap-4;
   }
 
   // for cards whose content is too wide for the columns of `distr-card-grid`
