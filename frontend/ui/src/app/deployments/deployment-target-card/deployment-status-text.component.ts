@@ -29,7 +29,7 @@ export function isDeploymentDisplayStatus(value: string): value is DeploymentDis
   return deploymentDisplayStatusSelectOptions.some((option) => option.value === value);
 }
 
-export function deploymentDisplayStatus(deployment: DeploymentWithLatestRevision): DeploymentDisplayStatus {
+export function deploymentDisplayStatus(deployment: DeploymentStatusSource): DeploymentDisplayStatus {
   const s = currentStatus(deployment);
   if (s === undefined) {
     return 'none';
