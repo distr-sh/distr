@@ -11,9 +11,9 @@ import (
 	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
-	"github.com/stripe/stripe-go/v86"
-	checkoutsession "github.com/stripe/stripe-go/v86/checkout/session"
-	"github.com/stripe/stripe-go/v86/subscription"
+	"github.com/stripe/stripe-go/v87"
+	checkoutsession "github.com/stripe/stripe-go/v87/checkout/session"
+	"github.com/stripe/stripe-go/v87/subscription"
 	"go.uber.org/zap"
 )
 

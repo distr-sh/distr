@@ -243,7 +243,7 @@ export class CustomerOrganizationsComponent {
   }
 
   protected async uploadImage(value: CustomerOrganization): Promise<void> {
-    const imageId = await firstValueFrom(this.imageUploadService.showDialog({scope: 'platform'}));
+    const imageId = await firstValueFrom(this.imageUploadService.showDialog());
     if (!imageId || imageId === value.imageId) {
       return;
     }

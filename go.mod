@@ -7,7 +7,7 @@ toolchain go1.27.3
 require (
 	cloud.google.com/go/kms v1.36.1
 	github.com/Masterminds/semver/v3 v3.5.0
-	github.com/avast/retry-go/v5 v5.0.0
+	github.com/avast/retry-go/v5 v5.0.1
 	github.com/aws/aws-sdk-go-v2 v1.47.5
 	github.com/aws/aws-sdk-go-v2/config v1.33.13
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.13
@@ -56,7 +56,7 @@ require (
 	github.com/shirou/gopsutil/v4 v4.26.10
 	github.com/sirupsen/logrus v1.10.2
 	github.com/spf13/cobra v1.10.2
-	github.com/stripe/stripe-go/v86 v86.4.2
+	github.com/stripe/stripe-go/v87 v87.1.0
 	go.opentelemetry.io/collector/component v1.70.0
 	go.opentelemetry.io/collector/confmap v1.70.0
 	go.opentelemetry.io/collector/consumer v1.70.0
