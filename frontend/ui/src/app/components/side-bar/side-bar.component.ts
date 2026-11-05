@@ -29,7 +29,7 @@ import {
   faUsers,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import {catchError, map, of, switchMap} from 'rxjs';
+import {map, of, switchMap} from 'rxjs';
 import {WEBSITE_URL} from '../../../constants';
 import {buildConfig} from '../../../data';
 import {environment} from '../../../env/env';
@@ -126,10 +126,7 @@ export class SideBarComponent {
     this.featureFlags.isLicensingEnabled$.pipe(
       switchMap((enabled) =>
         enabled && this.auth.isCustomer()
-          ? this.licenseKeysService.list().pipe(
-              map((licenseKeys) => licenseKeys.length > 0),
-              catchError(() => of(false))
-            )
+          ? this.licenseKeysService.list().pipe(map((licenseKeys) => licenseKeys.length > 0))
           : of(false)
       )
     ),
