@@ -121,8 +121,8 @@ func DeploymentRevisions(revisions []types.CustomerDeploymentRevision) []Entry {
 			CreatedAt:  revision.CreatedAt,
 			Type:       EntryTypeDeploymentRevisionCreated,
 			ResourceID: revision.DeploymentTargetID,
-			Subject:    revision.ApplicationName,
-			Detail:     new(revision.ApplicationVersionName + " on " + revision.DeploymentTargetName),
+			Subject:    revision.ApplicationName + " (" + revision.DeploymentTargetName + ")",
+			Detail:     new(revision.ApplicationVersionName),
 			User:       newUser(revision.CreatedByName, revision.CreatedByImageID),
 		}
 	}
