@@ -77,17 +77,19 @@ func getCollectScriptHandler(r *http.Request) (respond.Responder, error) {
 	); err != nil {
 		return nil, fmt.Errorf("failed to get support bundle config scripts: %w", err)
 	} else if script, err := supportbundle.GenerateCollectScript(supportbundle.CollectScriptParams{
-		DeploymentType:       bundle.DeploymentType,
-		BaseURL:              customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding),
-		BundleID:             bundle.ID,
-		BundleSecret:         bundleSecret,
-		EnvVars:              envVars,
-		Kubernetes:           *kubernetesConfig,
-		Scripts:              scripts,
-		LogTailLines:         env.SupportBundleLogTailLines(),
-		ResourceMaxBytes:     env.SupportBundleResourceMaxBytes(),
-		ScriptTimeout:        env.SupportBundleScriptTimeout(),
-		CollectorDownloadURL: util.PtrDerefOr(env.SupportCollectorDownloadURL(), supportbundle.CollectorDownloadURL()),
+		DeploymentType:   bundle.DeploymentType,
+		BaseURL:          customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding),
+		BundleID:         bundle.ID,
+		BundleSecret:     bundleSecret,
+		EnvVars:          envVars,
+		Kubernetes:       *kubernetesConfig,
+		Scripts:          scripts,
+		LogTailLines:     env.SupportBundleLogTailLines(),
+		ResourceMaxBytes: env.SupportBundleResourceMaxBytes(),
+		ScriptTimeout:    env.SupportBundleScriptTimeout(),
+		CollectorDownloadURL: util.PtrDerefOr(
+			env.SupportCollectorDownloadURLOverride(), supportbundle.DefaultCollectorDownloadURL(),
+		),
 	}); err != nil {
 		return nil, fmt.Errorf("failed to generate collect script: %w", err)
 	} else {

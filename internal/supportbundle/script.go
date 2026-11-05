@@ -101,9 +101,9 @@ func GenerateCollectScript(params CollectScriptParams) (string, error) {
 	return buf.String(), nil
 }
 
-// CollectorDownloadURL pins the support collector to the release of this Distr, so that it speaks
-// the same upload API. A development build has no release of its own and takes the latest one.
-func CollectorDownloadURL() string {
+// DefaultCollectorDownloadURL pins the support collector to the release of this Distr, so that it
+// speaks the same upload API. A development build has no release of its own and takes the latest one.
+func DefaultCollectorDownloadURL() string {
 	if buildconfig.IsRelease() {
 		return collectorReleasesURL + "/download/" + buildconfig.Version()
 	}
