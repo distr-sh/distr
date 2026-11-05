@@ -53,15 +53,17 @@ func EnsureAuth(
 		}
 	}
 
-	if reg, err := remote.NewRegistry(controllerenv.DistrRegistryHost); err != nil {
-		return nil, err
-	} else if previousJWT[deployment.ID] != jwt {
-		reg.PlainHTTP = controllerenv.DistrRegistryPlainHTTP
-		if err := credentials.Login(ctx, store, reg, auth.Credential{Username: "-", Password: jwt}); err != nil {
-			return nil, fmt.Errorf("docker login failed for %v: %w", controllerenv.DistrRegistryHost, err)
-		}
+	if controllerenv.DistrRegistryEnabled() {
+		if reg, err := remote.NewRegistry(controllerenv.DistrRegistryHost); err != nil {
+			return nil, err
+		} else if previousJWT[deployment.ID] != jwt {
+			reg.PlainHTTP = controllerenv.DistrRegistryPlainHTTP
+			if err := credentials.Login(ctx, store, reg, auth.Credential{Username: "-", Password: jwt}); err != nil {
+				return nil, fmt.Errorf("docker login failed for %v: %w", controllerenv.DistrRegistryHost, err)
+			}
 
-		previousJWT[deployment.ID] = jwt
+			previousJWT[deployment.ID] = jwt
+		}
 	}
 
 	if !maps.Equal(previousAuth[deployment.ID], deployment.RegistryAuth) {

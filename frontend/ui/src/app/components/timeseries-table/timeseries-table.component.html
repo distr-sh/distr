@@ -44,9 +44,10 @@
             </td>
             <th class="px-1 font-medium whitespace-nowrap">{{ entry.date | date: 'medium' }}</th>
             @if (showResourceColumn()) {
-              <td class="px-1 font-mono text-xs whitespace-nowrap" [ngClass]="resourceColorMap()[entry.resource!]">
-                {{ entry.resource }}
-              </td>
+              <td
+                class="px-1 font-mono text-xs whitespace-nowrap"
+                [ngClass]="resourceColorMap()[entry.resource!]"
+                [textContent]="entry.resource"></td>
             }
             <td
               class="px-1 uppercase"
@@ -55,13 +56,12 @@
               [class.text-yellow-600]="entry.status.toLowerCase().includes('warn')"
               [class.dark:text-yellow-500]="entry.status.toLowerCase().includes('warn')"
               [class.text-blue-600]="entry.status.toLowerCase().includes('info')"
-              [class.dark:text-blue-500]="entry.status.toLowerCase().includes('info')">
-              {{ entry.status }}
-            </td>
+              [class.dark:text-blue-500]="entry.status.toLowerCase().includes('info')"
+              [textContent]="entry.status"></td>
             <td class="w-full max-w-0 px-1" data-ph-mask-text="true">
-              <div class="overflow-x-auto font-mono whitespace-pre-wrap text-gray-900 dark:text-white">
-                {{ entry.detail }}
-              </div>
+              <div
+                class="overflow-x-auto font-mono whitespace-pre-wrap text-gray-900 dark:text-white"
+                [textContent]="entry.detail"></div>
             </td>
           </tr>
         }

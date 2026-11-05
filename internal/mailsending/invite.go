@@ -66,10 +66,8 @@ func SendUserInviteMail(
 		mailx.From(*from),
 		mailx.ReplyTo(currentUser.Email),
 		mailx.Subject(subject),
-		mailx.HtmlBodyTemplate(
-			mailtemplates.InviteUser(
-				ctx, userAccount, organization, customerOrgID, *currentUser, targetOrgName, inviteURL),
-		),
+		mailtemplates.InviteUser(
+			ctx, userAccount, organization, customerOrgID, *currentUser, targetOrgName, inviteURL),
 	); err != nil {
 		log.Warn(
 			"could not send invite mail",

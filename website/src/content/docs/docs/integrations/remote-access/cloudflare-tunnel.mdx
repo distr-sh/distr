@@ -1,0 +1,142 @@
+---
+title: Kubernetes with Cloudflare Tunnel
+description: Debug a customer's Kubernetes installation through a Cloudflare Tunnel that runs as a single cloudflared Deployment, with kubectl access limited to a ServiceAccount the customer controls.
+slug: docs/integrations/remote-access/cloudflare-tunnel
+sidebar:
+  label: Kubernetes with Cloudflare Tunnel
+---
+
+import {Aside, Code} from '@astrojs/starlight/components';
+import values from './cloudflare-tunnel/values.yaml?raw';
+import kubeconfig from './cloudflare-tunnel/kubeconfig.yaml?raw';
+
+With this setup, a [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/) on the customer's Kubernetes deployment target exposes the cluster's Kubernetes API server to your support engineers, behind [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/access-controls/).
+Read the [Remote Access Overview](/docs/integrations/remote-access/) first.
+It explains how the remote access application runs next to your application and how the customer creates the `vendor-support` ServiceAccount, which decides what your support team may do.
+
+The [tunnel](/glossary/reverse-tunnel/) is a single cloudflared Deployment in the namespace of your application.
+Its ServiceAccount has no permissions at all, so it runs on a namespace-scoped deployment target.
+
+<Aside type="note">
+  For Docker deployment targets, use
+  [Tailscale](/docs/integrations/remote-access/tailscale/) instead.
+</Aside>
+
+## Preparing Cloudflare
+
+You set this up in the [Cloudflare One dashboard](https://one.dash.cloudflare.com/) of your Cloudflare account.
+The hostname of the tunnel needs a domain on Cloudflare, for example `example.com`.
+
+### 1. Create a tunnel for the customer
+
+Under **Networks** > **Tunnels**, create a tunnel of type **Cloudflared** named after the customer, for example `acme`.
+The dashboard then shows an install command with the tunnel token in it, the long string starting with `eyJ`.
+Copy the token and skip the installation, because Distr deploys cloudflared for you.
+
+Give every customer their own tunnel. Deleting one then cuts off only that customer.
+
+### 2. Route a hostname to the Kubernetes API server
+
+Add a published application route to the tunnel:
+
+- **Hostname**: `k8s-acme.example.com`
+- **Service type**: `TCP`
+- **URL**: `kubernetes.default.svc:443`
+
+Every cluster serves its API server at `kubernetes.default.svc`, so the route works without knowing anything about the customer's cluster.
+Cloudflare's own [kubectl guide](https://developers.cloudflare.com/cloudflare-one/tutorials/kubectl/) turns the tunnel into a SOCKS proxy instead.
+Do not follow it here.
+A SOCKS proxy lets the client reach every address the cloudflared pod can reach, while this route only leads to the API server.
+
+### 3. Protect the hostname with Cloudflare Access
+
+Under **Access controls** > **Applications**, add a **Self-hosted** application for `k8s-acme.example.com`.
+Give it a policy that only allows your support team, for example by their email addresses or by a group in your identity provider.
+Without that policy, anyone who knows the hostname can reach the customer's API server, and only the API server's own authentication stands in their way.
+
+## Creating the application in Distr
+
+### 1. Store the tunnel token
+
+Open **Customers**, click **Manage secrets** next to the customer and create the secret `CLOUDFLARE_TUNNEL_TOKEN` with the tunnel token as its value.
+
+### 2. Create the application
+
+Create a Kubernetes application called **Remote Access** and add a version that uses Cloudflare's [`cloudflare-tunnel-remote`](https://github.com/cloudflare/helm-charts/tree/main/charts/cloudflare-tunnel-remote) chart:
+
+- **Chart Type**: `Repository`
+- **Chart Name**: `cloudflare-tunnel-remote`
+- **Chart URL**: `https://cloudflare.github.io/helm-charts`
+- **Chart Version**: `0.1.2`
+
+Enter these values as the **Template for Customer Values**.
+Every deployment starts from them, and Distr fills in the secret when it deploys:
+
+<Code code={values} lang="yaml" title="values.yaml" />
+
+The chart puts the token into a Kubernetes Secret and starts cloudflared with it.
+Without `image.tag`, it pulls the `latest` cloudflared image.
+It also runs two replicas by default, more than a tunnel for debugging needs.
+
+### 3. Deploy the tunnel
+
+Deploy the application to the customer's Kubernetes deployment target with **+ Deploy App**.
+Once the pod runs, the Cloudflare dashboard shows the tunnel as healthy.
+
+The pod connects out to Cloudflare on port 7844 and to the API server, and it resolves both names through the cluster DNS.
+Customers who restrict egress with NetworkPolicies have to allow both connections and DNS on port 53 over UDP and TCP.
+
+## Giving your support team access
+
+### 1. Receive the credentials from the customer
+
+The customer applies `vendor-support-rbac.yaml` as described in the [overview](/docs/integrations/remote-access/#kubernetes-a-serviceaccount-for-your-support-team) and sends your support engineer two values: a short-lived token and the certificate of the cluster's certificate authority.
+
+```shell
+kubectl create token vendor-support --namespace acme --duration 8h
+kubectl get configmap kube-root-ca.crt --namespace acme \
+  --output jsonpath='{.data.ca\.crt}' | base64 | tr -d '\n'
+```
+
+The token grants access to the customer's cluster.
+The customer should send it through a channel both sides trust, not in a support ticket.
+
+### 2. Start the local end of the tunnel
+
+Your support engineer installs [cloudflared](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/downloads/) and opens the tunnel on a local port:
+
+```shell
+cloudflared access tcp --hostname k8s-acme.example.com --url 127.0.0.1:6443
+```
+
+On the first connection, cloudflared opens a browser to log in to Cloudflare Access.
+
+### 3. Connect with kubectl
+
+Save this kubeconfig as `acme-kubeconfig.yaml` with the two values from the customer:
+
+<Code code={kubeconfig} lang="yaml" title="acme-kubeconfig.yaml" />
+
+kubectl connects to `127.0.0.1`, which is not a name on the API server's certificate.
+`tls-server-name` tells kubectl to check the certificate against `kubernetes.default.svc` instead.
+From there, the cluster works like any other:
+
+```shell
+export KUBECONFIG=acme-kubeconfig.yaml
+kubectl get pods
+kubectl logs deployment/acme-backend --tail 100
+kubectl exec -it deployment/acme-backend -- sh
+kubectl port-forward service/acme-backend 8080:80
+```
+
+kubectl acts as the `vendor-support` ServiceAccount, and any command the Role does not allow fails with `Forbidden`.
+`kubectl exec` and `kubectl port-forward` only work while the Role keeps its rule for `pods/exec` and `pods/portforward`.
+`kubectl debug` also needs `patch` on `pods/ephemeralcontainers`, which the customer can add to the Role.
+
+## Closing access
+
+When the support case is closed:
+
+1. Undeploy the remote access application, which removes the cloudflared Deployment and the Secret with the tunnel token.
+2. Delete the tunnel in the Cloudflare dashboard, or keep it and its secret in Distr for the next support case.
+3. Let the token expire, or have the customer delete the `vendor-support` ServiceAccount to revoke it right away.

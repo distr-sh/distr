@@ -1,0 +1,3 @@
+ALTER TABLE CustomerOrganization ADD COLUMN controller_image_repository TEXT;
+ALTER TYPE FEATURE ADD VALUE IF NOT EXISTS 'customer_settings';
+ALTER TYPE CUSTOMER_ORGANIZATION_FEATURE ADD VALUE IF NOT EXISTS 'settings';

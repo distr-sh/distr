@@ -33,6 +33,14 @@ Run your application on the ECS clusters your customers operate in their own AWS
 
 - **[Deploying to Amazon ECS](/docs/integrations/aws-ecs/)** - Pull your images from the Distr registry into ECS tasks, with registry credentials, secrets and configuration kept in the customer's AWS account
 
+## Remote Access
+
+Debug customer installations through a tunnel that you deploy as a Distr application:
+
+- **[Remote Access Overview](/docs/integrations/remote-access/)** - How remote access is deployed, revoked and limited with the Docker socket and a Kubernetes ServiceAccount
+- **[Docker Compose with Tailscale](/docs/integrations/remote-access/tailscale/)** - Reach the Docker engine of a customer host through Tailscale SSH or a forwarded Docker socket
+- **[Kubernetes with Cloudflare Tunnel](/docs/integrations/remote-access/cloudflare-tunnel/)** - Run kubectl against a customer cluster through a single cloudflared Deployment and Cloudflare Access
+
 ## API & SDKs
 
 Access Distr programmatically using our REST API and client libraries:

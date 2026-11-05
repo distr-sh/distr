@@ -14,7 +14,7 @@ import listVendorDark from '~/assets/docs/platform/support/support-bundles/suppo
 import settingsLight from '~/assets/docs/platform/support/support-bundles/support-bundle-settings-light.png';
 import settingsDark from '~/assets/docs/platform/support/support-bundles/support-bundle-settings-dark.png';
 
-Support Bundles give your customers a structured way to share diagnostic data when they report an issue. A customer initializes a bundle, runs a single `curl` command, and the collected data appears in your Vendor Portal. For a Docker deployment the command runs on the deployment host, for a Kubernetes deployment on a machine with access to the cluster. Nothing is uploaded without the customer's explicit approval.
+Support Bundles give your customers a structured way to share [diagnostic data](/glossary/support-bundle/) when they report an issue. A customer initializes a bundle, runs a single `curl` command, and the collected data appears in your Vendor Portal. For a Docker deployment the command runs on the deployment host, for a Kubernetes deployment on a machine with access to the cluster. Nothing is uploaded without the customer's explicit approval.
 
 <Aside type="note">
   Support Bundles are available for Docker and Kubernetes deployments on the
@@ -170,6 +170,12 @@ In the detail view:
 - **Comments** appear below the resources. Both vendor and customer users can leave comments.
 - Click **Mark as Resolved** to close the bundle once the issue is addressed.
 - Click **Delete** to remove the bundle. The list has a delete button on every row as well.
+
+## When a bundle is not enough
+
+Some issues only show up while you look at the running containers, and Kubernetes Support Bundles are only available on request.
+For those cases, and with the customer's consent, you can deploy a [tunnel](/glossary/reverse-tunnel/) next to your application and debug the installation yourself.
+See [Remote Access for Debugging](/docs/integrations/remote-access/).
 
 ## Customer flow
 

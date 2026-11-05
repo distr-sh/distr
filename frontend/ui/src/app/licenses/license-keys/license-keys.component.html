@@ -1,8 +1,8 @@
 <div class="distr-table-panel">
   <div class="distr-toolbar p-4">
-    <app-search-bar [control]="filterForm.controls.search" placeholder="Filter license keys" />
+    <app-search-bar [control]="filterForm.controls.search" placeholder="Filter license keys" [hotkey]="hotkey()" />
     <div class="distr-toolbar-actions">
-      @if ((auth.isVendor() || auth.isPartner()) && auth.hasAnyRole('read_write', 'admin')) {
+      @if (canManage) {
         <button
           (click)="openDrawer(manageLicenseDrawer)"
           type="button"
@@ -17,9 +17,6 @@
     <table class="distr-table">
       <thead class="distr-table-head">
         <tr>
-          @if (features.isVendorBillingEnabled()) {
-            <th scope="col" class="p-4">ID</th>
-          }
           <th scope="col" class="p-4">Name</th>
           <th scope="col" class="p-4">Reference</th>
           <th scope="col" class="p-4">Description</th>
@@ -33,15 +30,11 @@
       </thead>
       <tbody>
         @for (license of filteredLicenses(); track license.id) {
-          <tr class="distr-table-row">
-            @if (features.isVendorBillingEnabled()) {
-              <td class="size-0 py-3 ps-4">
-                @if (license.id) {
-                  <app-uuid [uuid]="license.id" />
-                }
-              </td>
-            }
-            <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
+          <tr
+            appClickableRow
+            (rowActivate)="canManage ? openDrawer(manageLicenseDrawer, license) : viewLicense(license)"
+            class="distr-table-row">
+            <td class="distr-table-cell">
               <div class="flex items-center gap-2">
                 <span class="block max-w-32 overflow-hidden text-ellipsis sm:max-w-64 lg:max-w-128">
                   {{ license.name }}
@@ -85,38 +78,83 @@
               [title]="license.lastRevisedAt | date: 'medium'">
               {{ license.lastRevisedAt | date }}
             </td>
-            <td
-              class="flex justify-end space-x-2 px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
-              <button
-                type="button"
-                (click)="viewLicense(license)"
-                [disabled]="viewLicenseLoading()"
-                class="distr-btn-secondary flex items-center px-3 py-2 text-center text-sm font-medium disabled:opacity-60">
-                <fa-icon [icon]="faEye" class="mr-2 mb-1 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                View License
-              </button>
-              @if ((auth.isVendor() || auth.isPartner()) && auth.hasAnyRole('read_write', 'admin')) {
+            <td class="px-4 py-3 text-end">
+              @if (canManage || canCopyId()) {
                 <button
                   type="button"
-                  (click)="openDrawer(manageLicenseDrawer, license)"
-                  class="distr-btn-secondary flex items-center px-3 py-2 text-center text-sm font-medium">
-                  <fa-icon [icon]="faPen" class="mr-2 -ml-0.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                  Edit
+                  aria-label="More actions"
+                  class="distr-btn-secondary px-2 py-1.5 text-center text-sm font-medium"
+                  cdkOverlayOrigin
+                  #dropdownTrigger="cdkOverlayOrigin"
+                  (click)="showDropdownForId.set(license.id)">
+                  <fa-icon [icon]="faEllipsisVertical" class="h-5 w-5 text-gray-500 dark:text-gray-400" />
                 </button>
-                <button
-                  type="button"
-                  (click)="duplicateLicense(manageLicenseDrawer, license)"
-                  class="distr-btn-secondary flex items-center px-3 py-2 text-center text-sm font-medium">
-                  <fa-icon [icon]="faCopy" class="mr-2 -ml-0.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                  New from&hellip;
-                </button>
-                <button
-                  type="button"
-                  aria-label="Delete"
-                  (click)="deleteLicense(license)"
-                  class="distr-btn-danger px-3 py-2">
-                  <fa-icon [icon]="faTrash" class="h-4 w-4" />
-                </button>
+
+                <ng-template
+                  cdkConnectedOverlay
+                  [cdkConnectedOverlayHasBackdrop]="true"
+                  (backdropClick)="showDropdownForId.set(undefined)"
+                  (detach)="showDropdownForId.set(undefined)"
+                  [cdkConnectedOverlayBackdropClass]="'transparent'"
+                  [cdkConnectedOverlayOrigin]="dropdownTrigger"
+                  [cdkConnectedOverlayPositions]="[
+                    {originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top'},
+                  ]"
+                  [cdkConnectedOverlayOpen]="showDropdownForId() === license.id">
+                  <ul
+                    role="none"
+                    class="distr-dropdown-panel"
+                    animate.enter="animate-flip-in-top"
+                    animate.leave="animate-flip-out-top"
+                    (click)="showDropdownForId.set(undefined)">
+                    @if (canManage) {
+                      <li>
+                        <button
+                          type="button"
+                          class="distr-dropdown-item"
+                          [disabled]="viewLicenseLoading()"
+                          (click)="viewLicense(license)">
+                          <fa-icon [icon]="faEye" class="w-4 text-gray-500 dark:text-gray-400" />
+                          View license key
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          type="button"
+                          class="distr-dropdown-item"
+                          (click)="duplicateLicense(manageLicenseDrawer, license)">
+                          <fa-icon [icon]="faCopy" class="w-4 text-gray-500 dark:text-gray-400" />
+                          New from&hellip;
+                        </button>
+                      </li>
+                    }
+                    @if (canCopyId() && license.id) {
+                      <li>
+                        <button
+                          type="button"
+                          class="distr-dropdown-item"
+                          [appClip]="license.id"
+                          #clip="clip"
+                          (click)="clip.writeClip()">
+                          <fa-icon [icon]="faClipboard" class="w-4 text-gray-500 dark:text-gray-400" />
+                          Copy ID
+                        </button>
+                      </li>
+                    }
+                    @if (canManage) {
+                      <li class="distr-dropdown-divider"></li>
+                      <li>
+                        <button
+                          type="button"
+                          class="distr-dropdown-item distr-dropdown-item-danger"
+                          (click)="deleteLicense(license)">
+                          <fa-icon [icon]="faTrash" class="w-4" />
+                          Delete
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                </ng-template>
               }
             </td>
           </tr>

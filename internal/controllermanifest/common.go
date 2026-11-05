@@ -68,7 +68,7 @@ func getTemplateData(
 	result := map[string]any{
 		"controllerName":               controllerName(deploymentTarget),
 		"controllerDockerConfig":       base64.StdEncoding.EncodeToString(env.ControllerDockerConfig()),
-		"controllerImageRepository":    ImageRepository(ctx, org),
+		"controllerImageRepository":    imageRepository(ctx, deploymentTarget, org),
 		"controllerInterval":           env.ControllerInterval(),
 		"controllerVersion":            deploymentTarget.ControllerVersion.Name,
 		"controllerVersionId":          deploymentTarget.ControllerVersion.ID,
@@ -101,7 +101,20 @@ func getTemplateData(
 	return result, nil
 }
 
-func ImageRepository(ctx context.Context, org types.OrganizationWithBranding) string {
+func imageRepository(
+	ctx context.Context,
+	deploymentTarget types.DeploymentTargetFull,
+	org types.OrganizationWithBranding,
+) string {
+	if co := deploymentTarget.CustomerOrganization; co != nil && co.ControllerImageRepository != nil {
+		return *co.ControllerImageRepository
+	}
+	return OrganizationImageRepository(ctx, org)
+}
+
+// OrganizationImageRepository is the repository controllers of org pull from unless their customer
+// organization overrides it.
+func OrganizationImageRepository(ctx context.Context, org types.OrganizationWithBranding) string {
 	if org.ControllerImageRepository != nil {
 		return *org.ControllerImageRepository
 	}

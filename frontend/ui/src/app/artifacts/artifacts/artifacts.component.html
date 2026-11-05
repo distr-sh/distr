@@ -82,31 +82,26 @@
       <ul role="list" class="distr-card-grid">
         @for (artifact of artifacts; track artifact.id) {
           <li [routerLink]="artifact.id" class="distr-card distr-card-clickable px-6 py-3 sm:py-4">
-            <div class="flex items-center">
-              @if (artifact.imageUrl) {
-                <img class="h-8 w-8 rounded-full" [attr.src]="artifact.imageUrl | secureImage | async" alt="" />
-              } @else {
-                <div class="shrink-0 text-gray-900 dark:text-gray-400">
-                  <fa-icon [icon]="faBox" size="xl" class="text-xl" />
-                </div>
-              }
+            <div class="flex flex-1 items-center">
+              <app-artifact-logo class="size-8 shrink-0" [imageUrl]="artifact.imageUrl" />
               <div class="ms-4 min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
                   <span class="truncate font-semibold text-gray-900 dark:text-white">{{ artifact.name }}</span>
                 </div>
-                <p class="mt-1 flex items-center gap-1 truncate text-sm text-gray-500 dark:text-gray-400">
-                  <app-uuid [uuid]="artifact.id" [small]="true" (click)="$event.stopPropagation()" />
-                  @if (auth.isVendor() && artifact.upstreamUrl) {
-                    <span class="distr-badge distr-badge-neutral">pull-through</span>
-                  }
-                  @if (artifact.public) {
-                    <app-artifact-public-badge />
-                  }
-                </p>
+                @if ((auth.isVendor() && artifact.upstreamUrl) || artifact.public) {
+                  <p class="mt-1 flex items-center gap-1 truncate text-sm text-gray-500 dark:text-gray-400">
+                    @if (auth.isVendor() && artifact.upstreamUrl) {
+                      <span class="distr-badge distr-badge-neutral">pull-through</span>
+                    }
+                    @if (artifact.public) {
+                      <app-artifact-public-badge />
+                    }
+                  </p>
+                }
               </div>
-              <div class="flex flex-col items-end gap-1" *appRequireVendor>
+              <div class="ms-4 flex h-14 shrink-0 flex-col items-end gap-1" *appRequireVendor>
                 <app-artifacts-download-count [source]="artifact" />
-                <app-artifacts-downloaded-by [source]="artifact" />
+                <app-artifacts-downloaded-by [source]="artifact" [maxShownAvatars]="3" />
               </div>
             </div>
           </li>

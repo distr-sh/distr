@@ -5,7 +5,7 @@ import (
 
 	"github.com/distr-sh/distr/internal/types"
 	. "github.com/onsi/gomega"
-	"github.com/stripe/stripe-go/v86"
+	"github.com/stripe/stripe-go/v87"
 )
 
 func subscriptionWithLookupKeys(keyQuantities map[string]int64) stripe.Subscription {

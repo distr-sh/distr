@@ -10,9 +10,7 @@ import (
 	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
-	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 const (
@@ -81,24 +79,6 @@ func GetFileMetadataWithID(ctx context.Context, id uuid.UUID) (*types.FileMetada
 	} else {
 		return &metadata, nil
 	}
-}
-
-func DeleteFileWithID(ctx context.Context, id uuid.UUID) error {
-	db := internalctx.GetDb(ctx)
-	cmd, err := db.Exec(ctx, `DELETE FROM file WHERE id = @id`, pgx.NamedArgs{"id": id})
-	if err != nil {
-		if pgerr := (*pgconn.PgError)(nil); errors.As(err, &pgerr) && pgerr.Code == pgerrcode.ForeignKeyViolation {
-			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
-		}
-	} else if cmd.RowsAffected() == 0 {
-		err = distrerr.ErrNotFound
-	}
-
-	if err != nil {
-		return fmt.Errorf("could not delete File: %w", err)
-	}
-
-	return nil
 }
 
 // DeleteUnreferencedFilesOlderThan collects every image that was replaced, since attaching a new one

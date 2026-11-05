@@ -82,27 +82,27 @@ windows.
 
 ## Distr vs Nuon at a Glance
 
-| Capability                                          | Distr                                       | Nuon                                                         |
-| --------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------ |
-| Provision customer-cloud infrastructure             | Yes, through OpenTofu controllers           | Yes                                                          |
-| Deploy applications into customer clouds            | Yes                                         | Yes                                                          |
-| Reuse existing Terraform or OpenTofu configurations | Yes                                         | Yes, within Nuon's application model                         |
-| Periodic infrastructure reconciliation              | Yes                                         | Yes                                                          |
-| Infrastructure drift detection                      | Yes                                         | Yes                                                          |
-| Packaged drift review and remediation               | Reconciliation and deployment logs          | More integrated workflow                                     |
-| Existing Kubernetes clusters                        | Yes                                         | Focused on AWS, Azure and Google Cloud BYOC                  |
-| Docker and virtual machine deployments              | Yes                                         | Not the primary deployment model                             |
-| On-premises environments                            | Yes                                         | Not the primary deployment model                             |
-| Air-gapped environments                             | Yes                                         | Not the primary deployment model                             |
-| Customer-managed CI/CD                              | Yes                                         | Vendor-operated model                                        |
-| Software licensing                                  | Built-in signed offline licenses            | Not a native product capability                              |
-| Artifact entitlements and OCI registry              | Built-in entitlements and registry          | Artifact sync into installs; different entitlement model     |
-| Staged fleet rollout groups                         | Per-customer version and deployment updates | Packaged install groups with plan and approval               |
-| Customer approval gates                             | Customer-controlled update timing           | Built-in BYOC approval workflow                              |
-| Operational actions                                 | Application and controller operations       | Dedicated action framework                                   |
-| Break-glass access                                  | No packaged workflow                        | Built-in temporary elevated access                           |
-| Open source                                         | Yes (Apache 2.0)                            | Yes (AGPL)                                                   |
-| Self-hostable platform                              | Yes                                         | Yes (AWS self-host and Nuon BYOC; Nuon Cloud also available) |
+| Capability                                          | Distr                                                                                                                      | Nuon                                                         |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Provision customer-cloud infrastructure             | Yes, through OpenTofu controllers                                                                                          | Yes                                                          |
+| Deploy applications into customer clouds            | Yes                                                                                                                        | Yes                                                          |
+| Reuse existing Terraform or OpenTofu configurations | Yes                                                                                                                        | Yes, within Nuon's application model                         |
+| Periodic infrastructure reconciliation              | Yes                                                                                                                        | Yes                                                          |
+| Infrastructure drift detection                      | Yes                                                                                                                        | Yes                                                          |
+| Packaged drift review and remediation               | Reconciliation and deployment logs                                                                                         | More integrated workflow                                     |
+| Existing Kubernetes clusters                        | Yes                                                                                                                        | Focused on AWS, Azure and Google Cloud BYOC                  |
+| Docker and virtual machine deployments              | Yes                                                                                                                        | Not the primary deployment model                             |
+| On-premises environments                            | Yes                                                                                                                        | Not the primary deployment model                             |
+| Air-gapped environments                             | Yes                                                                                                                        | Not the primary deployment model                             |
+| Customer-managed CI/CD                              | Yes                                                                                                                        | Vendor-operated model                                        |
+| Software licensing                                  | Built-in signed offline licenses                                                                                           | Not a native product capability                              |
+| Artifact entitlements and OCI registry              | Built-in entitlements and registry                                                                                         | Artifact sync into installs; different entitlement model     |
+| Staged fleet rollout groups                         | Per-customer version and deployment updates                                                                                | Packaged install groups with plan and approval               |
+| Customer approval gates                             | Customer-controlled update timing                                                                                          | Built-in BYOC approval workflow                              |
+| Operational actions                                 | Application and controller operations                                                                                      | Dedicated action framework                                   |
+| Break-glass access                                  | No packaged workflow; documented [remote access](/docs/integrations/remote-access/) through Tailscale or Cloudflare Tunnel | Built-in temporary elevated access                           |
+| Open source                                         | Yes (Apache 2.0)                                                                                                           | Yes (AGPL)                                                   |
+| Self-hostable platform                              | Yes                                                                                                                        | Yes (AWS self-host and Nuon BYOC; Nuon Cloud also available) |
 
 ## The Short Answer
 
@@ -341,6 +341,9 @@ The customer controls:
 - Update timing
 
 The vendor does not require interactive access to the customer account.
+When a support case needs it, the customer can let the vendor deploy a
+[remote access](/docs/integrations/remote-access/) application next to the
+application and undeploy it once the case is closed.
 
 Customers can also choose not to run a deployment controller. They can pull approved
 artifacts from Distr and deploy them through their own CI/CD pipeline.
@@ -433,7 +436,7 @@ Nuon is a stronger fit when:
 
 - There are no existing deployment workflows to keep.
 - All customers run on AWS, Azure or Google Cloud.
-- Customers expect controlled, temporary vendor access to their accounts.
+- Customers expect controlled, temporary [vendor access](/glossary/vendor-remote-access/) to their accounts.
 - Rollouts require staged installation groups.
 - Customers must approve updates or define release windows.
 - Operational actions must run across customer installations.

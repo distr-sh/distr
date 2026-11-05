@@ -88,11 +88,15 @@ func ApplicationsRouter(r chiopenapi.Router) {
 						With(middleware.RequireReadWriteOrAdmin).
 						With(middleware.BlockSuperAdmin).
 						Post("/", respond.Handler(createApplicationVersion)).
-						With(option.Description("Create a new application version")).
+						With(option.Description("Create a new application version from a multipart form. " +
+							"The applicationversion field holds the version as JSON, for example {\"name\":\"1.0.0\"}. " +
+							"Helm versions also need chartType, chartUrl and chartVersion, and chartName for a " +
+							"repository chart. Each file part is limited to 100 KiB and needs a YAML or JSON content type, " +
+							"for example curl -F 'composefile=@compose.yaml;type=application/yaml'.")).
 						With(option.Request(struct {
 							ApplicationRequest
-							api.CreateApplicationVersionRequest
-						}{})).
+							api.CreateApplicationVersionFormRequest
+						}{}, option.ContentType("multipart/form-data"))).
 						With(option.Response(http.StatusOK, api.ApplicationVersionResponse{}))
 				})
 			r.Route("/{applicationVersionId}", func(r chiopenapi.Router) {
@@ -673,8 +677,8 @@ func deleteApplication(r *http.Request) (respond.Responder, error) {
 }
 
 func patchImageApplication(r *http.Request) (respond.Responder, error) {
-	return patchImage(r, func(ctx context.Context, body api.PatchImageRequest) (any, error) {
-		application := internalctx.GetApplication(ctx)
+	application := internalctx.GetApplication(r.Context())
+	return patchImage(r, &application.OrganizationID, func(ctx context.Context, body api.PatchImageRequest) (any, error) {
 		if err := db.UpdateApplicationImage(ctx, application, body.ImageID); err != nil {
 			return nil, err
 		} else {

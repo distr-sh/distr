@@ -99,6 +99,8 @@ func createCustomerOrganizationHandler(r *http.Request) (respond.Responder, erro
 		return resp, nil
 	} else if err := request.Validate(); err != nil {
 		return respond.BadRequest(err.Error()), nil
+	} else if resp, err := requireCustomerOrganizationImage(ctx, request.ImageID); resp != nil || err != nil {
+		return resp, err
 	} else {
 		customerOrganization := types.CustomerOrganization{
 			OrganizationID:        *auth.CurrentOrgID(),
@@ -140,6 +142,8 @@ func updateCustomerOrganizationHandler(r *http.Request) (respond.Responder, erro
 		return respond.BadRequest(err.Error()), nil
 	} else if resp, err := checkReachableByPartner(ctx, &id, customerOrganizationNotFound); resp != nil || err != nil {
 		return resp, err
+	} else if resp, err := requireCustomerOrganizationImage(ctx, request.ImageID); resp != nil || err != nil {
+		return resp, err
 	} else {
 		var features []types.CustomerOrganizationFeature
 		if request.Features == nil {
@@ -175,6 +179,13 @@ func updateCustomerOrganizationHandler(r *http.Request) (respond.Responder, erro
 			return respond.JSON(mapping.CustomerOrganizationToAPI(customerOrganization)), nil
 		}
 	}
+}
+
+func requireCustomerOrganizationImage(ctx context.Context, imageID *uuid.UUID) (respond.Responder, error) {
+	if imageID == nil {
+		return nil, nil
+	}
+	return requireImageOwnedBy(ctx, *imageID, auth.Authentication.Require(ctx).CurrentOrgID())
 }
 
 // checkProCustomerOrganizationFeatures rejects adding a Pro customer feature without the Pro plan.
@@ -216,6 +227,8 @@ func checkBusinessCustomerOrganizationFeatures(
 			continue
 		} else if feature == types.CustomerOrganizationFeatureOidcProviders {
 			return respond.Forbidden("the custom identity provider feature is not available on your plan")
+		} else if feature == types.CustomerOrganizationFeatureSettings {
+			return respond.Forbidden("customer settings are not available on your plan")
 		} else {
 			return respond.Forbidden("security advisories are not available on your plan")
 		}

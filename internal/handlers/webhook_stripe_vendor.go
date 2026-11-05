@@ -23,8 +23,8 @@ import (
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
-	"github.com/stripe/stripe-go/v86"
-	"github.com/stripe/stripe-go/v86/webhook"
+	"github.com/stripe/stripe-go/v87"
+	"github.com/stripe/stripe-go/v87/webhook"
 	"go.uber.org/zap"
 )
 
@@ -58,6 +58,9 @@ func vendorStripeWebhookHandler(r *http.Request) (respond.Responder, error) {
 	event, err := webhook.ConstructEvent(payload, r.Header.Get("Stripe-Signature"), string(*org.StripeWebhookSecret))
 	if err != nil {
 		log.Warn("vendor webhook signature verification failed", zap.Error(err))
+		if isIgnoredStripeVersionMismatch(event) {
+			return respond.Status(http.StatusOK), nil
+		}
 		return respond.Status(http.StatusBadRequest), nil
 	}
 

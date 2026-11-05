@@ -1,0 +1,125 @@
+---
+title: 'Vendor Remote Access: How Software Vendors Reach Customer Environments'
+slug: vendor-remote-access
+description: "Vendor remote access is how a software vendor's engineers reach an installation that runs in a customer's environment. Learn the common approaches, what security teams expect and how to grant access that is temporary and revocable."
+term: Vendor Remote Access
+alternateNames:
+  - Vendor Access
+  - Third-Party Remote Access
+  - Remote Support Access
+shortDefinition: "Vendor remote access is the access a software vendor's engineers get to an installation that runs in a customer's environment, usually to debug or support it. The customer grants it, limits it to what the task needs and can revoke it at any time."
+lastUpdated: 2026-11-03
+faq:
+  - question: What is vendor remote access?
+    answer: "Vendor remote access is the access a software vendor's engineers get to an installation in a customer's environment, for example a shell on a host or kubectl access to a namespace. It is typically granted for a support case and revoked once the case is closed."
+  - question: Why do software vendors need remote access to customer environments?
+    answer: 'Logs, metrics and support bundles answer most support questions. Some problems only show up while you look at the running system, such as a container that cannot reach a database or a migration that hangs. Without access, every check becomes another round trip through the customer.'
+  - question: Is a VPN a good way to give a vendor access?
+    answer: "A VPN account usually puts the vendor on the customer's network rather than on the one system they need. It is hard to scope, often stays active long after the support case and needs an inbound path into the network. Tunnels that connect outbound and grant access per system fit vendor access better."
+  - question: How do I give a vendor temporary access to a Kubernetes cluster?
+    answer: "Create a ServiceAccount in the namespace of the vendor's application, bind it to a Role with only the permissions the support case needs and issue a short-lived token with `kubectl create token`. The token expires on its own, and deleting the ServiceAccount revokes it earlier."
+  - question: Do air-gapped deployments allow vendor remote access?
+    answer: 'No. An air-gapped environment has no network path to the vendor, so support relies on diagnostics the customer collects and hands over, such as support bundles.'
+  - question: How does Distr handle vendor remote access?
+    answer: "The Distr controller connects outbound only and gives the vendor no way into the customer's infrastructure. When a support case needs live access, the vendor deploys Tailscale or a Cloudflare Tunnel as a Distr application with the customer's consent, and the customer can undeploy it at any time. See [Remote Access for Debugging](/docs/integrations/remote-access/)."
+---
+
+## What Is Vendor Remote Access?
+
+**Vendor remote access** is the access a software vendor's engineers get to an installation that runs in a customer's environment.
+It can be a shell on a host, the Docker API of a server, `kubectl` access to a namespace or a role in the customer's cloud account.
+Vendors usually need it to debug an issue, to support an upgrade or to operate the software on the customer's behalf.
+
+The term only matters once software leaves the vendor's own infrastructure.
+A [SaaS](/glossary/saas-definition/) vendor operates its own servers and has full access to them.
+A vendor that ships [self-hosted software](/glossary/self-hosted-software/) has none by default: the installation runs in a data center, a cloud account or an isolated network that the customer controls, and every way in has to be granted by the customer.
+
+## Why Vendors Need Access to Customer Environments
+
+Most support cases get solved without access.
+The logs, metrics and diagnostics a customer shares tell the vendor which version runs, which container keeps restarting and what the error says.
+
+Other problems only show up on the running system:
+
+- A container cannot reach the database, and only a request from inside the network shows whether DNS, a firewall or the credentials are at fault.
+- A migration hangs, and you need to see which query it waits for.
+- An ingress or [reverse proxy](/glossary/reverse-proxy/) in front of the application rewrites a header, and the application logs look fine.
+- A cluster runs a policy engine or a service mesh that the vendor never tested against.
+
+Without access, each of these checks becomes another round trip: the vendor writes down a command, the customer runs it, pastes the output and waits for the next one.
+A case the vendor could close in one session on the live system can drag on for days like that.
+
+## Common Approaches to Vendor Remote Access
+
+| Approach                        | Inbound connection needed | Scope                          | Revocation                     |
+| ------------------------------- | ------------------------- | ------------------------------ | ------------------------------ |
+| Screen sharing                  | No                        | Whatever the customer shows    | End the call                   |
+| VPN account                     | Yes                       | Often the whole network        | Disable the account            |
+| Bastion host with SSH keys      | Yes                       | The hosts behind the bastion   | Remove the key                 |
+| Cross-account cloud role        | No                        | What the IAM policy allows     | Delete the role or the trust   |
+| Tunnel that connects outbound   | No                        | One host, service or namespace | Stop the tunnel                |
+| Support bundles and diagnostics | No                        | What the customer collects     | Not needed, nothing stays open |
+
+Screen sharing is where many vendors start.
+The customer types while the vendor watches and dictates commands.
+It needs no setup and leaves nothing behind.
+On the other hand, every command goes through someone who did not write the software, and the session ends when the call does.
+
+A VPN account connects the vendor to the customer's network.
+It is easy to issue and hard to scope, because a VPN usually reaches far more than the one system the vendor needs.
+The accounts also tend to stay active long after the support case is closed.
+
+A bastion host puts a hardened jump host in front of the systems the vendor may reach, and the vendor logs in with an SSH key.
+That is tighter than a VPN, but the bastion needs an inbound port, and teams often share keys and seldom rotate them.
+
+Cross-account cloud roles are the norm for [BYOC](/glossary/byoc-definition/) deployments, where the vendor operates the software in the customer's AWS, Azure or Google Cloud account.
+The customer creates a role that the vendor may assume, and the IAM policy of that role decides what the vendor can do.
+Emergency access with wider permissions often lives in a separate break-glass role that someone on the customer's side has to approve.
+
+[Tunnels that connect outbound](/glossary/reverse-tunnel/) run a small agent next to the application, for example Tailscale, a Cloudflare Tunnel or ngrok.
+The agent opens the connection from inside the customer's network, so the customer opens no inbound port.
+The vendor's engineers reach the host or service the tunnel exposes and nothing else.
+Access platforms such as Teleport build on the same idea and add session recording and short-lived certificates.
+
+[Support bundles](/glossary/support-bundle/) and remote diagnostics skip live access altogether.
+The customer runs a collection command, looks at what it gathered and sends the result.
+That works in [air-gapped](/glossary/air-gapped-meaning/) environments too, but a bundle only answers the questions its collection anticipated.
+
+## What Customer Security Teams Expect
+
+Security teams review vendor access like any other third-party risk.
+ISO 27001 and SOC 2 both ask organizations to control and review supplier access, and the NIS2 directive lists supply chain security among the measures that companies in its scope have to take.
+A review of vendor access usually checks these points:
+
+- The customer decides when access starts and can see while it is active.
+- The vendor gets the permissions the support case needs, in the namespace or on the host the application runs in. This is least privilege.
+- Access starts with a support case and ends with it rather than staying in place for the next one, which is often called just-in-time access.
+- The customer does not have to open a firewall port for the vendor.
+- Every engineer connects under their own identity, so the customer knows who did what. Shared accounts and shared SSH keys fail here.
+- The customer can end the access on their own at any time, without waiting for the vendor.
+
+A standing VPN account fails most of these points.
+Access granted for one support case and limited to the application usually gets through the review quickly.
+
+## Vendor Remote Access Across Deployment Models
+
+How much access a vendor gets depends on where the deployment sits on the [self-hosted spectrum](/blog/self-hosted-spectrum/):
+
+- In a BYOC deployment the vendor operates the software, so standing access through a cloud role is part of the deal. The customer audits that access and can revoke it.
+- In an [on-premises](/glossary/on-premises-definition/) data center or a cloud account the customer operates, vendor access is the exception and gets granted per support case.
+- An air-gapped environment has no network path to the vendor, so remote access is off the table. Support runs on diagnostics the customer collects and carries out.
+
+## Vendor Remote Access with Distr
+
+[Distr](/docs/) keeps the need for access small.
+The Distr controller in the customer's environment only connects outbound and gives the vendor no way into the infrastructure.
+Deployment status, [logs and metrics](/docs/controllers/logs-and-metrics/) and [support bundles](/docs/platform/support-bundles/) reach the vendor without anyone opening a port.
+
+When a support case needs a live look, the vendor ships the tunnel like its application: as a Distr application, deployed next to it on the customer's existing deployment target.
+
+- On Docker Compose, a Tailscale container gives the vendor's support team a shell or the forwarded Docker socket.
+- On Kubernetes, a single cloudflared Deployment exposes the API server behind Cloudflare Access, and a ServiceAccount the customer controls decides what `kubectl` may do.
+
+The customer sees the deployment in their portal next to the application, and undeploying it ends the access.
+The tunnel credentials are stored per customer, so closing one customer's tunnel leaves the others alone.
+The [remote access guide](/docs/integrations/remote-access/) walks through both setups.

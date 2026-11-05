@@ -7,7 +7,7 @@ alternateNames:
   - On-Prem
   - On-Premise
 shortDefinition: 'On-premises (or on-prem) describes software and IT infrastructure that organizations run inside environments they control. The organization controls the environment (traditionally their hardware; today often their cloud account), sets the security policy, and owns the data. Who operates the application can vary.'
-lastUpdated: 2026-08-20
+lastUpdated: 2026-11-03
 faq:
   - question: What does on-premise deployment mean?
     answer: "It means software runs on infrastructure controlled by the customer. That can be physical data centers or their own cloud accounts. The customer controls the environment instead of relying on the vendor's multi-tenant SaaS platform. Application operation may still be customer-led, shared, or vendor-assisted."
@@ -57,7 +57,7 @@ For software vendors, supporting on-prem deployment creates specific requirement
 - Installation, via Docker Compose files, [Helm charts](/glossary/helm-chart/), installers, or [Kubernetes](/glossary/kubernetes/) operators
 - Updates across thousands of independent customer environments
 - [Licensing](/glossary/software-license-management/) that works offline
-- Support and remote diagnostics without direct environment access
+- Support and [remote diagnostics](/glossary/support-bundle/) without direct environment access
 
 Modern [software distribution platforms](/glossary/software-distribution-platform/) like Distr exist to manage these complexities so vendors can offer on-prem without doubling engineering costs.
 
@@ -213,7 +213,7 @@ Platforms like Distr make on-prem deployment operationally manageable at scale b
 - **Deployment tracking** across thousands of installations with version visibility
 - **License management** with offline-capable enforcement
 - **Telemetry collection**, with customer consent, via optional deployment controllers
-- **Remote troubleshooting** when customers grant access
+- **[Remote troubleshooting](/glossary/vendor-remote-access/)** through a temporary [tunnel](/glossary/reverse-tunnel/) when customers grant access
 
 The result is that on-premises deployment can be run with roughly the same operational profile as SaaS for the vendor, while the customer keeps the control and security they require.
 

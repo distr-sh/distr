@@ -60,12 +60,6 @@ export class ArtifactsDownloadCountComponent {
   protected readonly faDownload = faDownload;
 }
 
-/**
- * An avatar costs an image request or a rendered icon, and this component is repeated for every artifact version
- * on the page, so only the first few downloaders are shown and the rest are summarized as a count.
- */
-const maxShownAvatars = 5;
-
 interface ShownDownloader {
   id: string;
   title: string;
@@ -104,6 +98,11 @@ interface ShownDownloader {
 })
 export class ArtifactsDownloadedByComponent {
   public readonly source = input.required<HasDownloads>();
+  /**
+   * An avatar costs an image request or a rendered icon, and this component is repeated for every artifact version
+   * on the page, so only the first few downloaders are shown and the rest are summarized as a count.
+   */
+  public readonly maxShownAvatars = input(5);
 
   private readonly usersService = inject(UsersService);
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
@@ -115,6 +114,7 @@ export class ArtifactsDownloadedByComponent {
     const source = this.source();
     const users = this.users() ?? [];
     const orgs = this.customerOrganizations() ?? [];
+    const maxShownAvatars = this.maxShownAvatars();
     const shown: ShownDownloader[] = [];
 
     for (const id of source.downloadedByUsers ?? []) {

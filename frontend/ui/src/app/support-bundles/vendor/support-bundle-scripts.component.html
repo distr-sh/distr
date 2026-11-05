@@ -112,9 +112,9 @@
               class="distr-input" />
           </div>
           <div>
-            <label for="scriptContent" class="distr-label mb-1">Script</label>
+            <label #scriptContentLabel class="distr-label mb-1">Script</label>
             <app-editor
-              id="scriptContent"
+              [label]="scriptContentLabel"
               language="shell"
               formControlName="content"
               class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0" />

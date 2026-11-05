@@ -1,0 +1,140 @@
+---
+title: Remote Access for Debugging
+description: Debug a customer installation remotely by deploying Tailscale or a Cloudflare Tunnel as a Distr application next to your application, with access the customer can see and revoke.
+slug: docs/integrations/remote-access
+sidebar:
+  label: Remote Access Overview
+---
+
+import {Aside, Code, Steps} from '@astrojs/starlight/components';
+import vendorSupportRbac from './vendor-support-rbac.yaml?raw';
+
+Logs, metrics and [support bundles](/docs/platform/support-bundles/) answer most questions about a customer installation.
+For the rest, your support engineers need [remote access](/glossary/vendor-remote-access/) to look at the running containers themselves.
+Customer environments rarely accept inbound connections, so this guide uses a [reverse tunnel](/glossary/reverse-tunnel/) instead: it connects outbound from the customer environment to [Tailscale](https://tailscale.com) or [Cloudflare](https://www.cloudflare.com), and your support team comes in from there.
+
+You ship the tunnel like your application, as a Distr application that the Distr controller in the customer environment deploys.
+
+## How remote access works with Distr
+
+<Steps>
+
+1. Create a separate [application](/docs/controllers/application/), for example **Remote Access**, with a version that contains the tunnel.
+   The tool guides below provide the Compose file and the Helm values for it.
+2. Store the credential of the tunnel as a [customer-specific secret](/docs/controllers/secrets/#customer-specific-secrets) of the customer you want to support.
+3. Deploy the application to the customer's existing deployment target with **+ Deploy App**, as described in [Using Existing Deployment Targets](/docs/controllers/deployment/#using-existing-deployment-targets).
+   It runs next to your application, and the deployment target stays as it is.
+4. Debug the installation through the tunnel.
+5. Undeploy the application when the support case is closed.
+
+</Steps>
+
+The customer opens no port in their firewall, since the tunnel only connects outbound.
+The deployment shows up in the Customer Portal like any other.
+The customer sees when remote access is active and can undeploy it themselves.
+If you use [application entitlements](/docs/platform/application-entitlements/), grant the customer the remote access application too, or it does not appear in the deployment wizard.
+
+<Aside type="caution">
+  Remote access reaches into an environment the customer operates. Agree with
+  the customer on when you deploy it and what you may do with it before you
+  deploy it.
+</Aside>
+
+## Storing the tunnel credential per customer
+
+Give every customer their own tunnel credential: a Cloudflare tunnel token or a Tailscale auth key.
+Store it as a customer-specific secret, which Distr only injects into that customer's deployments, and reference it from the deployment configuration:
+
+```dotenv
+TS_AUTHKEY={{ .Secrets.TAILSCALE_AUTHKEY }}
+```
+
+If you revoke one customer's credential, the other customers keep their access.
+The value itself never shows up in the Compose file, the Helm values or the deployment logs.
+See [Secrets Management](/docs/controllers/secrets/) for the template syntax.
+
+## Docker Compose: the Docker socket
+
+On a Docker deployment target, your application runs as containers of the Docker engine on the customer's host.
+A container that mounts the engine's socket, `/var/run/docker.sock`, gets the full Docker API.
+`docker ps`, `docker logs`, `docker inspect` and `docker exec` then work for every container on the host, your application included.
+
+You can use the socket through the tunnel in two ways:
+
+- Your support engineer opens a shell in a debug container that mounts the socket and ships the Docker CLI, then runs `docker` commands as if logged in to the host.
+- A small proxy exposes the socket to the tunnel, and your support engineer points the Docker CLI on their own machine at it with `docker -H` or a Docker context.
+
+If the deployment target uses a [custom Docker endpoint](/docs/controllers/docker-controller/#custom-docker-endpoint), mount that socket instead of `/var/run/docker.sock`.
+
+<Aside type="danger">
+  Access to the Docker socket is root access to the host. Anyone who reaches the
+  socket can start a privileged container that mounts the host's file system.
+  Restrict who may connect in your tunnel's access policy and never deploy the
+  remote access application without the customer's consent.
+</Aside>
+
+## Kubernetes: a ServiceAccount for your support team
+
+On a Kubernetes deployment target, the tunnel exposes the cluster's Kubernetes API server, and your support engineer runs `kubectl` against it.
+The identity `kubectl` presents decides what it may do.
+The customer therefore creates a ServiceAccount for your support team and binds it to a Role in the namespace of your application.
+They review the manifest before they apply it, so they decide what your support team can do:
+
+<Code code={vendorSupportRbac} lang="yaml" title="vendor-support-rbac.yaml" />
+
+The Role can read the workloads of the namespace and their logs, but not its Secrets.
+Its last rule allows `kubectl exec` and `kubectl port-forward`, the Kubernetes equivalent of a shell in a debug container.
+A customer who wants to keep your support team out of the containers deletes that rule.
+Change `acme` to the namespace of the deployment target and apply the manifest:
+
+```shell
+kubectl apply -f vendor-support-rbac.yaml
+```
+
+When a support case starts, the customer issues a short-lived token for the ServiceAccount and sends it to your support engineer:
+
+```shell
+kubectl create token vendor-support --namespace acme --duration 8h
+```
+
+The token expires on its own, and deleting the ServiceAccount revokes it earlier.
+Some clusters cap the lifetime of tokens, in which case the token expires sooner than requested.
+
+<Aside type="caution">
+  Never debug with the ServiceAccount of the Distr controller. It is bound to
+  `cluster-admin` or to an admin role of its namespace, as described in
+  [Kubernetes Controller](/docs/controllers/kubernetes-controller/), and its
+  credentials are not meant to leave the cluster.
+</Aside>
+
+## Choosing a tool for each deployment type
+
+| Deployment target | Recommended tool                                                         |
+| ----------------- | ------------------------------------------------------------------------ |
+| Docker Compose    | [Tailscale](/docs/integrations/remote-access/tailscale/)                 |
+| Kubernetes        | [Cloudflare Tunnel](/docs/integrations/remote-access/cloudflare-tunnel/) |
+
+### Why Tailscale for Docker Compose
+
+One Tailscale container joins your tailnet.
+Through it, Tailscale SSH and MagicDNS give your support engineers a shell or the forwarded socket under the name of the host.
+Your tailnet authorizes every connection by the identity of the engineer, and nothing besides that container runs on the host.
+
+### Why Cloudflare Tunnel for Kubernetes
+
+Tailscale gets into a cluster through the [Tailscale Kubernetes operator](https://tailscale.com/kb/1236/kubernetes-operator).
+The operator installs custom resource definitions and ClusterRoles, and its API server proxy needs the right to impersonate any user and group of the cluster.
+It therefore only runs on a cluster-scoped deployment target.
+Customers who share the cluster with other teams or vendors rarely accept that.
+An operator that reconciles cluster-wide resources is also hard to remove cleanly once the support case is closed.
+
+A Cloudflare Tunnel is a single cloudflared Deployment in the namespace of your application.
+Its ServiceAccount has no permissions, so it runs on a namespace-scoped deployment target, and the `vendor-support` ServiceAccount alone decides what your support team may do in the cluster.
+
+## Closing remote access
+
+When the support case is closed:
+
+1. Undeploy the remote access application in Distr, or let the customer undeploy it in the Customer Portal.
+2. Delete the tunnel in Cloudflare or the device in your tailnet, if it is not removed automatically.
+3. On Kubernetes, let the token expire or delete the `vendor-support` ServiceAccount.

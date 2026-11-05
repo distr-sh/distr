@@ -9,6 +9,7 @@ import {WEBSITE_URL} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
 import {slugMaxLength, slugPattern} from '../../util/slug';
 import {DeleteOrganizationComponent} from '../components/delete-organization/delete-organization.component';
+import {EditorComponent} from '../components/editor.component';
 import {PillTabBarComponent} from '../components/pill-tab-bar.component';
 import {TabItem} from '../components/tab-bar.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
@@ -51,7 +52,14 @@ function deploymentTypesUsingConnectScript(settings: ConnectScriptSettings): Dep
   selector: 'app-general-settings',
   templateUrl: './general-settings.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [FaIconComponent, ReactiveFormsModule, AutotrimDirective, DeleteOrganizationComponent, PillTabBarComponent],
+  imports: [
+    FaIconComponent,
+    ReactiveFormsModule,
+    AutotrimDirective,
+    DeleteOrganizationComponent,
+    EditorComponent,
+    PillTabBarComponent,
+  ],
 })
 export class GeneralSettingsComponent implements OnInit {
   protected readonly faFloppyDisk = faFloppyDisk;

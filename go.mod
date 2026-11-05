@@ -7,7 +7,7 @@ toolchain go1.27.3
 require (
 	cloud.google.com/go/kms v1.36.1
 	github.com/Masterminds/semver/v3 v3.5.0
-	github.com/avast/retry-go/v5 v5.0.0
+	github.com/avast/retry-go/v5 v5.0.1
 	github.com/aws/aws-sdk-go-v2 v1.47.5
 	github.com/aws/aws-sdk-go-v2/config v1.33.13
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.13
@@ -31,9 +31,9 @@ require (
 	github.com/go-chi/httprate v0.16.1
 	github.com/go-co-op/gocron/v2 v2.23.0
 	github.com/go-logr/zapr v1.3.0
-	github.com/go-mailx/mailx v1.0.2
-	github.com/go-mailx/mailx-ses v1.0.15
-	github.com/go-mailx/mailx-smtp v1.0.5
+	github.com/go-mailx/mailx v1.1.0
+	github.com/go-mailx/mailx-ses v1.1.0
+	github.com/go-mailx/mailx-smtp v1.1.0
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/golang-migrate/migrate/v4 v4.20.1
 	github.com/google/uuid v1.6.0
@@ -57,7 +57,7 @@ require (
 	github.com/sirupsen/logrus v1.10.2
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
-	github.com/stripe/stripe-go/v86 v86.4.2
+	github.com/stripe/stripe-go/v87 v87.1.0
 	go.opentelemetry.io/collector/component v1.70.0
 	go.opentelemetry.io/collector/confmap v1.70.0
 	go.opentelemetry.io/collector/consumer v1.70.0
@@ -118,7 +118,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery v1.13.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.14.8 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.20.8 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ses v1.42.5 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sesv2 v1.79.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/signin v1.12.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sns v1.47.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.52.1 // indirect

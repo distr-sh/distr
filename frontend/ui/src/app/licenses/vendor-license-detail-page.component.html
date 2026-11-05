@@ -56,8 +56,12 @@
         </nav>
       </div>
     }
-    <app-license-keys [customerOrganizationId]="customerOrgId()" />
-    <app-application-entitlements [customerOrganizationId]="customerOrgId()" />
-    <app-artifact-entitlements [customerOrganizationId]="customerOrgId()" />
+    <app-license-keys [customerOrganizationId]="customerOrgId()" [hotkey]="hotkeyTable() === 'licenseKeys'" />
+    <app-application-entitlements
+      [customerOrganizationId]="customerOrgId()"
+      [hotkey]="hotkeyTable() === 'applicationEntitlements'" />
+    <app-artifact-entitlements
+      [customerOrganizationId]="customerOrgId()"
+      [hotkey]="hotkeyTable() === 'artifactEntitlements'" />
   </div>
 </app-page>

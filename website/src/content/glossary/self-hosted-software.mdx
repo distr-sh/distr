@@ -8,7 +8,7 @@ alternateNames:
   - Self-Managed Software
   - Self-Managed
 shortDefinition: "Self-hosted software is software that runs inside the customer's trust boundary: their cloud account, data center, or isolated network, instead of in a vendor multi-tenant SaaS. Who operates it still varies, from vendor-managed BYOC to fully customer-operated and air-gapped deployments."
-lastUpdated: 2026-08-20
+lastUpdated: 2026-11-03
 faq:
   - question: What does self-hosted mean?
     answer: "Self-hosted means the product runs in an environment the customer controls (their cloud account, data center, or isolated network), not in the vendor's multi-tenant SaaS. Operation can sit with the vendor (BYOC), be shared, or sit fully with the customer."
@@ -55,7 +55,7 @@ Offering a self-hosted edition doesn't mean handing customers a tarball and wish
 - **Artifact distribution.** A vendor-controlled [container registry](/glossary/oci-container-artifact-registry/) serves Docker images, [Helm charts](/glossary/helm-chart/), and other artifacts, with per-customer access controls so each customer only sees the versions they are entitled to.
 - **Guided installation and updates.** Optional deployment controllers (Docker Compose and Helm) install the software in the customer's environment and roll out updates when the customer approves them, which reduces version fragmentation.
 - **Offline license enforcement.** Signed [license keys](/glossary/software-license-management/) and [entitlements](/glossary/software-entitlement/) work without a connection back to the vendor, so seat limits, feature gates, and expiry hold up even in [air-gapped](/glossary/air-gapped-meaning/) environments.
-- **Health monitoring and diagnostics.** With customer consent, controllers report deployment status, metrics and logs, so support teams can troubleshoot without direct access to the customer's infrastructure.
+- **Health monitoring and diagnostics.** With customer consent, controllers report deployment status, metrics and logs, so support teams can troubleshoot without direct access to the customer's infrastructure. For the cases that need a live look, [vendor remote access](/glossary/vendor-remote-access/) can be granted per support case.
 - **Customer self-service portal.** Customers download releases, generate registry credentials, and manage their deployments through a white-labeled portal instead of email threads with support.
 
 The result: vendors can offer a self-hosted edition with an operational profile close to SaaS, while customers keep the control that made them choose self-hosted in the first place.

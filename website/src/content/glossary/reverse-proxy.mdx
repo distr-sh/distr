@@ -1,0 +1,105 @@
+---
+title: 'Reverse Proxy: What It Is and How to Ship One With Self-Hosted Software'
+slug: reverse-proxy
+description: 'A reverse proxy accepts requests on behalf of one or more backend services and forwards them. Learn what reverse proxies do, which ones are common and what vendors of self-hosted software have to get right behind one.'
+term: Reverse Proxy
+alternateNames:
+  - Reverse Proxy Server
+  - Ingress Proxy
+  - Application Proxy
+shortDefinition: 'A reverse proxy is a server that accepts requests on behalf of one or more backend services and forwards them. It usually terminates TLS, routes requests by hostname or path and balances load between instances.'
+lastUpdated: 2026-11-03
+faq:
+  - question: What is a reverse proxy?
+    answer: 'A reverse proxy is a server that sits in front of one or more backend services, accepts requests from clients and forwards them to the right backend. Clients only ever talk to the proxy. Caddy, Traefik, HAProxy and Envoy are common examples.'
+  - question: What is the difference between a forward proxy and a reverse proxy?
+    answer: 'A forward proxy acts for the clients, for example a company proxy that all outgoing web traffic passes through. A reverse proxy acts for the servers: it receives requests from the internet and forwards them to backends that clients never reach directly.'
+  - question: Is a load balancer a reverse proxy?
+    answer: 'A layer 7 load balancer that reads HTTP requests is a reverse proxy with a focus on spreading load. A layer 4 load balancer only forwards TCP or UDP connections and does not see the requests, so it cannot route by path or set headers.'
+  - question: Should self-hosted software ship its own reverse proxy?
+    answer: 'For Docker Compose, shipping an optional proxy such as Caddy gives customers HTTPS out of the box, as long as they can turn it off and use their own. For Kubernetes, leave the proxy to the cluster, which usually offers Ingress or the Gateway API, and make the routing in your chart configurable.'
+  - question: Why does my application see the wrong client IP behind a reverse proxy?
+    answer: "Behind a proxy, every request comes from the proxy's address. The proxy passes the original client address in the `X-Forwarded-For` header, and the application has to read it from there, trusting only the entries added by proxies it knows."
+---
+
+## What Is a Reverse Proxy?
+
+A **reverse proxy** is a server that accepts requests on behalf of one or more backend services and forwards them.
+Clients only ever talk to the proxy and do not see which backend answers or where it runs.
+
+"Reverse" sets it apart from a forward proxy, which acts for the clients.
+A company proxy that all outgoing web traffic passes through is a forward proxy.
+A reverse proxy acts for the servers and sits in front of them.
+
+## What a Reverse Proxy Does
+
+The most common job is TLS termination.
+The proxy holds the certificates and decrypts HTTPS, and the backends serve plain HTTP on an internal network.
+Caddy and Traefik can obtain and renew the certificates through ACME by themselves.
+
+The proxy also routes requests to different backends by hostname or path, so one public address can serve many services.
+When a backend runs several instances, the proxy spreads the requests across them and stops sending traffic to an instance that fails its health check.
+With weighted upstreams it can send a share of the traffic to a new version, which is how blue-green and canary deployments switch versions without downtime.
+
+On the way through, a proxy can add headers, compress responses, limit request rates or require authentication before a request reaches the backend.
+
+## Common Reverse Proxies
+
+| Proxy                                  | Known for                                                     |
+| -------------------------------------- | ------------------------------------------------------------- |
+| [Caddy](https://caddyserver.com)       | Automatic HTTPS with almost no configuration                  |
+| [Traefik](https://traefik.io/traefik/) | Configuration from Docker labels and Kubernetes resources     |
+| [HAProxy](https://www.haproxy.org)     | High-throughput load balancing on layer 4 and layer 7         |
+| [Envoy](https://www.envoyproxy.io)     | The data plane of many service meshes and Kubernetes gateways |
+
+In Kubernetes, the cluster provides the reverse proxy through Ingress or the Gateway API, and applications only declare the routes they need.
+
+## Reverse Proxy vs. Load Balancer vs. Reverse Tunnel
+
+A load balancer that works on layer 7 reads HTTP requests, which makes it a reverse proxy whose main job is spreading load.
+A layer 4 load balancer only forwards TCP or UDP connections, so it cannot route by path, pick a certificate per hostname or set headers.
+
+A [reverse tunnel](/glossary/reverse-tunnel/) solves a different problem.
+A reverse proxy has to be reachable, since it accepts inbound connections and forwards them to backends it can reach.
+With a reverse tunnel, an agent next to the service dials out to a relay, and the service becomes reachable without any inbound connection into its network.
+The two often work together: Cloudflare's edge, for example, acts as a reverse proxy for the requests it sends through a Cloudflare Tunnel.
+
+## Reverse Proxies in Self-Hosted Software
+
+Vendors of [self-hosted software](/glossary/self-hosted-software/) have to decide whether to ship a reverse proxy or leave it to the customer.
+
+For Docker Compose, shipping one is often the friendlier choice.
+A Caddy service in the Compose file gives the customer HTTPS on their own domain without extra setup.
+Many customers already run a proxy or a load balancer, though, so make the bundled one optional and document how to run the application behind theirs.
+
+For Kubernetes, leave the proxy to the cluster.
+Most clusters already offer Ingress or the Gateway API, and a proxy installed by your [Helm chart](/glossary/helm-chart/) would need cluster-wide permissions and a load balancer of its own, which a shared cluster rarely allows.
+Ship the routing in the chart as an option, and let the customer set the hostname, the TLS certificate and whatever else their setup needs.
+
+### What to Get Right Behind a Proxy
+
+Support cases about reverse proxies tend to come back to the same few settings.
+
+Behind a proxy, every request comes from the proxy's address.
+The proxy passes the original client address in `X-Forwarded-For` and the original scheme and host in `X-Forwarded-Proto` and `X-Forwarded-Host`.
+The application has to read these headers, but only when they come from a proxy it trusts, since any client can send them too.
+
+The backend receives plain HTTP and cannot tell from the request whether users reach it over HTTPS.
+Let customers configure the public URL, and build redirects, links in emails and OAuth callbacks from it.
+
+WebSockets need the `Upgrade` and `Connection` headers passed through, and some proxies only do that when configured to.
+Proxies also close connections that stay idle for too long, which cuts off long polling and log streams.
+
+Many proxies limit the size of a request body and answer larger requests with `413 Request Entity Too Large`.
+File uploads and container image pushes need that limit raised.
+Exports and other long-running requests need a proxy timeout longer than the request takes.
+
+Customers who run their own proxy hit these settings one by one, so write down what your application needs for the common proxies.
+
+## Reverse Proxies with Distr
+
+[Distr](/docs/) itself runs behind a TLS-terminating reverse proxy: Caddy in the Docker Compose setup and an Ingress controller in Kubernetes, as described in the [system requirements](/docs/self-hosting/system-requirements/).
+
+Vendors who distribute their software with Distr can ship a proxy as a deployment of its own.
+The [blue-green deployments guide](/docs/controllers/docker-blue-green-deployments/) uses Caddy with weighted upstreams to switch traffic between two versions of an application without downtime.
+For Docker Swarm, [Load Balancing and Routing in Docker Swarm](/blog/docker-swarm-load-balancing-routing/) compares the built-in routing mesh with Traefik and other proxies.

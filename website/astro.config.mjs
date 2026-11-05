@@ -275,6 +275,23 @@ export default defineConfig({
                   ],
                 },
                 {
+                  label: 'Remote Access',
+                  items: [
+                    {
+                      label: 'Remote Access Overview',
+                      link: '/docs/integrations/remote-access/',
+                    },
+                    {
+                      label: 'Docker Compose with Tailscale',
+                      link: '/docs/integrations/remote-access/tailscale/',
+                    },
+                    {
+                      label: 'Kubernetes with Cloudflare Tunnel',
+                      link: '/docs/integrations/remote-access/cloudflare-tunnel/',
+                    },
+                  ],
+                },
+                {
                   label: 'API & SDK',
                   items: [
                     {label: 'Distr API', link: '/docs/integrations/api/'},
