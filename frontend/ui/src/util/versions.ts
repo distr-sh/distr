@@ -7,7 +7,7 @@ import {
 } from '@distr-sh/distr-sdk';
 import {SemVer} from 'semver';
 import {ApplicationEntitlement} from '../app/types/application-entitlement';
-import {isArchived} from './dates';
+import {isArchived, isExpired} from './dates';
 
 export type VersionComparator = (a: ApplicationVersion, b: ApplicationVersion) => number;
 
@@ -109,7 +109,8 @@ export function latestApplicationVersion(
 /**
  * The newest version the deployment is entitled to. A deployment bound to an entitlement is limited to
  * its versions, of which none means all of them, and every other deployment to the versions of its
- * application in `applications`, which a customer receives only the entitled ones of.
+ * application in `applications`, which a customer receives only the entitled ones of. A deployment bound
+ * to an expired entitlement is entitled to none.
  */
 export function latestDeploymentVersion(
   deployment: DeploymentWithLatestRevision,
@@ -117,10 +118,13 @@ export function latestDeploymentVersion(
   entitlements: ApplicationEntitlement[]
 ): ApplicationVersion | undefined {
   const application = applications.find((app) => app.id === deployment.application.id);
-  const entitledVersions = deployment.applicationEntitlementId
-    ? entitlements.find((entitlement) => entitlement.id === deployment.applicationEntitlementId)?.versions
+  const entitlement = deployment.applicationEntitlementId
+    ? entitlements.find((it) => it.id === deployment.applicationEntitlementId)
     : undefined;
-  const candidates = entitledVersions?.length ? entitledVersions : (application?.versions ?? []);
+  if (entitlement && isExpired(entitlement)) {
+    return undefined;
+  }
+  const candidates = entitlement?.versions?.length ? entitlement.versions : (application?.versions ?? []);
   return latestApplicationVersion(
     applicationVersionComparator(application?.versioningStrategy, application?.versions ?? []),
     candidates
