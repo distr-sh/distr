@@ -43,6 +43,14 @@ func Authenticator() authn.RequestAuthenticator[*types.SupportBundle] {
 				return nil, err
 			}
 
+			if org, err := db.GetOrganizationByID(ctx, bundle.OrganizationID); errors.Is(err, distrerr.ErrNotFound) {
+				return nil, fmt.Errorf("%w: organization not found", authn.ErrBadAuthentication)
+			} else if err != nil {
+				return nil, err
+			} else if !org.HasActiveSubscription() {
+				return nil, fmt.Errorf("%w: subscription expired", authn.ErrBadAuthentication)
+			}
+
 			return bundle, nil
 		},
 	)
