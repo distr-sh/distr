@@ -11,7 +11,9 @@
         {{ template "fragments/greeting.html" . }}
 
         {{ $verifyURL := printf "%s/verify?jwt=%s" .Host (.Token | QueryEscape) }}
-        <p>Welcome to {{ .Signature }}! Please verify that this is your email address by clicking the button below.</p>
+        <p>
+          Welcome to {{ .WelcomeName }}! Please verify that this is your email address by clicking the button below.
+        </p>
 
         <p class="my-3 text-center">
           <a class="cta" href="{{ $verifyURL }}">Verify email address</a>
@@ -19,8 +21,6 @@
 
         {{ template "fragments/link-fallback.html" $verifyURL }}
 
-
-        <p>{{ template "fragments/signature.html" . }}</p>
       </main>
       {{ template "fragments/footer.html" . }}
     </div>

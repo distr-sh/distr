@@ -14,6 +14,7 @@
         <p>
           A new version of
           <strong>{{ .Artifact.Name }}</strong>
+          {{ with .Organization.Name }}from <strong>{{ . }}</strong>{{ end }}
           is available:
           <strong>{{ .VersionName }}</strong>
         </p>
@@ -21,8 +22,6 @@
         <p class="my-3 text-center">
           <a class="cta" href="{{ .Host }}">Open Distr</a>
         </p>
-
-        <p>{{ template "fragments/signature.html" . }}</p>
       </main>
       {{ template "fragments/footer.html" . }}
     </div>
