@@ -7,6 +7,7 @@ import (
 )
 
 type ArtifactVersionPull struct {
+	ID            uuid.UUID
 	CreatedAt     time.Time
 	RemoteAddress *string
 	// Anonymous says the pull came without credentials, which only a public artifact allows.

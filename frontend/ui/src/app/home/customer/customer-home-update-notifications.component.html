@@ -1,0 +1,9 @@
+<a routerLink="/notifications/updates" class="distr-card block p-4">
+  <h2 appCardHeading [icon]="faCircleArrowUp" class="mb-3">Update notifications</h2>
+  <p class="distr-text-muted text-sm">You are not notified about new versions yet.</p>
+  @if (canConfigure) {
+    <span class="distr-btn-secondary distr-home-card-action mt-3 inline-flex items-center"
+      >Configure update notifications</span
+    >
+  }
+</a>

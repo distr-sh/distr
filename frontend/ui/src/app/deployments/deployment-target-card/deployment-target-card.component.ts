@@ -52,11 +52,7 @@ import {controllerChangelog} from '../../../data';
 import {dateTimeLocalToISO, isoToDateTimeLocal} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {DOCKER_ENDPOINT_REGEX, RESOURCE_QUANTITY_REGEX} from '../../../util/validation';
-import {
-  applicationVersionComparator,
-  deploymentIdsAllowingAutomaticUpdates,
-  latestApplicationVersion,
-} from '../../../util/versions';
+import {deploymentIdsAllowingAutomaticUpdates, latestDeploymentVersion} from '../../../util/versions';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
@@ -260,17 +256,7 @@ export class DeploymentTargetCardComponent {
 
     const latestVersions = new Map<string, ApplicationVersion>();
     for (const deployment of deploymentTarget.deployments) {
-      const application = applications.find((app) => app.id === deployment.application.id);
-      const entitledVersions = deployment.applicationEntitlementId
-        ? entitlements.find((entitlement) => entitlement.id === deployment.applicationEntitlementId)?.versions
-        : undefined;
-      // An entitlement without versions covers all of them.
-      const candidates = entitledVersions?.length ? entitledVersions : (application?.versions ?? []);
-      const maxVersion = latestApplicationVersion(
-        applicationVersionComparator(application?.versioningStrategy, application?.versions ?? []),
-        candidates
-      );
-
+      const maxVersion = latestDeploymentVersion(deployment, applications, entitlements);
       if (deployment.id && maxVersion) {
         latestVersions.set(deployment.id, maxVersion);
       }

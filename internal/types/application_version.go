@@ -9,6 +9,15 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// CustomerApplicationVersion is a version of an application that a customer organization may deploy.
+type CustomerApplicationVersion struct {
+	ID              uuid.UUID `db:"id"`
+	CreatedAt       time.Time `db:"created_at"`
+	ApplicationID   uuid.UUID `db:"application_id"`
+	ApplicationName string    `db:"application_name"`
+	Name            string    `db:"name"`
+}
+
 type ApplicationVersion struct {
 	// unfortunately Base nested type doesn't work when ApplicationVersion is a nested row in an SQL query
 	ID            uuid.UUID      `db:"id" json:"id"`
