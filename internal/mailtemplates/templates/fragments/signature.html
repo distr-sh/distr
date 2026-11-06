@@ -1,10 +1,10 @@
 Best regards,<br />
 the
-{{ if .Signature }}
+{{- if .Signature }}
   {{ .Signature }}
-{{ else if and .Organization .Organization.Name }}
+{{- else if and .Organization .Organization.Name }}
   {{ .Organization.Name }}
-{{ else }}
+{{- else }}
   Distr
-{{ end }}
+{{- end }}
 Team!

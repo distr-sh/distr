@@ -13,16 +13,15 @@
 
         <p>We received a request to update your email address from {{ .UserAccount.Email }} to this one.</p>
 
-        <p>
-          Please verify that this is your email address at
-          <a href="{{ .Host }}/verify?jwt={{ .Token | QueryEscape }}">{{ .Host }}</a>.
+        {{ $verifyURL := printf "%s/verify?jwt=%s" .Host (.Token | QueryEscape) }}
+        <p>Please verify that this is your email address by clicking the button below.</p>
+
+        <p class="my-3 text-center">
+          <a class="cta" href="{{ $verifyURL }}">Verify email address</a>
         </p>
 
-        <p>Alternatively, you can copy and paste the following URL into your browser:</p>
+        {{ template "fragments/link-fallback.html" $verifyURL }}
 
-        <div style="overflow-wrap: break-word; word-break: break-all">
-          <code>{{ .Host }}/verify?jwt={{ .Token | QueryEscape }}</code>
-        </div>
 
         <p>{{ template "fragments/signature.html" . }}</p>
       </main>
