@@ -44,7 +44,10 @@ else
   if ! curl -fsSL -o "${_tmpdir}/${_archive}" "${COLLECTOR_DOWNLOAD_URL}/${_archive}" ||
     ! curl -fsSL -o "${_tmpdir}/checksums.txt" "${COLLECTOR_DOWNLOAD_URL}/support-collector-checksums.txt"; then
     echo "Error: the support collector could not be downloaded from ${COLLECTOR_DOWNLOAD_URL}." >&2
-    echo "Allow this machine to reach it, then run the command again." >&2
+    case "$COLLECTOR_DOWNLOAD_URL" in
+      file://*) echo "Build it with \"mise run build:support-collector\", then run the command again." >&2 ;;
+      *) echo "Allow this machine to reach it, then run the command again." >&2 ;;
+    esac
     exit 1
   fi
   _expected=$(awk -v name="$_archive" '$2 == name { print $1 }' "${_tmpdir}/checksums.txt")
