@@ -16,7 +16,10 @@
           <strong>{{ .VersionName }}</strong>
           of
           <strong>{{ .Application.Name }}</strong>
-          is available.
+          is
+          available{{ with .Organization.Name }}
+            from <strong>{{ . }}</strong>
+          {{ end }}.
         </p>
 
         {{ if .Deployments }}
@@ -53,8 +56,6 @@
         <p class="my-3 text-center">
           <a class="cta" href="{{ .Host }}">Open Distr</a>
         </p>
-
-        <p>{{ template "fragments/signature.html" . }}</p>
       </main>
       {{ template "fragments/footer.html" . }}
     </div>

@@ -11,7 +11,11 @@
         {{ template "fragments/greeting.html" . }}
 
 
-        <p>We received a request to update your email address from {{ .UserAccount.Email }} to this one.</p>
+        <p>
+          We received a request to update the email address of your
+          {{ with .Organization.Name }}<strong>{{ . }}</strong>{{ end }}
+          account from {{ .UserAccount.Email }} to this one.
+        </p>
 
         {{ $verifyURL := printf "%s/verify?jwt=%s" .Host (.Token | QueryEscape) }}
         <p>Please verify that this is your email address by clicking the button below.</p>
@@ -22,8 +26,6 @@
 
         {{ template "fragments/link-fallback.html" $verifyURL }}
 
-
-        <p>{{ template "fragments/signature.html" . }}</p>
       </main>
       {{ template "fragments/footer.html" . }}
     </div>
