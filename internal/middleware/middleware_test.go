@@ -7,9 +7,26 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/authn/authinfo"
+	"github.com/distr-sh/distr/internal/types"
+	"github.com/google/uuid"
 	. "github.com/onsi/gomega"
 )
+
+type fakeAuthInfo struct {
+	authinfo.AuthInfoWithUserAndOrganization
+	org           *types.Organization
+	customerOrgID *uuid.UUID
+	isSuperAdmin  bool
+}
+
+func (f fakeAuthInfo) CurrentOrg() *types.Organization  { return f.org }
+func (f fakeAuthInfo) CurrentCustomerOrgID() *uuid.UUID { return f.customerOrgID }
+func (f fakeAuthInfo) CurrentPartnerOrgID() *uuid.UUID  { return nil }
+func (f fakeAuthInfo) IsSuperAdmin() bool               { return f.isSuperAdmin }
 
 type countingReader struct {
 	io.Reader
@@ -48,4 +65,69 @@ func TestRequestSize(t *testing.T) {
 		_, ok := errors.AsType[*http.MaxBytesError](readErr)
 		g.Expect(ok).To(BeTrue())
 	})
+}
+
+func TestRequireActiveSubscription(t *testing.T) {
+	expired := &types.Organization{
+		SubscriptionType:   types.SubscriptionTypePro,
+		SubscriptionEndsAt: time.Now().Add(-time.Hour),
+	}
+	serve := func(info fakeAuthInfo) *httptest.ResponseRecorder {
+		handler := RequireActiveSubscription(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req = req.WithContext(auth.Authentication.NewContext(req.Context(), info))
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		return w
+	}
+
+	for _, tt := range []struct {
+		name     string
+		info     fakeAuthInfo
+		expected int
+		body     string
+		hidden   string
+	}{
+		{
+			name:     "active subscription passes",
+			info:     fakeAuthInfo{org: &types.Organization{SubscriptionEndsAt: time.Now().Add(time.Hour)}},
+			expected: http.StatusOK,
+		},
+		{
+			name: "community never expires",
+			info: fakeAuthInfo{org: &types.Organization{
+				SubscriptionType:   types.SubscriptionTypeCommunity,
+				SubscriptionEndsAt: time.Now().Add(-time.Hour),
+			}},
+			expected: http.StatusOK,
+		},
+		{
+			name:     "vendor of an expired organization is told why",
+			info:     fakeAuthInfo{org: expired},
+			expected: http.StatusForbidden,
+			body:     "subscription",
+		},
+		{
+			name:     "customer of an expired organization is not told why",
+			info:     fakeAuthInfo{org: expired, customerOrgID: new(uuid.New())},
+			expected: http.StatusForbidden,
+			body:     "unavailable",
+			hidden:   "subscription",
+		},
+		{
+			name:     "super admin passes an expired organization",
+			info:     fakeAuthInfo{org: expired, isSuperAdmin: true},
+			expected: http.StatusOK,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			g := NewWithT(t)
+			w := serve(tt.info)
+			g.Expect(w.Code).To(Equal(tt.expected))
+			g.Expect(w.Body.String()).To(ContainSubstring(tt.body))
+			if tt.hidden != "" {
+				g.Expect(w.Body.String()).NotTo(ContainSubstring(tt.hidden))
+			}
+		})
+	}
 }

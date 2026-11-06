@@ -31,7 +31,12 @@ func OrganizationRouter(r chiopenapi.Router) {
 		With(option.Description("Get current organization")).
 		With(option.Response(http.StatusOK, api.OrganizationResponse{}))
 
-	r.With(middleware.BlockSuperAdmin, middleware.RequireVendor, middleware.RequireAdmin).
+	r.With(
+		middleware.BlockSuperAdmin,
+		middleware.RequireVendor,
+		middleware.RequireAdmin,
+		middleware.RequireActiveSubscription,
+	).
 		Put("/", respond.Handler(updateOrganization)).
 		With(option.Description("Update current organization")).
 		With(option.Request(api.UpdateOrganizationRequest{})).
@@ -49,7 +54,7 @@ func OrganizationRouter(r chiopenapi.Router) {
 	r.Route("/branding", OrganizationBrandingRouter)
 
 	r.Route("/webhook", func(r chiopenapi.Router) {
-		r.Use(middleware.RequireVendor, middleware.VendorBillingFeatureMiddleware)
+		r.Use(middleware.RequireVendor, middleware.VendorBillingFeatureMiddleware, middleware.RequireActiveSubscription)
 
 		r.Get("/", respond.Handler(getOrganizationWebhook)).
 			With(option.Description("Get vendor webhook configuration status")).

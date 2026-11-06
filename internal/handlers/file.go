@@ -134,6 +134,9 @@ func createFileHandler(r *http.Request) (respond.Responder, error) {
 		var orgID *uuid.UUID
 		scope := r.FormValue("scope")
 		if types.FileScope(scope) != types.FileScopePlatform {
+			if resp := middleware.CheckActiveSubscription(auth); resp != nil {
+				return resp, nil
+			}
 			orgID = auth.CurrentOrgID()
 		}
 		if err := db.CreateFile(ctx, orgID, file); err != nil {

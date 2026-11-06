@@ -172,47 +172,57 @@ func ApiRouter(
 						// such that controllers cant access anything here (they also can't now, because their tokens will not
 						// pass the Authentication chain (DbAuthenticator can't find the user -> 401)
 					)
-					r.Route("/controller-versions", handlers.ControllerVersionsRouter)
-					r.Route("/application-entitlements", handlers.ApplicationEntitlementsRouter)
-					r.Route("/applications", handlers.ApplicationsRouter)
-					r.Route("/artifact-entitlements", handlers.ArtifactEntitlementsRouter)
-					r.With(middleware.UseReadonlyDB).Route("/artifact-pulls", handlers.ArtifactPullsRouter)
-					r.Route("/artifacts", handlers.ArtifactsRouter)
+					// What an organization whose subscription has expired needs to renew it or to leave it. The
+					// routers guard what they hold beyond that with middleware.RequireActiveSubscription themselves.
 					r.Route("/billing", handlers.BillingRouter)
 					r.Route("/context", handlers.ContextRouter)
-					r.Route("/customer-organizations", handlers.CustomerOrganizationsRouter)
-					r.Route("/customer-settings", handlers.CustomerSettingsRouter)
-					r.With(middleware.CustomDomainsFeatureMiddleware).
-						Route("/custom-domains", handlers.CustomDomainsRouter)
-					r.With(middleware.CustomEmailsFeatureMiddleware).
-						Route("/custom-email", handlers.CustomEmailsRouter)
-					r.With(middleware.CustomOidcProvidersFeatureMiddleware).
-						Route("/custom-oidc", handlers.CustomOIDCConfigurationsRouter)
-					r.With(middleware.PartnerManagementFeatureMiddleware).
-						Route("/partner-organizations", handlers.PartnerOrganizationsRouter)
-					r.With(middleware.UseReadonlyDB).Route("/dashboard", handlers.DashboardRouter)
-					r.Route("/alert-configurations", handlers.AlertConfigurationsRouter)
-					r.Route("/update-notification-configurations",
-						handlers.UpdateNotificationConfigurationsRouter)
-					r.With(middleware.UseReadonlyDB).
-						Route("/deployment-target-metrics", handlers.DeploymentTargetMetricsRouter)
-					r.Route("/deployment-targets", handlers.DeploymentTargetsRouter)
-					r.Route("/deployments", handlers.DeploymentsRouter)
 					r.Route("/files", handlers.FileRouter)
 					r.Route("/lenses", handlers.LensesRouter)
-					r.With(middleware.UseReadonlyDB).Route("/notification-records", handlers.NotificationRecordsRouter)
 					r.Route("/organization", handlers.OrganizationRouter)
 					r.Route("/organizations", handlers.OrganizationsRouter)
-					r.Route("/secrets", handlers.SecretsRouter)
 					r.Route("/settings", handlers.SettingsRouter)
-					r.With(middleware.ProFeature).Route("/support-bundles", handlers.SupportBundlesRouter)
-					r.Route("/tutorial-progress", handlers.TutorialsRouter)
-					r.Route("/license-keys", handlers.LicenseKeysRouter)
-					r.Route("/license-templates", handlers.LicenseTemplatesRouter)
-					r.Route("/licenses", handlers.LicensesRouter)
-					r.Route("/user-accounts", handlers.UserAccountsRouter)
-					r.With(middleware.VulnerabilitiesFeatureMiddleware, middleware.VulnerabilitiesCustomerFeatureMiddleware).
-						Route("/advisories", handlers.AdvisoriesRouter)
+
+					r.Group(func(r chiopenapi.Router) {
+						r.Use(middleware.RequireActiveSubscription)
+
+						r.Route("/controller-versions", handlers.ControllerVersionsRouter)
+						r.Route("/application-entitlements", handlers.ApplicationEntitlementsRouter)
+						r.Route("/applications", handlers.ApplicationsRouter)
+						r.Route("/artifact-entitlements", handlers.ArtifactEntitlementsRouter)
+						r.With(middleware.UseReadonlyDB).Route("/artifact-pulls", handlers.ArtifactPullsRouter)
+						r.Route("/artifacts", handlers.ArtifactsRouter)
+						r.Route("/customer-organizations", handlers.CustomerOrganizationsRouter)
+						r.Route("/customer-settings", handlers.CustomerSettingsRouter)
+						r.With(middleware.CustomDomainsFeatureMiddleware).
+							Route("/custom-domains", handlers.CustomDomainsRouter)
+						r.With(middleware.CustomEmailsFeatureMiddleware).
+							Route("/custom-email", handlers.CustomEmailsRouter)
+						r.With(middleware.CustomOidcProvidersFeatureMiddleware).
+							Route("/custom-oidc", handlers.CustomOIDCConfigurationsRouter)
+						r.With(middleware.PartnerManagementFeatureMiddleware).
+							Route("/partner-organizations", handlers.PartnerOrganizationsRouter)
+						r.With(middleware.UseReadonlyDB).Route("/dashboard", handlers.DashboardRouter)
+						r.Route("/alert-configurations", handlers.AlertConfigurationsRouter)
+						r.Route("/update-notification-configurations",
+							handlers.UpdateNotificationConfigurationsRouter)
+						r.With(middleware.UseReadonlyDB).
+							Route("/deployment-target-metrics", handlers.DeploymentTargetMetricsRouter)
+						r.Route("/deployment-targets", handlers.DeploymentTargetsRouter)
+						r.Route("/deployments", handlers.DeploymentsRouter)
+						r.With(middleware.UseReadonlyDB).
+							Route("/notification-records", handlers.NotificationRecordsRouter)
+						r.Route("/secrets", handlers.SecretsRouter)
+						r.With(middleware.ProFeature).Route("/support-bundles", handlers.SupportBundlesRouter)
+						r.Route("/tutorial-progress", handlers.TutorialsRouter)
+						r.Route("/license-keys", handlers.LicenseKeysRouter)
+						r.Route("/license-templates", handlers.LicenseTemplatesRouter)
+						r.Route("/licenses", handlers.LicensesRouter)
+						r.Route("/user-accounts", handlers.UserAccountsRouter)
+						r.With(
+							middleware.VulnerabilitiesFeatureMiddleware,
+							middleware.VulnerabilitiesCustomerFeatureMiddleware,
+						).Route("/advisories", handlers.AdvisoriesRouter)
+					})
 				})
 			})
 
