@@ -16,7 +16,10 @@
           <strong>{{ .VersionName }}</strong>
           of
           <strong>{{ .Application.Name }}</strong>
-          is available{{ with .Organization.Name }}from <strong>{{ . }}</strong>{{ end }}.
+          is
+          available{{ with .Organization.Name }}
+            from <strong>{{ . }}</strong>
+          {{ end }}.
         </p>
 
         {{ if .Deployments }}
