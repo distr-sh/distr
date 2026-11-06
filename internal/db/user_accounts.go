@@ -630,7 +630,7 @@ func GetCustomerAndOrgForDeploymentTarget(
 				(`+organizationOutputExpr+`) AS organization,
 				CASE WHEN b.id IS NOT NULL THEN (`+organizationBrandingOutputExpr+`) END AS branding
 			FROM DeploymentTarget dt
-			JOIN Organization o ON o.id = dt.organization_id
+			JOIN Organization o ON o.id = dt.organization_id AND o.deleted_at IS NULL
 			LEFT JOIN CustomerOrganization co ON co.id = dt.customer_organization_id
 			LEFT JOIN OrganizationBranding b ON b.organization_id = o.id
 			WHERE dt.id = @id`,
