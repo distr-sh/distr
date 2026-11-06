@@ -3,6 +3,7 @@ package supportcollector
 import (
 	"context"
 	"fmt"
+	"maps"
 	"slices"
 	"time"
 
@@ -73,12 +74,7 @@ func (c *Collector) collectHelmReleases(ctx context.Context, namespace string, v
 		}
 	}
 
-	names := make([]string, 0, len(latest))
-	for name := range latest {
-		names = append(names, name)
-	}
-	slices.Sort(names)
-	for _, name := range names {
+	for _, name := range slices.Sorted(maps.Keys(latest)) {
 		release := latest[name]
 		revisions := history[name]
 		slices.SortFunc(revisions, func(a, b helmRevisionSummary) int { return a.Revision - b.Revision })
@@ -107,7 +103,7 @@ func (c *Collector) collectHelmReleases(ctx context.Context, namespace string, v
 			}
 		}
 	}
-	c.progressf("  %d Helm releases", len(names))
+	c.progressf("  %d Helm releases", len(latest))
 	return nil
 }
 
