@@ -1,47 +1,20 @@
 package supportcollector
 
 import (
-	"bytes"
-	"compress/gzip"
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"io"
 	"slices"
+	"time"
 
 	"github.com/distr-sh/distr/internal/contenttype"
+	"helm.sh/helm/v4/pkg/release"
+	rspb "helm.sh/helm/v4/pkg/release/v1"
+	"helm.sh/helm/v4/pkg/storage/driver"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
 
 const helmReleaseSecretType corev1.SecretType = "helm.sh/release.v1"
-
-// helmListPageSize is small because every release Secret holds the whole chart and the rendered
-// manifest, up to the 1 MiB a Secret may hold.
-const helmListPageSize = 10
-
-// helmStoredRelease is the part of the release Helm stores as gzipped JSON, the same in Helm 3 and
-// Helm 4. The timestamps stay strings because Helm 3 writes an empty string for one that is unset.
-type helmStoredRelease struct {
-	Name    string `json:"name"`
-	Version int    `json:"version"`
-	Info    struct {
-		FirstDeployed string `json:"first_deployed"`
-		LastDeployed  string `json:"last_deployed"`
-		Description   string `json:"description"`
-		Status        string `json:"status"`
-	} `json:"info"`
-	Chart struct {
-		Metadata struct {
-			Name       string `json:"name"`
-			Version    string `json:"version"`
-			AppVersion string `json:"appVersion"`
-		} `json:"metadata"`
-	} `json:"chart"`
-	Config map[string]any `json:"config"`
-}
 
 type helmReleaseSummary struct {
 	Name          string                `json:"name"`
@@ -69,39 +42,32 @@ type helmRevisionSummary struct {
 // collectHelmReleases writes what `helm status` and `helm history` show for every release in the
 // namespace and, with values, what `helm get values` shows for its latest revision.
 func (c *Collector) collectHelmReleases(ctx context.Context, namespace string, values bool) error {
-	latest := map[string]*helmStoredRelease{}
+	stored, err := driver.NewSecrets(c.Clients.Kubernetes.CoreV1().Secrets(namespace)).
+		List(func(release.Releaser) bool { return true })
+	if err != nil {
+		c.problemf("list the Helm releases in namespace %s: %v", namespace, err)
+		return nil
+	}
+
+	latest := map[string]*rspb.Release{}
 	history := map[string][]helmRevisionSummary{}
-	opts := metav1.ListOptions{LabelSelector: "owner=helm", Limit: helmListPageSize}
-	for {
-		list, err := c.Clients.Kubernetes.CoreV1().Secrets(namespace).List(ctx, opts)
-		if err != nil {
-			c.problemf("list the Helm releases in namespace %s: %v", namespace, err)
-			return nil
+	for _, releaser := range stored {
+		release, ok := releaser.(*rspb.Release)
+		if !ok || release.Info == nil || release.Chart == nil || release.Chart.Metadata == nil {
+			c.problemf("decode a Helm release in namespace %s: unexpected content", namespace)
+			continue
 		}
-		for _, secret := range list.Items {
-			if secret.Type != helmReleaseSecretType {
-				continue
-			}
-			release, err := decodeHelmRelease(secret.Data["release"])
-			if err != nil {
-				c.problemf("decode the Helm release in Secret %s/%s: %v", namespace, secret.Name, err)
-				continue
-			}
-			history[release.Name] = append(history[release.Name], helmRevisionSummary{
-				Revision:     release.Version,
-				Status:       release.Info.Status,
-				Updated:      release.Info.LastDeployed,
-				Chart:        release.Chart.Metadata.Name,
-				ChartVersion: release.Chart.Metadata.Version,
-				AppVersion:   release.Chart.Metadata.AppVersion,
-				Description:  release.Info.Description,
-			})
-			if current, ok := latest[release.Name]; !ok || release.Version > current.Version {
-				latest[release.Name] = release
-			}
-		}
-		if opts.Continue = list.Continue; opts.Continue == "" {
-			break
+		history[release.Name] = append(history[release.Name], helmRevisionSummary{
+			Revision:     release.Version,
+			Status:       release.Info.Status.String(),
+			Updated:      formatHelmTime(release.Info.LastDeployed),
+			Chart:        release.Chart.Metadata.Name,
+			ChartVersion: release.Chart.Metadata.Version,
+			AppVersion:   release.Chart.Metadata.AppVersion,
+			Description:  release.Info.Description,
+		})
+		if current, ok := latest[release.Name]; !ok || release.Version > current.Version {
+			latest[release.Name] = release
 		}
 	}
 
@@ -121,9 +87,9 @@ func (c *Collector) collectHelmReleases(ctx context.Context, namespace string, v
 			ChartVersion:  release.Chart.Metadata.Version,
 			AppVersion:    release.Chart.Metadata.AppVersion,
 			Revision:      release.Version,
-			Status:        release.Info.Status,
-			FirstDeployed: release.Info.FirstDeployed,
-			LastDeployed:  release.Info.LastDeployed,
+			Status:        release.Info.Status.String(),
+			FirstDeployed: formatHelmTime(release.Info.FirstDeployed),
+			LastDeployed:  formatHelmTime(release.Info.LastDeployed),
 			Description:   release.Info.Description,
 			History:       revisions,
 		}); err != nil {
@@ -143,25 +109,9 @@ func (c *Collector) collectHelmReleases(ctx context.Context, namespace string, v
 	return nil
 }
 
-// decodeHelmRelease reverses what Helm stores in the release key of the Secret: JSON, gzipped and
-// base64 encoded once more on top of the encoding of Secret data.
-func decodeHelmRelease(data []byte) (*helmStoredRelease, error) {
-	decoded, err := base64.StdEncoding.AppendDecode(nil, data)
-	if err != nil {
-		return nil, err
+func formatHelmTime(t time.Time) string {
+	if t.IsZero() {
+		return ""
 	}
-	if bytes.HasPrefix(decoded, []byte{0x1f, 0x8b, 0x08}) {
-		reader, err := gzip.NewReader(bytes.NewReader(decoded))
-		if err != nil {
-			return nil, err
-		}
-		if decoded, err = io.ReadAll(reader); err != nil {
-			return nil, err
-		}
-	}
-	var release helmStoredRelease
-	if err := json.Unmarshal(decoded, &release); err != nil {
-		return nil, err
-	}
-	return &release, nil
+	return t.Format(time.RFC3339Nano)
 }
