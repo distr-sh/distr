@@ -10,6 +10,7 @@
       <main>
         {{ template "fragments/greeting.html" . }}
 
+
         <p>
           Version
           <strong>{{ .VersionName }}</strong>
@@ -47,6 +48,7 @@
             </tbody>
           </table>
         {{ end }}
+
 
         <p class="my-3 text-center">
           <a class="cta" href="{{ .Host }}">Open Distr</a>

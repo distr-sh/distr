@@ -10,6 +10,7 @@
       <main>
         {{ template "fragments/greeting.html" . }}
 
+
         <p>
           {{ if .InvitingUser.Name }}{{ .InvitingUser.Name }}{{ else }}{{ .InvitingUser.Email }}{{ end }} invited you to
           the <strong>{{ .TargetOrgName }}</strong> organization on {{ .Host }}.
