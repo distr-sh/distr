@@ -359,6 +359,25 @@ func GetOrganizationByID(ctx context.Context, orgID uuid.UUID) (*types.Organizat
 	}
 }
 
+func GetOrganizationBySlug(ctx context.Context, slug string) (*types.Organization, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		"SELECT "+organizationOutputExpr+" FROM Organization o WHERE slug = @slug AND o.deleted_at IS NULL",
+		pgx.NamedArgs{"slug": slug},
+	)
+	if err != nil {
+		return nil, err
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[types.Organization])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, fmt.Errorf("%w: organization %v", distrerr.ErrNotFound, slug)
+	} else if err != nil {
+		return nil, err
+	} else {
+		return &result, nil
+	}
+}
+
 // GetOrganizationByIDIncludingDeleted also returns whether the organization is soft-deleted.
 func GetOrganizationByIDIncludingDeleted(ctx context.Context, orgID uuid.UUID) (*types.Organization, bool, error) {
 	type organizationWithDeleted struct {

@@ -62,6 +62,8 @@ func authorizeWrite(auth authinfo.AuthInfoWithOrganization) error {
 func authorizeAnonymous(ctx context.Context, n *name.Name, action Action) error {
 	if action != ActionRead && action != ActionStat {
 		return ErrAuthenticationRequired
+	} else if err := authorizeAnonymousOrganization(ctx, n); err != nil {
+		return err
 	} else if artifact, err := db.GetArtifactByName(ctx, n.OrgName, n.ArtifactName); err != nil {
 		if errors.Is(err, distrerr.ErrNotFound) {
 			return ErrAuthenticationRequired
@@ -80,6 +82,8 @@ func authorizeAnonymousBlob(ctx context.Context, n *name.Name, digest digest.Dig
 	// it names rather than to any artifact of the organization that references the digest.
 	if action != ActionRead && action != ActionStat {
 		return ErrAuthenticationRequired
+	} else if err := authorizeAnonymousOrganization(ctx, n); err != nil {
+		return err
 	} else if belongs, err := db.ArtifactBlobBelongsToPublicArtifact(
 		ctx, n.OrgName, n.ArtifactName, digest.String(),
 	); err != nil {
@@ -88,6 +92,19 @@ func authorizeAnonymousBlob(ctx context.Context, n *name.Name, digest digest.Dig
 		return ErrAuthenticationRequired
 	} else if AnonymousLimitExceeded(ctx) {
 		return ErrRateLimited
+	}
+	return nil
+}
+
+// authorizeAnonymousOrganization holds the public artifacts of a deleted organization, or of one whose
+// subscription has expired, to the answer for an artifact that does not exist.
+func authorizeAnonymousOrganization(ctx context.Context, n *name.Name) error {
+	if org, err := db.GetOrganizationBySlug(ctx, n.OrgName); errors.Is(err, distrerr.ErrNotFound) {
+		return ErrAuthenticationRequired
+	} else if err != nil {
+		return err
+	} else if !org.HasActiveSubscription() {
+		return ErrAuthenticationRequired
 	}
 	return nil
 }
