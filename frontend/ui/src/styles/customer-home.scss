@@ -1,0 +1,30 @@
+@layer components {
+  .distr-home-list {
+    @apply flex flex-col gap-1 text-sm;
+  }
+
+  .distr-home-row {
+    @apply flex gap-3 rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700;
+  }
+
+  .distr-home-row-title {
+    @apply font-medium text-gray-900 dark:text-white;
+  }
+
+  .distr-home-row-meta {
+    @apply text-xs text-gray-500 dark:text-gray-400;
+  }
+
+  .distr-home-avatar {
+    @apply size-4 rounded-full bg-gray-100 dark:bg-gray-700;
+  }
+
+  .distr-home-icon {
+    @apply text-gray-500 dark:text-gray-400;
+  }
+
+  // for a `distr-btn-secondary` on a card. Must stay loaded after `theme.scss` to override it.
+  .distr-home-card-action {
+    @apply px-4 py-2 text-sm hover:text-gray-900 dark:hover:text-white;
+  }
+}

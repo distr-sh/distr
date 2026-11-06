@@ -7,9 +7,9 @@ import {customerScopeParams} from './customer-scope';
 export class NotificationRecordsService {
   private readonly httpClient = inject(HttpClient);
 
-  public list(customerOrganizationId?: string) {
+  public list(customerOrganizationId?: string, after?: Date) {
     return this.httpClient.get<NotificationRecord[]>('/api/v1/notification-records', {
-      params: customerScopeParams(customerOrganizationId),
+      params: {...customerScopeParams(customerOrganizationId), ...(after ? {after: after.toISOString()} : {})},
     });
   }
 }
