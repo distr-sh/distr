@@ -10,7 +10,6 @@
       <main>
         {{ template "fragments/greeting.html" . }}
 
-
         <p>We received a request to update your email address from {{ .UserAccount.Email }} to this one.</p>
 
         {{ $verifyURL := printf "%s/verify?jwt=%s" .Host (.Token | QueryEscape) }}
