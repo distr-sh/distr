@@ -42,6 +42,8 @@ type helmRevisionSummary struct {
 // collectHelmReleases writes what `helm status` and `helm history` show for every release in the
 // namespace and, with values, what `helm get values` shows for its latest revision.
 func (c *Collector) collectHelmReleases(ctx context.Context, namespace string, values bool) error {
+	// The driver reads all release Secrets of the namespace in a single request without paging, the
+	// same way `helm list` does. It skips a Secret it cannot decode without returning an error.
 	stored, err := driver.NewSecrets(c.Clients.Kubernetes.CoreV1().Secrets(namespace)).
 		List(func(release.Releaser) bool { return true })
 	if err != nil {
