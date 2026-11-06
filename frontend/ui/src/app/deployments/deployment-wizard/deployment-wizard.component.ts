@@ -22,8 +22,7 @@ import {
   DeploymentType,
 } from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faDocker} from '@fortawesome/free-brands-svg-icons';
-import {faAddressBook, faCircleCheck, faDharmachakra, faShip, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faAddressBook, faCircleCheck, faShip, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, distinctUntilChanged, firstValueFrom, map, of, switchMap, take} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
@@ -35,6 +34,7 @@ import {
 } from '../../../util/validation';
 import {ClosableDialog} from '../../components/confirm-dialog/closable-dialog';
 import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
+import {DeploymentTypeBadgeComponent} from '../../components/deployment-type-badge.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
@@ -63,14 +63,13 @@ import {DeploymentWizardStepperComponent} from './deployment-wizard-stepper.comp
     AutotrimDirective,
     SecureImagePipe,
     DeploymentFormComponent,
+    DeploymentTypeBadgeComponent,
     SpinnerComponent,
   ],
 })
 export class DeploymentWizardComponent extends ClosableDialog implements OnInit {
   protected readonly faXmark = faXmark;
   protected readonly faShip = faShip;
-  protected readonly faDocker = faDocker;
-  protected readonly faDharmachakra = faDharmachakra;
   protected readonly faAddressBook = faAddressBook;
   protected readonly faCircleCheck = faCircleCheck;
 

@@ -1,10 +1,8 @@
 package types
 
 import (
-	"slices"
 	"time"
 
-	"github.com/distr-sh/distr/internal/contenttype"
 	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/google/uuid"
 )
@@ -22,6 +20,17 @@ type SupportBundleConfigurationEnvVar struct {
 	OrganizationID uuid.UUID `db:"organization_id"`
 	Name           string    `db:"name"`
 	Redacted       bool      `db:"redacted"`
+}
+
+type SupportBundleKubernetesConfiguration struct {
+	OrganizationID       uuid.UUID `db:"organization_id"`
+	IncludeConfigMapData bool      `db:"include_configmap_data"`
+	IncludeSecretData    bool      `db:"include_secret_data"`
+}
+
+// DefaultSupportBundleKubernetesConfiguration applies to an organization that never saved one.
+func DefaultSupportBundleKubernetesConfiguration(orgID uuid.UUID) SupportBundleKubernetesConfiguration {
+	return SupportBundleKubernetesConfiguration{OrganizationID: orgID, IncludeConfigMapData: true}
 }
 
 type SupportBundleConfigurationScript struct {
@@ -73,33 +82,6 @@ type SupportBundleWithDetails struct {
 	LastCommentAt            *time.Time `db:"last_comment_at"`
 	StatusChangedByUserName  *string    `db:"status_changed_by_user_name"`
 	StatusChangedByImageID   *uuid.UUID `db:"status_changed_by_image_id"`
-}
-
-var SupportBundleResourceContentTypes = []string{
-	contenttype.MediaTypeTextPlain,
-	contenttype.MediaTypeTextXLog,
-	contenttype.MediaTypeYAML,
-	contenttype.MediaTypeJSON,
-}
-
-func ParseSupportBundleResourceContentType(value string) string {
-	if slices.Contains(SupportBundleResourceContentTypes, value) {
-		return value
-	}
-	return contenttype.MediaTypeTextPlain
-}
-
-func SupportBundleResourceFileExtension(contentType string) string {
-	switch contentType {
-	case contenttype.MediaTypeTextXLog:
-		return ".log"
-	case contenttype.MediaTypeYAML:
-		return ".yaml"
-	case contenttype.MediaTypeJSON:
-		return ".json"
-	default:
-		return ".txt"
-	}
 }
 
 type SupportBundleResourceSummary struct {

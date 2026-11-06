@@ -3,13 +3,16 @@ The blocks below are shared by the collect script of every deployment type. Neit
 newline at its start or end, so the blank lines around them belong to the template using them.
 */ -}}
 
-{{define "collector-start" -}}
+{{define "collect-script-start" -}}
 #!/bin/sh
 
 need_tty=yes
 _dir=$(mktemp -d)
 _script="${_dir}/distr-collect.sh"
+# dash and other shells skip the EXIT trap when a signal ends them, so exit on the signals instead.
 trap 'rm -rf "$_dir"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 # Write the collect script to a temp file. When piped (curl | sh), the script
 # is run as a child process with /dev/tty as stdin so that interactive prompts
@@ -23,6 +26,8 @@ BUNDLE_SECRET="{{.Token}}"
 
 _tmpdir=$(mktemp -d)
 trap 'rm -rf "$_tmpdir"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 upload_resource_file() {
   _name="$1"
@@ -99,12 +104,12 @@ EOF_SPLIT
   fi
 }
 
-echo "=== Distr Support Bundle Collector ==="
+echo "=== Distr Support Bundle Collection ==="
 echo "Bundle ID: ${BUNDLE_ID}"
 echo ""
 {{- end}}
 
-{{define "collector-end"}}
+{{define "collect-script-end"}}
 {{- if .Scripts}}
 
 # Run the custom scripts configured by the vendor and collect their output. Their names,
@@ -167,7 +172,7 @@ if [ "$SCRIPT_COUNT" -gt 0 ]; then
       echo "  Skipping ${_sname}"
     else
       echo "  Running ${_sname}..."
-      # Custom scripts must not consume the stdin the collector reads its prompts from.
+      # Custom scripts must not consume the stdin this script reads its prompts from.
       run_custom_script "${_sbase}.sh" > "${_sbase}.raw" 2> "${_sbase}.err" < /dev/null
       _scode=$?
       head -c {{.ResourceMaxBytes}} "${_sbase}.raw" > "${_sbase}.out"
@@ -262,8 +267,8 @@ if [ "$need_tty" = "yes" ] && [ ! -t 0 ]; then
     echo "Unable to run interactively." >&2
     exit 1
   fi
-  sh "$_script" < /dev/tty
+  sh "$_script" "$@" < /dev/tty
 else
-  sh "$_script"
+  sh "$_script" "$@"
 fi
 {{- end}}

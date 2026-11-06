@@ -1,6 +1,7 @@
 import {Component, inject, output, signal} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router} from '@angular/router';
+import {DeploymentType} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
@@ -26,6 +27,7 @@ export class SupportBundleCreateDialogComponent extends ClosableDialog {
   protected readonly faXmark = faXmark;
 
   protected readonly form = new FormGroup({
+    deploymentType: new FormControl<DeploymentType>('docker', {nonNullable: true}),
     title: new FormControl('', {nonNullable: true, validators: [Validators.required, Validators.pattern(/\S/)]}),
     description: new FormControl('', {nonNullable: true}),
   });
@@ -39,6 +41,7 @@ export class SupportBundleCreateDialogComponent extends ClosableDialog {
     try {
       const bundle = await firstValueFrom(
         this.svc.create({
+          deploymentType: this.form.controls.deploymentType.value,
           title: this.form.value.title!,
           description: this.form.value.description || undefined,
         })

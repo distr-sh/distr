@@ -232,4 +232,9 @@
   .distr-table-cell {
     @apply px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white;
   }
+
+  // a row of a tree, indented by the nesting level bound to `--depth`
+  .distr-tree-indent {
+    padding-left: calc(var(--spacing) * (4 + 5 * var(--depth, 0)));
+  }
 }

@@ -10,6 +10,7 @@ import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {AlertComponent} from '../../components/alert/alert.component';
+import {DeploymentTypeBadgeComponent} from '../../components/deployment-type-badge.component';
 import {PageComponent} from '../../components/page.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
 import {ClickableRowDirective} from '../../directives/clickable-row.directive';
@@ -37,6 +38,7 @@ import {SupportBundleStatusBadgeComponent} from '../support-bundle-status-badge.
     SupportBundleCreateDialogComponent,
     SupportBundleStatusBadgeComponent,
     AlertComponent,
+    DeploymentTypeBadgeComponent,
   ],
 })
 export class SupportBundleListComponent {
@@ -73,7 +75,8 @@ export class SupportBundleListComponent {
       return (
         (bundle.title || '').toLowerCase().includes(q) ||
         (bundle.customerOrganizationName || '').toLowerCase().includes(q) ||
-        bundle.status.toLowerCase().includes(q)
+        bundle.status.toLowerCase().includes(q) ||
+        bundle.deploymentType.includes(q)
       );
     }).pipe(takeUntilDestroyed()),
     {initialValue: [] as SupportBundle[]}

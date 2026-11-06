@@ -12,7 +12,8 @@
             <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
               {{ title() }}
             </h1>
-            <app-support-bundle-status-badge class="ml-3" [status]="bundle.status" />
+            <app-deployment-type-badge class="ml-3" [type]="bundle.deploymentType" />
+            <app-support-bundle-status-badge class="ml-2" [status]="bundle.status" />
           </div>
           @if (bundle.description) {
             <p class="mt-3 text-sm text-gray-600 dark:text-gray-400">{{ bundle.description }}</p>
@@ -71,11 +72,23 @@
           [type]="justInitialized() ? 'success' : 'info'"
           [heading]="justInitialized() ? 'Support bundle successfully initialized' : 'Support bundle initialized'"
           class="mt-4">
-          <p>
-            The resources still need to be collected and uploaded. The script lets you exclude the system information
-            and any containers, environment variables or vendor scripts that you do not want to share.
-          </p>
-          <p class="mt-2">Run this command on the target system:</p>
+          @switch (bundle.deploymentType) {
+            @case ('docker') {
+              <p>
+                The resources still need to be collected and uploaded. The script lets you exclude the system
+                information and any containers, environment variables or vendor scripts that you do not want to share.
+              </p>
+              <p class="mt-2">Run this command on the target system:</p>
+            }
+            @case ('kubernetes') {
+              <p>
+                The resources still need to be collected and uploaded. The script lets you choose the kubectl context,
+                the namespaces, the parts of the bundle and the vendor scripts you want to share, and you can look
+                through and delete the collected files before they are uploaded.
+              </p>
+              <p class="mt-2">Run this command on a machine with access to the cluster:</p>
+            }
+          }
           <div
             class="mt-2 flex items-center gap-2 rounded border border-gray-300 bg-gray-100 px-4 py-3 dark:border-gray-600 dark:bg-gray-700">
             <code class="flex-1 font-normal break-all text-gray-900 select-all dark:text-gray-100">{{
@@ -104,10 +117,8 @@
       @if (bundle.resources.length === 0) {
         <p class="text-sm text-gray-500 dark:text-gray-400">No resources collected yet.</p>
       } @else {
-        <div class="space-y-3">
-          @for (resource of bundle.resources; track resource.id) {
-            <app-support-bundle-resource [bundleId]="bundle.id" [resource]="resource" />
-          }
+        <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+          <app-support-bundle-resource-folder class="-mt-px" [bundleId]="bundle.id" [folder]="resourceTree()" />
         </div>
       }
     </div>

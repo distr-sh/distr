@@ -2,6 +2,7 @@ package mapping
 
 import (
 	"github.com/distr-sh/distr/api"
+	"github.com/distr-sh/distr/internal/supportbundle/resourcetype"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 )
@@ -15,6 +16,26 @@ func SupportBundleConfigurationEnvVarsToAPI(
 			Redacted: ev.Redacted,
 		}
 	})
+}
+
+func SupportBundleKubernetesConfigurationToAPI(
+	config types.SupportBundleKubernetesConfiguration,
+) api.SupportBundleKubernetesConfiguration {
+	return api.SupportBundleKubernetesConfiguration{
+		IncludeConfigMapData: config.IncludeConfigMapData,
+		IncludeSecretData:    config.IncludeSecretData,
+	}
+}
+
+func SupportBundleKubernetesConfigurationToInternal(
+	request api.SupportBundleKubernetesConfiguration,
+	orgID uuid.UUID,
+) types.SupportBundleKubernetesConfiguration {
+	return types.SupportBundleKubernetesConfiguration{
+		OrganizationID:       orgID,
+		IncludeConfigMapData: request.IncludeConfigMapData,
+		IncludeSecretData:    request.IncludeSecretData,
+	}
 }
 
 func SupportBundleConfigurationScriptToAPI(
@@ -79,7 +100,7 @@ func SupportBundleResourceSummaryToAPI(resource types.SupportBundleResourceSumma
 		ID:          resource.ID,
 		CreatedAt:   resource.CreatedAt,
 		Name:        resource.Name,
-		ContentType: types.ParseSupportBundleResourceContentType(resource.ContentType),
+		ContentType: resourcetype.ParseContentType(resource.ContentType),
 		Size:        resource.Size,
 	}
 }

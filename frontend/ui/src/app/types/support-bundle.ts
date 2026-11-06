@@ -1,3 +1,5 @@
+import {DeploymentType} from '@distr-sh/distr-sdk';
+
 export type SupportBundleStatus = 'initialized' | 'created' | 'resolved' | 'canceled';
 
 export interface SupportBundleConfigurationEnvVar {
@@ -9,9 +11,15 @@ export interface CreateUpdateSupportBundleConfigurationRequest {
   envVars: SupportBundleConfigurationEnvVar[];
 }
 
+export interface SupportBundleKubernetesConfiguration {
+  includeConfigMapData: boolean;
+  includeSecretData: boolean;
+}
+
 export interface SupportBundleConfigurationScript {
   id: string;
   createdAt: string;
+  deploymentType: DeploymentType;
   name: string;
   description?: string;
   content: string;
@@ -19,6 +27,7 @@ export interface SupportBundleConfigurationScript {
 }
 
 export interface CreateUpdateSupportBundleConfigurationScriptRequest {
+  deploymentType: DeploymentType;
   name: string;
   description?: string;
   content: string;
@@ -33,6 +42,7 @@ export interface SupportBundle {
   createdByUserAccountId?: string;
   createdByUserName?: string;
   createdByImageUrl?: string;
+  deploymentType: DeploymentType;
   title: string;
   description?: string;
   status: SupportBundleStatus;
@@ -45,6 +55,7 @@ export interface SupportBundle {
 }
 
 export interface CreateSupportBundleRequest {
+  deploymentType: DeploymentType;
   title: string;
   description?: string;
 }

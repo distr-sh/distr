@@ -64,6 +64,7 @@
 - [SupportBundleConfigurationEnvVar](interfaces/SupportBundleConfigurationEnvVar.md)
 - [SupportBundleConfigurationScript](interfaces/SupportBundleConfigurationScript.md)
 - [SupportBundleDetail](interfaces/SupportBundleDetail.md)
+- [SupportBundleKubernetesConfiguration](interfaces/SupportBundleKubernetesConfiguration.md)
 - [SupportBundleResource](interfaces/SupportBundleResource.md)
 - [SupportBundleResourceSummary](interfaces/SupportBundleResourceSummary.md)
 - [TokenResponse](interfaces/TokenResponse.md)

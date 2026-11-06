@@ -23,6 +23,37 @@
       <form [formGroup]="form" (ngSubmit)="submit()">
         <div class="space-y-4">
           <div>
+            <span class="distr-label mb-2">Deployment Type <span class="text-red-500">*</span></span>
+            <div class="grid grid-cols-2 gap-4">
+              <label class="distr-radio-card">
+                <input
+                  type="radio"
+                  formControlName="deploymentType"
+                  value="docker"
+                  class="distr-radio mt-0.5"
+                  aria-describedby="deploymentTypeDockerText" />
+                <div class="text-sm">
+                  <span class="font-bold text-gray-900 dark:text-white">Docker</span>
+                  <p id="deploymentTypeDockerText" class="distr-hint mt-1">
+                    Collects from the Docker containers on a host.
+                  </p>
+                </div>
+              </label>
+              <label class="distr-radio-card">
+                <input
+                  type="radio"
+                  formControlName="deploymentType"
+                  value="kubernetes"
+                  class="distr-radio mt-0.5"
+                  aria-describedby="deploymentTypeKubernetesText" />
+                <div class="text-sm">
+                  <span class="font-bold text-gray-900 dark:text-white">Kubernetes</span>
+                  <p id="deploymentTypeKubernetesText" class="distr-hint mt-1">Collects from a Kubernetes cluster.</p>
+                </div>
+              </label>
+            </div>
+          </div>
+          <div>
             <label for="title" class="distr-label mb-2"> Title <span class="text-red-500">*</span> </label>
             <input
               formControlName="title"

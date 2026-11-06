@@ -44,6 +44,11 @@ func (r *CreateUpdateSupportBundleConfigurationRequest) Validate() error {
 	return nil
 }
 
+type SupportBundleKubernetesConfiguration struct {
+	IncludeConfigMapData bool `json:"includeConfigMapData"`
+	IncludeSecretData    bool `json:"includeSecretData"`
+}
+
 var scriptNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9 ._-]*$`)
 
 const (
@@ -71,9 +76,7 @@ type CreateUpdateSupportBundleConfigurationScriptRequest struct {
 }
 
 func (r *CreateUpdateSupportBundleConfigurationScriptRequest) Validate() error {
-	if err := validateSupportBundleDeploymentType(&r.DeploymentType); err != nil {
-		return err
-	}
+	defaultSupportBundleDeploymentType(&r.DeploymentType)
 	if r.Name == "" {
 		return validation.NewValidationFailedError("script name must not be empty")
 	}
@@ -104,16 +107,12 @@ func (r *CreateUpdateSupportBundleConfigurationScriptRequest) Validate() error {
 	return nil
 }
 
-// validateSupportBundleDeploymentType treats an omitted deployment type as docker, which was the
-// only one before the field existed.
-func validateSupportBundleDeploymentType(deploymentType *types.DeploymentType) error {
+// defaultSupportBundleDeploymentType treats an omitted deployment type as docker, which was the only
+// one before the field existed.
+func defaultSupportBundleDeploymentType(deploymentType *types.DeploymentType) {
 	if *deploymentType == "" {
 		*deploymentType = types.DeploymentTypeDocker
 	}
-	if *deploymentType != types.DeploymentTypeDocker {
-		return validation.NewValidationFailedError("only Docker support bundles are supported")
-	}
-	return nil
 }
 
 // Bundle
@@ -152,9 +151,7 @@ type CreateSupportBundleRequest struct {
 }
 
 func (r *CreateSupportBundleRequest) Validate() error {
-	if err := validateSupportBundleDeploymentType(&r.DeploymentType); err != nil {
-		return err
-	}
+	defaultSupportBundleDeploymentType(&r.DeploymentType)
 	if r.Title == "" {
 		return validation.NewValidationFailedError("title is required")
 	}
