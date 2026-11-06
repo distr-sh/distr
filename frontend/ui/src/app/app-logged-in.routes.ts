@@ -1,7 +1,7 @@
 import {inject} from '@angular/core';
 import {CanActivateFn, Router, Routes} from '@angular/router';
 import {CustomerOrganizationFeature, UserRole} from '@distr-sh/distr-sdk';
-import {firstValueFrom, switchMap} from 'rxjs';
+import {firstValueFrom, map, switchMap} from 'rxjs';
 import {getRemoteEnvironment} from '../env/remote';
 import {AccessTokenDetailComponent} from './access-tokens/access-token-detail.component';
 import {AccessTokensComponent} from './access-tokens/access-tokens.component';
@@ -20,6 +20,7 @@ import {CustomerOrganizationsComponent} from './components/customer-organization
 import {DashboardComponent} from './components/dashboard/dashboard.component';
 import {HomeComponent} from './components/home/home.component';
 import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
+import {PortalUnavailableComponent} from './components/portal-unavailable/portal-unavailable.component';
 import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
 import {PartnerUsersComponent} from './components/users/partners/partner-users.component';
 import {VendorUsersComponent} from './components/users/vendors/vendor-users.component';
@@ -229,9 +230,6 @@ function subscriptionGuard(): CanActivateFn {
     const auth = inject(AuthService);
     const router = inject(Router);
     const organizationService = inject(OrganizationService);
-    if (auth.isCustomer() && !auth.isLens()) {
-      return true;
-    }
     return organizationService.get().pipe(
       switchMap(async (org) => {
         if (!isSubscriptionExpired(org)) {
@@ -240,11 +238,23 @@ function subscriptionGuard(): CanActivateFn {
           // a lens cannot reach the subscription page, so the session has to return to the vendor portal first
           await auth.switchContext(org.id!);
           return false;
-        } else {
+        } else if (auth.isVendor()) {
           return router.createUrlTree(['/subscription']);
+        } else {
+          return router.createUrlTree(['/unavailable']);
         }
       })
     );
+  };
+}
+
+function portalUnavailableGuard(): CanActivateFn {
+  return () => {
+    const auth = inject(AuthService);
+    const router = inject(Router);
+    return inject(OrganizationService)
+      .get()
+      .pipe(map((org) => (!auth.isVendor() && isSubscriptionExpired(org)) || router.createUrlTree(['/'])));
   };
 }
 
@@ -636,5 +646,11 @@ export const routes: Routes = [
         component: SubscriptionCallbackComponent,
       },
     ],
+  },
+  {
+    path: 'unavailable',
+    title: 'Portal Unavailable',
+    canActivate: [portalUnavailableGuard()],
+    component: PortalUnavailableComponent,
   },
 ];
