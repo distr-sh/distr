@@ -158,7 +158,7 @@ type SubscriptionUpdateParams struct {
 	UserAccountQty          int64
 	// SubscriptionType optionally switches the subscription to a different plan by
 	// replacing the current price items with the target plan's prices (keeping the
-	// current billing period). Stripe applies its default proration.
+	// current billing period).
 	SubscriptionType *types.SubscriptionType
 	ReturnURL        string
 }
@@ -175,15 +175,18 @@ func UpdateSubscription(ctx context.Context, params SubscriptionUpdateParams) (*
 	// Find the existing subscription items with their price IDs
 	var customerPriceID, userPriceID string
 	var customerItemID, userItemID string
+	var customerQty, userQty int64
 
 	for _, item := range sub.Items.Data {
 		if item.Price != nil && item.Price.LookupKey != "" {
 			if slices.Contains(CustomerPriceKeys, item.Price.LookupKey) {
 				customerPriceID = item.Price.ID
 				customerItemID = item.ID
+				customerQty = item.Quantity
 			} else if slices.Contains(UserPriceKeys, item.Price.LookupKey) {
 				userPriceID = item.Price.ID
 				userItemID = item.ID
+				userQty = item.Quantity
 			}
 		}
 	}
@@ -192,14 +195,15 @@ func UpdateSubscription(ctx context.Context, params SubscriptionUpdateParams) (*
 		return nil, fmt.Errorf("could not find price IDs in subscription")
 	}
 
+	period, err := GetSubscriptionPeriod(*sub)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get subscription period: %w", err)
+	}
+
 	var items []*stripe.SubscriptionItemsParams
 	if params.SubscriptionType != nil {
 		// Plan switch: remove the current items and add the target plan's prices,
 		// keeping the current billing period.
-		period, err := GetSubscriptionPeriod(*sub)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get subscription period: %w", err)
-		}
 		prices, err := GetStripePrices(ctx, *params.SubscriptionType, period)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get stripe prices: %w", err)
@@ -238,10 +242,16 @@ func UpdateSubscription(ctx context.Context, params SubscriptionUpdateParams) (*
 		}
 	}
 
-	// Stripe will automatically prorate the charges
 	updateParams := &stripe.SubscriptionParams{
 		Params: stripe.Params{Context: ctx},
 		Items:  items,
+	}
+
+	// Stripe's default proration only adds the charge to the next renewal invoice, which is up to a year away for a
+	// yearly subscription. A plan switch is always an upgrade, since only Pro to Business is allowed.
+	if period == types.SubscriptionPeriodYearly && (params.SubscriptionType != nil ||
+		params.CustomerOrganizationQty > customerQty || params.UserAccountQty > userQty) {
+		updateParams.ProrationBehavior = new("always_invoice")
 	}
 
 	updatedSub, err := subscription.Update(params.SubscriptionID, updateParams)
