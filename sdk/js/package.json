@@ -1,6 +1,6 @@
 {
   "name": "@distr-sh/distr-sdk",
-  "version": "4.8.1",
+  "version": "4.9.0",
   "type": "module",
   "license": "Apache-2.0",
   "description": "Distr SDK",
