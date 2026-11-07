@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.9.0](https://github.com/distr-sh/distr/compare/4.8.1...4.9.0) (2026-11-07)
+
+
+### Features
+
+* add Kubernetes support bundles ([#3660](https://github.com/distr-sh/distr/issues/3660)) ([7328ed2](https://github.com/distr-sh/distr/commit/7328ed2dc499bf6096b0c18abd91078815821023))
+* new customer portal home page ([#3452](https://github.com/distr-sh/distr/issues/3452)) ([eb2c23a](https://github.com/distr-sh/distr/commit/eb2c23a5feb289ea5e83741fb43eb81d08783248))
+
 ## [4.8.1](https://github.com/distr-sh/distr/compare/4.8.0...4.8.1) (2026-11-06)
 
 
