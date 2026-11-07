@@ -14,7 +14,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.67.2
 	github.com/aws/aws-sdk-go-v2/service/kms v1.62.2
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.6
-	github.com/aws/smithy-go v1.28.7
+	github.com/aws/smithy-go v1.28.8
 	github.com/compose-spec/compose-go/v2 v2.16.2
 	github.com/containerd/log v0.2.0
 	github.com/containers/image/v5 v5.36.2
