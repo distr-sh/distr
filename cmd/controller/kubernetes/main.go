@@ -122,6 +122,19 @@ func main() {
 		}
 	}()
 
+	// The liveness probe would restart the controller while it waits for the lease.
+	health.Heartbeat()
+	logger.Info("waiting for controller lease")
+	ctx, releaseLease, err := acquireLease(ctx)
+	if err != nil {
+		if !errors.Is(err, context.Canceled) {
+			logger.Error("could not acquire controller lease", zap.Error(err))
+		}
+		return
+	}
+	defer releaseLease()
+	logger.Info("acquired controller lease")
+
 	var logsWatcher *logsWatcher
 	var logsGoroutine *util.ToggleableGoroutine
 	metricsGoroutine := util.NewToggleableGoroutine(watchMetrics)
