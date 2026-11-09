@@ -23,6 +23,9 @@ FROM docker:29.9.3-alpine3.24
 WORKDIR /
 COPY --from=builder /workspace/controller .
 
+# Set to the current date in CI, so BuildKit reruns the upgrade daily instead of reusing a cached
+# layer with packages from before the latest Alpine security fixes.
+ARG APK_UPGRADE_DATE
 RUN apk upgrade --no-cache && apk add --no-cache curl
 
 HEALTHCHECK --interval=10s --timeout=5s \
