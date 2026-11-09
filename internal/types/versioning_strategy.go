@@ -58,6 +58,26 @@ func SortTaggedArtifactVersions(strategy VersioningStrategy, versions []TaggedAr
 	})
 }
 
+// CompareArtifactTags orders two release tags of an artifact by the strategy. Under semver, a tag that is not a SemVer
+// version sorts before every SemVer one. The creation date decides where the strategy does not.
+func CompareArtifactTags(strategy VersioningStrategy, a, b ArtifactVersion) int {
+	if strategy == VersioningStrategySemver {
+		parsedA, _ := parseSemverTag(a.Name)
+		parsedB, _ := parseSemverTag(b.Name)
+		if c := compareSemver(parsedA, parsedB); c != 0 {
+			return c
+		}
+	}
+	return a.CreatedAt.Compare(b.CreatedAt)
+}
+
+// ArtifactTagBehind reports whether a customer whose latest pull was the tag pulled has something to update to in
+// the tag announced. A tag that points to the content they pulled already brings nothing new.
+func ArtifactTagBehind(strategy VersioningStrategy, pulled, announced ArtifactVersion) bool {
+	return pulled.ManifestBlobDigest != announced.ManifestBlobDigest &&
+		CompareArtifactTags(strategy, pulled, announced) < 0
+}
+
 // compareSemver orders nil before every version.
 func compareSemver(a, b *semver.Version) int {
 	switch {

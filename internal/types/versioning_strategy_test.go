@@ -372,6 +372,32 @@ func TestSortTaggedArtifactVersionsChronological(t *testing.T) {
 	}))
 }
 
+func artifactTag(name, digest string, createdAt time.Time) ArtifactVersion {
+	return ArtifactVersion{ID: uuid.New(), Name: name, ManifestBlobDigest: Digest(digest), CreatedAt: createdAt}
+}
+
+func TestArtifactTagBehind(t *testing.T) {
+	g := NewWithT(t)
+	base := time.Now()
+	pulled := artifactTag("2.1.0", "sha256:a", base)
+	older, newer := base.Add(-time.Hour), base.Add(time.Hour)
+	behind := func(strategy VersioningStrategy, announced ArtifactVersion) bool {
+		return ArtifactTagBehind(strategy, pulled, announced)
+	}
+
+	g.Expect(behind(VersioningStrategySemver, artifactTag("2.2.0", "sha256:b", older))).
+		To(BeTrue(), "a higher version is newer however old it is")
+	g.Expect(behind(VersioningStrategySemver, artifactTag("2.0.5", "sha256:b", newer))).
+		To(BeFalse(), "a backport is older than what the customer runs")
+	g.Expect(behind(VersioningStrategySemver, artifactTag("v2.1.0", "sha256:b", newer))).
+		To(BeTrue(), "the same version with other content falls back to the creation date")
+	g.Expect(behind(VersioningStrategySemver, artifactTag("2.2.0", "sha256:a", newer))).
+		To(BeFalse(), "a tag pointing to the pulled content brings nothing new")
+
+	g.Expect(behind(VersioningStrategyChronological, artifactTag("2.0.5", "sha256:b", newer))).To(BeTrue())
+	g.Expect(behind(VersioningStrategyChronological, artifactTag("2.2.0", "sha256:b", older))).To(BeFalse())
+}
+
 func TestAllowsArtifactTag(t *testing.T) {
 	g := NewWithT(t)
 

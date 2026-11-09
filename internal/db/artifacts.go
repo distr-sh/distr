@@ -743,6 +743,22 @@ func UpdateArtifactVersioningStrategy(
 	return nil
 }
 
+func GetArtifactVersioningStrategy(ctx context.Context, artifactID uuid.UUID) (types.VersioningStrategy, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT versioning_strategy FROM Artifact WHERE id = @artifactId`,
+		pgx.NamedArgs{"artifactId": artifactID},
+	)
+	if err != nil {
+		return "", fmt.Errorf("could not query artifact versioning strategy: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[types.VersioningStrategy])
+	if err != nil {
+		return "", fmt.Errorf("could not collect artifact versioning strategy: %w", err)
+	}
+	return result, nil
+}
+
 // GetArtifactReleaseTagNames returns the names of the release tags of the artifact, ordered by name.
 func GetArtifactReleaseTagNames(ctx context.Context, artifactID uuid.UUID) ([]string, error) {
 	db := internalctx.GetDb(ctx)
@@ -1037,23 +1053,23 @@ func GetArtifactTagDigest(
 	return &result, nil
 }
 
-func GetNewestArtifactTag(
+// GetArtifactReleaseTags returns the release tags of the artifact, without their manifest data. Given version IDs,
+// it returns only the tags that point to the same manifest as one of them.
+func GetArtifactReleaseTags(
 	ctx context.Context,
 	artifactID uuid.UUID,
 	artifactVersionIDs []uuid.UUID,
-) (*types.ArtifactVersion, error) {
+) ([]types.ArtifactVersion, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`SELECT`+artifactVersionOutputExpr+`
+		`SELECT v.id, v.created_at, v.name, v.manifest_blob_digest, v.artifact_id
 		FROM ArtifactVersion v
 		WHERE v.artifact_id = @artifactId
 			AND `+versionIsReleaseTagExpr+`
 			AND (@allVersions OR v.manifest_blob_digest IN (
 				SELECT manifest_blob_digest FROM ArtifactVersion WHERE id = any(@artifactVersionIds)
-			))
-		ORDER BY v.created_at DESC
-		LIMIT 1`,
+			))`,
 		pgx.NamedArgs{
 			"artifactId":         artifactID,
 			"allVersions":        len(artifactVersionIDs) == 0,
@@ -1061,15 +1077,13 @@ func GetNewestArtifactTag(
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("could not query ArtifactVersion: %w", err)
+		return nil, fmt.Errorf("could not query artifact release tags: %w", err)
 	}
-	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ArtifactVersion])
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
-		return nil, fmt.Errorf("could not collect ArtifactVersion: %w", err)
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[types.ArtifactVersion])
+	if err != nil {
+		return nil, fmt.Errorf("could not collect artifact release tags: %w", err)
 	}
-	return &result, nil
+	return result, nil
 }
 
 func CreateArtifactVersion(ctx context.Context, av *types.ArtifactVersion) error {
