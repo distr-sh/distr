@@ -3,43 +3,47 @@
     <div class="distr-table-panel">
       <div class="overflow-x-auto">
         <div class="flex flex-col gap-3 px-6 py-3 sm:py-4">
-          <div class="flex items-center">
-            <div class="shrink-0">
+          <div class="flex items-center gap-4">
+            <div class="h-16 w-16 overflow-hidden">
               @if (artifact.imageUrl) {
                 <img
                   (click)="uploadImage(artifact)"
-                  class="h-16 w-16 cursor-pointer rounded-sm"
+                  class="cursor-pointer rounded-sm"
                   height="199"
                   width="199"
                   [attr.src]="artifact.imageUrl | secureImage | async"
                   alt="" />
               } @else {
-                <div class="shrink-0 text-gray-900 dark:text-gray-400">
+                <div class="flex h-full items-center justify-center text-gray-900 dark:text-gray-400">
                   <fa-icon (click)="uploadImage(artifact)" [icon]="faBox" size="xl" class="cursor-pointer text-xl" />
                 </div>
               }
             </div>
-            <div class="ms-4 min-w-0 flex-1">
-              <h2 class="truncate text-2xl font-semibold">
+            <div class="flex-1">
+              <h2 class="w-0 min-w-full truncate text-2xl font-semibold">
                 {{ artifact.name }}
               </h2>
-              <p class="mt-1 flex items-center gap-1 truncate text-sm text-gray-500 dark:text-gray-400">
+              <div class="mt-1 flex flex-wrap items-center gap-2">
                 <app-uuid [uuid]="artifact.id" [small]="true" />
                 @if (artifact.public) {
                   <app-artifact-public-badge />
                 }
                 @if (auth.isVendor() && !artifact.featured) {
-                  <span class="distr-badge distr-badge-neutral">Not featured</span>
+                  <span class="distr-badge distr-badge-warning">Not featured</span>
                 }
-              </p>
+                @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
+                  <app-badge-select
+                    ariaLabel="Change versioning strategy"
+                    [plainOptions]="true"
+                    [options]="versioningStrategyOptions"
+                    [value]="artifact.versioningStrategy"
+                    [disabled]="savingVersioningStrategy()"
+                    (selected)="updateVersioningStrategy(artifact, $event)" />
+                } @else if (auth.isVendor()) {
+                  <span class="distr-badge distr-badge-neutral">{{ versioningStrategyLabel() }}</span>
+                }
+              </div>
             </div>
-
-            @if (auth.isVendor()) {
-              <app-title-image-picker
-                class="me-4 self-start"
-                [imageUrl]="artifact.titleImageUrl"
-                (picked)="updateTitleImage(artifact, $event)" />
-            }
 
             @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
               <button
@@ -124,6 +128,10 @@
 
             <app-artifacts-download-count class="self-start" [source]="artifact" />
           </div>
+
+          @if (auth.isVendor()) {
+            <app-title-image-picker [imageUrl]="artifact.titleImageUrl" (picked)="updateTitleImage(artifact, $event)" />
+          }
 
           @if (auth.isVendor() && artifact.upstreamUrl) {
             <div class="flex flex-col gap-1 text-sm">

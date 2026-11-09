@@ -11,6 +11,7 @@ func ArtifactToAPI(a types.ArtifactWithTaggedVersion) api.ArtifactResponse {
 		ImageUrl:                  CreateImageURL(a.ImageID),
 		TitleImageUrl:             CreateImageURL(a.TitleImageID),
 		Featured:                  a.Featured,
+		VersioningStrategy:        a.VersioningStrategy,
 	}
 }
 
@@ -28,6 +29,7 @@ func ArtifactsWithDownloadsToAPI(a types.ArtifactWithDownloads) api.ArtifactsRes
 		ImageUrl:              CreateImageURL(a.ImageID),
 		TitleImageUrl:         CreateImageURL(a.TitleImageID),
 		Featured:              a.Featured,
+		VersioningStrategy:    a.VersioningStrategy,
 	}
 }
 

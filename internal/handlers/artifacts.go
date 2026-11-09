@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
+	"strings"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
@@ -64,8 +66,8 @@ func ArtifactsRouter(r chiopenapi.Router) {
 					With(option.Response(http.StatusOK, api.ArtifactResponse{}))
 				r.Patch("/", respond.Handler(patchArtifactHandler)).
 					With(option.Description(
-						"Update artifact upstream URL and/or authentication, its public visibility " +
-							"or whether it is featured")).
+						"Update artifact upstream URL and/or authentication, its public visibility, " +
+							"whether it is featured or its versioning strategy")).
 					With(option.Request(struct {
 						ArtifactRequest
 						api.PatchArtifactRequest
@@ -345,30 +347,110 @@ func patchArtifactHandler(r *http.Request) (respond.Responder, error) {
 		}
 	}
 
-	if err := db.RunTx(ctx, func(ctx context.Context) error {
+	if body.VersioningStrategy != nil && !body.VersioningStrategy.IsSelectable() {
+		return respond.BadRequest(
+			fmt.Sprintf("versioning strategy must be one of %v", types.SelectableVersioningStrategies()),
+		), nil
+	}
+
+	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 		if params.UpdateURL || params.UpdateAuth {
 			if err := db.UpdateArtifactUpstream(ctx, artifact.ID, artifact.OrganizationID, params); err != nil {
-				return err
+				return nil, err
 			}
 		}
 		if body.Public != nil {
 			if err := db.UpdateArtifactPublic(ctx, artifact.ID, artifact.OrganizationID, *body.Public); err != nil {
-				return err
+				return nil, err
 			}
 		}
 		if body.Featured != nil {
-			return db.UpdateArtifactFeatured(
+			if err := db.UpdateArtifactFeatured(
 				ctx, artifact.ID, artifact.OrganizationID, *body.Featured,
+			); err != nil {
+				return nil, err
+			}
+		}
+		if body.VersioningStrategy != nil && *body.VersioningStrategy != artifact.VersioningStrategy {
+			return switchArtifactVersioningStrategy(
+				ctx, &artifact.Artifact, *body.VersioningStrategy, body.DeleteNonSemverTags,
 			)
 		}
-		return nil
+		return nil, nil
 	}); err != nil {
 		return nil, fmt.Errorf("failed to update artifact: %w", err)
+	} else if resp != nil {
+		return resp, nil
 	} else if result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil); err != nil {
 		return nil, fmt.Errorf("failed to fetch artifact after update: %w", err)
 	} else {
 		return respond.JSON(mapping.ArtifactToAPI(*result)), nil
 	}
+}
+
+// switchArtifactVersioningStrategy requires every release tag to be a SemVer version before switching to semver.
+// A pull-through artifact cannot keep its upstream from offering other tags, so it deletes them instead, but only
+// once the request confirms it.
+func switchArtifactVersioningStrategy(
+	ctx context.Context,
+	artifact *types.Artifact,
+	strategy types.VersioningStrategy,
+	shouldDeleteNonSemverTags bool,
+) (respond.Responder, error) {
+	if strategy == types.VersioningStrategySemver {
+		if resp, err := ensureSemverTags(ctx, artifact, shouldDeleteNonSemverTags); resp != nil || err != nil {
+			return resp, err
+		}
+	}
+	return nil, db.UpdateArtifactVersioningStrategy(ctx, artifact.ID, artifact.OrganizationID, strategy)
+}
+
+func ensureSemverTags(
+	ctx context.Context,
+	artifact *types.Artifact,
+	shouldDeleteNonSemverTags bool,
+) (respond.Responder, error) {
+	// A push holds this row lock until it commits, so no tag can be added between the check and the switch.
+	if err := db.LockArtifactRows(ctx, []uuid.UUID{artifact.ID}); err != nil {
+		return nil, err
+	}
+	tags, err := db.GetArtifactReleaseTagNames(ctx, artifact.ID)
+	if err != nil {
+		return nil, err
+	}
+	nonSemverTags := slices.DeleteFunc(tags, types.IsSemverTag)
+	if len(nonSemverTags) == 0 {
+		return nil, nil
+	} else if artifact.UpstreamURL == nil {
+		return respond.BadRequest(fmt.Sprintf(
+			"the artifact cannot use SemVer versioning while it has tags that are not SemVer versions: %s",
+			describeTagNames(nonSemverTags),
+		)), nil
+	} else if !shouldDeleteNonSemverTags {
+		return respond.Conflict(fmt.Sprintf(
+			"Switching to SemVer versioning deletes %d tags that are not SemVer versions, "+
+				"together with their pull history.",
+			len(nonSemverTags),
+		)), nil
+	}
+	for _, tag := range nonSemverTags {
+		if _, err := db.DeleteArtifactTag(ctx, artifact, tag); errors.Is(err, distrerr.ErrBadRequest) ||
+			errors.Is(err, distrerr.ErrConflict) {
+			return respond.BadRequest(fmt.Sprintf("cannot delete tag %q: %v", tag, err)), nil
+		} else if err != nil {
+			return nil, fmt.Errorf("failed to delete tag %q: %w", tag, err)
+		}
+	}
+	return nil, nil
+}
+
+// describeTagNames lists the first few of the tags and how many more there are.
+func describeTagNames(tags []string) string {
+	const listedTags = 5
+	if len(tags) <= listedTags {
+		return strings.Join(tags, ", ")
+	}
+	return fmt.Sprintf("%s and %d more", strings.Join(tags[:listedTags], ", "), len(tags)-listedTags)
 }
 
 func artifactMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {

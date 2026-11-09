@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/uuid"
@@ -27,6 +28,11 @@ func SelectableVersioningStrategies() []VersioningStrategy {
 
 func (s VersioningStrategy) IsSelectable() bool {
 	return slices.Contains(SelectableVersioningStrategies(), s)
+}
+
+func IsSemverTag(name string) bool {
+	_, err := semver.StrictNewVersion(strings.TrimPrefix(name, "v"))
+	return err == nil
 }
 
 func (s VersioningStrategy) AllowsAutomaticUpdates() bool {

@@ -22,17 +22,22 @@ type CreateArtifactRequest struct {
 // PatchArtifactRequest supports partial updates: omitted fields are left unchanged.
 // For auth, explicit null clears the credentials.
 type PatchArtifactRequest struct {
-	UpstreamURL *string                        `json:"upstreamUrl,omitempty"`
-	Auth        Nullable[ArtifactUpstreamAuth] `json:"auth"`
-	Public      *bool                          `json:"public,omitempty"`
-	Featured    *bool                          `json:"featured,omitempty"`
+	UpstreamURL        *string                        `json:"upstreamUrl,omitempty"`
+	Auth               Nullable[ArtifactUpstreamAuth] `json:"auth"`
+	Public             *bool                          `json:"public,omitempty"`
+	Featured           *bool                          `json:"featured,omitempty"`
+	VersioningStrategy *types.VersioningStrategy      `json:"versioningStrategy,omitempty"`
+	// DeleteNonSemverTags confirms that switching a pull-through artifact to semver deletes its tags that are
+	// not SemVer versions.
+	DeleteNonSemverTags bool `json:"deleteNonSemverTags,omitempty"`
 }
 
 type ArtifactResponse struct {
 	types.ArtifactWithTaggedVersion
-	ImageUrl      *string `json:"imageUrl,omitempty"`
-	TitleImageUrl *string `json:"titleImageUrl,omitempty"`
-	Featured      bool    `json:"featured"`
+	ImageUrl           *string                  `json:"imageUrl,omitempty"`
+	TitleImageUrl      *string                  `json:"titleImageUrl,omitempty"`
+	Featured           bool                     `json:"featured"`
+	VersioningStrategy types.VersioningStrategy `json:"versioningStrategy"`
 }
 
 type DeleteArtifactTagResponse struct {
@@ -42,9 +47,10 @@ type DeleteArtifactTagResponse struct {
 
 type ArtifactsResponse struct {
 	types.ArtifactWithDownloads
-	ImageUrl      *string `json:"imageUrl,omitempty"`
-	TitleImageUrl *string `json:"titleImageUrl,omitempty"`
-	Featured      bool    `json:"featured"`
+	ImageUrl           *string                  `json:"imageUrl,omitempty"`
+	TitleImageUrl      *string                  `json:"titleImageUrl,omitempty"`
+	Featured           bool                     `json:"featured"`
+	VersioningStrategy types.VersioningStrategy `json:"versioningStrategy"`
 	// LastPull is only set for a customer.
 	LastPull *ArtifactLastPull `json:"lastPull,omitempty"`
 }

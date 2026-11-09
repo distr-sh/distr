@@ -1,6 +1,7 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {concat, map, Observable, of, switchMap, tap} from 'rxjs';
+import {SelectableVersioningStrategy} from '../../util/versions';
 import {ReactiveList} from './cache';
 
 export interface HasDownloads {
@@ -39,6 +40,7 @@ export interface ArtifactUpstreamAuth {
 export interface Artifact extends BaseArtifact, HasDownloads {
   public: boolean;
   featured: boolean;
+  versioningStrategy: SelectableVersioningStrategy;
   upstreamUrl?: string;
   lastSyncedAt?: string;
   lastSyncError?: string;
@@ -74,6 +76,9 @@ export interface PatchArtifactRequest {
   auth?: ArtifactUpstreamAuth | null;
   public?: boolean;
   featured?: boolean;
+  versioningStrategy?: SelectableVersioningStrategy;
+  /** Confirms that switching a pull-through artifact to semver deletes its tags that are not SemVer versions. */
+  deleteNonSemverTags?: boolean;
 }
 
 export type DeleteArtifactTagResponse = {artifactDeleted: true} | {artifactDeleted: false; artifact: ArtifactWithTags};

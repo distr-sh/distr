@@ -305,6 +305,20 @@ func TestSortAdvisoryApplicationVersionsKeepsApplicationsWithTheSameNameApart(t 
 	g.Expect(advisoryNames(versions)).To(Equal([]string{"App 1.9.0", "App 1.10.0", "App 2.0.0", "App 1.0.0"}))
 }
 
+func TestIsSemverTag(t *testing.T) {
+	g := NewWithT(t)
+
+	for _, tag := range []string{"1.2.3", "v1.2.3", "0.0.0", "1.2.3-rc.1", "1.2.3-rc-1+build.5", "10.20.30+meta"} {
+		g.Expect(IsSemverTag(tag)).To(BeTrue(), "tag %q", tag)
+	}
+	for _, tag := range []string{
+		"latest", "main", "1.2", "1", "4309564170", "V1.2.3", "vv1.2.3", "01.2.3", "1.2.3-01", "1.2.3-", "1.2.3+",
+		"sha256-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef.sig",
+	} {
+		g.Expect(IsSemverTag(tag)).To(BeFalse(), "tag %q", tag)
+	}
+}
+
 func TestValidateVersionsForStrategy(t *testing.T) {
 	g := NewWithT(t)
 	base := time.Now()

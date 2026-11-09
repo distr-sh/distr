@@ -38,13 +38,14 @@ type Artifact struct {
 	Public         bool       `db:"public" json:"public"`
 	// Featured marks one of the main artifacts of the vendor's applications, which the Customer Portal home
 	// page shows.
-	Featured         bool              `db:"featured" json:"-"`
-	UpstreamURL      *string           `db:"upstream_url" json:"upstreamUrl,omitempty"`
-	LastSyncedAt     *time.Time        `db:"last_synced_at" json:"lastSyncedAt,omitempty"`
-	LastSyncError    *string           `db:"last_sync_error" json:"lastSyncError,omitempty"`
-	UpstreamAuthType *UpstreamAuthType `db:"upstream_auth_type" json:"upstreamAuthType,omitempty"`
-	UpstreamUsername *dbcrypto.String  `db:"upstream_username" json:"-"`
-	UpstreamPassword *dbcrypto.String  `db:"upstream_password" json:"-"`
+	Featured           bool               `db:"featured" json:"-"`
+	VersioningStrategy VersioningStrategy `db:"versioning_strategy" json:"-"`
+	UpstreamURL        *string            `db:"upstream_url" json:"upstreamUrl,omitempty"`
+	LastSyncedAt       *time.Time         `db:"last_synced_at" json:"lastSyncedAt,omitempty"`
+	LastSyncError      *string            `db:"last_sync_error" json:"lastSyncError,omitempty"`
+	UpstreamAuthType   *UpstreamAuthType  `db:"upstream_auth_type" json:"upstreamAuthType,omitempty"`
+	UpstreamUsername   *dbcrypto.String   `db:"upstream_username" json:"-"`
+	UpstreamPassword   *dbcrypto.String   `db:"upstream_password" json:"-"`
 }
 
 type DownloadMetrics struct {
