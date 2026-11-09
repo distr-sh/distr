@@ -20,12 +20,13 @@ type fakeAuthInfo struct {
 	authinfo.AuthInfoWithUserAndOrganization
 	org           *types.Organization
 	customerOrgID *uuid.UUID
+	partnerOrgID  *uuid.UUID
 	isSuperAdmin  bool
 }
 
 func (f fakeAuthInfo) CurrentOrg() *types.Organization  { return f.org }
 func (f fakeAuthInfo) CurrentCustomerOrgID() *uuid.UUID { return f.customerOrgID }
-func (f fakeAuthInfo) CurrentPartnerOrgID() *uuid.UUID  { return nil }
+func (f fakeAuthInfo) CurrentPartnerOrgID() *uuid.UUID  { return f.partnerOrgID }
 func (f fakeAuthInfo) IsSuperAdmin() bool               { return f.isSuperAdmin }
 
 type countingReader struct {
@@ -110,6 +111,13 @@ func TestRequireActiveSubscription(t *testing.T) {
 		{
 			name:     "customer of an expired organization is not told why",
 			info:     fakeAuthInfo{org: expired, customerOrgID: new(uuid.New())},
+			expected: http.StatusForbidden,
+			body:     "unavailable",
+			hidden:   "subscription",
+		},
+		{
+			name:     "partner of an expired organization is not told why",
+			info:     fakeAuthInfo{org: expired, partnerOrgID: new(uuid.New())},
 			expected: http.StatusForbidden,
 			body:     "unavailable",
 			hidden:   "subscription",
