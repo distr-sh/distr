@@ -1,4 +1,0 @@
-[[IgnoredVulns]]
-id = "GHSA-rj75-hqrm-r3gf"
-ignoreUntil = 2027-03-16
-reason = "Quadratic parsing of flat selectors in postcss-selector-parser, fixed in 7.1.6 only. Expressive Code's postcss-nested still requires 6.x and only parses our own CSS at build time."

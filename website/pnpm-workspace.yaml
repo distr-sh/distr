@@ -1,7 +1,3 @@
-auditConfig:
-  ignoreGhsas:
-    # postcss-selector-parser 6.x via Expressive Code only parses our own CSS at build time
-    - GHSA-rj75-hqrm-r3gf
 allowBuilds:
   esbuild: false
   sharp: false
