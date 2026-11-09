@@ -24,8 +24,9 @@ func organizationKindRank(customerOrgID, partnerOrgID *uuid.UUID) int {
 // deploymentRevisionCreatorToAPI returns a mapper that converts the creator of a deployment revision to its
 // API representation, or to nil when there is none. The creator's identity (id, name, email) is only included
 // when the viewer is allowed to see it: vendors see everyone, partners see partners and customers and
-// customers see only customers. The creator's organization and deleted flag are always included when a
-// creator is present.
+// customers see only customers. A creator whose identity is withheld keeps their organization, unless they
+// are deleted: then the viewer gets nil, as if there were no creator. A creator the viewer may see carries
+// the deleted flag.
 func deploymentRevisionCreatorToAPI(
 	viewerCustomerOrgID *uuid.UUID,
 	viewerPartnerOrgID *uuid.UUID,
@@ -36,8 +37,6 @@ func deploymentRevisionCreatorToAPI(
 			return nil
 		}
 		showIdentity := organizationKindRank(c.CustomerOrganizationID, c.PartnerOrganizationID) >= viewerRank
-		// A deleted creator is hidden entirely when the viewer is not allowed to see its identity. Otherwise
-		// the creator is always represented, with the identity withheld when the viewer is not allowed to see it.
 		if c.Deleted && !showIdentity {
 			return nil
 		}
