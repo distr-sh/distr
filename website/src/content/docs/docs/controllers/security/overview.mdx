@@ -1,0 +1,43 @@
+---
+title: Controller Security
+description: Distr controllers are open source, open no inbound ports and only pull their deployments from Distr. This section explains what they do in a customer environment and which of their settings you control.
+slug: docs/controllers/security
+sidebar:
+  label: Overview
+  order: 1
+---
+
+A controller runs in the customer's environment and manages the deployments of one deployment target. This page explains why you can run it there without opening the environment up, and which of its settings you control.
+
+## Open Source
+
+The Docker controller, the Kubernetes controller and the autoheal service are open source under the Apache 2.0 license. Their code is in the [Distr repository on GitHub](https://github.com/distr-sh/distr), in `cmd/controller/docker`, `cmd/controller/kubernetes` and `docker-autoheal`, so you can read what a controller does before you install it.
+
+Public GitHub Actions workflows build the images from that code. Every released image comes with an SBOM and build provenance and is signed with cosign, so you can check that the image you pull was built by that workflow. The commands are on the [Images](/docs/controllers/security/images/) page.
+
+Please report a vulnerability privately through [GitHub's vulnerability reporting](https://github.com/distr-sh/distr/security/advisories/new) rather than in a public issue. Fixed vulnerabilities are announced as [security advisories](https://github.com/distr-sh/distr/security/advisories) in the same repository, which you can watch to be notified.
+
+## Pull Only, No Open Ports
+
+The controller connects to Distr. Distr never connects to the controller. Every few seconds the controller fetches its deployments over HTTPS and reports back over the same connection. The environment needs outbound access to Distr and the registries but no firewall rule for incoming traffic.
+
+The controller opens no port that is reachable from outside. Distr cannot open a connection into the environment or run a command there. It can only change what the controller fetches next. [Network & Authentication](/docs/controllers/security/network/) lists every connection and the local health check.
+
+## Secrets That Never Reach Distr
+
+[Distr Secrets](/docs/controllers/secrets/) are encrypted at rest, but the controller still receives their values from Distr. A password, an API key or a certificate that should never leave the customer environment can be created there instead, as a Kubernetes Secret or a file on the Docker host. The deployment then refers to it by name, and Distr only ever sees that name. [External Secrets](/docs/controllers/security/external-secrets/) shows how for each deployment type.
+
+## What You Can Configure
+
+Log collection, metrics, automatic controller and application updates, image cleanup, autoheal and the scope of a Kubernetes controller are settings you control, most of them per deployment target. The [Configuration Reference](/docs/controllers/security/configuration/) lists each of them with its default.
+
+## In This Section
+
+- [Docker Controller](/docs/controllers/security/docker/) covers the mounts, the Docker commands and the credentials on a Docker host.
+- [Kubernetes Controller](/docs/controllers/security/kubernetes/) covers the RBAC of both scopes and the resources, operations and credentials in a cluster.
+- [Network & Authentication](/docs/controllers/security/network/) lists the connections a controller opens and explains how it logs in to Distr.
+- [Data Sent to Distr](/docs/controllers/security/data-sent-to-distr/) lists the logs, status and metrics a controller reports.
+- [External Secrets](/docs/controllers/security/external-secrets/) shows how to reference secrets that are created in the customer environment.
+- [Images](/docs/controllers/security/images/) describes what the controller images contain and how to verify their signatures.
+- [Hardening](/docs/controllers/security/hardening/) shows how to reduce what a controller can access and send.
+- [Configuration Reference](/docs/controllers/security/configuration/) lists the settings of a controller with their defaults.
