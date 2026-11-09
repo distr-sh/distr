@@ -8,9 +8,6 @@ sidebar:
 ---
 
 import {Aside} from '@astrojs/starlight/components';
-import ThemedImage from '~/components/util/ThemedImage.astro';
-import architectureLight from '~/assets/docs/controllers/overview/docker-controller/docker-controller-architecture-light.webp';
-import architectureDark from '~/assets/docs/controllers/overview/docker-controller/docker-controller-architecture-dark.webp';
 
 The Docker Compose controller manages container-based deployments, handling both single- and multi-container applications. It performs application updates with minimal downtime, collects container health metrics and logs, and supports environment variable templating for flexible configuration.
 
@@ -22,23 +19,7 @@ The Docker Compose controller manages container-based deployments, handling both
   to learn how it should be installed.
 </Aside>
 
-## Architecture
-
-The controller opens every connection to Distr itself, over HTTPS, so the host needs no inbound ports.
-
-<ThemedImage
-  lightSrc={architectureLight}
-  darkSrc={architectureDark}
-  alt="Connections the Docker controller opens to Distr and the Distr registry, what it runs with on the host and what it never does"
-  dropShadow={false}
-/>
-
-<Aside type="note">
-  On self-hosted Distr, the controller and autoheal images are pulled from
-  `ghcr.io/distr-sh/distr` by default rather than from the Distr registry. You
-  can switch them to your own registry or a mirror, see [Controller Image
-  Repository](#controller-image-repository).
-</Aside>
+The [architecture diagram](/docs/controllers/security/docker/#architecture) shows the connections the controller opens, what it runs with on the host and what it never does.
 
 ## Requirements
 

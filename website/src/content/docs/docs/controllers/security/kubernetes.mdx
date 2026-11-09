@@ -8,8 +8,29 @@ sidebar:
 ---
 
 import {Aside} from '@astrojs/starlight/components';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import architectureLight from '~/assets/docs/controllers/security/kubernetes-controller-architecture-light.webp';
+import architectureDark from '~/assets/docs/controllers/security/kubernetes-controller-architecture-dark.webp';
 
 The [Kubernetes controller](/docs/controllers/kubernetes-controller/) manages Helm releases through the Kubernetes API, so it has the access of its service account.
+
+## Architecture
+
+The controller opens every connection to Distr itself, over HTTPS, so the cluster needs no inbound ports.
+
+<ThemedImage
+  lightSrc={architectureLight}
+  darkSrc={architectureDark}
+  alt="Connections the Kubernetes controller opens to Distr and the Distr registry, how it runs in the cluster and what it never does"
+  dropShadow={false}
+/>
+
+<Aside type="note">
+  On self-hosted Distr, the controller image is pulled from
+  `ghcr.io/distr-sh/distr` by default rather than from the Distr registry. You
+  can switch it to your own registry or a mirror, see [Controller Image
+  Repository](/docs/controllers/kubernetes-controller/#controller-image-repository).
+</Aside>
 
 ## Access to the Cluster
 

@@ -8,8 +8,29 @@ sidebar:
 ---
 
 import {Aside} from '@astrojs/starlight/components';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import architectureLight from '~/assets/docs/controllers/security/docker-controller-architecture-light.webp';
+import architectureDark from '~/assets/docs/controllers/security/docker-controller-architecture-dark.webp';
 
 The [Docker controller](/docs/controllers/docker-controller/) manages Docker on the host, so it has the access of the Docker engine itself.
+
+## Architecture
+
+The controller opens every connection to Distr itself, over HTTPS, so the host needs no inbound ports.
+
+<ThemedImage
+  lightSrc={architectureLight}
+  darkSrc={architectureDark}
+  alt="Connections the Docker controller opens to Distr and the Distr registry, what it runs with on the host and what it never does"
+  dropShadow={false}
+/>
+
+<Aside type="note">
+  On self-hosted Distr, the controller and autoheal images are pulled from
+  `ghcr.io/distr-sh/distr` by default rather than from the Distr registry. You
+  can switch them to your own registry or a mirror, see [Controller Image
+  Repository](/docs/controllers/docker-controller/#controller-image-repository).
+</Aside>
 
 ## Access to the Host
 
