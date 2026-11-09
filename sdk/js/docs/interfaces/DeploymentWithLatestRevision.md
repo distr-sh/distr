@@ -122,7 +122,7 @@ newer revision is being rolled out or has failed.
 
 > `optional` **deploymentRevisionCreatedBy?**: [`DeploymentRevisionCreator`](DeploymentRevisionCreator.md)
 
-Without id, name and email when the viewer may not see who created the revision.
+Without id, name, email and imageId when the viewer may not see who created the revision.
 
 ---
 

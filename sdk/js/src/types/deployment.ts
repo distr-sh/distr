@@ -58,7 +58,7 @@ export interface DeploymentWithLatestRevision extends Deployment {
   envFileData?: string;
   deploymentRevisionId?: string;
   deploymentRevisionCreatedAt?: string;
-  /** Without id, name and email when the viewer may not see who created the revision. */
+  /** Without id, name, email and imageId when the viewer may not see who created the revision. */
   deploymentRevisionCreatedBy?: DeploymentRevisionCreator;
   latestStatus?: DeploymentRevisionStatus;
   /**
