@@ -118,6 +118,14 @@ newer revision is being rolled out or has failed.
 
 ---
 
+### deploymentRevisionCreatedBy?
+
+> `optional` **deploymentRevisionCreatedBy?**: [`DeploymentRevisionCreator`](DeploymentRevisionCreator.md)
+
+Without id, name and email when the viewer may not see who created the revision.
+
+---
+
 ### deploymentRevisionId?
 
 > `optional` **deploymentRevisionId?**: `string`

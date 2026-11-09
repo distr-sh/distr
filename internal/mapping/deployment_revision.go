@@ -21,17 +21,50 @@ func organizationKindRank(customerOrgID, partnerOrgID *uuid.UUID) int {
 	}
 }
 
-// DeploymentRevisionToAPI returns a mapper that converts a
-// DeploymentRevisionWithCreator to its API representation. The creator's
-// identity (id, name, email) is only included when the viewer is allowed to see
-// it: vendors see everyone, partners see partners and customers and customers
-// see only customers. The creator's organization and deleted flag are always
-// included when a creator is present.
+// deploymentRevisionCreatorToAPI returns a mapper that converts the creator of a deployment revision to its
+// API representation, or to nil when there is none. The creator's identity (id, name, email) is only included
+// when the viewer is allowed to see it: vendors see everyone, partners see partners and customers and
+// customers see only customers. The creator's organization and deleted flag are always included when a
+// creator is present.
+func deploymentRevisionCreatorToAPI(
+	viewerCustomerOrgID *uuid.UUID,
+	viewerPartnerOrgID *uuid.UUID,
+) func(*types.DeploymentRevisionCreator) *api.DeploymentRevisionCreator {
+	viewerRank := organizationKindRank(viewerCustomerOrgID, viewerPartnerOrgID)
+	return func(c *types.DeploymentRevisionCreator) *api.DeploymentRevisionCreator {
+		if c == nil {
+			return nil
+		}
+		showIdentity := organizationKindRank(c.CustomerOrganizationID, c.PartnerOrganizationID) >= viewerRank
+		// A deleted creator is hidden entirely when the viewer is not allowed to see its identity. Otherwise
+		// the creator is always represented, with the identity withheld when the viewer is not allowed to see it.
+		if c.Deleted && !showIdentity {
+			return nil
+		}
+		creator := &api.DeploymentRevisionCreator{
+			CustomerOrganizationID: c.CustomerOrganizationID,
+			PartnerOrganizationID:  c.PartnerOrganizationID,
+			Deleted:                c.Deleted,
+		}
+		if showIdentity {
+			creator.ID = &c.ID
+			creator.ImageID = c.ImageID
+			creator.Email = c.Email
+			if c.Name != nil {
+				creator.Name = *c.Name
+			}
+		}
+		return creator
+	}
+}
+
+// DeploymentRevisionToAPI returns a mapper that converts a DeploymentRevisionWithCreator to its API
+// representation, showing the creator as deploymentRevisionCreatorToAPI does.
 func DeploymentRevisionToAPI(
 	viewerCustomerOrgID *uuid.UUID,
 	viewerPartnerOrgID *uuid.UUID,
 ) func(types.DeploymentRevisionWithCreator) *api.DeploymentRevisionResponse {
-	viewerRank := organizationKindRank(viewerCustomerOrgID, viewerPartnerOrgID)
+	creatorToAPI := deploymentRevisionCreatorToAPI(viewerCustomerOrgID, viewerPartnerOrgID)
 	return func(r types.DeploymentRevisionWithCreator) *api.DeploymentRevisionResponse {
 		response := &api.DeploymentRevisionResponse{
 			ID:                     r.ID,
@@ -44,38 +77,13 @@ func DeploymentRevisionToAPI(
 			EnvFileData:            r.EnvFileData,
 			ForceRestart:           r.ForceRestart,
 			IgnoreRevisionSkew:     r.IgnoreRevisionSkew,
-			HelmOptions:            r.HelmOptions,
+			HelmOptions:            PtrOrNil(r.HelmOptions, HelmOptionsToAPI),
 			Trigger:                r.Trigger,
+			CreatedBy:              creatorToAPI(r.CreatedBy),
 		}
 
 		if r.LatestStatus != nil {
 			response.LatestStatus = new(DeploymentRevisionStatusToAPI(*r.LatestStatus))
-		}
-
-		if r.CreatedByID != nil {
-			creatorRank := organizationKindRank(r.CreatedByCustomerOrganizationID, r.CreatedByPartnerOrganizationID)
-			showIdentity := creatorRank >= viewerRank
-			// A deleted creator is hidden entirely (CreatedBy stays nil) when the viewer is not
-			// allowed to see its identity. Otherwise the creator is always represented, with the
-			// identity withheld when the viewer is not allowed to see it.
-			if !r.CreatedByDeleted || showIdentity {
-				creator := &api.DeploymentRevisionCreator{
-					CustomerOrganizationID: r.CreatedByCustomerOrganizationID,
-					PartnerOrganizationID:  r.CreatedByPartnerOrganizationID,
-					Deleted:                r.CreatedByDeleted,
-				}
-				if showIdentity {
-					creator.ID = r.CreatedByID
-					creator.ImageID = r.CreatedByImageID
-					if r.CreatedByEmail != nil {
-						creator.Email = *r.CreatedByEmail
-					}
-					if r.CreatedByName != nil {
-						creator.Name = *r.CreatedByName
-					}
-				}
-				response.CreatedBy = creator
-			}
 		}
 
 		return response

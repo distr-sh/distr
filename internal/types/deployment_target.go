@@ -84,7 +84,7 @@ func (dt *DeploymentTarget) DockerSocketPath() string {
 
 type DeploymentTargetFull struct {
 	DeploymentTarget
-	CustomerOrganization *CustomerOrganization          `db:"customer_organization" json:"customerOrganization,omitempty"`
-	Deployments          []DeploymentWithLatestRevision `db:"-" json:"deployments"`
-	ControllerVersion    ControllerVersion              `db:"controller_version" json:"controllerVersion"`
+	CustomerOrganization *CustomerOrganization          `db:"customer_organization"`
+	Deployments          []DeploymentWithLatestRevision `db:"-"`
+	ControllerVersion    ControllerVersion              `db:"controller_version"`
 }

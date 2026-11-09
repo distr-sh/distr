@@ -58,6 +58,8 @@ export interface DeploymentWithLatestRevision extends Deployment {
   envFileData?: string;
   deploymentRevisionId?: string;
   deploymentRevisionCreatedAt?: string;
+  /** Without id, name and email when the viewer may not see who created the revision. */
+  deploymentRevisionCreatedBy?: DeploymentRevisionCreator;
   latestStatus?: DeploymentRevisionStatus;
   /**
    * The revision a controller last reported as applied, which differs from deploymentRevisionId while a
