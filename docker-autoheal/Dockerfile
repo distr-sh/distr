@@ -1,7 +1,6 @@
 FROM alpine:3.24.4
 
-# Set to the current date in CI, so BuildKit reruns the upgrade daily instead of reusing a cached
-# layer with packages from before the latest Alpine security fixes.
+# Changes daily, so BuildKit reruns the upgrade instead of reusing a cached layer.
 ARG APK_UPGRADE_DATE
 RUN apk upgrade --no-cache && apk add --no-cache curl jq
 
