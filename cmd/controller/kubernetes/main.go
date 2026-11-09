@@ -125,7 +125,7 @@ func main() {
 	// The liveness probe would restart the controller while it waits for the lease.
 	health.Heartbeat()
 	logger.Info("waiting for controller lease")
-	ctx, releaseLease, err := acquireLease(ctx)
+	leaderCtx, releaseLease, err := acquireLease(ctx)
 	if err != nil {
 		if !errors.Is(err, context.Canceled) {
 			logger.Error("could not acquire controller lease", zap.Error(err))
@@ -134,6 +134,9 @@ func main() {
 	}
 	defer releaseLease()
 	logger.Info("acquired controller lease")
+	ctx, stopLoop := context.WithCancel(ctx)
+	defer stopLoop()
+	context.AfterFunc(leaderCtx, stopLoop)
 
 	var logsWatcher *logsWatcher
 	var logsGoroutine *util.ToggleableGoroutine
@@ -238,9 +241,10 @@ func main() {
 			if ctx.Err() != nil {
 				break
 			}
-			// Cancelling a Helm operation leaves a failed release that the controller could no longer record, and the
-			// revision skew would then block every later upgrade. Helm's own timeout bounds the operation instead.
-			runInstallOrUpgrade(context.WithoutCancel(ctx), res.Namespace, deployment, currentDeployment)
+			// A shutdown signal must not cancel a Helm operation, which leaves a failed release that the controller
+			// could no longer record, and the revision skew would then block every later upgrade. Helm's own timeout
+			// bounds the operation instead. Losing the lease does cancel it, since another controller takes over.
+			runInstallOrUpgrade(leaderCtx, res.Namespace, deployment, currentDeployment)
 		}
 	}
 

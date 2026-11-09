@@ -17,8 +17,8 @@ import (
 // replacement of a terminating pod right away, which would otherwise apply Helm releases and write their tracking
 // secrets while the terminating controller is still finishing its operation.
 //
-// The returned context is cancelled with ctx or when the lease is lost. The lease outlives ctx until release is
-// called, so that a shutdown signal does not hand it over while a Helm operation is still running.
+// The returned context is cancelled only when the lease is lost, not with ctx. The lease outlives ctx until release
+// is called, so that a shutdown signal does not hand it over while a Helm operation is still running.
 func acquireLease(ctx context.Context) (context.Context, func(), error) {
 	namespace, _, err := k8sConfigFlags.ToRawKubeConfigLoader().Namespace()
 	if err != nil {
@@ -31,7 +31,7 @@ func acquireLease(ctx context.Context) (context.Context, func(), error) {
 
 	name := "distr-" + controllerenv.ControllerName()
 	leaseCtx, cancelLease := context.WithCancel(context.WithoutCancel(ctx))
-	leaderCtx, cancelLeader := context.WithCancel(ctx)
+	leaderCtx, cancelLeader := context.WithCancel(context.WithoutCancel(ctx))
 	leading := make(chan struct{})
 	elector, err := leaderelection.NewLeaderElector(leaderelection.LeaderElectionConfig{
 		Name: name,
