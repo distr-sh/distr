@@ -201,8 +201,8 @@ var regErrTagAlreadyExists = &regError{
 
 func regErrTagInvalid(err error) *regError {
 	return &regError{
-		Status:  http.StatusBadRequest,
-		Code:    "TAG_INVALID",
+		Status:  http.StatusForbidden,
+		Code:    "DENIED",
 		Message: err.Error(),
 	}
 }
