@@ -51,6 +51,9 @@ jobs:
       - name: Generate commit hash
         id: generate
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      - name: Get current date
+        id: date
+        run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
       - name: Login to GitHub Container Registry
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
         uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
@@ -74,6 +77,7 @@ jobs:
           build-args: |
             COMMIT=${{ steps.generate.outputs.sha_short }}
             VERSION=${{ github.ref_name }}
+            APK_UPGRADE_DATE=${{ steps.date.outputs.date }}
           tags: ${{ env.REGISTRY_IMAGE }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,push-by-digest=true,name-canonical=true,push=${{ startsWith(github.ref, 'refs/tags/') }}

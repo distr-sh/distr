@@ -1,6 +1,8 @@
 FROM alpine:3.24.4
 
-RUN apk add --no-cache curl jq
+# Changes daily, so BuildKit reruns the upgrade instead of reusing a cached layer.
+ARG APK_UPGRADE_DATE
+RUN apk upgrade --no-cache && apk add --no-cache curl jq
 
 ENV AUTOHEAL_CONTAINER_LABEL=autoheal \
   AUTOHEAL_START_PERIOD=0 \
