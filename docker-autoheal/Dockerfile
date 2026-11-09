@@ -1,6 +1,6 @@
 FROM alpine:3.24.4
 
-RUN apk add --no-cache curl jq
+RUN apk upgrade --no-cache && apk add --no-cache curl jq
 
 ENV AUTOHEAL_CONTAINER_LABEL=autoheal \
   AUTOHEAL_START_PERIOD=0 \

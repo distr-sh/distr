@@ -23,7 +23,7 @@ FROM docker:29.9.3-alpine3.24
 WORKDIR /
 COPY --from=builder /workspace/controller .
 
-RUN apk add --no-cache curl
+RUN apk upgrade --no-cache && apk add --no-cache curl
 
 HEALTHCHECK --interval=10s --timeout=5s \
   --start-period=1m --start-interval=10s \
