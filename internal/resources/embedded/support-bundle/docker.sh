@@ -1,15 +1,15 @@
-{{template "collector-start" .}}
+{{template "collect-script-start" .}}
 
 # Docker is the only part of this script that needs elevated privileges: the
 # daemon socket is usually owned by root:docker. If the docker CLI is installed
 # but we cannot reach the daemon because of a permission error (and we are not
 # already root), collecting container data would be silently skipped. Exit early
-# with a copy-pasteable command to re-run the collector with sudo instead.
+# with a copy-pasteable command to re-run the collect script with sudo instead.
 if command -v docker >/dev/null 2>&1 && [ "$(id -u 2>/dev/null)" != "0" ]; then
   DOCKER_ERR=$(docker ps 2>&1 >/dev/null)
   if echo "$DOCKER_ERR" | grep -qi "permission denied"; then
     echo "Error: accessing the Docker daemon requires elevated privileges." >&2
-    echo "Please re-run the collector with sudo:" >&2
+    echo "Please re-run the collect script with sudo:" >&2
     echo "" >&2
     echo "  curl -fsSL '${BASE_URL}/collect-script?bundleSecret=${BUNDLE_SECRET}' | sudo sh" >&2
     echo "" >&2
@@ -223,4 +223,4 @@ if [ -n "$INCLUDED_CONTAINERS" ]; then
 $INCLUDED_CONTAINERS
 EOF_INCLUDED
 fi
-{{- template "collector-end" .}}
+{{- template "collect-script-end" .}}

@@ -118,6 +118,7 @@ var (
 	supportBundleLogTailLines             int
 	supportBundleResourceMaxBytes         int
 	supportBundleScriptTimeout            time.Duration
+	supportCollectorDownloadURLOverride   *string
 	lokiURL                               string
 	lokiBearerToken                       *string
 	lokiBasicAuthUsername                 *string
@@ -389,6 +390,7 @@ func Initialize() {
 	supportBundleScriptTimeout = envutil.GetEnvParsedOrDefault(
 		"SUPPORT_BUNDLE_SCRIPT_TIMEOUT", envparse.PositiveDuration, time.Minute,
 	)
+	supportCollectorDownloadURLOverride = envutil.GetEnvOrNil("SUPPORT_COLLECTOR_DOWNLOAD_URL")
 
 	lokiURL = envutil.RequireEnv("LOKI_URL")
 	lokiBearerToken = envutil.GetEnvOrNil("LOKI_BEARER_TOKEN")
@@ -819,6 +821,12 @@ func SupportBundleResourceMaxBytes() int {
 // before the collect script kills it. Rounded up to whole seconds when rendered.
 func SupportBundleScriptTimeout() time.Duration {
 	return supportBundleScriptTimeout
+}
+
+// SupportCollectorDownloadURLOverride replaces the GitHub release the Kubernetes collect script
+// downloads the support collector from, e.g. with a mirror of its assets.
+func SupportCollectorDownloadURLOverride() *string {
+	return supportCollectorDownloadURLOverride
 }
 
 // LokiURL is the base URL of the Loki instance storing deployment and deployment

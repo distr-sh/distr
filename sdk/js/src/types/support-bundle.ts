@@ -11,6 +11,11 @@ export interface CreateUpdateSupportBundleConfigurationRequest {
   envVars: SupportBundleConfigurationEnvVar[];
 }
 
+export interface SupportBundleKubernetesConfiguration {
+  includeConfigMapData: boolean;
+  includeSecretData: boolean;
+}
+
 export interface SupportBundleConfigurationScript {
   id: string;
   createdAt: string;

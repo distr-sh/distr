@@ -16,6 +16,7 @@ type Application struct {
 	Name                  string               `db:"name" json:"name"`
 	Type                  DeploymentType       `db:"type" json:"type"`
 	ImageID               *uuid.UUID           `db:"image_id" json:"imageId,omitempty"`
+	TitleImageID          *uuid.UUID           `db:"title_image_id" json:"-"`
 	VersioningStrategy    VersioningStrategy   `db:"versioning_strategy" json:"versioningStrategy"`
 	AllowAutomaticUpdates bool                 `db:"allow_automatic_updates" json:"allowAutomaticUpdates"`
 	Versions              []ApplicationVersion `db:"versions" json:"versions"`

@@ -14,7 +14,7 @@ services:
   # distr app and registry hostnames via ACME. It only joins the "proxy" network
   # and therefore has no route to postgres or the storage (rustfs) service.
   caddy:
-    image: 'caddy:2.11.7-alpine'
+    image: 'caddy:2.11.9-alpine'
     depends_on:
       - distr
     environment:
@@ -72,7 +72,7 @@ services:
       start_period: 30s
 
   distr:
-    image: ghcr.io/distr-sh/distr-ce:4.8.0 # x-release-please-version
+    image: ghcr.io/distr-sh/distr-ce:4.8.1 # x-release-please-version
     depends_on:
       postgres:
         condition: service_healthy

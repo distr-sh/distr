@@ -1,5 +1,31 @@
 # Changelog
 
+## [4.8.1](https://github.com/distr-sh/distr/compare/4.8.0...4.8.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* avoid broken frontend when index and bundles come from different versions ([#3781](https://github.com/distr-sh/distr/issues/3781)) ([6f62f2b](https://github.com/distr-sh/distr/commit/6f62f2b023646e538b74fd7677afaec98bbc8679))
+* **backend:** count pull-through artifacts toward registry storage only after a pull ([#3783](https://github.com/distr-sh/distr/issues/3783)) ([bef405d](https://github.com/distr-sh/distr/commit/bef405d290dacf9d2664eca9c6645323cada6644))
+* **backend:** tighten organization assignment requirement for uploaded files ([#3759](https://github.com/distr-sh/distr/issues/3759)) ([0fbfdfb](https://github.com/distr-sh/distr/commit/0fbfdfb800f142874f28adea29d9c4726fd65c33))
+* **deps:** update module github.com/avast/retry-go/v5 to v5.0.1 ([#3779](https://github.com/distr-sh/distr/issues/3779)) ([4866977](https://github.com/distr-sh/distr/commit/4866977ad25f75c51c4a40790157da65f138b9fc))
+* **frontend:** add missing animation on "show license key" dialog ([#3786](https://github.com/distr-sh/distr/issues/3786)) ([9071f82](https://github.com/distr-sh/distr/commit/9071f82aab05487445e98c9c7837c85af7ccd541))
+
+
+### Other
+
+* add application and status filters to the deployments page ([#3714](https://github.com/distr-sh/distr/issues/3714)) ([61f1b73](https://github.com/distr-sh/distr/commit/61f1b7398d3d8e9df0f32a9ba53185130fe2ad1d))
+* **backend:** change proration behavior for yearly subscriptions ([#3785](https://github.com/distr-sh/distr/issues/3785)) ([294089f](https://github.com/distr-sh/distr/commit/294089fe82504b946cf1bec1af05ed98ad0ce6d0))
+* **deps:** update angular-cli monorepo to v22.2.6 ([#3789](https://github.com/distr-sh/distr/issues/3789)) ([60b17b3](https://github.com/distr-sh/distr/commit/60b17b35e0140997d50713d2fc101ccd19d44084))
+* **deps:** update dependency @angular/cdk to v22.2.6 ([#3790](https://github.com/distr-sh/distr/issues/3790)) ([ff2e0f4](https://github.com/distr-sh/distr/commit/ff2e0f48ac2292b3261c4b511977b02eed6ac5b6))
+* **deps:** update dependency rimraf to v6.1.4 ([#3773](https://github.com/distr-sh/distr/issues/3773)) ([435f8a3](https://github.com/distr-sh/distr/commit/435f8a3e9fff18b304993f328cd3411dee157be3))
+* **deps:** update dependency stripe to v1.55.8 ([#3774](https://github.com/distr-sh/distr/issues/3774)) ([a5f96f7](https://github.com/distr-sh/distr/commit/a5f96f738c3cc97ae99c9c5a6b19d8f27597df84))
+* **deps:** upgrade Stripe Go SDK to v87 ([#3758](https://github.com/distr-sh/distr/issues/3758)) ([4717303](https://github.com/distr-sh/distr/commit/4717303146f8f214f1c60e16a39ea6f88be4f008))
+* **frontend:** improve active org / lens highlight ([#3784](https://github.com/distr-sh/distr/issues/3784)) ([0b06d02](https://github.com/distr-sh/distr/commit/0b06d02a7f62b93e5e9391e4ca38ca84586adb7f))
+* **frontend:** match the deployment search against applications, statuses and internal deployments ([#3715](https://github.com/distr-sh/distr/issues/3715)) ([0b4deec](https://github.com/distr-sh/distr/commit/0b4deec9a5da24bf88fd597f48162d9214734580))
+* **frontend:** remove copyable ID from artifact list, improve styling ([#3780](https://github.com/distr-sh/distr/issues/3780)) ([c614219](https://github.com/distr-sh/distr/commit/c614219170e2700899dbd9c4b9324cef5215b305))
+* introduce route title and display it on app-page ([#3782](https://github.com/distr-sh/distr/issues/3782)) ([8cb9b48](https://github.com/distr-sh/distr/commit/8cb9b483695b15e7787164170f562cfe10689645))
+
 ## [4.8.0](https://github.com/distr-sh/distr/compare/4.7.4...4.8.0) (2026-11-04)
 
 

@@ -123,6 +123,10 @@
                 }
               </div>
             </div>
+            <app-title-image-picker
+              class="ms-auto! self-start"
+              [imageUrl]="application.titleImageUrl"
+              (picked)="updateTitleImage(application, $event)" />
           </div>
         </div>
       </div>

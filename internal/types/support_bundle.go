@@ -1,10 +1,8 @@
 package types
 
 import (
-	"slices"
 	"time"
 
-	"github.com/distr-sh/distr/internal/contenttype"
 	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/google/uuid"
 )
@@ -22,6 +20,17 @@ type SupportBundleConfigurationEnvVar struct {
 	OrganizationID uuid.UUID `db:"organization_id"`
 	Name           string    `db:"name"`
 	Redacted       bool      `db:"redacted"`
+}
+
+type SupportBundleKubernetesConfiguration struct {
+	OrganizationID       uuid.UUID `db:"organization_id"`
+	IncludeConfigMapData bool      `db:"include_configmap_data"`
+	IncludeSecretData    bool      `db:"include_secret_data"`
+}
+
+// DefaultSupportBundleKubernetesConfiguration applies to an organization that never saved one.
+func DefaultSupportBundleKubernetesConfiguration(orgID uuid.UUID) SupportBundleKubernetesConfiguration {
+	return SupportBundleKubernetesConfiguration{OrganizationID: orgID, IncludeConfigMapData: true}
 }
 
 type SupportBundleConfigurationScript struct {
@@ -51,6 +60,18 @@ type SupportBundle struct {
 	StatusChangedAt              *time.Time          `db:"status_changed_at"`
 }
 
+// CustomerSupportBundleEvent is the creation of a support bundle of a customer organization, or the latest
+// change of its status when Status is set. UserName and UserImageID are only set for a member of the
+// customer organization, since a customer must not learn who works for the vendor.
+type CustomerSupportBundleEvent struct {
+	SupportBundleID uuid.UUID            `db:"support_bundle_id"`
+	CreatedAt       time.Time            `db:"created_at"`
+	Title           string               `db:"title"`
+	Status          *SupportBundleStatus `db:"status"`
+	UserName        *string              `db:"user_name"`
+	UserImageID     *uuid.UUID           `db:"user_image_id"`
+}
+
 type SupportBundleWithDetails struct {
 	SupportBundle
 	CreatedByUserName        *string    `db:"created_by_user_name"`
@@ -61,33 +82,6 @@ type SupportBundleWithDetails struct {
 	LastCommentAt            *time.Time `db:"last_comment_at"`
 	StatusChangedByUserName  *string    `db:"status_changed_by_user_name"`
 	StatusChangedByImageID   *uuid.UUID `db:"status_changed_by_image_id"`
-}
-
-var SupportBundleResourceContentTypes = []string{
-	contenttype.MediaTypeTextPlain,
-	contenttype.MediaTypeTextXLog,
-	contenttype.MediaTypeYAML,
-	contenttype.MediaTypeJSON,
-}
-
-func ParseSupportBundleResourceContentType(value string) string {
-	if slices.Contains(SupportBundleResourceContentTypes, value) {
-		return value
-	}
-	return contenttype.MediaTypeTextPlain
-}
-
-func SupportBundleResourceFileExtension(contentType string) string {
-	switch contentType {
-	case contenttype.MediaTypeTextXLog:
-		return ".log"
-	case contenttype.MediaTypeYAML:
-		return ".yaml"
-	case contenttype.MediaTypeJSON:
-		return ".json"
-	default:
-		return ".txt"
-	}
 }
 
 type SupportBundleResourceSummary struct {

@@ -19,7 +19,9 @@ import (
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/supportbundle"
+	"github.com/distr-sh/distr/internal/supportbundle/resourcetype"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
@@ -66,29 +68,44 @@ func getCollectScriptHandler(r *http.Request) (respond.Responder, error) {
 
 	if org, err := db.GetOrganizationWithBranding(ctx, bundle.OrganizationID); err != nil {
 		return nil, fmt.Errorf("failed to get organization: %w", err)
+	} else if envVars, err := getSupportBundleCollectEnvVars(ctx, bundle); err != nil {
+		return nil, err
+	} else if kubernetesConfig, err := db.GetSupportBundleKubernetesConfiguration(ctx, bundle.OrganizationID); err != nil {
+		return nil, fmt.Errorf("failed to get support bundle Kubernetes configuration: %w", err)
+	} else if scripts, err := db.GetEnabledSupportBundleConfigurationScripts(
+		ctx, bundle.OrganizationID, bundle.DeploymentType,
+	); err != nil {
+		return nil, fmt.Errorf("failed to get support bundle config scripts: %w", err)
+	} else if script, err := supportbundle.GenerateCollectScript(supportbundle.CollectScriptParams{
+		DeploymentType:   bundle.DeploymentType,
+		BaseURL:          customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding),
+		BundleID:         bundle.ID,
+		BundleSecret:     bundleSecret,
+		EnvVars:          envVars,
+		Kubernetes:       *kubernetesConfig,
+		Scripts:          scripts,
+		LogTailLines:     env.SupportBundleLogTailLines(),
+		ResourceMaxBytes: env.SupportBundleResourceMaxBytes(),
+		ScriptTimeout:    env.SupportBundleScriptTimeout(),
+		CollectorDownloadURL: util.PtrDerefOr(
+			env.SupportCollectorDownloadURLOverride(), supportbundle.DefaultCollectorDownloadURL(),
+		),
+	}); err != nil {
+		return nil, fmt.Errorf("failed to generate collect script: %w", err)
 	} else {
-		baseURL := customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding)
+		return respond.Stream("text/plain; charset=utf-8", strings.NewReader(script)), nil
+	}
+}
 
-		if envVars, err := db.GetSupportBundleConfigurationEnvVars(ctx, bundle.OrganizationID); err != nil {
-			return nil, fmt.Errorf("failed to get support bundle config env vars: %w", err)
-		} else if scripts, err := db.GetEnabledSupportBundleConfigurationScripts(
-			ctx, bundle.OrganizationID, bundle.DeploymentType,
-		); err != nil {
-			return nil, fmt.Errorf("failed to get support bundle config scripts: %w", err)
-		} else if script, err := supportbundle.GenerateCollectScript(supportbundle.CollectScriptParams{
-			BaseURL:          baseURL,
-			BundleID:         bundle.ID,
-			BundleSecret:     bundleSecret,
-			EnvVars:          envVars,
-			Scripts:          scripts,
-			LogTailLines:     env.SupportBundleLogTailLines(),
-			ResourceMaxBytes: env.SupportBundleResourceMaxBytes(),
-			ScriptTimeout:    env.SupportBundleScriptTimeout(),
-		}); err != nil {
-			return nil, fmt.Errorf("failed to generate collect script: %w", err)
-		} else {
-			return respond.Stream("text/plain; charset=utf-8", strings.NewReader(script)), nil
-		}
+func getSupportBundleCollectEnvVars(
+	ctx context.Context, bundle *types.SupportBundle,
+) ([]types.SupportBundleConfigurationEnvVar, error) {
+	if bundle.DeploymentType != types.DeploymentTypeDocker {
+		return nil, nil
+	} else if envVars, err := db.GetSupportBundleConfigurationEnvVars(ctx, bundle.OrganizationID); err != nil {
+		return nil, fmt.Errorf("failed to get support bundle config env vars: %w", err)
+	} else {
+		return envVars, nil
 	}
 }
 
@@ -105,7 +122,7 @@ func uploadSupportBundleResourceHandler(r *http.Request) (respond.Responder, err
 	} else if name := strings.TrimSpace(r.FormValue("name")); name == "" {
 		return respond.BadRequest("name is required"), nil
 	} else if contentType := cmp.Or(r.FormValue("contentType"), contenttype.MediaTypeTextPlain); !slices.Contains(
-		types.SupportBundleResourceContentTypes, contentType,
+		resourcetype.ContentTypes, contentType,
 	) {
 		return respond.BadRequest("unsupported content type"), nil
 	} else if file, _, err := r.FormFile("content"); err != nil {

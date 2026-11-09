@@ -5,9 +5,12 @@ import {never} from '../../../util/exhaust';
 import {isStale} from '../../../util/model';
 import {MultiSelectOption} from '../../components/multi-select/multi-select.component';
 import {AbstractStatusDotDirective} from '../../components/status-dot';
+import {CustomerHomeDeployment} from '../../home/customer/customer-home';
 import {DeploymentStatusBadgeComponent} from '../deployment-status-badge.component';
 
-function currentStatus(deployment: DeploymentWithLatestRevision): DeploymentRevisionStatus | undefined {
+export type DeploymentStatusSource = DeploymentWithLatestRevision | CustomerHomeDeployment;
+
+function currentStatus(deployment: DeploymentStatusSource): DeploymentRevisionStatus | undefined {
   return deployment.currentStatus ?? deployment.latestStatus;
 }
 
@@ -26,7 +29,7 @@ export function isDeploymentDisplayStatus(value: string): value is DeploymentDis
   return deploymentDisplayStatusSelectOptions.some((option) => option.value === value);
 }
 
-export function deploymentDisplayStatus(deployment: DeploymentWithLatestRevision): DeploymentDisplayStatus {
+export function deploymentDisplayStatus(deployment: DeploymentStatusSource): DeploymentDisplayStatus {
   const s = currentStatus(deployment);
   if (s === undefined) {
     return 'none';
@@ -44,7 +47,7 @@ interface PendingUpdate {
   message: string;
 }
 
-function pendingUpdate(deployment: DeploymentWithLatestRevision): PendingUpdate | undefined {
+function pendingUpdate(deployment: DeploymentStatusSource): PendingUpdate | undefined {
   const {currentDeploymentRevisionId, deploymentRevisionId, latestStatus} = deployment;
   if (!currentDeploymentRevisionId || currentDeploymentRevisionId === deploymentRevisionId) {
     return undefined;
@@ -57,7 +60,7 @@ function pendingUpdate(deployment: DeploymentWithLatestRevision): PendingUpdate 
 
 @Directive({selector: '[appDeploymentStatusDot]'})
 export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
-  public readonly deployment = input.required<DeploymentWithLatestRevision>();
+  public readonly deployment = input.required<DeploymentStatusSource>();
   protected override style = computed(() => {
     const status = deploymentDisplayStatus(this.deployment());
     switch (status) {
@@ -119,7 +122,7 @@ export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
   `,
 })
 export class DeploymentStatusTextComponent {
-  public readonly deployment = input.required<DeploymentWithLatestRevision>();
+  public readonly deployment = input.required<DeploymentStatusSource>();
   protected readonly status = computed(() => currentStatus(this.deployment()));
   protected readonly displayStatus = computed(() => deploymentDisplayStatus(this.deployment()));
   protected readonly pending = computed(() => pendingUpdate(this.deployment()));
