@@ -189,7 +189,7 @@
                       <ng-template ngPluralCase="=1">1 upstream tag was</ng-template>
                       <ng-template ngPluralCase="other">{{ skipped.count }} upstream tags were</ng-template>
                     </ng-container>
-                    not synced because the artifact uses SemVer versioning: {{ skipped.listed }}
+                    not synced because the artifact uses semantic versioning: {{ skipped.listed }}
                     @if (skipped.unlistedCount > 0) {
                       and {{ skipped.unlistedCount }} more
                     }

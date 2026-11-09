@@ -423,12 +423,12 @@ func ensureSemverTags(
 		return nil, nil
 	} else if artifact.UpstreamURL == nil {
 		return respond.BadRequest(fmt.Sprintf(
-			"the artifact cannot use SemVer versioning while it has tags that are not SemVer versions: %s",
+			"the artifact cannot use semantic versioning while it has tags that are not SemVer versions: %s",
 			describeTagNames(nonSemverTags),
 		)), nil
 	} else if !shouldDeleteNonSemverTags {
 		return respond.Conflict(fmt.Sprintf(
-			"Switching to SemVer versioning deletes %d tags that are not SemVer versions, "+
+			"Switching to semantic versioning deletes %d tags that are not SemVer versions, "+
 				"together with their pull history.",
 			len(nonSemverTags),
 		)), nil

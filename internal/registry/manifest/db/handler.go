@@ -223,7 +223,7 @@ func (h *handler) Put(
 
 		if !version.IsDigestVersion() && !artifact.VersioningStrategy.AllowsArtifactTag(reference) {
 			return fmt.Errorf(
-				"%w: the artifact uses SemVer versioning and %q is not a SemVer version",
+				"%w: the artifact uses semantic versioning and %q is not a SemVer version",
 				manifest.ErrTagInvalid, reference,
 			)
 		}
