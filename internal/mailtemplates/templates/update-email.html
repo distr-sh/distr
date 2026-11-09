@@ -16,7 +16,7 @@
         {{ $verifyURL := printf "%s/verify?jwt=%s" .Host (.Token | QueryEscape) }}
         <p>Please verify that this is your email address by clicking the button below.</p>
 
-        <p class="my-3 text-center">
+        <p class="my-3">
           <a class="cta" href="{{ $verifyURL }}">Verify email address</a>
         </p>
 

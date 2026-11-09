@@ -19,7 +19,7 @@
         {{ if .InviteURL }}
           <p>Since you don't have an account yet, please finish your setup by clicking the button below.</p>
 
-          <p class="my-3 text-center">
+          <p class="my-3">
             <a class="cta" href="{{ .InviteURL | UnsafeURL }}">Finish setup</a>
           </p>
 
@@ -27,7 +27,7 @@
         {{ else }}
           <p>Log in with your existing account by clicking the button below.</p>
 
-          <p class="my-3 text-center">
+          <p class="my-3">
             <a class="cta" href="{{ .Host }}/">Log in</a>
           </p>
         {{ end }}
