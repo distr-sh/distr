@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/containers/image/v5/manifest"
 	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
@@ -21,6 +20,7 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	godigest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"go.podman.io/image/v5/manifest"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"oras.land/oras-go/v2/registry"

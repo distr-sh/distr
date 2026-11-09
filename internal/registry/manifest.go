@@ -27,7 +27,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/containers/image/v5/manifest"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/distrerr"
@@ -39,6 +38,7 @@ import (
 	"github.com/opencontainers/go-digest"
 	"github.com/opencontainers/image-spec/specs-go"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"go.podman.io/image/v5/manifest"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
