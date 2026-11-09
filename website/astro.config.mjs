@@ -451,6 +451,10 @@ export default defineConfig({
     '/docs/agents/update-notifications/':
       '/docs/controllers/update-notifications/',
 
+    // Controller security redirects
+    '/docs/controllers/security/hardening/':
+      '/docs/controllers/security/configuration/',
+
     // Integration redirects
     '/docs/integrations/mcp/': '/docs/integrations/',
 
