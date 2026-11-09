@@ -110,6 +110,9 @@ spec:
         app: distr-{{ .controllerName }}
     spec:
       serviceAccountName: distr-{{ .controllerName }}
+      # The controller finishes a running Helm install or upgrade before it exits, which takes up to the default Helm
+      # timeout of 10 minutes.
+      terminationGracePeriodSeconds: 900
       securityContext:
         runAsNonRoot: true
       containers:

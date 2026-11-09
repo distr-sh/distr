@@ -203,6 +203,9 @@ func main() {
 		}
 
 		for _, deployment := range res.Deployments {
+			if ctx.Err() != nil {
+				break
+			}
 			var currentDeployment *ControllerDeployment
 			for _, existing := range existingDeployments {
 				if isSameDeployment(existing, deployment) {
@@ -222,7 +225,9 @@ func main() {
 				}
 			}
 
-			runInstallOrUpgrade(ctx, res.Namespace, deployment, currentDeployment)
+			// Cancelling a Helm operation leaves a failed release that the controller could no longer record, and the
+			// revision skew would then block every later upgrade. Helm's own timeout bounds the operation instead.
+			runInstallOrUpgrade(context.WithoutCancel(ctx), res.Namespace, deployment, currentDeployment)
 		}
 	}
 
