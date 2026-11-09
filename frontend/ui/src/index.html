@@ -98,11 +98,16 @@
           setTimeout(() => location.reload(), reloadIntervalMs);
         };
 
+        // Content blockers fail injected cross-origin scripts (e.g. analytics beacons) on every load.
+        function isSameOrigin(url) {
+          return !!url && new URL(url, location.href).origin === location.origin;
+        }
+
         function reloadOnEntryAssetError(event) {
           const target = event.target;
           if (
-            (target instanceof HTMLScriptElement && target.type === 'module') ||
-            (target instanceof HTMLLinkElement && target.rel === 'stylesheet')
+            (target instanceof HTMLScriptElement && target.type === 'module' && isSameOrigin(target.src)) ||
+            (target instanceof HTMLLinkElement && target.rel === 'stylesheet' && isSameOrigin(target.href))
           ) {
             window.reloadAfterAssetError();
           }
