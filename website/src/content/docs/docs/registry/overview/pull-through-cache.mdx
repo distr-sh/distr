@@ -142,6 +142,7 @@ The last tag of a pull-through cache artifact cannot be deleted; delete the arti
 A pull-through cache artifact can use [semantic versioning](/docs/registry/#versioning-strategy) like any other artifact.
 Since the upstream decides which tags exist, the sync then skips every upstream tag that is not a SemVer version, such as `latest`, instead of failing.
 Signature and attestation tags are synced as usual.
+A manual sync from the artifact details page lists the tags it skipped.
 
 Switching an artifact that already holds such tags to semantic versioning deletes them, after you confirm how many there are.
 Their pull history is deleted with them.

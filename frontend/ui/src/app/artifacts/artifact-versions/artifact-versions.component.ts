@@ -1,5 +1,5 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
-import {AsyncPipe} from '@angular/common';
+import {AsyncPipe, NgPlural, NgPluralCase} from '@angular/common';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Component, computed, inject, linkedSignal, resource, signal, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
@@ -46,6 +46,7 @@ import {
   SelectableVersioningStrategy,
   versioningStrategyLabel,
 } from '../../../util/versions';
+import {AlertComponent} from '../../components/alert/alert.component';
 import {BadgeSelectComponent, BadgeSelectOption} from '../../components/badge-select/badge-select.component';
 import {ClipComponent} from '../../components/clip.component';
 import {PageComponent} from '../../components/page.component';
@@ -79,6 +80,8 @@ import {
   ArtifactsHashComponent,
 } from '../components';
 
+const listedSkippedTagsCount = 10;
+
 @Component({
   selector: 'app-artifact-tags',
   imports: [
@@ -103,6 +106,9 @@ import {
     PaginationComponent,
     TitleImagePickerComponent,
     BadgeSelectComponent,
+    AlertComponent,
+    NgPlural,
+    NgPluralCase,
   ],
   templateUrl: './artifact-versions.component.html',
 })
@@ -136,6 +142,9 @@ export class ArtifactVersionsComponent {
   protected readonly faStar = faStar;
 
   protected readonly syncing = signal(false);
+  protected readonly syncSkippedTags = signal<
+    {artifactId: string; count: number; listed: string; unlistedCount: number} | undefined
+  >(undefined);
   protected readonly savingVersioningStrategy = signal(false);
   protected readonly versioningStrategyOptions: BadgeSelectOption<SelectableVersioningStrategy>[] =
     selectableVersioningStrategies.map((strategy) => ({
@@ -557,6 +566,7 @@ export class ArtifactVersionsComponent {
   public syncArtifact(artifact: ArtifactWithTags): void {
     if (this.syncing()) return;
     this.syncing.set(true);
+    this.syncSkippedTags.set(undefined);
     this.artifacts
       .syncArtifact(artifact.id)
       .pipe(
@@ -567,7 +577,18 @@ export class ArtifactVersionsComponent {
           }
           return NEVER;
         }),
-        tap(() => this.toast.success('Sync completed'))
+        tap(({skippedTags = []}) => {
+          this.toast.success('Sync completed');
+          if (skippedTags.length > 0) {
+            const listed = skippedTags.slice(0, listedSkippedTagsCount);
+            this.syncSkippedTags.set({
+              artifactId: artifact.id,
+              count: skippedTags.length,
+              listed: listed.join(', '),
+              unlistedCount: skippedTags.length - listed.length,
+            });
+          }
+        })
       )
       .subscribe({complete: () => this.syncing.set(false)});
   }

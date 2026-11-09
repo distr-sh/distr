@@ -81,6 +81,11 @@ export interface PatchArtifactRequest {
   deleteNonSemverTags?: boolean;
 }
 
+export interface SyncArtifactResponse extends ArtifactWithTags {
+  /** The upstream tags the sync skipped because the versioning strategy of the artifact does not allow them. */
+  skippedTags?: string[];
+}
+
 export type DeleteArtifactTagResponse = {artifactDeleted: true} | {artifactDeleted: false; artifact: ArtifactWithTags};
 
 class ArtifactsReactiveList extends ReactiveList<ArtifactWithTags> {
@@ -158,10 +163,10 @@ export class ArtifactsService {
       .pipe(tap((it) => this.cache.save(it)));
   }
 
-  public syncArtifact(id: string): Observable<ArtifactWithTags> {
+  public syncArtifact(id: string): Observable<SyncArtifactResponse> {
     return this.http
-      .post<ArtifactWithTags>(`${this.artifactsUrl}/${id}/sync`, {})
-      .pipe(tap((it) => this.cache.save(it)));
+      .post<SyncArtifactResponse>(`${this.artifactsUrl}/${id}/sync`, {})
+      .pipe(tap(({skippedTags, ...artifact}) => this.cache.save(artifact)));
   }
 
   public deleteArtifactTag(artifact: ArtifactWithTags, tagName: string): Observable<DeleteArtifactTagResponse> {

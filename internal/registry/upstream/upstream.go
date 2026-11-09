@@ -65,9 +65,13 @@ func newUpstreamRepository(artifact *types.Artifact) (*remote.Repository, error)
 
 type Syncer struct{}
 
-func (s *Syncer) SyncArtifactTags(ctx context.Context, artifact *types.Artifact, skipExistingTags bool) error {
+// SyncArtifactTags returns the upstream tags it skipped because the versioning strategy of the artifact does not
+// allow them.
+func (s *Syncer) SyncArtifactTags(
+	ctx context.Context, artifact *types.Artifact, skipExistingTags bool,
+) ([]string, error) {
 	if artifact.UpstreamURL == nil {
-		return nil
+		return nil, nil
 	}
 
 	log := internalctx.GetLogger(ctx).With(zap.Stringer("artifactId", artifact.ID))
@@ -76,15 +80,17 @@ func (s *Syncer) SyncArtifactTags(ctx context.Context, artifact *types.Artifact,
 	repo, err := newUpstreamRepository(artifact)
 	if err != nil {
 		syncErr := fmt.Sprintf("failed to create upstream client: %v", err)
-		return db.UpdateArtifactSyncStatus(ctx, artifact.ID, &syncErr)
+		return nil, db.UpdateArtifactSyncStatus(ctx, artifact.ID, &syncErr)
 	}
 
+	var skippedTags []string
 	g, gCtx := errgroup.WithContext(ctx)
 	g.SetLimit(5)
 	tagsErr := repo.Tags(ctx, "", func(tags []string) error {
 		for _, tag := range tags {
 			if !artifact.VersioningStrategy.AllowsArtifactTag(tag) {
 				log.Warn("upstream sync skipped tag that is not a SemVer version", zap.String("tag", tag))
+				skippedTags = append(skippedTags, tag)
 				continue
 			}
 			g.Go(func() error {
@@ -113,7 +119,7 @@ func (s *Syncer) SyncArtifactTags(ctx context.Context, artifact *types.Artifact,
 
 	log.Debug("upstream sync finished")
 
-	return db.UpdateArtifactSyncStatus(ctx, artifact.ID, errStr)
+	return skippedTags, db.UpdateArtifactSyncStatus(ctx, artifact.ID, errStr)
 }
 
 func syncTag(

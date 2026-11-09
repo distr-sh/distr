@@ -25,7 +25,7 @@ import (
 )
 
 type UpstreamTagSyncer interface {
-	SyncArtifactTags(ctx context.Context, artifact *types.Artifact, skipExistingTags bool) error
+	SyncArtifactTags(ctx context.Context, artifact *types.Artifact, skipExistingTags bool) ([]string, error)
 }
 
 func ArtifactsRouter(r chiopenapi.Router) {
@@ -76,7 +76,7 @@ func ArtifactsRouter(r chiopenapi.Router) {
 				r.Post("/sync", respond.Handler(syncArtifactHandler)).
 					With(option.Description("Trigger upstream sync for a pull-through artifact")).
 					With(option.Request(ArtifactRequest{})).
-					With(option.Response(http.StatusOK, api.ArtifactResponse{}))
+					With(option.Response(http.StatusOK, api.SyncArtifactResponse{}))
 				r.Delete("/", respond.Handler(deleteArtifactHandler)).
 					With(option.Description("Delete an artifact")).
 					With(option.Request(ArtifactRequest{}))
@@ -153,12 +153,12 @@ func syncArtifactHandler(r *http.Request) (respond.Responder, error) {
 
 	if artifact.UpstreamURL == nil {
 		return respond.BadRequest("artifact is not a pull-through cache"), nil
-	} else if err := syncer.SyncArtifactTags(ctx, &artifact.Artifact, false); err != nil {
+	} else if skippedTags, err := syncer.SyncArtifactTags(ctx, &artifact.Artifact, false); err != nil {
 		return nil, fmt.Errorf("upstream sync failed: %w", err)
 	} else if result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil); err != nil {
 		return nil, fmt.Errorf("failed to fetch artifact after sync: %w", err)
 	} else {
-		return respond.JSON(mapping.ArtifactToAPI(*result)), nil
+		return respond.JSON(mapping.SyncArtifactToAPI(*result, skippedTags)), nil
 	}
 }
 

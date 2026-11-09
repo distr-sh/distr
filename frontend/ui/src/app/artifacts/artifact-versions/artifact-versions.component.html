@@ -178,6 +178,25 @@
                 }
               </div>
 
+              @if (syncSkippedTags(); as skipped) {
+                @if (skipped.artifactId === artifact.id) {
+                  <app-alert
+                    type="warning"
+                    heading="Tags skipped"
+                    [dismissible]="true"
+                    (dismissed)="syncSkippedTags.set(undefined)">
+                    <ng-container [ngPlural]="skipped.count">
+                      <ng-template ngPluralCase="=1">1 upstream tag was</ng-template>
+                      <ng-template ngPluralCase="other">{{ skipped.count }} upstream tags were</ng-template>
+                    </ng-container>
+                    not synced because the artifact uses SemVer versioning: {{ skipped.listed }}
+                    @if (skipped.unlistedCount > 0) {
+                      and {{ skipped.unlistedCount }} more
+                    }
+                  </app-alert>
+                }
+              }
+
               @if (syncing()) {
                 <span class="distr-badge distr-badge-warning">
                   <fa-icon [icon]="faTriangleExclamation" />

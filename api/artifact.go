@@ -40,6 +40,13 @@ type ArtifactResponse struct {
 	VersioningStrategy types.VersioningStrategy `json:"versioningStrategy"`
 }
 
+type SyncArtifactResponse struct {
+	ArtifactResponse
+	// SkippedTags are the upstream tags the sync skipped because the versioning strategy of the artifact does not
+	// allow them.
+	SkippedTags []string `json:"skippedTags,omitempty"`
+}
+
 type DeleteArtifactTagResponse struct {
 	ArtifactDeleted bool              `json:"artifactDeleted"`
 	Artifact        *ArtifactResponse `json:"artifact,omitempty"`

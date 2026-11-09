@@ -15,6 +15,10 @@ func ArtifactToAPI(a types.ArtifactWithTaggedVersion) api.ArtifactResponse {
 	}
 }
 
+func SyncArtifactToAPI(a types.ArtifactWithTaggedVersion, skippedTags []string) api.SyncArtifactResponse {
+	return api.SyncArtifactResponse{ArtifactResponse: ArtifactToAPI(a), SkippedTags: skippedTags}
+}
+
 // DeleteArtifactTagToAPI takes the artifact that remains after the deletion, nil if the deletion removed it.
 func DeleteArtifactTagToAPI(remaining *types.ArtifactWithTaggedVersion) api.DeleteArtifactTagResponse {
 	if remaining == nil {
