@@ -11,7 +11,7 @@ A controller runs in the customer's environment and manages the deployments of o
 
 ## Open Source
 
-The Docker controller, the Kubernetes controller and the autoheal service are open source under the Apache 2.0 license. Their code is in the [Distr repository on GitHub](https://github.com/distr-sh/distr), in `cmd/controller/docker`, `cmd/controller/kubernetes` and `docker-autoheal`, so you can read what a controller does before you install it.
+The Docker controller and the Kubernetes controller are open source under the Apache 2.0 license. Their code is in the [Distr repository on GitHub](https://github.com/distr-sh/distr), in `cmd/controller/docker` and `cmd/controller/kubernetes`. The autoheal service, in `docker-autoheal`, is an MIT-licensed adaptation of [willfarrell/docker-autoheal](https://github.com/willfarrell/docker-autoheal). You can read all of it before you install a controller.
 
 Public GitHub Actions workflows build the images from that code. Every released image comes with an SBOM and build provenance and is signed with cosign, so you can check that the image you pull was built by that workflow. The commands are on the [Images](/docs/controllers/security/images/) page.
 
