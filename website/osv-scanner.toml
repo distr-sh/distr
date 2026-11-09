@@ -1,4 +1,0 @@
-[[IgnoredVulns]]
-id = "GHSA-vfj7-8cjw-p6xm"
-ignoreUntil = 2027-03-16
-reason = "Stack exhaustion in braces through deeply nested patterns, no patched version exists. Pulled in by starlight-llms-txt via micromatch, which only matches the globs of our own Astro config at build time."
