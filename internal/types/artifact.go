@@ -1,6 +1,7 @@
 package types
 
 import (
+	"regexp"
 	"time"
 
 	"github.com/distr-sh/distr/internal/dbcrypto"
@@ -11,6 +12,12 @@ import (
 // fallback tag "sha256-<digest>" and the cosign tags "sha256-<digest>.sig", ".att", ".sbom" and ".cosign",
 // so that these are not mistaken for releases. It is a PostgreSQL regular expression.
 const NonReleaseTagPattern = `^sha256-[0-9a-f]{64}(\.(sig|att|sbom|cosign))?$`
+
+var nonReleaseTagRegexp = regexp.MustCompile(NonReleaseTagPattern)
+
+func IsReleaseTag(name string) bool {
+	return !nonReleaseTagRegexp.MatchString(name)
+}
 
 type ManifestType string
 

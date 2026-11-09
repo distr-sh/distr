@@ -83,6 +83,10 @@ func (s *Syncer) SyncArtifactTags(ctx context.Context, artifact *types.Artifact,
 	g.SetLimit(5)
 	tagsErr := repo.Tags(ctx, "", func(tags []string) error {
 		for _, tag := range tags {
+			if !artifact.VersioningStrategy.AllowsArtifactTag(tag) {
+				log.Warn("upstream sync skipped tag that is not a SemVer version", zap.String("tag", tag))
+				continue
+			}
 			g.Go(func() error {
 				log.Debug("upstream sync tag", zap.String("tag", tag))
 				if err := syncTag(gCtx, repo, artifact, tag, skipExistingTags); err != nil {

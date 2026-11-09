@@ -472,6 +472,8 @@ func (handler *manifests) handlePut(resp http.ResponseWriter, req *http.Request,
 		return regErrDeniedQuotaExceeded
 	} else if errors.Is(err, imanifest.ErrTagAlreadyExists) {
 		return regErrTagAlreadyExists
+	} else if errors.Is(err, imanifest.ErrTagInvalid) {
+		return regErrTagInvalid(err)
 	} else if err != nil {
 		return regErrInternal(err)
 	}

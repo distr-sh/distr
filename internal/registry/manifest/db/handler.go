@@ -221,6 +221,13 @@ func (h *handler) Put(
 			ArtifactID:             artifact.ID,
 		}
 
+		if !version.IsDigestVersion() && !artifact.VersioningStrategy.AllowsArtifactTag(reference) {
+			return fmt.Errorf(
+				"%w: the artifact uses SemVer versioning and %q is not a SemVer version",
+				manifest.ErrTagInvalid, reference,
+			)
+		}
+
 		if existingVersion, err := db.GetArtifactVersion(ctx, name.OrgName, name.ArtifactName, reference); err != nil {
 			if !errors.Is(err, distrerr.ErrNotFound) {
 				return err

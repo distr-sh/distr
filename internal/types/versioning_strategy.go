@@ -35,6 +35,12 @@ func IsSemverTag(name string) bool {
 	return err == nil
 }
 
+// AllowsArtifactTag reports whether an artifact with the strategy may have a tag of the given name. Tags that are
+// not releases, like signatures, are allowed under every strategy.
+func (s VersioningStrategy) AllowsArtifactTag(name string) bool {
+	return s != VersioningStrategySemver || !IsReleaseTag(name) || IsSemverTag(name)
+}
+
 func (s VersioningStrategy) AllowsAutomaticUpdates() bool {
 	return s != VersioningStrategyLegacy
 }

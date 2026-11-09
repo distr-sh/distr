@@ -319,6 +319,19 @@ func TestIsSemverTag(t *testing.T) {
 	}
 }
 
+func TestAllowsArtifactTag(t *testing.T) {
+	g := NewWithT(t)
+	signature := "sha256-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef.sig"
+
+	for _, tag := range []string{"1.2.3", "v1.2.3-rc.1", signature, signature[:len(signature)-len(".sig")]} {
+		g.Expect(VersioningStrategySemver.AllowsArtifactTag(tag)).To(BeTrue(), "tag %q", tag)
+	}
+	for _, tag := range []string{"latest", "1.2", signature + "x", "sha256-0123.sig"} {
+		g.Expect(VersioningStrategySemver.AllowsArtifactTag(tag)).To(BeFalse(), "tag %q", tag)
+	}
+	g.Expect(VersioningStrategyChronological.AllowsArtifactTag("latest")).To(BeTrue())
+}
+
 func TestValidateVersionsForStrategy(t *testing.T) {
 	g := NewWithT(t)
 	base := time.Now()

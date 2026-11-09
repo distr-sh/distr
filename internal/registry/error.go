@@ -199,6 +199,14 @@ var regErrTagAlreadyExists = &regError{
 	Message: "this tag already exists and cannot be overwritten",
 }
 
+func regErrTagInvalid(err error) *regError {
+	return &regError{
+		Status:  http.StatusBadRequest,
+		Code:    "TAG_INVALID",
+		Message: err.Error(),
+	}
+}
+
 var regErrConflict = &regError{
 	Status:  http.StatusConflict,
 	Code:    "DENIED",
