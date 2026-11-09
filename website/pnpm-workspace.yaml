@@ -11,9 +11,3 @@ ignoredOptionalDependencies:
   - '*s390x*'
   - '*-linux-arm'
   - '*-linux-arm-gnueabihf'
-packageExtensions:
-  # astro2tsx loads @emnapi/core 1.x but declares @emnapi/runtime only as a devDependency, so pnpm
-  # resolves the peer to the 2.x beta, which crashes on import.
-  '@astrojs/astro2tsx@0.1.3':
-    dependencies:
-      '@emnapi/runtime': 1.11.3
