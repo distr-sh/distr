@@ -100,6 +100,20 @@ The artifact details page gives you a complete view of all tags associated with 
   organization settings page ("Artifact versions are mutable").
 </Aside>
 
+## Versioning Strategy
+
+Every artifact has a versioning strategy, which determines how its versions are sorted on the artifact details page and which tag counts as the newest:
+
+- **Chronological versioning** orders versions by the time they were pushed, whatever their tags are named. It is the default and accepts any tag.
+- **Semantic versioning** orders versions by [SemVer](https://semver.org/) precedence, so `1.10.0` is newer than `1.9.0` and `2.0.0` is newer than `2.0.0-rc.1`. A version with several tags is ranked by its highest one.
+
+Under semantic versioning, every tag has to be a SemVer version with exactly three numbers, optionally prefixed with `v`: `1.2.3`, `v1.2.3` and `1.2.3-rc.1` are accepted, `1.2`, `latest` and `main` are not.
+The registry rejects a push of any other tag with `403 Forbidden` and the error code `DENIED`.
+Signature and attestation tags (`sha256-<digest>.sig`, `.att`, `.sbom` and `.cosign`) are exempt, so signing an image with cosign keeps working.
+
+Change the strategy on the artifact details page. Switching to semantic versioning is only possible while every tag of the artifact is a SemVer version; otherwise Distr names the tags that are not, so you can delete them first.
+For a [pull-through cache](/docs/registry/pull-through-cache/#versioning-strategy) artifact, Distr instead offers to delete those tags for you.
+
 ## Public Artifacts
 
 A single artifact can be made public, so anyone who knows its name can pull it without credentials.
