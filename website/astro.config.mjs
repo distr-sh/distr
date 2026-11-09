@@ -171,6 +171,12 @@ export default defineConfig({
                     {autogenerate: {directory: 'docs/controllers/monitoring'}},
                   ],
                 },
+                {
+                  label: 'Security',
+                  items: [
+                    {autogenerate: {directory: 'docs/controllers/security'}},
+                  ],
+                },
               ],
             },
             {

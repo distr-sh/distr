@@ -11,6 +11,8 @@ import {Aside} from '@astrojs/starlight/components';
 
 The Kubernetes controller manages Kubernetes deployments, handling the complete lifecycle of Helm charts in customer environments. It installs and upgrades charts, monitors Kubernetes resource health, supports customer-specific value overrides, and provides rollback capabilities for failed deployments.
 
+The [architecture diagram](/docs/controllers/security/kubernetes/#architecture) shows the connections the controller opens, how it runs in the cluster and what it never does.
+
 ## Installation and Environment
 
 The controller is installed by applying manifests fetched directly from Distr:
@@ -87,7 +89,7 @@ spec:
           emptyDir: {}
 ```
 
-The controller can be cluster-scoped or namespace-scoped. This cannot be changed after creation. Cluster-scoped controllers get a `ClusterRoleBinding` to the built-in [`cluster-admin`](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#user-facing-roles) role. Namespace-scoped controllers get a `RoleBinding` to a `namespace-admin` role limited to that namespace.
+The controller can be cluster-scoped or namespace-scoped. This cannot be changed after creation. Cluster-scoped controllers get a `ClusterRoleBinding` to the built-in [`cluster-admin`](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#user-facing-roles) role. Namespace-scoped controllers get a `RoleBinding` to a `namespace-admin` role limited to that namespace. [Kubernetes Controller Security](/docs/controllers/security/kubernetes/) describes what either can access.
 
 The `distr-controller-env` ConfigMap contains all controller environment variables (same as the Docker controller). The `distr-controller-auth` Secret contains `targetId` and `targetSecret`.
 
@@ -196,6 +198,10 @@ kubectl patch secret "sh.distr.agent.v1.<release-name>" \
   --namespace=<namespace> --type='strategic' \
   -p '{"stringData":{"release":"{\"id\":\"00000000-0000-0000-0000-000000000000\",\"revisionId\":\"00000000-0000-0000-0000-000000000000\",\"releaseName\":\"<release-name>\",\"helmRevision\":<CURRENT_REVISION>,\"logsEnabled\":false,\"phase\":\"ready\"}"}}'
 ```
+
+## Security
+
+The controller manages Helm releases through the Kubernetes API, so it has the access of its service account. [Kubernetes Controller Security](/docs/controllers/security/kubernetes/) describes what it can reach in the cluster, which operations it runs and which credentials it keeps there. The other pages of [Controller Security](/docs/controllers/security/) cover its network connections, the data it sends to Distr and how to verify its image.
 
 ## Uninstalling
 
