@@ -1,6 +1,7 @@
 package types
 
 import (
+	"cmp"
 	"fmt"
 	"maps"
 	"slices"
@@ -31,8 +32,44 @@ func (s VersioningStrategy) IsSelectable() bool {
 }
 
 func IsSemverTag(name string) bool {
-	_, err := semver.StrictNewVersion(strings.TrimPrefix(name, "v"))
+	_, err := parseSemverTag(name)
 	return err == nil
+}
+
+func parseSemverTag(name string) (*semver.Version, error) {
+	return semver.StrictNewVersion(strings.TrimPrefix(name, "v"))
+}
+
+// SortTaggedArtifactVersions orders versions by the strategy, newest first. Under semver, a version ranks by its
+// highest SemVer tag, and the versions without one, like signatures, follow by creation date.
+func SortTaggedArtifactVersions(strategy VersioningStrategy, versions []TaggedArtifactVersion) {
+	highest := make(map[uuid.UUID]*semver.Version, len(versions))
+	if strategy == VersioningStrategySemver {
+		for _, version := range versions {
+			for _, tag := range version.Tags {
+				if parsed, err := parseSemverTag(tag.Name); err == nil && compareSemver(parsed, highest[version.ID]) > 0 {
+					highest[version.ID] = parsed
+				}
+			}
+		}
+	}
+	slices.SortStableFunc(versions, func(a, b TaggedArtifactVersion) int {
+		return cmp.Or(compareSemver(highest[b.ID], highest[a.ID]), b.CreatedAt.Compare(a.CreatedAt))
+	})
+}
+
+// compareSemver orders nil before every version.
+func compareSemver(a, b *semver.Version) int {
+	switch {
+	case a == nil && b == nil:
+		return 0
+	case a == nil:
+		return -1
+	case b == nil:
+		return 1
+	default:
+		return a.Compare(b)
+	}
 }
 
 // AllowsArtifactTag reports whether an artifact with the strategy may have a tag of the given name. Tags that are

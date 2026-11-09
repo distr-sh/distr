@@ -263,6 +263,7 @@ func GetArtifactByID(
 	} else if customerOrgID != nil && len(versions) == 0 {
 		return nil, distrerr.ErrNotFound
 	} else {
+		types.SortTaggedArtifactVersions(artifact.VersioningStrategy, versions)
 		return &types.ArtifactWithTaggedVersion{ArtifactWithDownloads: *artifact, Versions: versions}, nil
 	}
 }

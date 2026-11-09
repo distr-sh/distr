@@ -2,6 +2,7 @@ package types
 
 import (
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -319,14 +320,65 @@ func TestIsSemverTag(t *testing.T) {
 	}
 }
 
+func taggedVersion(createdAt time.Time, tags ...string) TaggedArtifactVersion {
+	version := TaggedArtifactVersion{ID: uuid.New(), CreatedAt: createdAt}
+	for _, tag := range tags {
+		version.Tags = append(version.Tags, ArtifactVersionTag{ID: uuid.New(), Name: tag})
+	}
+	return version
+}
+
+func tagNames(versions []TaggedArtifactVersion) []string {
+	result := make([]string, len(versions))
+	for i, v := range versions {
+		names := make([]string, len(v.Tags))
+		for j, tag := range v.Tags {
+			names[j] = tag.Name
+		}
+		result[i] = strings.Join(names, ",")
+	}
+	return result
+}
+
+const signatureTag = "sha256-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef.sig"
+
+func taggedVersionsForSortTests(base time.Time) []TaggedArtifactVersion {
+	return []TaggedArtifactVersion{
+		taggedVersion(base, "1.9.0"),
+		taggedVersion(base.Add(time.Minute), signatureTag),
+		taggedVersion(base.Add(2*time.Minute), "1.10.0-rc.1", "v1.10.0"),
+		taggedVersion(base.Add(3*time.Minute), "1.2.0"),
+		taggedVersion(base.Add(4*time.Minute), "1.10.0-rc.2"),
+	}
+}
+
+func TestSortTaggedArtifactVersionsSemver(t *testing.T) {
+	g := NewWithT(t)
+	versions := taggedVersionsForSortTests(time.Now())
+
+	SortTaggedArtifactVersions(VersioningStrategySemver, versions)
+	g.Expect(tagNames(versions)).To(Equal([]string{
+		"1.10.0-rc.1,v1.10.0", "1.10.0-rc.2", "1.9.0", "1.2.0", signatureTag,
+	}), "a version ranks by its highest tag and a signature has none")
+}
+
+func TestSortTaggedArtifactVersionsChronological(t *testing.T) {
+	g := NewWithT(t)
+	versions := taggedVersionsForSortTests(time.Now())
+
+	SortTaggedArtifactVersions(VersioningStrategyChronological, versions)
+	g.Expect(tagNames(versions)).To(Equal([]string{
+		"1.10.0-rc.2", "1.2.0", "1.10.0-rc.1,v1.10.0", signatureTag, "1.9.0",
+	}))
+}
+
 func TestAllowsArtifactTag(t *testing.T) {
 	g := NewWithT(t)
-	signature := "sha256-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef.sig"
 
-	for _, tag := range []string{"1.2.3", "v1.2.3-rc.1", signature, signature[:len(signature)-len(".sig")]} {
+	for _, tag := range []string{"1.2.3", "v1.2.3-rc.1", signatureTag, strings.TrimSuffix(signatureTag, ".sig")} {
 		g.Expect(VersioningStrategySemver.AllowsArtifactTag(tag)).To(BeTrue(), "tag %q", tag)
 	}
-	for _, tag := range []string{"latest", "1.2", signature + "x", "sha256-0123.sig"} {
+	for _, tag := range []string{"latest", "1.2", signatureTag + "x", "sha256-0123.sig"} {
 		g.Expect(VersioningStrategySemver.AllowsArtifactTag(tag)).To(BeFalse(), "tag %q", tag)
 	}
 	g.Expect(VersioningStrategyChronological.AllowsArtifactTag("latest")).To(BeTrue())

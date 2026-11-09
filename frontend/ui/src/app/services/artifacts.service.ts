@@ -85,7 +85,8 @@ export type DeleteArtifactTagResponse = {artifactDeleted: true} | {artifactDelet
 
 class ArtifactsReactiveList extends ReactiveList<ArtifactWithTags> {
   protected override identify = (a: ArtifactWithTags) => a.id;
-  protected override sortAttr = (a: ArtifactWithTags) => a.versions?.[0]?.createdAt ?? '';
+  protected override sortAttr = (a: ArtifactWithTags) =>
+    a.versions?.reduce((newest, v) => (v.createdAt > newest ? v.createdAt : newest), '') ?? '';
   protected override sortInverted = true;
 }
 
