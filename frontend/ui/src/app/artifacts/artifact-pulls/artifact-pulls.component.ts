@@ -169,7 +169,7 @@ export class ArtifactPullsComponent {
 
   protected exportCsv() {
     this.isExporting.set(true);
-    const toastRef = this.toast.info('Download started...');
+    const toastRef = this.toast.info('Download started...', false);
     const filters = this.buildFilters(this.filterForm.value);
     this.pullsService.export(filters).subscribe({
       next: (blob) => {
