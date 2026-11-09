@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/containers/image/v5/manifest"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/distrerr"
@@ -19,6 +18,7 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"go.podman.io/image/v5/manifest"
 	"go.uber.org/zap"
 )
 
