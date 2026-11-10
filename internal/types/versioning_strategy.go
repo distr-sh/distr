@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/uuid"
@@ -46,7 +47,7 @@ func ApplicationVersionComparator(
 	}
 	parsed := make(map[uuid.UUID]*semver.Version, len(versions))
 	for _, version := range versions {
-		parsedVersion, err := semver.NewVersion(version.Name)
+		parsedVersion, err := parseSemver(version.Name)
 		if err != nil && strategy == VersioningStrategyLegacy {
 			return compareApplicationVersionsByDate
 		} else if err == nil {
@@ -59,6 +60,12 @@ func ApplicationVersionComparator(
 		}
 		return compareApplicationVersionsByDate(a, b)
 	}
+}
+
+// parseSemver rejects a name with a missing minor or patch number, which semver.NewVersion would
+// complete with zeros.
+func parseSemver(name string) (*semver.Version, error) {
+	return semver.StrictNewVersion(strings.TrimPrefix(name, "v"))
 }
 
 func compareApplicationVersionsByDate(a, b ApplicationVersion) int {
@@ -123,7 +130,7 @@ func ValidateVersionsForStrategy(strategy VersioningStrategy, versions []Applica
 	}
 	parsed := make([]*semver.Version, 0, len(versions))
 	for i, version := range versions {
-		parsedVersion, err := semver.NewVersion(version.Name)
+		parsedVersion, err := parseSemver(version.Name)
 		if err != nil {
 			return fmt.Errorf("version %q is not a valid SemVer version", version.Name)
 		}
