@@ -410,7 +410,12 @@ func ensureSemverTags(
 	artifact *types.Artifact,
 	shouldDeleteNonSemverTags bool,
 ) (respond.Responder, error) {
-	// A push holds this row lock until it commits, so no tag can be added between the check and the switch.
+	// DeleteArtifactTag below takes the advisory lock before the row lock, so taking them in the other order could
+	// deadlock with a concurrent tag deletion.
+	if err := db.LockArtifactExclusive(ctx, artifact.ID); err != nil {
+		return nil, err
+	}
+	// A push or a sync holds this row lock until it commits, so no tag can be added between the check and the switch.
 	if err := db.LockArtifactRows(ctx, []uuid.UUID{artifact.ID}); err != nil {
 		return nil, err
 	}
@@ -418,6 +423,7 @@ func ensureSemverTags(
 	if err != nil {
 		return nil, err
 	}
+	tagCount := len(tags)
 	nonSemverTags := slices.DeleteFunc(tags, types.IsSemverTag)
 	if len(nonSemverTags) == 0 {
 		return nil, nil
@@ -426,6 +432,10 @@ func ensureSemverTags(
 			"the artifact cannot use semantic versioning while it has tags that are not SemVer versions: %s",
 			describeTagNames(nonSemverTags),
 		)), nil
+	} else if len(nonSemverTags) == tagCount {
+		return respond.BadRequest(
+			"the artifact cannot use semantic versioning because none of its tags is a SemVer version",
+		), nil
 	} else if !shouldDeleteNonSemverTags {
 		return respond.Conflict(fmt.Sprintf(
 			"Switching to semantic versioning deletes %d tags that are not SemVer versions, "+

@@ -759,6 +759,24 @@ func GetArtifactVersioningStrategy(ctx context.Context, artifactID uuid.UUID) (t
 	return result, nil
 }
 
+// LockArtifactVersioningStrategy reads the versioning strategy with a share lock on the artifact row, which keeps a
+// switch from committing until the transaction ends. It conflicts with [LockArtifactRows] but not with itself.
+func LockArtifactVersioningStrategy(ctx context.Context, artifactID uuid.UUID) (types.VersioningStrategy, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT versioning_strategy FROM Artifact WHERE id = @artifactId FOR SHARE`,
+		pgx.NamedArgs{"artifactId": artifactID},
+	)
+	if err != nil {
+		return "", fmt.Errorf("could not lock artifact versioning strategy: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[types.VersioningStrategy])
+	if err != nil {
+		return "", fmt.Errorf("could not collect artifact versioning strategy: %w", err)
+	}
+	return result, nil
+}
+
 // GetArtifactReleaseTagNames returns the names of the release tags of the artifact, ordered by name.
 func GetArtifactReleaseTagNames(ctx context.Context, artifactID uuid.UUID) ([]string, error) {
 	db := internalctx.GetDb(ctx)

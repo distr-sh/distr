@@ -161,10 +161,6 @@ func syncTag(
 		ManifestData:        data,
 		ArtifactID:          artifact.ID,
 	}
-	if err := db.UpsertArtifactVersionForSync(ctx, tagVersion); err != nil {
-		return err
-	}
-
 	digestVersion := &types.ArtifactVersion{
 		Name:                d.String(),
 		ManifestBlobDigest:  types.Digest(d),
@@ -173,27 +169,43 @@ func syncTag(
 		ManifestData:        data,
 		ArtifactID:          artifact.ID,
 	}
-	if err := db.UpsertArtifactVersionForSync(ctx, digestVersion); err != nil {
-		return err
-	}
 
-	parts := make([]types.ArtifactVersionPart, 0, len(blobs)*2)
-	for _, b := range blobs {
-		parts = append(parts,
-			types.ArtifactVersionPart{
-				ArtifactVersionID:  tagVersion.ID,
-				ArtifactBlobDigest: types.Digest(b.Digest),
-				ArtifactBlobSize:   b.Size,
-			},
-			types.ArtifactVersionPart{
-				ArtifactVersionID:  digestVersion.ID,
-				ArtifactBlobDigest: types.Digest(b.Digest),
-				ArtifactBlobSize:   b.Size,
-			},
-		)
-	}
-	if err := db.BulkUpsertArtifactVersionParts(ctx, parts); err != nil {
+	isAllowed := true
+	if err := db.RunTx(ctx, func(ctx context.Context) error {
+		// The strategy may have changed since the sync started, and a switch to semver holds the artifact row lock
+		// while it deletes the tags it does not allow.
+		if strategy, err := db.LockArtifactVersioningStrategy(ctx, artifact.ID); err != nil {
+			return err
+		} else if isAllowed = strategy.AllowsArtifactTag(tag); !isAllowed {
+			return nil
+		}
+		if err := db.UpsertArtifactVersionForSync(ctx, tagVersion); err != nil {
+			return err
+		} else if err := db.UpsertArtifactVersionForSync(ctx, digestVersion); err != nil {
+			return err
+		}
+		parts := make([]types.ArtifactVersionPart, 0, len(blobs)*2)
+		for _, b := range blobs {
+			parts = append(parts,
+				types.ArtifactVersionPart{
+					ArtifactVersionID:  tagVersion.ID,
+					ArtifactBlobDigest: types.Digest(b.Digest),
+					ArtifactBlobSize:   b.Size,
+				},
+				types.ArtifactVersionPart{
+					ArtifactVersionID:  digestVersion.ID,
+					ArtifactBlobDigest: types.Digest(b.Digest),
+					ArtifactBlobSize:   b.Size,
+				},
+			)
+		}
+		return db.BulkUpsertArtifactVersionParts(ctx, parts)
+	}); err != nil {
 		return err
+	} else if !isAllowed {
+		internalctx.GetLogger(ctx).Warn("upstream sync skipped tag that is not a SemVer version",
+			zap.Stringer("artifactId", artifact.ID), zap.String("tag", tag))
+		return nil
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
