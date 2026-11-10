@@ -171,6 +171,12 @@ export default defineConfig({
                     {autogenerate: {directory: 'docs/controllers/monitoring'}},
                   ],
                 },
+                {
+                  label: 'Security',
+                  items: [
+                    {autogenerate: {directory: 'docs/controllers/security'}},
+                  ],
+                },
               ],
             },
             {
@@ -444,6 +450,10 @@ export default defineConfig({
     '/docs/agents/logs-and-metrics/': '/docs/controllers/logs-and-metrics/',
     '/docs/agents/update-notifications/':
       '/docs/controllers/update-notifications/',
+
+    // Controller security redirects
+    '/docs/controllers/security/hardening/':
+      '/docs/controllers/security/configuration/',
 
     // Integration redirects
     '/docs/integrations/mcp/': '/docs/integrations/',

@@ -223,7 +223,7 @@ type DeploymentRequest struct {
 	DeploymentTargetID       uuid.UUID                       `json:"deploymentTargetId"`
 	ApplicationVersionID     uuid.UUID                       `json:"applicationVersionId"`
 	ApplicationEntitlementID *uuid.UUID                      `json:"applicationEntitlementId"`
-	ReleaseName              *string                         `json:"releaseName"`
+	ReleaseName              *string                         `json:"releaseName" description:"Ignored when updating a deployment, cannot change later"` //nolint:lll
 	ValuesYaml               []byte                          `json:"valuesYaml"`
 	DockerType               *types.DockerType               `json:"dockerType" description:"Defaults to compose on docker targets, cannot change later"` //nolint:lll
 	EnvFileData              []byte                          `json:"envFileData"`

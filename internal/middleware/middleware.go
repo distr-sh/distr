@@ -216,6 +216,33 @@ func ForbidSubscriptionTypes(forbidden ...types.SubscriptionType) func(http.Hand
 
 var ProFeature = ForbidSubscriptionTypes(types.NonProSubscriptionTypes...)
 
+var (
+	subscriptionExpired = respond.Forbidden("the subscription of your organization has expired")
+	portalUnavailable   = respond.Forbidden("this portal is currently unavailable")
+)
+
+// CheckActiveSubscription returns the rejection of [RequireActiveSubscription], or nil if the request may pass,
+// for the endpoints that reject only part of their requests and therefore cannot apply the middleware.
+func CheckActiveSubscription(auth authinfo.AuthInfoWithUserAndOrganization) respond.Responder {
+	if org := auth.CurrentOrg(); org == nil || org.HasActiveSubscription() || auth.IsSuperAdmin() {
+		return nil
+	} else if auth.CurrentCustomerOrgID() != nil || auth.CurrentPartnerOrgID() != nil {
+		return portalUnavailable
+	} else {
+		return subscriptionExpired
+	}
+}
+
+// RequireActiveSubscription rejects every request of an organization whose subscription has expired, except
+// those of super admins, who stay able to look into it. Customers and partners are not told why.
+var RequireActiveSubscription = guard(func(r *http.Request) (respond.Responder, error) {
+	if auth, err := auth.Authentication.Get(r.Context()); err != nil {
+		return nil, err
+	} else {
+		return CheckActiveSubscription(auth), nil
+	}
+})
+
 var RequireVendor = guard(func(r *http.Request) (respond.Responder, error) {
 	if auth, err := auth.Authentication.Get(r.Context()); err != nil {
 		return nil, err

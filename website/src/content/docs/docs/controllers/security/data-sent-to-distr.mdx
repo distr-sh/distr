@@ -1,0 +1,67 @@
+---
+title: Data Sent to Distr
+description: The controller logs, deployment status, container logs and metrics that Distr controllers report to Distr, when they report them and how Distr redacts secrets in them.
+slug: docs/controllers/security/data-sent-to-distr
+sidebar:
+  label: Data Sent to Distr
+  order: 5
+---
+
+import {TabItem, Tabs} from '@astrojs/starlight/components';
+
+| Data                                                                                                                                                                                                      | When                                                                                 |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Controller logs at debug level, including connection events, reconciliation cycles, errors and the output of Docker and Helm operations                                                                   | Always                                                                               |
+| The status of every deployment, whose message can contain the Compose progress, the Helm output, image names and error output                                                                             | Always                                                                               |
+| stdout and stderr of the containers of the deployments                                                                                                                                                    | When [log collection](/docs/controllers/logs-and-metrics/#container-logs) is enabled |
+| Docker: CPU, memory and disk usage of the host with the device names and mount paths, the size of the image store and the CPU, memory, limits and log size of every container of the deployments          | When [metrics](/docs/controllers/logs-and-metrics/#metrics) are enabled              |
+| Kubernetes: CPU and memory capacity and usage summed over all nodes, the usage of the controller pod and the CPU, memory and limits of every container of the deployments with its pod and workload names | When [metrics](/docs/controllers/logs-and-metrics/#metrics) are enabled              |
+
+The controller reads no logs or metrics of containers outside its deployments apart from its own. Distr masks the secrets of the deployment target and common credential patterns in logs before it stores them, see [Log Redaction](/docs/controllers/secrets/#log-redaction). Status messages are stored as reported.
+
+Log collection and metrics are settings of the deployment target, see the [Configuration Reference](/docs/controllers/security/configuration/).
+
+## Example Controller Logs
+
+These lines are taken from the controller logs of a Kubernetes and a Docker deployment target, as Distr shows and exports them. Every line has the time, the level, the place in the controller's code, the message and the fields of the message. Lines written by Helm carry `"component": "helm"` instead of a place in the code. The container logs of the deployments are not part of the controller logs.
+
+<Tabs syncKey="deployment-type">
+  <TabItem label="Kubernetes">
+
+```text
+2026-11-09T14:33:26Z  info  kubernetes/main.go:243  controller version has changed. starting self-update
+2026-11-09T14:33:28Z  info  kubernetes/main.go:265  self-update has been applied
+2026-11-09T14:45:04Z  info  kubernetes/main.go:105  kubernetes controller is starting  {"version": "4.9.0-rc.1", "commit": "278beaa", "release": true}
+2026-11-09T14:45:09Z  info  controllerclient/client.go:193  token has expired or is about to expire
+2026-11-09T14:45:10Z  info  controllerclient/client.go:202  token refreshed
+2026-11-09T15:52:10Z  debug  kubernetes/main.go:239  controller version is up to date
+2026-11-09T15:52:11Z  debug  kubernetes/metrics.go:47  node metrics  {"node": "minikube", "cpuUsage": 713, "memUsage": 1690030080}
+2026-11-09T15:52:12Z  debug  getting release history  {"component": "helm", "name": "production-cluster-3"}
+2026-11-09T15:52:13Z  debug  kubernetes/logs.go:130  get logs for resource  {"deploymentId": "8c8f78c9-e628-469f-a0c6-6da8bbd2767b", "resourceKind": "Deployment", "resourceName": "production-cluster-podinfo", "sinceTime": "2026-11-09T15:51:41.262Z"}
+2026-11-09T15:52:16Z  debug  kubernetes/status_check.go:181  checking status  {"resourceKind": "Deployment", "resourceNamespace": "llm-1", "resourceName": "production-cluster-podinfo"}
+2026-11-09T15:52:16Z  info  controllerclient/client.go:89  reporting deployment status  {"deploymentId": "8c8f78c9-e628-469f-a0c6-6da8bbd2767b", "revisionId": "4de6d2d2-7f10-47cb-92c8-9aef453fb29c", "type": "healthy", "message": "status check passed. 2 resources healthy"}
+2026-11-09T15:52:17Z  debug  deploymentlogs/collector.go:70  skipped flushing log records  {"deploymentId": "6a9796e8-94c7-4873-9a45-c835bdeaf5e0", "logRecords": 0, "resourceNames": []}
+```
+
+  </TabItem>
+  <TabItem label="Docker">
+
+```text
+2026-11-09T15:52:15Z  debug  docker/metrics.go:132  cpu usage  {"usage": 0.14856669580489745, "cores": 2}
+2026-11-09T15:52:15Z  debug  docker/metrics.go:133  memory usage  {"usage": 0.2828959859, "total": 8197980160}
+2026-11-09T15:52:44Z  debug  docker/logs.go:88  getting compose logs  {"deploymentId": "4b780df7-ac43-42d8-971e-f880fd18ef68", "projectName": "distr-4b780df7", "since": "2026-11-09T15:52:14.397Z"}
+2026-11-09T15:52:49Z  info  controllerclient/client.go:89  reporting deployment status  {"deploymentId": "4b780df7-ac43-42d8-971e-f880fd18ef68", "revisionId": "8744e7bf-9a3a-4565-97d9-c30a37a2b556", "type": "progressing", "message": "Started Container distr-4b780df7-backend-1\nRunning Container distr-4b780df7-postgres-1\n"}
+2026-11-09T15:52:50Z  debug  docker/metrics.go:154  disk usage  {"device": "/dev/nvme0n1p16", "path": "/boot", "fsType": "ext2/ext3", "total": 923156480, "used": 190869504}
+2026-11-09T15:52:54Z  debug  deploymentlogs/collector.go:87  flushed log records  {"deploymentId": "4b780df7-ac43-42d8-971e-f880fd18ef68", "projectName": "distr-4b780df7", "logRecords": 218, "resourceNames": ["backend-1"], "duration": "336.678642ms"}
+2026-11-09T15:52:59Z  info  controllerclient/client.go:89  reporting deployment status  {"deploymentId": "4b780df7-ac43-42d8-971e-f880fd18ef68", "revisionId": "2e4aab9a-78b9-4d52-a079-7e8ed6fab98d", "type": "progressing", "message": "service distr-4b780df7-proxy-1 is not in running state: state=created, status=Created, exitCode=0"}
+2026-11-09T15:53:01Z  debug  docker/metrics.go:266  image disk usage  {"bytes": 24197767044, "count": 159}
+2026-11-09T15:53:04Z  debug  docker/main.go:320  controller version is up to date
+2026-11-09T15:53:04Z  info  controllerclient/client.go:89  reporting deployment status  {"deploymentId": "4b780df7-ac43-42d8-971e-f880fd18ef68", "revisionId": "8744e7bf-9a3a-4565-97d9-c30a37a2b556", "type": "error", "message": "compose up failed: dependency failed to start: container distr-4b780df7-backend-1 exited (1)"}
+2026-11-09T15:53:05Z  debug  docker/docker_actions.go:53  applying compose file  {"deploymentId": "512dd0fb-0b51-42d8-bdcc-f3c14151be78"}
+2026-11-09T15:53:05Z  info  controllerclient/client.go:89  reporting deployment status  {"deploymentId": "512dd0fb-0b51-42d8-bdcc-f3c14151be78", "revisionId": "08093463-a61f-430f-9278-7313145e2899", "type": "error", "message": "failed to load compose project: services must be a mapping"}
+```
+
+  </TabItem>
+</Tabs>
+
+A controller writes most of these lines on every cycle. The two deployment targets these lines come from have two deployments each, and their controller logs grew by about 5,000 lines per hour on Docker and 14,000 on Kubernetes.

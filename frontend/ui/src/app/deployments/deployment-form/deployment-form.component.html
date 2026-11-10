@@ -39,7 +39,7 @@
       }
     </div>
   }
-  @if (deployForm.controls.releaseName.enabled) {
+  @if (deploymentType() === 'kubernetes') {
     <div class="col-span-2">
       <label for="release-name" class="distr-label mb-2"> Helm release name </label>
       <input
@@ -48,6 +48,9 @@
         autotrim
         formControlName="releaseName"
         class="distr-input distr-input-raised" />
+      @if (deployForm.controls.deploymentId.value) {
+        <p class="distr-hint mt-1">The release name cannot be changed after the deployment has been created.</p>
+      }
       @if (deployForm.controls.releaseName.invalid && deployForm.controls.releaseName.touched) {
         <p class="mt-1 text-sm text-red-600 dark:text-red-500">
           Field is required, must not be longer than 53 chars, and use lower case characters, numbers, and hyphens.
