@@ -28,15 +28,38 @@ const (
 		d.id, d.created_at, d.deployment_target_id, d.release_name, d.application_entitlement_id, d.docker_type,
 		d.automatic_application_updates_enabled
 	`
-	deploymentWithLatestRevisionFromExpr = `
-		Deployment d
-			JOIN DeploymentRevision dr ON dr.id = d.latest_deployment_revision_id
-			JOIN ApplicationVersion av ON dr.application_version_id = av.id
-			JOIN Application a ON av.application_id = a.id
-			LEFT JOIN DeploymentRevision dr_current ON dr_current.id = d.current_deployment_revision_id
-			LEFT JOIN ApplicationVersion av_current ON av_current.id = dr_current.application_version_id
-	`
+	// deploymentRevisionCreatorOutputExpr has to list the fields of types.DeploymentRevisionCreator in order.
+	deploymentRevisionCreatorOutputExpr = `
+		CASE WHEN creator.id IS NOT NULL THEN (
+			creator.id,
+			creator.name,
+			creator.email,
+			creator.image_id,
+			creator_membership.customer_organization_id,
+			creator_membership.partner_organization_id,
+			creator_membership.user_account_id IS NULL
+		) END`
 )
+
+// deploymentRevisionCreatorJoinExpr joins the creator of dr and their membership in the organization of the
+// deployment target, which orgIDExpr has to select.
+func deploymentRevisionCreatorJoinExpr(orgIDExpr string) string {
+	return `
+		LEFT JOIN UserAccount creator ON creator.id = dr.created_by_user_account_id
+		LEFT JOIN Organization_UserAccount creator_membership
+			ON creator_membership.user_account_id = creator.id
+				AND creator_membership.organization_id = ` + orgIDExpr + `
+	`
+}
+
+var deploymentWithLatestRevisionFromExpr = `
+	Deployment d
+		JOIN DeploymentRevision dr ON dr.id = d.latest_deployment_revision_id
+		JOIN ApplicationVersion av ON dr.application_version_id = av.id
+		JOIN Application a ON av.application_id = a.id
+		LEFT JOIN DeploymentRevision dr_current ON dr_current.id = d.current_deployment_revision_id
+		LEFT JOIN ApplicationVersion av_current ON av_current.id = dr_current.application_version_id
+` + deploymentRevisionCreatorJoinExpr("a.organization_id")
 
 var deploymentWithLatestRevisionOutputExpr = deploymentOutputExpr + `,
 	dr.application_version_id AS application_version_id,
@@ -74,7 +97,8 @@ var deploymentWithLatestRevisionOutputExpr = deploymentOutputExpr + `,
 		dr_current.status_message
 	) END AS current_status,
 	dr_current.application_version_id AS current_application_version_id,
-	av_current.name AS current_application_version_name
+	av_current.name AS current_application_version_name,
+	` + deploymentRevisionCreatorOutputExpr + ` AS deployment_revision_created_by
 `
 
 func GetDeployment(
@@ -593,14 +617,7 @@ func GetDeploymentRevisions(
 					dr.helm_options_force_conflicts
 				) END AS helm_options,
 				dr.trigger AS trigger,
-				u.id AS created_by_id,
-				u.name AS created_by_name,
-				u.email AS created_by_email,
-				u.image_id AS created_by_image_id,
-				j.customer_organization_id AS created_by_customer_organization_id,
-				j.partner_organization_id AS created_by_partner_organization_id,
-				(dr.created_by_user_account_id IS NOT NULL AND j.user_account_id IS NULL)
-					AS created_by_deleted,
+				`+deploymentRevisionCreatorOutputExpr+` AS created_by,
 				CASE WHEN dr.status_type IS NOT NULL THEN (
 					dr.status_created_at,
 					dr.id,
@@ -611,9 +628,7 @@ func GetDeploymentRevisions(
 				JOIN Deployment d ON dr.deployment_id = d.id
 				JOIN DeploymentTarget dt ON d.deployment_target_id = dt.id
 				JOIN ApplicationVersion av ON dr.application_version_id = av.id
-				LEFT JOIN UserAccount u ON dr.created_by_user_account_id = u.id
-				LEFT JOIN Organization_UserAccount j
-					ON j.user_account_id = u.id AND j.organization_id = dt.organization_id
+				`+deploymentRevisionCreatorJoinExpr("dt.organization_id")+`
 			WHERE dr.deployment_id = @deploymentId
 			ORDER BY dr.created_at DESC`,
 		pgx.NamedArgs{"deploymentId": deploymentID},

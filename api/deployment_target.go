@@ -151,6 +151,66 @@ type UpdateDeploymentTargetRequest struct {
 	ControllerVersion *EntityReference `json:"controllerVersion,omitempty" deprecated:"true"`
 }
 
+type ControllerVersion struct {
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"createdAt"`
+	Name      string    `json:"name"`
+}
+
+type DeploymentTargetResponse struct {
+	ID                          uuid.UUID                    `json:"id"`
+	CreatedAt                   time.Time                    `json:"createdAt"`
+	Name                        string                       `json:"name"`
+	Type                        types.DeploymentType         `json:"type"`
+	ReconnectPending            bool                         `json:"reconnectPending"`
+	Namespace                   *string                      `json:"namespace,omitempty"`
+	Scope                       *types.DeploymentTargetScope `json:"scope,omitempty"`
+	CustomerOrganizationID      *uuid.UUID                   `json:"customerOrganizationId,omitempty"`
+	ReportedControllerVersionID *uuid.UUID                   `json:"reportedControllerVersionId,omitempty"`
+	MetricsEnabled              bool                         `json:"metricsEnabled"`
+	ImageCleanupEnabled         bool                         `json:"imageCleanupEnabled"`
+	AutohealEnabled             bool                         `json:"autohealEnabled"`
+	AutomaticUpdatesEnabled     bool                         `json:"automaticUpdatesEnabled"`
+	DeploymentLogsEnabled       bool                         `json:"deploymentLogsEnabled"`
+	DeploymentLogsAfter         *time.Time                   `json:"deploymentLogsAfter,omitempty"`
+	Resources                   *DeploymentTargetResources   `json:"resources,omitempty"`
+	DockerEndpoint              *string                      `json:"dockerEndpoint,omitempty"`
+	CustomerOrganization        *CustomerOrganization        `json:"customerOrganization,omitempty"`
+	Deployments                 []DeploymentResponse         `json:"deployments"`
+	ControllerVersion           ControllerVersion            `json:"controllerVersion"`
+}
+
+type DeploymentResponse struct {
+	ID                                 uuid.UUID                  `json:"id"`
+	CreatedAt                          time.Time                  `json:"createdAt"`
+	DeploymentTargetID                 uuid.UUID                  `json:"deploymentTargetId"`
+	ReleaseName                        *string                    `json:"releaseName,omitempty"`
+	ApplicationEntitlementID           *uuid.UUID                 `json:"applicationEntitlementId,omitempty"`
+	DockerType                         *types.DockerType          `json:"dockerType,omitempty"`
+	AutomaticApplicationUpdatesEnabled bool                       `json:"automaticApplicationUpdatesEnabled"`
+	DeploymentRevisionID               uuid.UUID                  `json:"deploymentRevisionId"`
+	DeploymentRevisionCreatedAt        time.Time                  `json:"deploymentRevisionCreatedAt"`
+	DeploymentRevisionCreatedBy        *DeploymentRevisionCreator `json:"deploymentRevisionCreatedBy,omitempty"`
+	// Deprecated: Use [DeploymentResponse.Application] instead
+	ApplicationID uuid.UUID `json:"applicationId" deprecated:"true"`
+	// Deprecated: Use [DeploymentResponse.Application] instead
+	ApplicationName               string                    `json:"applicationName" deprecated:"true"`
+	Application                   ApplicationResponse       `json:"application"`
+	ApplicationVersionID          uuid.UUID                 `json:"applicationVersionId"`
+	ApplicationVersionName        string                    `json:"applicationVersionName"`
+	ApplicationLink               string                    `json:"applicationLink"`
+	ValuesYaml                    []byte                    `json:"valuesYaml,omitempty"`
+	EnvFileData                   []byte                    `json:"envFileData,omitempty"`
+	LatestStatus                  *DeploymentRevisionStatus `json:"latestStatus,omitempty"`
+	ForceRestart                  bool                      `json:"forceRestart"`
+	IgnoreRevisionSkew            bool                      `json:"ignoreRevisionSkew"`
+	HelmOptions                   *HelmOptions              `json:"helmOptions,omitempty"`
+	CurrentDeploymentRevisionID   *uuid.UUID                `json:"currentDeploymentRevisionId,omitempty"`
+	CurrentStatus                 *DeploymentRevisionStatus `json:"currentStatus,omitempty"`
+	CurrentApplicationVersionID   *uuid.UUID                `json:"currentApplicationVersionId,omitempty"`
+	CurrentApplicationVersionName *string                   `json:"currentApplicationVersionName,omitempty"`
+}
+
 type DeploymentTargetAccessTokenResponse struct {
 	ConnectURL     string    `json:"connectUrl"`
 	TargetID       uuid.UUID `json:"targetId"`

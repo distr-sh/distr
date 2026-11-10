@@ -31,12 +31,12 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 	r.Get("/", respond.Handler(getDeploymentTargets)).
 		With(option.Description("List all deployment targets")).
 		With(option.Request(api.ListDeploymentTargetsRequest{})).
-		With(option.Response(http.StatusOK, []types.DeploymentTargetFull{}))
+		With(option.Response(http.StatusOK, []api.DeploymentTargetResponse{}))
 	r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 		Post("/", respond.Handler(createDeploymentTarget)).
 		With(option.Description("Create a new deployment target")).
 		With(option.Request(api.CreateDeploymentTargetRequest{})).
-		With(option.Response(http.StatusOK, types.DeploymentTargetFull{}))
+		With(option.Response(http.StatusOK, api.DeploymentTargetResponse{}))
 	r.Route("/{deploymentTargetId}", func(r chiopenapi.Router) {
 		type DeploymentTargetIDRequest struct {
 			DeploymentTargetID uuid.UUID `path:"deploymentTargetId"`
@@ -51,7 +51,7 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 		r.Get("/", respond.Handler(getDeploymentTarget)).
 			With(option.Description("Get a deployment target")).
 			With(option.Request(DeploymentTargetIDRequest{})).
-			With(option.Response(http.StatusOK, types.DeploymentTargetFull{}))
+			With(option.Response(http.StatusOK, api.DeploymentTargetResponse{}))
 		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
 			r.Put("/", respond.Handler(updateDeploymentTarget)).
 				With(option.Description("Update a deployment target")).
@@ -59,7 +59,7 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 					DeploymentTargetIDRequest
 					api.UpdateDeploymentTargetRequest
 				}{})).
-				With(option.Response(http.StatusOK, types.DeploymentTargetFull{}))
+				With(option.Response(http.StatusOK, api.DeploymentTargetResponse{}))
 			r.Delete("/", respond.Handler(deleteDeploymentTarget)).
 				With(option.Description("Delete a deployment target")).
 				With(option.Request(DeploymentTargetIDRequest{}))
@@ -119,8 +119,13 @@ func getDeploymentTargets(r *http.Request) (respond.Responder, error) {
 	); err != nil {
 		return nil, fmt.Errorf("failed to get DeploymentTargets: %w", err)
 	} else {
-		return respond.JSON(deploymentTargets), nil
+		return respond.JSON(mapping.List(deploymentTargets, deploymentTargetMapper(ctx))), nil
 	}
+}
+
+func deploymentTargetMapper(ctx context.Context) func(types.DeploymentTargetFull) api.DeploymentTargetResponse {
+	a := auth.Authentication.Require(ctx)
+	return mapping.DeploymentTargetToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID())
 }
 
 func deploymentTargetFilter(r *http.Request) (db.DeploymentTargetFilter, respond.Responder) {
@@ -140,8 +145,8 @@ func deploymentTargetFilter(r *http.Request) (db.DeploymentTargetFilter, respond
 }
 
 func getDeploymentTarget(r *http.Request) (respond.Responder, error) {
-	dt := internalctx.GetDeploymentTarget(r.Context())
-	return respond.JSON(dt), nil
+	ctx := r.Context()
+	return respond.JSON(deploymentTargetMapper(ctx)(*internalctx.GetDeploymentTarget(ctx))), nil
 }
 
 func createDeploymentTarget(r *http.Request) (respond.Responder, error) {
@@ -176,7 +181,7 @@ func createDeploymentTarget(r *http.Request) (respond.Responder, error) {
 		}); resp != nil || err != nil {
 			return resp, err
 		} else {
-			return respond.JSON(dt), nil
+			return respond.JSON(deploymentTargetMapper(ctx)(dt)), nil
 		}
 	}
 }
@@ -206,7 +211,7 @@ func updateDeploymentTarget(r *http.Request) (respond.Responder, error) {
 		} else if err != nil {
 			return nil, fmt.Errorf("could not update DeploymentTarget: %w", err)
 		} else {
-			return respond.JSON(dt), nil
+			return respond.JSON(deploymentTargetMapper(ctx)(dt)), nil
 		}
 	}
 }
