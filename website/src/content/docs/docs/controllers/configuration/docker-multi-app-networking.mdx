@@ -1,29 +1,30 @@
 ---
-title: Connect Docker Deployments
+title: Docker Multi App Networking
 description: Let several Docker applications on one deployment target reach each other through a shared Docker network, for example a backend and the database it uses.
-slug: docs/controllers/connect-docker-deployments
+slug: docs/controllers/docker-multi-app-networking
 sidebar:
-  label: Connect Docker Deployments
+  label: Docker Multi App Networking
   order: 7
 ---
 
-import {Aside, Code, Steps, TabItem, Tabs} from '@astrojs/starlight/components';
-import networkCompose from './connect-docker-deployments/network/docker-compose.yaml?raw';
-import databaseCompose from './connect-docker-deployments/database/docker-compose.yaml?raw';
-import databaseEnv from './connect-docker-deployments/database/.env?raw';
-import backendCompose from './connect-docker-deployments/backend/docker-compose.yaml?raw';
-import backendEnv from './connect-docker-deployments/backend/.env?raw';
+import {Aside, Code, TabItem, Tabs} from '@astrojs/starlight/components';
+import networkCompose from './docker-multi-app-networking/network/docker-compose.yaml?raw';
+import joinNetworkCompose from './docker-multi-app-networking/join-network/docker-compose.yaml?raw';
+import databaseCompose from './docker-multi-app-networking/database/docker-compose.yaml?raw';
+import databaseEnv from './docker-multi-app-networking/database/.env?raw';
+import backendCompose from './docker-multi-app-networking/backend/docker-compose.yaml?raw';
+import backendEnv from './docker-multi-app-networking/backend/.env?raw';
 
 Services in one Compose file reach each other by their service names. Services in different applications don't, even on the same deployment target, because the Docker controller runs every deployment as a Compose project of its own (`distr-<short-deployment-id>`) with its own default network.
 
 To connect them, one application creates a Docker network and the others join it.
-This guide does that for a database and a backend that are deployed separately. The backend comes from [hello-distr](https://github.com/distr-sh/hello-distr), our example application.
+The [example](#example-a-backend-and-its-database) at the end does this for a database and a backend that are deployed separately.
 
 ## Step 1: Create the network application
 
-Create a Docker application named **Network** in Distr with the following Compose file. It exists only to create the shared network.
+Create a Docker application in Distr with the following Compose file. It exists only to create the shared network.
 
-<Code code={networkCompose} lang="yaml" title="docker-compose.yaml" />
+<Code code={networkCompose} lang="yaml" title="network/docker-compose.yaml" />
 
 - `networks.acme-shared.name` fixes the network's name. Without it, Compose puts the project name in front. That name differs for every deployment, so the others would not find the network. Replace `acme-shared` with a name unique to your application.
 - `network` is a placeholder. Compose won't start a project that has no services, so the application needs one. The `pause` image does nothing and uses almost no resources.
@@ -32,48 +33,41 @@ One of your other applications can create the network too, the way the proxy doe
 
 ## Step 2: Join the network from your applications
 
-The other applications declare the network as `external`, so Compose uses the existing network rather than creating its own.
-Create a Docker application named **Database** with this version:
+The other applications declare the network as `external`, so Compose uses the existing network rather than creating its own. Add it to every service that has to reach another deployment:
+
+<Code code={joinNetworkCompose} lang="yaml" title="docker-compose.yaml" />
+
+## Step 3: Deploy the network first
+
+Deploy all applications on the same deployment target, the network application before the others. For the first deployment, follow [Create a Deployment](/docs/controllers/deployment/). For the others, use **+ Deploy App** on the deployment target card.
+
+If you deploy another application first, it fails with `network acme-shared declared as external, but could not be found`. The controller retries every cycle, so the deployment starts by itself once the network exists.
+
+## Example: a backend and its database
+
+This example connects the backend of [hello-distr](https://github.com/distr-sh/hello-distr), our example application, to a PostgreSQL database deployed separately.
+Create a Docker application from each of the following Compose files and name them **Network**, **Database** and **Backend**.
+The backend connects to the database as `acme-db`. Both read the password from a [Distr secret](/docs/controllers/secrets/), so it never appears in a deployment configuration.
 
 <Tabs>
-  <TabItem label="docker-compose.yaml">
+  <TabItem label="network/docker-compose.yaml">
+    <Code code={networkCompose} lang="yaml" />
+  </TabItem>
+  <TabItem label="database/docker-compose.yaml">
     <Code code={databaseCompose} lang="yaml" />
   </TabItem>
-  <TabItem label=".env">
+  <TabItem label="database/.env">
     <Code code={databaseEnv} lang="dotenv" />
   </TabItem>
-</Tabs>
-
-And a Docker application named **Backend**, which connects to the database as `acme-db`:
-
-<Tabs>
-  <TabItem label="docker-compose.yaml">
+  <TabItem label="backend/docker-compose.yaml">
     <Code code={backendCompose} lang="yaml" />
   </TabItem>
-  <TabItem label=".env">
+  <TabItem label="backend/.env">
     <Code code={backendEnv} lang="dotenv" />
   </TabItem>
 </Tabs>
 
-Both read the password from a [Distr secret](/docs/controllers/secrets/), so it never appears in a deployment configuration.
-
-## Step 3: Deploy the applications
-
-Deploy all three applications on the same deployment target. For the first deployment, follow [Create a Deployment](/docs/controllers/deployment/). For the others, use **+ Deploy App** on the deployment target card.
-
-<Steps>
-
-1. Deploy the **Network**.
-
-2. Deploy the **Database**.
-
-3. Deploy the **Backend**.
-
-</Steps>
-
-If you deploy the database or the backend first, it fails with `network acme-shared declared as external, but could not be found`. The controller retries every cycle, so the deployment starts by itself once the network exists.
-
-The backend's health check queries the database, so once the Database and Backend deployments are **Healthy**, the connection works. The Network deployment has no health check and stays **Running**. `http://<host>/latest-message` then answers with `hello distr!`.
+Deploy the **Network**, then the **Database** and the **Backend**. The backend's health check queries the database, so once the Database and Backend deployments are **Healthy**, the connection works. The Network deployment has no health check and stays **Running**. `http://<host>/latest-message` then answers with `hello distr!`.
 
 ## Address other deployments by a network alias
 
