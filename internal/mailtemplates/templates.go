@@ -128,15 +128,15 @@ func VerifyEmail(
 	token string,
 	greetWithOrgName bool,
 ) mailx.MailOpt {
-	signature := "Distr"
+	welcomeName := "Distr"
 	if greetWithOrgName && org.Name != "" && org.Name != userAccount.Email {
-		signature = org.Name
+		welcomeName = org.Name
 	}
 
 	return brandedHTMLBody(ctx, "verify-email-registration.html", map[string]any{
 		"UserAccount":  userAccount,
 		"Organization": org,
-		"Signature":    signature,
+		"WelcomeName":  welcomeName,
 		"Host":         customdomains.CustomerPortalDomainOrDefault(ctx, org.ID, customerOrgID, org.Branding),
 		"Token":        token,
 	}, &org)
@@ -187,10 +187,7 @@ func CustomEmailTest(
 		"UserAccount":   userAccount,
 		"Organization":  org,
 		"Configuration": config,
-		// Distr reports the result of the test to the admin, so the organization name must not be
-		// used as the signature here.
-		"Signature": "Distr",
-		"Host":      customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding),
+		"Host":          customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding),
 	}, &org)
 }
 

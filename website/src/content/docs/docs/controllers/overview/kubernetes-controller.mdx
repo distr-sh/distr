@@ -106,6 +106,8 @@ Charts stored in the Distr registry are pinned to the digest their version point
 
 An install or upgrade that has not finished after 10 minutes is reported as an error rather than left in `PROGRESSING`. The deployment's Helm options set that timeout per deployment.
 
+When the controller pod is terminated, for example by a node drain or by the cluster autoscaler, the controller starts no further install or upgrade. It finishes the one in progress, records its outcome and only then exits. The controller Deployment grants it 15 minutes for that through `terminationGracePeriodSeconds`, so an operation with a longer Helm timeout can still be interrupted.
+
 All requests are authenticated with a JWT token obtained from `DISTR_LOGIN_ENDPOINT`.
 
 ## Altering the Helm Release

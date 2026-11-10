@@ -17,6 +17,9 @@ type logQueryRange struct {
 	End   time.Time
 	// Filter is an optional RE2 body filter, already validated.
 	Filter string
+	// ExclusionFilter is an optional RE2 body filter that excludes matching records, already
+	// validated.
+	ExclusionFilter string
 	// StartExplicit reports whether the client supplied an "after" parameter. The effective
 	// order direction must be resolved from this and not from Start, which is always set.
 	StartExplicit bool
@@ -29,7 +32,7 @@ func (r logQueryRange) IsEmpty() bool {
 	return r.End.Before(r.Start)
 }
 
-// parseLogQueryRange parses the before, after and filter query parameters of a log read or
+// parseLogQueryRange parses the before, after, filter and exclusionFilter query parameters of a log read or
 // export request and resolves them against the subscription's log query window. All returned
 // errors are caused by invalid client input and should be answered with status 400.
 func parseLogQueryRange(r *http.Request, subscriptionType types.SubscriptionType) (logQueryRange, error) {
@@ -39,9 +42,10 @@ func parseLogQueryRange(r *http.Request, subscriptionType types.SubscriptionType
 	}
 
 	result := logQueryRange{
-		End:           parsed.Before,
-		Filter:        parsed.Filter,
-		StartExplicit: !parsed.After.IsZero(),
+		End:             parsed.Before,
+		Filter:          parsed.Filter,
+		ExclusionFilter: parsed.ExclusionFilter,
+		StartExplicit:   !parsed.After.IsZero(),
 	}
 	if result.Start, err = resolveLogQueryStart(subscriptionType, parsed.After); err != nil {
 		return logQueryRange{}, err

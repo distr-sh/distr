@@ -50,6 +50,7 @@ export class DeploymentLogsTableComponent {
   public readonly after = input<Date>();
   public readonly before = input<Date>();
   public readonly filter = input<string>();
+  public readonly exclusionFilter = input<string>();
   public readonly orderDirection = input<OrderDirection>('DESC');
 
   protected readonly resourceColorMap = computed(() => {
@@ -66,7 +67,13 @@ export class DeploymentLogsTableComponent {
       new RangeTimeseriesSource(
         (options) => this.svc.get(this.deploymentId(), this.resources(), options),
         logRecordToTimeseriesEntry,
-        {order: this.orderDirection(), after: this.after(), before: this.before(), filter: this.filter()}
+        {
+          order: this.orderDirection(),
+          after: this.after(),
+          before: this.before(),
+          filter: this.filter(),
+          exclusionFilter: this.exclusionFilter(),
+        }
       )
   );
 
@@ -76,6 +83,7 @@ export class DeploymentLogsTableComponent {
         after: this.after(),
         before: this.before(),
         filter: this.filter(),
+        exclusionFilter: this.exclusionFilter(),
       }),
     getFileName: () => `${this.resources().join('_')}.log`,
   };

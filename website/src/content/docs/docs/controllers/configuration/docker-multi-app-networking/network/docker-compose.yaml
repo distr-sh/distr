@@ -1,0 +1,10 @@
+services:
+  network:
+    image: 'registry.k8s.io/pause:3.10'
+    restart: unless-stopped
+    networks:
+      - acme-shared
+
+networks:
+  acme-shared:
+    name: acme-shared

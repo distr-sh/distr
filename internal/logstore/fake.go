@@ -84,7 +84,7 @@ func (f *Fake) QueryDeploymentLogRecords(
 ) iter.Seq2[DeploymentLogRecord, error] {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	filter, err := compileFilter(query.Filter)
+	matchesBody, err := compileBodyMatcher(query.Filter, query.ExclusionFilter)
 	if err != nil {
 		return seqOf[DeploymentLogRecord](nil, err)
 	}
@@ -93,7 +93,7 @@ func (f *Fake) QueryDeploymentLogRecords(
 		if record.DeploymentID == query.DeploymentID &&
 			(len(query.Resources) == 0 || slices.Contains(query.Resources, record.Resource)) &&
 			inRange(record.Timestamp, query.Start, query.End) &&
-			(filter == nil || filter.MatchString(record.Body)) {
+			matchesBody(record.Body) {
 			result = append(result, record)
 		}
 	}
@@ -109,7 +109,7 @@ func (f *Fake) QueryDeploymentTargetLogRecords(
 ) iter.Seq2[DeploymentTargetLogRecord, error] {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	filter, err := compileFilter(query.Filter)
+	matchesBody, err := compileBodyMatcher(query.Filter, query.ExclusionFilter)
 	if err != nil {
 		return seqOf[DeploymentTargetLogRecord](nil, err)
 	}
@@ -117,7 +117,7 @@ func (f *Fake) QueryDeploymentTargetLogRecords(
 	for _, record := range f.targetRecords[orgID] {
 		if record.DeploymentTargetID == query.DeploymentTargetID &&
 			inRange(record.Timestamp, query.Start, query.End) &&
-			(filter == nil || filter.MatchString(record.Body)) {
+			matchesBody(record.Body) {
 			result = append(result, record)
 		}
 	}
@@ -154,6 +154,20 @@ func (f *Fake) GetDeploymentLogRecordResources(
 	slices.Sort(active)
 	slices.Sort(archived)
 	return active, archived, nil
+}
+
+func compileBodyMatcher(filter, exclusionFilter string) (func(string) bool, error) {
+	include, err := compileFilter(filter)
+	if err != nil {
+		return nil, err
+	}
+	exclude, err := compileFilter(exclusionFilter)
+	if err != nil {
+		return nil, err
+	}
+	return func(body string) bool {
+		return (include == nil || include.MatchString(body)) && (exclude == nil || !exclude.MatchString(body))
+	}, nil
 }
 
 func compileFilter(filter string) (*regexp.Regexp, error) {

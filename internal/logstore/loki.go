@@ -149,7 +149,8 @@ func (s *lokiStore) QueryDeploymentLogRecords(
 	orgID uuid.UUID,
 	query DeploymentLogQuery,
 ) iter.Seq2[DeploymentLogRecord, error] {
-	logql := deploymentSelector(query.DeploymentID, query.Resources) + filterExpr(query.Filter)
+	logql := deploymentSelector(query.DeploymentID, query.Resources) +
+		filterExpr(query.Filter, query.ExclusionFilter)
 	return querySeq(s, ctx, orgID, logql, query.Start, query.End, query.Limit, query.Direction,
 		entryToDeploymentLogRecord)
 }
@@ -160,7 +161,8 @@ func (s *lokiStore) QueryDeploymentTargetLogRecords(
 	orgID uuid.UUID,
 	query DeploymentTargetLogQuery,
 ) iter.Seq2[DeploymentTargetLogRecord, error] {
-	logql := deploymentTargetSelector(query.DeploymentTargetID) + filterExpr(query.Filter)
+	logql := deploymentTargetSelector(query.DeploymentTargetID) +
+		filterExpr(query.Filter, query.ExclusionFilter)
 	return querySeq(s, ctx, orgID, logql, query.Start, query.End, query.Limit, query.Direction,
 		entryToDeploymentTargetLogRecord)
 }
@@ -643,15 +645,18 @@ func deploymentTargetSelector(deploymentTargetID uuid.UUID) string {
 		labelDeploymentTargetID, deploymentTargetID)
 }
 
-// filterExpr renders the user-supplied body filter as a LogQL regex line filter. The
-// filter is validated as RE2 by the handler, but must still be quoted so it cannot break
-// out of the string literal.
-func filterExpr(filter string) string {
-	if filter == "" {
-		return ""
+// filterExpr renders the user-supplied body filters as LogQL regex line filters. The
+// filters are validated as RE2 by the handler, but must still be quoted so they cannot
+// break out of the string literal.
+func filterExpr(filter, exclusionFilter string) string {
+	var expr string
+	if filter != "" {
+		expr += ` |~ ` + strconv.Quote(filter)
 	}
-
-	return ` |~ ` + strconv.Quote(filter)
+	if exclusionFilter != "" {
+		expr += ` !~ ` + strconv.Quote(exclusionFilter)
+	}
+	return expr
 }
 
 func entryToDeploymentLogRecord(entry lokiEntry) (DeploymentLogRecord, error) {

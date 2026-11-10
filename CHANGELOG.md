@@ -1,5 +1,54 @@
 # Changelog
 
+## [4.9.0](https://github.com/distr-sh/distr/compare/4.8.1...4.9.0) (2026-11-10)
+
+
+### Features
+
+* add exclusion mode to log filtering ([#3838](https://github.com/distr-sh/distr/issues/3838)) ([74e43a0](https://github.com/distr-sh/distr/commit/74e43a0f22e6f8b10e8ae438f3ecc71c382c996f))
+* add Kubernetes support bundles ([#3660](https://github.com/distr-sh/distr/issues/3660)) ([7328ed2](https://github.com/distr-sh/distr/commit/7328ed2dc499bf6096b0c18abd91078815821023))
+* new customer portal home page ([#3452](https://github.com/distr-sh/distr/issues/3452)) ([eb2c23a](https://github.com/distr-sh/distr/commit/eb2c23a5feb289ea5e83741fb43eb81d08783248))
+
+
+### Bug Fixes
+
+* **deps:** switch to go.podman.io/image/v5 to drop github.com/docker/docker ([#3811](https://github.com/distr-sh/distr/issues/3811)) ([2146095](https://github.com/distr-sh/distr/commit/2146095e589666283c238fba3191a5ec418f7a28))
+* **deps:** update aws-sdk-go-v2 monorepo ([#3803](https://github.com/distr-sh/distr/issues/3803)) ([c3d578e](https://github.com/distr-sh/distr/commit/c3d578e5692c3fc9f87f2650d5717eb1725c892a))
+* **deps:** update module github.com/docker/cli to v29.9.3+incompatible ([#3805](https://github.com/distr-sh/distr/issues/3805)) ([1de60d8](https://github.com/distr-sh/distr/commit/1de60d89cce6c4d881005e2ab7a6243f71ebb160))
+* **deps:** update module github.com/go-mailx/mailx-ses to v1.1.1 ([#3806](https://github.com/distr-sh/distr/issues/3806)) ([da19310](https://github.com/distr-sh/distr/commit/da19310df3116e124ce8ab638593ed305982656c))
+* **docker-controller:** upgrade Alpine packages ([#3820](https://github.com/distr-sh/distr/issues/3820)) ([5e3368a](https://github.com/distr-sh/distr/commit/5e3368aa8da46e9890e7c28dd1af17fac7850cd4))
+* **docker-controller:** use the docker cli variant base image ([#3821](https://github.com/distr-sh/distr/issues/3821)) ([278beaa](https://github.com/distr-sh/distr/commit/278beaadf833f63eb04eae58fc72bea84ed6b1a9))
+* **frontend:** autoclose session expiry info ([#3819](https://github.com/distr-sh/distr/issues/3819)) ([09b7858](https://github.com/distr-sh/distr/commit/09b78585cdd5669ba74f0c47e375c608a1f0c4bb))
+* **frontend:** disable helm release name input in update dialog ([#3830](https://github.com/distr-sh/distr/issues/3830)) ([d9bab49](https://github.com/distr-sh/distr/commit/d9bab491f10128d26c2b4d132639c0fe71289948))
+* **frontend:** only reload on errors of same-origin entry assets ([#3826](https://github.com/distr-sh/distr/issues/3826)) ([ebd50b5](https://github.com/distr-sh/distr/commit/ebd50b51cdef1447bd6842813492841467cc81d8))
+* **kubernetes-controller:** do not cancel helm action from termination signal ([#3828](https://github.com/distr-sh/distr/issues/3828)) ([45cac98](https://github.com/distr-sh/distr/commit/45cac98075293b211c58c506da19978431556845))
+* refuse access for organizations with expired subscriptions ([#3796](https://github.com/distr-sh/distr/issues/3796)) ([5a72d83](https://github.com/distr-sh/distr/commit/5a72d838239aac533b7f8662dc636bddc5516d62))
+
+
+### Other
+
+* **backend:** include deployment revision creator in API response ([#3827](https://github.com/distr-sh/distr/issues/3827)) ([35e7419](https://github.com/distr-sh/distr/commit/35e741995b6b87918952bd5fe3af48cee465fcdf))
+* **backend:** remove signature from mail templates ([#3794](https://github.com/distr-sh/distr/issues/3794)) ([b114629](https://github.com/distr-sh/distr/commit/b114629ccdb1aa4a95670dca2d54319e709d8912))
+* **backend:** update mail templates to use CTA style ([#3792](https://github.com/distr-sh/distr/issues/3792)) ([fde8a54](https://github.com/distr-sh/distr/commit/fde8a542be4d6ad1caa9114c1a92a2184c5bc313))
+* **backend:** use distr color scheme in mail templates ([#3793](https://github.com/distr-sh/distr/issues/3793)) ([2a6a760](https://github.com/distr-sh/distr/commit/2a6a760dd13f0649fb0da80d174592fb2c59e169))
+* **deps:** update alpine docker tag to v3.24.4 ([#3801](https://github.com/distr-sh/distr/issues/3801)) ([21c0820](https://github.com/distr-sh/distr/commit/21c082042e91b06b69596b6933389cb1af83641d))
+* **deps:** update angular monorepo to v22.2.5 ([#3809](https://github.com/distr-sh/distr/issues/3809)) ([0b8dcbd](https://github.com/distr-sh/distr/commit/0b8dcbd90bae33f03846dc5aa7731bb971865ce4))
+* **deps:** update axllent/mailpit docker tag to v1.33.1 ([#3834](https://github.com/distr-sh/distr/issues/3834)) ([ab24850](https://github.com/distr-sh/distr/commit/ab24850172855d64f259c53d84ceed63191e9608))
+* **deps:** update caddy docker tag to v2.11.9 ([#3797](https://github.com/distr-sh/distr/issues/3797)) ([621de44](https://github.com/distr-sh/distr/commit/621de44daf115717b4506b5686117dca1f61584a))
+* **deps:** update docker docker tag to v29.9.3 ([#3778](https://github.com/distr-sh/distr/issues/3778)) ([6f84252](https://github.com/distr-sh/distr/commit/6f84252e604e6377ca576b010a985db522e709b7))
+* **deps:** update hello-distr to v0.4.24 ([#3835](https://github.com/distr-sh/distr/issues/3835)) ([4f09408](https://github.com/distr-sh/distr/commit/4f094087bb81a4cb632cf8d89b4c9c8f263e3c7a))
+* **deps:** update module golang.org/x/net to v0.62.0 [security] ([#3818](https://github.com/distr-sh/distr/issues/3818)) ([fd20b02](https://github.com/distr-sh/distr/commit/fd20b0220f0a4ab1fa2e7438ffc4b61a3eee9e00))
+* **deps:** update postgresql docker tag to v18.12.18 ([#3798](https://github.com/distr-sh/distr/issues/3798)) ([1dc84d1](https://github.com/distr-sh/distr/commit/1dc84d1e5174c2a2c3fb7202e8f28d277c54dc68))
+* **deps:** update tailwindcss monorepo to v4.3.5 ([#3836](https://github.com/distr-sh/distr/issues/3836)) ([e154d7d](https://github.com/distr-sh/distr/commit/e154d7d65bb2a57efc29b59928ff652d434a094e))
+* **frontend:** remove obsolete dependency overrides and the unused flowbite datepicker ([#3812](https://github.com/distr-sh/distr/issues/3812)) ([4b298c2](https://github.com/distr-sh/distr/commit/4b298c27984b176592aafed9060d657420687fcf))
+* **sdk/js:** update deps ([#3817](https://github.com/distr-sh/distr/issues/3817)) ([d7dd729](https://github.com/distr-sh/distr/commit/d7dd7294b7b146ff2c0817a50d5cdaa542cc4ed0))
+
+
+### Docs
+
+* **website:** controller security docs ([#3832](https://github.com/distr-sh/distr/issues/3832)) ([a2df8a1](https://github.com/distr-sh/distr/commit/a2df8a18cddf02e7243ccabef5bac75df2bd8d93))
+* **website:** remove controller hardening page ([#3833](https://github.com/distr-sh/distr/issues/3833)) ([7094c69](https://github.com/distr-sh/distr/commit/7094c6903b9aac3785bae20aadf767a7ea726eca))
+
 ## [4.8.1](https://github.com/distr-sh/distr/compare/4.8.0...4.8.1) (2026-11-06)
 
 

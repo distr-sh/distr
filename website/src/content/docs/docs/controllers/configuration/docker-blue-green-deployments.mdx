@@ -4,7 +4,7 @@ description: Ship downtime-free deployments on Docker. Run two versions of an ap
 slug: docs/controllers/docker-blue-green-deployments
 sidebar:
   label: Docker Blue-Green Deployments
-  order: 7
+  order: 8
 ---
 
 import {Aside, Code, Steps, TabItem, Tabs} from '@astrojs/starlight/components';
@@ -45,7 +45,7 @@ A single controller manages all of them, so every step of a rollout is an ordina
 | `backend`  | Backend with `SLOT=green` | The other slot, running the next version during a rollout.                                                                               |
 
 The blue and green slots are two deployments of the same Distr application, each on its own version.
-Distr runs every deployment as a Docker Compose project of its own, so the deployments reach each other through a shared Docker network that the proxy deployment creates and the others declare as `external`.
+Distr runs every deployment as a Docker Compose project of its own, so the deployments reach each other through a shared Docker network that the proxy deployment creates and the others declare as `external`. [Docker Multi App Networking](/docs/controllers/docker-multi-app-networking/) explains this pattern in general.
 
 The proxy in this guide is [Caddy](https://caddyserver.com/docs/), which supports weighted load balancing and health checks per slot.
 Any reverse proxy with weighted upstreams works the same way.

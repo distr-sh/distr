@@ -33,6 +33,9 @@ type DeploymentLogQuery struct {
 	End          time.Time
 	// Filter is an optional RE2 body filter, already validated by the handler.
 	Filter string
+	// ExclusionFilter is an optional RE2 body filter that excludes matching records, already
+	// validated by the handler.
+	ExclusionFilter string
 	// Limit is the maximum number of records to return. limit.Unlimited returns all
 	// matching records in the time range.
 	Limit limit.Limit
@@ -58,6 +61,9 @@ type DeploymentTargetLogQuery struct {
 	End                time.Time
 	// Filter is an optional RE2 body filter, already validated by the handler.
 	Filter string
+	// ExclusionFilter is an optional RE2 body filter that excludes matching records, already
+	// validated by the handler.
+	ExclusionFilter string
 	// Limit is the maximum number of records to return. limit.Unlimited returns all
 	// matching records in the time range.
 	Limit limit.Limit

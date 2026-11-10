@@ -65,13 +65,14 @@ func exportDeploymentLogsHandler(r *http.Request) (respond.Responder, error) {
 		var records iter.Seq2[logstore.DeploymentLogRecord, error] = noRecords
 		if !queryRange.IsEmpty() {
 			records = logstore.FromContext(ctx).QueryDeploymentLogRecords(ctx, org.ID, logstore.DeploymentLogQuery{
-				DeploymentID: deployment.ID,
-				Resources:    resources,
-				Start:        queryRange.Start,
-				End:          queryRange.End,
-				Filter:       queryRange.Filter,
-				Limit:        subscription.MaxLogExportRows,
-				Direction:    types.OrderDirectionDesc,
+				DeploymentID:    deployment.ID,
+				Resources:       resources,
+				Start:           queryRange.Start,
+				End:             queryRange.End,
+				Filter:          queryRange.Filter,
+				ExclusionFilter: queryRange.ExclusionFilter,
+				Limit:           subscription.MaxLogExportRows,
+				Direction:       types.OrderDirectionDesc,
 			})
 		}
 
@@ -105,13 +106,14 @@ func getDeploymentLogsHandler(r *http.Request) (respond.Responder, error) {
 		return nil, err
 	} else if records, err := util.SeqCollect(logstore.FromContext(ctx).QueryDeploymentLogRecords(
 		ctx, org.ID, logstore.DeploymentLogQuery{
-			DeploymentID: deployment.ID,
-			Resources:    resources,
-			Start:        queryRange.Start,
-			End:          queryRange.End,
-			Filter:       queryRange.Filter,
-			Limit:        limit.Limit(limitParam),
-			Direction:    types.EffectiveOrderDirection(order, queryRange.StartExplicit),
+			DeploymentID:    deployment.ID,
+			Resources:       resources,
+			Start:           queryRange.Start,
+			End:             queryRange.End,
+			Filter:          queryRange.Filter,
+			ExclusionFilter: queryRange.ExclusionFilter,
+			Limit:           limit.Limit(limitParam),
+			Direction:       types.EffectiveOrderDirection(order, queryRange.StartExplicit),
 		},
 	)); err != nil {
 		if errors.Is(err, distrerr.ErrBadRequest) {

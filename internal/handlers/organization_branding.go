@@ -24,7 +24,12 @@ func OrganizationBrandingRouter(r chiopenapi.Router) {
 	r.Get("/", respond.Handler(getOrganizationBranding)).
 		With(option.Description("Get organization branding")).
 		With(option.Response(http.StatusOK, types.OrganizationBranding{}))
-	r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
+	r.With(
+		middleware.RequireVendor,
+		middleware.RequireReadWriteOrAdmin,
+		middleware.BlockSuperAdmin,
+		middleware.RequireActiveSubscription,
+	).
 		Put("/", respond.Handler(upsertOrganizationBranding)).
 		With(option.Description("Create or update organization branding")).
 		With(option.Request(api.UpsertOrganizationBrandingRequest{})).

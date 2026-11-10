@@ -316,18 +316,19 @@ func TestQueryDeploymentLogRecordsSelector(t *testing.T) {
 	}))
 
 	_, err := util.SeqCollect(store.QueryDeploymentLogRecords(testContext(t), testOrgID, DeploymentLogQuery{
-		DeploymentID: testDeploymentID,
-		Resources:    []string{"resource-a", "resource+b"},
-		Start:        time.Now().Add(-time.Hour),
-		End:          time.Now(),
-		Filter:       "some.*filter",
-		Limit:        10,
-		Direction:    types.OrderDirectionDesc,
+		DeploymentID:    testDeploymentID,
+		Resources:       []string{"resource-a", "resource+b"},
+		Start:           time.Now().Add(-time.Hour),
+		End:             time.Now(),
+		Filter:          "some.*filter",
+		ExclusionFilter: `not "this"`,
+		Limit:           10,
+		Direction:       types.OrderDirectionDesc,
 	}))
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(capturedQuery).To(Equal(
 		`{distr_kind="deployment",deployment_id="` + testDeploymentID.String() +
-			`",resource=~"resource-a|resource\\+b"} |~ "some.*filter"`,
+			`",resource=~"resource-a|resource\\+b"} |~ "some.*filter" !~ "not \"this\""`,
 	))
 }
 

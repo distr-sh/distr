@@ -12,6 +12,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/deploymentvalues"
+	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 )
@@ -256,19 +257,6 @@ func deploymentRequestFromLatestRevision(deployment types.DeploymentWithLatestRe
 		ValuesYaml:               deployment.ValuesYaml,
 		DockerType:               deployment.DockerType,
 		EnvFileData:              deployment.EnvFileData,
-		HelmOptions:              apiHelmOptionsFromInternal(deployment.HelmOptions),
-	}
-}
-
-func apiHelmOptionsFromInternal(options *types.HelmOptions) *api.HelmOptions {
-	if options == nil {
-		return nil
-	}
-	return &api.HelmOptions{
-		Timeout:           options.Timeout,
-		WaitStrategy:      options.WaitStrategy,
-		RollbackOnFailure: options.RollbackOnFailure,
-		CleanupOnFailure:  options.CleanupOnFailure,
-		ForceConflicts:    options.ForceConflicts,
+		HelmOptions:              mapping.PtrOrNil(deployment.HelmOptions, mapping.HelmOptionsToAPI),
 	}
 }

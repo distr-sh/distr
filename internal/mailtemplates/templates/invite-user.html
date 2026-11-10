@@ -13,7 +13,11 @@
 
         <p>
           {{ if .InvitingUser.Name }}{{ .InvitingUser.Name }}{{ else }}{{ .InvitingUser.Email }}{{ end }} invited you to
-          the <strong>{{ .TargetOrgName }}</strong> organization on {{ .Host }}.
+          the <strong>{{ .TargetOrgName }}</strong> organization
+          {{ if and .Organization.Name (ne .Organization.Name .TargetOrgName) }}
+            at <strong>{{ .Organization.Name }}</strong>
+          {{ end }}
+          on {{ .Host }}.
         </p>
 
         {{ if .InviteURL }}
@@ -31,9 +35,6 @@
             <a class="cta" href="{{ .Host }}/">Log in</a>
           </p>
         {{ end }}
-
-
-        <p>{{ template "fragments/signature.html" . }}</p>
       </main>
       {{ template "fragments/footer.html" . }}
     </div>

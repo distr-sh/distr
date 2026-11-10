@@ -7,13 +7,7 @@
         Your <span class="font-semibold uppercase">{{ organization().subscriptionType }}</span> subscription has expired
         on <span class="font-semibold">{{ organization().subscriptionEndsAt | date: 'longDate' }}</span
         >.
-        <span class="hidden md:inline">
-          @if (isTrial()) {
-            <br />Please choose a plan to continue using Distr.
-          } @else {
-            <br />Please review your payment information in the <strong>Manage Subscription</strong> section.
-          }
-        </span>
+        <span class="hidden md:inline"> <br />Please choose a plan to continue using Distr. </span>
       </p>
     </div>
     <div class="hidden md:flex">

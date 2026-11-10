@@ -60,6 +60,10 @@ export function toCustomerHomeDeploymentTargets(
           latest.id !== (deployment.currentApplicationVersionId ?? deployment.applicationVersionId),
         deploymentRevisionId: deployment.deploymentRevisionId,
         deploymentRevisionCreatedAt: deployment.deploymentRevisionCreatedAt,
+        deploymentRevisionCreatedBy: user(
+          deployment.deploymentRevisionCreatedBy?.name || deployment.deploymentRevisionCreatedBy?.email,
+          undefined
+        ),
         currentDeploymentRevisionId: deployment.currentDeploymentRevisionId,
         latestStatus: deployment.latestStatus,
         currentStatus: deployment.currentStatus,

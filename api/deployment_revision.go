@@ -28,7 +28,7 @@ type DeploymentRevisionResponse struct {
 	EnvFileData            []byte                          `json:"envFileData,omitempty"`
 	ForceRestart           bool                            `json:"forceRestart"`
 	IgnoreRevisionSkew     bool                            `json:"ignoreRevisionSkew"`
-	HelmOptions            *types.HelmOptions              `json:"helmOptions,omitempty"`
+	HelmOptions            *HelmOptions                    `json:"helmOptions,omitempty"`
 	Trigger                types.DeploymentRevisionTrigger `json:"trigger"`
 	CreatedBy              *DeploymentRevisionCreator      `json:"createdBy,omitempty"`
 	LatestStatus           *DeploymentRevisionStatus       `json:"latestStatus,omitempty"`

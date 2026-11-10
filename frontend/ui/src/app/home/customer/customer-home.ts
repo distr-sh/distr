@@ -30,6 +30,7 @@ export interface CustomerHomeDeployment {
   updateAvailable: boolean;
   deploymentRevisionId?: string;
   deploymentRevisionCreatedAt?: string;
+  deploymentRevisionCreatedBy?: CustomerHomeUser;
   currentDeploymentRevisionId?: string;
   latestStatus?: DeploymentRevisionStatus;
   currentStatus?: DeploymentRevisionStatus;

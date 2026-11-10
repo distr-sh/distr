@@ -27,9 +27,10 @@ type TimeseriesRequest struct {
 // TimeseriesRangeRequest are the parameters that select a subset of a timeseries. Exports
 // accept them too, but no limit.
 type TimeseriesRangeRequest struct {
-	Before *time.Time `query:"before"`
-	After  *time.Time `query:"after"`
-	Filter *string    `query:"filter"`
+	Before          *time.Time `query:"before"`
+	After           *time.Time `query:"after"`
+	Filter          *string    `query:"filter" description:"RE2 regex that a record body has to match"`
+	ExclusionFilter *string    `query:"exclusionFilter" description:"RE2 regex that a record body must not match"`
 }
 
 // timeseriesRange is the raw range selection of a timeseries read or export request.
@@ -41,6 +42,9 @@ type timeseriesRange struct {
 	After time.Time
 	// Filter is an optional RE2 filter on the record body, already validated.
 	Filter string
+	// ExclusionFilter is an optional RE2 filter that excludes the records whose body matches it,
+	// already validated.
+	ExclusionFilter string
 }
 
 // defaultTimeseriesLimit is the page size used when a timeseries read does not request one.
@@ -58,9 +62,9 @@ func parseTimeseriesLimit(r *http.Request) (int, error) {
 	return limit, nil
 }
 
-// parseTimeseriesRange parses and validates the before, after and filter query parameters.
-// All returned errors are caused by invalid client input and should be answered with
-// status 400.
+// parseTimeseriesRange parses and validates the before, after, filter and exclusionFilter
+// query parameters. All returned errors are caused by invalid client input and should be
+// answered with status 400.
 func parseTimeseriesRange(r *http.Request) (timeseriesRange, error) {
 	before, err := QueryParam(r, "before", ParseTimeFunc(time.RFC3339Nano))
 	if err != nil && !errors.Is(err, ErrParamNotDefined) {
@@ -70,13 +74,25 @@ func parseTimeseriesRange(r *http.Request) (timeseriesRange, error) {
 	if err != nil && !errors.Is(err, ErrParamNotDefined) {
 		return timeseriesRange{}, err
 	}
-	filter := r.FormValue("filter")
+	filter, err := parseFilter(r, "filter")
+	if err != nil {
+		return timeseriesRange{}, err
+	}
+	exclusionFilter, err := parseFilter(r, "exclusionFilter")
+	if err != nil {
+		return timeseriesRange{}, err
+	}
+	return timeseriesRange{Before: before, After: after, Filter: filter, ExclusionFilter: exclusionFilter}, nil
+}
+
+func parseFilter(r *http.Request, key string) (string, error) {
+	filter := r.FormValue(key)
 	if filter != "" {
 		if _, err := validation.ParseRegex(filter, maxFilterLength); err != nil {
-			return timeseriesRange{}, err
+			return "", err
 		}
 	}
-	return timeseriesRange{Before: before, After: after, Filter: filter}, nil
+	return filter, nil
 }
 
 var errRollback = errors.New("transaction rolled back")

@@ -532,9 +532,14 @@ func controllerAuthDeploymentTargetCtxMiddleware(r *http.Request) (*http.Request
 	if deploymentTarget, err := db.GetDeploymentTarget(
 		ctx, auth.CurrentDeploymentTargetID(), &orgId, nil,
 	); errors.Is(err, distrerr.ErrNotFound) {
-		return nil, respond.Unauthorized("deployment target not found"), nil
+		return nil, deploymentTargetNotFoundUnauthorized, nil
 	} else if err != nil {
 		return nil, nil, fmt.Errorf("failed to get deployment target: %w", err)
+	} else if isActive, err := deploymentTargetHasActiveSubscription(ctx, deploymentTarget); err != nil {
+		return nil, nil, err
+	} else if !isActive {
+		log.Info("controller unauthorized: subscription expired", zap.Stringer("deploymentTargetId", deploymentTarget.ID))
+		return nil, deploymentTargetNotFoundUnauthorized, nil
 	} else {
 		if reportedVersionName, ok := useragent.ReportedVersion(r.UserAgent()); ok {
 			if reportedVersion, err := db.GetControllerVersionWithName(ctx, reportedVersionName); err != nil {
@@ -576,6 +581,13 @@ func getVerifiedDeploymentTarget(
 		return nil, invalidDeploymentTargetCredentials, nil
 	}
 
+	if isActive, err := deploymentTargetHasActiveSubscription(ctx, deploymentTarget); err != nil {
+		return nil, nil, err
+	} else if !isActive {
+		log.Info("controller unauthorized: subscription expired")
+		return nil, invalidDeploymentTargetCredentials, nil
+	}
+
 	if pending && promotePendingAccessKey {
 		if err := db.PromoteDeploymentTargetPendingAccessKey(
 			ctx, deploymentTarget.ID, *deploymentTarget.PendingAccessKeyHash,
@@ -591,4 +603,20 @@ func getVerifiedDeploymentTarget(
 	return deploymentTarget, nil, nil
 }
 
-var invalidDeploymentTargetCredentials = respond.Unauthorized("invalid deployment target credentials")
+var (
+	invalidDeploymentTargetCredentials   = respond.Unauthorized("invalid deployment target credentials")
+	deploymentTargetNotFoundUnauthorized = respond.Unauthorized("deployment target not found")
+)
+
+func deploymentTargetHasActiveSubscription(
+	ctx context.Context,
+	deploymentTarget *types.DeploymentTargetFull,
+) (bool, error) {
+	if org, err := db.GetOrganizationByID(ctx, deploymentTarget.OrganizationID); errors.Is(err, distrerr.ErrNotFound) {
+		return false, nil
+	} else if err != nil {
+		return false, fmt.Errorf("failed to get organization of deployment target: %w", err)
+	} else {
+		return org.HasActiveSubscription(), nil
+	}
+}

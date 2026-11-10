@@ -24,21 +24,20 @@ func TestDeploymentRevisionToAPI_CreatorVisibility(t *testing.T) {
 	)
 
 	creator := func(kind int, deleted bool) types.DeploymentRevisionWithCreator {
-		r := types.DeploymentRevisionWithCreator{
-			ID:               uuid.New(),
-			CreatedByID:      &creatorID,
-			CreatedByName:    &creatorName,
-			CreatedByEmail:   &creatorEmail,
-			CreatedByImageID: &creatorImageID,
-			CreatedByDeleted: deleted,
+		c := &types.DeploymentRevisionCreator{
+			ID:      creatorID,
+			Name:    &creatorName,
+			Email:   creatorEmail,
+			ImageID: &creatorImageID,
+			Deleted: deleted,
 		}
 		switch kind {
 		case partner:
-			r.CreatedByPartnerOrganizationID = &partnerOrg
+			c.PartnerOrganizationID = &partnerOrg
 		case customer:
-			r.CreatedByCustomerOrganizationID = &customerOrg
+			c.CustomerOrganizationID = &customerOrg
 		}
-		return r
+		return types.DeploymentRevisionWithCreator{ID: uuid.New(), CreatedBy: c}
 	}
 
 	tests := []struct {

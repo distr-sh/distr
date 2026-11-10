@@ -44,6 +44,9 @@
         @if (deployment.deploymentRevisionCreatedAt; as createdAt) {
           <dd class="text-gray-900 dark:text-white" [title]="createdAt | date: 'medium'">
             {{ createdAt | relativeDate }}
+            @if (deployment.deploymentRevisionCreatedBy; as createdBy) {
+              by {{ createdBy.name }}
+            }
           </dd>
         } @else {
           <dd class="distr-text-muted">Not updated yet</dd>

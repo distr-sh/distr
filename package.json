@@ -1,6 +1,6 @@
 {
   "name": "@distr-sh/distr",
-  "version": "4.8.1",
+  "version": "4.9.0",
   "type": "module",
   "license": "Apache-2.0",
   "description": "Distr",
@@ -16,8 +16,8 @@
     "watch": "pnpm buildconfig && pnpm controller-changelog && ng build --watch --configuration=development",
     "test": "pnpm buildconfig && ng test --watch=false",
     "test:watch": "pnpm buildconfig && ng test --watch=true",
-    "lint": "prettier --check .",
-    "format": "prettier --write --list-different ."
+    "lint": "prettier --check --cache .",
+    "format": "prettier --write --list-different --cache ."
   },
   "private": true,
   "packageManager": "pnpm@12.18.0",

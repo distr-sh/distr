@@ -60,6 +60,11 @@
     @apply relative h-6 w-11 rounded-full bg-gray-200 peer-checked:bg-blue-600 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-blue-300 after:absolute after:inset-s-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white rtl:peer-checked:after:-translate-x-full dark:border-gray-600 dark:bg-gray-700 dark:peer-checked:bg-blue-600 dark:peer-focus-visible:ring-blue-800;
   }
 
+  // a `distr-toggle` next to a `distr-label-sm`. Must stay below `.distr-toggle` to override it.
+  .distr-toggle-sm {
+    @apply h-4 w-7 after:h-3 after:w-3;
+  }
+
   .distr-input {
     @apply block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 placeholder-gray-500 focus:border-primary-600 focus:ring-primary-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500;
   }

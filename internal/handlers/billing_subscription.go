@@ -35,10 +35,15 @@ func GetSubscriptionHandler(r *http.Request) (respond.Responder, error) {
 func CreateSubscriptionHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
+	org := auth.CurrentOrg()
 
-	if body, resp := decodeJSON[api.CreateSubscriptionRequest](r); resp != nil {
+	if org.StripeSubscriptionID != nil {
+		return respond.BadRequest(
+			"the organization already has a subscription, please manage it in the billing portal",
+		), nil
+	} else if body, resp := decodeJSON[api.CreateSubscriptionRequest](r); resp != nil {
 		return resp, nil
-	} else if usage, err := getCurrentUsageCounts(ctx, *auth.CurrentOrgID()); err != nil {
+	} else if usage, err := getCurrentUsageCounts(ctx, org.ID); err != nil {
 		return nil, fmt.Errorf("failed to get current usage counts: %w", err)
 	} else if err := validateSubscriptionQuantities(
 		body.SubscriptionType,
@@ -48,8 +53,9 @@ func CreateSubscriptionHandler(r *http.Request) (respond.Responder, error) {
 	); err != nil {
 		return respond.BadRequest(err.Error()), nil
 	} else if session, err := billing.CreateCheckoutSession(ctx, billing.CheckoutSessionParams{
-		OrganizationID:          auth.CurrentOrgID().String(),
-		TrialEndsAt:             auth.CurrentOrg().SubscriptionEndsAt,
+		OrganizationID:          org.ID.String(),
+		CustomerID:              org.StripeCustomerID,
+		TrialEndsAt:             org.SubscriptionEndsAt,
 		SubscriptionType:        body.SubscriptionType,
 		SubscriptionPeriod:      body.SubscriptionPeriod,
 		CustomerOrganizationQty: body.CustomerOrganizationQty,
@@ -289,6 +295,7 @@ func buildSubscriptionInfo(ctx context.Context, org *types.Organization) (*api.S
 		SubscriptionPeriod:                  org.SubscriptionPeriod,
 		SubscriptionCustomerOrganizationQty: org.SubscriptionCustomerOrganizationQty.Value(),
 		SubscriptionUserAccountQty:          org.SubscriptionUserAccountQty.Value(),
+		HasStripeSubscription:               org.StripeSubscriptionID != nil,
 		CurrentUserAccountCount:             usage.userAccountCount,
 		CurrentCustomerOrganizationCount:    usage.customerOrganizationCount,
 		CurrentRegistryStorageBytes:         usage.registryStorageBytes,

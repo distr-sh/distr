@@ -86,7 +86,7 @@ The controller runs the following loop at the interval defined by `DISTR_CONTROL
 
 An apply that has not finished after 10 minutes is reported as an error rather than left in `PROGRESSING`, and is retried on the next cycle.
 
-Each deployment maps to one Docker Compose project on the host, named `distr-<short-deployment-id>`.
+Each deployment maps to one Docker Compose project on the host, named `distr-<short-deployment-id>`. To let deployments reach each other, see [Docker Multi App Networking](/docs/controllers/docker-multi-app-networking/).
 
 ## Authentication with OCI Registries
 
