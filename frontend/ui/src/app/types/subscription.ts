@@ -3,6 +3,9 @@ import dayjs from 'dayjs';
 export const UNLIMITED_QTY = -1;
 export type SubscriptionType = 'community' | 'pro' | 'business' | 'enterprise' | 'trial';
 
+/** The plans a feature can ask an organization to upgrade to. */
+export type UpgradePlan = Extract<SubscriptionType, 'pro' | 'business'>;
+
 // Subscription types without access to paid features. Feature gating is expressed by
 // excluding these types rather than by listing the paid ones, so a newly introduced plan
 // has access by default instead of silently losing it.

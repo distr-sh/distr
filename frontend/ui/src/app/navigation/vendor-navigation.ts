@@ -1,0 +1,107 @@
+import {
+  faAddressBook,
+  faAsterisk,
+  faBoxesStacked,
+  faBuilding,
+  faCreditCard,
+  faCube,
+  faDashboard,
+  faGear,
+  faHandHoldingDollar,
+  faKey,
+  faLifeRing,
+  faLightbulb,
+  faPalette,
+  faShieldHalved,
+  faUsers,
+} from '@fortawesome/free-solid-svg-icons';
+import {vendorNotificationsGroup} from './groups/notifications-group';
+import {registryGroup} from './groups/registry-group';
+import {NavigationDefinition} from './navigation';
+
+export const vendorNavigation: NavigationDefinition = [
+  {
+    id: 'distribution',
+    label: 'Distribution',
+    entries: [
+      {
+        id: 'tutorials',
+        label: 'Tutorials',
+        icon: faLightbulb,
+        route: '/tutorials',
+        visible: (c) => c.user.isAdmin && !c.organization.hasSubscription,
+        indicator: (c) => c.organization.hasUnstartedTutorials,
+      },
+      {id: 'dashboard', label: 'Dashboard', icon: faDashboard, route: '/dashboard'},
+      {id: 'applications', label: 'Applications', icon: faCube, route: '/applications'},
+      {id: 'deployments', label: 'Deployments', icon: faBoxesStacked, route: '/deployments'},
+      registryGroup,
+      {
+        id: 'licenses',
+        label: 'Licenses',
+        icon: faKey,
+        route: '/licenses',
+        locked: {plan: 'pro', when: (c) => !c.features.has('licensing')},
+      },
+      vendorNotificationsGroup,
+      {
+        id: 'billing',
+        label: 'Billing',
+        icon: faHandHoldingDollar,
+        route: '/billing',
+        visible: (c) => c.features.has('vendor_billing'),
+      },
+    ],
+  },
+  {
+    id: 'management',
+    label: 'Management',
+    entries: [
+      {id: 'customers', label: 'Customers', icon: faAddressBook, route: '/customers'},
+      {
+        id: 'partners',
+        label: 'Partners',
+        icon: faBuilding,
+        route: '/partners',
+        visible: (c) => c.features.has('partner_management'),
+      },
+      {
+        id: 'support-bundles',
+        label: 'Support Bundles',
+        icon: faLifeRing,
+        route: '/support-bundles',
+        locked: {plan: 'pro', when: (c) => !c.features.has('support_bundles')},
+      },
+      {
+        id: 'advisories',
+        label: 'Security Advisories',
+        icon: faShieldHalved,
+        route: '/advisories',
+        locked: {plan: 'business', when: (c) => !c.features.has('vulnerabilities')},
+      },
+      {id: 'users', label: 'Users', icon: faUsers, route: '/users', visible: (c) => c.user.isAdminOrSuperAdmin},
+      {id: 'secrets', label: 'Secrets', icon: faAsterisk, route: '/secrets'},
+      {
+        id: 'branding',
+        label: 'Branding',
+        icon: faPalette,
+        route: '/branding',
+        visible: (c) => c.user.isSuperAdmin || c.user.isReadWriteOrAdmin,
+      },
+      {
+        id: 'subscription',
+        label: 'Subscription',
+        icon: faCreditCard,
+        route: '/subscription',
+        visible: (c) => c.user.isAdminOrSuperAdmin && c.isEnterpriseEdition,
+      },
+      {
+        id: 'settings',
+        label: 'Settings',
+        icon: faGear,
+        route: '/settings/organization',
+        visible: (c) => c.user.isAdminOrSuperAdmin,
+      },
+    ],
+  },
+];

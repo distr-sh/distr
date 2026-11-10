@@ -1,0 +1,64 @@
+@let item = entry();
+@switch (item.kind) {
+  @case ('link') {
+    <a class="item" routerLinkActive="active" [routerLink]="item.route" (click)="sidebar.hide()">
+      <fa-icon [icon]="item.icon" size="lg" class="icon" />
+      <span class="label">{{ item.label }}</span>
+      @if (item.hasIndicator) {
+        <span class="mr-1.5 h-2.5 w-2.5 rounded-full bg-blue-700 dark:bg-blue-600"></span>
+      }
+    </a>
+  }
+  @case ('external') {
+    <a class="item" [href]="item.href" target="_blank" rel="noopener noreferrer">
+      <fa-icon [icon]="item.icon" size="lg" class="icon" />
+      <span class="label">{{ item.label }}</span>
+    </a>
+  }
+  @case ('locked') {
+    <button
+      type="button"
+      class="item"
+      [title]="'Upgrade to ' + (item.plan | titlecase) + ' to enable ' + (item.label | lowercase)"
+      (click)="isPlanHintOpen.set(!isPlanHintOpen())"
+      cdkOverlayOrigin
+      #origin="cdkOverlayOrigin">
+      <fa-icon [icon]="item.icon" size="lg" class="icon" />
+      <span class="label whitespace-nowrap">{{ item.label }}</span>
+      <app-plan-badge [plan]="item.plan" class="me-2 ml-2" />
+    </button>
+    <ng-template
+      cdkConnectedOverlay
+      [cdkConnectedOverlayHasBackdrop]="true"
+      (backdropClick)="isPlanHintOpen.set(false)"
+      [cdkConnectedOverlayOrigin]="origin"
+      [cdkConnectedOverlayBackdropClass]="'transparent'"
+      [cdkConnectedOverlayPositions]="[{originX: 'end', overlayX: 'start', originY: 'center', overlayY: 'center'}]"
+      [cdkConnectedOverlayOpen]="isPlanHintOpen()">
+      <app-plan-feature-hint [plan]="item.plan" />
+    </ng-template>
+  }
+  @case ('group') {
+    <button
+      type="button"
+      class="item"
+      [attr.aria-expanded]="isExpanded()"
+      [attr.aria-controls]="'side-bar-group-' + item.id"
+      (click)="isExpanded.set(!isExpanded())">
+      <fa-icon [icon]="item.icon" size="lg" class="icon" />
+      <span class="label whitespace-nowrap">{{ item.label }}</span>
+      <fa-icon [icon]="faChevronDown" [class.rotate-x-180]="isExpanded()" class="transition duration-150 ease-in-out" />
+    </button>
+    @if (isExpanded()) {
+      <ul class="mt-1 space-y-1" [id]="'side-bar-group-' + item.id">
+        @for (child of item.children; track child.id) {
+          <li>
+            <a class="item child" routerLinkActive="active" [routerLink]="child.route" (click)="sidebar.hide()">
+              {{ child.label }}
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  }
+}
