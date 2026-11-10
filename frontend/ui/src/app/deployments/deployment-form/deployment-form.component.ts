@@ -372,33 +372,38 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
     this.deploymentType$.pipe(takeUntil(this.destroyed$)).subscribe((type) => {
       if (type) {
         if (type === 'kubernetes') {
-          this.deployForm.controls.releaseName.enable();
           this.deployForm.controls.valuesYaml.enable();
           this.deployForm.controls.helmOptionsEnabled.enable();
           this.deployForm.controls.envFileData.disable();
 
           const targetName = this.deploymentTargetName();
-          if (!this.deployForm.value.releaseName && targetName) {
+          if (!this.deployForm.getRawValue().releaseName && targetName) {
             this.deployForm.patchValue({
               releaseName: targetName.trim().toLowerCase().replaceAll(/\W+/g, '-'),
             });
           }
         } else {
           this.deployForm.controls.envFileData.enable();
-          this.deployForm.controls.releaseName.disable();
           this.deployForm.controls.valuesYaml.disable();
           this.deployForm.controls.helmOptionsEnabled.disable();
         }
       }
     });
 
-    combineLatest([this.deploymentId$, this.deploymentType$]).subscribe(([deploymentId, deploymentType]) => {
-      if (deploymentType === 'kubernetes' && deploymentId) {
-        this.deployForm.controls.ignoreRevisionSkew.enable();
-      } else {
-        this.deployForm.controls.ignoreRevisionSkew.disable();
-      }
-    });
+    combineLatest([this.deploymentId$, this.deploymentType$])
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe(([deploymentId, deploymentType]) => {
+        if (deploymentType === 'kubernetes' && deploymentId) {
+          this.deployForm.controls.ignoreRevisionSkew.enable();
+        } else {
+          this.deployForm.controls.ignoreRevisionSkew.disable();
+        }
+        if (deploymentType === 'kubernetes' && !deploymentId) {
+          this.deployForm.controls.releaseName.enable();
+        } else {
+          this.deployForm.controls.releaseName.disable();
+        }
+      });
 
     this.deploymentId$.pipe(takeUntil(this.destroyed$)).subscribe((id) => {
       if (id) {
