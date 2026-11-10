@@ -1,0 +1,25 @@
+---
+title: Configuration Reference
+description: The settings that decide what a Distr controller collects, what it sends to Distr and what it changes on its own, with their defaults.
+slug: docs/controllers/security/configuration
+sidebar:
+  label: Configuration Reference
+  order: 9
+---
+
+These settings decide what a controller collects, what it sends and what it changes on its own. Most of them belong to the deployment target, and any user with the `read_write` or `admin` role in the vendor organization or in the customer organization of the deployment target can change them. The table shows the defaults of the Distr UI. A deployment target created through the API has every switch off unless the request turns it on.
+
+| Setting                                                   | Default in the UI                                                                   | What it controls                                                                                                                                                                        |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Collect application logs                                  | On                                                                                  | Whether the stdout and stderr of the deployments' containers are sent to Distr. **Collect logs after** limits this to logs newer than a point in time                                   |
+| Report metrics                                            | On, off for namespace scope                                                         | Whether the usage of the host or cluster and of the deployments' containers is sent to Distr. On Docker it also decides whether the host filesystem is mounted into the controller      |
+| Automatic controller updates                              | On                                                                                  | Whether the controller updates itself as soon as a new version is released. With it off, an editor starts each update from the deployment target, which shows the changelog first       |
+| Automatic application updates, per deployment             | Off                                                                                 | Whether a deployment follows the latest version of its application. Vendors and customers can both turn it on, see [Automatic Updates](/docs/controllers/deployment/#automatic-updates) |
+| Image cleanup, Docker only                                | On                                                                                  | Whether the images of the previous revision are removed after a successful update                                                                                                       |
+| Autoheal for all containers, Docker only, set at creation | On                                                                                  | Whether autoheal restarts every unhealthy container on the host or only the controller                                                                                                  |
+| Custom Docker endpoint, Docker only                       | Off                                                                                 | Which Docker socket the controller uses instead of `/var/run/docker.sock`                                                                                                               |
+| Scope, Kubernetes only, set at creation                   | Cluster                                                                             | Whether the controller gets `cluster-admin` or only the permissions of its namespace                                                                                                    |
+| Custom resource requirements, Kubernetes only             | Off                                                                                 | The CPU and memory of the controller pod instead of 256Mi of memory and a 500m CPU limit                                                                                                |
+| Controller image repository, organization setting         | `registry.distr.sh/distr` on Distr Cloud, `ghcr.io/distr-sh/distr` when self-hosted | Which registry the controller images are pulled from, see [Controller Image Repository](/docs/platform/branding/#controller-image-repository)                                           |
+
+A setting that ends up in the controller's Compose file or manifest, such as metrics on Docker, the Docker endpoint, the resource requirements or the image repository, reaches the environment the next time that file is applied, by a controller update or a reconnect. The other settings apply on the controller's next cycle.

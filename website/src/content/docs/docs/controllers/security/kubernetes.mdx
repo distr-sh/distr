@@ -1,0 +1,77 @@
+---
+title: Kubernetes Controller Security
+description: What the Distr Kubernetes controller can access in the cluster, which Helm and Kubernetes operations it runs and which credentials it keeps there.
+slug: docs/controllers/security/kubernetes
+sidebar:
+  label: Kubernetes Controller
+  order: 3
+---
+
+import {Aside} from '@astrojs/starlight/components';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import architectureLight from '~/assets/docs/controllers/security/kubernetes-controller-architecture-light.webp';
+import architectureDark from '~/assets/docs/controllers/security/kubernetes-controller-architecture-dark.webp';
+
+The [Kubernetes controller](/docs/controllers/kubernetes-controller/) manages Helm releases through the Kubernetes API, so it has the access of its service account.
+
+## Architecture
+
+The controller opens every connection to Distr itself, over HTTPS, so the cluster needs no inbound ports.
+
+<ThemedImage
+  lightSrc={architectureLight}
+  darkSrc={architectureDark}
+  alt="Connections the Kubernetes controller opens to Distr and the Distr registry, how it runs in the cluster and what it never does"
+  dropShadow={false}
+/>
+
+<Aside type="note">
+  On self-hosted Distr, the controller image is pulled from
+  `ghcr.io/distr-sh/distr` by default rather than from the Distr registry. You
+  can switch it to your own registry or a mirror, see [Controller Image
+  Repository](/docs/controllers/kubernetes-controller/#controller-image-repository).
+</Aside>
+
+## Access to the Cluster
+
+The manifest that installs the controller creates these resources in the namespace it is applied to:
+
+| Resource (default)                                                                                                                   | Purpose                                                                            | Optional                                                             | Changed by                                                                                 |
+| ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `distr-controller` ServiceAccount, bound to `cluster-admin` with cluster scope or to the `namespace-admin` Role with namespace scope | Install the resources of Helm charts and read their status, logs and metrics       | No                                                                   | Deployment target editor, when creating the deployment target                              |
+| `distr-controller` Deployment, one replica as non-root user with 256Mi memory and a CPU limit of 500m                                | Run the controller                                                                 | No                                                                   | Deployment target editor, with custom resource requirements                                |
+| `distr-controller-auth` Secret                                                                                                       | Hold the target secret                                                             | No                                                                   | Deployment target editor, by [reconnecting](/docs/controllers/logs-and-metrics/#reconnect) |
+| `distr-controller-env` ConfigMap                                                                                                     | Hold the Distr endpoints and the controller version                                | No                                                                   | Not configurable                                                                           |
+| `distr-controller-dockerconfig` Secret                                                                                               | Provide the registry credentials the Distr instance configures for all controllers | Yes, only with `CONTROLLER_DOCKER_CONFIG` set on a self-hosted Distr | Distr administrator                                                                        |
+| `emptyDir` cache volume                                                                                                              | Keep the pulled Helm charts                                                        | No                                                                   | Not configurable                                                                           |
+
+A deployment target editor is a user with the `read_write` or `admin` role in the vendor organization or in the customer organization the deployment target belongs to. The scope cannot be changed after the deployment target is created. The `namespace-admin` Role grants every verb on every resource of the namespace, including Secrets, Roles and RoleBindings. `cluster-admin` grants the same on every resource of the cluster, which [metrics](/docs/controllers/logs-and-metrics/#metrics) need to read the nodes.
+
+<Aside type="caution">
+  Anyone who can create pods in the controller's namespace can run a pod with
+  the controller's service account and act with its permissions. With cluster
+  scope that is control over the whole cluster. Choose namespace scope where the
+  charts allow it and do not give other users write access to the namespace.
+</Aside>
+
+Distr renders the manifest when the controller connects and again for every [self-update](/docs/controllers/kubernetes-controller/#controller-self-updates). A change to the custom resource requirements reaches the cluster with the next reconnect or controller update.
+
+## Kubernetes Operations
+
+| When                               | What the controller does                                                                                                                                                                                                                                                                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A deployment is created or updated | Writes the image pull secret `sh.distr.agent.v1.<release>.pull`, adds it to every `imagePullSecrets` and `pullSecrets` list in the values and runs `helm install` or `helm upgrade` in its namespace. By default Helm waits for the resources to become ready and rolls back on failure, unless the Helm options of the deployment say otherwise |
+| A deployment is force restarted    | After the upgrade, patches the workloads of the release the way `kubectl rollout restart` does                                                                                                                                                                                                                                                   |
+| A deployment is undeployed         | `helm uninstall`, then deletes the tracking secret `sh.distr.agent.v1.<release>`                                                                                                                                                                                                                                                                 |
+| Continuously                       | Reads the tracking secrets and Helm releases of its namespace and the status of the release resources. With log collection enabled it reads the logs of their pods, with metrics enabled the pods and pod metrics of its namespace and the nodes and node metrics of the cluster                                                                 |
+| The controller version changes     | Fetches the new manifest from Distr and creates or updates its resources, including its own role binding                                                                                                                                                                                                                                         |
+
+Anything the chart of a deployment defines runs as well, such as Helm hooks. Releases are installed in the controller's namespace, but with cluster scope a chart can create resources anywhere in the cluster.
+
+## Credentials in the Cluster
+
+- The `distr-controller-auth` Secret holds the target secret. [Authentication](/docs/controllers/security/network/#authentication) explains how to replace it.
+- The image pull secret of every deployment holds its registry credentials. Registry credentials are also kept in the temporary directory of the controller container.
+- Helm stores every revision of a release, including its values with their [secrets](/docs/controllers/secrets/) filled in, in Secrets named `sh.helm.release.v1.<release>.v<revision>`.
+
+Anyone who can read Secrets in the controller's namespace can read all of these.

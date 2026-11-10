@@ -208,7 +208,7 @@ export class TimeseriesTableComponent {
 
     const today = new Date().toISOString().split('T')[0];
     const filename = `${today}_${exporter.getFileName()}`;
-    const toastRef = this.toastService.info('Download started...');
+    const toastRef = this.toastService.info('Download started...', false);
 
     exporter.export().subscribe({
       next: (blob) => {

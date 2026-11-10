@@ -1,0 +1,31 @@
+---
+title: Network & Authentication
+description: The outbound connections Distr controllers open, the health check they serve and how they authenticate with Distr using the target secret.
+slug: docs/controllers/security/network
+sidebar:
+  label: 'Network & Authentication'
+  order: 4
+---
+
+## Network
+
+The controller only opens outbound connections. Distr never connects to the controller, so nothing in the environment has to be reachable from outside: the controller fetches its deployments every `DISTR_CONTROLLER_INTERVAL`, 5 seconds by default, and reports back on the same connection.
+
+| Destination                                                                                                                               | Purpose                                                               |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Distr, the `DISTR_*_ENDPOINT` URLs                                                                                                        | Login, deployments, status, logs, metrics and self-updates over HTTPS |
+| The Distr registry and the registries of [application entitlements](/docs/platform/application-entitlements/#oci-registry-authentication) | Log in for the images of a deployment, and pull Helm charts           |
+| Helm chart repositories, and the Git repositories and OCI artifacts a Compose file includes                                               | Load the chart or the Compose project, over HTTPS or SSH for Git      |
+| The Kubernetes API server                                                                                                                 | Manage the cluster, Kubernetes controller only                        |
+
+Container images are pulled by the container runtime, the Docker daemon or the kubelet, not by the controller. The runtime's proxy and registry mirror settings apply to them.
+
+Both controllers serve a health check on port `8765` that only reports whether the controller's main loop is running. The Docker controller listens on `127.0.0.1` of the host, the Kubernetes controller on the pod IP for its liveness and readiness probes.
+
+## Authentication
+
+The controller logs in to Distr with the target ID and the target secret of its deployment target and authenticates every further request with the JWT it receives. These credentials only give access to the deployments of that one deployment target.
+
+The target secret is part of the connect command as a query parameter, so the command can end up in the shell history and in the logs of a proxy that inspects TLS traffic. Distr shows the secret once and stores only a hash to verify it. To replace it, [reconnect](/docs/controllers/logs-and-metrics/#reconnect) the deployment target: the previous secret stops working once a controller has connected with the new one.
+
+The [Docker controller](/docs/controllers/security/docker/#credentials-on-the-host) and [Kubernetes controller](/docs/controllers/security/kubernetes/#credentials-in-the-cluster) pages list where each controller keeps the target secret.

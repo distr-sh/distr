@@ -25,8 +25,8 @@ export class ToastService {
     return this.add('error', message, false);
   }
 
-  public info(message: string): ToastRef {
-    return this.add('info', message, false);
+  public info(message: string, autoClose = true): ToastRef {
+    return this.add('info', message, autoClose);
   }
 
   dismiss(id: string) {

@@ -1,0 +1,94 @@
+---
+title: Controller Images
+description: What the Distr controller images contain, how they are built and how to verify their cosign signatures and read their SBOMs.
+slug: docs/controllers/security/images
+sidebar:
+  label: Images
+  order: 7
+---
+
+import {TabItem, Tabs} from '@astrojs/starlight/components';
+
+| Image                   | Base                                                | Contents                                                                                                                      |
+| ----------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `docker-controller`     | The Alpine variant of the official Docker CLI image | The controller binary, the Docker CLI with its Compose and Buildx plugins and curl for the health check, but no Docker daemon |
+| `docker-autoheal`       | Alpine                                              | The autoheal script with curl and jq                                                                                          |
+| `kubernetes-controller` | Distroless `static`, as the `nonroot` user          | The controller binary only, without a shell or package manager                                                                |
+
+The Alpine images are built with their packages upgraded to the latest version, so a package fix published after a release is part of the next release. To pull the images from your own registry, see [Controller Image Repository](/docs/platform/branding/#controller-image-repository).
+
+## Verifying the Signature
+
+Every released image is published with an SBOM and build provenance and signed with [cosign](https://docs.sigstore.dev/cosign/signing/overview/) keyless signing by the GitHub Actions workflow that builds it. The images are published to `registry.distr.sh`, which Distr Cloud pulls from, and mirrored to `ghcr.io`, which self-hosted instances pull from by default. The same workflow run signs both, while release candidates are only published to `ghcr.io`.
+
+To check an image before installing it, verify that its signature was issued to the workflow that builds it. The commands run cosign with an empty Docker config, so credentials or a credential helper configured for the registry cannot interfere with pulling the signature. Replace `4.8.1` with the controller version you install.
+
+<Tabs syncKey="controller-image-registry">
+  <TabItem label="registry.distr.sh">
+
+The `docker-controller` and `kubernetes-controller` images are signed by `build-controller.yaml`:
+
+```shell
+DOCKER_CONFIG=$(mktemp -d) cosign verify \
+  --certificate-identity-regexp '^https://github\.com/distr-sh/distr/\.github/workflows/build-controller\.yaml@' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  registry.distr.sh/distr/docker-controller:4.8.1
+```
+
+The `docker-autoheal` image is signed by `build-docker-autoheal.yaml`:
+
+```shell
+DOCKER_CONFIG=$(mktemp -d) cosign verify \
+  --certificate-identity-regexp '^https://github\.com/distr-sh/distr/\.github/workflows/build-docker-autoheal\.yaml@' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  registry.distr.sh/distr/docker-autoheal:4.8.1
+```
+
+  </TabItem>
+  <TabItem label="ghcr.io (GitHub mirror)">
+
+The `docker-controller` and `kubernetes-controller` images are signed by `build-controller.yaml`:
+
+```shell
+DOCKER_CONFIG=$(mktemp -d) cosign verify \
+  --certificate-identity-regexp '^https://github\.com/distr-sh/distr/\.github/workflows/build-controller\.yaml@' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  ghcr.io/distr-sh/distr/docker-controller:4.8.1
+```
+
+The `docker-autoheal` image is signed by `build-docker-autoheal.yaml`:
+
+```shell
+DOCKER_CONFIG=$(mktemp -d) cosign verify \
+  --certificate-identity-regexp '^https://github\.com/distr-sh/distr/\.github/workflows/build-docker-autoheal\.yaml@' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  ghcr.io/distr-sh/distr/docker-autoheal:4.8.1
+```
+
+  </TabItem>
+</Tabs>
+
+For the Kubernetes controller, replace `docker-controller` with `kubernetes-controller`. cosign exits with an error if the image has no signature from that workflow.
+
+## Reading the SBOM
+
+To list the packages of an image, read its SBOM:
+
+<Tabs syncKey="controller-image-registry">
+  <TabItem label="registry.distr.sh">
+
+```shell
+docker buildx imagetools inspect registry.distr.sh/distr/docker-controller:4.8.1 --format '{{ json .SBOM }}'
+```
+
+  </TabItem>
+  <TabItem label="ghcr.io (GitHub mirror)">
+
+```shell
+docker buildx imagetools inspect ghcr.io/distr-sh/distr/docker-controller:4.8.1 --format '{{ json .SBOM }}'
+```
+
+  </TabItem>
+</Tabs>
+
+The command works the same for `kubernetes-controller` and `docker-autoheal`.
