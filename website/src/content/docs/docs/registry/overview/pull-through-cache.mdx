@@ -137,6 +137,16 @@ curl -X POST https://app.distr.sh/api/v1/artifacts/<artifactId>/sync \
 You can delete a synced tag like any other tag, but the next sync restores it unless it has been removed from the upstream repository.
 The last tag of a pull-through cache artifact cannot be deleted; delete the artifact instead.
 
+## Versioning strategy
+
+A pull-through cache artifact can use [semantic versioning](/docs/registry/#versioning-strategy) like any other artifact.
+Since the upstream decides which tags exist, the sync then skips every upstream tag that is not a SemVer version, such as `latest`, instead of failing.
+Signature and attestation tags are synced as usual.
+A manual sync from the artifact details page lists the tags it skipped.
+
+Switching to semantic versioning deletes the tags the artifact already holds that are not SemVer versions, as for any other artifact.
+The sync does not restore them afterwards.
+
 ## Monitoring sync status
 
 The artifact details page shows:

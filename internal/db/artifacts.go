@@ -31,7 +31,7 @@ var (
 
 func artifactOutputExprWith(upstreamCredential func(EncryptedColumn, string) string) string {
 	return ` a.id, a.created_at, a.organization_id, a.name, a.image_id, a.title_image_id, a.public, ` +
-		`a.featured, ` +
+		`a.featured, a.versioning_strategy, ` +
 		`a.upstream_url, a.last_synced_at, a.last_sync_error, a.upstream_auth_type, ` +
 		upstreamCredential(artifactUpstreamUsername, "a") + `, ` +
 		upstreamCredential(artifactUpstreamPassword, "a") + ` `
@@ -263,6 +263,7 @@ func GetArtifactByID(
 	} else if customerOrgID != nil && len(versions) == 0 {
 		return nil, distrerr.ErrNotFound
 	} else {
+		types.SortTaggedArtifactVersions(artifact.VersioningStrategy, versions)
 		return &types.ArtifactWithTaggedVersion{ArtifactWithDownloads: *artifact, Versions: versions}, nil
 	}
 }
@@ -725,6 +726,75 @@ func UpdateArtifactFeatured(
 	return nil
 }
 
+func UpdateArtifactVersioningStrategy(
+	ctx context.Context,
+	artifactID, organizationID uuid.UUID,
+	strategy types.VersioningStrategy,
+) error {
+	db := internalctx.GetDb(ctx)
+	_, err := db.Exec(ctx,
+		`UPDATE Artifact SET versioning_strategy = @versioningStrategy
+		WHERE id = @id AND organization_id = @organizationId`,
+		pgx.NamedArgs{"id": artifactID, "organizationId": organizationID, "versioningStrategy": strategy},
+	)
+	if err != nil {
+		return fmt.Errorf("could not update artifact versioning strategy: %w", err)
+	}
+	return nil
+}
+
+func GetArtifactVersioningStrategy(ctx context.Context, artifactID uuid.UUID) (types.VersioningStrategy, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT versioning_strategy FROM Artifact WHERE id = @artifactId`,
+		pgx.NamedArgs{"artifactId": artifactID},
+	)
+	if err != nil {
+		return "", fmt.Errorf("could not query artifact versioning strategy: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[types.VersioningStrategy])
+	if err != nil {
+		return "", fmt.Errorf("could not collect artifact versioning strategy: %w", err)
+	}
+	return result, nil
+}
+
+// LockArtifactVersioningStrategy reads the versioning strategy with a share lock on the artifact row, which keeps a
+// switch from committing until the transaction ends. It conflicts with [LockArtifactRows] but not with itself.
+func LockArtifactVersioningStrategy(ctx context.Context, artifactID uuid.UUID) (types.VersioningStrategy, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT versioning_strategy FROM Artifact WHERE id = @artifactId FOR SHARE`,
+		pgx.NamedArgs{"artifactId": artifactID},
+	)
+	if err != nil {
+		return "", fmt.Errorf("could not lock artifact versioning strategy: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[types.VersioningStrategy])
+	if err != nil {
+		return "", fmt.Errorf("could not collect artifact versioning strategy: %w", err)
+	}
+	return result, nil
+}
+
+// GetArtifactReleaseTagNames returns the names of the release tags of the artifact, ordered by name.
+func GetArtifactReleaseTagNames(ctx context.Context, artifactID uuid.UUID) ([]string, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT v.name FROM ArtifactVersion v WHERE v.artifact_id = @artifactId AND `+versionIsReleaseTagExpr+`
+		ORDER BY v.name`,
+		pgx.NamedArgs{"artifactId": artifactID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query artifact release tags: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		return nil, fmt.Errorf("could not collect artifact release tags: %w", err)
+	}
+	return result, nil
+}
+
 func GetArtifactsWithUpstreamURL(ctx context.Context) ([]types.Artifact, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `SELECT`+artifactOutputExpr+`FROM Artifact a WHERE a.upstream_url IS NOT NULL`)
@@ -1001,23 +1071,23 @@ func GetArtifactTagDigest(
 	return &result, nil
 }
 
-func GetNewestArtifactTag(
+// GetArtifactReleaseTags returns the release tags of the artifact, without their manifest data. Given version IDs,
+// it returns only the tags that point to the same manifest as one of them.
+func GetArtifactReleaseTags(
 	ctx context.Context,
 	artifactID uuid.UUID,
 	artifactVersionIDs []uuid.UUID,
-) (*types.ArtifactVersion, error) {
+) ([]types.ArtifactVersion, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`SELECT`+artifactVersionOutputExpr+`
+		`SELECT v.id, v.created_at, v.name, v.manifest_blob_digest, v.artifact_id
 		FROM ArtifactVersion v
 		WHERE v.artifact_id = @artifactId
 			AND `+versionIsReleaseTagExpr+`
 			AND (@allVersions OR v.manifest_blob_digest IN (
 				SELECT manifest_blob_digest FROM ArtifactVersion WHERE id = any(@artifactVersionIds)
-			))
-		ORDER BY v.created_at DESC
-		LIMIT 1`,
+			))`,
 		pgx.NamedArgs{
 			"artifactId":         artifactID,
 			"allVersions":        len(artifactVersionIDs) == 0,
@@ -1025,15 +1095,13 @@ func GetNewestArtifactTag(
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("could not query ArtifactVersion: %w", err)
+		return nil, fmt.Errorf("could not query artifact release tags: %w", err)
 	}
-	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ArtifactVersion])
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
-		return nil, fmt.Errorf("could not collect ArtifactVersion: %w", err)
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[types.ArtifactVersion])
+	if err != nil {
+		return nil, fmt.Errorf("could not collect artifact release tags: %w", err)
 	}
-	return &result, nil
+	return result, nil
 }
 
 func CreateArtifactVersion(ctx context.Context, av *types.ArtifactVersion) error {

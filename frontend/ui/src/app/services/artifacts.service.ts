@@ -1,6 +1,7 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {concat, map, Observable, of, switchMap, tap} from 'rxjs';
+import {SelectableVersioningStrategy} from '../../util/versions';
 import {ReactiveList} from './cache';
 
 export interface HasDownloads {
@@ -39,6 +40,7 @@ export interface ArtifactUpstreamAuth {
 export interface Artifact extends BaseArtifact, HasDownloads {
   public: boolean;
   featured: boolean;
+  versioningStrategy: SelectableVersioningStrategy;
   upstreamUrl?: string;
   lastSyncedAt?: string;
   lastSyncError?: string;
@@ -74,13 +76,22 @@ export interface PatchArtifactRequest {
   auth?: ArtifactUpstreamAuth | null;
   public?: boolean;
   featured?: boolean;
+  versioningStrategy?: SelectableVersioningStrategy;
+  /** Confirms that switching to semver deletes the tags that are not SemVer versions. */
+  deleteNonSemverTags?: boolean;
+}
+
+export interface SyncArtifactResponse extends ArtifactWithTags {
+  /** The upstream tags the sync skipped because the versioning strategy of the artifact does not allow them. */
+  skippedTags?: string[];
 }
 
 export type DeleteArtifactTagResponse = {artifactDeleted: true} | {artifactDeleted: false; artifact: ArtifactWithTags};
 
 class ArtifactsReactiveList extends ReactiveList<ArtifactWithTags> {
   protected override identify = (a: ArtifactWithTags) => a.id;
-  protected override sortAttr = (a: ArtifactWithTags) => a.versions?.[0]?.createdAt ?? '';
+  protected override sortAttr = (a: ArtifactWithTags) =>
+    a.versions?.reduce((newest, v) => (v.createdAt > newest ? v.createdAt : newest), '') ?? '';
   protected override sortInverted = true;
 }
 
@@ -152,10 +163,10 @@ export class ArtifactsService {
       .pipe(tap((it) => this.cache.save(it)));
   }
 
-  public syncArtifact(id: string): Observable<ArtifactWithTags> {
+  public syncArtifact(id: string): Observable<SyncArtifactResponse> {
     return this.http
-      .post<ArtifactWithTags>(`${this.artifactsUrl}/${id}/sync`, {})
-      .pipe(tap((it) => this.cache.save(it)));
+      .post<SyncArtifactResponse>(`${this.artifactsUrl}/${id}/sync`, {})
+      .pipe(tap(({skippedTags, ...artifact}) => this.cache.save(artifact)));
   }
 
   public deleteArtifactTag(artifact: ArtifactWithTags, tagName: string): Observable<DeleteArtifactTagResponse> {

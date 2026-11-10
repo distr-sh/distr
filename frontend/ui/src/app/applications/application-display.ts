@@ -1,8 +1,6 @@
 import {VersioningStrategy} from '@distr-sh/distr-sdk';
-import {SelectableVersioningStrategy, versioningStrategyLabel} from '../../util/versions';
+import {selectableVersioningStrategies, versioningStrategyLabel} from '../../util/versions';
 import {BadgeSelectOption} from '../components/badge-select/badge-select.component';
-
-const selectableVersioningStrategies: SelectableVersioningStrategy[] = ['semver', 'chronological'];
 
 /**
  * Legacy is listed only while the application is on it, since an application cannot be moved back

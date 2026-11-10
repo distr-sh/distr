@@ -1,5 +1,6 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
-import {AsyncPipe} from '@angular/common';
+import {AsyncPipe, NgPlural, NgPluralCase} from '@angular/common';
+import {HttpErrorResponse} from '@angular/common/http';
 import {Component, computed, inject, linkedSignal, resource, signal, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
@@ -40,6 +41,13 @@ import {getFormDisplayedError} from '../../../util/errors';
 import {refreshInBackground} from '../../../util/refresh';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {BytesPipe} from '../../../util/units';
+import {
+  selectableVersioningStrategies,
+  SelectableVersioningStrategy,
+  versioningStrategyLabel,
+} from '../../../util/versions';
+import {AlertComponent} from '../../components/alert/alert.component';
+import {BadgeSelectComponent, BadgeSelectOption} from '../../components/badge-select/badge-select.component';
 import {ClipComponent} from '../../components/clip.component';
 import {PageComponent} from '../../components/page.component';
 import {PaginationComponent} from '../../components/pagination.component';
@@ -72,6 +80,8 @@ import {
   ArtifactsHashComponent,
 } from '../components';
 
+const listedSkippedTagsCount = 10;
+
 @Component({
   selector: 'app-artifact-tags',
   imports: [
@@ -95,6 +105,10 @@ import {
     SearchBarComponent,
     PaginationComponent,
     TitleImagePickerComponent,
+    BadgeSelectComponent,
+    AlertComponent,
+    NgPlural,
+    NgPluralCase,
   ],
   templateUrl: './artifact-versions.component.html',
 })
@@ -128,6 +142,16 @@ export class ArtifactVersionsComponent {
   protected readonly faStar = faStar;
 
   protected readonly syncing = signal(false);
+  protected readonly syncSkippedTags = signal<
+    {artifactId: string; count: number; listed: string; unlistedCount: number} | undefined
+  >(undefined);
+  protected readonly savingVersioningStrategy = signal(false);
+  protected readonly versioningStrategyOptions: BadgeSelectOption<SelectableVersioningStrategy>[] =
+    selectableVersioningStrategies.map((strategy) => ({
+      value: strategy,
+      label: versioningStrategyLabel(strategy),
+      variant: 'neutral',
+    }));
 
   protected readonly showDropdown = signal(false);
   protected readonly signatureOverlayDigest = signal<string | void>(undefined);
@@ -181,6 +205,10 @@ export class ArtifactVersionsComponent {
         return undefined;
       })
     )
+  );
+
+  protected readonly versioningStrategyLabel = computed(() =>
+    versioningStrategyLabel(this.artifact()?.versioningStrategy)
   );
 
   protected readonly canDeleteTags = computed(() => {
@@ -394,6 +422,44 @@ export class ArtifactVersionsComponent {
     }
   }
 
+  protected async updateVersioningStrategy(
+    artifact: ArtifactWithTags,
+    versioningStrategy: SelectableVersioningStrategy
+  ) {
+    this.savingVersioningStrategy.set(true);
+    try {
+      try {
+        await firstValueFrom(this.artifacts.patchArtifact(artifact.id, {versioningStrategy}));
+      } catch (e) {
+        // A switch to semver that would delete tags is answered with a conflict naming them, until the request
+        // confirms the deletion.
+        if (!(e instanceof HttpErrorResponse && e.status === 409)) {
+          throw e;
+        }
+        const confirmed = await firstValueFrom(
+          this.overlay.confirm({
+            message: {
+              message: `Switch ${artifact.name} to semantic versioning?`,
+              alert: {type: 'warning', message: getFormDisplayedError(e) ?? ''},
+            },
+          })
+        );
+        if (!confirmed) {
+          return;
+        }
+        await firstValueFrom(
+          this.artifacts.patchArtifact(artifact.id, {versioningStrategy, deleteNonSemverTags: true})
+        );
+      }
+      this.toast.success('Versioning strategy has been updated');
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) this.toast.error(msg);
+    } finally {
+      this.savingVersioningStrategy.set(false);
+    }
+  }
+
   public deleteArtifact(artifact: ArtifactWithTags): void {
     this.overlay
       .confirm(
@@ -500,6 +566,7 @@ export class ArtifactVersionsComponent {
   public syncArtifact(artifact: ArtifactWithTags): void {
     if (this.syncing()) return;
     this.syncing.set(true);
+    this.syncSkippedTags.set(undefined);
     this.artifacts
       .syncArtifact(artifact.id)
       .pipe(
@@ -510,7 +577,18 @@ export class ArtifactVersionsComponent {
           }
           return NEVER;
         }),
-        tap(() => this.toast.success('Sync completed'))
+        tap(({skippedTags = []}) => {
+          this.toast.success('Sync completed');
+          if (skippedTags.length > 0) {
+            const listed = skippedTags.slice(0, listedSkippedTagsCount);
+            this.syncSkippedTags.set({
+              artifactId: artifact.id,
+              count: skippedTags.length,
+              listed: listed.join(', '),
+              unlistedCount: skippedTags.length - listed.length,
+            });
+          }
+        })
       )
       .subscribe({complete: () => this.syncing.set(false)});
   }

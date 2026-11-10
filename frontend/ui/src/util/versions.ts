@@ -14,6 +14,8 @@ export type VersionComparator = (a: ApplicationVersion, b: ApplicationVersion) =
 /** The strategies an application may be set to. The legacy one only ever applies to existing ones. */
 export type SelectableVersioningStrategy = Exclude<VersioningStrategy, 'legacy'>;
 
+export const selectableVersioningStrategies: SelectableVersioningStrategy[] = ['semver', 'chronological'];
+
 /**
  * Mirrors types.ApplicationVersionComparator in the backend, which decides which version an
  * automatic update moves a deployment to. The ordering is derived from the whole set because the
