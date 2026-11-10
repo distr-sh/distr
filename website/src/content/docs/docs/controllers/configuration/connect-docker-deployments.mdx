@@ -14,26 +14,25 @@ import databaseEnv from './connect-docker-deployments/database/.env?raw';
 import backendCompose from './connect-docker-deployments/backend/docker-compose.yaml?raw';
 import backendEnv from './connect-docker-deployments/backend/.env?raw';
 
-Services in one Compose file reach each other by their service names. Services in different applications do not, even when they run on the same deployment target.
-The Docker controller runs every deployment as a Compose project of its own, named `distr-<short-deployment-id>`, and every project gets its own default network.
+Services in one Compose file reach each other by their service names. Services in different applications don't, even on the same deployment target, because the Docker controller runs every deployment as a Compose project of its own (`distr-<short-deployment-id>`) with its own default network.
 
-To let deployments talk to each other, put them on a shared Docker network: one application creates it, and every other application joins it.
-This guide connects a backend to a database that is deployed separately. The backend is the one from [hello-distr](https://github.com/distr-sh/hello-distr), our example application.
+To connect them, one application creates a Docker network and the others join it.
+This guide does that for a database and a backend that are deployed separately. The backend comes from [hello-distr](https://github.com/distr-sh/hello-distr), our example application.
 
 ## Step 1: Create the network application
 
-Create a Docker application named **Network** in Distr with the following Compose file. Its only purpose is to create the shared network.
+Create a Docker application named **Network** in Distr with the following Compose file. It exists only to create the shared network.
 
 <Code code={networkCompose} lang="yaml" title="docker-compose.yaml" />
 
-- `networks.acme-shared.name` gives the network a fixed name. Without it, Compose prefixes the network name with the project name, which differs for every deployment, so the other deployments would not find the network. Replace `acme-shared` with a name unique to your application.
-- `network` is a placeholder service. Compose refuses to start a project without services, so the application needs one to create the network. The `pause` image does nothing and uses almost no resources.
+- `networks.acme-shared.name` fixes the network's name. Without it, Compose puts the project name in front. That name differs for every deployment, so the others would not find the network. Replace `acme-shared` with a name unique to your application.
+- `network` is a placeholder. Compose won't start a project that has no services, so the application needs one. The `pause` image does nothing and uses almost no resources.
 
-You can also let one of your actual applications create the network instead, as the proxy does in [Docker Blue-Green Deployments](/docs/controllers/docker-blue-green-deployments/). A dedicated application keeps the network in place while you update or undeploy any of the others.
+One of your other applications can create the network too, the way the proxy does in [Docker Blue-Green Deployments](/docs/controllers/docker-blue-green-deployments/). The advantage of a separate application is that you can update or undeploy any of the others without touching the network.
 
 ## Step 2: Join the network from your applications
 
-Every application that takes part declares the network as `external`, which tells Compose to use the existing network instead of creating one.
+The other applications declare the network as `external`, so Compose uses the existing network rather than creating its own.
 Create a Docker application named **Database** with this version:
 
 <Tabs>
@@ -56,7 +55,7 @@ And a Docker application named **Backend**, which connects to the database as `a
   </TabItem>
 </Tabs>
 
-The password comes from a [Distr secret](/docs/controllers/secrets/), so the database and the backend share it without it showing up in a deployment configuration.
+Both read the password from a [Distr secret](/docs/controllers/secrets/), so it never appears in a deployment configuration.
 
 ## Step 3: Deploy the applications
 
@@ -72,28 +71,29 @@ Deploy all three applications on the same deployment target. For the first deplo
 
 </Steps>
 
-A deployment that joins the network before it exists fails with `network acme-shared declared as external, but could not be found`. The controller retries it on every cycle, so it starts on its own once the network application is deployed.
+If you deploy the database or the backend first, it fails with `network acme-shared declared as external, but could not be found`. The controller retries every cycle, so the deployment starts by itself once the network exists.
 
-Once all deployments are **Healthy**, `http://<host>/latest-message` answers through the backend, which reads the message from the database in the other deployment.
+The backend's health check queries the database, so once all three deployments are **Healthy**, the connection works. `http://<host>/latest-message` then answers with `hello distr!`.
 
 ## Address other deployments by a network alias
 
-On the shared network, a container can be reached by its network aliases and by its service name. Service names are often generic, like `postgres` or `backend`, and nothing prevents two deployments from using the same one.
-When two containers on the network share a name, Docker answers with both addresses in random order and requests end up at either of them.
+On the shared network, every container answers to its network aliases and to its service name. Service names tend to be generic, like `postgres` or `backend`. Two deployments can easily use the same one.
+Docker then resolves the name to both containers in random order. Each request ends up at either of them.
 
-- Give every service that other deployments connect to an alias under `networks.<name>.aliases`, like `acme-db`, and only connect through the alias.
-- If the same application is deployed more than once on a deployment target, take the alias from a deployment variable, for example `acme-db-${INSTANCE}`, so every deployment gets its own.
-- Only the containers on the shared network can reach each other. A service that no other deployment needs stays on the default network of its own project.
+- Give every service that other deployments connect to an alias under `networks.<name>.aliases` (like `acme-db`) and connect only through the alias.
+- If one application is deployed more than once on a deployment target, build the alias from a deployment variable, for example `acme-db-${INSTANCE}`, so each deployment has its own.
+
+Leave services that no other deployment needs off the shared network.
 
 ## Keep the network definition stable
 
-Compose recreates a network whose definition changed, for example when a new version of the network application adds a label, a driver option or a subnet. Docker cannot remove a network that other deployments are still connected to, so updating the network application to such a version fails with `network acme-shared has active endpoints`.
-Decide on the definition before the first deployment and leave it unchanged in later versions.
+When a new version of the network application changes the network, for example by adding a label, a driver option or a subnet, Compose tries to recreate it. Docker can't remove a network that other deployments are still connected to, so the update fails with `network acme-shared has active endpoints`.
+Settle the definition before the first deployment and keep it the same in every later version.
 
 <Aside type="note">
-  Undeploying the network application while other deployments still use the
-  network leaves the network in place, so those deployments keep running.
-  Deploying the network application again takes the existing network over.
+  If you undeploy the network application while other deployments still use the
+  network, Docker keeps the network and those deployments keep running. When you
+  deploy the network application again, it takes over the existing network.
 </Aside>
 
 ## Related
