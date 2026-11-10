@@ -84,19 +84,27 @@ func (s *Syncer) SyncArtifactTags(
 	}
 
 	var skippedTags []string
+	var skippedTagsMu sync.Mutex
+	skipTag := func(tag string) {
+		log.Warn("upstream sync skipped tag that is not a SemVer version", zap.String("tag", tag))
+		skippedTagsMu.Lock()
+		defer skippedTagsMu.Unlock()
+		skippedTags = append(skippedTags, tag)
+	}
 	g, gCtx := errgroup.WithContext(ctx)
 	g.SetLimit(5)
 	tagsErr := repo.Tags(ctx, "", func(tags []string) error {
 		for _, tag := range tags {
 			if !artifact.VersioningStrategy.AllowsArtifactTag(tag) {
-				log.Warn("upstream sync skipped tag that is not a SemVer version", zap.String("tag", tag))
-				skippedTags = append(skippedTags, tag)
+				skipTag(tag)
 				continue
 			}
 			g.Go(func() error {
 				log.Debug("upstream sync tag", zap.String("tag", tag))
-				if err := syncTag(gCtx, repo, artifact, tag, skipExistingTags); err != nil {
+				if isAllowed, err := syncTag(gCtx, repo, artifact, tag, skipExistingTags); err != nil {
 					return fmt.Errorf("syncing tag %q: %w", tag, err)
+				} else if !isAllowed {
+					skipTag(tag)
 				}
 				return nil
 			})
@@ -122,24 +130,25 @@ func (s *Syncer) SyncArtifactTags(
 	return skippedTags, db.UpdateArtifactSyncStatus(ctx, artifact.ID, errStr)
 }
 
+// syncTag returns false when the versioning strategy of the artifact no longer allows the tag.
 func syncTag(
 	ctx context.Context, repo *remote.Repository, artifact *types.Artifact, tag string, skipExistingTags bool,
-) error {
+) (bool, error) {
 	if skipExistingTags {
 		if _, err := db.GetArtifactVersionByName(ctx, artifact.ID, tag); err == nil {
-			return nil
+			return true, nil
 		} else if !errors.Is(err, distrerr.ErrNotFound) {
-			return fmt.Errorf("checking if tag exists: %w", err)
+			return false, fmt.Errorf("checking if tag exists: %w", err)
 		}
 	}
 	desc, rc, err := repo.FetchReference(ctx, tag)
 	if err != nil {
-		return fmt.Errorf("fetching manifest: %w", err)
+		return false, fmt.Errorf("fetching manifest: %w", err)
 	}
 	data, err := io.ReadAll(rc)
 	rc.Close()
 	if err != nil {
-		return fmt.Errorf("reading manifest: %w", err)
+		return false, fmt.Errorf("reading manifest: %w", err)
 	}
 
 	contentType := desc.MediaType
@@ -150,7 +159,7 @@ func syncTag(
 
 	blobs, subManifests, err := parseManifest(data, contentType, d)
 	if err != nil {
-		return fmt.Errorf("parsing manifest: %w", err)
+		return false, fmt.Errorf("parsing manifest: %w", err)
 	}
 
 	tagVersion := &types.ArtifactVersion{
@@ -200,12 +209,8 @@ func syncTag(
 			)
 		}
 		return db.BulkUpsertArtifactVersionParts(ctx, parts)
-	}); err != nil {
-		return err
-	} else if !isAllowed {
-		internalctx.GetLogger(ctx).Warn("upstream sync skipped tag that is not a SemVer version",
-			zap.Stringer("artifactId", artifact.ID), zap.String("tag", tag))
-		return nil
+	}); err != nil || !isAllowed {
+		return isAllowed, err
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
@@ -219,10 +224,10 @@ func syncTag(
 		})
 	}
 	if err := g.Wait(); err != nil {
-		return err
+		return true, err
 	}
 
-	return nil
+	return true, nil
 }
 
 func syncSubManifest(
