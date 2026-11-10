@@ -43,7 +43,7 @@ const customerFeatureLabels: Record<CustomerOrganizationFeature, string> = {
   artifacts: 'Artifacts',
   alerts: 'Alerts',
   update_notifications: 'Update Notifications',
-  support_bundles: 'Support Bundles',
+  support_bundles: 'Support',
   settings: 'Settings',
   oidc_providers: 'Identity Provider',
   vulnerabilities: 'Security',

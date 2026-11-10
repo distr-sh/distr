@@ -5,7 +5,7 @@ import {SupportBundleStatus} from '../types/support-bundle';
 
 export const supportBundleDeleteConfirm: ConfirmConfig = {
   message: {
-    message: 'Are you sure you want to delete this support bundle?',
+    message: 'Are you sure you want to delete this support request?',
     alert: {type: 'warning', message: 'All collected resources and comments are deleted permanently.'},
   },
   confirmLabel: 'Delete',

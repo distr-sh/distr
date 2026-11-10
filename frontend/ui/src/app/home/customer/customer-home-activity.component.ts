@@ -145,13 +145,13 @@ function action({type, subject, detail}: CustomerHomeActivity): string {
     case 'license_key_updated':
       return `license key ${subject} updated`;
     case 'support_bundle_created':
-      return `support bundle ${subject} created`;
+      return `support request ${subject} created`;
     case 'support_bundle_uploaded':
-      return `support bundle ${subject} uploaded`;
+      return `support bundle uploaded for ${subject}`;
     case 'support_bundle_resolved':
-      return `support bundle ${subject} resolved`;
+      return `support request ${subject} resolved`;
     case 'support_bundle_canceled':
-      return `support bundle ${subject} canceled`;
+      return `support request ${subject} canceled`;
     default:
       return never(type);
   }

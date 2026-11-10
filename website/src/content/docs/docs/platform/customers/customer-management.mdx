@@ -104,7 +104,7 @@ You can control which features are available to each customer organization. The 
 - **Alerts**: deployment health notifications (requires Deployments)
 - **Artifacts**: access to the artifact registry
 - **Update Notifications**: deciding which of their own users hears about a new application or artifact version
-- **Support Bundles**: ability to create and submit diagnostic bundles
+- **Support**: ability to create support requests and submit diagnostic bundles
 - **Security**: access to the security advisories you publish (requires the Business plan)
 - **Settings**: a settings page for the customer's administrators, where they choose the [controller image repository](/docs/platform/branding/#controller-image-repository) of their deployment targets (requires the Business plan)
 - **Identity Provider**: a [portal domain and identity provider](/docs/platform/custom-identity-provider/#letting-a-customer-bring-its-own-provider) of the customer's own, configured on its settings page (requires Settings and the Business plan)
@@ -121,9 +121,9 @@ A few things to note:
 
 - **Alerts** depends on **Deployments**. Enabling Alerts automatically enables Deployments; disabling Deployments automatically disables Alerts.
 - **Identity Provider** depends on **Settings** in the same way.
-- **Support Bundles** and **Artifacts** are independent and can be toggled without affecting other features.
+- **Support** and **Artifacts** are independent and can be toggled without affecting other features.
 - **Update Notifications** covers whichever of **Deployments** and **Artifacts** the customer also has, since a customer can only watch what it can reach.
-- **Deployments** and **Artifacts** are enabled by default for new customers. **Alerts**, **Update Notifications** and **Support Bundles** must be explicitly enabled.
+- **Deployments** and **Artifacts** are enabled by default for new customers. **Alerts**, **Update Notifications** and **Support** must be explicitly enabled.
 - **Security** is enabled by default for new customers once your organization has [Vulnerability Management](/docs/platform/vulnerability-management/). When your organization gains it, every existing customer gets it as well. You can switch it off for individual customers afterwards.
 - Changes take effect immediately. Disabled features are hidden entirely from the customer in the Customer Portal. Customers only see the sections that are enabled for them.
 

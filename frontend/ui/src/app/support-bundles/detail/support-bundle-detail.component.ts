@@ -70,7 +70,7 @@ export class SupportBundleDetailComponent {
 
   protected readonly title = computed(() => {
     const bundle = this.bundle();
-    return bundle?.title || `Support Bundle ${bundle?.id.substring(0, 8)}`;
+    return bundle?.title || `Support Request ${bundle?.id.substring(0, 8)}`;
   });
 
   protected readonly resourceTree = computed(() => buildResourceTree(this.bundle()?.resources ?? []));
@@ -111,8 +111,6 @@ export class SupportBundleDetailComponent {
       });
   }
 
-  protected readonly backRoute = this.auth.isCustomer() ? '/support' : '/support-bundles';
-
   protected async downloadResources(): Promise<void> {
     const bundle = this.bundle();
     if (!bundle || this.downloading()) {
@@ -138,7 +136,7 @@ export class SupportBundleDetailComponent {
       return;
     }
     const confirmed = await firstValueFrom(
-      this.overlay.confirm('Are you sure you want to mark this support bundle as resolved?')
+      this.overlay.confirm('Are you sure you want to mark this support request as resolved?')
     );
     if (!confirmed) {
       return;
@@ -146,7 +144,7 @@ export class SupportBundleDetailComponent {
     this.updatingStatus.set(true);
     try {
       await firstValueFrom(this.supportBundlesService.updateStatus(bundle.id, {status: 'resolved'}));
-      this.toast.success('Support bundle marked as resolved');
+      this.toast.success('Support request marked as resolved');
       this.refresh$.next();
     } catch (e) {
       const msg = getFormDisplayedError(e);
@@ -164,7 +162,7 @@ export class SupportBundleDetailComponent {
       return;
     }
     const confirmed = await firstValueFrom(
-      this.overlay.confirm('Are you sure you want to cancel this support bundle?')
+      this.overlay.confirm('Are you sure you want to cancel this support request?')
     );
     if (!confirmed) {
       return;
@@ -172,7 +170,7 @@ export class SupportBundleDetailComponent {
     this.updatingStatus.set(true);
     try {
       await firstValueFrom(this.supportBundlesService.updateStatus(bundle.id, {status: 'canceled'}));
-      this.toast.success('Support bundle canceled');
+      this.toast.success('Support request canceled');
       this.refresh$.next();
     } catch (e) {
       const msg = getFormDisplayedError(e);
@@ -196,8 +194,8 @@ export class SupportBundleDetailComponent {
     this.deleting.set(true);
     try {
       await firstValueFrom(this.supportBundlesService.delete(bundle.id));
-      this.toast.success('Support bundle deleted');
-      await this.router.navigate([this.backRoute]);
+      this.toast.success('Support request deleted');
+      await this.router.navigate(['/support']);
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {

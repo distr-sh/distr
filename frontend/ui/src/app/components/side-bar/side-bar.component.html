@@ -281,17 +281,17 @@
               class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
               (click)="sidebar.hide()"
-              routerLink="/support-bundles">
+              routerLink="/support">
               <fa-icon
                 [icon]="faLifeRing"
                 size="lg"
                 class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
-              <span class="ms-3">Support Bundles</span>
+              <span class="ms-3">Support</span>
             </a>
           } @else {
             <a
               class="group flex cursor-pointer items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
-              title="Upgrade to Pro to enable support bundles"
+              title="Upgrade to Pro to enable support"
               (click)="toggle(supportBundlesOverlayOpen)"
               cdkOverlayOrigin
               #supportBundlesTooltipTrigger="cdkOverlayOrigin">
@@ -299,7 +299,7 @@
                 [icon]="faLifeRing"
                 size="lg"
                 class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
-              <span class="ms-3 flex-1 text-left whitespace-nowrap rtl:text-right">Support Bundles</span>
+              <span class="ms-3 flex-1 text-left whitespace-nowrap rtl:text-right">Support</span>
               <app-plan-badge plan="pro" class="me-2 ml-2" />
               <ng-template
                 cdkConnectedOverlay
@@ -528,13 +528,13 @@
             <a
               (click)="sidebar.hide()"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
-              routerLink="/support-bundles"
+              routerLink="/support"
               class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
               <fa-icon
                 [icon]="faLifeRing"
                 size="lg"
                 class="h-6 w-6 pl-0.5 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
-              <span class="ms-3">Support Bundles</span>
+              <span class="ms-3">Support</span>
             </a>
           </li>
         }
