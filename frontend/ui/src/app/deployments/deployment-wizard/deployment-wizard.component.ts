@@ -25,6 +25,7 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faAddressBook, faCircleCheck, faShip, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, distinctUntilChanged, firstValueFrom, map, of, switchMap, take} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
+import {podSchedulingFormGroup, podSchedulingFromForm} from '../../../util/pod-scheduling';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {
   DOCKER_ENDPOINT_REGEX,
@@ -47,6 +48,7 @@ import {OrganizationBrandingService} from '../../services/organization-branding.
 import {OrganizationService} from '../../services/organization.service';
 import {ToastService} from '../../services/toast.service';
 import {DeploymentFormComponent, mapToDeploymentRequest} from '../deployment-form/deployment-form.component';
+import {PodSchedulingFieldsComponent} from '../pod-scheduling-fields/pod-scheduling-fields.component';
 import {DeploymentWizardStepperComponent} from './deployment-wizard-stepper.component';
 
 @Component({
@@ -65,6 +67,7 @@ import {DeploymentWizardStepperComponent} from './deployment-wizard-stepper.comp
     DeploymentFormComponent,
     DeploymentTypeBadgeComponent,
     SpinnerComponent,
+    PodSchedulingFieldsComponent,
   ],
 })
 export class DeploymentWizardComponent extends ClosableDialog implements OnInit {
@@ -137,6 +140,8 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
         validators: [Validators.required, Validators.pattern(RESOURCE_QUANTITY_REGEX)],
       }),
     }),
+    customPodScheduling: new FormControl<boolean>(false, {nonNullable: true}),
+    podScheduling: podSchedulingFormGroup(),
     scope: new FormControl<DeploymentTargetScope>('cluster', {nonNullable: true}),
   });
 
@@ -316,6 +321,16 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
         }
       });
 
+    this.deploymentTargetForm.controls.customPodScheduling.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => {
+        if (value) {
+          this.deploymentTargetForm.controls.podScheduling.enable();
+        } else {
+          this.deploymentTargetForm.controls.podScheduling.disable();
+        }
+      });
+
     this.deploymentTargetForm.controls.customDockerEndpoint.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((value) => {
@@ -340,6 +355,12 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
       } else {
         this.deploymentTargetForm.controls.resources.disable();
       }
+      this.deploymentTargetForm.controls.customPodScheduling.enable();
+      if (this.deploymentTargetForm.controls.customPodScheduling.value) {
+        this.deploymentTargetForm.controls.podScheduling.enable();
+      } else {
+        this.deploymentTargetForm.controls.podScheduling.disable();
+      }
       this.deploymentTargetForm.controls.customDockerEndpoint.disable();
       this.deploymentTargetForm.controls.dockerEndpoint.disable();
     } else if (type === 'docker') {
@@ -350,6 +371,8 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
       this.deploymentTargetForm.controls.imageCleanupEnabled.enable();
       this.deploymentTargetForm.controls.customResources.disable();
       this.deploymentTargetForm.controls.resources.disable();
+      this.deploymentTargetForm.controls.customPodScheduling.disable();
+      this.deploymentTargetForm.controls.podScheduling.disable();
       this.deploymentTargetForm.controls.customDockerEndpoint.enable();
       if (this.deploymentTargetForm.controls.customDockerEndpoint.value) {
         this.deploymentTargetForm.controls.dockerEndpoint.enable();
@@ -464,6 +487,9 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
                   memoryRequest: this.deploymentTargetForm.value.resources?.memoryRequest!,
                 }
               : undefined,
+            ...(this.deploymentTargetForm.value.customPodScheduling
+              ? podSchedulingFromForm(this.deploymentTargetForm.controls.podScheduling)
+              : {}),
             dockerEndpoint: this.deploymentTargetForm.value.customDockerEndpoint
               ? this.deploymentTargetForm.value.dockerEndpoint
               : undefined,

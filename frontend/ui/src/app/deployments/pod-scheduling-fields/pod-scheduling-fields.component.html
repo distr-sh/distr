@@ -1,0 +1,50 @@
+@let controls = group().controls;
+<div>
+  <label for="pod-annotations" class="distr-label mb-2">Pod Annotations</label>
+  <textarea
+    [formControl]="controls.podAnnotations"
+    id="pod-annotations"
+    rows="3"
+    wrap="off"
+    class="distr-input font-mono"
+    placeholder="example.com/annotation=value"
+    autocomplete="off"></textarea>
+  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">One <code>key=value</code> per line.</p>
+  @if (controls.podAnnotations.errors?.['parse']; as error) {
+    <p class="mt-1 text-xs text-red-600 dark:text-red-500">{{ error }}</p>
+  }
+</div>
+
+<div>
+  <label for="node-selector" class="distr-label mb-2">Node Selector</label>
+  <textarea
+    [formControl]="controls.nodeSelector"
+    id="node-selector"
+    rows="3"
+    wrap="off"
+    class="distr-input font-mono"
+    placeholder="kubernetes.io/arch=arm64"
+    autocomplete="off"></textarea>
+  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">One <code>key=value</code> per line.</p>
+  @if (controls.nodeSelector.errors?.['parse']; as error) {
+    <p class="mt-1 text-xs text-red-600 dark:text-red-500">{{ error }}</p>
+  }
+</div>
+
+<div>
+  <label for="tolerations" class="distr-label mb-2">Tolerations</label>
+  <textarea
+    [formControl]="controls.tolerations"
+    id="tolerations"
+    rows="3"
+    wrap="off"
+    class="distr-input font-mono"
+    placeholder="dedicated=controllers:NoSchedule"
+    autocomplete="off"></textarea>
+  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+    One <code>key[=value][:effect]</code> per line. A key without a value tolerates any value of that taint.
+  </p>
+  @if (controls.tolerations.errors?.['parse']; as error) {
+    <p class="mt-1 text-xs text-red-600 dark:text-red-500">{{ error }}</p>
+  }
+</div>

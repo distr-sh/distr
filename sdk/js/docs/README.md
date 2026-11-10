@@ -49,6 +49,7 @@
 - [DeploymentTargetAccessResponse](interfaces/DeploymentTargetAccessResponse.md)
 - [DeploymentTargetResources](interfaces/DeploymentTargetResources.md)
 - [DeploymentTargetSettings](interfaces/DeploymentTargetSettings.md)
+- [DeploymentTargetToleration](interfaces/DeploymentTargetToleration.md)
 - [DeploymentWithLatestRevision](interfaces/DeploymentWithLatestRevision.md)
 - [HelmOptions](interfaces/HelmOptions.md)
 - [Named](interfaces/Named.md)

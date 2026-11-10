@@ -51,6 +51,9 @@ func deploymentTargetSettingsToInternal(settings api.DeploymentTargetSettings) t
 		DeploymentLogsAfter:     settings.DeploymentLogsAfter,
 		Resources:               PtrOrNil(settings.Resources, DeploymentTargetResourcesToInternal),
 		DockerEndpoint:          settings.DockerEndpoint,
+		PodAnnotations:          nilIfEmpty(settings.PodAnnotations),
+		NodeSelector:            nilIfEmpty(settings.NodeSelector),
+		Tolerations:             tolerationsToInternal(settings.Tolerations),
 	}
 }
 
@@ -79,6 +82,9 @@ func DeploymentTargetToAPI(
 			DeploymentLogsAfter:         dt.DeploymentLogsAfter,
 			Resources:                   PtrOrNil(dt.Resources, DeploymentTargetResourcesToAPI),
 			DockerEndpoint:              dt.DockerEndpoint,
+			PodAnnotations:              dt.PodAnnotations,
+			NodeSelector:                dt.NodeSelector,
+			Tolerations:                 List(dt.Tolerations, DeploymentTargetTolerationToAPI),
 			CustomerOrganization:        PtrOrNil(dt.CustomerOrganization, CustomerOrganizationToAPI),
 			Deployments:                 List(dt.Deployments, deploymentToAPI),
 			ControllerVersion:           ControllerVersionToAPI(dt.ControllerVersion),
@@ -151,6 +157,40 @@ func DeploymentTargetResourcesToAPI(resources types.DeploymentTargetResources) a
 		CPULimit:      resources.CPULimit,
 		MemoryLimit:   resources.MemoryLimit,
 	}
+}
+
+func DeploymentTargetTolerationToAPI(toleration types.DeploymentTargetToleration) api.DeploymentTargetToleration {
+	return api.DeploymentTargetToleration{
+		Key:      toleration.Key,
+		Operator: toleration.Operator,
+		Value:    toleration.Value,
+		Effect:   toleration.Effect,
+	}
+}
+
+func DeploymentTargetTolerationToInternal(toleration api.DeploymentTargetToleration) types.DeploymentTargetToleration {
+	return types.DeploymentTargetToleration{
+		Key:      toleration.Key,
+		Operator: toleration.Operator,
+		Value:    toleration.Value,
+		Effect:   toleration.Effect,
+	}
+}
+
+// nilIfEmpty and tolerationsToInternal store an empty collection as NULL, which the docker type check in the
+// database relies on.
+func nilIfEmpty[M ~map[K]V, K comparable, V any](value M) M {
+	if len(value) == 0 {
+		return nil
+	}
+	return value
+}
+
+func tolerationsToInternal(tolerations []api.DeploymentTargetToleration) []types.DeploymentTargetToleration {
+	if len(tolerations) == 0 {
+		return nil
+	}
+	return List(tolerations, DeploymentTargetTolerationToInternal)
 }
 
 func DeploymentTargetResourcesToInternal(resources api.DeploymentTargetResources) types.DeploymentTargetResources {

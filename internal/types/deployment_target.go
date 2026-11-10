@@ -30,15 +30,25 @@ type DeploymentTarget struct {
 	ReportedControllerVersionID *uuid.UUID             `db:"reported_controller_version_id" json:"reportedControllerVersionId,omitempty"` //nolint:lll
 	// LegacyControllerName is set on targets created before the rename to controller, whose manifests keep naming
 	// the controller's resources and compose service after the agent.
-	LegacyControllerName    bool                       `db:"legacy_controller_name" json:"-"`
-	MetricsEnabled          bool                       `db:"metrics_enabled" json:"metricsEnabled"`
-	ImageCleanupEnabled     bool                       `db:"image_cleanup_enabled" json:"imageCleanupEnabled"`
-	AutohealEnabled         bool                       `db:"autoheal_enabled" json:"autohealEnabled"`
-	AutomaticUpdatesEnabled bool                       `db:"automatic_updates_enabled" json:"automaticUpdatesEnabled"`
-	DeploymentLogsEnabled   bool                       `db:"deployment_logs_enabled" json:"deploymentLogsEnabled"`
-	DeploymentLogsAfter     *time.Time                 `db:"deployment_logs_after" json:"deploymentLogsAfter,omitempty"`
-	Resources               *DeploymentTargetResources `db:"resources" json:"resources,omitempty"`
-	DockerEndpoint          *string                    `db:"docker_endpoint" json:"dockerEndpoint,omitempty"`
+	LegacyControllerName    bool                         `db:"legacy_controller_name" json:"-"`
+	MetricsEnabled          bool                         `db:"metrics_enabled" json:"metricsEnabled"`
+	ImageCleanupEnabled     bool                         `db:"image_cleanup_enabled" json:"imageCleanupEnabled"`
+	AutohealEnabled         bool                         `db:"autoheal_enabled" json:"autohealEnabled"`
+	AutomaticUpdatesEnabled bool                         `db:"automatic_updates_enabled" json:"automaticUpdatesEnabled"`
+	DeploymentLogsEnabled   bool                         `db:"deployment_logs_enabled" json:"deploymentLogsEnabled"`
+	DeploymentLogsAfter     *time.Time                   `db:"deployment_logs_after" json:"deploymentLogsAfter,omitempty"`
+	Resources               *DeploymentTargetResources   `db:"resources" json:"resources,omitempty"`
+	DockerEndpoint          *string                      `db:"docker_endpoint" json:"dockerEndpoint,omitempty"`
+	PodAnnotations          map[string]string            `db:"pod_annotations" json:"podAnnotations,omitempty"`
+	NodeSelector            map[string]string            `db:"node_selector" json:"nodeSelector,omitempty"`
+	Tolerations             []DeploymentTargetToleration `db:"tolerations" json:"tolerations,omitempty"`
+}
+
+type DeploymentTargetToleration struct {
+	Key      string `json:"key,omitempty"`
+	Operator string `json:"operator,omitempty"`
+	Value    string `json:"value,omitempty"`
+	Effect   string `json:"effect,omitempty"`
 }
 
 type DeploymentTargetResources struct {

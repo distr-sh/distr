@@ -817,6 +817,29 @@
             <app-alert type="info">Changes in the resource requirements are only applied after a reconnect!</app-alert>
           }
         }
+
+        @if (editForm.controls.customPodScheduling.enabled) {
+          <div class="flex items-center">
+            <input
+              id="custom-pod-scheduling"
+              type="checkbox"
+              formControlName="customPodScheduling"
+              class="distr-checkbox" />
+            <label for="custom-pod-scheduling" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+              Set pod annotations, node selector and tolerations for the Distr controller
+            </label>
+          </div>
+        }
+
+        @if (editForm.controls.podScheduling.enabled) {
+          <app-pod-scheduling-fields [group]="editForm.controls.podScheduling" />
+
+          @if (editForm.controls.podScheduling.dirty) {
+            <app-alert type="info">
+              Changes to the pod annotations, node selector and tolerations are only applied after a reconnect!
+            </app-alert>
+          }
+        }
       </div>
       <div class="mt-8 flex w-full justify-center space-x-4 pb-4 sm:mt-0">
         <button

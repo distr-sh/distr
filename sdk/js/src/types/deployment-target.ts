@@ -21,6 +21,9 @@ export interface DeploymentTarget extends BaseModel, Named {
   automaticUpdatesEnabled?: boolean;
   resources?: DeploymentTargetResources;
   dockerEndpoint?: string;
+  podAnnotations?: Record<string, string>;
+  nodeSelector?: Record<string, string>;
+  tolerations?: DeploymentTargetToleration[];
 }
 
 export interface DeploymentTargetResources {
@@ -28,6 +31,13 @@ export interface DeploymentTargetResources {
   memoryRequest: string;
   cpuLimit: string;
   memoryLimit: string;
+}
+
+export interface DeploymentTargetToleration {
+  key?: string;
+  operator?: 'Equal' | 'Exists';
+  value?: string;
+  effect?: 'NoSchedule' | 'PreferNoSchedule' | 'NoExecute';
 }
 
 export interface DeploymentTargetSettings {
@@ -39,6 +49,9 @@ export interface DeploymentTargetSettings {
   automaticUpdatesEnabled?: boolean;
   resources?: DeploymentTargetResources;
   dockerEndpoint?: string;
+  podAnnotations?: Record<string, string>;
+  nodeSelector?: Record<string, string>;
+  tolerations?: DeploymentTargetToleration[];
 }
 
 export interface CreateDeploymentTargetRequest extends DeploymentTargetSettings {
