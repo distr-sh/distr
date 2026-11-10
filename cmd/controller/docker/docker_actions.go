@@ -96,7 +96,6 @@ func ApplyComposeFile(ctx context.Context, deployment api.ControllerDeployment, 
 
 	err = composeService.Up(ctx, project, composeapi.UpOptions{
 		Create: composeapi.CreateOptions{RemoveOrphans: true},
-		Start:  composeapi.StartOptions{Project: project},
 	})
 	if err != nil {
 		return fmt.Errorf("compose up failed: %w", err)
