@@ -86,7 +86,9 @@ func (s *Syncer) SyncArtifactTags(
 	var skippedTags []string
 	var skippedTagsMu sync.Mutex
 	skipTag := func(tag string) {
-		log.Warn("upstream sync skipped tag that is not a SemVer version", zap.String("tag", tag))
+		log.Warn("upstream sync skipped tag that is not allowed by the artifacts versioning strategy",
+			zap.String("tag", tag),
+			zap.String("strategy", string(artifact.VersioningStrategy)))
 		skippedTagsMu.Lock()
 		defer skippedTagsMu.Unlock()
 		skippedTags = append(skippedTags, tag)
