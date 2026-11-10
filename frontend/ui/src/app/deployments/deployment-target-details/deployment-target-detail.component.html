@@ -255,7 +255,14 @@
         </div>
 
         <div>
-          <label for="filter" class="distr-label-sm mb-1">Filter</label>
+          <div class="mb-1 flex items-center justify-between gap-2">
+            <label for="filter" class="distr-label-sm">Filter</label>
+            <label class="inline-flex cursor-pointer items-center gap-1.5">
+              <span class="distr-label-sm">Exclude</span>
+              <input type="checkbox" class="peer sr-only" formControlName="exclude" />
+              <div class="distr-toggle distr-toggle-sm"></div>
+            </label>
+          </div>
           <input
             type="text"
             id="filter"
@@ -322,6 +329,7 @@
           [after]="after()"
           [before]="before()"
           [filter]="filter()"
+          [exclusionFilter]="exclusionFilter()"
           [orderDirection]="orderDirection()" />
       } @else if (availableResources()) {
         <p class="text-sm text-gray-500 dark:text-gray-400">
@@ -338,6 +346,7 @@
         [after]="after()"
         [before]="before()"
         [filter]="filter()"
+        [exclusionFilter]="exclusionFilter()"
         [orderDirection]="orderDirection()" />
     }
   </div>

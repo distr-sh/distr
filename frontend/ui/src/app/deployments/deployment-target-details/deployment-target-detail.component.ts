@@ -108,8 +108,10 @@ export class DeploymentTargetDetailComponent {
   // Gate table inputs with the same window check so stale/bookmarked URLs never query out-of-window.
   protected readonly after = computed(() => this.validRangeDate(this.fromParam()));
   protected readonly before = computed(() => this.validRangeDate(this.toParam()));
-  private readonly filter$ = this.route.queryParamMap.pipe(map((p) => p.get('filter') || undefined));
-  protected readonly filter = toSignal(this.filter$);
+  private readonly filterParam = toSignal(this.route.queryParamMap.pipe(map((p) => p.get('filter') || undefined)));
+  private readonly excludeParam = toSignal(this.route.queryParamMap.pipe(map((p) => p.get('exclude') === 'true')));
+  protected readonly filter = computed(() => (this.excludeParam() ? undefined : this.filterParam()));
+  protected readonly exclusionFilter = computed(() => (this.excludeParam() ? this.filterParam() : undefined));
 
   protected readonly live = computed(() => !this.after() && !this.before());
   // A present-but-invalid range must block the tables instead of falling back to live tailing.
@@ -236,6 +238,7 @@ export class DeploymentTargetDetailComponent {
     from: ['', this.logRangeValidator],
     to: ['', this.logRangeValidator],
     filter: '',
+    exclude: false,
   });
 
   private readonly deploymentTargetLogsTable = viewChild(DeploymentTargetLogsTableComponent);
@@ -258,13 +261,14 @@ export class DeploymentTargetDetailComponent {
           from: isoToDateTimeLocal(params.get('from')),
           to: isoToDateTimeLocal(params.get('to')),
           filter: params.get('filter') ?? '',
+          exclude: params.get('exclude') === 'true',
         },
         {emitEvent: false}
       );
     });
 
     this.form.valueChanges.pipe(takeUntilDestroyed(), debounceTime(300)).subscribe((values) => {
-      const queryParams: Params = {filter: values.filter || null};
+      const queryParams: Params = {filter: values.filter || null, exclude: values.exclude || null};
       // Only propagate valid dates so an invalid one doesn't block filter/other-date updates.
       if (this.form.controls.from.valid) {
         queryParams['from'] = dateTimeLocalToISO(values.from);

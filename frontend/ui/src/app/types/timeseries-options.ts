@@ -1,6 +1,13 @@
 export type OrderDirection = 'ASC' | 'DESC';
 
-export type TimeseriesOptions = {limit?: number; before?: Date; after?: Date; filter?: string; order?: OrderDirection};
+export type TimeseriesOptions = {
+  limit?: number;
+  before?: Date;
+  after?: Date;
+  filter?: string;
+  exclusionFilter?: string;
+  order?: OrderDirection;
+};
 
 export function timeseriesOptionsAsParams(options?: TimeseriesOptions): Record<string, string> {
   const params: Record<string, string> = {};
@@ -15,6 +22,9 @@ export function timeseriesOptionsAsParams(options?: TimeseriesOptions): Record<s
   }
   if (options?.filter !== undefined && options.filter !== '') {
     params['filter'] = options.filter;
+  }
+  if (options?.exclusionFilter !== undefined && options.exclusionFilter !== '') {
+    params['exclusionFilter'] = options.exclusionFilter;
   }
   if (options?.order !== undefined) {
     params['order'] = options.order;
