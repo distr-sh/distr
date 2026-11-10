@@ -473,7 +473,7 @@ func (handler *manifests) handlePut(resp http.ResponseWriter, req *http.Request,
 	} else if errors.Is(err, imanifest.ErrTagAlreadyExists) {
 		return regErrTagAlreadyExists
 	} else if errors.Is(err, imanifest.ErrTagInvalid) {
-		return regErrTagInvalid(err)
+		return regErrDenied(err.Error())
 	} else if err != nil {
 		return regErrInternal(err)
 	}
