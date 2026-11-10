@@ -11,7 +11,12 @@ func ArtifactToAPI(a types.ArtifactWithTaggedVersion) api.ArtifactResponse {
 		ImageUrl:                  CreateImageURL(a.ImageID),
 		TitleImageUrl:             CreateImageURL(a.TitleImageID),
 		Featured:                  a.Featured,
+		VersioningStrategy:        a.VersioningStrategy,
 	}
+}
+
+func SyncArtifactToAPI(a types.ArtifactWithTaggedVersion, skippedTags []string) api.SyncArtifactResponse {
+	return api.SyncArtifactResponse{ArtifactResponse: ArtifactToAPI(a), SkippedTags: skippedTags}
 }
 
 // DeleteArtifactTagToAPI takes the artifact that remains after the deletion, nil if the deletion removed it.
@@ -28,6 +33,7 @@ func ArtifactsWithDownloadsToAPI(a types.ArtifactWithDownloads) api.ArtifactsRes
 		ImageUrl:              CreateImageURL(a.ImageID),
 		TitleImageUrl:         CreateImageURL(a.TitleImageID),
 		Featured:              a.Featured,
+		VersioningStrategy:    a.VersioningStrategy,
 	}
 }
 

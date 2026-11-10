@@ -37,9 +37,9 @@ In order to use the Stripe integration during development, the `stripe` CLI tool
 If you use `mise` for setup, it will be installed automatically.
 Use `stripe login` to authenticate with Stripe (make sure to use a sandbox account).
 
-Use `stripe listen --forward-to localhost:8080/api/v1/webhook/stripe` to forward Stripe webhook events to your local server.
+Use `stripe listen --all-snapshot --forward-to localhost:8080/api/v1/webhook/stripe` to forward Stripe webhook events to your local server.
 Create an API key on the [Stripe Dashboard](https://dashboard.stripe.com/test/apikeys) with write access to "Checkout Sessions", "Customer Portal",
-"Subscription" and read access to "Prices".
+"Subscriptions" and read access to "Prices".
 Add the `STRIPE_WEBHOOK_SECRET` and `STRIPE_API_KEY` variables to your `.env.development.local.secret` file.
 
 In your sandbox account, you need at least some of the price resources with the following lookup keys:

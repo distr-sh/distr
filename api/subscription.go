@@ -44,6 +44,7 @@ type SubscriptionInfo struct {
 	SubscriptionEndsAt                  time.Time                `json:"subscriptionEndsAt"`
 	SubscriptionCustomerOrganizationQty int64                    `json:"subscriptionCustomerOrganizationQuantity"`
 	SubscriptionUserAccountQty          int64                    `json:"subscriptionUserAccountQuantity"`
+	HasStripeSubscription               bool                     `json:"hasStripeSubscription"`
 	CurrentUserAccountCount             int64                    `json:"currentUserAccountCount"`
 	CurrentCustomerOrganizationCount    int64                    `json:"currentCustomerOrganizationCount"`
 	CurrentRegistryStorageBytes         int64                    `json:"currentRegistryStorageBytes"`

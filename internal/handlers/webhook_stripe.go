@@ -101,9 +101,7 @@ func handleStripeSubscription(ctx context.Context, event stripe.Event) (respond.
 		return respond.NoContent(), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to handle stripe subscription: %w", err)
-	} else if orgDeleted &&
-		sub.Status != stripe.SubscriptionStatusCanceled &&
-		sub.Status != stripe.SubscriptionStatusIncompleteExpired {
+	} else if orgDeleted && !billing.IsEnded(sub) {
 		// A subscription the deletion did not know about yet, e.g. from a checkout completed afterwards
 		log.Info("canceling stripe subscription of deleted organization", zap.Stringer("organizationId", orgID))
 		if err := billing.CancelSubscription(ctx, sub.ID); err != nil {
@@ -126,12 +124,27 @@ func applyStripeSubscription(ctx context.Context, orgID uuid.UUID, sub stripe.Su
 		}
 		orgDeleted = deleted
 
-		org.StripeSubscriptionID = &sub.ID
+		switch classifyStripeSubscription(org.StripeSubscriptionID, sub) {
+		case stripeSubscriptionIgnored:
+			log.Info("ignoring ended stripe subscription that the organization no longer references",
+				zap.Stringer("organizationId", org.ID), zap.String("stripeSubscriptionId", sub.ID))
+			return nil
+		case stripeSubscriptionEnded:
+			org.StripeSubscriptionID = nil
+		case stripeSubscriptionReplaced:
+			log.Warn("stripe subscription replaces another live subscription of the organization",
+				zap.Stringer("organizationId", org.ID),
+				zap.String("previousStripeSubscriptionId", *org.StripeSubscriptionID),
+				zap.String("stripeSubscriptionId", sub.ID))
+			org.StripeSubscriptionID = &sub.ID
+		case stripeSubscriptionApplied:
+			org.StripeSubscriptionID = &sub.ID
+		}
 		org.StripeCustomerID = &sub.Customer.ID
 
 		var plan types.SubscriptionPlan
 
-		if sub.Status == stripe.SubscriptionStatusCanceled {
+		if billing.IsEnded(sub) {
 			plan.EndsAt = time.Now()
 		} else if currentPeriodEnd, err := billing.GetCurrentPeriodEnd(sub); err != nil {
 			return fmt.Errorf("failed to get current period end: %w", err)
@@ -180,4 +193,28 @@ func applyStripeSubscription(ctx context.Context, orgID uuid.UUID, sub stripe.Su
 		return subscription.GrantCustomerFeatures(ctx, org, previousFeatures)
 	})
 	return orgDeleted, err
+}
+
+type stripeSubscriptionChange int
+
+const (
+	stripeSubscriptionIgnored stripeSubscriptionChange = iota
+	stripeSubscriptionApplied
+	stripeSubscriptionEnded
+	stripeSubscriptionReplaced
+)
+
+// classifyStripeSubscription ignores an ended subscription other than current, since Stripe events can arrive
+// out of order.
+func classifyStripeSubscription(current *string, sub stripe.Subscription) stripeSubscriptionChange {
+	isCurrent := current != nil && *current == sub.ID
+	if billing.IsEnded(sub) && isCurrent {
+		return stripeSubscriptionEnded
+	} else if billing.IsEnded(sub) {
+		return stripeSubscriptionIgnored
+	} else if current != nil && !isCurrent {
+		return stripeSubscriptionReplaced
+	} else {
+		return stripeSubscriptionApplied
+	}
 }

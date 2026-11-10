@@ -53,6 +53,7 @@ export interface SubscriptionInfo {
   subscriptionEndsAt: string;
   subscriptionCustomerOrganizationQuantity: number;
   subscriptionUserAccountQuantity: number;
+  hasStripeSubscription: boolean;
   currentUserAccountCount: number;
   currentCustomerOrganizationCount: number;
   currentRegistryStorageBytes: number;
