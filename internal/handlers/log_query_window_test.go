@@ -91,15 +91,17 @@ func TestParseLogQueryRange(t *testing.T) {
 		after := time.Now().Add(-2 * time.Hour).Truncate(time.Second).UTC()
 		before := time.Now().Add(-time.Hour).Truncate(time.Second).UTC()
 		result, err := parseLogQueryRange(logQueryRequest(url.Values{
-			"after":  {after.Format(time.RFC3339Nano)},
-			"before": {before.Format(time.RFC3339Nano)},
-			"filter": {"some.*error"},
+			"after":           {after.Format(time.RFC3339Nano)},
+			"before":          {before.Format(time.RFC3339Nano)},
+			"filter":          {"some.*error"},
+			"exclusionFilter": {"manager"},
 		}), types.SubscriptionTypeCommunity)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(result.StartExplicit).To(BeTrue())
 		g.Expect(result.Start).To(BeTemporally("==", after))
 		g.Expect(result.End).To(BeTemporally("==", before))
 		g.Expect(result.Filter).To(Equal("some.*error"))
+		g.Expect(result.ExclusionFilter).To(Equal("manager"))
 	})
 
 	t.Run("a before cursor older than the start yields an empty range", func(t *testing.T) {
@@ -121,6 +123,8 @@ func TestParseLogQueryRange(t *testing.T) {
 	t.Run("rejects an invalid filter regex", func(t *testing.T) {
 		g := NewWithT(t)
 		_, err := parseLogQueryRange(logQueryRequest(url.Values{"filter": {"["}}), types.SubscriptionTypeCommunity)
+		g.Expect(err).To(HaveOccurred())
+		_, err = parseLogQueryRange(logQueryRequest(url.Values{"exclusionFilter": {"["}}), types.SubscriptionTypeCommunity)
 		g.Expect(err).To(HaveOccurred())
 	})
 

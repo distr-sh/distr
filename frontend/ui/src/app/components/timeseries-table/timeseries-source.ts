@@ -10,12 +10,13 @@ export interface TimeseriesEntry {
   resource?: string;
 }
 
-/** The time range, order and body filter a source reads with. */
+/** The time range, order and body filters a source reads with. */
 export interface TimeseriesRange {
   order: OrderDirection;
   after?: Date;
   before?: Date;
   filter?: string;
+  exclusionFilter?: string;
 }
 
 export interface TimeseriesSource {
@@ -70,6 +71,7 @@ export class RangeTimeseriesSource<T> implements TimeseriesSource {
       after: cursor.after ?? this.range.after,
       before: cursor.before ?? this.range.before,
       filter: this.range.filter,
+      exclusionFilter: this.range.exclusionFilter,
       order: this.range.order,
     }).pipe(map((records) => records.map((record) => this.toEntry(record))));
   }
