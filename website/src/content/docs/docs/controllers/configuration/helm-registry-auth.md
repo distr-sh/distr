@@ -51,6 +51,6 @@ worker:
 
 The controller adds the secret as `name: ...` by default.
 Some charts expect plain strings instead, e.g. `imagePullSecrets: [foo]`.
-If every entry of an array is a string, the controller adds the secret name as a string as well.
+If an array is non-empty and every entry is a string, the controller adds the secret name as a string as well.
 To get this form without a secret of your own, put an empty string into the array, as `worker` does above.
 The controller replaces the empty string with its secret name.
