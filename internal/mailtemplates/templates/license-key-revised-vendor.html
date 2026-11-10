@@ -22,8 +22,6 @@
         <pre>{{ .PayloadFormatted }}</pre>
 
         <p><strong>Expires at:</strong> {{ .Revision.ExpiresAt.UTC.Format "2006-01-02 15:04:05 UTC" }}</p>
-
-        <p>{{ template "fragments/signature.html" . }}</p>
       </main>
       {{ template "fragments/footer.html" . }}
     </div>
