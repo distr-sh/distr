@@ -18,6 +18,12 @@
   "rebaseWhen": "behind-base-branch",
   "minimumReleaseAge": "1 day",
   "osvVulnerabilityAlerts": true,
+  "logLevelRemap": [
+    {
+      "matchMessage": "/Some .+ did not have a releaseTimestamp, but as we're running with minimumReleaseAgeBehaviour=timestamp-optional, proceeding/",
+      "newLogLevel": "info"
+    }
+  ],
   "gitIgnoredAuthors": [
     "133648757+glasskube-bot@users.noreply.github.com"
   ],
@@ -33,6 +39,13 @@
       "description": "Silence dependency lookup warnings for enterprise images, which are not publicly available",
       "matchPackageNames": [
         "registry.distr.sh/enterprise/distr-ee"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Placeholder images in the docs, whose organization readers replace with their own",
+      "matchPackageNames": [
+        "registry.distr.sh/your-org/**"
       ],
       "enabled": false
     },
@@ -69,13 +82,22 @@
       "groupName": "golangci-lint"
     },
     {
+      "description": "Update the website in branches of its own, except for what the whole repository updates together. A branch spanning the website and the rest would take the highest commit type and an arbitrary scope of its upgrades",
       "matchFileNames": ["website/**"],
+      "matchPackageNames": [
+        "!node",
+        "!pnpm",
+        "!distr-sh/hello-distr",
+        "!ghcr.io/distr-sh/hello-distr/**"
+      ],
+      "additionalBranchPrefix": "website-",
       "semanticCommitType": "build",
       "semanticCommitScope": "website"
     },
     {
       "matchFileNames": ["website/**"],
       "matchPackageNames": [
+        "!node",
         "!pnpm",
         "!distr-sh/hello-distr",
         "!ghcr.io/distr-sh/hello-distr/**"
@@ -85,6 +107,7 @@
         "patch"
       ],
       "groupName": "website dependencies",
+      "groupSlug": "dependencies",
       "automerge": true
     },
     {

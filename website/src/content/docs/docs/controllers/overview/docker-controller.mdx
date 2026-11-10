@@ -19,6 +19,8 @@ The Docker Compose controller manages container-based deployments, handling both
   to learn how it should be installed.
 </Aside>
 
+The [architecture diagram](/docs/controllers/security/docker/#architecture) shows the connections the controller opens, what it runs with on the host and what it never does.
+
 ## Requirements
 
 The host system must have Docker and Docker Compose installed.
@@ -71,7 +73,7 @@ volumes:
   scratch:
 ```
 
-All requests to Distr are authenticated with a JWT token obtained by calling `DISTR_LOGIN_ENDPOINT` with the `targetId` and `targetSecret` credentials. The Docker socket is mounted so the controller can manage containers on the host. Which socket that is can be configured per deployment target, see [Custom Docker Endpoint](#custom-docker-endpoint).
+All requests to Distr are authenticated with a JWT token obtained by calling `DISTR_LOGIN_ENDPOINT` with the `targetId` and `targetSecret` credentials. The Docker socket is mounted so the controller can manage containers on the host. Which socket that is can be configured per deployment target, see [Custom Docker Endpoint](#custom-docker-endpoint). [Controller Security](/docs/controllers/security/) describes what the controller can access on the host and what it sends to Distr.
 
 ## Core Logic
 
@@ -151,6 +153,10 @@ Only unix socket URIs are supported. Remote endpoints such as `tcp://` cannot be
 ## Docker Swarm
 
 A deployment can run in Swarm mode. The host must have Docker Swarm enabled and initialized. Instead of `docker compose up`, the controller uses `docker stack deploy`. Unlike regular Compose mode, `docker stack deploy` is only called when the deployment has changed, not on every cycle.
+
+## Security
+
+The controller manages Docker on the host, so it has the access of the Docker engine itself. [Docker Controller Security](/docs/controllers/security/docker/) describes what it can reach on the host, which Docker operations it runs and which credentials it keeps there. The other pages of [Controller Security](/docs/controllers/security/) cover its network connections, the data it sends to Distr and how to verify its images.
 
 ## Uninstalling
 

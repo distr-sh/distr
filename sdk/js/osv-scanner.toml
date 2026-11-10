@@ -1,0 +1,4 @@
+[[IgnoredVulns]]
+id = "CVE-2026-118764"
+ignoreUntil = 2027-05-09
+reason = "Glob pattern amplification in minimatch, fixed in 11.0.1 only. typedoc requires minimatch 10.x and only matches the entry points of our own typedoc.json when it builds the docs, which do not ship with the SDK."

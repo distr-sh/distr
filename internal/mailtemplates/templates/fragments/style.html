@@ -16,14 +16,15 @@
   .message-container {
     font-family: Inter, 'Noto Sans', 'Droid Sans', Helvetica, sans-serif;
     padding: 0 0.8rem;
+    color: #111827;
   }
 
   a {
-    color: #00b5eb;
+    color: #1d4ed8;
   }
 
   hr {
-    border: 1px solid #00b5eb;
+    border: 1px solid #e5e7eb;
     border-bottom: none;
     margin-top: 1.6rem;
     margin-bottom: 1.6rem;
@@ -41,7 +42,8 @@
 
   footer {
     padding-top: 0.8rem;
-    border-top: 0.2rem solid #174c76;
+    border-top: 1px solid #e5e7eb;
+    color: #6b7280;
   }
 
   .my-1,
@@ -77,29 +79,41 @@
   }
 
   .text-success {
-    color: #00c951;
+    color: #15803d;
   }
 
   .text-warning {
-    color: #ffdf20;
+    color: #a16207;
   }
 
   .text-danger {
-    color: #fb2c36;
+    color: #b91c1c;
   }
 
   .cta {
     display: inline-block;
     padding: 0.8rem 1.2rem;
-    background: #00b5eb;
-    border-radius: 0.4rem;
+    background: #1d4ed8;
+    border-radius: 0.5rem;
     color: #ffffff;
     font-weight: 600;
     text-decoration: none;
   }
 
+  .link-fallback {
+    font-size: 0.8rem;
+    color: #6b7280;
+    overflow-wrap: break-word;
+    word-break: break-all;
+  }
+
+  .link-fallback code {
+    -webkit-user-select: all;
+    user-select: all;
+  }
+
   blockquote {
-    border-left: 0.4rem solid #00b5eb;
+    border-left: 0.4rem solid #1d4ed8;
     padding-left: 1rem;
     margin: 2rem 0;
   }

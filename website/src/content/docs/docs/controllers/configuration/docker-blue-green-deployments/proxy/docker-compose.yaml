@@ -1,6 +1,6 @@
 services:
   caddy:
-    image: 'caddy:2.11.7-alpine'
+    image: 'caddy:2.11.9-alpine'
     restart: unless-stopped
     command: >-
       sh -c 'until [ -f /etc/caddy/routing/Caddyfile ]; do sleep 1; done &&
@@ -13,7 +13,7 @@ services:
       - hello-distr
 
   routing:
-    image: 'caddy:2.11.7-alpine'
+    image: 'caddy:2.11.9-alpine'
     restart: unless-stopped
     init: true
     # Compose recreates a container when its environment changes, but not when only the content of a config does.
