@@ -73,7 +73,7 @@ Deploy all three applications on the same deployment target. For the first deplo
 
 If you deploy the database or the backend first, it fails with `network acme-shared declared as external, but could not be found`. The controller retries every cycle, so the deployment starts by itself once the network exists.
 
-The backend's health check queries the database, so once all three deployments are **Healthy**, the connection works. `http://<host>/latest-message` then answers with `hello distr!`.
+The backend's health check queries the database, so once the Database and Backend deployments are **Healthy**, the connection works. The Network deployment has no health check and stays **Running**. `http://<host>/latest-message` then answers with `hello distr!`.
 
 ## Address other deployments by a network alias
 
@@ -81,7 +81,7 @@ On the shared network, every container answers to its network aliases and to its
 Docker then resolves the name to both containers in random order. Each request ends up at either of them.
 
 - Give every service that other deployments connect to an alias under `networks.<name>.aliases` (like `acme-db`) and connect only through the alias.
-- If one application is deployed more than once on a deployment target, build the alias from a deployment variable, for example `acme-db-${INSTANCE}`, so each deployment has its own.
+- If one application is deployed more than once on a deployment target, build the alias from a deployment variable, for example `acme-db-${INSTANCE}`, so each deployment has its own. Do the same for published host ports, since only one deployment can bind the Backend's port `80`, for example `${HTTP_PORT}:5000`.
 
 Leave services that no other deployment needs off the shared network.
 
