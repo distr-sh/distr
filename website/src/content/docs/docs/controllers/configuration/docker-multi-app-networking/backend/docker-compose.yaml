@@ -1,0 +1,25 @@
+services:
+  backend:
+    image: 'ghcr.io/distr-sh/hello-distr/backend:0.4.24'
+    restart: unless-stopped
+    environment:
+      DB_URL: postgresql+psycopg2://acme:${POSTGRES_PASSWORD}@acme-db/acme?sslmode=disable
+    ports:
+      - '80:5000'
+    networks:
+      acme-shared:
+        aliases:
+          - acme-backend
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=1)",
+        ]
+      interval: 5s
+
+networks:
+  acme-shared:
+    external: true

@@ -1,0 +1,9 @@
+services:
+  my_service:
+    # ...
+    networks:
+      - acme-shared
+
+networks:
+  acme-shared:
+    external: true

@@ -1,0 +1,98 @@
+---
+title: Docker Multi App Networking
+description: Let several Docker applications on one deployment target reach each other through a shared Docker network, for example a backend and the database it uses.
+slug: docs/controllers/docker-multi-app-networking
+sidebar:
+  label: Docker Multi App Networking
+  order: 7
+---
+
+import {Aside, Code, TabItem, Tabs} from '@astrojs/starlight/components';
+import networkCompose from './docker-multi-app-networking/network/docker-compose.yaml?raw';
+import joinNetworkCompose from './docker-multi-app-networking/join-network/docker-compose.yaml?raw';
+import databaseCompose from './docker-multi-app-networking/database/docker-compose.yaml?raw';
+import databaseEnv from './docker-multi-app-networking/database/.env?raw';
+import backendCompose from './docker-multi-app-networking/backend/docker-compose.yaml?raw';
+import backendEnv from './docker-multi-app-networking/backend/.env?raw';
+
+Services in one Compose file reach each other by their service names. Services in different applications don't, even on the same deployment target, because the Docker controller runs every deployment as a Compose project of its own (`distr-<short-deployment-id>`) with its own default network.
+
+To connect them, one application creates a Docker network and the others join it.
+The [example](#example-a-backend-and-its-database) at the end does this for a database and a backend that are deployed separately.
+
+## Step 1: Create the network application
+
+Create a Docker application in Distr with the following Compose file. It exists only to create the shared network.
+
+<Code code={networkCompose} lang="yaml" title="network/docker-compose.yaml" />
+
+- `networks.acme-shared.name` fixes the network's name. Without it, Compose puts the project name in front. That name differs for every deployment, so the others would not find the network. Replace `acme-shared` with a name unique to your application.
+- `network` is a placeholder. Compose won't start a project that has no services, so the application needs one. The `pause` image does nothing and uses almost no resources.
+
+One of your other applications can create the network too, the way the proxy does in [Docker Blue-Green Deployments](/docs/controllers/docker-blue-green-deployments/). The advantage of a separate application is that you can update or undeploy any of the others without touching the network.
+
+## Step 2: Join the network from your applications
+
+The other applications declare the network as `external`, so Compose uses the existing network rather than creating its own. Add it to every service that has to reach another deployment:
+
+<Code code={joinNetworkCompose} lang="yaml" title="docker-compose.yaml" />
+
+## Step 3: Deploy the network first
+
+Deploy all applications on the same deployment target, the network application before the others. For the first deployment, follow [Create a Deployment](/docs/controllers/deployment/). For the others, use **+ Deploy App** on the deployment target card.
+
+If you deploy another application first, it fails with `network acme-shared declared as external, but could not be found`. The controller retries every cycle, so the deployment starts by itself once the network exists.
+
+## Example: a backend and its database
+
+This example connects the backend of [hello-distr](https://github.com/distr-sh/hello-distr), our example application, to a PostgreSQL database deployed separately.
+Create a Docker application from each of the following Compose files and name them **Network**, **Database** and **Backend**.
+The backend connects to the database as `acme-db`. Both read the password from a [Distr secret](/docs/controllers/secrets/), so it never appears in a deployment configuration.
+
+<Tabs>
+  <TabItem label="network/docker-compose.yaml">
+    <Code code={networkCompose} lang="yaml" />
+  </TabItem>
+  <TabItem label="database/docker-compose.yaml">
+    <Code code={databaseCompose} lang="yaml" />
+  </TabItem>
+  <TabItem label="database/.env">
+    <Code code={databaseEnv} lang="dotenv" />
+  </TabItem>
+  <TabItem label="backend/docker-compose.yaml">
+    <Code code={backendCompose} lang="yaml" />
+  </TabItem>
+  <TabItem label="backend/.env">
+    <Code code={backendEnv} lang="dotenv" />
+  </TabItem>
+</Tabs>
+
+Deploy the **Network**, then the **Database** and the **Backend**. The backend's health check queries the database, so once the Database and Backend deployments are **Healthy**, the connection works. The Network deployment has no health check and stays **Running**. `http://<host>/latest-message` then answers with `hello distr!`.
+
+## Address other deployments by a network alias
+
+On the shared network, every container answers to its network aliases and to its service name. Service names tend to be generic, like `postgres` or `backend`. Two deployments can easily use the same one.
+Docker then resolves the name to both containers in random order. Each request ends up at either of them.
+
+- Give every service that other deployments connect to an alias under `networks.<name>.aliases` (like `acme-db`) and connect only through the alias.
+- If one application is deployed more than once on a deployment target, build the alias from a deployment variable, for example `acme-db-${INSTANCE}`, so each deployment has its own. Do the same for published host ports, since only one deployment can bind the Backend's port `80`, for example `${HTTP_PORT}:5000`.
+
+Leave services that no other deployment needs off the shared network.
+
+## Keep the network definition stable
+
+When a new version of the network application changes the network, for example by adding a label, a driver option or a subnet, Compose tries to recreate it. Docker can't remove a network that other deployments are still connected to, so the update fails with `network acme-shared has active endpoints`.
+Settle the definition before the first deployment and keep it the same in every later version.
+
+<Aside type="note">
+  If you undeploy the network application while other deployments still use the
+  network, Docker keeps the network and those deployments keep running. When you
+  deploy the network application again, it takes over the existing network.
+</Aside>
+
+## Related
+
+- [Docker Blue-Green Deployments](/docs/controllers/docker-blue-green-deployments/): a setup of several connected deployments that shifts traffic between two versions of an application
+- [Docker Environment Variables](/docs/controllers/docker-env/): define the environment templates used for the password and the aliases
+- [Secrets Management](/docs/controllers/secrets/): share credentials between deployments
+- [Docker Controller](/docs/controllers/docker-controller/): how the controller runs every deployment as its own Compose project
