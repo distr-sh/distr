@@ -45,6 +45,11 @@ func GetSubscriptionType(subscription stripe.Subscription) (*types.SubscriptionT
 	return result, nil
 }
 
+// IsEnded reports whether sub can no longer be resumed or updated, so that a new one has to be checked out.
+func IsEnded(sub stripe.Subscription) bool {
+	return sub.Status == stripe.SubscriptionStatusCanceled || sub.Status == stripe.SubscriptionStatusIncompleteExpired
+}
+
 func GetCurrentPeriodEnd(subscription stripe.Subscription) (*time.Time, error) {
 	var result *time.Time
 	for _, item := range subscription.Items.Data {
@@ -97,6 +102,7 @@ func GetSubscriptionPeriod(subscription stripe.Subscription) (types.Subscription
 
 type CheckoutSessionParams struct {
 	OrganizationID          string
+	CustomerID              *string
 	TrialEndsAt             time.Time
 	SubscriptionType        types.SubscriptionType
 	SubscriptionPeriod      types.SubscriptionPeriod
@@ -117,6 +123,7 @@ func CreateCheckoutSession(ctx context.Context, params CheckoutSessionParams) (*
 		Mode:                util.PtrTo(string(stripe.CheckoutSessionModeSubscription)),
 		SuccessURL:          util.PtrTo(params.SuccessURL),
 		AllowPromotionCodes: util.PtrTo(true),
+		Customer:            params.CustomerID,
 		SubscriptionData: &stripe.CheckoutSessionSubscriptionDataParams{
 			Metadata: map[string]string{
 				"organizationId": params.OrganizationID,
@@ -272,8 +279,7 @@ func CancelSubscription(ctx context.Context, subscriptionID string) error {
 		return nil
 	} else if err != nil {
 		return fmt.Errorf("failed to get subscription: %w", err)
-	} else if sub.Status == stripe.SubscriptionStatusCanceled ||
-		sub.Status == stripe.SubscriptionStatusIncompleteExpired {
+	} else if IsEnded(*sub) {
 		return nil
 	}
 
