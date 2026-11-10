@@ -111,8 +111,9 @@ Under semantic versioning, every tag has to be a SemVer version with exactly thr
 The registry rejects a push of any other tag with `403 Forbidden` and the error code `DENIED`.
 Signature and attestation tags (`sha256-<digest>.sig`, `.att`, `.sbom` and `.cosign`) are exempt, so signing an image with cosign keeps working.
 
-Change the strategy on the artifact details page. Switching to semantic versioning is only possible while every tag of the artifact is a SemVer version; otherwise Distr names the tags that are not, so you can delete them first.
-For a [pull-through cache](/docs/registry/pull-through-cache/#versioning-strategy) artifact, Distr instead offers to delete those tags for you.
+Change the strategy on the artifact details page. Switching an artifact that holds tags that are not SemVer versions to semantic versioning deletes those tags, after Distr has named them and you have confirmed.
+Their pull history is deleted with them, and pushed tags cannot be restored.
+The switch is refused if one of them cannot be deleted, for example because an entitlement grants exactly that version, and if none of the artifact's tags is a SemVer version.
 
 ## Public Artifacts
 

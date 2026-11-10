@@ -388,9 +388,8 @@ func patchArtifactHandler(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-// switchArtifactVersioningStrategy requires every release tag to be a SemVer version before switching to semver.
-// A pull-through artifact cannot keep its upstream from offering other tags, so it deletes them instead, but only
-// once the request confirms it.
+// switchArtifactVersioningStrategy deletes every release tag that is not a SemVer version before switching to semver,
+// but only once the request confirms it.
 func switchArtifactVersioningStrategy(
 	ctx context.Context,
 	artifact *types.Artifact,
@@ -427,20 +426,18 @@ func ensureSemverTags(
 	nonSemverTags := slices.DeleteFunc(tags, types.IsSemverTag)
 	if len(nonSemverTags) == 0 {
 		return nil, nil
-	} else if artifact.UpstreamURL == nil {
-		return respond.BadRequest(fmt.Sprintf(
-			"the artifact cannot use semantic versioning while it has tags that are not SemVer versions: %s",
-			describeTagNames(nonSemverTags),
-		)), nil
 	} else if len(nonSemverTags) == tagCount {
+		// DeleteArtifactTag deletes a pushed artifact together with its last tag and refuses the last tag of a
+		// pull-through artifact.
 		return respond.BadRequest(
 			"the artifact cannot use semantic versioning because none of its tags is a SemVer version",
 		), nil
 	} else if !shouldDeleteNonSemverTags {
 		return respond.Conflict(fmt.Sprintf(
-			"Switching to semantic versioning deletes %d tags that are not SemVer versions, "+
-				"together with their pull history.",
+			"Switching to semantic versioning permanently deletes %d tags that are not SemVer versions, "+
+				"together with their pull history: %s",
 			len(nonSemverTags),
+			describeTagNames(nonSemverTags),
 		)), nil
 	}
 	for _, tag := range nonSemverTags {

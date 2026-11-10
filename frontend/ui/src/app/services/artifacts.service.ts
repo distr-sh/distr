@@ -77,7 +77,7 @@ export interface PatchArtifactRequest {
   public?: boolean;
   featured?: boolean;
   versioningStrategy?: SelectableVersioningStrategy;
-  /** Confirms that switching a pull-through artifact to semver deletes its tags that are not SemVer versions. */
+  /** Confirms that switching to semver deletes the tags that are not SemVer versions. */
   deleteNonSemverTags?: boolean;
 }
 

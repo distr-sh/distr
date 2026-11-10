@@ -431,9 +431,9 @@ export class ArtifactVersionsComponent {
       try {
         await firstValueFrom(this.artifacts.patchArtifact(artifact.id, {versioningStrategy}));
       } catch (e) {
-        // A pull-through artifact answers a switch to semver that would delete tags with a conflict, which says
-        // how many, until the request confirms the deletion.
-        if (!(artifact.upstreamUrl && e instanceof HttpErrorResponse && e.status === 409)) {
+        // A switch to semver that would delete tags is answered with a conflict naming them, until the request
+        // confirms the deletion.
+        if (!(e instanceof HttpErrorResponse && e.status === 409)) {
           throw e;
         }
         const confirmed = await firstValueFrom(

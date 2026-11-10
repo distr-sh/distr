@@ -27,8 +27,7 @@ type PatchArtifactRequest struct {
 	Public             *bool                          `json:"public,omitempty"`
 	Featured           *bool                          `json:"featured,omitempty"`
 	VersioningStrategy *types.VersioningStrategy      `json:"versioningStrategy,omitempty"`
-	// DeleteNonSemverTags confirms that switching a pull-through artifact to semver deletes its tags that are
-	// not SemVer versions.
+	// DeleteNonSemverTags confirms that switching to semver deletes the tags that are not SemVer versions.
 	DeleteNonSemverTags bool `json:"deleteNonSemverTags,omitempty"`
 }
 
