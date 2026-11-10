@@ -1,5 +1,10 @@
 <app-page variant="narrow">
   <app-alert type="error">
-    This portal is currently unavailable. Please contact the vendor that gave you access for more information.
+    This portal is currently unavailable.
+    @if (vendorName(); as vendorName) {
+      Please contact {{ vendorName }} for more information.
+    } @else {
+      Please contact the vendor that gave you access for more information.
+    }
   </app-alert>
 </app-page>
