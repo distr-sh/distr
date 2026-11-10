@@ -191,6 +191,8 @@ func NewDefault(
 					auth.ArtifactsAuthentication.ValidatorMiddleware(func(value authinfo.AuthInfoWithOrganization) error {
 						if value.CurrentOrg() == nil {
 							return fmt.Errorf("%w: org is required", authn.ErrBadAuthentication)
+						} else if !value.CurrentOrg().HasActiveSubscription() {
+							return fmt.Errorf("%w: subscription expired", authn.ErrBadAuthentication)
 						}
 						return nil
 					}),
