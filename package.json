@@ -16,8 +16,8 @@
     "watch": "pnpm buildconfig && pnpm controller-changelog && ng build --watch --configuration=development",
     "test": "pnpm buildconfig && ng test --watch=false",
     "test:watch": "pnpm buildconfig && ng test --watch=true",
-    "lint": "prettier --check .",
-    "format": "prettier --write --list-different ."
+    "lint": "prettier --check --cache .",
+    "format": "prettier --write --list-different --cache ."
   },
   "private": true,
   "packageManager": "pnpm@12.18.0",
