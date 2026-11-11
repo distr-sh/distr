@@ -1,5 +1,6 @@
 import {
   faAddressBook,
+  faBox,
   faBoxesStacked,
   faDashboard,
   faKey,
@@ -7,7 +8,6 @@ import {
   faShieldHalved,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
-import {registryGroup} from './groups/registry-group';
 import {NavigationDefinition} from './navigation';
 
 export const partnerNavigation: NavigationDefinition = [
@@ -17,7 +17,15 @@ export const partnerNavigation: NavigationDefinition = [
     entries: [
       {id: 'dashboard', label: 'Dashboard', icon: faDashboard, route: '/dashboard'},
       {id: 'deployments', label: 'Deployments', icon: faBoxesStacked, route: '/deployments'},
-      registryGroup,
+      {
+        id: 'registry',
+        label: 'Registry',
+        icon: faBox,
+        children: [
+          {id: 'artifacts', label: 'Artifacts', route: '/artifacts'},
+          {id: 'artifact-pulls', label: 'Downloads', route: '/artifact-pulls'},
+        ],
+      },
       {
         id: 'licenses',
         label: 'Licenses',

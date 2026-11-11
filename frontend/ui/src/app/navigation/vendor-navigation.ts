@@ -1,6 +1,8 @@
 import {
   faAddressBook,
   faAsterisk,
+  faBell,
+  faBox,
   faBoxesStacked,
   faBuilding,
   faCreditCard,
@@ -15,8 +17,6 @@ import {
   faShieldHalved,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
-import {vendorNotificationsGroup} from './groups/notifications-group';
-import {registryGroup} from './groups/registry-group';
 import {NavigationDefinition} from './navigation';
 
 export const vendorNavigation: NavigationDefinition = [
@@ -35,7 +35,15 @@ export const vendorNavigation: NavigationDefinition = [
       {id: 'dashboard', label: 'Dashboard', icon: faDashboard, route: '/dashboard'},
       {id: 'applications', label: 'Applications', icon: faCube, route: '/applications'},
       {id: 'deployments', label: 'Deployments', icon: faBoxesStacked, route: '/deployments'},
-      registryGroup,
+      {
+        id: 'registry',
+        label: 'Registry',
+        icon: faBox,
+        children: [
+          {id: 'artifacts', label: 'Artifacts', route: '/artifacts'},
+          {id: 'artifact-pulls', label: 'Downloads', route: '/artifact-pulls'},
+        ],
+      },
       {
         id: 'licenses',
         label: 'Licenses',
@@ -43,7 +51,17 @@ export const vendorNavigation: NavigationDefinition = [
         route: '/licenses',
         locked: {plan: 'pro', when: (c) => !c.features.has('licensing')},
       },
-      vendorNotificationsGroup,
+      {
+        id: 'notifications',
+        label: 'Notifications',
+        icon: faBell,
+        locked: {plan: 'pro', when: (c) => !c.features.has('notifications')},
+        children: [
+          {id: 'alert-configurations', label: 'Alerts', route: '/notifications/alert-configurations'},
+          {id: 'update-notifications', label: 'Updates', route: '/notifications/updates'},
+          {id: 'notification-history', label: 'History', route: '/notifications/history'},
+        ],
+      },
       {
         id: 'billing',
         label: 'Billing',

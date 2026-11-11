@@ -1,6 +1,7 @@
 import {
   faArrowUpRightFromSquare,
   faAsterisk,
+  faBell,
   faBox,
   faDashboard,
   faGear,
@@ -10,7 +11,6 @@ import {
   faShieldHalved,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
-import {customerNotificationsGroup} from './groups/notifications-group';
 import {NavigationDefinition} from './navigation';
 
 export const customerNavigation: NavigationDefinition = [
@@ -40,7 +40,29 @@ export const customerNavigation: NavigationDefinition = [
         route: '/license-keys',
         visible: (c) => c.customer.hasLicenseKeys,
       },
-      customerNotificationsGroup,
+      {
+        id: 'notifications',
+        label: 'Notifications',
+        icon: faBell,
+        visible: (c) =>
+          c.features.has('notifications') &&
+          (c.customer.features.has('alerts') || c.customer.features.has('update_notifications')),
+        children: [
+          {
+            id: 'alert-configurations',
+            label: 'Alerts',
+            route: '/notifications/alert-configurations',
+            visible: (c) => c.customer.features.has('alerts'),
+          },
+          {
+            id: 'update-notifications',
+            label: 'Updates',
+            route: '/notifications/updates',
+            visible: (c) => c.customer.features.has('update_notifications'),
+          },
+          {id: 'notification-history', label: 'History', route: '/notifications/history'},
+        ],
+      },
       {
         id: 'support',
         label: 'Support',
