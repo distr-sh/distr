@@ -26,10 +26,10 @@ func TestArtifactUpdatesAvailable(t *testing.T) {
 		tag(publicArtifact, "2.0.0", "sha256:e", base),
 	}
 	pinned, entitled, other := uuid.New(), uuid.New(), uuid.New()
-	pull := func(customer uuid.UUID, artifact Artifact, version ArtifactVersion) CustomerArtifactPull {
-		return CustomerArtifactPull{CustomerOrganizationID: customer, Artifact: artifact, ArtifactVersion: version}
+	pull := func(customer uuid.UUID, artifact Artifact, version ArtifactVersion) CustomerArtifactVersion {
+		return CustomerArtifactVersion{CustomerOrganizationID: customer, Artifact: artifact, ArtifactVersion: version}
 	}
-	pulls := []CustomerArtifactPull{
+	pulls := []CustomerArtifactVersion{
 		pull(pinned, artifact, v110),
 		pull(entitled, artifact, v110),
 		pull(other, publicArtifact, tag(publicArtifact, "1.0.0", "sha256:d", base)),

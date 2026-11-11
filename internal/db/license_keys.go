@@ -76,14 +76,20 @@ func GetLicenseKeys(ctx context.Context, orgID uuid.UUID) ([]types.LicenseKey, e
 func GetLicenseKeysByCustomerOrgID(
 	ctx context.Context, customerOrgID, orgID uuid.UUID,
 ) ([]types.LicenseKey, error) {
+	return GetLicenseKeysByCustomerOrgIDs(ctx, []uuid.UUID{customerOrgID}, orgID)
+}
+
+func GetLicenseKeysByCustomerOrgIDs(
+	ctx context.Context, customerOrgIDs []uuid.UUID, orgID uuid.UUID,
+) ([]types.LicenseKey, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `
 		SELECT `+licenseKeyOutExpr+`
 		FROM LicenseKey lk`+licenseKeyLatestRevisionJoin+`
-		WHERE lk.organization_id = @orgId AND lk.customer_organization_id = @customerOrgId
+		WHERE lk.organization_id = @orgId AND lk.customer_organization_id = any(@customerOrgIds)
 			AND lr.payload IS NOT NULL
 		ORDER BY lk.name`,
-		pgx.NamedArgs{"orgId": orgID, "customerOrgId": customerOrgID},
+		pgx.NamedArgs{"orgId": orgID, "customerOrgIds": customerOrgIDs},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not query LicenseKey: %w", err)

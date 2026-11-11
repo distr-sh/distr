@@ -545,11 +545,12 @@ func GetLatestDeploymentRevisionIDs(ctx context.Context, deploymentID uuid.UUID,
 	return result, nil
 }
 
-// GetCustomerDeploymentRevisions returns the newest deployment revisions of the customer organization created
-// since, at most limit of them.
+// GetCustomerDeploymentRevisions returns the newest deployment revisions of the customer organizations created
+// since, at most limit of them in total.
 func GetCustomerDeploymentRevisions(
 	ctx context.Context,
-	orgID, customerOrgID uuid.UUID,
+	orgID uuid.UUID,
+	customerOrgIDs []uuid.UUID,
 	since time.Time,
 	limit int,
 ) ([]types.CustomerDeploymentRevision, error) {
@@ -558,6 +559,7 @@ func GetCustomerDeploymentRevisions(
 		`SELECT
 			dr.id,
 			dr.created_at,
+			dt.customer_organization_id,
 			dt.id AS deployment_target_id,
 			dt.name AS deployment_target_name,
 			a.name AS application_name,
@@ -575,11 +577,11 @@ func GetCustomerDeploymentRevisions(
 					AND j.organization_id = dt.organization_id
 					AND j.customer_organization_id = dt.customer_organization_id
 		WHERE dt.organization_id = @orgId
-			AND dt.customer_organization_id = @customerOrgId
+			AND dt.customer_organization_id = any(@customerOrgIds)
 			AND dr.created_at > @since
 		ORDER BY dr.created_at DESC
 		LIMIT @limit`,
-		pgx.NamedArgs{"orgId": orgID, "customerOrgId": customerOrgID, "since": since, "limit": limit},
+		pgx.NamedArgs{"orgId": orgID, "customerOrgIds": customerOrgIDs, "since": since, "limit": limit},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query customer deployment revisions: %w", err)

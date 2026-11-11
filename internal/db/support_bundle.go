@@ -297,10 +297,11 @@ var supportBundleWithDetailsOutputExpr = `
 `
 
 // GetCustomerSupportBundleEvents returns the newest creations and status changes of the support bundles of the
-// customer organization since, at most limit of them.
+// customer organizations since, at most limit of them in total.
 func GetCustomerSupportBundleEvents(
 	ctx context.Context,
-	orgID, customerOrgID uuid.UUID,
+	orgID uuid.UUID,
+	customerOrgIDs []uuid.UUID,
 	since time.Time,
 	limit int,
 ) ([]types.CustomerSupportBundleEvent, error) {
@@ -312,29 +313,30 @@ func GetCustomerSupportBundleEvents(
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		`SELECT * FROM (
-			SELECT sb.id AS support_bundle_id, sb.created_at, sb.title, NULL::TEXT AS status,
+			SELECT sb.id AS support_bundle_id, sb.customer_organization_id, sb.created_at, sb.title,
+				NULL::TEXT AS status,
 				CASE WHEN j.user_account_id IS NOT NULL THEN u.name END AS user_name,
 				CASE WHEN j.user_account_id IS NOT NULL THEN u.image_id END AS user_image_id
 			FROM SupportBundle sb
 				LEFT JOIN UserAccount u ON u.id = sb.created_by_user_account_id
 				`+customerMember+`
 			WHERE sb.organization_id = @orgId
-				AND sb.customer_organization_id = @customerOrgId
+				AND sb.customer_organization_id = any(@customerOrgIds)
 				AND sb.created_at > @since
 			UNION ALL
-			SELECT sb.id, sb.status_changed_at, sb.title, sb.status::TEXT,
+			SELECT sb.id, sb.customer_organization_id, sb.status_changed_at, sb.title, sb.status::TEXT,
 				CASE WHEN j.user_account_id IS NOT NULL THEN u.name END,
 				CASE WHEN j.user_account_id IS NOT NULL THEN u.image_id END
 			FROM SupportBundle sb
 				LEFT JOIN UserAccount u ON u.id = sb.status_changed_by_user_account_id
 				`+customerMember+`
 			WHERE sb.organization_id = @orgId
-				AND sb.customer_organization_id = @customerOrgId
+				AND sb.customer_organization_id = any(@customerOrgIds)
 				AND sb.status_changed_at > @since
 		) events
 		ORDER BY created_at DESC
 		LIMIT @limit`,
-		pgx.NamedArgs{"orgId": orgID, "customerOrgId": customerOrgID, "since": since, "limit": limit},
+		pgx.NamedArgs{"orgId": orgID, "customerOrgIds": customerOrgIDs, "since": since, "limit": limit},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query customer support bundle events: %w", err)

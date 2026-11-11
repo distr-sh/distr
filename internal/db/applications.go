@@ -164,28 +164,32 @@ func mergeApplications(applications []types.Application) []types.Application {
 	return util.GetValues(applicationMap)
 }
 
-// GetApplicationVersionsEntitledToCustomer returns the newest versions released since that the customer
-// organization may deploy, at most limit of them. Archived versions are left out, and with entitledOnly so are
-// the versions no valid entitlement of the customer covers.
-func GetApplicationVersionsEntitledToCustomer(
+// GetApplicationVersionsEntitledToCustomers returns the newest versions released since that each of the
+// customer organizations may deploy, at most limit of them in total. Archived versions are left out, and with
+// entitledOnly so are the versions no valid entitlement of the customer covers.
+func GetApplicationVersionsEntitledToCustomers(
 	ctx context.Context,
-	orgID, customerOrgID uuid.UUID,
+	orgID uuid.UUID,
+	customerOrgIDs []uuid.UUID,
 	entitledOnly bool,
 	since time.Time,
 	limit int,
 ) ([]types.CustomerApplicationVersion, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		`SELECT av.id, av.created_at, a.id AS application_id, a.name AS application_name, av.name
-		FROM Application a
+		`SELECT av.id, av.created_at, a.id AS application_id, a.name AS application_name, av.name,
+			co.id AS customer_organization_id
+		FROM CustomerOrganization co
+			JOIN Application a ON a.organization_id = co.organization_id
 			JOIN ApplicationVersion av ON av.application_id = a.id
-		WHERE a.organization_id = @orgId
+		WHERE co.organization_id = @orgId
+			AND co.id = any(@customerOrgIds)
 			AND av.created_at > @since
 			AND av.archived_at IS NULL
 			AND (NOT @entitledOnly OR EXISTS (
 				SELECT 1 FROM ApplicationEntitlement al
 				WHERE al.application_id = a.id
-					AND al.customer_organization_id = @customerOrgId
+					AND al.customer_organization_id = co.id
 					AND (al.expires_at IS NULL OR al.expires_at > now())
 					AND (
 						NOT EXISTS (
@@ -200,11 +204,11 @@ func GetApplicationVersionsEntitledToCustomer(
 		ORDER BY av.created_at DESC
 		LIMIT @limit`,
 		pgx.NamedArgs{
-			"orgId":         orgID,
-			"customerOrgId": customerOrgID,
-			"entitledOnly":  entitledOnly,
-			"since":         since,
-			"limit":         limit,
+			"orgId":          orgID,
+			"customerOrgIds": customerOrgIDs,
+			"entitledOnly":   entitledOnly,
+			"since":          since,
+			"limit":          limit,
 		},
 	)
 	if err != nil {

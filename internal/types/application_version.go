@@ -11,11 +11,12 @@ import (
 
 // CustomerApplicationVersion is a version of an application that a customer organization may deploy.
 type CustomerApplicationVersion struct {
-	ID              uuid.UUID `db:"id"`
-	CreatedAt       time.Time `db:"created_at"`
-	ApplicationID   uuid.UUID `db:"application_id"`
-	ApplicationName string    `db:"application_name"`
-	Name            string    `db:"name"`
+	ID                     uuid.UUID `db:"id"`
+	CreatedAt              time.Time `db:"created_at"`
+	ApplicationID          uuid.UUID `db:"application_id"`
+	ApplicationName        string    `db:"application_name"`
+	Name                   string    `db:"name"`
+	CustomerOrganizationID uuid.UUID `db:"customer_organization_id"`
 }
 
 type ApplicationVersion struct {

@@ -82,7 +82,23 @@ const (
 		FROM Organization_UserAccount oua
 			JOIN ArtifactVersionPull avpl
 				ON avpl.useraccount_id = oua.user_account_id AND avpl.customer_organization_id IS NULL
-		WHERE oua.customer_organization_id = @customerOrganizationId
+			WHERE oua.customer_organization_id = @customerOrganizationId
+	)`
+
+	// customerOrgsPullsExpr is a CTE of the pulls of the customer organizations given as
+	// @customerOrganizationIds, by the rules of customerOrgPullsExpr, with the customer organization each
+	// pull is attributed to.
+	customerOrgsPullsExpr = `
+	customer_pull AS (
+		SELECT avpl.customer_organization_id, avpl.id, avpl.artifact_version_id, avpl.created_at
+		FROM ArtifactVersionPull avpl
+		WHERE avpl.customer_organization_id = any(@customerOrganizationIds)
+		UNION ALL
+		SELECT oua.customer_organization_id, avpl.id, avpl.artifact_version_id, avpl.created_at
+		FROM Organization_UserAccount oua
+			JOIN ArtifactVersionPull avpl
+				ON avpl.useraccount_id = oua.user_account_id AND avpl.customer_organization_id IS NULL
+		WHERE oua.customer_organization_id = any(@customerOrganizationIds)
 	)`
 
 	artifactVersionOutputExpr = `
@@ -297,7 +313,12 @@ func GetArtifactByName(ctx context.Context, orgSlug, name string) (*types.Artifa
 
 // artifactVersionVisibleExpr matches the digest version av when it has a tag and either @isVendorUser is set
 // or @customerOrgId may pull it.
-var artifactVersionVisibleExpr = `(
+var artifactVersionVisibleExpr = artifactVersionVisibleToExpr("@customerOrgId")
+
+// artifactVersionVisibleToExpr is artifactVersionVisibleExpr for the customer organization that the SQL
+// expression customerOrgID evaluates to.
+func artifactVersionVisibleToExpr(customerOrgID string) string {
+	return `(
 	@isVendorUser
 	OR a.public
 	-- only check entitlement if there is at least one entitlement in this organization
@@ -314,7 +335,7 @@ var artifactVersionVisibleExpr = `(
 		FROM ArtifactEntitlement_Artifact ala
 		INNER JOIN ArtifactEntitlement al ON ala.artifact_entitlement_id = al.id
 		WHERE ala.artifact_id = av.artifact_id AND ala.artifact_version_id IS NULL
-		AND al.customer_organization_id = @customerOrgId AND (al.expires_at IS NULL OR al.expires_at > now())
+		AND al.customer_organization_id = ` + customerOrgID + ` AND (al.expires_at IS NULL OR al.expires_at > now())
 	)
 	OR EXISTS (
 		-- or entitlement only for specific versions or their parent versions
@@ -334,7 +355,7 @@ var artifactVersionVisibleExpr = `(
 		FROM ArtifactVersionAggregate avagg
 		INNER JOIN ArtifactEntitlement_Artifact ala ON ala.artifact_version_id = avagg.id
 		INNER JOIN ArtifactEntitlement al ON ala.artifact_entitlement_id = al.id
-		WHERE al.customer_organization_id = @customerOrgId AND (al.expires_at IS NULL OR al.expires_at > now())
+		WHERE al.customer_organization_id = ` + customerOrgID + ` AND (al.expires_at IS NULL OR al.expires_at > now())
 		AND ala.artifact_id = av.artifact_id
 	)
 )
@@ -346,6 +367,7 @@ AND EXISTS (
 	AND avt.artifact_id = av.artifact_id
 	AND ` + artifactVersionIsTagExpr("avt") + `
 )`
+}
 
 // ListArtifactReleaseTags returns every release tag of the artifacts, whoever may pull it.
 func ListArtifactReleaseTags(ctx context.Context, artifactIDs []uuid.UUID) ([]types.ArtifactVersion, error) {
@@ -367,43 +389,46 @@ func ListArtifactReleaseTags(ctx context.Context, artifactIDs []uuid.UUID) ([]ty
 	return result, nil
 }
 
-// GetArtifactTagsEntitledToCustomer returns the newest release tags of the artifacts created since, at most
-// limit of them. With licensing, only those the customer organization may pull.
-func GetArtifactTagsEntitledToCustomer(
+// GetArtifactTagsEntitledToCustomers returns the newest release tags of the organization's artifacts created
+// since for each of the customer organizations, at most limit of them in total. With licensing, only those the
+// customer organization may pull.
+func GetArtifactTagsEntitledToCustomers(
 	ctx context.Context,
-	artifactIDs []uuid.UUID,
-	customerOrgID uuid.UUID,
+	orgID uuid.UUID,
+	customerOrgIDs []uuid.UUID,
 	licensing bool,
 	since time.Time,
 	limit int,
-) ([]types.ArtifactVersion, error) {
+) ([]types.CustomerArtifactVersion, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `
-		SELECT `+artifactVersionOutputExpr+`
-		FROM ArtifactVersion v
-			JOIN Artifact a ON a.id = v.artifact_id
+		SELECT co.id, (`+artifactRowOutputExpr+`), (`+artifactVersionOutputExpr+`)
+		FROM CustomerOrganization co
+			JOIN Artifact a ON a.organization_id = co.organization_id
+			JOIN ArtifactVersion v ON v.artifact_id = a.id
 			JOIN ArtifactVersion av
 				ON av.artifact_id = v.artifact_id
 					AND av.manifest_blob_digest = v.manifest_blob_digest
 					AND `+artifactVersionIsDigestExpr("av")+`
-		WHERE v.artifact_id = any(@artifactIds)
+		WHERE co.organization_id = @orgId
+			AND co.id = any(@customerOrgIds)
 			AND v.created_at > @since
 			AND `+versionIsReleaseTagExpr+`
-			AND `+artifactVersionVisibleExpr+`
+			AND `+artifactVersionVisibleToExpr("co.id")+`
 		ORDER BY v.created_at DESC
 		LIMIT @limit`,
 		pgx.NamedArgs{
-			"artifactIds":   artifactIDs,
-			"customerOrgId": customerOrgID,
-			"isVendorUser":  !licensing,
-			"since":         since,
-			"limit":         limit,
+			"orgId":          orgID,
+			"customerOrgIds": customerOrgIDs,
+			"isVendorUser":   !licensing,
+			"since":          since,
+			"limit":          limit,
 		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query artifact tags: %w", err)
 	}
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ArtifactVersion])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.CustomerArtifactVersion])
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect artifact tags: %w", err)
 	}
@@ -1184,37 +1209,50 @@ func BulkUpsertArtifactVersionParts(ctx context.Context, parts []types.ArtifactV
 	return nil
 }
 
-// GetFirstArtifactVersionPullsOfCustomerOrganization returns when each user of the customer organization first
-// pulled each release tag created within the time window.
-func GetFirstArtifactVersionPullsOfCustomerOrganization(
+// GetFirstArtifactVersionPullsOfCustomerOrganizations returns when each user of the customer organizations first
+// pulled each release tag created since, at most limit of them in total. With entitlementsApply, the pulls of
+// an artifact that is neither public nor entitled to the customer organization are left out.
+func GetFirstArtifactVersionPullsOfCustomerOrganizations(
 	ctx context.Context,
-	orgID, customerOrgID uuid.UUID,
-	artifactIDs []uuid.UUID,
+	orgID uuid.UUID,
+	customerOrgIDs []uuid.UUID,
+	entitlementsApply bool,
 	since time.Time,
 	limit int,
 ) ([]types.ArtifactVersionPull, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		`WITH `+customerOrgPullsExpr+`
+		`WITH `+customerOrgsPullsExpr+`
 		SELECT * FROM (
-			SELECT DISTINCT ON (v.id, p.useraccount_id) `+artifactVersionPullOutputExpr+`
+			SELECT DISTINCT ON (co.id, v.id, p.useraccount_id) `+artifactVersionPullOutputExpr+`
 			FROM customer_pull cp
-				JOIN ArtifactVersionPull p ON p.id = cp.id `+artifactVersionPullJoinExpr+`
+				JOIN ArtifactVersionPull p ON p.id = cp.id
+				JOIN UserAccount u ON u.id = p.useraccount_id
+				JOIN CustomerOrganization co ON co.id = cp.customer_organization_id
+				LEFT JOIN DeploymentTarget dt ON dt.id = p.deployment_target_id
+				JOIN ArtifactVersion v ON v.id = p.artifact_version_id
+				JOIN Artifact a ON a.id = v.artifact_id
 			WHERE a.organization_id = @orgId
-				AND a.id = any(@artifactIds)
-				AND p.useraccount_id IS NOT NULL
 				AND v.created_at > @since
 				AND `+versionIsReleaseTagExpr+`
-			ORDER BY v.id, p.useraccount_id, p.created_at
+				AND (NOT @entitlementsApply OR a.public OR EXISTS (
+					SELECT 1
+					FROM ArtifactEntitlement_Artifact ala
+						JOIN ArtifactEntitlement al ON al.id = ala.artifact_entitlement_id
+					WHERE ala.artifact_id = a.id
+						AND al.customer_organization_id = co.id
+						AND (al.expires_at IS NULL OR al.expires_at > now())
+				))
+			ORDER BY co.id, v.id, p.useraccount_id, p.created_at
 		) first_pull
 		ORDER BY created_at DESC
 		LIMIT @limit`,
 		pgx.NamedArgs{
-			"orgId":                  orgID,
-			"customerOrganizationId": customerOrgID,
-			"artifactIds":            artifactIDs,
-			"since":                  since,
-			"limit":                  limit,
+			"orgId":                   orgID,
+			"customerOrganizationIds": customerOrgIDs,
+			"entitlementsApply":       entitlementsApply,
+			"since":                   since,
+			"limit":                   limit,
 		},
 	)
 	if err != nil {
@@ -1265,20 +1303,10 @@ func GetLatestArtifactPullsOfCustomerOrganizations(
 	ctx context.Context,
 	orgID uuid.UUID,
 	customerOrgIDs []uuid.UUID,
-) ([]types.CustomerArtifactPull, error) {
+) ([]types.CustomerArtifactVersion, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `
-		WITH customer_pull AS (
-			SELECT avpl.customer_organization_id, avpl.artifact_version_id, avpl.created_at
-			FROM ArtifactVersionPull avpl
-			WHERE avpl.customer_organization_id = any(@customerOrganizationIds)
-			UNION ALL
-			SELECT oua.customer_organization_id, avpl.artifact_version_id, avpl.created_at
-			FROM Organization_UserAccount oua
-				JOIN ArtifactVersionPull avpl
-					ON avpl.useraccount_id = oua.user_account_id AND avpl.customer_organization_id IS NULL
-			WHERE oua.customer_organization_id = any(@customerOrganizationIds)
-		)
+		WITH `+customerOrgsPullsExpr+`
 		SELECT DISTINCT ON (cp.customer_organization_id, v.artifact_id)
 			cp.customer_organization_id,
 			(`+artifactRowOutputExpr+`),
@@ -1294,7 +1322,7 @@ func GetLatestArtifactPullsOfCustomerOrganizations(
 	if err != nil {
 		return nil, fmt.Errorf("failed to query latest artifact pulls: %w", err)
 	}
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.CustomerArtifactPull])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.CustomerArtifactVersion])
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect latest artifact pulls: %w", err)
 	}

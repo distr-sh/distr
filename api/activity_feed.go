@@ -18,4 +18,7 @@ type ActivityFeedEntry struct {
 	Detail       *string                `json:"detail,omitempty"`
 	UserName     *string                `json:"userName,omitempty"`
 	UserImageUrl *string                `json:"userImageUrl,omitempty"`
+
+	CustomerOrganizationID   uuid.UUID `json:"customerOrganizationId"`
+	CustomerOrganizationName string    `json:"customerOrganizationName"`
 }

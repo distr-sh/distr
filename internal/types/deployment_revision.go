@@ -48,6 +48,7 @@ type HelmOptions struct {
 type CustomerDeploymentRevision struct {
 	ID                     uuid.UUID `db:"id"`
 	CreatedAt              time.Time `db:"created_at"`
+	CustomerOrganizationID uuid.UUID `db:"customer_organization_id"`
 	DeploymentTargetID     uuid.UUID `db:"deployment_target_id"`
 	DeploymentTargetName   string    `db:"deployment_target_name"`
 	ApplicationName        string    `db:"application_name"`

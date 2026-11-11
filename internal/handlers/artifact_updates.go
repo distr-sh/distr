@@ -52,7 +52,7 @@ func customerArtifactUpdates(
 			lastTagged[tag.ArtifactID] = tag.CreatedAt
 		}
 	}
-	slices.SortStableFunc(pulls, func(a, b types.CustomerArtifactPull) int {
+	slices.SortStableFunc(pulls, func(a, b types.CustomerArtifactVersion) int {
 		return cmp.Or(
 			lastTagged[b.Artifact.ID].Compare(lastTagged[a.Artifact.ID]),
 			cmp.Compare(a.Artifact.Name, b.Artifact.Name),
