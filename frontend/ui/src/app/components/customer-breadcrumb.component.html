@@ -39,7 +39,7 @@
                     <a
                       class="distr-dropdown-item"
                       (click)="dropdownOpen.set(false)"
-                      [routerLink]="['/', 'customers', customer.id, section()]">
+                      [routerLink]="'/customers/' + customer.id + '/' + section()">
                       {{ customer.name }}
                     </a>
                   </li>
