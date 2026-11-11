@@ -37,6 +37,7 @@ import {InlineEditComponent} from '../inline-edit.component';
 import {PageComponent} from '../page.component';
 import {QuotaLimitComponent} from '../quota-limit.component';
 import {SearchBarComponent} from '../search-bar.component';
+import {deleteCustomerConfirmConfig} from './delete-customer-confirm';
 
 const customerFeatureLabels: Record<CustomerOrganizationFeature, string> = {
   deployment_targets: 'Deployments',
@@ -254,22 +255,7 @@ export class CustomerOrganizationsComponent {
 
   protected delete(target: CustomerOrganizationWithUsage): void {
     this.overlay
-      .confirm({
-        message: {
-          message: 'Are you sure you want to delete this customer?',
-          alert:
-            target.userCount > 0 || target.deploymentTargetCount > 0
-              ? {
-                  type: 'warning',
-                  message: `Deleting this customer will also delete its associated users (${target.userCount}) and deployment targets (${target.deploymentTargetCount}) from your organization.`,
-                }
-              : {
-                  type: 'info',
-                  message: 'This customer has no associated users or deployment targets.',
-                },
-        },
-        requiredConfirmInputText: target.name,
-      })
+      .confirm(deleteCustomerConfirmConfig(target))
       .pipe(
         filter((it) => it === true),
         switchMap(() => this.customerOrganizationsService.deleteCustomerOrganization(target.id!))

@@ -1,3 +1,64 @@
 <app-page>
-  <app-customer-breadcrumb [customerOrganizationId]="customerOrganizationId()" />
+  @if (loading()) {
+    <div class="flex items-center justify-center py-12">
+      <app-spinner class="size-8" />
+    </div>
+  } @else if (customerOrganization(); as customer) {
+    <div class="distr-panel mb-4">
+      <div class="flex justify-between gap-2">
+        <app-customer-breadcrumb [customerOrganizationId]="customerOrganizationId()" [section]="activeTab()" />
+        <div class="flex gap-2">
+          <button
+            type="button"
+            (click)="openCustomerPortal(customer)"
+            class="distr-btn-secondary inline-flex items-center px-3 py-2 text-sm font-medium">
+            <fa-icon [icon]="faGlasses" class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
+            Open customer portal
+          </button>
+          @if (canDelete) {
+            <button type="button" (click)="delete(customer)" class="distr-btn-danger px-3 py-2">
+              <fa-icon [icon]="faTrash" class="mr-2 h-4 w-4" />
+              Delete Customer
+            </button>
+          }
+        </div>
+      </div>
+      <div class="mt-4 flex items-center gap-4 md:mt-6">
+        <button
+          type="button"
+          (click)="uploadImage(customer)"
+          [disabled]="!canEdit"
+          aria-label="Upload customer avatar"
+          class="cursor-pointer disabled:cursor-default">
+          <app-avatar
+            [image]="customer.imageUrl"
+            [name]="customer.name"
+            [icon]="faAddressBook"
+            class="size-16 rounded-lg" />
+        </button>
+        <div class="min-w-0">
+          <app-inline-edit
+            class="block"
+            tag="h3"
+            [value]="customer.name"
+            [editable]="canEdit"
+            placeholder="Customer name"
+            size="lg"
+            textClass="block max-w-lg truncate text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
+            [loading]="savingName()"
+            (save)="updateName(customer, $event)" />
+          <p class="distr-text-muted text-sm">Customer since {{ customer.createdAt | date }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="distr-panel pt-0">
+      <app-tab-bar [tabs]="tabs" [active]="activeTab()" (tabClick)="onTabClick($event)" />
+      <div role="tabpanel" class="pt-6" [id]="'tabpanel-' + activeTab()" [attr.aria-labelledby]="'tab-' + activeTab()">
+        <router-outlet />
+      </div>
+    </div>
+  } @else {
+    <app-alert type="error">This customer does not exist.</app-alert>
+  }
 </app-page>

@@ -9,7 +9,7 @@ import {UpdateNotificationsComponent} from './update-notifications.component';
   template: `
     <app-page>
       <div class="distr-table-panel">
-        <app-customer-breadcrumb [customerOrganizationId]="customerOrganizationId()" section="updates" />
+        <app-customer-breadcrumb class="m-4" [customerOrganizationId]="customerOrganizationId()" section="updates" />
         <app-update-notifications [customerOrganizationId]="customerOrganizationId()" />
       </div>
     </app-page>

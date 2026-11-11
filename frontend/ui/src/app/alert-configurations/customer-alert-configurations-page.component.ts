@@ -9,7 +9,7 @@ import {AlertConfigurationsComponent} from './alert-configurations.component';
   template: `
     <app-page>
       <div class="distr-table-panel">
-        <app-customer-breadcrumb [customerOrganizationId]="customerOrganizationId()" section="alerts" />
+        <app-customer-breadcrumb class="m-4" [customerOrganizationId]="customerOrganizationId()" section="alerts" />
         <app-alert-configurations [customerOrganizationId]="customerOrganizationId()" />
       </div>
     </app-page>

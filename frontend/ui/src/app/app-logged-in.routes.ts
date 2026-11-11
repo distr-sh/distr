@@ -18,6 +18,7 @@ import {BillingComponent} from './billing/billing.component';
 import {BillingSettingsComponent} from './billing/settings/billing-settings.component';
 import {CustomerDetailPageComponent} from './components/customer-organizations/customer-detail-page.component';
 import {CustomerOrganizationsComponent} from './components/customer-organizations/customer-organizations.component';
+import {CustomerTabPlaceholderComponent} from './components/customer-organizations/customer-tab-placeholder.component';
 import {DashboardComponent} from './components/dashboard/dashboard.component';
 import {NavShellComponent} from './components/nav-shell.component';
 import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
@@ -289,7 +290,9 @@ const shellRoutes: Routes = [
         title: 'Customers',
         canActivate: [requireVendorOrPartner],
         children: [
+          // TODO DEV-1091 move this inside the detail page once it's migrated to a tab
           {path: 'users', component: CustomerUsersComponent},
+          // TODO DEV-1091 move this inside the detail page once it's migrated to a tab
           {path: 'secrets', component: CustomerSecretsPageComponent},
           {path: 'links', component: SidebarLinksPageComponent},
           {
@@ -307,12 +310,25 @@ const shellRoutes: Routes = [
             component: CustomerNotificationRecordsPageComponent,
             canActivate: [notificationsEnabledGuard()],
           },
+          // TODO DEV-1093 move this inside the detail page once it's migrated to a tab
           {
             path: 'settings',
             component: CustomerSettingsComponent,
             canActivate: [requiredRoleGuard('admin'), customerSettingsFeatureGuard()],
           },
-          {path: '', pathMatch: 'full', component: CustomerDetailPageComponent},
+          {
+            path: '',
+            component: CustomerDetailPageComponent,
+            children: [
+              {path: 'overview', component: CustomerTabPlaceholderComponent},
+              {path: 'deployments', component: CustomerTabPlaceholderComponent},
+              {path: 'downloads', component: CustomerTabPlaceholderComponent},
+              {path: 'licenses', component: CustomerTabPlaceholderComponent},
+              {path: 'support', component: CustomerTabPlaceholderComponent},
+              {path: 'notifications', component: CustomerTabPlaceholderComponent},
+              {path: '', pathMatch: 'full', redirectTo: 'overview'},
+            ],
+          },
         ],
       },
       {
