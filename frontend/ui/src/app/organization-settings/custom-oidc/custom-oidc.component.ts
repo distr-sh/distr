@@ -109,7 +109,7 @@ export class CustomOidcComponent {
     () =>
       (this.domainsEnabled() || this.oidcProvidersEnabled()) &&
       (this.customerScoped() || this.auth.isVendor()) &&
-      this.auth.hasRole('admin')
+      (this.auth.isSuperAdmin() || this.auth.hasRole('admin'))
   );
 
   private readonly response = toSignal(

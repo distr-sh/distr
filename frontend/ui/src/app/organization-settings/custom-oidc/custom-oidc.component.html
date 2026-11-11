@@ -41,7 +41,9 @@
 
       @if (oidcProvidersEnabled() && viewerIsVendor() && !configurable()) {
         <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-          Set an organization slug on the General tab first. It is part of every login and callback URL.
+          Set an organization slug on the
+          <a routerLink="/settings/organization/general" class="font-semibold underline">General tab</a> of the
+          organization settings first. It is part of every login and callback URL.
         </p>
       }
     </div>
