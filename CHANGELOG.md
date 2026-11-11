@@ -1,5 +1,44 @@
 # Changelog
 
+## [4.10.0](https://github.com/distr-sh/distr/compare/4.9.0...4.10.0) (2026-11-11)
+
+
+### Features
+
+* add versioning strategy to artifacts ([#3831](https://github.com/distr-sh/distr/issues/3831)) ([5f1ba40](https://github.com/distr-sh/distr/commit/5f1ba40c0f6ee1ca45a5db058cab52c956b1ba22))
+
+
+### Bug Fixes
+
+* allow a new subscription checkout after the previous one ended ([#3851](https://github.com/distr-sh/distr/issues/3851)) ([5ebb11b](https://github.com/distr-sh/distr/commit/5ebb11b0414d1ad26a25c4259b8ae309d569092f))
+* **backend:** use strict semantic version parsing ([#3854](https://github.com/distr-sh/distr/issues/3854)) ([596992c](https://github.com/distr-sh/distr/commit/596992c37cef8791aa2a88d286bd1844e96a1aeb))
+* **deps:** update module github.com/avast/retry-go/v5 to v5.1.1 ([#3842](https://github.com/distr-sh/distr/issues/3842)) ([e8c2059](https://github.com/distr-sh/distr/commit/e8c20595a5ed406cff62c763a957b1773485a408))
+* **deps:** update module github.com/docker/compose/v5 to v5.7.0 ([#3843](https://github.com/distr-sh/distr/issues/3843)) ([4514836](https://github.com/distr-sh/distr/commit/4514836ef827ef0bfc45d4621e7346b0c7cea4cd))
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.165.0 ([#3844](https://github.com/distr-sh/distr/issues/3844)) ([af785ea](https://github.com/distr-sh/distr/commit/af785eacbbf655b3d3b5098d06a154d04652e8c9))
+* **deps:** update module golang.org/x/oauth2 to v0.38.0 ([#3845](https://github.com/distr-sh/distr/issues/3845)) ([c30105e](https://github.com/distr-sh/distr/commit/c30105edc045b80b942af0f2f6b191c8ae3e58e7))
+* **deps:** update module golang.org/x/sync to v0.25.0 ([#3846](https://github.com/distr-sh/distr/issues/3846)) ([716250d](https://github.com/distr-sh/distr/commit/716250dd40a676941cddd4edd8e4b466ff7d2483))
+* **kubernetes-controller:** support charts that expect image pull secrets as plain strings ([#3847](https://github.com/distr-sh/distr/issues/3847)) ([4c715d2](https://github.com/distr-sh/distr/commit/4c715d223c4509e764d226e5fb257f7dafcf3a49))
+
+
+### Other
+
+* **deps:** update dependency posthog-js to v1.447.3 ([#3840](https://github.com/distr-sh/distr/issues/3840)) ([aecb6b6](https://github.com/distr-sh/distr/commit/aecb6b602d5606d482ff24c365b1033be60a91c6))
+* **deps:** update go toolchain directive to v1.27.4 [security] ([#3859](https://github.com/distr-sh/distr/issues/3859)) ([805dc34](https://github.com/distr-sh/distr/commit/805dc3409239cff93326ef21897f30d45bbb0a30))
+* **deps:** update hello-distr to v0.4.25 ([#3860](https://github.com/distr-sh/distr/issues/3860)) ([315ea13](https://github.com/distr-sh/distr/commit/315ea1356d4c058633795d1637b3ac808b4789f6))
+* **deps:** update sentry-javascript monorepo to v11.11.0 ([#3841](https://github.com/distr-sh/distr/issues/3841)) ([81f38bb](https://github.com/distr-sh/distr/commit/81f38bb84f54fa41edecba5270fa05b09554d0a8))
+* update deployment limit ([#3853](https://github.com/distr-sh/distr/issues/3853)) ([a368622](https://github.com/distr-sh/distr/commit/a368622a5c0eac4fb5ea53629d8f1706f450ce0e))
+
+
+### Docs
+
+* **website:** add docker multi-app networking guide ([#3839](https://github.com/distr-sh/distr/issues/3839)) ([909c327](https://github.com/distr-sh/distr/commit/909c3276a24114356495c3e3135c70ea1dc2aab4))
+* **website:** add Snicket Labs testimonial ([#3856](https://github.com/distr-sh/distr/issues/3856)) ([71881ad](https://github.com/distr-sh/distr/commit/71881adc23682d5bfae8eeb90021c66badf46007))
+
+
+### Refactoring
+
+* **frontend:** sidebar navigation ([#3855](https://github.com/distr-sh/distr/issues/3855)) ([86b0eb4](https://github.com/distr-sh/distr/commit/86b0eb4eceacc21dfb60fb413afdab2cb4005de9))
+
 ## [4.9.0](https://github.com/distr-sh/distr/compare/4.8.1...4.9.0) (2026-11-10)
 
 
