@@ -5,7 +5,7 @@
         <div>
           <div class="flex items-center">
             <a
-              [routerLink]="backRoute"
+              routerLink="/support"
               class="mr-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
               <fa-icon [icon]="faArrowLeft" />
             </a>
@@ -70,23 +70,25 @@
       ) {
         <app-alert
           [type]="justInitialized() ? 'success' : 'info'"
-          [heading]="justInitialized() ? 'Support bundle successfully initialized' : 'Support bundle initialized'"
+          [heading]="justInitialized() ? 'Support request successfully initialized' : 'Support request initialized'"
           class="mt-4">
           @switch (bundle.deploymentType) {
             @case ('docker') {
               <p>
-                The resources still need to be collected and uploaded. The script lets you exclude the system
-                information and any containers, environment variables or vendor scripts that you do not want to share.
+                Attach a support bundle to share diagnostics with your vendor. Once uploaded, its contents appear under
+                <strong>Resources</strong> below. Before anything is uploaded, the script lets you exclude the system
+                information and any containers, environment variables or vendor scripts you do not want to share.
               </p>
-              <p class="mt-2">Run this command on the target system:</p>
+              <p class="mt-2">Run this command on the target system to collect a support bundle:</p>
             }
             @case ('kubernetes') {
               <p>
-                The resources still need to be collected and uploaded. The script lets you choose the kubectl context,
-                the namespaces, the parts of the bundle and the vendor scripts you want to share, and you can look
-                through and delete the collected files before they are uploaded.
+                Attach a support bundle to share diagnostics with your vendor. Once uploaded, its contents appear under
+                <strong>Resources</strong> below. The script lets you choose the kubectl context, the namespaces, the
+                parts of the bundle and the vendor scripts to share, and you can look through and delete the collected
+                files before they are uploaded.
               </p>
-              <p class="mt-2">Run this command on a machine with access to the cluster:</p>
+              <p class="mt-2">Run this command on a machine with access to the cluster to collect a support bundle:</p>
             }
           }
           <div

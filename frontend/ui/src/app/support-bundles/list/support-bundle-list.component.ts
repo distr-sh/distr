@@ -51,8 +51,6 @@ export class SupportBundleListComponent {
   protected readonly faGear = faGear;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
-  protected readonly routePrefix = this.auth.isCustomer() ? '/support' : '/support-bundles';
-
   protected readonly configExists = toSignal(
     this.auth.isVendor() ? this.svc.getConfiguration().pipe(map((envVars) => envVars.length > 0)) : of(false),
     {initialValue: false}
@@ -141,7 +139,7 @@ export class SupportBundleListComponent {
     this.deletingBundleId.set(bundle.id);
     try {
       await firstValueFrom(this.svc.delete(bundle.id));
-      this.toast.success('Support bundle deleted');
+      this.toast.success('Support request deleted');
       this.refresh$.next();
     } catch (e) {
       const msg = getFormDisplayedError(e);

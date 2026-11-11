@@ -1,11 +1,11 @@
 <app-page>
   <div class="distr-table-panel">
     <div class="distr-toolbar p-4">
-      <app-search-bar [control]="filterForm.controls.search" placeholder="Filter support bundles" />
+      <app-search-bar [control]="filterForm.controls.search" placeholder="Filter support requests" />
       <div class="distr-toolbar-actions">
         @if (auth.isVendor()) {
           <a
-            routerLink="/support-bundles/settings"
+            routerLink="/support/settings"
             class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none md:w-auto dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
             <fa-icon [icon]="faGear" class="mr-2 text-gray-500 dark:text-gray-400" />
             Settings
@@ -17,7 +17,7 @@
             type="button"
             class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none md:w-auto dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
             <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
-            New Support Bundle
+            New Request
           </button>
         }
       </div>
@@ -29,7 +29,7 @@
         create Docker support bundles.
         <a
           alertActions
-          routerLink="/support-bundles/settings"
+          routerLink="/support/settings"
           class="shrink-0 rounded-lg bg-blue-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 focus:outline-none dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
           Configure
         </a>
@@ -59,7 +59,7 @@
             </thead>
             <tbody>
               @for (bundle of filteredBundles(); track bundle.id) {
-                <tr [appClickableRow]="routePrefix + '/' + bundle.id" class="distr-table-row">
+                <tr [appClickableRow]="'/support/' + bundle.id" class="distr-table-row">
                   <td class="distr-table-cell">
                     {{ bundle.title || bundle.id.substring(0, 8) }}
                   </td>
@@ -96,10 +96,10 @@
                           type="button"
                           (click)="deleteBundle(bundle)"
                           [disabled]="deletingBundleId() !== null"
-                          title="Delete support bundle"
+                          title="Delete support request"
                           class="distr-btn-danger px-3 py-2">
                           <fa-icon [icon]="faTrash" class="h-4 w-4" />
-                          <span class="sr-only">Delete support bundle</span>
+                          <span class="sr-only">Delete support request</span>
                         </button>
                       }
                     </div>
@@ -111,21 +111,21 @@
         </div>
       } @else if (bundles().length > 0) {
         <div class="p-8 text-center text-gray-500 dark:text-gray-400">
-          <p>No matching support bundles.</p>
+          <p>No matching support requests.</p>
         </div>
       } @else if (auth.isVendor()) {
         <div class="p-8 text-center text-gray-500 dark:text-gray-400">
-          <p>No support bundles have been created yet.</p>
-          <p class="mt-1 text-sm">Customers with the support bundles feature enabled can create support bundles.</p>
+          <p>No support requests have been created yet.</p>
+          <p class="mt-1 text-sm">Customers with the support feature enabled can create support requests.</p>
         </div>
       } @else if (auth.isPartner()) {
         <div class="p-8 text-center text-gray-500 dark:text-gray-400">
-          <p>No support bundles yet.</p>
-          <p class="mt-1 text-sm">Support bundles created by your assigned customers will appear here.</p>
+          <p>No support requests yet.</p>
+          <p class="mt-1 text-sm">Support requests created by your assigned customers will appear here.</p>
         </div>
       } @else if (auth.isCustomer()) {
         <div class="p-8 text-center text-gray-500 dark:text-gray-400">
-          <p>No support bundles yet.</p>
+          <p>No support requests yet.</p>
         </div>
       }
     }

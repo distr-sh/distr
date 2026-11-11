@@ -98,29 +98,3 @@ type ArtifactWithTaggedVersion struct {
 
 // SignatureArtifactType is the artifact type of a referrer that marks a version as a signature.
 const SignatureArtifactType = "application/vnd.dev.sigstore.bundle.v0.3+json"
-
-// ArtifactReleaseVersion is a tagged version of an artifact with its tag names and whether it is a signature.
-type ArtifactReleaseVersion struct {
-	ArtifactID uuid.UUID `db:"artifact_id"`
-	ID         uuid.UUID `db:"id"`
-	CreatedAt  time.Time `db:"created_at"`
-	TagNames   []string  `db:"tag_names"`
-	Signature  bool      `db:"signature"`
-}
-
-// TaggedArtifactVersionsByArtifact converts the versions, grouped by their artifact. A version that is not a
-// signature gets the generic type, since its manifest is not loaded.
-func TaggedArtifactVersionsByArtifact(versions []ArtifactReleaseVersion) map[uuid.UUID][]TaggedArtifactVersion {
-	result := make(map[uuid.UUID][]TaggedArtifactVersion)
-	for _, v := range versions {
-		tagged := TaggedArtifactVersion{ID: v.ID, CreatedAt: v.CreatedAt, InferredType: ManifestTypeGeneric}
-		if v.Signature {
-			tagged.InferredType = ManifestTypeSignature
-		}
-		for _, name := range v.TagNames {
-			tagged.Tags = append(tagged.Tags, ArtifactVersionTag{Name: name})
-		}
-		result[v.ArtifactID] = append(result[v.ArtifactID], tagged)
-	}
-	return result
-}

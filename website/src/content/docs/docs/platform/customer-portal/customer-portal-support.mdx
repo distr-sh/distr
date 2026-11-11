@@ -14,7 +14,7 @@ import supportDark from '~/assets/docs/platform/customer-portal/customer-view/cu
 import detailLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-support-detail-light.png';
 import detailDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-support-detail-dark.png';
 
-As an end customer, you can create support bundles to share diagnostic data with your vendor when reporting an issue. Support bundles give your vendor the information they need to troubleshoot problems without requiring direct access to your infrastructure.
+As an end customer, you can create support requests and attach support bundles to share diagnostic data with your vendor when reporting an issue. Support bundles give your vendor the information they need to troubleshoot problems without requiring direct access to your infrastructure.
 
 <ThemedImage
   lightSrc={supportLight}
@@ -24,14 +24,14 @@ As an end customer, you can create support bundles to share diagnostic data with
 
 <Aside type="note">
   The **Support** section only appears if your vendor has enabled the Support
-  Bundles feature for your organization.
+  feature for your organization.
 </Aside>
 
-## Creating a support bundle
+## Creating a support request
 
-1. Navigate to **Support** in the sidebar and click **New Support Bundle**.
+1. Navigate to **Support** in the sidebar and click **New Request**.
 2. Choose **Docker** or **Kubernetes** as the **Deployment Type**, enter a **Title** (required) and an optional **Description** of the issue.
-3. Click **Create**. Distr opens the new bundle and shows a one-time `curl` command valid for 24 hours.
+3. Click **Create**. Distr opens the new request and shows a one-time `curl` command valid for 24 hours that collects its support bundle.
 4. Run the command. It asks you before it collects or uploads anything and before it runs a script of your vendor.
 
 For a **Docker** bundle, run the command on the affected deployment host. The interactive script will:
@@ -52,37 +52,37 @@ For a **Kubernetes** bundle, run the command on a machine with access to the clu
 To collect from a context without being asked, append `-s --` and the option to the command: `curl -fsSL '...' | sh -s -- --context prod`. See [Kubernetes bundles](/docs/platform/support-bundles/#kubernetes-bundles) for every option, the permissions the collector needs and what the collected resources contain.
 
 <Aside type="tip">
-  The collect command is shown in the Customer Portal after creating the bundle
+  The collect command is shown in the Customer Portal after creating the request
   and remains visible in the bundle detail view for as long as the bundle is in
   the **Initialized** state.
 </Aside>
 
-## Viewing and commenting on bundles
+## Viewing and commenting on support requests
 
-After the collection script runs, the bundle status changes from **Initialized** to **Created**. Click on any bundle to open the detail view where you can:
+After the collection script runs, the request status changes from **Initialized** to **Created**. Click on any request to open the detail view where you can:
 
 - View all collected resources (container logs, environment variables, Kubernetes resources, script output)
 - Exchange comments with your vendor's support team
-- Track the bundle status (Initialized, Created, Resolved, Canceled)
+- Track the request status (Initialized, Created, Resolved, Canceled)
 
 <ThemedImage
   lightSrc={detailLight}
   darkSrc={detailDark}
-  alt="Support bundle detail view showing resources and comments"
+  alt="Support request detail view showing resources and comments"
 />
 
-## Bundle status lifecycle
+## Support request status lifecycle
 
 | Status          | Meaning                                                                         |
 | --------------- | ------------------------------------------------------------------------------- |
-| **Initialized** | Bundle created, collection script not yet run. Secret valid for 24 hours.       |
+| **Initialized** | Request created, collection script not yet run. Secret valid for 24 hours.      |
 | **Created**     | Collection script ran successfully. Resources are attached and ready to review. |
-| **Resolved**    | Vendor has marked the bundle as resolved.                                       |
-| **Canceled**    | Bundle was canceled before data was collected.                                  |
+| **Resolved**    | Vendor has marked the request as resolved.                                      |
+| **Canceled**    | Request was canceled before data was collected.                                 |
 
-You can cancel an **Initialized** bundle if you no longer need it. Once resolved or canceled, a bundle cannot be reopened.
+You can cancel an **Initialized** request if you no longer need it. Once resolved or canceled, a request cannot be reopened.
 
-If you have the role **Administrator** or **User**, you can delete a bundle in any status, from the list or from its detail view. Deleting is permanent: the bundle, the collected resources and the comments are removed from Distr for you and for your vendor, and cannot be restored.
+If you have the role **Administrator** or **User**, you can delete a request in any status, from the list or from its detail view. Deleting is permanent: the request, the collected resources and the comments are removed from Distr for you and for your vendor, and cannot be restored.
 
 ## Remote access for a support case
 

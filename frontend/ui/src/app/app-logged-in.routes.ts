@@ -545,10 +545,12 @@ const shellRoutes: Routes = [
           },
         ],
       },
+      {path: 'support-bundles', pathMatch: 'full', redirectTo: 'support'},
+      {path: 'support-bundles/:supportBundleId', redirectTo: 'support/:supportBundleId'},
       {
-        path: 'support-bundles',
-        title: 'Support Bundles',
-        canActivate: [requireVendorOrPartner, supportBundlesEnabledGuard()],
+        path: 'support',
+        title: 'Support',
+        canActivate: [supportBundlesEnabledGuard(), requireCustomerFeature('support_bundles')],
         children: [
           {
             path: '',
@@ -560,22 +562,6 @@ const shellRoutes: Routes = [
             title: 'Support Bundle Settings',
             component: SupportBundleSettingsComponent,
             canActivate: [requireVendor, requiredRoleGuard('read_write', 'admin')],
-          },
-          {
-            path: ':supportBundleId',
-            component: SupportBundleDetailComponent,
-          },
-        ],
-      },
-      {
-        path: 'support',
-        title: 'Support',
-        canActivate: [requireCustomer, supportBundlesEnabledGuard(), requireCustomerFeature('support_bundles')],
-        children: [
-          {
-            path: '',
-            pathMatch: 'full',
-            component: SupportBundleListComponent,
           },
           {
             path: ':supportBundleId',
