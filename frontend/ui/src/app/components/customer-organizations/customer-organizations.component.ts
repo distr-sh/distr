@@ -1,77 +1,32 @@
-import {OverlayModule} from '@angular/cdk/overlay';
-import {AsyncPipe, DatePipe, DecimalPipe} from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  inject,
-  signal,
-  TemplateRef,
-  viewChild,
-} from '@angular/core';
-import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
+import {AsyncPipe, DecimalPipe} from '@angular/common';
+import {Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
-import {RouterLink} from '@angular/router';
-import {CustomerOrganization, CustomerOrganizationFeature, CustomerOrganizationWithUsage} from '@distr-sh/distr-sdk';
+import {Router, RouterLink} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
-import {faAddressBook, faChevronDown, faEdit, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, filter, firstValueFrom, map, of, startWith, switchMap} from 'rxjs';
-import {getFormDisplayedError} from '../../../util/errors';
+import {faAddressBook, faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {combineLatest, firstValueFrom, map, startWith} from 'rxjs';
 import {refreshInBackground} from '../../../util/refresh';
-import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
-import {ArtifactEntitlementsService} from '../../services/artifact-entitlements.service';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
-import {ImageUploadService} from '../../services/image-upload.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
-import {PartnerOrganizationsService} from '../../services/partner-organizations.service';
-import {ToastService} from '../../services/toast.service';
-import {Feature} from '../../types/organization';
-import {isProSubscription, SubscriptionType} from '../../types/subscription';
 import {AlertComponent} from '../alert/alert.component';
 import {AvatarComponent} from '../avatar.component';
-import {InlineEditComponent} from '../inline-edit.component';
 import {PageComponent} from '../page.component';
 import {QuotaLimitComponent} from '../quota-limit.component';
 import {SearchBarComponent} from '../search-bar.component';
-import {deleteCustomerConfirmConfig} from './delete-customer-confirm';
-
-const customerFeatureLabels: Record<CustomerOrganizationFeature, string> = {
-  deployment_targets: 'Deployments',
-  artifacts: 'Artifacts',
-  alerts: 'Alerts',
-  update_notifications: 'Update Notifications',
-  support_bundles: 'Support',
-  settings: 'Settings',
-  oidc_providers: 'Identity Provider',
-  vulnerabilities: 'Security',
-};
-
-const proCustomerFeatures: CustomerOrganizationFeature[] = ['alerts', 'update_notifications', 'support_bundles'];
-
-// A Business customer feature is unlocked by the organization feature behind it rather than by the plan.
-const businessCustomerFeatures: Partial<Record<CustomerOrganizationFeature, Feature>> = {
-  vulnerabilities: 'vulnerabilities',
-  settings: 'customer_settings',
-  oidc_providers: 'custom_oidc_providers',
-};
 
 @Component({
   templateUrl: './customer-organizations.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     ReactiveFormsModule,
     FontAwesomeModule,
-    DatePipe,
     AsyncPipe,
     DecimalPipe,
     RouterLink,
     QuotaLimitComponent,
-    OverlayModule,
-    InlineEditComponent,
     AvatarComponent,
     PageComponent,
     SearchBarComponent,
@@ -81,21 +36,13 @@ const businessCustomerFeatures: Partial<Record<CustomerOrganizationFeature, Feat
 export class CustomerOrganizationsComponent {
   protected readonly faPlus = faPlus;
   protected readonly faAddressBook = faAddressBook;
-  protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
-  protected readonly faEdit = faEdit;
-  protected readonly faChevronDown = faChevronDown;
 
+  private readonly router = inject(Router);
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
-  private readonly partnerOrganizationsService = inject(PartnerOrganizationsService);
-  private readonly toast = inject(ToastService);
-  private readonly imageUploadService = inject(ImageUploadService);
   private readonly overlay = inject(OverlayService);
   private readonly fb = inject(FormBuilder).nonNullable;
-  private readonly destroyRef = inject(DestroyRef);
   private readonly organizationService = inject(OrganizationService);
-  private readonly artifactEntitlementsService = inject(ArtifactEntitlementsService);
-  private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
   protected readonly featureFlags = inject(FeatureFlagService);
   protected readonly auth = inject(AuthService);
 
@@ -129,63 +76,7 @@ export class CustomerOrganizationsComponent {
   protected readonly createForm = this.fb.group({
     name: this.fb.control('', [Validators.required]),
   });
-  protected createFormLoading = false;
-  protected readonly savingCustomerId = signal<string | undefined>(undefined);
-
-  private readonly allCustomerFeaturesList: readonly CustomerOrganizationFeature[] = [
-    'deployment_targets',
-    'alerts',
-    'artifacts',
-    'update_notifications',
-    'support_bundles',
-    'vulnerabilities',
-    'settings',
-    'oidc_providers',
-  ];
-
-  protected readonly allCustomerFeatures = computed(() => {
-    const isPro = isProSubscription(this.organization()?.subscriptionType);
-    const organizationFeatures = this.organization()?.features ?? [];
-    const granted = this.openCustomerFeaturesDropdownCustomer()?.features ?? [];
-    const requiredPlan = (feature: CustomerOrganizationFeature): SubscriptionType | undefined => {
-      const businessFeature = businessCustomerFeatures[feature];
-      if (granted.includes(feature)) {
-        return undefined;
-      } else if (proCustomerFeatures.includes(feature)) {
-        return isPro ? undefined : 'pro';
-      } else if (businessFeature) {
-        return organizationFeatures.includes(businessFeature) ? undefined : 'business';
-      } else {
-        return undefined;
-      }
-    };
-    return this.allCustomerFeaturesList.map((feature) => ({
-      feature,
-      label: customerFeatureLabels[feature],
-      indent: feature === 'alerts' || feature === 'oidc_providers',
-      checked: granted.includes(feature),
-      requiredPlan: requiredPlan(feature),
-    }));
-  });
-
-  protected readonly openCustomerFeaturesDropdownId = signal<string | void>(undefined);
-  protected readonly openCustomerFeaturesDropdownCustomer = computed(() => {
-    const id = this.openCustomerFeaturesDropdownId();
-    return id ? this.customerOrganizations()?.find((it) => it.id === id) : undefined;
-  });
-  protected dropdownWidth = 0;
-
-  protected readonly partnerOrganizations = toSignal(
-    this.auth.isVendor() && this.featureFlags.isPartnerManagementEnabled()
-      ? this.partnerOrganizationsService.getPartnerOrganizations()
-      : of([])
-  );
-
-  private readonly partnerAssignDialog = viewChild.required<TemplateRef<unknown>>('partnerAssignDialog');
-  private partnerAssignModalRef?: DialogRef;
-  private readonly selectedCustomerForPartner = signal<CustomerOrganization | undefined>(undefined);
-  protected readonly partnerAssignControl = this.fb.control('');
-  protected partnerAssignLoading = signal(false);
+  protected readonly createFormLoading = signal(false);
 
   constructor() {
     refreshInBackground(this.customerOrganizationsService.refresh());
@@ -211,150 +102,19 @@ export class CustomerOrganizationsComponent {
       return;
     }
 
-    this.createFormLoading = true;
+    this.createFormLoading.set(true);
 
     try {
-      await firstValueFrom(
+      const customer = await firstValueFrom(
         this.customerOrganizationsService.createCustomerOrganization({
           name: this.createForm.value.name!,
         })
       );
 
       this.closeCreateDialog();
+      await this.router.navigate(['/', 'customers', customer.id]);
     } finally {
-      this.createFormLoading = false;
-    }
-  }
-
-  protected updateCustomerName(customer: CustomerOrganization, name: string): void {
-    this.savingCustomerId.set(customer.id);
-    this.customerOrganizationsService
-      .updateCustomerOrganization(customer.id, {...customer, name})
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => this.toast.success('Customer has been updated'),
-        error: (e) => {
-          const msg = getFormDisplayedError(e);
-          if (msg) {
-            this.toast.error(msg);
-          }
-        },
-      })
-      .add(() => this.savingCustomerId.set(undefined));
-  }
-
-  protected async uploadImage(value: CustomerOrganization): Promise<void> {
-    const imageId = await firstValueFrom(this.imageUploadService.showDialog());
-    if (!imageId || imageId === value.imageId) {
-      return;
-    }
-    await firstValueFrom(
-      this.customerOrganizationsService.updateCustomerOrganization(value.id, {name: value.name, imageId})
-    );
-  }
-
-  protected delete(target: CustomerOrganizationWithUsage): void {
-    this.overlay
-      .confirm(deleteCustomerConfirmConfig(target))
-      .pipe(
-        filter((it) => it === true),
-        switchMap(() => this.customerOrganizationsService.deleteCustomerOrganization(target.id!))
-      )
-      .subscribe({
-        next: () => {
-          this.artifactEntitlementsService.refresh();
-          this.applicationEntitlementsService.refresh();
-        },
-        error: (e) => {
-          const msg = getFormDisplayedError(e);
-          if (msg) {
-            this.toast.error(msg);
-          }
-        },
-      });
-  }
-
-  protected async toggleFeature(customer: CustomerOrganization, feature: CustomerOrganizationFeature) {
-    const featureSet = new Set(customer.features);
-    if (featureSet.has(feature)) {
-      featureSet.delete(feature);
-      if (feature === 'deployment_targets') {
-        featureSet.delete('alerts');
-      } else if (feature === 'settings') {
-        featureSet.delete('oidc_providers');
-      }
-    } else {
-      featureSet.add(feature);
-      if (feature === 'alerts') {
-        featureSet.add('deployment_targets');
-      } else if (feature === 'oidc_providers') {
-        featureSet.add('settings');
-      }
-    }
-
-    try {
-      await firstValueFrom(
-        this.customerOrganizationsService.updateCustomerOrganization(customer.id, {
-          ...customer,
-          features: Array.from(featureSet),
-        })
-      );
-      this.toast.success('Customer features updated');
-    } catch (e) {
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
-      }
-    }
-  }
-
-  protected showCustomerFeaturesDropdown(customer: CustomerOrganization, btn: HTMLButtonElement) {
-    this.dropdownWidth = btn.getBoundingClientRect().width;
-    this.openCustomerFeaturesDropdownId.set(customer.id);
-  }
-
-  protected hideCustomerFeaturesDropdown(): void {
-    this.openCustomerFeaturesDropdownId.set(undefined);
-  }
-
-  protected getPartnerName(partnerId: string | undefined): string | undefined {
-    if (!partnerId) {
-      return undefined;
-    }
-    return this.partnerOrganizations()?.find((p) => p.id === partnerId)?.name;
-  }
-
-  protected showPartnerAssignDialog(customer: CustomerOrganization) {
-    this.selectedCustomerForPartner.set(customer);
-    this.partnerAssignControl.setValue(customer.partnerOrganizationId ?? '');
-    this.partnerAssignModalRef = this.overlay.showModal(this.partnerAssignDialog());
-  }
-
-  protected closePartnerAssignDialog() {
-    this.partnerAssignModalRef?.close();
-    this.selectedCustomerForPartner.set(undefined);
-    this.partnerAssignControl.reset();
-  }
-
-  protected async submitPartnerAssign() {
-    const customer = this.selectedCustomerForPartner();
-    if (!customer) {
-      return;
-    }
-    const partnerOrganizationId = this.partnerAssignControl.value || undefined;
-    this.partnerAssignLoading.set(true);
-    try {
-      await firstValueFrom(
-        this.customerOrganizationsService.assignCustomerToPartner(customer.id, {partnerOrganizationId})
-      );
-      this.closePartnerAssignDialog();
-    } catch (e) {
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
-      }
-    } finally {
-      this.partnerAssignLoading.set(false);
+      this.createFormLoading.set(false);
     }
   }
 }
