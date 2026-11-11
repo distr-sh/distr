@@ -47,7 +47,7 @@ export class SupportBundleCreateDialogComponent extends ClosableDialog {
         })
       );
       this.closed.emit();
-      this.toast.success('Support bundle created');
+      this.toast.success('Support request created');
       await this.router.navigate(['/support', bundle.id], {queryParams: {initialized: true}});
     } catch (e) {
       const msg = getFormDisplayedError(e);
