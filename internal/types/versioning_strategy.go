@@ -32,11 +32,13 @@ func (s VersioningStrategy) IsSelectable() bool {
 }
 
 func IsSemverTag(name string) bool {
-	_, err := parseSemverTag(name)
+	_, err := parseSemver(name)
 	return err == nil
 }
 
-func parseSemverTag(name string) (*semver.Version, error) {
+// parseSemver rejects a name with a missing minor or patch number, which semver.NewVersion would
+// complete with zeros.
+func parseSemver(name string) (*semver.Version, error) {
 	return semver.StrictNewVersion(strings.TrimPrefix(name, "v"))
 }
 
@@ -47,7 +49,7 @@ func SortTaggedArtifactVersions(strategy VersioningStrategy, versions []TaggedAr
 	if strategy == VersioningStrategySemver {
 		for _, version := range versions {
 			for _, tag := range version.Tags {
-				if parsed, err := parseSemverTag(tag.Name); err == nil && compareSemver(parsed, highest[version.ID]) > 0 {
+				if parsed, err := parseSemver(tag.Name); err == nil && compareSemver(parsed, highest[version.ID]) > 0 {
 					highest[version.ID] = parsed
 				}
 			}
@@ -62,8 +64,8 @@ func SortTaggedArtifactVersions(strategy VersioningStrategy, versions []TaggedAr
 // version sorts before every SemVer one. The creation date decides where the strategy does not.
 func CompareArtifactTags(strategy VersioningStrategy, a, b ArtifactVersion) int {
 	if strategy == VersioningStrategySemver {
-		parsedA, _ := parseSemverTag(a.Name)
-		parsedB, _ := parseSemverTag(b.Name)
+		parsedA, _ := parseSemver(a.Name)
+		parsedB, _ := parseSemver(b.Name)
 		if c := compareSemver(parsedA, parsedB); c != 0 {
 			return c
 		}
@@ -115,7 +117,7 @@ func ApplicationVersionComparator(
 	}
 	parsed := make(map[uuid.UUID]*semver.Version, len(versions))
 	for _, version := range versions {
-		parsedVersion, err := semver.NewVersion(version.Name)
+		parsedVersion, err := parseSemver(version.Name)
 		if err != nil && strategy == VersioningStrategyLegacy {
 			return compareApplicationVersionsByDate
 		} else if err == nil {
@@ -192,7 +194,7 @@ func ValidateVersionsForStrategy(strategy VersioningStrategy, versions []Applica
 	}
 	parsed := make([]*semver.Version, 0, len(versions))
 	for i, version := range versions {
-		parsedVersion, err := semver.NewVersion(version.Name)
+		parsedVersion, err := parseSemver(version.Name)
 		if err != nil {
 			return fmt.Errorf("version %q is not a valid SemVer version", version.Name)
 		}

@@ -63,4 +63,14 @@ describe('sortAdvisoryApplicationVersions', () => {
       'App 2.0.0',
     ]);
   });
+
+  it('falls back to the creation date for a legacy name that only loose SemVer accepts', () => {
+    const app = '11111111-1111-1111-1111-111111111111';
+    const versions = [
+      advisoryVersion(app, 'App', 'legacy', '2.0.0', base),
+      advisoryVersion(app, 'App', 'legacy', '01.0.0', later),
+    ];
+
+    expect(advisoryNames(sortAdvisoryApplicationVersions(versions))).toEqual(['App 01.0.0', 'App 2.0.0']);
+  });
 });

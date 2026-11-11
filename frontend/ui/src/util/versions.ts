@@ -31,7 +31,7 @@ export function applicationVersionComparator(
   const parsed = new Map<string, SemVer>();
   for (const version of versions) {
     try {
-      parsed.set(version.id!, new SemVer(version.name, {loose: true}));
+      parsed.set(version.id!, new SemVer(version.name));
     } catch {
       if (strategy !== 'semver') {
         return compareByCreationDate;

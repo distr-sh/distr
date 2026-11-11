@@ -163,6 +163,19 @@ func TestSortApplicationVersionsLegacyUsesSemverWhenEveryNameParses(t *testing.T
 	g.Expect(names(versions)).To(Equal([]string{"1.0.0", "2.0.0"}))
 }
 
+func TestSortApplicationVersionsLegacyFallsBackToCreationDateForPartialVersions(t *testing.T) {
+	g := NewWithT(t)
+	base := time.Now()
+	versions := []ApplicationVersion{
+		version("2.0.0", base),
+		version("1.10", base.Add(time.Minute)),
+		version("1.9.0", base.Add(2*time.Minute)),
+	}
+
+	SortApplicationVersions(VersioningStrategyLegacy, versions)
+	g.Expect(names(versions)).To(Equal([]string{"2.0.0", "1.10", "1.9.0"}))
+}
+
 func TestSortApplicationVersionsLegacyFallsBackToCreationDate(t *testing.T) {
 	g := NewWithT(t)
 	base := time.Now()
@@ -423,6 +436,12 @@ func TestValidateVersionsForStrategy(t *testing.T) {
 		version("1.0.0", base),
 		version("nightly", base.Add(time.Minute)),
 	})).To(MatchError(ContainSubstring(`"nightly" is not a valid SemVer version`)))
+
+	for _, partial := range []string{"1.2", "v1.2", "54698435", "1.2-rc.1"} {
+		g.Expect(ValidateVersionsForStrategy(VersioningStrategySemver, []ApplicationVersion{
+			version(partial, base),
+		})).To(MatchError(ContainSubstring(`is not a valid SemVer version`)), "version %q", partial)
+	}
 
 	g.Expect(ValidateVersionsForStrategy(VersioningStrategySemver, []ApplicationVersion{
 		version("1.0.0", base),
