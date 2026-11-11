@@ -106,15 +106,17 @@ export class CustomerDetailPageComponent {
 
   protected async uploadImage(customer: CustomerOrganizationWithUsage) {
     const imageId = await firstValueFrom(this.imageUploadService.showDialog({imageUrl: customer.imageUrl}));
-    if (!imageId || imageId === customer.imageId) {
+    // The update replaces the whole customer, so it has to carry what changed while the dialog was open.
+    const current = this.customerOrganization();
+    if (!imageId || current?.id !== customer.id || imageId === current.imageId) {
       return;
     }
     try {
       await firstValueFrom(
-        this.customerOrganizationsService.updateCustomerOrganization(customer.id, {
-          name: customer.name,
+        this.customerOrganizationsService.updateCustomerOrganization(current.id, {
+          name: current.name,
           imageId,
-          features: customer.features,
+          features: current.features,
         })
       );
     } catch (e) {
