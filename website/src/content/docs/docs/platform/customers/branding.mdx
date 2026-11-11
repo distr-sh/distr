@@ -16,7 +16,7 @@ import brandedCustomerPortalLight from '~/assets/docs/platform/customers/brandin
 import brandedCustomerPortalDark from '~/assets/docs/platform/customers/branding/branded-customer-portal-dark.png';
 import {Aside} from '@astrojs/starlight/components';
 
-The Branding page of the Vendor Portal allows you to apply your own branding to the UI that customers use to deploy and manage your software.
+The Branding tab of the Customer Portal page in the Vendor Portal allows you to apply your own branding to the UI that customers use to deploy and manage your software.
 
 A well-configured Customer Portal should provide all the information your end users need to install, operate, and troubleshoot your software independently.
 
@@ -26,7 +26,7 @@ A well-configured Customer Portal should provide all the information your end us
   Business plan. See the [pricing page](/pricing/) for a detailed comparison.
 </Aside>
 
-To get started, go to the Branding tab in the sidebar of the Vendor Portal.
+To get started, go to **Customer Portal → Branding** in the sidebar of the Vendor Portal.
 At the top of the page, live previews show what the navigation bar will look like for your own team in the Vendor Portal and for your customers in the Customer Portal.
 
 <ThemedImage
@@ -82,7 +82,7 @@ None of these settings require a custom domain: they apply to all logged-in user
 For a fully white-labeled experience, Distr supports custom domains for the Customer Portal and the artifact registry.
 When your portal is accessed via your custom domain, all Distr-specific branding is removed and your white-label settings also apply to unauthenticated pages such as the login page.
 
-Organization admins can set up custom domains self-service under **Settings → Organization → Custom Domains & Identity Provider**, in the Vendor Portal, Customer Portal and Registry sections:
+Organization admins can set up custom domains self-service. The Vendor Portal and Registry domains are configured under **Settings → Organization → Custom Domains & Identity Provider** and the Customer Portal domain under **Customer Portal → Domain & Sign-in**:
 
 1. **Vendor Portal domain** (e.g. `app.your-company.com`): Serves the web UI and API for your own team (and your partners, if partner management is enabled). It also serves the artifact registry under the `/v2/` path, so a single domain is usually all you need.
 2. **Customer Portal domain** (optional, e.g. `portal.your-company.com`): Serves the Customer Portal for all of your customers. When it is set, invitation links, password resets and notification mails sent to customer users point at it instead of your Vendor Portal domain; without it, they use your Vendor Portal domain like everyone else.

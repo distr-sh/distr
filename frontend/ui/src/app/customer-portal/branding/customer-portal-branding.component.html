@@ -1,0 +1,38 @@
+<h2 class="mb-4 text-xl font-bold dark:text-white">Branding</h2>
+<p class="mb-6 text-sm font-normal text-gray-500 dark:text-gray-400">
+  Customize how Distr looks for your team and your customers. Upload a logo, set a customer portal name and instructions
+  for getting started.
+</p>
+
+@if (customDomainsSelfService() || showCustomDomainsUpsell()) {
+  <app-alert type="info" class="mb-6">
+    @if (customDomainsSelfService() && canOpenCustomDomains()) {
+      Configure a custom domain for your customer portal on the
+      <a routerLink="/customer-portal/domain-and-sign-in" class="font-semibold underline">Domain &amp; Sign-in</a>
+      tab.
+    } @else if (customDomainsSelfService()) {
+      Admins can configure a custom domain for your customer portal on the Domain &amp; Sign-in tab.
+    } @else if (canOpenSubscription()) {
+      Upgrade to the
+      <a routerLink="/settings/organization/subscription" class="font-semibold underline">Distr Business plan</a> to
+      configure a custom domain for your customer portal.
+    } @else {
+      Contact an administrator of your organization to upgrade to the Distr Business plan and configure a custom domain
+      for your customer portal.
+    }
+  </app-alert>
+}
+
+<form (submit)="$event.preventDefault(); save()">
+  <app-branding-form class="block" />
+
+  @if (!auth.isSuperAdmin()) {
+    <button
+      type="submit"
+      [disabled]="formLoading()"
+      class="distr-btn-primary mt-8 flex w-full items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-60">
+      <fa-icon [icon]="faFloppyDisk" size="lg" class="mr-2 mb-1 -ml-0.5 h-4 w-4" />
+      Save
+    </button>
+  }
+</form>

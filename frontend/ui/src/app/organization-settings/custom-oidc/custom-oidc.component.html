@@ -2,7 +2,9 @@
   <div class="space-y-8">
     <div class="space-y-4">
       <h2 class="text-xl font-bold dark:text-white">
-        @if (oidcProvidersEnabled()) {
+        @if (showsCustomerPortalDefaults()) {
+          Domain &amp; Sign-in
+        } @else if (oidcProvidersEnabled()) {
           Custom Domains &amp; Identity Provider
         } @else {
           Custom Domains
@@ -15,15 +17,27 @@
         } @else if (customerScoped()) {
           Let this customer's users additionally sign in with their own identity provider via OIDC (OpenID Connect). A
           provider only works on the customer's own portal domain.
+        } @else if (showsVendorPortal()) {
+          Give your team its own domain for the Distr web UI and API and let it additionally sign in with your own
+          identity provider via OIDC (OpenID Connect).
         } @else {
-          Let your team and your customers additionally sign in with your own identity provider via OIDC (OpenID
-          Connect). Each domain has its own providers. The ones on your
-          <span class="lowercase">{{ appDomainLabel() }}</span>
-          apply to your team, the ones on your customer portal domain to all of your customers. Customers can add their
-          own.
+          One domain that all of your customers sign in on by default. Without it they keep using your
+          <span class="lowercase">{{ appDomainLabel() }}</span> or the default Distr host. Identity providers on it
+          apply to every customer, including the ones you create later.
         }
         A custom domain has to exist first.
       </p>
+      @if (showsVendorPortal()) {
+        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+          The domain and identity providers of your customers are set up on the
+          <a routerLink="/customer-portal/domain-and-sign-in" class="font-semibold underline">Customer Portal</a> page.
+        </p>
+      } @else if (showsCustomerPortalDefaults()) {
+        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+          Customers can override this with their own domain and providers on their
+          <a routerLink="/customers" class="font-semibold underline">settings page</a>.
+        </p>
+      }
 
       @if (oidcProvidersEnabled() && viewerIsVendor() && !configurable()) {
         <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
@@ -39,7 +53,7 @@
       </app-alert>
     }
 
-    @if (!customerScoped()) {
+    @if (showsVendorPortal()) {
       <section class="space-y-4">
         <h3 class="text-lg font-bold dark:text-white">
           @if (partnerManagementEnabled()) {
@@ -81,55 +95,44 @@
       </section>
     }
 
-    <section class="space-y-4">
-      @if (!customerScoped()) {
-        <h3 class="text-lg font-bold dark:text-white">Customer Portal</h3>
-        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-          One domain that all of your customers sign in on by default. Without it they keep using your
-          <span class="lowercase">{{ appDomainLabel() }}</span> or the default Distr host. Add it below first. Providers
-          on it apply to every customer, including the ones you create later.
-        </p>
-        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-          Customers can override this with their own domain and providers on their
-          <a routerLink="/customers" class="font-semibold underline">settings page</a>.
-        </p>
-      }
+    @if (!showsVendorPortal()) {
+      <section class="space-y-4">
+        @if (customDomainsConfigured()) {
+          <app-domain-field
+            fieldId="customerPortalDomain"
+            label="Customer Portal domain"
+            placeholder="<slug>-portal.yourcompany.com"
+            invalidHint="Must be a valid hostname without scheme, e.g. <slug>-portal.yourcompany.com"
+            removeAriaLabel="Remove portal domain"
+            [optionalCheckboxLabel]="customerPortalCheckboxLabel()"
+            [domain]="customerPortalDomain()"
+            [cnameTarget]="cnameTarget()"
+            [saving]="savingDomain()"
+            [verifying]="checkingDomainIds().has(customerPortalDomain()?.id ?? '')"
+            (save)="saveDomain($event, 'customer_portal')"
+            (remove)="removeDomain(customerPortalDomain())"
+            (recheck)="verifyDomain(customerPortalDomain()!)">
+            @if (customerScoped()) {
+              The domain this customer's users sign in on. Links in invitations, password resets and notification mails
+              use it. Without it they sign in on the vendor's domain.
+            } @else {
+              The domain all of your customers sign in on. Links in invitations, password resets and notification mails
+              use it instead of your <span class="lowercase">{{ appDomainLabel() }}</span
+              >.
+            }
+          </app-domain-field>
+        }
 
-      @if (customDomainsConfigured()) {
-        <app-domain-field
-          fieldId="customerPortalDomain"
-          label="Customer Portal domain"
-          placeholder="<slug>-portal.yourcompany.com"
-          invalidHint="Must be a valid hostname without scheme, e.g. <slug>-portal.yourcompany.com"
-          removeAriaLabel="Remove portal domain"
-          [optionalCheckboxLabel]="customerPortalCheckboxLabel()"
-          [domain]="customerPortalDomain()"
-          [cnameTarget]="cnameTarget()"
-          [saving]="savingDomain()"
-          [verifying]="checkingDomainIds().has(customerPortalDomain()?.id ?? '')"
-          (save)="saveDomain($event, 'customer_portal')"
-          (remove)="removeDomain(customerPortalDomain())"
-          (recheck)="verifyDomain(customerPortalDomain()!)">
-          @if (customerScoped()) {
-            The domain this customer's users sign in on. Links in invitations, password resets and notification mails
-            use it. Without it they sign in on the vendor's domain.
-          } @else {
-            The domain all of your customers sign in on. Links in invitations, password resets and notification mails
-            use it instead of your <span class="lowercase">{{ appDomainLabel() }}</span
-            >.
-          }
-        </app-domain-field>
-      }
+        @if (oidcProvidersEnabled()) {
+          <h4 class="mt-8 text-base font-semibold text-gray-900 dark:text-white">Identity Providers</h4>
+          <ng-container
+            [ngTemplateOutlet]="providerSection"
+            [ngTemplateOutletContext]="{$implicit: customerPortalDomain()}" />
+        }
+      </section>
+    }
 
-      @if (oidcProvidersEnabled()) {
-        <h4 class="mt-8 text-base font-semibold text-gray-900 dark:text-white">Identity Providers</h4>
-        <ng-container
-          [ngTemplateOutlet]="providerSection"
-          [ngTemplateOutletContext]="{$implicit: customerPortalDomain()}" />
-      }
-    </section>
-
-    @if (!customerScoped() && customDomainsConfigured()) {
+    @if (showsVendorPortal() && customDomainsConfigured()) {
       <section class="space-y-4">
         <h3 class="text-lg font-bold dark:text-white">Registry</h3>
         <p class="text-sm font-normal text-gray-500 dark:text-gray-400">

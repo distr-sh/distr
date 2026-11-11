@@ -68,8 +68,13 @@ export class CustomOidcComponent {
   private readonly configurationsRefresh$ = new BehaviorSubject<void>(undefined);
 
   public readonly customerOrganizationId = input<string>();
+  public readonly portal = input<'vendor' | 'customer'>('vendor');
 
   protected readonly customerScoped = computed(() => !!this.customerOrganizationId());
+  protected readonly showsVendorPortal = computed(() => !this.customerScoped() && this.portal() === 'vendor');
+  protected readonly showsCustomerPortalDefaults = computed(
+    () => !this.customerScoped() && this.portal() === 'customer'
+  );
   protected readonly viewerIsCustomer = computed(() => this.auth.isCustomer());
   protected readonly viewerIsVendor = computed(() => this.auth.isVendor());
   protected readonly partnerManagementEnabled = computed(() => this.featureFlags.isPartnerManagementEnabled());
