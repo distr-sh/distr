@@ -9,7 +9,7 @@ import {
   TemplateRef,
   ViewContainerRef,
 } from '@angular/core';
-import {filter, fromEvent, map, merge, Observable, Subject, take, takeUntil} from 'rxjs';
+import {filter, map, merge, Observable, Subject, take, takeUntil} from 'rxjs';
 import {ConfirmConfig, ConfirmDialogComponent} from '../components/confirm-dialog/confirm-dialog.component';
 
 type OnClosedHook<T> = (result: T | null) => Promise<void> | void;
@@ -119,10 +119,7 @@ export class OverlayService {
     }
 
     if (!config.backdropStyleOnly) {
-      merge(
-        overlayRef.backdropClick(),
-        fromEvent<KeyboardEvent>(window, 'keydown').pipe(filter((it) => it.key === 'Escape'))
-      )
+      merge(overlayRef.backdropClick(), overlayRef.keydownEvents().pipe(filter((it) => it.key === 'Escape')))
         .pipe(takeUntil(dialogRef.closed()))
         .subscribe(() => dialogRef.dismiss());
     }
