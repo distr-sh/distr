@@ -37,6 +37,20 @@ func ArtifactsWithDownloadsToAPI(a types.ArtifactWithDownloads) api.ArtifactsRes
 	}
 }
 
+func LatestArtifactPullToAPI(update types.CustomerArtifactUpdate) api.LatestArtifactPullResponse {
+	result := api.LatestArtifactPullResponse{
+		CustomerOrganizationID: update.CustomerOrganizationID,
+		ArtifactID:             update.Artifact.ID,
+		ArtifactName:           update.Artifact.Name,
+		ArtifactImageUrl:       CreateImageURL(update.Artifact.ImageID),
+		VersionName:            update.ArtifactVersion.Name,
+	}
+	if update.AvailableUpdate != nil {
+		result.AvailableUpdate = &update.AvailableUpdate.Name
+	}
+	return result
+}
+
 // CustomerArtifactToAPI adds the last pull of the customer organization to the artifact.
 func CustomerArtifactToAPI(a types.ArtifactWithDownloads, pull *types.ArtifactVersionPull) api.ArtifactsResponse {
 	result := ArtifactsWithDownloadsToAPI(a)

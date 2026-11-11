@@ -34,10 +34,10 @@ export const partnerNavigation: NavigationDefinition = [
         visible: (c) => c.features.has('licensing'),
       },
       {
-        id: 'support-bundles',
-        label: 'Support Bundles',
+        id: 'support',
+        label: 'Support',
         icon: faLifeRing,
-        route: '/support-bundles',
+        route: '/support',
         visible: (c) => c.features.has('support_bundles'),
       },
       {

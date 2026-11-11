@@ -84,10 +84,10 @@ export const vendorNavigation: NavigationDefinition = [
         visible: (c) => c.features.has('partner_management'),
       },
       {
-        id: 'support-bundles',
-        label: 'Support Bundles',
+        id: 'support',
+        label: 'Support',
         icon: faLifeRing,
-        route: '/support-bundles',
+        route: '/support',
         locked: {plan: 'pro', when: (c) => !c.features.has('support_bundles')},
       },
       {

@@ -2,7 +2,7 @@
   @if (supportBundlesByCustomer().length > 0) {
     <div class="flex flex-col gap-4 pb-4">
       <h2 class="text-3xl leading-none font-extrabold tracking-tight text-gray-900 md:text-4xl dark:text-white">
-        Support Bundles
+        Support
       </h2>
       <div class="distr-card-grid mb-4">
         @for (group of supportBundlesByCustomer(); track group.customerName) {
@@ -41,7 +41,7 @@
     @if (artifactsByCustomer(); as items) {
       <div class="distr-card-grid mb-4">
         @for (item of items; track item.customer.id) {
-          <app-artifacts-by-customer-card [customer]="item.customer" [artifacts]="item.artifacts ?? []" />
+          <app-artifacts-by-customer-card [customer]="item.customer" [artifacts]="item.artifacts" />
         } @empty {
           <div class="text-gray-500 dark:text-gray-400">Nothing to show yet.</div>
         }

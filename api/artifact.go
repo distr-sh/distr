@@ -83,6 +83,18 @@ type ArtifactVersionPullResponse struct {
 	ArtifactVersion          types.ArtifactVersion `json:"artifactVersion"`
 }
 
+// LatestArtifactPullResponse is the release tag of an artifact that a customer organization pulled last.
+type LatestArtifactPullResponse struct {
+	CustomerOrganizationID uuid.UUID `json:"customerOrganizationId"`
+	ArtifactID             uuid.UUID `json:"artifactId"`
+	ArtifactName           string    `json:"artifactName"`
+	ArtifactImageUrl       *string   `json:"artifactImageUrl,omitempty"`
+	VersionName            string    `json:"versionName"`
+	// AvailableUpdate is the newest release tag the customer organization may pull, set only when it is newer
+	// than VersionName.
+	AvailableUpdate *string `json:"availableUpdate,omitempty"`
+}
+
 type ArtifactPullFilterOption struct {
 	ID   uuid.UUID `json:"id"`
 	Name string    `json:"name"`
