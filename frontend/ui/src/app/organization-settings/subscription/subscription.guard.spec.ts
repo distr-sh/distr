@@ -3,9 +3,9 @@ import {ActivatedRouteSnapshot, provideRouter, Router, RouterStateSnapshot, UrlT
 import {UserRole} from '@distr-sh/distr-sdk';
 import dayjs from 'dayjs';
 import {firstValueFrom, Observable, of} from 'rxjs';
-import {AuthService} from '../services/auth.service';
-import {OrganizationService} from '../services/organization.service';
-import {Organization} from '../types/organization';
+import {AuthService} from '../../services/auth.service';
+import {OrganizationService} from '../../services/organization.service';
+import {Organization} from '../../types/organization';
 import {subscriptionGuard} from './subscription.guard';
 
 describe('subscriptionGuard', () => {

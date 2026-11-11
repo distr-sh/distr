@@ -7,7 +7,7 @@ import {faBoxesStacked, faChevronDown} from '@fortawesome/free-solid-svg-icons';
 import {map, of, switchMap} from 'rxjs';
 import {refreshInBackground} from '../../util/refresh';
 import {PageComponent} from '../components/page.component';
-import {CustomOidcComponent} from '../organization-settings/custom-oidc.component';
+import {CustomOidcComponent} from '../organization-settings/custom-oidc/custom-oidc.component';
 import {ContextService} from '../services/context.service';
 import {CustomerOrganizationsService} from '../services/customer-organizations.service';
 import {CustomerControllerSettingsComponent} from './customer-controller-settings.component';
