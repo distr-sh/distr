@@ -1,5 +1,5 @@
 import {inject} from '@angular/core';
-import {CanActivateFn, RedirectFunction, CanMatchFn, Router, Routes} from '@angular/router';
+import {CanActivateFn, CanMatchFn, RedirectFunction, Router, Routes} from '@angular/router';
 import {CustomerOrganizationFeature, UserRole} from '@distr-sh/distr-sdk';
 import {combineLatest, firstValueFrom, map} from 'rxjs';
 import {getRemoteEnvironment} from '../env/remote';
