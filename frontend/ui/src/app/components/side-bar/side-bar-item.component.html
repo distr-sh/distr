@@ -10,7 +10,7 @@
     </a>
   }
   @case ('external') {
-    <a class="item" [href]="item.href" target="_blank" rel="noopener noreferrer">
+    <a class="item" [href]="item.href" target="_blank" rel="noopener noreferrer" (click)="sidebar.hide()">
       <fa-icon [icon]="item.icon" size="lg" class="icon" />
       <span class="label">{{ item.label }}</span>
     </a>
