@@ -37,7 +37,16 @@
             class="size-16 rounded-lg" />
         </button>
         <div class="min-w-0">
-          <h3 class="truncate text-2xl font-bold text-gray-900 dark:text-white">{{ customer.name }}</h3>
+          <app-inline-edit
+            class="block"
+            tag="h3"
+            [value]="customer.name"
+            [editable]="canEdit"
+            placeholder="Customer name"
+            size="lg"
+            textClass="block max-w-lg truncate text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
+            [loading]="savingName()"
+            (save)="updateName(customer, $event)" />
           <p class="distr-text-muted text-sm">Customer since {{ customer.createdAt | date }}</p>
         </div>
       </div>

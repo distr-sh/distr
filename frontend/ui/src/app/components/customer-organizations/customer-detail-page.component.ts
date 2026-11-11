@@ -18,6 +18,7 @@ import {ToastService} from '../../services/toast.service';
 import {AlertComponent} from '../alert/alert.component';
 import {AvatarComponent} from '../avatar.component';
 import {CustomerBreadcrumbComponent} from '../customer-breadcrumb.component';
+import {InlineEditComponent} from '../inline-edit.component';
 import {PageComponent} from '../page.component';
 import {SpinnerComponent} from '../spinner/spinner.component';
 import {TabBarComponent, TabItem} from '../tab-bar.component';
@@ -32,6 +33,7 @@ import {deleteCustomerConfirmConfig} from './delete-customer-confirm';
     CustomerBreadcrumbComponent,
     DatePipe,
     FaIconComponent,
+    InlineEditComponent,
     PageComponent,
     RouterOutlet,
     SpinnerComponent,
@@ -66,6 +68,7 @@ export class CustomerDetailPageComponent {
     this.customerOrganizations()?.find((it) => it.id === this.customerOrganizationId())
   );
   protected readonly loading = signal(true);
+  protected readonly savingName = signal(false);
 
   protected readonly tabs = customerDetailTabs;
   protected readonly activeTab = toSignal(
@@ -78,6 +81,27 @@ export class CustomerDetailPageComponent {
 
   constructor() {
     refreshInBackground(this.customerOrganizationsService.refresh().finally(() => this.loading.set(false)));
+  }
+
+  protected async updateName(customer: CustomerOrganizationWithUsage, name: string) {
+    this.savingName.set(true);
+    try {
+      await firstValueFrom(
+        this.customerOrganizationsService.updateCustomerOrganization(customer.id, {
+          name,
+          imageId: customer.imageId,
+          features: customer.features,
+        })
+      );
+      this.toast.success('Customer has been updated');
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    } finally {
+      this.savingName.set(false);
+    }
   }
 
   protected async uploadImage(customer: CustomerOrganizationWithUsage) {
