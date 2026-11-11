@@ -1,5 +1,5 @@
 import {inject} from '@angular/core';
-import {CanActivateFn, RedirectFunction, ResolveFn, Router} from '@angular/router';
+import {CanActivateFn, RedirectFunction, Router} from '@angular/router';
 import {map, Observable} from 'rxjs';
 import {environment} from '../../env/env';
 import {Edition} from '../../env/types';
@@ -23,9 +23,8 @@ type SettingsTabPredicate = (context: SettingsTabContext) => boolean;
 
 interface SettingsTabDefinition {
   id: SettingsTabId;
-  label: string | ((context: SettingsTabContext) => string);
+  label: string;
   visible?: SettingsTabPredicate;
-  /** Shows the tab with a plan badge and a plan hint instead of the page while the predicate holds. */
   locked?: {plan: UpgradePlan; when: SettingsTabPredicate};
 }
 
@@ -37,15 +36,8 @@ const settingsTabDefinitions: SettingsTabDefinition[] = [
   {id: 'general', label: 'General', visible: (c) => c.user.isAdminOrSuperAdmin},
   {
     id: 'identity-provider',
-    // Drops the identity provider mention once domains are enabled without it, so the tab does not
-    // advertise a capability the organization does not have.
-    label: (c) =>
-      c.features.has('custom_domains') && !c.features.has('custom_oidc_providers')
-        ? 'Custom Domains'
-        : 'Custom Domains & Identity Provider',
+    label: 'Custom Domains & Identity Provider',
     visible: (c) => c.user.isAdminOrSuperAdmin,
-    // The tab holds the custom domains as well, which are gated on their own feature. Both are
-    // granted by the same plan, so either one is enough to make the tab worth opening.
     locked: {
       plan: 'business',
       when: (c) => !c.features.has('custom_oidc_providers') && !c.features.has('custom_domains'),
@@ -66,19 +58,12 @@ const settingsTabDefinitions: SettingsTabDefinition[] = [
 
 export const settingsTabIds = settingsTabDefinitions.map((tab) => tab.id);
 
-function resolveLabel({label}: SettingsTabDefinition, context: SettingsTabContext): string {
-  return typeof label === 'function' ? label(context) : label;
-}
-
 export function resolveSettingsTabs(context: SettingsTabContext): SettingsTab[] {
   return settingsTabDefinitions
     .filter((tab) => tab.visible?.(context) ?? true)
-    .map((tab) => {
-      const label = resolveLabel(tab, context);
-      return tab.locked?.when(context)
-        ? {id: tab.id, label, disabled: true, plan: tab.locked.plan}
-        : {id: tab.id, label};
-    });
+    .map(({id, label, locked}) =>
+      locked?.when(context) ? {id, label, disabled: true, plan: locked.plan} : {id, label}
+    );
 }
 
 export function settingsTabContext(): Observable<SettingsTabContext> {
@@ -104,9 +89,8 @@ function openableSettingsTabs(): Observable<SettingsTabId[]> {
   );
 }
 
-export function settingsTabTitle(id: SettingsTabId): ResolveFn<string> {
-  const tab = settingsTabDefinitions.find((tab) => tab.id === id)!;
-  return () => settingsTabContext().pipe(map((context) => `${resolveLabel(tab, context)} | Organization Settings`));
+export function settingsTabTitle(id: SettingsTabId): string {
+  return `${settingsTabDefinitions.find((tab) => tab.id === id)!.label} | Organization Settings`;
 }
 
 export function canOpenSettingsTab(tab: SettingsTabId): Observable<boolean> {

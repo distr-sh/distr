@@ -55,8 +55,7 @@ describe('subscriptionGuard', () => {
     expect(await navigate('/settings/organization/subscription/callback?pendingPlan=business')).toBe(true);
   });
 
-  // The subscription tab is admin only, so sending a non-admin there would bounce between this guard
-  // and the tab guard.
+  // Sending a non-admin to the admin-only tab would bounce between this guard and the tab guard.
   it('sends a non-admin of an expired organization to the unavailable page', async () => {
     setup('read_write', dayjs().subtract(1, 'day'));
     expect(await navigate('/deployments')).toBe('/unavailable');

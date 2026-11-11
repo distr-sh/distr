@@ -13,8 +13,7 @@ export function canOpenSubscription(): Observable<boolean> {
   return canOpenSettingsTab('subscription').pipe(map((canOpen) => auth.isVendor() && canOpen));
 }
 
-// A child guard rather than canActivate, because canActivate does not run again when navigating
-// between children and an expired organization must not reach any page but the subscription.
+// canActivate would not run again when navigating between children.
 export const subscriptionGuard: CanActivateChildFn = (_, state) => {
   const auth = inject(AuthService);
   const router = inject(Router);

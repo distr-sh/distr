@@ -617,7 +617,7 @@ const shellRoutes: Routes = [
       },
     ],
   },
-  // Stripe checkout and billing portal sessions created with these return URLs can still lead here.
+  // Older Stripe sessions and bookmarks still lead here.
   {
     path: 'subscription',
     children: [
