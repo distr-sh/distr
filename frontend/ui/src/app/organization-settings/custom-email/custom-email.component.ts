@@ -4,13 +4,13 @@ import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faFloppyDisk, faPaperPlane, faTrash} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
-import {getFormDisplayedError} from '../../util/errors';
-import {HOSTNAME_MAX_LENGTH, HOSTNAME_REGEX} from '../../util/validation';
-import {AutotrimDirective} from '../directives/autotrim.directive';
-import {CustomEmailService} from '../services/custom-email.service';
-import {OverlayService} from '../services/overlay.service';
-import {ToastService} from '../services/toast.service';
-import {CustomEmailConfiguration, CustomEmailSettings} from '../types/custom-email';
+import {getFormDisplayedError} from '../../../util/errors';
+import {HOSTNAME_MAX_LENGTH, HOSTNAME_REGEX} from '../../../util/validation';
+import {AutotrimDirective} from '../../directives/autotrim.directive';
+import {CustomEmailService} from '../../services/custom-email.service';
+import {OverlayService} from '../../services/overlay.service';
+import {ToastService} from '../../services/toast.service';
+import {CustomEmailConfiguration, CustomEmailSettings} from '../../types/custom-email';
 
 @Component({
   selector: 'app-custom-email',

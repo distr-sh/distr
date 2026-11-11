@@ -1,0 +1,51 @@
+<app-page>
+  <div class="flex flex-col gap-4">
+    @if (counts(); as counts) {
+      <p class="distr-text-muted -mt-2 text-sm">
+        <ng-container [ngPlural]="counts.customers">
+          <ng-template ngPluralCase="=1">1 customer</ng-template>
+          <ng-template ngPluralCase="other">{{ counts.customers }} customers</ng-template>
+        </ng-container>
+        &middot;
+        <ng-container [ngPlural]="counts.deployments">
+          <ng-template ngPluralCase="=1">1 deployment</ng-template>
+          <ng-template ngPluralCase="other">{{ counts.deployments }} deployments</ng-template>
+        </ng-container>
+        @if (counts.applications !== null) {
+          &middot;
+          <ng-container [ngPlural]="counts.applications">
+            <ng-template ngPluralCase="=1">1 application</ng-template>
+            <ng-template ngPluralCase="other">{{ counts.applications }} applications</ng-template>
+          </ng-container>
+        }
+      </p>
+    }
+
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div class="distr-card min-h-32 p-4">
+        <h2 appCardHeading [icon]="faBoxesStacked">Deployments</h2>
+      </div>
+      <div class="distr-card min-h-32 p-4">
+        <h2 appCardHeading [icon]="faCircleArrowUp">Updates</h2>
+      </div>
+      <div class="distr-card min-h-32 p-4">
+        <h2 appCardHeading [icon]="faKey">Licenses</h2>
+      </div>
+      <div class="distr-card min-h-32 p-4">
+        <h2 appCardHeading [icon]="faLifeRing">Support</h2>
+      </div>
+      <div class="distr-card min-h-32 p-4">
+        <h2 appCardHeading [icon]="faShieldHalved">Security Advisories</h2>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div class="distr-card min-h-96 p-4 lg:col-span-2">
+        <h2 appCardHeading [icon]="faClockRotateLeft">Activity</h2>
+      </div>
+      <div class="distr-card min-h-96 p-4">
+        <h2 appCardHeading [icon]="faAddressBook">Customers</h2>
+      </div>
+    </div>
+  </div>
+</app-page>

@@ -4,7 +4,7 @@ import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleCheck} from '@fortawesome/free-solid-svg-icons';
 import {map} from 'rxjs';
-import {SubscriptionService} from '../services/subscription.service';
+import {SubscriptionService} from '../../services/subscription.service';
 
 @Component({
   selector: 'app-subscription-callback',

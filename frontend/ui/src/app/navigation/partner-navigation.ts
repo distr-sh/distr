@@ -2,7 +2,7 @@ import {
   faAddressBook,
   faBox,
   faBoxesStacked,
-  faDashboard,
+  faHome,
   faKey,
   faLifeRing,
   faShieldHalved,
@@ -15,7 +15,7 @@ export const partnerNavigation: NavigationDefinition = [
     id: 'distribution',
     label: 'Distribution',
     entries: [
-      {id: 'dashboard', label: 'Dashboard', icon: faDashboard, route: '/dashboard'},
+      {id: 'home', label: 'Home', icon: faHome, route: '/home'},
       {id: 'deployments', label: 'Deployments', icon: faBoxesStacked, route: '/deployments'},
       {
         id: 'registry',

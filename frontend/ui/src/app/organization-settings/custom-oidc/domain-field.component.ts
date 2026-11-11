@@ -2,11 +2,11 @@ import {Component, computed, effect, inject, input, output, signal} from '@angul
 import {FormBuilder, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleCheck, faCircleExclamation, faRotate, faTrash} from '@fortawesome/free-solid-svg-icons';
-import {RelativeDatePipe} from '../../util/dates';
-import {HOSTNAME_MAX_LENGTH, HOSTNAME_REGEX} from '../../util/validation';
-import {ClipComponent} from '../components/clip.component';
-import {AutotrimDirective} from '../directives/autotrim.directive';
-import {CustomDomain} from '../types/custom-domain';
+import {RelativeDatePipe} from '../../../util/dates';
+import {HOSTNAME_MAX_LENGTH, HOSTNAME_REGEX} from '../../../util/validation';
+import {ClipComponent} from '../../components/clip.component';
+import {AutotrimDirective} from '../../directives/autotrim.directive';
+import {CustomDomain} from '../../types/custom-domain';
 
 // A single CNAME-configurable domain field: shows the existing domain with a remove button once
 // configured, or a validated hostname input beforehand. Purely presentational. The domain list and

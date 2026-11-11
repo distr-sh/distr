@@ -2,22 +2,21 @@ import {NgPlural, NgPluralCase} from '@angular/common';
 import {ChangeDetectionStrategy, Component, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
-import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faGear, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {catchError, EMPTY, filter, firstValueFrom, switchMap} from 'rxjs';
-import {getFormDisplayedError} from '../../util/errors';
-import {loadWhileOpen, refreshInBackground} from '../../util/refresh';
-import {AlertComponent} from '../components/alert/alert.component';
-import {PageComponent} from '../components/page.component';
-import {SpinnerComponent} from '../components/spinner/spinner.component';
-import {ClickableRowDirective} from '../directives/clickable-row.directive';
-import {AuthService} from '../services/auth.service';
-import {LicenseTemplatesService} from '../services/license-templates.service';
-import {OrganizationService} from '../services/organization.service';
-import {DialogRef, OverlayService} from '../services/overlay.service';
-import {ToastService} from '../services/toast.service';
-import {LicenseTemplate} from '../types/license-template';
+import {getFormDisplayedError} from '../../../util/errors';
+import {loadWhileOpen, refreshInBackground} from '../../../util/refresh';
+import {AlertComponent} from '../../components/alert/alert.component';
+import {SpinnerComponent} from '../../components/spinner/spinner.component';
+import {ClickableRowDirective} from '../../directives/clickable-row.directive';
+import {AuthService} from '../../services/auth.service';
+import {LicenseTemplatesService} from '../../services/license-templates.service';
+import {OrganizationService} from '../../services/organization.service';
+import {DialogRef, OverlayService} from '../../services/overlay.service';
+import {ToastService} from '../../services/toast.service';
+import {LicenseTemplate} from '../../types/license-template';
+import {BillingSettingsComponent} from './billing-settings.component';
 
 @Component({
   selector: 'app-billing',
@@ -26,8 +25,6 @@ import {LicenseTemplate} from '../types/license-template';
   imports: [
     FaIconComponent,
     ReactiveFormsModule,
-    RouterLink,
-    PageComponent,
     AlertComponent,
     NgPlural,
     NgPluralCase,
@@ -60,7 +57,6 @@ export class BillingComponent {
 
   private drawerRef?: DialogRef;
   private readonly templateDrawerTemplate = viewChild.required<TemplateRef<unknown>>('templateDrawer');
-
   protected readonly templateForm = this.fb.group({
     name: this.fb.control('', Validators.required),
     payloadTemplate: this.fb.control('', Validators.required),
@@ -74,6 +70,10 @@ export class BillingComponent {
 
   constructor() {
     refreshInBackground(this.templatesService.refresh());
+  }
+
+  openSettingsModal() {
+    this.overlay.showModal(BillingSettingsComponent);
   }
 
   async openTemplateDrawer(template?: LicenseTemplate) {
