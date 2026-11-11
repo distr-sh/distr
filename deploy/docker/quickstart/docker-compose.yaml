@@ -102,7 +102,7 @@ services:
     logging: *default-logging
 
   loki-bucket-init:
-    image: 'rclone/rclone:1.75.2'
+    image: 'rclone/rclone:1.76.0'
     environment:
       RCLONE_CONFIG_STORAGE_TYPE: s3
       RCLONE_CONFIG_STORAGE_PROVIDER: Other
