@@ -80,16 +80,6 @@ const inviteComponentGuard: CanActivateFn = async () => {
   return router.createUrlTree(['/login']);
 };
 
-const baseRouteRedirectGuard: CanActivateFn = () => {
-  const auth = inject(AuthService);
-  const router = inject(Router);
-  if (auth.isVendor() || auth.isPartner()) {
-    return router.createUrlTree(['/dashboard']);
-  } else {
-    return router.createUrlTree(['/home']);
-  }
-};
-
 export const routes: Routes = [
   {path: 'maintenance', component: MaintenanceComponent},
   {path: 'login', component: LoginComponent},
@@ -99,12 +89,7 @@ export const routes: Routes = [
     path: '',
     canActivate: [jwtParamRedirectGuard, jwtAuthGuard],
     children: [
-      {
-        path: '',
-        pathMatch: 'full',
-        canActivate: [baseRouteRedirectGuard],
-        children: [],
-      },
+      {path: '', pathMatch: 'full', redirectTo: 'home'},
       {
         path: 'verify',
         component: VerifyComponent,

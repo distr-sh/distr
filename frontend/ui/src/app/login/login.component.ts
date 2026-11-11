@@ -179,7 +179,7 @@ export class LoginComponent implements OnInit {
         if (this.auth.isCustomer()) {
           await this.router.navigate(['/home']);
         } else {
-          await this.router.navigate(['/dashboard'], {queryParams: {from: 'login'}});
+          await this.router.navigate(['/home'], {queryParams: {from: 'login'}});
         }
       }
     } catch (e) {
