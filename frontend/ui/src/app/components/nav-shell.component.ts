@@ -2,6 +2,7 @@ import {ChangeDetectionStrategy, Component, computed, inject} from '@angular/cor
 import {toSignal} from '@angular/core/rxjs-interop';
 import {RouterOutlet} from '@angular/router';
 import {map} from 'rxjs';
+import {NavigationService} from '../navigation/navigation.service';
 import {AuthService} from '../services/auth.service';
 import {OrganizationService} from '../services/organization.service';
 import {NavBarComponent} from './nav-bar/nav-bar.component';
@@ -20,6 +21,7 @@ import {SideBarComponent} from './side-bar/side-bar.component';
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [NavBarComponent, SideBarComponent, RouterOutlet],
+  providers: [NavigationService],
 })
 export class NavShellComponent {
   private readonly organizationService = inject(OrganizationService);

@@ -18,6 +18,7 @@ import {BillingComponent} from './billing/billing.component';
 import {BillingSettingsComponent} from './billing/settings/billing-settings.component';
 import {CustomerOrganizationsComponent} from './components/customer-organizations/customer-organizations.component';
 import {DashboardComponent} from './components/dashboard/dashboard.component';
+import {NavShellComponent} from './components/nav-shell.component';
 import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
 import {PortalUnavailableComponent} from './components/portal-unavailable/portal-unavailable.component';
 import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
@@ -258,7 +259,7 @@ function portalUnavailableGuard(): CanActivateFn {
   };
 }
 
-export const routes: Routes = [
+const shellRoutes: Routes = [
   {
     path: '',
     canActivate: [subscriptionGuard()],
@@ -655,3 +656,5 @@ export const routes: Routes = [
     component: PortalUnavailableComponent,
   },
 ];
+
+export const routes: Routes = [{path: '', component: NavShellComponent, children: shellRoutes}];

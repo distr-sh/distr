@@ -1,0 +1,25 @@
+@reference '../../../styles/tailwind.css';
+
+.item {
+  @apply flex w-full cursor-pointer items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700;
+
+  &.active {
+    @apply bg-gray-100 dark:bg-gray-700;
+  }
+
+  &:hover .icon {
+    @apply text-gray-900 dark:text-white;
+  }
+}
+
+.child {
+  @apply ml-7 w-auto pl-4;
+}
+
+.icon {
+  @apply h-6 w-6 pl-0.5 text-gray-400 transition duration-75;
+}
+
+.label {
+  @apply ms-3 flex-1 text-left rtl:text-right;
+}
