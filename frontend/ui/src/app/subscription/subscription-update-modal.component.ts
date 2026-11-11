@@ -56,7 +56,7 @@ export class SubscriptionUpdateModalComponent {
       if (pending.subscriptionType) {
         // Plan switches are only applied once Stripe confirms them via webhook,
         // so redirect to the callback page which waits for the confirmation.
-        await this.router.navigate(['/subscription/callback'], {
+        await this.router.navigate(['/settings/organization/subscription/callback'], {
           queryParams: {pendingPlan: pending.subscriptionType},
         });
       } else {

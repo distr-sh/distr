@@ -20,7 +20,6 @@ import {getFormDisplayedError} from '../../util/errors';
 import {BytesPipe} from '../../util/units';
 import {AlertComponent} from '../components/alert/alert.component';
 import {DeleteOrganizationComponent} from '../components/delete-organization/delete-organization.component';
-import {PageComponent} from '../components/page.component';
 import {AuthService} from '../services/auth.service';
 import {FeatureFlagService} from '../services/feature-flag.service';
 import {OrganizationService} from '../services/organization.service';
@@ -48,7 +47,6 @@ import {PendingSubscriptionUpdate, SubscriptionUpdateModalComponent} from './sub
     SubscriptionUpdateModalComponent,
     DeleteOrganizationComponent,
     BytesPipe,
-    PageComponent,
     AlertComponent,
   ],
 })

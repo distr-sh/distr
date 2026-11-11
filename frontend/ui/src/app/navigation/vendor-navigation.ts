@@ -5,7 +5,6 @@ import {
   faBox,
   faBoxesStacked,
   faBuilding,
-  faCreditCard,
   faCube,
   faDashboard,
   faGear,
@@ -105,13 +104,6 @@ export const vendorNavigation: NavigationDefinition = [
         icon: faPalette,
         route: '/branding',
         visible: (c) => c.user.isSuperAdmin || c.user.isReadWriteOrAdmin,
-      },
-      {
-        id: 'subscription',
-        label: 'Subscription',
-        icon: faCreditCard,
-        route: '/subscription',
-        visible: (c) => c.user.isAdminOrSuperAdmin && c.isEnterpriseEdition,
       },
       {
         id: 'settings',

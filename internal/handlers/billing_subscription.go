@@ -61,7 +61,7 @@ func CreateSubscriptionHandler(r *http.Request) (respond.Responder, error) {
 		CustomerOrganizationQty: body.CustomerOrganizationQty,
 		UserAccountQty:          body.UserAccountQty,
 		Currency:                "usd",
-		SuccessURL:              fmt.Sprintf("%v/subscription/callback", handlerutil.GetRequestSchemeAndHost(r)),
+		SuccessURL:              handlerutil.GetRequestSchemeAndHost(r) + subscriptionPagePath + "/callback",
 	}); err != nil {
 		return nil, fmt.Errorf("failed to create checkout session: %w", err)
 	} else {
@@ -130,7 +130,7 @@ func UpdateSubscriptionHandler(r *http.Request) (respond.Responder, error) {
 			CustomerOrganizationQty: body.CustomerOrganizationQty,
 			UserAccountQty:          body.UserAccountQty,
 			SubscriptionType:        body.SubscriptionType,
-			ReturnURL:               fmt.Sprintf("%v/subscription", handlerutil.GetRequestSchemeAndHost(r)),
+			ReturnURL:               handlerutil.GetRequestSchemeAndHost(r) + subscriptionPagePath,
 		})
 		if stripeErr, ok := errors.AsType[*stripe.Error](err); ok && stripeErr.Type == stripe.ErrorTypeInvalidRequest {
 			internalctx.GetLogger(ctx).Warn("stripe rejected subscription update", zap.Error(err))

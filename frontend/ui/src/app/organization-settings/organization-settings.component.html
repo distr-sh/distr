@@ -2,8 +2,8 @@
   <div class="distr-panel">
     <app-tab-bar [tabs]="tabs()" [(active)]="activeTab" (tabClick)="onTabClick($event)">
       <ng-template #tabSuffix let-tab let-origin="origin">
-        @if (tab.disabled) {
-          <app-plan-badge plan="business" class="ml-2" />
+        @if (tab.plan; as plan) {
+          <app-plan-badge [plan]="plan" class="ml-2" />
           <ng-template
             cdkConnectedOverlay
             [cdkConnectedOverlayOrigin]="origin"
@@ -14,7 +14,7 @@
             [cdkConnectedOverlayPositions]="[
               {originX: 'center', overlayX: 'center', originY: 'bottom', overlayY: 'top'},
             ]">
-            <app-plan-feature-hint plan="business" />
+            <app-plan-feature-hint [plan]="plan" />
           </ng-template>
         }
       </ng-template>

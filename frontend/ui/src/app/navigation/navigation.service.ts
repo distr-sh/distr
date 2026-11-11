@@ -2,7 +2,6 @@ import {computed, inject, Injectable, signal} from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {CustomerOrganizationFeature, SidebarLink} from '@distr-sh/distr-sdk';
 import {map, of, switchMap} from 'rxjs';
-import {environment} from '../../env/env';
 import {AuthService} from '../services/auth.service';
 import {ContextService} from '../services/context.service';
 import {FeatureFlagService} from '../services/feature-flag.service';
@@ -96,7 +95,6 @@ export class NavigationService {
   );
 
   private readonly context = computed<NavigationContext>(() => ({
-    isEnterpriseEdition: environment.edition === 'enterprise',
     user: {
       isAdmin: this.auth.hasRole('admin'),
       isAdminOrSuperAdmin: this.auth.isSuperAdmin() || this.auth.hasRole('admin'),

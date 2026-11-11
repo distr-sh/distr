@@ -10,7 +10,6 @@ export type NavigationFeature =
   | 'support_bundles';
 
 export interface NavigationContext {
-  isEnterpriseEdition: boolean;
   user: {
     isAdmin: boolean;
     isAdminOrSuperAdmin: boolean;
