@@ -1,168 +1,38 @@
-import {CdkConnectedOverlay, CdkOverlayOrigin} from '@angular/cdk/overlay';
-import {NgTemplateOutlet} from '@angular/common';
-import {ChangeDetectionStrategy, Component, computed, inject, input, signal, WritableSignal} from '@angular/core';
-import {toObservable, toSignal} from '@angular/core/rxjs-interop';
-import {RouterLink, RouterLinkActive} from '@angular/router';
-import {CustomerOrganization, CustomerOrganizationFeature, SidebarLink} from '@distr-sh/distr-sdk';
+import {Component, inject, input, signal} from '@angular/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {
-  faAddressBook,
-  faArrowRightLong,
-  faArrowUpRightFromSquare,
-  faAsterisk,
-  faBell,
-  faBox,
-  faBoxesStacked,
-  faBuilding,
-  faChevronDown,
-  faCreditCard,
-  faCube,
-  faDashboard,
-  faGear,
-  faHandHoldingDollar,
-  faHome,
-  faKey,
-  faLifeRing,
-  faLightbulb,
-  faPalette,
-  faShieldHalved,
-  faUsers,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
-import {map, of, switchMap} from 'rxjs';
+import {faArrowRightLong, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {WEBSITE_URL} from '../../../constants';
 import {buildConfig} from '../../../data';
 import {environment} from '../../../env/env';
-import {
-  RequireCustomerDirective,
-  RequirePartnerDirective,
-  RequireVendorDirective,
-} from '../../directives/required-role.directive';
+import {RequireVendorDirective} from '../../directives/required-role.directive';
+import {NavigationService} from '../../navigation/navigation.service';
 import {AuthService} from '../../services/auth.service';
-import {ContextService} from '../../services/context.service';
-import {FeatureFlagService} from '../../services/feature-flag.service';
-import {LicenseKeysService} from '../../services/license-keys.service';
 import {OrganizationService} from '../../services/organization.service';
 import {SidebarService} from '../../services/sidebar.service';
-import {TutorialsService} from '../../services/tutorials.service';
-import {PlanBadgeComponent} from '../plan-badge.component';
-import {PlanFeatureHintComponent} from '../plan-feature-hint.component';
+import {SideBarItemComponent} from './side-bar-item.component';
 
 @Component({
   selector: 'app-side-bar',
   templateUrl: './side-bar.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [
-    RouterLink,
-    FaIconComponent,
-    RouterLinkActive,
-    CdkOverlayOrigin,
-    CdkConnectedOverlay,
-    NgTemplateOutlet,
-    RequireVendorDirective,
-    RequireCustomerDirective,
-    RequirePartnerDirective,
-    PlanBadgeComponent,
-    PlanFeatureHintComponent,
-  ],
+  imports: [FaIconComponent, RequireVendorDirective, SideBarItemComponent],
 })
 export class SideBarComponent {
   protected readonly auth = inject(AuthService);
   protected readonly sidebar = inject(SidebarService);
+  protected readonly navigation = inject(NavigationService);
   private readonly organizationService = inject(OrganizationService);
-
-  private readonly tutorialsService = inject(TutorialsService);
-  private readonly featureFlags = inject(FeatureFlagService);
-  private readonly contextService = inject(ContextService);
-  private readonly licenseKeysService = inject(LicenseKeysService);
 
   protected readonly buildConfig = buildConfig;
   protected readonly edition = environment.edition;
   protected readonly websiteUrl = WEBSITE_URL;
 
-  protected readonly faDashboard = faDashboard;
-  protected readonly faBoxesStacked = faBoxesStacked;
-  protected readonly faCube = faCube;
-  protected readonly faLightbulb = faLightbulb;
-  protected readonly faKey = faKey;
-  protected readonly faGear = faGear;
-  protected readonly faUsers = faUsers;
-  protected readonly faPalette = faPalette;
-  protected readonly faAddressBook = faAddressBook;
-  protected readonly faBuilding = faBuilding;
-  protected readonly faBox = faBox;
-  protected readonly faBell = faBell;
-  protected readonly faCreditCard = faCreditCard;
   protected readonly faArrowRightLong = faArrowRightLong;
-  protected readonly faArrowUpRightFromSquare = faArrowUpRightFromSquare;
-  protected readonly faHome = faHome;
-  protected readonly faChevronDown = faChevronDown;
-  protected readonly faAsterisk = faAsterisk;
-  protected readonly faLifeRing = faLifeRing;
-  protected readonly faShieldHalved = faShieldHalved;
-  protected readonly faHandHoldingDollar = faHandHoldingDollar;
   protected readonly faXmark = faXmark;
-  protected feedbackAlert = true;
-  protected readonly registrySubMenuOpen = signal(true);
-  protected readonly notificationsSubMenuOpen = signal(true);
-  protected readonly licenseOverlayOpen = signal(false);
-  protected readonly notificationsOverlayOpen = signal(false);
-  protected readonly supportBundlesOverlayOpen = signal(false);
-  protected readonly advisoriesOverlayOpen = signal(false);
 
-  protected readonly isAllTutorialsStarted =
-    this.auth.isVendor() && this.auth.hasAnyRole('admin')
-      ? toSignal(
-          toObservable(this.organizationService.hasSubscription).pipe(
-            switchMap((hasSub) => (hasSub ? of(true) : this.tutorialsService.allStarted$))
-          ),
-          {initialValue: true}
-        )
-      : signal(true);
-  protected readonly isLicensingFeatureEnabled = toSignal(this.featureFlags.isLicensingEnabled$);
-  // The license keys page lists only license keys, so a customer licensed through entitlements alone would land on
-  // an empty page.
-  protected readonly isCustomerLicensesVisible = toSignal(
-    this.featureFlags.isLicensingEnabled$.pipe(
-      switchMap((enabled) =>
-        enabled && this.auth.isCustomer()
-          ? this.licenseKeysService.list().pipe(map((licenseKeys) => licenseKeys.length > 0))
-          : of(false)
-      )
-    ),
-    {initialValue: false}
-  );
-  protected readonly isNotificationsFeatureEnabled = toSignal(this.featureFlags.isNotificationsEnabled$);
-  protected readonly isSupportBundlesFeatureEnabled = toSignal(this.featureFlags.isSupportBundlesEnabled$);
-  protected readonly isVulnerabilitiesFeatureEnabled = this.featureFlags.isVulnerabilitiesEnabled;
-  protected readonly isVendorBillingFeatureEnabled = this.featureFlags.isVendorBillingEnabled;
-  protected readonly isPartnerManagementEnabled = this.featureFlags.isPartnerManagementEnabled;
+  protected readonly isFeedbackAlertVisible = signal(true);
 
   public readonly isBannerVisible = input<boolean>();
   public readonly isSidebarVisible = input<boolean>();
 
   protected readonly hasSubscription = this.organizationService.hasSubscription;
-
-  private readonly customerOrgFeatures = toSignal(
-    this.contextService
-      .getCustomerOrganization()
-      .pipe(map((customerOrg: CustomerOrganization | undefined) => customerOrg?.features ?? [])),
-    {initialValue: [] as CustomerOrganizationFeature[]}
-  );
-  protected readonly customerFeatures = computed<Partial<Record<CustomerOrganizationFeature, boolean>>>(() =>
-    Object.fromEntries(this.customerOrgFeatures().map((feature) => [feature, true]))
-  );
-  protected readonly isCustomerNotificationsVisible = computed(
-    () =>
-      (this.isNotificationsFeatureEnabled() ?? false) &&
-      (this.customerFeatures().alerts || this.customerFeatures().update_notifications || false)
-  );
-
-  protected readonly customerOrgLinks = toSignal(this.contextService.getSidebarLinks(), {
-    initialValue: [] as SidebarLink[],
-  });
-
-  protected toggle(signal: WritableSignal<boolean>) {
-    signal.update((val) => !val);
-  }
 }

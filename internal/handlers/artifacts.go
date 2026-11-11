@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
+	"strings"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
@@ -23,7 +25,7 @@ import (
 )
 
 type UpstreamTagSyncer interface {
-	SyncArtifactTags(ctx context.Context, artifact *types.Artifact, skipExistingTags bool) error
+	SyncArtifactTags(ctx context.Context, artifact *types.Artifact, skipExistingTags bool) ([]string, error)
 }
 
 func ArtifactsRouter(r chiopenapi.Router) {
@@ -64,8 +66,8 @@ func ArtifactsRouter(r chiopenapi.Router) {
 					With(option.Response(http.StatusOK, api.ArtifactResponse{}))
 				r.Patch("/", respond.Handler(patchArtifactHandler)).
 					With(option.Description(
-						"Update artifact upstream URL and/or authentication, its public visibility " +
-							"or whether it is featured")).
+						"Update artifact upstream URL and/or authentication, its public visibility, " +
+							"whether it is featured or its versioning strategy")).
 					With(option.Request(struct {
 						ArtifactRequest
 						api.PatchArtifactRequest
@@ -74,7 +76,7 @@ func ArtifactsRouter(r chiopenapi.Router) {
 				r.Post("/sync", respond.Handler(syncArtifactHandler)).
 					With(option.Description("Trigger upstream sync for a pull-through artifact")).
 					With(option.Request(ArtifactRequest{})).
-					With(option.Response(http.StatusOK, api.ArtifactResponse{}))
+					With(option.Response(http.StatusOK, api.SyncArtifactResponse{}))
 				r.Delete("/", respond.Handler(deleteArtifactHandler)).
 					With(option.Description("Delete an artifact")).
 					With(option.Request(ArtifactRequest{}))
@@ -151,12 +153,12 @@ func syncArtifactHandler(r *http.Request) (respond.Responder, error) {
 
 	if artifact.UpstreamURL == nil {
 		return respond.BadRequest("artifact is not a pull-through cache"), nil
-	} else if err := syncer.SyncArtifactTags(ctx, &artifact.Artifact, false); err != nil {
+	} else if skippedTags, err := syncer.SyncArtifactTags(ctx, &artifact.Artifact, false); err != nil {
 		return nil, fmt.Errorf("upstream sync failed: %w", err)
 	} else if result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil); err != nil {
 		return nil, fmt.Errorf("failed to fetch artifact after sync: %w", err)
 	} else {
-		return respond.JSON(mapping.ArtifactToAPI(*result)), nil
+		return respond.JSON(mapping.SyncArtifactToAPI(*result, skippedTags)), nil
 	}
 }
 
@@ -345,30 +347,117 @@ func patchArtifactHandler(r *http.Request) (respond.Responder, error) {
 		}
 	}
 
-	if err := db.RunTx(ctx, func(ctx context.Context) error {
+	if body.VersioningStrategy != nil && !body.VersioningStrategy.IsSelectable() {
+		return respond.BadRequest(
+			fmt.Sprintf("versioning strategy must be one of %v", types.SelectableVersioningStrategies()),
+		), nil
+	}
+
+	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 		if params.UpdateURL || params.UpdateAuth {
 			if err := db.UpdateArtifactUpstream(ctx, artifact.ID, artifact.OrganizationID, params); err != nil {
-				return err
+				return nil, err
 			}
 		}
 		if body.Public != nil {
 			if err := db.UpdateArtifactPublic(ctx, artifact.ID, artifact.OrganizationID, *body.Public); err != nil {
-				return err
+				return nil, err
 			}
 		}
 		if body.Featured != nil {
-			return db.UpdateArtifactFeatured(
+			if err := db.UpdateArtifactFeatured(
 				ctx, artifact.ID, artifact.OrganizationID, *body.Featured,
+			); err != nil {
+				return nil, err
+			}
+		}
+		if body.VersioningStrategy != nil && *body.VersioningStrategy != artifact.VersioningStrategy {
+			return switchArtifactVersioningStrategy(
+				ctx, &artifact.Artifact, *body.VersioningStrategy, body.DeleteNonSemverTags,
 			)
 		}
-		return nil
+		return nil, nil
 	}); err != nil {
 		return nil, fmt.Errorf("failed to update artifact: %w", err)
+	} else if resp != nil {
+		return resp, nil
 	} else if result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil); err != nil {
 		return nil, fmt.Errorf("failed to fetch artifact after update: %w", err)
 	} else {
 		return respond.JSON(mapping.ArtifactToAPI(*result)), nil
 	}
+}
+
+// switchArtifactVersioningStrategy deletes every release tag that is not a SemVer version before switching to semver,
+// but only once the request confirms it.
+func switchArtifactVersioningStrategy(
+	ctx context.Context,
+	artifact *types.Artifact,
+	strategy types.VersioningStrategy,
+	shouldDeleteNonSemverTags bool,
+) (respond.Responder, error) {
+	if strategy == types.VersioningStrategySemver {
+		if resp, err := ensureSemverTags(ctx, artifact, shouldDeleteNonSemverTags); resp != nil || err != nil {
+			return resp, err
+		}
+	}
+	return nil, db.UpdateArtifactVersioningStrategy(ctx, artifact.ID, artifact.OrganizationID, strategy)
+}
+
+func ensureSemverTags(
+	ctx context.Context,
+	artifact *types.Artifact,
+	shouldDeleteNonSemverTags bool,
+) (respond.Responder, error) {
+	// DeleteArtifactTag below takes the advisory lock before the row lock, so taking them in the other order could
+	// deadlock with a concurrent tag deletion.
+	if err := db.LockArtifactExclusive(ctx, artifact.ID); err != nil {
+		return nil, err
+	}
+	// A push or a sync holds this row lock until it commits, so no tag can be added between the check and the switch.
+	if err := db.LockArtifactRows(ctx, []uuid.UUID{artifact.ID}); err != nil {
+		return nil, err
+	}
+	tags, err := db.GetArtifactReleaseTagNames(ctx, artifact.ID)
+	if err != nil {
+		return nil, err
+	}
+	tagCount := len(tags)
+	nonSemverTags := slices.DeleteFunc(tags, types.IsSemverTag)
+	if len(nonSemverTags) == 0 {
+		return nil, nil
+	} else if len(nonSemverTags) == tagCount {
+		// DeleteArtifactTag deletes a pushed artifact together with its last tag and refuses the last tag of a
+		// pull-through artifact.
+		return respond.BadRequest(
+			"the artifact cannot use semantic versioning because none of its tags is a SemVer version",
+		), nil
+	} else if !shouldDeleteNonSemverTags {
+		return respond.Conflict(fmt.Sprintf(
+			"Switching to semantic versioning permanently deletes %d tags that are not SemVer versions, "+
+				"together with their pull history: %s",
+			len(nonSemverTags),
+			describeTagNames(nonSemverTags),
+		)), nil
+	}
+	for _, tag := range nonSemverTags {
+		if _, err := db.DeleteArtifactTag(ctx, artifact, tag); errors.Is(err, distrerr.ErrBadRequest) ||
+			errors.Is(err, distrerr.ErrConflict) {
+			return respond.BadRequest(fmt.Sprintf("cannot delete tag %q: %v", tag, err)), nil
+		} else if err != nil {
+			return nil, fmt.Errorf("failed to delete tag %q: %w", tag, err)
+		}
+	}
+	return nil, nil
+}
+
+// describeTagNames lists the first few of the tags and how many more there are.
+func describeTagNames(tags []string) string {
+	const listedTags = 5
+	if len(tags) <= listedTags {
+		return strings.Join(tags, ", ")
+	}
+	return fmt.Sprintf("%s and %d more", strings.Join(tags[:listedTags], ", "), len(tags)-listedTags)
 }
 
 func artifactMiddleware(r *http.Request) (*http.Request, respond.Responder, error) {

@@ -131,11 +131,27 @@ export class SubscriptionComponent implements OnInit {
   // a trial does not renew, it runs out
   protected readonly subscriptionEndsAtLabel = computed(() => {
     const info = this.subscriptionInfo();
-    if (info?.subscriptionType !== 'trial') {
-      return 'Renews On';
+    if (info && isExpiredSubscription(info.subscriptionType, info.subscriptionEndsAt)) {
+      return 'Expired On';
     }
-    return isExpiredSubscription(info.subscriptionType, info.subscriptionEndsAt) ? 'Expired On' : 'Expires On';
+    return info?.subscriptionType === 'trial' ? 'Expires On' : 'Renews On';
   });
+
+  private readonly isSelfServicePlan = computed(() => {
+    const subscriptionType = this.subscriptionInfo()?.subscriptionType;
+    return subscriptionType === 'pro' || subscriptionType === 'business';
+  });
+
+  protected readonly hasActiveSubscription = computed(
+    () => this.isSelfServicePlan() && !!this.subscriptionInfo()?.hasStripeSubscription
+  );
+
+  // Stripe cannot reactivate a subscription that has ended, so a lapsed plan checks out a new one like a trial
+  protected readonly canCheckout = computed(
+    () =>
+      this.subscriptionInfo()?.subscriptionType === 'trial' ||
+      (this.isSelfServicePlan() && !this.subscriptionInfo()?.hasStripeSubscription)
+  );
 
   /** The registry storage included in the current plan, or `undefined` if it is unlimited. */
   protected readonly registryStorageLimit = computed(() => {
@@ -311,16 +327,6 @@ export class SubscriptionComponent implements OnInit {
       return '';
     }
     return this.getCustomerOrganizationsLimit(info.subscriptionType);
-  }
-
-  isTrialSubscription(): boolean {
-    const info = this.subscriptionInfo();
-    return info?.subscriptionType === 'trial';
-  }
-
-  hasActiveSubscription(): boolean {
-    const info = this.subscriptionInfo();
-    return info?.subscriptionType === 'pro' || info?.subscriptionType === 'business';
   }
 
   canUpgradeToBusiness(): boolean {

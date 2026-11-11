@@ -2,7 +2,7 @@ module github.com/distr-sh/distr
 
 go 1.27.0
 
-toolchain go1.27.3
+toolchain go1.27.4
 
 require (
 	cloud.google.com/go/kms v1.36.1

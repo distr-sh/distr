@@ -1,9 +1,11 @@
 package types
 
 import (
+	"cmp"
 	"fmt"
 	"maps"
 	"slices"
+	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/uuid"
@@ -29,6 +31,75 @@ func (s VersioningStrategy) IsSelectable() bool {
 	return slices.Contains(SelectableVersioningStrategies(), s)
 }
 
+func IsSemverTag(name string) bool {
+	_, err := parseSemver(name)
+	return err == nil
+}
+
+// parseSemver rejects a name with a missing minor or patch number, which semver.NewVersion would
+// complete with zeros.
+func parseSemver(name string) (*semver.Version, error) {
+	return semver.StrictNewVersion(strings.TrimPrefix(name, "v"))
+}
+
+// SortTaggedArtifactVersions orders versions by the strategy, newest first. Under semver, a version ranks by its
+// highest SemVer tag, and the versions without one, like signatures, follow by creation date.
+func SortTaggedArtifactVersions(strategy VersioningStrategy, versions []TaggedArtifactVersion) {
+	highest := make(map[uuid.UUID]*semver.Version, len(versions))
+	if strategy == VersioningStrategySemver {
+		for _, version := range versions {
+			for _, tag := range version.Tags {
+				if parsed, err := parseSemver(tag.Name); err == nil && compareSemver(parsed, highest[version.ID]) > 0 {
+					highest[version.ID] = parsed
+				}
+			}
+		}
+	}
+	slices.SortStableFunc(versions, func(a, b TaggedArtifactVersion) int {
+		return cmp.Or(compareSemver(highest[b.ID], highest[a.ID]), b.CreatedAt.Compare(a.CreatedAt))
+	})
+}
+
+// CompareArtifactTags orders two release tags of an artifact by the strategy. Under semver, a tag that is not a SemVer
+// version sorts before every SemVer one. The creation date decides where the strategy does not.
+func CompareArtifactTags(strategy VersioningStrategy, a, b ArtifactVersion) int {
+	if strategy == VersioningStrategySemver {
+		parsedA, _ := parseSemver(a.Name)
+		parsedB, _ := parseSemver(b.Name)
+		if c := compareSemver(parsedA, parsedB); c != 0 {
+			return c
+		}
+	}
+	return a.CreatedAt.Compare(b.CreatedAt)
+}
+
+// ArtifactTagBehind reports whether a customer whose latest pull was the tag pulled has something to update to in
+// the tag announced. A tag that points to the content they pulled already brings nothing new.
+func ArtifactTagBehind(strategy VersioningStrategy, pulled, announced ArtifactVersion) bool {
+	return pulled.ManifestBlobDigest != announced.ManifestBlobDigest &&
+		CompareArtifactTags(strategy, pulled, announced) < 0
+}
+
+// compareSemver orders nil before every version.
+func compareSemver(a, b *semver.Version) int {
+	switch {
+	case a == nil && b == nil:
+		return 0
+	case a == nil:
+		return -1
+	case b == nil:
+		return 1
+	default:
+		return a.Compare(b)
+	}
+}
+
+// AllowsArtifactTag reports whether an artifact with the strategy may have a tag of the given name. Tags that are
+// not releases, like signatures, are allowed under every strategy.
+func (s VersioningStrategy) AllowsArtifactTag(name string) bool {
+	return s != VersioningStrategySemver || !IsReleaseTag(name) || IsSemverTag(name)
+}
+
 func (s VersioningStrategy) AllowsAutomaticUpdates() bool {
 	return s != VersioningStrategyLegacy
 }
@@ -46,7 +117,7 @@ func ApplicationVersionComparator(
 	}
 	parsed := make(map[uuid.UUID]*semver.Version, len(versions))
 	for _, version := range versions {
-		parsedVersion, err := semver.NewVersion(version.Name)
+		parsedVersion, err := parseSemver(version.Name)
 		if err != nil && strategy == VersioningStrategyLegacy {
 			return compareApplicationVersionsByDate
 		} else if err == nil {
@@ -123,7 +194,7 @@ func ValidateVersionsForStrategy(strategy VersioningStrategy, versions []Applica
 	}
 	parsed := make([]*semver.Version, 0, len(versions))
 	for i, version := range versions {
-		parsedVersion, err := semver.NewVersion(version.Name)
+		parsedVersion, err := parseSemver(version.Name)
 		if err != nil {
 			return fmt.Errorf("version %q is not a valid SemVer version", version.Name)
 		}
