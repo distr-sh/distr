@@ -41,7 +41,7 @@
     @if (artifactsByCustomer(); as items) {
       <div class="distr-card-grid mb-4">
         @for (item of items; track item.customer.id) {
-          <app-artifacts-by-customer-card [customer]="item.customer" [artifacts]="item.artifacts ?? []" />
+          <app-artifacts-by-customer-card [customer]="item.customer" [artifacts]="item.artifacts" />
         } @empty {
           <div class="text-gray-500 dark:text-gray-400">Nothing to show yet.</div>
         }

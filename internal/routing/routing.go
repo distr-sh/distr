@@ -204,7 +204,6 @@ func ApiRouter(
 							Route("/custom-oidc", handlers.CustomOIDCConfigurationsRouter)
 						r.With(middleware.PartnerManagementFeatureMiddleware).
 							Route("/partner-organizations", handlers.PartnerOrganizationsRouter)
-						r.With(middleware.UseReadonlyDB).Route("/dashboard", handlers.DashboardRouter)
 						r.Route("/alert-configurations", handlers.AlertConfigurationsRouter)
 						r.Route("/update-notification-configurations",
 							handlers.UpdateNotificationConfigurationsRouter)

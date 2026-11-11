@@ -5,6 +5,7 @@ import {
   ArtifactPullFilterOption,
   ArtifactVersionPull,
   ArtifactVersionPullFilterOptions,
+  LatestArtifactPull,
 } from '../types/artifact-version-pull';
 
 export interface ArtifactPullFilters {
@@ -27,6 +28,14 @@ export class ArtifactPullsService {
 
   public get(filters: ArtifactPullFilters = {}): Observable<ArtifactVersionPull[]> {
     return this.httpClient.get<ArtifactVersionPull[]>(this.baseUrl, {params: this.buildParams(filters)});
+  }
+
+  public getLatest(customerOrganizationId?: string): Observable<LatestArtifactPull[]> {
+    let params = new HttpParams();
+    if (customerOrganizationId) {
+      params = params.set('customerOrganizationId', customerOrganizationId);
+    }
+    return this.httpClient.get<LatestArtifactPull[]>(`${this.baseUrl}/latest`, {params});
   }
 
   public getFilterOptions(): Observable<ArtifactVersionPullFilterOptions> {
