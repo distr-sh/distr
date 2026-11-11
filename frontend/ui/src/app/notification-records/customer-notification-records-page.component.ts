@@ -9,7 +9,10 @@ import {NotificationRecordsComponent} from './notification-records.component';
   template: `
     <app-page>
       <div class="distr-table-panel">
-        <app-customer-breadcrumb [customerOrganizationId]="customerOrganizationId()" section="notification-history" />
+        <app-customer-breadcrumb
+          class="m-4"
+          [customerOrganizationId]="customerOrganizationId()"
+          section="notification-history" />
         <app-notification-records [customerOrganizationId]="customerOrganizationId()" />
       </div>
     </app-page>

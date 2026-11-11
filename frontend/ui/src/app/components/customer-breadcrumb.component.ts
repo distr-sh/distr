@@ -10,6 +10,7 @@ import {CustomerOrganizationsService} from '../services/customer-organizations.s
 /** The breadcrumb of a page that shows one customer's rows, with the dropdown to switch customer. */
 @Component({
   selector: 'app-customer-breadcrumb',
+  host: {class: 'block'},
   templateUrl: './customer-breadcrumb.component.html',
   imports: [RouterLink, FaIconComponent, OverlayModule],
 })
