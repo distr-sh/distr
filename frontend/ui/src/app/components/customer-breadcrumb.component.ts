@@ -18,8 +18,8 @@ export class CustomerBreadcrumbComponent {
   protected readonly faChevronDown = faChevronDown;
 
   public readonly customerOrganizationId = input.required<string | undefined>();
-  /** section is the route below the customer that the dropdown keeps the user on. */
-  public readonly section = input.required<string>();
+  /** section is the route below the customer that the dropdown keeps the user on, empty for the detail page. */
+  public readonly section = input('');
 
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   protected readonly customerOrganizations = toSignal(this.customerOrganizationsService.getCustomerOrganizations());

@@ -16,6 +16,7 @@ import {ArtifactVersionsComponent} from './artifacts/artifact-versions/artifact-
 import {ArtifactsComponent} from './artifacts/artifacts/artifacts.component';
 import {BillingComponent} from './billing/billing.component';
 import {BillingSettingsComponent} from './billing/settings/billing-settings.component';
+import {CustomerDetailPageComponent} from './components/customer-organizations/customer-detail-page.component';
 import {CustomerOrganizationsComponent} from './components/customer-organizations/customer-organizations.component';
 import {DashboardComponent} from './components/dashboard/dashboard.component';
 import {NavShellComponent} from './components/nav-shell.component';
@@ -348,7 +349,7 @@ const shellRoutes: Routes = [
             component: CustomerSettingsComponent,
             canActivate: [requiredRoleGuard('admin'), customerSettingsFeatureGuard()],
           },
-          {path: '', pathMatch: 'full', redirectTo: 'users'},
+          {path: '', pathMatch: 'full', component: CustomerDetailPageComponent},
         ],
       },
       {
