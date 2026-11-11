@@ -1,0 +1,24 @@
+@reference '../../styles/tailwind.css';
+
+// Tailwind's `dark` variant, spelled out, for the same reason as in `subscription-badge.component.scss`
+@mixin dark {
+  &:where(.dark, .dark *) {
+    @content;
+  }
+}
+
+.quick-navigation-card-error {
+  @apply border-red-400 bg-red-100 text-red-800 hover:bg-red-200;
+
+  @include dark {
+    @apply border-red-900 text-red-300 hover:bg-red-950;
+    // Tailwind's darkest red isn't dark enough for us
+    background-color: color-mix(in oklab, --theme(--color-red-950) 75%, --theme(--color-gray-950));
+  }
+
+  h2,
+  .quick-navigation-card-count,
+  .quick-navigation-card-subtitle {
+    color: inherit;
+  }
+}

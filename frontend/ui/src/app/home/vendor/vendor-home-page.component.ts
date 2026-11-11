@@ -20,11 +20,13 @@ import {ArtifactPullsService} from '../../services/artifact-pulls.service';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
+import {QuickNavigationCardComponent} from '../quick-navigation-card.component';
+import {toVendorHomeDeploymentHealth, vendorHomeAttentionStatuses} from './vendor-home-mappers';
 
 @Component({
   selector: 'app-vendor-home-page',
   templateUrl: './vendor-home-page.component.html',
-  imports: [NgPlural, NgPluralCase, PageComponent, CardHeadingComponent],
+  imports: [NgPlural, NgPluralCase, PageComponent, CardHeadingComponent, QuickNavigationCardComponent],
 })
 export class VendorHomePageComponent {
   private readonly route = inject(ActivatedRoute);
@@ -48,11 +50,15 @@ export class VendorHomePageComponent {
   private readonly customerCount = toSignal(
     this.customerOrganizationsService.getCustomerOrganizations().pipe(map((customers) => customers.length))
   );
-  private readonly deploymentCount = toSignal(
-    this.deploymentTargetsService
-      .list()
-      .pipe(map((targets) => targets.reduce((count, target) => count + target.deployments.length, 0)))
+  private readonly deploymentTargets = toSignal(this.deploymentTargetsService.list());
+  private readonly deploymentCount = computed(() =>
+    this.deploymentTargets()?.reduce((count, target) => count + target.deployments.length, 0)
   );
+  protected readonly deploymentHealth = computed(() => {
+    const targets = this.deploymentTargets();
+    return targets && toVendorHomeDeploymentHealth(targets);
+  });
+  protected readonly deploymentAttentionQueryParams = {status: vendorHomeAttentionStatuses};
   // Partners have no access to the applications.
   private readonly applicationCount = toSignal(
     this.isVendor ? this.applicationsService.list().pipe(map((applications) => applications.length)) : of(null)

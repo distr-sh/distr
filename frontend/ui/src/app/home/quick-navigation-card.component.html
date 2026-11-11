@@ -1,17 +1,35 @@
 @if (count() > 0) {
-  <a [routerLink]="link()" [queryParams]="queryParams()" class="distr-card distr-card-clickable p-4">
-    <h2 appCardHeading [icon]="icon()" class="mb-3">{{ heading() }}</h2>
-    <span class="block text-3xl font-bold text-gray-900 dark:text-white">{{ count() }}</span>
-    <span class="distr-text-muted block text-sm">
+  <a
+    [routerLink]="link()"
+    [queryParams]="queryParams()"
+    class="distr-card distr-card-clickable p-4"
+    [class.quick-navigation-card-error]="type() === 'error'">
+    @if (type() === 'error') {
+      <h2 appCardHeading class="mb-3"><fa-icon [icon]="faCircleExclamation" class="me-2" />{{ heading() }}</h2>
+    } @else {
+      <h2 appCardHeading [icon]="icon()" class="mb-3">{{ heading() }}</h2>
+    }
+    <span class="quick-navigation-card-count -mt-2 mb-1 block text-4xl font-bold text-gray-900 dark:text-white">
+      {{ count() }}
+    </span>
+    <span class="quick-navigation-card-subtitle distr-text-muted block text-xs">
       <ng-content select="[attention]" />
     </span>
   </a>
+} @else if (allGoodLink(); as allGoodLink) {
+  <a [routerLink]="allGoodLink" class="distr-card distr-card-clickable p-4">
+    <ng-container [ngTemplateOutlet]="allGood" />
+  </a>
 } @else {
   <div class="distr-card p-4">
-    <h2 appCardHeading [icon]="icon()" class="mb-3">{{ heading() }}</h2>
-    <span class="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
-      <fa-icon [icon]="faCircleCheck" />
-      <span><ng-content select="[allGood]" /></span>
-    </span>
+    <ng-container [ngTemplateOutlet]="allGood" />
   </div>
 }
+
+<ng-template #allGood>
+  <h2 appCardHeading [icon]="icon()" class="mb-3">{{ heading() }}</h2>
+  <span class="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
+    <fa-icon [icon]="faCircleCheck" />
+    <span><ng-content select="[allGood]" /></span>
+  </span>
+</ng-template>

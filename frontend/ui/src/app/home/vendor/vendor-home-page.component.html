@@ -22,9 +22,24 @@
     }
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-      <div class="distr-card min-h-32 p-4">
-        <h2 appCardHeading [icon]="faBoxesStacked">Deployments</h2>
-      </div>
+      @if (deploymentHealth(); as health) {
+        <app-quick-navigation-card
+          class="min-h-32"
+          [icon]="faBoxesStacked"
+          heading="Deployments"
+          type="error"
+          [count]="health.error + health.stale"
+          link="/deployments"
+          [queryParams]="deploymentAttentionQueryParams"
+          allGoodLink="/deployments">
+          <span attention>{{ health.error }} failing &middot; {{ health.stale }} not responding</span>
+          <span allGood>{{ health.healthy }} healthy &middot; {{ health.running }} running</span>
+        </app-quick-navigation-card>
+      } @else {
+        <div class="distr-card min-h-32 p-4">
+          <h2 appCardHeading [icon]="faBoxesStacked">Deployments</h2>
+        </div>
+      }
       <div class="distr-card min-h-32 p-4">
         <h2 appCardHeading [icon]="faCircleArrowUp">Updates</h2>
       </div>
