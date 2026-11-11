@@ -7,10 +7,10 @@ import {AlertComponent} from '../components/alert/alert.component';
 import {BrandingFormComponent} from '../components/branding/branding-form.component';
 import {PageComponent} from '../components/page.component';
 import {canOpenSettingsTab} from '../organization-settings/organization-settings-navigation';
+import {canOpenSubscription} from '../organization-settings/subscription/subscription.guard';
 import {AuthService} from '../services/auth.service';
 import {FeatureFlagService} from '../services/feature-flag.service';
 import {OrganizationService} from '../services/organization.service';
-import {canOpenSubscription} from '../subscription/subscription.guard';
 
 @Component({
   selector: 'app-organization-branding',

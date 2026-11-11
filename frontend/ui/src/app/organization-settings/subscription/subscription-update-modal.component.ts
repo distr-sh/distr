@@ -3,11 +3,11 @@ import {ChangeDetectionStrategy, Component, inject, input, output} from '@angula
 import {Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {WEBSITE_URL} from '../../constants';
-import {getFormDisplayedError} from '../../util/errors';
-import {SubscriptionService} from '../services/subscription.service';
-import {ToastService} from '../services/toast.service';
-import {SubscriptionInfo, SubscriptionPeriod, SubscriptionType} from '../types/subscription';
+import {WEBSITE_URL} from '../../../constants';
+import {getFormDisplayedError} from '../../../util/errors';
+import {SubscriptionService} from '../../services/subscription.service';
+import {ToastService} from '../../services/toast.service';
+import {SubscriptionInfo, SubscriptionPeriod, SubscriptionType} from '../../types/subscription';
 
 export interface PendingSubscriptionUpdate {
   // Set when the update also switches the subscription to a different plan

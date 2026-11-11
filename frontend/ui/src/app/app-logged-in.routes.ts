@@ -37,15 +37,22 @@ import {CustomerNotificationRecordsPageComponent} from './notification-records/c
 import {NotificationRecordsPageComponent} from './notification-records/notification-records-page.component';
 import {OrganizationBrandingComponent} from './organization-branding/organization-branding.component';
 import {BillingComponent} from './organization-settings/billing/billing.component';
-import {CustomEmailComponent} from './organization-settings/custom-email.component';
-import {CustomOidcComponent} from './organization-settings/custom-oidc.component';
-import {GeneralSettingsComponent} from './organization-settings/general-settings.component';
+import {CustomEmailComponent} from './organization-settings/custom-email/custom-email.component';
+import {CustomOidcComponent} from './organization-settings/custom-oidc/custom-oidc.component';
+import {GeneralSettingsComponent} from './organization-settings/general/general-settings.component';
 import {
   firstOpenableSettingsTab,
   settingsTabGuard,
   settingsTabTitle,
 } from './organization-settings/organization-settings-navigation';
 import {OrganizationSettingsComponent} from './organization-settings/organization-settings.component';
+import {SubscriptionCallbackComponent} from './organization-settings/subscription/subscription-callback.component';
+import {SubscriptionComponent} from './organization-settings/subscription/subscription.component';
+import {
+  canOpenSubscription,
+  subscriptionGuard,
+  subscriptionPath,
+} from './organization-settings/subscription/subscription.guard';
 import {CustomerSecretsPageComponent} from './secrets/customer-secrets-page.component';
 import {SecretsPage} from './secrets/secrets-page.component';
 import {AuthService} from './services/auth.service';
@@ -54,9 +61,6 @@ import {FeatureFlagService} from './services/feature-flag.service';
 import {OrganizationService} from './services/organization.service';
 import {ToastService} from './services/toast.service';
 import {SidebarLinksPageComponent} from './sidebar-links/sidebar-links-page.component';
-import {SubscriptionCallbackComponent} from './subscription/subscription-callback.component';
-import {SubscriptionComponent} from './subscription/subscription.component';
-import {canOpenSubscription, subscriptionGuard, subscriptionPath} from './subscription/subscription.guard';
 import {SupportBundleDetailComponent} from './support-bundles/detail/support-bundle-detail.component';
 import {SupportBundleListComponent} from './support-bundles/list/support-bundle-list.component';
 import {SupportBundleSettingsComponent} from './support-bundles/vendor/support-bundle-settings.component';
