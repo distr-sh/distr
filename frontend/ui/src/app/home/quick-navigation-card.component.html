@@ -1,0 +1,17 @@
+@if (count() > 0) {
+  <a [routerLink]="link()" [queryParams]="queryParams()" class="distr-card distr-card-clickable p-4">
+    <h2 appCardHeading [icon]="icon()" class="mb-3">{{ heading() }}</h2>
+    <span class="block text-3xl font-bold text-gray-900 dark:text-white">{{ count() }}</span>
+    <span class="distr-text-muted block text-sm">
+      <ng-content select="[attention]" />
+    </span>
+  </a>
+} @else {
+  <div class="distr-card p-4">
+    <h2 appCardHeading [icon]="icon()" class="mb-3">{{ heading() }}</h2>
+    <span class="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
+      <fa-icon [icon]="faCircleCheck" />
+      <span><ng-content select="[allGood]" /></span>
+    </span>
+  </div>
+}

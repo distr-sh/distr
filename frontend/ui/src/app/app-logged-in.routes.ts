@@ -1,5 +1,5 @@
 import {inject} from '@angular/core';
-import {CanActivateFn, RedirectFunction, Router, Routes} from '@angular/router';
+import {CanActivateFn, CanMatchFn, RedirectFunction, Router, Routes} from '@angular/router';
 import {CustomerOrganizationFeature, UserRole} from '@distr-sh/distr-sdk';
 import {combineLatest, firstValueFrom, map} from 'rxjs';
 import {getRemoteEnvironment} from '../env/remote';
@@ -19,7 +19,6 @@ import {BillingSettingsComponent} from './billing/settings/billing-settings.comp
 import {CustomerDetailPageComponent} from './components/customer-organizations/customer-detail-page.component';
 import {CustomerOrganizationsComponent} from './components/customer-organizations/customer-organizations.component';
 import {CustomerTabPlaceholderComponent} from './components/customer-organizations/customer-tab-placeholder.component';
-import {DashboardComponent} from './components/dashboard/dashboard.component';
 import {NavShellComponent} from './components/nav-shell.component';
 import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
 import {PortalUnavailableComponent} from './components/portal-unavailable/portal-unavailable.component';
@@ -30,6 +29,7 @@ import {CustomerSettingsComponent} from './customer-settings/customer-settings.c
 import {DeploymentTargetDetailComponent} from './deployments/deployment-target-details/deployment-target-detail.component';
 import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
 import {CustomerHomePageComponent} from './home/customer/customer-home-page.component';
+import {VendorHomePageComponent} from './home/vendor/vendor-home-page.component';
 import {CustomerLicenseDetailPageComponent} from './licenses/customer-license-detail-page.component';
 import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
 import {VendorLicenseDetailPageComponent} from './licenses/vendor-license-detail-page.component';
@@ -102,6 +102,11 @@ const requireVendorOrPartner: CanActivateFn = () => {
     return true;
   }
   return inject(Router).createUrlTree(['/']);
+};
+
+const matchVendorOrPartner: CanMatchFn = () => {
+  const auth = inject(AuthService);
+  return auth.isVendor() || auth.isPartner();
 };
 
 const requireVendorOrCustomer: CanActivateFn = () => {
@@ -230,9 +235,10 @@ const shellRoutes: Routes = [
     canActivateChild: [subscriptionGuard],
     children: [
       {
-        path: 'dashboard',
-        component: DashboardComponent,
-        canActivate: [requireVendorOrPartner],
+        path: 'home',
+        title: 'Home',
+        component: VendorHomePageComponent,
+        canMatch: [matchVendorOrPartner],
       },
       {
         path: 'home',
@@ -240,6 +246,7 @@ const shellRoutes: Routes = [
         component: CustomerHomePageComponent,
         canActivate: [requireCustomer],
       },
+      {path: 'dashboard', pathMatch: 'full', redirectTo: 'home'},
       {path: 'overview', pathMatch: 'full', redirectTo: 'home'},
       {
         path: 'applications',
