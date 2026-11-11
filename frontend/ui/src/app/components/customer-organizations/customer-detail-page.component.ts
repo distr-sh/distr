@@ -22,7 +22,7 @@ import {InlineEditComponent} from '../inline-edit.component';
 import {PageComponent} from '../page.component';
 import {SpinnerComponent} from '../spinner/spinner.component';
 import {TabBarComponent, TabItem} from '../tab-bar.component';
-import {CustomerDetailTab, customerDetailTabs} from './customer-detail-tabs';
+import {CustomerDetailTabId, customerDetailTabs} from './customer-detail-navigation';
 import {deleteCustomerConfirmConfig} from './delete-customer-confirm';
 
 @Component({
@@ -153,11 +153,11 @@ export class CustomerDetailPageComponent {
     }
   }
 
-  protected onTabClick(tab: TabItem<CustomerDetailTab>) {
+  protected onTabClick(tab: TabItem<CustomerDetailTabId>) {
     this.router.navigate([tab.id], {relativeTo: this.route});
   }
 
-  private tabFromRoute(): CustomerDetailTab {
+  private tabFromRoute(): CustomerDetailTabId {
     const path = this.route.snapshot.firstChild?.routeConfig?.path;
     return this.tabs.find((tab) => tab.id === path)?.id ?? 'overview';
   }

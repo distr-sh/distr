@@ -1,6 +1,6 @@
 import {Component, inject} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {customerDetailTabs} from './customer-detail-tabs';
+import {customerDetailTabs} from './customer-detail-navigation';
 
 @Component({
   template: `<p class="distr-text-muted text-sm">{{ label }}</p>`,

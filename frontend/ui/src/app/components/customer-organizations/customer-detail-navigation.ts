@@ -1,6 +1,6 @@
 import {TabItem} from '../tab-bar.component';
 
-export type CustomerDetailTab =
+export type CustomerDetailTabId =
   | 'overview'
   | 'deployments'
   | 'downloads'
@@ -11,7 +11,7 @@ export type CustomerDetailTab =
   | 'notifications'
   | 'settings';
 
-export const customerDetailTabs: readonly TabItem<CustomerDetailTab>[] = [
+export const customerDetailTabs: readonly TabItem<CustomerDetailTabId>[] = [
   {id: 'overview', label: 'Overview'},
   {id: 'deployments', label: 'Deployments'},
   {id: 'downloads', label: 'Downloads'},
