@@ -9,7 +9,7 @@ import {OrganizationService} from '../services/organization.service';
 import {Feature} from '../types/organization';
 import {UpgradePlan} from '../types/subscription';
 
-export type SettingsTabId = 'general' | 'identity-provider' | 'email' | 'subscription';
+export type SettingsTabId = 'general' | 'identity-provider' | 'email' | 'subscription' | 'billing';
 
 export interface SettingsTabContext {
   edition: Edition;
@@ -54,6 +54,7 @@ const settingsTabDefinitions: SettingsTabDefinition[] = [
     label: 'Subscription',
     visible: (c) => c.user.isAdminOrSuperAdmin && c.edition !== 'community',
   },
+  {id: 'billing', label: 'Billing', visible: (c) => c.user.isAdminOrSuperAdmin && c.features.has('vendor_billing')},
 ];
 
 export const settingsTabIds = settingsTabDefinitions.map((tab) => tab.id);

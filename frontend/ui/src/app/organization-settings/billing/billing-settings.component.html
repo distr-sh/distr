@@ -1,13 +1,19 @@
-<app-page variant="narrow">
-  <div class="distr-panel">
-    <a
-      routerLink=".."
-      class="mb-4 inline-flex items-center text-sm font-medium text-primary-700 hover:text-primary-800 dark:text-primary-500 dark:hover:text-primary-400">
-      <fa-icon [icon]="faArrowLeft" class="mr-2" />
-      Back to Billing
-    </a>
-    <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Stripe Webhook</h2>
+<div
+  class="mt-12 max-h-full w-2xl max-w-full overflow-y-auto rounded-lg bg-white p-4 shadow-sm dark:bg-gray-900"
+  animate.enter="animate-fly-in-top"
+  animate.leave="animate-fly-out-top">
+  <div class="flex items-center justify-between rounded-t border-b border-gray-200 p-4 md:p-5 dark:border-gray-600">
+    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Stripe Webhook</h2>
+    <button
+      type="button"
+      (click)="closed.emit()"
+      class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
+      <fa-icon [icon]="faXmark" />
+      <span class="sr-only">Close modal</span>
+    </button>
+  </div>
 
+  <div class="p-4 md:p-5">
     <div class="mb-6">
       <p class="mb-2 text-sm text-gray-600 dark:text-gray-400">
         Configure this webhook URL in your Stripe dashboard to trigger automatic license key generation:
@@ -40,38 +46,36 @@
       }
     </div>
 
-    @if (auth.hasRole('admin')) {
-      <form [formGroup]="webhookForm" (ngSubmit)="saveWebhookSecret()">
-        <label for="webhook-secret" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-          @if (organization()?.stripeWebhookSecretConfigured) {
-            Update webhook secret
-          } @else {
-            Set webhook secret
-          }
-        </label>
-        <div class="flex gap-3">
-          <input
-            id="webhook-secret"
-            type="password"
-            formControlName="webhookSecret"
-            name="webhookSecret"
-            autocomplete="off"
-            placeholder="whsec_&hellip;"
-            class="distr-input w-128 max-w-128" />
-          <button
-            type="submit"
-            [disabled]="webhookForm.invalid || webhookSecretLoading()"
-            class="distr-btn-primary inline-flex items-center justify-center text-white disabled:opacity-60">
-            Save
-          </button>
-        </div>
-        @if (webhookForm.controls.webhookSecret.errors?.['pattern']) {
-          <p class="mt-1 text-sm text-red-600 dark:text-red-400">Invalid webhook secret format</p>
+    <form [formGroup]="webhookForm" (ngSubmit)="saveWebhookSecret()">
+      <label for="webhook-secret" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        @if (organization()?.stripeWebhookSecretConfigured) {
+          Update webhook secret
+        } @else {
+          Set webhook secret
         }
-      </form>
-    }
+      </label>
+      <div class="flex gap-3">
+        <input
+          id="webhook-secret"
+          type="password"
+          formControlName="webhookSecret"
+          name="webhookSecret"
+          autocomplete="off"
+          placeholder="whsec_&hellip;"
+          class="distr-input" />
+        <button
+          type="submit"
+          [disabled]="webhookForm.invalid || webhookSecretLoading()"
+          class="distr-btn-primary inline-flex items-center justify-center text-white disabled:opacity-60">
+          Save
+        </button>
+      </div>
+      @if (webhookForm.controls.webhookSecret.errors?.['pattern']) {
+        <p class="mt-1 text-sm text-red-600 dark:text-red-400">Invalid webhook secret format</p>
+      }
+    </form>
 
-    @if (auth.hasRole('admin') && organization()?.stripeWebhookSecretConfigured) {
+    @if (organization()?.stripeWebhookSecretConfigured) {
       <h3 class="mt-6 mb-2 text-base font-semibold text-gray-900 dark:text-white">Danger Zone</h3>
       <div class="distr-danger-zone">
         <div class="flex items-center justify-between p-4 dark:text-white">
@@ -92,4 +96,4 @@
       </div>
     }
   </div>
-</app-page>
+</div>

@@ -1,14 +1,11 @@
-import {ChangeDetectionStrategy, Component, computed, inject, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, output, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
-import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faArrowLeft, faCheck, faCircleCheck, faCopy} from '@fortawesome/free-solid-svg-icons';
+import {faCheck, faCircleCheck, faCopy, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {ClipDirective} from '../../components/clip.component';
-import {PageComponent} from '../../components/page.component';
-import {AuthService} from '../../services/auth.service';
 import {OrganizationService} from '../../services/organization.service';
 import {OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
@@ -17,19 +14,20 @@ import {ToastService} from '../../services/toast.service';
   selector: 'app-billing-settings',
   templateUrl: './billing-settings.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [FaIconComponent, ReactiveFormsModule, ClipDirective, RouterLink, PageComponent],
+  imports: [FaIconComponent, ReactiveFormsModule, ClipDirective],
 })
 export class BillingSettingsComponent {
-  protected readonly auth = inject(AuthService);
   private readonly organizationService = inject(OrganizationService);
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder).nonNullable;
 
-  protected readonly faArrowLeft = faArrowLeft;
+  readonly closed = output<void>();
+
   protected readonly faCheck = faCheck;
   protected readonly faCircleCheck = faCircleCheck;
   protected readonly faCopy = faCopy;
+  protected readonly faXmark = faXmark;
 
   protected readonly organization = toSignal(this.organizationService.get());
   protected readonly webhookSecretLoading = signal(false);

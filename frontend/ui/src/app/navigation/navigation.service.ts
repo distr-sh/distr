@@ -89,7 +89,6 @@ export class NavigationService {
       notifications: this.isNotificationsEnabled(),
       support_bundles: this.isSupportBundlesEnabled(),
       vulnerabilities: this.featureFlags.isVulnerabilitiesEnabled(),
-      vendor_billing: this.featureFlags.isVendorBillingEnabled(),
       partner_management: this.featureFlags.isPartnerManagementEnabled(),
     })
   );
