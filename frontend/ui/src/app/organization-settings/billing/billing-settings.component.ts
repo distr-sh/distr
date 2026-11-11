@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, computed, inject, output, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -6,6 +6,7 @@ import {faCheck, faCircleCheck, faCopy, faXmark} from '@fortawesome/free-solid-s
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {ClipDirective} from '../../components/clip.component';
+import {ClosableDialog} from '../../components/confirm-dialog/closable-dialog';
 import {OrganizationService} from '../../services/organization.service';
 import {OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
@@ -16,13 +17,11 @@ import {ToastService} from '../../services/toast.service';
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FaIconComponent, ReactiveFormsModule, ClipDirective],
 })
-export class BillingSettingsComponent {
+export class BillingSettingsComponent extends ClosableDialog {
   private readonly organizationService = inject(OrganizationService);
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder).nonNullable;
-
-  readonly closed = output<void>();
 
   protected readonly faCheck = faCheck;
   protected readonly faCircleCheck = faCircleCheck;

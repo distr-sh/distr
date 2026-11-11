@@ -30,7 +30,6 @@ import {BillingSettingsComponent} from './billing-settings.component';
     NgPluralCase,
     ClickableRowDirective,
     SpinnerComponent,
-    BillingSettingsComponent,
   ],
 })
 export class BillingComponent {
@@ -58,9 +57,6 @@ export class BillingComponent {
 
   private drawerRef?: DialogRef;
   private readonly templateDrawerTemplate = viewChild.required<TemplateRef<unknown>>('templateDrawer');
-  private settingsModalRef?: DialogRef;
-  private readonly settingsModalTemplate = viewChild.required<TemplateRef<unknown>>('settingsModal');
-
   protected readonly templateForm = this.fb.group({
     name: this.fb.control('', Validators.required),
     payloadTemplate: this.fb.control('', Validators.required),
@@ -77,11 +73,7 @@ export class BillingComponent {
   }
 
   openSettingsModal() {
-    this.settingsModalRef = this.overlay.showModal(this.settingsModalTemplate());
-  }
-
-  closeSettingsModal() {
-    this.settingsModalRef?.close();
+    this.overlay.showModal(BillingSettingsComponent);
   }
 
   async openTemplateDrawer(template?: LicenseTemplate) {

@@ -369,7 +369,6 @@ const shellRoutes: Routes = [
         data: {userRole: 'vendor'},
         canActivate: [requireVendor, requiredRoleGuard('read_write', 'admin')],
       },
-      {path: 'billing', redirectTo: '/settings/organization/billing'},
       {
         path: 'licenses',
         title: 'Licenses',
