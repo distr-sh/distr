@@ -1,7 +1,7 @@
 import {inject} from '@angular/core';
-import {CanActivateFn, Router, Routes} from '@angular/router';
+import {CanActivateFn, RedirectFunction, Router, Routes} from '@angular/router';
 import {CustomerOrganizationFeature, UserRole} from '@distr-sh/distr-sdk';
-import {firstValueFrom, map, switchMap} from 'rxjs';
+import {combineLatest, firstValueFrom, map} from 'rxjs';
 import {getRemoteEnvironment} from '../env/remote';
 import {AccessTokenDetailComponent} from './access-tokens/access-token-detail.component';
 import {AccessTokensComponent} from './access-tokens/access-tokens.component';
@@ -40,6 +40,11 @@ import {OrganizationBrandingComponent} from './organization-branding/organizatio
 import {CustomEmailComponent} from './organization-settings/custom-email.component';
 import {CustomOidcComponent} from './organization-settings/custom-oidc.component';
 import {GeneralSettingsComponent} from './organization-settings/general-settings.component';
+import {
+  firstOpenableSettingsTab,
+  settingsTabGuard,
+  settingsTabTitle,
+} from './organization-settings/organization-settings-navigation';
 import {OrganizationSettingsComponent} from './organization-settings/organization-settings.component';
 import {CustomerSecretsPageComponent} from './secrets/customer-secrets-page.component';
 import {SecretsPage} from './secrets/secrets-page.component';
@@ -51,6 +56,7 @@ import {ToastService} from './services/toast.service';
 import {SidebarLinksPageComponent} from './sidebar-links/sidebar-links-page.component';
 import {SubscriptionCallbackComponent} from './subscription/subscription-callback.component';
 import {SubscriptionComponent} from './subscription/subscription.component';
+import {canOpenSubscription, subscriptionGuard, subscriptionPath} from './subscription/subscription.guard';
 import {SupportBundleDetailComponent} from './support-bundles/detail/support-bundle-detail.component';
 import {SupportBundleListComponent} from './support-bundles/list/support-bundle-list.component';
 import {SupportBundleSettingsComponent} from './support-bundles/vendor/support-bundle-settings.component';
@@ -154,19 +160,6 @@ function vendorBillingEnabledGuard(): CanActivateFn {
   };
 }
 
-// The tab holds the custom domains as well, so either feature makes it reachable.
-function customOidcProvidersEnabledGuard(): CanActivateFn {
-  return async () => {
-    const featureFlags = inject(FeatureFlagService);
-    const router = inject(Router);
-    return (
-      (await firstValueFrom(featureFlags.isCustomOidcProvidersEnabled$)) ||
-      (await firstValueFrom(featureFlags.isCustomDomainsEnabled$)) ||
-      router.createUrlTree(['/settings/organization/general'])
-    );
-  };
-}
-
 function customerSettingsEnabledGuard(): CanActivateFn {
   return async () => {
     const contextService = inject(ContextService);
@@ -186,17 +179,6 @@ function customerSettingsFeatureGuard(): CanActivateFn {
     const featureFlags = inject(FeatureFlagService);
     const router = inject(Router);
     return (await firstValueFrom(featureFlags.isCustomerSettingsEnabled$)) || router.createUrlTree(['/customers']);
-  };
-}
-
-function customEmailsEnabledGuard(): CanActivateFn {
-  return async () => {
-    const featureFlags = inject(FeatureFlagService);
-    const router = inject(Router);
-    return (
-      (await firstValueFrom(featureFlags.isCustomEmailsEnabled$)) ||
-      router.createUrlTree(['/settings/organization/general'])
-    );
   };
 }
 
@@ -227,43 +209,24 @@ function registryHostSetOrRedirectGuard(redirectTo: string): CanActivateFn {
   };
 }
 
-function subscriptionGuard(): CanActivateFn {
-  return () => {
-    const auth = inject(AuthService);
-    const router = inject(Router);
-    const organizationService = inject(OrganizationService);
-    return organizationService.get().pipe(
-      switchMap(async (org) => {
-        if (!isSubscriptionExpired(org)) {
-          return true;
-        } else if (auth.isLens()) {
-          // a lens cannot reach the subscription page, so the session has to return to the vendor portal first
-          await auth.switchContext(org.id!);
-          return false;
-        } else if (auth.isVendor()) {
-          return router.createUrlTree(['/subscription']);
-        } else {
-          return router.createUrlTree(['/unavailable']);
-        }
-      })
-    );
-  };
+// An absolute redirectTo string drops the query parameters of the original URL.
+function redirectWithQueryParams(path: string): RedirectFunction {
+  return ({queryParams}) => inject(Router).createUrlTree([path], {queryParams});
 }
 
 function portalUnavailableGuard(): CanActivateFn {
   return () => {
-    const auth = inject(AuthService);
     const router = inject(Router);
-    return inject(OrganizationService)
-      .get()
-      .pipe(map((org) => (!auth.isVendor() && isSubscriptionExpired(org)) || router.createUrlTree(['/'])));
+    return combineLatest([inject(OrganizationService).get(), canOpenSubscription()]).pipe(
+      map(([org, canOpen]) => (isSubscriptionExpired(org) && !canOpen) || router.createUrlTree(['/']))
+    );
   };
 }
 
 const shellRoutes: Routes = [
   {
     path: '',
-    canActivate: [subscriptionGuard()],
+    canActivateChild: [subscriptionGuard],
     children: [
       {
         path: 'dashboard',
@@ -444,26 +407,46 @@ const shellRoutes: Routes = [
             title: 'Organization Settings',
             component: OrganizationSettingsComponent,
             data: {userRole: 'vendor'},
-            canActivate: [requireVendor, requiredRoleGuard('admin')],
+            canActivate: [requireVendor],
             children: [
               {
                 path: '',
                 pathMatch: 'full',
-                redirectTo: 'general',
+                redirectTo: firstOpenableSettingsTab,
               },
               {
                 path: 'general',
+                title: settingsTabTitle('general'),
                 component: GeneralSettingsComponent,
+                canActivate: [settingsTabGuard('general')],
               },
               {
                 path: 'identity-provider',
+                title: settingsTabTitle('identity-provider'),
                 component: CustomOidcComponent,
-                canActivate: [customOidcProvidersEnabledGuard()],
+                canActivate: [settingsTabGuard('identity-provider')],
               },
               {
                 path: 'email',
+                title: settingsTabTitle('email'),
                 component: CustomEmailComponent,
-                canActivate: [customEmailsEnabledGuard()],
+                canActivate: [settingsTabGuard('email')],
+              },
+              {
+                path: 'subscription',
+                title: settingsTabTitle('subscription'),
+                canActivate: [settingsTabGuard('subscription')],
+                children: [
+                  {
+                    path: '',
+                    pathMatch: 'full',
+                    component: SubscriptionComponent,
+                  },
+                  {
+                    path: 'callback',
+                    component: SubscriptionCallbackComponent,
+                  },
+                ],
               },
             ],
           },
@@ -620,19 +603,18 @@ const shellRoutes: Routes = [
       },
     ],
   },
+  // Older Stripe sessions and bookmarks still lead here.
   {
     path: 'subscription',
-    title: 'Subscription',
-    canActivate: [requireVendor],
     children: [
       {
         path: '',
         pathMatch: 'full',
-        component: SubscriptionComponent,
+        redirectTo: redirectWithQueryParams(subscriptionPath),
       },
       {
         path: 'callback',
-        component: SubscriptionCallbackComponent,
+        redirectTo: redirectWithQueryParams(`${subscriptionPath}/callback`),
       },
     ],
   },
