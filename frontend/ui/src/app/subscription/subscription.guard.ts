@@ -23,12 +23,14 @@ export const subscriptionGuard: CanActivateChildFn = (_, state) => {
     .get()
     .pipe(
       switchMap(async (org) => {
-        if (!isSubscriptionExpired(org) || state.url.startsWith(subscriptionPath)) {
+        if (!isSubscriptionExpired(org)) {
           return true;
         } else if (auth.isLens()) {
           // a lens cannot reach the subscription page, so the session has to return to the vendor portal first
           await auth.switchContext(org.id!);
           return false;
+        } else if (state.url.startsWith(subscriptionPath)) {
+          return true;
         } else if (await firstValueFrom(canOpenSubscription$)) {
           return router.createUrlTree([subscriptionPath]);
         } else {

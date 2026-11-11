@@ -9,7 +9,8 @@ import {Organization} from '../types/organization';
 import {subscriptionGuard} from './subscription.guard';
 
 describe('subscriptionGuard', () => {
-  function setup(role: UserRole, subscriptionEndsAt: dayjs.Dayjs) {
+  function setup(role: UserRole, subscriptionEndsAt: dayjs.Dayjs, isLens = false) {
+    const switchContext = vi.fn(async () => undefined);
     const organization: Pick<Organization, 'id' | 'subscriptionType' | 'subscriptionEndsAt' | 'features'> = {
       id: 'org',
       subscriptionType: 'pro',
@@ -22,15 +23,17 @@ describe('subscriptionGuard', () => {
         {
           provide: AuthService,
           useValue: {
-            isLens: () => false,
-            isVendor: () => true,
+            isLens: () => isLens,
+            isVendor: () => !isLens,
             isSuperAdmin: () => false,
             hasRole: (r: UserRole) => r === role,
+            switchContext,
           },
         },
         {provide: OrganizationService, useValue: {get: () => of(organization as Organization)}},
       ],
     });
+    return {switchContext};
   }
 
   async function navigate(url: string): Promise<string | boolean> {
@@ -57,6 +60,12 @@ describe('subscriptionGuard', () => {
   it('sends a non-admin of an expired organization to the unavailable page', async () => {
     setup('read_write', dayjs().subtract(1, 'day'));
     expect(await navigate('/deployments')).toBe('/unavailable');
+  });
+
+  it('returns an expired lens session to the vendor portal, even on the subscription tab', async () => {
+    const {switchContext} = setup('admin', dayjs().subtract(1, 'day'), true);
+    expect(await navigate('/settings/organization/subscription')).toBe(false);
+    expect(switchContext).toHaveBeenCalledWith('org');
   });
 
   it('lets everyone through while the subscription is active', async () => {
