@@ -60,6 +60,19 @@ func SortTaggedArtifactVersions(strategy VersioningStrategy, versions []TaggedAr
 	})
 }
 
+// sortArtifactTags orders release tags the way CompareArtifactTags does, newest first, parsing every name only once.
+func sortArtifactTags(strategy VersioningStrategy, tags []ArtifactVersion) {
+	parsed := make(map[uuid.UUID]*semver.Version, len(tags))
+	if strategy == VersioningStrategySemver {
+		for _, tag := range tags {
+			parsed[tag.ID], _ = parseSemver(tag.Name)
+		}
+	}
+	slices.SortStableFunc(tags, func(a, b ArtifactVersion) int {
+		return cmp.Or(compareSemver(parsed[b.ID], parsed[a.ID]), b.CreatedAt.Compare(a.CreatedAt))
+	})
+}
+
 // CompareArtifactTags orders two release tags of an artifact by the strategy. Under semver, a tag that is not a SemVer
 // version sorts before every SemVer one. The creation date decides where the strategy does not.
 func CompareArtifactTags(strategy VersioningStrategy, a, b ArtifactVersion) int {

@@ -347,53 +347,22 @@ AND EXISTS (
 	AND ` + artifactVersionIsTagExpr("avt") + `
 )`
 
-// ListArtifactReleaseVersions returns the tagged versions of the artifacts with their tag names and whether
-// they are signatures. With licensing, only those the customer organization may pull.
-func ListArtifactReleaseVersions(
-	ctx context.Context,
-	artifactIDs []uuid.UUID,
-	customerOrgID uuid.UUID,
-	licensing bool,
-) ([]types.ArtifactReleaseVersion, error) {
+// ListArtifactReleaseTags returns every release tag of the artifacts, whoever may pull it.
+func ListArtifactReleaseTags(ctx context.Context, artifactIDs []uuid.UUID) ([]types.ArtifactVersion, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `
-		SELECT
-			av.artifact_id,
-			av.id,
-			av.created_at,
-			coalesce((
-				SELECT array_agg(avt.name ORDER BY avt.name)
-				FROM ArtifactVersion avt
-				WHERE avt.manifest_blob_digest = av.manifest_blob_digest
-					AND avt.artifact_id = av.artifact_id
-					AND `+artifactVersionIsTagExpr("avt")+`
-			), ARRAY[]::TEXT[]) AS tag_names,
-			EXISTS (
-				SELECT 1
-				FROM ArtifactVersionPart avp
-					JOIN ArtifactVersion av1 ON av1.manifest_blob_digest = avp.artifact_blob_digest
-				WHERE avp.artifact_version_id = av.id
-					AND convert_from(av1.manifest_data, 'UTF8')::jsonb ->> 'artifactType' = @signatureArtifactType
-			) AS signature
-		FROM ArtifactVersion av
-			JOIN Artifact a ON a.id = av.artifact_id
-		WHERE av.artifact_id = any(@artifactIds)
-			AND `+artifactVersionIsDigestExpr("av")+`
-			AND `+artifactVersionVisibleExpr+`
-		ORDER BY av.created_at DESC`,
-		pgx.NamedArgs{
-			"artifactIds":           artifactIDs,
-			"customerOrgId":         customerOrgID,
-			"isVendorUser":          !licensing,
-			"signatureArtifactType": types.SignatureArtifactType,
-		},
+		SELECT v.id, v.created_at, v.name, v.manifest_blob_digest, v.artifact_id
+		FROM ArtifactVersion v
+		WHERE v.artifact_id = any(@artifactIds)
+			AND `+versionIsReleaseTagExpr,
+		pgx.NamedArgs{"artifactIds": artifactIDs},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query artifact release versions: %w", err)
+		return nil, fmt.Errorf("failed to query artifact release tags: %w", err)
 	}
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ArtifactReleaseVersion])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[types.ArtifactVersion])
 	if err != nil {
-		return nil, fmt.Errorf("failed to collect artifact release versions: %w", err)
+		return nil, fmt.Errorf("failed to collect artifact release tags: %w", err)
 	}
 	return result, nil
 }
@@ -1283,6 +1252,49 @@ func GetLatestArtifactPullsOfCustomerOrganization(
 		return nil, fmt.Errorf("failed to query latest artifact pulls: %w", err)
 	}
 	result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.ArtifactVersionPull])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect latest artifact pulls: %w", err)
+	}
+	return result, nil
+}
+
+// GetLatestArtifactPullsOfCustomerOrganizations returns, by the rules of
+// GetLatestArtifactPullsOfCustomerOrganization, the most recent pull of a release tag of each artifact of the
+// organization for each of the customer organizations.
+func GetLatestArtifactPullsOfCustomerOrganizations(
+	ctx context.Context,
+	orgID uuid.UUID,
+	customerOrgIDs []uuid.UUID,
+) ([]types.CustomerArtifactPull, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx, `
+		WITH customer_pull AS (
+			SELECT avpl.customer_organization_id, avpl.artifact_version_id, avpl.created_at
+			FROM ArtifactVersionPull avpl
+			WHERE avpl.customer_organization_id = any(@customerOrganizationIds)
+			UNION ALL
+			SELECT oua.customer_organization_id, avpl.artifact_version_id, avpl.created_at
+			FROM Organization_UserAccount oua
+				JOIN ArtifactVersionPull avpl
+					ON avpl.useraccount_id = oua.user_account_id AND avpl.customer_organization_id IS NULL
+			WHERE oua.customer_organization_id = any(@customerOrganizationIds)
+		)
+		SELECT DISTINCT ON (cp.customer_organization_id, v.artifact_id)
+			cp.customer_organization_id,
+			(`+artifactRowOutputExpr+`),
+			(`+artifactVersionOutputExpr+`)
+		FROM customer_pull cp
+			JOIN ArtifactVersion v ON v.id = cp.artifact_version_id
+			JOIN Artifact a ON a.id = v.artifact_id
+		WHERE a.organization_id = @orgId
+			AND `+versionIsReleaseTagExpr+`
+		ORDER BY cp.customer_organization_id, v.artifact_id, cp.created_at DESC`,
+		pgx.NamedArgs{"orgId": orgID, "customerOrganizationIds": customerOrgIDs},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query latest artifact pulls: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.CustomerArtifactPull])
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect latest artifact pulls: %w", err)
 	}

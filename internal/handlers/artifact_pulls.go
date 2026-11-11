@@ -45,6 +45,11 @@ func ArtifactPullsRouter(r chiopenapi.Router) {
 			DeploymentTargetID     *string    `query:"deploymentTargetId"`
 		}{})).
 		With(option.Response(http.StatusOK, []api.ArtifactVersionPullResponse{}))
+	r.Get("/latest", respond.Handler(getLatestArtifactPullsHandler)).
+		With(option.Description("List the release tag of each artifact that each customer organization pulled last, " +
+			"with the newer one it may pull")).
+		With(option.Request(customerScopeQuery{})).
+		With(option.Response(http.StatusOK, []api.LatestArtifactPullResponse{}))
 	r.Get("/filter-options", respond.Handler(getArtifactPullFilterOptionsHandler)).
 		With(option.Description("Get available filter options for artifact pulls")).
 		With(option.Response(http.StatusOK, api.ArtifactVersionPullFilterOptions{}))
@@ -172,6 +177,44 @@ func getArtifactPullsHandler(r *http.Request) (respond.Responder, error) {
 	} else {
 		return respond.JSON(mapping.List(pulls, mapping.ArtifactVersionPullToAPI)), nil
 	}
+}
+
+func getLatestArtifactPullsHandler(r *http.Request) (respond.Responder, error) {
+	if customerOrgIDs, resp, err := latestArtifactPullsScope(r); resp != nil || err != nil {
+		return resp, err
+	} else if updates, err := customerArtifactUpdates(r.Context(), customerOrgIDs); err != nil {
+		return nil, err
+	} else {
+		return respond.JSON(mapping.List(updates, mapping.LatestArtifactPullToAPI)), nil
+	}
+}
+
+// latestArtifactPullsScope returns the customer organization named by the query, or without one every customer
+// organization the caller manages.
+func latestArtifactPullsScope(r *http.Request) ([]uuid.UUID, respond.Responder, error) {
+	ctx := r.Context()
+	authInfo := auth.Authentication.Require(ctx)
+	var customers []types.CustomerOrganizationWithUsage
+	var err error
+	if r.URL.Query().Get("customerOrganizationId") != "" {
+		if customerOrgID, resp, err := customerScopeFromQuery(r); resp != nil || err != nil {
+			return nil, resp, err
+		} else {
+			return []uuid.UUID{*customerOrgID}, nil, nil
+		}
+	} else if partnerOrgID := authInfo.CurrentPartnerOrgID(); partnerOrgID != nil {
+		customers, err = db.GetCustomerOrganizationsByPartnerOrgID(ctx, *partnerOrgID)
+	} else {
+		customers, err = db.GetCustomerOrganizationsByOrganizationID(ctx, *authInfo.CurrentOrgID())
+	}
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get customers: %w", err)
+	}
+	customerOrgIDs := make([]uuid.UUID, len(customers))
+	for i, customer := range customers {
+		customerOrgIDs[i] = customer.ID
+	}
+	return customerOrgIDs, nil, nil
 }
 
 func getArtifactPullFilterOptionsHandler(r *http.Request) (respond.Responder, error) {

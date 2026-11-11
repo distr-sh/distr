@@ -464,3 +464,58 @@ func GetArtifactVersionEntitlement(
 
 	return result, nil
 }
+
+// GetArtifactTagVisibility returns which versions of the organization's artifacts the customer organizations may
+// pull, by the rules of GetArtifactVersionEntitlement. An entitlement for a version covers every version with the
+// same content and every manifest that is part of it.
+func GetArtifactTagVisibility(
+	ctx context.Context,
+	orgID uuid.UUID,
+	customerOrgIDs []uuid.UUID,
+) (types.ArtifactTagVisibility, error) {
+	db := internalctx.GetDb(ctx)
+
+	gatedRows, err := db.Query(ctx,
+		`SELECT EXISTS (SELECT 1 FROM ArtifactEntitlement WHERE organization_id = @orgId)`,
+		pgx.NamedArgs{"orgId": orgID},
+	)
+	if err != nil {
+		return types.ArtifactTagVisibility{}, fmt.Errorf("failed to query artifact entitlement existence: %w", err)
+	}
+	gated, err := pgx.CollectExactlyOneRow(gatedRows, pgx.RowTo[bool])
+	if err != nil {
+		return types.ArtifactTagVisibility{}, fmt.Errorf("failed to collect artifact entitlement existence: %w", err)
+	} else if !gated {
+		return types.NewArtifactTagVisibility(false, nil), nil
+	}
+
+	rows, err := db.Query(ctx, `
+		WITH RECURSIVE entitled (customer_organization_id, artifact_id, manifest_blob_digest) AS (
+			SELECT ae.customer_organization_id, aea.artifact_id, av.manifest_blob_digest
+			FROM ArtifactEntitlement ae
+				JOIN ArtifactEntitlement_Artifact aea ON aea.artifact_entitlement_id = ae.id
+				LEFT JOIN ArtifactVersion av ON av.id = aea.artifact_version_id
+			WHERE ae.organization_id = @orgId
+				AND ae.customer_organization_id = any(@customerOrganizationIds)
+				AND (ae.expires_at IS NULL OR ae.expires_at > now())
+
+			UNION
+
+			SELECT e.customer_organization_id, e.artifact_id, avp.artifact_blob_digest
+			FROM entitled e
+				JOIN ArtifactVersion av
+					ON av.artifact_id = e.artifact_id AND av.manifest_blob_digest = e.manifest_blob_digest
+				JOIN ArtifactVersionPart avp ON avp.artifact_version_id = av.id
+		)
+		SELECT customer_organization_id, artifact_id, manifest_blob_digest FROM entitled`,
+		pgx.NamedArgs{"orgId": orgID, "customerOrganizationIds": customerOrgIDs},
+	)
+	if err != nil {
+		return types.ArtifactTagVisibility{}, fmt.Errorf("failed to query artifact entitlement grants: %w", err)
+	}
+	grants, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ArtifactEntitlementGrant])
+	if err != nil {
+		return types.ArtifactTagVisibility{}, fmt.Errorf("failed to collect artifact entitlement grants: %w", err)
+	}
+	return types.NewArtifactTagVisibility(true, grants), nil
+}
