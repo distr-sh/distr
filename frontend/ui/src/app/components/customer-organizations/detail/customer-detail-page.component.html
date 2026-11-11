@@ -52,11 +52,10 @@
       </div>
     </div>
 
-    <div class="distr-panel pt-0">
-      <app-tab-bar [tabs]="tabs" [active]="activeTab()" (tabClick)="onTabClick($event)" />
-      <div role="tabpanel" class="pt-6" [id]="'tabpanel-' + activeTab()" [attr.aria-labelledby]="'tab-' + activeTab()">
-        <router-outlet />
-      </div>
+    <app-tab-bar class="mb-6 block" [tabs]="tabs" [active]="activeTab()" (tabClick)="onTabClick($event)" />
+
+    <div role="tabpanel" [id]="'tabpanel-' + activeTab()" [attr.aria-labelledby]="'tab-' + activeTab()">
+      <router-outlet />
     </div>
   } @else {
     <app-alert type="error">This customer does not exist.</app-alert>
