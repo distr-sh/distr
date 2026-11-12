@@ -42,7 +42,7 @@ export const partnerNavigation: NavigationDefinition = [
       },
       {
         id: 'advisories',
-        label: 'Security Advisories',
+        label: 'Security',
         icon: faShieldHalved,
         route: '/advisories',
         visible: (c) => c.features.has('vulnerabilities'),

@@ -83,7 +83,7 @@ export const vendorNavigation: NavigationDefinition = [
       },
       {
         id: 'advisories',
-        label: 'Security Advisories',
+        label: 'Security',
         icon: faShieldHalved,
         route: '/advisories',
         locked: {plan: 'business', when: (c) => !c.features.has('vulnerabilities')},
