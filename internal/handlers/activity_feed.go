@@ -172,9 +172,9 @@ func artifactActivity(ctx context.Context, scope activityScope, since time.Time)
 	for i, artifact := range artifacts {
 		artifactIDs[i] = artifact.ID
 	}
-	tags, err := db.GetRecentArtifactTags(
+	tags, err := db.GetArtifactTagEvents(
 		ctx, artifactIDs, scope.customerOrgID(), auth.CurrentOrg().HasFeature(types.FeatureLicensing),
-		since, activityfeed.Limit,
+		scope.viewer, since, activityfeed.Limit,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get artifact tags: %w", err)

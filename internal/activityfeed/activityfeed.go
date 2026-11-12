@@ -100,7 +100,7 @@ func ApplicationVersions(versions []types.ApplicationVersionEvent) []Entry {
 }
 
 // ArtifactTags returns an entry for every tag, which has to belong to one of the artifacts.
-func ArtifactTags(artifacts []types.ArtifactWithDownloads, tags []types.ArtifactVersion) []Entry {
+func ArtifactTags(artifacts []types.ArtifactWithDownloads, tags []types.ArtifactTagEvent) []Entry {
 	names := make(map[uuid.UUID]string, len(artifacts))
 	for _, artifact := range artifacts {
 		names[artifact.ID] = artifact.Name
@@ -114,6 +114,7 @@ func ArtifactTags(artifacts []types.ArtifactWithDownloads, tags []types.Artifact
 			ResourceID: tag.ArtifactID,
 			Subject:    names[tag.ArtifactID],
 			Detail:     new(tag.Name),
+			User:       newUser(tag.CreatedByName, tag.CreatedByImageID),
 		}
 	}
 	return result

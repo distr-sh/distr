@@ -383,43 +383,52 @@ func ListArtifactReleaseTags(ctx context.Context, artifactIDs []uuid.UUID) ([]ty
 	return result, nil
 }
 
-// GetRecentArtifactTags returns the newest release tags of the artifacts created since, at most limit of them.
+// GetArtifactTagEvents returns the newest release tags of the artifacts created since, at most limit of them.
 // With a customer organization and licensing, only those the customer organization may pull.
-func GetRecentArtifactTags(
+func GetArtifactTagEvents(
 	ctx context.Context,
 	artifactIDs []uuid.UUID,
 	customerOrgID *uuid.UUID,
 	licensing bool,
+	viewer types.ActivityViewer,
 	since time.Time,
 	limit int,
-) ([]types.ArtifactVersion, error) {
+) ([]types.ArtifactTagEvent, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `
-		SELECT `+artifactVersionOutputExpr+`
+		SELECT
+			v.id,
+			v.created_at,
+			v.artifact_id,
+			v.name,
+			`+activityUserExpr("name", "NULL")+` AS created_by_name,
+			`+activityUserExpr("image_id", "NULL")+` AS created_by_image_id
 		FROM ArtifactVersion v
 			JOIN Artifact a ON a.id = v.artifact_id
 			JOIN ArtifactVersion av
 				ON av.artifact_id = v.artifact_id
 					AND av.manifest_blob_digest = v.manifest_blob_digest
 					AND `+artifactVersionIsDigestExpr("av")+`
+			LEFT JOIN UserAccount u ON u.id = v.created_by_useraccount_id
+			LEFT JOIN Organization_UserAccount j ON j.user_account_id = u.id AND j.organization_id = a.organization_id
 		WHERE v.artifact_id = any(@artifactIds)
 			AND v.created_at > @since
 			AND `+versionIsReleaseTagExpr+`
 			AND `+artifactVersionVisibleExpr+`
 		ORDER BY v.created_at DESC
 		LIMIT @limit`,
-		pgx.NamedArgs{
+		activityViewerArgs(viewer, pgx.NamedArgs{
 			"artifactIds":   artifactIDs,
 			"customerOrgId": customerOrgID,
 			"isVendorUser":  customerOrgID == nil || !licensing,
 			"since":         since,
 			"limit":         limit,
-		},
+		}),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query artifact tags: %w", err)
 	}
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ArtifactVersion])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ArtifactTagEvent])
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect artifact tags: %w", err)
 	}
