@@ -626,6 +626,11 @@ rustfs:
       # -- Object storage secret key. Change this for any real deployment, and keep it in sync as
       # described above.
       secret_key: 'distr123'
+  config:
+    rustfs:
+      # -- Region of the object storage. Must match `REGISTRY_S3_REGION` and
+      # `loki.loki.storage.s3.region`, since RustFS rejects creating a bucket in another region.
+      region: local
   mode:
     standalone:
       # -- Run RustFS as a single instance.

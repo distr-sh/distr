@@ -831,6 +831,20 @@
     "rustfs": {
       "type": "object",
       "properties": {
+        "config": {
+          "type": "object",
+          "properties": {
+            "rustfs": {
+              "type": "object",
+              "properties": {
+                "region": {
+                  "description": "Region of the object storage. Must match `REGISTRY_S3_REGION` and `loki.loki.storage.s3.region`, since RustFS rejects creating a bucket in another region.",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
         "enabled": {
           "description": "Deploy the bundled RustFS object storage, used by the OCI registry and by Loki. When disabled, provide external object storage for both (see `loki.loki.storage.s3`), otherwise they cannot persist data.",
           "type": "boolean"
