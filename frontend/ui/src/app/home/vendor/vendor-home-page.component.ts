@@ -67,6 +67,16 @@ function licensesCardType(licenses: VendorHomeLicenses): QuickNavigationCardType
   }
 }
 
+function supportCardType(open: number, isConfigured: boolean): QuickNavigationCardType {
+  if (open > 0) {
+    return 'warning';
+  } else if (isConfigured) {
+    return 'success';
+  } else {
+    return 'neutral';
+  }
+}
+
 @Component({
   selector: 'app-vendor-home-page',
   templateUrl: './vendor-home-page.component.html',
@@ -86,6 +96,7 @@ export class VendorHomePageComponent {
   private readonly supportBundlesService = inject(SupportBundlesService);
 
   protected readonly isVendor = this.auth.isVendor();
+  protected readonly canConfigureSupport = this.isVendor && this.auth.hasAnyRole('read_write', 'admin');
 
   protected readonly faAddressBook = faAddressBook;
   protected readonly faBoxesStacked = faBoxesStacked;
@@ -145,10 +156,16 @@ export class VendorHomePageComponent {
   });
 
   /** `null` while the organization's plan has no support bundles. */
-  protected readonly openSupportBundles = toSignal(
+  private readonly supportState = toSignal(
     this.featureFlags.isSupportBundlesEnabled$.pipe(
       switchMap((enabled) =>
-        enabled ? this.supportBundlesService.list().pipe(map((bundles) => countOpenSupportBundles(bundles))) : of(null)
+        enabled
+          ? combineLatest([
+              this.supportBundlesService.list(),
+              // Partners cannot read the configuration, and the support page shows them no banner about it either.
+              this.isVendor ? this.supportBundlesService.hasConfiguration() : of(true),
+            ]).pipe(map(([bundles, isConfigured]) => ({open: countOpenSupportBundles(bundles), isConfigured})))
+          : of(null)
       )
     )
   );
@@ -171,6 +188,20 @@ export class VendorHomePageComponent {
     }
     const updates = toVendorHomeUpdates(customers, targets, applications, entitlements, pulls);
     return {...updates, type: updatesCardType(updates)};
+  });
+
+  protected readonly supportCard = computed(() => {
+    const state = this.supportState();
+    if (state === undefined || state === null) {
+      return state;
+    }
+    const {open, isConfigured} = state;
+    const shouldConfigure = open === 0 && !isConfigured && this.canConfigureSupport;
+    return {
+      open,
+      type: supportCardType(open, isConfigured),
+      link: shouldConfigure ? '/support/settings' : '/support',
+    };
   });
 
   protected readonly counts = computed(() => {

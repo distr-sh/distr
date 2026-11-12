@@ -162,33 +162,46 @@
       } @else {
         <app-quick-navigation-card class="min-h-32" [icon]="faKey" heading="Licenses" />
       }
-      @let support = openSupportBundles();
+      @let support = supportCard();
       @if (support === null) {
         @if (isVendor) {
           <app-quick-navigation-card class="min-h-32" [icon]="faLifeRing" heading="Support" lockedPlan="pro">
             <span subtitle>Upgrade to receive support requests from your customers</span>
           </app-quick-navigation-card>
         }
-      } @else if (support !== undefined) {
+      } @else if (support) {
         <app-quick-navigation-card
           class="min-h-32"
           [icon]="faLifeRing"
           heading="Support"
-          [type]="support > 0 ? 'warning' : 'success'"
-          link="/support">
-          @if (support > 0) {
-            {{ support }} open
-          } @else {
-            All good
+          [type]="support.type"
+          [link]="support.link">
+          @switch (support.type) {
+            @case ('warning') {
+              {{ support.open }} open
+            }
+            @case ('success') {
+              All good
+            }
           }
           <span subtitle>
-            @if (support > 0) {
-              <ng-container [ngPlural]="support">
-                <ng-template ngPluralCase="=1">Support request awaiting resolution</ng-template>
-                <ng-template ngPluralCase="other">Support requests awaiting resolution</ng-template>
-              </ng-container>
-            } @else {
-              No open support requests
+            @switch (support.type) {
+              @case ('warning') {
+                <ng-container [ngPlural]="support.open">
+                  <ng-template ngPluralCase="=1">Support request awaiting resolution</ng-template>
+                  <ng-template ngPluralCase="other">Support requests awaiting resolution</ng-template>
+                </ng-container>
+              }
+              @case ('success') {
+                No open support requests
+              }
+              @default {
+                @if (canConfigureSupport) {
+                  No open support requests. Configure what support bundles collect.
+                } @else {
+                  No open support requests
+                }
+              }
             }
           </span>
         </app-quick-navigation-card>
