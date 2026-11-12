@@ -85,9 +85,46 @@
       } @else {
         <app-quick-navigation-card class="min-h-32" [icon]="faBoxesStacked" heading="Deployment health" />
       }
-      <div class="distr-card min-h-32 p-4">
-        <h2 appCardHeading [icon]="faCircleArrowUp">Updates</h2>
-      </div>
+      @if (updates(); as updates) {
+        <app-quick-navigation-card
+          class="min-h-32"
+          [icon]="faCircleArrowUp"
+          heading="Updates"
+          [type]="updates.type"
+          link="/customers">
+          @switch (updates.type) {
+            @case ('warning') {
+              {{ updates.outdatedCustomers }} outdated
+            }
+            @case ('success') {
+              All up to date
+            }
+          }
+          <span subtitle>
+            @switch (updates.type) {
+              @case ('warning') {
+                @if (updates.outdatedDeployments > 0) {
+                  of {{ updates.totalCustomers }} total, affecting
+                  <ng-container [ngPlural]="updates.outdatedDeployments">
+                    <ng-template ngPluralCase="=1">1 deployment</ng-template>
+                    <ng-template ngPluralCase="other">{{ updates.outdatedDeployments }} deployments</ng-template>
+                  </ng-container>
+                } @else {
+                  of {{ updates.totalCustomers }} total
+                }
+              }
+              @case ('success') {
+                No customer is behind on updates
+              }
+              @default {
+                No customers yet
+              }
+            }
+          </span>
+        </app-quick-navigation-card>
+      } @else {
+        <app-quick-navigation-card class="min-h-32" [icon]="faCircleArrowUp" heading="Updates" />
+      }
       <div class="distr-card min-h-32 p-4">
         <h2 appCardHeading [icon]="faKey">Licenses</h2>
       </div>

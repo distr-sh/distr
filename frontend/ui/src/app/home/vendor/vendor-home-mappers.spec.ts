@@ -1,4 +1,6 @@
 import {
+  Application,
+  ApplicationVersion,
   CustomerOrganization,
   DeploymentRevisionStatus,
   DeploymentStatusType,
@@ -6,7 +8,8 @@ import {
   DeploymentWithLatestRevision,
 } from '@distr-sh/distr-sdk';
 import dayjs from 'dayjs';
-import {toVendorHomeCustomers, toVendorHomeDeploymentHealth} from './vendor-home-mappers';
+import {LatestArtifactPull} from '../../types/artifact-version-pull';
+import {toVendorHomeCustomers, toVendorHomeDeploymentHealth, toVendorHomeUpdates} from './vendor-home-mappers';
 
 const fresh = () => dayjs().toISOString();
 const old = () => dayjs().subtract(1, 'hour').toISOString();
@@ -76,6 +79,48 @@ describe('toVendorHomeDeploymentHealth', () => {
       error: 0,
       stale: 0,
     });
+  });
+});
+
+const version = (id: string, createdAt: string): ApplicationVersion => ({id, name: id, createdAt});
+
+const application: Application = {
+  id: 'app',
+  name: 'app',
+  type: 'docker',
+  versioningStrategy: 'semver',
+  versions: [version('1.0.0', '2026-01-01T00:00:00Z'), version('2.0.0', '2026-02-01T00:00:00Z')],
+};
+
+const deploymentOf = (versionId: string): DeploymentWithLatestRevision => ({
+  ...deployment(status('healthy')),
+  application,
+  applicationVersionId: versionId,
+});
+
+const pull = (customerOrganizationId: string, availableUpdate?: string): LatestArtifactPull => ({
+  customerOrganizationId,
+  artifactId: 'artifact',
+  artifactName: 'artifact',
+  versionName: '1.0.0',
+  availableUpdate,
+});
+
+describe('toVendorHomeUpdates', () => {
+  it('should judge a customer by its deployments and fall back to its artifact pulls without any', () => {
+    const [current, outdated, pulledOutdated, pulledCurrent, idle] = ['a', 'b', 'c', 'd', 'e'].map(customer);
+    const targets = [
+      target([deploymentOf('2.0.0')], current),
+      target([], current),
+      target([deploymentOf('1.0.0'), deploymentOf('2.0.0')], outdated),
+      target([deploymentOf('1.0.0')], outdated),
+      target([], pulledOutdated),
+      target([deploymentOf('1.0.0')]),
+    ];
+    const pulls = [pull('a', '2.0.0'), pull('c', '2.0.0'), pull('d')];
+    expect(
+      toVendorHomeUpdates([current, outdated, pulledOutdated, pulledCurrent, idle], targets, [application], [], pulls)
+    ).toEqual({totalCustomers: 5, outdatedCustomers: 2, outdatedDeployments: 2});
   });
 });
 

@@ -1,5 +1,12 @@
-import {AdvisoryApplicationVersion, VersioningStrategy} from '@distr-sh/distr-sdk';
-import {sortAdvisoryApplicationVersions} from './versions';
+import {
+  AdvisoryApplicationVersion,
+  Application,
+  ApplicationVersion,
+  DeploymentWithLatestRevision,
+  VersioningStrategy,
+} from '@distr-sh/distr-sdk';
+import {ApplicationEntitlement} from '../app/types/application-entitlement';
+import {isDeploymentOutdated, sortAdvisoryApplicationVersions} from './versions';
 
 let nextVersionId = 0;
 
@@ -72,5 +79,91 @@ describe('sortAdvisoryApplicationVersions', () => {
     ];
 
     expect(advisoryNames(sortAdvisoryApplicationVersions(versions))).toEqual(['App 01.0.0', 'App 2.0.0']);
+  });
+});
+
+describe('isDeploymentOutdated', () => {
+  const version = (id: string, createdAt: string, archivedAt?: string): ApplicationVersion => ({
+    id,
+    name: id,
+    createdAt,
+    archivedAt,
+  });
+
+  const application: Application = {
+    id: 'app',
+    name: 'app',
+    type: 'docker',
+    versioningStrategy: 'semver',
+    versions: [
+      version('1.0.0', '2026-01-01T00:00:00Z'),
+      version('1.1.0', '2026-03-01T00:00:00Z'),
+      // Released after 2.0.0, which semver has to rank below it nonetheless.
+      version('1.2.0', '2026-05-01T00:00:00Z'),
+      version('2.0.0', '2026-04-01T00:00:00Z'),
+      version('3.0.0', '2026-06-01T00:00:00Z', '2026-07-01T00:00:00Z'),
+    ],
+  };
+
+  const deployment = (
+    versionId: string,
+    options: {currentVersionId?: string; entitlementId?: string} = {}
+  ): DeploymentWithLatestRevision => ({
+    deploymentTargetId: 'target',
+    application: {id: 'app', name: 'app', type: 'docker'},
+    applicationId: 'app',
+    applicationName: 'app',
+    applicationVersionId: versionId,
+    applicationVersionName: versionId,
+    applicationLink: '',
+    currentApplicationVersionId: options.currentVersionId,
+    applicationEntitlementId: options.entitlementId,
+  });
+
+  const entitlement = (id: string, versionIds: string[], expiresAt?: Date): ApplicationEntitlement => ({
+    id,
+    name: id,
+    expiresAt,
+    versions: application.versions!.filter((it) => versionIds.includes(it.id!)),
+  });
+
+  const outdated = (
+    d: DeploymentWithLatestRevision,
+    entitlements: ApplicationEntitlement[] = [],
+    applications = [application]
+  ) => isDeploymentOutdated(d, applications, entitlements);
+
+  it('should compare by the versioning strategy and ignore archived versions', () => {
+    expect(outdated(deployment('1.2.0'))).toBe(true);
+    expect(outdated(deployment('2.0.0'))).toBe(false);
+  });
+
+  it('should order by creation date for a chronological application', () => {
+    const chronological = {...application, versioningStrategy: 'chronological' as const};
+    expect(outdated(deployment('2.0.0'), [], [chronological])).toBe(true);
+    expect(outdated(deployment('1.2.0'), [], [chronological])).toBe(false);
+  });
+
+  it('should judge the version the deployment runs rather than the one being rolled out', () => {
+    expect(outdated(deployment('2.0.0', {currentVersionId: '1.0.0'}))).toBe(true);
+    expect(outdated(deployment('1.0.0', {currentVersionId: '2.0.0'}))).toBe(false);
+  });
+
+  it('should compare against the newest version of the entitlement only', () => {
+    const entitlements = [entitlement('limited', ['1.0.0', '1.1.0']), entitlement('expired', ['2.0.0'], new Date(0))];
+    expect(outdated(deployment('1.0.0', {entitlementId: 'limited'}), entitlements)).toBe(true);
+    expect(outdated(deployment('1.1.0', {entitlementId: 'limited'}), entitlements)).toBe(false);
+    expect(outdated(deployment('2.0.0', {entitlementId: 'limited'}), entitlements)).toBe(false);
+    expect(outdated(deployment('1.0.0', {entitlementId: 'expired'}), entitlements)).toBe(false);
+  });
+
+  it('should count a version the caller does not see as outdated unless it is the newest', () => {
+    const customerView = {
+      ...application,
+      versions: application.versions!.filter((it) => it.id !== '1.0.0' && it.id !== '2.0.0'),
+    };
+    const entitlements = [entitlement('limited', ['1.1.0', '2.0.0'])];
+    expect(outdated(deployment('1.0.0'), [], [customerView])).toBe(true);
+    expect(outdated(deployment('2.0.0', {entitlementId: 'limited'}), entitlements, [customerView])).toBe(false);
   });
 });
