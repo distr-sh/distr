@@ -9,7 +9,7 @@ import {ApplicationEntitlement} from '../../types/application-entitlement';
 import {LatestArtifactPull} from '../../types/artifact-version-pull';
 import {License} from '../../types/license';
 import {SupportBundle, SupportBundleStatus} from '../../types/support-bundle';
-import {VendorHomeCustomer, VendorHomeDeploymentHealth, VendorHomeUpdates} from './vendor-home';
+import {VendorHomeCustomer, VendorHomeDeploymentHealth, VendorHomeLicenses, VendorHomeUpdates} from './vendor-home';
 
 /** The status filter the deployments card links to, which has to show exactly the error and stale deployments. */
 export const vendorHomeAttentionStatuses: readonly DeploymentDisplayStatus[] = ['error', 'stale'];
@@ -18,16 +18,26 @@ export const vendorHomeLicenseExpiryWindowDays = 30;
 
 const openSupportBundleStatuses: readonly SupportBundleStatus[] = ['initialized', 'created'];
 
-/** The customers with a license key or entitlement that has not expired yet but will within the window. */
-export function expiringLicenseCustomerIds(licenses: License[], now: Dayjs = dayjs()): string[] {
+/**
+ * The customers with an expired license key or entitlement, and those without one but with one that expires within
+ * the window, so that every customer counts once.
+ */
+export function toVendorHomeLicenses(licenses: License[], now: Dayjs = dayjs()): VendorHomeLicenses {
   const threshold = now.add(vendorHomeLicenseExpiryWindowDays, 'day');
-  const isExpiring = ({expiresAt}: {expiresAt?: string | Date}) =>
-    expiresAt !== undefined && now.isBefore(expiresAt) && !threshold.isBefore(expiresAt);
-  return licenses
-    .filter((license) =>
-      [...license.licenseKeys, ...license.applicationEntitlements, ...license.artifactEntitlements].some(isExpiring)
-    )
-    .map((license) => license.customerOrganization.id);
+  const expirations = (license: License) =>
+    [...license.licenseKeys, ...license.applicationEntitlements, ...license.artifactEntitlements]
+      .map((it) => it.expiresAt)
+      .filter((expiresAt) => expiresAt !== undefined);
+  const result: VendorHomeLicenses = {expiredCustomerIds: [], expiringCustomerIds: []};
+  for (const license of licenses) {
+    const dates = expirations(license);
+    if (dates.some((expiresAt) => !now.isBefore(expiresAt))) {
+      result.expiredCustomerIds.push(license.customerOrganization.id);
+    } else if (dates.some((expiresAt) => !threshold.isBefore(expiresAt))) {
+      result.expiringCustomerIds.push(license.customerOrganization.id);
+    }
+  }
+  return result;
 }
 
 export function countOpenSupportBundles(bundles: SupportBundle[]): number {

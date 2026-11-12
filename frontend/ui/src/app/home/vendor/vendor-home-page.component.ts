@@ -25,11 +25,11 @@ import {FeatureFlagService} from '../../services/feature-flag.service';
 import {LicensesService} from '../../services/licenses.service';
 import {SupportBundlesService} from '../../services/support-bundles.service';
 import {QuickNavigationCardComponent, QuickNavigationCardType} from '../quick-navigation-card.component';
-import {VendorHomeDeploymentHealth, VendorHomeUpdates} from './vendor-home';
+import {VendorHomeDeploymentHealth, VendorHomeLicenses, VendorHomeUpdates} from './vendor-home';
 import {
   countOpenSupportBundles,
-  expiringLicenseCustomerIds,
   toVendorHomeDeploymentHealth,
+  toVendorHomeLicenses,
   toVendorHomeUpdates,
   vendorHomeAttentionStatuses,
   vendorHomeLicenseExpiryWindowDays,
@@ -54,6 +54,16 @@ function updatesCardType(updates: VendorHomeUpdates): QuickNavigationCardType {
     return 'success';
   } else {
     return 'neutral';
+  }
+}
+
+function licensesCardType(licenses: VendorHomeLicenses): QuickNavigationCardType {
+  if (licenses.expiredCustomerIds.length > 0) {
+    return 'error';
+  } else if (licenses.expiringCustomerIds.length > 0) {
+    return 'warning';
+  } else {
+    return 'success';
   }
 }
 
@@ -112,20 +122,24 @@ export class VendorHomePageComponent {
 
   protected readonly licenseExpiryWindowDays = vendorHomeLicenseExpiryWindowDays;
   /** `null` while the organization has no licensing. */
-  private readonly expiringLicenseCustomerIds = toSignal(
+  private readonly licenseCustomers = toSignal(
     this.featureFlags.isLicensingEnabled$.pipe(
       switchMap((enabled) =>
-        enabled ? this.licensesService.list().pipe(map((licenses) => expiringLicenseCustomerIds(licenses))) : of(null)
+        enabled ? this.licensesService.list().pipe(map((licenses) => toVendorHomeLicenses(licenses))) : of(null)
       )
     )
   );
-  protected readonly expiringLicenses = computed(() => {
-    const ids = this.expiringLicenseCustomerIds();
-    if (ids === undefined || ids === null) {
-      return ids;
+  protected readonly licenseCard = computed(() => {
+    const licenses = this.licenseCustomers();
+    if (licenses === undefined || licenses === null) {
+      return licenses;
     }
+    const ids = [...licenses.expiredCustomerIds, ...licenses.expiringCustomerIds];
     return {
       customers: ids.length,
+      expired: licenses.expiredCustomerIds.length,
+      expiring: licenses.expiringCustomerIds.length,
+      type: licensesCardType(licenses),
       link: ids.length === 1 ? ['/licenses', ids[0]] : ids.length > 1 ? ['/customers'] : ['/licenses'],
     };
   });

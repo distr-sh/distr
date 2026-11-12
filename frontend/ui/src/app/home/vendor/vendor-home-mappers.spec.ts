@@ -11,9 +11,9 @@ import dayjs from 'dayjs';
 import {LatestArtifactPull} from '../../types/artifact-version-pull';
 import {License} from '../../types/license';
 import {
-  expiringLicenseCustomerIds,
   toVendorHomeCustomers,
   toVendorHomeDeploymentHealth,
+  toVendorHomeLicenses,
   toVendorHomeUpdates,
 } from './vendor-home-mappers';
 
@@ -130,8 +130,8 @@ describe('toVendorHomeUpdates', () => {
   });
 });
 
-describe('expiringLicenseCustomerIds', () => {
-  it('should count a customer once for any license expiring within the window but not for expired ones', () => {
+describe('toVendorHomeLicenses', () => {
+  it('should count a customer with an expired license as expired only and ignore expirations after the window', () => {
     const now = dayjs('2026-06-01T00:00:00Z');
     const inDays = (days: number) => now.add(days, 'day').toISOString();
     const date = (expiresAt?: string) => (expiresAt === undefined ? undefined : new Date(expiresAt));
@@ -157,10 +157,14 @@ describe('expiringLicenseCustomerIds', () => {
       license('application', {applications: [inDays(30)]}),
       license('artifact', {artifacts: [inDays(400), inDays(1)]}),
       license('expired', {keys: [inDays(-1)], applications: [inDays(-10)]}),
+      license('both', {keys: [inDays(5)], artifacts: [inDays(0)]}),
       license('later', {keys: [inDays(31)]}),
       license('unlimited', {keys: [undefined], applications: [undefined]}),
     ];
-    expect(expiringLicenseCustomerIds(licenses, now)).toEqual(['key', 'application', 'artifact']);
+    expect(toVendorHomeLicenses(licenses, now)).toEqual({
+      expiredCustomerIds: ['expired', 'both'],
+      expiringCustomerIds: ['key', 'application', 'artifact'],
+    });
   });
 });
 

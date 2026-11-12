@@ -125,7 +125,7 @@
       } @else {
         <app-quick-navigation-card class="min-h-32" [icon]="faCircleArrowUp" heading="Updates" />
       }
-      @let licenses = expiringLicenses();
+      @let licenses = licenseCard();
       @if (licenses === null) {
         @if (isVendor) {
           <app-quick-navigation-card class="min-h-32" [icon]="faKey" heading="Licenses" lockedPlan="pro">
@@ -137,7 +137,7 @@
           class="min-h-32"
           [icon]="faKey"
           heading="Licenses"
-          [type]="licenses.customers > 0 ? 'warning' : 'success'"
+          [type]="licenses.type"
           [link]="licenses.link">
           @if (licenses.customers > 0) {
             <ng-container [ngPlural]="licenses.customers">
@@ -148,7 +148,11 @@
             All good
           }
           <span subtitle>
-            @if (licenses.customers > 0) {
+            @if (licenses.expired > 0 && licenses.expiring > 0) {
+              {{ licenses.expired }} expired &middot; {{ licenses.expiring }} expiring
+            } @else if (licenses.expired > 0) {
+              With an expired license
+            } @else if (licenses.expiring > 0) {
               With a license expiring in the next {{ licenseExpiryWindowDays }} days
             } @else {
               No licenses expiring in the next {{ licenseExpiryWindowDays }} days
