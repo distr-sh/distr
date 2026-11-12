@@ -1,13 +1,15 @@
 @if (lockedPlan(); as plan) {
-  <button
-    type="button"
-    class="distr-card distr-card-clickable w-full p-4 text-left"
-    [title]="'Upgrade to ' + (plan | titlecase) + ' to enable ' + (heading() | lowercase)"
-    (click)="isPlanHintOpen.set(!isPlanHintOpen())"
-    cdkOverlayOrigin
-    #origin="cdkOverlayOrigin">
+  <div class="distr-card distr-card-clickable relative p-4">
     <ng-container [ngTemplateOutlet]="content" />
-  </button>
+    <!-- Covers the card instead of wrapping it, because a button must not contain the heading. -->
+    <button
+      type="button"
+      class="absolute inset-0 cursor-pointer rounded-lg focus-visible:-outline-offset-2"
+      [title]="'Upgrade to ' + (plan | titlecase) + ' to enable ' + (heading() | lowercase)"
+      (click)="isPlanHintOpen.set(!isPlanHintOpen())"
+      cdkOverlayOrigin
+      #origin="cdkOverlayOrigin"></button>
+  </div>
   <ng-template
     cdkConnectedOverlay
     [cdkConnectedOverlayHasBackdrop]="true"
