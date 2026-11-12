@@ -838,7 +838,7 @@
               "type": "object",
               "properties": {
                 "region": {
-                  "description": "Region of the object storage. Must match `REGISTRY_S3_REGION` and `loki.loki.storage.s3.region`, since RustFS rejects creating a bucket in another region.",
+                  "description": "Region of the bundled RustFS, which rejects creating a bucket in any other region. Must match `REGISTRY_S3_REGION` and `loki.loki.storage.s3.region` while `rustfs.enabled` is true.",
                   "type": "string"
                 }
               }
