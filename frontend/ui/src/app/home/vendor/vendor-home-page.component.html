@@ -33,7 +33,14 @@
           [queryParams]="type === 'error' || type === 'warning' ? deploymentAttentionQueryParams : undefined">
           @switch (type) {
             @case ('error') {
-              {{ health.error + health.stale }}
+              @if (health.stale > 0) {
+                {{ health.error + health.stale }} issues
+              } @else {
+                <ng-container [ngPlural]="health.error">
+                  <ng-template ngPluralCase="=1">1 error</ng-template>
+                  <ng-template ngPluralCase="other">{{ health.error }} errors</ng-template>
+                </ng-container>
+              }
             }
             @case ('warning') {
               {{ health.stale }} stale
@@ -45,12 +52,14 @@
           <span subtitle>
             @switch (type) {
               @case ('error') {
-                <ng-container [ngPlural]="health.error">
-                  <ng-template ngPluralCase="=1">1 error</ng-template>
-                  <ng-template ngPluralCase="other">{{ health.error }} errors</ng-template>
-                </ng-container>
                 @if (health.stale > 0) {
+                  <ng-container [ngPlural]="health.error">
+                    <ng-template ngPluralCase="=1">1 error</ng-template>
+                    <ng-template ngPluralCase="other">{{ health.error }} errors</ng-template>
+                  </ng-container>
                   &middot; {{ health.stale }} stale
+                } @else {
+                  Some controllers reporting an error
                 }
               }
               @case ('warning') {
