@@ -1,5 +1,4 @@
 import {Component, computed, inject} from '@angular/core';
-import {RouterLink} from '@angular/router';
 import {CustomDomainComponent} from '../../components/custom-domains/custom-domain/custom-domain.component';
 import {IdentityProvidersComponent} from '../../components/custom-domains/identity-providers/identity-providers.component';
 import {FeatureFlagService} from '../../services/feature-flag.service';
@@ -7,7 +6,7 @@ import {FeatureFlagService} from '../../services/feature-flag.service';
 @Component({
   selector: 'app-customer-portal-domain',
   templateUrl: './customer-portal-domain.component.html',
-  imports: [CustomDomainComponent, IdentityProvidersComponent, RouterLink],
+  imports: [CustomDomainComponent, IdentityProvidersComponent],
 })
 export class CustomerPortalDomainComponent {
   private readonly featureFlags = inject(FeatureFlagService);

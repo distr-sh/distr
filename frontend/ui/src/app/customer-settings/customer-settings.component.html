@@ -21,7 +21,8 @@
                 label="Customer Portal domain"
                 placeholder="<slug>-portal.yourcompany.com">
                 The domain the users of this organization sign in on. Links in invitations, password resets and
-                notification mails use it. Without it they sign in on the default customer portal domain.
+                notification mails use it. Without it they sign in on the shared customer portal domain, or on the
+                Vendor Portal domain if there is none.
               </app-custom-domain>
               <app-identity-providers
                 [domain]="portalDomain.domain()"
