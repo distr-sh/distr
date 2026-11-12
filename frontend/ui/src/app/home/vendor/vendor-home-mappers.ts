@@ -57,6 +57,7 @@ export function toVendorHomeAdvisoryCounts(advisories: Advisory[]): VendorHomeAd
   const count = (status: AdvisoryStatus) => advisories.reduce((c, it) => (it.status === status ? c + 1 : c), 0);
   return {
     total: advisories.length,
+    open: advisories.filter((it) => vendorHomeOpenAdvisoryStatuses.includes(it.status)).length,
     triage: count('triage'),
     draft: count('draft'),
     published: count('published'),

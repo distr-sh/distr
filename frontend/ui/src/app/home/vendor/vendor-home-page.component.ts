@@ -209,15 +209,11 @@ export class VendorHomePageComponent {
   });
 
   /** `null` while the organization's plan has no vulnerabilities. */
-  protected readonly openAdvisories = toSignal(
+  protected readonly advisoryCounts = toSignal(
     this.isVendor
       ? this.featureFlags.isVulnerabilitiesEnabled$.pipe(
           switchMap((enabled) =>
-            enabled
-              ? this.advisoriesService
-                  .list({status: vendorHomeOpenAdvisoryStatuses})
-                  .pipe(map(toVendorHomeAdvisoryCounts))
-              : of(null)
+            enabled ? this.advisoriesService.list().pipe(map(toVendorHomeAdvisoryCounts)) : of(null)
           )
         )
       : of(null)

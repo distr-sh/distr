@@ -19,6 +19,7 @@ export interface VendorHomeLicenses {
 
 export interface VendorHomeAdvisoryCounts {
   total: number;
+  open: number;
   triage: number;
   draft: number;
   published: number;

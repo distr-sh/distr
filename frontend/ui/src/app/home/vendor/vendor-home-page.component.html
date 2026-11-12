@@ -209,7 +209,7 @@
         <app-quick-navigation-card class="min-h-32" [icon]="faLifeRing" heading="Support" />
       }
       @if (isVendor) {
-        @let advisories = openAdvisories();
+        @let advisories = advisoryCounts();
         @if (advisories === null) {
           <app-quick-navigation-card
             class="min-h-32"
@@ -223,16 +223,18 @@
             class="min-h-32"
             [icon]="faShieldHalved"
             heading="Security Advisories"
-            [type]="advisories.total > 0 ? 'neutral' : 'success'"
+            [type]="advisories.total > 0 && advisories.open === 0 ? 'success' : 'neutral'"
             link="/advisories"
-            [queryParams]="advisories.total > 0 ? openAdvisoryQueryParams : undefined">
-            @if (advisories.total > 0) {
-              {{ advisories.total }} open
-            } @else {
+            [queryParams]="advisories.open > 0 ? openAdvisoryQueryParams : undefined">
+            @if (advisories.open > 0) {
+              {{ advisories.open }} open
+            } @else if (advisories.total > 0) {
               All good
             }
             <span subtitle>
-              @if (advisories.total > 0) {
+              @if (advisories.total === 0) {
+                Publish advisories to inform your customers about vulnerabilities
+              } @else if (advisories.open > 0) {
                 @if (advisories.triage > 0) {
                   {{ advisories.triage }} in triage
                 }
