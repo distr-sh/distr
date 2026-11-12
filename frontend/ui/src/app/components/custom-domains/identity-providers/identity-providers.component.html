@@ -1,0 +1,103 @@
+@if (enabled()) {
+  <h4 class="mt-8 text-base font-semibold text-gray-900 dark:text-white">Identity Providers</h4>
+  <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
+    <table class="distr-table">
+      <thead class="distr-table-head border-t-0">
+        <tr>
+          <th scope="col" class="w-px py-3 ps-4">Enabled</th>
+          <th scope="col" class="px-4 py-3">Provider</th>
+          <th scope="col" class="px-4 py-3">Callback URL</th>
+          <th scope="col" class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (configuration of configurations(); track configuration.id) {
+          <tr appClickableRow (rowActivate)="showDialog(configuration)" class="distr-table-row">
+            <td class="py-3 ps-4">
+              <label class="inline-flex cursor-pointer items-center align-middle">
+                <input
+                  #enabledToggle
+                  type="checkbox"
+                  class="peer sr-only"
+                  aria-label="Enabled"
+                  [checked]="configuration.enabled"
+                  (click)="toggleEnabled(configuration, enabledToggle, $event)" />
+                <div class="distr-toggle"></div>
+              </label>
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-2">
+                <span
+                  class="font-medium whitespace-nowrap"
+                  [class]="
+                    configuration.enabled ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'
+                  ">
+                  {{ configuration.name }}
+                </span>
+                @if (configuration.spInitiated) {
+                  <span class="distr-badge distr-badge-neutral">Automatic</span>
+                }
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              <div class="inline-flex cursor-auto items-center gap-2" (click)="$event.stopPropagation()">
+                <code
+                  class="max-w-64 truncate font-mono text-xs text-gray-500 dark:text-gray-400"
+                  [title]="configuration.callbackUrl">
+                  {{ configuration.callbackUrl }}
+                </code>
+                <app-clip [clip]="configuration.callbackUrl" />
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex justify-end gap-2">
+                <button
+                  type="button"
+                  (click)="test(configuration)"
+                  class="distr-btn-secondary flex items-center px-3 py-2 text-center text-sm font-medium">
+                  <fa-icon [icon]="faPlug" class="mr-2 text-gray-500 dark:text-gray-400" />
+                  Test
+                </button>
+                <button
+                  type="button"
+                  aria-label="Delete"
+                  (click)="remove(configuration)"
+                  class="distr-btn-danger px-3 py-2">
+                  <fa-icon [icon]="faTrash" class="h-4 w-4" />
+                </button>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr class="border-t border-gray-200 dark:border-gray-600">
+            <td
+              colspan="4"
+              class="px-4 py-6 text-center font-medium whitespace-nowrap text-gray-600 dark:text-gray-400">
+              No identity provider configured
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="space-y-2">
+    <button
+      type="button"
+      [disabled]="!domain() || !configurable()"
+      (click)="showDialog()"
+      class="distr-btn-secondary flex items-center px-4 py-2 text-center text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60">
+      <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
+      Add identity provider
+    </button>
+    @if (!domain()) {
+      <p class="distr-hint-warning">Identity providers only work on custom domains. Configure and verify one first.</p>
+    } @else if (viewerIsVendor() && !configurable()) {
+      <p class="distr-hint-warning">
+        An organization slug is required. Set one on the
+        <a routerLink="/settings/organization/general" class="font-semibold underline">General tab</a> of the
+        organization settings first.
+      </p>
+    }
+  </div>
+}

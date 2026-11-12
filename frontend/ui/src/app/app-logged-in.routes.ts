@@ -26,6 +26,10 @@ import {PortalUnavailableComponent} from './components/portal-unavailable/portal
 import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
 import {PartnerUsersComponent} from './components/users/partners/partner-users.component';
 import {VendorUsersComponent} from './components/users/vendors/vendor-users.component';
+import {CustomerPortalBrandingComponent} from './customer-portal/branding/customer-portal-branding.component';
+import {customerPortalTabs} from './customer-portal/customer-portal-navigation';
+import {CustomerPortalComponent} from './customer-portal/customer-portal.component';
+import {CustomerPortalDomainComponent} from './customer-portal/domain-and-sign-in/customer-portal-domain.component';
 import {CustomerSettingsComponent} from './customer-settings/customer-settings.component';
 import {DeploymentTargetDetailComponent} from './deployments/deployment-target-details/deployment-target-detail.component';
 import {DeploymentTargetsPageComponent} from './deployments/deployment-targets-page.component';
@@ -38,10 +42,9 @@ import {CustomerUpdateNotificationsPageComponent} from './notification-configura
 import {UpdateNotificationsPageComponent} from './notification-configurations/update-notifications-page.component';
 import {CustomerNotificationRecordsPageComponent} from './notification-records/customer-notification-records-page.component';
 import {NotificationRecordsPageComponent} from './notification-records/notification-records-page.component';
-import {OrganizationBrandingComponent} from './organization-branding/organization-branding.component';
 import {BillingComponent} from './organization-settings/billing/billing.component';
 import {CustomEmailComponent} from './organization-settings/custom-email/custom-email.component';
-import {CustomOidcComponent} from './organization-settings/custom-oidc/custom-oidc.component';
+import {OrganizationDomainsComponent} from './organization-settings/domains-and-sign-in/organization-domains.component';
 import {GeneralSettingsComponent} from './organization-settings/general/general-settings.component';
 import {organizationSettingsTabs} from './organization-settings/organization-settings-navigation';
 import {OrganizationSettingsComponent} from './organization-settings/organization-settings.component';
@@ -396,11 +399,25 @@ const shellRoutes: Routes = [
         canActivate: [requireCustomer, licensingEnabledGuard()],
       },
       {
-        path: 'branding',
-        title: 'Branding',
-        component: OrganizationBrandingComponent,
+        path: 'customer-portal',
+        title: 'Customer Portal',
+        component: CustomerPortalComponent,
         data: {userRole: 'vendor'},
         canActivate: [requireVendor, requiredRoleGuard('read_write', 'admin')],
+        children: [
+          {path: '', pathMatch: 'full', redirectTo: 'branding'},
+          {
+            path: 'branding',
+            title: customerPortalTabs.title('branding'),
+            component: CustomerPortalBrandingComponent,
+          },
+          {
+            path: 'domain-and-sign-in',
+            title: customerPortalTabs.title('domain-and-sign-in'),
+            component: CustomerPortalDomainComponent,
+            canActivate: [customerPortalTabs.guard('domain-and-sign-in')],
+          },
+        ],
       },
       {
         path: 'licenses',
@@ -454,7 +471,7 @@ const shellRoutes: Routes = [
               {
                 path: 'identity-provider',
                 title: organizationSettingsTabs.title('identity-provider'),
-                component: CustomOidcComponent,
+                component: OrganizationDomainsComponent,
                 canActivate: [organizationSettingsTabs.guard('identity-provider')],
               },
               {

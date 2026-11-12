@@ -6,7 +6,7 @@ export const organizationSettingsTabs = defineRoutedTabs<SettingsTabId>('Organiz
   {id: 'general', label: 'General', visible: (c) => c.user.isAdminOrSuperAdmin},
   {
     id: 'identity-provider',
-    label: 'Custom Domains & Identity Provider',
+    label: 'Domains & Sign-in',
     visible: (c) => c.user.isAdminOrSuperAdmin,
     locked: {
       plan: 'business',
