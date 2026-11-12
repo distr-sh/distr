@@ -58,10 +58,10 @@ func newUser(name *string, imageID *uuid.UUID) *User {
 	return &User{Name: *name, ImageID: imageID}
 }
 
-// Latest returns the newest entries, at most Limit of them, with the name of their customer organization.
-// Entries of a customer organization outside customerOrgs are left out, so that a source returning more than it
-// was asked for cannot widen what the caller sees.
-func Latest(entries []Entry, customerOrgs []types.CustomerOrganization) []Entry {
+// RestrictToCustomerOrganizations returns the entries with the name of their customer organization. Entries of
+// a customer organization outside customerOrgs are left out, so that a source returning more than it was asked
+// for cannot widen what the caller sees.
+func RestrictToCustomerOrganizations(entries []Entry, customerOrgs []types.CustomerOrganization) []Entry {
 	names := make(map[uuid.UUID]string, len(customerOrgs))
 	for _, customerOrg := range customerOrgs {
 		names[customerOrg.ID] = customerOrg.Name
@@ -75,8 +75,13 @@ func Latest(entries []Entry, customerOrgs []types.CustomerOrganization) []Entry 
 			result = append(result, entry)
 		}
 	}
-	slices.SortFunc(result, func(a, b Entry) int { return b.CreatedAt.Compare(a.CreatedAt) })
-	return result[:min(len(result), Limit)]
+	return result
+}
+
+// Latest returns the newest entries, at most Limit of them.
+func Latest(entries []Entry) []Entry {
+	slices.SortFunc(entries, func(a, b Entry) int { return b.CreatedAt.Compare(a.CreatedAt) })
+	return entries[:min(len(entries), Limit)]
 }
 
 func ApplicationVersions(versions []types.ApplicationVersionEvent) []Entry {

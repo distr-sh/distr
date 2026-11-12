@@ -66,8 +66,9 @@ func getActivityFeed(r *http.Request) (respond.Responder, error) {
 	} else if entries, err := collectActivity(ctx, scope); err != nil {
 		return nil, err
 	} else {
-		latest := activityfeed.Latest(entries, scope.customerOrgs)
-		return respond.JSON(mapping.List(latest, mapping.ActivityFeedEntryToAPI)), nil
+		entries = activityfeed.RestrictToCustomerOrganizations(entries, scope.customerOrgs)
+		entries = activityfeed.Latest(entries)
+		return respond.JSON(mapping.List(entries, mapping.ActivityFeedEntryToAPI)), nil
 	}
 }
 
