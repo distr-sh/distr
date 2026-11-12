@@ -41,11 +41,7 @@ import {BillingComponent} from './organization-settings/billing/billing.componen
 import {CustomEmailComponent} from './organization-settings/custom-email/custom-email.component';
 import {CustomOidcComponent} from './organization-settings/custom-oidc/custom-oidc.component';
 import {GeneralSettingsComponent} from './organization-settings/general/general-settings.component';
-import {
-  firstOpenableSettingsTab,
-  settingsTabGuard,
-  settingsTabTitle,
-} from './organization-settings/organization-settings-navigation';
+import {organizationSettingsTabs} from './organization-settings/organization-settings-navigation';
 import {OrganizationSettingsComponent} from './organization-settings/organization-settings.component';
 import {SubscriptionCallbackComponent} from './organization-settings/subscription/subscription-callback.component';
 import {SubscriptionComponent} from './organization-settings/subscription/subscription.component';
@@ -415,30 +411,30 @@ const shellRoutes: Routes = [
               {
                 path: '',
                 pathMatch: 'full',
-                redirectTo: firstOpenableSettingsTab,
+                redirectTo: organizationSettingsTabs.firstOpenable,
               },
               {
                 path: 'general',
-                title: settingsTabTitle('general'),
+                title: organizationSettingsTabs.title('general'),
                 component: GeneralSettingsComponent,
-                canActivate: [settingsTabGuard('general')],
+                canActivate: [organizationSettingsTabs.guard('general')],
               },
               {
                 path: 'identity-provider',
-                title: settingsTabTitle('identity-provider'),
+                title: organizationSettingsTabs.title('identity-provider'),
                 component: CustomOidcComponent,
-                canActivate: [settingsTabGuard('identity-provider')],
+                canActivate: [organizationSettingsTabs.guard('identity-provider')],
               },
               {
                 path: 'email',
-                title: settingsTabTitle('email'),
+                title: organizationSettingsTabs.title('email'),
                 component: CustomEmailComponent,
-                canActivate: [settingsTabGuard('email')],
+                canActivate: [organizationSettingsTabs.guard('email')],
               },
               {
                 path: 'subscription',
-                title: settingsTabTitle('subscription'),
-                canActivate: [settingsTabGuard('subscription')],
+                title: organizationSettingsTabs.title('subscription'),
+                canActivate: [organizationSettingsTabs.guard('subscription')],
                 children: [
                   {
                     path: '',
@@ -453,9 +449,9 @@ const shellRoutes: Routes = [
               },
               {
                 path: 'billing',
-                title: settingsTabTitle('billing'),
+                title: organizationSettingsTabs.title('billing'),
                 component: BillingComponent,
-                canActivate: [settingsTabGuard('billing')],
+                canActivate: [organizationSettingsTabs.guard('billing')],
               },
             ],
           },

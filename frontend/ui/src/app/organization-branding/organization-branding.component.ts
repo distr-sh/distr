@@ -6,7 +6,7 @@ import {faFloppyDisk} from '@fortawesome/free-solid-svg-icons';
 import {AlertComponent} from '../components/alert/alert.component';
 import {BrandingFormComponent} from '../components/branding/branding-form.component';
 import {PageComponent} from '../components/page.component';
-import {canOpenSettingsTab} from '../organization-settings/organization-settings-navigation';
+import {organizationSettingsTabs} from '../organization-settings/organization-settings-navigation';
 import {canOpenSubscription} from '../organization-settings/subscription/subscription.guard';
 import {AuthService} from '../services/auth.service';
 import {FeatureFlagService} from '../services/feature-flag.service';
@@ -27,7 +27,9 @@ export class OrganizationBrandingComponent {
 
   private readonly organization = toSignal(this.organizationService.get());
   protected readonly canOpenSubscription = toSignal(canOpenSubscription(), {initialValue: false});
-  protected readonly canOpenCustomDomains = toSignal(canOpenSettingsTab('identity-provider'), {initialValue: false});
+  protected readonly canOpenCustomDomains = toSignal(organizationSettingsTabs.canOpen('identity-provider'), {
+    initialValue: false,
+  });
 
   protected readonly customDomainsSelfService = this.featureFlags.isCustomDomainsEnabled;
   // Business plan upsell, shown only on the plans that can actually upgrade to it

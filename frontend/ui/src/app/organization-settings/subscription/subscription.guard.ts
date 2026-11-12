@@ -4,13 +4,13 @@ import {firstValueFrom, map, Observable, switchMap} from 'rxjs';
 import {AuthService} from '../../services/auth.service';
 import {OrganizationService} from '../../services/organization.service';
 import {isSubscriptionExpired} from '../../types/organization';
-import {canOpenSettingsTab} from '../organization-settings-navigation';
+import {organizationSettingsTabs} from '../organization-settings-navigation';
 
 export const subscriptionPath = '/settings/organization/subscription';
 
 export function canOpenSubscription(): Observable<boolean> {
   const auth = inject(AuthService);
-  return canOpenSettingsTab('subscription').pipe(map((canOpen) => auth.isVendor() && canOpen));
+  return organizationSettingsTabs.canOpen('subscription').pipe(map((canOpen) => auth.isVendor() && canOpen));
 }
 
 // canActivate would not run again when navigating between children.
