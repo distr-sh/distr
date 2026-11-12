@@ -1392,6 +1392,7 @@ func GetArtifactVersionPullFilterOptions(
 	ctx context.Context,
 	orgID uuid.UUID,
 	partnerOrganizationID *uuid.UUID,
+	customerOrganizationID *uuid.UUID,
 ) (*types.ArtifactVersionPullFilterOptions, error) {
 	db := internalctx.GetDb(ctx)
 	result := &types.ArtifactVersionPullFilterOptions{}
@@ -1399,12 +1400,14 @@ func GetArtifactVersionPullFilterOptions(
 	baseFromExpr := ` ArtifactVersionPull p` +
 		` JOIN ArtifactVersion v ON v.id = p.artifact_version_id` +
 		` JOIN Artifact a ON a.id = v.artifact_id `
-	baseWhereExpr := ` a.organization_id = @orgId AND (@isVendor OR co.partner_organization_id = @partnerOrgId) `
+	baseWhereExpr := ` a.organization_id = @orgId AND (@isVendor OR co.partner_organization_id = @partnerOrgId)` +
+		` AND (@customerOrgId::uuid IS NULL OR p.customer_organization_id = @customerOrgId) `
 
 	args := pgx.NamedArgs{
-		"orgId":        orgID,
-		"isVendor":     partnerOrganizationID == nil,
-		"partnerOrgId": partnerOrganizationID,
+		"orgId":         orgID,
+		"isVendor":      partnerOrganizationID == nil,
+		"partnerOrgId":  partnerOrganizationID,
+		"customerOrgId": customerOrganizationID,
 	}
 
 	// Customer organizations
@@ -1497,6 +1500,7 @@ func GetArtifactVersionPullVersionOptions(
 	orgID uuid.UUID,
 	artifactID uuid.UUID,
 	partnerOrganizationID *uuid.UUID,
+	customerOrganizationID *uuid.UUID,
 ) ([]types.FilterOption, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
@@ -1508,13 +1512,15 @@ func GetArtifactVersionPullVersionOptions(
 		WHERE a.organization_id = @orgId
 			AND a.id = @artifactId
 			AND (@isVendor OR co.partner_organization_id = @partnerOrgId)
+			AND (@customerOrgId::uuid IS NULL OR p.customer_organization_id = @customerOrgId)
 		GROUP BY v.id, v.name
 		ORDER BY v.name`,
 		pgx.NamedArgs{
-			"orgId":        orgID,
-			"artifactId":   artifactID,
-			"isVendor":     partnerOrganizationID == nil,
-			"partnerOrgId": partnerOrganizationID,
+			"orgId":         orgID,
+			"artifactId":    artifactID,
+			"isVendor":      partnerOrganizationID == nil,
+			"partnerOrgId":  partnerOrganizationID,
+			"customerOrgId": customerOrganizationID,
 		})
 	if err != nil {
 		return nil, fmt.Errorf("could not query artifact version options: %w", err)

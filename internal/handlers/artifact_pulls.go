@@ -52,10 +52,12 @@ func ArtifactPullsRouter(r chiopenapi.Router) {
 		With(option.Response(http.StatusOK, []api.LatestArtifactPullResponse{}))
 	r.Get("/filter-options", respond.Handler(getArtifactPullFilterOptionsHandler)).
 		With(option.Description("Get available filter options for artifact pulls")).
+		With(option.Request(customerScopeQuery{})).
 		With(option.Response(http.StatusOK, api.ArtifactVersionPullFilterOptions{}))
 	r.Get("/filter-options/versions", respond.Handler(getArtifactPullVersionOptionsHandler)).
 		With(option.Description("Get available version filter options for a specific artifact")).
 		With(option.Request(struct {
+			customerScopeQuery
 			ArtifactID string `query:"artifactId"`
 		}{})).
 		With(option.Response(http.StatusOK, []api.ArtifactPullFilterOption{}))
@@ -221,8 +223,10 @@ func getArtifactPullFilterOptionsHandler(r *http.Request) (respond.Responder, er
 	ctx := r.Context()
 	authInfo := auth.Authentication.Require(ctx)
 
-	if opts, err := db.GetArtifactVersionPullFilterOptions(
-		ctx, *authInfo.CurrentOrgID(), authInfo.CurrentPartnerOrgID(),
+	if customerOrgID, resp := artifactPullFilterOptionsCustomer(r); resp != nil {
+		return resp, nil
+	} else if opts, err := db.GetArtifactVersionPullFilterOptions(
+		ctx, *authInfo.CurrentOrgID(), authInfo.CurrentPartnerOrgID(), customerOrgID,
 	); err != nil {
 		return nil, fmt.Errorf("could not get pull filter options: %w", err)
 	} else {
@@ -236,15 +240,28 @@ func getArtifactPullVersionOptionsHandler(r *http.Request) (respond.Responder, e
 
 	if artifactID, err := QueryParam(r, "artifactId", uuid.Parse); err != nil {
 		return respond.BadRequest("artifactId is required and must be a valid UUID"), nil
+	} else if customerOrgID, resp := artifactPullFilterOptionsCustomer(r); resp != nil {
+		return resp, nil
 	} else if versions, err := db.GetArtifactVersionPullVersionOptions(
 		ctx,
 		*authInfo.CurrentOrgID(),
 		artifactID,
 		authInfo.CurrentPartnerOrgID(),
+		customerOrgID,
 	); err != nil {
 		return nil, fmt.Errorf("could not get version filter options: %w", err)
 	} else {
 		return respond.JSON(mapping.List(versions, mapping.FilterOptionToAPI)), nil
+	}
+}
+
+func artifactPullFilterOptionsCustomer(r *http.Request) (*uuid.UUID, respond.Responder) {
+	if id, err := QueryParam(r, "customerOrganizationId", uuid.Parse); errors.Is(err, ErrParamNotDefined) {
+		return nil, nil
+	} else if err != nil {
+		return nil, respond.BadRequest("customerOrganizationId must be a valid UUID")
+	} else {
+		return &id, nil
 	}
 }
 

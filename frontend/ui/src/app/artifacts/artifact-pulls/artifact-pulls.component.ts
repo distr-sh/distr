@@ -1,12 +1,13 @@
 import {DatePipe} from '@angular/common';
-import {ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal} from '@angular/core';
-import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
+import {ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, signal} from '@angular/core';
+import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {ActivatedRoute, Params, Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faDownload, faFilterCircleXmark} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {
+  combineLatest,
   concatMap,
   debounceTime,
   filter,
@@ -23,7 +24,6 @@ import {
 } from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
 import {shortDigest} from '../../../util/digest';
-import {PageComponent} from '../../components/page.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {ArtifactPullFilters, ArtifactPullsService} from '../../services/artifact-pulls.service';
 import {ToastService} from '../../services/toast.service';
@@ -33,9 +33,10 @@ import {ToastService} from '../../services/toast.service';
 const ANONYMOUS_USER = 'anonymous';
 
 @Component({
+  selector: 'app-artifact-pulls',
   templateUrl: './artifact-pulls.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [DatePipe, ReactiveFormsModule, FaIconComponent, PageComponent, SpinnerComponent],
+  imports: [DatePipe, ReactiveFormsModule, FaIconComponent, SpinnerComponent],
 })
 export class ArtifactPullsComponent {
   private readonly pullsService = inject(ArtifactPullsService);
@@ -43,6 +44,9 @@ export class ArtifactPullsComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+
+  public readonly customerOrganizationId = input<string>();
+  private readonly customerOrganizationId$ = toObservable(this.customerOrganizationId);
 
   protected readonly faDownload = faDownload;
   protected readonly faFilterCircleXmark = faFilterCircleXmark;
@@ -68,17 +72,23 @@ export class ArtifactPullsComponent {
     to: new FormControl(''),
   });
 
-  protected readonly filterOptions = toSignal(this.pullsService.getFilterOptions());
+  private readonly filterOptions$ = this.customerOrganizationId$.pipe(
+    switchMap((customerOrganizationId) => this.pullsService.getFilterOptions(customerOrganizationId)),
+    shareReplay(1)
+  );
+  protected readonly filterOptions = toSignal(this.filterOptions$);
 
   protected readonly versionOptions = toSignal(
-    this.filterForm.controls.artifactId.valueChanges.pipe(
-      startWith(this.filterForm.controls.artifactId.value),
-      switchMap((artifactId) => {
+    combineLatest([
+      this.filterForm.controls.artifactId.valueChanges.pipe(startWith(this.filterForm.controls.artifactId.value)),
+      this.customerOrganizationId$,
+    ]).pipe(
+      switchMap(([artifactId, customerOrganizationId]) => {
         if (!this.initializing) {
           this.filterForm.controls.artifactVersionId.setValue('', {emitEvent: false});
         }
         if (artifactId) {
-          return this.pullsService.getVersionOptions(artifactId);
+          return this.pullsService.getVersionOptions(artifactId, customerOrganizationId);
         }
         return of([]);
       })
@@ -86,12 +96,13 @@ export class ArtifactPullsComponent {
     {initialValue: []}
   );
 
-  private readonly filters$ = this.filterForm.valueChanges.pipe(
-    startWith(this.filterForm.value),
-    debounceTime(300),
+  private readonly filters$ = combineLatest([
+    this.filterForm.valueChanges.pipe(startWith(this.filterForm.value), debounceTime(300)),
+    this.customerOrganizationId$,
+  ]).pipe(
     tap(() => (this.initializing = false)),
-    tap((values) => this.syncQueryParams(values)),
-    map((values) => this.buildFilters(values)),
+    tap(([values]) => this.syncQueryParams(values)),
+    map(([values]) => this.buildFilters(values)),
     shareReplay(1)
   );
 
@@ -196,22 +207,19 @@ export class ArtifactPullsComponent {
     // Wait for filter options to load, then apply query params.
     // This ensures <select> elements have their <option> children
     // before we set a value, preventing Angular from resetting them.
-    this.pullsService
-      .getFilterOptions()
-      .pipe(first(), takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        // Use setTimeout to let Angular complete the render cycle
-        // so that <option> elements from @for are in the DOM
-        setTimeout(() => {
-          const patch: Record<string, string> = {};
-          for (const key of Object.keys(this.filterForm.controls)) {
-            if (params[key]) {
-              patch[key] = params[key];
-            }
+    this.filterOptions$.pipe(first(), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      // Use setTimeout to let Angular complete the render cycle
+      // so that <option> elements from @for are in the DOM
+      setTimeout(() => {
+        const patch: Record<string, string> = {};
+        for (const key of Object.keys(this.filterForm.controls)) {
+          if (params[key]) {
+            patch[key] = params[key];
           }
-          this.filterForm.patchValue(patch);
-        });
+        }
+        this.filterForm.patchValue(patch);
       });
+    });
   }
 
   private syncQueryParams(values: typeof this.filterForm.value) {
@@ -224,8 +232,9 @@ export class ArtifactPullsComponent {
 
   private buildFilters(values: typeof this.filterForm.value): ArtifactPullFilters {
     const filters: ArtifactPullFilters = {};
-    if (values.customerOrganizationId) {
-      filters.customerOrganizationId = values.customerOrganizationId;
+    const customerOrganizationId = this.customerOrganizationId() || values.customerOrganizationId;
+    if (customerOrganizationId) {
+      filters.customerOrganizationId = customerOrganizationId;
     }
     if (values.userAccountId === ANONYMOUS_USER) {
       filters.anonymous = true;
