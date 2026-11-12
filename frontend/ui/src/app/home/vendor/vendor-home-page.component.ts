@@ -15,6 +15,7 @@ import {combineLatest, firstValueFrom, map, of, switchMap} from 'rxjs';
 import {refreshInBackground} from '../../../util/refresh';
 import {CardHeadingComponent} from '../../components/card-heading.component';
 import {PageComponent} from '../../components/page.component';
+import {AdvisoriesService} from '../../services/advisories.service';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
 import {ArtifactPullsService} from '../../services/artifact-pulls.service';
@@ -28,11 +29,13 @@ import {QuickNavigationCardComponent, QuickNavigationCardType} from '../quick-na
 import {VendorHomeDeploymentHealth, VendorHomeLicenses, VendorHomeUpdates} from './vendor-home';
 import {
   countOpenSupportBundles,
+  toVendorHomeAdvisoryCounts,
   toVendorHomeDeploymentHealth,
   toVendorHomeLicenses,
   toVendorHomeUpdates,
   vendorHomeAttentionStatuses,
   vendorHomeLicenseExpiryWindowDays,
+  vendorHomeOpenAdvisoryStatuses,
 } from './vendor-home-mappers';
 
 function deploymentHealthType(health: VendorHomeDeploymentHealth): QuickNavigationCardType {
@@ -94,6 +97,7 @@ export class VendorHomePageComponent {
   private readonly featureFlags = inject(FeatureFlagService);
   private readonly licensesService = inject(LicensesService);
   private readonly supportBundlesService = inject(SupportBundlesService);
+  private readonly advisoriesService = inject(AdvisoriesService);
 
   protected readonly isVendor = this.auth.isVendor();
   protected readonly canConfigureSupport = this.isVendor && this.auth.hasAnyRole('read_write', 'admin');
@@ -203,6 +207,23 @@ export class VendorHomePageComponent {
       link: shouldConfigure ? '/support/settings' : '/support',
     };
   });
+
+  /** `null` while the organization's plan has no vulnerabilities. */
+  protected readonly openAdvisories = toSignal(
+    this.isVendor
+      ? this.featureFlags.isVulnerabilitiesEnabled$.pipe(
+          switchMap((enabled) =>
+            enabled
+              ? this.advisoriesService
+                  .list({status: vendorHomeOpenAdvisoryStatuses})
+                  .pipe(map(toVendorHomeAdvisoryCounts))
+              : of(null)
+          )
+        )
+      : of(null)
+  );
+
+  protected readonly openAdvisoryQueryParams = {status: vendorHomeOpenAdvisoryStatuses};
 
   protected readonly counts = computed(() => {
     const customers = this.customerCount();
