@@ -5,9 +5,7 @@ import {UpgradePlan} from '../types/subscription';
 
 /** The organization features that show, hide or lock an entry, including those that follow from the plan alone. */
 export type NavigationFeature =
-  | Extract<Feature, 'licensing' | 'vulnerabilities' | 'vendor_billing' | 'partner_management'>
-  | 'notifications'
-  | 'support_bundles';
+  Extract<Feature, 'licensing' | 'vulnerabilities' | 'partner_management'> | 'notifications' | 'support_bundles';
 
 export interface NavigationContext {
   user: {

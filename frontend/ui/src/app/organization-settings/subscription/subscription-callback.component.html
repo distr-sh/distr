@@ -1,0 +1,31 @@
+<div class="mx-auto max-w-2xl text-center">
+  <div class="mb-6">
+    <fa-icon [icon]="faCircleCheck" class="text-6xl text-green-500" />
+  </div>
+
+  <h1 class="mb-4 text-3xl font-bold text-gray-900 dark:text-white">Thank You for Updating Your Subscription</h1>
+
+  <p class="mb-6 text-gray-600 dark:text-gray-400">
+    @if (isProcessing() === false) {
+      Your subscription has been successfully updated.
+    } @else {
+      Your subscription update is being processed. Please note that this may take a few moments.
+    }
+  </p>
+
+  @if (isProcessing() === false) {
+    <div class="space-y-3">
+      <a
+        routerLink="/settings/organization/subscription"
+        class="block w-full rounded-lg bg-primary-700 px-4 py-2.5 font-medium text-white transition-colors hover:bg-primary-800 dark:bg-primary-600 dark:hover:bg-primary-700">
+        View Subscription Details
+      </a>
+
+      <a
+        routerLink="/home"
+        class="block w-full rounded-lg bg-gray-200 px-4 py-2.5 font-medium text-gray-800 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
+        Go to Home
+      </a>
+    </div>
+  }
+</div>

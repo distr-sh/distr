@@ -1,0 +1,20 @@
+<app-tab-bar [tabs]="tabs()" [(active)]="activeTab" (tabClick)="onTabClick($event)">
+  <ng-template #tabSuffix let-tab let-origin="origin">
+    @if (tab.plan; as plan) {
+      <app-plan-badge [plan]="plan" class="ml-2" />
+      <ng-template
+        cdkConnectedOverlay
+        [cdkConnectedOverlayOrigin]="origin"
+        [cdkConnectedOverlayOpen]="planHintTab() === tab.id"
+        [cdkConnectedOverlayHasBackdrop]="true"
+        [cdkConnectedOverlayBackdropClass]="'transparent'"
+        (backdropClick)="planHintTab.set(null)"
+        [cdkConnectedOverlayPositions]="[{originX: 'center', overlayX: 'center', originY: 'bottom', overlayY: 'top'}]">
+        <app-plan-feature-hint [plan]="plan" />
+      </ng-template>
+    }
+  </ng-template>
+</app-tab-bar>
+<div role="tabpanel" class="pt-6" [id]="'tabpanel-' + activeTab()" [attr.aria-labelledby]="'tab-' + activeTab()">
+  <router-outlet />
+</div>

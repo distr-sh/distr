@@ -1,0 +1,161 @@
+import {NgPlural, NgPluralCase} from '@angular/common';
+import {ChangeDetectionStrategy, Component, inject, signal, TemplateRef, viewChild} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
+import {faGear, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {catchError, EMPTY, filter, firstValueFrom, switchMap} from 'rxjs';
+import {getFormDisplayedError} from '../../../util/errors';
+import {loadWhileOpen, refreshInBackground} from '../../../util/refresh';
+import {AlertComponent} from '../../components/alert/alert.component';
+import {SpinnerComponent} from '../../components/spinner/spinner.component';
+import {ClickableRowDirective} from '../../directives/clickable-row.directive';
+import {AuthService} from '../../services/auth.service';
+import {LicenseTemplatesService} from '../../services/license-templates.service';
+import {OrganizationService} from '../../services/organization.service';
+import {DialogRef, OverlayService} from '../../services/overlay.service';
+import {ToastService} from '../../services/toast.service';
+import {LicenseTemplate} from '../../types/license-template';
+import {BillingSettingsComponent} from './billing-settings.component';
+
+@Component({
+  selector: 'app-billing',
+  templateUrl: './billing.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
+  imports: [
+    FaIconComponent,
+    ReactiveFormsModule,
+    AlertComponent,
+    NgPlural,
+    NgPluralCase,
+    ClickableRowDirective,
+    SpinnerComponent,
+  ],
+})
+export class BillingComponent {
+  protected readonly auth = inject(AuthService);
+  private readonly templatesService = inject(LicenseTemplatesService);
+  private readonly organizationService = inject(OrganizationService);
+  private readonly overlay = inject(OverlayService);
+  private readonly toast = inject(ToastService);
+  private readonly fb = inject(FormBuilder).nonNullable;
+
+  protected readonly canEdit = this.auth.hasAnyRole('read_write', 'admin');
+
+  protected readonly faGear = faGear;
+  protected readonly faPen = faPen;
+  protected readonly faPlus = faPlus;
+  protected readonly faTrash = faTrash;
+  protected readonly faXmark = faXmark;
+
+  protected readonly templates = toSignal(this.templatesService.list(), {initialValue: [] as LicenseTemplate[]});
+  protected readonly organization = toSignal(this.organizationService.get());
+
+  protected readonly selectedTemplate = signal<LicenseTemplate | undefined>(undefined);
+  protected readonly templateFormLoading = signal(false);
+  protected readonly drawerLoading = signal(false);
+
+  private drawerRef?: DialogRef;
+  private readonly templateDrawerTemplate = viewChild.required<TemplateRef<unknown>>('templateDrawer');
+  protected readonly templateForm = this.fb.group({
+    name: this.fb.control('', Validators.required),
+    payloadTemplate: this.fb.control('', Validators.required),
+    expirationGracePeriodDays: this.fb.control(0, [Validators.required, Validators.min(0)]),
+  });
+
+  protected readonly payloadTemplatePlaceholder = `{
+  "plan": "{{ if hasItem "business" }}business{{ else }}pro{{ end }}",
+  "seats": {{ itemQuantity "seats" }}
+}`;
+
+  constructor() {
+    refreshInBackground(this.templatesService.refresh());
+  }
+
+  openSettingsModal() {
+    this.overlay.showModal(BillingSettingsComponent);
+  }
+
+  async openTemplateDrawer(template?: LicenseTemplate) {
+    this.hideDrawer();
+    this.selectedTemplate.set(template);
+    const open = () => (this.drawerRef = this.overlay.showDrawer(this.templateDrawerTemplate()));
+    if (!template) {
+      this.drawerLoading.set(false);
+      open();
+      return;
+    }
+    try {
+      const templates = await loadWhileOpen(this.drawerLoading, open, this.templatesService.refresh());
+      if (templates === undefined) {
+        return;
+      }
+      const fresh = templates.find((it) => it.id === template.id);
+      if (!fresh) {
+        this.toast.error('This template no longer exists');
+        this.hideDrawer();
+        return;
+      }
+      this.selectedTemplate.set(fresh);
+      this.templateForm.patchValue({
+        name: fresh.name,
+        payloadTemplate: fresh.payloadTemplate,
+        expirationGracePeriodDays: fresh.expirationGracePeriodDays,
+      });
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+      this.hideDrawer();
+    }
+  }
+
+  hideDrawer() {
+    this.drawerRef?.close();
+    this.selectedTemplate.set(undefined);
+    this.templateForm.reset({expirationGracePeriodDays: 0});
+  }
+
+  async saveTemplate() {
+    this.templateForm.markAllAsTouched();
+    if (!this.templateForm.valid) {
+      return;
+    }
+    this.templateFormLoading.set(true);
+    const {name, payloadTemplate, expirationGracePeriodDays} = this.templateForm.getRawValue();
+    const existing = this.selectedTemplate();
+    const action = existing
+      ? this.templatesService.update({...existing, name, payloadTemplate, expirationGracePeriodDays})
+      : this.templatesService.create({name, payloadTemplate, expirationGracePeriodDays});
+    try {
+      const saved = await firstValueFrom(action);
+      this.hideDrawer();
+      this.toast.success(`${saved.name} saved successfully`);
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    } finally {
+      this.templateFormLoading.set(false);
+    }
+  }
+
+  deleteTemplate(template: LicenseTemplate) {
+    this.overlay
+      .confirm(`Really delete template "${template.name}"?`)
+      .pipe(
+        filter((result) => result === true),
+        switchMap(() => this.templatesService.delete(template)),
+        catchError((e) => {
+          const msg = getFormDisplayedError(e);
+          if (msg) {
+            this.toast.error(msg);
+          }
+          return EMPTY;
+        })
+      )
+      .subscribe();
+  }
+}

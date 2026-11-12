@@ -1,0 +1,23 @@
+@if (link(); as link) {
+  <a [routerLink]="link" [queryParams]="queryParams()" class="distr-card distr-card-clickable p-4">
+    <ng-container [ngTemplateOutlet]="content" />
+  </a>
+} @else {
+  <div class="distr-card p-4">
+    <ng-container [ngTemplateOutlet]="content" />
+  </div>
+}
+
+<ng-template #content>
+  @if (typeIcon(); as typeIcon) {
+    <h2 appCardHeading class="mb-3"><fa-icon [icon]="typeIcon" class="me-2" />{{ heading() }}</h2>
+  } @else {
+    <h2 appCardHeading [icon]="icon()" class="mb-3">{{ heading() }}</h2>
+  }
+  <span class="headline -mt-2 mb-1 block text-4xl font-bold text-gray-900 empty:hidden dark:text-white">
+    <ng-content />
+  </span>
+  <span class="subtitle distr-text-muted block text-xs">
+    <ng-content select="[subtitle]" />
+  </span>
+</ng-template>

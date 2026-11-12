@@ -7,6 +7,7 @@ import {
   computed,
   effect,
   inject,
+  input,
   signal,
   TemplateRef,
   viewChild,
@@ -40,7 +41,6 @@ import {filteredByFormControl} from '../../util/filter';
 import {refreshInBackground} from '../../util/refresh';
 import {SecureImagePipe} from '../../util/secureImage';
 import {MultiSelectComponent, MultiSelectOption} from '../components/multi-select/multi-select.component';
-import {PageComponent} from '../components/page.component';
 import {QuotaLimitComponent} from '../components/quota-limit.component';
 import {SearchBarComponent} from '../components/search-bar.component';
 import {ApplicationsService} from '../services/applications.service';
@@ -89,7 +89,6 @@ const deploymentDisplayStatusLabels = new Map(
     DeploymentModalComponent,
     SecureImagePipe,
     QuotaLimitComponent,
-    PageComponent,
     SearchBarComponent,
     MultiSelectComponent,
   ],
@@ -137,18 +136,26 @@ export class DeploymentTargetsComponent implements AfterViewInit {
     search: new FormControl(this.route.snapshot.queryParamMap.get('search') ?? ''),
   });
 
-  protected readonly canFilterByCustomer = this.auth.isVendor() || this.auth.isPartner();
+  public readonly customerOrganizationId = input<string>();
+
+  private readonly isVendorOrPartner = this.auth.isVendor() || this.auth.isPartner();
+  protected readonly canFilterByCustomer = computed(() => this.isVendorOrPartner && !this.customerOrganizationId());
   private readonly queryParams = toSignal(this.route.queryParamMap, {requireSync: true});
   // Equal by content, so that changing one filter does not restart the poll that depends on another.
   protected readonly selectedCustomerIds = computed(
     () => {
+      const customerOrganizationId = this.customerOrganizationId();
       const params = this.queryParams();
-      return this.canFilterByCustomer
-        ? [
-            ...(params.get('internal') === 'true' ? [internalCustomerOption] : []),
-            ...params.getAll('customerOrganizationId'),
-          ]
-        : [];
+      if (customerOrganizationId) {
+        return [customerOrganizationId];
+      } else if (this.canFilterByCustomer()) {
+        return [
+          ...(params.get('internal') === 'true' ? [internalCustomerOption] : []),
+          ...params.getAll('customerOrganizationId'),
+        ];
+      } else {
+        return [];
+      }
     },
     {equal: arraysEqual}
   );
@@ -162,7 +169,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   protected readonly statusSelectOptions = deploymentDisplayStatusSelectOptions;
 
   protected readonly customerSelectOptions = toSignal(
-    this.canFilterByCustomer
+    this.isVendorOrPartner
       ? this.customerOrganizations.getCustomerOrganizations().pipe(
           map((customers) => [
             // Only vendors have deployment targets that belong to no customer.
@@ -215,7 +222,9 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   });
   protected readonly toolbarLimit = computed(() => {
     const customerIds = this.selectedCustomerIds();
-    if (this.auth.isPartner() || (customerIds.length > 0 && !customerIds.includes(internalCustomerOption))) {
+    if (this.customerOrganizationId()) {
+      return this.limit();
+    } else if (this.auth.isPartner() || (customerIds.length > 0 && !customerIds.includes(internalCustomerOption))) {
       return undefined;
     } else {
       return this.limit();
@@ -223,9 +232,10 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   });
   protected readonly count = toSignal(
     combineLatest([this.deploymentTargets$, this.context.getUser()]).pipe(
-      map(
-        ([targets, user]) => targets.filter((it) => it.customerOrganization?.id === user.customerOrganizationId).length
-      )
+      map(([targets, user]) => {
+        const customerOrganizationId = this.customerOrganizationId() ?? user.customerOrganizationId;
+        return targets.filter((it) => it.customerOrganization?.id === customerOrganizationId).length;
+      })
     ),
     {initialValue: 0}
   );
