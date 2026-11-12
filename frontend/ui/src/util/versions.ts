@@ -133,6 +133,31 @@ export function latestDeploymentVersion(
   );
 }
 
+/**
+ * Whether the version the deployment runs is older than the newest one it is entitled to. A deployment running a
+ * version beyond that is not outdated. A customer receives only the entitled versions, so a version missing from
+ * `applications` counts as outdated unless it is the newest.
+ */
+export function isDeploymentOutdated(
+  deployment: DeploymentWithLatestRevision,
+  applications: Application[],
+  entitlements: ApplicationEntitlement[]
+): boolean {
+  const latest = latestDeploymentVersion(deployment, applications, entitlements);
+  if (latest === undefined) {
+    return false;
+  }
+  const application = applications.find((app) => app.id === deployment.application.id);
+  const runningVersionId = deployment.currentApplicationVersionId ?? deployment.applicationVersionId;
+  const running = application?.versions?.find((version) => version.id === runningVersionId);
+  if (running === undefined) {
+    return latest.id !== runningVersionId;
+  }
+  return (
+    applicationVersionComparator(application?.versioningStrategy, application?.versions ?? [])(running, latest) < 0
+  );
+}
+
 export function allowsAutomaticUpdates(application: Application): boolean {
   return (application.allowAutomaticUpdates ?? false) && application.versioningStrategy !== 'legacy';
 }

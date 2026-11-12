@@ -17,7 +17,6 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
 import {
-  ApplicationVersion,
   DeploymentRevisionResponse,
   DeploymentTarget,
   DeploymentTargetScope,
@@ -52,7 +51,11 @@ import {controllerChangelog} from '../../../data';
 import {dateTimeLocalToISO, isoToDateTimeLocal} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {DOCKER_ENDPOINT_REGEX, RESOURCE_QUANTITY_REGEX} from '../../../util/validation';
-import {deploymentIdsAllowingAutomaticUpdates, latestDeploymentVersion} from '../../../util/versions';
+import {
+  deploymentIdsAllowingAutomaticUpdates,
+  isDeploymentOutdated,
+  latestDeploymentVersion,
+} from '../../../util/versions';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
@@ -248,30 +251,12 @@ export class DeploymentTargetCardComponent {
 
   private readonly applications = toSignal(this.applicationsService.list(), {initialValue: []});
 
-  /** The newest version each deployment is entitled to, which is the one it runs when it is current. */
-  private readonly latestVersionByDeploymentId = computed(() => {
-    const deploymentTarget = this.deploymentTarget();
+  protected readonly deploymentIdsWithUpdate = computed(() => {
     const applications = this.applications();
     const entitlements = this.entitlements();
-
-    const latestVersions = new Map<string, ApplicationVersion>();
-    for (const deployment of deploymentTarget.deployments) {
-      const maxVersion = latestDeploymentVersion(deployment, applications, entitlements);
-      if (deployment.id && maxVersion) {
-        latestVersions.set(deployment.id, maxVersion);
-      }
-    }
-    return latestVersions;
-  });
-
-  protected readonly deploymentIdsWithUpdate = computed(() => {
-    const latestVersions = this.latestVersionByDeploymentId();
     return new Set(
       this.deploymentTarget()
-        .deployments.filter((deployment) => {
-          const latestVersion = deployment.id ? latestVersions.get(deployment.id) : undefined;
-          return latestVersion !== undefined && latestVersion.id !== deployment.applicationVersionId;
-        })
+        .deployments.filter((deployment) => isDeploymentOutdated(deployment, applications, entitlements))
         .map((deployment) => deployment.id!)
     );
   });
@@ -330,7 +315,7 @@ export class DeploymentTargetCardComponent {
 
   private enableAutomaticUpdatesMessage(deployment: DeploymentWithLatestRevision): string {
     const everyFutureVersion = 'to every version released from now on, without anyone confirming it.';
-    const latestVersion = deployment.id ? this.latestVersionByDeploymentId().get(deployment.id) : undefined;
+    const latestVersion = latestDeploymentVersion(deployment, this.applications(), this.entitlements());
     if (latestVersion === undefined) {
       return `The deployment is updated to the latest version right away and ${everyFutureVersion}`;
     }

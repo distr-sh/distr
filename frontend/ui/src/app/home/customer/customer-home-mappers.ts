@@ -1,6 +1,6 @@
 import {Application, DeploymentTarget, UserAccount} from '@distr-sh/distr-sdk';
 import dayjs, {Dayjs} from 'dayjs';
-import {latestDeploymentVersion} from '../../../util/versions';
+import {isDeploymentOutdated, latestDeploymentVersion} from '../../../util/versions';
 import {Artifact} from '../../services/artifacts.service';
 import {AccessToken} from '../../types/access-token';
 import {ActivityFeedEntry} from '../../types/activity-feed';
@@ -55,9 +55,7 @@ export function toCustomerHomeDeploymentTargets(
         currentApplicationVersionId: deployment.currentApplicationVersionId,
         currentApplicationVersionName: deployment.currentApplicationVersionName,
         latestApplicationVersionName: latest?.name,
-        updateAvailable:
-          latest !== undefined &&
-          latest.id !== (deployment.currentApplicationVersionId ?? deployment.applicationVersionId),
+        updateAvailable: isDeploymentOutdated(deployment, applications, entitlements),
         deploymentRevisionId: deployment.deploymentRevisionId,
         deploymentRevisionCreatedAt: deployment.deploymentRevisionCreatedAt,
         deploymentRevisionCreatedBy: user(

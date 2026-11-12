@@ -6,6 +6,12 @@ export interface VendorHomeDeploymentHealth {
   stale: number;
 }
 
+export interface VendorHomeUpdates {
+  totalCustomers: number;
+  outdatedCustomers: number;
+  outdatedDeployments: number;
+}
+
 export interface VendorHomeCustomer {
   id: string;
   name: string;
