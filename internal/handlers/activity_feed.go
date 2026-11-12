@@ -200,10 +200,12 @@ func licenseKeyActivity(ctx context.Context, scope activityScope, since time.Tim
 	}
 	if !auth.CurrentOrg().HasFeature(types.FeatureLicensing) || len(customerOrgIDs) == 0 {
 		return nil, nil
-	} else if keys, err := db.GetLicenseKeysByCustomerOrgIDs(ctx, customerOrgIDs, *auth.CurrentOrgID()); err != nil {
+	} else if keys, err := db.GetLicenseKeyEvents(
+		ctx, *auth.CurrentOrgID(), customerOrgIDs, since, activityfeed.Limit,
+	); err != nil {
 		return nil, fmt.Errorf("failed to get license keys: %w", err)
 	} else {
-		return activityfeed.LicenseKeys(keys, since), nil
+		return activityfeed.LicenseKeys(keys), nil
 	}
 }
 

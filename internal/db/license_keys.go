@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/distrerr"
@@ -76,20 +77,14 @@ func GetLicenseKeys(ctx context.Context, orgID uuid.UUID) ([]types.LicenseKey, e
 func GetLicenseKeysByCustomerOrgID(
 	ctx context.Context, customerOrgID, orgID uuid.UUID,
 ) ([]types.LicenseKey, error) {
-	return GetLicenseKeysByCustomerOrgIDs(ctx, []uuid.UUID{customerOrgID}, orgID)
-}
-
-func GetLicenseKeysByCustomerOrgIDs(
-	ctx context.Context, customerOrgIDs []uuid.UUID, orgID uuid.UUID,
-) ([]types.LicenseKey, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `
 		SELECT `+licenseKeyOutExpr+`
 		FROM LicenseKey lk`+licenseKeyLatestRevisionJoin+`
-		WHERE lk.organization_id = @orgId AND lk.customer_organization_id = any(@customerOrgIds)
+		WHERE lk.organization_id = @orgId AND lk.customer_organization_id = @customerOrgId
 			AND lr.payload IS NOT NULL
 		ORDER BY lk.name`,
-		pgx.NamedArgs{"orgId": orgID, "customerOrgIds": customerOrgIDs},
+		pgx.NamedArgs{"orgId": orgID, "customerOrgId": customerOrgID},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not query LicenseKey: %w", err)
@@ -97,6 +92,36 @@ func GetLicenseKeysByCustomerOrgIDs(
 	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.LicenseKey])
 	if err != nil {
 		return nil, fmt.Errorf("could not query LicenseKey: %w", err)
+	}
+	return result, nil
+}
+
+// GetLicenseKeyEvents returns the license keys of the customer organizations whose latest revision was created
+// since, the most recently revised first and at most limit of them.
+func GetLicenseKeyEvents(
+	ctx context.Context,
+	orgID uuid.UUID,
+	customerOrgIDs []uuid.UUID,
+	since time.Time,
+	limit int,
+) ([]types.LicenseKeyEvent, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx, `
+		SELECT lk.id, lk.created_at, lk.name, lk.customer_organization_id, lr.created_at AS last_revised_at
+		FROM LicenseKey lk`+licenseKeyLatestRevisionJoin+`
+		WHERE lk.organization_id = @orgId
+			AND lk.customer_organization_id = any(@customerOrgIds)
+			AND lr.created_at > @since
+		ORDER BY lr.created_at DESC
+		LIMIT @limit`,
+		pgx.NamedArgs{"orgId": orgID, "customerOrgIds": customerOrgIDs, "since": since, "limit": limit},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query LicenseKey events: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.LicenseKeyEvent])
+	if err != nil {
+		return nil, fmt.Errorf("could not collect LicenseKey events: %w", err)
 	}
 	return result, nil
 }
