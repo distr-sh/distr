@@ -10,6 +10,7 @@ import (
 	"time"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/db/queryable"
 	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/env"
@@ -20,6 +21,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"go.podman.io/image/v5/manifest"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -1369,89 +1371,72 @@ func GetArtifactVersionPullFilterOptions(
 		"customerOrgId": customerOrganizationID,
 	}
 
-	// Customer organizations
-	rows, err := db.Query(
-		ctx,
+	// The queries run concurrently, so db has to be a pool, never a transaction.
+	group, ctx := errgroup.WithContext(ctx)
+	group.Go(collectRowsInto(
+		ctx, db, &result.CustomerOrganizations, pgx.RowToStructByPos[types.FilterOption],
 		`SELECT co.id, co.name FROM `+baseFromExpr+
 			` JOIN CustomerOrganization co ON co.id = p.customer_organization_id`+
 			` WHERE `+baseWhereExpr+
 			` GROUP BY co.id, co.name ORDER BY co.name`,
 		args,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("could not query customer organizations for filter options: %w", err)
-	}
-	if result.CustomerOrganizations, err = pgx.CollectRows(rows, pgx.RowToStructByPos[types.FilterOption]); err != nil {
-		return nil, fmt.Errorf("could not scan customer organizations for filter options: %w", err)
-	}
-
-	// User accounts
-	rows, err = db.Query(
-		ctx,
+	))
+	group.Go(collectRowsInto(
+		ctx, db, &result.UserAccounts, pgx.RowToStructByPos[types.FilterOption],
 		`SELECT u.id, COALESCE(NULLIF(u.name, ''), u.email) AS name FROM `+baseFromExpr+
 			` JOIN UserAccount u ON u.id = p.useraccount_id`+
 			` LEFT JOIN CustomerOrganization co ON co.id = p.customer_organization_id`+
 			` WHERE `+baseWhereExpr+
 			` GROUP BY u.id, u.name, u.email ORDER BY name`,
 		args,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("could not query user accounts for filter options: %w", err)
-	}
-	if result.UserAccounts, err = pgx.CollectRows(rows, pgx.RowToStructByPos[types.FilterOption]); err != nil {
-		return nil, fmt.Errorf("could not scan user accounts for filter options: %w", err)
-	}
-
-	// Remote addresses
-	rows, err = db.Query(
-		ctx,
+	))
+	group.Go(collectRowsInto(
+		ctx, db, &result.RemoteAddresses, pgx.RowTo[string],
 		`SELECT p.remote_address FROM `+baseFromExpr+
 			` LEFT JOIN CustomerOrganization co ON co.id = p.customer_organization_id`+
 			` WHERE `+baseWhereExpr+` AND p.remote_address IS NOT NULL`+
 			` GROUP BY p.remote_address ORDER BY p.remote_address`,
 		args,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("could not query remote addresses for filter options: %w", err)
-	}
-	if result.RemoteAddresses, err = pgx.CollectRows(rows, pgx.RowTo[string]); err != nil {
-		return nil, fmt.Errorf("could not scan remote addresses for filter options: %w", err)
-	}
-
-	// Artifacts
-	rows, err = db.Query(
-		ctx,
+	))
+	group.Go(collectRowsInto(
+		ctx, db, &result.Artifacts, pgx.RowToStructByPos[types.FilterOption],
 		`SELECT a.id, a.name FROM `+baseFromExpr+
 			` LEFT JOIN CustomerOrganization co ON co.id = p.customer_organization_id`+
 			` WHERE `+baseWhereExpr+
 			` GROUP BY a.id, a.name ORDER BY a.name`,
 		args,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("could not query artifacts for filter options: %w", err)
-	}
-	if result.Artifacts, err = pgx.CollectRows(rows, pgx.RowToStructByPos[types.FilterOption]); err != nil {
-		return nil, fmt.Errorf("could not scan artifacts for filter options: %w", err)
-	}
-
-	// Deployment targets
-	rows, err = db.Query(
-		ctx,
+	))
+	group.Go(collectRowsInto(
+		ctx, db, &result.DeploymentTargets, pgx.RowToStructByPos[types.FilterOption],
 		`SELECT dt.id, dt.name FROM `+baseFromExpr+
 			` JOIN DeploymentTarget dt ON dt.id = p.deployment_target_id`+
 			` LEFT JOIN CustomerOrganization co ON co.id = p.customer_organization_id`+
 			` WHERE `+baseWhereExpr+
 			` GROUP BY dt.id, dt.name ORDER BY dt.name`,
 		args,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("could not query deployment targets for filter options: %w", err)
+	))
+	if err := group.Wait(); err != nil {
+		return nil, fmt.Errorf("could not query filter options: %w", err)
 	}
-	if result.DeploymentTargets, err = pgx.CollectRows(rows, pgx.RowToStructByPos[types.FilterOption]); err != nil {
-		return nil, fmt.Errorf("could not scan deployment targets for filter options: %w", err)
-	}
-
 	return result, nil
+}
+
+func collectRowsInto[T any](
+	ctx context.Context,
+	db queryable.Queryable,
+	target *[]T,
+	rowTo pgx.RowToFunc[T],
+	sql string,
+	args pgx.NamedArgs,
+) func() error {
+	return func() error {
+		rows, err := db.Query(ctx, sql, args)
+		if err != nil {
+			return err
+		}
+		*target, err = pgx.CollectRows(rows, rowTo)
+		return err
+	}
 }
 
 func GetArtifactVersionPullVersionOptions(
