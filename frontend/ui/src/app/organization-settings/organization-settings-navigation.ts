@@ -1,6 +1,6 @@
 import {defineRoutedTabs} from '../navigation/tabs';
 
-export type SettingsTabId = 'general' | 'identity-provider' | 'email' | 'subscription' | 'billing';
+export type SettingsTabId = 'general' | 'identity-provider' | 'subscription' | 'billing';
 
 export const organizationSettingsTabs = defineRoutedTabs<SettingsTabId>(
   '/settings/organization',
@@ -13,14 +13,11 @@ export const organizationSettingsTabs = defineRoutedTabs<SettingsTabId>(
       visible: (c) => c.user.isAdminOrSuperAdmin,
       locked: {
         plan: 'business',
-        when: (c) => !c.features.has('custom_oidc_providers') && !c.features.has('custom_domains'),
+        when: (c) =>
+          !c.features.has('custom_oidc_providers') &&
+          !c.features.has('custom_domains') &&
+          !c.features.has('custom_emails'),
       },
-    },
-    {
-      id: 'email',
-      label: 'Email Sending Provider',
-      visible: (c) => c.user.isAdminOrSuperAdmin,
-      locked: {plan: 'business', when: (c) => !c.features.has('custom_emails')},
     },
     {
       id: 'subscription',

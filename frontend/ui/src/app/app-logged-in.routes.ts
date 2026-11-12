@@ -42,7 +42,6 @@ import {UpdateNotificationsPageComponent} from './notification-configurations/up
 import {CustomerNotificationRecordsPageComponent} from './notification-records/customer-notification-records-page.component';
 import {NotificationRecordsPageComponent} from './notification-records/notification-records-page.component';
 import {BillingComponent} from './organization-settings/billing/billing.component';
-import {CustomEmailComponent} from './organization-settings/custom-email/custom-email.component';
 import {OrganizationDomainsComponent} from './organization-settings/domains-and-sign-in/organization-domains.component';
 import {GeneralSettingsComponent} from './organization-settings/general/general-settings.component';
 import {organizationSettingsTabs} from './organization-settings/organization-settings-navigation';
@@ -442,12 +441,6 @@ const shellRoutes: Routes = [
                 title: organizationSettingsTabs.title('identity-provider'),
                 component: OrganizationDomainsComponent,
                 canActivate: [organizationSettingsTabs.guard('identity-provider')],
-              },
-              {
-                path: 'email',
-                title: organizationSettingsTabs.title('email'),
-                component: CustomEmailComponent,
-                canActivate: [organizationSettingsTabs.guard('email')],
               },
               {
                 path: 'subscription',

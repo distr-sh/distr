@@ -1,5 +1,6 @@
 import {HttpErrorResponse} from '@angular/common/http';
 import {Component, inject, OnInit, signal} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faFloppyDisk, faPaperPlane, faTrash} from '@fortawesome/free-solid-svg-icons';
@@ -42,8 +43,10 @@ export class CustomEmailComponent implements OnInit {
     smtpUsername: this.fb.control(''),
     smtpPassword: this.fb.control(''),
     smtpImplicitTls: this.fb.control(false),
-    enabled: this.fb.control(true),
+    enabled: this.fb.control(false),
   });
+
+  protected readonly enabled = toSignal(this.form.controls.enabled.valueChanges, {initialValue: false});
 
   async ngOnInit() {
     try {
