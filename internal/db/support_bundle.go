@@ -302,41 +302,43 @@ func GetCustomerSupportBundleEvents(
 	ctx context.Context,
 	orgID uuid.UUID,
 	customerOrgIDs []uuid.UUID,
+	viewer types.ActivityViewer,
 	since time.Time,
 	limit int,
 ) ([]types.CustomerSupportBundleEvent, error) {
-	const customerMember = `
-		LEFT JOIN Organization_UserAccount j
-			ON j.user_account_id = u.id
-				AND j.organization_id = sb.organization_id
-				AND j.customer_organization_id = sb.customer_organization_id`
+	const member = `
+		LEFT JOIN Organization_UserAccount j ON j.user_account_id = u.id AND j.organization_id = sb.organization_id`
+	userName := activityUserExpr("name", "sb.customer_organization_id")
+	userImageID := activityUserExpr("image_id", "sb.customer_organization_id")
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		`SELECT * FROM (
 			SELECT sb.id AS support_bundle_id, sb.customer_organization_id, sb.created_at, sb.title,
 				NULL::TEXT AS status,
-				CASE WHEN j.user_account_id IS NOT NULL THEN u.name END AS user_name,
-				CASE WHEN j.user_account_id IS NOT NULL THEN u.image_id END AS user_image_id
+				`+userName+` AS user_name,
+				`+userImageID+` AS user_image_id
 			FROM SupportBundle sb
 				LEFT JOIN UserAccount u ON u.id = sb.created_by_user_account_id
-				`+customerMember+`
+				`+member+`
 			WHERE sb.organization_id = @orgId
 				AND sb.customer_organization_id = any(@customerOrgIds)
 				AND sb.created_at > @since
 			UNION ALL
 			SELECT sb.id, sb.customer_organization_id, sb.status_changed_at, sb.title, sb.status::TEXT,
-				CASE WHEN j.user_account_id IS NOT NULL THEN u.name END,
-				CASE WHEN j.user_account_id IS NOT NULL THEN u.image_id END
+				`+userName+`,
+				`+userImageID+`
 			FROM SupportBundle sb
 				LEFT JOIN UserAccount u ON u.id = sb.status_changed_by_user_account_id
-				`+customerMember+`
+				`+member+`
 			WHERE sb.organization_id = @orgId
 				AND sb.customer_organization_id = any(@customerOrgIds)
 				AND sb.status_changed_at > @since
 		) events
 		ORDER BY created_at DESC
 		LIMIT @limit`,
-		pgx.NamedArgs{"orgId": orgID, "customerOrgIds": customerOrgIDs, "since": since, "limit": limit},
+		activityViewerArgs(viewer, pgx.NamedArgs{
+			"orgId": orgID, "customerOrgIds": customerOrgIDs, "since": since, "limit": limit,
+		}),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query customer support bundle events: %w", err)

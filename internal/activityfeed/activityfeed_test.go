@@ -19,21 +19,27 @@ func TestLatest_partnerNeverReceivesActivityOfCustomersItDoesNotManage(t *testin
 
 	entries := make([]activityfeed.Entry, 0, 2+2*activityfeed.Limit)
 	entries = append(entries,
-		activityfeed.Entry{ID: uuid.New(), CreatedAt: now.Add(-time.Hour), CustomerOrganizationID: managed.ID},
-		activityfeed.Entry{ID: uuid.New(), CreatedAt: now, CustomerOrganizationID: uuid.Nil},
+		activityfeed.Entry{ID: uuid.New(), CreatedAt: now.Add(-time.Hour), CustomerOrganizationID: &managed.ID},
+		activityfeed.Entry{ID: uuid.New(), CreatedAt: now.Add(-2 * time.Hour)},
 	)
 	for i := range activityfeed.Limit {
+		createdAt := now.Add(-time.Duration(i))
 		entries = append(entries,
-			activityfeed.Entry{ID: uuid.New(), CreatedAt: now.Add(-time.Duration(i)), CustomerOrganizationID: otherPartner},
-			activityfeed.Entry{ID: uuid.New(), CreatedAt: now.Add(-time.Duration(i)), CustomerOrganizationID: vendorOwned},
+			activityfeed.Entry{ID: uuid.New(), CreatedAt: createdAt, CustomerOrganizationID: &otherPartner},
+			activityfeed.Entry{ID: uuid.New(), CreatedAt: createdAt, CustomerOrganizationID: &vendorOwned},
 		)
 	}
 
 	result := activityfeed.Latest(entries, []types.CustomerOrganization{managed})
 
-	g.Expect(result).To(HaveExactElements(SatisfyAll(
-		HaveField("ID", entries[0].ID),
-		HaveField("CustomerOrganizationID", managed.ID),
-		HaveField("CustomerOrganizationName", "Managed"),
-	)))
+	g.Expect(result).To(HaveExactElements(
+		SatisfyAll(
+			HaveField("ID", entries[0].ID),
+			HaveField("CustomerOrganizationName", HaveValue(Equal("Managed"))),
+		),
+		SatisfyAll(
+			HaveField("ID", entries[1].ID),
+			HaveField("CustomerOrganizationName", BeNil()),
+		),
+	))
 }

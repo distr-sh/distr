@@ -164,32 +164,29 @@ func mergeApplications(applications []types.Application) []types.Application {
 	return util.GetValues(applicationMap)
 }
 
-// GetApplicationVersionsEntitledToCustomers returns the newest versions released since that each of the
-// customer organizations may deploy, at most limit of them in total. Archived versions are left out, and with
-// entitledOnly so are the versions no valid entitlement of the customer covers.
-func GetApplicationVersionsEntitledToCustomers(
+// GetRecentApplicationVersions returns the newest versions released since, at most limit of them. Archived
+// versions are left out, and with a customer organization and entitledOnly so are the versions no valid
+// entitlement of the customer covers.
+func GetRecentApplicationVersions(
 	ctx context.Context,
 	orgID uuid.UUID,
-	customerOrgIDs []uuid.UUID,
+	customerOrgID *uuid.UUID,
 	entitledOnly bool,
 	since time.Time,
 	limit int,
-) ([]types.CustomerApplicationVersion, error) {
+) ([]types.ApplicationVersionEvent, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		`SELECT av.id, av.created_at, a.id AS application_id, a.name AS application_name, av.name,
-			co.id AS customer_organization_id
-		FROM CustomerOrganization co
-			JOIN Application a ON a.organization_id = co.organization_id
+		`SELECT av.id, av.created_at, a.id AS application_id, a.name AS application_name, av.name
+		FROM Application a
 			JOIN ApplicationVersion av ON av.application_id = a.id
-		WHERE co.organization_id = @orgId
-			AND co.id = any(@customerOrgIds)
+		WHERE a.organization_id = @orgId
 			AND av.created_at > @since
 			AND av.archived_at IS NULL
 			AND (NOT @entitledOnly OR EXISTS (
 				SELECT 1 FROM ApplicationEntitlement al
 				WHERE al.application_id = a.id
-					AND al.customer_organization_id = co.id
+					AND al.customer_organization_id = @customerOrgId
 					AND (al.expires_at IS NULL OR al.expires_at > now())
 					AND (
 						NOT EXISTS (
@@ -204,17 +201,17 @@ func GetApplicationVersionsEntitledToCustomers(
 		ORDER BY av.created_at DESC
 		LIMIT @limit`,
 		pgx.NamedArgs{
-			"orgId":          orgID,
-			"customerOrgIds": customerOrgIDs,
-			"entitledOnly":   entitledOnly,
-			"since":          since,
-			"limit":          limit,
+			"orgId":         orgID,
+			"customerOrgId": customerOrgID,
+			"entitledOnly":  entitledOnly && customerOrgID != nil,
+			"since":         since,
+			"limit":         limit,
 		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query customer application versions: %w", err)
 	}
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.CustomerApplicationVersion])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ApplicationVersionEvent])
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect customer application versions: %w", err)
 	}

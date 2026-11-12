@@ -217,16 +217,6 @@ func visibleArtifacts(ctx context.Context, customerOrgID *uuid.UUID) ([]types.Ar
 	return db.GetArtifactsByEntitlementOwnerID(ctx, orgID, *customerOrgID)
 }
 
-// artifactEntitlementsApply reports whether artifact entitlements restrict customers, which they do only with
-// licensing enabled and once the vendor has created any.
-func artifactEntitlementsApply(ctx context.Context) (bool, error) {
-	auth := auth.Authentication.Require(ctx)
-	if !auth.CurrentOrg().HasFeature(types.FeatureLicensing) {
-		return false, nil
-	}
-	return db.HasAnyArtifactEntitlement(ctx, *auth.CurrentOrgID())
-}
-
 func getArtifact(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	return respond.JSON(mapping.ArtifactToAPI(*internalctx.GetArtifact(ctx))), nil

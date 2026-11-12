@@ -19,6 +19,6 @@ export interface ActivityFeedEntry {
   detail?: string;
   userName?: string;
   userImageUrl?: string;
-  customerOrganizationId: string;
-  customerOrganizationName: string;
+  customerOrganizationId?: string;
+  customerOrganizationName?: string;
 }

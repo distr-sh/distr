@@ -6,18 +6,17 @@ import (
 	"github.com/google/uuid"
 )
 
-// CustomerArtifactVersion is a release tag of an artifact together with the customer organization it concerns,
-// such as the tag the customer organization pulled last or one it may pull.
-type CustomerArtifactVersion struct {
+// CustomerArtifactPull is the release tag of an artifact that a customer organization pulled last.
+type CustomerArtifactPull struct {
 	CustomerOrganizationID uuid.UUID
 	Artifact               Artifact
 	ArtifactVersion        ArtifactVersion
 }
 
-// CustomerArtifactUpdate is the CustomerArtifactVersion a customer organization pulled last with the newer release
-// tag that it may pull, nil when there is none.
+// CustomerArtifactUpdate is a CustomerArtifactPull with the newer release tag that the customer organization may
+// pull, nil when there is none.
 type CustomerArtifactUpdate struct {
-	CustomerArtifactVersion
+	CustomerArtifactPull
 	AvailableUpdate *ArtifactVersion
 }
 
@@ -81,7 +80,7 @@ func (v ArtifactTagVisibility) Allows(customerOrganizationID uuid.UUID, artifact
 // may pull, unless that tag is not newer than the one it pulled by the rule update notifications follow. The tags
 // have to include every release tag of the pulled artifacts.
 func AvailableArtifactUpdates(
-	pulls []CustomerArtifactVersion,
+	pulls []CustomerArtifactPull,
 	tags []ArtifactVersion,
 	visibility ArtifactTagVisibility,
 ) []CustomerArtifactUpdate {
@@ -101,7 +100,7 @@ func AvailableArtifactUpdates(
 		index := slices.IndexFunc(artifactTags, func(tag ArtifactVersion) bool {
 			return visibility.Allows(pull.CustomerOrganizationID, pull.Artifact, tag)
 		})
-		result[i] = CustomerArtifactUpdate{CustomerArtifactVersion: pull}
+		result[i] = CustomerArtifactUpdate{CustomerArtifactPull: pull}
 		if index >= 0 &&
 			ArtifactTagBehind(pull.Artifact.VersioningStrategy, pull.ArtifactVersion, artifactTags[index]) {
 			result[i].AvailableUpdate = &artifactTags[index]

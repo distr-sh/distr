@@ -545,15 +545,17 @@ func GetLatestDeploymentRevisionIDs(ctx context.Context, deploymentID uuid.UUID,
 	return result, nil
 }
 
-// GetCustomerDeploymentRevisions returns the newest deployment revisions of the customer organizations created
-// since, at most limit of them in total.
-func GetCustomerDeploymentRevisions(
+// GetDeploymentRevisionEvents returns the newest deployment revisions of the customer organizations created
+// since, at most limit of them in total. A vendor viewer also gets those of the deployment targets that belong
+// to no customer organization.
+func GetDeploymentRevisionEvents(
 	ctx context.Context,
 	orgID uuid.UUID,
 	customerOrgIDs []uuid.UUID,
+	viewer types.ActivityViewer,
 	since time.Time,
 	limit int,
-) ([]types.CustomerDeploymentRevision, error) {
+) ([]types.DeploymentRevisionEvent, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		`SELECT
@@ -564,29 +566,31 @@ func GetCustomerDeploymentRevisions(
 			dt.name AS deployment_target_name,
 			a.name AS application_name,
 			av.name AS application_version_name,
-			CASE WHEN j.customer_organization_id IS NOT NULL THEN u.name END AS created_by_name,
-			CASE WHEN j.customer_organization_id IS NOT NULL THEN u.image_id END AS created_by_image_id
+			`+activityUserExpr("name", "dt.customer_organization_id")+` AS created_by_name,
+			`+activityUserExpr("image_id", "dt.customer_organization_id")+` AS created_by_image_id
 		FROM DeploymentTarget dt
 			JOIN Deployment d ON d.deployment_target_id = dt.id
 			JOIN DeploymentRevision dr ON dr.deployment_id = d.id
 			JOIN ApplicationVersion av ON av.id = dr.application_version_id
 			JOIN Application a ON a.id = av.application_id
 			LEFT JOIN UserAccount u ON u.id = dr.created_by_user_account_id
-			LEFT JOIN Organization_UserAccount j
-				ON j.user_account_id = u.id
-					AND j.organization_id = dt.organization_id
-					AND j.customer_organization_id = dt.customer_organization_id
+			LEFT JOIN Organization_UserAccount j ON j.user_account_id = u.id AND j.organization_id = dt.organization_id
 		WHERE dt.organization_id = @orgId
-			AND dt.customer_organization_id = any(@customerOrgIds)
+			AND (
+				dt.customer_organization_id = any(@customerOrgIds)
+				OR (@viewerIsVendor AND dt.customer_organization_id IS NULL)
+			)
 			AND dr.created_at > @since
 		ORDER BY dr.created_at DESC
 		LIMIT @limit`,
-		pgx.NamedArgs{"orgId": orgID, "customerOrgIds": customerOrgIDs, "since": since, "limit": limit},
+		activityViewerArgs(viewer, pgx.NamedArgs{
+			"orgId": orgID, "customerOrgIds": customerOrgIDs, "since": since, "limit": limit,
+		}),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query customer deployment revisions: %w", err)
 	}
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.CustomerDeploymentRevision])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.DeploymentRevisionEvent])
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect customer deployment revisions: %w", err)
 	}

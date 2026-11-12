@@ -41,12 +41,14 @@ type Entry struct {
 	Type      EntryType
 	// ResourceID is the application, artifact, deployment target, license key or support bundle the
 	// entry is about, depending on its type.
-	ResourceID               uuid.UUID
-	Subject                  string
-	Detail                   *string
-	User                     *User
-	CustomerOrganizationID   uuid.UUID
-	CustomerOrganizationName string
+	ResourceID uuid.UUID
+	Subject    string
+	Detail     *string
+	User       *User
+	// CustomerOrganizationID is nil for activity of the vendor that concerns no particular customer
+	// organization, such as a new application version.
+	CustomerOrganizationID   *uuid.UUID
+	CustomerOrganizationName *string
 }
 
 func newUser(name *string, imageID *uuid.UUID) *User {
@@ -56,9 +58,9 @@ func newUser(name *string, imageID *uuid.UUID) *User {
 	return &User{Name: *name, ImageID: imageID}
 }
 
-// Latest returns the newest entries of the customer organizations, at most Limit of them, named after their
-// customer organization. Entries of any other customer organization are left out, so that a source returning
-// more than it was asked for cannot widen what the caller sees.
+// Latest returns the newest entries, at most Limit of them, with the name of their customer organization.
+// Entries of a customer organization outside customerOrgs are left out, so that a source returning more than it
+// was asked for cannot widen what the caller sees.
 func Latest(entries []Entry, customerOrgs []types.CustomerOrganization) []Entry {
 	names := make(map[uuid.UUID]string, len(customerOrgs))
 	for _, customerOrg := range customerOrgs {
@@ -66,8 +68,10 @@ func Latest(entries []Entry, customerOrgs []types.CustomerOrganization) []Entry 
 	}
 	result := make([]Entry, 0, len(entries))
 	for _, entry := range entries {
-		if name, ok := names[entry.CustomerOrganizationID]; ok {
-			entry.CustomerOrganizationName = name
+		if entry.CustomerOrganizationID == nil {
+			result = append(result, entry)
+		} else if name, ok := names[*entry.CustomerOrganizationID]; ok {
+			entry.CustomerOrganizationName = &name
 			result = append(result, entry)
 		}
 	}
@@ -75,33 +79,36 @@ func Latest(entries []Entry, customerOrgs []types.CustomerOrganization) []Entry 
 	return result[:min(len(result), Limit)]
 }
 
-func ApplicationVersions(versions []types.CustomerApplicationVersion) []Entry {
+func ApplicationVersions(versions []types.ApplicationVersionEvent) []Entry {
 	result := make([]Entry, len(versions))
 	for i, version := range versions {
 		result[i] = Entry{
-			ID:                     version.ID,
-			CreatedAt:              version.CreatedAt,
-			Type:                   EntryTypeApplicationVersionCreated,
-			ResourceID:             version.ApplicationID,
-			Subject:                version.ApplicationName,
-			Detail:                 new(version.Name),
-			CustomerOrganizationID: version.CustomerOrganizationID,
+			ID:         version.ID,
+			CreatedAt:  version.CreatedAt,
+			Type:       EntryTypeApplicationVersionCreated,
+			ResourceID: version.ApplicationID,
+			Subject:    version.ApplicationName,
+			Detail:     new(version.Name),
 		}
 	}
 	return result
 }
 
-func ArtifactTags(tags []types.CustomerArtifactVersion) []Entry {
+// ArtifactTags returns an entry for every tag, which has to belong to one of the artifacts.
+func ArtifactTags(artifacts []types.ArtifactWithDownloads, tags []types.ArtifactVersion) []Entry {
+	names := make(map[uuid.UUID]string, len(artifacts))
+	for _, artifact := range artifacts {
+		names[artifact.ID] = artifact.Name
+	}
 	result := make([]Entry, len(tags))
 	for i, tag := range tags {
 		result[i] = Entry{
-			ID:                     tag.ArtifactVersion.ID,
-			CreatedAt:              tag.ArtifactVersion.CreatedAt,
-			Type:                   EntryTypeArtifactVersionCreated,
-			ResourceID:             tag.Artifact.ID,
-			Subject:                tag.Artifact.Name,
-			Detail:                 new(tag.ArtifactVersion.Name),
-			CustomerOrganizationID: tag.CustomerOrganizationID,
+			ID:         tag.ID,
+			CreatedAt:  tag.CreatedAt,
+			Type:       EntryTypeArtifactVersionCreated,
+			ResourceID: tag.ArtifactID,
+			Subject:    names[tag.ArtifactID],
+			Detail:     new(tag.Name),
 		}
 	}
 	return result
@@ -118,7 +125,7 @@ func FirstPulls(pulls []types.ArtifactVersionPull) []Entry {
 			ResourceID:             pull.Artifact.ID,
 			Subject:                pull.Artifact.Name,
 			Detail:                 new(pull.ArtifactVersion.Name),
-			CustomerOrganizationID: pull.CustomerOrganization.ID,
+			CustomerOrganizationID: new(pull.CustomerOrganization.ID),
 		}
 		if pull.UserAccount != nil {
 			result[i].User = &User{Name: pull.UserAccount.Name, ImageID: pull.UserAccount.ImageID}
@@ -127,7 +134,7 @@ func FirstPulls(pulls []types.ArtifactVersionPull) []Entry {
 	return result
 }
 
-func DeploymentRevisions(revisions []types.CustomerDeploymentRevision) []Entry {
+func DeploymentRevisions(revisions []types.DeploymentRevisionEvent) []Entry {
 	result := make([]Entry, len(revisions))
 	for i, revision := range revisions {
 		result[i] = Entry{
@@ -163,7 +170,7 @@ func LicenseKeys(keys []types.LicenseKey, since time.Time) []Entry {
 			Type:                   entryType,
 			ResourceID:             key.ID,
 			Subject:                key.Name,
-			CustomerOrganizationID: *key.CustomerOrganizationID,
+			CustomerOrganizationID: key.CustomerOrganizationID,
 		})
 	}
 	return result
@@ -193,7 +200,7 @@ func SupportBundles(events []types.CustomerSupportBundleEvent) []Entry {
 			ResourceID:             event.SupportBundleID,
 			Subject:                event.Title,
 			User:                   newUser(event.UserName, event.UserImageID),
-			CustomerOrganizationID: event.CustomerOrganizationID,
+			CustomerOrganizationID: new(event.CustomerOrganizationID),
 		})
 	}
 	return result
