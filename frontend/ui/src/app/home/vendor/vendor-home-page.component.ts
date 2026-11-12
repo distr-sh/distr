@@ -6,15 +6,17 @@ import {
   faAddressBook,
   faBoxesStacked,
   faCircleArrowUp,
-  faClockRotateLeft,
   faKey,
   faLifeRing,
   faShieldHalved,
 } from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, firstValueFrom, of, switchMap} from 'rxjs';
+import {combineLatest, firstValueFrom, map, of, switchMap} from 'rxjs';
+import {recoverWithToast} from '../../../util/errors';
 import {refreshInBackground} from '../../../util/refresh';
 import {CardHeadingComponent} from '../../components/card-heading.component';
+import {LoadingCardComponent} from '../../components/loading-card/loading-card.component';
 import {PageComponent} from '../../components/page.component';
+import {ActivityFeedService} from '../../services/activity-feed.service';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
 import {ArtifactPullsService} from '../../services/artifact-pulls.service';
@@ -22,6 +24,9 @@ import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
+import {ToastService} from '../../services/toast.service';
+import {toHomeActivity} from '../home-activity';
+import {HomeActivityComponent} from '../home-activity.component';
 import {QuickNavigationCardComponent, QuickNavigationCardType} from '../quick-navigation-card.component';
 import {VendorHomeDeploymentHealth, VendorHomeUpdates} from './vendor-home';
 import {toVendorHomeDeploymentHealth, toVendorHomeUpdates, vendorHomeAttentionStatuses} from './vendor-home-mappers';
@@ -51,7 +56,15 @@ function updatesCardType(updates: VendorHomeUpdates): QuickNavigationCardType {
 @Component({
   selector: 'app-vendor-home-page',
   templateUrl: './vendor-home-page.component.html',
-  imports: [NgPlural, NgPluralCase, PageComponent, CardHeadingComponent, QuickNavigationCardComponent],
+  imports: [
+    NgPlural,
+    NgPluralCase,
+    PageComponent,
+    CardHeadingComponent,
+    LoadingCardComponent,
+    QuickNavigationCardComponent,
+    HomeActivityComponent,
+  ],
 })
 export class VendorHomePageComponent {
   private readonly route = inject(ActivatedRoute);
@@ -61,15 +74,17 @@ export class VendorHomePageComponent {
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   private readonly deploymentTargetsService = inject(DeploymentTargetsService);
   private readonly applicationsService = inject(ApplicationsService);
+  private readonly activityFeedService = inject(ActivityFeedService);
   private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
   private readonly featureFlags = inject(FeatureFlagService);
+  private readonly toast = inject(ToastService);
 
   private readonly isVendor = this.auth.isVendor();
+  protected readonly activityViewer = this.isVendor ? 'vendor' : 'partner';
 
   protected readonly faAddressBook = faAddressBook;
   protected readonly faBoxesStacked = faBoxesStacked;
   protected readonly faCircleArrowUp = faCircleArrowUp;
-  protected readonly faClockRotateLeft = faClockRotateLeft;
   protected readonly faKey = faKey;
   protected readonly faLifeRing = faLifeRing;
   protected readonly faShieldHalved = faShieldHalved;
@@ -128,10 +143,15 @@ export class VendorHomePageComponent {
       : {customers, deployments, applications};
   });
 
+  protected readonly activity = toSignal(
+    this.activityFeedService.list().pipe(map(toHomeActivity), recoverWithToast(this.toast, []))
+  );
+
   constructor() {
     refreshInBackground(
       this.customerOrganizationsService.refresh(),
       this.deploymentTargetsService.refresh(),
+      this.activityFeedService.refresh(),
       this.applicationsService.refresh(),
       firstValueFrom(this.featureFlags.isLicensingEnabled$).then((enabled) =>
         enabled ? this.applicationEntitlementsService.refresh() : undefined

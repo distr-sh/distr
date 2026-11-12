@@ -26,8 +26,9 @@ import {SecretsService} from '../../services/secrets.service';
 import {SupportBundlesService} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
+import {toHomeActivity} from '../home-activity';
+import {HomeActivityComponent} from '../home-activity.component';
 import {CustomerHomeAccessTokensComponent} from './customer-home-access-tokens.component';
-import {CustomerHomeActivityComponent} from './customer-home-activity.component';
 import {CustomerHomeAlertsComponent} from './customer-home-alerts.component';
 import {CustomerHomeChecklistComponent} from './customer-home-checklist.component';
 import {CustomerHomeDeploymentsComponent, CustomerHomePrimarySection} from './customer-home-deployments.component';
@@ -36,7 +37,6 @@ import {CustomerHomeLicenseComponent} from './customer-home-license.component';
 import {
   customerHomeNotificationsSince,
   toCustomerHomeAccessTokens,
-  toCustomerHomeActivity,
   toCustomerHomeAlerts,
   toCustomerHomeArtifacts,
   toCustomerHomeChecklist,
@@ -66,7 +66,7 @@ function storedFlag(storage: Storage, key: string | undefined): boolean | undefi
     CustomerHomeUpdateNotificationsComponent,
     CustomerHomeAccessTokensComponent,
     CustomerHomeSupportBundlesComponent,
-    CustomerHomeActivityComponent,
+    HomeActivityComponent,
   ],
 })
 export class CustomerHomePageComponent {
@@ -340,7 +340,7 @@ export class CustomerHomePageComponent {
       ].filter(Boolean).length
   );
 
-  protected readonly activity = toSignal(this.activityFeedService.list().pipe(map(toCustomerHomeActivity)));
+  protected readonly activity = toSignal(this.activityFeedService.list().pipe(map(toHomeActivity)));
   protected readonly activityShown = computed(() => this.activity()?.length !== 0);
   protected readonly vendorName = toSignal(this.organizationService.get().pipe(map((org) => org.name)));
 

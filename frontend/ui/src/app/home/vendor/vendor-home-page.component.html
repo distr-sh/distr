@@ -137,8 +137,12 @@
     </div>
 
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
-      <div class="distr-card min-h-96 p-4 lg:col-span-2">
-        <h2 appCardHeading [icon]="faClockRotateLeft">Activity</h2>
+      <div class="relative lg:col-span-2">
+        @if (activity(); as activity) {
+          <app-home-activity [activity]="activity" [viewer]="activityViewer" [fillHeight]="true" />
+        } @else {
+          <app-loading-card layout="timeline" />
+        }
       </div>
       <div class="distr-card min-h-96 p-4">
         <h2 appCardHeading [icon]="faAddressBook">Customers</h2>
