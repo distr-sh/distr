@@ -52,11 +52,7 @@
       </div>
     </div>
 
-    <app-tab-bar class="mb-6 block" [tabs]="tabs" [active]="activeTab()" (tabClick)="onTabClick($event)" />
-
-    <div role="tabpanel" [id]="'tabpanel-' + activeTab()" [attr.aria-labelledby]="'tab-' + activeTab()">
-      <router-outlet />
-    </div>
+    <app-routed-tabs [tabs]="tabs()" />
   } @else {
     <app-alert type="error">This customer does not exist.</app-alert>
   }
