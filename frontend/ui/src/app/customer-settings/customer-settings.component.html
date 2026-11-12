@@ -1,87 +1,33 @@
 <app-page variant="narrow">
   <div class="distr-panel">
-    @if (vendorScoped() && customerOrganization(); as customer) {
-      <nav class="mb-6 flex justify-between" aria-label="Breadcrumb">
-        <ol class="mb-3 inline-flex items-center sm:mb-0">
-          <li class="flex items-center">
-            <a
-              [routerLink]="['/', 'customers']"
-              class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
-              <fa-icon class="mr-2" [icon]="faBoxesStacked" />
-              Customers
-            </a>
-          </li>
-          <span class="mx-2 text-gray-400">/</span>
-          <li aria-current="page">
-            <div class="flex items-center">
-              <button
-                id="application-dropdown"
-                cdkOverlayOrigin
-                #dropdownTrigger="cdkOverlayOrigin"
-                #dropdownTriggerButton
-                (click)="toggleBreadcrumbDropdown()"
-                class="inline-flex items-center rounded-lg px-3 py-2 text-center text-sm font-normal text-gray-700 hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 focus:outline-none dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white dark:focus:ring-gray-700">
-                {{ customer.name }}
-                <fa-icon class="ml-2" [icon]="faChevronDown" />
-              </button>
-              <ng-template
-                cdkConnectedOverlay
-                [cdkConnectedOverlayHasBackdrop]="true"
-                (backdropClick)="breadcrumbDropdown.set(false)"
-                [cdkConnectedOverlayBackdropClass]="'transparent'"
-                [cdkConnectedOverlayOrigin]="dropdownTrigger"
-                [cdkConnectedOverlayMinWidth]="breadcrumbDropdownWidth + 'px'"
-                [cdkConnectedOverlayOpen]="breadcrumbDropdown()">
-                <div
-                  animate.enter="animate-flip-in-top"
-                  animate.leave="animate-flip-out-top"
-                  class="distr-dropdown-panel w-full">
-                  <ul aria-labelledby="dropdownDefault">
-                    @for (item of switcherCustomers(); track item.customer.id) {
-                      <li>
-                        @if (item.settingsEnabled) {
-                          <a
-                            class="distr-dropdown-item"
-                            [routerLink]="['/', 'customers', item.customer.id, 'settings']"
-                            >{{ item.customer.name }}</a
-                          >
-                        } @else {
-                          <button
-                            type="button"
-                            disabled
-                            class="distr-dropdown-item"
-                            title="Settings are not enabled for this customer">
-                            {{ item.customer.name }}
-                          </button>
-                        }
-                      </li>
-                    }
-                  </ul>
-                </div>
-              </ng-template>
-            </div>
-          </li>
-        </ol>
-      </nav>
-    }
-
     @if (customerOrganizationId(); as customerOrganizationId) {
       <div class="flex flex-col gap-10">
         <app-customer-controller-settings [customerOrganizationId]="customerOrganizationId" />
         @if (oidcProvidersEnabled()) {
-          <app-custom-oidc portal="customer" [customerOrganizationId]="customerOrganizationId">
-            <h2 class="text-xl font-bold dark:text-white">Custom Domains &amp; Identity Provider</h2>
-            <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-              @if (vendorScoped()) {
-                Let this customer's users additionally sign in with their own identity provider via OIDC (OpenID
-                Connect). A provider only works on the customer's own portal domain.
-              } @else {
-                Let your users additionally sign in with their own identity provider via OIDC (OpenID Connect). A
-                provider only works on your own portal domain.
-              }
-              A custom domain has to exist first.
-            </p>
-          </app-custom-oidc>
+          <div class="space-y-8">
+            <div class="space-y-4">
+              <h2 class="text-xl font-bold dark:text-white">Custom Domains &amp; Identity Provider</h2>
+              <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+                Let the users of this organization additionally sign in with their own identity provider via OIDC
+                (OpenID Connect). A provider only works on the organization's own portal domain, so a custom domain has
+                to exist first.
+              </p>
+            </div>
+            <section class="space-y-4">
+              <app-custom-domain
+                #portalDomain
+                domainType="customer_portal"
+                [customerOrganizationId]="customerOrganizationId"
+                label="Customer Portal domain"
+                placeholder="<slug>-portal.yourcompany.com">
+                The domain the users of this organization sign in on. Links in invitations, password resets and
+                notification mails use it. Without it they sign in on the default customer portal domain.
+              </app-custom-domain>
+              <app-identity-providers
+                [domain]="portalDomain.domain()"
+                [customerOrganizationId]="customerOrganizationId" />
+            </section>
+          </div>
         }
       </div>
     }
