@@ -43,7 +43,7 @@ import {CustomerNotificationRecordsPageComponent} from './notification-records/c
 import {NotificationRecordsPageComponent} from './notification-records/notification-records-page.component';
 import {BillingComponent} from './organization-settings/billing/billing.component';
 import {CustomEmailComponent} from './organization-settings/custom-email/custom-email.component';
-import {CustomOidcComponent} from './organization-settings/custom-oidc/custom-oidc.component';
+import {CustomOidcSettingsComponent} from './organization-settings/custom-oidc/custom-oidc-settings.component';
 import {GeneralSettingsComponent} from './organization-settings/general/general-settings.component';
 import {organizationSettingsTabs} from './organization-settings/organization-settings-navigation';
 import {OrganizationSettingsComponent} from './organization-settings/organization-settings.component';
@@ -440,7 +440,7 @@ const shellRoutes: Routes = [
               {
                 path: 'identity-provider',
                 title: organizationSettingsTabs.title('identity-provider'),
-                component: CustomOidcComponent,
+                component: CustomOidcSettingsComponent,
                 canActivate: [organizationSettingsTabs.guard('identity-provider')],
               },
               {

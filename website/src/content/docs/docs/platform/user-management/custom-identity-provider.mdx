@@ -27,19 +27,19 @@ Every domain carries its own set of providers. Nothing is inherited between them
 | Your customer portal domain                            | you                     | all of your customers, including ones created later |
 | A customer's own portal domain                         | you or that customer    | that one customer                                   |
 
-Your Vendor Portal domain and its providers are configured under **Settings → Organization → Custom Domains & Identity Provider**. Your customer portal domain and its providers are configured under **Customer Portal → Domain & Sign-in**. A customer's own domain is configured on that customer's settings page and additionally needs the **Identity Provider** feature, which you grant per customer in the customer list.
+Your Vendor Portal domain and its providers are configured under **Settings → Organization → Domains & Sign-in**. Your customer portal domain and its providers are configured under **Customer Portal → Domain & Sign-in**. A customer's own domain is configured on that customer's settings page and additionally needs the **Identity Provider** feature, which you grant per customer in the customer list.
 
 Domains added anywhere show a status panel next to them — green once the CNAME resolves to the expected target, red with the reason otherwise — so you can tell without leaving the page whether a provider is actually reachable yet. A domain is only used for links, mails, controller manifests and registry URLs once that check has succeeded; sign-in on the domain itself works as soon as it resolves here.
 
 ## Requirements
 
-1. A Vendor Portal domain (e.g. `app.your-company.com`) set up under **Settings → Organization → Custom Domains & Identity Provider**, and an organization slug, because both are part of every provider's URLs.
+1. A Vendor Portal domain (e.g. `app.your-company.com`) set up under **Settings → Organization → Domains & Sign-in**, and an organization slug, because both are part of every provider's URLs.
 2. An identity provider that serves an OpenID configuration under `<issuer>/.well-known/openid-configuration`. Microsoft Entra ID, Google Workspace, Okta, Auth0, Keycloak, JumpCloud, Authentik and any other OpenID Connect provider work with the same fields.
 3. An application (client) registered with that provider, using the authorization code flow.
 
 ## Connecting your identity provider
 
-Go to **Settings → Organization → Custom Domains & Identity Provider** for your own team, or to **Customer Portal → Domain & Sign-in** for your customers, and add a provider:
+Go to **Settings → Organization → Domains & Sign-in** for your own team, or to **Customer Portal → Domain & Sign-in** for your customers, and add a provider:
 
 1. **Display name**: Shown on the sign-in button, e.g. `Acme SSO`.
 2. **Issuer URL**: The provider's issuer. Distr fetches its OpenID configuration when you save, verifies that the document belongs to that host, and stores the issuer exactly as the provider states it. So a URL that is a little off is corrected rather than rejected.

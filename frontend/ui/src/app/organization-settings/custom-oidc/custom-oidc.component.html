@@ -1,61 +1,10 @@
 @if (visible()) {
   <div class="space-y-8">
     <div class="space-y-4">
-      <h2 class="text-xl font-bold dark:text-white">
-        @if (showsCustomerPortalDefaults()) {
-          Domain &amp; Sign-in
-        } @else if (oidcProvidersEnabled()) {
-          Custom Domains &amp; Identity Provider
-        } @else {
-          Custom Domains
-        }
-      </h2>
-      <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-        @if (customerScoped() && viewerIsCustomer()) {
-          Let your users additionally sign in with their own identity provider via OIDC (OpenID Connect). A provider
-          only works on your own portal domain.
-        } @else if (customerScoped()) {
-          Let this customer's users additionally sign in with their own identity provider via OIDC (OpenID Connect). A
-          provider only works on the customer's own portal domain.
-        } @else if (showsVendorPortal()) {
-          Give your team its own domain for the Distr web UI and API and let it additionally sign in with your own
-          identity provider via OIDC (OpenID Connect).
-        } @else {
-          One domain that all of your customers sign in on by default. Without it they keep using your
-          <span class="lowercase">{{ appDomainLabel() }}</span> or the default Distr host. Identity providers on it
-          apply to every customer, including the ones you create later.
-        }
-        A custom domain has to exist first.
-      </p>
-      @if (showsVendorPortal()) {
-        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-          The domain and identity providers of your customers are set up on the
-          <a routerLink="/customer-portal/domain-and-sign-in" class="font-semibold underline">Customer Portal</a> page.
-        </p>
-      } @else if (showsCustomerPortalDefaults()) {
-        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-          Customers can override this with their own domain and providers on their
-          <a routerLink="/customers" class="font-semibold underline">settings page</a>.
-        </p>
-      }
-
-      @if (oidcProvidersEnabled() && viewerIsVendor() && !configurable()) {
-        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-          Set an organization slug on the
-          <a routerLink="/settings/organization/general" class="font-semibold underline">General tab</a> of the
-          organization settings first. It is part of every login and callback URL.
-        </p>
-      }
+      <ng-content />
     </div>
 
-    @if (showBusinessOidcBanner()) {
-      <app-alert type="info" [dismissible]="true" (dismissed)="dismissBusinessOidcBanner()">
-        Unlock custom identity providers with the
-        <a routerLink="/settings/organization/subscription" class="font-semibold underline">Distr Business plan</a>.
-      </app-alert>
-    }
-
-    @if (showsVendorPortal()) {
+    @if (portal() === 'vendor') {
       <section class="space-y-4">
         <h3 class="text-lg font-bold dark:text-white">
           @if (partnerManagementEnabled()) {
@@ -95,9 +44,31 @@
           <ng-container [ngTemplateOutlet]="providerSection" [ngTemplateOutletContext]="{$implicit: appDomain()}" />
         }
       </section>
-    }
 
-    @if (!showsVendorPortal()) {
+      @if (customDomainsConfigured()) {
+        <section class="space-y-4">
+          <h3 class="text-lg font-bold dark:text-white">Registry</h3>
+          <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+            You only need this if the artifact registry should have its own hostname. The hostname is part of the OCI
+            artifact name.
+          </p>
+          <app-domain-field
+            fieldId="registryDomain"
+            label="Registry domain"
+            placeholder="registry.your-company.com"
+            invalidHint="Must be a valid hostname without scheme, e.g. registry.your-company.com"
+            removeAriaLabel="Remove registry domain"
+            optionalCheckboxLabel="Use a separate registry domain"
+            [domain]="registryDomain()"
+            [cnameTarget]="cnameTarget()"
+            [saving]="savingDomain()"
+            [verifying]="checkingDomainIds().has(registryDomain()?.id ?? '')"
+            (save)="saveDomain($event, 'registry')"
+            (remove)="removeDomain(registryDomain())"
+            (recheck)="verifyDomain(registryDomain()!)" />
+        </section>
+      }
+    } @else {
       <section class="space-y-4">
         @if (customDomainsConfigured()) {
           <app-domain-field
@@ -131,30 +102,6 @@
             [ngTemplateOutlet]="providerSection"
             [ngTemplateOutletContext]="{$implicit: customerPortalDomain()}" />
         }
-      </section>
-    }
-
-    @if (showsVendorPortal() && customDomainsConfigured()) {
-      <section class="space-y-4">
-        <h3 class="text-lg font-bold dark:text-white">Registry</h3>
-        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-          You only need this if the artifact registry should have its own hostname. The hostname is part of the OCI
-          artifact name.
-        </p>
-        <app-domain-field
-          fieldId="registryDomain"
-          label="Registry domain"
-          placeholder="registry.your-company.com"
-          invalidHint="Must be a valid hostname without scheme, e.g. registry.your-company.com"
-          removeAriaLabel="Remove registry domain"
-          optionalCheckboxLabel="Use a separate registry domain"
-          [domain]="registryDomain()"
-          [cnameTarget]="cnameTarget()"
-          [saving]="savingDomain()"
-          [verifying]="checkingDomainIds().has(registryDomain()?.id ?? '')"
-          (save)="saveDomain($event, 'registry')"
-          (remove)="removeDomain(registryDomain())"
-          (recheck)="verifyDomain(registryDomain()!)" />
       </section>
     }
   </div>
@@ -259,7 +206,8 @@
       } @else if (viewerIsVendor() && !configurable()) {
         <p class="distr-hint-warning">
           An organization slug is required. Set one on the
-          <a routerLink="/settings/organization/general" class="font-semibold underline">General tab</a> first.
+          <a routerLink="/settings/organization/general" class="font-semibold underline">General tab</a> of the
+          organization settings first.
         </p>
       }
     </div>

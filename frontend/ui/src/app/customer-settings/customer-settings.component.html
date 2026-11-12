@@ -69,7 +69,19 @@
       <div class="flex flex-col gap-10">
         <app-customer-controller-settings [customerOrganizationId]="customerOrganizationId" />
         @if (oidcProvidersEnabled()) {
-          <app-custom-oidc [customerOrganizationId]="customerOrganizationId" />
+          <app-custom-oidc portal="customer" [customerOrganizationId]="customerOrganizationId">
+            <h2 class="text-xl font-bold dark:text-white">Custom Domains &amp; Identity Provider</h2>
+            <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+              @if (vendorScoped()) {
+                Let this customer's users additionally sign in with their own identity provider via OIDC (OpenID
+                Connect). A provider only works on the customer's own portal domain.
+              } @else {
+                Let your users additionally sign in with their own identity provider via OIDC (OpenID Connect). A
+                provider only works on your own portal domain.
+              }
+              A custom domain has to exist first.
+            </p>
+          </app-custom-oidc>
         }
       </div>
     }

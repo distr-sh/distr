@@ -9,7 +9,6 @@ import {BehaviorSubject, combineLatest, firstValueFrom, from, map, of, switchMap
 import {getRemoteEnvironment} from '../../../env/remote';
 import {getFormDisplayedError} from '../../../util/errors';
 import {slugMaxLength, slugPattern, toSlug} from '../../../util/slug';
-import {AlertComponent} from '../../components/alert/alert.component';
 import {ClipComponent} from '../../components/clip.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ClickableRowDirective} from '../../directives/clickable-row.directive';
@@ -25,8 +24,6 @@ import {CustomDomain, CustomDomainType, CustomDomainVerification} from '../../ty
 import {CustomOidcConfiguration, CustomOidcConfigurationsResponse} from '../../types/custom-oidc';
 import {DomainFieldComponent} from './domain-field.component';
 
-const BUSINESS_OIDC_BANNER_DISMISSED_KEY = 'customOidc.businessOidcBannerDismissed';
-
 const DEFAULT_SCOPES = ['openid', 'profile', 'email'];
 
 @Component({
@@ -41,7 +38,6 @@ const DEFAULT_SCOPES = ['openid', 'profile', 'email'];
     NgTemplateOutlet,
     DomainFieldComponent,
     RouterLink,
-    AlertComponent,
   ],
 })
 export class CustomOidcComponent {
@@ -68,14 +64,9 @@ export class CustomOidcComponent {
   private readonly configurationsRefresh$ = new BehaviorSubject<void>(undefined);
 
   public readonly customerOrganizationId = input<string>();
-  public readonly portal = input<'vendor' | 'customer'>('vendor');
+  public readonly portal = input.required<'vendor' | 'customer'>();
 
   protected readonly customerScoped = computed(() => !!this.customerOrganizationId());
-  protected readonly showsVendorPortal = computed(() => !this.customerScoped() && this.portal() === 'vendor');
-  protected readonly showsCustomerPortalDefaults = computed(
-    () => !this.customerScoped() && this.portal() === 'customer'
-  );
-  protected readonly viewerIsCustomer = computed(() => this.auth.isCustomer());
   protected readonly viewerIsVendor = computed(() => this.auth.isVendor());
   protected readonly partnerManagementEnabled = computed(() => this.featureFlags.isPartnerManagementEnabled());
   protected readonly appDomainLabel = computed(() =>
@@ -88,22 +79,6 @@ export class CustomOidcComponent {
 
   protected readonly domainsEnabled = computed(() => this.featureFlags.isCustomDomainsEnabled());
   protected readonly oidcProvidersEnabled = computed(() => this.featureFlags.isCustomOidcProvidersEnabled());
-
-  private readonly businessOidcBannerDismissed = signal(
-    sessionStorage.getItem(BUSINESS_OIDC_BANNER_DISMISSED_KEY) === 'true'
-  );
-  protected readonly showBusinessOidcBanner = computed(
-    () =>
-      !this.customerScoped() &&
-      this.domainsEnabled() &&
-      !this.oidcProvidersEnabled() &&
-      !this.businessOidcBannerDismissed()
-  );
-
-  protected dismissBusinessOidcBanner(): void {
-    sessionStorage.setItem(BUSINESS_OIDC_BANNER_DISMISSED_KEY, 'true');
-    this.businessOidcBannerDismissed.set(true);
-  }
 
   protected readonly visible = computed(
     () =>
