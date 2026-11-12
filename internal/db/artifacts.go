@@ -56,35 +56,6 @@ const (
 			FILTER (WHERE avpl.customer_organization_id IS NOT NULL), ARRAY[]::UUID[])
 			AS downloaded_by_customer_organizations `
 
-	// artifactPullOfCustomerOrgExpr matches pulls of the customer organization given as
-	// @customerOrganizationId, including those of its controllers, which have no user account.
-	// Pulls that predate the customer_organization_id column are attributed via the puller's membership.
-	artifactPullOfCustomerOrgExpr = `
-		(avpl.customer_organization_id = @customerOrganizationId
-			OR (avpl.customer_organization_id IS NULL AND EXISTS (
-				SELECT 1
-				FROM Organization_UserAccount oua
-				WHERE oua.user_account_id = avpl.useraccount_id
-					AND oua.customer_organization_id = @customerOrganizationId
-			))) `
-
-	// customerOrgPullsExpr is a CTE of the pulls of the customer organization given as
-	// @customerOrganizationId. It matches the same pulls as artifactPullOfCustomerOrgExpr, split into two
-	// branches so that each can use an index instead of evaluating the OR for every pull. Neither branch
-	// is limited to an organization, so a query has to scope the pulled artifact to one.
-	customerOrgPullsExpr = `
-	customer_pull AS (
-		SELECT avpl.id
-		FROM ArtifactVersionPull avpl
-		WHERE avpl.customer_organization_id = @customerOrganizationId
-		UNION ALL
-		SELECT avpl.id
-		FROM Organization_UserAccount oua
-			JOIN ArtifactVersionPull avpl
-				ON avpl.useraccount_id = oua.user_account_id AND avpl.customer_organization_id IS NULL
-		WHERE oua.customer_organization_id = @customerOrganizationId
-	)`
-
 	artifactVersionOutputExpr = `
 		v.id,
 		v.created_at,
@@ -111,15 +82,6 @@ var artifactVersionPullOutputExpr = `
 	CASE WHEN dt.id IS NOT NULL THEN (dt.id, dt.name) ELSE NULL END,
 	(` + artifactRowOutputExpr + `),
 	(` + artifactVersionOutputExpr + `) `
-
-// artifactPullsFromExpr returns the WITH clause and the FROM item of the pulls p, limited by customerOrgPullsExpr
-// to the customer organization given as @customerOrganizationId when isCustomerScoped is set.
-func artifactPullsFromExpr(isCustomerScoped bool) (string, string) {
-	if isCustomerScoped {
-		return `WITH ` + customerOrgPullsExpr, ` customer_pull cp JOIN ArtifactVersionPull p ON p.id = cp.id `
-	}
-	return ``, ` ArtifactVersionPull p `
-}
 
 const artifactVersionPullJoinExpr = `
 	LEFT JOIN UserAccount u ON u.id = p.useraccount_id
@@ -195,7 +157,7 @@ func GetArtifactsByEntitlementOwnerID(ctx context.Context, orgID uuid.UUID, owne
 			LEFT JOIN ArtifactVersion av
 				ON a.id = av.artifact_id
 			LEFT JOIN ArtifactVersionPull avpl
-				ON avpl.artifact_version_id = av.id AND `+artifactPullOfCustomerOrgExpr+`
+				ON avpl.artifact_version_id = av.id AND avpl.customer_organization_id = @customerOrganizationId
 			WHERE a.organization_id = @orgId
 			AND (
 				a.public
@@ -1204,12 +1166,11 @@ func GetFirstArtifactVersionPullsOfCustomerOrganization(
 ) ([]types.ArtifactVersionPull, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		`WITH `+customerOrgPullsExpr+`
-		SELECT * FROM (
+		`SELECT * FROM (
 			SELECT DISTINCT ON (v.id, p.useraccount_id) `+artifactVersionPullOutputExpr+`
-			FROM customer_pull cp
-				JOIN ArtifactVersionPull p ON p.id = cp.id `+artifactVersionPullJoinExpr+`
-			WHERE a.organization_id = @orgId
+			FROM ArtifactVersionPull p `+artifactVersionPullJoinExpr+`
+			WHERE p.customer_organization_id = @customerOrganizationId
+				AND a.organization_id = @orgId
 				AND a.id = any(@artifactIds)
 				AND p.useraccount_id IS NOT NULL
 				AND v.created_at > @since
@@ -1247,11 +1208,10 @@ func GetLatestArtifactPullsOfCustomerOrganization(
 ) ([]types.ArtifactVersionPull, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		`WITH `+customerOrgPullsExpr+`
-		SELECT DISTINCT ON (v.artifact_id) `+artifactVersionPullOutputExpr+`
-		FROM customer_pull cp
-			JOIN ArtifactVersionPull p ON p.id = cp.id `+artifactVersionPullJoinExpr+`
-		WHERE a.organization_id = @orgId
+		`SELECT DISTINCT ON (v.artifact_id) `+artifactVersionPullOutputExpr+`
+		FROM ArtifactVersionPull p `+artifactVersionPullJoinExpr+`
+		WHERE p.customer_organization_id = @customerOrganizationId
+			AND a.organization_id = @orgId
 			AND v.artifact_id = any(@artifactIds)
 			AND `+versionIsReleaseTagExpr+`
 		ORDER BY v.artifact_id, p.created_at DESC`,
@@ -1277,27 +1237,17 @@ func GetLatestArtifactPullsOfCustomerOrganizations(
 ) ([]types.CustomerArtifactPull, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `
-		WITH customer_pull AS (
-			SELECT avpl.customer_organization_id, avpl.artifact_version_id, avpl.created_at
-			FROM ArtifactVersionPull avpl
-			WHERE avpl.customer_organization_id = any(@customerOrganizationIds)
-			UNION ALL
-			SELECT oua.customer_organization_id, avpl.artifact_version_id, avpl.created_at
-			FROM Organization_UserAccount oua
-				JOIN ArtifactVersionPull avpl
-					ON avpl.useraccount_id = oua.user_account_id AND avpl.customer_organization_id IS NULL
-			WHERE oua.customer_organization_id = any(@customerOrganizationIds)
-		)
-		SELECT DISTINCT ON (cp.customer_organization_id, v.artifact_id)
-			cp.customer_organization_id,
+		SELECT DISTINCT ON (avpl.customer_organization_id, v.artifact_id)
+			avpl.customer_organization_id,
 			(`+artifactRowOutputExpr+`),
 			(`+artifactVersionOutputExpr+`)
-		FROM customer_pull cp
-			JOIN ArtifactVersion v ON v.id = cp.artifact_version_id
+		FROM ArtifactVersionPull avpl
+			JOIN ArtifactVersion v ON v.id = avpl.artifact_version_id
 			JOIN Artifact a ON a.id = v.artifact_id
-		WHERE a.organization_id = @orgId
+		WHERE avpl.customer_organization_id = any(@customerOrganizationIds)
+			AND a.organization_id = @orgId
 			AND `+versionIsReleaseTagExpr+`
-		ORDER BY cp.customer_organization_id, v.artifact_id, cp.created_at DESC`,
+		ORDER BY avpl.customer_organization_id, v.artifact_id, avpl.created_at DESC`,
 		pgx.NamedArgs{"orgId": orgID, "customerOrganizationIds": customerOrgIDs},
 	)
 	if err != nil {
@@ -1406,23 +1356,23 @@ func GetArtifactVersionPullFilterOptions(
 	db := internalctx.GetDb(ctx)
 	result := &types.ArtifactVersionPullFilterOptions{}
 
-	withExpr, pullsFromExpr := artifactPullsFromExpr(customerOrganizationID != nil)
-	baseFromExpr := pullsFromExpr +
+	baseFromExpr := ` ArtifactVersionPull p` +
 		` JOIN ArtifactVersion v ON v.id = p.artifact_version_id` +
 		` JOIN Artifact a ON a.id = v.artifact_id `
-	baseWhereExpr := ` a.organization_id = @orgId AND (@isVendor OR co.partner_organization_id = @partnerOrgId) `
+	baseWhereExpr := ` a.organization_id = @orgId AND (@isVendor OR co.partner_organization_id = @partnerOrgId)` +
+		` AND (@customerOrgId::uuid IS NULL OR p.customer_organization_id = @customerOrgId) `
 
 	args := pgx.NamedArgs{
-		"orgId":                  orgID,
-		"isVendor":               partnerOrganizationID == nil,
-		"partnerOrgId":           partnerOrganizationID,
-		"customerOrganizationId": customerOrganizationID,
+		"orgId":         orgID,
+		"isVendor":      partnerOrganizationID == nil,
+		"partnerOrgId":  partnerOrganizationID,
+		"customerOrgId": customerOrganizationID,
 	}
 
 	// Customer organizations
 	rows, err := db.Query(
 		ctx,
-		withExpr+` SELECT co.id, co.name FROM `+baseFromExpr+
+		`SELECT co.id, co.name FROM `+baseFromExpr+
 			` JOIN CustomerOrganization co ON co.id = p.customer_organization_id`+
 			` WHERE `+baseWhereExpr+
 			` GROUP BY co.id, co.name ORDER BY co.name`,
@@ -1438,7 +1388,7 @@ func GetArtifactVersionPullFilterOptions(
 	// User accounts
 	rows, err = db.Query(
 		ctx,
-		withExpr+` SELECT u.id, COALESCE(NULLIF(u.name, ''), u.email) AS name FROM `+baseFromExpr+
+		`SELECT u.id, COALESCE(NULLIF(u.name, ''), u.email) AS name FROM `+baseFromExpr+
 			` JOIN UserAccount u ON u.id = p.useraccount_id`+
 			` LEFT JOIN CustomerOrganization co ON co.id = p.customer_organization_id`+
 			` WHERE `+baseWhereExpr+
@@ -1455,7 +1405,7 @@ func GetArtifactVersionPullFilterOptions(
 	// Remote addresses
 	rows, err = db.Query(
 		ctx,
-		withExpr+` SELECT p.remote_address FROM `+baseFromExpr+
+		`SELECT p.remote_address FROM `+baseFromExpr+
 			` LEFT JOIN CustomerOrganization co ON co.id = p.customer_organization_id`+
 			` WHERE `+baseWhereExpr+` AND p.remote_address IS NOT NULL`+
 			` GROUP BY p.remote_address ORDER BY p.remote_address`,
@@ -1471,7 +1421,7 @@ func GetArtifactVersionPullFilterOptions(
 	// Artifacts
 	rows, err = db.Query(
 		ctx,
-		withExpr+` SELECT a.id, a.name FROM `+baseFromExpr+
+		`SELECT a.id, a.name FROM `+baseFromExpr+
 			` LEFT JOIN CustomerOrganization co ON co.id = p.customer_organization_id`+
 			` WHERE `+baseWhereExpr+
 			` GROUP BY a.id, a.name ORDER BY a.name`,
@@ -1487,7 +1437,7 @@ func GetArtifactVersionPullFilterOptions(
 	// Deployment targets
 	rows, err = db.Query(
 		ctx,
-		withExpr+` SELECT dt.id, dt.name FROM `+baseFromExpr+
+		`SELECT dt.id, dt.name FROM `+baseFromExpr+
 			` JOIN DeploymentTarget dt ON dt.id = p.deployment_target_id`+
 			` LEFT JOIN CustomerOrganization co ON co.id = p.customer_organization_id`+
 			` WHERE `+baseWhereExpr+
@@ -1512,24 +1462,24 @@ func GetArtifactVersionPullVersionOptions(
 	customerOrganizationID *uuid.UUID,
 ) ([]types.FilterOption, error) {
 	db := internalctx.GetDb(ctx)
-	withExpr, pullsFromExpr := artifactPullsFromExpr(customerOrganizationID != nil)
 	rows, err := db.Query(ctx,
-		withExpr+` SELECT v.id, v.name
-		FROM `+pullsFromExpr+`
+		`SELECT v.id, v.name
+		FROM ArtifactVersionPull p
 			JOIN ArtifactVersion v ON v.id = p.artifact_version_id
 			JOIN Artifact a ON a.id = v.artifact_id
 			LEFT JOIN CustomerOrganization co ON co.id = p.customer_organization_id
 		WHERE a.organization_id = @orgId
 			AND a.id = @artifactId
 			AND (@isVendor OR co.partner_organization_id = @partnerOrgId)
+			AND (@customerOrgId::uuid IS NULL OR p.customer_organization_id = @customerOrgId)
 		GROUP BY v.id, v.name
 		ORDER BY v.name`,
 		pgx.NamedArgs{
-			"orgId":                  orgID,
-			"artifactId":             artifactID,
-			"isVendor":               partnerOrganizationID == nil,
-			"partnerOrgId":           partnerOrganizationID,
-			"customerOrganizationId": customerOrganizationID,
+			"orgId":         orgID,
+			"artifactId":    artifactID,
+			"isVendor":      partnerOrganizationID == nil,
+			"partnerOrgId":  partnerOrganizationID,
+			"customerOrgId": customerOrganizationID,
 		})
 	if err != nil {
 		return nil, fmt.Errorf("could not query artifact version options: %w", err)
@@ -1565,8 +1515,8 @@ func GetArtifactVersionPulls(
 		args["after"] = filter.After
 	}
 	if filter.CustomerOrganizationID != nil {
-		// No condition: artifactPullsFromExpr narrows the pulls, including those attributed via membership.
-		args["customerOrganizationId"] = *filter.CustomerOrganizationID
+		conditions = append(conditions, "p.customer_organization_id = @customerOrgId")
+		args["customerOrgId"] = *filter.CustomerOrganizationID
 	}
 	if filter.UserAccountID != nil {
 		conditions = append(conditions, "p.useraccount_id = @userAccountId")
@@ -1592,9 +1542,8 @@ func GetArtifactVersionPulls(
 		args["deploymentTargetId"] = *filter.DeploymentTargetID
 	}
 
-	withExpr, pullsFromExpr := artifactPullsFromExpr(filter.CustomerOrganizationID != nil)
-	query := withExpr + ` SELECT ` + artifactVersionPullOutputExpr + `
-		FROM ` + pullsFromExpr + artifactVersionPullJoinExpr + `
+	query := `SELECT ` + artifactVersionPullOutputExpr + `
+		FROM ArtifactVersionPull p ` + artifactVersionPullJoinExpr + `
 		WHERE ` + strings.Join(conditions, " AND ") + `
 		ORDER BY p.created_at DESC
 		LIMIT @count`
