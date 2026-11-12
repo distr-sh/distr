@@ -111,6 +111,7 @@ services:
     environment:
       RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY}
       RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY}
+      RUSTFS_REGION: local
     networks:
       - internal
     restart: always

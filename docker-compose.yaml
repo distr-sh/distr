@@ -27,6 +27,7 @@ services:
     environment:
       RUSTFS_ACCESS_KEY: local
       RUSTFS_SECRET_KEY: local
+      RUSTFS_REGION: local
     healthcheck:
       test: ['CMD', 'sh', '-c', 'curl -f http://127.0.0.1:9000/health']
       start_interval: 1s
