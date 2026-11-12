@@ -7,13 +7,42 @@
   }
 }
 
-.quick-navigation-card-error {
-  @apply border-red-400 bg-red-100 text-red-800 hover:bg-red-200;
+// Tailwind's darkest shades aren't dark enough for the dark mode background
+@mixin variant($color) {
+  --card-border: --theme(--color-#{$color}-400);
+  --card-bg: --theme(--color-#{$color}-100);
+  --card-hover-bg: --theme(--color-#{$color}-200);
+  --card-text: --theme(--color-#{$color}-800);
 
   @include dark {
-    @apply border-red-900 text-red-300 hover:bg-red-950;
-    // Tailwind's darkest red isn't dark enough for us
-    background-color: color-mix(in oklab, --theme(--color-red-950) 75%, --theme(--color-gray-950));
+    --card-border: --theme(--color-#{$color}-900);
+    --card-bg: color-mix(in oklab, --theme(--color-#{$color}-950) 75%, --theme(--color-gray-950));
+    --card-hover-bg: --theme(--color-#{$color}-950);
+    --card-text: --theme(--color-#{$color}-300);
+  }
+}
+
+.quick-navigation-card-success {
+  @include variant(green);
+}
+
+.quick-navigation-card-warning {
+  @include variant(yellow);
+}
+
+.quick-navigation-card-error {
+  @include variant(red);
+}
+
+.quick-navigation-card-success,
+.quick-navigation-card-warning,
+.quick-navigation-card-error {
+  border-color: var(--card-border);
+  background-color: var(--card-bg);
+  color: var(--card-text);
+
+  &.distr-card-clickable:hover {
+    background-color: var(--card-hover-bg);
   }
 
   h2,

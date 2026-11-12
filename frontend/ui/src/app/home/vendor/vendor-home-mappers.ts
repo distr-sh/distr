@@ -10,8 +10,14 @@ export const vendorHomeAttentionStatuses: readonly DeploymentDisplayStatus[] = [
 
 export function toVendorHomeDeploymentHealth(targets: DeploymentTarget[]): VendorHomeDeploymentHealth {
   const statuses = targets.flatMap((target) => target.deployments.map(deploymentDisplayStatus));
-  const count = (status: DeploymentDisplayStatus) => statuses.filter((it) => it === status).length;
-  return {healthy: count('healthy'), running: count('running'), error: count('error'), stale: count('stale')};
+  const count = (status: DeploymentDisplayStatus) => statuses.reduce((c, it) => (it === status ? c + 1 : c), 0);
+  return {
+    total: statuses.length,
+    healthy: count('healthy'),
+    running: count('running'),
+    error: count('error'),
+    stale: count('stale'),
+  };
 }
 
 export function toVendorHomeCustomers(

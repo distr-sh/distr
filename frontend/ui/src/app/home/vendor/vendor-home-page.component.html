@@ -26,18 +26,46 @@
         <app-quick-navigation-card
           class="min-h-32"
           [icon]="faBoxesStacked"
-          heading="Deployments"
-          type="error"
+          heading="Deployment health"
+          [type]="health.error > 0 ? 'error' : 'warning'"
           [count]="health.error + health.stale"
+          [isEmpty]="health.healthy + health.running + health.error + health.stale === 0"
           link="/deployments"
           [queryParams]="deploymentAttentionQueryParams"
-          allGoodLink="/deployments">
-          <span attention>{{ health.error }} failing &middot; {{ health.stale }} not responding</span>
-          <span allGood>{{ health.healthy }} healthy &middot; {{ health.running }} running</span>
+          overviewLink="/deployments">
+          @if (health.error === 0) {
+            <span countLabel>stale</span>
+          }
+          <span attention>
+            @if (health.error > 0) {
+              <ng-container [ngPlural]="health.error">
+                <ng-template ngPluralCase="=1">1 error</ng-template>
+                <ng-template ngPluralCase="other">{{ health.error }} errors</ng-template>
+              </ng-container>
+              @if (health.stale > 0) {
+                &middot; {{ health.stale }} stale
+              }
+            } @else {
+              Some controllers stopped reporting
+            }
+          </span>
+          <span allGood>All good</span>
+          <span allGoodSubtitle>
+            @if (health.healthy > 0) {
+              {{ health.healthy }} healthy
+              @if (health.running > 0) {
+                &middot;
+              }
+            }
+            @if (health.running > 0) {
+              {{ health.running }} running
+            }
+          </span>
+          <span empty>No deployments yet</span>
         </app-quick-navigation-card>
       } @else {
         <div class="distr-card min-h-32 p-4">
-          <h2 appCardHeading [icon]="faBoxesStacked">Deployments</h2>
+          <h2 appCardHeading [icon]="faBoxesStacked">Deployment health</h2>
         </div>
       }
       <div class="distr-card min-h-32 p-4">

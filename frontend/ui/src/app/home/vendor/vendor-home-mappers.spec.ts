@@ -64,12 +64,13 @@ describe('toVendorHomeDeploymentHealth', () => {
         deployment(status('healthy')),
       ]),
     ];
-    expect(toVendorHomeDeploymentHealth(targets)).toEqual({healthy: 2, running: 1, error: 1, stale: 1});
+    expect(toVendorHomeDeploymentHealth(targets)).toEqual({total: 7, healthy: 2, running: 1, error: 1, stale: 1});
   });
 
   it('should judge a deployment by its applied revision, not by a failed update', () => {
     const failedUpdate = deployment(status('error'), status('healthy'));
     expect(toVendorHomeDeploymentHealth([target([failedUpdate])])).toEqual({
+      total: 1,
       healthy: 1,
       running: 0,
       error: 0,
@@ -89,8 +90,8 @@ describe('toVendorHomeCustomers', () => {
       target([deployment(status('error'))], customer('other')),
     ];
     expect(toVendorHomeCustomers([a, b], targets).map((c) => [c.id, c.deploymentHealth])).toEqual([
-      ['a', {healthy: 1, running: 1, error: 1, stale: 0}],
-      ['b', {healthy: 0, running: 0, error: 0, stale: 0}],
+      ['a', {total: 3, healthy: 1, running: 1, error: 1, stale: 0}],
+      ['b', {total: 0, healthy: 0, running: 0, error: 0, stale: 0}],
     ]);
   });
 });

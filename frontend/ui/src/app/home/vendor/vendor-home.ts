@@ -1,4 +1,5 @@
 export interface VendorHomeDeploymentHealth {
+  total: number;
   healthy: number;
   running: number;
   error: number;

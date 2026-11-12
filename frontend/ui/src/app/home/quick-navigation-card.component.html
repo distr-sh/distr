@@ -3,33 +3,50 @@
     [routerLink]="link()"
     [queryParams]="queryParams()"
     class="distr-card distr-card-clickable p-4"
+    [class.quick-navigation-card-warning]="type() === 'warning'"
     [class.quick-navigation-card-error]="type() === 'error'">
-    @if (type() === 'error') {
-      <h2 appCardHeading class="mb-3"><fa-icon [icon]="faCircleExclamation" class="me-2" />{{ heading() }}</h2>
-    } @else {
-      <h2 appCardHeading [icon]="icon()" class="mb-3">{{ heading() }}</h2>
+    @switch (type()) {
+      @case ('error') {
+        <h2 appCardHeading class="mb-3"><fa-icon [icon]="faCircleExclamation" class="me-2" />{{ heading() }}</h2>
+      }
+      @case ('warning') {
+        <h2 appCardHeading class="mb-3"><fa-icon [icon]="faTriangleExclamation" class="me-2" />{{ heading() }}</h2>
+      }
+      @default {
+        <h2 appCardHeading [icon]="icon()" class="mb-3">{{ heading() }}</h2>
+      }
     }
     <span class="quick-navigation-card-count -mt-2 mb-1 block text-4xl font-bold text-gray-900 dark:text-white">
-      {{ count() }}
+      {{ count() }} <ng-content select="[countLabel]" />
     </span>
     <span class="quick-navigation-card-subtitle distr-text-muted block text-xs">
       <ng-content select="[attention]" />
     </span>
   </a>
-} @else if (allGoodLink(); as allGoodLink) {
-  <a [routerLink]="allGoodLink" class="distr-card distr-card-clickable p-4">
-    <ng-container [ngTemplateOutlet]="allGood" />
+} @else if (overviewLink(); as overviewLink) {
+  <a
+    [routerLink]="overviewLink"
+    class="distr-card distr-card-clickable p-4"
+    [class.quick-navigation-card-success]="!isEmpty()">
+    <ng-container [ngTemplateOutlet]="overview" />
   </a>
 } @else {
-  <div class="distr-card p-4">
-    <ng-container [ngTemplateOutlet]="allGood" />
+  <div class="distr-card p-4" [class.quick-navigation-card-success]="!isEmpty()">
+    <ng-container [ngTemplateOutlet]="overview" />
   </div>
 }
 
-<ng-template #allGood>
-  <h2 appCardHeading [icon]="icon()" class="mb-3">{{ heading() }}</h2>
-  <span class="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
-    <fa-icon [icon]="faCircleCheck" />
-    <span><ng-content select="[allGood]" /></span>
-  </span>
+<ng-template #overview>
+  @if (isEmpty()) {
+    <h2 appCardHeading [icon]="icon()" class="mb-3">{{ heading() }}</h2>
+    <span class="distr-text-muted text-sm"><ng-content select="[empty]" /></span>
+  } @else {
+    <h2 appCardHeading class="mb-3"><fa-icon [icon]="faCircleCheck" class="me-2" />{{ heading() }}</h2>
+    <span class="quick-navigation-card-count -mt-2 mb-1 block text-4xl font-bold">
+      <ng-content select="[allGood]" />
+    </span>
+    <span class="quick-navigation-card-subtitle distr-text-muted block text-xs">
+      <ng-content select="[allGoodSubtitle]" />
+    </span>
+  }
 </ng-template>

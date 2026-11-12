@@ -51,13 +51,11 @@ export class VendorHomePageComponent {
     this.customerOrganizationsService.getCustomerOrganizations().pipe(map((customers) => customers.length))
   );
   private readonly deploymentTargets = toSignal(this.deploymentTargetsService.list());
-  private readonly deploymentCount = computed(() =>
-    this.deploymentTargets()?.reduce((count, target) => count + target.deployments.length, 0)
-  );
   protected readonly deploymentHealth = computed(() => {
     const targets = this.deploymentTargets();
     return targets && toVendorHomeDeploymentHealth(targets);
   });
+  private readonly deploymentCount = computed(() => this.deploymentHealth()?.total);
   protected readonly deploymentAttentionQueryParams = {status: vendorHomeAttentionStatuses};
   // Partners have no access to the applications.
   private readonly applicationCount = toSignal(
