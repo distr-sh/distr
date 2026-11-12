@@ -91,10 +91,10 @@ export const vendorNavigation: NavigationDefinition = [
       {id: 'users', label: 'Users', icon: faUsers, route: '/users', visible: (c) => c.user.isAdminOrSuperAdmin},
       {id: 'secrets', label: 'Secrets', icon: faAsterisk, route: '/secrets'},
       {
-        id: 'branding',
-        label: 'Branding',
+        id: 'customer-portal',
+        label: 'Customer Portal',
         icon: faPalette,
-        route: '/branding',
+        route: '/customer-portal',
         visible: (c) => c.user.isSuperAdmin || c.user.isReadWriteOrAdmin,
       },
       {

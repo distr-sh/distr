@@ -3,22 +3,21 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faFloppyDisk} from '@fortawesome/free-solid-svg-icons';
-import {AlertComponent} from '../components/alert/alert.component';
-import {BrandingFormComponent} from '../components/branding/branding-form.component';
-import {PageComponent} from '../components/page.component';
-import {organizationSettingsTabs} from '../organization-settings/organization-settings-navigation';
-import {canOpenSubscription} from '../organization-settings/subscription/subscription.guard';
-import {AuthService} from '../services/auth.service';
-import {FeatureFlagService} from '../services/feature-flag.service';
-import {OrganizationService} from '../services/organization.service';
+import {AlertComponent} from '../../components/alert/alert.component';
+import {BrandingFormComponent} from '../../components/branding/branding-form.component';
+import {canOpenSubscription} from '../../organization-settings/subscription/subscription.guard';
+import {AuthService} from '../../services/auth.service';
+import {FeatureFlagService} from '../../services/feature-flag.service';
+import {OrganizationService} from '../../services/organization.service';
+import {customerPortalTabs} from '../customer-portal-navigation';
 
 @Component({
-  selector: 'app-organization-branding',
-  templateUrl: './organization-branding.component.html',
+  selector: 'app-customer-portal-branding',
+  templateUrl: './customer-portal-branding.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [BrandingFormComponent, FaIconComponent, RouterLink, PageComponent, AlertComponent],
+  imports: [BrandingFormComponent, FaIconComponent, RouterLink, AlertComponent],
 })
-export class OrganizationBrandingComponent {
+export class CustomerPortalBrandingComponent {
   protected readonly faFloppyDisk = faFloppyDisk;
 
   protected readonly auth = inject(AuthService);
@@ -27,7 +26,7 @@ export class OrganizationBrandingComponent {
 
   private readonly organization = toSignal(this.organizationService.get());
   protected readonly canOpenSubscription = toSignal(canOpenSubscription(), {initialValue: false});
-  protected readonly canOpenCustomDomains = toSignal(organizationSettingsTabs.canOpen('identity-provider'), {
+  protected readonly canOpenCustomDomains = toSignal(customerPortalTabs.canOpen('domain-and-sign-in'), {
     initialValue: false,
   });
 

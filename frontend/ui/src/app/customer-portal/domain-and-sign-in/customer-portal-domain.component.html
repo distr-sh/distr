@@ -1,0 +1,27 @@
+<div class="space-y-8">
+  <div class="space-y-4">
+    <h2 class="text-xl font-bold dark:text-white">Domain &amp; Sign-in</h2>
+    <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+      One domain that all of your customers sign in on by default. Without it they keep using your
+      <span class="lowercase">{{ appDomainLabel() }}</span> or the default Distr host. Identity providers on it apply to
+      every customer, including the ones you create later. A custom domain has to exist first.
+    </p>
+    <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+      Customers with the Identity Provider feature can override this with a domain and providers of their own.
+    </p>
+  </div>
+
+  <section class="space-y-4">
+    <app-custom-domain
+      #portalDomain
+      domainType="customer_portal"
+      label="Customer Portal domain"
+      placeholder="<slug>-portal.yourcompany.com"
+      optionalCheckboxLabel="Use a customer portal domain">
+      The domain all of your customers sign in on. Links in invitations, password resets and notification mails use it
+      instead of your <span class="lowercase">{{ appDomainLabel() }}</span
+      >.
+    </app-custom-domain>
+    <app-identity-providers [domain]="portalDomain.domain()" />
+  </section>
+</div>
