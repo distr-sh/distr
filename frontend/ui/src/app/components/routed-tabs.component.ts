@@ -11,7 +11,7 @@ import {TabBarComponent} from './tab-bar.component';
 @Component({
   selector: 'app-routed-tabs',
   templateUrl: './routed-tabs.component.html',
-  host: {class: 'distr-panel block'},
+  host: {class: 'block'},
   imports: [CdkConnectedOverlay, TabBarComponent, PlanBadgeComponent, PlanFeatureHintComponent, RouterOutlet],
 })
 export class RoutedTabsComponent {
@@ -19,7 +19,8 @@ export class RoutedTabsComponent {
   private readonly route = inject(ActivatedRoute);
 
   public readonly tabs = input.required<readonly LockableTab[]>();
-  protected readonly activeTab = signal(this.tabFromRoute());
+  protected readonly active = signal(this.tabFromRoute());
+  public readonly activeTab = this.active.asReadonly();
   protected readonly planHintTab = signal<string | null>(null);
 
   constructor() {
@@ -28,7 +29,7 @@ export class RoutedTabsComponent {
         filter((event) => event instanceof NavigationEnd),
         takeUntilDestroyed()
       )
-      .subscribe(() => this.activeTab.set(this.tabFromRoute()));
+      .subscribe(() => this.active.set(this.tabFromRoute()));
   }
 
   protected onTabClick(tab: LockableTab) {

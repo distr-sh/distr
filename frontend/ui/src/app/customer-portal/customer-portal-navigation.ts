@@ -2,7 +2,7 @@ import {defineRoutedTabs} from '../navigation/tabs';
 
 export type CustomerPortalTabId = 'branding' | 'domain-and-sign-in';
 
-export const customerPortalTabs = defineRoutedTabs<CustomerPortalTabId>('/customer-portal', 'Customer Portal', [
+export const customerPortalTabs = defineRoutedTabs<CustomerPortalTabId>('Customer Portal', [
   {id: 'branding', label: 'Branding'},
   {
     id: 'domain-and-sign-in',

@@ -25,6 +25,7 @@ describe('subscriptionGuard', () => {
           useValue: {
             isLens: () => isLens,
             isVendor: () => !isLens,
+            isPartner: () => false,
             isSuperAdmin: () => false,
             hasRole: (r: UserRole) => r === role,
             switchContext,

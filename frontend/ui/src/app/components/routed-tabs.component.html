@@ -1,4 +1,4 @@
-<app-tab-bar [tabs]="tabs()" [(active)]="activeTab" (tabClick)="onTabClick($event)">
+<app-tab-bar [tabs]="tabs()" [(active)]="active" (tabClick)="onTabClick($event)">
   <ng-template #tabSuffix let-tab let-origin="origin">
     @if (tab.plan; as plan) {
       <app-plan-badge [plan]="plan" class="ml-2" />
@@ -15,6 +15,6 @@
     }
   </ng-template>
 </app-tab-bar>
-<div role="tabpanel" class="pt-6" [id]="'tabpanel-' + activeTab()" [attr.aria-labelledby]="'tab-' + activeTab()">
+<div role="tabpanel" class="pt-6" [id]="'tabpanel-' + active()" [attr.aria-labelledby]="'tab-' + active()">
   <router-outlet />
 </div>
