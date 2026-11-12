@@ -38,12 +38,22 @@ export class ArtifactPullsService {
     return this.httpClient.get<LatestArtifactPull[]>(`${this.baseUrl}/latest`, {params});
   }
 
-  public getFilterOptions(): Observable<ArtifactVersionPullFilterOptions> {
-    return this.httpClient.get<ArtifactVersionPullFilterOptions>(`${this.baseUrl}/filter-options`);
+  public getFilterOptions(customerOrganizationId?: string): Observable<ArtifactVersionPullFilterOptions> {
+    let params = new HttpParams();
+    if (customerOrganizationId) {
+      params = params.set('customerOrganizationId', customerOrganizationId);
+    }
+    return this.httpClient.get<ArtifactVersionPullFilterOptions>(`${this.baseUrl}/filter-options`, {params});
   }
 
-  public getVersionOptions(artifactId: string): Observable<ArtifactPullFilterOption[]> {
-    const params = new HttpParams().set('artifactId', artifactId);
+  public getVersionOptions(
+    artifactId: string,
+    customerOrganizationId?: string
+  ): Observable<ArtifactPullFilterOption[]> {
+    let params = new HttpParams().set('artifactId', artifactId);
+    if (customerOrganizationId) {
+      params = params.set('customerOrganizationId', customerOrganizationId);
+    }
     return this.httpClient.get<ArtifactPullFilterOption[]>(`${this.baseUrl}/filter-options/versions`, {params});
   }
 

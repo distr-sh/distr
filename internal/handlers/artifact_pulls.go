@@ -52,10 +52,12 @@ func ArtifactPullsRouter(r chiopenapi.Router) {
 		With(option.Response(http.StatusOK, []api.LatestArtifactPullResponse{}))
 	r.Get("/filter-options", respond.Handler(getArtifactPullFilterOptionsHandler)).
 		With(option.Description("Get available filter options for artifact pulls")).
+		With(option.Request(customerScopeQuery{})).
 		With(option.Response(http.StatusOK, api.ArtifactVersionPullFilterOptions{}))
 	r.Get("/filter-options/versions", respond.Handler(getArtifactPullVersionOptionsHandler)).
 		With(option.Description("Get available version filter options for a specific artifact")).
 		With(option.Request(struct {
+			customerScopeQuery
 			ArtifactID string `query:"artifactId"`
 		}{})).
 		With(option.Response(http.StatusOK, []api.ArtifactPullFilterOption{}))
@@ -64,19 +66,19 @@ func ArtifactPullsRouter(r chiopenapi.Router) {
 		With(option.Response(http.StatusOK, []byte{}))
 }
 
-func artifactPullFilter(r *http.Request) (types.ArtifactVersionPullFilter, respond.Responder, error) {
-	ctx := r.Context()
-	authInfo := auth.Authentication.Require(ctx)
+func artifactPullFilter(r *http.Request) (types.ArtifactVersionPullFilter, respond.Responder) {
+	authInfo := auth.Authentication.Require(r.Context())
 	filter := types.ArtifactVersionPullFilter{
-		OrgID:  *authInfo.CurrentOrgID(),
-		Before: time.Now(),
-		Count:  50,
+		OrgID:                 *authInfo.CurrentOrgID(),
+		PartnerOrganizationID: authInfo.CurrentPartnerOrgID(),
+		Before:                time.Now(),
+		Count:                 50,
 	}
 
 	if before, err := QueryParam(r, "before", ParseTimeFunc(time.RFC3339Nano)); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return filter, respond.BadRequest("before must be a valid date"), nil
+		return filter, respond.BadRequest("before must be a valid date")
 	} else {
 		filter.Before = before
 	}
@@ -84,7 +86,7 @@ func artifactPullFilter(r *http.Request) (types.ArtifactVersionPullFilter, respo
 	if after, err := QueryParam(r, "after", ParseTimeFunc(time.RFC3339Nano)); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return filter, respond.BadRequest("after must be a valid date"), nil
+		return filter, respond.BadRequest("after must be a valid date")
 	} else {
 		filter.After = after
 	}
@@ -92,25 +94,23 @@ func artifactPullFilter(r *http.Request) (types.ArtifactVersionPullFilter, respo
 	if count, err := QueryParam(r, "count", strconv.Atoi); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return filter, respond.BadRequest("count must be a number"), nil
+		return filter, respond.BadRequest("count must be a number")
 	} else if count < 1 || count > 1000 {
-		return filter, respond.BadRequest("count must be between 1 and 1000"), nil
+		return filter, respond.BadRequest("count must be between 1 and 1000")
 	} else {
 		filter.Count = count
 	}
 
-	if id, err := QueryParam(r, "customerOrganizationId", uuid.Parse); errors.Is(err, ErrParamNotDefined) {
-		// use default
-	} else if err != nil {
-		return filter, respond.BadRequest("customerOrganizationId must be a valid UUID"), nil
+	if customerOrgID, resp := artifactPullCustomerFilter(r); resp != nil {
+		return filter, resp
 	} else {
-		filter.CustomerOrganizationID = &id
+		filter.CustomerOrganizationID = customerOrgID
 	}
 
 	if id, err := QueryParam(r, "userAccountId", uuid.Parse); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return filter, respond.BadRequest("userAccountId must be a valid UUID"), nil
+		return filter, respond.BadRequest("userAccountId must be a valid UUID")
 	} else {
 		filter.UserAccountID = &id
 	}
@@ -118,7 +118,7 @@ func artifactPullFilter(r *http.Request) (types.ArtifactVersionPullFilter, respo
 	if anonymous, err := QueryParam(r, "anonymous", strconv.ParseBool); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return filter, respond.BadRequest("anonymous must be true or false"), nil
+		return filter, respond.BadRequest("anonymous must be true or false")
 	} else {
 		filter.Anonymous = anonymous
 	}
@@ -130,7 +130,7 @@ func artifactPullFilter(r *http.Request) (types.ArtifactVersionPullFilter, respo
 	if id, err := QueryParam(r, "artifactId", uuid.Parse); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return filter, respond.BadRequest("artifactId must be a valid UUID"), nil
+		return filter, respond.BadRequest("artifactId must be a valid UUID")
 	} else {
 		filter.ArtifactID = &id
 	}
@@ -138,7 +138,7 @@ func artifactPullFilter(r *http.Request) (types.ArtifactVersionPullFilter, respo
 	if id, err := QueryParam(r, "artifactVersionId", uuid.Parse); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return filter, respond.BadRequest("artifactVersionId must be a valid UUID"), nil
+		return filter, respond.BadRequest("artifactVersionId must be a valid UUID")
 	} else {
 		filter.ArtifactVersionID = &id
 	}
@@ -146,32 +146,19 @@ func artifactPullFilter(r *http.Request) (types.ArtifactVersionPullFilter, respo
 	if id, err := QueryParam(r, "deploymentTargetId", uuid.Parse); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return filter, respond.BadRequest("deploymentTargetId must be a valid UUID"), nil
+		return filter, respond.BadRequest("deploymentTargetId must be a valid UUID")
 	} else {
 		filter.DeploymentTargetID = &id
 	}
 
-	if partnerOrgID := authInfo.CurrentPartnerOrgID(); partnerOrgID != nil {
-		filter.PartnerOrganizationID = partnerOrgID
-		if filter.CustomerOrganizationID != nil {
-			if err := db.ValidateCustomerOrgBelongsToPartnerOrg(
-				ctx, *filter.CustomerOrganizationID, *partnerOrgID,
-			); errors.Is(err, db.ErrCustomerOrgNotInPartnerOrg) {
-				return filter, invalidCustomerScope, nil
-			} else if err != nil {
-				return filter, nil, fmt.Errorf("failed to validate customer organization of partner: %w", err)
-			}
-		}
-	}
-
-	return filter, nil, nil
+	return filter, nil
 }
 
 func getArtifactPullsHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 
-	if filter, resp, err := artifactPullFilter(r); resp != nil || err != nil {
-		return resp, err
+	if filter, resp := artifactPullFilter(r); resp != nil {
+		return resp, nil
 	} else if pulls, err := db.GetArtifactVersionPulls(ctx, filter); err != nil {
 		return nil, fmt.Errorf("could not get pulls: %w", err)
 	} else {
@@ -221,8 +208,10 @@ func getArtifactPullFilterOptionsHandler(r *http.Request) (respond.Responder, er
 	ctx := r.Context()
 	authInfo := auth.Authentication.Require(ctx)
 
-	if opts, err := db.GetArtifactVersionPullFilterOptions(
-		ctx, *authInfo.CurrentOrgID(), authInfo.CurrentPartnerOrgID(),
+	if customerOrgID, resp := artifactPullCustomerFilter(r); resp != nil {
+		return resp, nil
+	} else if opts, err := db.GetArtifactVersionPullFilterOptions(
+		ctx, *authInfo.CurrentOrgID(), authInfo.CurrentPartnerOrgID(), customerOrgID,
 	); err != nil {
 		return nil, fmt.Errorf("could not get pull filter options: %w", err)
 	} else {
@@ -236,11 +225,14 @@ func getArtifactPullVersionOptionsHandler(r *http.Request) (respond.Responder, e
 
 	if artifactID, err := QueryParam(r, "artifactId", uuid.Parse); err != nil {
 		return respond.BadRequest("artifactId is required and must be a valid UUID"), nil
+	} else if customerOrgID, resp := artifactPullCustomerFilter(r); resp != nil {
+		return resp, nil
 	} else if versions, err := db.GetArtifactVersionPullVersionOptions(
 		ctx,
 		*authInfo.CurrentOrgID(),
 		artifactID,
 		authInfo.CurrentPartnerOrgID(),
+		customerOrgID,
 	); err != nil {
 		return nil, fmt.Errorf("could not get version filter options: %w", err)
 	} else {
@@ -248,11 +240,21 @@ func getArtifactPullVersionOptionsHandler(r *http.Request) (respond.Responder, e
 	}
 }
 
+func artifactPullCustomerFilter(r *http.Request) (*uuid.UUID, respond.Responder) {
+	if id, err := QueryParam(r, "customerOrganizationId", uuid.Parse); errors.Is(err, ErrParamNotDefined) {
+		return nil, nil
+	} else if err != nil {
+		return nil, respond.BadRequest("customerOrganizationId must be a valid UUID")
+	} else {
+		return &id, nil
+	}
+}
+
 func exportArtifactPullsHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 
-	if filter, resp, err := artifactPullFilter(r); resp != nil || err != nil {
-		return resp, err
+	if filter, resp := artifactPullFilter(r); resp != nil {
+		return resp, nil
 	} else {
 		filter.Count = int(subscription.MaxArtifactPullExportRows)
 		if pulls, err := db.GetArtifactVersionPulls(ctx, filter); err != nil {
