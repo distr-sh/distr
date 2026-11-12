@@ -138,6 +138,12 @@ describe('isDeploymentOutdated', () => {
     expect(outdated(deployment('2.0.0'))).toBe(false);
   });
 
+  it('should order by creation date for a chronological application', () => {
+    const chronological = {...application, versioningStrategy: 'chronological' as const};
+    expect(outdated(deployment('2.0.0'), [], [chronological])).toBe(true);
+    expect(outdated(deployment('1.2.0'), [], [chronological])).toBe(false);
+  });
+
   it('should judge the version the deployment runs rather than the one being rolled out', () => {
     expect(outdated(deployment('2.0.0', {currentVersionId: '1.0.0'}))).toBe(true);
     expect(outdated(deployment('1.0.0', {currentVersionId: '2.0.0'}))).toBe(false);
@@ -152,7 +158,12 @@ describe('isDeploymentOutdated', () => {
   });
 
   it('should count a version the caller does not see as outdated unless it is the newest', () => {
-    const customerView = {...application, versions: application.versions!.filter((it) => it.id !== '1.0.0')};
+    const customerView = {
+      ...application,
+      versions: application.versions!.filter((it) => it.id !== '1.0.0' && it.id !== '2.0.0'),
+    };
+    const entitlements = [entitlement('limited', ['1.1.0', '2.0.0'])];
     expect(outdated(deployment('1.0.0'), [], [customerView])).toBe(true);
+    expect(outdated(deployment('2.0.0', {entitlementId: 'limited'}), entitlements, [customerView])).toBe(false);
   });
 });
