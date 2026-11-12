@@ -22,19 +22,19 @@
   }
 }
 
-:host([data-type='success']) {
+:host(.card-success) {
   @include variant(green);
 }
 
-:host([data-type='warning']) {
+:host(.card-warning) {
   @include variant(yellow);
 }
 
-:host([data-type='error']) {
+:host(.card-error) {
   @include variant(red);
 }
 
-:host(:not([data-type='neutral'])) {
+:host(:not(.card-neutral)) {
   .distr-card {
     border-color: var(--card-border);
     background-color: var(--card-bg);
@@ -46,8 +46,8 @@
   }
 
   h2,
-  .quick-navigation-card-headline,
-  .quick-navigation-card-subtitle {
+  .headline,
+  .subtitle {
     color: inherit;
   }
 }

@@ -14,11 +14,10 @@
   } @else {
     <h2 appCardHeading [icon]="icon()" class="mb-3">{{ heading() }}</h2>
   }
-  <span
-    class="quick-navigation-card-headline -mt-2 mb-1 block text-4xl font-bold text-gray-900 empty:hidden dark:text-white">
+  <span class="headline -mt-2 mb-1 block text-4xl font-bold text-gray-900 empty:hidden dark:text-white">
     <ng-content />
   </span>
-  <span class="quick-navigation-card-subtitle distr-text-muted block text-xs">
+  <span class="subtitle distr-text-muted block text-xs">
     <ng-content select="[subtitle]" />
   </span>
 </ng-template>

@@ -18,7 +18,7 @@ export type QuickNavigationCardType = 'neutral' | 'success' | 'warning' | 'error
   imports: [NgTemplateOutlet, RouterLink, FaIconComponent, CardHeadingComponent],
   host: {
     class: 'block',
-    '[attr.data-type]': 'type()',
+    '[class]': 'typeClass()',
   },
 })
 export class QuickNavigationCardComponent {
@@ -27,6 +27,8 @@ export class QuickNavigationCardComponent {
   public readonly type = input<QuickNavigationCardType>('neutral');
   public readonly link = input<string | readonly unknown[]>();
   public readonly queryParams = input<Params>();
+
+  protected readonly typeClass = computed(() => `card-${this.type()}`);
 
   protected readonly typeIcon = computed(() => {
     switch (this.type()) {
