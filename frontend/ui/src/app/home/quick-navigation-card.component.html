@@ -29,16 +29,15 @@
 }
 
 <ng-template #content>
-  @if (typeIcon(); as typeIcon) {
-    <h2 appCardHeading class="mb-3"><fa-icon [icon]="typeIcon" class="me-2" />{{ heading() }}</h2>
-  } @else {
-    <h2 appCardHeading [icon]="icon()" class="mb-3 flex items-center">
-      {{ heading() }}
-      @if (lockedPlan(); as plan) {
-        <app-plan-badge [plan]="plan" class="ms-auto" />
-      }
-    </h2>
-  }
+  <h2 appCardHeading [icon]="typeIcon() ? undefined : icon()" class="mb-3 flex items-center">
+    @if (typeIcon(); as typeIcon) {
+      <fa-icon [icon]="typeIcon" class="me-2" />
+    }
+    {{ heading() }}
+    @if (lockedPlan(); as plan) {
+      <app-plan-badge [plan]="plan" class="ms-auto" />
+    }
+  </h2>
   <span class="headline -mt-2 mb-1 block text-4xl font-bold text-gray-900 empty:hidden dark:text-white">
     <ng-content />
   </span>
