@@ -11,7 +11,7 @@
             [title]="quota.isLimitReached() ? 'Customer limit reached' : 'Create Customer'"
             type="button"
             id="createCustomerButton"
-            class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:w-auto dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+            class="distr-btn-secondary flex w-full items-center justify-center px-4 py-2 text-sm font-medium md:w-auto">
             <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
             Create Customer
           </button>
@@ -28,18 +28,16 @@
         </thead>
         <tbody>
           @for (customer of customerOrganizations(); track customer.id) {
-            <tr class="distr-table-row relative">
+            <tr [appClickableRow]="['/', 'customers', customer.id]" class="distr-table-row">
               <td class="distr-table-cell">
-                <a
-                  [routerLink]="[customer.id]"
-                  class="flex items-center gap-3 after:absolute after:inset-0 focus:outline-none focus-visible:after:ring-2 focus-visible:after:ring-primary-500">
+                <div class="flex items-center gap-3">
                   <app-avatar
                     [image]="customer.imageUrl"
                     [name]="customer.name"
                     [icon]="faAddressBook"
                     class="size-8 rounded-sm" />
-                  <span class="block max-w-32 truncate lg:max-w-64 xl:max-w-128">{{ customer.name }}</span>
-                </a>
+                  <span class="block">{{ customer.name }}</span>
+                </div>
               </td>
               <td class="distr-table-cell text-end">
                 {{ customer.deploymentTargetCount | number }}
@@ -102,12 +100,7 @@
                 }
               </div>
 
-              <button
-                type="submit"
-                [disabled]="createFormLoading()"
-                class="w-full self-end rounded-lg bg-blue-700 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 focus:outline-none sm:w-auto dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                Submit
-              </button>
+              <button type="submit" [disabled]="createFormLoading()" class="distr-btn-primary self-end">Submit</button>
             </div>
           </form>
         </div>

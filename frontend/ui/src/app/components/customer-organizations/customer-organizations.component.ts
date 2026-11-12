@@ -2,11 +2,12 @@ import {AsyncPipe, DecimalPipe} from '@angular/common';
 import {Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
-import {Router, RouterLink} from '@angular/router';
+import {Router} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faAddressBook, faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, firstValueFrom, map, startWith} from 'rxjs';
 import {refreshInBackground} from '../../../util/refresh';
+import {ClickableRowDirective} from '../../directives/clickable-row.directive';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
@@ -25,7 +26,7 @@ import {SearchBarComponent} from '../search-bar.component';
     FontAwesomeModule,
     AsyncPipe,
     DecimalPipe,
-    RouterLink,
+    ClickableRowDirective,
     QuotaLimitComponent,
     AvatarComponent,
     PageComponent,
