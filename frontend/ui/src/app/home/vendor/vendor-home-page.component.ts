@@ -11,7 +11,7 @@ import {
   faLifeRing,
   faShieldHalved,
 } from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, firstValueFrom, of, switchMap} from 'rxjs';
+import {combineLatest, firstValueFrom, map, of, switchMap} from 'rxjs';
 import {refreshInBackground} from '../../../util/refresh';
 import {CardHeadingComponent} from '../../components/card-heading.component';
 import {PageComponent} from '../../components/page.component';
@@ -22,9 +22,18 @@ import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
+import {LicensesService} from '../../services/licenses.service';
+import {SupportBundlesService} from '../../services/support-bundles.service';
 import {QuickNavigationCardComponent, QuickNavigationCardType} from '../quick-navigation-card.component';
 import {VendorHomeDeploymentHealth, VendorHomeUpdates} from './vendor-home';
-import {toVendorHomeDeploymentHealth, toVendorHomeUpdates, vendorHomeAttentionStatuses} from './vendor-home-mappers';
+import {
+  countOpenSupportBundles,
+  expiringLicenseCustomerIds,
+  toVendorHomeDeploymentHealth,
+  toVendorHomeUpdates,
+  vendorHomeAttentionStatuses,
+  vendorHomeLicenseExpiryWindowDays,
+} from './vendor-home-mappers';
 
 function deploymentHealthType(health: VendorHomeDeploymentHealth): QuickNavigationCardType {
   if (health.error > 0) {
@@ -63,8 +72,10 @@ export class VendorHomePageComponent {
   private readonly applicationsService = inject(ApplicationsService);
   private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
   private readonly featureFlags = inject(FeatureFlagService);
+  private readonly licensesService = inject(LicensesService);
+  private readonly supportBundlesService = inject(SupportBundlesService);
 
-  private readonly isVendor = this.auth.isVendor();
+  protected readonly isVendor = this.auth.isVendor();
 
   protected readonly faAddressBook = faAddressBook;
   protected readonly faBoxesStacked = faBoxesStacked;
@@ -96,6 +107,35 @@ export class VendorHomePageComponent {
   private readonly applicationEntitlements = toSignal(
     this.featureFlags.isLicensingEnabled$.pipe(
       switchMap((enabled) => (enabled ? this.applicationEntitlementsService.list() : of([])))
+    )
+  );
+
+  protected readonly licenseExpiryWindowDays = vendorHomeLicenseExpiryWindowDays;
+  /** `null` while the organization has no licensing. */
+  private readonly expiringLicenseCustomerIds = toSignal(
+    this.featureFlags.isLicensingEnabled$.pipe(
+      switchMap((enabled) =>
+        enabled ? this.licensesService.list().pipe(map((licenses) => expiringLicenseCustomerIds(licenses))) : of(null)
+      )
+    )
+  );
+  protected readonly expiringLicenses = computed(() => {
+    const ids = this.expiringLicenseCustomerIds();
+    if (ids === undefined || ids === null) {
+      return ids;
+    }
+    return {
+      customers: ids.length,
+      link: ids.length === 1 ? ['/licenses', ids[0]] : ids.length > 1 ? ['/customers'] : ['/licenses'],
+    };
+  });
+
+  /** `null` while the organization's plan has no support bundles. */
+  protected readonly openSupportBundles = toSignal(
+    this.featureFlags.isSupportBundlesEnabled$.pipe(
+      switchMap((enabled) =>
+        enabled ? this.supportBundlesService.list().pipe(map((bundles) => countOpenSupportBundles(bundles))) : of(null)
+      )
     )
   );
   private readonly latestArtifactPulls = toSignal(this.artifactPullsService.getLatest());

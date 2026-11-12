@@ -1,4 +1,24 @@
-@if (link(); as link) {
+@if (lockedPlan(); as plan) {
+  <button
+    type="button"
+    class="distr-card distr-card-clickable w-full p-4 text-left"
+    [title]="'Upgrade to ' + (plan | titlecase) + ' to enable ' + (heading() | lowercase)"
+    (click)="isPlanHintOpen.set(!isPlanHintOpen())"
+    cdkOverlayOrigin
+    #origin="cdkOverlayOrigin">
+    <ng-container [ngTemplateOutlet]="content" />
+  </button>
+  <ng-template
+    cdkConnectedOverlay
+    [cdkConnectedOverlayHasBackdrop]="true"
+    (backdropClick)="isPlanHintOpen.set(false)"
+    [cdkConnectedOverlayOrigin]="origin"
+    [cdkConnectedOverlayBackdropClass]="'transparent'"
+    [cdkConnectedOverlayPositions]="[{originX: 'center', overlayX: 'center', originY: 'bottom', overlayY: 'top'}]"
+    [cdkConnectedOverlayOpen]="isPlanHintOpen()">
+    <app-plan-feature-hint [plan]="plan" />
+  </ng-template>
+} @else if (link(); as link) {
   <a [routerLink]="link" [queryParams]="queryParams()" class="distr-card distr-card-clickable p-4">
     <ng-container [ngTemplateOutlet]="content" />
   </a>
@@ -12,7 +32,12 @@
   @if (typeIcon(); as typeIcon) {
     <h2 appCardHeading class="mb-3"><fa-icon [icon]="typeIcon" class="me-2" />{{ heading() }}</h2>
   } @else {
-    <h2 appCardHeading [icon]="icon()" class="mb-3">{{ heading() }}</h2>
+    <h2 appCardHeading [icon]="icon()" class="mb-3 flex items-center">
+      {{ heading() }}
+      @if (lockedPlan(); as plan) {
+        <app-plan-badge [plan]="plan" class="ms-auto" />
+      }
+    </h2>
   }
   <span class="headline -mt-2 mb-1 block text-4xl font-bold text-gray-900 empty:hidden dark:text-white">
     <ng-content />

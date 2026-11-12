@@ -1,4 +1,5 @@
 import {Application, CustomerOrganization, DeploymentTarget} from '@distr-sh/distr-sdk';
+import dayjs, {Dayjs} from 'dayjs';
 import {isDeploymentOutdated} from '../../../util/versions';
 import {
   DeploymentDisplayStatus,
@@ -6,10 +7,32 @@ import {
 } from '../../deployments/deployment-target-card/deployment-status-text.component';
 import {ApplicationEntitlement} from '../../types/application-entitlement';
 import {LatestArtifactPull} from '../../types/artifact-version-pull';
+import {License} from '../../types/license';
+import {SupportBundle, SupportBundleStatus} from '../../types/support-bundle';
 import {VendorHomeCustomer, VendorHomeDeploymentHealth, VendorHomeUpdates} from './vendor-home';
 
 /** The status filter the deployments card links to, which has to show exactly the error and stale deployments. */
 export const vendorHomeAttentionStatuses: readonly DeploymentDisplayStatus[] = ['error', 'stale'];
+
+export const vendorHomeLicenseExpiryWindowDays = 30;
+
+const openSupportBundleStatuses: readonly SupportBundleStatus[] = ['initialized', 'created'];
+
+/** The customers with a license key or entitlement that has not expired yet but will within the window. */
+export function expiringLicenseCustomerIds(licenses: License[], now: Dayjs = dayjs()): string[] {
+  const threshold = now.add(vendorHomeLicenseExpiryWindowDays, 'day');
+  const isExpiring = ({expiresAt}: {expiresAt?: string | Date}) =>
+    expiresAt !== undefined && now.isBefore(expiresAt) && !threshold.isBefore(expiresAt);
+  return licenses
+    .filter((license) =>
+      [...license.licenseKeys, ...license.applicationEntitlements, ...license.artifactEntitlements].some(isExpiring)
+    )
+    .map((license) => license.customerOrganization.id);
+}
+
+export function countOpenSupportBundles(bundles: SupportBundle[]): number {
+  return bundles.filter((bundle) => openSupportBundleStatuses.includes(bundle.status)).length;
+}
 
 export function toVendorHomeDeploymentHealth(targets: DeploymentTarget[]): VendorHomeDeploymentHealth {
   const statuses = targets.flatMap((target) => target.deployments.map(deploymentDisplayStatus));

@@ -125,12 +125,72 @@
       } @else {
         <app-quick-navigation-card class="min-h-32" [icon]="faCircleArrowUp" heading="Updates" />
       }
-      <div class="distr-card min-h-32 p-4">
-        <h2 appCardHeading [icon]="faKey">Licenses</h2>
-      </div>
-      <div class="distr-card min-h-32 p-4">
-        <h2 appCardHeading [icon]="faLifeRing">Support</h2>
-      </div>
+      @let licenses = expiringLicenses();
+      @if (licenses === null) {
+        @if (isVendor) {
+          <app-quick-navigation-card class="min-h-32" [icon]="faKey" heading="Licenses" lockedPlan="pro">
+            <span subtitle>Upgrade to manage customer licenses</span>
+          </app-quick-navigation-card>
+        }
+      } @else if (licenses) {
+        <app-quick-navigation-card
+          class="min-h-32"
+          [icon]="faKey"
+          heading="Licenses"
+          [type]="licenses.customers > 0 ? 'warning' : 'success'"
+          [link]="licenses.link">
+          @if (licenses.customers > 0) {
+            <ng-container [ngPlural]="licenses.customers">
+              <ng-template ngPluralCase="=1">1 customer</ng-template>
+              <ng-template ngPluralCase="other">{{ licenses.customers }} customers</ng-template>
+            </ng-container>
+          } @else {
+            All good
+          }
+          <span subtitle>
+            @if (licenses.customers > 0) {
+              With a license expiring in the next {{ licenseExpiryWindowDays }} days
+            } @else {
+              No licenses expiring in the next {{ licenseExpiryWindowDays }} days
+            }
+          </span>
+        </app-quick-navigation-card>
+      } @else {
+        <app-quick-navigation-card class="min-h-32" [icon]="faKey" heading="Licenses" />
+      }
+      @let support = openSupportBundles();
+      @if (support === null) {
+        @if (isVendor) {
+          <app-quick-navigation-card class="min-h-32" [icon]="faLifeRing" heading="Support" lockedPlan="pro">
+            <span subtitle>Upgrade to receive support requests from your customers</span>
+          </app-quick-navigation-card>
+        }
+      } @else if (support !== undefined) {
+        <app-quick-navigation-card
+          class="min-h-32"
+          [icon]="faLifeRing"
+          heading="Support"
+          [type]="support > 0 ? 'warning' : 'success'"
+          link="/support">
+          @if (support > 0) {
+            {{ support }} open
+          } @else {
+            All good
+          }
+          <span subtitle>
+            @if (support > 0) {
+              <ng-container [ngPlural]="support">
+                <ng-template ngPluralCase="=1">Support request awaiting resolution</ng-template>
+                <ng-template ngPluralCase="other">Support requests awaiting resolution</ng-template>
+              </ng-container>
+            } @else {
+              No open support requests
+            }
+          </span>
+        </app-quick-navigation-card>
+      } @else {
+        <app-quick-navigation-card class="min-h-32" [icon]="faLifeRing" heading="Support" />
+      }
       <div class="distr-card min-h-32 p-4">
         <h2 appCardHeading [icon]="faShieldHalved">Security Advisories</h2>
       </div>

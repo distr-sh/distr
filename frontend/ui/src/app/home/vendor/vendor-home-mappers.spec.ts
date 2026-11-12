@@ -9,7 +9,13 @@ import {
 } from '@distr-sh/distr-sdk';
 import dayjs from 'dayjs';
 import {LatestArtifactPull} from '../../types/artifact-version-pull';
-import {toVendorHomeCustomers, toVendorHomeDeploymentHealth, toVendorHomeUpdates} from './vendor-home-mappers';
+import {License} from '../../types/license';
+import {
+  expiringLicenseCustomerIds,
+  toVendorHomeCustomers,
+  toVendorHomeDeploymentHealth,
+  toVendorHomeUpdates,
+} from './vendor-home-mappers';
 
 const fresh = () => dayjs().toISOString();
 const old = () => dayjs().subtract(1, 'hour').toISOString();
@@ -121,6 +127,40 @@ describe('toVendorHomeUpdates', () => {
     expect(
       toVendorHomeUpdates([current, outdated, pulledOutdated, pulledCurrent, idle], targets, [application], [], pulls)
     ).toEqual({totalCustomers: 5, outdatedCustomers: 2, outdatedDeployments: 2});
+  });
+});
+
+describe('expiringLicenseCustomerIds', () => {
+  it('should count a customer once for any license expiring within the window but not for expired ones', () => {
+    const now = dayjs('2026-06-01T00:00:00Z');
+    const inDays = (days: number) => now.add(days, 'day').toISOString();
+    const date = (expiresAt?: string) => (expiresAt === undefined ? undefined : new Date(expiresAt));
+    const license = (
+      id: string,
+      {
+        keys = [],
+        applications = [],
+        artifacts = [],
+      }: Partial<Record<'keys' | 'applications' | 'artifacts', (string | undefined)[]>>
+    ): License => ({
+      customerOrganization: customer(id),
+      licenseKeys: keys.map((expiresAt) => ({id: 'key', name: 'key', expiresAt})),
+      applicationEntitlements: applications.map((expiresAt) => ({id: 'app', name: 'app', expiresAt: date(expiresAt)})),
+      artifactEntitlements: artifacts.map((expiresAt) => ({
+        id: 'artifact',
+        name: 'artifact',
+        expiresAt: date(expiresAt),
+      })),
+    });
+    const licenses = [
+      license('key', {keys: [inDays(10), inDays(20)]}),
+      license('application', {applications: [inDays(30)]}),
+      license('artifact', {artifacts: [inDays(400), inDays(1)]}),
+      license('expired', {keys: [inDays(-1)], applications: [inDays(-10)]}),
+      license('later', {keys: [inDays(31)]}),
+      license('unlimited', {keys: [undefined], applications: [undefined]}),
+    ];
+    expect(expiringLicenseCustomerIds(licenses, now)).toEqual(['key', 'application', 'artifact']);
   });
 });
 
