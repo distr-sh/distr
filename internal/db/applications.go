@@ -164,16 +164,17 @@ func mergeApplications(applications []types.Application) []types.Application {
 	return util.GetValues(applicationMap)
 }
 
-// GetApplicationVersionsEntitledToCustomer returns the newest versions released since that the customer
-// organization may deploy, at most limit of them. Archived versions are left out, and with entitledOnly so are
-// the versions no valid entitlement of the customer covers.
-func GetApplicationVersionsEntitledToCustomer(
+// GetRecentApplicationVersions returns the newest versions released since, at most limit of them. Archived
+// versions are left out, and with a customer organization and entitledOnly so are the versions no valid
+// entitlement of the customer covers.
+func GetRecentApplicationVersions(
 	ctx context.Context,
-	orgID, customerOrgID uuid.UUID,
+	orgID uuid.UUID,
+	customerOrgID *uuid.UUID,
 	entitledOnly bool,
 	since time.Time,
 	limit int,
-) ([]types.CustomerApplicationVersion, error) {
+) ([]types.ApplicationVersionEvent, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		`SELECT av.id, av.created_at, a.id AS application_id, a.name AS application_name, av.name
@@ -202,7 +203,7 @@ func GetApplicationVersionsEntitledToCustomer(
 		pgx.NamedArgs{
 			"orgId":         orgID,
 			"customerOrgId": customerOrgID,
-			"entitledOnly":  entitledOnly,
+			"entitledOnly":  entitledOnly && customerOrgID != nil,
 			"since":         since,
 			"limit":         limit,
 		},
@@ -210,7 +211,7 @@ func GetApplicationVersionsEntitledToCustomer(
 	if err != nil {
 		return nil, fmt.Errorf("failed to query customer application versions: %w", err)
 	}
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.CustomerApplicationVersion])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ApplicationVersionEvent])
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect customer application versions: %w", err)
 	}

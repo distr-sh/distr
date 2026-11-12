@@ -340,43 +340,52 @@ func ListArtifactReleaseTags(ctx context.Context, artifactIDs []uuid.UUID) ([]ty
 	return result, nil
 }
 
-// GetArtifactTagsEntitledToCustomer returns the newest release tags of the artifacts created since, at most
-// limit of them. With licensing, only those the customer organization may pull.
-func GetArtifactTagsEntitledToCustomer(
+// GetArtifactTagEvents returns the newest release tags of the artifacts created since, at most limit of them.
+// With a customer organization and licensing, only those the customer organization may pull.
+func GetArtifactTagEvents(
 	ctx context.Context,
 	artifactIDs []uuid.UUID,
-	customerOrgID uuid.UUID,
+	customerOrgID *uuid.UUID,
 	licensing bool,
+	viewer types.ActivityViewer,
 	since time.Time,
 	limit int,
-) ([]types.ArtifactVersion, error) {
+) ([]types.ArtifactTagEvent, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `
-		SELECT `+artifactVersionOutputExpr+`
+		SELECT
+			v.id,
+			v.created_at,
+			v.artifact_id,
+			v.name,
+			`+activityUserExpr("name", "NULL")+` AS created_by_name,
+			`+activityUserExpr("image_id", "NULL")+` AS created_by_image_id
 		FROM ArtifactVersion v
 			JOIN Artifact a ON a.id = v.artifact_id
 			JOIN ArtifactVersion av
 				ON av.artifact_id = v.artifact_id
 					AND av.manifest_blob_digest = v.manifest_blob_digest
 					AND `+artifactVersionIsDigestExpr("av")+`
+			LEFT JOIN UserAccount u ON u.id = v.created_by_useraccount_id
+			LEFT JOIN Organization_UserAccount j ON j.user_account_id = u.id AND j.organization_id = a.organization_id
 		WHERE v.artifact_id = any(@artifactIds)
 			AND v.created_at > @since
 			AND `+versionIsReleaseTagExpr+`
 			AND `+artifactVersionVisibleExpr+`
 		ORDER BY v.created_at DESC
 		LIMIT @limit`,
-		pgx.NamedArgs{
+		activityViewerArgs(viewer, pgx.NamedArgs{
 			"artifactIds":   artifactIDs,
 			"customerOrgId": customerOrgID,
-			"isVendorUser":  !licensing,
+			"isVendorUser":  customerOrgID == nil || !licensing,
 			"since":         since,
 			"limit":         limit,
-		},
+		}),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query artifact tags: %w", err)
 	}
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ArtifactVersion])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ArtifactTagEvent])
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect artifact tags: %w", err)
 	}
@@ -1157,11 +1166,13 @@ func BulkUpsertArtifactVersionParts(ctx context.Context, parts []types.ArtifactV
 	return nil
 }
 
-// GetFirstArtifactVersionPullsOfCustomerOrganization returns when each user of the customer organization first
-// pulled each release tag created within the time window.
-func GetFirstArtifactVersionPullsOfCustomerOrganization(
+// GetFirstArtifactVersionPullsOfCustomerOrganizations returns when each user of the customer organizations first
+// pulled each release tag of the artifacts created since, at most limit of them in total. Every pull has its
+// customer organization set.
+func GetFirstArtifactVersionPullsOfCustomerOrganizations(
 	ctx context.Context,
-	orgID, customerOrgID uuid.UUID,
+	orgID uuid.UUID,
+	customerOrgIDs []uuid.UUID,
 	artifactIDs []uuid.UUID,
 	since time.Time,
 	limit int,
@@ -1169,24 +1180,24 @@ func GetFirstArtifactVersionPullsOfCustomerOrganization(
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		`SELECT * FROM (
-			SELECT DISTINCT ON (v.id, p.useraccount_id) `+artifactVersionPullOutputExpr+`
+			SELECT DISTINCT ON (p.customer_organization_id, v.id, p.useraccount_id) `+artifactVersionPullOutputExpr+`
 			FROM ArtifactVersionPull p `+artifactVersionPullJoinExpr+`
-			WHERE p.customer_organization_id = @customerOrganizationId
+			WHERE p.customer_organization_id = any(@customerOrganizationIds)
 				AND a.organization_id = @orgId
 				AND a.id = any(@artifactIds)
 				AND p.useraccount_id IS NOT NULL
 				AND v.created_at > @since
 				AND `+versionIsReleaseTagExpr+`
-			ORDER BY v.id, p.useraccount_id, p.created_at
+			ORDER BY p.customer_organization_id, v.id, p.useraccount_id, p.created_at
 		) first_pull
 		ORDER BY created_at DESC
 		LIMIT @limit`,
 		pgx.NamedArgs{
-			"orgId":                  orgID,
-			"customerOrganizationId": customerOrgID,
-			"artifactIds":            artifactIDs,
-			"since":                  since,
-			"limit":                  limit,
+			"orgId":                   orgID,
+			"customerOrganizationIds": customerOrgIDs,
+			"artifactIds":             artifactIDs,
+			"since":                   since,
+			"limit":                   limit,
 		},
 	)
 	if err != nil {

@@ -7,12 +7,14 @@ import (
 
 func ActivityFeedEntryToAPI(e activityfeed.Entry) api.ActivityFeedEntry {
 	result := api.ActivityFeedEntry{
-		ID:         e.ID,
-		CreatedAt:  e.CreatedAt,
-		Type:       e.Type,
-		ResourceID: e.ResourceID,
-		Subject:    e.Subject,
-		Detail:     e.Detail,
+		ID:                       e.ID,
+		CreatedAt:                e.CreatedAt,
+		Type:                     e.Type,
+		ResourceID:               e.ResourceID,
+		Subject:                  e.Subject,
+		Detail:                   e.Detail,
+		CustomerOrganizationID:   e.CustomerOrganizationID,
+		CustomerOrganizationName: e.CustomerOrganizationName,
 	}
 	if e.User != nil {
 		result.UserName = &e.User.Name
