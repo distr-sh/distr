@@ -20,11 +20,26 @@ import {ArtifactPullsService} from '../../services/artifact-pulls.service';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
+import {QuickNavigationCardComponent, QuickNavigationCardType} from '../quick-navigation-card.component';
+import {VendorHomeDeploymentHealth} from './vendor-home';
+import {toVendorHomeDeploymentHealth, vendorHomeAttentionStatuses} from './vendor-home-mappers';
+
+function deploymentHealthType(health: VendorHomeDeploymentHealth): QuickNavigationCardType {
+  if (health.error > 0) {
+    return 'error';
+  } else if (health.stale > 0) {
+    return 'warning';
+  } else if (health.healthy + health.running > 0) {
+    return 'success';
+  } else {
+    return 'neutral';
+  }
+}
 
 @Component({
   selector: 'app-vendor-home-page',
   templateUrl: './vendor-home-page.component.html',
-  imports: [NgPlural, NgPluralCase, PageComponent, CardHeadingComponent],
+  imports: [NgPlural, NgPluralCase, PageComponent, CardHeadingComponent, QuickNavigationCardComponent],
 })
 export class VendorHomePageComponent {
   private readonly route = inject(ActivatedRoute);
@@ -48,11 +63,17 @@ export class VendorHomePageComponent {
   private readonly customerCount = toSignal(
     this.customerOrganizationsService.getCustomerOrganizations().pipe(map((customers) => customers.length))
   );
-  private readonly deploymentCount = toSignal(
-    this.deploymentTargetsService
-      .list()
-      .pipe(map((targets) => targets.reduce((count, target) => count + target.deployments.length, 0)))
-  );
+  private readonly deploymentTargets = toSignal(this.deploymentTargetsService.list());
+  protected readonly deploymentHealth = computed(() => {
+    const targets = this.deploymentTargets();
+    if (targets === undefined) {
+      return undefined;
+    }
+    const health = toVendorHomeDeploymentHealth(targets);
+    return {...health, type: deploymentHealthType(health)};
+  });
+  private readonly deploymentCount = computed(() => this.deploymentHealth()?.total);
+  protected readonly deploymentAttentionQueryParams = {status: vendorHomeAttentionStatuses};
   // Partners have no access to the applications.
   private readonly applicationCount = toSignal(
     this.isVendor ? this.applicationsService.list().pipe(map((applications) => applications.length)) : of(null)

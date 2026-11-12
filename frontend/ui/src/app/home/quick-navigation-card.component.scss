@@ -1,0 +1,53 @@
+@reference '../../styles/tailwind.css';
+
+// Tailwind's `dark` variant, spelled out, for the same reason as in `subscription-badge.component.scss`
+@mixin dark {
+  &:where(.dark, .dark *) {
+    @content;
+  }
+}
+
+// Tailwind's darkest shades aren't dark enough for the dark mode background
+@mixin variant($color) {
+  --card-border: --theme(--color-#{$color}-400);
+  --card-bg: --theme(--color-#{$color}-100);
+  --card-hover-bg: --theme(--color-#{$color}-200);
+  --card-text: --theme(--color-#{$color}-800);
+
+  @include dark {
+    --card-border: --theme(--color-#{$color}-900);
+    --card-bg: color-mix(in oklab, --theme(--color-#{$color}-950) 75%, --theme(--color-gray-950));
+    --card-hover-bg: --theme(--color-#{$color}-950);
+    --card-text: --theme(--color-#{$color}-300);
+  }
+}
+
+:host(.card-success) {
+  @include variant(green);
+}
+
+:host(.card-warning) {
+  @include variant(yellow);
+}
+
+:host(.card-error) {
+  @include variant(red);
+}
+
+:host(:not(.card-neutral)) {
+  .distr-card {
+    border-color: var(--card-border);
+    background-color: var(--card-bg);
+    color: var(--card-text);
+  }
+
+  .distr-card-clickable:hover {
+    background-color: var(--card-hover-bg);
+  }
+
+  h2,
+  .headline,
+  .subtitle {
+    color: inherit;
+  }
+}

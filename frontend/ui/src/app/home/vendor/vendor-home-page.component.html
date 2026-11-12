@@ -22,9 +22,69 @@
     }
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-      <div class="distr-card min-h-32 p-4">
-        <h2 appCardHeading [icon]="faBoxesStacked">Deployments</h2>
-      </div>
+      @if (deploymentHealth(); as health) {
+        @let type = health.type;
+        <app-quick-navigation-card
+          class="min-h-32"
+          [icon]="faBoxesStacked"
+          heading="Deployment health"
+          [type]="type"
+          link="/deployments"
+          [queryParams]="type === 'error' || type === 'warning' ? deploymentAttentionQueryParams : undefined">
+          @switch (type) {
+            @case ('error') {
+              @if (health.stale > 0) {
+                {{ health.error + health.stale }} issues
+              } @else {
+                <ng-container [ngPlural]="health.error">
+                  <ng-template ngPluralCase="=1">1 error</ng-template>
+                  <ng-template ngPluralCase="other">{{ health.error }} errors</ng-template>
+                </ng-container>
+              }
+            }
+            @case ('warning') {
+              {{ health.stale }} stale
+            }
+            @case ('success') {
+              All good
+            }
+          }
+          <span subtitle>
+            @switch (type) {
+              @case ('error') {
+                @if (health.stale > 0) {
+                  <ng-container [ngPlural]="health.error">
+                    <ng-template ngPluralCase="=1">1 error</ng-template>
+                    <ng-template ngPluralCase="other">{{ health.error }} errors</ng-template>
+                  </ng-container>
+                  &middot; {{ health.stale }} stale
+                } @else {
+                  Some controllers reporting an error
+                }
+              }
+              @case ('warning') {
+                Some controllers stopped reporting
+              }
+              @case ('success') {
+                @if (health.healthy > 0) {
+                  {{ health.healthy }} healthy
+                  @if (health.running > 0) {
+                    &middot;
+                  }
+                }
+                @if (health.running > 0) {
+                  {{ health.running }} running
+                }
+              }
+              @default {
+                No deployments yet
+              }
+            }
+          </span>
+        </app-quick-navigation-card>
+      } @else {
+        <app-quick-navigation-card class="min-h-32" [icon]="faBoxesStacked" heading="Deployment health" />
+      }
       <div class="distr-card min-h-32 p-4">
         <h2 appCardHeading [icon]="faCircleArrowUp">Updates</h2>
       </div>
