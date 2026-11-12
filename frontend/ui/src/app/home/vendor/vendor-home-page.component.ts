@@ -20,8 +20,21 @@ import {ArtifactPullsService} from '../../services/artifact-pulls.service';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
-import {QuickNavigationCardComponent} from '../quick-navigation-card.component';
+import {QuickNavigationCardComponent, QuickNavigationCardType} from '../quick-navigation-card.component';
+import {VendorHomeDeploymentHealth} from './vendor-home';
 import {toVendorHomeDeploymentHealth, vendorHomeAttentionStatuses} from './vendor-home-mappers';
+
+function deploymentHealthType(health: VendorHomeDeploymentHealth): QuickNavigationCardType {
+  if (health.error > 0) {
+    return 'error';
+  } else if (health.stale > 0) {
+    return 'warning';
+  } else if (health.healthy + health.running > 0) {
+    return 'success';
+  } else {
+    return 'neutral';
+  }
+}
 
 @Component({
   selector: 'app-vendor-home-page',
@@ -53,7 +66,11 @@ export class VendorHomePageComponent {
   private readonly deploymentTargets = toSignal(this.deploymentTargetsService.list());
   protected readonly deploymentHealth = computed(() => {
     const targets = this.deploymentTargets();
-    return targets && toVendorHomeDeploymentHealth(targets);
+    if (targets === undefined) {
+      return undefined;
+    }
+    const health = toVendorHomeDeploymentHealth(targets);
+    return {...health, type: deploymentHealthType(health)};
   });
   private readonly deploymentCount = computed(() => this.deploymentHealth()?.total);
   protected readonly deploymentAttentionQueryParams = {status: vendorHomeAttentionStatuses};

@@ -22,31 +22,31 @@
   }
 }
 
-.quick-navigation-card-success {
+:host([data-type='success']) {
   @include variant(green);
 }
 
-.quick-navigation-card-warning {
+:host([data-type='warning']) {
   @include variant(yellow);
 }
 
-.quick-navigation-card-error {
+:host([data-type='error']) {
   @include variant(red);
 }
 
-.quick-navigation-card-success,
-.quick-navigation-card-warning,
-.quick-navigation-card-error {
-  border-color: var(--card-border);
-  background-color: var(--card-bg);
-  color: var(--card-text);
+:host(:not([data-type='neutral'])) {
+  .distr-card {
+    border-color: var(--card-border);
+    background-color: var(--card-bg);
+    color: var(--card-text);
+  }
 
-  &.distr-card-clickable:hover {
+  .distr-card-clickable:hover {
     background-color: var(--card-hover-bg);
   }
 
   h2,
-  .quick-navigation-card-count,
+  .quick-navigation-card-headline,
   .quick-navigation-card-subtitle {
     color: inherit;
   }
