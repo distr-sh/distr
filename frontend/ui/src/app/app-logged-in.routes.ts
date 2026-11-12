@@ -11,12 +11,13 @@ import {AlertConfigurationsPageComponent} from './alert-configurations/alert-con
 import {CustomerAlertConfigurationsPageComponent} from './alert-configurations/customer-alert-configurations-page.component';
 import {ApplicationDetailComponent} from './applications/application-detail.component';
 import {ApplicationsPageComponent} from './applications/applications-page.component';
-import {ArtifactPullsComponent} from './artifacts/artifact-pulls/artifact-pulls.component';
+import {ArtifactPullsPageComponent} from './artifacts/artifact-pulls/artifact-pulls-page.component';
 import {ArtifactVersionsComponent} from './artifacts/artifact-versions/artifact-versions.component';
 import {ArtifactsComponent} from './artifacts/artifacts/artifacts.component';
 import {CustomerOrganizationsComponent} from './components/customer-organizations/customer-organizations.component';
 import {CustomerDeploymentsTabComponent} from './components/customer-organizations/detail/customer-deployments-tab.component';
 import {CustomerDetailPageComponent} from './components/customer-organizations/detail/customer-detail-page.component';
+import {CustomerDownloadsTabComponent} from './components/customer-organizations/detail/customer-downloads-tab.component';
 import {CustomerTabPlaceholderComponent} from './components/customer-organizations/detail/customer-tab-placeholder.component';
 import {NavShellComponent} from './components/nav-shell.component';
 import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
@@ -276,7 +277,7 @@ const shellRoutes: Routes = [
       {
         path: 'artifact-pulls',
         title: 'Downloads',
-        component: ArtifactPullsComponent,
+        component: ArtifactPullsPageComponent,
         canActivate: [requireVendorOrPartner],
       },
       {
@@ -322,7 +323,7 @@ const shellRoutes: Routes = [
             children: [
               {path: 'overview', component: CustomerTabPlaceholderComponent},
               {path: 'deployments', component: CustomerDeploymentsTabComponent},
-              {path: 'downloads', component: CustomerTabPlaceholderComponent},
+              {path: 'downloads', component: CustomerDownloadsTabComponent},
               {path: 'licenses', component: CustomerTabPlaceholderComponent},
               {path: 'support', component: CustomerTabPlaceholderComponent},
               {path: 'notifications', component: CustomerTabPlaceholderComponent},
