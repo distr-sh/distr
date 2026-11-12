@@ -15,24 +15,24 @@ import {NonNullableFormBuilder, ReactiveFormsModule, Validators} from '@angular/
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faCreditCard, faShoppingCart} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
-import {WEBSITE_URL} from '../../constants';
-import {getFormDisplayedError} from '../../util/errors';
-import {BytesPipe} from '../../util/units';
-import {AlertComponent} from '../components/alert/alert.component';
-import {DeleteOrganizationComponent} from '../components/delete-organization/delete-organization.component';
-import {AuthService} from '../services/auth.service';
-import {FeatureFlagService} from '../services/feature-flag.service';
-import {OrganizationService} from '../services/organization.service';
-import {DialogRef, OverlayService} from '../services/overlay.service';
-import {SubscriptionService} from '../services/subscription.service';
-import {ToastService} from '../services/toast.service';
+import {WEBSITE_URL} from '../../../constants';
+import {getFormDisplayedError} from '../../../util/errors';
+import {BytesPipe} from '../../../util/units';
+import {AlertComponent} from '../../components/alert/alert.component';
+import {DeleteOrganizationComponent} from '../../components/delete-organization/delete-organization.component';
+import {AuthService} from '../../services/auth.service';
+import {FeatureFlagService} from '../../services/feature-flag.service';
+import {OrganizationService} from '../../services/organization.service';
+import {DialogRef, OverlayService} from '../../services/overlay.service';
+import {SubscriptionService} from '../../services/subscription.service';
+import {ToastService} from '../../services/toast.service';
 import {
   isExpiredSubscription,
   SubscriptionInfo,
   SubscriptionPeriod,
   SubscriptionType,
   UNLIMITED_QTY,
-} from '../types/subscription';
+} from '../../types/subscription';
 import {PendingSubscriptionUpdate, SubscriptionUpdateModalComponent} from './subscription-update-modal.component';
 
 @Component({

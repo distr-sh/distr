@@ -1,4 +1,4 @@
-import {TabItem} from '../tab-bar.component';
+import {TabItem} from '../../tab-bar.component';
 
 export type CustomerDetailTabId =
   | 'overview'

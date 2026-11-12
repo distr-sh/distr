@@ -14,9 +14,10 @@ import {ApplicationsPageComponent} from './applications/applications-page.compon
 import {ArtifactPullsComponent} from './artifacts/artifact-pulls/artifact-pulls.component';
 import {ArtifactVersionsComponent} from './artifacts/artifact-versions/artifact-versions.component';
 import {ArtifactsComponent} from './artifacts/artifacts/artifacts.component';
-import {CustomerDetailPageComponent} from './components/customer-organizations/customer-detail-page.component';
 import {CustomerOrganizationsComponent} from './components/customer-organizations/customer-organizations.component';
-import {CustomerTabPlaceholderComponent} from './components/customer-organizations/customer-tab-placeholder.component';
+import {CustomerDeploymentsTabComponent} from './components/customer-organizations/detail/customer-deployments-tab.component';
+import {CustomerDetailPageComponent} from './components/customer-organizations/detail/customer-detail-page.component';
+import {CustomerTabPlaceholderComponent} from './components/customer-organizations/detail/customer-tab-placeholder.component';
 import {NavShellComponent} from './components/nav-shell.component';
 import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
 import {PortalUnavailableComponent} from './components/portal-unavailable/portal-unavailable.component';
@@ -25,7 +26,7 @@ import {PartnerUsersComponent} from './components/users/partners/partner-users.c
 import {VendorUsersComponent} from './components/users/vendors/vendor-users.component';
 import {CustomerSettingsComponent} from './customer-settings/customer-settings.component';
 import {DeploymentTargetDetailComponent} from './deployments/deployment-target-details/deployment-target-detail.component';
-import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
+import {DeploymentTargetsPageComponent} from './deployments/deployment-targets-page.component';
 import {CustomerHomePageComponent} from './home/customer/customer-home-page.component';
 import {VendorHomePageComponent} from './home/vendor/vendor-home-page.component';
 import {CustomerLicenseDetailPageComponent} from './licenses/customer-license-detail-page.component';
@@ -37,15 +38,22 @@ import {CustomerNotificationRecordsPageComponent} from './notification-records/c
 import {NotificationRecordsPageComponent} from './notification-records/notification-records-page.component';
 import {OrganizationBrandingComponent} from './organization-branding/organization-branding.component';
 import {BillingComponent} from './organization-settings/billing/billing.component';
-import {CustomEmailComponent} from './organization-settings/custom-email.component';
-import {CustomOidcComponent} from './organization-settings/custom-oidc.component';
-import {GeneralSettingsComponent} from './organization-settings/general-settings.component';
+import {CustomEmailComponent} from './organization-settings/custom-email/custom-email.component';
+import {CustomOidcComponent} from './organization-settings/custom-oidc/custom-oidc.component';
+import {GeneralSettingsComponent} from './organization-settings/general/general-settings.component';
 import {
   firstOpenableSettingsTab,
   settingsTabGuard,
   settingsTabTitle,
 } from './organization-settings/organization-settings-navigation';
 import {OrganizationSettingsComponent} from './organization-settings/organization-settings.component';
+import {SubscriptionCallbackComponent} from './organization-settings/subscription/subscription-callback.component';
+import {SubscriptionComponent} from './organization-settings/subscription/subscription.component';
+import {
+  canOpenSubscription,
+  subscriptionGuard,
+  subscriptionPath,
+} from './organization-settings/subscription/subscription.guard';
 import {CustomerSecretsPageComponent} from './secrets/customer-secrets-page.component';
 import {SecretsPage} from './secrets/secrets-page.component';
 import {AuthService} from './services/auth.service';
@@ -54,9 +62,6 @@ import {FeatureFlagService} from './services/feature-flag.service';
 import {OrganizationService} from './services/organization.service';
 import {ToastService} from './services/toast.service';
 import {SidebarLinksPageComponent} from './sidebar-links/sidebar-links-page.component';
-import {SubscriptionCallbackComponent} from './subscription/subscription-callback.component';
-import {SubscriptionComponent} from './subscription/subscription.component';
-import {canOpenSubscription, subscriptionGuard, subscriptionPath} from './subscription/subscription.guard';
 import {SupportBundleDetailComponent} from './support-bundles/detail/support-bundle-detail.component';
 import {SupportBundleListComponent} from './support-bundles/list/support-bundle-list.component';
 import {SupportBundleSettingsComponent} from './support-bundles/vendor/support-bundle-settings.component';
@@ -260,7 +265,7 @@ const shellRoutes: Routes = [
         path: 'deployments',
         title: 'Deployments',
         children: [
-          {path: '', pathMatch: 'full', component: DeploymentTargetsComponent},
+          {path: '', pathMatch: 'full', component: DeploymentTargetsPageComponent},
           {path: ':deploymentTargetId', component: DeploymentTargetDetailComponent},
         ],
       },
@@ -320,7 +325,7 @@ const shellRoutes: Routes = [
             component: CustomerDetailPageComponent,
             children: [
               {path: 'overview', component: CustomerTabPlaceholderComponent},
-              {path: 'deployments', component: CustomerTabPlaceholderComponent},
+              {path: 'deployments', component: CustomerDeploymentsTabComponent},
               {path: 'downloads', component: CustomerTabPlaceholderComponent},
               {path: 'licenses', component: CustomerTabPlaceholderComponent},
               {path: 'support', component: CustomerTabPlaceholderComponent},

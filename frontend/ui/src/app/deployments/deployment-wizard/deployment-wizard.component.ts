@@ -7,6 +7,7 @@ import {
   DestroyRef,
   effect,
   inject,
+  input,
   OnInit,
   output,
   signal,
@@ -87,6 +88,7 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
 
   private readonly stepper = viewChild<CdkStepper>('stepper');
 
+  readonly customerOrganizationId = input<string>();
   readonly closed = output<void>();
 
   // Step 1: Customer Selection (optional)
@@ -192,7 +194,7 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
 
   // Computed properties
   protected readonly showCustomerStep = computed(() => {
-    return this.auth.isVendor() || this.auth.isPartner();
+    return (this.auth.isVendor() || this.auth.isPartner()) && !this.customerOrganizationId();
   });
 
   protected readonly selectedDeploymentType = computed<DeploymentType>(() => {
@@ -276,8 +278,11 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
   }
 
   ngOnInit() {
-    // If user is a customer, auto-select their own customer organization
-    if (this.auth.isCustomer()) {
+    const customerOrganizationId = this.customerOrganizationId();
+    if (customerOrganizationId) {
+      this.customerForm.controls.customerOrganizationId.setValue(customerOrganizationId);
+    } else if (this.auth.isCustomer()) {
+      // If user is a customer, auto-select their own customer organization
       this.currentOrganization$
         .pipe(take(1))
         .subscribe((org) => this.customerForm.controls.customerOrganizationId.setValue(org.customerOrganizationId!));

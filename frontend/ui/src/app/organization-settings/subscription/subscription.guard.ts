@@ -1,10 +1,10 @@
 import {inject} from '@angular/core';
 import {CanActivateChildFn, Router} from '@angular/router';
 import {firstValueFrom, map, Observable, switchMap} from 'rxjs';
-import {canOpenSettingsTab} from '../organization-settings/organization-settings-navigation';
-import {AuthService} from '../services/auth.service';
-import {OrganizationService} from '../services/organization.service';
-import {isSubscriptionExpired} from '../types/organization';
+import {AuthService} from '../../services/auth.service';
+import {OrganizationService} from '../../services/organization.service';
+import {isSubscriptionExpired} from '../../types/organization';
+import {canOpenSettingsTab} from '../organization-settings-navigation';
 
 export const subscriptionPath = '/settings/organization/subscription';
 
