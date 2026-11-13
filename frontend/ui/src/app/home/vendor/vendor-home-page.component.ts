@@ -127,6 +127,7 @@ export class VendorHomePageComponent {
   protected readonly isVendor = this.auth.isVendor();
   protected readonly activityViewer = this.isVendor ? 'vendor' : 'partner';
   protected readonly canConfigureSupport = this.isVendor && this.auth.hasAnyRole('read_write', 'admin');
+  protected readonly canCreateCustomers = this.auth.hasAnyRole('read_write', 'admin');
   protected readonly faAddressBook = faAddressBook;
   protected readonly faBoxesStacked = faBoxesStacked;
   protected readonly faCircleArrowUp = faCircleArrowUp;
