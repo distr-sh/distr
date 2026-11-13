@@ -10,6 +10,10 @@ export const advisorySeverities: AdvisorySeverity[] = ['none', 'low', 'medium', 
 
 export const advisoryStatuses: AdvisoryStatus[] = ['triage', 'draft', 'published', 'resolved', 'canceled'];
 
+export function isAdvisoryStatus(value: string): value is AdvisoryStatus {
+  return (advisoryStatuses as string[]).includes(value);
+}
+
 /**
  * Canceled advisories were closed without disclosure, so they stay out of the way until a
  * vendor asks for them explicitly.

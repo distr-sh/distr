@@ -1,4 +1,4 @@
-import {Application, CustomerOrganization, DeploymentTarget} from '@distr-sh/distr-sdk';
+import {Advisory, AdvisoryStatus, Application, CustomerOrganization, DeploymentTarget} from '@distr-sh/distr-sdk';
 import dayjs, {Dayjs} from 'dayjs';
 import {isDeploymentOutdated} from '../../../util/versions';
 import {
@@ -9,7 +9,13 @@ import {ApplicationEntitlement} from '../../types/application-entitlement';
 import {LatestArtifactPull} from '../../types/artifact-version-pull';
 import {License} from '../../types/license';
 import {SupportBundle, SupportBundleStatus} from '../../types/support-bundle';
-import {VendorHomeCustomer, VendorHomeDeploymentHealth, VendorHomeLicenses, VendorHomeUpdates} from './vendor-home';
+import {
+  VendorHomeAdvisoryCounts,
+  VendorHomeCustomer,
+  VendorHomeDeploymentHealth,
+  VendorHomeLicenses,
+  VendorHomeUpdates,
+} from './vendor-home';
 
 /** The status filter the deployments card links to, which has to show exactly the error and stale deployments. */
 export const vendorHomeAttentionStatuses: readonly DeploymentDisplayStatus[] = ['error', 'stale'];
@@ -42,6 +48,20 @@ export function toVendorHomeLicenses(licenses: License[], now: Dayjs = dayjs()):
 
 export function countOpenSupportBundles(bundles: SupportBundle[]): number {
   return bundles.filter((bundle) => openSupportBundleStatuses.includes(bundle.status)).length;
+}
+
+/** The advisory statuses the advisories card counts and links to. */
+export const vendorHomeOpenAdvisoryStatuses: AdvisoryStatus[] = ['triage', 'draft', 'published'];
+
+export function toVendorHomeAdvisoryCounts(advisories: Advisory[]): VendorHomeAdvisoryCounts {
+  const count = (status: AdvisoryStatus) => advisories.reduce((c, it) => (it.status === status ? c + 1 : c), 0);
+  return {
+    total: advisories.length,
+    open: advisories.filter((it) => vendorHomeOpenAdvisoryStatuses.includes(it.status)).length,
+    triage: count('triage'),
+    draft: count('draft'),
+    published: count('published'),
+  };
 }
 
 export function toVendorHomeDeploymentHealth(targets: DeploymentTarget[]): VendorHomeDeploymentHealth {

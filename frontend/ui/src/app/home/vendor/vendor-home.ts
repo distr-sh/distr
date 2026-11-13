@@ -17,6 +17,14 @@ export interface VendorHomeLicenses {
   expiringCustomerIds: string[];
 }
 
+export interface VendorHomeAdvisoryCounts {
+  total: number;
+  open: number;
+  triage: number;
+  draft: number;
+  published: number;
+}
+
 export interface VendorHomeCustomer {
   id: string;
   name: string;
