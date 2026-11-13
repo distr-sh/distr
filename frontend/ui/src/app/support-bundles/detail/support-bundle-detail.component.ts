@@ -1,7 +1,7 @@
-import {DatePipe, Location} from '@angular/common';
+import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
-import {ActivatedRoute, Router} from '@angular/router';
+import {ActivatedRoute, Router, RouterLink, UrlTree} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faArrowLeft, faCheck, faComment, faDownload, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, map, startWith, Subject, switchMap} from 'rxjs';
@@ -31,6 +31,7 @@ import {SupportBundleResourceFolderComponent} from './support-bundle-resource-fo
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     DatePipe,
+    RouterLink,
     FaIconComponent,
     AlertComponent,
     ClipComponent,
@@ -44,7 +45,6 @@ import {SupportBundleResourceFolderComponent} from './support-bundle-resource-fo
 export class SupportBundleDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly location = inject(Location);
   private readonly supportBundlesService = inject(SupportBundlesService);
   private readonly toast = inject(ToastService);
   private readonly overlay = inject(OverlayService);
@@ -56,6 +56,8 @@ export class SupportBundleDetailComponent {
   protected readonly faDownload = faDownload;
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
+  protected readonly backLink: UrlTree | string =
+    this.router.currentNavigation()?.previousNavigation?.finalUrl ?? '/support';
   private readonly timeline = viewChild(ActivityTimelineComponent);
 
   protected readonly bundle = signal<SupportBundleDetail | undefined>(undefined);
@@ -182,15 +184,6 @@ export class SupportBundleDetailComponent {
     }
   }
 
-  /** Returns to the page the user came from, the support list when the app was opened on this page. */
-  protected async back(): Promise<void> {
-    if (this.router.lastSuccessfulNavigation()?.previousNavigation) {
-      this.location.back();
-    } else {
-      await this.router.navigate(['/support']);
-    }
-  }
-
   protected async deleteBundle(): Promise<void> {
     const bundle = this.bundle();
     if (!bundle || this.deleting()) {
@@ -204,7 +197,7 @@ export class SupportBundleDetailComponent {
     try {
       await firstValueFrom(this.supportBundlesService.delete(bundle.id));
       this.toast.success('Support request deleted');
-      await this.back();
+      await this.router.navigateByUrl(this.backLink);
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {
