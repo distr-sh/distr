@@ -197,7 +197,7 @@ export class SupportBundleDetailComponent {
     try {
       await firstValueFrom(this.supportBundlesService.delete(bundle.id));
       this.toast.success('Support request deleted');
-      await this.router.navigateByUrl(this.backLink);
+      await this.router.navigateByUrl(this.backLink, {replaceUrl: true});
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {
