@@ -1,11 +1,24 @@
 import {DatePipe} from '@angular/common';
-import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup} from '@angular/forms';
+import {ActivatedRoute} from '@angular/router';
 import {Advisory, AdvisorySeverity, AdvisoryStatus, PatchAdvisoryRequest} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faPlus} from '@fortawesome/free-solid-svg-icons';
-import {catchError, combineLatest, firstValueFrom, of, shareReplay, startWith, Subject, switchMap, take} from 'rxjs';
+import {
+  catchError,
+  combineLatest,
+  firstValueFrom,
+  map,
+  of,
+  shareReplay,
+  startWith,
+  Subject,
+  switchMap,
+  take,
+} from 'rxjs';
+import {arraysEqual} from '../../util/arrays';
 import {getFormDisplayedError} from '../../util/errors';
 import {filteredByFormControl} from '../../util/filter';
 import {BadgeSelectComponent} from '../components/badge-select/badge-select.component';
@@ -25,6 +38,7 @@ import {
 import {
   confirmAdvisoryVisibilityChange,
   defaultAdvisoryStatusFilter,
+  isAdvisoryStatus,
   severitySelectOptions,
   statusSelectOptions,
 } from './advisory-display';
@@ -50,6 +64,7 @@ import {AdvisoryFormComponent, AdvisoryFormDraft} from './advisory-form.componen
 })
 export class AdvisoryListComponent {
   protected readonly auth = inject(AuthService);
+  private readonly route = inject(ActivatedRoute);
   private readonly advisoriesService = inject(AdvisoriesService);
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
@@ -70,7 +85,15 @@ export class AdvisoryListComponent {
 
   private readonly defaultStatuses: AdvisoryStatus[] = this.showsAffectedState ? [] : defaultAdvisoryStatusFilter;
 
-  protected readonly selectedStatuses = signal<AdvisoryStatus[]>([...this.defaultStatuses]);
+  private readonly statusParam = toSignal(
+    this.route.queryParamMap.pipe(map((params) => params.getAll('status').filter(isAdvisoryStatus))),
+    {requireSync: true, equal: arraysEqual}
+  );
+  // Reset whenever the query changes, since the component is reused when e.g. the sidebar links to the page it is on.
+  protected readonly selectedStatuses = linkedSignal(() => {
+    const statuses = this.canFilterByStatus ? this.statusParam() : [];
+    return statuses.length > 0 ? statuses : [...this.defaultStatuses];
+  });
   protected readonly selectedSeverities = signal<AdvisorySeverity[]>([]);
   protected readonly selectedTags = signal<string[]>([]);
 

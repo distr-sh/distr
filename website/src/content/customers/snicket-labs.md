@@ -4,9 +4,9 @@ person:
   name: 'Jack Fenton'
   role: 'Platform Engineer'
   image: '/src/assets/customers/snicket-labs/jack-fenton.jpeg'
-quote: "Self-hosted products had a distribution problem, which we noticed. And it was even trickier with Kubernetes installations, getting a Helm chart into and on a customer's cluster. We found Distr looking to fill that gap with their product. We couldn't be happier with Distr as a provider, they are smart, quick and helpful: the golden trio. Working with them has been a pleasure and we love seeing the platform evolve."
+quote: "Getting a Helm chart onto a customer's cluster was the trickiest part of going self-hosted. Distr filled that gap, and we couldn't be happier: smart, quick and helpful, the golden trio."
 industry: 'Software'
-useCase: 'Kubernetes Distribution'
+useCase: 'Helm Chart Distribution'
 featured: true
-outcome: 'Closing the Kubernetes distribution gap'
+outcome: 'Shipping Helm charts to customer clusters'
 ---
