@@ -1,4 +1,11 @@
-import {Advisory, AdvisoryStatus, Application, CustomerOrganization, DeploymentTarget} from '@distr-sh/distr-sdk';
+import {
+  Advisory,
+  AdvisoryStatus,
+  Application,
+  CustomerOrganization,
+  CustomerOrganizationWithUsage,
+  DeploymentTarget,
+} from '@distr-sh/distr-sdk';
 import dayjs, {Dayjs} from 'dayjs';
 import {isDeploymentOutdated} from '../../../util/versions';
 import {
@@ -119,6 +126,23 @@ export function toVendorHomeUpdates(
   return {totalCustomers: customers.length, outdatedCustomers, outdatedDeployments};
 }
 
+function toCustomerUsage(
+  customer: CustomerOrganizationWithUsage,
+  deployments: number,
+  pulls: LatestArtifactPull[]
+): VendorHomeCustomer['usage'] {
+  if (customer.features.includes('deployment_targets')) {
+    return {type: 'deployments', count: deployments};
+  } else if (customer.features.includes('artifacts')) {
+    const artifactIds = new Set(
+      pulls.filter((pull) => pull.customerOrganizationId === customer.id).map((pull) => pull.artifactId)
+    );
+    return {type: 'downloads', count: artifactIds.size};
+  } else {
+    return {type: 'users', count: customer.userCount};
+  }
+}
+
 /**
  * Counts as open items of a customer every deployment in error or stale, every outdated deployment (or the outdated
  * artifact pulls of a customer without deployments, as one item), an expired or expiring license and every open
@@ -126,7 +150,7 @@ export function toVendorHomeUpdates(
  * `licenses` and `openSupportBundles` are `null` while the organization lacks the feature.
  */
 export function toVendorHomeCustomers(
-  customers: CustomerOrganization[],
+  customers: CustomerOrganizationWithUsage[],
   targets: DeploymentTarget[],
   applications: Application[],
   entitlements: ApplicationEntitlement[],
@@ -152,7 +176,7 @@ export function toVendorHomeCustomers(
         id: customer.id,
         name: customer.name,
         imageUrl: customer.imageUrl,
-        deployments: health.total,
+        usage: toCustomerUsage(customer, health.total, pulls),
         openItems,
       };
     })

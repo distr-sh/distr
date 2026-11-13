@@ -305,11 +305,31 @@
                             <ng-template ngPluralCase="other">{{ customer.openItems }} open items</ng-template>
                           </ng-container>
                         } @else {
-                          <ng-container [ngPlural]="customer.deployments">
-                            <ng-template ngPluralCase="=0">No deployments</ng-template>
-                            <ng-template ngPluralCase="=1">1 deployment</ng-template>
-                            <ng-template ngPluralCase="other">{{ customer.deployments }} deployments</ng-template>
-                          </ng-container>
+                          @switch (customer.usage.type) {
+                            @case ('deployments') {
+                              <ng-container [ngPlural]="customer.usage.count">
+                                <ng-template ngPluralCase="=0">No deployments yet</ng-template>
+                                <ng-template ngPluralCase="=1">1 deployment</ng-template>
+                                <ng-template ngPluralCase="other">{{ customer.usage.count }} deployments</ng-template>
+                              </ng-container>
+                            }
+                            @case ('downloads') {
+                              <ng-container [ngPlural]="customer.usage.count">
+                                <ng-template ngPluralCase="=0">No downloads yet</ng-template>
+                                <ng-template ngPluralCase="=1">1 artifact downloaded</ng-template>
+                                <ng-template ngPluralCase="other">
+                                  {{ customer.usage.count }} artifacts downloaded
+                                </ng-template>
+                              </ng-container>
+                            }
+                            @case ('users') {
+                              <ng-container [ngPlural]="customer.usage.count">
+                                <ng-template ngPluralCase="=0">No users yet</ng-template>
+                                <ng-template ngPluralCase="=1">1 user</ng-template>
+                                <ng-template ngPluralCase="other">{{ customer.usage.count }} users</ng-template>
+                              </ng-container>
+                            }
+                          }
                         }
                       </span>
                     </div>

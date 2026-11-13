@@ -2,6 +2,8 @@ import {
   Application,
   ApplicationVersion,
   CustomerOrganization,
+  CustomerOrganizationFeature,
+  CustomerOrganizationWithUsage,
   DeploymentRevisionStatus,
   DeploymentStatusType,
   DeploymentTarget,
@@ -170,6 +172,12 @@ describe('toVendorHomeLicenses', () => {
 });
 
 describe('toVendorHomeCustomers', () => {
+  const customerWithUsage = (
+    id: string,
+    features: CustomerOrganizationFeature[] = ['deployment_targets', 'artifacts'],
+    userCount = 0
+  ): CustomerOrganizationWithUsage => ({...customer(id), features, userCount, deploymentTargetCount: 0});
+
   it('should count the open items of each customer and order customers by them, then by name', () => {
     const [zeta, alpha, errors, pulled, licensed, support] = [
       'zeta',
@@ -178,7 +186,7 @@ describe('toVendorHomeCustomers', () => {
       'pulled',
       'licensed',
       'support',
-    ].map(customer);
+    ].map((id) => customerWithUsage(id));
     const targets = [
       target([deploymentOf('2.0.0')], zeta),
       target([{...deploymentOf('1.0.0'), latestStatus: status('error')}, deployment(status('healthy', old()))], errors),
@@ -202,6 +210,21 @@ describe('toVendorHomeCustomers', () => {
       ['pulled', 1],
       ['alpha', 0],
       ['zeta', 0],
+    ]);
+  });
+
+  it('should show the usage of the first feature the customer has, counting each downloaded artifact once', () => {
+    const customers = [
+      customerWithUsage('deployments', ['deployment_targets', 'artifacts']),
+      customerWithUsage('downloads', ['artifacts']),
+      customerWithUsage('users', [], 3),
+    ];
+    const targets = [target([deploymentOf('2.0.0'), deploymentOf('2.0.0')], customers[0])];
+    const pulls = [pull('deployments'), pull('downloads'), pull('downloads'), {...pull('downloads'), artifactId: 'b'}];
+    expect(toVendorHomeCustomers(customers, targets, [application], [], pulls, null, null)).toEqual([
+      expect.objectContaining({id: 'deployments', usage: {type: 'deployments', count: 2}}),
+      expect.objectContaining({id: 'downloads', usage: {type: 'downloads', count: 2}}),
+      expect.objectContaining({id: 'users', usage: {type: 'users', count: 3}}),
     ]);
   });
 });
