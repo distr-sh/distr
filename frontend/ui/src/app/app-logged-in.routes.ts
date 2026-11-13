@@ -25,7 +25,7 @@ import {PartnerOrganizationsComponent} from './components/partner-organizations/
 import {PortalUnavailableComponent} from './components/portal-unavailable/portal-unavailable.component';
 import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
 import {PartnerUsersComponent} from './components/users/partners/partner-users.component';
-import {VendorUsersComponent} from './components/users/vendors/vendor-users.component';
+import {UsersPageComponent} from './components/users/users-page.component';
 import {CustomerPortalBrandingComponent} from './customer-portal/branding/customer-portal-branding.component';
 import {customerPortalTabs} from './customer-portal/customer-portal-navigation';
 import {CustomerPortalComponent} from './customer-portal/customer-portal.component';
@@ -54,6 +54,7 @@ import {
   subscriptionGuard,
   subscriptionPath,
 } from './organization-settings/subscription/subscription.guard';
+import {TeamSettingsComponent} from './organization-settings/team/team-settings.component';
 import {CustomerSecretsPageComponent} from './secrets/customer-secrets-page.component';
 import {SecretsPage} from './secrets/secrets-page.component';
 import {AuthService} from './services/auth.service';
@@ -111,6 +112,14 @@ const requireVendorOrPartner: CanActivateFn = () => {
 const matchVendorOrPartner: CanMatchFn = () => {
   const auth = inject(AuthService);
   return auth.isVendor() || auth.isPartner();
+};
+
+const requirePartnerOrCustomer: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  if (auth.isPartner() || auth.isCustomer()) {
+    return true;
+  }
+  return inject(Router).createUrlTree(['/']);
 };
 
 const requireVendorOrCustomer: CanActivateFn = () => {
@@ -383,8 +392,8 @@ const shellRoutes: Routes = [
       {
         path: 'users',
         title: 'Users',
-        component: VendorUsersComponent,
-        canActivate: [requiredRoleGuard('admin')],
+        component: UsersPageComponent,
+        canActivate: [requirePartnerOrCustomer, requiredRoleGuard('admin')],
       },
       {
         path: 'secrets',
@@ -466,6 +475,12 @@ const shellRoutes: Routes = [
                 title: organizationSettingsTabs.title('general'),
                 component: GeneralSettingsComponent,
                 canActivate: [organizationSettingsTabs.guard('general')],
+              },
+              {
+                path: 'team',
+                title: organizationSettingsTabs.title('team'),
+                component: TeamSettingsComponent,
+                canActivate: [organizationSettingsTabs.guard('team')],
               },
               {
                 path: 'identity-provider',
