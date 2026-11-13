@@ -120,16 +120,16 @@
             Set your environment variables here. Documentation:
             <a
               target="_blank"
-              class="text-primary-600 underline"
+              class="distr-link"
               href="https://docs.docker.com/compose/how-tos/environment-variables/variable-interpolation/#env-file-syntax">
               Env File Syntax</a
             >.
             @if (auth.hasAnyRole('read_write', 'admin')) {
               You can also reference
-              <a [routerLink]="secretsUrl()" target="_blank" class="text-primary-600 underline">secrets</a>
+              <a [routerLink]="secretsUrl()" target="_blank" class="distr-link">secrets</a>
               @if (licenseKeysUrl(); as licenseKeysUrl) {
                 or
-                <a [routerLink]="licenseKeysUrl" target="_blank" class="text-primary-600 underline">license keys</a>
+                <a [routerLink]="licenseKeysUrl" target="_blank" class="distr-link">license keys</a>
               }
               in your environment variables.
             }
@@ -150,20 +150,10 @@
           @if (auth.hasAnyRole('read_write', 'admin')) {
             <div class="distr-hint mt-1">
               You can reference
-              <a
-                [routerLink]="secretsUrl()"
-                target="_blank"
-                class="font-medium text-primary-600 hover:underline dark:text-primary-500"
-                >secrets</a
-              >
+              <a [routerLink]="secretsUrl()" target="_blank" class="distr-link">secrets</a>
               @if (licenseKeysUrl(); as licenseKeysUrl) {
                 or
-                <a
-                  [routerLink]="licenseKeysUrl"
-                  target="_blank"
-                  class="font-medium text-primary-600 hover:underline dark:text-primary-500"
-                  >license keys</a
-                >
+                <a [routerLink]="licenseKeysUrl" target="_blank" class="distr-link">license keys</a>
               }
               in your Helm values.
             </div>
@@ -282,10 +272,7 @@
 
           <div class="distr-hint col-span-2">
             Please refer to the
-            <a
-              class="font-medium text-primary-600 hover:underline dark:text-primary-500"
-              href="https://helm.sh/docs/helm/helm_upgrade#options"
-              target="_blank"
+            <a class="distr-link" href="https://helm.sh/docs/helm/helm_upgrade#options" target="_blank"
               >Helm documentation</a
             >
             for details about the above options.

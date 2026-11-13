@@ -8,13 +8,13 @@
   <app-alert type="info" class="mb-6">
     @if (customDomainsSelfService() && canOpenCustomDomains()) {
       Configure a custom domain for your customer portal on the
-      <a routerLink="/customer-portal/domain-and-sign-in" class="font-semibold underline">Domain &amp; Sign-in</a>
+      <a routerLink="/customer-portal/domain-and-sign-in" class="distr-link-inherit">Domain &amp; Sign-in</a>
       tab.
     } @else if (customDomainsSelfService()) {
       Admins can configure a custom domain for your customer portal on the Domain &amp; Sign-in tab.
     } @else if (canOpenSubscription()) {
       Upgrade to the
-      <a routerLink="/settings/organization/subscription" class="font-semibold underline">Distr Business plan</a> to
+      <a routerLink="/settings/organization/subscription" class="distr-link-inherit">Distr Business plan</a> to
       configure a custom domain for your customer portal.
     } @else {
       Contact an administrator of your organization to upgrade to the Distr Business plan and configure a custom domain
