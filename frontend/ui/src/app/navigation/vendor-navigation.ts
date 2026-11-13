@@ -33,15 +33,7 @@ export const vendorNavigation: NavigationDefinition = [
       {id: 'home', label: 'Home', icon: faHome, route: '/home'},
       {id: 'applications', label: 'Applications', icon: faCube, route: '/applications'},
       {id: 'deployments', label: 'Deployments', icon: faBoxesStacked, route: '/deployments'},
-      {
-        id: 'registry',
-        label: 'Registry',
-        icon: faBox,
-        children: [
-          {id: 'artifacts', label: 'Artifacts', route: '/artifacts'},
-          {id: 'artifact-pulls', label: 'Downloads', route: '/artifact-pulls'},
-        ],
-      },
+      {id: 'registry', label: 'Registry', icon: faBox, route: '/artifacts'},
       {
         id: 'licenses',
         label: 'Licenses',

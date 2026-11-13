@@ -274,14 +274,14 @@ const shellRoutes: Routes = [
         title: 'Artifacts',
         children: [
           {path: '', pathMatch: 'full', component: ArtifactsComponent},
+          {
+            path: 'downloads',
+            title: 'Downloads',
+            component: ArtifactPullsPageComponent,
+            canActivate: [requireVendorOrPartner],
+          },
           {path: ':id', component: ArtifactVersionsComponent},
         ],
-      },
-      {
-        path: 'artifact-pulls',
-        title: 'Downloads',
-        component: ArtifactPullsPageComponent,
-        canActivate: [requireVendorOrPartner],
       },
       {
         path: 'customers',
