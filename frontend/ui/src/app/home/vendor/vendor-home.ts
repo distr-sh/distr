@@ -12,6 +12,11 @@ export interface VendorHomeUpdates {
   outdatedDeployments: number;
 }
 
+export interface VendorHomeLicenses {
+  expiredCustomerIds: string[];
+  expiringCustomerIds: string[];
+}
+
 export interface VendorHomeCustomer {
   id: string;
   name: string;

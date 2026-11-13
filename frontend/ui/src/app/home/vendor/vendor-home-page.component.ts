@@ -11,7 +11,7 @@ import {
   faLifeRing,
   faShieldHalved,
 } from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, firstValueFrom, of, switchMap} from 'rxjs';
+import {combineLatest, firstValueFrom, map, of, switchMap} from 'rxjs';
 import {refreshInBackground} from '../../../util/refresh';
 import {CardHeadingComponent} from '../../components/card-heading.component';
 import {PageComponent} from '../../components/page.component';
@@ -22,9 +22,18 @@ import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
+import {LicensesService} from '../../services/licenses.service';
+import {SupportBundlesService} from '../../services/support-bundles.service';
 import {QuickNavigationCardComponent, QuickNavigationCardType} from '../quick-navigation-card.component';
-import {VendorHomeDeploymentHealth, VendorHomeUpdates} from './vendor-home';
-import {toVendorHomeDeploymentHealth, toVendorHomeUpdates, vendorHomeAttentionStatuses} from './vendor-home-mappers';
+import {VendorHomeDeploymentHealth, VendorHomeLicenses, VendorHomeUpdates} from './vendor-home';
+import {
+  countOpenSupportBundles,
+  toVendorHomeDeploymentHealth,
+  toVendorHomeLicenses,
+  toVendorHomeUpdates,
+  vendorHomeAttentionStatuses,
+  vendorHomeLicenseExpiryWindowDays,
+} from './vendor-home-mappers';
 
 function deploymentHealthType(health: VendorHomeDeploymentHealth): QuickNavigationCardType {
   if (health.error > 0) {
@@ -48,6 +57,26 @@ function updatesCardType(updates: VendorHomeUpdates): QuickNavigationCardType {
   }
 }
 
+function licensesCardType(licenses: VendorHomeLicenses): QuickNavigationCardType {
+  if (licenses.expiredCustomerIds.length > 0) {
+    return 'error';
+  } else if (licenses.expiringCustomerIds.length > 0) {
+    return 'warning';
+  } else {
+    return 'success';
+  }
+}
+
+function supportCardType(open: number, isConfigured: boolean): QuickNavigationCardType {
+  if (open > 0) {
+    return 'warning';
+  } else if (isConfigured) {
+    return 'success';
+  } else {
+    return 'neutral';
+  }
+}
+
 @Component({
   selector: 'app-vendor-home-page',
   templateUrl: './vendor-home-page.component.html',
@@ -63,8 +92,11 @@ export class VendorHomePageComponent {
   private readonly applicationsService = inject(ApplicationsService);
   private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
   private readonly featureFlags = inject(FeatureFlagService);
+  private readonly licensesService = inject(LicensesService);
+  private readonly supportBundlesService = inject(SupportBundlesService);
 
-  private readonly isVendor = this.auth.isVendor();
+  protected readonly isVendor = this.auth.isVendor();
+  protected readonly canConfigureSupport = this.isVendor && this.auth.hasAnyRole('read_write', 'admin');
 
   protected readonly faAddressBook = faAddressBook;
   protected readonly faBoxesStacked = faBoxesStacked;
@@ -98,6 +130,45 @@ export class VendorHomePageComponent {
       switchMap((enabled) => (enabled ? this.applicationEntitlementsService.list() : of([])))
     )
   );
+
+  protected readonly licenseExpiryWindowDays = vendorHomeLicenseExpiryWindowDays;
+  /** `null` while the organization has no licensing. */
+  private readonly licenseCustomers = toSignal(
+    this.featureFlags.isLicensingEnabled$.pipe(
+      switchMap((enabled) =>
+        enabled ? this.licensesService.list().pipe(map((licenses) => toVendorHomeLicenses(licenses))) : of(null)
+      )
+    )
+  );
+  protected readonly licenseCard = computed(() => {
+    const licenses = this.licenseCustomers();
+    if (licenses === undefined || licenses === null) {
+      return licenses;
+    }
+    const ids = [...licenses.expiredCustomerIds, ...licenses.expiringCustomerIds];
+    return {
+      customers: ids.length,
+      expired: licenses.expiredCustomerIds.length,
+      expiring: licenses.expiringCustomerIds.length,
+      type: licensesCardType(licenses),
+      link: ids.length === 1 ? ['/licenses', ids[0]] : ids.length > 1 ? ['/customers'] : ['/licenses'],
+    };
+  });
+
+  /** `null` while the organization's plan has no support bundles. */
+  private readonly supportState = toSignal(
+    this.featureFlags.isSupportBundlesEnabled$.pipe(
+      switchMap((enabled) =>
+        enabled
+          ? combineLatest([
+              this.supportBundlesService.list(),
+              // Partners cannot read the configuration, and the support page shows them no banner about it either.
+              this.isVendor ? this.supportBundlesService.hasConfiguration() : of(true),
+            ]).pipe(map(([bundles, isConfigured]) => ({open: countOpenSupportBundles(bundles), isConfigured})))
+          : of(null)
+      )
+    )
+  );
   private readonly latestArtifactPulls = toSignal(this.artifactPullsService.getLatest());
 
   protected readonly updates = computed(() => {
@@ -117,6 +188,20 @@ export class VendorHomePageComponent {
     }
     const updates = toVendorHomeUpdates(customers, targets, applications, entitlements, pulls);
     return {...updates, type: updatesCardType(updates)};
+  });
+
+  protected readonly supportCard = computed(() => {
+    const state = this.supportState();
+    if (state === undefined || state === null) {
+      return state;
+    }
+    const {open, isConfigured} = state;
+    const shouldConfigure = open === 0 && !isConfigured && this.canConfigureSupport;
+    return {
+      open,
+      type: supportCardType(open, isConfigured),
+      link: shouldConfigure ? '/support/settings' : '/support',
+    };
   });
 
   protected readonly counts = computed(() => {

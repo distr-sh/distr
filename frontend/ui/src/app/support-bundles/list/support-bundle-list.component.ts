@@ -5,7 +5,7 @@ import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faDownload, faGear, faPlus, faTrash} from '@fortawesome/free-solid-svg-icons';
-import {firstValueFrom, map, of, startWith, Subject, switchMap, take} from 'rxjs';
+import {firstValueFrom, of, startWith, Subject, switchMap, take} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
@@ -51,10 +51,9 @@ export class SupportBundleListComponent {
   protected readonly faGear = faGear;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
-  protected readonly configExists = toSignal(
-    this.auth.isVendor() ? this.svc.getConfiguration().pipe(map((envVars) => envVars.length > 0)) : of(false),
-    {initialValue: false}
-  );
+  protected readonly configExists = toSignal(this.auth.isVendor() ? this.svc.hasConfiguration() : of(false), {
+    initialValue: false,
+  });
 
   private readonly refresh$ = new Subject<void>();
   private readonly bundles$ = this.refresh$.pipe(

@@ -1,5 +1,6 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
+import {map, Observable} from 'rxjs';
 import {
   CreateSupportBundleCommentRequest,
   CreateSupportBundleRequest,
@@ -43,6 +44,10 @@ export class SupportBundlesService {
 
   public getConfiguration() {
     return this.httpClient.get<SupportBundleConfigurationEnvVar[]>(`${baseUrl}/configuration`);
+  }
+
+  public hasConfiguration(): Observable<boolean> {
+    return this.getConfiguration().pipe(map((envVars) => envVars.length > 0));
   }
 
   public updateConfiguration(request: CreateUpdateSupportBundleConfigurationRequest) {
