@@ -1,17 +1,17 @@
 import {Component, computed, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {startWith, Subject, switchMap} from 'rxjs';
-import {refreshInBackground} from '../../../../util/refresh';
-import {AuthService} from '../../../services/auth.service';
-import {UsersService} from '../../../services/users.service';
-import {PageComponent} from '../../page.component';
-import {UsersComponent} from '../users.component';
+import {refreshInBackground} from '../../../util/refresh';
+import {AuthService} from '../../services/auth.service';
+import {UsersService} from '../../services/users.service';
+import {PageComponent} from '../page.component';
+import {UsersComponent} from './users.component';
 
 @Component({
-  templateUrl: './organization-users.component.html',
+  templateUrl: './users-page.component.html',
   imports: [UsersComponent, PageComponent],
 })
-export class OrganizationUsersComponent {
+export class UsersPageComponent {
   private readonly usersService = inject(UsersService);
   private readonly auth = inject(AuthService);
   protected readonly refresh$ = new Subject<void>();

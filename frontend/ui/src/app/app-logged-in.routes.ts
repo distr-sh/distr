@@ -24,8 +24,8 @@ import {NavShellComponent} from './components/nav-shell.component';
 import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
 import {PortalUnavailableComponent} from './components/portal-unavailable/portal-unavailable.component';
 import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
-import {OrganizationUsersComponent} from './components/users/organization/organization-users.component';
 import {PartnerUsersComponent} from './components/users/partners/partner-users.component';
+import {UsersPageComponent} from './components/users/users-page.component';
 import {CustomerPortalBrandingComponent} from './customer-portal/branding/customer-portal-branding.component';
 import {customerPortalTabs} from './customer-portal/customer-portal-navigation';
 import {CustomerPortalComponent} from './customer-portal/customer-portal.component';
@@ -392,7 +392,7 @@ const shellRoutes: Routes = [
       {
         path: 'users',
         title: 'Users',
-        component: OrganizationUsersComponent,
+        component: UsersPageComponent,
         canActivate: [requirePartnerOrCustomer, requiredRoleGuard('admin')],
       },
       {
