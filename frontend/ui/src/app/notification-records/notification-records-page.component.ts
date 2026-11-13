@@ -12,7 +12,7 @@ import {NotificationRecordsComponent} from './notification-records.component';
           [icon]="faClockRotateLeft"
           label="Organization History"
           linkLabel="Show customer history"
-          section="notification-history" />
+          section="notifications" />
         <app-notification-records />
       </div>
     </app-page>
