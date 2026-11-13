@@ -204,7 +204,7 @@ export class LicensesOverviewComponent {
   }
 
   protected navigateToCustomer(license: License) {
-    this.router.navigate(['/licenses', license.customerOrganization.id]);
+    this.router.navigate(['/customers', license.customerOrganization.id, 'licenses']);
   }
 
   protected countExpired(license: License): number {
@@ -281,7 +281,7 @@ export class LicensesOverviewComponent {
         await firstValueFrom(forkJoin(creates));
       }
       this.closeCopyModal();
-      this.router.navigate(['/licenses', targetId]);
+      this.router.navigate(['/customers', targetId, 'licenses']);
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {

@@ -19,6 +19,7 @@ import {CustomerDeploymentsTabComponent} from './components/customer-organizatio
 import {customerDetailTabs} from './components/customer-organizations/detail/customer-detail-navigation';
 import {CustomerDetailPageComponent} from './components/customer-organizations/detail/customer-detail-page.component';
 import {CustomerDownloadsTabComponent} from './components/customer-organizations/detail/customer-downloads-tab.component';
+import {CustomerLicensesTabComponent} from './components/customer-organizations/detail/customer-licenses-tab.component';
 import {CustomerTabPlaceholderComponent} from './components/customer-organizations/detail/customer-tab-placeholder.component';
 import {NavShellComponent} from './components/nav-shell.component';
 import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
@@ -37,7 +38,6 @@ import {CustomerHomePageComponent} from './home/customer/customer-home-page.comp
 import {VendorHomePageComponent} from './home/vendor/vendor-home-page.component';
 import {CustomerLicenseDetailPageComponent} from './licenses/customer-license-detail-page.component';
 import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
-import {VendorLicenseDetailPageComponent} from './licenses/vendor-license-detail-page.component';
 import {CustomerUpdateNotificationsPageComponent} from './notification-configurations/customer-update-notifications-page.component';
 import {UpdateNotificationsPageComponent} from './notification-configurations/update-notifications-page.component';
 import {CustomerNotificationRecordsPageComponent} from './notification-records/customer-notification-records-page.component';
@@ -346,7 +346,7 @@ const shellRoutes: Routes = [
               {
                 path: 'licenses',
                 title: customerDetailTabs.title('licenses'),
-                component: CustomerTabPlaceholderComponent,
+                component: CustomerLicensesTabComponent,
                 canActivate: [customerDetailTabs.guard('licenses')],
               },
               {
@@ -432,7 +432,7 @@ const shellRoutes: Routes = [
           },
           {
             path: ':customerOrganizationId',
-            component: VendorLicenseDetailPageComponent,
+            redirectTo: '/customers/:customerOrganizationId/licenses',
           },
         ],
       },
