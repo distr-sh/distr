@@ -125,15 +125,143 @@
       } @else {
         <app-quick-navigation-card class="min-h-32" [icon]="faCircleArrowUp" heading="Updates" />
       }
-      <div class="distr-card min-h-32 p-4">
-        <h2 appCardHeading [icon]="faKey">Licenses</h2>
-      </div>
-      <div class="distr-card min-h-32 p-4">
-        <h2 appCardHeading [icon]="faLifeRing">Support</h2>
-      </div>
-      <div class="distr-card min-h-32 p-4">
-        <h2 appCardHeading [icon]="faShieldHalved">Security Advisories</h2>
-      </div>
+      @let licenses = licenseCard();
+      @if (licenses === null) {
+        @if (isVendor) {
+          <app-quick-navigation-card class="min-h-32" [icon]="faKey" heading="Licenses" lockedPlan="pro">
+            <span subtitle>Upgrade to manage customer licenses</span>
+          </app-quick-navigation-card>
+        }
+      } @else if (licenses) {
+        <app-quick-navigation-card
+          class="min-h-32"
+          [icon]="faKey"
+          heading="Licenses"
+          [type]="licenses.type"
+          [link]="licenses.link">
+          @if (licenses.customers > 0) {
+            <ng-container [ngPlural]="licenses.customers">
+              <ng-template ngPluralCase="=1">1 customer</ng-template>
+              <ng-template ngPluralCase="other">{{ licenses.customers }} customers</ng-template>
+            </ng-container>
+          } @else {
+            All good
+          }
+          <span subtitle>
+            @if (licenses.expired > 0 && licenses.expiring > 0) {
+              {{ licenses.expired }} expired &middot; {{ licenses.expiring }} expiring
+            } @else if (licenses.expired > 0) {
+              With an expired license
+            } @else if (licenses.expiring > 0) {
+              With a license expiring in the next {{ licenseExpiryWindowDays }} days
+            } @else {
+              No licenses expiring in the next {{ licenseExpiryWindowDays }} days
+            }
+          </span>
+        </app-quick-navigation-card>
+      } @else {
+        <app-quick-navigation-card class="min-h-32" [icon]="faKey" heading="Licenses" />
+      }
+      @let support = supportCard();
+      @if (support === null) {
+        @if (isVendor) {
+          <app-quick-navigation-card class="min-h-32" [icon]="faLifeRing" heading="Support" lockedPlan="pro">
+            <span subtitle>Upgrade to receive support requests from your customers</span>
+          </app-quick-navigation-card>
+        }
+      } @else if (support) {
+        <app-quick-navigation-card
+          class="min-h-32"
+          [icon]="faLifeRing"
+          heading="Support"
+          [type]="support.type"
+          [link]="support.link">
+          @switch (support.type) {
+            @case ('warning') {
+              {{ support.open }} open
+            }
+            @case ('success') {
+              All good
+            }
+          }
+          <span subtitle>
+            @switch (support.type) {
+              @case ('warning') {
+                <ng-container [ngPlural]="support.open">
+                  <ng-template ngPluralCase="=1">Support request awaiting resolution</ng-template>
+                  <ng-template ngPluralCase="other">Support requests awaiting resolution</ng-template>
+                </ng-container>
+              }
+              @case ('success') {
+                No open support requests
+              }
+              @default {
+                @if (canConfigureSupport) {
+                  No open support requests. Configure what support bundles collect.
+                } @else {
+                  No open support requests
+                }
+              }
+            }
+          </span>
+        </app-quick-navigation-card>
+      } @else {
+        <app-quick-navigation-card class="min-h-32" [icon]="faLifeRing" heading="Support" />
+      }
+      @if (isVendor) {
+        @let advisories = advisoryCounts();
+        @if (advisories === null) {
+          <app-quick-navigation-card
+            class="min-h-32"
+            [icon]="faShieldHalved"
+            heading="Security Advisories"
+            lockedPlan="business">
+            <span subtitle>Upgrade to inform your customers about vulnerabilities</span>
+          </app-quick-navigation-card>
+        } @else if (advisories) {
+          <app-quick-navigation-card
+            class="min-h-32"
+            [icon]="faShieldHalved"
+            heading="Security Advisories"
+            [type]="advisories.total > 0 && advisories.open === 0 ? 'success' : 'neutral'"
+            link="/advisories"
+            [queryParams]="advisories.open > 0 ? openAdvisoryQueryParams : undefined">
+            @if (advisories.open > 0) {
+              {{ advisories.open }} open
+            } @else if (advisories.total > 0) {
+              All good
+            }
+            <span subtitle>
+              @if (advisories.total === 0) {
+                Publish advisories to inform your customers about vulnerabilities
+              } @else if (advisories.open > 0) {
+                @if (advisories.triage > 0) {
+                  {{ advisories.triage }} in triage
+                }
+                @if (advisories.draft > 0) {
+                  @if (advisories.triage > 0) {
+                    &middot;
+                  }
+                  <ng-container [ngPlural]="advisories.draft">
+                    <ng-template ngPluralCase="=1">1 draft</ng-template>
+                    <ng-template ngPluralCase="other">{{ advisories.draft }} drafts</ng-template>
+                  </ng-container>
+                }
+                @if (advisories.published > 0) {
+                  @if (advisories.triage + advisories.draft > 0) {
+                    &middot;
+                  }
+                  {{ advisories.published }} active
+                }
+              } @else {
+                No open security advisories
+              }
+            </span>
+          </app-quick-navigation-card>
+        } @else {
+          <app-quick-navigation-card class="min-h-32" [icon]="faShieldHalved" heading="Security Advisories" />
+        }
+      }
     </div>
 
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
