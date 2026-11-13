@@ -1,13 +1,14 @@
 import {DatePipe} from '@angular/common';
-import {Component, computed, inject, signal} from '@angular/core';
+import {Component, computed, inject, signal, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
-import {ActivatedRoute, NavigationEnd, Router, RouterOutlet} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {CustomerOrganizationWithUsage} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faAddressBook, faGlasses, faTrash} from '@fortawesome/free-solid-svg-icons';
-import {filter, firstValueFrom, map} from 'rxjs';
+import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../../../util/errors';
 import {refreshInBackground} from '../../../../util/refresh';
+import {tabContext} from '../../../navigation/tabs';
 import {ApplicationEntitlementsService} from '../../../services/application-entitlements.service';
 import {ArtifactEntitlementsService} from '../../../services/artifact-entitlements.service';
 import {AuthService} from '../../../services/auth.service';
@@ -20,10 +21,10 @@ import {AvatarComponent} from '../../avatar.component';
 import {CustomerBreadcrumbComponent} from '../../customer-breadcrumb.component';
 import {InlineEditComponent} from '../../inline-edit.component';
 import {PageComponent} from '../../page.component';
+import {RoutedTabsComponent} from '../../routed-tabs.component';
 import {SpinnerComponent} from '../../spinner/spinner.component';
-import {TabBarComponent, TabItem} from '../../tab-bar.component';
 import {deleteCustomerConfirmConfig} from '../delete-customer-confirm';
-import {CustomerDetailTabId, customerDetailTabs} from './customer-detail-navigation';
+import {customerDetailTabs} from './customer-detail-navigation';
 
 @Component({
   templateUrl: './customer-detail-page.component.html',
@@ -35,9 +36,8 @@ import {CustomerDetailTabId, customerDetailTabs} from './customer-detail-navigat
     FaIconComponent,
     InlineEditComponent,
     PageComponent,
-    RouterOutlet,
+    RoutedTabsComponent,
     SpinnerComponent,
-    TabBarComponent,
   ],
 })
 export class CustomerDetailPageComponent {
@@ -70,14 +70,13 @@ export class CustomerDetailPageComponent {
   protected readonly loading = signal(true);
   protected readonly savingName = signal(false);
 
-  protected readonly tabs = customerDetailTabs;
-  protected readonly activeTab = toSignal(
-    this.router.events.pipe(
-      filter((event) => event instanceof NavigationEnd),
-      map(() => this.tabFromRoute())
-    ),
-    {initialValue: this.tabFromRoute()}
-  );
+  private readonly tabContext = toSignal(tabContext());
+  protected readonly tabs = computed(() => {
+    const context = this.tabContext();
+    return context === undefined ? [] : customerDetailTabs.resolve(context);
+  });
+  private readonly routedTabs = viewChild(RoutedTabsComponent);
+  protected readonly activeTab = computed(() => this.routedTabs()?.activeTab() ?? '');
 
   constructor() {
     refreshInBackground(this.customerOrganizationsService.refresh().finally(() => this.loading.set(false)));
@@ -153,14 +152,5 @@ export class CustomerDetailPageComponent {
         this.toast.error(msg);
       }
     }
-  }
-
-  protected onTabClick(tab: TabItem<CustomerDetailTabId>) {
-    this.router.navigate([tab.id], {relativeTo: this.route});
-  }
-
-  private tabFromRoute(): CustomerDetailTabId {
-    const path = this.route.snapshot.firstChild?.routeConfig?.path;
-    return this.tabs.find((tab) => tab.id === path)?.id ?? 'overview';
   }
 }

@@ -16,6 +16,7 @@ import {ArtifactVersionsComponent} from './artifacts/artifact-versions/artifact-
 import {ArtifactsComponent} from './artifacts/artifacts/artifacts.component';
 import {CustomerOrganizationsComponent} from './components/customer-organizations/customer-organizations.component';
 import {CustomerDeploymentsTabComponent} from './components/customer-organizations/detail/customer-deployments-tab.component';
+import {customerDetailTabs} from './components/customer-organizations/detail/customer-detail-navigation';
 import {CustomerDetailPageComponent} from './components/customer-organizations/detail/customer-detail-page.component';
 import {CustomerDownloadsTabComponent} from './components/customer-organizations/detail/customer-downloads-tab.component';
 import {CustomerTabPlaceholderComponent} from './components/customer-organizations/detail/customer-tab-placeholder.component';
@@ -323,13 +324,43 @@ const shellRoutes: Routes = [
             path: '',
             component: CustomerDetailPageComponent,
             children: [
-              {path: 'overview', component: CustomerTabPlaceholderComponent},
-              {path: 'deployments', component: CustomerDeploymentsTabComponent},
-              {path: 'downloads', component: CustomerDownloadsTabComponent},
-              {path: 'licenses', component: CustomerTabPlaceholderComponent},
-              {path: 'support', component: CustomerTabPlaceholderComponent},
-              {path: 'notifications', component: CustomerTabPlaceholderComponent},
-              {path: '', pathMatch: 'full', redirectTo: 'overview'},
+              {
+                path: 'overview',
+                title: customerDetailTabs.title('overview'),
+                component: CustomerTabPlaceholderComponent,
+                canActivate: [customerDetailTabs.guard('overview')],
+              },
+              {
+                path: 'deployments',
+                title: customerDetailTabs.title('deployments'),
+                component: CustomerDeploymentsTabComponent,
+                canActivate: [customerDetailTabs.guard('deployments')],
+              },
+              {
+                path: 'downloads',
+                title: customerDetailTabs.title('downloads'),
+                component: CustomerDownloadsTabComponent,
+                canActivate: [customerDetailTabs.guard('downloads')],
+              },
+              {
+                path: 'licenses',
+                title: customerDetailTabs.title('licenses'),
+                component: CustomerTabPlaceholderComponent,
+                canActivate: [customerDetailTabs.guard('licenses')],
+              },
+              {
+                path: 'support',
+                title: customerDetailTabs.title('support'),
+                component: CustomerTabPlaceholderComponent,
+                canActivate: [customerDetailTabs.guard('support')],
+              },
+              {
+                path: 'notifications',
+                title: customerDetailTabs.title('notifications'),
+                component: CustomerTabPlaceholderComponent,
+                canActivate: [customerDetailTabs.guard('notifications')],
+              },
+              {path: '', pathMatch: 'full', redirectTo: customerDetailTabs.firstOpenable},
             ],
           },
         ],
