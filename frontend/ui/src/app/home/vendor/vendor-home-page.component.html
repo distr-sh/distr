@@ -272,9 +272,59 @@
           <app-loading-card layout="timeline" />
         }
       </div>
-      <div class="distr-card min-h-96 p-4">
-        <h2 appCardHeading [icon]="faAddressBook">Customers</h2>
-      </div>
+      @if (homeCustomers(); as customers) {
+        <div class="distr-card min-h-96 p-4">
+          <div class="mb-3 flex items-center justify-between gap-2">
+            <h2 appCardHeading [icon]="faAddressBook">Customers</h2>
+            @if (customers.length > 0) {
+              <a
+                routerLink="/customers"
+                class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">
+                View all
+              </a>
+            }
+          </div>
+          @if (customers.length === 0) {
+            <p class="distr-text-muted text-sm">No customers yet</p>
+          } @else {
+            <ul class="distr-home-list -mx-2">
+              @for (customer of customers; track customer.id) {
+                <li>
+                  <a [routerLink]="['/customers', customer.id]" class="distr-home-row items-center">
+                    <app-avatar
+                      [image]="customer.imageUrl"
+                      [name]="customer.name"
+                      [icon]="faAddressBook"
+                      class="size-8 rounded-sm" />
+                    <div class="min-w-0 flex-1">
+                      <span class="distr-home-row-title block truncate">{{ customer.name }}</span>
+                      <span class="distr-home-row-meta">
+                        @if (customer.openItems > 0) {
+                          <ng-container [ngPlural]="customer.openItems">
+                            <ng-template ngPluralCase="=1">1 open item</ng-template>
+                            <ng-template ngPluralCase="other">{{ customer.openItems }} open items</ng-template>
+                          </ng-container>
+                        } @else {
+                          <ng-container [ngPlural]="customer.deployments">
+                            <ng-template ngPluralCase="=0">No deployments</ng-template>
+                            <ng-template ngPluralCase="=1">1 deployment</ng-template>
+                            <ng-template ngPluralCase="other">{{ customer.deployments }} deployments</ng-template>
+                          </ng-container>
+                        }
+                      </span>
+                    </div>
+                    @if (customer.openItems > 0) {
+                      <span class="distr-badge distr-badge-warning shrink-0">Needs attention</span>
+                    }
+                  </a>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      } @else {
+        <app-loading-card class="min-h-96" />
+      }
     </div>
   </div>
 </app-page>

@@ -1,7 +1,7 @@
 import {NgPlural, NgPluralCase} from '@angular/common';
 import {Component, computed, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
-import {ActivatedRoute, Router} from '@angular/router';
+import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {
   faAddressBook,
   faBoxesStacked,
@@ -13,6 +13,7 @@ import {
 import {combineLatest, firstValueFrom, map, of, switchMap} from 'rxjs';
 import {recoverWithToast} from '../../../util/errors';
 import {refreshInBackground} from '../../../util/refresh';
+import {AvatarComponent} from '../../components/avatar.component';
 import {CardHeadingComponent} from '../../components/card-heading.component';
 import {LoadingCardComponent} from '../../components/loading-card/loading-card.component';
 import {PageComponent} from '../../components/page.component';
@@ -33,8 +34,9 @@ import {HomeActivityComponent} from '../home-activity.component';
 import {QuickNavigationCardComponent, QuickNavigationCardType} from '../quick-navigation-card.component';
 import {VendorHomeDeploymentHealth, VendorHomeLicenses, VendorHomeUpdates} from './vendor-home';
 import {
-  countOpenSupportBundles,
+  filterOpenSupportBundles,
   toVendorHomeAdvisoryCounts,
+  toVendorHomeCustomers,
   toVendorHomeDeploymentHealth,
   toVendorHomeLicenses,
   toVendorHomeUpdates,
@@ -42,6 +44,8 @@ import {
   vendorHomeLicenseExpiryWindowDays,
   vendorHomeOpenAdvisoryStatuses,
 } from './vendor-home-mappers';
+
+const vendorHomeMaxCustomers = 10;
 
 function deploymentHealthType(health: VendorHomeDeploymentHealth): QuickNavigationCardType {
   if (health.error > 0) {
@@ -91,11 +95,14 @@ function supportCardType(open: number, isConfigured: boolean): QuickNavigationCa
   imports: [
     NgPlural,
     NgPluralCase,
+    RouterLink,
     PageComponent,
+    AvatarComponent,
     CardHeadingComponent,
     LoadingCardComponent,
     QuickNavigationCardComponent,
     HomeActivityComponent,
+    QuickNavigationCardComponent,
   ],
 })
 export class VendorHomePageComponent {
@@ -185,7 +192,7 @@ export class VendorHomePageComponent {
               this.supportBundlesService.list(),
               // Partners cannot read the configuration, and the support page shows them no banner about it either.
               this.isVendor ? this.supportBundlesService.hasConfiguration() : of(true),
-            ]).pipe(map(([bundles, isConfigured]) => ({open: countOpenSupportBundles(bundles), isConfigured})))
+            ]).pipe(map(([bundles, isConfigured]) => ({openBundles: filterOpenSupportBundles(bundles), isConfigured})))
           : of(null)
       )
     )
@@ -211,12 +218,43 @@ export class VendorHomePageComponent {
     return {...updates, type: updatesCardType(updates)};
   });
 
+  protected readonly homeCustomers = computed(() => {
+    const customers = this.customers();
+    const targets = this.deploymentTargets();
+    const applications = this.applications();
+    const entitlements = this.applicationEntitlements();
+    const pulls = this.latestArtifactPulls();
+    const licenses = this.licenseCustomers();
+    const support = this.supportState();
+    if (
+      customers === undefined ||
+      targets === undefined ||
+      applications === undefined ||
+      entitlements === undefined ||
+      pulls === undefined ||
+      licenses === undefined ||
+      support === undefined
+    ) {
+      return undefined;
+    }
+    return toVendorHomeCustomers(
+      customers,
+      targets,
+      applications,
+      entitlements,
+      pulls,
+      licenses,
+      support?.openBundles ?? null
+    ).slice(0, vendorHomeMaxCustomers);
+  });
+
   protected readonly supportCard = computed(() => {
     const state = this.supportState();
     if (state === undefined || state === null) {
       return state;
     }
-    const {open, isConfigured} = state;
+    const open = state.openBundles.length;
+    const isConfigured = state.isConfigured;
     const shouldConfigure = open === 0 && !isConfigured && this.canConfigureSupport;
     return {
       open,

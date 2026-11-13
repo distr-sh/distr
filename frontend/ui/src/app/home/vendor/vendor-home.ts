@@ -29,5 +29,6 @@ export interface VendorHomeCustomer {
   id: string;
   name: string;
   imageUrl?: string;
-  deploymentHealth: VendorHomeDeploymentHealth;
+  deployments: number;
+  openItems: number;
 }

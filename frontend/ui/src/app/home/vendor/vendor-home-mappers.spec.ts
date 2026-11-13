@@ -10,6 +10,7 @@ import {
 import dayjs from 'dayjs';
 import {LatestArtifactPull} from '../../types/artifact-version-pull';
 import {License} from '../../types/license';
+import {SupportBundle} from '../../types/support-bundle';
 import {
   toVendorHomeCustomers,
   toVendorHomeDeploymentHealth,
@@ -169,18 +170,38 @@ describe('toVendorHomeLicenses', () => {
 });
 
 describe('toVendorHomeCustomers', () => {
-  it('should count only the deployments of each customer', () => {
-    const a = customer('a');
-    const b = customer('b');
+  it('should count the open items of each customer and order customers by them, then by name', () => {
+    const [zeta, alpha, errors, pulled, licensed, support] = [
+      'zeta',
+      'alpha',
+      'errors',
+      'pulled',
+      'licensed',
+      'support',
+    ].map(customer);
     const targets = [
-      target([deployment(status('error'))], a),
-      target([deployment(status('healthy')), deployment(status('running'))], a),
+      target([deploymentOf('2.0.0')], zeta),
+      target([{...deploymentOf('1.0.0'), latestStatus: status('error')}, deployment(status('healthy', old()))], errors),
       target([deployment(status('error'))]),
-      target([deployment(status('error'))], customer('other')),
+      target([], pulled),
     ];
-    expect(toVendorHomeCustomers([a, b], targets).map((c) => [c.id, c.deploymentHealth])).toEqual([
-      ['a', {total: 3, healthy: 1, running: 1, error: 1, stale: 0}],
-      ['b', {total: 0, healthy: 0, running: 0, error: 0, stale: 0}],
+    const bundle = (customerOrganizationId: string) => ({customerOrganizationId}) as SupportBundle;
+    const result = toVendorHomeCustomers(
+      [zeta, alpha, errors, pulled, licensed, support],
+      targets,
+      [application],
+      [],
+      [pull('pulled', '2.0.0'), pull('zeta', '2.0.0')],
+      {expiredCustomerIds: ['licensed'], expiringCustomerIds: ['support']},
+      [bundle('support'), bundle('support'), bundle('other')]
+    );
+    expect(result.map((c) => [c.id, c.openItems])).toEqual([
+      ['errors', 3],
+      ['support', 3],
+      ['licensed', 1],
+      ['pulled', 1],
+      ['alpha', 0],
+      ['zeta', 0],
     ]);
   });
 });
