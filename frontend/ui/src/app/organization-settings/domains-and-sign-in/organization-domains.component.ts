@@ -8,6 +8,7 @@ import {CustomEmailComponent} from './custom-email.component';
 @Component({
   selector: 'app-organization-domains',
   templateUrl: './organization-domains.component.html',
+  host: {class: 'block max-w-4xl'},
   imports: [CustomDomainComponent, IdentityProvidersComponent, CustomEmailComponent, RouterLink],
 })
 export class OrganizationDomainsComponent {

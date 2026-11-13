@@ -51,6 +51,7 @@ function deploymentTypesUsingConnectScript(settings: ConnectScriptSettings): Dep
 @Component({
   selector: 'app-general-settings',
   templateUrl: './general-settings.component.html',
+  host: {class: 'block max-w-4xl'},
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     FaIconComponent,
