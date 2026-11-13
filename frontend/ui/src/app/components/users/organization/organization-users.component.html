@@ -1,0 +1,5 @@
+<app-page>
+  <div class="distr-table-panel">
+    <app-users (refresh)="refresh$.next()" [users]="users()" />
+  </div>
+</app-page>

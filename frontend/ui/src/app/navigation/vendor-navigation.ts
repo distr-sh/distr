@@ -13,7 +13,6 @@ import {
   faLightbulb,
   faPalette,
   faShieldHalved,
-  faUsers,
 } from '@fortawesome/free-solid-svg-icons';
 import {NavigationDefinition} from './navigation';
 
@@ -88,7 +87,6 @@ export const vendorNavigation: NavigationDefinition = [
         route: '/advisories',
         locked: {plan: 'business', when: (c) => !c.features.has('vulnerabilities')},
       },
-      {id: 'users', label: 'Users', icon: faUsers, route: '/users', visible: (c) => c.user.isAdminOrSuperAdmin},
       {id: 'secrets', label: 'Secrets', icon: faAsterisk, route: '/secrets'},
       {
         id: 'customer-portal',

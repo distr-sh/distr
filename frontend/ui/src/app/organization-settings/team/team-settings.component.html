@@ -1,0 +1,10 @@
+<div class="space-y-4">
+  <div class="space-y-2">
+    <h2 class="text-xl font-bold dark:text-white">Team</h2>
+    <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+      Invite and manage the members of your organization.
+    </p>
+  </div>
+
+  <app-users class="-mx-6 -mb-6 block overflow-hidden rounded-b-lg" [users]="users()" (refresh)="refresh$.next()" />
+</div>
