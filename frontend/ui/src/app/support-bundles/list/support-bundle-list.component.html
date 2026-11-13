@@ -1,136 +1,138 @@
-<app-page>
-  <div class="distr-table-panel">
-    <div class="distr-toolbar p-4">
-      <app-search-bar [control]="filterForm.controls.search" placeholder="Filter support requests" />
-      <div class="distr-toolbar-actions">
-        @if (auth.isVendor()) {
-          <a
-            routerLink="/support/settings"
-            class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none md:w-auto dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
-            <fa-icon [icon]="faGear" class="mr-2 text-gray-500 dark:text-gray-400" />
-            Settings
-          </a>
-        }
-        @if (auth.isCustomer() && auth.hasAnyRole('read_write', 'admin')) {
-          <button
-            (click)="openDialog(createBundleDialog)"
-            type="button"
-            class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none md:w-auto dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
-            <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
-            New Request
-          </button>
-        }
-      </div>
-    </div>
-
-    @if (auth.isVendor() && !loading() && !configExists()) {
-      <app-alert type="info" heading="Support bundle configuration has not been set up yet." class="m-4">
-        Configure the environment variables that should be collected from the host and Docker containers when customers
-        create Docker support bundles.
+<div class="distr-table-panel">
+  <div class="distr-toolbar p-4">
+    <app-search-bar [control]="filterForm.controls.search" placeholder="Filter support requests" />
+    <div class="distr-toolbar-actions">
+      @if (auth.isVendor() && !customerOrganizationId()) {
         <a
-          alertActions
           routerLink="/support/settings"
-          class="shrink-0 rounded-lg bg-blue-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 focus:outline-none dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-          Configure
+          class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none md:w-auto dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+          <fa-icon [icon]="faGear" class="mr-2 text-gray-500 dark:text-gray-400" />
+          Settings
         </a>
-      </app-alert>
-    }
-
-    @if (!loading()) {
-      @if (filteredBundles().length > 0) {
-        <div class="overflow-x-auto">
-          <table class="distr-table">
-            <thead class="distr-table-head">
-              <tr>
-                <th scope="col" class="p-4">Title</th>
-                @if (auth.isVendor() || auth.isPartner()) {
-                  <th scope="col" class="p-4">Customer</th>
-                }
-                <th scope="col" class="p-4">Type</th>
-                <th scope="col" class="p-4">Status</th>
-                <th scope="col" class="p-4">Created At</th>
-                <th scope="col" class="p-4">Resources</th>
-                <th scope="col" class="p-4">Comments</th>
-                <th scope="col" class="p-4">Last Updated At</th>
-                <th scope="col" class="p-4">
-                  <span class="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (bundle of filteredBundles(); track bundle.id) {
-                <tr [appClickableRow]="'/support/' + bundle.id" class="distr-table-row">
-                  <td class="distr-table-cell">
-                    {{ bundle.title || bundle.id.substring(0, 8) }}
-                  </td>
-                  @if (auth.isVendor() || auth.isPartner()) {
-                    <td class="px-4 py-3">{{ bundle.customerOrganizationName }}</td>
-                  }
-                  <td class="px-4 py-3">
-                    <app-deployment-type-badge [type]="bundle.deploymentType" />
-                  </td>
-                  <td class="px-4 py-3">
-                    <app-support-bundle-status-badge [status]="bundle.status" />
-                  </td>
-                  <td class="px-4 py-3">{{ bundle.createdAt | date: 'medium' }}</td>
-                  <td class="px-4 py-3">{{ bundle.resourceCount }}</td>
-                  <td class="px-4 py-3">{{ bundle.commentCount }}</td>
-                  <td class="px-4 py-3">
-                    {{ bundle.lastCommentAt ? (bundle.lastCommentAt | date: 'medium') : '-' }}
-                  </td>
-                  <td class="px-4 py-3">
-                    <div class="flex justify-end gap-2">
-                      @if (bundle.resourceCount > 0) {
-                        <button
-                          type="button"
-                          (click)="downloadResources(bundle)"
-                          [disabled]="downloadingBundleId() !== null"
-                          title="Download resources"
-                          class="distr-btn-secondary px-3 py-2 text-sm">
-                          <fa-icon [icon]="faDownload" class="h-4 w-4" />
-                          <span class="sr-only">Download resources</span>
-                        </button>
-                      }
-                      @if (auth.hasAnyRole('read_write', 'admin')) {
-                        <button
-                          type="button"
-                          (click)="deleteBundle(bundle)"
-                          [disabled]="deletingBundleId() !== null"
-                          title="Delete support request"
-                          class="distr-btn-danger px-3 py-2">
-                          <fa-icon [icon]="faTrash" class="h-4 w-4" />
-                          <span class="sr-only">Delete support request</span>
-                        </button>
-                      }
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      } @else if (bundles().length > 0) {
-        <div class="p-8 text-center text-gray-500 dark:text-gray-400">
-          <p>No matching support requests.</p>
-        </div>
-      } @else if (auth.isVendor()) {
-        <div class="p-8 text-center text-gray-500 dark:text-gray-400">
-          <p>No support requests have been created yet.</p>
-          <p class="mt-1 text-sm">Customers with the support feature enabled can create support requests.</p>
-        </div>
-      } @else if (auth.isPartner()) {
-        <div class="p-8 text-center text-gray-500 dark:text-gray-400">
-          <p>No support requests yet.</p>
-          <p class="mt-1 text-sm">Support requests created by your assigned customers will appear here.</p>
-        </div>
-      } @else if (auth.isCustomer()) {
-        <div class="p-8 text-center text-gray-500 dark:text-gray-400">
-          <p>No support requests yet.</p>
-        </div>
       }
-    }
+      @if (auth.isCustomer() && auth.hasAnyRole('read_write', 'admin')) {
+        <button
+          (click)="openDialog(createBundleDialog)"
+          type="button"
+          class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none md:w-auto dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+          <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
+          New Request
+        </button>
+      }
+    </div>
   </div>
-</app-page>
+
+  @if (!loading() && configMissing()) {
+    <app-alert type="info" heading="Support bundle configuration has not been set up yet." class="m-4">
+      Configure the environment variables that should be collected from the host and Docker containers when customers
+      create Docker support bundles.
+      <a
+        alertActions
+        routerLink="/support/settings"
+        class="shrink-0 rounded-lg bg-blue-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 focus:outline-none dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+        Configure
+      </a>
+    </app-alert>
+  }
+
+  @if (!loading()) {
+    @if (filteredBundles().length > 0) {
+      <div class="overflow-x-auto">
+        <table class="distr-table">
+          <thead class="distr-table-head">
+            <tr>
+              <th scope="col" class="p-4">Title</th>
+              @if (showCustomerColumn()) {
+                <th scope="col" class="p-4">Customer</th>
+              }
+              <th scope="col" class="p-4">Type</th>
+              <th scope="col" class="p-4">Status</th>
+              <th scope="col" class="p-4">Created At</th>
+              <th scope="col" class="p-4">Resources</th>
+              <th scope="col" class="p-4">Comments</th>
+              <th scope="col" class="p-4">Last Updated At</th>
+              <th scope="col" class="p-4">
+                <span class="sr-only">Actions</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (bundle of filteredBundles(); track bundle.id) {
+              <tr [appClickableRow]="'/support/' + bundle.id" class="distr-table-row">
+                <td class="distr-table-cell">
+                  {{ bundle.title || bundle.id.substring(0, 8) }}
+                </td>
+                @if (showCustomerColumn()) {
+                  <td class="px-4 py-3">{{ bundle.customerOrganizationName }}</td>
+                }
+                <td class="px-4 py-3">
+                  <app-deployment-type-badge [type]="bundle.deploymentType" />
+                </td>
+                <td class="px-4 py-3">
+                  <app-support-bundle-status-badge [status]="bundle.status" />
+                </td>
+                <td class="px-4 py-3">{{ bundle.createdAt | date: 'medium' }}</td>
+                <td class="px-4 py-3">{{ bundle.resourceCount }}</td>
+                <td class="px-4 py-3">{{ bundle.commentCount }}</td>
+                <td class="px-4 py-3">
+                  {{ bundle.lastCommentAt ? (bundle.lastCommentAt | date: 'medium') : '-' }}
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex justify-end gap-2">
+                    @if (bundle.resourceCount > 0) {
+                      <button
+                        type="button"
+                        (click)="downloadResources(bundle)"
+                        [disabled]="downloadingBundleId() !== null"
+                        title="Download resources"
+                        class="distr-btn-secondary px-3 py-2 text-sm">
+                        <fa-icon [icon]="faDownload" class="h-4 w-4" />
+                        <span class="sr-only">Download resources</span>
+                      </button>
+                    }
+                    @if (auth.hasAnyRole('read_write', 'admin')) {
+                      <button
+                        type="button"
+                        (click)="deleteBundle(bundle)"
+                        [disabled]="deletingBundleId() !== null"
+                        title="Delete support request"
+                        class="distr-btn-danger px-3 py-2">
+                        <fa-icon [icon]="faTrash" class="h-4 w-4" />
+                        <span class="sr-only">Delete support request</span>
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (hasBundles()) {
+      <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+        <p>No matching support requests.</p>
+      </div>
+    } @else if (customerOrganizationId()) {
+      <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+        <p>This customer has not created any support requests yet.</p>
+      </div>
+    } @else if (auth.isVendor()) {
+      <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+        <p>No support requests have been created yet.</p>
+        <p class="mt-1 text-sm">Customers with the support feature enabled can create support requests.</p>
+      </div>
+    } @else if (auth.isPartner()) {
+      <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+        <p>No support requests yet.</p>
+        <p class="mt-1 text-sm">Support requests created by your assigned customers will appear here.</p>
+      </div>
+    } @else if (auth.isCustomer()) {
+      <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+        <p>No support requests yet.</p>
+      </div>
+    }
+  }
+</div>
 
 <ng-template #createBundleDialog>
   <app-support-bundle-create-dialog (closed)="closeDialog()" />

@@ -19,6 +19,7 @@ import {CustomerDeploymentsTabComponent} from './components/customer-organizatio
 import {customerDetailTabs} from './components/customer-organizations/detail/customer-detail-navigation';
 import {CustomerDetailPageComponent} from './components/customer-organizations/detail/customer-detail-page.component';
 import {CustomerDownloadsTabComponent} from './components/customer-organizations/detail/customer-downloads-tab.component';
+import {CustomerSupportTabComponent} from './components/customer-organizations/detail/customer-support-tab.component';
 import {CustomerTabPlaceholderComponent} from './components/customer-organizations/detail/customer-tab-placeholder.component';
 import {NavShellComponent} from './components/nav-shell.component';
 import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
@@ -63,7 +64,7 @@ import {OrganizationService} from './services/organization.service';
 import {ToastService} from './services/toast.service';
 import {SidebarLinksPageComponent} from './sidebar-links/sidebar-links-page.component';
 import {SupportBundleDetailComponent} from './support-bundles/detail/support-bundle-detail.component';
-import {SupportBundleListComponent} from './support-bundles/list/support-bundle-list.component';
+import {SupportBundleListPageComponent} from './support-bundles/list/support-bundle-list-page.component';
 import {SupportBundleSettingsComponent} from './support-bundles/vendor/support-bundle-settings.component';
 import {BrandingTutorialComponent} from './tutorials/branding/branding-tutorial.component';
 import {ControllersTutorialComponent} from './tutorials/controllers/controllers-tutorial.component';
@@ -351,7 +352,7 @@ const shellRoutes: Routes = [
               {
                 path: 'support',
                 title: customerDetailTabs.title('support'),
-                component: CustomerTabPlaceholderComponent,
+                component: CustomerSupportTabComponent,
                 canActivate: [customerDetailTabs.guard('support')],
               },
               {
@@ -602,7 +603,7 @@ const shellRoutes: Routes = [
           {
             path: '',
             pathMatch: 'full',
-            component: SupportBundleListComponent,
+            component: SupportBundleListPageComponent,
           },
           {
             path: 'settings',
