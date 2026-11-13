@@ -46,7 +46,7 @@
               {{ health.stale }} stale
             }
             @case ('success') {
-              All good
+              0 issues
             }
           }
           <span subtitle>
@@ -92,13 +92,8 @@
           heading="Updates"
           [type]="updates.type"
           link="/customers">
-          @switch (updates.type) {
-            @case ('warning') {
-              {{ updates.outdatedCustomers }} outdated
-            }
-            @case ('success') {
-              All up to date
-            }
+          @if (updates.type !== 'neutral') {
+            {{ updates.outdatedCustomers }} outdated
           }
           <span subtitle>
             @switch (updates.type) {
@@ -139,14 +134,10 @@
           heading="Licenses"
           [type]="licenses.type"
           [link]="licenses.link">
-          @if (licenses.customers > 0) {
-            <ng-container [ngPlural]="licenses.customers">
-              <ng-template ngPluralCase="=1">1 customer</ng-template>
-              <ng-template ngPluralCase="other">{{ licenses.customers }} customers</ng-template>
-            </ng-container>
-          } @else {
-            All good
-          }
+          <ng-container [ngPlural]="licenses.customers">
+            <ng-template ngPluralCase="=1">1 customer</ng-template>
+            <ng-template ngPluralCase="other">{{ licenses.customers }} customers</ng-template>
+          </ng-container>
           <span subtitle>
             @if (licenses.expired > 0 && licenses.expiring > 0) {
               {{ licenses.expired }} expired &middot; {{ licenses.expiring }} expiring
@@ -176,13 +167,8 @@
           heading="Support"
           [type]="support.type"
           [link]="support.link">
-          @switch (support.type) {
-            @case ('warning') {
-              {{ support.open }} open
-            }
-            @case ('success') {
-              All good
-            }
+          @if (support.type !== 'neutral') {
+            {{ support.open }} open
           }
           <span subtitle>
             @switch (support.type) {
@@ -226,10 +212,8 @@
             [type]="advisories.total > 0 && advisories.open === 0 ? 'success' : 'neutral'"
             link="/advisories"
             [queryParams]="advisories.open > 0 ? openAdvisoryQueryParams : undefined">
-            @if (advisories.open > 0) {
+            @if (advisories.total > 0) {
               {{ advisories.open }} open
-            } @else if (advisories.total > 0) {
-              All good
             }
             <span subtitle>
               @if (advisories.total === 0) {
