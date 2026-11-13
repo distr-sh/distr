@@ -57,15 +57,23 @@
   <div class="distr-toolbar mb-4">
     <app-search-bar [control]="filterForm.controls.search" placeholder="Filter artifacts" />
 
-    @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
+    @if (!auth.isCustomer()) {
       <div class="distr-toolbar-actions">
-        <button
-          (click)="openCreateModal(newArtifactModal)"
-          type="button"
-          class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none md:w-auto dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
-          <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
-          Add artifact
-        </button>
+        <a
+          routerLink="downloads"
+          class="distr-btn-secondary flex w-full items-center justify-center px-4 py-2 text-sm font-medium md:w-auto">
+          <fa-icon [icon]="faDownload" class="mr-2 text-gray-500 dark:text-gray-400" />
+          Downloads
+        </a>
+        @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
+          <button
+            (click)="openCreateModal(newArtifactModal)"
+            type="button"
+            class="distr-btn-primary flex w-full items-center justify-center px-4 py-2 md:w-auto">
+            <fa-icon [icon]="faPlus" class="mr-2" />
+            Add artifact
+          </button>
+        }
       </div>
     }
   </div>
