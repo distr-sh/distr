@@ -1,7 +1,7 @@
 <app-page>
   <div class="flex flex-col gap-4">
-    @if (counts(); as counts) {
-      <p class="distr-text-muted -mt-2 text-sm">
+    <p class="distr-text-muted -mt-2 min-h-5 text-sm">
+      @if (counts(); as counts) {
         <ng-container [ngPlural]="counts.customers">
           <ng-template ngPluralCase="=1">1 customer</ng-template>
           <ng-template ngPluralCase="other">{{ counts.customers }} customers</ng-template>
@@ -18,8 +18,8 @@
             <ng-template ngPluralCase="other">{{ counts.applications }} applications</ng-template>
           </ng-container>
         }
-      </p>
-    }
+      }
+    </p>
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
       @if (deploymentHealth(); as health) {
@@ -83,7 +83,7 @@
           </span>
         </app-quick-navigation-card>
       } @else {
-        <app-quick-navigation-card class="min-h-32" [icon]="faBoxesStacked" heading="Deployment health" />
+        <app-loading-card layout="stat" class="min-h-32" />
       }
       @if (updates(); as updates) {
         <app-quick-navigation-card
@@ -118,7 +118,7 @@
           </span>
         </app-quick-navigation-card>
       } @else {
-        <app-quick-navigation-card class="min-h-32" [icon]="faCircleArrowUp" heading="Updates" />
+        <app-loading-card layout="stat" class="min-h-32" />
       }
       @let licenses = licenseCard();
       @if (licenses === null) {
@@ -151,7 +151,7 @@
           </span>
         </app-quick-navigation-card>
       } @else {
-        <app-quick-navigation-card class="min-h-32" [icon]="faKey" heading="Licenses" />
+        <app-loading-card layout="stat" class="min-h-32" />
       }
       @let support = supportCard();
       @if (support === null) {
@@ -192,7 +192,7 @@
           </span>
         </app-quick-navigation-card>
       } @else {
-        <app-quick-navigation-card class="min-h-32" [icon]="faLifeRing" heading="Support" />
+        <app-loading-card layout="stat" class="min-h-32" />
       }
       @if (isVendor) {
         @let advisories = advisoryCounts();
@@ -243,7 +243,7 @@
             </span>
           </app-quick-navigation-card>
         } @else {
-          <app-quick-navigation-card class="min-h-32" [icon]="faShieldHalved" heading="Security Advisories" />
+          <app-loading-card layout="stat" class="min-h-32" />
         }
       }
     </div>

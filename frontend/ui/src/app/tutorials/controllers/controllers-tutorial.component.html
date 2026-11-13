@@ -15,9 +15,7 @@
               </p>
               <p>
                 We have already prepared a sample application called
-                <a href="https://github.com/distr-sh/hello-distr" class="text-primary-600 underline" target="_blank"
-                  >hello-distr</a
-                >.
+                <a href="https://github.com/distr-sh/hello-distr" class="distr-link" target="_blank">hello-distr</a>.
               </p>
             </div>
 
@@ -51,7 +49,10 @@
                   @if (showMacOsWarning) {
                     <app-alert type="warning" class="mt-2 mb-2">
                       If you are on Mac, please make sure to check
-                      <a [href]="websiteUrl + '/docs/controllers/distr-on-macos/'" class="underline" target="_blank"
+                      <a
+                        [href]="websiteUrl + '/docs/controllers/distr-on-macos/'"
+                        class="distr-link-inherit"
+                        target="_blank"
                         >this guide</a
                       >
                       first!
@@ -114,7 +115,7 @@
                     <a
                       [routerLink]="['/deployments']"
                       [queryParams]="{tutorial: this.route.snapshot.url[0].path}"
-                      class="text-primary-600 underline"
+                      class="distr-link"
                       >Deployments</a
                     >
                     page, and look for the "hello-distr-tutorial" deployment. It should show a healthy status and the
@@ -157,7 +158,7 @@
                   <label for="openDone" class="text-lg leading-tight font-medium">Open hello-distr</label>
                   <p class="mt-1 text-sm">
                     hello-distr is now deployed on
-                    <a href="http://localhost" target="_blank" class="text-primary-600 underline">http://localhost</a>
+                    <a href="http://localhost" target="_blank" class="distr-link">http://localhost</a>
                   </p>
                   @if (deployFormGroup.controls.openDone.touched && deployFormGroup.controls.openDone.invalid) {
                     <div class="mt-2 text-sm text-red-500">Please mark this as checked when you are done with it.</div>
@@ -217,10 +218,7 @@
                   >
                   <p class="mt-1 text-sm">
                     Fork the previously deployed
-                    <a
-                      href="https://github.com/distr-sh/hello-distr"
-                      class="text-gray-600 underline dark:text-gray-400"
-                      target="_blank"
+                    <a href="https://github.com/distr-sh/hello-distr" class="distr-link" target="_blank"
                       >hello-distr application</a
                     >
                     on GitHub. You will use this fork to release a new version of your own hello-distr, and then sync
@@ -249,11 +247,7 @@
                   </p>
                   <p class="mt-1 text-sm">
                     If you need any help or in case you have questions, don't hesitate to
-                    <a
-                      [href]="githubUrl + '/discussions'"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="text-gray-600 hover:underline dark:text-gray-400"
+                    <a [href]="githubUrl + '/discussions'" target="_blank" rel="noopener noreferrer" class="distr-link"
                       >get help</a
                     >
                     in our community forum!
