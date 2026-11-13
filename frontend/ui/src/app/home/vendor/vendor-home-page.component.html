@@ -256,9 +256,91 @@
           <app-loading-card layout="timeline" />
         }
       </div>
-      <div class="distr-card min-h-96 p-4">
-        <h2 appCardHeading [icon]="faAddressBook">Customers</h2>
-      </div>
+      @if (homeCustomers(); as customers) {
+        @if (customers.length === 0) {
+          <a routerLink="/customers" class="distr-card distr-card-clickable min-h-96 p-4">
+            <h2 appCardHeading [icon]="faAddressBook" class="mb-3">Customers</h2>
+            <p class="distr-text-muted text-sm">
+              @if (canCreateCustomers) {
+                No customers yet.
+                <br />
+                Create your first customer on the customers page.
+              } @else {
+                No customers yet
+              }
+            </p>
+          </a>
+        } @else {
+          <div class="distr-card min-h-96 p-4">
+            <div class="mb-3 flex items-center justify-between gap-2">
+              <h2 appCardHeading [icon]="faAddressBook">
+                Customers
+                <span class="distr-badge distr-badge-neutral ms-2">{{ customerCount() }}</span>
+              </h2>
+              <a
+                routerLink="/customers"
+                class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">
+                View all
+              </a>
+            </div>
+            <ul class="distr-home-list -mx-2">
+              @for (customer of customers; track customer.id) {
+                <li>
+                  <a [routerLink]="['/customers', customer.id]" class="distr-home-row items-center">
+                    <app-avatar
+                      [image]="customer.imageUrl"
+                      [name]="customer.name"
+                      [icon]="faAddressBook"
+                      class="size-8 rounded-sm" />
+                    <div class="min-w-0 flex-1">
+                      <span class="distr-home-row-title block truncate">{{ customer.name }}</span>
+                      <span class="distr-home-row-meta">
+                        @if (customer.openItems > 0) {
+                          <ng-container [ngPlural]="customer.openItems">
+                            <ng-template ngPluralCase="=1">1 open item</ng-template>
+                            <ng-template ngPluralCase="other">{{ customer.openItems }} open items</ng-template>
+                          </ng-container>
+                        } @else {
+                          @switch (customer.usage.type) {
+                            @case ('deployments') {
+                              <ng-container [ngPlural]="customer.usage.count">
+                                <ng-template ngPluralCase="=0">No deployments yet</ng-template>
+                                <ng-template ngPluralCase="=1">1 deployment</ng-template>
+                                <ng-template ngPluralCase="other">{{ customer.usage.count }} deployments</ng-template>
+                              </ng-container>
+                            }
+                            @case ('downloads') {
+                              <ng-container [ngPlural]="customer.usage.count">
+                                <ng-template ngPluralCase="=0">No downloads yet</ng-template>
+                                <ng-template ngPluralCase="=1">1 artifact downloaded</ng-template>
+                                <ng-template ngPluralCase="other">
+                                  {{ customer.usage.count }} artifacts downloaded
+                                </ng-template>
+                              </ng-container>
+                            }
+                            @case ('users') {
+                              <ng-container [ngPlural]="customer.usage.count">
+                                <ng-template ngPluralCase="=0">No users yet</ng-template>
+                                <ng-template ngPluralCase="=1">1 user</ng-template>
+                                <ng-template ngPluralCase="other">{{ customer.usage.count }} users</ng-template>
+                              </ng-container>
+                            }
+                          }
+                        }
+                      </span>
+                    </div>
+                    @if (customer.openItems > 0) {
+                      <span class="distr-badge distr-badge-warning shrink-0">Needs attention</span>
+                    }
+                  </a>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      } @else {
+        <app-loading-card class="min-h-96" />
+      }
     </div>
   </div>
 </app-page>

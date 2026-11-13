@@ -1,4 +1,11 @@
-import {Advisory, AdvisoryStatus, Application, CustomerOrganization, DeploymentTarget} from '@distr-sh/distr-sdk';
+import {
+  Advisory,
+  AdvisoryStatus,
+  Application,
+  CustomerOrganization,
+  CustomerOrganizationWithUsage,
+  DeploymentTarget,
+} from '@distr-sh/distr-sdk';
 import dayjs, {Dayjs} from 'dayjs';
 import {isDeploymentOutdated} from '../../../util/versions';
 import {
@@ -46,8 +53,8 @@ export function toVendorHomeLicenses(licenses: License[], now: Dayjs = dayjs()):
   return result;
 }
 
-export function countOpenSupportBundles(bundles: SupportBundle[]): number {
-  return bundles.filter((bundle) => openSupportBundleStatuses.includes(bundle.status)).length;
+export function filterOpenSupportBundles(bundles: SupportBundle[]): SupportBundle[] {
+  return bundles.filter((bundle) => openSupportBundleStatuses.includes(bundle.status));
 }
 
 /** The advisory statuses the advisories card counts and links to. */
@@ -76,10 +83,30 @@ export function toVendorHomeDeploymentHealth(targets: DeploymentTarget[]): Vendo
   };
 }
 
+function customerTargets(customer: CustomerOrganization, targets: DeploymentTarget[]): DeploymentTarget[] {
+  return targets.filter((target) => target.customerOrganization?.id === customer.id);
+}
+
 /**
  * A customer is outdated when one of its deployments is. A customer without deployments is outdated when it
  * pulled an artifact it may pull a newer tag of.
  */
+function toCustomerUpdates(
+  customer: CustomerOrganization,
+  targets: DeploymentTarget[],
+  applications: Application[],
+  entitlements: ApplicationEntitlement[],
+  pulls: LatestArtifactPull[]
+): {isOutdated: boolean; outdatedDeployments: number} {
+  const deployments = customerTargets(customer, targets).flatMap((target) => target.deployments);
+  const outdatedDeployments = deployments.filter((it) => isDeploymentOutdated(it, applications, entitlements)).length;
+  const isOutdated =
+    deployments.length > 0
+      ? outdatedDeployments > 0
+      : pulls.some((pull) => pull.customerOrganizationId === customer.id && pull.availableUpdate !== undefined);
+  return {isOutdated, outdatedDeployments};
+}
+
 export function toVendorHomeUpdates(
   customers: CustomerOrganization[],
   targets: DeploymentTarget[],
@@ -90,32 +117,68 @@ export function toVendorHomeUpdates(
   let outdatedCustomers = 0;
   let outdatedDeployments = 0;
   for (const customer of customers) {
-    const deployments = targets
-      .filter((target) => target.customerOrganization?.id === customer.id)
-      .flatMap((target) => target.deployments);
-    const outdated = deployments.filter((it) => isDeploymentOutdated(it, applications, entitlements)).length;
-    const isOutdated =
-      deployments.length > 0
-        ? outdated > 0
-        : pulls.some((pull) => pull.customerOrganizationId === customer.id && pull.availableUpdate !== undefined);
-    if (isOutdated) {
+    const updates = toCustomerUpdates(customer, targets, applications, entitlements, pulls);
+    if (updates.isOutdated) {
       outdatedCustomers++;
     }
-    outdatedDeployments += outdated;
+    outdatedDeployments += updates.outdatedDeployments;
   }
   return {totalCustomers: customers.length, outdatedCustomers, outdatedDeployments};
 }
 
+function toCustomerUsage(
+  customer: CustomerOrganizationWithUsage,
+  deployments: number,
+  pulls: LatestArtifactPull[]
+): VendorHomeCustomer['usage'] {
+  if (customer.features.includes('deployment_targets')) {
+    return {type: 'deployments', count: deployments};
+  } else if (customer.features.includes('artifacts')) {
+    const artifactIds = new Set(
+      pulls.filter((pull) => pull.customerOrganizationId === customer.id).map((pull) => pull.artifactId)
+    );
+    return {type: 'downloads', count: artifactIds.size};
+  } else {
+    return {type: 'users', count: customer.userCount};
+  }
+}
+
+/**
+ * Counts as open items of a customer every deployment in error or stale, every outdated deployment (or the outdated
+ * artifact pulls of a customer without deployments, as one item), an expired or expiring license and every open
+ * support request. Customers with open items come first, the most first, and the rest follow alphabetically.
+ * `licenses` and `openSupportBundles` are `null` while the organization lacks the feature.
+ */
 export function toVendorHomeCustomers(
-  customers: CustomerOrganization[],
-  targets: DeploymentTarget[]
+  customers: CustomerOrganizationWithUsage[],
+  targets: DeploymentTarget[],
+  applications: Application[],
+  entitlements: ApplicationEntitlement[],
+  pulls: LatestArtifactPull[],
+  licenses: VendorHomeLicenses | null,
+  openSupportBundles: SupportBundle[] | null
 ): VendorHomeCustomer[] {
-  return customers.map((customer) => ({
-    id: customer.id,
-    name: customer.name,
-    imageUrl: customer.imageUrl,
-    deploymentHealth: toVendorHomeDeploymentHealth(
-      targets.filter((target) => target.customerOrganization?.id === customer.id)
-    ),
-  }));
+  const licenseCustomerIds = new Set([
+    ...(licenses?.expiredCustomerIds ?? []),
+    ...(licenses?.expiringCustomerIds ?? []),
+  ]);
+  return customers
+    .map((customer) => {
+      const health = toVendorHomeDeploymentHealth(customerTargets(customer, targets));
+      const updates = toCustomerUpdates(customer, targets, applications, entitlements, pulls);
+      const openItems =
+        health.error +
+        health.stale +
+        (updates.outdatedDeployments > 0 ? updates.outdatedDeployments : updates.isOutdated ? 1 : 0) +
+        (licenseCustomerIds.has(customer.id) ? 1 : 0) +
+        (openSupportBundles ?? []).filter((bundle) => bundle.customerOrganizationId === customer.id).length;
+      return {
+        id: customer.id,
+        name: customer.name,
+        imageUrl: customer.imageUrl,
+        usage: toCustomerUsage(customer, health.total, pulls),
+        openItems,
+      };
+    })
+    .sort((a, b) => b.openItems - a.openItems || a.name.localeCompare(b.name));
 }
