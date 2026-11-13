@@ -113,7 +113,8 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
 
   protected readonly secretsUrl = computed(() => {
     const customerOrgId = this.customerOrganizationId();
-    return customerOrgId ? `/customers/${customerOrgId}/secrets` : '/secrets';
+    if (customerOrgId) return `/customers/${customerOrgId}/secrets`;
+    return this.auth.isVendor() ? '/settings/organization/secrets' : '/secrets';
   });
 
   /**
