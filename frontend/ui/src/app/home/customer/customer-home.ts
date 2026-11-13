@@ -1,5 +1,4 @@
 import {DeploymentRevisionStatus, DeploymentType} from '@distr-sh/distr-sdk';
-import {ActivityFeedEntryType} from '../../types/activity-feed';
 import {SupportBundleStatus} from '../../types/support-bundle';
 
 export interface CustomerHomeUser {
@@ -94,14 +93,4 @@ export interface CustomerHomeSupportBundle {
   status: SupportBundleStatus;
   updatedAt: string;
   updatedBy?: CustomerHomeUser;
-}
-
-export interface CustomerHomeActivity {
-  id: string;
-  createdAt: string;
-  type: ActivityFeedEntryType;
-  resourceId: string;
-  subject: string;
-  detail?: string;
-  user?: CustomerHomeUser;
 }
