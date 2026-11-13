@@ -136,7 +136,7 @@ export class VendorHomePageComponent {
   protected readonly faShieldHalved = faShieldHalved;
 
   private readonly customers = toSignal(this.customerOrganizationsService.getCustomerOrganizations());
-  private readonly customerCount = computed(() => this.customers()?.length);
+  protected readonly customerCount = computed(() => this.customers()?.length);
   private readonly deploymentTargets = toSignal(this.deploymentTargetsService.list());
   protected readonly deploymentHealth = computed(() => {
     const targets = this.deploymentTargets();

@@ -273,7 +273,10 @@
         } @else {
           <div class="distr-card min-h-96 p-4">
             <div class="mb-3 flex items-center justify-between gap-2">
-              <h2 appCardHeading [icon]="faAddressBook">Customers</h2>
+              <h2 appCardHeading [icon]="faAddressBook">
+                Customers
+                <span class="distr-badge distr-badge-neutral ms-2">{{ customerCount() }}</span>
+              </h2>
               <a
                 routerLink="/customers"
                 class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">
