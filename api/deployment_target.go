@@ -9,6 +9,10 @@ import (
 	"github.com/distr-sh/distr/internal/validation"
 	"github.com/google/uuid"
 	"k8s.io/apimachinery/pkg/api/resource"
+	apivalidation "k8s.io/apimachinery/pkg/api/validation"
+	metav1validation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
+	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 // EntityReference is the shape of the deprecated nested references that clients written against the
@@ -51,15 +55,56 @@ type DeploymentTargetResources struct {
 	MemoryLimit   string `json:"memoryLimit"`
 }
 
+type DeploymentTargetToleration struct {
+	Key      string `json:"key,omitempty"`
+	Operator string `json:"operator,omitempty"`
+	Value    string `json:"value,omitempty"`
+	Effect   string `json:"effect,omitempty"`
+}
+
+func (t DeploymentTargetToleration) validate(fldPath *field.Path) field.ErrorList {
+	var errs field.ErrorList
+	if t.Key != "" {
+		errs = append(errs, metav1validation.ValidateLabelName(t.Key, fldPath.Child("key"))...)
+	}
+	switch t.Operator {
+	case "", "Equal":
+		if t.Key == "" {
+			errs = append(errs, field.Invalid(fldPath.Child("operator"), t.Operator,
+				"operator must be Exists when key is empty"))
+		}
+		for _, msg := range k8svalidation.IsValidLabelValue(t.Value) {
+			errs = append(errs, field.Invalid(fldPath.Child("value"), t.Value, msg))
+		}
+	case "Exists":
+		if t.Value != "" {
+			errs = append(errs, field.Invalid(fldPath.Child("value"), t.Value,
+				"value must be empty when operator is Exists"))
+		}
+	default:
+		errs = append(errs, field.NotSupported(fldPath.Child("operator"), t.Operator, []string{"Equal", "Exists"}))
+	}
+	switch t.Effect {
+	case "", "NoSchedule", "PreferNoSchedule", "NoExecute":
+	default:
+		errs = append(errs, field.NotSupported(fldPath.Child("effect"), t.Effect,
+			[]string{"NoSchedule", "PreferNoSchedule", "NoExecute"}))
+	}
+	return errs
+}
+
 type DeploymentTargetSettings struct {
-	Name                    string                     `json:"name"`
-	MetricsEnabled          bool                       `json:"metricsEnabled"`
-	ImageCleanupEnabled     bool                       `json:"imageCleanupEnabled"`
-	AutomaticUpdatesEnabled bool                       `json:"automaticUpdatesEnabled"`
-	DeploymentLogsEnabled   bool                       `json:"deploymentLogsEnabled"`
-	DeploymentLogsAfter     *time.Time                 `json:"deploymentLogsAfter,omitempty"`
-	Resources               *DeploymentTargetResources `json:"resources,omitempty"`
-	DockerEndpoint          *string                    `json:"dockerEndpoint,omitempty"`
+	Name                    string                       `json:"name"`
+	MetricsEnabled          bool                         `json:"metricsEnabled"`
+	ImageCleanupEnabled     bool                         `json:"imageCleanupEnabled"`
+	AutomaticUpdatesEnabled bool                         `json:"automaticUpdatesEnabled"`
+	DeploymentLogsEnabled   bool                         `json:"deploymentLogsEnabled"`
+	DeploymentLogsAfter     *time.Time                   `json:"deploymentLogsAfter,omitempty"`
+	Resources               *DeploymentTargetResources   `json:"resources,omitempty"`
+	DockerEndpoint          *string                      `json:"dockerEndpoint,omitempty"`
+	PodAnnotations          map[string]string            `json:"podAnnotations,omitempty"`
+	NodeSelector            map[string]string            `json:"nodeSelector,omitempty"`
+	Tolerations             []DeploymentTargetToleration `json:"tolerations,omitempty"`
 }
 
 // Validate takes the type as an argument because an update never changes it, so an update request
@@ -85,9 +130,23 @@ func (s *DeploymentTargetSettings) Validate(deploymentType types.DeploymentType)
 				return validation.NewValidationFailedError(fmt.Sprintf("failed to parse memory request: %s", err))
 			}
 		}
+		var errs field.ErrorList
+		errs = append(errs, apivalidation.ValidateAnnotations(s.PodAnnotations, field.NewPath("podAnnotations"))...)
+		errs = append(errs, metav1validation.ValidateLabels(s.NodeSelector, field.NewPath("nodeSelector"))...)
+		for i, t := range s.Tolerations {
+			errs = append(errs, t.validate(field.NewPath("tolerations").Index(i))...)
+		}
+		if len(errs) > 0 {
+			return validation.NewValidationFailedError(errs.ToAggregate().Error())
+		}
 	case types.DeploymentTypeDocker:
 		if s.Resources != nil {
 			return validation.NewValidationFailedError("DeploymentTarget with type \"docker\" must not have resources")
+		}
+		if len(s.PodAnnotations) > 0 || len(s.NodeSelector) > 0 || len(s.Tolerations) > 0 {
+			return validation.NewValidationFailedError(
+				"DeploymentTarget with type \"docker\" must not have pod annotations, node selector or tolerations",
+			)
 		}
 	}
 	if s.DockerEndpoint != nil {
@@ -175,6 +234,9 @@ type DeploymentTargetResponse struct {
 	DeploymentLogsAfter         *time.Time                   `json:"deploymentLogsAfter,omitempty"`
 	Resources                   *DeploymentTargetResources   `json:"resources,omitempty"`
 	DockerEndpoint              *string                      `json:"dockerEndpoint,omitempty"`
+	PodAnnotations              map[string]string            `json:"podAnnotations,omitempty"`
+	NodeSelector                map[string]string            `json:"nodeSelector,omitempty"`
+	Tolerations                 []DeploymentTargetToleration `json:"tolerations,omitempty"`
 	CustomerOrganization        *CustomerOrganization        `json:"customerOrganization,omitempty"`
 	Deployments                 []DeploymentResponse         `json:"deployments"`
 	ControllerVersion           ControllerVersion            `json:"controllerVersion"`
