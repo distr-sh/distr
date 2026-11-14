@@ -5,7 +5,7 @@
       <button
         type="button"
         (click)="showDrawer()"
-        class="distr-btn-secondary flex w-full items-center justify-center px-4 py-2 text-sm font-medium md:w-auto">
+        class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:w-auto dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
         <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
         Update Notification
       </button>
@@ -73,11 +73,23 @@
           </td>
         </tr>
       } @empty {
-        <tr class="border-t border-gray-200 dark:border-gray-600">
-          <td colspan="6" class="px-4 py-3 text-center font-medium whitespace-nowrap text-gray-600 dark:text-gray-400">
-            No configurations found
-          </td>
-        </tr>
+        @if (loaded()) {
+          <tr class="border-t border-gray-200 dark:border-gray-600">
+            <td
+              colspan="6"
+              class="px-4 py-3 text-center font-medium whitespace-nowrap text-gray-600 dark:text-gray-400">
+              No configurations found
+            </td>
+          </tr>
+        } @else {
+          <tr class="border-t border-gray-200 dark:border-gray-600">
+            <td colspan="6">
+              <div class="flex items-center justify-center py-12">
+                <app-spinner class="size-8" />
+              </div>
+            </td>
+          </tr>
+        }
       }
     </tbody>
   </table>
