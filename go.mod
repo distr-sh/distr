@@ -19,7 +19,7 @@ require (
 	github.com/containerd/log v0.2.0
 	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/docker/cli v29.9.3+incompatible
-	github.com/docker/compose/v5 v5.7.0
+	github.com/docker/compose/v5 v5.7.1
 	github.com/exaring/otelpgx v0.13.0
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/getsentry/sentry-go v0.50.0
@@ -325,7 +325,7 @@ require (
 	go.podman.io/storage v1.65.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.6 // indirect
-	go.yaml.in/yaml/v4 v4.0.0-rc.6 // indirect
+	go.yaml.in/yaml/v4 v4.0.0 // indirect
 	golang.org/x/mod v0.42.0 // indirect
 	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/sys v0.50.0 // indirect
