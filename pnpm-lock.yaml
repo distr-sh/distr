@@ -307,19 +307,19 @@ importers:
         version: 8.5.33
       prettier:
         specifier: ^3.9.6
-        version: 3.9.10
+        version: 3.10.1
       prettier-plugin-go-template:
         specifier: ^0.0.15
-        version: 0.0.15(prettier@3.9.10)
+        version: 0.0.15(prettier@3.10.1)
       prettier-plugin-organize-imports:
         specifier: ^4.3.0
-        version: 4.3.0(prettier@3.9.10)(typescript@6.0.3)
+        version: 4.3.0(prettier@3.10.1)(typescript@6.0.3)
       prettier-plugin-tailwindcss:
         specifier: ^0.8.1
-        version: 0.8.1(prettier-plugin-organize-imports@4.3.0(prettier@3.9.10)(typescript@6.0.3))(prettier@3.9.10)
+        version: 0.8.1(prettier-plugin-organize-imports@4.3.0(prettier@3.10.1)(typescript@6.0.3))(prettier@3.10.1)
       prettier-plugin-tailwindcss-canonical-classes:
         specifier: ^0.1.6
-        version: 0.1.6(prettier@3.9.10)(tailwindcss@4.3.5)
+        version: 0.1.6(prettier@3.10.1)(tailwindcss@4.3.5)
       tailwindcss:
         specifier: ^4.3.3
         version: 4.3.5
@@ -2743,8 +2743,8 @@ packages:
       prettier-plugin-svelte:
         optional: true
 
-  prettier@3.9.10:
-    resolution: {integrity: sha512-skGHTH1Yb9QvaTC4hWnRTzEYtCpApF0UMBPz+t/0ZPzP8ihefo/btKd+QA7pUE0fEwA1SbS/NmhyEcstdXOIdA==}
+  prettier@3.10.1:
+    resolution: {integrity: sha512-70vp3ZUYoPlFbF9uiTdXHUUCGEIp7d4+6p+8DYbkm2jP7x/3i/paXVF6dopSI3zd/CEitrZN1rc4i85xWmmXlg==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -5385,29 +5385,29 @@ snapshots:
 
   preact@10.29.7: {}
 
-  prettier-plugin-go-template@0.0.15(prettier@3.9.10):
+  prettier-plugin-go-template@0.0.15(prettier@3.10.1):
     dependencies:
-      prettier: 3.9.10
+      prettier: 3.10.1
       ulid: 2.4.0
 
-  prettier-plugin-organize-imports@4.3.0(prettier@3.9.10)(typescript@6.0.3):
+  prettier-plugin-organize-imports@4.3.0(prettier@3.10.1)(typescript@6.0.3):
     dependencies:
-      prettier: 3.9.10
+      prettier: 3.10.1
       typescript: 6.0.3
 
-  prettier-plugin-tailwindcss-canonical-classes@0.1.6(prettier@3.9.10)(tailwindcss@4.3.5):
+  prettier-plugin-tailwindcss-canonical-classes@0.1.6(prettier@3.10.1)(tailwindcss@4.3.5):
     dependencies:
       '@laststance/tailwindcss-canonical-classes-core': 0.1.0(tailwindcss@4.3.5)
-      prettier: 3.9.10
+      prettier: 3.10.1
       tailwindcss: 4.3.5
 
-  prettier-plugin-tailwindcss@0.8.1(prettier-plugin-organize-imports@4.3.0(prettier@3.9.10)(typescript@6.0.3))(prettier@3.9.10):
+  prettier-plugin-tailwindcss@0.8.1(prettier-plugin-organize-imports@4.3.0(prettier@3.10.1)(typescript@6.0.3))(prettier@3.10.1):
     dependencies:
-      prettier: 3.9.10
+      prettier: 3.10.1
     optionalDependencies:
-      prettier-plugin-organize-imports: 4.3.0(prettier@3.9.10)(typescript@6.0.3)
+      prettier-plugin-organize-imports: 4.3.0(prettier@3.10.1)(typescript@6.0.3)
 
-  prettier@3.9.10: {}
+  prettier@3.10.1: {}
 
   proc-log@7.0.0: {}
 
