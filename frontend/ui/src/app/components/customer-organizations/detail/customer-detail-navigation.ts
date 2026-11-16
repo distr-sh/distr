@@ -32,7 +32,7 @@ export const customerDetailTabs = defineRoutedTabs<CustomerDetailTabId>('Custome
   {
     id: 'notifications',
     label: 'Notifications',
-    visible: (c) => !c.user.isPartner,
+    visible: (c) => !c.user.isPartner || c.organization.isPro,
     locked: {plan: 'pro', when: (c) => !c.organization.isPro},
   },
   {id: 'settings', label: 'Settings'},
