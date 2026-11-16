@@ -5,7 +5,7 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faPlus, faTrash, faUserCircle, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faDownload, faPlus, faTrash, faUserCircle, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, lastValueFrom, map, of, startWith} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {refreshInBackground} from '../../../util/refresh';
@@ -63,6 +63,7 @@ export class ArtifactsComponent {
   private readonly fb = inject(FormBuilder).nonNullable;
 
   protected readonly faTrash = faTrash;
+  protected readonly faDownload = faDownload;
   protected readonly faPlus = faPlus;
   protected readonly faXmark = faXmark;
   protected readonly faUserCircle = faUserCircle;

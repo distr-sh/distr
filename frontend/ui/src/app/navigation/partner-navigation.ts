@@ -17,15 +17,7 @@ export const partnerNavigation: NavigationDefinition = [
     entries: [
       {id: 'home', label: 'Home', icon: faHome, route: '/home'},
       {id: 'deployments', label: 'Deployments', icon: faBoxesStacked, route: '/deployments'},
-      {
-        id: 'registry',
-        label: 'Registry',
-        icon: faBox,
-        children: [
-          {id: 'artifacts', label: 'Artifacts', route: '/artifacts'},
-          {id: 'artifact-pulls', label: 'Downloads', route: '/artifact-pulls'},
-        ],
-      },
+      {id: 'registry', label: 'Registry', icon: faBox, route: '/artifacts'},
       {
         id: 'licenses',
         label: 'Licenses',
