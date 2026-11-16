@@ -18,10 +18,12 @@ import {customerDetailTabs} from './components/customer-organizations/detail/cus
 import {CustomerDetailPageComponent} from './components/customer-organizations/detail/customer-detail-page.component';
 import {CustomerDownloadsTabComponent} from './components/customer-organizations/detail/customer-downloads-tab.component';
 import {CustomerLicensesTabComponent} from './components/customer-organizations/detail/customer-licenses-tab.component';
+import {CustomerLinksTabComponent} from './components/customer-organizations/detail/customer-links-tab.component';
 import {CustomerNotificationsTabComponent} from './components/customer-organizations/detail/customer-notifications-tab.component';
+import {CustomerOverviewTabComponent} from './components/customer-organizations/detail/customer-overview-tab.component';
 import {CustomerSecretsTabComponent} from './components/customer-organizations/detail/customer-secrets-tab.component';
+import {CustomerSettingsTabComponent} from './components/customer-organizations/detail/customer-settings-tab.component';
 import {CustomerSupportTabComponent} from './components/customer-organizations/detail/customer-support-tab.component';
-import {CustomerTabPlaceholderComponent} from './components/customer-organizations/detail/customer-tab-placeholder.component';
 import {CustomerUsersTabComponent} from './components/customer-organizations/detail/customer-users-tab.component';
 import {NavShellComponent} from './components/nav-shell.component';
 import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
@@ -61,7 +63,6 @@ import {ContextService} from './services/context.service';
 import {FeatureFlagService} from './services/feature-flag.service';
 import {OrganizationService} from './services/organization.service';
 import {ToastService} from './services/toast.service';
-import {SidebarLinksPageComponent} from './sidebar-links/sidebar-links-page.component';
 import {SupportBundleDetailComponent} from './support-bundles/detail/support-bundle-detail.component';
 import {SupportBundleListPageComponent} from './support-bundles/list/support-bundle-list-page.component';
 import {SupportBundleSettingsComponent} from './support-bundles/vendor/support-bundle-settings.component';
@@ -185,14 +186,6 @@ function customerSettingsEnabledGuard(): CanActivateFn {
   };
 }
 
-function customerSettingsFeatureGuard(): CanActivateFn {
-  return async () => {
-    const featureFlags = inject(FeatureFlagService);
-    const router = inject(Router);
-    return (await firstValueFrom(featureFlags.isCustomerSettingsEnabled$)) || router.createUrlTree(['/customers']);
-  };
-}
-
 function partnerManagementEnabledGuard(): CanActivateFn {
   return async () => {
     const featureFlags = inject(FeatureFlagService);
@@ -302,13 +295,6 @@ const shellRoutes: Routes = [
         title: 'Customers',
         canActivate: [requireVendorOrPartner],
         children: [
-          {path: 'links', component: SidebarLinksPageComponent},
-          // TODO DEV-1093 move this inside the detail page once it's migrated to a tab
-          {
-            path: 'settings',
-            component: CustomerSettingsComponent,
-            canActivate: [requiredRoleGuard('admin'), customerSettingsFeatureGuard()],
-          },
           {
             path: '',
             component: CustomerDetailPageComponent,
@@ -316,7 +302,7 @@ const shellRoutes: Routes = [
               {
                 path: 'overview',
                 title: customerDetailTabs.title('overview'),
-                component: CustomerTabPlaceholderComponent,
+                component: CustomerOverviewTabComponent,
                 canActivate: [customerDetailTabs.guard('overview')],
               },
               {
@@ -360,6 +346,18 @@ const shellRoutes: Routes = [
                 title: customerDetailTabs.title('notifications'),
                 component: CustomerNotificationsTabComponent,
                 canActivate: [customerDetailTabs.guard('notifications')],
+              },
+              {
+                path: 'links',
+                title: customerDetailTabs.title('links'),
+                component: CustomerLinksTabComponent,
+                canActivate: [customerDetailTabs.guard('links')],
+              },
+              {
+                path: 'settings',
+                title: customerDetailTabs.title('settings'),
+                component: CustomerSettingsTabComponent,
+                canActivate: [customerDetailTabs.guard('settings')],
               },
               {path: '', pathMatch: 'full', redirectTo: customerDetailTabs.firstOpenable},
             ],

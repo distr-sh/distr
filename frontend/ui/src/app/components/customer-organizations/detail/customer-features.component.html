@@ -1,0 +1,20 @@
+<ul class="space-y-4">
+  @for (row of rows(); track row.feature) {
+    <li [class.ps-6]="row.requires">
+      <label class="inline-flex items-center gap-3" [class.cursor-pointer]="canEdit && !row.lockedPlan">
+        <input
+          #featureToggle
+          type="checkbox"
+          class="peer sr-only"
+          [checked]="row.enabled"
+          [disabled]="!canEdit || !!row.lockedPlan"
+          (click)="toggleFeature(row, featureToggle, $event)" />
+        <div class="distr-toggle shrink-0 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"></div>
+        <span class="text-sm font-medium text-gray-900 dark:text-white">{{ row.label }}</span>
+        @if (row.lockedPlan; as plan) {
+          <app-plan-badge [plan]="plan" />
+        }
+      </label>
+    </li>
+  }
+</ul>
