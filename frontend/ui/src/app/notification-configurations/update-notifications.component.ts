@@ -117,11 +117,11 @@ export class UpdateNotificationsComponent {
   private readonly configs = toSignal(
     combineLatest([this.reloads$, this.customerOrganizationId$]).pipe(
       switchMap(([, customerOrganizationId]) => this.configsService.list(customerOrganizationId))
-    ),
-    {initialValue: [] as UpdateNotificationConfiguration[]}
+    )
   );
+  protected readonly loaded = computed(() => this.configs() !== undefined);
   private readonly rows = computed(() =>
-    this.configs()
+    (this.configs() ?? [])
       .map((config) => {
         const recipientNames = config.recipients.map((it) => it.name || it.email);
         return {

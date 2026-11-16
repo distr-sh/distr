@@ -158,6 +158,8 @@ export class AlertConfigurationsComponent {
 
   private readonly filterValue = toSignal(this.filterForm.controls.search.valueChanges);
 
+  protected readonly loaded = computed(() => this.configs() !== undefined);
+
   protected readonly filteredConfigs = computed(() => {
     const value = this.filterValue()?.toLowerCase();
     const configs = this.configs();

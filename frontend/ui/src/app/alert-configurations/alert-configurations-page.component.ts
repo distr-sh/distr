@@ -12,7 +12,7 @@ import {AlertConfigurationsComponent} from './alert-configurations.component';
           [icon]="faBell"
           label="Organization Alerts"
           linkLabel="Show customer alerts"
-          section="alerts" />
+          section="notifications" />
         <app-alert-configurations />
       </div>
     </app-page>

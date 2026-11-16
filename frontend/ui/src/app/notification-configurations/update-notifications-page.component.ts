@@ -12,7 +12,7 @@ import {UpdateNotificationsComponent} from './update-notifications.component';
           [icon]="faCircleArrowUp"
           label="Organization Update Notifications"
           linkLabel="Show customer update notifications"
-          section="updates" />
+          section="notifications" />
         <app-update-notifications />
       </div>
     </app-page>

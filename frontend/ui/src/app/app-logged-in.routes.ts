@@ -8,7 +8,6 @@ import {AccessTokensComponent} from './access-tokens/access-tokens.component';
 import {AdvisoryDetailComponent} from './advisories/advisory-detail.component';
 import {AdvisoryListComponent} from './advisories/advisory-list.component';
 import {AlertConfigurationsPageComponent} from './alert-configurations/alert-configurations-page.component';
-import {CustomerAlertConfigurationsPageComponent} from './alert-configurations/customer-alert-configurations-page.component';
 import {ApplicationDetailComponent} from './applications/application-detail.component';
 import {ApplicationsPageComponent} from './applications/applications-page.component';
 import {ArtifactPullsPageComponent} from './artifacts/artifact-pulls/artifact-pulls-page.component';
@@ -20,6 +19,7 @@ import {customerDetailTabs} from './components/customer-organizations/detail/cus
 import {CustomerDetailPageComponent} from './components/customer-organizations/detail/customer-detail-page.component';
 import {CustomerDownloadsTabComponent} from './components/customer-organizations/detail/customer-downloads-tab.component';
 import {CustomerLicensesTabComponent} from './components/customer-organizations/detail/customer-licenses-tab.component';
+import {CustomerNotificationsTabComponent} from './components/customer-organizations/detail/customer-notifications-tab.component';
 import {CustomerSupportTabComponent} from './components/customer-organizations/detail/customer-support-tab.component';
 import {CustomerTabPlaceholderComponent} from './components/customer-organizations/detail/customer-tab-placeholder.component';
 import {NavShellComponent} from './components/nav-shell.component';
@@ -39,9 +39,7 @@ import {CustomerHomePageComponent} from './home/customer/customer-home-page.comp
 import {VendorHomePageComponent} from './home/vendor/vendor-home-page.component';
 import {CustomerLicenseDetailPageComponent} from './licenses/customer-license-detail-page.component';
 import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
-import {CustomerUpdateNotificationsPageComponent} from './notification-configurations/customer-update-notifications-page.component';
 import {UpdateNotificationsPageComponent} from './notification-configurations/update-notifications-page.component';
-import {CustomerNotificationRecordsPageComponent} from './notification-records/customer-notification-records-page.component';
 import {NotificationRecordsPageComponent} from './notification-records/notification-records-page.component';
 import {BillingComponent} from './organization-settings/billing/billing.component';
 import {OrganizationDomainsComponent} from './organization-settings/domains-and-sign-in/organization-domains.component';
@@ -310,21 +308,6 @@ const shellRoutes: Routes = [
           // TODO DEV-1091 move this inside the detail page once it's migrated to a tab
           {path: 'secrets', component: CustomerSecretsPageComponent},
           {path: 'links', component: SidebarLinksPageComponent},
-          {
-            path: 'alerts',
-            component: CustomerAlertConfigurationsPageComponent,
-            canActivate: [notificationsEnabledGuard()],
-          },
-          {
-            path: 'updates',
-            component: CustomerUpdateNotificationsPageComponent,
-            canActivate: [notificationsEnabledGuard()],
-          },
-          {
-            path: 'notification-history',
-            component: CustomerNotificationRecordsPageComponent,
-            canActivate: [notificationsEnabledGuard()],
-          },
           // TODO DEV-1093 move this inside the detail page once it's migrated to a tab
           {
             path: 'settings',
@@ -368,7 +351,7 @@ const shellRoutes: Routes = [
               {
                 path: 'notifications',
                 title: customerDetailTabs.title('notifications'),
-                component: CustomerTabPlaceholderComponent,
+                component: CustomerNotificationsTabComponent,
                 canActivate: [customerDetailTabs.guard('notifications')],
               },
               {path: '', pathMatch: 'full', redirectTo: customerDetailTabs.firstOpenable},

@@ -1,0 +1,12 @@
+<div class="distr-table-panel">
+  <h2 appCardHeading [icon]="faBell" class="px-4 pt-4">Alerts</h2>
+  <app-alert-configurations [customerOrganizationId]="customerOrganizationId()" />
+</div>
+<div class="distr-table-panel">
+  <h2 appCardHeading [icon]="faCircleArrowUp" class="px-4 pt-4">Updates</h2>
+  <app-update-notifications [customerOrganizationId]="customerOrganizationId()" />
+</div>
+<div class="distr-table-panel">
+  <h2 appCardHeading [icon]="faClockRotateLeft" class="p-4">History</h2>
+  <app-notification-records [customerOrganizationId]="customerOrganizationId()" />
+</div>
