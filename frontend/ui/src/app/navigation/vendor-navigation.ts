@@ -43,12 +43,8 @@ export const vendorNavigation: NavigationDefinition = [
         id: 'notifications',
         label: 'Notifications',
         icon: faBell,
+        route: '/notifications',
         locked: {plan: 'pro', when: (c) => !c.features.has('notifications')},
-        children: [
-          {id: 'alert-configurations', label: 'Alerts', route: '/notifications/alert-configurations'},
-          {id: 'update-notifications', label: 'Updates', route: '/notifications/updates'},
-          {id: 'notification-history', label: 'History', route: '/notifications/history'},
-        ],
       },
     ],
   },

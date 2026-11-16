@@ -198,7 +198,7 @@ export class VendorHomePageComponent {
       )
     )
   );
-  private readonly latestArtifactPulls = toSignal(this.artifactPullsService.getLatest());
+  private readonly latestArtifactPulls = toSignal(this.artifactPullsService.listLatest());
 
   protected readonly updates = computed(() => {
     const customers = this.customers();
@@ -296,6 +296,7 @@ export class VendorHomePageComponent {
       this.deploymentTargetsService.refresh(),
       this.activityFeedService.refresh(),
       this.applicationsService.refresh(),
+      this.artifactPullsService.refreshLatest(),
       firstValueFrom(this.featureFlags.isLicensingEnabled$).then((enabled) =>
         enabled ? this.applicationEntitlementsService.refresh() : undefined
       )

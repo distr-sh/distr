@@ -1,0 +1,30 @@
+<app-page>
+  <div class="distr-toolbar mb-4">
+    <app-search-bar [control]="searchControl" placeholder="Filter notifications" />
+    <div class="distr-toolbar-actions">
+      <a
+        routerLink="history"
+        class="distr-btn-secondary flex w-full items-center justify-center px-4 py-2 text-sm font-medium md:w-auto">
+        <fa-icon [icon]="faClockRotateLeft" class="mr-2 text-gray-500 dark:text-gray-400" />
+        History
+      </a>
+    </div>
+  </div>
+
+  <div class="flex flex-col gap-4">
+    @if (alertsVisible()) {
+      <div class="distr-table-panel">
+        <app-alert-configurations [search]="search()">
+          <h2 heading appCardHeading>Alerts</h2>
+        </app-alert-configurations>
+      </div>
+    }
+    @if (updatesVisible()) {
+      <div class="distr-table-panel">
+        <app-update-notifications [search]="search()">
+          <h2 heading appCardHeading>Updates</h2>
+        </app-update-notifications>
+      </div>
+    }
+  </div>
+</app-page>

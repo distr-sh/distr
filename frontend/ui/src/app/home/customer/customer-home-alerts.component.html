@@ -1,6 +1,6 @@
 @let configured = alerts().alertConfigurationCount > 0;
 <a
-  [routerLink]="!configured && canConfigure ? '/notifications/alert-configurations' : '/notifications/history'"
+  [routerLink]="!configured && canConfigure ? '/notifications' : '/notifications/history'"
   class="distr-card block p-4">
   <h2 appCardHeading [icon]="faBell" class="mb-3">Alerts</h2>
 
