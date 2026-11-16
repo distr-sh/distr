@@ -5,11 +5,10 @@ import {CustomerLicenseStatus} from './customer-list-mappers';
 export function customerLicenseStatusVariant(status: CustomerLicenseStatus): BadgeVariant {
   switch (status) {
     case 'no_license':
-      return 'neutral';
-    case 'expired':
-      return 'error';
     case 'expiring':
       return 'warning';
+    case 'expired':
+      return 'error';
     case 'valid':
       return 'success';
     default:

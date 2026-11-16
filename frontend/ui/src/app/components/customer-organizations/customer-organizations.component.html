@@ -59,7 +59,9 @@
               </td>
               @if (showLicenseColumn()) {
                 <td [appClickableRow]="['/', 'customers', customer.id, 'licenses']" class="distr-table-cell">
-                  @if (customer.license; as license) {
+                  @if (customer.license === 'valid') {
+                    Valid
+                  } @else if (customer.license; as license) {
                     <app-customer-license-badge [status]="license" />
                   } @else {
                     <ng-container [ngTemplateOutlet]="badgeSkeleton" />
@@ -70,7 +72,7 @@
                 @if (customer.isOutdated === true) {
                   <span class="distr-badge distr-badge-warning">Outdated</span>
                 } @else if (customer.isOutdated === false) {
-                  <span class="distr-badge distr-badge-success">Up to date</span>
+                  Up to date
                 } @else {
                   <ng-container [ngTemplateOutlet]="badgeSkeleton" />
                 }
@@ -79,7 +81,7 @@
                 <td [appClickableRow]="['/', 'customers', customer.id, 'support']" class="distr-table-cell">
                   @if (customer.supportBundles; as support) {
                     @if (support.open > 0) {
-                      <span class="block text-yellow-600 dark:text-yellow-400">
+                      <span class="block">
                         <ng-container [ngPlural]="support.open">
                           <ng-template ngPluralCase="=1">1 open request</ng-template>
                           <ng-template ngPluralCase="other">{{ support.open }} open requests</ng-template>
@@ -92,7 +94,7 @@
                     }
                     <span class="flex flex-wrap gap-x-2 text-xs">
                       @if (support.resolved > 0) {
-                        <span class="text-green-600 dark:text-green-400">{{ support.resolved }} resolved</span>
+                        <span class="distr-text-muted">{{ support.resolved }} resolved</span>
                       }
                       @if (support.canceled > 0) {
                         <span class="distr-text-muted">{{ support.canceled }} canceled</span>
