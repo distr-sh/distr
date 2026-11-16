@@ -28,13 +28,6 @@ export interface NavigationContext {
 
 export type NavigationPredicate = (context: NavigationContext) => boolean;
 
-export interface NavigationChildDefinition {
-  id: string;
-  label: string;
-  route: string;
-  visible?: NavigationPredicate;
-}
-
 interface NavigationEntryDefinitionBase {
   id: string;
   label: string;
@@ -53,12 +46,7 @@ export interface NavigationExternalLinkDefinition extends NavigationEntryDefinit
   href: string;
 }
 
-export interface NavigationGroupDefinition extends NavigationEntryDefinitionBase {
-  children: NavigationChildDefinition[];
-}
-
-export type NavigationEntryDefinition =
-  NavigationLinkDefinition | NavigationExternalLinkDefinition | NavigationGroupDefinition;
+export type NavigationEntryDefinition = NavigationLinkDefinition | NavigationExternalLinkDefinition;
 
 /** A section of a portal's navigation. The sidebar renders a divider between sections and does not show the label. */
 export interface NavigationSectionDefinition {
@@ -69,17 +57,10 @@ export interface NavigationSectionDefinition {
 
 export type NavigationDefinition = NavigationSectionDefinition[];
 
-export interface NavigationChild {
-  id: string;
-  label: string;
-  route: string;
-}
-
 export type NavigationEntry =
   | {kind: 'link'; id: string; label: string; icon: IconDefinition; route: string; hasIndicator: boolean}
   | {kind: 'external'; id: string; label: string; icon: IconDefinition; href: string}
-  | {kind: 'locked'; id: string; label: string; icon: IconDefinition; plan: UpgradePlan}
-  | {kind: 'group'; id: string; label: string; icon: IconDefinition; children: NavigationChild[]};
+  | {kind: 'locked'; id: string; label: string; icon: IconDefinition; plan: UpgradePlan};
 
 export interface NavigationSection {
   id: string;
@@ -104,12 +85,6 @@ function resolveEntry(entry: NavigationEntryDefinition, context: NavigationConte
   const {id, label, icon, locked} = entry;
   if (locked?.when(context)) {
     return {kind: 'locked', id, label, icon, plan: locked.plan};
-  }
-  if ('children' in entry) {
-    const children = entry.children
-      .filter((child) => child.visible?.(context) ?? true)
-      .map(({id, label, route}) => ({id, label, route}));
-    return {kind: 'group', id, label, icon, children};
   }
   if ('href' in entry) {
     return {kind: 'external', id, label, icon, href: entry.href};
