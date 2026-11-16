@@ -4,10 +4,7 @@
       <div class="mb-2 flex min-w-0 items-center gap-3 md:mb-0">
         <div class="shrink-0">
           @if (deploymentTarget().customerOrganization?.imageUrl; as imageUrl) {
-            <img
-              [attr.src]="imageUrl | secureImage | async"
-              [alt]="ownerName()"
-              class="size-10 max-w-none rounded-sm" />
+            <img [attr.src]="imageUrl | secureImage | async" alt="" class="size-10 max-w-none rounded-sm" />
           } @else {
             <img
               [ngSrc]="'/' + deploymentTarget().type + '.png'"

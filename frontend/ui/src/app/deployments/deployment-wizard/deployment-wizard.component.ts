@@ -47,7 +47,9 @@ import {FeatureFlagService} from '../../services/feature-flag.service';
 import {OrganizationBrandingService} from '../../services/organization-branding.service';
 import {OrganizationService} from '../../services/organization.service';
 import {ToastService} from '../../services/toast.service';
+import {UNLIMITED_QTY} from '../../types/subscription';
 import {DeploymentFormComponent, mapToDeploymentRequest} from '../deployment-form/deployment-form.component';
+import {DeploymentQuotaComponent} from './deployment-quota.component';
 import {DeploymentWizardStepperComponent} from './deployment-wizard-stepper.component';
 
 @Component({
@@ -66,6 +68,7 @@ import {DeploymentWizardStepperComponent} from './deployment-wizard-stepper.comp
     DeploymentFormComponent,
     DeploymentTypeBadgeComponent,
     SpinnerComponent,
+    DeploymentQuotaComponent,
   ],
 })
 export class DeploymentWizardComponent extends ClosableDialog implements OnInit {
@@ -165,11 +168,24 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
     this.customerForm.controls.customerOrganizationId.valueChanges
   );
   protected readonly selectedDeploymentTarget = signal<DeploymentTarget | undefined>(undefined);
-  protected readonly internalDeploymentCount = toSignal(
-    this.deploymentTargets
-      .list()
-      .pipe(map((targets) => targets.filter((it) => it.customerOrganization === undefined).length)),
-    {initialValue: 0}
+  private readonly existingDeploymentTargets = toSignal(this.deploymentTargets.list(), {initialValue: []});
+  protected readonly deploymentLimit = toSignal(
+    this.currentOrganization$.pipe(map((org) => org.subscriptionLimits.maxDeploymentsPerCustomerOrganization)),
+    {initialValue: UNLIMITED_QTY}
+  );
+  protected readonly internalDeploymentCount = computed(
+    () => this.existingDeploymentTargets().filter((it) => it.customerOrganization === undefined).length
+  );
+  protected readonly selectedCustomerDeploymentCount = computed(() => {
+    const customerOrganizationId = this.selectedCustomerOrganizationId();
+    return this.existingDeploymentTargets().filter((it) => it.customerOrganization?.id === customerOrganizationId)
+      .length;
+  });
+  protected readonly isSelectedCustomerQuotaShown = computed(
+    () =>
+      !this.showCustomerStep() &&
+      this.selectedCustomerOrganizationId() !== undefined &&
+      this.deploymentLimit() !== UNLIMITED_QTY
   );
 
   // Filter applications based on customer entitlements
@@ -264,6 +280,7 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
       const licensingEnabled = await firstValueFrom(this.featureFlags.isLicensingEnabled$);
       await Promise.all([
         this.applications.refresh(),
+        this.deploymentTargets.refresh(),
         ...(licensingEnabled ? [this.applicationEntitlements.refresh()] : []),
         ...(this.showCustomerStep() ? [this.customerOrganizations.refresh()] : []),
       ]);

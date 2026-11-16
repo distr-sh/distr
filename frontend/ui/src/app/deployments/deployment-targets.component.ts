@@ -222,7 +222,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
       const query = search.toLowerCase();
       return [
         dt.name,
-        dt.customerOrganization?.name ?? 'Internal',
+        ...(dt.customerOrganization ? [dt.customerOrganization.name] : ['Internal', this.organization()?.name]),
         ...dt.deployments.flatMap((d) => [
           d.application.name,
           deploymentDisplayStatusLabels.get(deploymentDisplayStatus(d)),
