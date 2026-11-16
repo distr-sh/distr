@@ -19,6 +19,6 @@
       </nav>
     }
 
-    <app-users [partnerOrganizationId]="partnerOrganizationId()" [users]="users() ?? []" (refresh)="refresh$.next()" />
+    <app-users [partnerOrganizationId]="partnerOrganizationId()" [users]="users()" />
   </div>
 </app-page>

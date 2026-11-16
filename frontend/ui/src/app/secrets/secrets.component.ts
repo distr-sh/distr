@@ -13,7 +13,6 @@ import {
 } from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
-import {ActivatedRoute} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
@@ -21,6 +20,7 @@ import {getFormDisplayedError} from '../../util/errors';
 import {AlertComponent} from '../components/alert/alert.component';
 import {ClipComponent} from '../components/clip.component';
 import {SearchBarComponent} from '../components/search-bar.component';
+import {SpinnerComponent} from '../components/spinner/spinner.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {ClickableRowDirective} from '../directives/clickable-row.directive';
 import {AuthService} from '../services/auth.service';
@@ -41,12 +41,14 @@ import {Secret} from '../types/secret';
     ClipComponent,
     SearchBarComponent,
     AlertComponent,
+    SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './secrets.component.html',
 })
 export class SecretsComponent {
-  public readonly secrets = input.required<Secret[]>();
+  public readonly secrets = input.required<Secret[] | undefined>();
+  public readonly customerOrganizationId = input<string>();
   public readonly refresh = output();
 
   protected readonly auth = inject(AuthService);
@@ -55,11 +57,6 @@ export class SecretsComponent {
   private readonly secretsService = inject(SecretsService);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder).nonNullable;
-
-  private readonly routeParams = toSignal(inject(ActivatedRoute).params);
-  protected readonly customerOrganizationId = computed(
-    () => this.routeParams()?.['customerOrganizationId'] as string | undefined
-  );
 
   protected readonly faXmark = faXmark;
   protected readonly faPlus = faPlus;
@@ -74,9 +71,11 @@ export class SecretsComponent {
 
   private readonly filterValue = toSignal(this.filterForm.controls.search.valueChanges);
 
+  protected readonly loaded = computed(() => this.secrets() !== undefined);
+
   protected readonly filteredSecrets = computed(() => {
     const value = this.filterValue()?.toLowerCase();
-    const secrets = this.secrets();
+    const secrets = this.secrets() ?? [];
     return !value ? secrets : secrets.filter((secret) => secret.key.toLowerCase().includes(value));
   });
 

@@ -1,5 +1,5 @@
 import {AsyncPipe} from '@angular/common';
-import {Component, computed, DestroyRef, inject, input, output, signal, TemplateRef, viewChild} from '@angular/core';
+import {Component, computed, DestroyRef, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {UserAccountWithRole, UserRole} from '@distr-sh/distr-sdk';
@@ -15,7 +15,7 @@ import {
   faUser,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import {catchError, filter, firstValueFrom, NEVER, switchMap, tap} from 'rxjs';
+import {catchError, filter, firstValueFrom, NEVER, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {UserRoleLabelPipe} from '../../../util/user-role';
@@ -33,6 +33,7 @@ import {AvatarComponent} from '../avatar.component';
 import {InlineEditComponent} from '../inline-edit.component';
 import {QuotaLimitComponent} from '../quota-limit.component';
 import {SearchBarComponent} from '../search-bar.component';
+import {SpinnerComponent} from '../spinner/spinner.component';
 import {UserRoleSelectComponent} from '../user-role-select.component';
 
 @Component({
@@ -50,14 +51,14 @@ import {UserRoleSelectComponent} from '../user-role-select.component';
     InlineEditComponent,
     SearchBarComponent,
     AlertComponent,
+    SpinnerComponent,
   ],
   templateUrl: './users.component.html',
 })
 export class UsersComponent {
-  public readonly users = input.required<UserAccountWithRole[]>();
+  public readonly users = input.required<UserAccountWithRole[] | undefined>();
   public readonly customerOrganizationId = input<string>();
   public readonly partnerOrganizationId = input<string>();
-  public readonly refresh = output<void>();
 
   private readonly toast = inject(ToastService);
   private readonly usersService = inject(UsersService);
@@ -88,8 +89,10 @@ export class UsersComponent {
     search: this.fb.control(''),
   });
 
+  protected readonly loaded = computed(() => this.users() !== undefined);
+
   protected readonly users$ = filteredByFormControl(
-    toObservable(this.users),
+    toObservable(computed(() => this.users() ?? [])),
     this.filterForm.controls.search,
     (it: UserAccountWithRole, search: string) =>
       !search ||
@@ -127,7 +130,7 @@ export class UsersComponent {
   protected readonly effectiveUsage = computed(() => {
     const org = this.organization();
     if (!org || this.customerOrganizationId() !== undefined || this.auth.isCustomer()) {
-      return this.users().length;
+      return this.users()?.length;
     }
     return org.currentBillableUserAccountCount;
   });
@@ -219,12 +222,10 @@ export class UsersComponent {
           this.toast.success(`${this.userLabel(result.user)} has been added to the organization`);
           this.closeInviteDialog();
         }
-        this.refresh.emit();
       } catch (e) {
         if (isInviteMailNotSentError(e)) {
           this.inviteUrl.set(e.error.inviteUrl ?? null);
           this.inviteMailNotSentUser.set(e.error.user);
-          this.refresh.emit();
         } else {
           const msg = getFormDisplayedError(e);
           if (msg) {
@@ -279,8 +280,7 @@ export class UsersComponent {
             this.toast.error(msg);
           }
           return NEVER;
-        }),
-        tap(() => this.refresh.emit())
+        })
       )
       .subscribe();
   }
