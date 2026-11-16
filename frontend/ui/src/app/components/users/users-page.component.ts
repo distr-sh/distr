@@ -24,10 +24,10 @@ export class UsersPageComponent {
   );
 
   protected readonly users = computed(() => {
-    const all = this.allUsers() ?? [];
+    const all = this.allUsers();
     if (this.auth.isPartner()) {
       const partnerOrgId = this.auth.getPartnerOrganizationId();
-      return all.filter((user) => user.partnerOrganizationId === partnerOrgId);
+      return all?.filter((user) => user.partnerOrganizationId === partnerOrgId);
     }
     return all;
   });

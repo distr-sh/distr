@@ -20,8 +20,7 @@ export class TeamSettingsComponent {
       startWith(undefined),
       switchMap(() => this.usersService.getUsers()),
       map((users) => users.filter((user) => organizationKind(user) === 'vendor'))
-    ),
-    {initialValue: []}
+    )
   );
 
   constructor() {

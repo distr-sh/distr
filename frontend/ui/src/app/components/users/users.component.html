@@ -9,7 +9,7 @@
         [title]="quota.isLimitReached() ? 'Limit reached' : ''"
         type="button"
         id="addUserButton"
-        class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:w-auto dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+        class="distr-btn-secondary flex w-full items-center justify-center px-4 py-2 text-sm font-medium md:w-auto">
         <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
         Add User
       </button>
@@ -37,8 +37,7 @@
               <app-avatar [image]="user.imageUrl" [name]="user.name" [icon]="faUser" class="size-8 rounded-full" />
             </button>
           </td>
-          <td
-            class="max-w-32 overflow-hidden px-4 py-3 font-medium text-ellipsis whitespace-nowrap text-gray-900 lg:max-w-64 xl:max-w-128 dark:text-white">
+          <td class="distr-table-cell max-w-32 overflow-hidden text-ellipsis lg:max-w-64 xl:max-w-128">
             <app-inline-edit
               [value]="user.name ?? ''"
               [editable]="auth.hasRole('admin') || (auth.isVendor() && auth.hasRole('read_write'))"
@@ -47,11 +46,11 @@
               [loading]="savingUserId() === user.id"
               (save)="updateUserName(user, $event)" />
           </td>
-          <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
+          <td class="distr-table-cell">
             {{ user.email }}
           </td>
           @if (isProSubscription()) {
-            <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
+            <td class="distr-table-cell">
               @if (editRoleUserId() === user.id) {
                 <form [formGroup]="editRoleForm" class="flex" (ngSubmit)="submitEditUserRoleForm()">
                   <app-user-role-select
@@ -79,13 +78,10 @@
               }
             </td>
           }
-          <td class="flex justify-end space-x-2 px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
+          <td class="distr-table-cell flex justify-end space-x-2">
             @if ((auth.isVendor() && auth.hasRole('read_write')) || auth.hasRole('admin')) {
               @if (!user.activated) {
-                <button
-                  type="button"
-                  (click)="resendInvitation(user)"
-                  class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">
+                <button type="button" (click)="resendInvitation(user)" class="distr-btn-secondary px-3 py-2">
                   <fa-icon [icon]="faRepeat" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   Resend invitation
                 </button>
@@ -96,6 +92,24 @@
             }
           </td>
         </tr>
+      } @empty {
+        @if (loaded()) {
+          <tr class="border-t border-gray-200 dark:border-gray-600">
+            <td
+              [attr.colspan]="isProSubscription() ? 5 : 4"
+              class="px-4 py-3 text-center font-medium whitespace-nowrap text-gray-600 dark:text-gray-400">
+              No users found
+            </td>
+          </tr>
+        } @else {
+          <tr class="border-t border-gray-200 dark:border-gray-600">
+            <td [attr.colspan]="isProSubscription() ? 5 : 4">
+              <div class="flex items-center justify-center py-12">
+                <app-spinner class="size-8" />
+              </div>
+            </td>
+          </tr>
+        }
       }
     </tbody>
   </table>

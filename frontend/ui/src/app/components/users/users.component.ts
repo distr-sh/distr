@@ -33,6 +33,7 @@ import {AvatarComponent} from '../avatar.component';
 import {InlineEditComponent} from '../inline-edit.component';
 import {QuotaLimitComponent} from '../quota-limit.component';
 import {SearchBarComponent} from '../search-bar.component';
+import {SpinnerComponent} from '../spinner/spinner.component';
 import {UserRoleSelectComponent} from '../user-role-select.component';
 
 @Component({
@@ -50,11 +51,12 @@ import {UserRoleSelectComponent} from '../user-role-select.component';
     InlineEditComponent,
     SearchBarComponent,
     AlertComponent,
+    SpinnerComponent,
   ],
   templateUrl: './users.component.html',
 })
 export class UsersComponent {
-  public readonly users = input.required<UserAccountWithRole[]>();
+  public readonly users = input.required<UserAccountWithRole[] | undefined>();
   public readonly customerOrganizationId = input<string>();
   public readonly partnerOrganizationId = input<string>();
   public readonly refresh = output<void>();
@@ -88,8 +90,10 @@ export class UsersComponent {
     search: this.fb.control(''),
   });
 
+  protected readonly loaded = computed(() => this.users() !== undefined);
+
   protected readonly users$ = filteredByFormControl(
-    toObservable(this.users),
+    toObservable(computed(() => this.users() ?? [])),
     this.filterForm.controls.search,
     (it: UserAccountWithRole, search: string) =>
       !search ||
@@ -127,7 +131,7 @@ export class UsersComponent {
   protected readonly effectiveUsage = computed(() => {
     const org = this.organization();
     if (!org || this.customerOrganizationId() !== undefined || this.auth.isCustomer()) {
-      return this.users().length;
+      return this.users()?.length;
     }
     return org.currentBillableUserAccountCount;
   });
