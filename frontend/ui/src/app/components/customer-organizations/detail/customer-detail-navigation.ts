@@ -9,6 +9,7 @@ export type CustomerDetailTabId =
   | 'secrets'
   | 'support'
   | 'notifications'
+  | 'links'
   | 'settings';
 
 export const customerDetailTabs = defineRoutedTabs<CustomerDetailTabId>('Customers', [
@@ -35,5 +36,11 @@ export const customerDetailTabs = defineRoutedTabs<CustomerDetailTabId>('Custome
     visible: (c) => !c.user.isPartner || c.organization.isPro,
     locked: {plan: 'pro', when: (c) => !c.organization.isPro},
   },
-  {id: 'settings', label: 'Settings'},
+  {id: 'links', label: 'Links'},
+  {
+    id: 'settings',
+    label: 'Settings',
+    visible: (c) => c.user.isAdminOrSuperAdmin && (!c.user.isPartner || c.features.has('customer_settings')),
+    locked: {plan: 'business', when: (c) => !c.features.has('customer_settings')},
+  },
 ]);

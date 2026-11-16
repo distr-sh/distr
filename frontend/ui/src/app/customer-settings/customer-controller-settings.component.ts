@@ -2,7 +2,7 @@ import {Component, inject, input, signal} from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faFloppyDisk, faSpinner} from '@fortawesome/free-solid-svg-icons';
+import {faSpinner} from '@fortawesome/free-solid-svg-icons';
 import {catchError, EMPTY, firstValueFrom, startWith, switchMap} from 'rxjs';
 import {WEBSITE_URL} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
@@ -16,9 +16,9 @@ import {CustomerSettings} from '../types/customer-settings';
   selector: 'app-customer-controller-settings',
   templateUrl: './customer-controller-settings.component.html',
   imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, AlertComponent],
+  host: {class: 'block'},
 })
 export class CustomerControllerSettingsComponent {
-  protected readonly faFloppyDisk = faFloppyDisk;
   protected readonly faSpinner = faSpinner;
 
   private readonly customerSettingsService = inject(CustomerSettingsService);
