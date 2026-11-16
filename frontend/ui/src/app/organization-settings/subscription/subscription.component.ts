@@ -38,7 +38,6 @@ import {PendingSubscriptionUpdate, SubscriptionUpdateModalComponent} from './sub
 @Component({
   selector: 'app-subscription',
   templateUrl: './subscription.component.html',
-  host: {class: 'block max-w-4xl'},
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     FaIconComponent,

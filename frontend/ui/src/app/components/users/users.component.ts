@@ -1,4 +1,4 @@
-import {AsyncPipe, DatePipe} from '@angular/common';
+import {AsyncPipe} from '@angular/common';
 import {Component, computed, DestroyRef, inject, input, output, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
@@ -40,7 +40,6 @@ import {UserRoleSelectComponent} from '../user-role-select.component';
   imports: [
     FaIconComponent,
     AsyncPipe,
-    DatePipe,
     ReactiveFormsModule,
     AutotrimDirective,
     PlaceholderDirective,

@@ -23,7 +23,6 @@
         <th scope="col" class="p-4"></th>
         <th scope="col" class="p-4">Name</th>
         <th scope="col" class="p-4">E-Mail</th>
-        <th scope="col" class="p-4">Join Date</th>
         @if (isProSubscription()) {
           <th scope="col" class="p-4">Role</th>
         }
@@ -50,9 +49,6 @@
           </td>
           <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
             {{ user.email }}
-          </td>
-          <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
-            {{ user.joinedOrgAt | date: 'short' }}
           </td>
           @if (isProSubscription()) {
             <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
