@@ -1,5 +1,5 @@
 import {AsyncPipe} from '@angular/common';
-import {Component, computed, DestroyRef, inject, input, output, signal, TemplateRef, viewChild} from '@angular/core';
+import {Component, computed, DestroyRef, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {UserAccountWithRole, UserRole} from '@distr-sh/distr-sdk';
@@ -15,7 +15,7 @@ import {
   faUser,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import {catchError, filter, firstValueFrom, NEVER, switchMap, tap} from 'rxjs';
+import {catchError, filter, firstValueFrom, NEVER, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {UserRoleLabelPipe} from '../../../util/user-role';
@@ -59,7 +59,6 @@ export class UsersComponent {
   public readonly users = input.required<UserAccountWithRole[] | undefined>();
   public readonly customerOrganizationId = input<string>();
   public readonly partnerOrganizationId = input<string>();
-  public readonly refresh = output<void>();
 
   private readonly toast = inject(ToastService);
   private readonly usersService = inject(UsersService);
@@ -223,12 +222,10 @@ export class UsersComponent {
           this.toast.success(`${this.userLabel(result.user)} has been added to the organization`);
           this.closeInviteDialog();
         }
-        this.refresh.emit();
       } catch (e) {
         if (isInviteMailNotSentError(e)) {
           this.inviteUrl.set(e.error.inviteUrl ?? null);
           this.inviteMailNotSentUser.set(e.error.user);
-          this.refresh.emit();
         } else {
           const msg = getFormDisplayedError(e);
           if (msg) {
@@ -283,8 +280,7 @@ export class UsersComponent {
             this.toast.error(msg);
           }
           return NEVER;
-        }),
-        tap(() => this.refresh.emit())
+        })
       )
       .subscribe();
   }

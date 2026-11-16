@@ -1,6 +1,5 @@
 import {Component, computed, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
-import {startWith, Subject, switchMap} from 'rxjs';
 import {refreshInBackground} from '../../../util/refresh';
 import {AuthService} from '../../services/auth.service';
 import {UsersService} from '../../services/users.service';
@@ -14,14 +13,8 @@ import {UsersComponent} from './users.component';
 export class UsersPageComponent {
   private readonly usersService = inject(UsersService);
   private readonly auth = inject(AuthService);
-  protected readonly refresh$ = new Subject<void>();
 
-  private readonly allUsers = toSignal(
-    this.refresh$.pipe(
-      startWith(undefined),
-      switchMap(() => this.usersService.getUsers())
-    )
-  );
+  private readonly allUsers = toSignal(this.usersService.getUsers());
 
   protected readonly users = computed(() => {
     const all = this.allUsers();
