@@ -15,17 +15,21 @@
     </div>
   </div>
   @if (settingsEnabled()) {
-    <div class="grid gap-4 2xl:grid-cols-[28rem_minmax(0,1fr)]">
-      <div class="distr-panel" [class.2xl:col-span-2]="!domainAndSignInEnabled()">
-        <h2 appCardHeading [icon]="faServer" class="mb-4">Controllers</h2>
-        <app-customer-controller-settings [customerOrganizationId]="customer.id" />
+    <div class="distr-panel">
+      <h2 appCardHeading [icon]="faGear">Customer Settings</h2>
+      <p class="distr-text-muted mt-1 text-sm">The customer's admins can change these on their own settings page.</p>
+      <div class="mt-6 flex flex-col gap-8">
+        <section class="space-y-4">
+          <h3 class="text-base font-semibold text-gray-900 dark:text-white">Controllers</h3>
+          <app-customer-controller-settings [customerOrganizationId]="customer.id" />
+        </section>
+        @if (domainAndSignInEnabled()) {
+          <section class="space-y-4">
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white">Domain &amp; Sign-in</h3>
+            <app-customer-domain-and-sign-in [customerOrganizationId]="customer.id" />
+          </section>
+        }
       </div>
-      @if (domainAndSignInEnabled()) {
-        <div class="distr-panel">
-          <h2 appCardHeading [icon]="faGlobe" class="mb-4">Domain &amp; Sign-in</h2>
-          <app-customer-domain-and-sign-in [customerOrganizationId]="customer.id" />
-        </div>
-      }
     </div>
   }
 }

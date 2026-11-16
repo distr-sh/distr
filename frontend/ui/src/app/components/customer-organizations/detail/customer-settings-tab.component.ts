@@ -1,7 +1,7 @@
 import {Component, computed, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute} from '@angular/router';
-import {faGlobe, faLink, faServer, faToggleOn} from '@fortawesome/free-solid-svg-icons';
+import {faGear, faLink, faToggleOn} from '@fortawesome/free-solid-svg-icons';
 import {EMPTY} from 'rxjs';
 import {CustomerControllerSettingsComponent} from '../../../customer-settings/customer-controller-settings.component';
 import {CustomerDomainAndSignInComponent} from '../../../customer-settings/customer-domain-and-sign-in.component';
@@ -24,9 +24,8 @@ import {CustomerFeaturesComponent} from './customer-features.component';
   host: {class: 'flex flex-col gap-4'},
 })
 export class CustomerSettingsTabComponent {
-  protected readonly faGlobe = faGlobe;
+  protected readonly faGear = faGear;
   protected readonly faLink = faLink;
-  protected readonly faServer = faServer;
   protected readonly faToggleOn = faToggleOn;
 
   private readonly auth = inject(AuthService);
