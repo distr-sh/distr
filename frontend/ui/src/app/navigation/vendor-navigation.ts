@@ -1,6 +1,5 @@
 import {
   faAddressBook,
-  faAsterisk,
   faBell,
   faBox,
   faBoxesStacked,
@@ -87,7 +86,6 @@ export const vendorNavigation: NavigationDefinition = [
         route: '/advisories',
         locked: {plan: 'business', when: (c) => !c.features.has('vulnerabilities')},
       },
-      {id: 'secrets', label: 'Secrets', icon: faAsterisk, route: '/secrets'},
       {
         id: 'customer-portal',
         label: 'Customer Portal',
@@ -95,13 +93,7 @@ export const vendorNavigation: NavigationDefinition = [
         route: '/customer-portal',
         visible: (c) => c.user.isSuperAdmin || c.user.isReadWriteOrAdmin,
       },
-      {
-        id: 'settings',
-        label: 'Settings',
-        icon: faGear,
-        route: '/settings/organization',
-        visible: (c) => c.user.isAdminOrSuperAdmin,
-      },
+      {id: 'settings', label: 'Settings', icon: faGear, route: '/settings/organization'},
     ],
   },
 ];

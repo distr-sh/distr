@@ -48,6 +48,7 @@ import {OrganizationDomainsComponent} from './organization-settings/domains-and-
 import {GeneralSettingsComponent} from './organization-settings/general/general-settings.component';
 import {organizationSettingsTabs} from './organization-settings/organization-settings-navigation';
 import {OrganizationSettingsComponent} from './organization-settings/organization-settings.component';
+import {SecretsSettingsComponent} from './organization-settings/secrets/secrets-settings.component';
 import {SubscriptionCallbackComponent} from './organization-settings/subscription/subscription-callback.component';
 import {SubscriptionComponent} from './organization-settings/subscription/subscription.component';
 import {
@@ -400,6 +401,7 @@ const shellRoutes: Routes = [
         path: 'secrets',
         title: 'Secrets',
         component: SecretsPage,
+        canActivate: [requirePartnerOrCustomer],
       },
       {
         path: 'license-keys',
@@ -482,6 +484,12 @@ const shellRoutes: Routes = [
                 title: organizationSettingsTabs.title('team'),
                 component: TeamSettingsComponent,
                 canActivate: [organizationSettingsTabs.guard('team')],
+              },
+              {
+                path: 'secrets',
+                title: organizationSettingsTabs.title('secrets'),
+                component: SecretsSettingsComponent,
+                canActivate: [organizationSettingsTabs.guard('secrets')],
               },
               {
                 path: 'identity-provider',
