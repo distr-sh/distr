@@ -1,22 +1,7 @@
 @if (customerOrganization(); as customer) {
-  <div class="grid gap-4 xl:grid-cols-[minmax(20rem,auto)_minmax(0,1fr)]">
-    <div class="distr-panel">
-      <h2 appCardHeading [icon]="faToggleOn">Features</h2>
-      <p class="distr-text-muted mt-1 text-sm">Available in the customer portal.</p>
-      <app-customer-features [customerOrganization]="customer" class="mt-4" />
-    </div>
-    <div class="distr-table-panel">
-      <app-sidebar-links [customerOrganizationId]="customer.id">
-        <div heading>
-          <h2 appCardHeading [icon]="faLink">Links</h2>
-          <p class="distr-text-muted mt-1 text-sm">Shown in the customer portal sidebar.</p>
-        </div>
-      </app-sidebar-links>
-    </div>
-  </div>
   @if (settingsEnabled()) {
     <div class="distr-panel">
-      <h2 appCardHeading [icon]="faGear">Customer Settings</h2>
+      <h2 appCardHeading>Customer Settings</h2>
       <p class="distr-text-muted mt-1 text-sm">The customer's admins can change these on their own settings page.</p>
       <div class="mt-6 flex flex-col gap-8">
         <section class="space-y-4">
@@ -31,5 +16,19 @@
         }
       </div>
     </div>
+  } @else {
+    <app-alert type="info" heading="Settings are disabled for this customer.">
+      The customer's admins have no settings page until settings are enabled.
+      @if (canEdit) {
+        <button
+          alertActions
+          type="button"
+          (click)="enableSettings()"
+          [disabled]="enabling()"
+          class="distr-btn-primary shrink-0 px-3 py-1.5">
+          Enable settings
+        </button>
+      }
+    </app-alert>
   }
 }

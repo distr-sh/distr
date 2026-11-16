@@ -19,11 +19,12 @@ import {customerDetailTabs} from './components/customer-organizations/detail/cus
 import {CustomerDetailPageComponent} from './components/customer-organizations/detail/customer-detail-page.component';
 import {CustomerDownloadsTabComponent} from './components/customer-organizations/detail/customer-downloads-tab.component';
 import {CustomerLicensesTabComponent} from './components/customer-organizations/detail/customer-licenses-tab.component';
+import {CustomerLinksTabComponent} from './components/customer-organizations/detail/customer-links-tab.component';
 import {CustomerNotificationsTabComponent} from './components/customer-organizations/detail/customer-notifications-tab.component';
+import {CustomerOverviewTabComponent} from './components/customer-organizations/detail/customer-overview-tab.component';
 import {CustomerSecretsTabComponent} from './components/customer-organizations/detail/customer-secrets-tab.component';
 import {CustomerSettingsTabComponent} from './components/customer-organizations/detail/customer-settings-tab.component';
 import {CustomerSupportTabComponent} from './components/customer-organizations/detail/customer-support-tab.component';
-import {CustomerTabPlaceholderComponent} from './components/customer-organizations/detail/customer-tab-placeholder.component';
 import {CustomerUsersTabComponent} from './components/customer-organizations/detail/customer-users-tab.component';
 import {NavShellComponent} from './components/nav-shell.component';
 import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
@@ -302,7 +303,7 @@ const shellRoutes: Routes = [
               {
                 path: 'overview',
                 title: customerDetailTabs.title('overview'),
-                component: CustomerTabPlaceholderComponent,
+                component: CustomerOverviewTabComponent,
                 canActivate: [customerDetailTabs.guard('overview')],
               },
               {
@@ -346,6 +347,12 @@ const shellRoutes: Routes = [
                 title: customerDetailTabs.title('notifications'),
                 component: CustomerNotificationsTabComponent,
                 canActivate: [customerDetailTabs.guard('notifications')],
+              },
+              {
+                path: 'links',
+                title: customerDetailTabs.title('links'),
+                component: CustomerLinksTabComponent,
+                canActivate: [customerDetailTabs.guard('links')],
               },
               {
                 path: 'settings',

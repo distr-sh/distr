@@ -1,0 +1,7 @@
+@if (customerOrganization(); as customer) {
+  <div class="distr-panel">
+    <h2 appCardHeading>Features</h2>
+    <p class="distr-text-muted mt-1 text-sm">Available in the customer portal.</p>
+    <app-customer-features [customerOrganization]="customer" class="mt-4" />
+  </div>
+}
