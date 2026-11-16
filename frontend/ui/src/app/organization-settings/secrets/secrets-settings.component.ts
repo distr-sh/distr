@@ -18,7 +18,6 @@ export class SecretsSettingsComponent {
       startWith(undefined),
       switchMap(() => this.secretsService.list()),
       map((secrets) => secrets.filter((secret) => secret.customerOrganizationId === undefined))
-    ),
-    {initialValue: []}
+    )
   );
 }

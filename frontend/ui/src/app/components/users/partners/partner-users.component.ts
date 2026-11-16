@@ -1,9 +1,8 @@
 import {ChangeDetectionStrategy, Component, computed, inject} from '@angular/core';
-import {toObservable, toSignal} from '@angular/core/rxjs-interop';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faBuilding} from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, map, startWith, Subject, switchMap} from 'rxjs';
 import {refreshInBackground} from '../../../../util/refresh';
 import {PartnerOrganizationsService} from '../../../services/partner-organizations.service';
 import {UsersService} from '../../../services/users.service';
@@ -32,17 +31,9 @@ export class PartnerUsersComponent {
     return this.partnerOrganizations()?.find((org) => org.id === id);
   });
 
-  protected readonly refresh$ = new Subject<void>();
-  protected readonly users = toSignal(
-    combineLatest([
-      this.refresh$.pipe(
-        startWith(undefined),
-        switchMap(() => this.usersService.getUsers())
-      ),
-      toObservable(this.partnerOrganizationId),
-    ]).pipe(
-      map(([users, partnerOrganizationId]) => users.filter((it) => it.partnerOrganizationId === partnerOrganizationId))
-    )
+  private readonly allUsers = toSignal(this.usersService.getUsers());
+  protected readonly users = computed(() =>
+    this.allUsers()?.filter((it) => it.partnerOrganizationId === this.partnerOrganizationId())
   );
 
   constructor() {

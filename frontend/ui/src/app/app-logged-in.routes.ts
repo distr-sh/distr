@@ -20,12 +20,13 @@ import {CustomerDetailPageComponent} from './components/customer-organizations/d
 import {CustomerDownloadsTabComponent} from './components/customer-organizations/detail/customer-downloads-tab.component';
 import {CustomerLicensesTabComponent} from './components/customer-organizations/detail/customer-licenses-tab.component';
 import {CustomerNotificationsTabComponent} from './components/customer-organizations/detail/customer-notifications-tab.component';
+import {CustomerSecretsTabComponent} from './components/customer-organizations/detail/customer-secrets-tab.component';
 import {CustomerSupportTabComponent} from './components/customer-organizations/detail/customer-support-tab.component';
 import {CustomerTabPlaceholderComponent} from './components/customer-organizations/detail/customer-tab-placeholder.component';
+import {CustomerUsersTabComponent} from './components/customer-organizations/detail/customer-users-tab.component';
 import {NavShellComponent} from './components/nav-shell.component';
 import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
 import {PortalUnavailableComponent} from './components/portal-unavailable/portal-unavailable.component';
-import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
 import {PartnerUsersComponent} from './components/users/partners/partner-users.component';
 import {UsersPageComponent} from './components/users/users-page.component';
 import {CustomerPortalBrandingComponent} from './customer-portal/branding/customer-portal-branding.component';
@@ -55,7 +56,6 @@ import {
   subscriptionPath,
 } from './organization-settings/subscription/subscription.guard';
 import {TeamSettingsComponent} from './organization-settings/team/team-settings.component';
-import {CustomerSecretsPageComponent} from './secrets/customer-secrets-page.component';
 import {SecretsPage} from './secrets/secrets-page.component';
 import {AuthService} from './services/auth.service';
 import {ContextService} from './services/context.service';
@@ -303,10 +303,6 @@ const shellRoutes: Routes = [
         title: 'Customers',
         canActivate: [requireVendorOrPartner],
         children: [
-          // TODO DEV-1091 move this inside the detail page once it's migrated to a tab
-          {path: 'users', component: CustomerUsersComponent},
-          // TODO DEV-1091 move this inside the detail page once it's migrated to a tab
-          {path: 'secrets', component: CustomerSecretsPageComponent},
           {path: 'links', component: SidebarLinksPageComponent},
           // TODO DEV-1093 move this inside the detail page once it's migrated to a tab
           {
@@ -341,6 +337,18 @@ const shellRoutes: Routes = [
                 title: customerDetailTabs.title('licenses'),
                 component: CustomerLicensesTabComponent,
                 canActivate: [customerDetailTabs.guard('licenses')],
+              },
+              {
+                path: 'users',
+                title: customerDetailTabs.title('users'),
+                component: CustomerUsersTabComponent,
+                canActivate: [customerDetailTabs.guard('users')],
+              },
+              {
+                path: 'secrets',
+                title: customerDetailTabs.title('secrets'),
+                component: CustomerSecretsTabComponent,
+                canActivate: [customerDetailTabs.guard('secrets')],
               },
               {
                 path: 'support',
