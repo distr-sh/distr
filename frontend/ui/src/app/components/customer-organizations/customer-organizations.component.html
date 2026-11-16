@@ -22,33 +22,164 @@
       <table class="distr-table">
         <thead class="distr-table-head">
           <tr>
-            <th scope="col" class="p-4">Name</th>
-            <th scope="col" class="p-4 text-end"># of Deployments</th>
+            <th scope="col" class="p-4">Customer</th>
+            @if (showLicenseColumn()) {
+              <th scope="col" class="p-4">License</th>
+            }
+            <th scope="col" class="p-4">Updates</th>
+            @if (showSupportColumn()) {
+              <th scope="col" class="p-4">Support</th>
+            }
+            <th scope="col" class="p-4">Deployments</th>
           </tr>
         </thead>
         <tbody>
-          @for (customer of customerOrganizations(); track customer.id) {
-            <tr [appClickableRow]="['/', 'customers', customer.id]" class="distr-table-row">
-              <td class="distr-table-cell">
+          @for (customer of rows(); track customer.id) {
+            <tr class="distr-table-row">
+              <td [appClickableRow]="['/', 'customers', customer.id]" class="distr-table-cell">
                 <div class="flex items-center gap-3">
-                  <app-avatar
-                    [image]="customer.imageUrl"
-                    [name]="customer.name"
-                    [icon]="faAddressBook"
-                    class="size-8 rounded-sm" />
-                  <span class="block">{{ customer.name }}</span>
+                  <app-avatar [image]="customer.imageUrl" [name]="customer.name" class="size-8 rounded-sm" />
+                  <div class="min-w-0">
+                    <span class="block">{{ customer.name }}</span>
+                    <span class="distr-text-muted block text-xs">
+                      @switch (customer.management) {
+                        @case ('controller') {
+                          Controller managed
+                        }
+                        @case ('self') {
+                          Self managed
+                        }
+                        @case ('none') {
+                          None
+                        }
+                      }
+                    </span>
+                  </div>
                 </div>
               </td>
-              <td class="distr-table-cell text-end">
-                {{ customer.deploymentTargetCount | number }}
+              @if (showLicenseColumn()) {
+                <td [appClickableRow]="['/', 'customers', customer.id, 'licenses']" class="distr-table-cell">
+                  @if (customer.license; as license) {
+                    <app-customer-license-badge [status]="license" />
+                  } @else {
+                    <ng-container [ngTemplateOutlet]="badgeSkeleton" />
+                  }
+                </td>
+              }
+              <td [appClickableRow]="['/', 'customers', customer.id, customer.updatesTab]" class="distr-table-cell">
+                @if (customer.isOutdated === true) {
+                  <span class="distr-badge distr-badge-warning">Outdated</span>
+                } @else if (customer.isOutdated === false) {
+                  <span class="distr-badge distr-badge-success">Up to date</span>
+                } @else {
+                  <ng-container [ngTemplateOutlet]="badgeSkeleton" />
+                }
+              </td>
+              @if (showSupportColumn()) {
+                <td [appClickableRow]="['/', 'customers', customer.id, 'support']" class="distr-table-cell">
+                  @if (customer.supportBundles; as support) {
+                    @if (support.open > 0) {
+                      <span class="block text-yellow-600 dark:text-yellow-400">
+                        <ng-container [ngPlural]="support.open">
+                          <ng-template ngPluralCase="=1">1 open request</ng-template>
+                          <ng-template ngPluralCase="other">{{ support.open }} open requests</ng-template>
+                        </ng-container>
+                      </span>
+                    } @else if (support.resolved + support.canceled > 0) {
+                      <span class="distr-text-muted block">0 open requests</span>
+                    } @else {
+                      <span class="distr-text-muted block">None</span>
+                    }
+                    <span class="flex flex-wrap gap-x-2 text-xs">
+                      @if (support.resolved > 0) {
+                        <span class="text-green-600 dark:text-green-400">{{ support.resolved }} resolved</span>
+                      }
+                      @if (support.canceled > 0) {
+                        <span class="distr-text-muted">{{ support.canceled }} canceled</span>
+                      }
+                    </span>
+                  } @else {
+                    <ng-container [ngTemplateOutlet]="twoLineSkeleton" />
+                  }
+                </td>
+              }
+              <td [appClickableRow]="['/', 'customers', customer.id, 'deployments']" class="distr-table-cell">
+                @if (customer.deployments; as deployments) {
+                  @if (deployments.total === 0) {
+                    <span class="distr-text-muted">None</span>
+                  } @else {
+                    <span class="block">
+                      <ng-container [ngPlural]="deployments.total">
+                        <ng-template ngPluralCase="=1">1 deployment</ng-template>
+                        <ng-template ngPluralCase="other">{{ deployments.total }} deployments</ng-template>
+                      </ng-container>
+                    </span>
+                    <span class="flex flex-wrap gap-x-2 text-xs">
+                      @if (deployments.error > 0) {
+                        <span class="text-red-600 dark:text-red-400">
+                          <ng-container [ngPlural]="deployments.error">
+                            <ng-template ngPluralCase="=1">1 error</ng-template>
+                            <ng-template ngPluralCase="other">{{ deployments.error }} errors</ng-template>
+                          </ng-container>
+                        </span>
+                      }
+                      @if (deployments.running > 0) {
+                        <span class="text-green-600 dark:text-green-400">{{ deployments.running }} running</span>
+                      }
+                      @if (deployments.stale > 0) {
+                        <span class="text-yellow-600 dark:text-yellow-400">{{ deployments.stale }} stale</span>
+                      }
+                      @if (deployments.healthy > 0) {
+                        <span class="text-green-600 dark:text-green-400">{{ deployments.healthy }} healthy</span>
+                      }
+                      @if (deployments.noStatus > 0) {
+                        <span class="distr-text-muted">{{ deployments.noStatus }} no status</span>
+                      }
+                    </span>
+                  }
+                } @else {
+                  <ng-container [ngTemplateOutlet]="twoLineSkeleton" />
+                }
               </td>
             </tr>
+          } @empty {
+            @if (rows() === undefined) {
+              @for (row of placeholderRows; track row) {
+                <tr class="distr-table-row" aria-hidden="true">
+                  <td class="distr-table-cell">
+                    <div class="flex items-center gap-3">
+                      <span class="distr-skeleton size-8 shrink-0"></span>
+                      <ng-container [ngTemplateOutlet]="twoLineSkeleton" />
+                    </div>
+                  </td>
+                  @if (showLicenseColumn()) {
+                    <td class="distr-table-cell"><ng-container [ngTemplateOutlet]="badgeSkeleton" /></td>
+                  }
+                  <td class="distr-table-cell"><ng-container [ngTemplateOutlet]="badgeSkeleton" /></td>
+                  @if (showSupportColumn()) {
+                    <td class="distr-table-cell"><ng-container [ngTemplateOutlet]="twoLineSkeleton" /></td>
+                  }
+                  <td class="distr-table-cell"><ng-container [ngTemplateOutlet]="twoLineSkeleton" /></td>
+                </tr>
+              }
+            }
           }
         </tbody>
       </table>
     </div>
   </div>
 </app-page>
+
+<ng-template #badgeSkeleton>
+  <span class="distr-skeleton block h-5 w-20"></span>
+</ng-template>
+
+<ng-template #twoLineSkeleton>
+  <span class="flex flex-col gap-1.5">
+    <span class="distr-skeleton block h-4 w-28"></span>
+    <span class="distr-skeleton block h-3 w-36"></span>
+  </span>
+</ng-template>
 
 <ng-template #createCustomerDialog>
   <div

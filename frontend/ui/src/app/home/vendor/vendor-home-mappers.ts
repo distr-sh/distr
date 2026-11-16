@@ -91,7 +91,7 @@ function customerTargets(customer: CustomerOrganization, targets: DeploymentTarg
  * A customer is outdated when one of its deployments is. A customer without deployments is outdated when it
  * pulled an artifact it may pull a newer tag of.
  */
-function toCustomerUpdates(
+export function toCustomerUpdates(
   customer: CustomerOrganization,
   targets: DeploymentTarget[],
   applications: Application[],
