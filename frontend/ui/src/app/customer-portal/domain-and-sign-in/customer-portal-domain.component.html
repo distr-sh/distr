@@ -19,8 +19,7 @@
       placeholder="<slug>-portal.yourcompany.com"
       optionalCheckboxLabel="Use a customer portal domain">
       The domain all of your customers sign in on. Links in invitations, password resets and notification mails use it
-      instead of your <span class="lowercase">{{ appDomainLabel() }}</span
-      >.
+      instead of your <span class="lowercase">{{ appDomainLabel() }}</span>.
     </app-custom-domain>
     <app-identity-providers [domain]="portalDomain.domain()" />
   </section>
