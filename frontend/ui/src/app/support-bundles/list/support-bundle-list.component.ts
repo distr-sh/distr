@@ -1,17 +1,16 @@
 import {DatePipe} from '@angular/common';
-import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef} from '@angular/core';
-import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
+import {ChangeDetectionStrategy, Component, computed, inject, input, signal, TemplateRef} from '@angular/core';
+import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faDownload, faGear, faPlus, faTrash} from '@fortawesome/free-solid-svg-icons';
-import {firstValueFrom, of, startWith, Subject, switchMap, take} from 'rxjs';
+import {combineLatest, firstValueFrom, map, of, startWith, Subject, switchMap, take} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {DeploymentTypeBadgeComponent} from '../../components/deployment-type-badge.component';
-import {PageComponent} from '../../components/page.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
 import {ClickableRowDirective} from '../../directives/clickable-row.directive';
 import {AuthService} from '../../services/auth.service';
@@ -33,7 +32,6 @@ import {SupportBundleStatusBadgeComponent} from '../support-bundle-status-badge.
     RouterLink,
     FaIconComponent,
     ClickableRowDirective,
-    PageComponent,
     SearchBarComponent,
     SupportBundleCreateDialogComponent,
     SupportBundleStatusBadgeComponent,
@@ -51,14 +49,27 @@ export class SupportBundleListComponent {
   protected readonly faGear = faGear;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
-  protected readonly configExists = toSignal(this.auth.isVendor() ? this.svc.hasConfiguration() : of(false), {
-    initialValue: false,
-  });
+  public readonly customerOrganizationId = input<string>();
+  private readonly customerOrganizationId$ = toObservable(this.customerOrganizationId);
+
+  protected readonly showCustomerColumn = computed(
+    () => (this.auth.isVendor() || this.auth.isPartner()) && !this.customerOrganizationId()
+  );
+
+  protected readonly configMissing = toSignal(
+    this.customerOrganizationId$.pipe(
+      switchMap((customerOrganizationId) =>
+        this.auth.isVendor() && !customerOrganizationId
+          ? this.svc.hasConfiguration().pipe(map((has) => !has))
+          : of(false)
+      )
+    ),
+    {initialValue: false}
+  );
 
   private readonly refresh$ = new Subject<void>();
-  private readonly bundles$ = this.refresh$.pipe(
-    startWith(0),
-    switchMap(() => this.svc.list()),
+  private readonly bundles$ = combineLatest([this.customerOrganizationId$, this.refresh$.pipe(startWith(0))]).pipe(
+    switchMap(([customerOrganizationId]) => this.svc.list(customerOrganizationId)),
     takeUntilDestroyed()
   );
 
@@ -82,6 +93,7 @@ export class SupportBundleListComponent {
   private readonly bundlesResult = toSignal(this.bundles$);
   protected readonly bundles = computed(() => this.bundlesResult() ?? []);
   protected readonly loading = computed(() => this.bundlesResult() === undefined);
+  public readonly hasBundles = computed(() => this.bundles().length > 0);
 
   private dialogRef: DialogRef | null = null;
 

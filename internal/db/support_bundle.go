@@ -352,6 +352,7 @@ func GetCustomerSupportBundleEvents(
 
 func GetSupportBundles(
 	ctx context.Context, orgID uuid.UUID, customerOrgID *uuid.UUID, partnerOrgID *uuid.UUID,
+	filterCustomerOrgID *uuid.UUID,
 ) ([]types.SupportBundleWithDetails, error) {
 	db := internalctx.GetDb(ctx)
 	isVendor := customerOrgID == nil && partnerOrgID == nil
@@ -370,6 +371,10 @@ func GetSupportBundles(
 		"isVendor":      isVendor,
 		"customerOrgId": customerOrgID,
 		"partnerOrgId":  partnerOrgID,
+	}
+	if filterCustomerOrgID != nil {
+		query += ` AND sb.customer_organization_id = @filterCustomerOrgId`
+		args["filterCustomerOrgId"] = *filterCustomerOrgID
 	}
 	query += ` ORDER BY sb.created_at DESC`
 

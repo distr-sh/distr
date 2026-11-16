@@ -47,6 +47,18 @@ func customerScopeFromQuery(r *http.Request) (*uuid.UUID, respond.Responder, err
 	}
 }
 
+// customerFilterFromQuery reads the optional customer organization that narrows a list already
+// scoped to the caller. It is not checked against the caller, since an unreachable ID matches nothing.
+func customerFilterFromQuery(r *http.Request) (*uuid.UUID, respond.Responder) {
+	if id, err := QueryParam(r, "customerOrganizationId", uuid.Parse); errors.Is(err, ErrParamNotDefined) {
+		return nil, nil
+	} else if err != nil {
+		return nil, respond.BadRequest("customerOrganizationId must be a valid UUID")
+	} else {
+		return &id, nil
+	}
+}
+
 // customerScope returns the customer a request operates on, or nil for the vendor's own
 // organization. The returned Responder rejects a customer the caller may not reach.
 func customerScope(ctx context.Context, requested *uuid.UUID) (*uuid.UUID, respond.Responder, error) {
