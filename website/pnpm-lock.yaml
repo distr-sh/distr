@@ -201,7 +201,7 @@ importers:
         version: 5.3.0
       '@iconify-json/lucide':
         specifier: ^1.2.152
-        version: 1.2.154
+        version: 1.2.155
       '@iconify-json/simple-icons':
         specifier: ^1.2.101
         version: 1.2.102
@@ -673,8 +673,8 @@ packages:
   '@fontsource/poppins@5.3.0':
     resolution: {integrity: sha512-cms1nM7U6SN8epIV1WMVOV8VsA645aSm3wHfzIQnkk188U341ThbJGSl2Sv54V29gnDbT2arMPfLzvVIIVCceQ==}
 
-  '@iconify-json/lucide@1.2.154':
-    resolution: {integrity: sha512-8+fuquLzqefUqEsnQSn77laDESOd9AX5ZM9zQzL5HT9DN58DtzwMIkLXxDjX77GAQ8PF4HTMuxhShQCOynwADg==}
+  '@iconify-json/lucide@1.2.155':
+    resolution: {integrity: sha512-pntdVKUFkr/NA+R5wVvRlpRFCr+wY8xKU1wFjywvOr5taNq8Y6MTfHTZ6v7P5M0pe3LQYUO2rYzKCgIfAhdcDA==}
 
   '@iconify-json/simple-icons@1.2.102':
     resolution: {integrity: sha512-IwbAj1ZI6LBy+qU7sVYxB1wgbSSIDKjY9I0BnnpjfIdlqfXoYnBb80UvYA0WkodUFWfQyL4AjaKMg48fqX8sIw==}
@@ -3335,7 +3335,7 @@ snapshots:
 
   '@fontsource/poppins@5.3.0': {}
 
-  '@iconify-json/lucide@1.2.154':
+  '@iconify-json/lucide@1.2.155':
     dependencies:
       '@iconify/types': 2.0.0
 
