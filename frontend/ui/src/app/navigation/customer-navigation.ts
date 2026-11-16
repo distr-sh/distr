@@ -44,24 +44,10 @@ export const customerNavigation: NavigationDefinition = [
         id: 'notifications',
         label: 'Notifications',
         icon: faBell,
+        route: '/notifications',
         visible: (c) =>
           c.features.has('notifications') &&
           (c.customer.features.has('alerts') || c.customer.features.has('update_notifications')),
-        children: [
-          {
-            id: 'alert-configurations',
-            label: 'Alerts',
-            route: '/notifications/alert-configurations',
-            visible: (c) => c.customer.features.has('alerts'),
-          },
-          {
-            id: 'update-notifications',
-            label: 'Updates',
-            route: '/notifications/updates',
-            visible: (c) => c.customer.features.has('update_notifications'),
-          },
-          {id: 'notification-history', label: 'History', route: '/notifications/history'},
-        ],
       },
       {
         id: 'support',

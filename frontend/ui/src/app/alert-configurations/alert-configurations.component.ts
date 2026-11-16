@@ -47,6 +47,8 @@ import {AlertConfiguration, CreateUpdateAlertConfigurationRequest} from '../type
 export class AlertConfigurationsComponent {
   /** customerOrganizationId scopes the page to what one customer is notified about. */
   public readonly customerOrganizationId = input<string>();
+  /** Replaces the component's own search bar when the page filters several tables at once. */
+  public readonly search = input<string>();
 
   protected readonly auth = inject(AuthService);
   protected readonly canEdit = this.auth.hasAnyRole('read_write', 'admin');
@@ -161,7 +163,7 @@ export class AlertConfigurationsComponent {
   protected readonly loaded = computed(() => this.configs() !== undefined);
 
   protected readonly filteredConfigs = computed(() => {
-    const value = this.filterValue()?.toLowerCase();
+    const value = (this.search() ?? this.filterValue())?.toLowerCase();
     const configs = this.configs();
     return !value ? configs : configs?.filter((it) => it.name.toLowerCase().includes(value));
   });

@@ -1,6 +1,9 @@
 <div class="distr-toolbar p-4">
-  <app-search-bar [control]="filterForm.controls.search" placeholder="Filter alert configurations" />
-  <div class="distr-toolbar-actions">
+  <ng-content select="[heading]" />
+  @if (search() === undefined) {
+    <app-search-bar [control]="filterForm.controls.search" placeholder="Filter alert configurations" />
+  }
+  <div class="distr-toolbar-actions md:ms-auto">
     @if (auth.hasAnyRole('read_write', 'admin')) {
       <button
         type="button"

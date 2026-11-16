@@ -76,7 +76,7 @@ export class CustomerHomeChecklistComponent {
         label: 'Set up update notifications',
         hint: 'Get notified about new versions.',
         done: checklist.updateNotificationsConfigured,
-        link: '/notifications/updates',
+        link: '/notifications',
       });
     }
     return items.sort((a, b) => Number(b.done) - Number(a.done));
