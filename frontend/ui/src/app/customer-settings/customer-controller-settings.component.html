@@ -31,9 +31,8 @@
     </div>
     <button
       type="submit"
-      [disabled]="formLoading()"
-      class="distr-btn-primary inline-flex w-full items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-60">
-      <fa-icon [icon]="faFloppyDisk" size="lg" class="mr-2 mb-1 -ml-0.5 h-4 w-4" />
+      [disabled]="formLoading() || form.pristine"
+      class="distr-btn-primary disabled:cursor-not-allowed disabled:opacity-60">
       Save
     </button>
   </form>
