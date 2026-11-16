@@ -30,7 +30,7 @@ export class TutorialsService {
       id: 'users',
       icon: this.faUserGroup,
       description: 'Invite your colleagues to collaborate with you in Distr.',
-      completedRoute: '/users',
+      completedRoute: '/settings/organization/team',
     },
     {
       name: 'Setup Your Artifact Registry',

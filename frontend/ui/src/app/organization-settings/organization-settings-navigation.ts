@@ -1,9 +1,10 @@
 import {defineRoutedTabs} from '../navigation/tabs';
 
-export type SettingsTabId = 'general' | 'identity-provider' | 'subscription' | 'billing';
+export type SettingsTabId = 'general' | 'team' | 'identity-provider' | 'subscription' | 'billing';
 
 export const organizationSettingsTabs = defineRoutedTabs<SettingsTabId>('Organization Settings', [
   {id: 'general', label: 'General', visible: (c) => c.user.isAdminOrSuperAdmin},
+  {id: 'team', label: 'Team', visible: (c) => c.user.isAdminOrSuperAdmin},
   {
     id: 'identity-provider',
     label: 'Domains & Sign-in',
