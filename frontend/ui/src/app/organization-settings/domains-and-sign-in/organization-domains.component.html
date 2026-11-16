@@ -1,44 +1,54 @@
 <div class="space-y-8">
-  <div class="space-y-4">
-    <h2 class="text-xl font-bold dark:text-white">Domains &amp; Sign-in</h2>
-    <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-      Give your team its own domain for the Distr web UI and API and let it additionally sign in with your own identity
-      provider via OIDC (OpenID Connect). A custom domain has to exist first.
-    </p>
-    <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-      The domain and identity providers of your customers are set up on the
-      <a routerLink="/customer-portal/domain-and-sign-in" class="font-semibold underline">Customer Portal</a> page.
-    </p>
-  </div>
+  @if (domainsEnabled()) {
+    <div class="space-y-2">
+      <h2 class="text-xl font-bold dark:text-white">Domains &amp; Sign-in</h2>
+      <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+        Give your team its own domain for the Distr web UI and API and let it additionally sign in with your own
+        identity provider via OIDC (OpenID Connect). A custom domain has to exist first.
+      </p>
+      <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+        The domain and identity providers of your customers are set up on the
+        <a routerLink="/customer-portal/domain-and-sign-in" class="distr-link">Customer Portal</a> page.
+      </p>
+    </div>
 
-  <section class="space-y-4">
-    <h3 class="text-lg font-bold dark:text-white">{{ portalName() }}</h3>
-    <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-      @if (partnerManagementEnabled()) {
-        The domain your own team and your partners use for the Distr web UI and API.
-      } @else {
-        The domain your own team uses for the Distr web UI and API.
-      }
-    </p>
+    <section class="space-y-4">
+      <div class="space-y-2">
+        <h3 class="text-lg font-bold dark:text-white">{{ portalName() }}</h3>
+        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+          @if (partnerManagementEnabled()) {
+            The domain your own team and your partners use for the Distr web UI and API.
+          } @else {
+            The domain your own team uses for the Distr web UI and API.
+          }
+        </p>
+      </div>
+      <app-custom-domain
+        #appDomain
+        domainType="app"
+        [label]="portalName() + ' domain'"
+        placeholder="deploy.your-company.com">
+        The domain for the Distr web UI and API.
+      </app-custom-domain>
+      <app-identity-providers [domain]="appDomain.domain()" />
+    </section>
+
     <app-custom-domain
-      #appDomain
-      domainType="app"
-      [label]="portalName() + ' domain'"
-      placeholder="deploy.your-company.com">
-      The domain for the Distr web UI and API.
+      domainType="registry"
+      label="Registry domain"
+      placeholder="registry.your-company.com"
+      optionalCheckboxLabel="Use a separate registry domain">
+      <div heading class="space-y-2">
+        <h3 class="text-lg font-bold dark:text-white">Registry</h3>
+        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+          You only need this if the artifact registry should have its own hostname. The hostname is part of the OCI
+          artifact name.
+        </p>
+      </div>
     </app-custom-domain>
-    <app-identity-providers [domain]="appDomain.domain()" />
-  </section>
+  }
 
-  <app-custom-domain
-    domainType="registry"
-    label="Registry domain"
-    placeholder="registry.your-company.com"
-    optionalCheckboxLabel="Use a separate registry domain">
-    <h3 heading class="text-lg font-bold dark:text-white">Registry</h3>
-    <p heading class="text-sm font-normal text-gray-500 dark:text-gray-400">
-      You only need this if the artifact registry should have its own hostname. The hostname is part of the OCI artifact
-      name.
-    </p>
-  </app-custom-domain>
+  @if (customEmailsEnabled()) {
+    <app-custom-email />
+  }
 </div>

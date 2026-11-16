@@ -13,12 +13,7 @@
     <div class="hidden md:flex">
       @if (isVendorAdmin()) {
         <div class="flex shrink-0 items-center space-x-4 lg:pl-10">
-          <a
-            [href]="websiteUrl + '/contact/'"
-            target="_blank"
-            class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-500"
-            >Contact Sales</a
-          >
+          <a [href]="websiteUrl + '/contact/'" target="_blank" class="distr-link text-sm">Contact Sales</a>
         </div>
       }
       @if (isVendorNonAdmin()) {
@@ -48,12 +43,7 @@
     </div>
     @if (isVendorAdmin()) {
       <div class="hidden shrink-0 items-center space-x-4 md:flex lg:pl-10">
-        <a
-          [href]="websiteUrl + '/contact/'"
-          target="_blank"
-          class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-500"
-          >Contact Sales</a
-        >
+        <a [href]="websiteUrl + '/contact/'" target="_blank" class="distr-link text-sm">Contact Sales</a>
         <a
           routerLink="/settings/organization/subscription"
           class="rounded-lg bg-blue-700 px-4 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 focus:outline-none dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"

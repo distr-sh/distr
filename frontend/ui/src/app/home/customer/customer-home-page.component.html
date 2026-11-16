@@ -67,8 +67,9 @@
       @if (activityShown()) {
         <div class="relative">
           @if (activity(); as activity) {
-            <app-customer-home-activity
+            <app-home-activity
               [activity]="activity"
+              viewer="customer"
               [vendorName]="vendorName()"
               [vendorLogo]="vendorLogo()"
               [fillHeight]="besideActivity" />

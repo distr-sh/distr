@@ -6,9 +6,7 @@
           @if (registryHost$ | async; as host) {
             <div class="font-medium">
               To use the OCI Registry, make sure to create a
-              <a class="text-gray-600 underline dark:text-gray-400" routerLink="/settings/access-tokens"
-                >personal access token</a
-              >
+              <a class="distr-link-inherit" routerLink="/settings/access-tokens">personal access token</a>
               and log in to the registry from your machine:
               <code class="mt-1 block text-sm whitespace-pre-line text-gray-900 select-all dark:text-gray-200">
                 echo "YOUR-ACCESS-TOKEN" | docker login {{ host }} --password-stdin -u -
@@ -17,12 +15,7 @@
             <div class="mt-1 font-medium" *appRequireVendor>
               Then you can start tagging and pushing your images. For example, you can try the following commands to
               push your own
-              <a
-                href="https://hub.docker.com/_/hello-world"
-                target="_blank"
-                class="text-gray-600 underline dark:text-gray-400"
-                >hello-world</a
-              >
+              <a href="https://hub.docker.com/_/hello-world" target="_blank" class="distr-link-inherit">hello-world</a>
               image:
               <code class="mt-1 block text-sm whitespace-pre-line text-gray-900 select-all dark:text-gray-200">
                 docker pull hello-world
@@ -54,7 +47,7 @@
           It seems your organization does not have a slug set yet.
           <ng-container *appRequireVendor
             >To use the registry, please set a slug in
-            <a class="text-gray-600 underline dark:text-gray-400" routerLink="/settings">Settings</a>.
+            <a class="distr-link-inherit" routerLink="/settings">Settings</a>.
           </ng-container>
         }
       </div>

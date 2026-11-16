@@ -3,6 +3,7 @@ import {Component, computed, input, signal} from '@angular/core';
 import {Params, RouterLink} from '@angular/router';
 import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
 import {
+  faAddressBook,
   faBox,
   faClockRotateLeft,
   faCube,
@@ -11,12 +12,12 @@ import {
   faKey,
   faLifeRing,
 } from '@fortawesome/free-solid-svg-icons';
-import {RelativeDatePipe} from '../../../util/dates';
-import {never} from '../../../util/exhaust';
-import {AvatarComponent} from '../../components/avatar.component';
-import {CardHeadingComponent} from '../../components/card-heading.component';
-import {CustomerHomeActivity} from './customer-home';
-import {CustomerHomeCollapsibleComponent} from './customer-home-collapsible.component';
+import {RelativeDatePipe} from '../../util/dates';
+import {never} from '../../util/exhaust';
+import {AvatarComponent} from '../components/avatar.component';
+import {CardHeadingComponent} from '../components/card-heading.component';
+import {CustomerHomeCollapsibleComponent} from './customer/customer-home-collapsible.component';
+import {HomeActivity, HomeActivityViewer} from './home-activity';
 
 interface ActivityEntry {
   id: string;
@@ -26,10 +27,11 @@ interface ActivityEntry {
   link: string;
   queryParams?: Params;
   user?: {name: string; imageUrl?: string; isVendor: boolean};
+  customerName?: string;
 }
 
 @Component({
-  selector: 'app-customer-home-activity',
+  selector: 'app-home-activity',
   imports: [
     DatePipe,
     RouterLink,
@@ -39,15 +41,17 @@ interface ActivityEntry {
     CardHeadingComponent,
     CustomerHomeCollapsibleComponent,
   ],
-  templateUrl: './customer-home-activity.component.html',
+  templateUrl: './home-activity.component.html',
   host: {
     class: 'block',
     '[class.lg:absolute]': 'fillHeight() && !expanded()',
     '[class.lg:inset-0]': 'fillHeight() && !expanded()',
   },
 })
-export class CustomerHomeActivityComponent {
-  public readonly activity = input.required<CustomerHomeActivity[]>();
+export class HomeActivityComponent {
+  public readonly activity = input.required<HomeActivity[]>();
+  public readonly viewer = input.required<HomeActivityViewer>();
+  /** Shown as the author of what the vendor did, to a customer only. */
   public readonly vendorName = input<string>();
   public readonly vendorLogo = input<string>();
   /**
@@ -56,36 +60,40 @@ export class CustomerHomeActivityComponent {
    */
   public readonly fillHeight = input(false);
 
+  protected readonly faAddressBook = faAddressBook;
   protected readonly faClockRotateLeft = faClockRotateLeft;
 
   protected readonly expanded = signal(false);
 
-  protected readonly entries = computed<ActivityEntry[]>(() =>
-    this.activity().map((activity) => {
+  protected readonly entries = computed<ActivityEntry[]>(() => {
+    const viewer = this.viewer();
+    const vendorName = this.vendorName();
+    return this.activity().map((activity) => {
       const byVendor =
         activity.type === 'application_version_created' ||
         activity.type === 'artifact_version_created' ||
         activity.type === 'license_key_created' ||
         activity.type === 'license_key_updated' ||
         activity.type === 'support_bundle_resolved';
-      const vendorName = this.vendorName();
       return {
         id: `${activity.type}-${activity.id}`,
         createdAt: activity.createdAt,
         action: action(activity),
         icon: icon(activity),
-        ...link(activity),
-        user: byVendor
-          ? vendorName
-            ? {name: vendorName, imageUrl: this.vendorLogo(), isVendor: true}
-            : undefined
-          : activity.user && {...activity.user, isVendor: false},
+        ...link(activity, viewer),
+        user:
+          viewer === 'customer' && byVendor
+            ? vendorName
+              ? {name: vendorName, imageUrl: this.vendorLogo(), isVendor: true}
+              : undefined
+            : activity.user && {...activity.user, isVendor: false},
+        customerName: viewer === 'customer' ? undefined : activity.customer?.name,
       };
-    })
-  );
+    });
+  });
 }
 
-function icon({type}: CustomerHomeActivity): IconDefinition {
+function icon({type}: HomeActivity): IconDefinition {
   switch (type) {
     case 'application_version_created':
       return faCube;
@@ -108,10 +116,16 @@ function icon({type}: CustomerHomeActivity): IconDefinition {
   }
 }
 
-function link({type, resourceId, subject}: CustomerHomeActivity): Pick<ActivityEntry, 'link' | 'queryParams'> {
+function link(
+  {type, resourceId, subject, customer}: HomeActivity,
+  viewer: HomeActivityViewer
+): Pick<ActivityEntry, 'link' | 'queryParams'> {
   switch (type) {
     case 'application_version_created':
-      return {link: '/deployments', queryParams: {search: subject}};
+      // Only the vendor has access to the applications.
+      return viewer === 'vendor'
+        ? {link: `/applications/${resourceId}`}
+        : {link: '/deployments', queryParams: {search: subject}};
     case 'artifact_version_created':
     case 'artifact_version_first_pulled':
       return {link: `/artifacts/${resourceId}`};
@@ -119,7 +133,10 @@ function link({type, resourceId, subject}: CustomerHomeActivity): Pick<ActivityE
       return {link: `/deployments/${resourceId}`};
     case 'license_key_created':
     case 'license_key_updated':
-      return {link: '/license-keys'};
+      if (viewer === 'customer') {
+        return {link: '/license-keys'};
+      }
+      return {link: customer ? `/licenses/${customer.id}` : '/licenses'};
     case 'support_bundle_created':
     case 'support_bundle_uploaded':
     case 'support_bundle_resolved':
@@ -130,7 +147,7 @@ function link({type, resourceId, subject}: CustomerHomeActivity): Pick<ActivityE
   }
 }
 
-function action({type, subject, detail}: CustomerHomeActivity): string {
+function action({type, subject, detail}: HomeActivity): string {
   switch (type) {
     case 'application_version_created':
       return `version ${detail} of ${subject} released`;

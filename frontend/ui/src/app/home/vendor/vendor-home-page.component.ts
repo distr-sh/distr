@@ -6,15 +6,17 @@ import {
   faAddressBook,
   faBoxesStacked,
   faCircleArrowUp,
-  faClockRotateLeft,
   faKey,
   faLifeRing,
   faShieldHalved,
 } from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, firstValueFrom, map, of, switchMap} from 'rxjs';
+import {recoverWithToast} from '../../../util/errors';
 import {refreshInBackground} from '../../../util/refresh';
 import {CardHeadingComponent} from '../../components/card-heading.component';
+import {LoadingCardComponent} from '../../components/loading-card/loading-card.component';
 import {PageComponent} from '../../components/page.component';
+import {ActivityFeedService} from '../../services/activity-feed.service';
 import {AdvisoriesService} from '../../services/advisories.service';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
@@ -25,6 +27,9 @@ import {DeploymentTargetsService} from '../../services/deployment-targets.servic
 import {FeatureFlagService} from '../../services/feature-flag.service';
 import {LicensesService} from '../../services/licenses.service';
 import {SupportBundlesService} from '../../services/support-bundles.service';
+import {ToastService} from '../../services/toast.service';
+import {toHomeActivity} from '../home-activity';
+import {HomeActivityComponent} from '../home-activity.component';
 import {QuickNavigationCardComponent, QuickNavigationCardType} from '../quick-navigation-card.component';
 import {VendorHomeDeploymentHealth, VendorHomeLicenses, VendorHomeUpdates} from './vendor-home';
 import {
@@ -83,7 +88,15 @@ function supportCardType(open: number, isConfigured: boolean): QuickNavigationCa
 @Component({
   selector: 'app-vendor-home-page',
   templateUrl: './vendor-home-page.component.html',
-  imports: [NgPlural, NgPluralCase, PageComponent, CardHeadingComponent, QuickNavigationCardComponent],
+  imports: [
+    NgPlural,
+    NgPluralCase,
+    PageComponent,
+    CardHeadingComponent,
+    LoadingCardComponent,
+    QuickNavigationCardComponent,
+    HomeActivityComponent,
+  ],
 })
 export class VendorHomePageComponent {
   private readonly route = inject(ActivatedRoute);
@@ -93,19 +106,23 @@ export class VendorHomePageComponent {
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   private readonly deploymentTargetsService = inject(DeploymentTargetsService);
   private readonly applicationsService = inject(ApplicationsService);
+  private readonly activityFeedService = inject(ActivityFeedService);
   private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
   private readonly featureFlags = inject(FeatureFlagService);
+  private readonly toast = inject(ToastService);
+
   private readonly licensesService = inject(LicensesService);
+
   private readonly supportBundlesService = inject(SupportBundlesService);
+
   private readonly advisoriesService = inject(AdvisoriesService);
 
   protected readonly isVendor = this.auth.isVendor();
+  protected readonly activityViewer = this.isVendor ? 'vendor' : 'partner';
   protected readonly canConfigureSupport = this.isVendor && this.auth.hasAnyRole('read_write', 'admin');
-
   protected readonly faAddressBook = faAddressBook;
   protected readonly faBoxesStacked = faBoxesStacked;
   protected readonly faCircleArrowUp = faCircleArrowUp;
-  protected readonly faClockRotateLeft = faClockRotateLeft;
   protected readonly faKey = faKey;
   protected readonly faLifeRing = faLifeRing;
   protected readonly faShieldHalved = faShieldHalved;
@@ -230,10 +247,15 @@ export class VendorHomePageComponent {
       : {customers, deployments, applications};
   });
 
+  protected readonly activity = toSignal(
+    this.activityFeedService.list().pipe(map(toHomeActivity), recoverWithToast(this.toast, []))
+  );
+
   constructor() {
     refreshInBackground(
       this.customerOrganizationsService.refresh(),
       this.deploymentTargetsService.refresh(),
+      this.activityFeedService.refresh(),
       this.applicationsService.refresh(),
       firstValueFrom(this.featureFlags.isLicensingEnabled$).then((enabled) =>
         enabled ? this.applicationEntitlementsService.refresh() : undefined

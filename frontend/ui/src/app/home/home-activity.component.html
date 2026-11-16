@@ -1,0 +1,51 @@
+<div class="distr-card space-y-4 py-4">
+  <h2 appCardHeading [icon]="faClockRotateLeft" class="px-4">Activity</h2>
+  <app-customer-home-collapsible [fill]="fillHeight()" [(expanded)]="expanded">
+    <ul class="distr-home-list class px-2">
+      @for (entry of entries(); track entry.id) {
+        <li>
+          <a [routerLink]="entry.link" [queryParams]="entry.queryParams" class="distr-home-row items-center">
+            <fa-icon
+              [icon]="entry.icon"
+              class="distr-home-icon flex w-5 shrink-0 items-center justify-center text-lg" />
+            <div class="min-w-0 flex-1">
+              <div class="flex items-baseline justify-between gap-3">
+                <p class="distr-home-row-title min-w-0 first-letter:uppercase">{{ entry.action }}</p>
+                <time
+                  class="distr-home-row-meta shrink-0"
+                  [attr.datetime]="entry.createdAt"
+                  [title]="entry.createdAt | date: 'medium'">
+                  {{ entry.createdAt | relativeDate }}
+                </time>
+              </div>
+              @if (entry.customerName || entry.user) {
+                <p class="distr-home-row-meta flex flex-wrap items-center gap-1.5">
+                  @if (entry.customerName; as customerName) {
+                    <span class="flex items-center gap-1">
+                      <fa-icon [icon]="faAddressBook" />
+                      {{ customerName }}
+                    </span>
+                    @if (entry.user) {
+                      <span aria-hidden="true">&middot;</span>
+                    }
+                  }
+                  @if (entry.user; as user) {
+                    <app-avatar
+                      [image]="user.imageUrl"
+                      [name]="user.name"
+                      [imageIsLogo]="user.isVendor"
+                      initialsClass="text-[0.5rem]"
+                      class="distr-home-avatar" />
+                    <span class="font-medium text-gray-700 dark:text-gray-300">{{ user.name }}</span>
+                  }
+                </p>
+              }
+            </div>
+          </a>
+        </li>
+      } @empty {
+        <li class="distr-text-muted px-2 py-4 text-sm">No activity in the last 90 days</li>
+      }
+    </ul>
+  </app-customer-home-collapsible>
+</div>

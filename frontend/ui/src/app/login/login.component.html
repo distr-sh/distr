@@ -49,7 +49,7 @@
                   [queryParams]="{
                     email: emailPasswordForm.controls.email.valid ? emailPasswordForm.value.email : undefined,
                   }"
-                  class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">
+                  class="distr-link text-sm">
                   Forgot password?
                 </a>
               </div>
@@ -65,9 +65,7 @@
               @if (loginConfig().registration === 'enabled') {
                 <p class="text-center text-sm font-light text-gray-500 dark:text-gray-400">
                   Don’t have an account yet?<br />
-                  <a routerLink="/register" class="font-medium text-primary-600 hover:underline dark:text-primary-500"
-                    >Sign up</a
-                  >
+                  <a routerLink="/register" class="distr-link">Sign up</a>
                 </p>
               }
             </form>
@@ -92,12 +90,7 @@
                 <div class="text-sm text-red-500">{{ errorMessage }}</div>
               }
               <div class="flex items-center justify-between">
-                <button
-                  type="button"
-                  (click)="reset()"
-                  class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">
-                  Back to login
-                </button>
+                <button type="button" (click)="reset()" class="distr-link text-sm">Back to login</button>
               </div>
               <button
                 type="submit"

@@ -1,6 +1,6 @@
 services:
   backend:
-    image: 'ghcr.io/distr-sh/hello-distr/backend:0.4.27'
+    image: 'ghcr.io/distr-sh/hello-distr/backend:0.4.29'
     restart: unless-stopped
     environment:
       DB_URL: postgresql+psycopg2://acme:${POSTGRES_PASSWORD}@acme-db/acme?sslmode=disable

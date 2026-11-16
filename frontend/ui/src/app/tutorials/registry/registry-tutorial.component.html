@@ -231,10 +231,7 @@
                   >
                   <p class="my-1 text-sm">
                     The hello-distr proxy is one of several images that all belong to the
-                    <a
-                      href="https://github.com/distr-sh/hello-distr"
-                      class="text-gray-600 underline dark:text-gray-400"
-                      target="_blank"
+                    <a href="https://github.com/distr-sh/hello-distr" class="distr-link" target="_blank"
                       >hello-distr application</a
                     >. Pull it from the GitHub Container Registry to your machine's docker environment, with:
                   </p>
@@ -325,7 +322,7 @@
                     <a
                       [routerLink]="['/artifact-pulls']"
                       [queryParams]="{tutorial: this.route.snapshot.url[0].path}"
-                      class="text-primary-600 underline"
+                      class="distr-link"
                       >Artifacts Download History</a
                     >
                     you will now see that you have pulled the image!

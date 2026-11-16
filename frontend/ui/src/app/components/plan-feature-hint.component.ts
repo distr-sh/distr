@@ -14,12 +14,7 @@ import {PlanBadgeComponent} from './plan-badge.component';
         subscription.
       </div>
       Our Pro and Business plans are also available for self-hosted customers. See our
-      <a
-        [href]="websiteUrl + '/pricing/'"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="text-gray-600 hover:underline dark:text-gray-400"
-        >pricing page</a
+      <a [href]="websiteUrl + '/pricing/'" target="_blank" rel="noopener noreferrer" class="distr-link">pricing page</a
       >.
     </div>
   `,

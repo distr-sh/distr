@@ -20,6 +20,7 @@ import {customerDetailTabs} from './components/customer-organizations/detail/cus
 import {CustomerDetailPageComponent} from './components/customer-organizations/detail/customer-detail-page.component';
 import {CustomerDownloadsTabComponent} from './components/customer-organizations/detail/customer-downloads-tab.component';
 import {CustomerSupportTabComponent} from './components/customer-organizations/detail/customer-support-tab.component';
+import {CustomerLicensesTabComponent} from './components/customer-organizations/detail/customer-licenses-tab.component';
 import {CustomerTabPlaceholderComponent} from './components/customer-organizations/detail/customer-tab-placeholder.component';
 import {NavShellComponent} from './components/nav-shell.component';
 import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
@@ -38,13 +39,11 @@ import {CustomerHomePageComponent} from './home/customer/customer-home-page.comp
 import {VendorHomePageComponent} from './home/vendor/vendor-home-page.component';
 import {CustomerLicenseDetailPageComponent} from './licenses/customer-license-detail-page.component';
 import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
-import {VendorLicenseDetailPageComponent} from './licenses/vendor-license-detail-page.component';
 import {CustomerUpdateNotificationsPageComponent} from './notification-configurations/customer-update-notifications-page.component';
 import {UpdateNotificationsPageComponent} from './notification-configurations/update-notifications-page.component';
 import {CustomerNotificationRecordsPageComponent} from './notification-records/customer-notification-records-page.component';
 import {NotificationRecordsPageComponent} from './notification-records/notification-records-page.component';
 import {BillingComponent} from './organization-settings/billing/billing.component';
-import {CustomEmailComponent} from './organization-settings/custom-email/custom-email.component';
 import {OrganizationDomainsComponent} from './organization-settings/domains-and-sign-in/organization-domains.component';
 import {GeneralSettingsComponent} from './organization-settings/general/general-settings.component';
 import {organizationSettingsTabs} from './organization-settings/organization-settings-navigation';
@@ -347,7 +346,7 @@ const shellRoutes: Routes = [
               {
                 path: 'licenses',
                 title: customerDetailTabs.title('licenses'),
-                component: CustomerTabPlaceholderComponent,
+                component: CustomerLicensesTabComponent,
                 canActivate: [customerDetailTabs.guard('licenses')],
               },
               {
@@ -433,7 +432,7 @@ const shellRoutes: Routes = [
           },
           {
             path: ':customerOrganizationId',
-            component: VendorLicenseDetailPageComponent,
+            redirectTo: '/customers/:customerOrganizationId/licenses',
           },
         ],
       },
@@ -474,12 +473,6 @@ const shellRoutes: Routes = [
                 title: organizationSettingsTabs.title('identity-provider'),
                 component: OrganizationDomainsComponent,
                 canActivate: [organizationSettingsTabs.guard('identity-provider')],
-              },
-              {
-                path: 'email',
-                title: organizationSettingsTabs.title('email'),
-                component: CustomEmailComponent,
-                canActivate: [organizationSettingsTabs.guard('email')],
               },
               {
                 path: 'subscription',
