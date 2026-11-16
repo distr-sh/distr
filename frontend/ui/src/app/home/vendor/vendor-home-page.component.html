@@ -91,7 +91,8 @@
           [icon]="faCircleArrowUp"
           heading="Updates"
           [type]="updates.type"
-          link="/customers">
+          link="/customers"
+          [queryParams]="updates.type === 'warning' ? outdatedCustomersQueryParams : undefined">
           @if (updates.type !== 'neutral') {
             {{ updates.outdatedCustomers }} outdated
           }
@@ -133,7 +134,8 @@
           [icon]="faKey"
           heading="Licenses"
           [type]="licenses.type"
-          [link]="licenses.link">
+          [link]="licenses.link"
+          [queryParams]="licenses.queryParams">
           <ng-container [ngPlural]="licenses.customers">
             <ng-template ngPluralCase="=1">1 customer</ng-template>
             <ng-template ngPluralCase="other">{{ licenses.customers }} customers</ng-template>
