@@ -3,7 +3,7 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faBell, faCircleArrowUp, faClockRotateLeft} from '@fortawesome/free-solid-svg-icons';
+import {faClockRotateLeft} from '@fortawesome/free-solid-svg-icons';
 import {AlertConfigurationsComponent} from '../alert-configurations/alert-configurations.component';
 import {CardHeadingComponent} from '../components/card-heading.component';
 import {PageComponent} from '../components/page.component';
@@ -25,8 +25,6 @@ import {ContextService} from '../services/context.service';
   ],
 })
 export class NotificationsPageComponent {
-  protected readonly faBell = faBell;
-  protected readonly faCircleArrowUp = faCircleArrowUp;
   protected readonly faClockRotateLeft = faClockRotateLeft;
 
   protected readonly searchControl = new FormControl('', {nonNullable: true});

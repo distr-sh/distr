@@ -15,14 +15,14 @@
     @if (alertsVisible()) {
       <div class="distr-table-panel">
         <app-alert-configurations [search]="search()">
-          <h2 heading appCardHeading [icon]="faBell">Alerts</h2>
+          <h2 heading appCardHeading>Alerts</h2>
         </app-alert-configurations>
       </div>
     }
     @if (updatesVisible()) {
       <div class="distr-table-panel">
         <app-update-notifications [search]="search()">
-          <h2 heading appCardHeading [icon]="faCircleArrowUp">Updates</h2>
+          <h2 heading appCardHeading>Updates</h2>
         </app-update-notifications>
       </div>
     }
