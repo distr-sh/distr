@@ -101,7 +101,7 @@ func artifactPullFilter(r *http.Request) (types.ArtifactVersionPullFilter, respo
 		filter.Count = count
 	}
 
-	if customerOrgID, resp := artifactPullCustomerFilter(r); resp != nil {
+	if customerOrgID, resp := customerFilterFromQuery(r); resp != nil {
 		return filter, resp
 	} else {
 		filter.CustomerOrganizationID = customerOrgID
@@ -208,7 +208,7 @@ func getArtifactPullFilterOptionsHandler(r *http.Request) (respond.Responder, er
 	ctx := r.Context()
 	authInfo := auth.Authentication.Require(ctx)
 
-	if customerOrgID, resp := artifactPullCustomerFilter(r); resp != nil {
+	if customerOrgID, resp := customerFilterFromQuery(r); resp != nil {
 		return resp, nil
 	} else if opts, err := db.GetArtifactVersionPullFilterOptions(
 		ctx, *authInfo.CurrentOrgID(), authInfo.CurrentPartnerOrgID(), customerOrgID,
@@ -225,7 +225,7 @@ func getArtifactPullVersionOptionsHandler(r *http.Request) (respond.Responder, e
 
 	if artifactID, err := QueryParam(r, "artifactId", uuid.Parse); err != nil {
 		return respond.BadRequest("artifactId is required and must be a valid UUID"), nil
-	} else if customerOrgID, resp := artifactPullCustomerFilter(r); resp != nil {
+	} else if customerOrgID, resp := customerFilterFromQuery(r); resp != nil {
 		return resp, nil
 	} else if versions, err := db.GetArtifactVersionPullVersionOptions(
 		ctx,
@@ -237,16 +237,6 @@ func getArtifactPullVersionOptionsHandler(r *http.Request) (respond.Responder, e
 		return nil, fmt.Errorf("could not get version filter options: %w", err)
 	} else {
 		return respond.JSON(mapping.List(versions, mapping.FilterOptionToAPI)), nil
-	}
-}
-
-func artifactPullCustomerFilter(r *http.Request) (*uuid.UUID, respond.Responder) {
-	if id, err := QueryParam(r, "customerOrganizationId", uuid.Parse); errors.Is(err, ErrParamNotDefined) {
-		return nil, nil
-	} else if err != nil {
-		return nil, respond.BadRequest("customerOrganizationId must be a valid UUID")
-	} else {
-		return &id, nil
 	}
 }
 

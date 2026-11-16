@@ -19,13 +19,15 @@ import {CustomerDeploymentsTabComponent} from './components/customer-organizatio
 import {customerDetailTabs} from './components/customer-organizations/detail/customer-detail-navigation';
 import {CustomerDetailPageComponent} from './components/customer-organizations/detail/customer-detail-page.component';
 import {CustomerDownloadsTabComponent} from './components/customer-organizations/detail/customer-downloads-tab.component';
+import {CustomerLicensesTabComponent} from './components/customer-organizations/detail/customer-licenses-tab.component';
+import {CustomerSupportTabComponent} from './components/customer-organizations/detail/customer-support-tab.component';
 import {CustomerTabPlaceholderComponent} from './components/customer-organizations/detail/customer-tab-placeholder.component';
 import {NavShellComponent} from './components/nav-shell.component';
 import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
 import {PortalUnavailableComponent} from './components/portal-unavailable/portal-unavailable.component';
 import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
 import {PartnerUsersComponent} from './components/users/partners/partner-users.component';
-import {VendorUsersComponent} from './components/users/vendors/vendor-users.component';
+import {UsersPageComponent} from './components/users/users-page.component';
 import {CustomerPortalBrandingComponent} from './customer-portal/branding/customer-portal-branding.component';
 import {customerPortalTabs} from './customer-portal/customer-portal-navigation';
 import {CustomerPortalComponent} from './customer-portal/customer-portal.component';
@@ -37,7 +39,6 @@ import {CustomerHomePageComponent} from './home/customer/customer-home-page.comp
 import {VendorHomePageComponent} from './home/vendor/vendor-home-page.component';
 import {CustomerLicenseDetailPageComponent} from './licenses/customer-license-detail-page.component';
 import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
-import {VendorLicenseDetailPageComponent} from './licenses/vendor-license-detail-page.component';
 import {CustomerUpdateNotificationsPageComponent} from './notification-configurations/customer-update-notifications-page.component';
 import {UpdateNotificationsPageComponent} from './notification-configurations/update-notifications-page.component';
 import {CustomerNotificationRecordsPageComponent} from './notification-records/customer-notification-records-page.component';
@@ -47,6 +48,7 @@ import {OrganizationDomainsComponent} from './organization-settings/domains-and-
 import {GeneralSettingsComponent} from './organization-settings/general/general-settings.component';
 import {organizationSettingsTabs} from './organization-settings/organization-settings-navigation';
 import {OrganizationSettingsComponent} from './organization-settings/organization-settings.component';
+import {SecretsSettingsComponent} from './organization-settings/secrets/secrets-settings.component';
 import {SubscriptionCallbackComponent} from './organization-settings/subscription/subscription-callback.component';
 import {SubscriptionComponent} from './organization-settings/subscription/subscription.component';
 import {
@@ -54,6 +56,7 @@ import {
   subscriptionGuard,
   subscriptionPath,
 } from './organization-settings/subscription/subscription.guard';
+import {TeamSettingsComponent} from './organization-settings/team/team-settings.component';
 import {CustomerSecretsPageComponent} from './secrets/customer-secrets-page.component';
 import {SecretsPage} from './secrets/secrets-page.component';
 import {AuthService} from './services/auth.service';
@@ -63,7 +66,7 @@ import {OrganizationService} from './services/organization.service';
 import {ToastService} from './services/toast.service';
 import {SidebarLinksPageComponent} from './sidebar-links/sidebar-links-page.component';
 import {SupportBundleDetailComponent} from './support-bundles/detail/support-bundle-detail.component';
-import {SupportBundleListComponent} from './support-bundles/list/support-bundle-list.component';
+import {SupportBundleListPageComponent} from './support-bundles/list/support-bundle-list-page.component';
 import {SupportBundleSettingsComponent} from './support-bundles/vendor/support-bundle-settings.component';
 import {BrandingTutorialComponent} from './tutorials/branding/branding-tutorial.component';
 import {ControllersTutorialComponent} from './tutorials/controllers/controllers-tutorial.component';
@@ -111,6 +114,14 @@ const requireVendorOrPartner: CanActivateFn = () => {
 const matchVendorOrPartner: CanMatchFn = () => {
   const auth = inject(AuthService);
   return auth.isVendor() || auth.isPartner();
+};
+
+const requirePartnerOrCustomer: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  if (auth.isPartner() || auth.isCustomer()) {
+    return true;
+  }
+  return inject(Router).createUrlTree(['/']);
 };
 
 const requireVendorOrCustomer: CanActivateFn = () => {
@@ -345,13 +356,13 @@ const shellRoutes: Routes = [
               {
                 path: 'licenses',
                 title: customerDetailTabs.title('licenses'),
-                component: CustomerTabPlaceholderComponent,
+                component: CustomerLicensesTabComponent,
                 canActivate: [customerDetailTabs.guard('licenses')],
               },
               {
                 path: 'support',
                 title: customerDetailTabs.title('support'),
-                component: CustomerTabPlaceholderComponent,
+                component: CustomerSupportTabComponent,
                 canActivate: [customerDetailTabs.guard('support')],
               },
               {
@@ -383,13 +394,14 @@ const shellRoutes: Routes = [
       {
         path: 'users',
         title: 'Users',
-        component: VendorUsersComponent,
-        canActivate: [requiredRoleGuard('admin')],
+        component: UsersPageComponent,
+        canActivate: [requirePartnerOrCustomer, requiredRoleGuard('admin')],
       },
       {
         path: 'secrets',
         title: 'Secrets',
         component: SecretsPage,
+        canActivate: [requirePartnerOrCustomer],
       },
       {
         path: 'license-keys',
@@ -431,7 +443,7 @@ const shellRoutes: Routes = [
           },
           {
             path: ':customerOrganizationId',
-            component: VendorLicenseDetailPageComponent,
+            redirectTo: '/customers/:customerOrganizationId/licenses',
           },
         ],
       },
@@ -466,6 +478,18 @@ const shellRoutes: Routes = [
                 title: organizationSettingsTabs.title('general'),
                 component: GeneralSettingsComponent,
                 canActivate: [organizationSettingsTabs.guard('general')],
+              },
+              {
+                path: 'team',
+                title: organizationSettingsTabs.title('team'),
+                component: TeamSettingsComponent,
+                canActivate: [organizationSettingsTabs.guard('team')],
+              },
+              {
+                path: 'secrets',
+                title: organizationSettingsTabs.title('secrets'),
+                component: SecretsSettingsComponent,
+                canActivate: [organizationSettingsTabs.guard('secrets')],
               },
               {
                 path: 'identity-provider',
@@ -602,7 +626,7 @@ const shellRoutes: Routes = [
           {
             path: '',
             pathMatch: 'full',
-            component: SupportBundleListComponent,
+            component: SupportBundleListPageComponent,
           },
           {
             path: 'settings',
