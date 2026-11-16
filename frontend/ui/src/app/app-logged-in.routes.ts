@@ -19,8 +19,8 @@ import {CustomerDeploymentsTabComponent} from './components/customer-organizatio
 import {customerDetailTabs} from './components/customer-organizations/detail/customer-detail-navigation';
 import {CustomerDetailPageComponent} from './components/customer-organizations/detail/customer-detail-page.component';
 import {CustomerDownloadsTabComponent} from './components/customer-organizations/detail/customer-downloads-tab.component';
-import {CustomerSupportTabComponent} from './components/customer-organizations/detail/customer-support-tab.component';
 import {CustomerLicensesTabComponent} from './components/customer-organizations/detail/customer-licenses-tab.component';
+import {CustomerSupportTabComponent} from './components/customer-organizations/detail/customer-support-tab.component';
 import {CustomerTabPlaceholderComponent} from './components/customer-organizations/detail/customer-tab-placeholder.component';
 import {NavShellComponent} from './components/nav-shell.component';
 import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
