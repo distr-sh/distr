@@ -233,8 +233,7 @@
             class="flex flex-col items-center justify-center px-6 py-10 text-center text-gray-500 dark:text-gray-400">
             <p class="text-sm">
               Versions for this artifact will be automatically synced from
-              <span class="font-mono text-gray-700 dark:text-gray-300">{{ artifact.upstreamUrl }}</span
-              >.
+              <span class="font-mono text-gray-700 dark:text-gray-300">{{ artifact.upstreamUrl }}</span>.
             </p>
             @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
               <p class="mt-1 text-sm">
@@ -253,8 +252,7 @@
           <div class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
             <p class="text-sm">
               No version matches
-              <span class="font-mono text-gray-700 dark:text-gray-300">{{ search() }}</span
-              >.
+              <span class="font-mono text-gray-700 dark:text-gray-300">{{ search() }}</span>.
             </p>
           </div>
         }
