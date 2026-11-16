@@ -7,7 +7,6 @@ import {AccessTokenDetailComponent} from './access-tokens/access-token-detail.co
 import {AccessTokensComponent} from './access-tokens/access-tokens.component';
 import {AdvisoryDetailComponent} from './advisories/advisory-detail.component';
 import {AdvisoryListComponent} from './advisories/advisory-list.component';
-import {AlertConfigurationsPageComponent} from './alert-configurations/alert-configurations-page.component';
 import {ApplicationDetailComponent} from './applications/application-detail.component';
 import {ApplicationsPageComponent} from './applications/applications-page.component';
 import {ArtifactPullsPageComponent} from './artifacts/artifact-pulls/artifact-pulls-page.component';
@@ -42,8 +41,8 @@ import {CustomerHomePageComponent} from './home/customer/customer-home-page.comp
 import {VendorHomePageComponent} from './home/vendor/vendor-home-page.component';
 import {CustomerLicenseDetailPageComponent} from './licenses/customer-license-detail-page.component';
 import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
-import {UpdateNotificationsPageComponent} from './notification-configurations/update-notifications-page.component';
 import {NotificationRecordsPageComponent} from './notification-records/notification-records-page.component';
+import {NotificationsPageComponent} from './notifications/notifications-page.component';
 import {BillingComponent} from './organization-settings/billing/billing.component';
 import {OrganizationDomainsComponent} from './organization-settings/domains-and-sign-in/organization-domains.component';
 import {GeneralSettingsComponent} from './organization-settings/general/general-settings.component';
@@ -583,26 +582,15 @@ const shellRoutes: Routes = [
       },
       {
         path: 'notifications',
-        canActivate: [requireVendorOrCustomer, notificationsEnabledGuard()],
+        title: 'Notifications',
+        canActivate: [
+          requireVendorOrCustomer,
+          notificationsEnabledGuard(),
+          requireCustomerFeature('alerts', 'update_notifications'),
+        ],
         children: [
-          {
-            path: 'alert-configurations',
-            title: 'Alerts',
-            canActivate: [requireCustomerFeature('alerts')],
-            component: AlertConfigurationsPageComponent,
-          },
-          {
-            path: 'updates',
-            title: 'Update Notifications',
-            canActivate: [requireCustomerFeature('update_notifications')],
-            component: UpdateNotificationsPageComponent,
-          },
-          {
-            path: 'history',
-            title: 'Notification History',
-            canActivate: [requireCustomerFeature('alerts', 'update_notifications')],
-            component: NotificationRecordsPageComponent,
-          },
+          {path: '', pathMatch: 'full', component: NotificationsPageComponent},
+          {path: 'history', title: 'Notification History', component: NotificationRecordsPageComponent},
         ],
       },
       {path: 'support-bundles', pathMatch: 'full', redirectTo: 'support'},

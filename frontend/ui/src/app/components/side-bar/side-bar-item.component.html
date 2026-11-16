@@ -38,27 +38,4 @@
       <app-plan-feature-hint [plan]="item.plan" />
     </ng-template>
   }
-  @case ('group') {
-    <button
-      type="button"
-      class="item"
-      [attr.aria-expanded]="isExpanded()"
-      [attr.aria-controls]="'side-bar-group-' + item.id"
-      (click)="isExpanded.set(!isExpanded())">
-      <fa-icon [icon]="item.icon" size="lg" class="icon" />
-      <span class="label whitespace-nowrap">{{ item.label }}</span>
-      <fa-icon [icon]="faChevronDown" [class.rotate-x-180]="isExpanded()" class="transition duration-150 ease-in-out" />
-    </button>
-    @if (isExpanded()) {
-      <ul class="mt-1 space-y-1" [id]="'side-bar-group-' + item.id">
-        @for (child of item.children; track child.id) {
-          <li>
-            <a class="item child" routerLinkActive="active" [routerLink]="child.route" (click)="sidebar.hide()">
-              {{ child.label }}
-            </a>
-          </li>
-        }
-      </ul>
-    }
-  }
 }

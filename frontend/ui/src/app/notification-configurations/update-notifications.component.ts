@@ -60,6 +60,8 @@ type NotificationKind = 'application' | 'artifact';
 export class UpdateNotificationsComponent {
   /** customerOrganizationId scopes the page to what one customer is notified about. */
   public readonly customerOrganizationId = input<string>();
+  /** Replaces the component's own search bar when the page filters several tables at once. */
+  public readonly search = input<string>();
 
   protected readonly auth = inject(AuthService);
   protected readonly canEdit = this.auth.hasAnyRole('read_write', 'admin');
@@ -203,7 +205,7 @@ export class UpdateNotificationsComponent {
   protected readonly filterForm = this.fb.group({search: ''});
   private readonly filterValue = toSignal(this.filterForm.controls.search.valueChanges);
   protected readonly filteredRows = computed(() => {
-    const value = this.filterValue()?.toLowerCase();
+    const value = (this.search() ?? this.filterValue())?.toLowerCase();
     const rows = this.rows();
     return !value ? rows : rows.filter((config) => config.name.toLowerCase().includes(value));
   });
