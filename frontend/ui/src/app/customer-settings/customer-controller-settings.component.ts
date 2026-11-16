@@ -16,6 +16,7 @@ import {CustomerSettings} from '../types/customer-settings';
   selector: 'app-customer-controller-settings',
   templateUrl: './customer-controller-settings.component.html',
   imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, AlertComponent],
+  host: {class: 'block'},
 })
 export class CustomerControllerSettingsComponent {
   protected readonly faFloppyDisk = faFloppyDisk;

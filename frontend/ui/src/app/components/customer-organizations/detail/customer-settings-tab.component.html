@@ -1,0 +1,31 @@
+@if (customerOrganization(); as customer) {
+  <div class="grid gap-4 xl:grid-cols-[minmax(20rem,auto)_minmax(0,1fr)]">
+    <div class="distr-panel">
+      <h2 appCardHeading [icon]="faToggleOn">Features</h2>
+      <p class="distr-text-muted mt-1 text-sm">Available in the customer portal.</p>
+      <app-customer-features [customerOrganization]="customer" class="mt-4" />
+    </div>
+    <div class="distr-table-panel">
+      <app-sidebar-links [customerOrganizationId]="customer.id">
+        <div heading>
+          <h2 appCardHeading [icon]="faLink">Links</h2>
+          <p class="distr-text-muted mt-1 text-sm">Shown in the customer portal sidebar.</p>
+        </div>
+      </app-sidebar-links>
+    </div>
+  </div>
+  @if (settingsEnabled()) {
+    <div class="grid gap-4 2xl:grid-cols-[28rem_minmax(0,1fr)]">
+      <div class="distr-panel" [class.2xl:col-span-2]="!domainAndSignInEnabled()">
+        <h2 appCardHeading [icon]="faServer" class="mb-4">Controllers</h2>
+        <app-customer-controller-settings [customerOrganizationId]="customer.id" />
+      </div>
+      @if (domainAndSignInEnabled()) {
+        <div class="distr-panel">
+          <h2 appCardHeading [icon]="faGlobe" class="mb-4">Domain &amp; Sign-in</h2>
+          <app-customer-domain-and-sign-in [customerOrganizationId]="customer.id" />
+        </div>
+      }
+    </div>
+  }
+}
