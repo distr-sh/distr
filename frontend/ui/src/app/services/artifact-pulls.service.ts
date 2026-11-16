@@ -7,6 +7,7 @@ import {
   ArtifactVersionPullFilterOptions,
   LatestArtifactPull,
 } from '../types/artifact-version-pull';
+import {ReactiveList} from './cache';
 
 export interface ArtifactPullFilters {
   before?: Date;
@@ -21,21 +22,29 @@ export interface ArtifactPullFilters {
   deploymentTargetId?: string;
 }
 
+class LatestArtifactPullsReactiveList extends ReactiveList<LatestArtifactPull> {
+  protected override identify = (pull: LatestArtifactPull) => `${pull.customerOrganizationId}/${pull.artifactId}`;
+  protected override sortAttr = (pull: LatestArtifactPull) => pull.artifactName;
+}
+
 @Injectable({providedIn: 'root'})
 export class ArtifactPullsService {
   private readonly baseUrl = '/api/v1/artifact-pulls';
   private readonly httpClient = inject(HttpClient);
+  private readonly latestCache = new LatestArtifactPullsReactiveList(() =>
+    this.httpClient.get<LatestArtifactPull[]>(`${this.baseUrl}/latest`)
+  );
 
   public get(filters: ArtifactPullFilters = {}): Observable<ArtifactVersionPull[]> {
     return this.httpClient.get<ArtifactVersionPull[]>(this.baseUrl, {params: this.buildParams(filters)});
   }
 
-  public getLatest(customerOrganizationId?: string): Observable<LatestArtifactPull[]> {
-    let params = new HttpParams();
-    if (customerOrganizationId) {
-      params = params.set('customerOrganizationId', customerOrganizationId);
-    }
-    return this.httpClient.get<LatestArtifactPull[]>(`${this.baseUrl}/latest`, {params});
+  public listLatest(): Observable<LatestArtifactPull[]> {
+    return this.latestCache.get();
+  }
+
+  public refreshLatest(): Promise<LatestArtifactPull[]> {
+    return this.latestCache.refresh();
   }
 
   public getFilterOptions(customerOrganizationId?: string): Observable<ArtifactVersionPullFilterOptions> {
