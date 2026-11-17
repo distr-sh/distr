@@ -80,6 +80,7 @@ export function toDeploymentHealth(targets: DeploymentTarget[]): DeploymentHealt
     running: count('running'),
     error: count('error'),
     stale: count('stale'),
+    progressing: count('progressing'),
   };
 }
 

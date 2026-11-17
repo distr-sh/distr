@@ -151,6 +151,9 @@
                       @if (deployments.healthy > 0) {
                         <span class="text-green-600 dark:text-green-400">{{ deployments.healthy }} healthy</span>
                       }
+                      @if (deployments.progressing > 0) {
+                        <span class="text-blue-600 dark:text-blue-400">{{ deployments.progressing }} progressing</span>
+                      }
                       @if (deployments.noStatus > 0) {
                         <span class="distr-text-muted">{{ deployments.noStatus }} no status</span>
                       }

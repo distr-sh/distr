@@ -4,6 +4,7 @@ export interface DeploymentHealth {
   running: number;
   error: number;
   stale: number;
+  progressing: number;
 }
 
 export interface VendorHomeUpdates {

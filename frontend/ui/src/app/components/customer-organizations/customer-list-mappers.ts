@@ -36,7 +36,6 @@ export interface CustomerListRow {
 }
 
 export interface CustomerListDeployments extends DeploymentHealth {
-  /** The deployments that are progressing or have not reported a status. */
   noStatus: number;
 }
 
@@ -119,7 +118,7 @@ export function toCustomerListRows(
       license: licenses && toCustomerLicenseStatus(licenseByCustomer.get(customer.id), now),
       deployments: health && {
         ...health,
-        noStatus: health.total - health.healthy - health.running - health.error - health.stale,
+        noStatus: health.total - health.healthy - health.running - health.error - health.stale - health.progressing,
       },
       isOutdated:
         deployments &&
