@@ -14,8 +14,8 @@ import {LatestArtifactPull} from '../../types/artifact-version-pull';
 import {License} from '../../types/license';
 import {SupportBundle} from '../../types/support-bundle';
 import {
+  toDeploymentHealth,
   toVendorHomeCustomers,
-  toVendorHomeDeploymentHealth,
   toVendorHomeLicenses,
   toVendorHomeUpdates,
 } from './vendor-home-mappers';
@@ -65,8 +65,8 @@ const target = (
   deploymentLogsEnabled: false,
 });
 
-describe('toVendorHomeDeploymentHealth', () => {
-  it('should count a stale deployment as stale only and leave out progressing and unknown ones', () => {
+describe('toDeploymentHealth', () => {
+  it('should count a stale deployment as stale only and leave out unknown ones', () => {
     const targets = [
       target([deployment(status('healthy')), deployment(status('running')), deployment(status('error'))]),
       target([
@@ -76,17 +76,25 @@ describe('toVendorHomeDeploymentHealth', () => {
         deployment(status('healthy')),
       ]),
     ];
-    expect(toVendorHomeDeploymentHealth(targets)).toEqual({total: 7, healthy: 2, running: 1, error: 1, stale: 1});
+    expect(toDeploymentHealth(targets)).toEqual({
+      total: 7,
+      healthy: 2,
+      running: 1,
+      error: 1,
+      stale: 1,
+      progressing: 1,
+    });
   });
 
   it('should judge a deployment by its applied revision, not by a failed update', () => {
     const failedUpdate = deployment(status('error'), status('healthy'));
-    expect(toVendorHomeDeploymentHealth([target([failedUpdate])])).toEqual({
+    expect(toDeploymentHealth([target([failedUpdate])])).toEqual({
       total: 1,
       healthy: 1,
       running: 0,
       error: 0,
       stale: 0,
+      progressing: 0,
     });
   });
 });

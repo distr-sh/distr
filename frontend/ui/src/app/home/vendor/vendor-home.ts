@@ -1,9 +1,10 @@
-export interface VendorHomeDeploymentHealth {
+export interface DeploymentHealth {
   total: number;
   healthy: number;
   running: number;
   error: number;
   stale: number;
+  progressing: number;
 }
 
 export interface VendorHomeUpdates {
