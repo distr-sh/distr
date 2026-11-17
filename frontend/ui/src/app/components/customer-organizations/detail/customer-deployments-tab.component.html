@@ -6,7 +6,9 @@
     enableLabel="Enable deployments"
     enabledMessage="Deployments have been enabled for this customer"
     class="mb-4">
-    The customer portal shows no deployments until deployments are enabled.
+    The customer portal shows no deployments until the feature is enabled.
   </app-customer-feature-disabled-alert>
 }
-<app-deployment-targets [customerOrganizationId]="customerOrganizationId()" />
+<app-deployment-targets
+  [customerOrganizationId]="customerOrganizationId()"
+  [customerFeatureDisabled]="isDeploymentsDisabled()" />

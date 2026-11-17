@@ -5,7 +5,8 @@
       alertActions
       type="button"
       (click)="enable()"
-      [disabled]="enabling()"
+      [disabled]="enabling() || !!unmetRequirement()"
+      [title]="unmetRequirement() ?? ''"
       class="distr-btn-primary shrink-0 px-3 py-1.5">
       {{ enableLabel() }}
     </button>

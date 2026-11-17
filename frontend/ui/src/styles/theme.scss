@@ -75,6 +75,11 @@
     @apply h-4 w-7 after:h-3 after:w-3;
   }
 
+  // a `<label>` wrapping a `distr-toggle` and its text, dimmed as a whole while the toggle is disabled
+  .distr-toggle-label {
+    @apply inline-flex cursor-pointer items-center gap-3 text-sm font-medium text-gray-900 has-disabled:cursor-not-allowed has-disabled:opacity-60 dark:text-white;
+  }
+
   .distr-input {
     @apply block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 placeholder-gray-500 focus:border-primary-600 focus:ring-primary-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500;
   }

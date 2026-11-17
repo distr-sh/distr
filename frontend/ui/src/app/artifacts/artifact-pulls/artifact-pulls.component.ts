@@ -37,6 +37,7 @@ const ANONYMOUS_USER = 'anonymous';
   templateUrl: './artifact-pulls.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [DatePipe, ReactiveFormsModule, FaIconComponent, SpinnerComponent],
+  host: {'[hidden]': 'isHidden()'},
 })
 export class ArtifactPullsComponent {
   private readonly pullsService = inject(ArtifactPullsService);
@@ -46,6 +47,8 @@ export class ArtifactPullsComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   public readonly customerOrganizationId = input<string>();
+  /** Hides the component for a customer that lacks the feature, unless the customer has downloaded something. */
+  public readonly customerFeatureDisabled = input(false);
   private readonly customerOrganizationId$ = toObservable(this.customerOrganizationId);
 
   protected readonly faDownload = faDownload;
@@ -77,6 +80,10 @@ export class ArtifactPullsComponent {
     shareReplay(1)
   );
   protected readonly filterOptions = toSignal(this.filterOptions$);
+  // The filter options are collected from the downloads, so an artifact among them means there is one.
+  protected readonly isHidden = computed(
+    () => this.customerFeatureDisabled() && !this.filterOptions()?.artifacts.length
+  );
 
   protected readonly versionOptions = toSignal(
     combineLatest([

@@ -1,12 +1,12 @@
-import {Component, inject, input, signal} from '@angular/core';
+import {Component, computed, inject, input, signal} from '@angular/core';
 import {CustomerOrganization, CustomerOrganizationFeature} from '@distr-sh/distr-sdk';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../../../util/errors';
 import {AuthService} from '../../../services/auth.service';
 import {CustomerOrganizationsService} from '../../../services/customer-organizations.service';
 import {ToastService} from '../../../services/toast.service';
+import {switchCustomerFeature, unmetCustomerFeatureRequirement} from '../../../types/customer-features';
 import {AlertComponent} from '../../alert/alert.component';
-import {customerFeatures} from './customer-features.component';
 
 /** The projected content is the description. */
 @Component({
@@ -27,22 +27,19 @@ export class CustomerFeatureDisabledAlertComponent {
 
   protected readonly canEdit = inject(AuthService).hasAnyRole('read_write', 'admin');
   protected readonly enabling = signal(false);
+  protected readonly unmetRequirement = computed(() =>
+    unmetCustomerFeatureRequirement(this.customerOrganization().features, this.feature(), {enablesRequired: false})
+  );
 
   protected async enable() {
     const customer = this.customerOrganization();
-    const feature = this.feature();
-    const features = new Set([...customer.features, feature]);
-    const requires = customerFeatures.find((it) => it.feature === feature)?.requires;
-    if (requires) {
-      features.add(requires);
-    }
     this.enabling.set(true);
     try {
       await firstValueFrom(
         this.customerOrganizationsService.updateCustomerOrganization(customer.id, {
           name: customer.name,
           imageId: customer.imageId,
-          features: Array.from(features),
+          features: switchCustomerFeature(customer.features, this.feature(), true),
         })
       );
       this.toast.success(this.enabledMessage());
