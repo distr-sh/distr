@@ -15,7 +15,7 @@ import {CustomerDetailTabId} from './detail/customer-detail-navigation';
 
 const licenseExpiryWindowDays = 7;
 
-export type CustomerManagement = 'controller' | 'self' | 'none';
+export type CustomerManagement = 'controller' | 'self' | 'unknown';
 
 export type CustomerLicenseStatus = 'no_license' | 'expired' | 'expiring' | 'valid';
 
@@ -23,7 +23,8 @@ export interface CustomerListRow {
   id: string;
   name: string;
   imageUrl?: string;
-  management: CustomerManagement;
+  /** Undefined while the deployments and pulls of a customer with both features are loading. */
+  management?: CustomerManagement;
   /** The tab that shows what the updates column judges: the deployments, or the downloads of a customer without. */
   updatesTab: Extract<CustomerDetailTabId, 'deployments' | 'downloads'>;
   /** Undefined while the licenses are loading or the organization has no licensing. */
@@ -59,13 +60,31 @@ export interface CustomerListLicenseSources {
   templates: LicenseTemplate[];
 }
 
-function toCustomerManagement(customer: CustomerOrganizationWithUsage): CustomerManagement {
-  if (customer.features.includes('deployment_targets')) {
+/**
+ * Decided by the features when the customer has only one of deployment targets and artifacts, and by whether it
+ * deployed or pulled anything when it has both, since every customer gets both by default.
+ */
+function toCustomerManagement(
+  customer: CustomerOrganizationWithUsage,
+  health: VendorHomeDeploymentHealth | undefined,
+  pulls: LatestArtifactPull[] | undefined
+): CustomerManagement | undefined {
+  const deploymentTargetsEnabled = customer.features.includes('deployment_targets');
+  const artifactsEnabled = customer.features.includes('artifacts');
+  if (deploymentTargetsEnabled && !artifactsEnabled) {
     return 'controller';
-  } else if (customer.features.includes('artifacts')) {
+  } else if (artifactsEnabled && !deploymentTargetsEnabled) {
+    return 'self';
+  } else if (!deploymentTargetsEnabled) {
+    return 'unknown';
+  } else if (health === undefined || pulls === undefined) {
+    return undefined;
+  } else if (health.total > 0) {
+    return 'controller';
+  } else if (pulls.some((pull) => pull.customerOrganizationId === customer.id)) {
     return 'self';
   } else {
-    return 'none';
+    return 'unknown';
   }
 }
 
@@ -119,7 +138,6 @@ export function toCustomerListRows(
 ): CustomerListRow[] {
   const licenseByCustomer = new Map(licenses?.licenses.map((license) => [license.customerOrganization.id, license]));
   return customers.map((customer): CustomerListRow => {
-    const management = toCustomerManagement(customer);
     const health =
       deployments &&
       toVendorHomeDeploymentHealth(
@@ -129,7 +147,7 @@ export function toCustomerListRows(
       id: customer.id,
       name: customer.name,
       imageUrl: customer.imageUrl,
-      management,
+      management: toCustomerManagement(customer, health, deployments?.pulls),
       updatesTab: (health?.total ?? 0) > 0 ? 'deployments' : 'downloads',
       license: licenses && toCustomerLicenseStatus(licenseByCustomer.get(customer.id), licenses.templates, now),
       deployments: health && {

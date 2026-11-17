@@ -1,8 +1,9 @@
-import {CustomerOrganizationWithUsage} from '@distr-sh/distr-sdk';
+import {CustomerOrganizationWithUsage, DeploymentTarget} from '@distr-sh/distr-sdk';
 import dayjs from 'dayjs';
+import {LatestArtifactPull} from '../../types/artifact-version-pull';
 import {License} from '../../types/license';
 import {LicenseKey} from '../../types/license-key';
-import {toCustomerLicenseStatus, toCustomerListRows} from './customer-list-mappers';
+import {CustomerListDeploymentSources, toCustomerLicenseStatus, toCustomerListRows} from './customer-list-mappers';
 
 const now = dayjs('2026-06-01T00:00:00Z');
 const inDays = (days: number) => now.add(days, 'day').toISOString();
@@ -61,16 +62,56 @@ describe('toCustomerLicenseStatus', () => {
 });
 
 describe('toCustomerListRows', () => {
-  it('should prefer controller management over self management', () => {
+  const managementOf = (customers: CustomerOrganizationWithUsage[], deployments?: CustomerListDeploymentSources) =>
+    toCustomerListRows(customers, deployments, undefined, undefined, now).map((row) => row.management);
+
+  it('should take the management from the features when the customer has only one of them', () => {
     const customers: CustomerOrganizationWithUsage[] = [
-      {...customer, id: 'both', features: ['artifacts', 'deployment_targets']},
+      {...customer, id: 'deployment_targets', features: ['deployment_targets']},
       {...customer, id: 'artifacts', features: ['artifacts']},
-      {...customer, id: 'none', features: ['alerts']},
+      {...customer, id: 'neither', features: ['alerts']},
     ];
-    expect(toCustomerListRows(customers, undefined, undefined, undefined, now).map((row) => row.management)).toEqual([
-      'controller',
-      'self',
-      'none',
-    ]);
+    expect(managementOf(customers)).toEqual(['controller', 'self', 'unknown']);
+  });
+
+  it('should judge a customer with both features by its deployments first and its artifact pulls second', () => {
+    const both = (id: string): CustomerOrganizationWithUsage => ({
+      ...customer,
+      id,
+      features: ['artifacts', 'deployment_targets'],
+    });
+    const customers = [both('deployed'), both('deployed_and_pulled'), both('pulled'), both('idle')];
+    const target = (customerId: string, deploymentCount: number): DeploymentTarget => ({
+      name: 'target',
+      type: 'docker',
+      customerOrganization: customers.find((it) => it.id === customerId),
+      deployments: Array.from({length: deploymentCount}, () => ({
+        deploymentTargetId: 'target',
+        application: {name: 'app', type: 'docker'},
+        applicationId: 'app',
+        applicationName: 'app',
+        applicationVersionId: 'version',
+        applicationVersionName: '1.0.0',
+        applicationLink: '',
+      })),
+      metricsEnabled: false,
+      imageCleanupEnabled: false,
+      deploymentLogsEnabled: false,
+    });
+    const pull = (customerOrganizationId: string): LatestArtifactPull => ({
+      customerOrganizationId,
+      artifactId: 'artifact',
+      artifactName: 'artifact',
+      versionName: '1.0.0',
+    });
+    const deployments: CustomerListDeploymentSources = {
+      targets: [target('deployed', 1), target('deployed_and_pulled', 1), target('idle', 0)],
+      applications: [],
+      entitlements: [],
+      pulls: [pull('deployed_and_pulled'), pull('pulled')],
+    };
+
+    expect(managementOf(customers)).toEqual([undefined, undefined, undefined, undefined]);
+    expect(managementOf(customers, deployments)).toEqual(['controller', 'controller', 'self', 'unknown']);
   });
 });

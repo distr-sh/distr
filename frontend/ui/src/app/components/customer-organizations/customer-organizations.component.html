@@ -41,19 +41,21 @@
                   <app-avatar [image]="customer.imageUrl" [name]="customer.name" class="size-8 rounded-sm" />
                   <div class="min-w-0">
                     <span class="block">{{ customer.name }}</span>
-                    <span class="distr-text-muted block text-xs">
-                      @switch (customer.management) {
-                        @case ('controller') {
-                          Controller managed
+                    @if (customer.management !== 'unknown') {
+                      <span class="distr-text-muted block text-xs">
+                        @switch (customer.management) {
+                          @case ('controller') {
+                            Controller managed
+                          }
+                          @case ('self') {
+                            Self managed
+                          }
+                          @default {
+                            <span class="distr-skeleton my-0.5 block h-3 w-24"></span>
+                          }
                         }
-                        @case ('self') {
-                          Self managed
-                        }
-                        @case ('none') {
-                          None
-                        }
-                      }
-                    </span>
+                      </span>
+                    }
                   </div>
                 </div>
               </td>
