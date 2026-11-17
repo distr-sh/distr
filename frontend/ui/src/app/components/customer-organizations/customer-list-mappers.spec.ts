@@ -35,29 +35,20 @@ const license = ({
 
 describe('toCustomerLicenseStatus', () => {
   it('should report a customer without license keys and entitlements as having no license', () => {
-    expect(toCustomerLicenseStatus(undefined, [], now)).toBe('no_license');
-    expect(toCustomerLicenseStatus(license({}), [], now)).toBe('no_license');
+    expect(toCustomerLicenseStatus(undefined, now)).toBe('no_license');
+    expect(toCustomerLicenseStatus(license({}), now)).toBe('no_license');
   });
 
   it('should let an expired license win over an expiring one and count a license without expiration as valid', () => {
-    expect(
-      toCustomerLicenseStatus(license({keys: [{expiresAt: inDays(-1)}], entitlements: [inDays(1)]}), [], now)
-    ).toBe('expired');
-    expect(toCustomerLicenseStatus(license({keys: [{expiresAt: undefined}]}), [], now)).toBe('valid');
-  });
-
-  it('should count an expiration within 7 days as expiring', () => {
-    expect(toCustomerLicenseStatus(license({entitlements: [inDays(5)]}), [], now)).toBe('expiring');
-    expect(toCustomerLicenseStatus(license({entitlements: [inDays(10)]}), [], now)).toBe('valid');
-  });
-
-  it('should widen the window of a key to the grace period of its template', () => {
-    const templates = [{id: 'template', name: 'template', payloadTemplate: '', expirationGracePeriodDays: 14}];
-    const key = {expiresAt: inDays(10), licenseTemplateId: 'template'};
-    expect(toCustomerLicenseStatus(license({keys: [key]}), templates, now)).toBe('expiring');
-    expect(toCustomerLicenseStatus(license({keys: [{...key, licenseTemplateId: undefined}]}), templates, now)).toBe(
-      'valid'
+    expect(toCustomerLicenseStatus(license({keys: [{expiresAt: inDays(-1)}], entitlements: [inDays(1)]}), now)).toBe(
+      'expired'
     );
+    expect(toCustomerLicenseStatus(license({keys: [{expiresAt: undefined}]}), now)).toBe('valid');
+  });
+
+  it('should count an expiration within 30 days as expiring', () => {
+    expect(toCustomerLicenseStatus(license({entitlements: [inDays(25)]}), now)).toBe('expiring');
+    expect(toCustomerLicenseStatus(license({entitlements: [inDays(35)]}), now)).toBe('valid');
   });
 });
 

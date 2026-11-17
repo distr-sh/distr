@@ -27,7 +27,7 @@ import {
 /** The status filter the deployments card links to, which has to show exactly the error and stale deployments. */
 export const vendorHomeAttentionStatuses: readonly DeploymentDisplayStatus[] = ['error', 'stale'];
 
-export const vendorHomeLicenseExpiryWindowDays = 30;
+export const licenseExpiryWindowDays = 30;
 
 const openSupportBundleStatuses: readonly SupportBundleStatus[] = ['initialized', 'created'];
 
@@ -36,7 +36,7 @@ const openSupportBundleStatuses: readonly SupportBundleStatus[] = ['initialized'
  * the window, so that every customer counts once.
  */
 export function toVendorHomeLicenses(licenses: License[], now: Dayjs = dayjs()): VendorHomeLicenses {
-  const threshold = now.add(vendorHomeLicenseExpiryWindowDays, 'day');
+  const threshold = now.add(licenseExpiryWindowDays, 'day');
   const expirations = (license: License) =>
     [...license.licenseKeys, ...license.applicationEntitlements, ...license.artifactEntitlements]
       .map((it) => it.expiresAt)

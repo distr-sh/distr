@@ -15,7 +15,6 @@ import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
-import {LicenseTemplatesService} from '../../services/license-templates.service';
 import {LicensesService} from '../../services/licenses.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
@@ -67,15 +66,12 @@ export class CustomerOrganizationsComponent {
   private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
   private readonly artifactPullsService = inject(ArtifactPullsService);
   private readonly licensesService = inject(LicensesService);
-  private readonly licenseTemplatesService = inject(LicenseTemplatesService);
   private readonly supportBundlesService = inject(SupportBundlesService);
   private readonly overlay = inject(OverlayService);
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly organizationService = inject(OrganizationService);
   protected readonly featureFlags = inject(FeatureFlagService);
   protected readonly auth = inject(AuthService);
-  private readonly isVendor = this.auth.isVendor();
-
   private readonly organization = toSignal(this.organizationService.get());
   protected readonly limit = computed(() => this.organization()?.subscriptionCustomerOrganizationQuantity);
   protected readonly currentCustomerOrganizationCount = computed(
@@ -100,21 +96,9 @@ export class CustomerOrganizationsComponent {
   );
 
   /** `null` while the organization has no licensing. */
-  private readonly licenseSources = toSignal(
+  private readonly licenses = toSignal(
     this.featureFlags.isLicensingEnabled$.pipe(
-      switchMap((enabled) =>
-        enabled
-          ? combineLatest({
-              licenses: this.licensesService.list(),
-              // Templates only exist with vendor billing, and partners cannot read them.
-              templates: this.isVendor
-                ? this.featureFlags.isVendorBillingEnabled$.pipe(
-                    switchMap((billing) => (billing ? this.licenseTemplatesService.list() : of([])))
-                  )
-                : of([]),
-            })
-          : of(null)
-      )
+      switchMap((enabled) => (enabled ? this.licensesService.list() : of(null)))
     )
   );
 
@@ -134,7 +118,7 @@ export class CustomerOrganizationsComponent {
     return toCustomerListRows(
       customers,
       this.deploymentSources(),
-      this.licenseSources() ?? undefined,
+      this.licenses() ?? undefined,
       this.supportBundles() ?? undefined
     );
   });
@@ -164,9 +148,6 @@ export class CustomerOrganizationsComponent {
       this.artifactPullsService.refreshLatest(),
       firstValueFrom(this.featureFlags.isLicensingEnabled$).then((enabled) =>
         enabled ? this.applicationEntitlementsService.refresh() : undefined
-      ),
-      firstValueFrom(this.featureFlags.isVendorBillingEnabled$).then((enabled) =>
-        enabled && this.isVendor ? this.licenseTemplatesService.refresh() : undefined
       )
     );
   }

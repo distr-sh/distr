@@ -1,15 +1,17 @@
 import {Application, CustomerOrganizationWithUsage, DeploymentTarget} from '@distr-sh/distr-sdk';
 import dayjs, {Dayjs} from 'dayjs';
 import {DeploymentHealth} from '../../home/vendor/vendor-home';
-import {filterOpenSupportBundles, toCustomerUpdates, toDeploymentHealth} from '../../home/vendor/vendor-home-mappers';
+import {
+  filterOpenSupportBundles,
+  licenseExpiryWindowDays,
+  toCustomerUpdates,
+  toDeploymentHealth,
+} from '../../home/vendor/vendor-home-mappers';
 import {ApplicationEntitlement} from '../../types/application-entitlement';
 import {LatestArtifactPull} from '../../types/artifact-version-pull';
 import {License} from '../../types/license';
-import {LicenseTemplate} from '../../types/license-template';
 import {SupportBundle, SupportBundleStatus} from '../../types/support-bundle';
 import {CustomerDetailTabId} from './detail/customer-detail-navigation';
-
-const licenseExpiryWindowDays = 7;
 
 export type CustomerManagement = 'controller' | 'self' | 'unknown';
 
@@ -51,11 +53,6 @@ export interface CustomerListDeploymentSources {
   pulls: LatestArtifactPull[];
 }
 
-export interface CustomerListLicenseSources {
-  licenses: License[];
-  templates: LicenseTemplate[];
-}
-
 /**
  * Decided by the features when the customer has only one of deployment targets and artifacts, and by whether it
  * deployed or pulled anything when it has both, since every customer gets both by default.
@@ -84,41 +81,17 @@ function toCustomerManagement(
   }
 }
 
-/**
- * Expired when any license key or entitlement has expired, expiring when any expires within the window and valid
- * otherwise. The window of a key created from a template is at least the template's grace period, because the
- * vendor billing sets such a key to expire that long after the billing period ends, so a key inside it has already
- * missed its renewal.
- */
-export function toCustomerLicenseStatus(
-  license: License | undefined,
-  templates: LicenseTemplate[],
-  now: Dayjs = dayjs()
-): CustomerLicenseStatus {
-  if (license === undefined) {
+export function toCustomerLicenseStatus(license: License | undefined, now: Dayjs = dayjs()): CustomerLicenseStatus {
+  const grants = license
+    ? [...license.licenseKeys, ...license.applicationEntitlements, ...license.artifactEntitlements]
+    : [];
+  const expirations = grants.map((it) => it.expiresAt).filter((expiresAt) => expiresAt !== undefined);
+  const threshold = now.add(licenseExpiryWindowDays, 'day');
+  if (grants.length === 0) {
     return 'no_license';
-  }
-  const gracePeriodDays = new Map(templates.map((template) => [template.id, template.expirationGracePeriodDays]));
-  const expirations = [
-    ...license.licenseKeys.map((key) => ({
-      expiresAt: key.expiresAt,
-      windowDays: Math.max(
-        licenseExpiryWindowDays,
-        (key.licenseTemplateId && gracePeriodDays.get(key.licenseTemplateId)) || 0
-      ),
-    })),
-    ...[...license.applicationEntitlements, ...license.artifactEntitlements].map((entitlement) => ({
-      expiresAt: entitlement.expiresAt,
-      windowDays: licenseExpiryWindowDays,
-    })),
-  ];
-  if (expirations.length === 0) {
-    return 'no_license';
-  }
-  const expiring = expirations.filter((it) => it.expiresAt !== undefined);
-  if (expiring.some(({expiresAt}) => !now.isBefore(expiresAt))) {
+  } else if (expirations.some((expiresAt) => !now.isBefore(expiresAt))) {
     return 'expired';
-  } else if (expiring.some(({expiresAt, windowDays}) => !now.add(windowDays, 'day').isBefore(expiresAt))) {
+  } else if (expirations.some((expiresAt) => !threshold.isBefore(expiresAt))) {
     return 'expiring';
   } else {
     return 'valid';
@@ -128,11 +101,11 @@ export function toCustomerLicenseStatus(
 export function toCustomerListRows(
   customers: CustomerOrganizationWithUsage[],
   deployments: CustomerListDeploymentSources | undefined,
-  licenses: CustomerListLicenseSources | undefined,
+  licenses: License[] | undefined,
   supportBundles: SupportBundle[] | undefined,
   now: Dayjs = dayjs()
 ): CustomerListRow[] {
-  const licenseByCustomer = new Map(licenses?.licenses.map((license) => [license.customerOrganization.id, license]));
+  const licenseByCustomer = new Map(licenses?.map((license) => [license.customerOrganization.id, license]));
   return customers.map((customer): CustomerListRow => {
     const health =
       deployments &&
@@ -143,7 +116,7 @@ export function toCustomerListRows(
       imageUrl: customer.imageUrl,
       management: toCustomerManagement(customer, health, deployments?.pulls),
       updatesTab: (health?.total ?? 0) > 0 ? 'deployments' : 'downloads',
-      license: licenses && toCustomerLicenseStatus(licenseByCustomer.get(customer.id), licenses.templates, now),
+      license: licenses && toCustomerLicenseStatus(licenseByCustomer.get(customer.id), now),
       deployments: health && {
         ...health,
         noStatus: health.total - health.healthy - health.running - health.error - health.stale,

@@ -35,13 +35,13 @@ import {QuickNavigationCardComponent, QuickNavigationCardType} from '../quick-na
 import {DeploymentHealth, VendorHomeLicenses, VendorHomeUpdates} from './vendor-home';
 import {
   filterOpenSupportBundles,
+  licenseExpiryWindowDays,
   toDeploymentHealth,
   toVendorHomeAdvisoryCounts,
   toVendorHomeCustomers,
   toVendorHomeLicenses,
   toVendorHomeUpdates,
   vendorHomeAttentionStatuses,
-  vendorHomeLicenseExpiryWindowDays,
   vendorHomeOpenAdvisoryStatuses,
 } from './vendor-home-mappers';
 
@@ -160,7 +160,7 @@ export class VendorHomePageComponent {
     )
   );
 
-  protected readonly licenseExpiryWindowDays = vendorHomeLicenseExpiryWindowDays;
+  protected readonly licenseExpiryWindowDays = licenseExpiryWindowDays;
   /** `null` while the organization has no licensing. */
   private readonly licenseCustomers = toSignal(
     this.featureFlags.isLicensingEnabled$.pipe(
