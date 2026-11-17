@@ -21,7 +21,7 @@ interface CustomerFeatureDefinition {
   unlockedBy?: Feature;
 }
 
-const customerFeatures: CustomerFeatureDefinition[] = [
+export const customerFeatures: CustomerFeatureDefinition[] = [
   {feature: 'deployment_targets', label: 'Deployments'},
   {feature: 'alerts', label: 'Alerts', requires: 'deployment_targets', requiresPro: true},
   {feature: 'artifacts', label: 'Artifacts'},

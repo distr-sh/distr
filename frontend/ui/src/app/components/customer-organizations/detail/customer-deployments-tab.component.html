@@ -1,0 +1,12 @@
+@if (isDeploymentsDisabled() && customerOrganization(); as customer) {
+  <app-customer-feature-disabled-alert
+    [customerOrganization]="customer"
+    feature="deployment_targets"
+    heading="Deployments are disabled for this customer."
+    enableLabel="Enable deployments"
+    enabledMessage="Deployments have been enabled for this customer"
+    class="mb-4">
+    The customer portal shows no deployments until deployments are enabled.
+  </app-customer-feature-disabled-alert>
+}
+<app-deployment-targets [customerOrganizationId]="customerOrganizationId()" />
