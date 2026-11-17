@@ -1,4 +1,4 @@
-export interface VendorHomeDeploymentHealth {
+export interface DeploymentHealth {
   total: number;
   healthy: number;
   running: number;

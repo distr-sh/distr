@@ -17,9 +17,9 @@ import {LatestArtifactPull} from '../../types/artifact-version-pull';
 import {License} from '../../types/license';
 import {SupportBundle, SupportBundleStatus} from '../../types/support-bundle';
 import {
+  DeploymentHealth,
   VendorHomeAdvisoryCounts,
   VendorHomeCustomer,
-  VendorHomeDeploymentHealth,
   VendorHomeLicenses,
   VendorHomeUpdates,
 } from './vendor-home';
@@ -71,7 +71,7 @@ export function toVendorHomeAdvisoryCounts(advisories: Advisory[]): VendorHomeAd
   };
 }
 
-export function toVendorHomeDeploymentHealth(targets: DeploymentTarget[]): VendorHomeDeploymentHealth {
+export function toDeploymentHealth(targets: DeploymentTarget[]): DeploymentHealth {
   const statuses = targets.flatMap((target) => target.deployments.map(deploymentDisplayStatus));
   const count = (status: DeploymentDisplayStatus) => statuses.reduce((c, it) => (it === status ? c + 1 : c), 0);
   return {
@@ -164,7 +164,7 @@ export function toVendorHomeCustomers(
   ]);
   return customers
     .map((customer) => {
-      const health = toVendorHomeDeploymentHealth(customerTargets(customer, targets));
+      const health = toDeploymentHealth(customerTargets(customer, targets));
       const updates = toCustomerUpdates(customer, targets, applications, entitlements, pulls);
       const openItems =
         health.error +

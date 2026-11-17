@@ -32,12 +32,12 @@ import {ToastService} from '../../services/toast.service';
 import {toHomeActivity} from '../home-activity';
 import {HomeActivityComponent} from '../home-activity.component';
 import {QuickNavigationCardComponent, QuickNavigationCardType} from '../quick-navigation-card.component';
-import {VendorHomeDeploymentHealth, VendorHomeLicenses, VendorHomeUpdates} from './vendor-home';
+import {DeploymentHealth, VendorHomeLicenses, VendorHomeUpdates} from './vendor-home';
 import {
   filterOpenSupportBundles,
+  toDeploymentHealth,
   toVendorHomeAdvisoryCounts,
   toVendorHomeCustomers,
-  toVendorHomeDeploymentHealth,
   toVendorHomeLicenses,
   toVendorHomeUpdates,
   vendorHomeAttentionStatuses,
@@ -47,7 +47,7 @@ import {
 
 const vendorHomeMaxCustomers = 10;
 
-function deploymentHealthType(health: VendorHomeDeploymentHealth): QuickNavigationCardType {
+function deploymentHealthType(health: DeploymentHealth): QuickNavigationCardType {
   if (health.error > 0) {
     return 'error';
   } else if (health.stale > 0) {
@@ -143,7 +143,7 @@ export class VendorHomePageComponent {
     if (targets === undefined) {
       return undefined;
     }
-    const health = toVendorHomeDeploymentHealth(targets);
+    const health = toDeploymentHealth(targets);
     return {...health, type: deploymentHealthType(health)};
   });
   private readonly deploymentCount = computed(() => this.deploymentHealth()?.total);

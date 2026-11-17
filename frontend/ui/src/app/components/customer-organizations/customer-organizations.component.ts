@@ -124,14 +124,14 @@ export class CustomerOrganizationsComponent {
 
   private readonly allRows = computed(() => {
     const customers = this.customerOrganizations();
-    return (
-      customers &&
-      toCustomerListRows(
-        customers,
-        this.deploymentSources(),
-        this.licenseSources() ?? undefined,
-        this.supportBundles() ?? undefined
-      )
+    if (customers === undefined) {
+      return undefined;
+    }
+    return toCustomerListRows(
+      customers,
+      this.deploymentSources(),
+      this.licenseSources() ?? undefined,
+      this.supportBundles() ?? undefined
     );
   });
 

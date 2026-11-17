@@ -1,11 +1,7 @@
 import {Application, CustomerOrganizationWithUsage, DeploymentTarget} from '@distr-sh/distr-sdk';
 import dayjs, {Dayjs} from 'dayjs';
-import {VendorHomeDeploymentHealth} from '../../home/vendor/vendor-home';
-import {
-  filterOpenSupportBundles,
-  toCustomerUpdates,
-  toVendorHomeDeploymentHealth,
-} from '../../home/vendor/vendor-home-mappers';
+import {DeploymentHealth} from '../../home/vendor/vendor-home';
+import {filterOpenSupportBundles, toCustomerUpdates, toDeploymentHealth} from '../../home/vendor/vendor-home-mappers';
 import {ApplicationEntitlement} from '../../types/application-entitlement';
 import {LatestArtifactPull} from '../../types/artifact-version-pull';
 import {License} from '../../types/license';
@@ -37,7 +33,7 @@ export interface CustomerListRow {
   supportBundles?: CustomerListSupportBundles;
 }
 
-export interface CustomerListDeployments extends VendorHomeDeploymentHealth {
+export interface CustomerListDeployments extends DeploymentHealth {
   /** The deployments that are progressing or have not reported a status. */
   noStatus: number;
 }
@@ -66,7 +62,7 @@ export interface CustomerListLicenseSources {
  */
 function toCustomerManagement(
   customer: CustomerOrganizationWithUsage,
-  health: VendorHomeDeploymentHealth | undefined,
+  health: DeploymentHealth | undefined,
   pulls: LatestArtifactPull[] | undefined
 ): CustomerManagement | undefined {
   const deploymentTargetsEnabled = customer.features.includes('deployment_targets');
@@ -140,9 +136,7 @@ export function toCustomerListRows(
   return customers.map((customer): CustomerListRow => {
     const health =
       deployments &&
-      toVendorHomeDeploymentHealth(
-        deployments.targets.filter((target) => target.customerOrganization?.id === customer.id)
-      );
+      toDeploymentHealth(deployments.targets.filter((target) => target.customerOrganization?.id === customer.id));
     return {
       id: customer.id,
       name: customer.name,

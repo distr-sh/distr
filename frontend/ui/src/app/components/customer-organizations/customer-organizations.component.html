@@ -92,7 +92,7 @@
                     } @else if (support.resolved + support.canceled > 0) {
                       <span class="distr-text-muted block">0 open requests</span>
                     } @else {
-                      <span class="distr-text-muted block">None</span>
+                      <span class="distr-text-muted block">-</span>
                     }
                     <span class="flex flex-wrap gap-x-2 text-xs">
                       @if (support.resolved > 0) {
@@ -110,7 +110,7 @@
               <td [appClickableRow]="['/', 'customers', customer.id, columnTabs.deployments]" class="distr-table-cell">
                 @if (customer.deployments; as deployments) {
                   @if (deployments.total === 0) {
-                    <span class="distr-text-muted">None</span>
+                    <span class="distr-text-muted">-</span>
                   } @else {
                     <span class="block">
                       <ng-container [ngPlural]="deployments.total">
