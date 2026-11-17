@@ -5,7 +5,7 @@
       alertActions
       type="button"
       (click)="enable()"
-      [disabled]="enabling() || !!unmetRequirement()"
+      [disabled]="isUpdatePending() || !!unmetRequirement()"
       [title]="unmetRequirement() ?? ''"
       class="distr-btn-primary shrink-0 px-3 py-1.5">
       {{ enableLabel() }}

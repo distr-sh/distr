@@ -8,6 +8,9 @@ import {ToastService} from '../../../services/toast.service';
 import {switchCustomerFeature, unmetCustomerFeatureRequirement} from '../../../types/customer-features';
 import {AlertComponent} from '../../alert/alert.component';
 
+// Shared by every instance: each update sends the whole feature list, so one sent before another returns would undo it.
+const featureUpdatePending = signal(false);
+
 /** The projected content is the description. */
 @Component({
   selector: 'app-customer-feature-disabled-alert',
@@ -26,14 +29,14 @@ export class CustomerFeatureDisabledAlertComponent {
   public readonly enabledMessage = input.required<string>();
 
   protected readonly canEdit = inject(AuthService).hasAnyRole('read_write', 'admin');
-  protected readonly enabling = signal(false);
+  protected readonly isUpdatePending = featureUpdatePending.asReadonly();
   protected readonly unmetRequirement = computed(() =>
     unmetCustomerFeatureRequirement(this.customerOrganization().features, this.feature(), {enablesRequired: false})
   );
 
   protected async enable() {
     const customer = this.customerOrganization();
-    this.enabling.set(true);
+    featureUpdatePending.set(true);
     try {
       await firstValueFrom(
         this.customerOrganizationsService.updateCustomerOrganization(customer.id, {
@@ -49,7 +52,7 @@ export class CustomerFeatureDisabledAlertComponent {
         this.toast.error(msg);
       }
     } finally {
-      this.enabling.set(false);
+      featureUpdatePending.set(false);
     }
   }
 }
