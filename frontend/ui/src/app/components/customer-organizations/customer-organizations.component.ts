@@ -141,17 +141,7 @@ export class CustomerOrganizationsComponent {
     return search.length > 0 ? rows?.filter((row) => row.name.toLowerCase().includes(search)) : rows;
   });
 
-  private readonly isLicensingEnabled = toSignal(this.featureFlags.isLicensingEnabled$, {initialValue: false});
-  /** Shown while the licenses are loading, and hidden once they turn out to hold no license for any customer. */
-  protected readonly showLicenseColumn = computed(() => {
-    const rows = this.allRows();
-    return (
-      this.isLicensingEnabled() &&
-      (rows === undefined ||
-        this.licenseSources() === undefined ||
-        rows.some((row) => row.license !== undefined && row.license !== 'no_license'))
-    );
-  });
+  protected readonly showLicenseColumn = toSignal(this.featureFlags.isLicensingEnabled$, {initialValue: false});
 
   protected readonly placeholderRows = [0, 1, 2, 3, 4];
 
