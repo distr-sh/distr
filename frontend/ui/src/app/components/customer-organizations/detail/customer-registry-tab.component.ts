@@ -7,10 +7,10 @@ import {CustomerOrganizationsService} from '../../../services/customer-organizat
 import {CustomerFeatureDisabledAlertComponent} from './customer-feature-disabled-alert.component';
 
 @Component({
-  templateUrl: './customer-artifacts-tab.component.html',
+  templateUrl: './customer-registry-tab.component.html',
   imports: [ArtifactPullsComponent, CustomerFeatureDisabledAlertComponent],
 })
-export class CustomerArtifactsTabComponent {
+export class CustomerRegistryTabComponent {
   private readonly parentParams = toSignal(inject(ActivatedRoute).parent?.params ?? EMPTY);
   protected readonly customerOrganizationId = computed(
     () => this.parentParams()?.['customerOrganizationId'] as string | undefined

@@ -13,7 +13,6 @@ import {ArtifactPullsPageComponent} from './artifacts/artifact-pulls/artifact-pu
 import {ArtifactVersionsComponent} from './artifacts/artifact-versions/artifact-versions.component';
 import {ArtifactsComponent} from './artifacts/artifacts/artifacts.component';
 import {CustomerOrganizationsComponent} from './components/customer-organizations/customer-organizations.component';
-import {CustomerArtifactsTabComponent} from './components/customer-organizations/detail/customer-artifacts-tab.component';
 import {CustomerDeploymentsTabComponent} from './components/customer-organizations/detail/customer-deployments-tab.component';
 import {customerDetailTabs} from './components/customer-organizations/detail/customer-detail-navigation';
 import {CustomerDetailPageComponent} from './components/customer-organizations/detail/customer-detail-page.component';
@@ -21,6 +20,7 @@ import {CustomerLicensesTabComponent} from './components/customer-organizations/
 import {CustomerLinksTabComponent} from './components/customer-organizations/detail/customer-links-tab.component';
 import {CustomerNotificationsTabComponent} from './components/customer-organizations/detail/customer-notifications-tab.component';
 import {CustomerOverviewTabComponent} from './components/customer-organizations/detail/customer-overview-tab.component';
+import {CustomerRegistryTabComponent} from './components/customer-organizations/detail/customer-registry-tab.component';
 import {CustomerSecretsTabComponent} from './components/customer-organizations/detail/customer-secrets-tab.component';
 import {CustomerSettingsTabComponent} from './components/customer-organizations/detail/customer-settings-tab.component';
 import {CustomerSupportTabComponent} from './components/customer-organizations/detail/customer-support-tab.component';
@@ -312,10 +312,10 @@ const shellRoutes: Routes = [
                 canActivate: [customerDetailTabs.guard('deployments')],
               },
               {
-                path: 'artifacts',
-                title: customerDetailTabs.title('artifacts'),
-                component: CustomerArtifactsTabComponent,
-                canActivate: [customerDetailTabs.guard('artifacts')],
+                path: 'registry',
+                title: customerDetailTabs.title('registry'),
+                component: CustomerRegistryTabComponent,
+                canActivate: [customerDetailTabs.guard('registry')],
               },
               {
                 path: 'licenses',
