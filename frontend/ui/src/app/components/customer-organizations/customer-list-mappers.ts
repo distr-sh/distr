@@ -24,7 +24,7 @@ export interface CustomerListRow {
   /** Undefined while the deployments and pulls of a customer with both features are loading. */
   management?: CustomerManagement;
   /** The tab that shows what the updates column judges: the deployments, or the downloads of a customer without. */
-  updatesTab: Extract<CustomerDetailTabId, 'deployments' | 'downloads'>;
+  updatesTab: Extract<CustomerDetailTabId, 'deployments' | 'registry'>;
   /** Undefined while the licenses are loading or the organization has no licensing. */
   license?: CustomerLicenseStatus;
   /** Undefined while the deployments and pulls are loading. */
@@ -117,7 +117,7 @@ export function toCustomerListRows(
       name: customer.name,
       imageUrl: customer.imageUrl,
       management: toCustomerManagement(customer, health, pulls),
-      updatesTab: (health?.total ?? 0) > 0 ? 'deployments' : 'downloads',
+      updatesTab: (health?.total ?? 0) > 0 ? 'deployments' : 'registry',
       license: licenses && toCustomerLicenseStatus(licenseByCustomer.get(customer.id), now),
       deployments: health && {
         ...health,
