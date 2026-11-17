@@ -27,7 +27,7 @@ import {QuotaLimitComponent} from '../quota-limit.component';
 import {SearchBarComponent} from '../search-bar.component';
 import {CustomerLicenseBadgeComponent} from './customer-license-badge.component';
 import {toCustomerListRows} from './customer-list-mappers';
-import {CustomerDetailTabId} from './detail/customer-detail-navigation';
+import {CustomerDetailTabId, customerDetailTabs} from './detail/customer-detail-navigation';
 
 @Component({
   templateUrl: './customer-organizations.component.html',
@@ -51,10 +51,14 @@ export class CustomerOrganizationsComponent {
   protected readonly faPlus = faPlus;
   protected readonly faXmark = faXmark;
   protected readonly columnTabs = {
+    customer: 'overview',
     license: 'licenses',
     support: 'support',
     deployments: 'deployments',
   } satisfies Record<string, CustomerDetailTabId>;
+  protected readonly tabTitles = Object.fromEntries(
+    customerDetailTabs.ids.map((id) => [id, `Open ${customerDetailTabs.label(id)}`])
+  );
 
   private readonly router = inject(Router);
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);

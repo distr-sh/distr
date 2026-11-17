@@ -36,7 +36,10 @@
         <tbody>
           @for (customer of rows(); track customer.id) {
             <tr class="distr-table-row">
-              <td [appClickableRow]="['/', 'customers', customer.id]" class="distr-table-cell">
+              <td
+                [appClickableRow]="['/', 'customers', customer.id, columnTabs.customer]"
+                [title]="tabTitles[columnTabs.customer]"
+                class="distr-table-cell">
                 <div class="flex items-center gap-3">
                   <app-avatar [image]="customer.imageUrl" [name]="customer.name" class="size-8 rounded-sm" />
                   <div class="min-w-0">
@@ -60,7 +63,10 @@
                 </div>
               </td>
               @if (showLicenseColumn()) {
-                <td [appClickableRow]="['/', 'customers', customer.id, columnTabs.license]" class="distr-table-cell">
+                <td
+                  [appClickableRow]="['/', 'customers', customer.id, columnTabs.license]"
+                  [title]="tabTitles[columnTabs.license]"
+                  class="distr-table-cell">
                   @if (customer.license === 'valid') {
                     Valid
                   } @else if (customer.license; as license) {
@@ -70,7 +76,10 @@
                   }
                 </td>
               }
-              <td [appClickableRow]="['/', 'customers', customer.id, customer.updatesTab]" class="distr-table-cell">
+              <td
+                [appClickableRow]="['/', 'customers', customer.id, customer.updatesTab]"
+                [title]="tabTitles[customer.updatesTab]"
+                class="distr-table-cell">
                 @if (customer.isOutdated === true) {
                   <span class="distr-badge distr-badge-warning">Outdated</span>
                 } @else if (customer.isOutdated === false) {
@@ -80,7 +89,10 @@
                 }
               </td>
               @if (showSupportColumn()) {
-                <td [appClickableRow]="['/', 'customers', customer.id, columnTabs.support]" class="distr-table-cell">
+                <td
+                  [appClickableRow]="['/', 'customers', customer.id, columnTabs.support]"
+                  [title]="tabTitles[columnTabs.support]"
+                  class="distr-table-cell">
                   @if (customer.supportBundles; as support) {
                     @if (support.open > 0) {
                       <span class="block">
@@ -107,7 +119,10 @@
                   }
                 </td>
               }
-              <td [appClickableRow]="['/', 'customers', customer.id, columnTabs.deployments]" class="distr-table-cell">
+              <td
+                [appClickableRow]="['/', 'customers', customer.id, columnTabs.deployments]"
+                [title]="tabTitles[columnTabs.deployments]"
+                class="distr-table-cell">
                 @if (customer.deployments; as deployments) {
                   @if (deployments.total === 0) {
                     <span class="distr-text-muted">-</span>
