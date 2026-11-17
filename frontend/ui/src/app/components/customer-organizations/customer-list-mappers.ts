@@ -130,7 +130,7 @@ export function toCustomerListRows(
       name: customer.name,
       imageUrl: customer.imageUrl,
       management,
-      updatesTab: (health?.total ?? 0) > 0 || management === 'controller' ? 'deployments' : 'downloads',
+      updatesTab: (health?.total ?? 0) > 0 ? 'deployments' : 'downloads',
       license: licenses && toCustomerLicenseStatus(licenseByCustomer.get(customer.id), licenses.templates, now),
       deployments: health && {
         ...health,

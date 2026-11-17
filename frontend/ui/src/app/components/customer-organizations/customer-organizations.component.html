@@ -58,7 +58,7 @@
                 </div>
               </td>
               @if (showLicenseColumn()) {
-                <td [appClickableRow]="['/', 'customers', customer.id, 'licenses']" class="distr-table-cell">
+                <td [appClickableRow]="['/', 'customers', customer.id, columnTabs.license]" class="distr-table-cell">
                   @if (customer.license === 'valid') {
                     Valid
                   } @else if (customer.license; as license) {
@@ -78,7 +78,7 @@
                 }
               </td>
               @if (showSupportColumn()) {
-                <td [appClickableRow]="['/', 'customers', customer.id, 'support']" class="distr-table-cell">
+                <td [appClickableRow]="['/', 'customers', customer.id, columnTabs.support]" class="distr-table-cell">
                   @if (customer.supportBundles; as support) {
                     @if (support.open > 0) {
                       <span class="block">
@@ -105,7 +105,7 @@
                   }
                 </td>
               }
-              <td [appClickableRow]="['/', 'customers', customer.id, 'deployments']" class="distr-table-cell">
+              <td [appClickableRow]="['/', 'customers', customer.id, columnTabs.deployments]" class="distr-table-cell">
                 @if (customer.deployments; as deployments) {
                   @if (deployments.total === 0) {
                     <span class="distr-text-muted">None</span>

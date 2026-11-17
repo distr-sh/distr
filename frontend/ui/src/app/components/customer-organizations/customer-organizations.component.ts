@@ -27,6 +27,7 @@ import {QuotaLimitComponent} from '../quota-limit.component';
 import {SearchBarComponent} from '../search-bar.component';
 import {CustomerLicenseBadgeComponent} from './customer-license-badge.component';
 import {toCustomerListRows} from './customer-list-mappers';
+import {CustomerDetailTabId} from './detail/customer-detail-navigation';
 
 @Component({
   templateUrl: './customer-organizations.component.html',
@@ -49,6 +50,11 @@ import {toCustomerListRows} from './customer-list-mappers';
 export class CustomerOrganizationsComponent {
   protected readonly faPlus = faPlus;
   protected readonly faXmark = faXmark;
+  protected readonly columnTabs = {
+    license: 'licenses',
+    support: 'support',
+    deployments: 'deployments',
+  } satisfies Record<string, CustomerDetailTabId>;
 
   private readonly router = inject(Router);
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
