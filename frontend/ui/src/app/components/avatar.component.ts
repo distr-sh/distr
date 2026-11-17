@@ -12,7 +12,8 @@ import {SecureImagePipe} from '../../util/secureImage';
  */
 @Component({
   selector: 'app-avatar',
-  host: {class: 'inline-block shrink-0'},
+  // The image and the fallback have different baselines, so on the baseline the surrounding line would differ in height.
+  host: {class: 'inline-block shrink-0 align-middle'},
   imports: [AsyncPipe, SecureImagePipe, FaIconComponent],
   template: `
     @if (image(); as image) {
