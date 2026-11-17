@@ -88,15 +88,15 @@ function customerTargets(customer: CustomerOrganization, targets: DeploymentTarg
   return targets.filter((target) => target.customerOrganization?.id === customer.id);
 }
 
-/**
- * A customer is outdated when one of its deployments is. A customer without deployments is outdated when it
- * pulled an artifact it may pull a newer tag of.
- */
 export interface CustomerUpdates {
   isOutdated: boolean;
   outdatedDeployments: number;
 }
 
+/**
+ * A customer is outdated when one of its deployments is. A customer without deployments is outdated when it
+ * pulled an artifact it may pull a newer tag of.
+ */
 export function toCustomerUpdates(
   customer: CustomerOrganization,
   targets: DeploymentTarget[],
