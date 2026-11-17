@@ -3,7 +3,7 @@ import {defineRoutedTabs} from '../../../navigation/tabs';
 export type CustomerDetailTabId =
   | 'overview'
   | 'deployments'
-  | 'downloads'
+  | 'artifacts'
   | 'licenses'
   | 'users'
   | 'secrets'
@@ -15,7 +15,7 @@ export type CustomerDetailTabId =
 export const customerDetailTabs = defineRoutedTabs<CustomerDetailTabId>('Customers', [
   {id: 'overview', label: 'Overview'},
   {id: 'deployments', label: 'Deployments'},
-  {id: 'downloads', label: 'Downloads'},
+  {id: 'artifacts', label: 'Artifacts'},
   {
     id: 'licenses',
     label: 'Licenses',

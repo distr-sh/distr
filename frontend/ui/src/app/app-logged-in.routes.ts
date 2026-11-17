@@ -13,10 +13,10 @@ import {ArtifactPullsPageComponent} from './artifacts/artifact-pulls/artifact-pu
 import {ArtifactVersionsComponent} from './artifacts/artifact-versions/artifact-versions.component';
 import {ArtifactsComponent} from './artifacts/artifacts/artifacts.component';
 import {CustomerOrganizationsComponent} from './components/customer-organizations/customer-organizations.component';
+import {CustomerArtifactsTabComponent} from './components/customer-organizations/detail/customer-artifacts-tab.component';
 import {CustomerDeploymentsTabComponent} from './components/customer-organizations/detail/customer-deployments-tab.component';
 import {customerDetailTabs} from './components/customer-organizations/detail/customer-detail-navigation';
 import {CustomerDetailPageComponent} from './components/customer-organizations/detail/customer-detail-page.component';
-import {CustomerDownloadsTabComponent} from './components/customer-organizations/detail/customer-downloads-tab.component';
 import {CustomerLicensesTabComponent} from './components/customer-organizations/detail/customer-licenses-tab.component';
 import {CustomerLinksTabComponent} from './components/customer-organizations/detail/customer-links-tab.component';
 import {CustomerNotificationsTabComponent} from './components/customer-organizations/detail/customer-notifications-tab.component';
@@ -312,10 +312,10 @@ const shellRoutes: Routes = [
                 canActivate: [customerDetailTabs.guard('deployments')],
               },
               {
-                path: 'downloads',
-                title: customerDetailTabs.title('downloads'),
-                component: CustomerDownloadsTabComponent,
-                canActivate: [customerDetailTabs.guard('downloads')],
+                path: 'artifacts',
+                title: customerDetailTabs.title('artifacts'),
+                component: CustomerArtifactsTabComponent,
+                canActivate: [customerDetailTabs.guard('artifacts')],
               },
               {
                 path: 'licenses',

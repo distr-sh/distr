@@ -8,7 +8,7 @@ import {ArtifactPullsComponent} from '../../../artifacts/artifact-pulls/artifact
   template: `<app-artifact-pulls [customerOrganizationId]="customerOrganizationId()" />`,
   imports: [ArtifactPullsComponent],
 })
-export class CustomerDownloadsTabComponent {
+export class CustomerArtifactsTabComponent {
   private readonly parentParams = toSignal(inject(ActivatedRoute).parent?.params ?? EMPTY);
   protected readonly customerOrganizationId = computed(
     () => this.parentParams()?.['customerOrganizationId'] as string | undefined
