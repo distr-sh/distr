@@ -17,9 +17,9 @@ import {LatestArtifactPull} from '../../types/artifact-version-pull';
 import {License} from '../../types/license';
 import {SupportBundle, SupportBundleStatus} from '../../types/support-bundle';
 import {
+  DeploymentHealth,
   VendorHomeAdvisoryCounts,
   VendorHomeCustomer,
-  VendorHomeDeploymentHealth,
   VendorHomeLicenses,
   VendorHomeUpdates,
 } from './vendor-home';
@@ -27,7 +27,7 @@ import {
 /** The status filter the deployments card links to, which has to show exactly the error and stale deployments. */
 export const vendorHomeAttentionStatuses: readonly DeploymentDisplayStatus[] = ['error', 'stale'];
 
-export const vendorHomeLicenseExpiryWindowDays = 30;
+export const licenseExpiryWindowDays = 30;
 
 const openSupportBundleStatuses: readonly SupportBundleStatus[] = ['initialized', 'created'];
 
@@ -36,7 +36,7 @@ const openSupportBundleStatuses: readonly SupportBundleStatus[] = ['initialized'
  * the window, so that every customer counts once.
  */
 export function toVendorHomeLicenses(licenses: License[], now: Dayjs = dayjs()): VendorHomeLicenses {
-  const threshold = now.add(vendorHomeLicenseExpiryWindowDays, 'day');
+  const threshold = now.add(licenseExpiryWindowDays, 'day');
   const expirations = (license: License) =>
     [...license.licenseKeys, ...license.applicationEntitlements, ...license.artifactEntitlements]
       .map((it) => it.expiresAt)
@@ -71,7 +71,7 @@ export function toVendorHomeAdvisoryCounts(advisories: Advisory[]): VendorHomeAd
   };
 }
 
-export function toVendorHomeDeploymentHealth(targets: DeploymentTarget[]): VendorHomeDeploymentHealth {
+export function toDeploymentHealth(targets: DeploymentTarget[]): DeploymentHealth {
   const statuses = targets.flatMap((target) => target.deployments.map(deploymentDisplayStatus));
   const count = (status: DeploymentDisplayStatus) => statuses.reduce((c, it) => (it === status ? c + 1 : c), 0);
   return {
@@ -80,6 +80,7 @@ export function toVendorHomeDeploymentHealth(targets: DeploymentTarget[]): Vendo
     running: count('running'),
     error: count('error'),
     stale: count('stale'),
+    progressing: count('progressing'),
   };
 }
 
@@ -91,7 +92,7 @@ function customerTargets(customer: CustomerOrganization, targets: DeploymentTarg
  * A customer is outdated when one of its deployments is. A customer without deployments is outdated when it
  * pulled an artifact it may pull a newer tag of.
  */
-function toCustomerUpdates(
+export function toCustomerUpdates(
   customer: CustomerOrganization,
   targets: DeploymentTarget[],
   applications: Application[],
@@ -164,7 +165,7 @@ export function toVendorHomeCustomers(
   ]);
   return customers
     .map((customer) => {
-      const health = toVendorHomeDeploymentHealth(customerTargets(customer, targets));
+      const health = toDeploymentHealth(customerTargets(customer, targets));
       const updates = toCustomerUpdates(customer, targets, applications, entitlements, pulls);
       const openItems =
         health.error +
