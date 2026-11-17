@@ -146,7 +146,7 @@ export class CustomerOrganizationsComponent {
   protected readonly rows = computed(() => {
     const rows = this.allRows();
     const search = this.search().toLowerCase();
-    const licenses = this.showLicenseColumn() ? this.selectedLicenseStatuses() : [];
+    const licenses = this.licenses() === null ? [] : this.selectedLicenseStatuses();
     const updates = this.selectedUpdateStatuses();
     if (
       rows === undefined ||
