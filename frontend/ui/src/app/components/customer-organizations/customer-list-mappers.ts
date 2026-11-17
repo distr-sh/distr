@@ -9,6 +9,7 @@ import {
   toCustomerUpdates,
   toDeploymentHealth,
 } from '../../home/vendor/vendor-home-mappers';
+import {isCustomerLicenseIssue} from '../../licenses/customer-license-status';
 import {ApplicationEntitlement} from '../../types/application-entitlement';
 import {LatestArtifactPull} from '../../types/artifact-version-pull';
 import {License} from '../../types/license';
@@ -109,6 +110,12 @@ export function toCustomerListRows(
   now: Dayjs = dayjs()
 ): CustomerListRow[] {
   const licenseByCustomer = new Map(licenses?.map((license) => [license.customerOrganization.id, license]));
+  const licenseStatuses = new Map<string, CustomerLicenseStatus>(
+    licenses
+      ? customers.map((customer) => [customer.id, toCustomerLicenseStatus(licenseByCustomer.get(customer.id), now)])
+      : []
+  );
+  const isLicensingInUse = [...licenseStatuses.values()].some((status) => status !== 'no_license');
   return customers
     .map((customer) => {
       const health =
@@ -124,7 +131,7 @@ export function toCustomerListRows(
           deployments.entitlements,
           deployments.pulls
         );
-      const license = licenses && toCustomerLicenseStatus(licenseByCustomer.get(customer.id), now);
+      const license = licenseStatuses.get(customer.id);
       const support =
         supportBundles &&
         toCustomerSupportBundles(supportBundles.filter((bundle) => bundle.customerOrganizationId === customer.id));
@@ -146,7 +153,7 @@ export function toCustomerListRows(
       const openItems = countCustomerOpenItems(
         health,
         updates,
-        license === 'expired' || license === 'expiring',
+        isCustomerLicenseIssue(license, isLicensingInUse),
         support?.open ?? 0
       );
       return {row, name: customer.name, openItems};

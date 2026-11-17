@@ -74,7 +74,7 @@ function updatesCardType(updates: VendorHomeUpdates): QuickNavigationCardType {
 function licensesCardType(licenses: VendorHomeLicenses): QuickNavigationCardType {
   if (licenses.expiredCustomerIds.length > 0) {
     return 'error';
-  } else if (licenses.expiringCustomerIds.length > 0) {
+  } else if (licenses.expiringCustomerIds.length + licenses.unlicensedCustomerIds.length > 0) {
     return 'warning';
   } else {
     return 'success';
@@ -168,7 +168,12 @@ export class VendorHomePageComponent {
   private readonly licenseCustomers = toSignal(
     this.featureFlags.isLicensingEnabled$.pipe(
       switchMap((enabled) =>
-        enabled ? this.licensesService.list().pipe(map((licenses) => toVendorHomeLicenses(licenses))) : of(null)
+        enabled
+          ? combineLatest([
+              this.customerOrganizationsService.getCustomerOrganizations(),
+              this.licensesService.list(),
+            ]).pipe(map(([customers, licenses]) => toVendorHomeLicenses(customers, licenses)))
+          : of(null)
       )
     )
   );
@@ -179,14 +184,18 @@ export class VendorHomePageComponent {
     }
     const expired = licenses.expiredCustomerIds.length;
     const expiring = licenses.expiringCustomerIds.length;
+    const unlicensed = licenses.unlicensedCustomerIds.length;
     const statuses: CustomerLicenseStatus[] = [
       ...(expired > 0 ? ['expired' as const] : []),
       ...(expiring > 0 ? ['expiring' as const] : []),
+      ...(unlicensed > 0 ? ['no_license' as const] : []),
     ];
     return {
-      customers: expired + expiring,
+      customers: expired + expiring + unlicensed,
       expired,
       expiring,
+      unlicensed,
+      statusCount: statuses.length,
       type: licensesCardType(licenses),
       link: statuses.length > 0 ? '/customers' : '/licenses',
       queryParams: statuses.length > 0 ? {license: statuses} : undefined,

@@ -16,6 +16,7 @@ export interface VendorHomeUpdates {
 export interface VendorHomeLicenses {
   expiredCustomerIds: string[];
   expiringCustomerIds: string[];
+  unlicensedCustomerIds: string[];
 }
 
 export interface VendorHomeAdvisoryCounts {

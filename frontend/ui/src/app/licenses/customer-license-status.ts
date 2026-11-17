@@ -11,3 +11,11 @@ export const customerLicenseStatusSelectOptions: MultiSelectOption<CustomerLicen
 export function isCustomerLicenseStatus(value: string): value is CustomerLicenseStatus {
   return customerLicenseStatusSelectOptions.some((option) => option.value === value);
 }
+
+/**
+ * Whether a customer's license needs attention. A missing license only does once some customer has one, because
+ * until then every customer sees all applications and artifacts.
+ */
+export function isCustomerLicenseIssue(status: CustomerLicenseStatus | undefined, isLicensingInUse: boolean): boolean {
+  return status === 'expired' || status === 'expiring' || (status === 'no_license' && isLicensingInUse);
+}

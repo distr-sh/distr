@@ -141,12 +141,25 @@
             <ng-template ngPluralCase="other">{{ licenses.customers }} customers</ng-template>
           </ng-container>
           <span subtitle>
-            @if (licenses.expired > 0 && licenses.expiring > 0) {
-              {{ licenses.expired }} expired &middot; {{ licenses.expiring }} expiring
+            @if (licenses.statusCount > 1) {
+              @if (licenses.expired > 0) {
+                {{ licenses.expired }} expired
+              }
+              @if (licenses.expiring > 0) {
+                @if (licenses.expired > 0) {
+                  &middot;
+                }
+                {{ licenses.expiring }} expiring
+              }
+              @if (licenses.unlicensed > 0) {
+                &middot; {{ licenses.unlicensed }} without license
+              }
             } @else if (licenses.expired > 0) {
               With an expired license
             } @else if (licenses.expiring > 0) {
               With a license expiring in the next {{ licenseExpiryWindowDays }} days
+            } @else if (licenses.unlicensed > 0) {
+              Without a license
             } @else {
               No licenses expiring in the next {{ licenseExpiryWindowDays }} days
             }

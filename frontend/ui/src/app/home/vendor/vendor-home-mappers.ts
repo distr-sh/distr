@@ -32,22 +32,31 @@ export const licenseExpiryWindowDays = 30;
 const openSupportBundleStatuses: readonly SupportBundleStatus[] = ['initialized', 'created'];
 
 /**
- * The customers with an expired license key or entitlement, and those without one but with one that expires within
- * the window, so that every customer counts once.
+ * The customers with an expired license key or entitlement, those without one but with one that expires within the
+ * window and, once some customer has a license, those without one, so that every customer counts once.
  */
-export function toVendorHomeLicenses(licenses: License[], now: Dayjs = dayjs()): VendorHomeLicenses {
+export function toVendorHomeLicenses(
+  customers: CustomerOrganization[],
+  licenses: License[],
+  now: Dayjs = dayjs()
+): VendorHomeLicenses {
   const threshold = now.add(licenseExpiryWindowDays, 'day');
-  const expirations = (license: License) =>
-    [...license.licenseKeys, ...license.applicationEntitlements, ...license.artifactEntitlements]
-      .map((it) => it.expiresAt)
-      .filter((expiresAt) => expiresAt !== undefined);
-  const result: VendorHomeLicenses = {expiredCustomerIds: [], expiringCustomerIds: []};
-  for (const license of licenses) {
-    const dates = expirations(license);
-    if (dates.some((expiresAt) => !now.isBefore(expiresAt))) {
-      result.expiredCustomerIds.push(license.customerOrganization.id);
+  const licenseByCustomer = new Map(licenses.map((license) => [license.customerOrganization.id, license]));
+  const grants = (license: License | undefined) =>
+    license ? [...license.licenseKeys, ...license.applicationEntitlements, ...license.artifactEntitlements] : [];
+  const isLicensingInUse = licenses.some((license) => grants(license).length > 0);
+  const result: VendorHomeLicenses = {expiredCustomerIds: [], expiringCustomerIds: [], unlicensedCustomerIds: []};
+  for (const customer of customers) {
+    const customerGrants = grants(licenseByCustomer.get(customer.id));
+    const dates = customerGrants.map((it) => it.expiresAt).filter((expiresAt) => expiresAt !== undefined);
+    if (customerGrants.length === 0) {
+      if (isLicensingInUse) {
+        result.unlicensedCustomerIds.push(customer.id);
+      }
+    } else if (dates.some((expiresAt) => !now.isBefore(expiresAt))) {
+      result.expiredCustomerIds.push(customer.id);
     } else if (dates.some((expiresAt) => !threshold.isBefore(expiresAt))) {
-      result.expiringCustomerIds.push(license.customerOrganization.id);
+      result.expiringCustomerIds.push(customer.id);
     }
   }
   return result;
@@ -151,7 +160,7 @@ function toCustomerUsage(
 
 /**
  * Counts as open items of a customer every deployment in error or stale, every outdated deployment (or the outdated
- * artifact pulls of a customer without deployments, as one item), an expired or expiring license and every open
+ * artifact pulls of a customer without deployments, as one item), a license that needs attention and every open
  * support request. Customers with open items come first, the most first, and the rest follow alphabetically.
  * `licenses` and `openSupportBundles` are `null` while the organization lacks the feature.
  */
@@ -167,6 +176,7 @@ export function toVendorHomeCustomers(
   const licenseCustomerIds = new Set([
     ...(licenses?.expiredCustomerIds ?? []),
     ...(licenses?.expiringCustomerIds ?? []),
+    ...(licenses?.unlicensedCustomerIds ?? []),
   ]);
   return customers
     .map((customer) => {

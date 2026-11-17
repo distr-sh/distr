@@ -172,9 +172,19 @@ describe('toVendorHomeLicenses', () => {
       license('later', {keys: [inDays(31)]}),
       license('unlimited', {keys: [undefined], applications: [undefined]}),
     ];
-    expect(toVendorHomeLicenses(licenses, now)).toEqual({
+    const customers = [...licenses.map((it) => it.customerOrganization), customer('unlicensed')];
+    expect(toVendorHomeLicenses(customers, licenses, now)).toEqual({
       expiredCustomerIds: ['expired', 'both'],
       expiringCustomerIds: ['key', 'application', 'artifact'],
+      unlicensedCustomerIds: ['unlicensed'],
+    });
+  });
+
+  it('should not count customers without a license while no customer has one', () => {
+    expect(toVendorHomeLicenses([customer('a'), customer('b')], [])).toEqual({
+      expiredCustomerIds: [],
+      expiringCustomerIds: [],
+      unlicensedCustomerIds: [],
     });
   });
 });
@@ -208,7 +218,7 @@ describe('toVendorHomeCustomers', () => {
       [application],
       [],
       [pull('pulled', '2.0.0'), pull('zeta', '2.0.0')],
-      {expiredCustomerIds: ['licensed'], expiringCustomerIds: ['support']},
+      {expiredCustomerIds: ['licensed'], expiringCustomerIds: ['support'], unlicensedCustomerIds: []},
       [bundle('support'), bundle('support'), bundle('other')]
     );
     expect(result.map((c) => [c.id, c.openItems])).toEqual([
