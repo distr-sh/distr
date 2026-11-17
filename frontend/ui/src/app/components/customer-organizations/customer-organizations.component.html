@@ -82,6 +82,8 @@
                 class="distr-table-cell">
                 @if (customer.isOutdated === true) {
                   <span class="distr-badge distr-badge-warning">Outdated</span>
+                } @else if (customer.hasDeploymentsOrPulls === false) {
+                  <span class="distr-text-muted">-</span>
                 } @else if (customer.isOutdated === false) {
                   Up to date
                 } @else {

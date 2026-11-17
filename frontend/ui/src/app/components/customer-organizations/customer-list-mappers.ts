@@ -31,6 +31,8 @@ export interface CustomerListRow {
   deployments?: CustomerListDeployments;
   /** Undefined while the deployments and pulls are loading. */
   isOutdated?: boolean;
+  /** Undefined while the deployments and pulls are loading. */
+  hasDeploymentsOrPulls?: boolean;
   /** Undefined while the support bundles are loading or the organization's plan has none. */
   supportBundles?: CustomerListSupportBundles;
 }
@@ -73,7 +75,7 @@ function toCustomerManagement(
     return undefined;
   } else if (health.total > 0) {
     return 'controller';
-  } else if (pulls.some((pull) => pull.customerOrganizationId === customer.id)) {
+  } else if (pulls.length > 0) {
     return 'self';
   } else {
     return 'unknown';
@@ -109,11 +111,12 @@ export function toCustomerListRows(
     const health =
       deployments &&
       toDeploymentHealth(deployments.targets.filter((target) => target.customerOrganization?.id === customer.id));
+    const pulls = deployments?.pulls.filter((pull) => pull.customerOrganizationId === customer.id);
     return {
       id: customer.id,
       name: customer.name,
       imageUrl: customer.imageUrl,
-      management: toCustomerManagement(customer, health, deployments?.pulls),
+      management: toCustomerManagement(customer, health, pulls),
       updatesTab: (health?.total ?? 0) > 0 ? 'deployments' : 'downloads',
       license: licenses && toCustomerLicenseStatus(licenseByCustomer.get(customer.id), now),
       deployments: health && {
@@ -129,6 +132,7 @@ export function toCustomerListRows(
           deployments.entitlements,
           deployments.pulls
         ).isOutdated,
+      hasDeploymentsOrPulls: health && pulls && (health.total > 0 || pulls.length > 0),
       supportBundles:
         supportBundles &&
         toCustomerSupportBundles(supportBundles.filter((bundle) => bundle.customerOrganizationId === customer.id)),
