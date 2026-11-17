@@ -32,6 +32,7 @@ export interface LockableTab<T extends string = string> extends TabItem<T> {
 export interface RoutedTabs<T extends string> {
   readonly ids: readonly T[];
   resolve(context: TabContext): LockableTab<T>[];
+  label(id: T): string;
   title(id: T): string;
   canOpen(id: T): Observable<boolean>;
   guard(id: T): CanActivateFn;
@@ -71,10 +72,12 @@ export function defineRoutedTabs<T extends string>(pageTitle: string, definition
           .map((tab) => tab.id)
       )
     );
+  const label = (id: T) => definitions.find((tab) => tab.id === id)!.label;
   return {
     ids: definitions.map((tab) => tab.id),
     resolve,
-    title: (id) => `${definitions.find((tab) => tab.id === id)!.label} | ${pageTitle}`,
+    label,
+    title: (id) => `${label(id)} | ${pageTitle}`,
     canOpen: (id) => openable().pipe(map((ids) => ids.includes(id))),
     guard: (id) => (route) =>
       openable().pipe(map((ids) => ids.includes(id) || createUrlTreeFromSnapshot(route, ['..']))),
