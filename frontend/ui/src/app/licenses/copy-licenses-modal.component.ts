@@ -182,7 +182,7 @@ export class CopyLicensesModalComponent extends ClosableDialog<boolean> {
     const overrideIds = this.effectiveOverrideIds();
     const isOverridden = (id: string | undefined) => id !== undefined && overrideIds.has(id);
     const expiresAt = this.form.controls.expiresAt.value;
-    const entitlementExpiresAt = expiresAt ? new Date(expiresAt) : undefined;
+    const entitlementExpiresAt = expiresAt ? dayjs(expiresAt).toDate() : undefined;
     const licenseKeyExpiresAt = expiresAt ? dayjs(expiresAt).toISOString() : undefined;
     const creates = [
       ...source.artifactEntitlements.map((ae) =>

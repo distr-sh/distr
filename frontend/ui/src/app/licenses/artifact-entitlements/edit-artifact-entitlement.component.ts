@@ -111,7 +111,7 @@ export class EditArtifactEntitlementComponent
       const entitlement: ArtifactEntitlement = {
         id: val.id,
         name: val.name,
-        expiresAt: val.expiresAt ? new Date(val.expiresAt) : undefined,
+        expiresAt: val.expiresAt ? dayjs(val.expiresAt).toDate() : undefined,
         artifacts: val.artifacts.map((artifact) => {
           return {
             artifactId: artifact.artifact?.id ?? artifact.artifactId ?? '',
