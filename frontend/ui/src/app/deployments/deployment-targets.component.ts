@@ -14,7 +14,7 @@ import {
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup} from '@angular/forms';
 import {ActivatedRoute, Params, Router} from '@angular/router';
-import {ApplicationVersion, DeploymentTarget, DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
+import {Application, ApplicationVersion, DeploymentTarget, DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faPlus} from '@fortawesome/free-solid-svg-icons';
 import {
@@ -24,34 +24,39 @@ import {
   debounceTime,
   distinctUntilChanged,
   first,
+  firstValueFrom,
   map,
   Observable,
   of,
   shareReplay,
+  startWith,
   switchMap,
 } from 'rxjs';
 import {arraysEqual, compareBy} from '../../util/arrays';
-import {filteredByFormControl} from '../../util/filter';
 import {refreshInBackground} from '../../util/refresh';
+import {isDeploymentOutdated} from '../../util/versions';
 import {MultiSelectComponent, MultiSelectOption} from '../components/multi-select/multi-select.component';
 import {SearchBarComponent} from '../components/search-bar.component';
+import {ApplicationEntitlementsService} from '../services/application-entitlements.service';
 import {ApplicationsService} from '../services/applications.service';
 import {AuthService} from '../services/auth.service';
 import {ContextService} from '../services/context.service';
 import {CustomerOrganizationsService} from '../services/customer-organizations.service';
 import {DeploymentTargetsMetricsService} from '../services/deployment-target-metrics.service';
 import {DeploymentTargetsService} from '../services/deployment-targets.service';
+import {FeatureFlagService} from '../services/feature-flag.service';
 import {OrganizationService} from '../services/organization.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
+import {ApplicationEntitlement} from '../types/application-entitlement';
 import {customerFeatureRequiredMessage} from '../types/customer-features';
 import {DeploymentTargetLatestMetrics} from '../types/deployment-target-metrics';
 import {UNLIMITED_QTY} from '../types/subscription';
 import {DeploymentModalComponent} from './deployment-modal.component';
 import {
-  DeploymentDisplayStatus,
   deploymentDisplayStatus,
-  deploymentDisplayStatusSelectOptions,
-  isDeploymentDisplayStatus,
+  DeploymentStatusFilter,
+  deploymentStatusFilterSelectOptions,
+  isDeploymentStatusFilter,
 } from './deployment-target-card/deployment-status-text.component';
 import {DeploymentTargetCardComponent} from './deployment-target-card/deployment-target-card.component';
 import {DeploymentWizardComponent} from './deployment-wizard/deployment-wizard.component';
@@ -62,9 +67,18 @@ export interface DeploymentTargetViewData extends DeploymentTarget {
 
 // customer organization ids are UUIDs, so this cannot collide with one
 const internalCustomerOption = 'internal';
-const deploymentDisplayStatusLabels = new Map(
-  deploymentDisplayStatusSelectOptions.map((option) => [option.value, option.label])
+const deploymentStatusFilterLabels = new Map(
+  deploymentStatusFilterSelectOptions.map((option) => [option.value, option.label])
 );
+
+function deploymentStatusFilters(
+  deployment: DeploymentWithLatestRevision,
+  applications: Application[],
+  entitlements: ApplicationEntitlement[]
+): DeploymentStatusFilter[] {
+  const status = deploymentDisplayStatus(deployment);
+  return isDeploymentOutdated(deployment, applications, entitlements) ? [status, 'outdated'] : [status];
+}
 
 @Component({
   selector: 'app-deployment-targets',
@@ -86,6 +100,8 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   public readonly auth = inject(AuthService);
   private readonly overlay = inject(OverlayService);
   private readonly applications = inject(ApplicationsService);
+  private readonly applicationEntitlements = inject(ApplicationEntitlementsService);
+  private readonly featureFlags = inject(FeatureFlagService);
   private readonly deploymentTargets = inject(DeploymentTargetsService);
   private readonly deploymentTargetMetrics = inject(DeploymentTargetsMetricsService);
   private readonly organizationService = inject(OrganizationService);
@@ -138,10 +154,10 @@ export class DeploymentTargetsComponent implements AfterViewInit {
     equal: arraysEqual,
   });
   protected readonly selectedStatuses = computed(
-    () => this.queryParams().getAll('status').filter(isDeploymentDisplayStatus),
+    () => this.queryParams().getAll('status').filter(isDeploymentStatusFilter),
     {equal: arraysEqual}
   );
-  protected readonly statusSelectOptions = deploymentDisplayStatusSelectOptions;
+  protected readonly statusSelectOptions = deploymentStatusFilterSelectOptions;
 
   protected readonly customerSelectOptions = toSignal(
     this.isVendorOrPartner
@@ -160,6 +176,9 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   );
 
   private readonly applications$ = this.applications.list();
+  private readonly applicationEntitlements$ = this.featureFlags.isLicensingEnabled$.pipe(
+    switchMap((enabled) => (enabled ? this.applicationEntitlements.list() : of([])))
+  );
 
   protected readonly applicationSelectOptions = toSignal(
     this.applications$.pipe(
@@ -224,34 +243,41 @@ export class DeploymentTargetsComponent implements AfterViewInit {
     return limit !== undefined && limit !== UNLIMITED_QTY && this.count() >= limit;
   });
 
-  protected readonly filteredDeploymentTargets$: Observable<DeploymentTargetViewData[]> = filteredByFormControl(
+  protected readonly filteredDeploymentTargets$: Observable<DeploymentTargetViewData[]> = combineLatest([
     this.deploymentTargets$,
-    this.filterForm.controls.search,
-    (dt, search) => {
-      const query = search.toLowerCase();
-      return [
-        dt.name,
-        ...(dt.customerOrganization ? [dt.customerOrganization.name] : ['Internal', this.organization()?.name]),
-        ...dt.deployments.flatMap((d) => [
-          d.application.name,
-          deploymentDisplayStatusLabels.get(deploymentDisplayStatus(d)),
-        ]),
-      ].some((it) => it?.toLowerCase().includes(query) ?? false);
-    }
-  ).pipe(
-    combineLatestWith(toObservable(this.deploymentFilter)),
-    map(([deploymentTargets, {applicationIds, statuses}]) =>
-      applicationIds.length === 0 && statuses.length === 0
-        ? deploymentTargets
-        : deploymentTargets.filter((dt) =>
-            dt.deployments.some(
-              (d) =>
-                (applicationIds.length === 0 ||
-                  (d.application.id !== undefined && applicationIds.includes(d.application.id))) &&
-                (statuses.length === 0 || statuses.includes(deploymentDisplayStatus(d)))
-            )
-          )
-    ),
+    this.applications$.pipe(catchError(() => of([]))),
+    this.applicationEntitlements$.pipe(catchError(() => of([]))),
+    this.filterForm.controls.search.valueChanges.pipe(startWith(this.filterForm.controls.search.value)),
+    toObservable(this.deploymentFilter),
+  ]).pipe(
+    map(([deploymentTargets, applications, entitlements, search, {applicationIds, statuses}]) => {
+      const query = search?.toLowerCase();
+      return deploymentTargets.filter((dt) => {
+        const deployments = dt.deployments.map((d) => ({
+          deployment: d,
+          statuses: deploymentStatusFilters(d, applications, entitlements),
+        }));
+        const matchesSearch =
+          !query ||
+          [
+            dt.name,
+            ...(dt.customerOrganization ? [dt.customerOrganization.name] : ['Internal', this.organization()?.name]),
+            ...deployments.flatMap(({deployment, statuses}) => [
+              deployment.application.name,
+              ...statuses.map((status) => deploymentStatusFilterLabels.get(status)),
+            ]),
+          ].some((it) => it?.toLowerCase().includes(query) ?? false);
+        const matchesFilter =
+          (applicationIds.length === 0 && statuses.length === 0) ||
+          deployments.some(
+            ({deployment, statuses: deploymentStatuses}) =>
+              (applicationIds.length === 0 ||
+                (deployment.application.id !== undefined && applicationIds.includes(deployment.application.id))) &&
+              (statuses.length === 0 || deploymentStatuses.some((status) => statuses.includes(status)))
+          );
+        return matchesSearch && matchesFilter;
+      });
+    }),
     combineLatestWith(this.deploymentTargetMetrics$),
     map(([deploymentTargets, deploymentTargetMetrics]) =>
       deploymentTargets.map((dt) => ({
@@ -263,7 +289,12 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   );
 
   constructor() {
-    refreshInBackground(this.applications.refresh());
+    refreshInBackground(
+      this.applications.refresh(),
+      firstValueFrom(this.featureFlags.isLicensingEnabled$).then((enabled) =>
+        enabled ? this.applicationEntitlements.refresh() : undefined
+      )
+    );
     const search = this.filterForm.controls.search;
     // The component is reused when only the query changes, e.g. when the sidebar links to the page it is on.
     this.route.queryParamMap
@@ -294,7 +325,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
     this.setQueryParams({applicationId: ids.length > 0 ? ids : null});
   }
 
-  protected selectStatuses(statuses: DeploymentDisplayStatus[]) {
+  protected selectStatuses(statuses: DeploymentStatusFilter[]) {
     this.setQueryParams({status: statuses.length > 0 ? statuses : null});
   }
 

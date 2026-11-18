@@ -16,17 +16,20 @@ function currentStatus(deployment: DeploymentStatusSource): DeploymentRevisionSt
 
 export type DeploymentDisplayStatus = DeploymentStatusType | 'stale' | 'none';
 
-export const deploymentDisplayStatusSelectOptions: MultiSelectOption<DeploymentDisplayStatus>[] = [
+export type DeploymentStatusFilter = DeploymentDisplayStatus | 'outdated';
+
+export const deploymentStatusFilterSelectOptions: MultiSelectOption<DeploymentStatusFilter>[] = [
   {value: 'healthy', label: 'Healthy'},
   {value: 'running', label: 'Running'},
   {value: 'progressing', label: 'Progressing'},
   {value: 'stale', label: 'Stale'},
   {value: 'error', label: 'Error'},
   {value: 'none', label: 'No status'},
+  {value: 'outdated', label: 'Outdated'},
 ];
 
-export function isDeploymentDisplayStatus(value: string): value is DeploymentDisplayStatus {
-  return deploymentDisplayStatusSelectOptions.some((option) => option.value === value);
+export function isDeploymentStatusFilter(value: string): value is DeploymentStatusFilter {
+  return deploymentStatusFilterSelectOptions.some((option) => option.value === value);
 }
 
 export function deploymentDisplayStatus(deployment: DeploymentStatusSource): DeploymentDisplayStatus {
