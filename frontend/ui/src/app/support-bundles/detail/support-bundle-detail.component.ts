@@ -1,7 +1,7 @@
 import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
-import {ActivatedRoute, Router, UrlTree} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faComment, faDownload, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, map, startWith, Subject, switchMap} from 'rxjs';
@@ -54,8 +54,6 @@ export class SupportBundleDetailComponent {
   protected readonly faDownload = faDownload;
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
-  private readonly returnUrl: UrlTree | string =
-    this.router.currentNavigation()?.previousNavigation?.finalUrl ?? '/support';
   private readonly timeline = viewChild(ActivityTimelineComponent);
 
   protected readonly bundle = signal<SupportBundleDetail | undefined>(undefined);
@@ -195,7 +193,7 @@ export class SupportBundleDetailComponent {
     try {
       await firstValueFrom(this.supportBundlesService.delete(bundle.id));
       this.toast.success('Support request deleted');
-      await this.router.navigateByUrl(this.returnUrl, {replaceUrl: true});
+      await this.router.navigate(['/support'], {replaceUrl: true});
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {
