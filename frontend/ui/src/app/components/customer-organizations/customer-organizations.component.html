@@ -3,6 +3,14 @@
     <div class="distr-toolbar p-4">
       <div class="flex grow flex-col items-stretch gap-3 md:flex-row md:items-center">
         <app-search-bar [control]="filterForm.controls.search" placeholder="Filter customers" />
+        <app-multi-select
+          class="shrink-0 md:w-40"
+          idPrefix="updates-filter"
+          placeholder="All update states"
+          itemLabel="update states"
+          [options]="updateStatusSelectOptions"
+          [selected]="selectedUpdateStatuses()"
+          (selectedChange)="selectUpdateStatuses($event)" />
         @if (showLicenseColumn()) {
           <app-multi-select
             class="shrink-0 md:w-40"
@@ -13,14 +21,6 @@
             [selected]="selectedLicenseStatuses()"
             (selectedChange)="selectLicenseStatuses($event)" />
         }
-        <app-multi-select
-          class="shrink-0 md:w-40"
-          idPrefix="updates-filter"
-          placeholder="All update states"
-          itemLabel="update states"
-          [options]="updateStatusSelectOptions"
-          [selected]="selectedUpdateStatuses()"
-          (selectedChange)="selectUpdateStatuses($event)" />
       </div>
       <div class="distr-toolbar-actions">
         <app-quota-limit [usage]="currentCustomerOrganizationCount()" [limit]="limit()" label="customers" #quota />
@@ -43,14 +43,14 @@
         <thead class="distr-table-head">
           <tr>
             <th scope="col" class="p-4">Customer</th>
+            <th scope="col" class="p-4">Deployments</th>
+            <th scope="col" class="p-4">Updates</th>
             @if (showLicenseColumn()) {
               <th scope="col" class="p-4">License</th>
             }
-            <th scope="col" class="p-4">Updates</th>
             @if (showSupportColumn()) {
               <th scope="col" class="p-4">Support</th>
             }
-            <th scope="col" class="p-4">Deployments</th>
           </tr>
         </thead>
         <tbody>
@@ -82,67 +82,6 @@
                   </div>
                 </div>
               </td>
-              @if (showLicenseColumn()) {
-                <td
-                  [appClickableRow]="['/', 'customers', customer.id, columnTabs.license]"
-                  [title]="tabTitles[columnTabs.license]"
-                  class="distr-table-cell">
-                  @if (customer.license === 'valid') {
-                    Valid
-                  } @else if (customer.isLicensingInUse === false) {
-                    <span class="distr-text-muted">-</span>
-                  } @else if (customer.license; as license) {
-                    <app-customer-license-badge [status]="license" />
-                  } @else {
-                    <ng-container [ngTemplateOutlet]="badgeSkeleton" />
-                  }
-                </td>
-              }
-              <td
-                [appClickableRow]="['/', 'customers', customer.id, customer.updatesTab]"
-                [title]="tabTitles[customer.updatesTab]"
-                class="distr-table-cell">
-                @if (customer.isOutdated === true) {
-                  <span class="distr-badge distr-badge-warning">Outdated</span>
-                } @else if (customer.hasDeploymentsOrPulls === false) {
-                  <span class="distr-text-muted">-</span>
-                } @else if (customer.isOutdated === false) {
-                  Up to date
-                } @else {
-                  <ng-container [ngTemplateOutlet]="badgeSkeleton" />
-                }
-              </td>
-              @if (showSupportColumn()) {
-                <td
-                  [appClickableRow]="['/', 'customers', customer.id, columnTabs.support]"
-                  [title]="tabTitles[columnTabs.support]"
-                  class="distr-table-cell">
-                  @if (customer.supportBundles; as support) {
-                    @if (support.open > 0) {
-                      <span class="block">
-                        <ng-container [ngPlural]="support.open">
-                          <ng-template ngPluralCase="=1">1 open request</ng-template>
-                          <ng-template ngPluralCase="other">{{ support.open }} open requests</ng-template>
-                        </ng-container>
-                      </span>
-                    } @else if (support.resolved + support.canceled > 0) {
-                      <span class="distr-text-muted block">0 open requests</span>
-                    } @else {
-                      <span class="distr-text-muted block">-</span>
-                    }
-                    <span class="flex flex-wrap gap-x-2 text-xs">
-                      @if (support.resolved > 0) {
-                        <span class="distr-text-muted">{{ support.resolved }} resolved</span>
-                      }
-                      @if (support.canceled > 0) {
-                        <span class="distr-text-muted">{{ support.canceled }} canceled</span>
-                      }
-                    </span>
-                  } @else {
-                    <ng-container [ngTemplateOutlet]="twoLineSkeleton" />
-                  }
-                </td>
-              }
               <td
                 [appClickableRow]="['/', 'customers', customer.id, columnTabs.deployments]"
                 [title]="tabTitles[columnTabs.deployments]"
@@ -187,6 +126,67 @@
                   <ng-container [ngTemplateOutlet]="twoLineSkeleton" />
                 }
               </td>
+              <td
+                [appClickableRow]="['/', 'customers', customer.id, customer.updatesTab]"
+                [title]="tabTitles[customer.updatesTab]"
+                class="distr-table-cell">
+                @if (customer.isOutdated === true) {
+                  <span class="distr-badge distr-badge-warning">Outdated</span>
+                } @else if (customer.hasDeploymentsOrPulls === false) {
+                  <span class="distr-text-muted">-</span>
+                } @else if (customer.isOutdated === false) {
+                  Up to date
+                } @else {
+                  <ng-container [ngTemplateOutlet]="badgeSkeleton" />
+                }
+              </td>
+              @if (showLicenseColumn()) {
+                <td
+                  [appClickableRow]="['/', 'customers', customer.id, columnTabs.license]"
+                  [title]="tabTitles[columnTabs.license]"
+                  class="distr-table-cell">
+                  @if (customer.license === 'valid') {
+                    Valid
+                  } @else if (customer.isLicensingInUse === false) {
+                    <span class="distr-text-muted">-</span>
+                  } @else if (customer.license; as license) {
+                    <app-customer-license-badge [status]="license" />
+                  } @else {
+                    <ng-container [ngTemplateOutlet]="badgeSkeleton" />
+                  }
+                </td>
+              }
+              @if (showSupportColumn()) {
+                <td
+                  [appClickableRow]="['/', 'customers', customer.id, columnTabs.support]"
+                  [title]="tabTitles[columnTabs.support]"
+                  class="distr-table-cell">
+                  @if (customer.supportBundles; as support) {
+                    @if (support.open > 0) {
+                      <span class="block">
+                        <ng-container [ngPlural]="support.open">
+                          <ng-template ngPluralCase="=1">1 open request</ng-template>
+                          <ng-template ngPluralCase="other">{{ support.open }} open requests</ng-template>
+                        </ng-container>
+                      </span>
+                    } @else if (support.resolved + support.canceled > 0) {
+                      <span class="distr-text-muted block">0 open requests</span>
+                    } @else {
+                      <span class="distr-text-muted block">-</span>
+                    }
+                    <span class="flex flex-wrap gap-x-2 text-xs">
+                      @if (support.resolved > 0) {
+                        <span class="distr-text-muted">{{ support.resolved }} resolved</span>
+                      }
+                      @if (support.canceled > 0) {
+                        <span class="distr-text-muted">{{ support.canceled }} canceled</span>
+                      }
+                    </span>
+                  } @else {
+                    <ng-container [ngTemplateOutlet]="twoLineSkeleton" />
+                  }
+                </td>
+              }
             </tr>
           } @empty {
             @if (rows() === undefined) {
@@ -198,14 +198,14 @@
                       <ng-container [ngTemplateOutlet]="twoLineSkeleton" />
                     </div>
                   </td>
+                  <td class="distr-table-cell"><ng-container [ngTemplateOutlet]="twoLineSkeleton" /></td>
+                  <td class="distr-table-cell"><ng-container [ngTemplateOutlet]="badgeSkeleton" /></td>
                   @if (showLicenseColumn()) {
                     <td class="distr-table-cell"><ng-container [ngTemplateOutlet]="badgeSkeleton" /></td>
                   }
-                  <td class="distr-table-cell"><ng-container [ngTemplateOutlet]="badgeSkeleton" /></td>
                   @if (showSupportColumn()) {
                     <td class="distr-table-cell"><ng-container [ngTemplateOutlet]="twoLineSkeleton" /></td>
                   }
-                  <td class="distr-table-cell"><ng-container [ngTemplateOutlet]="twoLineSkeleton" /></td>
                 </tr>
               }
             } @else {
