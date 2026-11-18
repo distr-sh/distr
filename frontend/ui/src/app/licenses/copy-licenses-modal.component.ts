@@ -1,12 +1,12 @@
 import {DatePipe} from '@angular/common';
-import {Component, computed, effect, inject, signal} from '@angular/core';
+import {Component, computed, effect, inject, signal, untracked} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faXmark} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {firstValueFrom, Observable} from 'rxjs';
-import {getFormDisplayedError} from '../../util/errors';
+import {getFormDisplayedError, toastDisplayedError} from '../../util/errors';
 import {ClosableDialog} from '../components/confirm-dialog/closable-dialog';
 import {ExpiresAtPickerComponent} from '../components/expires-at-picker/expires-at-picker.component';
 import {SpinnerComponent} from '../components/spinner/spinner.component';
@@ -151,9 +151,11 @@ export class CopyLicensesModalComponent extends ClosableDialog<boolean> {
       });
 
     // Prefill the expiry with the latest expiration date among the selected source's licenses and
-    // select every license for the override by default whenever the source changes.
+    // select every license for the override by default whenever the source changes. A refresh of
+    // the lists the source is derived from must not reset what the user chose.
     effect(() => {
-      const source = this.selectedSource();
+      this.sourceId();
+      const source = untracked(() => this.selectedSource());
       this.form.controls.expiresAt.setValue(this.largestExpiry(source));
       this.expiryOverrideIds.set(
         new Set(
@@ -241,6 +243,14 @@ export class CopyLicensesModalComponent extends ClosableDialog<boolean> {
         const error = getFormDisplayedError(result.reason);
         return [error ? `${creates[i].name} (${error})` : `${creates[i].name}`];
       });
+      if (failures.length > 0) {
+        // A create may have failed because the target changed since the lists were loaded.
+        Promise.all([
+          this.licenseKeysService.refresh(),
+          this.applicationEntitlementsService.refresh(),
+          this.artifactEntitlementsService.refresh(),
+        ]).catch((e) => toastDisplayedError(this.toast, e));
+      }
       if (failures.length === 0) {
         this.toast.success('Licenses have been copied');
         await this.dialogRef.close(true);
