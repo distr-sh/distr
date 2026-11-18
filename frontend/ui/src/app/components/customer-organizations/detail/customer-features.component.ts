@@ -3,9 +3,9 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {CustomerOrganization, CustomerOrganizationFeature} from '@distr-sh/distr-sdk';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../../../util/errors';
+import {tabContext} from '../../../navigation/tabs';
 import {AuthService} from '../../../services/auth.service';
 import {CustomerOrganizationsService} from '../../../services/customer-organizations.service';
-import {OrganizationService} from '../../../services/organization.service';
 import {ToastService} from '../../../services/toast.service';
 import {
   CustomerFeatureDefinition,
@@ -13,7 +13,7 @@ import {
   switchCustomerFeature,
   unmetCustomerFeatureRequirement,
 } from '../../../types/customer-features';
-import {isProSubscription, UpgradePlan} from '../../../types/subscription';
+import {UpgradePlan} from '../../../types/subscription';
 import {PlanBadgeComponent} from '../../plan-badge.component';
 
 interface CustomerFeatureRow extends CustomerFeatureDefinition {
@@ -37,29 +37,19 @@ export class CustomerFeaturesComponent {
   protected readonly canEdit = inject(AuthService).hasAnyRole('read_write', 'admin');
   protected readonly saving = signal(false);
 
-  private readonly organization = toSignal(inject(OrganizationService).get());
+  private readonly context = toSignal(tabContext());
 
   protected readonly rows = computed<CustomerFeatureRow[]>(() => {
     const granted = this.customerOrganization().features;
-    const isPro = isProSubscription(this.organization()?.subscriptionType);
-    const organizationFeatures = this.organization()?.features ?? [];
-    const ownLock = (definition: CustomerFeatureDefinition): UpgradePlan | undefined => {
-      if (definition.requiresPro && !isPro) {
-        return 'pro';
-      } else if (definition.unlockedBy && !organizationFeatures.includes(definition.unlockedBy)) {
-        return 'business';
-      } else {
-        return undefined;
-      }
-    };
+    const context = this.context();
     // A feature granted before a downgrade stays switchable, so that it can still be disabled. One whose required
     // feature is locked is locked as well, since enabling it would enable the required one.
     const locks = new Map<CustomerOrganizationFeature, UpgradePlan | undefined>();
     return customerFeatures.map((definition) => {
       const enabled = granted.includes(definition.feature);
-      const lockedPlan = enabled
-        ? undefined
-        : (ownLock(definition) ?? (definition.requires ? locks.get(definition.requires) : undefined));
+      const {locked, requires} = definition;
+      const ownLock = locked && (!context || locked.when(context)) ? locked.plan : undefined;
+      const lockedPlan = enabled ? undefined : (ownLock ?? (requires ? locks.get(requires) : undefined));
       locks.set(definition.feature, lockedPlan);
       const unmetRequirement = enabled
         ? undefined

@@ -18,11 +18,23 @@ export interface TabContext {
 
 type TabPredicate = (context: TabContext) => boolean;
 
+export interface TabLock {
+  plan: UpgradePlan;
+  when: TabPredicate;
+}
+
+export const proLock: TabLock = {plan: 'pro', when: (c) => !c.organization.isPro};
+
+/** Locks until the organization has the feature, which decides rather than the plan that grants it. */
+export function featureLock(plan: UpgradePlan, feature: Feature): TabLock {
+  return {plan, when: (c) => !c.features.has(feature)};
+}
+
 export interface TabDefinition<T extends string> {
   id: T;
   label: string;
   visible?: TabPredicate;
-  locked?: {plan: UpgradePlan; when: TabPredicate};
+  locked?: TabLock;
 }
 
 export interface LockableTab<T extends string = string> extends TabItem<T> {

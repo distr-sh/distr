@@ -1,38 +1,45 @@
 import {CustomerOrganizationFeature} from '@distr-sh/distr-sdk';
-import {Feature} from './organization';
+import {featureLock, proLock, TabLock} from '../navigation/tabs';
 
 export interface CustomerFeatureDefinition {
   feature: CustomerOrganizationFeature;
   label: string;
+  locked?: TabLock;
   /** The feature this one builds on: enabling this one enables it as well, disabling it disables this one. */
   requires?: CustomerOrganizationFeature;
   /** The features this one needs one of: it cannot be enabled without one, disabling the last one disables it. */
   requiresAnyOf?: CustomerOrganizationFeature[];
-  requiresPro?: boolean;
-  /** The organization feature that unlocks a Business customer feature, which decides instead of the plan. */
-  unlockedBy?: Feature;
 }
 
 export const customerFeatures: CustomerFeatureDefinition[] = [
   {feature: 'deployment_targets', label: 'Deployments'},
-  {feature: 'alerts', label: 'Alerts', requires: 'deployment_targets', requiresPro: true},
+  {feature: 'alerts', label: 'Alerts', locked: proLock, requires: 'deployment_targets'},
   {feature: 'artifacts', label: 'Artifacts'},
   {
     feature: 'update_notifications',
     label: 'Update Notifications',
+    locked: proLock,
     requiresAnyOf: ['deployment_targets', 'artifacts'],
-    requiresPro: true,
   },
-  {feature: 'support_bundles', label: 'Support', requiresPro: true},
-  {feature: 'vulnerabilities', label: 'Security', unlockedBy: 'vulnerabilities'},
-  {feature: 'settings', label: 'Settings', unlockedBy: 'customer_settings'},
+  {feature: 'support_bundles', label: 'Support', locked: proLock},
+  {feature: 'vulnerabilities', label: 'Security', locked: featureLock('business', 'vulnerabilities')},
+  {feature: 'settings', label: 'Settings', locked: featureLock('business', 'customer_settings')},
   {
     feature: 'oidc_providers',
     label: 'Identity Provider',
+    locked: featureLock('business', 'custom_oidc_providers'),
     requires: 'settings',
-    unlockedBy: 'custom_oidc_providers',
   },
 ];
+
+/** Locks what belongs to the given customer features while the organization's plan lets it grant none of them. */
+export function customerFeaturesLock(...features: CustomerOrganizationFeature[]): TabLock {
+  const locks = customerFeatures.filter((it) => features.includes(it.feature)).map((it) => it.locked);
+  return {
+    plan: locks.some((it) => it?.plan === 'pro') ? 'pro' : 'business',
+    when: (c) => locks.every((it) => it !== undefined && it.when(c)),
+  };
+}
 
 export function switchCustomerFeature(
   features: CustomerOrganizationFeature[],
