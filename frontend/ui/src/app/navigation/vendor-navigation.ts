@@ -7,7 +7,6 @@ import {
   faCube,
   faGear,
   faHome,
-  faKey,
   faLifeRing,
   faLightbulb,
   faPalette,
@@ -32,13 +31,6 @@ export const vendorNavigation: NavigationDefinition = [
       {id: 'applications', label: 'Applications', icon: faCube, route: '/applications'},
       {id: 'deployments', label: 'Deployments', icon: faBoxesStacked, route: '/deployments'},
       {id: 'registry', label: 'Registry', icon: faBox, route: '/artifacts'},
-      {
-        id: 'licenses',
-        label: 'Licenses',
-        icon: faKey,
-        route: '/licenses',
-        locked: {plan: 'pro', when: (c) => !c.features.has('licensing')},
-      },
       {
         id: 'notifications',
         label: 'Notifications',

@@ -136,7 +136,7 @@ function link(
       if (viewer === 'customer') {
         return {link: '/license-keys'};
       }
-      return {link: customer ? `/licenses/${customer.id}` : '/licenses'};
+      return {link: customer ? `/customers/${customer.id}/licenses` : '/customers'};
     case 'support_bundle_created':
     case 'support_bundle_uploaded':
     case 'support_bundle_resolved':
