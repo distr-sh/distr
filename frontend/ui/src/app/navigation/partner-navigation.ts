@@ -38,7 +38,7 @@ export const partnerNavigation: NavigationDefinition = [
     label: 'Management',
     entries: [
       {id: 'customers', label: 'Customers', icon: faAddressBook, route: '/customers'},
-      {id: 'users', label: 'Users', icon: faUsers, route: '/users', visible: (c) => c.user.isAdmin},
+      {id: 'team', label: 'Team', icon: faUsers, route: '/team', visible: (c) => c.user.isAdmin},
     ],
   },
 ];

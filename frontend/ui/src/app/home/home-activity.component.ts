@@ -134,7 +134,7 @@ function link(
     case 'license_key_created':
     case 'license_key_updated':
       if (viewer === 'customer') {
-        return {link: '/license-keys'};
+        return {link: '/licenses'};
       }
       return {link: customer ? `/customers/${customer.id}/licenses` : '/customers'};
     case 'support_bundle_created':

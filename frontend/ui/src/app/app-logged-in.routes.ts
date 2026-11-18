@@ -373,8 +373,8 @@ const shellRoutes: Routes = [
         ],
       },
       {
-        path: 'users',
-        title: 'Users',
+        path: 'team',
+        title: 'Team',
         component: UsersPageComponent,
         canActivate: [requirePartnerOrCustomer, requiredRoleGuard('admin')],
       },
@@ -385,7 +385,7 @@ const shellRoutes: Routes = [
         canActivate: [requirePartnerOrCustomer],
       },
       {
-        path: 'license-keys',
+        path: 'licenses',
         title: 'Licenses',
         component: CustomerLicenseDetailPageComponent,
         canActivate: [requireCustomer, licensingEnabledGuard()],
@@ -411,8 +411,6 @@ const shellRoutes: Routes = [
           },
         ],
       },
-      {path: 'licenses', pathMatch: 'full', redirectTo: 'customers'},
-      {path: 'licenses/:customerOrganizationId', redirectTo: 'customers/:customerOrganizationId/licenses'},
       {
         path: 'settings',
         children: [
