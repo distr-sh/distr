@@ -108,6 +108,9 @@ spec:
     metadata:
       labels:
         app: distr-{{ .controllerName }}
+      {{- if .podAnnotations }}
+      annotations: {{ .podAnnotations }}
+      {{- end }}
     spec:
       serviceAccountName: distr-{{ .controllerName }}
       # The controller finishes a running Helm install or upgrade before it exits, which takes up to the default Helm
@@ -115,6 +118,12 @@ spec:
       terminationGracePeriodSeconds: 900
       securityContext:
         runAsNonRoot: true
+      {{- if .nodeSelector }}
+      nodeSelector: {{ .nodeSelector }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations: {{ .tolerations }}
+      {{- end }}
       containers:
         - name: distr-{{ .controllerName }}
           image: "{{ .controllerImageRepository }}/kubernetes-controller:{{ .controllerVersion }}"

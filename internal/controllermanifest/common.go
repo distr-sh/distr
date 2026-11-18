@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"io"
 	"net/url"
 	"path"
@@ -98,7 +100,30 @@ func getTemplateData(
 	if deploymentTarget.Resources != nil {
 		result["targetResources"] = deploymentTarget.Resources
 	}
-	return result, nil
+	if err := setJSON(result, "podAnnotations", deploymentTarget.PodAnnotations,
+		len(deploymentTarget.PodAnnotations) > 0); err != nil {
+		return nil, err
+	} else if err := setJSON(result, "nodeSelector", deploymentTarget.NodeSelector,
+		len(deploymentTarget.NodeSelector) > 0); err != nil {
+		return nil, err
+	} else if err := setJSON(result, "tolerations", deploymentTarget.Tolerations,
+		len(deploymentTarget.Tolerations) > 0); err != nil {
+		return nil, err
+	} else {
+		return result, nil
+	}
+}
+
+// setJSON passes value to the template as JSON, which is valid YAML and quotes every key and value safely.
+func setJSON(result map[string]any, key string, value any, isSet bool) error {
+	if !isSet {
+		return nil
+	} else if data, err := json.Marshal(value); err != nil {
+		return fmt.Errorf("failed to marshal %v: %w", key, err)
+	} else {
+		result[key] = string(data)
+		return nil
+	}
 }
 
 func imageRepository(

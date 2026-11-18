@@ -109,6 +109,18 @@
 
 ---
 
+### nodeSelector?
+
+> `optional` **nodeSelector?**: `Record`\<`string`, `string`\>
+
+---
+
+### podAnnotations?
+
+> `optional` **podAnnotations?**: `Record`\<`string`, `string`\>
+
+---
+
 ### reconnectPending?
 
 > `optional` **reconnectPending?**: `boolean`
@@ -130,6 +142,12 @@
 ### scope?
 
 > `optional` **scope?**: [`DeploymentTargetScope`](../type-aliases/DeploymentTargetScope.md)
+
+---
+
+### tolerations?
+
+> `optional` **tolerations?**: [`DeploymentTargetToleration`](DeploymentTargetToleration.md)[]
 
 ---
 
