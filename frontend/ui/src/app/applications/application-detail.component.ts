@@ -1,10 +1,9 @@
-import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
+import {GlobalPositionStrategy} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe, NgOptimizedImage} from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  ElementRef,
   inject,
   OnDestroy,
   OnInit,
@@ -14,7 +13,7 @@ import {
 } from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {ActivatedRoute, Router, RouterLink} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {
   Application,
   ApplicationVersion,
@@ -24,7 +23,7 @@ import {
   VersioningStrategy,
 } from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faArchive, faBox, faBoxesStacked, faChevronDown, faPlus, faTrash} from '@fortawesome/free-solid-svg-icons';
+import {faArchive, faBox, faChevronDown, faPlus, faTrash} from '@fortawesome/free-solid-svg-icons';
 import {
   catchError,
   combineLatestWith,
@@ -80,9 +79,7 @@ import {
   selector: 'app-application-detail',
   imports: [
     ReactiveFormsModule,
-    OverlayModule,
     AsyncPipe,
-    RouterLink,
     FaIconComponent,
     NgOptimizedImage,
     UuidComponent,
@@ -113,7 +110,6 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly auth = inject(AuthService);
-  readonly applications$: Observable<Application[]> = this.applicationService.list();
   filterForm = new FormGroup({
     showArchived: new FormControl<boolean>(false),
   });
@@ -188,7 +184,6 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   protected readonly versionDetailsModal = viewChild.required<TemplateRef<unknown>>('versionDetailsModal');
   private versionDetailsModalRef?: DialogRef;
 
-  protected readonly faBoxesStacked = faBoxesStacked;
   protected readonly faChevronDown = faChevronDown;
   protected readonly faTrash = faTrash;
   protected readonly faArchive = faArchive;
@@ -197,14 +192,9 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   protected readonly resourcePreviewIndices = signal(new Set<number>());
 
   protected readonly isArchived = isArchived;
-  readonly breadcrumbDropdown = signal(false);
   readonly isVersionFormExpanded = signal(false);
-  breadcrumbDropdownWidth: number = 0;
-  protected readonly dropdownTriggerButton = viewChild.required<ElementRef<HTMLElement>>('dropdownTriggerButton');
 
   ngOnInit() {
-    this.route.url.subscribe(() => this.breadcrumbDropdown.set(false));
-
     this.newVersionForm.controls.kubernetes.controls.chartType.valueChanges
       .pipe(takeUntil(this.destroyed$))
       .subscribe((type) => {
@@ -219,13 +209,6 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroyed$.next();
     this.destroyed$.complete();
-  }
-
-  toggleBreadcrumbDropdown() {
-    this.breadcrumbDropdown.update((v) => !v);
-    if (this.breadcrumbDropdown()) {
-      this.breadcrumbDropdownWidth = this.dropdownTriggerButton().nativeElement.getBoundingClientRect().width;
-    }
   }
 
   protected readonly savingApplicationName = signal(false);

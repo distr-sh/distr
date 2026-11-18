@@ -5,25 +5,7 @@
     </div>
   } @else if (customerOrganization(); as customer) {
     <div class="distr-panel mb-4">
-      <div class="flex justify-between gap-2">
-        <app-customer-breadcrumb [customerOrganizationId]="customerOrganizationId()" [section]="activeTab()" />
-        <div class="flex gap-2">
-          <button
-            type="button"
-            (click)="openCustomerPortal(customer)"
-            class="distr-btn-secondary inline-flex items-center px-3 py-2 text-sm font-medium">
-            <fa-icon [icon]="faGlasses" class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-            Open customer portal
-          </button>
-          @if (canDelete) {
-            <button type="button" (click)="delete(customer)" class="distr-btn-danger px-3 py-2">
-              <fa-icon [icon]="faTrash" class="mr-2 h-4 w-4" />
-              Delete Customer
-            </button>
-          }
-        </div>
-      </div>
-      <div class="mt-4 flex items-center gap-4 md:mt-6">
+      <div class="flex items-center gap-4">
         <button
           type="button"
           (click)="uploadImage(customer)"
@@ -37,7 +19,7 @@
             iconClass="text-4xl"
             class="size-16 rounded-lg" />
         </button>
-        <div class="min-w-0">
+        <div class="min-w-64 flex-1">
           <app-inline-edit
             class="block"
             tag="h3"
@@ -49,6 +31,24 @@
             [loading]="savingName()"
             (save)="updateName(customer, $event)" />
           <p class="distr-text-muted text-sm">Customer since {{ customer.createdAt | date }}</p>
+        </div>
+        <div class="flex flex-wrap justify-end gap-2 self-start">
+          <button
+            type="button"
+            (click)="openCustomerPortal(customer)"
+            class="distr-btn-secondary inline-flex items-center px-3 py-2 text-sm font-medium whitespace-nowrap">
+            <fa-icon [icon]="faGlasses" class="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
+            Open customer portal
+          </button>
+          @if (canDelete) {
+            <button
+              type="button"
+              (click)="delete(customer)"
+              class="distr-btn-danger inline-flex items-center px-3 py-2 whitespace-nowrap">
+              <fa-icon [icon]="faTrash" class="mr-2 h-4 w-4" />
+              Delete Customer
+            </button>
+          }
         </div>
       </div>
     </div>

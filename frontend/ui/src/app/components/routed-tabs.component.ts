@@ -20,7 +20,6 @@ export class RoutedTabsComponent {
 
   public readonly tabs = input.required<readonly LockableTab[]>();
   protected readonly active = signal(this.tabFromRoute());
-  public readonly activeTab = this.active.asReadonly();
   protected readonly planHintTab = signal<string | null>(null);
 
   constructor() {
