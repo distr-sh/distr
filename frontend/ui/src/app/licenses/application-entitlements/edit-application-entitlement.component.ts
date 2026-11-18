@@ -171,7 +171,7 @@ export class EditApplicationEntitlementComponent implements OnInit, AfterViewIni
         this.onChange({
           id: val.id,
           name: val.name,
-          expiresAt: val.expiresAt ? new Date(val.expiresAt) : undefined,
+          expiresAt: val.expiresAt ? dayjs(val.expiresAt).toDate() : undefined,
           applicationId: val.subjectId,
           versions,
           autoAddVersionRegex: (!allVersions && val.autoAddVersionRegex) || undefined,

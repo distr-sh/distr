@@ -5,7 +5,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   inject,
   input,
   signal,
@@ -15,14 +14,9 @@ import {
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup} from '@angular/forms';
 import {ActivatedRoute, Params, Router} from '@angular/router';
-import {
-  ApplicationVersion,
-  CustomerOrganization,
-  DeploymentTarget,
-  DeploymentWithLatestRevision,
-} from '@distr-sh/distr-sdk';
+import {ApplicationVersion, DeploymentTarget, DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faChevronDown, faPlus} from '@fortawesome/free-solid-svg-icons';
+import {faPlus} from '@fortawesome/free-solid-svg-icons';
 import {
   catchError,
   combineLatest,
@@ -39,9 +33,7 @@ import {
 import {arraysEqual, compareBy} from '../../util/arrays';
 import {filteredByFormControl} from '../../util/filter';
 import {refreshInBackground} from '../../util/refresh';
-import {SecureImagePipe} from '../../util/secureImage';
 import {MultiSelectComponent, MultiSelectOption} from '../components/multi-select/multi-select.component';
-import {QuotaLimitComponent} from '../components/quota-limit.component';
 import {SearchBarComponent} from '../components/search-bar.component';
 import {ApplicationsService} from '../services/applications.service';
 import {AuthService} from '../services/auth.service';
@@ -53,6 +45,7 @@ import {OrganizationService} from '../services/organization.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {customerFeatureRequiredMessage} from '../types/customer-features';
 import {DeploymentTargetLatestMetrics} from '../types/deployment-target-metrics';
+import {UNLIMITED_QTY} from '../types/subscription';
 import {DeploymentModalComponent} from './deployment-modal.component';
 import {
   DeploymentDisplayStatus,
@@ -67,12 +60,6 @@ export interface DeploymentTargetViewData extends DeploymentTarget {
   metrics?: DeploymentTargetLatestMetrics;
 }
 
-export interface CustomerDeploymentTargets {
-  customerOrganization?: CustomerOrganization;
-  deploymentTargets: DeploymentTargetViewData[];
-}
-
-const localStoragerCollapsedCustomerIds = 'collapsedCustomerIds';
 // customer organization ids are UUIDs, so this cannot collide with one
 const internalCustomerOption = 'internal';
 const deploymentDisplayStatusLabels = new Map(
@@ -88,8 +75,6 @@ const deploymentDisplayStatusLabels = new Map(
     OverlayModule,
     DeploymentTargetCardComponent,
     DeploymentModalComponent,
-    SecureImagePipe,
-    QuotaLimitComponent,
     SearchBarComponent,
     MultiSelectComponent,
   ],
@@ -110,20 +95,6 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   private readonly router = inject(Router);
 
   protected readonly plusIcon = faPlus;
-  protected readonly faChevronDown = faChevronDown;
-  protected readonly collapsedCustomerIds = signal<string[]>(
-    (() => {
-      const s = localStorage.getItem(localStoragerCollapsedCustomerIds);
-      if (s) {
-        try {
-          return JSON.parse(s);
-        } catch (e) {
-          console.warn(e);
-        }
-      }
-      return [];
-    })()
-  );
 
   private modal?: DialogRef;
 
@@ -248,28 +219,19 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   protected readonly createBlockedReason = computed(() =>
     this.customerFeatureDisabled() ? customerFeatureRequiredMessage(['deployment_targets']) : undefined
   );
-  protected readonly customerDeploymentTargetCounts = toSignal(
-    this.deploymentTargets$.pipe(
-      map((targets) =>
-        targets.reduce<Record<string, number>>((counts, dt) => {
-          if (dt.customerOrganization) {
-            counts[dt.customerOrganization.id] = (counts[dt.customerOrganization.id] ?? 0) + 1;
-          }
-          return counts;
-        }, {})
-      )
-    ),
-    {initialValue: {} as Record<string, number>}
-  );
+  protected readonly limitReached = computed(() => {
+    const limit = this.toolbarLimit();
+    return limit !== undefined && limit !== UNLIMITED_QTY && this.count() >= limit;
+  });
 
-  protected readonly filteredDeploymentTargets$: Observable<CustomerDeploymentTargets[]> = filteredByFormControl(
+  protected readonly filteredDeploymentTargets$: Observable<DeploymentTargetViewData[]> = filteredByFormControl(
     this.deploymentTargets$,
     this.filterForm.controls.search,
     (dt, search) => {
       const query = search.toLowerCase();
       return [
         dt.name,
-        dt.customerOrganization?.name ?? 'Internal',
+        ...(dt.customerOrganization ? [dt.customerOrganization.name] : ['Internal', this.organization()?.name]),
         ...dt.deployments.flatMap((d) => [
           d.application.name,
           deploymentDisplayStatusLabels.get(deploymentDisplayStatus(d)),
@@ -297,30 +259,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
         metrics: deploymentTargetMetrics.find((x) => x.deploymentTargetId === dt.id),
       }))
     ),
-    map((deploymentTargets) =>
-      // For vendors and partners: group deployment targets by customer organization
-      // For customers: just put all deployment targets into one group
-      (this.auth.isVendor() || this.auth.isPartner()
-        ? [
-            ...(this.auth.isVendor()
-              ? [{deploymentTargets: deploymentTargets.filter((it) => it.customerOrganization === undefined)}]
-              : []),
-            ...Object.values(
-              deploymentTargets
-                .map((dt) => dt.customerOrganization)
-                .filter((co) => co !== undefined)
-                .sort(compareBy((co) => co.name))
-                .reduce<Record<string, CustomerOrganization>>((agg, co) => ({...agg, [co.id]: co}), {})
-            ).map<CustomerDeploymentTargets>((customerOrganization) => ({
-              customerOrganization,
-              deploymentTargets: deploymentTargets.filter(
-                (dt) => dt.customerOrganization?.id === customerOrganization.id
-              ),
-            })),
-          ]
-        : [{deploymentTargets}]
-      ).filter((it) => it.deploymentTargets.length > 0)
-    )
+    map((deploymentTargets) => deploymentTargets.sort(compareBy((dt) => dt.customerOrganization?.name ?? '')))
   );
 
   constructor() {
@@ -341,7 +280,6 @@ export class DeploymentTargetsComponent implements AfterViewInit {
     search.valueChanges
       .pipe(debounceTime(300), takeUntilDestroyed())
       .subscribe((value) => this.setQueryParams({search: value || null}));
-    effect(() => localStorage.setItem(localStoragerCollapsedCustomerIds, JSON.stringify(this.collapsedCustomerIds())));
   }
 
   protected selectCustomers(ids: string[]) {
@@ -401,11 +339,5 @@ export class DeploymentTargetsComponent implements AfterViewInit {
 
   protected hideModal(): void {
     this.modal?.close();
-  }
-
-  protected toggleCustomerCollapsed(customerId: string): void {
-    this.collapsedCustomerIds.update((prev) =>
-      prev.includes(customerId) ? prev.filter((el) => el !== customerId) : prev.concat(customerId)
-    );
   }
 }

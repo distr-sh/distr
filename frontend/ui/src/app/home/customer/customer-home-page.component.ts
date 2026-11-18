@@ -373,7 +373,8 @@ export class CustomerHomePageComponent {
       this.refreshIf(
         features.then((it) => it.includes('deployment_targets')),
         () => this.deploymentTargetsService.refresh(),
-        () => this.applicationsService.refresh()
+        () => this.applicationsService.refresh(),
+        () => this.secretsService.refresh()
       ),
       this.refreshIf(
         features.then((it) => it.includes('artifacts')),
