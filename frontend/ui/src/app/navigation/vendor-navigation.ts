@@ -29,28 +29,22 @@ export const vendorNavigation: NavigationDefinition = [
       },
       {id: 'home', label: 'Home', icon: faHome, route: '/home'},
       {id: 'applications', label: 'Applications', icon: faCube, route: '/applications'},
-      {id: 'deployments', label: 'Deployments', icon: faBoxesStacked, route: '/deployments'},
-      {id: 'registry', label: 'Registry', icon: faBox, route: '/artifacts'},
-      {
-        id: 'notifications',
-        label: 'Notifications',
-        icon: faBell,
-        route: '/notifications',
-        locked: {plan: 'pro', when: (c) => !c.features.has('notifications')},
-      },
-    ],
-  },
-  {
-    id: 'management',
-    label: 'Management',
-    entries: [
-      {id: 'customers', label: 'Customers', icon: faAddressBook, route: '/customers'},
       {
         id: 'partners',
         label: 'Partners',
         icon: faBuilding,
         route: '/partners',
         visible: (c) => c.features.has('partner_management'),
+      },
+      {id: 'customers', label: 'Customers', icon: faAddressBook, route: '/customers'},
+      {id: 'deployments', label: 'Deployments', icon: faBoxesStacked, route: '/deployments'},
+      {id: 'registry', label: 'Registry', icon: faBox, route: '/registry'},
+      {
+        id: 'notifications',
+        label: 'Notifications',
+        icon: faBell,
+        route: '/notifications',
+        locked: {plan: 'pro', when: (c) => !c.features.has('notifications')},
       },
       {
         id: 'support',
@@ -60,12 +54,18 @@ export const vendorNavigation: NavigationDefinition = [
         locked: {plan: 'pro', when: (c) => !c.features.has('support_bundles')},
       },
       {
-        id: 'advisories',
+        id: 'security',
         label: 'Security',
         icon: faShieldHalved,
-        route: '/advisories',
+        route: '/security',
         locked: {plan: 'business', when: (c) => !c.features.has('vulnerabilities')},
       },
+    ],
+  },
+  {
+    id: 'configuration',
+    label: 'Configuration',
+    entries: [
       {
         id: 'customer-portal',
         label: 'Customer Portal',

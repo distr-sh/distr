@@ -156,7 +156,7 @@ export class ArtifactsComponent {
       );
       this.toast.success(`${name} created successfully`);
       this.hideCreateModal();
-      await this.router.navigate(['/artifacts', created.id]);
+      await this.router.navigate(['/registry', created.id]);
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {

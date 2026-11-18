@@ -36,7 +36,7 @@ export class CustomerHomeChecklistComponent {
         label: 'Invite team members',
         hint: this.canInvite ? 'Give your colleagues access.' : 'Ask an admin to give your colleagues access.',
         done: checklist.teamMembersInvited,
-        link: this.canInvite ? '/users' : undefined,
+        link: this.canInvite ? '/team' : undefined,
       },
     ];
     if (this.section() === 'deployments') {

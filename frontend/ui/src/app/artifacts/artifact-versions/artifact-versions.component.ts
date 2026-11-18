@@ -476,7 +476,7 @@ export class ArtifactVersionsComponent {
           return NEVER;
         }),
         tap(() => this.toast.success('Artifact deleted successfully')),
-        switchMap(() => this.router.navigate(['/artifacts']))
+        switchMap(() => this.router.navigate(['/registry']))
       )
       .subscribe();
   }
@@ -522,7 +522,7 @@ export class ArtifactVersionsComponent {
         switchMap(async ({artifactDeleted}) => {
           if (artifactDeleted) {
             this.toast.success(`Tag "${tagName}" and artifact ${artifact.name} deleted successfully`);
-            await this.router.navigate(['/artifacts']);
+            await this.router.navigate(['/registry']);
           } else {
             this.toast.success(`Tag "${tagName}" removed successfully`);
           }

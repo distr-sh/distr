@@ -8,9 +8,9 @@ import {ArtifactPullsComponent} from './artifact-pulls.component';
 @Component({
   template: `
     <app-page>
-      <a routerLink="/artifacts" class="distr-link mb-4 inline-flex items-center text-sm">
+      <a routerLink="/registry" class="distr-link mb-4 inline-flex items-center text-sm">
         <fa-icon [icon]="faArrowLeft" class="mr-2" />
-        Artifacts
+        Registry
       </a>
       <app-artifact-pulls />
     </app-page>
