@@ -89,7 +89,6 @@ export class AdvisoryDetailComponent {
 
   protected readonly showsAffectedState = this.auth.isCustomer() || this.auth.isPartner();
 
-  protected readonly backRoute = this.auth.isCustomer() ? '/security' : '/advisories';
   protected readonly canEdit = this.auth.isVendor() && this.auth.hasAnyRole('read_write', 'admin');
 
   private readonly timeline = viewChild(ActivityTimelineComponent);

@@ -16,7 +16,7 @@ export const partnerNavigation: NavigationDefinition = [
     entries: [
       {id: 'home', label: 'Home', icon: faHome, route: '/home'},
       {id: 'deployments', label: 'Deployments', icon: faBoxesStacked, route: '/deployments'},
-      {id: 'registry', label: 'Registry', icon: faBox, route: '/artifacts'},
+      {id: 'registry', label: 'Registry', icon: faBox, route: '/registry'},
       {
         id: 'support',
         label: 'Support',
@@ -25,10 +25,10 @@ export const partnerNavigation: NavigationDefinition = [
         visible: (c) => c.features.has('support_bundles'),
       },
       {
-        id: 'advisories',
+        id: 'security',
         label: 'Security',
         icon: faShieldHalved,
-        route: '/advisories',
+        route: '/security',
         visible: (c) => c.features.has('vulnerabilities'),
       },
     ],

@@ -128,7 +128,7 @@ function link(
         : {link: '/deployments', queryParams: {search: subject}};
     case 'artifact_version_created':
     case 'artifact_version_first_pulled':
-      return {link: `/artifacts/${resourceId}`};
+      return {link: viewer === 'customer' ? `/artifacts/${resourceId}` : `/registry/${resourceId}`};
     case 'deployment_revision_created':
       return {link: `/deployments/${resourceId}`};
     case 'license_key_created':

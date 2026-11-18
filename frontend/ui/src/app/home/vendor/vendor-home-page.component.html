@@ -233,7 +233,7 @@
             [icon]="faShieldHalved"
             heading="Security Advisories"
             [type]="advisories.total > 0 && advisories.open === 0 ? 'success' : 'neutral'"
-            link="/advisories"
+            link="/security"
             [queryParams]="advisories.open > 0 ? openAdvisoryQueryParams : undefined">
             @if (advisories.total > 0) {
               {{ advisories.open }} open

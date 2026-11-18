@@ -6,7 +6,7 @@ import {OrganizationService} from '../../services/organization.service';
 import {isSubscriptionExpired} from '../../types/organization';
 import {organizationSettingsTabs} from '../organization-settings-navigation';
 
-export const subscriptionPath = '/settings/organization/subscription';
+const subscriptionPath = '/settings/organization/subscription';
 
 export function canOpenSubscription(): Observable<boolean> {
   const auth = inject(AuthService);

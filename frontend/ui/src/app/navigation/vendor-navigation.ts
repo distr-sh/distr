@@ -38,7 +38,7 @@ export const vendorNavigation: NavigationDefinition = [
       },
       {id: 'customers', label: 'Customers', icon: faAddressBook, route: '/customers'},
       {id: 'deployments', label: 'Deployments', icon: faBoxesStacked, route: '/deployments'},
-      {id: 'registry', label: 'Registry', icon: faBox, route: '/artifacts'},
+      {id: 'registry', label: 'Registry', icon: faBox, route: '/registry'},
       {
         id: 'notifications',
         label: 'Notifications',
@@ -54,10 +54,10 @@ export const vendorNavigation: NavigationDefinition = [
         locked: {plan: 'pro', when: (c) => !c.features.has('support_bundles')},
       },
       {
-        id: 'advisories',
+        id: 'security',
         label: 'Security',
         icon: faShieldHalved,
-        route: '/advisories',
+        route: '/security',
         locked: {plan: 'business', when: (c) => !c.features.has('vulnerabilities')},
       },
     ],

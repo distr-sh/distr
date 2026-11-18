@@ -75,7 +75,6 @@ export class AdvisoryListComponent {
 
   protected readonly showsAffectedState = this.auth.isCustomer() || this.auth.isPartner();
 
-  protected readonly routePrefix = this.auth.isCustomer() ? '/security' : '/advisories';
   protected readonly canEdit = this.auth.isVendor() && this.auth.hasAnyRole('read_write', 'admin');
   protected readonly canFilterByStatus = !this.showsAffectedState;
 
