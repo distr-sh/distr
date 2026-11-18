@@ -40,7 +40,6 @@ import {DeploymentTargetsPageComponent} from './deployments/deployment-targets-p
 import {CustomerHomePageComponent} from './home/customer/customer-home-page.component';
 import {VendorHomePageComponent} from './home/vendor/vendor-home-page.component';
 import {CustomerLicenseDetailPageComponent} from './licenses/customer-license-detail-page.component';
-import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
 import {NotificationRecordsPageComponent} from './notification-records/notification-records-page.component';
 import {NotificationsPageComponent} from './notifications/notifications-page.component';
 import {BillingComponent} from './organization-settings/billing/billing.component';
@@ -418,23 +417,8 @@ const shellRoutes: Routes = [
           },
         ],
       },
-      {
-        path: 'licenses',
-        title: 'Licenses',
-        canActivate: [requireVendorOrPartner, licensingEnabledGuard()],
-        data: {userRole: 'vendor'},
-        children: [
-          {
-            path: '',
-            pathMatch: 'full',
-            component: LicensesOverviewComponent,
-          },
-          {
-            path: ':customerOrganizationId',
-            redirectTo: '/customers/:customerOrganizationId/licenses',
-          },
-        ],
-      },
+      {path: 'licenses', pathMatch: 'full', redirectTo: 'customers'},
+      {path: 'licenses/:customerOrganizationId', redirectTo: 'customers/:customerOrganizationId/licenses'},
       {
         path: 'settings',
         children: [

@@ -3,7 +3,6 @@ import {
   faBox,
   faBoxesStacked,
   faHome,
-  faKey,
   faLifeRing,
   faShieldHalved,
   faUsers,
@@ -18,13 +17,6 @@ export const partnerNavigation: NavigationDefinition = [
       {id: 'home', label: 'Home', icon: faHome, route: '/home'},
       {id: 'deployments', label: 'Deployments', icon: faBoxesStacked, route: '/deployments'},
       {id: 'registry', label: 'Registry', icon: faBox, route: '/artifacts'},
-      {
-        id: 'licenses',
-        label: 'Licenses',
-        icon: faKey,
-        route: '/licenses',
-        visible: (c) => c.features.has('licensing'),
-      },
       {
         id: 'support',
         label: 'Support',
