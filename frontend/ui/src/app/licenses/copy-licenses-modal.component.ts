@@ -5,7 +5,7 @@ import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faXmark} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {firstValueFrom, forkJoin} from 'rxjs';
+import {firstValueFrom, Observable} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {ClosableDialog} from '../components/confirm-dialog/closable-dialog';
 import {ExpiresAtPickerComponent} from '../components/expires-at-picker/expires-at-picker.component';
@@ -201,42 +201,56 @@ export class CopyLicensesModalComponent extends ClosableDialog<boolean> {
     const expiresAt = this.form.controls.expiresAt.value;
     const entitlementExpiresAt = expiresAt ? dayjs(expiresAt).toDate() : undefined;
     const licenseKeyExpiresAt = expiresAt ? dayjs(expiresAt).toISOString() : undefined;
-    const creates = [
-      ...source.artifactEntitlements.map((ae) =>
-        this.artifactEntitlementsService.create({
+    const creates: {name?: string; request: Observable<unknown>}[] = [
+      ...source.artifactEntitlements.map((ae) => ({
+        name: ae.name,
+        request: this.artifactEntitlementsService.create({
           ...ae,
           id: undefined,
           customerOrganizationId: targetId,
           ...(isOverridden(ae.id) ? {expiresAt: entitlementExpiresAt} : {}),
-        })
-      ),
-      ...source.applicationEntitlements.map((ae) =>
-        this.applicationEntitlementsService.create({
+        }),
+      })),
+      ...source.applicationEntitlements.map((ae) => ({
+        name: ae.name,
+        request: this.applicationEntitlementsService.create({
           ...ae,
           id: undefined,
           customerOrganizationId: targetId,
           ...(isOverridden(ae.id) ? {expiresAt: entitlementExpiresAt} : {}),
-        })
-      ),
-      ...source.licenseKeys.map(({id, name, ...lk}) =>
-        this.licenseKeysService.create({
+        }),
+      })),
+      ...source.licenseKeys.map(({id, name, ...lk}) => ({
+        name,
+        request: this.licenseKeysService.create({
           ...lk,
           name: name!,
           customerOrganizationId: targetId,
           ...(isOverridden(id) ? {expiresAt: licenseKeyExpiresAt} : {}),
-        })
-      ),
+        }),
+      })),
     ];
 
     this.copying.set(true);
     try {
-      await firstValueFrom(forkJoin(creates));
-      this.toast.success('Licenses have been copied');
-      await this.dialogRef.close(true);
-    } catch (e) {
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
+      const results = await Promise.allSettled(creates.map(({request}) => firstValueFrom(request)));
+      const failures = results.flatMap((result, i) => {
+        if (result.status === 'fulfilled') {
+          return [];
+        }
+        const error = getFormDisplayedError(result.reason);
+        return [error ? `${creates[i].name} (${error})` : `${creates[i].name}`];
+      });
+      if (failures.length === 0) {
+        this.toast.success('Licenses have been copied');
+        await this.dialogRef.close(true);
+      } else if (failures.length === results.length) {
+        this.toast.error(`Could not copy ${failures.join(', ')}.`);
+      } else {
+        this.toast.error(
+          `Copied ${results.length - failures.length} of ${results.length} licenses. Could not copy ${failures.join(', ')}.`
+        );
+        await this.dialogRef.close(true);
       }
     } finally {
       this.copying.set(false);
