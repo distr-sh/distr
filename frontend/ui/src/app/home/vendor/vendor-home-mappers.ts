@@ -32,22 +32,36 @@ export const licenseExpiryWindowDays = 30;
 const openSupportBundleStatuses: readonly SupportBundleStatus[] = ['initialized', 'created'];
 
 /**
- * The customers with an expired license key or entitlement, and those without one but with one that expires within
- * the window, so that every customer counts once.
+ * The customers with an expired license key or entitlement, those without one but with one that expires within the
+ * window and, once some customer has a license, those without one, so that every customer counts once.
  */
-export function toVendorHomeLicenses(licenses: License[], now: Dayjs = dayjs()): VendorHomeLicenses {
+export function toVendorHomeLicenses(
+  customers: CustomerOrganization[],
+  licenses: License[],
+  now: Dayjs = dayjs()
+): VendorHomeLicenses {
   const threshold = now.add(licenseExpiryWindowDays, 'day');
-  const expirations = (license: License) =>
-    [...license.licenseKeys, ...license.applicationEntitlements, ...license.artifactEntitlements]
-      .map((it) => it.expiresAt)
-      .filter((expiresAt) => expiresAt !== undefined);
-  const result: VendorHomeLicenses = {expiredCustomerIds: [], expiringCustomerIds: []};
-  for (const license of licenses) {
-    const dates = expirations(license);
-    if (dates.some((expiresAt) => !now.isBefore(expiresAt))) {
-      result.expiredCustomerIds.push(license.customerOrganization.id);
+  const licenseByCustomer = new Map(licenses.map((license) => [license.customerOrganization.id, license]));
+  const grants = (license: License | undefined) =>
+    license ? [...license.licenseKeys, ...license.applicationEntitlements, ...license.artifactEntitlements] : [];
+  const isLicensingInUse = licenses.some((license) => grants(license).length > 0);
+  const result: VendorHomeLicenses = {
+    isLicensingInUse,
+    expiredCustomerIds: [],
+    expiringCustomerIds: [],
+    unlicensedCustomerIds: [],
+  };
+  for (const customer of customers) {
+    const customerGrants = grants(licenseByCustomer.get(customer.id));
+    const dates = customerGrants.map((it) => it.expiresAt).filter((expiresAt) => expiresAt !== undefined);
+    if (customerGrants.length === 0) {
+      if (isLicensingInUse) {
+        result.unlicensedCustomerIds.push(customer.id);
+      }
+    } else if (dates.some((expiresAt) => !now.isBefore(expiresAt))) {
+      result.expiredCustomerIds.push(customer.id);
     } else if (dates.some((expiresAt) => !threshold.isBefore(expiresAt))) {
-      result.expiringCustomerIds.push(license.customerOrganization.id);
+      result.expiringCustomerIds.push(customer.id);
     }
   }
   return result;
@@ -88,6 +102,12 @@ function customerTargets(customer: CustomerOrganization, targets: DeploymentTarg
   return targets.filter((target) => target.customerOrganization?.id === customer.id);
 }
 
+export interface CustomerUpdates {
+  hasDeploymentsOrPulls: boolean;
+  isOutdated: boolean;
+  outdatedDeployments: number;
+}
+
 /**
  * A customer is outdated when one of its deployments is. A customer without deployments is outdated when it
  * pulled an artifact it may pull a newer tag of.
@@ -98,14 +118,13 @@ export function toCustomerUpdates(
   applications: Application[],
   entitlements: ApplicationEntitlement[],
   pulls: LatestArtifactPull[]
-): {isOutdated: boolean; outdatedDeployments: number} {
+): CustomerUpdates {
   const deployments = customerTargets(customer, targets).flatMap((target) => target.deployments);
+  const customerPulls = pulls.filter((pull) => pull.customerOrganizationId === customer.id);
   const outdatedDeployments = deployments.filter((it) => isDeploymentOutdated(it, applications, entitlements)).length;
   const isOutdated =
-    deployments.length > 0
-      ? outdatedDeployments > 0
-      : pulls.some((pull) => pull.customerOrganizationId === customer.id && pull.availableUpdate !== undefined);
-  return {isOutdated, outdatedDeployments};
+    deployments.length > 0 ? outdatedDeployments > 0 : customerPulls.some((pull) => pull.availableUpdate !== undefined);
+  return {hasDeploymentsOrPulls: deployments.length + customerPulls.length > 0, isOutdated, outdatedDeployments};
 }
 
 export function toVendorHomeUpdates(
@@ -115,16 +134,18 @@ export function toVendorHomeUpdates(
   entitlements: ApplicationEntitlement[],
   pulls: LatestArtifactPull[]
 ): VendorHomeUpdates {
+  let hasDeploymentsOrPulls = false;
   let outdatedCustomers = 0;
   let outdatedDeployments = 0;
   for (const customer of customers) {
     const updates = toCustomerUpdates(customer, targets, applications, entitlements, pulls);
+    hasDeploymentsOrPulls ||= updates.hasDeploymentsOrPulls;
     if (updates.isOutdated) {
       outdatedCustomers++;
     }
     outdatedDeployments += updates.outdatedDeployments;
   }
-  return {totalCustomers: customers.length, outdatedCustomers, outdatedDeployments};
+  return {totalCustomers: customers.length, hasDeploymentsOrPulls, outdatedCustomers, outdatedDeployments};
 }
 
 function toCustomerUsage(
@@ -146,7 +167,7 @@ function toCustomerUsage(
 
 /**
  * Counts as open items of a customer every deployment in error or stale, every outdated deployment (or the outdated
- * artifact pulls of a customer without deployments, as one item), an expired or expiring license and every open
+ * artifact pulls of a customer without deployments, as one item), a license that needs attention and every open
  * support request. Customers with open items come first, the most first, and the rest follow alphabetically.
  * `licenses` and `openSupportBundles` are `null` while the organization lacks the feature.
  */
@@ -162,17 +183,18 @@ export function toVendorHomeCustomers(
   const licenseCustomerIds = new Set([
     ...(licenses?.expiredCustomerIds ?? []),
     ...(licenses?.expiringCustomerIds ?? []),
+    ...(licenses?.unlicensedCustomerIds ?? []),
   ]);
   return customers
     .map((customer) => {
       const health = toDeploymentHealth(customerTargets(customer, targets));
       const updates = toCustomerUpdates(customer, targets, applications, entitlements, pulls);
-      const openItems =
-        health.error +
-        health.stale +
-        (updates.outdatedDeployments > 0 ? updates.outdatedDeployments : updates.isOutdated ? 1 : 0) +
-        (licenseCustomerIds.has(customer.id) ? 1 : 0) +
-        (openSupportBundles ?? []).filter((bundle) => bundle.customerOrganizationId === customer.id).length;
+      const openItems = countCustomerOpenItems(
+        health,
+        updates,
+        licenseCustomerIds.has(customer.id),
+        (openSupportBundles ?? []).filter((bundle) => bundle.customerOrganizationId === customer.id).length
+      );
       return {
         id: customer.id,
         name: customer.name,
@@ -181,5 +203,24 @@ export function toVendorHomeCustomers(
         openItems,
       };
     })
-    .sort((a, b) => b.openItems - a.openItems || a.name.localeCompare(b.name));
+    .sort(compareByOpenItems);
+}
+
+export function countCustomerOpenItems(
+  health: DeploymentHealth | undefined,
+  updates: CustomerUpdates | undefined,
+  hasLicenseIssue: boolean,
+  openSupportBundles: number
+): number {
+  return (
+    (health?.error ?? 0) +
+    (health?.stale ?? 0) +
+    (updates?.outdatedDeployments || (updates?.isOutdated ? 1 : 0)) +
+    (hasLicenseIssue ? 1 : 0) +
+    openSupportBundles
+  );
+}
+
+export function compareByOpenItems(a: {name: string; openItems: number}, b: {name: string; openItems: number}): number {
+  return b.openItems - a.openItems || a.name.localeCompare(b.name);
 }

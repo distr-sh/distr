@@ -2,3 +2,7 @@
 id = "GO-2026-5932"
 ignoreUntil = 2027-03-16
 reason = "The advisory covers the unmaintained golang.org/x/crypto/openpgp packages, none of which appear in 'go list -deps ./...'."
+[[IgnoredVulns]]
+id = "CVE-2026-112366"
+ignoreUntil = 2027-05-18
+reason = "ReDoS in picomatch through crafted extglob patterns, with no patched release. picomatch comes in only through @angular/build, @angular/cli, vite and vitest, which match glob patterns from our own angular.json and test configuration at build time, and the frontend bundle contains none of its code."

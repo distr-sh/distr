@@ -1,7 +1,27 @@
 <app-page>
   <div class="distr-table-panel">
     <div class="distr-toolbar p-4">
-      <app-search-bar [control]="filterForm.controls.search" placeholder="Filter customers" />
+      <div class="flex grow flex-col items-stretch gap-3 md:flex-row md:items-center">
+        <app-search-bar [control]="filterForm.controls.search" placeholder="Filter customers" />
+        @if (showLicenseColumn()) {
+          <app-multi-select
+            class="shrink-0 md:w-40"
+            idPrefix="license-filter"
+            placeholder="All licenses"
+            itemLabel="license states"
+            [options]="licenseStatusSelectOptions"
+            [selected]="selectedLicenseStatuses()"
+            (selectedChange)="selectLicenseStatuses($event)" />
+        }
+        <app-multi-select
+          class="shrink-0 md:w-40"
+          idPrefix="updates-filter"
+          placeholder="All update states"
+          itemLabel="update states"
+          [options]="updateStatusSelectOptions"
+          [selected]="selectedUpdateStatuses()"
+          (selectedChange)="selectUpdateStatuses($event)" />
+      </div>
       <div class="distr-toolbar-actions">
         <app-quota-limit [usage]="currentCustomerOrganizationCount()" [limit]="limit()" label="customers" #quota />
         @if (auth.hasAnyRole('read_write', 'admin')) {
@@ -69,6 +89,8 @@
                   class="distr-table-cell">
                   @if (customer.license === 'valid') {
                     Valid
+                  } @else if (customer.isLicensingInUse === false) {
+                    <span class="distr-text-muted">-</span>
                   } @else if (customer.license; as license) {
                     <app-customer-license-badge [status]="license" />
                   } @else {
@@ -186,6 +208,10 @@
                   <td class="distr-table-cell"><ng-container [ngTemplateOutlet]="twoLineSkeleton" /></td>
                 </tr>
               }
+            } @else {
+              <tr>
+                <td class="distr-table-cell distr-text-muted" [attr.colspan]="columnCount()">No customers found.</td>
+              </tr>
             }
           }
         </tbody>
