@@ -4,8 +4,8 @@
       <app-spinner class="size-8" />
     </div>
   } @else if (customerOrganization(); as customer) {
-    <div class="distr-panel mb-4">
-      <div class="flex items-center gap-4">
+    <div class="distr-panel @container mb-4">
+      <div class="flex flex-wrap items-center gap-4">
         <button
           type="button"
           (click)="uploadImage(customer)"
@@ -19,7 +19,7 @@
             iconClass="text-4xl"
             class="size-16 rounded-lg" />
         </button>
-        <div class="min-w-64 flex-1">
+        <div class="min-w-0 flex-1 @[34rem]:min-w-64">
           <app-inline-edit
             class="block"
             tag="h3"
@@ -32,7 +32,8 @@
             (save)="updateName(customer, $event)" />
           <p class="distr-text-muted text-sm">Customer since {{ customer.createdAt | date }}</p>
         </div>
-        <div class="flex flex-wrap justify-end gap-2 self-start">
+        <div
+          class="flex basis-full flex-wrap gap-2 self-start @[34rem]:max-w-max @[34rem]:grow-1000 @[34rem]:basis-0 @[34rem]:justify-end">
           <button
             type="button"
             (click)="openCustomerPortal(customer)"
