@@ -9,6 +9,7 @@ import {
   toCustomerUpdates,
   toDeploymentHealth,
 } from '../../home/vendor/vendor-home-mappers';
+import {isCustomerLicenseIssue} from '../../licenses/customer-license-status';
 import {ApplicationEntitlement} from '../../types/application-entitlement';
 import {LatestArtifactPull} from '../../types/artifact-version-pull';
 import {License} from '../../types/license';
@@ -29,6 +30,8 @@ export interface CustomerListRow {
   updatesTab: Extract<CustomerDetailTabId, 'deployments' | 'downloads'>;
   /** Undefined while the licenses are loading or the organization has no licensing. */
   license?: CustomerLicenseStatus;
+  /** Undefined while the licenses are loading or the organization has no licensing. */
+  isLicensingInUse?: boolean;
   /** Undefined while the deployments and pulls are loading. */
   deployments?: CustomerListDeployments;
   /** Undefined while the deployments and pulls are loading. */
@@ -109,6 +112,12 @@ export function toCustomerListRows(
   now: Dayjs = dayjs()
 ): CustomerListRow[] {
   const licenseByCustomer = new Map(licenses?.map((license) => [license.customerOrganization.id, license]));
+  const licenseStatuses = new Map<string, CustomerLicenseStatus>(
+    licenses
+      ? customers.map((customer) => [customer.id, toCustomerLicenseStatus(licenseByCustomer.get(customer.id), now)])
+      : []
+  );
+  const isLicensingInUse = [...licenseStatuses.values()].some((status) => status !== 'no_license');
   return customers
     .map((customer) => {
       const health =
@@ -124,7 +133,7 @@ export function toCustomerListRows(
           deployments.entitlements,
           deployments.pulls
         );
-      const license = licenses && toCustomerLicenseStatus(licenseByCustomer.get(customer.id), now);
+      const license = licenseStatuses.get(customer.id);
       const support =
         supportBundles &&
         toCustomerSupportBundles(supportBundles.filter((bundle) => bundle.customerOrganizationId === customer.id));
@@ -135,18 +144,19 @@ export function toCustomerListRows(
         management: toCustomerManagement(customer, health, pulls),
         updatesTab: (health?.total ?? 0) > 0 ? 'deployments' : 'downloads',
         license,
+        isLicensingInUse: licenses && isLicensingInUse,
         deployments: health && {
           ...health,
           noStatus: health.total - health.healthy - health.running - health.error - health.stale - health.progressing,
         },
         isOutdated: updates?.isOutdated,
-        hasDeploymentsOrPulls: health && pulls && (health.total > 0 || pulls.length > 0),
+        hasDeploymentsOrPulls: updates?.hasDeploymentsOrPulls,
         supportBundles: support,
       };
       const openItems = countCustomerOpenItems(
         health,
         updates,
-        license === 'expired' || license === 'expiring',
+        isCustomerLicenseIssue(license, isLicensingInUse),
         support?.open ?? 0
       );
       return {row, name: customer.name, openItems};
