@@ -161,7 +161,7 @@
         <button
           type="button"
           (click)="copy()"
-          [disabled]="loading() || copying() || namesOfKeysStartingAfterExpiry()"
+          [disabled]="loading() || copying() || !!namesOfKeysStartingAfterExpiry()"
           class="distr-btn-primary">
           Copy licenses
         </button>
