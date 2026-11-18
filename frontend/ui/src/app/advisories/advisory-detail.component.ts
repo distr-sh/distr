@@ -1,7 +1,7 @@
 import {DatePipe, NgPlural, NgPluralCase, NgTemplateOutlet} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
-import {ActivatedRoute, RouterLink} from '@angular/router';
+import {ActivatedRoute} from '@angular/router';
 import {
   AdvisoryDetail,
   AdvisoryImpact,
@@ -10,7 +10,7 @@ import {
   PatchAdvisoryRequest,
 } from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faArrowLeft, faPen, faUpRightFromSquare} from '@fortawesome/free-solid-svg-icons';
+import {faPen, faUpRightFromSquare} from '@fortawesome/free-solid-svg-icons';
 import {catchError, firstValueFrom, map, of, startWith, Subject, switchMap, take} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {sortAdvisoryApplicationVersions} from '../../util/versions';
@@ -57,7 +57,6 @@ type ImpactState = {state: 'loading'} | {state: 'loaded'; impact: AdvisoryImpact
     NgPlural,
     NgPluralCase,
     NgTemplateOutlet,
-    RouterLink,
     FaIconComponent,
     InnerMarkdownDirective,
     AdvisoryFormComponent,
@@ -80,7 +79,6 @@ export class AdvisoryDetailComponent {
   private readonly toast = inject(ToastService);
   protected readonly auth = inject(AuthService);
 
-  protected readonly faArrowLeft = faArrowLeft;
   protected readonly faPen = faPen;
   protected readonly faUpRightFromSquare = faUpRightFromSquare;
 
