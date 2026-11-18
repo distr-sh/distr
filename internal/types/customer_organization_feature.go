@@ -31,7 +31,7 @@ const (
 )
 
 // ProCustomerOrganizationFeatures can only be granted by an organization with a pro subscription, since
-// the routes behind them are gated with middleware.ProFeature.
+// the routes behind them require FeatureNotifications or FeatureSupport, which come with that plan.
 var ProCustomerOrganizationFeatures = []CustomerOrganizationFeature{
 	CustomerOrganizationFeatureAlerts,
 	CustomerOrganizationFeatureUpdateNotifications,

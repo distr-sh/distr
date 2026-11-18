@@ -55,7 +55,7 @@ func UserAccountsRouter(r chiopenapi.Router) {
 			)
 
 			r.Use(respond.Middleware(userAccountMiddleware))
-			r.With(middleware.ProFeature).
+			r.With(middleware.UserRolesFeatureMiddleware).
 				Patch("/", respond.Handler(patchUserAccountHandler)).
 				With(option.Description("Partially update a user account")).
 				With(option.Request(struct {
@@ -144,8 +144,8 @@ func createUserAccountHandler(r *http.Request) (respond.Responder, error) {
 		var err error
 		if organization, err = db.GetOrganizationWithBranding(ctx, *auth.CurrentOrgID()); err != nil {
 			return nil, fmt.Errorf("failed to get org with branding: %w", err)
-		} else if body.UserRole != types.UserRoleAdmin && !organization.SubscriptionType.IsPro() {
-			return respond.Forbidden("creating non-admin users requires a pro subscription"), nil
+		} else if body.UserRole != types.UserRoleAdmin && !organization.HasFeature(types.FeatureUserRoles) {
+			return respond.Forbidden("user roles are not enabled for your organization"), nil
 		} else if limitReached, err := checkUserCreationLimits(
 			ctx, organization.Organization, customerOrganization,
 		); err != nil {

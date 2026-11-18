@@ -178,9 +178,11 @@ Give a one-time migration such as `maintenance encrypt-database` the subcommand 
 
 ## Subscription Gating
 
-Never gate a feature by listing the subscription types allowed to use it. Such an allowlist has to be touched again for every new plan, and the plan silently loses the feature when someone forgets. Express gating as a denylist of the lower plans, so a new plan gets access by default:
+Gate an organization feature in Go by a `types.Feature`, checked with `middleware.FeatureFlagMiddleware` or `Organization.HasFeature`, never by the subscription type. A plan grants its features through `types.FeaturesForSubscriptionType`, so add a new plan feature there and grant it to the existing organizations in a migration.
 
-- Go: `types.NonProSubscriptionTypes` with `SubscriptionType.IsPro()`, `middleware.ForbidSubscriptionTypes(...)` or the ready-made `middleware.ProFeature`.
+Never decide what a plan grants by listing the subscription types allowed to use it. Such an allowlist has to be touched again for every new plan, and the plan silently loses the feature when someone forgets. Express it as a denylist of the lower plans, so a new plan gets access by default:
+
+- Go: `types.NonProSubscriptionTypes` with `SubscriptionType.IsPro()`.
 - Frontend: `isProSubscription()` / `isPayingSubscription()` from `app/types/subscription.ts`, or `NON_PRO_SUBSCRIPTION_TYPES` / `NON_PAYING_SUBSCRIPTION_TYPES` when a list is needed.
 
 Plan-specific billing UI (checkout, plan comparison) and upsell banners for one plan are the exceptions, since they are tied to concrete plans.
