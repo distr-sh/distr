@@ -78,8 +78,8 @@ You can add links for each customer, for example to your documentation, a suppor
 
 To add a link:
 
-1. In the **Customers** list, find the customer.
-2. Click **Manage links** for that customer.
+1. In the **Customers** list, open the customer.
+2. Select the **Links** tab.
 3. Click **+ Create Link** and enter a **name** and the **URL**.
 
 <ThemedImage
@@ -109,7 +109,7 @@ You can control which features are available to each customer organization. The 
 - **Settings**: a settings page for the customer's administrators, where they choose the [controller image repository](/docs/platform/branding/#controller-image-repository) of their deployment targets (requires the Business plan)
 - **Identity Provider**: a [portal domain and identity provider](/docs/platform/custom-identity-provider/#letting-a-customer-bring-its-own-provider) of the customer's own, configured on its settings page (requires Settings and the Business plan)
 
-Each customer has a **Features** button in the customer list showing how many features are currently enabled. Click it to open a dropdown where you can check or uncheck individual features.
+Open the customer and switch individual features on or off in the **Features** panel of its **Overview** tab. The tab of a disabled feature explains what that means for the customer and lets you enable the feature from there.
 
 <ThemedImage
   lightSrc={featuresLight}
@@ -122,10 +122,11 @@ A few things to note:
 - **Alerts** depends on **Deployments**. Enabling Alerts automatically enables Deployments; disabling Deployments automatically disables Alerts.
 - **Identity Provider** depends on **Settings** in the same way.
 - **Support** and **Artifacts** are independent and can be toggled without affecting other features.
-- **Update Notifications** covers whichever of **Deployments** and **Artifacts** the customer also has, since a customer can only watch what it can reach.
+- **Update Notifications** needs **Deployments** or **Artifacts** and covers whichever of them the customer has, since a customer can only watch what it can reach. Disabling the last of the two disables Update Notifications as well.
 - **Deployments** and **Artifacts** are enabled by default for new customers. **Alerts**, **Update Notifications** and **Support** must be explicitly enabled.
 - **Security** is enabled by default for new customers once your organization has [Vulnerability Management](/docs/platform/vulnerability-management/). When your organization gains it, every existing customer gets it as well. You can switch it off for individual customers afterwards.
 - Changes take effect immediately. Disabled features are hidden entirely from the customer in the Customer Portal. Customers only see the sections that are enabled for them.
+- While a feature is disabled, you cannot create deployments, alerts or update notifications for that customer either. The ones that already exist stay on the customer's page in the Vendor Portal, where you can still edit or delete them.
 
 ---
 
