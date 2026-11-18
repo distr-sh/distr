@@ -1,9 +1,9 @@
 import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
-import {ActivatedRoute, Router, RouterLink, UrlTree} from '@angular/router';
+import {ActivatedRoute, Router, UrlTree} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faArrowLeft, faCheck, faComment, faDownload, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faCheck, faComment, faDownload, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, map, startWith, Subject, switchMap} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
@@ -31,7 +31,6 @@ import {SupportBundleResourceFolderComponent} from './support-bundle-resource-fo
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     DatePipe,
-    RouterLink,
     FaIconComponent,
     AlertComponent,
     ClipComponent,
@@ -50,13 +49,12 @@ export class SupportBundleDetailComponent {
   private readonly overlay = inject(OverlayService);
   protected readonly auth = inject(AuthService);
 
-  protected readonly faArrowLeft = faArrowLeft;
   protected readonly faCheck = faCheck;
   protected readonly faComment = faComment;
   protected readonly faDownload = faDownload;
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
-  protected readonly backLink: UrlTree | string =
+  private readonly returnUrl: UrlTree | string =
     this.router.currentNavigation()?.previousNavigation?.finalUrl ?? '/support';
   private readonly timeline = viewChild(ActivityTimelineComponent);
 
@@ -197,7 +195,7 @@ export class SupportBundleDetailComponent {
     try {
       await firstValueFrom(this.supportBundlesService.delete(bundle.id));
       this.toast.success('Support request deleted');
-      await this.router.navigateByUrl(this.backLink, {replaceUrl: true});
+      await this.router.navigateByUrl(this.returnUrl, {replaceUrl: true});
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {
