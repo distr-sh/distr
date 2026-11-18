@@ -1,0 +1,4 @@
+[[IgnoredVulns]]
+id = "CVE-2026-112366"
+ignoreUntil = 2027-05-18
+reason = "ReDoS in picomatch through crafted extglob patterns, with no patched release. Astro, Vite and the Starlight plugins match only glob patterns from our own astro.config.mjs and content collections while building the static site, and the deployed dist output contains none of its code."
