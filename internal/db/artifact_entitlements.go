@@ -373,17 +373,17 @@ func DeleteArtifactEntitlementsWithOrganizationID(ctx context.Context, organizat
 	return cmd.RowsAffected(), nil
 }
 
-func DeleteArtifactEntitlementsWithOrganizationSubscriptionType(
+func DeleteArtifactEntitlementsWithoutOrganizationFeature(
 	ctx context.Context,
-	subscriptionType []types.SubscriptionType,
+	feature types.Feature,
 ) (int64, error) {
 	db := internalctx.GetDb(ctx)
 	cmd, err := db.Exec(
 		ctx,
 		`DELETE FROM ArtifactEntitlement WHERE organization_id IN (
-			SELECT id FROM Organization WHERE subscription_type = ANY(@subscriptionType)
+			SELECT id FROM Organization WHERE NOT @feature::FEATURE = ANY(features)
 		)`,
-		pgx.NamedArgs{"subscriptionType": subscriptionType},
+		pgx.NamedArgs{"feature": feature},
 	)
 	if err != nil {
 		var pgError *pgconn.PgError

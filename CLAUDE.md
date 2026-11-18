@@ -178,18 +178,13 @@ Give a one-time migration such as `maintenance encrypt-database` the subcommand 
 
 ## Subscription Gating
 
-Gate an organization feature in Go by a `types.Feature`, checked with `middleware.FeatureFlagMiddleware` or `Organization.HasFeature`, never by the subscription type. A plan grants its features through `types.FeaturesForSubscriptionType`, so add a new plan feature there and grant it to the existing organizations in a migration.
+Gate a feature in Go by a `types.Feature`, never by the subscription type: check it with `middleware.FeatureFlagMiddleware` or `Organization.HasFeature`, and map every customer feature it unlocks to it in `types.CustomerOrganizationFeatureRequirements`. Decide what a plan grants in `types.FeaturesForSubscriptionType` alone, and grant a new plan feature to the existing organizations in a migration.
 
-Never decide what a plan grants by listing the subscription types allowed to use it. Such an allowlist has to be touched again for every new plan, and the plan silently loses the feature when someone forgets. Express it as a denylist of the lower plans, so a new plan gets access by default:
-
-- Go: `types.NonProSubscriptionTypes` with `SubscriptionType.IsPro()`.
-- Frontend: `isProSubscription()` / `isPayingSubscription()` from `app/types/subscription.ts`, or `NON_PRO_SUBSCRIPTION_TYPES` / `NON_PAYING_SUBSCRIPTION_TYPES` when a list is needed.
-
-Plan-specific billing UI (checkout, plan comparison) and upsell banners for one plan are the exceptions, since they are tied to concrete plans.
+Grant a feature every paid plan shares through `SubscriptionType.IsPro()`, the denylist of the lower plans in `types.NonProSubscriptionTypes`, so a new paid plan inherits it. Name plans only for a tiered feature such as `types.BusinessFeatures`.
 
 Gate what a customer organization may configure for itself with a `types.CustomerOrganizationFeature`, the way `alerts` does: the toggle on the customers page, the entry point on the page the feature belongs to rather than in the sidebar, the router guarded with `middleware.CustomerFeatureMiddleware` and the rows a customer may link narrowed down in `internal/db`, so hiding the UI is not what protects them.
 
-Keep the two sources of organization features (`types.Feature`) apart. Only the plan-managed ones, granted by `types.FeaturesForSubscriptionType` and collected in `types.PlanManagedFeatures`, may be revoked when an organization loses its plan. The rest is granted out of band (`vendor_billing` by staff, `pre_post_scripts` and `artifact_version_mutable` by an organization admin in the settings) and has to survive plan changes and edition reconciliation. Remove `types.PlanManagedFeatures` from the `features` array to revoke a plan; never overwrite the whole array.
+Keep the two sources of organization features (`types.Feature`) apart. Only the plan-managed ones, granted by `types.FeaturesForSubscriptionType` and collected in `types.PlanManagedFeatures`, may be revoked when an organization loses its plan. The rest is granted out of band (`vendor_billing` by staff, `pre_post_scripts` and `artifact_version_mutable` by an organization admin in the settings) and has to survive plan changes and edition reconciliation. Remove `types.PlanManagedFeatures` from the `features` array to revoke a plan; never overwrite the whole array. Clean up what a revoked feature leaves behind (user roles, entitlements) by the missing feature, after the plan has revoked it, never by the subscription type.
 
 ## Sending Mail
 

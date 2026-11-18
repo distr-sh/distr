@@ -351,9 +351,9 @@ func UpdateDeploymentUnsetEntitlementIDWithOrganizationID(ctx context.Context, o
 	return nil
 }
 
-func UpdateDeploymentUnsetEntitlementIDWithOrganizationSubscriptionType(
+func UpdateDeploymentUnsetEntitlementIDWithoutOrganizationFeature(
 	ctx context.Context,
-	subscriptionType []types.SubscriptionType,
+	feature types.Feature,
 ) error {
 	db := internalctx.GetDb(ctx)
 	_, err := db.Exec(
@@ -363,9 +363,9 @@ func UpdateDeploymentUnsetEntitlementIDWithOrganizationSubscriptionType(
 		WHERE deployment_target_id IN (
 			SELECT dt.id FROM DeploymentTarget dt
 				JOIN Organization o ON dt.organization_id = o.id
-			WHERE o.subscription_type = ANY(@subscriptionType)
+			WHERE NOT @feature::FEATURE = ANY(o.features)
 		)`,
-		pgx.NamedArgs{"subscriptionType": subscriptionType},
+		pgx.NamedArgs{"feature": feature},
 	)
 	if err != nil {
 		return fmt.Errorf("could not update Deployment: %w", err)
