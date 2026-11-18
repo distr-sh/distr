@@ -116,6 +116,23 @@ export class CopyLicensesModalComponent extends ClosableDialog<boolean> {
     return selectable.length > 0 && selectable.every((id) => this.effectiveOverrideIds().has(id));
   });
 
+  // A license template sets the dates of its license keys, so the server ignores the expiry sent for them.
+  protected readonly namesOfKeysStartingAfterExpiry = computed(() => {
+    const expiresAt = this.expiresAt();
+    const overrideIds = this.effectiveOverrideIds();
+    return (this.selectedSource()?.licenseKeys ?? [])
+      .filter(
+        (lk) =>
+          lk.id !== undefined &&
+          overrideIds.has(lk.id) &&
+          !lk.licenseTemplateId &&
+          lk.notBefore !== undefined &&
+          !dayjs(expiresAt).isAfter(lk.notBefore)
+      )
+      .map((lk) => lk.name)
+      .join(', ');
+  });
+
   constructor() {
     super();
     Promise.all([
