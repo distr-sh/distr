@@ -45,7 +45,12 @@ export function toVendorHomeLicenses(
   const grants = (license: License | undefined) =>
     license ? [...license.licenseKeys, ...license.applicationEntitlements, ...license.artifactEntitlements] : [];
   const isLicensingInUse = licenses.some((license) => grants(license).length > 0);
-  const result: VendorHomeLicenses = {expiredCustomerIds: [], expiringCustomerIds: [], unlicensedCustomerIds: []};
+  const result: VendorHomeLicenses = {
+    isLicensingInUse,
+    expiredCustomerIds: [],
+    expiringCustomerIds: [],
+    unlicensedCustomerIds: [],
+  };
   for (const customer of customers) {
     const customerGrants = grants(licenseByCustomer.get(customer.id));
     const dates = customerGrants.map((it) => it.expiresAt).filter((expiresAt) => expiresAt !== undefined);

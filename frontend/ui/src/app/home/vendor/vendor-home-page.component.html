@@ -136,12 +136,16 @@
           [type]="licenses.type"
           [link]="licenses.link"
           [queryParams]="licenses.queryParams">
-          <ng-container [ngPlural]="licenses.customers">
-            <ng-template ngPluralCase="=1">1 customer</ng-template>
-            <ng-template ngPluralCase="other">{{ licenses.customers }} customers</ng-template>
-          </ng-container>
+          @if (licenses.type !== 'neutral') {
+            <ng-container [ngPlural]="licenses.customers">
+              <ng-template ngPluralCase="=1">1 customer</ng-template>
+              <ng-template ngPluralCase="other">{{ licenses.customers }} customers</ng-template>
+            </ng-container>
+          }
           <span subtitle>
-            @if (licenses.statusCount > 1) {
+            @if (licenses.type === 'neutral') {
+              No licenses yet
+            } @else if (licenses.statusCount > 1) {
               @if (licenses.expired > 0) {
                 {{ licenses.expired }} expired
               }

@@ -76,8 +76,10 @@ function licensesCardType(licenses: VendorHomeLicenses): QuickNavigationCardType
     return 'error';
   } else if (licenses.expiringCustomerIds.length + licenses.unlicensedCustomerIds.length > 0) {
     return 'warning';
-  } else {
+  } else if (licenses.isLicensingInUse) {
     return 'success';
+  } else {
+    return 'neutral';
   }
 }
 

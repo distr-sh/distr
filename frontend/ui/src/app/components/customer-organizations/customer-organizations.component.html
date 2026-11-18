@@ -89,6 +89,8 @@
                   class="distr-table-cell">
                   @if (customer.license === 'valid') {
                     Valid
+                  } @else if (customer.isLicensingInUse === false) {
+                    <span class="distr-text-muted">-</span>
                   } @else if (customer.license; as license) {
                     <app-customer-license-badge [status]="license" />
                   } @else {

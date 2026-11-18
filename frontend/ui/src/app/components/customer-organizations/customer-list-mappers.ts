@@ -30,6 +30,8 @@ export interface CustomerListRow {
   updatesTab: Extract<CustomerDetailTabId, 'deployments' | 'downloads'>;
   /** Undefined while the licenses are loading or the organization has no licensing. */
   license?: CustomerLicenseStatus;
+  /** Undefined while the licenses are loading or the organization has no licensing. */
+  isLicensingInUse?: boolean;
   /** Undefined while the deployments and pulls are loading. */
   deployments?: CustomerListDeployments;
   /** Undefined while the deployments and pulls are loading. */
@@ -142,6 +144,7 @@ export function toCustomerListRows(
         management: toCustomerManagement(customer, health, pulls),
         updatesTab: (health?.total ?? 0) > 0 ? 'deployments' : 'downloads',
         license,
+        isLicensingInUse: licenses && isLicensingInUse,
         deployments: health && {
           ...health,
           noStatus: health.total - health.healthy - health.running - health.error - health.stale - health.progressing,

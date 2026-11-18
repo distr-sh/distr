@@ -174,6 +174,7 @@ describe('toVendorHomeLicenses', () => {
     ];
     const customers = [...licenses.map((it) => it.customerOrganization), customer('unlicensed')];
     expect(toVendorHomeLicenses(customers, licenses, now)).toEqual({
+      isLicensingInUse: true,
       expiredCustomerIds: ['expired', 'both'],
       expiringCustomerIds: ['key', 'application', 'artifact'],
       unlicensedCustomerIds: ['unlicensed'],
@@ -182,6 +183,7 @@ describe('toVendorHomeLicenses', () => {
 
   it('should not count customers without a license while no customer has one', () => {
     expect(toVendorHomeLicenses([customer('a'), customer('b')], [])).toEqual({
+      isLicensingInUse: false,
       expiredCustomerIds: [],
       expiringCustomerIds: [],
       unlicensedCustomerIds: [],
@@ -218,7 +220,12 @@ describe('toVendorHomeCustomers', () => {
       [application],
       [],
       [pull('pulled', '2.0.0'), pull('zeta', '2.0.0')],
-      {expiredCustomerIds: ['licensed'], expiringCustomerIds: ['support'], unlicensedCustomerIds: []},
+      {
+        isLicensingInUse: true,
+        expiredCustomerIds: ['licensed'],
+        expiringCustomerIds: ['support'],
+        unlicensedCustomerIds: [],
+      },
       [bundle('support'), bundle('support'), bundle('other')]
     );
     expect(result.map((c) => [c.id, c.openItems])).toEqual([
