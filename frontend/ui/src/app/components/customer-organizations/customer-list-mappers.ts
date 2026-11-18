@@ -2,6 +2,8 @@ import {Application, CustomerOrganizationWithUsage, DeploymentTarget} from '@dis
 import dayjs, {Dayjs} from 'dayjs';
 import {DeploymentHealth} from '../../home/vendor/vendor-home';
 import {
+  compareByOpenItems,
+  countCustomerOpenItems,
   filterOpenSupportBundles,
   licenseExpiryWindowDays,
   toCustomerUpdates,
@@ -107,23 +109,13 @@ export function toCustomerListRows(
   now: Dayjs = dayjs()
 ): CustomerListRow[] {
   const licenseByCustomer = new Map(licenses?.map((license) => [license.customerOrganization.id, license]));
-  return customers.map((customer): CustomerListRow => {
-    const health =
-      deployments &&
-      toDeploymentHealth(deployments.targets.filter((target) => target.customerOrganization?.id === customer.id));
-    const pulls = deployments?.pulls.filter((pull) => pull.customerOrganizationId === customer.id);
-    return {
-      id: customer.id,
-      name: customer.name,
-      imageUrl: customer.imageUrl,
-      management: toCustomerManagement(customer, health, pulls),
-      updatesTab: (health?.total ?? 0) > 0 ? 'deployments' : 'downloads',
-      license: licenses && toCustomerLicenseStatus(licenseByCustomer.get(customer.id), now),
-      deployments: health && {
-        ...health,
-        noStatus: health.total - health.healthy - health.running - health.error - health.stale - health.progressing,
-      },
-      isOutdated:
+  return customers
+    .map((customer) => {
+      const health =
+        deployments &&
+        toDeploymentHealth(deployments.targets.filter((target) => target.customerOrganization?.id === customer.id));
+      const pulls = deployments?.pulls.filter((pull) => pull.customerOrganizationId === customer.id);
+      const updates =
         deployments &&
         toCustomerUpdates(
           customer,
@@ -131,13 +123,36 @@ export function toCustomerListRows(
           deployments.applications,
           deployments.entitlements,
           deployments.pulls
-        ).isOutdated,
-      hasDeploymentsOrPulls: health && pulls && (health.total > 0 || pulls.length > 0),
-      supportBundles:
+        );
+      const license = licenses && toCustomerLicenseStatus(licenseByCustomer.get(customer.id), now);
+      const support =
         supportBundles &&
-        toCustomerSupportBundles(supportBundles.filter((bundle) => bundle.customerOrganizationId === customer.id)),
-    };
-  });
+        toCustomerSupportBundles(supportBundles.filter((bundle) => bundle.customerOrganizationId === customer.id));
+      const row: CustomerListRow = {
+        id: customer.id,
+        name: customer.name,
+        imageUrl: customer.imageUrl,
+        management: toCustomerManagement(customer, health, pulls),
+        updatesTab: (health?.total ?? 0) > 0 ? 'deployments' : 'downloads',
+        license,
+        deployments: health && {
+          ...health,
+          noStatus: health.total - health.healthy - health.running - health.error - health.stale - health.progressing,
+        },
+        isOutdated: updates?.isOutdated,
+        hasDeploymentsOrPulls: health && pulls && (health.total > 0 || pulls.length > 0),
+        supportBundles: support,
+      };
+      const openItems = countCustomerOpenItems(
+        health,
+        updates,
+        license === 'expired' || license === 'expiring',
+        support?.open ?? 0
+      );
+      return {row, name: customer.name, openItems};
+    })
+    .sort(compareByOpenItems)
+    .map(({row}) => row);
 }
 
 function toCustomerSupportBundles(bundles: SupportBundle[]): CustomerListSupportBundles {

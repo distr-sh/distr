@@ -15,6 +15,8 @@ import {recoverWithToast} from '../../../util/errors';
 import {refreshInBackground} from '../../../util/refresh';
 import {AvatarComponent} from '../../components/avatar.component';
 import {CardHeadingComponent} from '../../components/card-heading.component';
+import {CustomerUpdateStatus} from '../../components/customer-organizations/customer-list-display';
+import {CustomerLicenseStatus} from '../../components/customer-organizations/customer-list-mappers';
 import {LoadingCardComponent} from '../../components/loading-card/loading-card.component';
 import {PageComponent} from '../../components/page.component';
 import {ActivityFeedService} from '../../services/activity-feed.service';
@@ -148,6 +150,7 @@ export class VendorHomePageComponent {
   });
   private readonly deploymentCount = computed(() => this.deploymentHealth()?.total);
   protected readonly deploymentAttentionQueryParams = {status: vendorHomeAttentionStatuses};
+  protected readonly outdatedCustomersQueryParams = {updates: ['outdated'] satisfies CustomerUpdateStatus[]};
   private readonly applications = toSignal(this.applicationsService.list());
   private readonly applicationCount = computed(() => {
     const applications = this.applications();
@@ -174,13 +177,19 @@ export class VendorHomePageComponent {
     if (licenses === undefined || licenses === null) {
       return licenses;
     }
-    const ids = [...licenses.expiredCustomerIds, ...licenses.expiringCustomerIds];
+    const expired = licenses.expiredCustomerIds.length;
+    const expiring = licenses.expiringCustomerIds.length;
+    const statuses: CustomerLicenseStatus[] = [
+      ...(expired > 0 ? ['expired' as const] : []),
+      ...(expiring > 0 ? ['expiring' as const] : []),
+    ];
     return {
-      customers: ids.length,
-      expired: licenses.expiredCustomerIds.length,
-      expiring: licenses.expiringCustomerIds.length,
+      customers: expired + expiring,
+      expired,
+      expiring,
       type: licensesCardType(licenses),
-      link: ids.length === 1 ? ['/licenses', ids[0]] : ids.length > 1 ? ['/customers'] : ['/licenses'],
+      link: statuses.length > 0 ? '/customers' : '/licenses',
+      queryParams: statuses.length > 0 ? {license: statuses} : undefined,
     };
   });
 

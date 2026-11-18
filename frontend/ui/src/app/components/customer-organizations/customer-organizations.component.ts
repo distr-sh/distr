@@ -1,13 +1,15 @@
 import {AsyncPipe, NgPlural, NgPluralCase, NgTemplateOutlet} from '@angular/common';
 import {Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
-import {Router} from '@angular/router';
+import {ActivatedRoute, Params, Router} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, firstValueFrom, of, switchMap} from 'rxjs';
+import {combineLatest, debounceTime, distinctUntilChanged, firstValueFrom, map, of, switchMap} from 'rxjs';
+import {arraysEqual} from '../../../util/arrays';
 import {refreshInBackground} from '../../../util/refresh';
 import {ClickableRowDirective} from '../../directives/clickable-row.directive';
+import {customerLicenseStatusSelectOptions, isCustomerLicenseStatus} from '../../licenses/customer-license-status';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
 import {ArtifactPullsService} from '../../services/artifact-pulls.service';
@@ -21,11 +23,13 @@ import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService} from '../../services/support-bundles.service';
 import {AlertComponent} from '../alert/alert.component';
 import {AvatarComponent} from '../avatar.component';
+import {MultiSelectComponent} from '../multi-select/multi-select.component';
 import {PageComponent} from '../page.component';
 import {QuotaLimitComponent} from '../quota-limit.component';
 import {SearchBarComponent} from '../search-bar.component';
 import {CustomerLicenseBadgeComponent} from './customer-license-badge.component';
-import {toCustomerListRows} from './customer-list-mappers';
+import {CustomerUpdateStatus, customerUpdateStatusSelectOptions, isCustomerUpdateStatus} from './customer-list-display';
+import {CustomerLicenseStatus, toCustomerListRows} from './customer-list-mappers';
 import {CustomerDetailTabId, customerDetailTabs} from './detail/customer-detail-navigation';
 
 @Component({
@@ -42,6 +46,7 @@ import {CustomerDetailTabId, customerDetailTabs} from './detail/customer-detail-
     AvatarComponent,
     PageComponent,
     SearchBarComponent,
+    MultiSelectComponent,
     AlertComponent,
     CustomerLicenseBadgeComponent,
   ],
@@ -78,10 +83,24 @@ export class CustomerOrganizationsComponent {
     () => this.organization()?.currentCustomerOrganizationCount
   );
 
+  private readonly route = inject(ActivatedRoute);
+  private readonly queryParams = toSignal(this.route.queryParamMap, {requireSync: true});
   protected readonly filterForm = this.fb.group({
-    search: this.fb.control(''),
+    search: this.fb.control(this.route.snapshot.queryParamMap.get('search') ?? ''),
   });
-  private readonly search = toSignal(this.filterForm.controls.search.valueChanges, {initialValue: ''});
+  private readonly search = toSignal(this.filterForm.controls.search.valueChanges, {
+    initialValue: this.filterForm.controls.search.value,
+  });
+  protected readonly licenseStatusSelectOptions = customerLicenseStatusSelectOptions;
+  protected readonly selectedLicenseStatuses = computed(
+    () => this.queryParams().getAll('license').filter(isCustomerLicenseStatus),
+    {equal: arraysEqual}
+  );
+  protected readonly updateStatusSelectOptions = customerUpdateStatusSelectOptions;
+  protected readonly selectedUpdateStatuses = computed(
+    () => this.queryParams().getAll('updates').filter(isCustomerUpdateStatus),
+    {equal: arraysEqual}
+  );
   private readonly customerOrganizations = toSignal(this.customerOrganizationsService.getCustomerOrganizations());
 
   private readonly deploymentSources = toSignal(
@@ -123,14 +142,33 @@ export class CustomerOrganizationsComponent {
     );
   });
 
+  /** Undefined until every column a filter is set for has loaded. */
   protected readonly rows = computed(() => {
-    const search = this.search().toLowerCase();
     const rows = this.allRows();
-    return search.length > 0 ? rows?.filter((row) => row.name.toLowerCase().includes(search)) : rows;
+    const search = this.search().toLowerCase();
+    const licenses = this.licenses() === null ? [] : this.selectedLicenseStatuses();
+    const updates = this.selectedUpdateStatuses();
+    if (
+      rows === undefined ||
+      (licenses.length > 0 && this.licenses() === undefined) ||
+      (updates.length > 0 && this.deploymentSources() === undefined)
+    ) {
+      return undefined;
+    }
+    return rows.filter(
+      (row) =>
+        (search.length === 0 || row.name.toLowerCase().includes(search)) &&
+        (licenses.length === 0 || (row.license !== undefined && licenses.includes(row.license))) &&
+        (updates.length === 0 ||
+          (row.isOutdated !== undefined && updates.includes(row.isOutdated ? 'outdated' : 'up_to_date')))
+    );
   });
 
   protected readonly showLicenseColumn = toSignal(this.featureFlags.isLicensingEnabled$, {initialValue: false});
 
+  protected readonly columnCount = computed(
+    () => 3 + (this.showLicenseColumn() ? 1 : 0) + (this.showSupportColumn() ? 1 : 0)
+  );
   protected readonly placeholderRows = [0, 1, 2, 3, 4];
 
   private readonly createCustomerDialog = viewChild.required<TemplateRef<unknown>>('createCustomerDialog');
@@ -150,6 +188,34 @@ export class CustomerOrganizationsComponent {
         enabled ? this.applicationEntitlementsService.refresh() : undefined
       )
     );
+    const search = this.filterForm.controls.search;
+    // The component is reused when only the query changes, e.g. when the home page links to the page it is on.
+    this.route.queryParamMap
+      .pipe(
+        map((params) => params.get('search') ?? ''),
+        distinctUntilChanged(),
+        takeUntilDestroyed()
+      )
+      .subscribe((value) => {
+        if (value !== search.value) {
+          search.setValue(value);
+        }
+      });
+    search.valueChanges
+      .pipe(debounceTime(300), takeUntilDestroyed())
+      .subscribe((value) => this.setQueryParams({search: value || null}));
+  }
+
+  protected selectLicenseStatuses(statuses: CustomerLicenseStatus[]) {
+    this.setQueryParams({license: statuses.length > 0 ? statuses : null});
+  }
+
+  protected selectUpdateStatuses(statuses: CustomerUpdateStatus[]) {
+    this.setQueryParams({updates: statuses.length > 0 ? statuses : null});
+  }
+
+  private setQueryParams(queryParams: Params) {
+    this.router.navigate([], {relativeTo: this.route, queryParams, queryParamsHandling: 'merge', replaceUrl: true});
   }
 
   protected showCreateDialog() {

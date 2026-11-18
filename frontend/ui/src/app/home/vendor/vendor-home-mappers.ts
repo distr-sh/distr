@@ -88,6 +88,11 @@ function customerTargets(customer: CustomerOrganization, targets: DeploymentTarg
   return targets.filter((target) => target.customerOrganization?.id === customer.id);
 }
 
+export interface CustomerUpdates {
+  isOutdated: boolean;
+  outdatedDeployments: number;
+}
+
 /**
  * A customer is outdated when one of its deployments is. A customer without deployments is outdated when it
  * pulled an artifact it may pull a newer tag of.
@@ -98,7 +103,7 @@ export function toCustomerUpdates(
   applications: Application[],
   entitlements: ApplicationEntitlement[],
   pulls: LatestArtifactPull[]
-): {isOutdated: boolean; outdatedDeployments: number} {
+): CustomerUpdates {
   const deployments = customerTargets(customer, targets).flatMap((target) => target.deployments);
   const outdatedDeployments = deployments.filter((it) => isDeploymentOutdated(it, applications, entitlements)).length;
   const isOutdated =
@@ -167,12 +172,12 @@ export function toVendorHomeCustomers(
     .map((customer) => {
       const health = toDeploymentHealth(customerTargets(customer, targets));
       const updates = toCustomerUpdates(customer, targets, applications, entitlements, pulls);
-      const openItems =
-        health.error +
-        health.stale +
-        (updates.outdatedDeployments > 0 ? updates.outdatedDeployments : updates.isOutdated ? 1 : 0) +
-        (licenseCustomerIds.has(customer.id) ? 1 : 0) +
-        (openSupportBundles ?? []).filter((bundle) => bundle.customerOrganizationId === customer.id).length;
+      const openItems = countCustomerOpenItems(
+        health,
+        updates,
+        licenseCustomerIds.has(customer.id),
+        (openSupportBundles ?? []).filter((bundle) => bundle.customerOrganizationId === customer.id).length
+      );
       return {
         id: customer.id,
         name: customer.name,
@@ -181,5 +186,24 @@ export function toVendorHomeCustomers(
         openItems,
       };
     })
-    .sort((a, b) => b.openItems - a.openItems || a.name.localeCompare(b.name));
+    .sort(compareByOpenItems);
+}
+
+export function countCustomerOpenItems(
+  health: DeploymentHealth | undefined,
+  updates: CustomerUpdates | undefined,
+  hasLicenseIssue: boolean,
+  openSupportBundles: number
+): number {
+  return (
+    (health?.error ?? 0) +
+    (health?.stale ?? 0) +
+    (updates?.outdatedDeployments || (updates?.isOutdated ? 1 : 0)) +
+    (hasLicenseIssue ? 1 : 0) +
+    openSupportBundles
+  );
+}
+
+export function compareByOpenItems(a: {name: string; openItems: number}, b: {name: string; openItems: number}): number {
+  return b.openItems - a.openItems || a.name.localeCompare(b.name);
 }
