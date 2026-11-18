@@ -64,7 +64,7 @@ function deploymentHealthType(health: DeploymentHealth): QuickNavigationCardType
 function updatesCardType(updates: VendorHomeUpdates): QuickNavigationCardType {
   if (updates.outdatedCustomers > 0) {
     return 'warning';
-  } else if (updates.totalCustomers > 0) {
+  } else if (updates.hasDeploymentsOrPulls) {
     return 'success';
   } else {
     return 'neutral';

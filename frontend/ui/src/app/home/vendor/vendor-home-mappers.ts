@@ -103,6 +103,7 @@ function customerTargets(customer: CustomerOrganization, targets: DeploymentTarg
 }
 
 export interface CustomerUpdates {
+  hasDeploymentsOrPulls: boolean;
   isOutdated: boolean;
   outdatedDeployments: number;
 }
@@ -119,12 +120,11 @@ export function toCustomerUpdates(
   pulls: LatestArtifactPull[]
 ): CustomerUpdates {
   const deployments = customerTargets(customer, targets).flatMap((target) => target.deployments);
+  const customerPulls = pulls.filter((pull) => pull.customerOrganizationId === customer.id);
   const outdatedDeployments = deployments.filter((it) => isDeploymentOutdated(it, applications, entitlements)).length;
   const isOutdated =
-    deployments.length > 0
-      ? outdatedDeployments > 0
-      : pulls.some((pull) => pull.customerOrganizationId === customer.id && pull.availableUpdate !== undefined);
-  return {isOutdated, outdatedDeployments};
+    deployments.length > 0 ? outdatedDeployments > 0 : customerPulls.some((pull) => pull.availableUpdate !== undefined);
+  return {hasDeploymentsOrPulls: deployments.length + customerPulls.length > 0, isOutdated, outdatedDeployments};
 }
 
 export function toVendorHomeUpdates(
@@ -134,16 +134,18 @@ export function toVendorHomeUpdates(
   entitlements: ApplicationEntitlement[],
   pulls: LatestArtifactPull[]
 ): VendorHomeUpdates {
+  let hasDeploymentsOrPulls = false;
   let outdatedCustomers = 0;
   let outdatedDeployments = 0;
   for (const customer of customers) {
     const updates = toCustomerUpdates(customer, targets, applications, entitlements, pulls);
+    hasDeploymentsOrPulls ||= updates.hasDeploymentsOrPulls;
     if (updates.isOutdated) {
       outdatedCustomers++;
     }
     outdatedDeployments += updates.outdatedDeployments;
   }
-  return {totalCustomers: customers.length, outdatedCustomers, outdatedDeployments};
+  return {totalCustomers: customers.length, hasDeploymentsOrPulls, outdatedCustomers, outdatedDeployments};
 }
 
 function toCustomerUsage(

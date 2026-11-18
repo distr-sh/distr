@@ -137,7 +137,7 @@ describe('toVendorHomeUpdates', () => {
     const pulls = [pull('a', '2.0.0'), pull('c', '2.0.0'), pull('d')];
     expect(
       toVendorHomeUpdates([current, outdated, pulledOutdated, pulledCurrent, idle], targets, [application], [], pulls)
-    ).toEqual({totalCustomers: 5, outdatedCustomers: 2, outdatedDeployments: 2});
+    ).toEqual({totalCustomers: 5, hasDeploymentsOrPulls: true, outdatedCustomers: 2, outdatedDeployments: 2});
   });
 });
 

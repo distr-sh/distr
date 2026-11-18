@@ -9,6 +9,7 @@ export interface DeploymentHealth {
 
 export interface VendorHomeUpdates {
   totalCustomers: number;
+  hasDeploymentsOrPulls: boolean;
   outdatedCustomers: number;
   outdatedDeployments: number;
 }

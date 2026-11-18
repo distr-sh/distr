@@ -113,7 +113,11 @@
                 No customer is behind on updates
               }
               @default {
-                No customers yet
+                @if (updates.totalCustomers > 0) {
+                  No deployments or downloads yet
+                } @else {
+                  No customers yet
+                }
               }
             }
           </span>

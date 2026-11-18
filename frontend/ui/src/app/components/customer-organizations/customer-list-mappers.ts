@@ -150,7 +150,7 @@ export function toCustomerListRows(
           noStatus: health.total - health.healthy - health.running - health.error - health.stale - health.progressing,
         },
         isOutdated: updates?.isOutdated,
-        hasDeploymentsOrPulls: health && pulls && (health.total > 0 || pulls.length > 0),
+        hasDeploymentsOrPulls: updates?.hasDeploymentsOrPulls,
         supportBundles: support,
       };
       const openItems = countCustomerOpenItems(
