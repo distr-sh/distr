@@ -1,12 +1,12 @@
 import {DatePipe} from '@angular/common';
-import {Component, computed, effect, inject, signal} from '@angular/core';
+import {Component, computed, effect, inject, signal, untracked} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faXmark} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {firstValueFrom, forkJoin} from 'rxjs';
-import {getFormDisplayedError} from '../../util/errors';
+import {firstValueFrom, Observable} from 'rxjs';
+import {getFormDisplayedError, toastDisplayedError} from '../../util/errors';
 import {ClosableDialog} from '../components/confirm-dialog/closable-dialog';
 import {ExpiresAtPickerComponent} from '../components/expires-at-picker/expires-at-picker.component';
 import {SpinnerComponent} from '../components/spinner/spinner.component';
@@ -116,6 +116,23 @@ export class CopyLicensesModalComponent extends ClosableDialog<boolean> {
     return selectable.length > 0 && selectable.every((id) => this.effectiveOverrideIds().has(id));
   });
 
+  // A license template sets the dates of its license keys, so the server ignores the expiry sent for them.
+  protected readonly namesOfKeysStartingAfterExpiry = computed(() => {
+    const expiresAt = this.expiresAt();
+    const overrideIds = this.effectiveOverrideIds();
+    return (this.selectedSource()?.licenseKeys ?? [])
+      .filter(
+        (lk) =>
+          lk.id !== undefined &&
+          overrideIds.has(lk.id) &&
+          !lk.licenseTemplateId &&
+          lk.notBefore !== undefined &&
+          !dayjs(expiresAt).isAfter(lk.notBefore)
+      )
+      .map((lk) => lk.name)
+      .join(', ');
+  });
+
   constructor() {
     super();
     Promise.all([
@@ -134,9 +151,11 @@ export class CopyLicensesModalComponent extends ClosableDialog<boolean> {
       });
 
     // Prefill the expiry with the latest expiration date among the selected source's licenses and
-    // select every license for the override by default whenever the source changes.
+    // select every license for the override by default whenever the source changes. A refresh of
+    // the lists the source is derived from must not reset what the user chose.
     effect(() => {
-      const source = this.selectedSource();
+      this.sourceId();
+      const source = untracked(() => this.selectedSource());
       this.form.controls.expiresAt.setValue(this.largestExpiry(source));
       this.expiryOverrideIds.set(
         new Set(
@@ -182,44 +201,66 @@ export class CopyLicensesModalComponent extends ClosableDialog<boolean> {
     const overrideIds = this.effectiveOverrideIds();
     const isOverridden = (id: string | undefined) => id !== undefined && overrideIds.has(id);
     const expiresAt = this.form.controls.expiresAt.value;
-    const entitlementExpiresAt = expiresAt ? new Date(expiresAt) : undefined;
+    const entitlementExpiresAt = expiresAt ? dayjs(expiresAt).toDate() : undefined;
     const licenseKeyExpiresAt = expiresAt ? dayjs(expiresAt).toISOString() : undefined;
-    const creates = [
-      ...source.artifactEntitlements.map((ae) =>
-        this.artifactEntitlementsService.create({
+    const creates: {name?: string; request: Observable<unknown>}[] = [
+      ...source.artifactEntitlements.map((ae) => ({
+        name: ae.name,
+        request: this.artifactEntitlementsService.create({
           ...ae,
           id: undefined,
           customerOrganizationId: targetId,
           ...(isOverridden(ae.id) ? {expiresAt: entitlementExpiresAt} : {}),
-        })
-      ),
-      ...source.applicationEntitlements.map((ae) =>
-        this.applicationEntitlementsService.create({
+        }),
+      })),
+      ...source.applicationEntitlements.map((ae) => ({
+        name: ae.name,
+        request: this.applicationEntitlementsService.create({
           ...ae,
           id: undefined,
           customerOrganizationId: targetId,
           ...(isOverridden(ae.id) ? {expiresAt: entitlementExpiresAt} : {}),
-        })
-      ),
-      ...source.licenseKeys.map(({id, name, ...lk}) =>
-        this.licenseKeysService.create({
+        }),
+      })),
+      ...source.licenseKeys.map(({id, name, ...lk}) => ({
+        name,
+        request: this.licenseKeysService.create({
           ...lk,
           name: name!,
           customerOrganizationId: targetId,
           ...(isOverridden(id) ? {expiresAt: licenseKeyExpiresAt} : {}),
-        })
-      ),
+        }),
+      })),
     ];
 
     this.copying.set(true);
     try {
-      await firstValueFrom(forkJoin(creates));
-      this.toast.success('Licenses have been copied');
-      await this.dialogRef.close(true);
-    } catch (e) {
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
+      const results = await Promise.allSettled(creates.map(({request}) => firstValueFrom(request)));
+      const failures = results.flatMap((result, i) => {
+        if (result.status === 'fulfilled') {
+          return [];
+        }
+        const error = getFormDisplayedError(result.reason);
+        return [error ? `${creates[i].name} (${error})` : `${creates[i].name}`];
+      });
+      if (failures.length > 0) {
+        // A create may have failed because the target changed since the lists were loaded.
+        Promise.all([
+          this.licenseKeysService.refresh(),
+          this.applicationEntitlementsService.refresh(),
+          this.artifactEntitlementsService.refresh(),
+        ]).catch((e) => toastDisplayedError(this.toast, e));
+      }
+      if (failures.length === 0) {
+        this.toast.success('Licenses have been copied');
+        await this.dialogRef.close(true);
+      } else if (failures.length === results.length) {
+        this.toast.error(`Could not copy ${failures.join(', ')}.`);
+      } else {
+        this.toast.error(
+          `Copied ${results.length - failures.length} of ${results.length} licenses. Could not copy ${failures.join(', ')}.`
+        );
+        await this.dialogRef.close(true);
       }
     } finally {
       this.copying.set(false);

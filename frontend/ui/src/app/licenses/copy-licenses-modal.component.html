@@ -41,6 +41,12 @@
             <div class="mt-4">
               <label for="copyExpiresAt" class="distr-label mb-2">Expiration date</label>
               <app-expires-at-picker inputId="copyExpiresAt" formControlName="expiresAt" />
+              @if (namesOfKeysStartingAfterExpiry(); as names) {
+                <p class="mt-1 text-sm text-red-600 dark:text-red-500">
+                  The expiration date must be after the start date of {{ names }}. Pick a later date or don't apply the
+                  new expiration to them.
+                </p>
+              }
             </div>
 
             @if (selectedSource(); as source) {
@@ -152,7 +158,11 @@
         <button type="button" (click)="dialogRef.dismiss()" class="distr-btn-secondary px-5 py-2.5 text-sm font-medium">
           Cancel
         </button>
-        <button type="button" (click)="copy()" [disabled]="loading() || copying()" class="distr-btn-primary">
+        <button
+          type="button"
+          (click)="copy()"
+          [disabled]="loading() || copying() || !!namesOfKeysStartingAfterExpiry()"
+          class="distr-btn-primary">
           Copy licenses
         </button>
       </div>
