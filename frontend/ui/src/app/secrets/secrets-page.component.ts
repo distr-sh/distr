@@ -1,6 +1,6 @@
 import {Component, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
-import {startWith, Subject, switchMap} from 'rxjs';
+import {refreshInBackground} from '../../util/refresh';
 import {PageComponent} from '../components/page.component';
 import {SecretsService} from '../services/secrets.service';
 import {SecretsComponent} from './secrets.component';
@@ -11,11 +11,9 @@ import {SecretsComponent} from './secrets.component';
 })
 export class SecretsPage {
   private readonly secretsService = inject(SecretsService);
-  protected readonly refresh$ = new Subject<void>();
-  protected readonly secrets = toSignal(
-    this.refresh$.pipe(
-      startWith(undefined),
-      switchMap(() => this.secretsService.list())
-    )
-  );
+  protected readonly secrets = toSignal(this.secretsService.list());
+
+  constructor() {
+    refreshInBackground(this.secretsService.refresh());
+  }
 }

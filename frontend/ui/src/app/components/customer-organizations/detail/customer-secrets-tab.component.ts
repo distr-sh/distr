@@ -1,7 +1,8 @@
 import {Component, computed, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute} from '@angular/router';
-import {EMPTY, startWith, Subject, switchMap} from 'rxjs';
+import {EMPTY} from 'rxjs';
+import {refreshInBackground} from '../../../../util/refresh';
 import {SecretsComponent} from '../../../secrets/secrets.component';
 import {SecretsService} from '../../../services/secrets.service';
 
@@ -17,14 +18,12 @@ export class CustomerSecretsTabComponent {
     () => this.parentParams()?.['customerOrganizationId'] as string | undefined
   );
 
-  protected readonly refresh$ = new Subject<void>();
-  private readonly allSecrets = toSignal(
-    this.refresh$.pipe(
-      startWith(undefined),
-      switchMap(() => this.secretsService.list())
-    )
-  );
+  private readonly allSecrets = toSignal(this.secretsService.list());
   protected readonly secrets = computed(() =>
     this.allSecrets()?.filter((it) => it.customerOrganizationId === this.customerOrganizationId())
   );
+
+  constructor() {
+    refreshInBackground(this.secretsService.refresh());
+  }
 }
