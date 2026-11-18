@@ -6,7 +6,6 @@ import {
   computed,
   inject,
   input,
-  output,
   signal,
   TemplateRef,
   viewChild,
@@ -49,7 +48,6 @@ import {Secret} from '../types/secret';
 export class SecretsComponent {
   public readonly secrets = input.required<Secret[] | undefined>();
   public readonly customerOrganizationId = input<string>();
-  public readonly refresh = output();
 
   protected readonly auth = inject(AuthService);
   protected readonly canEdit = this.auth.hasAnyRole('read_write', 'admin');
@@ -122,7 +120,6 @@ export class SecretsComponent {
       this.secretsService.create(key!, value!, this.customerOrganizationId()).subscribe({
         next: () => {
           this.toast.success('Secret has been created.');
-          this.refresh.emit();
           this.closeDialog();
         },
         error: (error) => {
@@ -142,7 +139,6 @@ export class SecretsComponent {
       const confirm = this.affectedDeployments().length > 0;
       await firstValueFrom(this.secretsService.update(id, value, confirm));
       this.toast.success('Secret value has been updated.');
-      this.refresh.emit();
       this.closeDialog();
     } catch (error) {
       if (error instanceof HttpErrorResponse && error.status === 409) {
@@ -174,8 +170,7 @@ export class SecretsComponent {
       )
     ) {
       try {
-        await firstValueFrom(this.secretsService.delete(secret.id));
-        this.refresh.emit();
+        await firstValueFrom(this.secretsService.delete(secret));
       } catch (e) {
         if (e instanceof HttpErrorResponse && e.status === 409) {
           const affected: AffectedDeployment[] = e.error?.affectedDeployments ?? [];
