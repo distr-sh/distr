@@ -6,7 +6,15 @@
     (animationend)="animationComplete()">
     <!-- Modal header -->
     <div class="flex items-center justify-between rounded-t border-b border-gray-200 p-4 md:p-5 dark:border-gray-600">
-      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Create New Deployment</h2>
+      <div class="flex items-baseline gap-3">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Create New Deployment</h2>
+        @if (dataLoaded() && isSelectedCustomerQuotaShown()) {
+          <app-deployment-quota
+            class="text-sm"
+            [usage]="selectedCustomerDeploymentCount()"
+            [limit]="deploymentLimit()" />
+        }
+      </div>
       <button
         type="button"
         (click)="close()"
@@ -44,10 +52,10 @@
                       <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                         <!-- Vendor Only Option -->
                         @let org = currentOrganization$ | async;
-                        @let deploymentLimit = org?.subscriptionLimits?.maxDeploymentsPerCustomerOrganization ?? -1;
                         @if (!auth.isPartner()) {
                           @if (org) {
-                            @let limitReached = deploymentLimit >= 0 && internalDeploymentCount() >= deploymentLimit;
+                            @let limitReached =
+                              deploymentLimit() >= 0 && internalDeploymentCount() >= deploymentLimit();
                             @let isSelected = customerForm.value.internal;
                             <button
                               type="button"
@@ -80,6 +88,9 @@
                               <div class="text-center text-xs text-gray-500 dark:text-gray-400">
                                 Internal deployment
                               </div>
+                              <div class="text-center text-xs">
+                                <app-deployment-quota [usage]="internalDeploymentCount()" [limit]="deploymentLimit()" />
+                              </div>
 
                               <!-- Selection Indicator -->
                               @if (isSelected) {
@@ -94,7 +105,7 @@
                         <!-- Customer Options -->
                         @for (customer of customerOrganizations$ | async; track customer.id) {
                           @let deploymentLimitReached =
-                            deploymentLimit >= 0 && customer.deploymentTargetCount >= deploymentLimit;
+                            deploymentLimit() >= 0 && customer.deploymentTargetCount >= deploymentLimit();
                           <button
                             type="button"
                             (click)="selectCustomer(customer)"
@@ -127,9 +138,10 @@
                               {{ customer.name }}
                             </div>
 
-                            <!-- Customer Stats -->
-                            <div class="text-center text-xs text-gray-500 dark:text-gray-400">
-                              {{ customer.userCount }} users · {{ customer.deploymentTargetCount }} deployments
+                            <div class="text-center text-xs">
+                              <app-deployment-quota
+                                [usage]="customer.deploymentTargetCount"
+                                [limit]="deploymentLimit()" />
                             </div>
 
                             <!-- Selection Indicator -->

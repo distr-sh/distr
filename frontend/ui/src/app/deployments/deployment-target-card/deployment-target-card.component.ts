@@ -1,6 +1,6 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {TextFieldModule} from '@angular/cdk/text-field';
-import {DatePipe, NgOptimizedImage} from '@angular/common';
+import {AsyncPipe, DatePipe, NgOptimizedImage} from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -50,6 +50,7 @@ import {GITHUB_URL, WEBSITE_URL} from '../../../constants';
 import {controllerChangelog} from '../../../data';
 import {dateTimeLocalToISO, isoToDateTimeLocal} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
+import {SecureImagePipe} from '../../../util/secureImage';
 import {DOCKER_ENDPOINT_REGEX, RESOURCE_QUANTITY_REGEX} from '../../../util/validation';
 import {
   deploymentIdsAllowingAutomaticUpdates,
@@ -68,6 +69,7 @@ import {ControllerVersionService} from '../../services/controller-version.servic
 import {DeploymentLogsService} from '../../services/deployment-logs.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
+import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
 import {DeploymentTargetLatestMetrics} from '../../types/deployment-target-metrics';
@@ -103,6 +105,8 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
     RouterLink,
     SpinnerComponent,
     AlertComponent,
+    AsyncPipe,
+    SecureImagePipe,
   ],
 })
 export class DeploymentTargetCardComponent {
@@ -119,6 +123,10 @@ export class DeploymentTargetCardComponent {
   private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
   private readonly applicationsService = inject(ApplicationsService);
   private readonly featureFlags = inject(FeatureFlagService);
+  private readonly organization = toSignal(inject(OrganizationService).get());
+  protected readonly ownerName = computed(
+    () => this.deploymentTarget().customerOrganization?.name ?? this.organization()?.name
+  );
   protected readonly isDeploymentLogsAfterEnabled = this.featureFlags.isDeploymentLogsAfterEnabled;
   protected readonly isAutoUpdatesEnabled = this.featureFlags.isAutoUpdatesEnabled;
 
