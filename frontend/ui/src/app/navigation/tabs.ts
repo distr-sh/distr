@@ -18,16 +18,24 @@ export interface TabContext {
 
 type TabPredicate = (context: TabContext) => boolean;
 
+/** Locks until the organization has any of the features. The plan never decides, the upgrade badge only names it. */
 export interface TabLock {
-  plan: UpgradePlan;
-  when: TabPredicate;
+  requiresAnyOf: Feature[];
+  upgradePlan: UpgradePlan;
 }
 
-export const proLock: TabLock = {plan: 'pro', when: (c) => !c.organization.isPro};
+// TODO: Lock alerts, update notifications and support bundles by organization features of their own once they exist,
+// then remove this lock and isPro from the TabContext, so that no lock checks the plan.
+export const proSubscriptionLock: TabLock = {requiresAnyOf: [], upgradePlan: 'pro'};
 
-/** Locks until the organization has the feature, which decides rather than the plan that grants it. */
-export function featureLock(plan: UpgradePlan, feature: Feature): TabLock {
-  return {plan, when: (c) => !c.features.has(feature)};
+export function isLocked(lock: TabLock | undefined, context: TabContext): boolean {
+  if (!lock) {
+    return false;
+  } else if (lock === proSubscriptionLock) {
+    return !context.organization.isPro;
+  } else {
+    return !lock.requiresAnyOf.some((feature) => context.features.has(feature));
+  }
 }
 
 export interface TabDefinition<T extends string> {
@@ -74,7 +82,7 @@ export function defineRoutedTabs<T extends string>(pageTitle: string, definition
     definitions
       .filter((tab) => tab.visible?.(context) ?? true)
       .map(({id, label, locked}) =>
-        locked?.when(context) ? {id, label, disabled: true, plan: locked.plan} : {id, label}
+        locked && isLocked(locked, context) ? {id, label, disabled: true, plan: locked.upgradePlan} : {id, label}
       );
   const openable = (): Observable<T[]> =>
     tabContext().pipe(

@@ -1,5 +1,6 @@
 import {CustomerOrganizationFeature} from '@distr-sh/distr-sdk';
-import {featureLock, proLock, TabLock} from '../navigation/tabs';
+import {proSubscriptionLock, TabLock} from '../navigation/tabs';
+import {UPGRADE_PLANS} from './subscription';
 
 export interface CustomerFeatureDefinition {
   feature: CustomerOrganizationFeature;
@@ -13,32 +14,42 @@ export interface CustomerFeatureDefinition {
 
 export const customerFeatures: CustomerFeatureDefinition[] = [
   {feature: 'deployment_targets', label: 'Deployments'},
-  {feature: 'alerts', label: 'Alerts', locked: proLock, requires: 'deployment_targets'},
+  {feature: 'alerts', label: 'Alerts', locked: proSubscriptionLock, requires: 'deployment_targets'},
   {feature: 'artifacts', label: 'Artifacts'},
   {
     feature: 'update_notifications',
     label: 'Update Notifications',
-    locked: proLock,
+    locked: proSubscriptionLock,
     requiresAnyOf: ['deployment_targets', 'artifacts'],
   },
-  {feature: 'support_bundles', label: 'Support', locked: proLock},
-  {feature: 'vulnerabilities', label: 'Security', locked: featureLock('business', 'vulnerabilities')},
-  {feature: 'settings', label: 'Settings', locked: featureLock('business', 'customer_settings')},
+  {feature: 'support_bundles', label: 'Support', locked: proSubscriptionLock},
+  {
+    feature: 'vulnerabilities',
+    label: 'Security',
+    locked: {requiresAnyOf: ['vulnerabilities'], upgradePlan: 'business'},
+  },
+  {feature: 'settings', label: 'Settings', locked: {requiresAnyOf: ['customer_settings'], upgradePlan: 'business'}},
   {
     feature: 'oidc_providers',
     label: 'Identity Provider',
-    locked: featureLock('business', 'custom_oidc_providers'),
+    locked: {requiresAnyOf: ['custom_oidc_providers'], upgradePlan: 'business'},
     requires: 'settings',
   },
 ];
 
-/** Locks what belongs to the given customer features while the organization's plan lets it grant none of them. */
-export function customerFeaturesLock(...features: CustomerOrganizationFeature[]): TabLock {
+/**
+ * Locks what belongs to the given customer features until the organization has a feature that unlocks one of them,
+ * naming the lowest plan among them for the upgrade.
+ */
+export function customerFeaturesLock(...features: CustomerOrganizationFeature[]): TabLock | undefined {
   const locks = customerFeatures.filter((it) => features.includes(it.feature)).map((it) => it.locked);
-  return {
-    plan: locks.some((it) => it?.plan === 'pro') ? 'pro' : 'business',
-    when: (c) => locks.every((it) => it !== undefined && it.when(c)),
-  };
+  if (!locks.every((it) => it !== undefined)) {
+    return undefined;
+  } else if (locks.includes(proSubscriptionLock)) {
+    return proSubscriptionLock;
+  }
+  const upgradePlan = UPGRADE_PLANS.find((plan) => locks.some((it) => it.upgradePlan === plan));
+  return upgradePlan && {requiresAnyOf: locks.flatMap((it) => it.requiresAnyOf), upgradePlan};
 }
 
 export function switchCustomerFeature(

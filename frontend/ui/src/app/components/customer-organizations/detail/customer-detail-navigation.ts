@@ -1,4 +1,4 @@
-import {defineRoutedTabs, featureLock} from '../../../navigation/tabs';
+import {defineRoutedTabs, isLocked, TabLock} from '../../../navigation/tabs';
 import {customerFeaturesLock} from '../../../types/customer-features';
 
 export type CustomerDetailTabId =
@@ -13,7 +13,7 @@ export type CustomerDetailTabId =
   | 'support'
   | 'settings';
 
-const licensesLock = featureLock('pro', 'licensing');
+const licensesLock: TabLock = {requiresAnyOf: ['licensing'], upgradePlan: 'pro'};
 const notificationsLock = customerFeaturesLock('alerts', 'update_notifications');
 const supportLock = customerFeaturesLock('support_bundles');
 const settingsLock = customerFeaturesLock('settings');
@@ -28,25 +28,25 @@ export const customerDetailTabs = defineRoutedTabs<CustomerDetailTabId>('Custome
   {
     id: 'licenses',
     label: 'Licenses',
-    visible: (c) => !c.user.isPartner || !licensesLock.when(c),
+    visible: (c) => !c.user.isPartner || !isLocked(licensesLock, c),
     locked: licensesLock,
   },
   {
     id: 'notifications',
     label: 'Notifications',
-    visible: (c) => !c.user.isPartner || !notificationsLock.when(c),
+    visible: (c) => !c.user.isPartner || !isLocked(notificationsLock, c),
     locked: notificationsLock,
   },
   {
     id: 'support',
     label: 'Support',
-    visible: (c) => !c.user.isPartner || !supportLock.when(c),
+    visible: (c) => !c.user.isPartner || !isLocked(supportLock, c),
     locked: supportLock,
   },
   {
     id: 'settings',
     label: 'Settings',
-    visible: (c) => c.user.isAdminOrSuperAdmin && (!c.user.isPartner || !settingsLock.when(c)),
+    visible: (c) => c.user.isAdminOrSuperAdmin && (!c.user.isPartner || !isLocked(settingsLock, c)),
     locked: settingsLock,
   },
 ]);
