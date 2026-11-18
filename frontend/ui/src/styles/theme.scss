@@ -82,12 +82,20 @@
 
   .distr-input {
     @apply block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 placeholder-gray-500 focus:border-primary-600 focus:ring-primary-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500;
+
+    &:is(select, button) {
+      @apply not-disabled:hover:bg-gray-100 dark:not-disabled:hover:bg-gray-600;
+    }
   }
 
   // for a `distr-input` on a surface that is `dark:bg-gray-700` itself, where the default fill would
   // be the same color as the surface in dark mode. Must stay below `.distr-input` to override it.
   .distr-input-raised {
     @apply dark:border-gray-500 dark:bg-gray-600;
+
+    &:is(select, button) {
+      @apply dark:not-disabled:hover:bg-gray-500;
+    }
   }
 
   // a `distr-input` in a compact filter row, next to a button of the same height
