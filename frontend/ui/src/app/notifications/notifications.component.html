@@ -1,0 +1,29 @@
+<div class="distr-toolbar mb-4">
+  @if (hasVisiblePanel()) {
+    <app-search-bar [control]="searchControl" placeholder="Filter notifications" />
+  }
+  <div class="distr-toolbar-actions md:ms-auto">
+    <ng-content select="[toolbarActions]" />
+  </div>
+</div>
+
+<div class="flex flex-col gap-4">
+  @if (alertsVisible()) {
+    <app-alert-configurations
+      [search]="search()"
+      [customerOrganizationId]="customerOrganizationId()"
+      [customerFeatureDisabled]="alertsDisabled()"
+      class="distr-table-panel block">
+      <h2 heading appCardHeading>Alerts</h2>
+    </app-alert-configurations>
+  }
+  @if (updatesVisible()) {
+    <app-update-notifications
+      [search]="search()"
+      [customerOrganizationId]="customerOrganizationId()"
+      [customerFeatureDisabled]="updateNotificationsDisabled()"
+      class="distr-table-panel block">
+      <h2 heading appCardHeading>Updates</h2>
+    </app-update-notifications>
+  }
+</div>

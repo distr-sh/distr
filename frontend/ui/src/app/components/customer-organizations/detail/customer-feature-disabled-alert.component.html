@@ -1,0 +1,14 @@
+<app-alert type="info" [heading]="heading()">
+  <ng-content />
+  @if (canEdit) {
+    <button
+      alertActions
+      type="button"
+      (click)="enable()"
+      [disabled]="isUpdatePending() || !!unmetRequirement()"
+      [title]="unmetRequirement() ?? ''"
+      class="distr-btn-primary shrink-0 px-3 py-1.5">
+      {{ enableLabel() }}
+    </button>
+  }
+</app-alert>

@@ -3,43 +3,23 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {CustomerOrganization, CustomerOrganizationFeature} from '@distr-sh/distr-sdk';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../../../util/errors';
+import {isLocked, tabContext} from '../../../navigation/tabs';
 import {AuthService} from '../../../services/auth.service';
 import {CustomerOrganizationsService} from '../../../services/customer-organizations.service';
-import {OrganizationService} from '../../../services/organization.service';
 import {ToastService} from '../../../services/toast.service';
-import {Feature} from '../../../types/organization';
-import {isProSubscription, UpgradePlan} from '../../../types/subscription';
+import {
+  CustomerFeatureDefinition,
+  customerFeatures,
+  switchCustomerFeature,
+  unmetCustomerFeatureRequirement,
+} from '../../../types/customer-features';
+import {UpgradePlan} from '../../../types/subscription';
 import {PlanBadgeComponent} from '../../plan-badge.component';
-
-interface CustomerFeatureDefinition {
-  feature: CustomerOrganizationFeature;
-  label: string;
-  /** The feature this one builds on: enabling this one enables it as well, disabling it disables this one. */
-  requires?: CustomerOrganizationFeature;
-  requiresPro?: boolean;
-  /** The organization feature that unlocks a Business customer feature, which decides instead of the plan. */
-  unlockedBy?: Feature;
-}
-
-const customerFeatures: CustomerFeatureDefinition[] = [
-  {feature: 'deployment_targets', label: 'Deployments'},
-  {feature: 'alerts', label: 'Alerts', requires: 'deployment_targets', requiresPro: true},
-  {feature: 'artifacts', label: 'Artifacts'},
-  {feature: 'update_notifications', label: 'Update Notifications', requiresPro: true},
-  {feature: 'support_bundles', label: 'Support', requiresPro: true},
-  {feature: 'vulnerabilities', label: 'Security', unlockedBy: 'vulnerabilities'},
-  {feature: 'settings', label: 'Settings', unlockedBy: 'customer_settings'},
-  {
-    feature: 'oidc_providers',
-    label: 'Identity Provider',
-    requires: 'settings',
-    unlockedBy: 'custom_oidc_providers',
-  },
-];
 
 interface CustomerFeatureRow extends CustomerFeatureDefinition {
   enabled: boolean;
   lockedPlan?: UpgradePlan;
+  unmetRequirement?: string;
 }
 
 @Component({
@@ -57,31 +37,24 @@ export class CustomerFeaturesComponent {
   protected readonly canEdit = inject(AuthService).hasAnyRole('read_write', 'admin');
   protected readonly saving = signal(false);
 
-  private readonly organization = toSignal(inject(OrganizationService).get());
+  private readonly context = toSignal(tabContext());
 
   protected readonly rows = computed<CustomerFeatureRow[]>(() => {
     const granted = this.customerOrganization().features;
-    const isPro = isProSubscription(this.organization()?.subscriptionType);
-    const organizationFeatures = this.organization()?.features ?? [];
-    const ownLock = (definition: CustomerFeatureDefinition): UpgradePlan | undefined => {
-      if (definition.requiresPro && !isPro) {
-        return 'pro';
-      } else if (definition.unlockedBy && !organizationFeatures.includes(definition.unlockedBy)) {
-        return 'business';
-      } else {
-        return undefined;
-      }
-    };
+    const context = this.context();
     // A feature granted before a downgrade stays switchable, so that it can still be disabled. One whose required
     // feature is locked is locked as well, since enabling it would enable the required one.
     const locks = new Map<CustomerOrganizationFeature, UpgradePlan | undefined>();
     return customerFeatures.map((definition) => {
       const enabled = granted.includes(definition.feature);
-      const lockedPlan = enabled
-        ? undefined
-        : (ownLock(definition) ?? (definition.requires ? locks.get(definition.requires) : undefined));
+      const {locked, requires} = definition;
+      const ownLock = locked && (!context || isLocked(locked, context)) ? locked.upgradePlan : undefined;
+      const lockedPlan = enabled ? undefined : (ownLock ?? (requires ? locks.get(requires) : undefined));
       locks.set(definition.feature, lockedPlan);
-      return {...definition, enabled, lockedPlan};
+      const unmetRequirement = enabled
+        ? undefined
+        : unmetCustomerFeatureRequirement(granted, definition.feature, {enablesRequired: true});
+      return {...definition, enabled, lockedPlan, unmetRequirement};
     });
   });
 
@@ -92,26 +65,13 @@ export class CustomerFeaturesComponent {
       return;
     }
     const customer = this.customerOrganization();
-    const features = new Set(customer.features);
-    if (row.enabled) {
-      features.delete(row.feature);
-      for (const dependent of customerFeatures.filter((it) => it.requires === row.feature)) {
-        features.delete(dependent.feature);
-      }
-    } else {
-      features.add(row.feature);
-      if (row.requires) {
-        features.add(row.requires);
-      }
-    }
-
     this.saving.set(true);
     try {
       await firstValueFrom(
         this.customerOrganizationsService.updateCustomerOrganization(customer.id, {
           name: customer.name,
           imageId: customer.imageId,
-          features: Array.from(features),
+          features: switchCustomerFeature(customer.features, row.feature, !row.enabled),
         })
       );
       this.toast.success('Customer features updated');

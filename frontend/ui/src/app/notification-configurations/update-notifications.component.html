@@ -4,10 +4,12 @@
     <app-search-bar [control]="filterForm.controls.search" placeholder="Filter notification configurations" />
   }
   <div class="distr-toolbar-actions md:ms-auto">
-    @if (auth.hasAnyRole('read_write', 'admin') && kinds().length > 0) {
+    @if (auth.hasAnyRole('read_write', 'admin')) {
       <button
         type="button"
         (click)="showDrawer()"
+        [disabled]="!!createBlockedReason()"
+        [title]="createBlockedReason() ?? ''"
         class="distr-btn-secondary flex w-full items-center justify-center px-4 py-2 text-sm font-medium md:w-auto">
         <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
         Update Notification

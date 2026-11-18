@@ -1,12 +1,62 @@
-<div class="distr-table-panel">
-  <h2 appCardHeading [icon]="faBell" class="px-4 pt-4">Alerts</h2>
-  <app-alert-configurations [customerOrganizationId]="customerOrganizationId()" />
-</div>
-<div class="distr-table-panel">
-  <h2 appCardHeading [icon]="faCircleArrowUp" class="px-4 pt-4">Updates</h2>
-  <app-update-notifications [customerOrganizationId]="customerOrganizationId()" />
-</div>
-<div class="distr-table-panel">
-  <h2 appCardHeading [icon]="faClockRotateLeft" class="p-4">History</h2>
-  <app-notification-records [customerOrganizationId]="customerOrganizationId()" />
-</div>
+@if (customerOrganization(); as customer) {
+  @if (isAlertsDisabled()) {
+    <app-customer-feature-disabled-alert
+      [customerOrganization]="customer"
+      feature="alerts"
+      heading="Alerts are disabled for this customer."
+      enableLabel="Enable alerts"
+      enabledMessage="Alerts have been enabled for this customer">
+      Until the feature is enabled, no alerts can be created.
+    </app-customer-feature-disabled-alert>
+  }
+  @if (isUpdateNotificationsDisabled()) {
+    <app-customer-feature-disabled-alert
+      [customerOrganization]="customer"
+      feature="update_notifications"
+      heading="Update notifications are disabled for this customer."
+      enableLabel="Enable update notifications"
+      enabledMessage="Update notifications have been enabled for this customer">
+      Until the feature is enabled, no update notifications can be created.
+    </app-customer-feature-disabled-alert>
+  }
+}
+<app-notifications
+  [customerOrganizationId]="customerOrganizationId()"
+  [alertsDisabled]="isAlertsDisabled()"
+  [updateNotificationsDisabled]="isUpdateNotificationsDisabled()">
+  @if (hasHistory()) {
+    <button
+      toolbarActions
+      type="button"
+      (click)="showHistory()"
+      class="distr-btn-secondary flex w-full items-center justify-center px-4 py-2 text-sm font-medium md:w-auto">
+      <fa-icon [icon]="faClockRotateLeft" class="mr-2 text-gray-500 dark:text-gray-400" />
+      History
+    </button>
+  }
+</app-notifications>
+
+<ng-template #historyDrawer>
+  <div
+    animate.enter="animate-fly-in-right"
+    animate.leave="animate-fly-out-right"
+    id="notification-history-drawer"
+    class="h-screen w-240 overflow-y-auto bg-white p-4 dark:bg-gray-800"
+    tabindex="-1"
+    aria-labelledby="notification-history-label">
+    <h2
+      id="notification-history-label"
+      class="mb-6 inline-flex items-center text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
+      Notification history
+    </h2>
+    <button
+      type="button"
+      (click)="hideHistory()"
+      aria-controls="notification-history-drawer"
+      class="absolute top-2.5 right-2.5 inline-flex items-center rounded-lg bg-transparent p-1.5 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
+      <fa-icon [icon]="faXmark" class="size-5" />
+      <span class="sr-only">Close menu</span>
+    </button>
+    <app-notification-records [customerOrganizationId]="customerOrganizationId()" />
+  </div>
+</ng-template>

@@ -17,18 +17,13 @@
       </div>
     </div>
   } @else {
-    <app-alert type="info" heading="Settings are disabled for this customer.">
-      The customer's admins have no settings page until settings are enabled.
-      @if (canEdit) {
-        <button
-          alertActions
-          type="button"
-          (click)="enableSettings()"
-          [disabled]="enabling()"
-          class="distr-btn-primary shrink-0 px-3 py-1.5">
-          Enable settings
-        </button>
-      }
-    </app-alert>
+    <app-customer-feature-disabled-alert
+      [customerOrganization]="customer"
+      feature="settings"
+      heading="Settings are disabled for this customer."
+      enableLabel="Enable settings"
+      enabledMessage="Settings have been enabled for this customer">
+      The customer's admins have no settings page until the feature is enabled.
+    </app-customer-feature-disabled-alert>
   }
 }

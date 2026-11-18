@@ -35,6 +35,7 @@ import {UpdateNotificationConfigurationsService} from '../services/notification-
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 import {UsersService} from '../services/users.service';
+import {customerFeatureRequiredMessage} from '../types/customer-features';
 import {UpdateNotificationConfiguration} from '../types/notification-configuration';
 import {NotificationRecipientsComponent} from './notification-recipients.component';
 
@@ -56,10 +57,13 @@ type NotificationKind = 'application' | 'artifact';
     NotificationRecipientsComponent,
     SpinnerComponent,
   ],
+  host: {'[hidden]': 'isHidden()'},
 })
 export class UpdateNotificationsComponent {
   /** customerOrganizationId scopes the page to what one customer is notified about. */
   public readonly customerOrganizationId = input<string>();
+  /** Blocks creating configurations for a customer that lacks the feature, and hides the component unless it has some. */
+  public readonly customerFeatureDisabled = input(false);
   /** Replaces the component's own search bar when the page filters several tables at once. */
   public readonly search = input<string>();
 
@@ -228,6 +232,16 @@ export class UpdateNotificationsComponent {
 
   protected readonly watchesApplications = computed(() => this.kinds().includes('application'));
   protected readonly watchesArtifacts = computed(() => this.kinds().includes('artifact'));
+  protected readonly createBlockedReason = computed(() => {
+    if (this.customerFeatureDisabled()) {
+      return customerFeatureRequiredMessage(['update_notifications']);
+    } else if (this.kinds().length === 0) {
+      return customerFeatureRequiredMessage(['deployment_targets', 'artifacts']);
+    } else {
+      return undefined;
+    }
+  });
+  public readonly isHidden = computed(() => this.customerFeatureDisabled() && !this.configs()?.length);
 
   private readonly editConfigDrawerTpl = viewChild.required<TemplateRef<unknown>>('editConfigDrawer');
   private editConfigDrawerRef?: DialogRef;

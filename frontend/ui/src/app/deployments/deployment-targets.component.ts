@@ -43,6 +43,7 @@ import {DeploymentTargetsMetricsService} from '../services/deployment-target-met
 import {DeploymentTargetsService} from '../services/deployment-targets.service';
 import {OrganizationService} from '../services/organization.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
+import {customerFeatureRequiredMessage} from '../types/customer-features';
 import {DeploymentTargetLatestMetrics} from '../types/deployment-target-metrics';
 import {UNLIMITED_QTY} from '../types/subscription';
 import {DeploymentModalComponent} from './deployment-modal.component';
@@ -79,6 +80,7 @@ const deploymentDisplayStatusLabels = new Map(
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './deployment-targets.component.html',
+  host: {'[hidden]': 'isHidden()'},
 })
 export class DeploymentTargetsComponent implements AfterViewInit {
   public readonly auth = inject(AuthService);
@@ -108,6 +110,8 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   });
 
   public readonly customerOrganizationId = input<string>();
+  /** Blocks creating deployments for a customer that lacks the feature, and hides the component unless it has some. */
+  public readonly customerFeatureDisabled = input(false);
 
   private readonly isVendorOrPartner = this.auth.isVendor() || this.auth.isPartner();
   protected readonly canFilterByCustomer = computed(() => this.isVendorOrPartner && !this.customerOrganizationId());
@@ -209,6 +213,11 @@ export class DeploymentTargetsComponent implements AfterViewInit {
       })
     ),
     {initialValue: 0}
+  );
+  private readonly deploymentTargetCount = toSignal(this.deploymentTargets$.pipe(map((targets) => targets.length)));
+  protected readonly isHidden = computed(() => this.customerFeatureDisabled() && !this.deploymentTargetCount());
+  protected readonly createBlockedReason = computed(() =>
+    this.customerFeatureDisabled() ? customerFeatureRequiredMessage(['deployment_targets']) : undefined
   );
   protected readonly limitReached = computed(() => {
     const limit = this.toolbarLimit();

@@ -16,11 +16,11 @@ import {CustomerOrganizationsComponent} from './components/customer-organization
 import {CustomerDeploymentsTabComponent} from './components/customer-organizations/detail/customer-deployments-tab.component';
 import {customerDetailTabs} from './components/customer-organizations/detail/customer-detail-navigation';
 import {CustomerDetailPageComponent} from './components/customer-organizations/detail/customer-detail-page.component';
-import {CustomerDownloadsTabComponent} from './components/customer-organizations/detail/customer-downloads-tab.component';
 import {CustomerLicensesTabComponent} from './components/customer-organizations/detail/customer-licenses-tab.component';
 import {CustomerLinksTabComponent} from './components/customer-organizations/detail/customer-links-tab.component';
 import {CustomerNotificationsTabComponent} from './components/customer-organizations/detail/customer-notifications-tab.component';
 import {CustomerOverviewTabComponent} from './components/customer-organizations/detail/customer-overview-tab.component';
+import {CustomerRegistryTabComponent} from './components/customer-organizations/detail/customer-registry-tab.component';
 import {CustomerSecretsTabComponent} from './components/customer-organizations/detail/customer-secrets-tab.component';
 import {CustomerSettingsTabComponent} from './components/customer-organizations/detail/customer-settings-tab.component';
 import {CustomerSupportTabComponent} from './components/customer-organizations/detail/customer-support-tab.component';
@@ -312,10 +312,10 @@ const shellRoutes: Routes = [
                 canActivate: [customerDetailTabs.guard('deployments')],
               },
               {
-                path: 'downloads',
-                title: customerDetailTabs.title('downloads'),
-                component: CustomerDownloadsTabComponent,
-                canActivate: [customerDetailTabs.guard('downloads')],
+                path: 'registry',
+                title: customerDetailTabs.title('registry'),
+                component: CustomerRegistryTabComponent,
+                canActivate: [customerDetailTabs.guard('registry')],
               },
               {
                 path: 'licenses',

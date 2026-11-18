@@ -1,17 +1,13 @@
-@if (isSupportDisabled()) {
-  <app-alert type="info" heading="Support is disabled for this customer." class="mb-4">
-    The customer cannot create support requests until support is enabled.
-    @if (canEdit) {
-      <button
-        alertActions
-        type="button"
-        (click)="enableSupport()"
-        [disabled]="enabling()"
-        class="distr-btn-primary shrink-0 px-3 py-1.5">
-        Enable support
-      </button>
-    }
-  </app-alert>
+@if (isSupportDisabled() && customerOrganization(); as customer) {
+  <app-customer-feature-disabled-alert
+    [customerOrganization]="customer"
+    feature="support_bundles"
+    heading="Support is disabled for this customer."
+    enableLabel="Enable support"
+    enabledMessage="Support has been enabled for this customer"
+    class="mb-4">
+    The customer cannot create support requests until the feature is enabled.
+  </app-customer-feature-disabled-alert>
 }
 <app-support-bundle-list
   #list
