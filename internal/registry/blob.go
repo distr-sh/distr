@@ -277,7 +277,13 @@ func (b *blobs) handleGet(resp http.ResponseWriter, req *http.Request, repo, tar
 		resp.WriteHeader(http.StatusOK)
 	}
 
-	if _, err := io.Copy(resp, r); err != nil {
+	client := newDeadlineWriter(resp)
+	defer client.Close()
+	if _, err := io.Copy(client, r); err != nil {
+		if client.err != nil {
+			internalctx.GetLogger(req.Context()).Debug("client stopped receiving blob", zap.Error(err))
+			return nil
+		}
 		return regErrInternal(err)
 	}
 	return nil
@@ -316,18 +322,14 @@ func (b *blobs) serveFromUpstream(resp http.ResponseWriter, req *http.Request, r
 		<-copied
 	}()
 
-	w := &upstreamBlobWriter{client: resp, clientController: http.NewResponseController(resp), buffer: pw}
-	// The server sets no write timeout of its own, so a deadline left behind would apply to the next request
-	// on the same connection.
-	defer func() {
-		w.flushClient()
-		_ = w.clientController.SetWriteDeadline(time.Time{})
-	}()
+	client := newDeadlineWriter(resp)
+	w := &upstreamBlobWriter{client: client, buffer: pw}
+	defer client.Close()
 
 	resp.Header().Set("Content-Length", strconv.FormatInt(size, 10))
 	resp.Header().Set("Docker-Content-Digest", h.String())
 	resp.WriteHeader(http.StatusOK)
-	w.flushClient()
+	client.Flush()
 
 	_, err = io.Copy(w, rc)
 	_ = rc.Close()
@@ -370,50 +372,78 @@ func storeUpstreamBlob(ctx context.Context, repo string, h digest.Digest, bph bl
 
 var errUpstreamBlobAbandoned = errors.New("neither the client nor the buffer accepts the upstream blob")
 
-// upstreamBlobClientWriteTimeout bounds every write to the client. A client that keeps the connection open without
-// reading would otherwise block the download, and with it the buffer, indefinitely.
-var upstreamBlobClientWriteTimeout = time.Minute
-
 // upstreamBlobWriter writes an upstream blob to the client and to the buffer, and keeps writing to one of them after
 // the other failed.
 type upstreamBlobWriter struct {
-	client               io.Writer
-	clientController     *http.ResponseController
-	buffer               io.Writer
-	clientErr, bufferErr error
+	client    *deadlineWriter
+	buffer    io.Writer
+	bufferErr error
 }
 
 func (w *upstreamBlobWriter) Write(p []byte) (int, error) {
-	if w.extendClientDeadline() {
-		_, w.clientErr = w.client.Write(p)
-	}
+	_, _ = w.client.Write(p)
 	if w.bufferErr == nil {
 		_, w.bufferErr = w.buffer.Write(p)
 	}
-	if w.clientErr != nil && w.bufferErr != nil {
+	if w.client.err != nil && w.bufferErr != nil {
 		return 0, errUpstreamBlobAbandoned
 	}
 	return len(p), nil
 }
 
-func (w *upstreamBlobWriter) flushClient() {
-	if w.extendClientDeadline() {
-		if err := w.clientController.Flush(); err != nil && !errors.Is(err, http.ErrNotSupported) {
-			w.clientErr = err
+// clientWriteTimeout bounds every write of a blob download to the client. The server sets no write timeout of its
+// own, since a download can take arbitrarily long, so a client that keeps the connection open without reading would
+// otherwise hold the download open indefinitely.
+var clientWriteTimeout = time.Minute
+
+// deadlineWriter writes a blob download to the client and extends the write deadline before every write. It keeps
+// the first error and fails every later write with it.
+type deadlineWriter struct {
+	client     io.Writer
+	controller *http.ResponseController
+	err        error
+}
+
+func newDeadlineWriter(resp http.ResponseWriter) *deadlineWriter {
+	return &deadlineWriter{client: resp, controller: http.NewResponseController(resp)}
+}
+
+func (w *deadlineWriter) Write(p []byte) (int, error) {
+	if !w.extendDeadline() {
+		return 0, w.err
+	}
+	n, err := w.client.Write(p)
+	if err != nil {
+		w.err = err
+	}
+	return n, err
+}
+
+func (w *deadlineWriter) Flush() {
+	if w.extendDeadline() {
+		if err := w.controller.Flush(); err != nil && !errors.Is(err, http.ErrNotSupported) {
+			w.err = err
 		}
 	}
 }
 
-// extendClientDeadline reports whether the client is still accepting writes.
-func (w *upstreamBlobWriter) extendClientDeadline() bool {
-	if w.clientErr != nil {
+// Close flushes what is still buffered while the deadline applies and then removes the deadline, which would
+// otherwise apply to the next request on the same connection.
+func (w *deadlineWriter) Close() {
+	w.Flush()
+	_ = w.controller.SetWriteDeadline(time.Time{})
+}
+
+// extendDeadline reports whether the client is still accepting writes.
+func (w *deadlineWriter) extendDeadline() bool {
+	if w.err != nil {
 		return false
 	}
-	err := w.clientController.SetWriteDeadline(time.Now().Add(upstreamBlobClientWriteTimeout))
+	err := w.controller.SetWriteDeadline(time.Now().Add(clientWriteTimeout))
 	if err != nil && !errors.Is(err, http.ErrNotSupported) {
-		w.clientErr = err
+		w.err = err
 	}
-	return w.clientErr == nil
+	return w.err == nil
 }
 
 func (b *blobs) handlePost(resp http.ResponseWriter, req *http.Request, repo, target, digestArg string) *regError {
