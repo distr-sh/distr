@@ -206,20 +206,23 @@ func (b *blobs) handleGet(resp http.ResponseWriter, req *http.Request, repo, tar
 	if errors.Is(err, blob.ErrNotFound) {
 		return b.serveFromUpstream(resp, req, repo, h)
 	} else if err != nil {
-		var rerr blob.RedirectError
-		if errors.As(err, &rerr) {
+		if rerr, ok := errors.AsType[blob.RedirectError](err); ok {
 			http.Redirect(resp, req, rerr.Location, rerr.Code)
 			return nil
 		}
 		return regErrInternal(err)
 	}
 
-	rc, err := b.blobHandler.Get(req.Context(), repo, h, true)
+	allowRedirect, err := redirectAllowed(req.Context(), repo)
+	if err != nil {
+		return regErrInternal(err)
+	}
+
+	rc, err := b.blobHandler.Get(req.Context(), repo, h, allowRedirect)
 	if errors.Is(err, blob.ErrNotFound) {
 		return regErrBlobUnknown
 	} else if err != nil {
-		var rerr blob.RedirectError
-		if errors.As(err, &rerr) {
+		if rerr, ok := errors.AsType[blob.RedirectError](err); ok {
 			http.Redirect(resp, req, rerr.Location, rerr.Code)
 			return nil
 		}

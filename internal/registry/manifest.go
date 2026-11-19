@@ -343,10 +343,13 @@ func (handler *manifests) handleGet(resp http.ResponseWriter, req *http.Request,
 
 	// TODO: remove in v2
 	if len(m.Data) == 0 {
-		b, err := handler.blobHandler.Get(ctx, repo, m.Digest, true)
+		allowRedirect, err := redirectAllowed(ctx, repo)
 		if err != nil {
-			var rerr blob.RedirectError
-			if errors.As(err, &rerr) {
+			return regErrInternal(err)
+		}
+		b, err := handler.blobHandler.Get(ctx, repo, m.Digest, allowRedirect)
+		if err != nil {
+			if rerr, ok := errors.AsType[blob.RedirectError](err); ok {
 				if err := handler.audit.AuditPull(ctx, repo, target); err != nil {
 					log := internalctx.GetLogger(ctx)
 					log.Warn("failed to audit-log pull", zap.Error(err))
