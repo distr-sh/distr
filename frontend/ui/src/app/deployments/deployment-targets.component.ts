@@ -59,6 +59,7 @@ import {
   isDeploymentStatusFilter,
 } from './deployment-target-card/deployment-status-text.component';
 import {DeploymentTargetCardComponent} from './deployment-target-card/deployment-target-card.component';
+import {deploymentTargetSearchTexts, matchesSearch} from './deployment-target-search';
 import {DeploymentWizardComponent} from './deployment-wizard/deployment-wizard.component';
 
 export interface DeploymentTargetViewData extends DeploymentTarget {
@@ -257,16 +258,17 @@ export class DeploymentTargetsComponent implements AfterViewInit {
           deployment: d,
           statuses: needsStatuses ? deploymentStatusFilters(d, applications, entitlements) : [],
         }));
-        const matchesSearch =
+        const isSearchMatch =
           !query ||
-          [
-            dt.name,
-            ...(dt.customerOrganization ? [dt.customerOrganization.name] : ['Internal', this.organization()?.name]),
-            ...deployments.flatMap(({deployment, statuses}) => [
-              deployment.application.name,
-              ...statuses.map((status) => deploymentStatusFilterLabels.get(status)),
-            ]),
-          ].some((it) => it?.toLowerCase().includes(query) ?? false);
+          matchesSearch(
+            [
+              ...deploymentTargetSearchTexts(dt, this.organization()?.name),
+              ...deployments.flatMap(({statuses}) =>
+                statuses.map((status) => deploymentStatusFilterLabels.get(status))
+              ),
+            ],
+            query
+          );
         const matchesFilter =
           (applicationIds.length === 0 && statuses.length === 0) ||
           deployments.some(
@@ -275,7 +277,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
                 (deployment.application.id !== undefined && applicationIds.includes(deployment.application.id))) &&
               (statuses.length === 0 || deploymentStatuses.some((status) => statuses.includes(status)))
           );
-        return matchesSearch && matchesFilter;
+        return isSearchMatch && matchesFilter;
       });
     }),
     combineLatestWith(this.deploymentTargetMetrics$),

@@ -47,10 +47,7 @@ function isBehindOverlay(element: Element): boolean {
       @if (hotkey()) {
         <div
           class="pointer-events-none absolute inset-y-0 right-0 hidden items-center pr-3 peer-placeholder-shown:flex peer-focus:hidden">
-          <kbd
-            class="rounded-sm border border-gray-200 bg-gray-100 px-1.5 font-sans text-xs text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
-            /
-          </kbd>
+          <kbd class="distr-kbd">/</kbd>
         </div>
       }
     </div>

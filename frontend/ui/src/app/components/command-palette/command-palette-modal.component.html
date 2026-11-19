@@ -1,0 +1,43 @@
+<div
+  class="distr-dropdown-panel mt-[15vh] flex max-h-[60vh] w-xl flex-col gap-2"
+  animate.enter="animate-flip-in-top"
+  animate.leave="animate-flip-out-top"
+  (keydown)="onKeydown($event)">
+  <app-search-bar
+    [control]="search"
+    placeholder="Search or jump to"
+    [autofocus]="true"
+    [hotkey]="false"
+    class="md:max-w-none!" />
+  <ul class="flex min-h-0 flex-col gap-y-0.5 overflow-y-auto" role="listbox" aria-label="Commands">
+    @for (group of groups(); track group.id) {
+      <li class="px-2 pt-2 pb-1 text-xs font-semibold text-gray-500 uppercase dark:text-gray-400" role="presentation">
+        {{ group.label }}
+      </li>
+      @for (command of group.commands; track command.id) {
+        <li role="presentation">
+          <button
+            type="button"
+            role="option"
+            [id]="command.elementId"
+            [attr.aria-selected]="command.index === activeIndex()"
+            class="distr-dropdown-item aria-selected:bg-gray-100 dark:aria-selected:bg-gray-600 dark:aria-selected:text-white"
+            (mousemove)="activeIndex.set(command.index)"
+            (click)="run(command)">
+            <fa-icon [icon]="command.icon" class="w-5 text-gray-500 dark:text-gray-400" />
+            <span class="grow">{{ command.label }}</span>
+            @if (command.detail) {
+              <span class="text-xs text-gray-500 dark:text-gray-400">{{ command.detail }}</span>
+            }
+            @if (command.shortcut) {
+              <kbd class="distr-kbd uppercase">g</kbd>
+              <kbd class="distr-kbd uppercase">{{ command.shortcut }}</kbd>
+            }
+          </button>
+        </li>
+      }
+    } @empty {
+      <li class="px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300">Nothing matches your search.</li>
+    }
+  </ul>
+</div>
