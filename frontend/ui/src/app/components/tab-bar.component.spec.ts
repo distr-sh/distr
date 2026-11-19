@@ -32,7 +32,7 @@ describe('TabBarComponent', () => {
     expect(suffixes[0].getAttribute('data-has-origin')).toBe('true');
   });
 
-  it('does not select a disabled tab but still reports the click', () => {
+  it('neither selects a disabled tab nor reports the click', () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
 
@@ -41,7 +41,7 @@ describe('TabBarComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.active()).toBe('general');
-    expect(fixture.componentInstance.clicked).toEqual(['email']);
+    expect(fixture.componentInstance.clicked).toEqual([]);
     expect(buttons[1].getAttribute('aria-disabled')).toBe('true');
   });
 });

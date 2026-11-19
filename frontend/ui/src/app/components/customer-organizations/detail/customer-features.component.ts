@@ -1,3 +1,5 @@
+import {CdkOverlayOrigin} from '@angular/cdk/overlay';
+import {LowerCasePipe, TitleCasePipe} from '@angular/common';
 import {Component, computed, inject, input, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {CustomerOrganization, CustomerOrganizationFeature} from '@distr-sh/distr-sdk';
@@ -17,6 +19,7 @@ import {
 import {isLocked, upgradePlan} from '../../../types/feature-lock';
 import {UpgradePlan} from '../../../types/subscription';
 import {PlanBadgeComponent} from '../../plan-badge.component';
+import {PlanHintOverlayComponent} from '../../plan-hint-overlay.component';
 
 interface CustomerFeatureRow extends CustomerFeatureDefinition {
   enabled: boolean;
@@ -27,7 +30,7 @@ interface CustomerFeatureRow extends CustomerFeatureDefinition {
 @Component({
   selector: 'app-customer-features',
   templateUrl: './customer-features.component.html',
-  imports: [PlanBadgeComponent],
+  imports: [CdkOverlayOrigin, PlanBadgeComponent, PlanHintOverlayComponent, LowerCasePipe, TitleCasePipe],
   host: {class: 'block'},
 })
 export class CustomerFeaturesComponent {
@@ -38,7 +41,6 @@ export class CustomerFeaturesComponent {
 
   protected readonly canEdit = inject(AuthService).hasAnyRole('read_write', 'admin');
   protected readonly saving = signal(false);
-
   private readonly context = toSignal(tabContext());
 
   protected readonly rows = computed<CustomerFeatureRow[]>(() => {

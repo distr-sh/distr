@@ -1,0 +1,10 @@
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="origin()"
+  [cdkConnectedOverlayOpen]="open()"
+  [cdkConnectedOverlayHasBackdrop]="true"
+  [cdkConnectedOverlayBackdropClass]="'transparent'"
+  [cdkConnectedOverlayPositions]="positions()"
+  (backdropClick)="open.set(false)">
+  <app-plan-feature-hint [plan]="plan()" />
+</ng-template>

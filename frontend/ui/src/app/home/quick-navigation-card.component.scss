@@ -22,6 +22,14 @@
   }
 }
 
+.locked {
+  h2,
+  .headline,
+  .subtitle {
+    @apply opacity-60;
+  }
+}
+
 :host(.card-success) {
   @include variant(green);
 }

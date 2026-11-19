@@ -1,19 +1,32 @@
 <ul class="space-y-4">
   @for (row of rows(); track row.feature) {
     <li class="flex items-center gap-3" [class.ps-6]="row.requires">
-      <label class="distr-toggle-label" [title]="row.unmetRequirement ?? ''">
-        <input
-          #featureToggle
-          type="checkbox"
-          class="peer sr-only"
-          [checked]="row.enabled"
-          [disabled]="!canEdit || !!row.lockedPlan || !!row.unmetRequirement"
-          (click)="toggleFeature(row, featureToggle, $event)" />
-        <div class="distr-toggle shrink-0"></div>
-        {{ row.label }}
-      </label>
       @if (row.lockedPlan; as plan) {
-        <app-plan-badge [plan]="plan" />
+        <button
+          type="button"
+          class="distr-toggle-label"
+          [title]="'Upgrade to ' + (plan | titlecase) + ' to enable ' + (row.label | lowercase)"
+          cdkOverlayOrigin
+          #origin="cdkOverlayOrigin">
+          <span class="inline-flex items-center gap-3 opacity-60">
+            <span class="distr-toggle shrink-0"></span>
+            {{ row.label }}
+          </span>
+          <app-plan-badge [plan]="plan" />
+        </button>
+        <app-plan-hint-overlay [origin]="origin" [plan]="plan" />
+      } @else {
+        <label class="distr-toggle-label" [title]="row.unmetRequirement ?? ''">
+          <input
+            #featureToggle
+            type="checkbox"
+            class="peer sr-only"
+            [checked]="row.enabled"
+            [disabled]="!canEdit || !!row.unmetRequirement"
+            (click)="toggleFeature(row, featureToggle, $event)" />
+          <div class="distr-toggle shrink-0"></div>
+          {{ row.label }}
+        </label>
       }
     </li>
   }

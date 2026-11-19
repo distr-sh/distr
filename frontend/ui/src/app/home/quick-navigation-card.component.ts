@@ -1,12 +1,12 @@
-import {CdkConnectedOverlay, CdkOverlayOrigin} from '@angular/cdk/overlay';
+import {CdkOverlayOrigin} from '@angular/cdk/overlay';
 import {LowerCasePipe, NgTemplateOutlet, TitleCasePipe} from '@angular/common';
-import {Component, computed, input, signal} from '@angular/core';
+import {Component, computed, input} from '@angular/core';
 import {Params, RouterLink} from '@angular/router';
 import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
 import {faCircleCheck, faCircleExclamation, faTriangleExclamation} from '@fortawesome/free-solid-svg-icons';
 import {CardHeadingComponent} from '../components/card-heading.component';
 import {PlanBadgeComponent} from '../components/plan-badge.component';
-import {PlanFeatureHintComponent} from '../components/plan-feature-hint.component';
+import {PlanHintOverlayComponent} from '../components/plan-hint-overlay.component';
 import {FeatureLock, upgradePlan} from '../types/feature-lock';
 
 export type QuickNavigationCardType = 'neutral' | 'success' | 'warning' | 'error';
@@ -26,9 +26,8 @@ export type QuickNavigationCardType = 'neutral' | 'success' | 'warning' | 'error
     FaIconComponent,
     CardHeadingComponent,
     CdkOverlayOrigin,
-    CdkConnectedOverlay,
     PlanBadgeComponent,
-    PlanFeatureHintComponent,
+    PlanHintOverlayComponent,
     LowerCasePipe,
     TitleCasePipe,
   ],
@@ -50,8 +49,6 @@ export class QuickNavigationCardComponent {
     return locked && upgradePlan(locked);
   });
   protected readonly typeClass = computed(() => `card-${this.type()}`);
-  protected readonly isPlanHintOpen = signal(false);
-
   protected readonly typeIcon = computed(() => {
     switch (this.type()) {
       case 'success':
