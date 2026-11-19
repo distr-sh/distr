@@ -36,11 +36,13 @@ Distr itself is licensed under the Apache License 2.0. Depending on the Compose 
 can also run PostgreSQL, RustFS, Loki and Caddy next to it, each as an unmodified upstream image and as a separate
 service that Distr talks to over the network, so their licenses apply to them alone.
 
-[Grafana Loki](https://github.com/grafana/loki) is licensed under the GNU Affero General Public License v3 (AGPL-3.0).
-Distr neither includes nor modifies Loki: the stacks pull the official `grafana/loki` image, which runs as a program of
-its own, so the AGPL applies to Loki alone, and its clause on offering software over a network concerns modified
-versions only. A Loki instance that you run yourself is licensed under the AGPL as well. To keep Loki out of your
-stack, point `LOKI_URL` and the `LOKI_*` authentication variables at a Loki that is operated separately or at a hosted
+[Grafana Loki](https://github.com/grafana/loki) is licensed under the
+[GNU Affero General Public License v3](https://github.com/grafana/loki/blob/main/LICENSE) (AGPL-3.0-only), with the
+exceptions listed in [Loki's licensing guide](https://github.com/grafana/loki/blob/main/LICENSING.md). Distr neither
+includes nor modifies Loki: the stacks pull the official `grafana/loki` image, which runs as a program of its own, so
+the AGPL applies to Loki alone, and its clause on offering software over a network concerns modified versions only. A
+Loki instance that you run yourself is licensed under the AGPL as well. To keep Loki out of your stack, point
+`LOKI_URL` and the `LOKI_*` authentication variables at a Loki that is operated separately or at a hosted
 Loki-compatible service, and set `loki.enabled` to `false` in the Helm chart or remove the `loki` service and the
 `loki` entry under `depends_on` of the `distr` service from the Compose stack.
 
