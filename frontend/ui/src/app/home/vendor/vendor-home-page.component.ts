@@ -199,7 +199,7 @@ export class VendorHomePageComponent {
       unlicensed,
       statusCount: statuses.length,
       type: licensesCardType(licenses),
-      link: statuses.length > 0 ? '/customers' : '/licenses',
+      link: '/customers',
       queryParams: statuses.length > 0 ? {license: statuses} : undefined,
     };
   });

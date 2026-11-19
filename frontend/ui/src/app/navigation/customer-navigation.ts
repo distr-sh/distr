@@ -37,7 +37,7 @@ export const customerNavigation: NavigationDefinition = [
         id: 'licenses',
         label: 'Licenses',
         icon: faKey,
-        route: '/license-keys',
+        route: '/licenses',
         visible: (c) => c.customer.hasLicenseKeys,
       },
       {
@@ -69,7 +69,7 @@ export const customerNavigation: NavigationDefinition = [
     id: 'organization',
     label: 'Organization',
     entries: [
-      {id: 'users', label: 'Users', icon: faUsers, route: '/users', visible: (c) => c.user.isAdmin},
+      {id: 'team', label: 'Team', icon: faUsers, route: '/team', visible: (c) => c.user.isAdmin},
       {
         id: 'secrets',
         label: 'Secrets',

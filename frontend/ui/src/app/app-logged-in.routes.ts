@@ -1,5 +1,5 @@
 import {inject} from '@angular/core';
-import {CanActivateFn, CanMatchFn, RedirectFunction, Router, Routes} from '@angular/router';
+import {CanActivateFn, CanMatchFn, Router, Routes} from '@angular/router';
 import {CustomerOrganizationFeature, UserRole} from '@distr-sh/distr-sdk';
 import {combineLatest, firstValueFrom, map} from 'rxjs';
 import {getRemoteEnvironment} from '../env/remote';
@@ -40,7 +40,6 @@ import {DeploymentTargetsPageComponent} from './deployments/deployment-targets-p
 import {CustomerHomePageComponent} from './home/customer/customer-home-page.component';
 import {VendorHomePageComponent} from './home/vendor/vendor-home-page.component';
 import {CustomerLicenseDetailPageComponent} from './licenses/customer-license-detail-page.component';
-import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
 import {NotificationRecordsPageComponent} from './notification-records/notification-records-page.component';
 import {NotificationsPageComponent} from './notifications/notifications-page.component';
 import {BillingComponent} from './organization-settings/billing/billing.component';
@@ -51,11 +50,7 @@ import {OrganizationSettingsComponent} from './organization-settings/organizatio
 import {SecretsSettingsComponent} from './organization-settings/secrets/secrets-settings.component';
 import {SubscriptionCallbackComponent} from './organization-settings/subscription/subscription-callback.component';
 import {SubscriptionComponent} from './organization-settings/subscription/subscription.component';
-import {
-  canOpenSubscription,
-  subscriptionGuard,
-  subscriptionPath,
-} from './organization-settings/subscription/subscription.guard';
+import {canOpenSubscription, subscriptionGuard} from './organization-settings/subscription/subscription.guard';
 import {TeamSettingsComponent} from './organization-settings/team/team-settings.component';
 import {SecretsPage} from './secrets/secrets-page.component';
 import {AuthService} from './services/auth.service';
@@ -213,11 +208,6 @@ function registryHostSetOrRedirectGuard(redirectTo: string): CanActivateFn {
   };
 }
 
-// An absolute redirectTo string drops the query parameters of the original URL.
-function redirectWithQueryParams(path: string): RedirectFunction {
-  return ({queryParams}) => inject(Router).createUrlTree([path], {queryParams});
-}
-
 function portalUnavailableGuard(): CanActivateFn {
   return () => {
     const router = inject(Router);
@@ -244,8 +234,6 @@ const shellRoutes: Routes = [
         component: CustomerHomePageComponent,
         canActivate: [requireCustomer],
       },
-      {path: 'dashboard', pathMatch: 'full', redirectTo: 'home'},
-      {path: 'overview', pathMatch: 'full', redirectTo: 'home'},
       {
         path: 'applications',
         title: 'Applications',
@@ -271,16 +259,21 @@ const shellRoutes: Routes = [
         ],
       },
       {
-        path: 'artifacts',
-        title: 'Artifacts',
+        path: 'registry',
+        title: 'Registry',
+        canActivate: [requireVendorOrPartner],
         children: [
           {path: '', pathMatch: 'full', component: ArtifactsComponent},
-          {
-            path: 'downloads',
-            title: 'Downloads',
-            component: ArtifactPullsPageComponent,
-            canActivate: [requireVendorOrPartner],
-          },
+          {path: 'downloads', title: 'Downloads', component: ArtifactPullsPageComponent},
+          {path: ':id', component: ArtifactVersionsComponent},
+        ],
+      },
+      {
+        path: 'artifacts',
+        title: 'Artifacts',
+        canActivate: [requireCustomer],
+        children: [
+          {path: '', pathMatch: 'full', component: ArtifactsComponent},
           {path: ':id', component: ArtifactVersionsComponent},
         ],
       },
@@ -380,8 +373,8 @@ const shellRoutes: Routes = [
         ],
       },
       {
-        path: 'users',
-        title: 'Users',
+        path: 'team',
+        title: 'Team',
         component: UsersPageComponent,
         canActivate: [requirePartnerOrCustomer, requiredRoleGuard('admin')],
       },
@@ -392,7 +385,7 @@ const shellRoutes: Routes = [
         canActivate: [requirePartnerOrCustomer],
       },
       {
-        path: 'license-keys',
+        path: 'licenses',
         title: 'Licenses',
         component: CustomerLicenseDetailPageComponent,
         canActivate: [requireCustomer, licensingEnabledGuard()],
@@ -415,23 +408,6 @@ const shellRoutes: Routes = [
             title: customerPortalTabs.title('domain-and-sign-in'),
             component: CustomerPortalDomainComponent,
             canActivate: [customerPortalTabs.guard('domain-and-sign-in')],
-          },
-        ],
-      },
-      {
-        path: 'licenses',
-        title: 'Licenses',
-        canActivate: [requireVendorOrPartner, licensingEnabledGuard()],
-        data: {userRole: 'vendor'},
-        children: [
-          {
-            path: '',
-            pathMatch: 'full',
-            component: LicensesOverviewComponent,
-          },
-          {
-            path: ':customerOrganizationId',
-            redirectTo: '/customers/:customerOrganizationId/licenses',
           },
         ],
       },
@@ -480,10 +456,10 @@ const shellRoutes: Routes = [
                 canActivate: [organizationSettingsTabs.guard('secrets')],
               },
               {
-                path: 'identity-provider',
-                title: organizationSettingsTabs.title('identity-provider'),
+                path: 'domains-and-sign-in',
+                title: organizationSettingsTabs.title('domains-and-sign-in'),
                 component: OrganizationDomainsComponent,
-                canActivate: [organizationSettingsTabs.guard('identity-provider')],
+                canActivate: [organizationSettingsTabs.guard('domains-and-sign-in')],
               },
               {
                 path: 'subscription',
@@ -593,8 +569,6 @@ const shellRoutes: Routes = [
           {path: 'history', title: 'Notification History', component: NotificationRecordsPageComponent},
         ],
       },
-      {path: 'support-bundles', pathMatch: 'full', redirectTo: 'support'},
-      {path: 'support-bundles/:supportBundleId', redirectTo: 'support/:supportBundleId'},
       {
         path: 'support',
         title: 'Support',
@@ -618,25 +592,9 @@ const shellRoutes: Routes = [
         ],
       },
       {
-        path: 'advisories',
-        title: 'Security Advisories',
-        canActivate: [requireVendorOrPartner, vulnerabilitiesEnabledGuard()],
-        children: [
-          {
-            path: '',
-            pathMatch: 'full',
-            component: AdvisoryListComponent,
-          },
-          {
-            path: ':advisoryId',
-            component: AdvisoryDetailComponent,
-          },
-        ],
-      },
-      {
         path: 'security',
         title: 'Security',
-        canActivate: [requireCustomer, vulnerabilitiesEnabledGuard(), requireCustomerFeature('vulnerabilities')],
+        canActivate: [vulnerabilitiesEnabledGuard(), requireCustomerFeature('vulnerabilities')],
         children: [
           {
             path: '',
@@ -648,21 +606,6 @@ const shellRoutes: Routes = [
             component: AdvisoryDetailComponent,
           },
         ],
-      },
-    ],
-  },
-  // Older Stripe sessions and bookmarks still lead here.
-  {
-    path: 'subscription',
-    children: [
-      {
-        path: '',
-        pathMatch: 'full',
-        redirectTo: redirectWithQueryParams(subscriptionPath),
-      },
-      {
-        path: 'callback',
-        redirectTo: redirectWithQueryParams(`${subscriptionPath}/callback`),
       },
     ],
   },

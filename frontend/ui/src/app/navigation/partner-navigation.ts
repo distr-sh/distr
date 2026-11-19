@@ -3,7 +3,6 @@ import {
   faBox,
   faBoxesStacked,
   faHome,
-  faKey,
   faLifeRing,
   faShieldHalved,
   faUsers,
@@ -17,14 +16,7 @@ export const partnerNavigation: NavigationDefinition = [
     entries: [
       {id: 'home', label: 'Home', icon: faHome, route: '/home'},
       {id: 'deployments', label: 'Deployments', icon: faBoxesStacked, route: '/deployments'},
-      {id: 'registry', label: 'Registry', icon: faBox, route: '/artifacts'},
-      {
-        id: 'licenses',
-        label: 'Licenses',
-        icon: faKey,
-        route: '/licenses',
-        visible: (c) => c.features.has('licensing'),
-      },
+      {id: 'registry', label: 'Registry', icon: faBox, route: '/registry'},
       {
         id: 'support',
         label: 'Support',
@@ -33,10 +25,10 @@ export const partnerNavigation: NavigationDefinition = [
         visible: (c) => c.features.has('support_bundles'),
       },
       {
-        id: 'advisories',
+        id: 'security',
         label: 'Security',
         icon: faShieldHalved,
-        route: '/advisories',
+        route: '/security',
         visible: (c) => c.features.has('vulnerabilities'),
       },
     ],
@@ -46,7 +38,7 @@ export const partnerNavigation: NavigationDefinition = [
     label: 'Management',
     entries: [
       {id: 'customers', label: 'Customers', icon: faAddressBook, route: '/customers'},
-      {id: 'users', label: 'Users', icon: faUsers, route: '/users', visible: (c) => c.user.isAdmin},
+      {id: 'team', label: 'Team', icon: faUsers, route: '/team', visible: (c) => c.user.isAdmin},
     ],
   },
 ];

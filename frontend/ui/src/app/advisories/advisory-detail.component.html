@@ -1,11 +1,4 @@
 <app-page>
-  <a
-    [routerLink]="backRoute"
-    class="mb-4 inline-flex items-center text-sm text-gray-600 hover:text-primary-700 dark:text-gray-400 dark:hover:text-white">
-    <fa-icon [icon]="faArrowLeft" class="me-2" />
-    Back to advisories
-  </a>
-
   @if (advisory(); as advisory) {
     <div class="distr-panel mb-6">
       <div class="flex items-start justify-between gap-4">

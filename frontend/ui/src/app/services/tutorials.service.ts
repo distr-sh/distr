@@ -37,7 +37,7 @@ export class TutorialsService {
       id: 'registry',
       icon: this.faBox,
       description: 'Learn how to use the Distr registry to distribute OCI artifacts.',
-      completedRoute: '/artifacts',
+      completedRoute: '/registry',
     },
     {
       name: 'Try out Controllers, Applications and Deployments',
