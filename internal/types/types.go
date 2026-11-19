@@ -136,11 +136,17 @@ const (
 	FeatureCustomOidcProviders Feature = "custom_oidc_providers"
 	FeatureAutoUpdates         Feature = "auto_updates"
 	FeatureCustomerSettings    Feature = "customer_settings"
+	FeatureSupport             Feature = "support"
+	FeatureNotifications       Feature = "notifications"
+	FeatureUserRoles           Feature = "user_roles"
 )
 
 // ProFeatures is the set of features granted to organizations with a paid (pro) subscription.
 var ProFeatures = []Feature{
 	FeatureLicensing,
+	FeatureSupport,
+	FeatureNotifications,
+	FeatureUserRoles,
 }
 
 // BusinessFeatures is the set granted on top of ProFeatures to the Business plan.

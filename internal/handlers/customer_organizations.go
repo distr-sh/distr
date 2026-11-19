@@ -155,11 +155,7 @@ func updateCustomerOrganizationHandler(r *http.Request) (respond.Responder, erro
 			features = request.Features
 		}
 
-		if resp := checkBusinessCustomerOrganizationFeatures(auth.CurrentOrg(), features); resp != nil {
-			return resp, nil
-		}
-
-		if resp, err := checkProCustomerOrganizationFeatures(ctx, id, features); resp != nil || err != nil {
+		if resp, err := checkCustomerOrganizationFeatures(ctx, id, features); resp != nil || err != nil {
 			return resp, err
 		}
 
@@ -188,18 +184,20 @@ func requireCustomerOrganizationImage(ctx context.Context, imageID *uuid.UUID) (
 	return requireImageOwnedBy(ctx, *imageID, auth.Authentication.Require(ctx).CurrentOrgID())
 }
 
-// checkProCustomerOrganizationFeatures rejects adding a Pro customer feature without the Pro plan.
-// Features granted before a downgrade may stay, so that the customer can still be edited.
-func checkProCustomerOrganizationFeatures(
+// checkCustomerOrganizationFeatures rejects adding a customer feature whose organization feature the
+// vendor does not have, since the vendor cannot hand out what it lacks itself. Features granted before
+// the vendor lost the organization feature may stay, so that the customer can still be edited.
+func checkCustomerOrganizationFeatures(
 	ctx context.Context,
 	id uuid.UUID,
 	features []types.CustomerOrganizationFeature,
 ) (respond.Responder, error) {
 	auth := auth.Authentication.Require(ctx)
-	if auth.CurrentOrg().SubscriptionType.IsPro() ||
-		!slices.ContainsFunc(features, func(f types.CustomerOrganizationFeature) bool {
-			return slices.Contains(types.ProCustomerOrganizationFeatures, f)
-		}) {
+	unavailable := slices.DeleteFunc(slices.Clone(features), func(f types.CustomerOrganizationFeature) bool {
+		required, ok := types.CustomerOrganizationFeatureRequirements[f]
+		return !ok || auth.CurrentOrg().HasFeature(required)
+	})
+	if len(unavailable) == 0 {
 		return nil, nil
 	}
 	existing, err := db.GetCustomerOrganizationByID(ctx, id)
@@ -208,32 +206,27 @@ func checkProCustomerOrganizationFeatures(
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get customer org: %w", err)
 	}
-	for _, feature := range features {
-		if slices.Contains(types.ProCustomerOrganizationFeatures, feature) && !existing.HasFeature(feature) {
-			return respond.Forbidden("alerts, update notifications and support bundles require the Pro plan"), nil
+	for _, feature := range unavailable {
+		if !existing.HasFeature(feature) {
+			return customerOrganizationFeatureUnavailable(feature), nil
 		}
 	}
 	return nil, nil
 }
 
-// checkBusinessCustomerOrganizationFeatures rejects a Business customer feature whose organization
-// feature the vendor does not have, since the vendor cannot hand out what it lacks itself.
-func checkBusinessCustomerOrganizationFeatures(
-	org *types.Organization,
-	features []types.CustomerOrganizationFeature,
-) respond.Responder {
-	for _, feature := range features {
-		if required, ok := types.BusinessCustomerOrganizationFeatures[feature]; !ok || org.HasFeature(required) {
-			continue
-		} else if feature == types.CustomerOrganizationFeatureOidcProviders {
-			return respond.Forbidden("the custom identity provider feature is not available on your plan")
-		} else if feature == types.CustomerOrganizationFeatureSettings {
-			return respond.Forbidden("customer settings are not available on your plan")
-		} else {
-			return respond.Forbidden("security advisories are not available on your plan")
-		}
+func customerOrganizationFeatureUnavailable(feature types.CustomerOrganizationFeature) respond.Responder {
+	switch feature {
+	case types.CustomerOrganizationFeatureAlerts, types.CustomerOrganizationFeatureUpdateNotifications:
+		return respond.Forbidden("notifications are not available on your plan")
+	case types.CustomerOrganizationFeatureSupportBundles:
+		return respond.Forbidden("support bundles are not available on your plan")
+	case types.CustomerOrganizationFeatureOidcProviders:
+		return respond.Forbidden("the custom identity provider feature is not available on your plan")
+	case types.CustomerOrganizationFeatureSettings:
+		return respond.Forbidden("customer settings are not available on your plan")
+	default:
+		return respond.Forbidden("security advisories are not available on your plan")
 	}
-	return nil
 }
 
 func assignCustomerToPartnerHandler(r *http.Request) (respond.Responder, error) {

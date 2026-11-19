@@ -25,31 +25,32 @@ func ReconcileEditionFeatures(ctx context.Context) error {
 			}
 		}
 
-		if err := db.UpdateAllUserAccountOrganizationAssignmentsWithOrganizationSuscriptionType(
-			ctx,
-			types.NonProSubscriptionTypes,
-			types.UserRoleAdmin,
-		); err != nil {
-			return err
-		} else if err := db.UpdateDeploymentUnsetEntitlementIDWithOrganizationSubscriptionType(
-			ctx,
-			types.NonProSubscriptionTypes,
-		); err != nil {
-			return err
-		} else if _, err := db.DeleteApplicationEntitlementsWithOrganizationSubscriptionType(
-			ctx,
-			types.NonProSubscriptionTypes,
-		); err != nil {
-			return err
-		} else if _, err := db.DeleteArtifactEntitlementsWithOrganizationSubscriptionType(
-			ctx,
-			types.NonProSubscriptionTypes,
-		); err != nil {
-			return err
-		} else if err := db.RemoveOrganizationFeaturesWithSubscriptionType(
+		// The features have to be revoked first, since the cleanup below follows the features alone.
+		if err := db.RemoveOrganizationFeaturesWithSubscriptionType(
 			ctx,
 			types.NonProSubscriptionTypes,
 			types.PlanManagedFeatures,
+		); err != nil {
+			return err
+		} else if err := db.UpdateAllUserAccountOrganizationAssignmentsWithoutOrganizationFeature(
+			ctx,
+			types.FeatureUserRoles,
+			types.UserRoleAdmin,
+		); err != nil {
+			return err
+		} else if err := db.UpdateDeploymentUnsetEntitlementIDWithoutOrganizationFeature(
+			ctx,
+			types.FeatureLicensing,
+		); err != nil {
+			return err
+		} else if _, err := db.DeleteApplicationEntitlementsWithoutOrganizationFeature(
+			ctx,
+			types.FeatureLicensing,
+		); err != nil {
+			return err
+		} else if _, err := db.DeleteArtifactEntitlementsWithoutOrganizationFeature(
+			ctx,
+			types.FeatureLicensing,
 		); err != nil {
 			return err
 		}
