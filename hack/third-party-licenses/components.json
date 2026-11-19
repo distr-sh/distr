@@ -1,0 +1,71 @@
+[
+  {
+    "name": "Grafana Loki",
+    "license": "AGPL-3.0-only",
+    "source": "https://github.com/grafana/loki",
+    "images": ["grafana/loki"],
+    "charts": ["loki"]
+  },
+  {
+    "name": "Loki Helm chart",
+    "license": "Apache-2.0",
+    "source": "https://github.com/grafana-community/helm-charts/tree/main/charts/loki",
+    "charts": ["loki"]
+  },
+  {
+    "name": "PostgreSQL",
+    "license": "PostgreSQL",
+    "source": "https://git.postgresql.org/gitweb/?p=postgresql.git",
+    "images": ["postgres", "bitnamilegacy/postgresql"],
+    "charts": ["postgresql"]
+  },
+  {
+    "name": "Bitnami PostgreSQL Helm chart",
+    "license": "Apache-2.0",
+    "source": "https://github.com/bitnami/charts/tree/main/bitnami/postgresql",
+    "charts": ["postgresql"]
+  },
+  {
+    "name": "RustFS and its Helm chart",
+    "license": "Apache-2.0",
+    "source": "https://github.com/rustfs/rustfs",
+    "images": ["rustfs/rustfs"],
+    "charts": ["rustfs"]
+  },
+  {
+    "name": "Caddy",
+    "license": "Apache-2.0",
+    "source": "https://github.com/caddyserver/caddy",
+    "images": ["caddy"]
+  },
+  {
+    "name": "rclone",
+    "license": "MIT",
+    "source": "https://github.com/rclone/rclone",
+    "images": ["rclone/rclone"]
+  },
+  {
+    "name": "BusyBox",
+    "license": "GPL-2.0-only",
+    "source": "https://git.busybox.net/busybox/",
+    "images": ["busybox"]
+  },
+  {
+    "name": "Distroless static",
+    "license": "Apache-2.0",
+    "source": "https://github.com/GoogleContainerTools/distroless",
+    "images": ["gcr.io/distroless/static-debian12"]
+  },
+  {
+    "name": "Docker CLI",
+    "license": "Apache-2.0",
+    "source": "https://github.com/docker/cli",
+    "images": ["docker"]
+  },
+  {
+    "name": "Alpine Linux",
+    "license": "MIT, GPL-2.0-only and others",
+    "source": "https://gitlab.alpinelinux.org/alpine/aports",
+    "images": ["alpine"]
+  }
+]

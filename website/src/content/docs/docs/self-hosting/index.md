@@ -30,6 +30,24 @@ maintenance jobs.
 The [Configuration Reference](/docs/self-hosting/configuration/) lists every variable, grouped by area, and is the
 place to look up what a setting does and when it is required.
 
+## Third-Party Software
+
+Distr itself is licensed under the Apache License 2.0. The Docker Compose stacks and the Helm chart also run
+PostgreSQL, RustFS, Loki and Caddy next to it, each as an unmodified upstream image and as a separate program that
+Distr only talks to over the network, so their licenses apply to them alone.
+
+[Grafana Loki](https://github.com/grafana/loki) is licensed under the GNU Affero General Public License v3 (AGPL-3.0).
+Distr neither includes nor modifies Loki: the stacks pull the official `grafana/loki` image, which runs as a program of
+its own, so the AGPL applies to Loki alone, and its clause on offering software over a network concerns modified
+versions only. If your policies do not allow AGPL software, run Distr against a Loki instance that you provide yourself:
+set `loki.enabled` to `false` in the Helm chart or remove the `loki` service from the Compose stack, and point
+`LOKI_URL` at it.
+
+Every bundled component, Go module and npm package is listed with its license in
+[`THIRD_PARTY_LICENSES.md`](https://github.com/distr-sh/distr/blob/main/THIRD_PARTY_LICENSES.md), and the attribution
+notices those licenses require are collected in [`NOTICE`](https://github.com/distr-sh/distr/blob/main/NOTICE). The
+Distr and Distr Controller images contain both files in `/usr/share/doc/distr/`.
+
 ## Semantic Versioning
 
 We are using [semantic versioning](https://semver.org/) for the releases of Distr, the Distr Controllers and the Distr SDKs.

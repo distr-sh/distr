@@ -5,6 +5,7 @@ ARG TARGETARCH
 WORKDIR /
 COPY dist/distr-${TARGETARCH} /distr
 COPY dist/*.spdx.json /usr/local/share/sbom/
+COPY LICENSE NOTICE THIRD_PARTY_LICENSES.md /usr/share/doc/distr/
 USER 65532:65532
 ENTRYPOINT ["/distr"]
 CMD ["serve"]

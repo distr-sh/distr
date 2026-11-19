@@ -22,6 +22,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} \
 FROM docker:29.9.3-cli-alpine3.24
 WORKDIR /
 COPY --from=builder /workspace/controller .
+COPY LICENSE NOTICE THIRD_PARTY_LICENSES.md /usr/share/doc/distr/
 
 # Changes daily, so BuildKit reruns the upgrade instead of reusing a cached layer.
 ARG APK_UPGRADE_DATE

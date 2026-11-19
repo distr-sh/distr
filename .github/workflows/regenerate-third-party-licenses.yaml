@@ -1,0 +1,85 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: Regenerate Third-Party Licenses
+
+on:
+  pull_request:
+    paths:
+      - go.mod
+      - go.sum
+      - package.json
+      - pnpm-lock.yaml
+      - hack/third-party-licenses/**
+      - deploy/docker/*/docker-compose.yaml
+      - deploy/charts/distr/Chart.yaml
+      - deploy/charts/distr/values.yaml
+      - Dockerfile.*
+      - docker-autoheal/Dockerfile
+      - THIRD_PARTY_LICENSES.md
+      - NOTICE
+      - mise.toml
+      - .github/workflows/regenerate-third-party-licenses.yaml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    name: Regenerate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Install mise
+        uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
+        with:
+          install_args: 'go go:github.com/google/go-licenses/v2 node pnpm'
+      - name: Regenerate THIRD_PARTY_LICENSES.md and NOTICE
+        # a fresh checkout gives the files and their sources arbitrary mtimes, hence --force
+        run: |
+          pnpm install --frozen-lockfile
+          mise run --force build:third-party-licenses
+      - name: Check that THIRD_PARTY_LICENSES.md and NOTICE are up to date
+        # Renovate changes the dependencies without running the generator, so the push job below commits for it
+        if: ${{ !startsWith(github.head_ref, 'renovate/') }}
+        run: git diff --exit-code THIRD_PARTY_LICENSES.md NOTICE
+      - name: Upload THIRD_PARTY_LICENSES.md and NOTICE
+        if: startsWith(github.head_ref, 'renovate/')
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: third-party-licenses
+          path: |
+            THIRD_PARTY_LICENSES.md
+            NOTICE
+
+  push:
+    name: Push
+    needs: generate
+    # runs no code from the pull request, since it holds a token that can push to the repository
+    if: startsWith(github.head_ref, 'renovate/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download THIRD_PARTY_LICENSES.md and NOTICE
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: third-party-licenses
+      - name: Commit changed files
+        env:
+          # a commit with the GITHUB_TOKEN would not run the pull request checks again
+          GH_TOKEN: ${{ secrets.GLASSKUBE_BOT_SECRET }}
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          for file in THIRD_PARTY_LICENSES.md NOTICE; do
+            sha=$(gh api "repos/$GITHUB_REPOSITORY/contents/$file?ref=$BRANCH" --jq .sha)
+            [[ "$sha" == "$(git hash-object "$file")" ]] && continue
+            base64 -w0 "$file" > content
+            gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/$file" \
+              -f message="docs: regenerate $file" -f branch="$BRANCH" -f sha="$sha" -F content=@content
+          done
