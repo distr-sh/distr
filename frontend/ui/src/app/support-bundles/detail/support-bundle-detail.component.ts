@@ -4,9 +4,9 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faComment, faDownload, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {firstValueFrom, map, startWith, Subject, switchMap} from 'rxjs';
+import {catchError, combineLatest, firstValueFrom, map, of, startWith, Subject, switchMap} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
-import {getFormDisplayedError} from '../../../util/errors';
+import {getFormDisplayedError, isNotFound, toastDisplayedError} from '../../../util/errors';
 import {
   ActivityTimelineComponent,
   ActivityTimelineEntry,
@@ -16,6 +16,8 @@ import {ClipComponent} from '../../components/clip.component';
 import {DeploymentTypeBadgeComponent} from '../../components/deployment-type-badge.component';
 import {PageComponent} from '../../components/page.component';
 import {AuthService} from '../../services/auth.service';
+import {OrganizationBrandingService} from '../../services/organization-branding.service';
+import {OrganizationService} from '../../services/organization.service';
 import {OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService, supportBundleZipFileName} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
@@ -47,6 +49,8 @@ export class SupportBundleDetailComponent {
   private readonly supportBundlesService = inject(SupportBundlesService);
   private readonly toast = inject(ToastService);
   private readonly overlay = inject(OverlayService);
+  private readonly organizationService = inject(OrganizationService);
+  private readonly organizationBranding = inject(OrganizationBrandingService);
   protected readonly auth = inject(AuthService);
 
   protected readonly faCheck = faCheck;
@@ -73,15 +77,41 @@ export class SupportBundleDetailComponent {
 
   protected readonly resourceTree = computed(() => buildResourceTree(this.bundle()?.resources ?? []));
 
+  /** Stands in for a user whose identity the API withholds, which it only does from a customer or partner. */
+  private readonly vendor = toSignal(
+    this.auth.isVendor()
+      ? of(undefined)
+      : combineLatest([
+          this.organizationService.get(),
+          this.organizationBranding.get().pipe(
+            catchError((e) => {
+              if (!isNotFound(e)) {
+                toastDisplayedError(this.toast, e);
+              }
+              return of(undefined);
+            })
+          ),
+        ]).pipe(map(([org, branding]) => ({name: org.name, imageUrl: branding?.logoImageId})))
+  );
+
+  protected readonly createdByName = computed(() => this.bundle()?.createdByUserName ?? this.vendor()?.name);
+
+  protected readonly statusChangedByName = computed(
+    () => this.bundle()?.statusChangedByUserName ?? this.vendor()?.name
+  );
+
   protected readonly timelineEntries = computed<ActivityTimelineEntry[]>(() =>
-    (this.bundle()?.comments ?? []).map((comment) => ({
-      id: comment.id,
-      createdAt: comment.createdAt,
-      userName: comment.userName,
-      userImageUrl: comment.userImageUrl,
-      action: 'commented',
-      body: comment.content,
-    }))
+    (this.bundle()?.comments ?? []).map((comment) => {
+      const author = comment.userName ? {name: comment.userName, imageUrl: comment.userImageUrl} : this.vendor();
+      return {
+        id: comment.id,
+        createdAt: comment.createdAt,
+        userName: author?.name,
+        userImageUrl: author?.imageUrl,
+        action: 'commented',
+        body: comment.content,
+      };
+    })
   );
 
   private readonly refresh$ = new Subject<void>();
