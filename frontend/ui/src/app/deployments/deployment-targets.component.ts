@@ -152,8 +152,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
             ...[...customers]
               .sort(compareBy((co) => co.name))
               .map<MultiSelectOption>((co) => ({value: co.id, label: co.name})),
-          ]),
-          catchError(() => of([]))
+          ])
         )
       : of([]),
     {initialValue: []}
@@ -263,7 +262,10 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   );
 
   constructor() {
-    refreshInBackground(this.applications.refresh());
+    refreshInBackground(
+      this.applications.refresh(),
+      ...(this.isVendorOrPartner ? [this.customerOrganizations.refresh()] : [])
+    );
     const search = this.filterForm.controls.search;
     // The component is reused when only the query changes, e.g. when the sidebar links to the page it is on.
     this.route.queryParamMap
