@@ -5,6 +5,7 @@
   [cdkConnectedOverlayHasBackdrop]="true"
   [cdkConnectedOverlayBackdropClass]="'transparent'"
   [cdkConnectedOverlayPositions]="positions()"
-  (backdropClick)="open.set(false)">
+  (backdropClick)="open.set(false)"
+  (detach)="open.set(false)">
   <app-plan-feature-hint [plan]="plan()" />
 </ng-template>
