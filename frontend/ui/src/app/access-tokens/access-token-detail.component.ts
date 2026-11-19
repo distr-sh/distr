@@ -1,19 +1,10 @@
-import {OverlayModule} from '@angular/cdk/overlay';
 import {DatePipe} from '@angular/common';
-import {Component, computed, effect, ElementRef, inject, signal, TemplateRef, viewChild} from '@angular/core';
+import {Component, computed, effect, inject, signal, TemplateRef} from '@angular/core';
 import {rxResource, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
-import {ActivatedRoute, Router, RouterLink} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {
-  faChevronDown,
-  faCircleExclamation,
-  faKey,
-  faPlus,
-  faTrash,
-  faTriangleExclamation,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
+import {faCircleExclamation, faPlus, faTrash, faTriangleExclamation, faXmark} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {catchError, firstValueFrom, Observable, of, tap} from 'rxjs';
 import {isExpired, RelativeDatePipe} from '../../util/dates';
@@ -53,9 +44,7 @@ interface CredentialRow {
   imports: [
     FaIconComponent,
     DatePipe,
-    OverlayModule,
     ReactiveFormsModule,
-    RouterLink,
     RelativeDatePipe,
     CreatedAccessTokenComponent,
     ExpiresAtPickerComponent,
@@ -66,8 +55,6 @@ interface CredentialRow {
   templateUrl: './access-token-detail.component.html',
 })
 export class AccessTokenDetailComponent {
-  protected readonly faChevronDown = faChevronDown;
-  protected readonly faKey = faKey;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
   protected readonly faCircleExclamation = faCircleExclamation;
@@ -91,10 +78,6 @@ export class AccessTokenDetailComponent {
     const token = this.token();
     return token ? accessTokenName(token) : '';
   });
-  protected readonly siblings = computed(() =>
-    (this.accessTokens.value() ?? []).map((token) => ({id: token.id!, name: accessTokenName(token)}))
-  );
-
   protected readonly credentials = computed<CredentialRow[]>(() => {
     const token = this.token();
     if (!token) {
@@ -155,17 +138,6 @@ export class AccessTokenDetailComponent {
       const id = this.tokenId();
       this.createdToken.set(id ? this.createdTokens.take(id) : null);
     });
-  }
-
-  protected readonly dropdownTriggerButton = viewChild.required<ElementRef<HTMLElement>>('dropdownTriggerButton');
-  protected readonly breadcrumbDropdown = signal(false);
-  protected readonly breadcrumbDropdownWidth = signal(0);
-
-  protected toggleBreadcrumbDropdown() {
-    this.breadcrumbDropdown.update((open) => !open);
-    if (this.breadcrumbDropdown()) {
-      this.breadcrumbDropdownWidth.set(this.dropdownTriggerButton().nativeElement.getBoundingClientRect().width);
-    }
   }
 
   public async saveLabel(label: string) {

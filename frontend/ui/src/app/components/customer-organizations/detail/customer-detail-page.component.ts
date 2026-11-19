@@ -1,5 +1,5 @@
 import {DatePipe} from '@angular/common';
-import {Component, computed, inject, signal, viewChild} from '@angular/core';
+import {Component, computed, inject, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router} from '@angular/router';
 import {CustomerOrganizationWithUsage} from '@distr-sh/distr-sdk';
@@ -18,7 +18,6 @@ import {OverlayService} from '../../../services/overlay.service';
 import {ToastService} from '../../../services/toast.service';
 import {AlertComponent} from '../../alert/alert.component';
 import {AvatarComponent} from '../../avatar.component';
-import {CustomerBreadcrumbComponent} from '../../customer-breadcrumb.component';
 import {InlineEditComponent} from '../../inline-edit.component';
 import {PageComponent} from '../../page.component';
 import {RoutedTabsComponent} from '../../routed-tabs.component';
@@ -31,7 +30,6 @@ import {customerDetailTabs} from './customer-detail-navigation';
   imports: [
     AlertComponent,
     AvatarComponent,
-    CustomerBreadcrumbComponent,
     DatePipe,
     FaIconComponent,
     InlineEditComponent,
@@ -75,8 +73,6 @@ export class CustomerDetailPageComponent {
     const context = this.tabContext();
     return context === undefined ? [] : customerDetailTabs.resolve(context);
   });
-  private readonly routedTabs = viewChild(RoutedTabsComponent);
-  protected readonly activeTab = computed(() => this.routedTabs()?.activeTab() ?? '');
 
   constructor() {
     refreshInBackground(this.customerOrganizationsService.refresh().finally(() => this.loading.set(false)));
