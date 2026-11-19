@@ -291,7 +291,6 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   constructor() {
     refreshInBackground(
       this.applications.refresh(),
-      ...(this.isVendorOrPartner ? [this.customerOrganizations.refresh()] : []),
       firstValueFrom(this.featureFlags.isLicensingEnabled$).then((enabled) =>
         enabled ? this.applicationEntitlements.refresh() : undefined
       )
