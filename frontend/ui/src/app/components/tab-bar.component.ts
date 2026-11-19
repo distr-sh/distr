@@ -38,7 +38,6 @@ export interface TabItem<T extends string = string> {
 export class TabBarComponent<T extends string> {
   public readonly tabs = input.required<readonly TabItem<T>[]>();
   public readonly active = model.required<T>();
-  /** Emitted for every tab, including disabled ones, which are not selected but may react. */
   public readonly tabClick = output<TabItem<T>>();
 
   /** Rendered after the label of each tab, with the tab and the tab's overlay origin as context. */
@@ -47,7 +46,7 @@ export class TabBarComponent<T extends string> {
   protected onClick(tab: TabItem<T>) {
     if (!tab.disabled) {
       this.active.set(tab.id);
+      this.tabClick.emit(tab);
     }
-    this.tabClick.emit(tab);
   }
 }

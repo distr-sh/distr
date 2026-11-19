@@ -54,7 +54,7 @@ export const customerNavigation: NavigationDefinition = [
         label: 'Support',
         icon: faLifeRing,
         route: '/support',
-        visible: (c) => c.features.has('support_bundles') && c.customer.features.has('support_bundles'),
+        visible: (c) => c.features.has('support') && c.customer.features.has('support_bundles'),
       },
       {
         id: 'security',

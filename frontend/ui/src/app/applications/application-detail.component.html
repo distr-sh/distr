@@ -536,7 +536,7 @@
 
 <ng-template #autoUpdatesHint>
   @if (!isAutoUpdatesEnabled()) {
-    <app-plan-feature-hint plan="business" />
+    <app-plan-feature-hint [plan]="autoUpdatesPlan" />
   } @else {
     <div role="tooltip" class="distr-tooltip max-w-64">
       Please choose semantic or chronological versioning to enable automatic updates.

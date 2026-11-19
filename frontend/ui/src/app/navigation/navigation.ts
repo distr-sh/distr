@@ -1,11 +1,8 @@
 import {CustomerOrganizationFeature, SidebarLink} from '@distr-sh/distr-sdk';
 import {IconDefinition} from '@fortawesome/angular-fontawesome';
+import {FeatureLock, isLocked, upgradePlan} from '../types/feature-lock';
 import {Feature} from '../types/organization';
 import {UpgradePlan} from '../types/subscription';
-
-/** The organization features that show, hide or lock an entry, including those that follow from the plan alone. */
-export type NavigationFeature =
-  Extract<Feature, 'licensing' | 'vulnerabilities' | 'partner_management'> | 'notifications' | 'support_bundles';
 
 export interface NavigationContext {
   user: {
@@ -18,7 +15,7 @@ export interface NavigationContext {
     hasSubscription: boolean;
     hasUnstartedTutorials: boolean;
   };
-  features: ReadonlySet<NavigationFeature>;
+  features: ReadonlySet<Feature>;
   customer: {
     features: ReadonlySet<CustomerOrganizationFeature>;
     hasLicenseKeys: boolean;
@@ -33,8 +30,8 @@ interface NavigationEntryDefinitionBase {
   label: string;
   icon: IconDefinition;
   visible?: NavigationPredicate;
-  /** Shows the entry with a plan badge and a plan hint instead of the page while the predicate holds. */
-  locked?: {plan: UpgradePlan; when: NavigationPredicate};
+  /** Shows the entry with a plan badge and a plan hint instead of the page while the lock holds. */
+  locked?: FeatureLock;
 }
 
 export interface NavigationLinkDefinition extends NavigationEntryDefinitionBase {
@@ -83,8 +80,8 @@ export function resolveNavigation(definition: NavigationDefinition, context: Nav
 
 function resolveEntry(entry: NavigationEntryDefinition, context: NavigationContext): NavigationEntry {
   const {id, label, icon, locked} = entry;
-  if (locked?.when(context)) {
-    return {kind: 'locked', id, label, icon, plan: locked.plan};
+  if (locked && isLocked(locked, context.features)) {
+    return {kind: 'locked', id, label, icon, plan: upgradePlan(locked)};
   }
   if ('href' in entry) {
     return {kind: 'external', id, label, icon, href: entry.href};

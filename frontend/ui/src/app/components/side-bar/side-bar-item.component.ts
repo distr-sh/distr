@@ -1,12 +1,12 @@
-import {CdkConnectedOverlay, CdkOverlayOrigin} from '@angular/cdk/overlay';
+import {CdkOverlayOrigin} from '@angular/cdk/overlay';
 import {LowerCasePipe, TitleCasePipe} from '@angular/common';
-import {Component, inject, input, signal} from '@angular/core';
+import {Component, inject, input} from '@angular/core';
 import {RouterLink, RouterLinkActive} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {NavigationEntry} from '../../navigation/navigation';
 import {SidebarService} from '../../services/sidebar.service';
 import {PlanBadgeComponent} from '../plan-badge.component';
-import {PlanFeatureHintComponent} from '../plan-feature-hint.component';
+import {PlanHintOverlayComponent} from '../plan-hint-overlay.component';
 
 @Component({
   selector: 'app-side-bar-item',
@@ -17,9 +17,8 @@ import {PlanFeatureHintComponent} from '../plan-feature-hint.component';
     RouterLinkActive,
     FaIconComponent,
     CdkOverlayOrigin,
-    CdkConnectedOverlay,
     PlanBadgeComponent,
-    PlanFeatureHintComponent,
+    PlanHintOverlayComponent,
     LowerCasePipe,
     TitleCasePipe,
   ],
@@ -28,6 +27,4 @@ export class SideBarItemComponent {
   public readonly entry = input.required<NavigationEntry>();
 
   protected readonly sidebar = inject(SidebarService);
-
-  protected readonly isPlanHintOpen = signal(false);
 }

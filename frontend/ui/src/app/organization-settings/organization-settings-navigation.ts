@@ -10,7 +10,7 @@ export const organizationSettingsTabs = defineRoutedTabs<SettingsTabId>('Organiz
     id: 'domains-and-sign-in',
     label: 'Domains & Sign-in',
     visible: (c) => c.user.isAdminOrSuperAdmin,
-    locked: {requiresAnyOf: ['custom_oidc_providers', 'custom_domains', 'custom_emails'], upgradePlan: 'business'},
+    locked: {requiresAnyOf: ['custom_oidc_providers', 'custom_domains', 'custom_emails']},
   },
   {
     id: 'subscription',
