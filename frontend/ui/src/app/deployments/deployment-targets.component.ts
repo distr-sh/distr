@@ -245,8 +245,8 @@ export class DeploymentTargetsComponent implements AfterViewInit {
 
   protected readonly filteredDeploymentTargets$: Observable<DeploymentTargetViewData[]> = combineLatest([
     this.deploymentTargets$,
-    this.applications$.pipe(catchError(() => of([]))),
-    this.applicationEntitlements$.pipe(catchError(() => of([]))),
+    this.applications$.pipe(startWith([])),
+    this.applicationEntitlements$.pipe(startWith([])),
     this.filterForm.controls.search.valueChanges.pipe(startWith(this.filterForm.controls.search.value)),
     toObservable(this.deploymentFilter),
   ]).pipe(
