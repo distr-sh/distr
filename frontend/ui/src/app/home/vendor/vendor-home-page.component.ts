@@ -11,7 +11,6 @@ import {
   faShieldHalved,
 } from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, firstValueFrom, map, of, switchMap} from 'rxjs';
-import {recoverWithToast} from '../../../util/errors';
 import {refreshInBackground} from '../../../util/refresh';
 import {AvatarComponent} from '../../components/avatar.component';
 import {CardHeadingComponent} from '../../components/card-heading.component';
@@ -30,7 +29,6 @@ import {DeploymentTargetsService} from '../../services/deployment-targets.servic
 import {FeatureFlagService} from '../../services/feature-flag.service';
 import {LicensesService} from '../../services/licenses.service';
 import {SupportBundlesService} from '../../services/support-bundles.service';
-import {ToastService} from '../../services/toast.service';
 import {toHomeActivity} from '../home-activity';
 import {HomeActivityComponent} from '../home-activity.component';
 import {QuickNavigationCardComponent, QuickNavigationCardType} from '../quick-navigation-card.component';
@@ -120,7 +118,6 @@ export class VendorHomePageComponent {
   private readonly activityFeedService = inject(ActivityFeedService);
   private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
   private readonly featureFlags = inject(FeatureFlagService);
-  private readonly toast = inject(ToastService);
 
   private readonly licensesService = inject(LicensesService);
 
@@ -306,9 +303,7 @@ export class VendorHomePageComponent {
       : {customers, deployments, applications};
   });
 
-  protected readonly activity = toSignal(
-    this.activityFeedService.list().pipe(map(toHomeActivity), recoverWithToast(this.toast, []))
-  );
+  protected readonly activity = toSignal(this.activityFeedService.list().pipe(map(toHomeActivity)));
 
   constructor() {
     refreshInBackground(
