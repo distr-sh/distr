@@ -27,7 +27,7 @@
         <app-quick-navigation-card
           class="min-h-32"
           [icon]="faBoxesStacked"
-          heading="Deployment health"
+          heading="Deployments"
           [type]="type"
           link="/deployments"
           [queryParams]="type === 'error' || type === 'warning' ? deploymentAttentionQueryParams : undefined">
@@ -138,6 +138,7 @@
           [icon]="faKey"
           heading="Licenses"
           [type]="licenses.type"
+          errorLabel="Expired"
           [link]="licenses.link"
           [queryParams]="licenses.queryParams">
           @if (licenses.type !== 'neutral') {
