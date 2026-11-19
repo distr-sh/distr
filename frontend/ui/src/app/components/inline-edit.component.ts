@@ -50,7 +50,7 @@ export type InlineEditDisplayTag = 'span' | 'h3';
         </button>
       </form>
     } @else {
-      <span class="inline-flex items-center">
+      <span class="inline-flex max-w-full items-center">
         @if (value()) {
           @if (tag() === 'h3') {
             <h3 [class]="textClass()" [title]="value()">{{ value() }}</h3>
@@ -65,7 +65,7 @@ export type InlineEditDisplayTag = 'span' | 'h3';
             type="button"
             aria-label="Edit"
             (click)="$event.stopPropagation(); enable()"
-            class="ms-2 text-gray-900 dark:text-gray-400">
+            class="ms-2 shrink-0 text-gray-900 dark:text-gray-400">
             <fa-icon [icon]="faPen" />
           </button>
         }

@@ -1,134 +1,74 @@
 <app-page>
   <div class="distr-panel">
     @if (application$ | async; as application) {
-      <nav class="flex justify-between" aria-label="Breadcrumb">
-        <ol class="mb-3 inline-flex items-center sm:mb-0">
-          <li class="flex items-center">
-            <a
-              [routerLink]="['/', 'applications']"
-              class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
-              <fa-icon class="mr-2" [icon]="faBoxesStacked" />
-              Applications
-            </a>
-          </li>
-          <span class="mx-2 text-gray-400">/</span>
-          <li aria-current="page">
-            <div class="flex items-center">
-              <button
-                id="application-dropdown"
-                cdkOverlayOrigin
-                #dropdownTrigger="cdkOverlayOrigin"
-                #dropdownTriggerButton
-                (click)="toggleBreadcrumbDropdown()"
-                class="inline-flex items-center rounded-lg px-3 py-2 text-center text-sm font-normal text-gray-700 hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 focus:outline-none dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white dark:focus:ring-gray-700">
-                <span class="block max-w-64 overflow-hidden text-ellipsis whitespace-nowrap" [title]="application.name">
-                  {{ application.name }}
-                </span>
-                <fa-icon class="ml-2" [icon]="faChevronDown" />
-              </button>
-              <ng-template
-                cdkConnectedOverlay
-                [cdkConnectedOverlayHasBackdrop]="true"
-                (backdropClick)="breadcrumbDropdown.set(false)"
-                [cdkConnectedOverlayBackdropClass]="'transparent'"
-                [cdkConnectedOverlayOrigin]="dropdownTrigger"
-                [cdkConnectedOverlayMinWidth]="breadcrumbDropdownWidth + 'px'"
-                [cdkConnectedOverlayOpen]="breadcrumbDropdown()">
-                <div
-                  animate.enter="animate-flip-in-top"
-                  animate.leave="animate-flip-out-top"
-                  class="distr-dropdown-panel w-full max-w-80">
-                  <ul aria-labelledby="dropdownDefault">
-                    @for (app of applications$ | async; track app.id) {
-                      <li>
-                        <a
-                          class="distr-dropdown-item overflow-hidden text-ellipsis whitespace-nowrap"
-                          [routerLink]="['/', 'applications', app.id]"
-                          [title]="app.name"
-                          >{{ app.name }}</a
-                        >
-                      </li>
-                    }
-                  </ul>
-                </div>
-              </ng-template>
-            </div>
-          </li>
-        </ol>
+      <div class="mb-4 flex flex-wrap items-start gap-4 md:mb-6">
+        <button
+          type="button"
+          class="h-16 w-16 shrink-0 cursor-pointer overflow-hidden rounded-sm"
+          (click)="uploadImage(application)"
+          [disabled]="!auth.hasAnyRole('read_write', 'admin')">
+          @if (application.imageUrl) {
+            <img height="199" width="199" [attr.src]="application.imageUrl | secureImage | async" alt="" />
+          } @else {
+            <img [ngSrc]="'/' + application.type + '.png'" [alt]="application.type" height="199" width="199" />
+          }
+        </button>
+        <div class="min-w-0 flex-1">
+          <app-inline-edit
+            class="block"
+            tag="h3"
+            [value]="application.name ?? ''"
+            [editable]="auth.hasAnyRole('read_write', 'admin')"
+            placeholder="Application name"
+            size="lg"
+            textClass="block max-w-lg overflow-hidden text-ellipsis whitespace-nowrap text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
+            [loading]="savingApplicationName()"
+            (save)="updateApplicationName(application, $event)" />
+          <div class="mt-1 flex flex-wrap items-center gap-2">
+            @if (application.id) {
+              <app-uuid [uuid]="application.id" [small]="true" />
+            }
+            <span class="distr-badge capitalize">{{ application.type }}</span>
+            @if (auth.hasAnyRole('read_write', 'admin')) {
+              <app-badge-select
+                ariaLabel="Change versioning strategy"
+                [plainOptions]="true"
+                [options]="versioningStrategyOptions()"
+                [value]="versioningStrategy()"
+                [disabled]="savingVersioning()"
+                (selected)="updateVersioningStrategy($event)" />
+              <app-badge-select
+                ariaLabel="Change whether automatic updates are allowed"
+                [plainOptions]="true"
+                [options]="allowAutomaticUpdatesOptions"
+                [value]="allowAutomaticUpdatesValue()"
+                [disabled]="autoUpdatesLocked() || savingVersioning()"
+                [disabledHint]="autoUpdatesLocked() ? autoUpdatesHint : undefined"
+                (selected)="updateAllowAutomaticUpdates($event)" />
+            } @else {
+              <span class="distr-badge distr-badge-neutral">
+                {{ versioningStrategyLabel() }}
+              </span>
+              @if (isAutoUpdatesEnabled()) {
+                @if (allowAutomaticUpdatesValue() === 'allowed') {
+                  <span class="distr-badge distr-badge-success">Auto-Updates allowed</span>
+                } @else {
+                  <span class="distr-badge distr-badge-neutral">Auto-Updates disallowed</span>
+                }
+              }
+            }
+          </div>
+        </div>
+        <app-title-image-picker
+          class="order-last w-full 2xl:order-0 2xl:w-auto"
+          [imageUrl]="application.titleImageUrl"
+          (picked)="updateTitleImage(application, $event)" />
         @if (auth.hasAnyRole('read_write', 'admin')) {
-          <button type="button" (click)="deleteApplication(application)" class="distr-btn-danger px-3 py-2">
+          <button type="button" (click)="deleteApplication(application)" class="distr-btn-danger shrink-0 px-3 py-2">
             <fa-icon [icon]="faTrash" class="mr-2 h-4 w-4" />
             Delete Application
           </button>
         }
-      </nav>
-
-      <div class="my-4 gap-4 md:my-6 md:gap-12">
-        <div class="space-y-4">
-          <div class="flex space-x-4">
-            <button
-              type="button"
-              class="h-16 w-16 cursor-pointer overflow-hidden rounded-sm"
-              (click)="uploadImage(application)"
-              [disabled]="!auth.hasAnyRole('read_write', 'admin')">
-              @if (application.imageUrl) {
-                <img height="199" width="199" [attr.src]="application.imageUrl | secureImage | async" alt="" />
-              } @else {
-                <img [ngSrc]="'/' + application.type + '.png'" [alt]="application.type" height="199" width="199" />
-              }
-            </button>
-            <div>
-              <app-inline-edit
-                class="block"
-                tag="h3"
-                [value]="application.name ?? ''"
-                [editable]="auth.hasAnyRole('read_write', 'admin')"
-                placeholder="Application name"
-                size="lg"
-                textClass="block max-w-lg overflow-hidden text-ellipsis whitespace-nowrap text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
-                [loading]="savingApplicationName()"
-                (save)="updateApplicationName(application, $event)" />
-              <div class="mt-1 flex flex-wrap items-center gap-2">
-                @if (application.id) {
-                  <app-uuid [uuid]="application.id" [small]="true" />
-                }
-                <span class="distr-badge capitalize">{{ application.type }}</span>
-                @if (auth.hasAnyRole('read_write', 'admin')) {
-                  <app-badge-select
-                    ariaLabel="Change versioning strategy"
-                    [plainOptions]="true"
-                    [options]="versioningStrategyOptions()"
-                    [value]="versioningStrategy()"
-                    [disabled]="savingVersioning()"
-                    (selected)="updateVersioningStrategy($event)" />
-                  <app-badge-select
-                    ariaLabel="Change whether automatic updates are allowed"
-                    [plainOptions]="true"
-                    [options]="allowAutomaticUpdatesOptions"
-                    [value]="allowAutomaticUpdatesValue()"
-                    [disabled]="autoUpdatesLocked() || savingVersioning()"
-                    [disabledHint]="autoUpdatesLocked() ? autoUpdatesHint : undefined"
-                    (selected)="updateAllowAutomaticUpdates($event)" />
-                } @else {
-                  <span class="distr-badge distr-badge-neutral">
-                    {{ versioningStrategyLabel() }}
-                  </span>
-                  @if (isAutoUpdatesEnabled()) {
-                    @if (allowAutomaticUpdatesValue() === 'allowed') {
-                      <span class="distr-badge distr-badge-success">Auto-Updates allowed</span>
-                    } @else {
-                      <span class="distr-badge distr-badge-neutral">Auto-Updates disallowed</span>
-                    }
-                  }
-                }
-              </div>
-            </div>
-            <app-title-image-picker
-              class="ms-auto! self-start"
-              [imageUrl]="application.titleImageUrl"
-              (picked)="updateTitleImage(application, $event)" />
-          </div>
-        </div>
       </div>
 
       @if (versioningStrategy() === 'legacy' && auth.hasAnyRole('read_write', 'admin')) {
