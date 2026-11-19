@@ -31,16 +31,31 @@
 }
 
 <ng-template #content>
-  <h2 appCardHeading [icon]="typeIcon() ? undefined : icon()" class="mb-3 flex items-center">
-    @if (typeIcon(); as typeIcon) {
-      <fa-icon [icon]="typeIcon" class="me-2" />
-    }
+  <h2 appCardHeading [icon]="icon()" class="mb-3 flex items-center">
     {{ heading() }}
     @if (lockedPlan(); as plan) {
       <app-plan-badge [plan]="plan" class="ms-auto" />
+    } @else {
+      @switch (type()) {
+        @case ('success') {
+          <span class="distr-badge distr-badge-success ms-auto"><fa-icon [icon]="faCircleCheck" />OK</span>
+        }
+        @case ('warning') {
+          <span class="distr-badge distr-badge-warning ms-auto">
+            <fa-icon [icon]="faTriangleExclamation" />
+            Needs attention
+          </span>
+        }
+        @case ('error') {
+          <span class="distr-badge distr-badge-error ms-auto">
+            <fa-icon [icon]="faCircleExclamation" />
+            {{ errorLabel() }}
+          </span>
+        }
+      }
     }
   </h2>
-  <span class="headline -mt-2 mb-1 block text-4xl font-bold text-gray-900 empty:hidden dark:text-white">
+  <span class="headline -mt-2 mb-1 block text-2xl font-bold text-gray-900 empty:hidden dark:text-white">
     <ng-content />
   </span>
   <span class="subtitle distr-text-muted block text-xs">
