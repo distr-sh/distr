@@ -32,7 +32,8 @@ const (
 
 // CustomerOrganizationFeatureRequirements maps each customer feature that an organization can only
 // hand out with an organization feature of its own to that feature. The organization feature
-// decides, not the plan.
+// decides, not the plan. It is mirrored by CUSTOMER_FEATURE_REQUIREMENTS in
+// frontend/ui/src/app/types/customer-features.ts. Change both together.
 var CustomerOrganizationFeatureRequirements = map[CustomerOrganizationFeature]Feature{
 	CustomerOrganizationFeatureAlerts:              FeatureNotifications,
 	CustomerOrganizationFeatureUpdateNotifications: FeatureNotifications,

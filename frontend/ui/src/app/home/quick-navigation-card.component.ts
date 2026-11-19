@@ -7,13 +7,13 @@ import {faCircleCheck, faCircleExclamation, faTriangleExclamation} from '@fortaw
 import {CardHeadingComponent} from '../components/card-heading.component';
 import {PlanBadgeComponent} from '../components/plan-badge.component';
 import {PlanFeatureHintComponent} from '../components/plan-feature-hint.component';
-import {UpgradePlan} from '../types/subscription';
+import {FeatureLock, upgradePlan} from '../types/feature-lock';
 
 export type QuickNavigationCardType = 'neutral' | 'success' | 'warning' | 'error';
 
 /**
  * Shows the projected content as the headline above the projected `[subtitle]`, as a link to `link` if one is given.
- * Every type but `neutral` colors the card and replaces `icon` with an icon of its own. With `lockedPlan`, the card
+ * Every type but `neutral` colors the card and replaces `icon` with an icon of its own. With `locked`, the card
  * shows a plan badge and opens a plan hint instead of following `link`, like a locked sidebar entry.
  */
 @Component({
@@ -43,8 +43,12 @@ export class QuickNavigationCardComponent {
   public readonly type = input<QuickNavigationCardType>('neutral');
   public readonly link = input<string | readonly unknown[]>();
   public readonly queryParams = input<Params>();
-  public readonly lockedPlan = input<UpgradePlan>();
+  public readonly locked = input<FeatureLock>();
 
+  protected readonly lockedPlan = computed(() => {
+    const locked = this.locked();
+    return locked && upgradePlan(locked);
+  });
   protected readonly typeClass = computed(() => `card-${this.type()}`);
   protected readonly isPlanHintOpen = signal(false);
 

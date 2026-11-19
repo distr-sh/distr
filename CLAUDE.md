@@ -180,6 +180,8 @@ Give a one-time migration such as `maintenance encrypt-database` the subcommand 
 
 Gate a feature in Go by a `types.Feature`, never by the subscription type: check it with `middleware.FeatureFlagMiddleware` or `Organization.HasFeature`, and map every customer feature it unlocks to it in `types.CustomerOrganizationFeatureRequirements`. Decide what a plan grants in `types.FeaturesForSubscriptionType` alone, and grant a new plan feature to the existing organizations in a migration.
 
+Gate a feature in the frontend by a `Feature` as well: check it with `FeatureFlagService` and lock an entry point with a `FeatureLock` (`app/types/feature-lock.ts`), which derives the plan it offers from the features, so never name a plan in a lock. Change `FEATURE_UPGRADE_PLANS`, the `Feature` type and `CUSTOMER_FEATURE_REQUIREMENTS` together with the Go code they mirror, as their comments say.
+
 Grant a feature every paid plan shares through `SubscriptionType.IsPro()`, the denylist of the lower plans in `types.NonProSubscriptionTypes`, so a new paid plan inherits it. Name plans only for a tiered feature such as `types.BusinessFeatures`.
 
 Gate what a customer organization may configure for itself with a `types.CustomerOrganizationFeature`, the way `alerts` does: the toggle on the customers page, the entry point on the page the feature belongs to rather than in the sidebar, the router guarded with `middleware.CustomerFeatureMiddleware` and the rows a customer may link narrowed down in `internal/db`, so hiding the UI is not what protects them.

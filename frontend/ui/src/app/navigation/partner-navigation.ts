@@ -22,7 +22,7 @@ export const partnerNavigation: NavigationDefinition = [
         label: 'Support',
         icon: faLifeRing,
         route: '/support',
-        visible: (c) => c.features.has('support_bundles'),
+        visible: (c) => c.features.has('support'),
       },
       {
         id: 'security',

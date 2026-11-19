@@ -6,43 +6,23 @@ import {Edition} from '../../env/types';
 import {TabItem} from '../components/tab-bar.component';
 import {AuthService} from '../services/auth.service';
 import {OrganizationService} from '../services/organization.service';
+import {FeatureLock, isLocked, upgradePlan} from '../types/feature-lock';
 import {Feature} from '../types/organization';
-import {isProSubscription, UpgradePlan} from '../types/subscription';
+import {UpgradePlan} from '../types/subscription';
 
 export interface TabContext {
   edition: Edition;
   user: {isAdminOrSuperAdmin: boolean; isPartner: boolean};
-  organization: {isPro: boolean};
   features: ReadonlySet<Feature>;
 }
 
 type TabPredicate = (context: TabContext) => boolean;
 
-/** Locks until the organization has any of the features. The plan never decides, the upgrade badge only names it. */
-export interface TabLock {
-  requiresAnyOf: Feature[];
-  upgradePlan: UpgradePlan;
-}
-
-// TODO: Lock alerts, update notifications and support bundles by organization features of their own once they exist,
-// then remove this lock and isPro from the TabContext, so that no lock checks the plan.
-export const proSubscriptionLock: TabLock = {requiresAnyOf: [], upgradePlan: 'pro'};
-
-export function isLocked(lock: TabLock | undefined, context: TabContext): boolean {
-  if (!lock) {
-    return false;
-  } else if (lock === proSubscriptionLock) {
-    return !context.organization.isPro;
-  } else {
-    return !lock.requiresAnyOf.some((feature) => context.features.has(feature));
-  }
-}
-
 export interface TabDefinition<T extends string> {
   id: T;
   label: string;
   visible?: TabPredicate;
-  locked?: TabLock;
+  locked?: FeatureLock;
 }
 
 export interface LockableTab<T extends string = string> extends TabItem<T> {
@@ -67,7 +47,6 @@ export function tabContext(): Observable<TabContext> {
       map((org) => ({
         edition: environment.edition,
         user: {isAdminOrSuperAdmin: auth.isSuperAdmin() || auth.hasRole('admin'), isPartner: auth.isPartner()},
-        organization: {isPro: isProSubscription(org.subscriptionType)},
         features: new Set(org.features),
       }))
     );
@@ -82,7 +61,9 @@ export function defineRoutedTabs<T extends string>(pageTitle: string, definition
     definitions
       .filter((tab) => tab.visible?.(context) ?? true)
       .map(({id, label, locked}) =>
-        locked && isLocked(locked, context) ? {id, label, disabled: true, plan: locked.upgradePlan} : {id, label}
+        locked && isLocked(locked, context.features)
+          ? {id, label, disabled: true, plan: upgradePlan(locked)}
+          : {id, label}
       );
   const openable = (): Observable<T[]> =>
     tabContext().pipe(
