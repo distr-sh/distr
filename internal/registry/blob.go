@@ -218,7 +218,31 @@ func (b *blobs) handleGet(resp http.ResponseWriter, req *http.Request, repo, tar
 		return regErrInternal(err)
 	}
 
-	rc, err := b.blobHandler.Get(req.Context(), repo, h, allowRedirect)
+	start, end := int64(0), int64(0)
+	if rangeHeader != "" {
+		if _, err := fmt.Sscanf(rangeHeader, "bytes=%d-%d", &start, &end); err != nil {
+			return &regError{
+				Status:  http.StatusRequestedRangeNotSatisfiable,
+				Code:    "BLOB_UNKNOWN",
+				Message: "We don't understand your Range",
+			}
+		} else if start < 0 || start > end || end+1 > size {
+			return &regError{
+				Status:  http.StatusRequestedRangeNotSatisfiable,
+				Code:    "BLOB_UNKNOWN",
+				Message: fmt.Sprintf("range %d-%d is not within size %d", start, end, size),
+			}
+		}
+	}
+
+	var rc io.ReadCloser
+	rangeHandler, isRangeHandler := b.blobHandler.(blob.BlobRangeHandler)
+	isRangeRead := rangeHeader != "" && isRangeHandler && !allowRedirect
+	if isRangeRead {
+		rc, err = rangeHandler.GetRange(req.Context(), repo, h, start, end)
+	} else {
+		rc, err = b.blobHandler.Get(req.Context(), repo, h, allowRedirect)
+	}
 	if errors.Is(err, blob.ErrNotFound) {
 		return regErrBlobUnknown
 	} else if err != nil {
@@ -232,24 +256,10 @@ func (b *blobs) handleGet(resp http.ResponseWriter, req *http.Request, repo, tar
 	var r io.Reader = rc
 
 	if rangeHeader != "" {
-		start, end := int64(0), int64(0)
-		if _, err := fmt.Sscanf(rangeHeader, "bytes=%d-%d", &start, &end); err != nil {
-			return &regError{
-				Status:  http.StatusRequestedRangeNotSatisfiable,
-				Code:    "BLOB_UNKNOWN",
-				Message: "We don't understand your Range",
-			}
-		}
-
 		n := (end + 1) - start
-		if ra, ok := r.(io.ReaderAt); ok {
-			if end+1 > size {
-				return &regError{
-					Status:  http.StatusRequestedRangeNotSatisfiable,
-					Code:    "BLOB_UNKNOWN",
-					Message: fmt.Sprintf("range end %d > %d size", end+1, size),
-				}
-			}
+		if isRangeRead {
+			r = io.LimitReader(r, n)
+		} else if ra, ok := r.(io.ReaderAt); ok {
 			r = io.NewSectionReader(ra, start, n)
 		} else {
 			if _, err := io.CopyN(io.Discard, r, start); err != nil {

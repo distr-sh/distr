@@ -40,6 +40,7 @@ type blobHandler struct {
 
 var (
 	_ blob.BlobHandler               = &blobHandler{}
+	_ blob.BlobRangeHandler          = &blobHandler{}
 	_ blob.BlobPutHandler            = &blobHandler{}
 	_ blob.BlobDeleteHandler         = &blobHandler{}
 	_ blob.BlobChunkMinLengthHandler = &blobHandler{}
@@ -110,6 +111,26 @@ func (handler *blobHandler) Get(
 		}
 		return obj.Body, nil
 	}
+}
+
+// GetRange implements blob.BlobRangeHandler.
+func (handler *blobHandler) GetRange(
+	ctx context.Context,
+	repo string,
+	h digest.Digest,
+	start, end int64,
+) (io.ReadCloser, error) {
+	key := h.String()
+	objectRange := fmt.Sprintf("bytes=%d-%d", start, end)
+	obj, err := handler.s3Client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: &handler.bucket,
+		Key:    &key,
+		Range:  &objectRange,
+	})
+	if err != nil {
+		return nil, convertErrNotFound(err)
+	}
+	return obj.Body, nil
 }
 
 // Stat implements blob.BlobHandler.
