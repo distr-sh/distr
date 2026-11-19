@@ -220,17 +220,11 @@ func (b *blobs) handleGet(resp http.ResponseWriter, req *http.Request, repo, tar
 
 	start, end := int64(0), int64(0)
 	if rangeHeader != "" {
-		if _, err := fmt.Sscanf(rangeHeader, "bytes=%d-%d", &start, &end); err != nil {
+		if start, end, err = parseRange(rangeHeader, size); err != nil {
 			return &regError{
 				Status:  http.StatusRequestedRangeNotSatisfiable,
 				Code:    "BLOB_UNKNOWN",
-				Message: "We don't understand your Range",
-			}
-		} else if start < 0 || start > end || end+1 > size {
-			return &regError{
-				Status:  http.StatusRequestedRangeNotSatisfiable,
-				Code:    "BLOB_UNKNOWN",
-				Message: fmt.Sprintf("range %d-%d is not within size %d", start, end, size),
+				Message: err.Error(),
 			}
 		}
 	}
