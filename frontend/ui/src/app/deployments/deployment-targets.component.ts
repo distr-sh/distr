@@ -252,10 +252,11 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   ]).pipe(
     map(([deploymentTargets, applications, entitlements, search, {applicationIds, statuses}]) => {
       const query = search?.toLowerCase();
+      const needsStatuses = !!query || statuses.length > 0;
       return deploymentTargets.filter((dt) => {
         const deployments = dt.deployments.map((d) => ({
           deployment: d,
-          statuses: deploymentStatusFilters(d, applications, entitlements),
+          statuses: needsStatuses ? deploymentStatusFilters(d, applications, entitlements) : [],
         }));
         const matchesSearch =
           !query ||
