@@ -393,7 +393,9 @@ func FeatureFlagMiddleware(feature types.Feature) func(handler http.Handler) htt
 	return guard(func(r *http.Request) (respond.Responder, error) {
 		if auth, err := auth.Authentication.Get(r.Context()); err != nil {
 			return nil, err
-		} else if !auth.CurrentOrg().HasFeature(feature) {
+		} else if org := auth.CurrentOrg(); org == nil {
+			return respond.Forbidden("inadequate access token"), nil
+		} else if !org.HasFeature(feature) {
 			return featureNotEnabled, nil
 		}
 		return nil, nil
