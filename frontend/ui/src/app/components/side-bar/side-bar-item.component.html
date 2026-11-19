@@ -18,24 +18,14 @@
   @case ('locked') {
     <button
       type="button"
-      class="item"
+      class="item locked"
       [title]="'Upgrade to ' + (item.plan | titlecase) + ' to enable ' + (item.label | lowercase)"
-      (click)="isPlanHintOpen.set(!isPlanHintOpen())"
       cdkOverlayOrigin
       #origin="cdkOverlayOrigin">
       <fa-icon [icon]="item.icon" size="lg" class="icon" />
       <span class="label whitespace-nowrap">{{ item.label }}</span>
       <app-plan-badge [plan]="item.plan" class="me-2 ml-2" />
     </button>
-    <ng-template
-      cdkConnectedOverlay
-      [cdkConnectedOverlayHasBackdrop]="true"
-      (backdropClick)="isPlanHintOpen.set(false)"
-      [cdkConnectedOverlayOrigin]="origin"
-      [cdkConnectedOverlayBackdropClass]="'transparent'"
-      [cdkConnectedOverlayPositions]="[{originX: 'end', overlayX: 'start', originY: 'center', overlayY: 'center'}]"
-      [cdkConnectedOverlayOpen]="isPlanHintOpen()">
-      <app-plan-feature-hint [plan]="item.plan" />
-    </ng-template>
+    <app-plan-hint-overlay [origin]="origin" [plan]="item.plan" placement="end" />
   }
 }
