@@ -20,7 +20,7 @@ import (
 func UpdateNotificationConfigurationsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Notifications"))
 
-	r.Use(middleware.ProFeature, middleware.UpdateNotificationsCustomerFeatureMiddleware)
+	r.Use(middleware.NotificationsFeatureMiddleware, middleware.UpdateNotificationsCustomerFeatureMiddleware)
 
 	r.Get("/", respond.Handler(getUpdateNotificationConfigurationsHandler)).
 		With(option.Description("list all update notification configurations")).

@@ -30,20 +30,16 @@ const (
 	CustomerOrganizationFeatureVulnerabilities CustomerOrganizationFeature = "vulnerabilities"
 )
 
-// ProCustomerOrganizationFeatures can only be granted by an organization with a pro subscription, since
-// the routes behind them are gated with middleware.ProFeature.
-var ProCustomerOrganizationFeatures = []CustomerOrganizationFeature{
-	CustomerOrganizationFeatureAlerts,
-	CustomerOrganizationFeatureUpdateNotifications,
-	CustomerOrganizationFeatureSupportBundles,
-}
-
-// BusinessCustomerOrganizationFeatures maps each Business customer feature to the organization
-// feature that unlocks it. The organization feature decides, not the plan.
-var BusinessCustomerOrganizationFeatures = map[CustomerOrganizationFeature]Feature{
-	CustomerOrganizationFeatureVulnerabilities: FeatureVulnerabilities,
-	CustomerOrganizationFeatureOidcProviders:   FeatureCustomOidcProviders,
-	CustomerOrganizationFeatureSettings:        FeatureCustomerSettings,
+// CustomerOrganizationFeatureRequirements maps each customer feature that an organization can only
+// hand out with an organization feature of its own to that feature. The organization feature
+// decides, not the plan.
+var CustomerOrganizationFeatureRequirements = map[CustomerOrganizationFeature]Feature{
+	CustomerOrganizationFeatureAlerts:              FeatureNotifications,
+	CustomerOrganizationFeatureUpdateNotifications: FeatureNotifications,
+	CustomerOrganizationFeatureSupportBundles:      FeatureSupport,
+	CustomerOrganizationFeatureVulnerabilities:     FeatureVulnerabilities,
+	CustomerOrganizationFeatureOidcProviders:       FeatureCustomOidcProviders,
+	CustomerOrganizationFeatureSettings:            FeatureCustomerSettings,
 }
 
 type GrantedCustomerOrganizationFeature struct {

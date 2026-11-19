@@ -335,9 +335,9 @@ func UpdateAllUserAccountOrganizationAssignmentsWithOrganizationID(
 	}
 }
 
-func UpdateAllUserAccountOrganizationAssignmentsWithOrganizationSuscriptionType(
+func UpdateAllUserAccountOrganizationAssignmentsWithoutOrganizationFeature(
 	ctx context.Context,
-	subscriptionType []types.SubscriptionType,
+	feature types.Feature,
 	role types.UserRole,
 ) error {
 	db := internalctx.GetDb(ctx)
@@ -345,11 +345,11 @@ func UpdateAllUserAccountOrganizationAssignmentsWithOrganizationSuscriptionType(
 		`UPDATE Organization_UserAccount
 		SET user_role = @role
 		WHERE organization_id IN (
-			SELECT id FROM Organization WHERE subscription_type = ANY(@subscriptionType)
+			SELECT id FROM Organization WHERE NOT @feature::FEATURE = ANY(features)
 		)`,
 		pgx.NamedArgs{
-			"subscriptionType": subscriptionType,
-			"role":             role,
+			"feature": feature,
+			"role":    role,
 		},
 	)
 	if err != nil {

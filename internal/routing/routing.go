@@ -214,7 +214,7 @@ func ApiRouter(
 						r.With(middleware.UseReadonlyDB).
 							Route("/notification-records", handlers.NotificationRecordsRouter)
 						r.Route("/secrets", handlers.SecretsRouter)
-						r.With(middleware.ProFeature).Route("/support-bundles", handlers.SupportBundlesRouter)
+						r.With(middleware.SupportFeatureMiddleware).Route("/support-bundles", handlers.SupportBundlesRouter)
 						r.Route("/tutorial-progress", handlers.TutorialsRouter)
 						r.Route("/license-keys", handlers.LicenseKeysRouter)
 						r.Route("/license-templates", handlers.LicenseTemplatesRouter)

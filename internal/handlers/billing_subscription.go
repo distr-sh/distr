@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
@@ -244,7 +245,7 @@ func validateSubscriptionQuantities(
 		)
 	}
 
-	if !subscriptionType.IsPro() {
+	if !slices.Contains(types.FeaturesForSubscriptionType(subscriptionType), types.FeatureLicensing) {
 		if usage.applicationEntitlementCount > 0 {
 			return fmt.Errorf("subscription type %v does not allow application entitlements", subscriptionType)
 		}

@@ -189,33 +189,6 @@ var (
 	RequireAdmin            = RequireAnyUserRole(types.UserRoleAdmin)
 )
 
-// ForbidSubscriptionTypes blocks the given subscription types. Gating is expressed as a
-// denylist of the lower plans instead of an allowlist of the higher ones, so a newly
-// introduced plan has access by default.
-func ForbidSubscriptionTypes(forbidden ...types.SubscriptionType) func(http.Handler) http.Handler {
-	names := make([]string, len(forbidden))
-	for i, t := range forbidden {
-		names[i] = string(t)
-	}
-	forbiddenSubscription := respond.Forbidden(
-		"this operation can not be performed on an organization with one of the following subscription types: " +
-			strings.Join(names, ", "),
-	)
-
-	return guard(func(r *http.Request) (respond.Responder, error) {
-		if auth, err := auth.Authentication.Get(r.Context()); err != nil {
-			return nil, err
-		} else if auth.CurrentOrg() == nil {
-			return respond.Forbidden("inadequate access token"), nil
-		} else if slices.Contains(forbidden, auth.CurrentOrg().SubscriptionType) {
-			return forbiddenSubscription, nil
-		}
-		return nil, nil
-	})
-}
-
-var ProFeature = ForbidSubscriptionTypes(types.NonProSubscriptionTypes...)
-
 var (
 	subscriptionExpired = respond.Forbidden("the subscription of your organization has expired")
 	portalUnavailable   = respond.Forbidden("this portal is currently unavailable")
@@ -420,7 +393,9 @@ func FeatureFlagMiddleware(feature types.Feature) func(handler http.Handler) htt
 	return guard(func(r *http.Request) (respond.Responder, error) {
 		if auth, err := auth.Authentication.Get(r.Context()); err != nil {
 			return nil, err
-		} else if !auth.CurrentOrg().HasFeature(feature) {
+		} else if org := auth.CurrentOrg(); org == nil {
+			return respond.Forbidden("inadequate access token"), nil
+		} else if !org.HasFeature(feature) {
 			return featureNotEnabled, nil
 		}
 		return nil, nil
@@ -471,6 +446,9 @@ var (
 	CustomOidcProvidersFeatureMiddleware  = FeatureFlagMiddleware(types.FeatureCustomOidcProviders)
 	AutoUpdatesFeatureMiddleware          = FeatureFlagMiddleware(types.FeatureAutoUpdates)
 	CustomerSettingsFeatureMiddleware     = FeatureFlagMiddleware(types.FeatureCustomerSettings)
+	SupportFeatureMiddleware              = FeatureFlagMiddleware(types.FeatureSupport)
+	NotificationsFeatureMiddleware        = FeatureFlagMiddleware(types.FeatureNotifications)
+	UserRolesFeatureMiddleware            = FeatureFlagMiddleware(types.FeatureUserRoles)
 )
 
 // RequireCustomDomainsConfigured rejects requests unless the instance itself is set up for custom

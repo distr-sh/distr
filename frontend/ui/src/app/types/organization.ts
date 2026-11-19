@@ -13,7 +13,10 @@ export type Feature =
   | 'custom_emails'
   | 'custom_oidc_providers'
   | 'auto_updates'
-  | 'customer_settings';
+  | 'customer_settings'
+  | 'support'
+  | 'notifications'
+  | 'user_roles';
 
 export interface SubscriptionLimits {
   maxCustomerOrganizations: number;

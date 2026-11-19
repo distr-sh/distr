@@ -19,7 +19,7 @@ import (
 func NotificationRecordsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Notifications"))
 
-	r.Use(middleware.ProFeature, middleware.NotificationHistoryCustomerFeatureMiddleware)
+	r.Use(middleware.NotificationsFeatureMiddleware, middleware.NotificationHistoryCustomerFeatureMiddleware)
 
 	r.Get("/", respond.Handler(getNotificationRecordsHandler)).
 		With(option.Request(struct {

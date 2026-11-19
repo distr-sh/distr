@@ -216,7 +216,7 @@ func supportBundleActivity(
 ) ([]activityfeed.Entry, error) {
 	auth := auth.Authentication.Require(ctx)
 	customerOrgIDs := scope.customerOrgIDsWith(types.CustomerOrganizationFeatureSupportBundles)
-	if !auth.CurrentOrg().SubscriptionType.IsPro() || len(customerOrgIDs) == 0 {
+	if !auth.CurrentOrg().HasFeature(types.FeatureSupport) || len(customerOrgIDs) == 0 {
 		return nil, nil
 	} else if events, err := db.GetCustomerSupportBundleEvents(
 		ctx, *auth.CurrentOrgID(), customerOrgIDs, scope.viewer, since, activityfeed.Limit,

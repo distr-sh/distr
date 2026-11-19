@@ -12,6 +12,7 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
 	"github.com/distr-sh/distr/internal/types"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
 	. "github.com/onsi/gomega"
 )
@@ -138,4 +139,35 @@ func TestRequireActiveSubscription(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFeatureFlagMiddleware(t *testing.T) {
+	serve := func(info fakeAuthInfo) *httptest.ResponseRecorder {
+		handler := chimiddleware.Recoverer(
+			FeatureFlagMiddleware(types.FeatureSupport)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})),
+		)
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req = req.WithContext(auth.Authentication.NewContext(req.Context(), info))
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		return w
+	}
+
+	t.Run("organization with the feature passes", func(t *testing.T) {
+		g := NewWithT(t)
+		w := serve(fakeAuthInfo{org: &types.Organization{Features: []types.Feature{types.FeatureSupport}}})
+		g.Expect(w.Code).To(Equal(http.StatusOK))
+	})
+
+	t.Run("organization without the feature is forbidden", func(t *testing.T) {
+		g := NewWithT(t)
+		w := serve(fakeAuthInfo{org: &types.Organization{}})
+		g.Expect(w.Code).To(Equal(http.StatusForbidden))
+	})
+
+	t.Run("authentication without an organization is forbidden", func(t *testing.T) {
+		g := NewWithT(t)
+		w := serve(fakeAuthInfo{})
+		g.Expect(w.Code).To(Equal(http.StatusForbidden))
+	})
 }
