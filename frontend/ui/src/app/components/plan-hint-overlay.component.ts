@@ -25,7 +25,7 @@ export class PlanHintOverlayComponent {
       case 'end':
         return [{originX: 'end', overlayX: 'start', originY: 'center', overlayY: 'center'}];
       case 'below':
-        return [{originX: 'center', overlayX: 'center', originY: 'bottom', overlayY: 'top'}];
+        return [{originX: 'center', overlayX: 'center', originY: 'bottom', overlayY: 'top', offsetY: 8}];
     }
   });
 
