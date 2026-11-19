@@ -176,7 +176,9 @@ outputs = ["THIRD_PARTY_LICENSES.md", "NOTICE"]
 
 [tasks."format:frontend"]
 run = ['pnpm dedupe', 'pnpm format']
-depends = ["build:helm-docs", "build:helm-schema", "build:third-party-licenses"]
+depends = ["build:helm-docs", "build:helm-schema"]
+# after pnpm dedupe, which can still change the lockfile the npm licenses are read from
+depends_post = ["build:third-party-licenses"]
 
 [tasks."format:website"]
 run = ['pnpm dedupe', 'pnpm format']

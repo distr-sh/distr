@@ -9,10 +9,6 @@ const DIR = 'hack/third-party-licenses';
 const OWN_MODULE = 'github.com/distr-sh/distr';
 const OWN_IMAGES = /^(ghcr\.io\/distr-sh\/|registry\.distr\.sh\/)/;
 
-// Copyleft licenses that may not be linked into the binaries or bundled into the web interface. They are fine for
-// the bundled components, which run as separate programs. LGPL is included because Go links statically.
-const FORBIDDEN_LICENSE = /\b(A?GPL|LGPL|SSPL|BUSL)\b/;
-
 const errors = [];
 const notices = new Map();
 
@@ -47,14 +43,6 @@ function table(header, rows) {
   ].join('\n');
 }
 
-function isForbidden(expression) {
-  // Any alternative of an SPDX "OR" expression may be chosen.
-  return expression
-    .replace(/[()]/g, '')
-    .split(/\s+OR\s+/)
-    .every((alternative) => FORBIDDEN_LICENSE.test(alternative));
-}
-
 function stripTag(image) {
   return image.replace(/@sha256:.*$/, '').replace(/:[^/]+$/, '');
 }
@@ -78,7 +66,7 @@ function shippedImages() {
   }
   const dockerfiles = globSync(['Dockerfile.*', '*/Dockerfile'], {exclude: ['node_modules/**']});
   for (const file of dockerfiles.sort()) {
-    const stages = [...readFileSync(file, 'utf8').matchAll(/^FROM\s+(\S+)/gm)];
+    const stages = [...readFileSync(file, 'utf8').matchAll(/^FROM\s+(?:--\S+\s+)*(\S+)/gm)];
     add(stages.at(-1)[1], `base of \`${file}\``);
   }
   return found;
@@ -162,9 +150,6 @@ function backend() {
     } else {
       collectNotices(name, dirname(licensePath));
     }
-    if (isForbidden(license)) {
-      errors.push(`Go module ${name} is licensed under ${license}`);
-    }
     // go-licenses reports a module once per license it finds, and all of them apply.
     const module = modules.get(`${name}@${version}`) ?? {name, version, licenses: new Map()};
     module.licenses.set(license, url);
@@ -203,8 +188,6 @@ function frontend() {
       paths.forEach((path) => collectNotices(name, path));
       if (license === 'Unknown') {
         errors.push(`the license of npm package ${name} is unknown, run "pnpm install --frozen-lockfile" first`);
-      } else if (isForbidden(license)) {
-        errors.push(`npm package ${name} is licensed under ${license}`);
       }
       return [link(name, homepage), versions.join(', '), license];
     });

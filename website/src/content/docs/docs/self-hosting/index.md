@@ -32,21 +32,22 @@ place to look up what a setting does and when it is required.
 
 ## Third-Party Software
 
-Distr itself is licensed under the Apache License 2.0. The Docker Compose stacks and the Helm chart also run
-PostgreSQL, RustFS, Loki and Caddy next to it, each as an unmodified upstream image and as a separate program that
-Distr only talks to over the network, so their licenses apply to them alone.
+Distr itself is licensed under the Apache License 2.0. Depending on the Compose stack and the Helm values, a deployment
+can also run PostgreSQL, RustFS, Loki and Caddy next to it, each as an unmodified upstream image and as a separate
+service that Distr talks to over the network, so their licenses apply to them alone.
 
 [Grafana Loki](https://github.com/grafana/loki) is licensed under the GNU Affero General Public License v3 (AGPL-3.0).
 Distr neither includes nor modifies Loki: the stacks pull the official `grafana/loki` image, which runs as a program of
 its own, so the AGPL applies to Loki alone, and its clause on offering software over a network concerns modified
-versions only. If your policies do not allow AGPL software, run Distr against a Loki instance that you provide yourself:
-set `loki.enabled` to `false` in the Helm chart or remove the `loki` service from the Compose stack, and point
-`LOKI_URL` at it.
+versions only. A Loki instance that you run yourself is licensed under the AGPL as well. To keep Loki out of your
+stack, point `LOKI_URL` and the `LOKI_*` authentication variables at a Loki that is operated separately or at a hosted
+Loki-compatible service, and set `loki.enabled` to `false` in the Helm chart or remove the `loki` service and the
+`loki` entry under `depends_on` of the `distr` service from the Compose stack.
 
 Every bundled component, Go module and npm package is listed with its license in
 [`THIRD_PARTY_LICENSES.md`](https://github.com/distr-sh/distr/blob/main/THIRD_PARTY_LICENSES.md), and the attribution
 notices those licenses require are collected in [`NOTICE`](https://github.com/distr-sh/distr/blob/main/NOTICE). The
-Distr and Distr Controller images contain both files in `/usr/share/doc/distr/`.
+Distr and Distr Controller images contain `NOTICE` and Distr's `LICENSE` in `/usr/share/doc/distr/`.
 
 ## Semantic Versioning
 

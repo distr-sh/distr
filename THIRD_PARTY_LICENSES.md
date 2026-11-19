@@ -11,15 +11,18 @@ passed on are collected in [`NOTICE`](NOTICE).
 The Docker Compose stacks in [`deploy/docker`](deploy/docker) and the Helm chart in
 [`deploy/charts/distr`](deploy/charts/distr) run the following programs next to Distr, and the Distr and Distr
 Controller images are built on the following base images. None of them is modified: the stacks and the chart pull the
-official upstream images and charts as they are published, and only configure them. Each runs as a separate program
-that Distr talks to over the network, so its license applies to that program alone and does not extend to Distr.
+official upstream images and charts as they are published, and only configure them. Loki, PostgreSQL, RustFS and Caddy
+run as separate services that Distr talks to over the network. BusyBox and rclone run as separate one-off containers.
+The base images provide the operating system of the Distr and Distr Controller images, and the Docker Controller runs
+the Docker CLI as a separate process. Each license applies to its program alone and does not extend to Distr.
 
 This includes the copyleft licenses of Grafana Loki (AGPL-3.0) and BusyBox (GPL-2.0). Distr runs the official, unmodified
 `grafana/loki` image and does not include, link or change any Loki code. The source code of both is available at the
 linked repositories.
 
-Distr can also use a Loki instance that you manage yourself instead of the bundled one: set `loki.enabled` to `false`
-in the Helm chart or remove the `loki` service from the Compose stack, and point `LOKI_URL` at your instance.
+Distr can also use a Loki instance that is managed separately instead of the bundled one: set `loki.enabled` to `false`
+in the Helm chart, or remove the `loki` service and the `loki` entry under `depends_on` of the `distr` service from the
+Compose stack, and point `LOKI_URL` at your instance.
 
 Every container image contains further software, such as the packages of its base operating system, under the licenses
 documented for that image.
@@ -114,8 +117,8 @@ published by their authors and verified against the checksums in [`go.sum`](go.s
 | github.com/davecgh/go-spew/spew | v1.1.2-0.20180830191138-d8f796af33cc | [ISC](https://github.com/davecgh/go-spew/blob/d8f796af33cc/LICENSE) |
 | github.com/DefangLabs/secret-detector/pkg | v0.0.0-20260916192156-3e28d7ed64df | [Apache-2.0](https://github.com/DefangLabs/secret-detector/blob/3e28d7ed64df/LICENSE) |
 | github.com/distribution/reference | v0.6.0 | [Apache-2.0](https://github.com/distribution/reference/blob/v0.6.0/LICENSE) |
-| github.com/docker/cli | v29.9.3 | [Apache-2.0](https://github.com/docker/cli/blob/v29.9.3/LICENSE) |
-| github.com/docker/cli/cli/connhelper/internal/syntax | v29.9.3 | [BSD-3-Clause](https://github.com/docker/cli/blob/v29.9.3/cli/connhelper/internal/syntax/LICENSE) |
+| github.com/docker/cli | v29.10.0 | [Apache-2.0](https://github.com/docker/cli/blob/v29.10.0/LICENSE) |
+| github.com/docker/cli/cli/connhelper/internal/syntax | v29.10.0 | [BSD-3-Clause](https://github.com/docker/cli/blob/v29.10.0/cli/connhelper/internal/syntax/LICENSE) |
 | github.com/docker/compose/v5 | v5.7.1 | [Apache-2.0](https://github.com/docker/compose/blob/v5.7.1/LICENSE) |
 | github.com/docker/docker-credential-helpers | v0.9.10 | [MIT](https://github.com/docker/docker-credential-helpers/blob/v0.9.10/LICENSE) |
 | github.com/docker/go-connections | v0.8.2 | [Apache-2.0](https://github.com/docker/go-connections/blob/v0.8.2/LICENSE) |
