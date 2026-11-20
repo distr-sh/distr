@@ -1,5 +1,5 @@
 import {CdkOverlayOrigin} from '@angular/cdk/overlay';
-import {LowerCasePipe, TitleCasePipe} from '@angular/common';
+import {LowerCasePipe, TitleCasePipe, UpperCasePipe} from '@angular/common';
 import {Component, inject, input} from '@angular/core';
 import {RouterLink, RouterLinkActive} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -21,6 +21,7 @@ import {PlanHintOverlayComponent} from '../plan-hint-overlay.component';
     PlanHintOverlayComponent,
     LowerCasePipe,
     TitleCasePipe,
+    UpperCasePipe,
   ],
 })
 export class SideBarItemComponent {
