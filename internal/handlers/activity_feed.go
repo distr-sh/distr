@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"sync"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -40,6 +41,8 @@ type activityScope struct {
 	customerOrg  *types.CustomerOrganization
 	customerOrgs []types.CustomerOrganization
 	viewer       types.ActivityViewer
+	// artifacts loads the artifacts visible to the scope once for every source that needs them.
+	artifacts func() ([]types.ArtifactWithDownloads, error)
 }
 
 func (s activityScope) customerOrgID() *uuid.UUID {
@@ -95,8 +98,15 @@ func getActivityFeed(r *http.Request) (respond.Responder, error) {
 // which matches nothing when the caller cannot reach it.
 func activityFeedScope(ctx context.Context, filter *uuid.UUID) (activityScope, error) {
 	scope, err := callerActivityScope(ctx)
-	if err != nil || filter == nil {
+	if err != nil {
 		return scope, err
+	}
+	customerOrgID := scope.customerOrgID()
+	scope.artifacts = sync.OnceValues(func() ([]types.ArtifactWithDownloads, error) {
+		return visibleArtifacts(ctx, customerOrgID)
+	})
+	if filter == nil {
+		return scope, nil
 	}
 	scope.customerOrgs = slices.DeleteFunc(scope.customerOrgs, func(customerOrg types.CustomerOrganization) bool {
 		return customerOrg.ID != *filter
@@ -224,7 +234,7 @@ func artifactTagActivity(ctx context.Context, scope activityScope, since time.Ti
 	auth := auth.Authentication.Require(ctx)
 	if scope.customerOrg != nil && !scope.customerOrg.HasFeature(types.CustomerOrganizationFeatureArtifacts) {
 		return nil, nil
-	} else if artifacts, err := visibleArtifacts(ctx, scope.customerOrgID()); err != nil {
+	} else if artifacts, err := scope.artifacts(); err != nil {
 		return nil, fmt.Errorf("failed to get artifacts: %w", err)
 	} else if tags, err := db.GetArtifactTagEvents(
 		ctx, artifactIDsOf(artifacts), scope.customerOrgID(), auth.CurrentOrg().HasFeature(types.FeatureLicensing),
@@ -244,7 +254,7 @@ func firstArtifactPullActivity(
 	auth := auth.Authentication.Require(ctx)
 	if customerOrgIDs := scope.customerOrgIDsWith(types.CustomerOrganizationFeatureArtifacts); len(customerOrgIDs) == 0 {
 		return nil, nil
-	} else if artifacts, err := visibleArtifacts(ctx, scope.customerOrgID()); err != nil {
+	} else if artifacts, err := scope.artifacts(); err != nil {
 		return nil, fmt.Errorf("failed to get artifacts: %w", err)
 	} else if pulls, err := db.GetFirstArtifactVersionPullsOfCustomerOrganizations(
 		ctx, *auth.CurrentOrgID(), customerOrgIDs, artifactIDsOf(artifacts), since, activityfeed.Limit,

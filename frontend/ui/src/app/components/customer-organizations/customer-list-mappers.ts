@@ -87,17 +87,34 @@ function toCustomerManagement(
   }
 }
 
-export function toCustomerLicenseStatus(license: License | undefined, now: Dayjs = dayjs()): CustomerLicenseStatus {
+export interface LicenseGrantCounts {
+  grants: number;
+  expired: number;
+  /** The grants that expire within the window but have not expired yet. */
+  expiring: number;
+}
+
+export function toLicenseGrantCounts(license: License | undefined, now: Dayjs = dayjs()): LicenseGrantCounts {
   const grants = license
     ? [...license.licenseKeys, ...license.applicationEntitlements, ...license.artifactEntitlements]
     : [];
   const expirations = grants.map((it) => it.expiresAt).filter((expiresAt) => expiresAt !== undefined);
   const threshold = now.add(licenseExpiryWindowDays, 'day');
-  if (grants.length === 0) {
+  const expired = expirations.filter((expiresAt) => !now.isBefore(expiresAt)).length;
+  return {
+    grants: grants.length,
+    expired,
+    expiring: expirations.filter((expiresAt) => !threshold.isBefore(expiresAt)).length - expired,
+  };
+}
+
+export function toCustomerLicenseStatus(license: License | undefined, now: Dayjs = dayjs()): CustomerLicenseStatus {
+  const counts = toLicenseGrantCounts(license, now);
+  if (counts.grants === 0) {
     return 'no_license';
-  } else if (expirations.some((expiresAt) => !now.isBefore(expiresAt))) {
+  } else if (counts.expired > 0) {
     return 'expired';
-  } else if (expirations.some((expiresAt) => !threshold.isBefore(expiresAt))) {
+  } else if (counts.expiring > 0) {
     return 'expiring';
   } else {
     return 'valid';

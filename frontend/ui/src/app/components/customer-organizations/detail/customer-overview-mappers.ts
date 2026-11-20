@@ -5,11 +5,15 @@ import {
   DeploymentDisplayStatus,
   deploymentDisplayStatus,
 } from '../../../deployments/deployment-target-card/deployment-status-text.component';
-import {licenseExpiryWindowDays} from '../../../home/vendor/vendor-home-mappers';
 import {ApplicationEntitlement} from '../../../types/application-entitlement';
 import {LatestArtifactPull} from '../../../types/artifact-version-pull';
 import {License} from '../../../types/license';
-import {CustomerLicenseStatus, toCustomerLicenseStatus} from '../customer-list-mappers';
+import {
+  CustomerLicenseStatus,
+  LicenseGrantCounts,
+  toCustomerLicenseStatus,
+  toLicenseGrantCounts,
+} from '../customer-list-mappers';
 
 export interface CustomerOverviewUpdates {
   /** What `outdated` counts: the deployments, or the downloaded artifacts of a customer without deployments. */
@@ -17,13 +21,10 @@ export interface CustomerOverviewUpdates {
   outdated: number;
 }
 
-export interface CustomerOverviewLicense {
+export interface CustomerOverviewLicense extends LicenseGrantCounts {
   status: CustomerLicenseStatus;
   /** Whether any customer has a license, which is what makes a missing one an issue. */
   isLicensingInUse: boolean;
-  grants: number;
-  expired: number;
-  expiring: number;
 }
 
 export function toAffectedTargetNames(targets: DeploymentTarget[], status: DeploymentDisplayStatus): string[] {
@@ -56,21 +57,10 @@ export function toCustomerOverviewLicense(
   licenses: License[],
   now: Dayjs = dayjs()
 ): CustomerOverviewLicense {
-  const grants = (license: License) => [
-    ...license.licenseKeys,
-    ...license.applicationEntitlements,
-    ...license.artifactEntitlements,
-  ];
   const license = licenses.find((it) => it.customerOrganization.id === customerOrganizationId);
-  const customerGrants = license ? grants(license) : [];
-  const expirations = customerGrants.map((it) => it.expiresAt).filter((expiresAt) => expiresAt !== undefined);
-  const threshold = now.add(licenseExpiryWindowDays, 'day');
-  const expired = expirations.filter((expiresAt) => !now.isBefore(expiresAt)).length;
   return {
+    ...toLicenseGrantCounts(license, now),
     status: toCustomerLicenseStatus(license, now),
-    isLicensingInUse: licenses.some((it) => grants(it).length > 0),
-    grants: customerGrants.length,
-    expired,
-    expiring: expirations.filter((expiresAt) => !threshold.isBefore(expiresAt)).length - expired,
+    isLicensingInUse: licenses.some((it) => toCustomerLicenseStatus(it, now) !== 'no_license'),
   };
 }
