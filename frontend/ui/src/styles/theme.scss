@@ -240,6 +240,24 @@
     @apply cursor-pointer transition-shadow hover:bg-gray-100 hover:shadow-md dark:hover:bg-gray-700;
   }
 
+  // the colors of an `app-alert`, for a notice in a layout of its own such as a `distr-card`. Must
+  // stay below `.distr-card` to override it.
+  .distr-alert-success {
+    @apply border border-current text-green-800 not-dark:bg-green-50 dark:text-green-400;
+  }
+
+  .distr-alert-info {
+    @apply border border-current text-blue-800 not-dark:bg-blue-50 dark:text-blue-400;
+  }
+
+  .distr-alert-warning {
+    @apply border border-current text-yellow-800 not-dark:bg-yellow-50 dark:text-yellow-300;
+  }
+
+  .distr-alert-error {
+    @apply border border-current text-red-800 not-dark:bg-red-50 dark:text-red-400;
+  }
+
   // the row above a table or card grid that holds `app-search-bar` and the page actions. Inside a
   // `distr-table-panel` add `p-4`, above a `distr-card-grid` add `mb-4`.
   .distr-toolbar {

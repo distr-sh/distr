@@ -11,7 +11,6 @@ export interface VendorHomeUpdates {
   totalCustomers: number;
   hasDeploymentsOrPulls: boolean;
   outdatedCustomers: number;
-  outdatedDeployments: number;
 }
 
 export interface VendorHomeLicenses {
