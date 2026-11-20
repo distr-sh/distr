@@ -1,5 +1,11 @@
 @if (auth.hasAnyRole('admin')) {
-  <p class="text-sm text-gray-500 dark:text-gray-400">Manage your Distr subscription and view usage.</p>
+  <p class="text-sm text-gray-500 dark:text-gray-400">
+    @if (licenseEnforced()) {
+      View your Distr plan and usage.
+    } @else {
+      Manage your Distr subscription and view usage.
+    }
+  </p>
 } @else {
   <app-alert type="warning">
     You do not have sufficient permissions to manage this organization's subscription. Please contact your
@@ -84,7 +90,15 @@
       </div>
 
       @if (auth.hasAnyRole('admin')) {
-        @if (hasActiveSubscription()) {
+        @if (licenseEnforced()) {
+          <app-alert type="info">
+            Your plan and its limits come from your Distr license key.
+            <a [href]="websiteUrl + '/contact/'" target="_blank" rel="noopener noreferrer" class="distr-link-inherit"
+              >Contact us</a
+            >
+            to change them.
+          </app-alert>
+        } @else if (hasActiveSubscription()) {
           <div class="space-y-4">
             <h2 class="text-xl font-bold dark:text-white">Manage Subscription</h2>
             <div class="rounded-lg bg-linear-to-r from-primary-50 to-blue-50 p-6 dark:from-gray-700 dark:to-gray-800">
