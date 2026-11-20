@@ -92,11 +92,14 @@
       @if (auth.hasAnyRole('admin')) {
         @if (licenseEnforced()) {
           <app-alert type="info">
-            Your plan and its limits come from your Distr license key.
-            <a [href]="websiteUrl + '/contact/'" target="_blank" rel="noopener noreferrer" class="distr-link-inherit"
-              >Contact us</a
-            >
-            to change them.
+            Your plan comes from your Distr license key. Change it in your vendor organization on
+            <a
+              [href]="distrCloudUrl + '/settings/organization/subscription'"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="distr-link-inherit"
+              >app.distr.sh</a
+            >.
           </app-alert>
         } @else if (hasActiveSubscription()) {
           <div class="space-y-4">

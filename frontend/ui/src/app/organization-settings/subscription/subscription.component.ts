@@ -15,7 +15,7 @@ import {NonNullableFormBuilder, ReactiveFormsModule, Validators} from '@angular/
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faCreditCard, faShoppingCart} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, from} from 'rxjs';
-import {WEBSITE_URL} from '../../../constants';
+import {DISTR_CLOUD_URL, WEBSITE_URL} from '../../../constants';
 import {getRemoteEnvironment} from '../../../env/remote';
 import {getFormDisplayedError} from '../../../util/errors';
 import {BytesPipe} from '../../../util/units';
@@ -58,6 +58,7 @@ export class SubscriptionComponent implements OnInit {
 
   protected readonly unlimited = UNLIMITED_QTY;
   protected readonly websiteUrl = WEBSITE_URL;
+  protected readonly distrCloudUrl = DISTR_CLOUD_URL;
 
   // Feature lists mirroring the pricing cards on https://distr.sh/pricing/
   protected readonly proPlanFeatures = [

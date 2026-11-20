@@ -8,9 +8,14 @@
     Our Pro and Business plans are also available for self-hosted customers. See our
     <a [href]="websiteUrl + '/pricing/'" target="_blank" rel="noopener noreferrer" class="distr-link">pricing page</a>.
   } @else if (licenseEnforced()) {
-    Your Distr license key determines the plan.
-    <a [href]="websiteUrl + '/contact/'" target="_blank" rel="noopener noreferrer" class="distr-link">Contact us</a>
-    to upgrade it.
+    Upgrade in your vendor organization on
+    <a
+      [href]="distrCloudUrl + '/settings/organization/subscription'"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="distr-link"
+      >app.distr.sh</a
+    >.
   } @else if (canOpenSubscription()) {
     Upgrade on the <a routerLink="/settings/organization/subscription" class="distr-link">Subscription</a> page to
     unlock it.
