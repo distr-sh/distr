@@ -284,11 +284,7 @@
                 Customers
                 <span class="distr-badge distr-badge-neutral ms-2">{{ customerCount() }}</span>
               </h2>
-              <a
-                routerLink="/customers"
-                class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">
-                View all
-              </a>
+              <a routerLink="/customers" class="distr-link text-sm">View all</a>
             </div>
             <ul class="distr-home-list -mx-2">
               @for (customer of customers; track customer.id) {
