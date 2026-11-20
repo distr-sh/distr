@@ -8,6 +8,7 @@ import {ContextSwitcherService, SwitcherOrganization} from '../../navigation/con
 import {NavigationSection} from '../../navigation/navigation';
 import {NavigationService} from '../../navigation/navigation.service';
 import {ApplicationsService} from '../../services/applications.service';
+import {ArtifactsService, ArtifactWithTags} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
@@ -44,6 +45,7 @@ const sections: NavigationSection[] = [
 ];
 
 const applications = [{id: 'app-1', name: 'Shop'}] as Application[];
+const artifacts = [{id: 'artifact-1', name: 'billing-image'}] as ArtifactWithTags[];
 const deploymentTargets = [
   {
     id: 'target-1',
@@ -88,6 +90,7 @@ describe('CommandPaletteModalComponent', () => {
         {provide: AuthService, useValue: {isCustomer: () => false}},
         {provide: OrganizationService, useValue: {get: () => of(org)}},
         {provide: ApplicationsService, useValue: {list: () => of(applications), refresh: async () => applications}},
+        {provide: ArtifactsService, useValue: {list: () => of(artifacts), refresh: async () => artifacts}},
         {
           provide: DeploymentTargetsService,
           useValue: {list: () => of(deploymentTargets), refresh: async () => deploymentTargets},
@@ -126,14 +129,17 @@ describe('CommandPaletteModalComponent', () => {
   it('lists the reachable pages and the lenses that are not entered', () => {
     const fixture = render();
     expect(labels(fixture)).toEqual([
-      'Home',
-      'Applications',
-      'Registry',
-      'Deployments',
+      'Shop',
       'Running',
       'Stale',
       'Error',
       'Outdated',
+      'edge-prod',
+      'billing-image',
+      'Home',
+      'Applications',
+      'Registry',
+      'Deployments',
       'Globex',
     ]);
   });
@@ -156,6 +162,24 @@ describe('CommandPaletteModalComponent', () => {
 
     expect(enterLens).toHaveBeenCalledWith(switcherTree[0].lenses[0]);
     expect(navigateByUrl).not.toHaveBeenCalled();
+  });
+
+  it('clears the search on the first Escape and lets the second one reach the overlay', () => {
+    const fixture = render();
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('input');
+    const reachedBody = vi.fn();
+    document.body.addEventListener('keydown', reachedBody);
+    search(fixture, 'reg');
+    input.focus();
+
+    press(fixture, 'Escape');
+    expect(input.value).toBe('');
+    expect(document.activeElement).toBe(input);
+    expect(reachedBody).not.toHaveBeenCalled();
+
+    press(fixture, 'Escape');
+    expect(reachedBody).toHaveBeenCalled();
+    document.body.removeEventListener('keydown', reachedBody);
   });
 
   it('finds a page by its go-to keys', () => {

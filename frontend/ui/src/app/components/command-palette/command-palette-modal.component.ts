@@ -1,4 +1,4 @@
-import {Component, computed, inject, linkedSignal, output} from '@angular/core';
+import {Component, computed, inject, linkedSignal, output, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl} from '@angular/forms';
 import {Router, UrlTree} from '@angular/router';
@@ -18,6 +18,7 @@ import {LEAVE_LENS_SHORTCUT} from '../../navigation/go-to-shortcuts.service';
 import {NavigationEntry} from '../../navigation/navigation';
 import {NavigationService} from '../../navigation/navigation.service';
 import {ApplicationsService} from '../../services/applications.service';
+import {ArtifactsService, ArtifactWithTags} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
@@ -25,8 +26,6 @@ import {OrganizationService} from '../../services/organization.service';
 import {CustomerLens} from '../../types/lens';
 import {Organization} from '../../types/organization';
 import {SearchBarComponent} from '../search-bar.component';
-
-const SEARCH_RESULT_LIMIT = 5;
 
 const PALETTE_DEPLOYMENT_STATUSES: DeploymentStatusFilter[] = ['running', 'error', 'stale', 'outdated'];
 
@@ -51,8 +50,6 @@ interface CommandGroup {
   id: string;
   label: string;
   commands: Command[];
-  /** Shows the group only while the user searches, with at most SEARCH_RESULT_LIMIT matches. */
-  isSearchOnly?: boolean;
 }
 
 interface IndexedCommand extends Command {
@@ -78,9 +75,12 @@ export class CommandPaletteModalComponent {
   private readonly applicationsService = inject(ApplicationsService);
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   private readonly deploymentTargetsService = inject(DeploymentTargetsService);
+  private readonly artifactsService = inject(ArtifactsService);
   private readonly organizationService = inject(OrganizationService);
 
   public readonly closed = output<void>();
+
+  private readonly searchBar = viewChild.required(SearchBarComponent);
 
   protected readonly search = new FormControl<string>('', {nonNullable: true});
   private readonly searchTerm = toSignal(this.search.valueChanges.pipe(map((term) => term.trim().toLowerCase())), {
@@ -97,6 +97,7 @@ export class CommandPaletteModalComponent {
   private readonly applicationsLink = this.links.get('applications');
   private readonly customersLink = this.links.get('customers');
   private readonly deploymentsLink = this.links.get('deployments');
+  private readonly artifactsLink = this.links.get('registry') ?? this.links.get('artifacts');
 
   private readonly applications = toSignal(
     this.applicationsLink ? this.applicationsService.list() : of<Application[]>([]),
@@ -110,6 +111,10 @@ export class CommandPaletteModalComponent {
   );
   private readonly deploymentTargets = toSignal(
     this.deploymentsLink ? this.deploymentTargetsService.list() : of<DeploymentTarget[]>([]),
+    {initialValue: []}
+  );
+  private readonly artifacts = toSignal(
+    this.artifactsLink ? this.artifactsService.list() : of<ArtifactWithTags[]>([]),
     {initialValue: []}
   );
   private readonly isCustomer = this.auth.isCustomer();
@@ -133,11 +138,10 @@ export class CommandPaletteModalComponent {
       : [],
   };
 
-  private readonly searchGroups = computed<CommandGroup[]>(() => [
+  private readonly entityGroups = computed<CommandGroup[]>(() => [
     {
       id: 'applications',
       label: 'Applications',
-      isSearchOnly: true,
       commands: this.applications().map((application) => ({
         id: application.id!,
         label: application.name!,
@@ -148,7 +152,6 @@ export class CommandPaletteModalComponent {
     {
       id: 'customers',
       label: 'Customers',
-      isSearchOnly: true,
       commands: this.customers().map((customer) => ({
         id: customer.id,
         label: customer.name,
@@ -156,10 +159,10 @@ export class CommandPaletteModalComponent {
         action: {kind: 'route', route: `/customers/${customer.id}`},
       })),
     },
+    this.deploymentStatusGroup,
     {
       id: 'deployment-targets',
-      label: 'Deployment targets',
-      isSearchOnly: true,
+      label: 'Deployments',
       commands: this.deploymentTargets().map((target) => ({
         id: target.id!,
         label: target.name,
@@ -170,6 +173,16 @@ export class CommandPaletteModalComponent {
           kind: 'route',
           route: this.router.createUrlTree(['/deployments'], {queryParams: {search: target.name}}),
         },
+      })),
+    },
+    {
+      id: 'artifacts',
+      label: 'Artifacts',
+      commands: this.artifacts().map((artifact) => ({
+        id: artifact.id,
+        label: artifact.name,
+        icon: this.artifactsLink!.icon,
+        action: {kind: 'route', route: `${this.artifactsLink!.route}/${artifact.id}`},
       })),
     },
   ]);
@@ -223,9 +236,8 @@ export class CommandPaletteModalComponent {
         action: {kind: 'lens' as const, lens},
       }));
     return [
+      ...this.entityGroups(),
       ...navigationGroups,
-      this.deploymentStatusGroup,
-      ...this.searchGroups(),
       {id: 'organizations', label: 'Switch organization', commands: [...leaveLens, ...organizations]},
       {id: 'lenses', label: 'Enter customer lens', commands: lenses},
     ];
@@ -236,25 +248,21 @@ export class CommandPaletteModalComponent {
     const shortcutTerm = term.replace(/\s/g, '');
     let index = 0;
     return this.allGroups()
-      .filter((group) => term || !group.isSearchOnly)
-      .map((group) => {
-        const matches = group.commands.filter(
-          (command) =>
-            matchesSearch(command.searchTexts ?? [command.label, command.detail], term) ||
-            (command.shortcut !== undefined && `g${command.shortcut}` === shortcutTerm)
-        );
-        return {
-          ...group,
-          commands: (group.isSearchOnly ? matches.slice(0, SEARCH_RESULT_LIMIT) : matches).map(
-            (command): IndexedCommand => ({
-              ...command,
-              index,
-              elementId: `command-palette-${index++}`,
-              key: `${group.id}/${command.id}`,
-            })
-          ),
-        };
-      })
+      .map((group) => ({
+        ...group,
+        commands: group.commands
+          .filter(
+            (command) =>
+              matchesSearch(command.searchTexts ?? [command.label, command.detail], term) ||
+              (command.shortcut !== undefined && `g${command.shortcut}` === shortcutTerm)
+          )
+          .map((command): IndexedCommand => ({
+            ...command,
+            index,
+            elementId: `command-palette-${index++}`,
+            key: `${group.id}/${command.id}`,
+          })),
+      }))
       .filter((group) => group.commands.length > 0);
   });
 
@@ -279,7 +287,8 @@ export class CommandPaletteModalComponent {
     refreshInBackground(
       ...(this.applicationsLink ? [this.applicationsService.refresh()] : []),
       ...(this.customersLink ? [this.customerOrganizationsService.refresh()] : []),
-      ...(this.deploymentsLink ? [this.deploymentTargetsService.refresh()] : [])
+      ...(this.deploymentsLink ? [this.deploymentTargetsService.refresh()] : []),
+      ...(this.artifactsLink ? [this.artifactsService.refresh()] : [])
     );
   }
 
@@ -294,6 +303,11 @@ export class CommandPaletteModalComponent {
     } else if (event.key === 'Enter' && commands[this.activeIndex()]) {
       event.preventDefault();
       this.run(commands[this.activeIndex()]);
+    } else if (event.key === 'Escape' && this.search.value) {
+      // The overlay closes on every Escape that reaches the body, and the search bar blurs its input on Escape.
+      event.stopPropagation();
+      this.search.setValue('');
+      this.searchBar().focus();
     }
   }
 

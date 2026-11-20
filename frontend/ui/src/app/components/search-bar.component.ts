@@ -65,6 +65,10 @@ export class SearchBarComponent {
   protected readonly id = `search-bar-${nextId++}`;
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
 
+  public focus(): void {
+    this.input().nativeElement.focus();
+  }
+
   /** Focuses the first visible search bar of the topmost layer when "/" is pressed outside of a text field. */
   protected onDocumentKeydown(event: KeyboardEvent): void {
     const input = this.input().nativeElement;
