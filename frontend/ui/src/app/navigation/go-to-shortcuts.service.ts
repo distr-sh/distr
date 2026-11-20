@@ -6,7 +6,7 @@ import {NavigationService} from './navigation.service';
 
 const SEQUENCE_TIMEOUT_MS = 1500;
 
-/** Leaves the customer lens when pressed after "g". No portal's navigation may use it. */
+/** Leaves the customer lens when pressed after "g". A lens session uses the customer navigation, which may not use it. */
 export const LEAVE_LENS_SHORTCUT = 'p';
 
 /** Opens the page of a navigation entry when "g" is followed by the entry's shortcut key. */

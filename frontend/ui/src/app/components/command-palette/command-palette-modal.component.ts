@@ -283,6 +283,8 @@ export class CommandPaletteModalComponent {
     },
   });
 
+  protected readonly activeElementId = computed(() => this.commands()[this.activeIndex()]?.elementId);
+
   constructor() {
     refreshInBackground(
       ...(this.applicationsLink ? [this.applicationsService.refresh()] : []),

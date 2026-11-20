@@ -40,6 +40,11 @@ function isBehindOverlay(element: Element): boolean {
         [placeholder]="placeholder()"
         [autofocus]="autofocus()"
         [attr.aria-keyshortcuts]="hotkey() ? '/' : null"
+        [attr.role]="listboxId() ? 'combobox' : null"
+        [attr.aria-controls]="listboxId() ?? null"
+        [attr.aria-expanded]="listboxId() ? true : null"
+        [attr.aria-autocomplete]="listboxId() ? 'list' : null"
+        [attr.aria-activedescendant]="activeOptionId() ?? null"
         (keydown.escape)="$event.preventDefault(); input.blur()"
         autotrim
         type="search"
@@ -58,6 +63,9 @@ export class SearchBarComponent {
   public readonly placeholder = input.required<string>();
   public readonly autofocus = input(false);
   public readonly hotkey = input(true);
+  /** Makes the input a combobox for the listbox with this id, whose options the user moves through from the input. */
+  public readonly listboxId = input<string>();
+  public readonly activeOptionId = input<string>();
 
   private readonly input = viewChild.required<ElementRef<HTMLInputElement>>('input');
 
