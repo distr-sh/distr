@@ -73,11 +73,11 @@ describe('CommandPaletteModalComponent', () => {
   // jsdom does not implement scrolling
   beforeAll(() => (Element.prototype.scrollIntoView = () => undefined));
 
-  function render(lensHome?: OrganizationWithUserRole) {
+  function render(lensHome?: OrganizationWithUserRole, navigationSections = signal(sections)) {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
-        {provide: NavigationService, useValue: {sections: signal(sections)}},
+        {provide: NavigationService, useValue: {sections: navigationSections}},
         {
           provide: ContextSwitcherService,
           useValue: {
@@ -180,6 +180,16 @@ describe('CommandPaletteModalComponent', () => {
     press(fixture, 'Escape');
     expect(reachedBody).toHaveBeenCalled();
     document.body.removeEventListener('keydown', reachedBody);
+  });
+
+  it('lists the entities of a page that becomes reachable while the palette is open', () => {
+    const navigationSections = signal<NavigationSection[]>([]);
+    const fixture = render(undefined, navigationSections);
+    expect(labels(fixture)).not.toContain('edge-prod');
+
+    navigationSections.set(sections);
+    fixture.detectChanges();
+    expect(labels(fixture)).toContain('edge-prod');
   });
 
   it('finds a page by its go-to keys', () => {

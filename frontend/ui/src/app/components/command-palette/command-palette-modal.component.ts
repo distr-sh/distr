@@ -1,11 +1,10 @@
-import {Component, computed, inject, linkedSignal, output, viewChild} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {Component, computed, inject, linkedSignal, output, Signal, viewChild} from '@angular/core';
+import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl} from '@angular/forms';
 import {Router, UrlTree} from '@angular/router';
-import {Application, CustomerOrganizationWithUsage, DeploymentTarget} from '@distr-sh/distr-sdk';
 import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
 import {faArrowLeft, faGlasses, faShuffle} from '@fortawesome/free-solid-svg-icons';
-import {map, of} from 'rxjs';
+import {map, Observable, of, switchMap} from 'rxjs';
 import {organizationKind} from '../../../util/organization-kind';
 import {refreshInBackground} from '../../../util/refresh';
 import {
@@ -18,7 +17,7 @@ import {LEAVE_LENS_SHORTCUT} from '../../navigation/go-to-shortcuts.service';
 import {NavigationEntry} from '../../navigation/navigation';
 import {NavigationService} from '../../navigation/navigation.service';
 import {ApplicationsService} from '../../services/applications.service';
-import {ArtifactsService, ArtifactWithTags} from '../../services/artifacts.service';
+import {ArtifactsService} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
@@ -28,6 +27,9 @@ import {Organization} from '../../types/organization';
 import {SearchBarComponent} from '../search-bar.component';
 
 const PALETTE_DEPLOYMENT_STATUSES: DeploymentStatusFilter[] = ['running', 'error', 'stale', 'outdated'];
+const PALETTE_DEPLOYMENT_STATUS_OPTIONS = deploymentStatusFilterSelectOptions.filter((option) =>
+  PALETTE_DEPLOYMENT_STATUSES.includes(option.value)
+);
 
 type CommandAction =
   | {kind: 'route'; route: string | UrlTree}
@@ -61,6 +63,14 @@ interface IndexedCommand extends Command {
 
 type NavigationLink = Extract<NavigationEntry, {kind: 'link'}>;
 
+function linkedCommands<T>(
+  link: NavigationLink | undefined,
+  items: readonly T[],
+  toCommand: (item: T, link: NavigationLink) => Command
+): Command[] {
+  return link ? items.map((item) => toCommand(item, link)) : [];
+}
+
 @Component({
   selector: 'app-command-palette-modal',
   templateUrl: './command-palette-modal.component.html',
@@ -87,102 +97,83 @@ export class CommandPaletteModalComponent {
     initialValue: '',
   });
 
-  // Only what the sidebar links to is searched, so the palette follows the same visibility rules.
-  private readonly links = new Map(
-    this.navigation
-      .sections()
-      .flatMap((section) => section.entries)
-      .flatMap((entry): [string, NavigationLink][] => (entry.kind === 'link' ? [[entry.id, entry]] : []))
+  // Only what the sidebar links to is listed, so the palette follows the same visibility rules.
+  private readonly links = computed(
+    () =>
+      new Map(
+        this.navigation
+          .sections()
+          .flatMap((section) => section.entries)
+          .flatMap((entry): [string, NavigationLink][] => (entry.kind === 'link' ? [[entry.id, entry]] : []))
+      )
   );
-  private readonly applicationsLink = this.links.get('applications');
-  private readonly customersLink = this.links.get('customers');
-  private readonly deploymentsLink = this.links.get('deployments');
-  private readonly artifactsLink = this.links.get('registry') ?? this.links.get('artifacts');
+  private readonly applicationsLink = computed(() => this.links().get('applications'));
+  private readonly customersLink = computed(() => this.links().get('customers'));
+  private readonly deploymentsLink = computed(() => this.links().get('deployments'));
+  private readonly artifactsLink = computed(() => this.links().get('registry') ?? this.links().get('artifacts'));
 
-  private readonly applications = toSignal(
-    this.applicationsLink ? this.applicationsService.list() : of<Application[]>([]),
-    {initialValue: []}
+  private readonly applications = this.listWhileLinked(this.applicationsLink, () => this.applicationsService.list());
+  private readonly customers = this.listWhileLinked(this.customersLink, () =>
+    this.customerOrganizationsService.getCustomerOrganizations()
   );
-  private readonly customers = toSignal(
-    this.customersLink
-      ? this.customerOrganizationsService.getCustomerOrganizations()
-      : of<CustomerOrganizationWithUsage[]>([]),
-    {initialValue: []}
+  private readonly deploymentTargets = this.listWhileLinked(this.deploymentsLink, () =>
+    this.deploymentTargetsService.list()
   );
-  private readonly deploymentTargets = toSignal(
-    this.deploymentsLink ? this.deploymentTargetsService.list() : of<DeploymentTarget[]>([]),
-    {initialValue: []}
-  );
-  private readonly artifacts = toSignal(
-    this.artifactsLink ? this.artifactsService.list() : of<ArtifactWithTags[]>([]),
-    {initialValue: []}
-  );
+  private readonly artifacts = this.listWhileLinked(this.artifactsLink, () => this.artifactsService.list());
   private readonly isCustomer = this.auth.isCustomer();
   private readonly organization = toSignal(this.organizationService.get());
-
-  private readonly deploymentStatusGroup: CommandGroup = {
-    id: 'deployment-status',
-    label: 'Filter deployments',
-    commands: this.deploymentsLink
-      ? deploymentStatusFilterSelectOptions
-          .filter((option) => PALETTE_DEPLOYMENT_STATUSES.includes(option.value))
-          .map((option) => ({
-            id: option.value,
-            label: option.label,
-            icon: this.deploymentsLink!.icon,
-            action: {
-              kind: 'route',
-              route: this.router.createUrlTree(['/deployments'], {queryParams: {status: option.value}}),
-            },
-          }))
-      : [],
-  };
 
   private readonly entityGroups = computed<CommandGroup[]>(() => [
     {
       id: 'applications',
       label: 'Applications',
-      commands: this.applications().map((application) => ({
+      commands: linkedCommands(this.applicationsLink(), this.applications(), (application, link) => ({
         id: application.id!,
         label: application.name!,
-        icon: this.applicationsLink!.icon,
-        action: {kind: 'route', route: `/applications/${application.id}`},
+        icon: link.icon,
+        action: {kind: 'route', route: `${link.route}/${application.id}`},
       })),
     },
     {
       id: 'customers',
       label: 'Customers',
-      commands: this.customers().map((customer) => ({
+      commands: linkedCommands(this.customersLink(), this.customers(), (customer, link) => ({
         id: customer.id,
         label: customer.name,
-        icon: this.customersLink!.icon,
-        action: {kind: 'route', route: `/customers/${customer.id}`},
+        icon: link.icon,
+        action: {kind: 'route', route: `${link.route}/${customer.id}`},
       })),
     },
-    this.deploymentStatusGroup,
+    {
+      id: 'deployment-status',
+      label: 'Filter deployments',
+      commands: linkedCommands(this.deploymentsLink(), PALETTE_DEPLOYMENT_STATUS_OPTIONS, (option, link) => ({
+        id: option.value,
+        label: option.label,
+        icon: link.icon,
+        action: {kind: 'route', route: this.router.createUrlTree([link.route], {queryParams: {status: option.value}})},
+      })),
+    },
     {
       id: 'deployment-targets',
       label: 'Deployments',
-      commands: this.deploymentTargets().map((target) => ({
+      commands: linkedCommands(this.deploymentsLink(), this.deploymentTargets(), (target, link) => ({
         id: target.id!,
         label: target.name,
         detail: this.isCustomer ? undefined : target.customerOrganization?.name,
         searchTexts: deploymentTargetSearchTexts(target, this.organization()?.name),
-        icon: this.deploymentsLink!.icon,
-        action: {
-          kind: 'route',
-          route: this.router.createUrlTree(['/deployments'], {queryParams: {search: target.name}}),
-        },
+        icon: link.icon,
+        action: {kind: 'route', route: this.router.createUrlTree([link.route], {queryParams: {search: target.name}})},
       })),
     },
     {
       id: 'artifacts',
       label: 'Artifacts',
-      commands: this.artifacts().map((artifact) => ({
+      commands: linkedCommands(this.artifactsLink(), this.artifacts(), (artifact, link) => ({
         id: artifact.id,
         label: artifact.name,
-        icon: this.artifactsLink!.icon,
-        action: {kind: 'route', route: `${this.artifactsLink!.route}/${artifact.id}`},
+        icon: link.icon,
+        action: {kind: 'route', route: `${link.route}/${artifact.id}`},
       })),
     },
   ]);
@@ -287,10 +278,17 @@ export class CommandPaletteModalComponent {
 
   constructor() {
     refreshInBackground(
-      ...(this.applicationsLink ? [this.applicationsService.refresh()] : []),
-      ...(this.customersLink ? [this.customerOrganizationsService.refresh()] : []),
-      ...(this.deploymentsLink ? [this.deploymentTargetsService.refresh()] : []),
-      ...(this.artifactsLink ? [this.artifactsService.refresh()] : [])
+      ...(this.applicationsLink() ? [this.applicationsService.refresh()] : []),
+      ...(this.customersLink() ? [this.customerOrganizationsService.refresh()] : []),
+      ...(this.deploymentsLink() ? [this.deploymentTargetsService.refresh()] : []),
+      ...(this.artifactsLink() ? [this.artifactsService.refresh()] : [])
+    );
+  }
+
+  private listWhileLinked<T>(link: Signal<NavigationLink | undefined>, list: () => Observable<T[]>): Signal<T[]> {
+    return toSignal(
+      toObservable(computed(() => link() !== undefined)).pipe(switchMap((isLinked) => (isLinked ? list() : of([])))),
+      {initialValue: []}
     );
   }
 
