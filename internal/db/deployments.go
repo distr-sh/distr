@@ -546,12 +546,13 @@ func GetLatestDeploymentRevisionIDs(ctx context.Context, deploymentID uuid.UUID,
 }
 
 // GetDeploymentRevisionEvents returns the newest deployment revisions of the customer organizations created
-// since, at most limit of them in total. A vendor viewer also gets those of the deployment targets that belong
-// to no customer organization.
+// since, at most limit of them in total. With shouldIncludeInternal, also those of the deployment targets that
+// belong to no customer organization, which only a vendor viewer may see.
 func GetDeploymentRevisionEvents(
 	ctx context.Context,
 	orgID uuid.UUID,
 	customerOrgIDs []uuid.UUID,
+	shouldIncludeInternal bool,
 	viewer types.ActivityViewer,
 	since time.Time,
 	limit int,
@@ -578,13 +579,17 @@ func GetDeploymentRevisionEvents(
 		WHERE dt.organization_id = @orgId
 			AND (
 				dt.customer_organization_id = any(@customerOrgIds)
-				OR (@viewerIsVendor AND dt.customer_organization_id IS NULL)
+				OR (@includeInternal AND dt.customer_organization_id IS NULL)
 			)
 			AND dr.created_at > @since
 		ORDER BY dr.created_at DESC
 		LIMIT @limit`,
 		activityViewerArgs(viewer, pgx.NamedArgs{
-			"orgId": orgID, "customerOrgIds": customerOrgIDs, "since": since, "limit": limit,
+			"orgId":           orgID,
+			"customerOrgIds":  customerOrgIDs,
+			"includeInternal": shouldIncludeInternal && viewer.IsVendor,
+			"since":           since,
+			"limit":           limit,
 		}),
 	)
 	if err != nil {

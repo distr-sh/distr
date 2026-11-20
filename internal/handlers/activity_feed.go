@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -26,8 +27,9 @@ func ActivityFeedRouter(r chiopenapi.Router) {
 		Get("/", respond.Handler(getActivityFeed)).
 		With(option.Description(
 			"List the recent activity of the current customer organization, or else of the vendor and every " +
-				"customer the vendor or partner organization manages",
+				"customer the vendor or partner organization manages, or of only the given one of those customers",
 		)).
+		With(option.Request(customerScopeQuery{})).
 		With(option.Response(http.StatusOK, []api.ActivityFeedEntry{}))
 }
 
@@ -59,11 +61,28 @@ func (s activityScope) customerOrgIDsWith(feature types.CustomerOrganizationFeat
 
 type activitySource func(ctx context.Context, scope activityScope, since time.Time) ([]activityfeed.Entry, error)
 
+// organizationActivitySources return the activity that belongs to no customer organization.
+var organizationActivitySources = []activitySource{
+	applicationVersionActivity,
+	artifactTagActivity,
+	internalDeploymentRevisionActivity,
+}
+
+// customerActivitySources return the activity of the customer organizations in the scope.
+var customerActivitySources = []activitySource{
+	customerDeploymentRevisionActivity,
+	firstArtifactPullActivity,
+	licenseKeyActivity,
+	supportBundleActivity,
+}
+
 func getActivityFeed(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
-	if scope, err := activityFeedScope(ctx); err != nil {
+	if customerOrgID, resp := customerFilterFromQuery(r); resp != nil {
+		return resp, nil
+	} else if scope, err := activityFeedScope(ctx, customerOrgID); err != nil {
 		return nil, err
-	} else if entries, err := collectActivity(ctx, scope); err != nil {
+	} else if entries, err := collectActivity(ctx, scope, activitySources(customerOrgID)); err != nil {
 		return nil, err
 	} else {
 		entries = activityfeed.RestrictToCustomerOrganizations(entries, scope.customerOrgs)
@@ -72,7 +91,28 @@ func getActivityFeed(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-func activityFeedScope(ctx context.Context) (activityScope, error) {
+// activityFeedScope narrows the scope of the caller down to the customer organization filter if one is given,
+// which matches nothing when the caller cannot reach it.
+func activityFeedScope(ctx context.Context, filter *uuid.UUID) (activityScope, error) {
+	scope, err := callerActivityScope(ctx)
+	if err != nil || filter == nil {
+		return scope, err
+	}
+	scope.customerOrgs = slices.DeleteFunc(scope.customerOrgs, func(customerOrg types.CustomerOrganization) bool {
+		return customerOrg.ID != *filter
+	})
+	return scope, nil
+}
+
+// activitySources leaves the activity that belongs to no customer organization out of the feed of one customer.
+func activitySources(filter *uuid.UUID) []activitySource {
+	if filter != nil {
+		return customerActivitySources
+	}
+	return slices.Concat(organizationActivitySources, customerActivitySources)
+}
+
+func callerActivityScope(ctx context.Context) (activityScope, error) {
 	auth := auth.Authentication.Require(ctx)
 	if customerOrg := cmp.Or(auth.LensCustomerOrg(), auth.CurrentCustomerOrg()); customerOrg != nil {
 		return activityScope{customerOrg: customerOrg, customerOrgs: []types.CustomerOrganization{*customerOrg}}, nil
@@ -99,16 +139,14 @@ func activityFeedScope(ctx context.Context) (activityScope, error) {
 	return scope, nil
 }
 
-func collectActivity(ctx context.Context, scope activityScope) ([]activityfeed.Entry, error) {
+func collectActivity(
+	ctx context.Context,
+	scope activityScope,
+	sources []activitySource,
+) ([]activityfeed.Entry, error) {
 	since := time.Now().Add(-activityfeed.Window)
 	var entries []activityfeed.Entry
-	for _, source := range []activitySource{
-		applicationVersionActivity,
-		deploymentRevisionActivity,
-		artifactActivity,
-		licenseKeyActivity,
-		supportBundleActivity,
-	} {
+	for _, source := range sources {
 		if result, err := source(ctx, scope, since); err != nil {
 			return nil, err
 		} else {
@@ -139,17 +177,41 @@ func applicationVersionActivity(
 	}
 }
 
-func deploymentRevisionActivity(
+func customerDeploymentRevisionActivity(
 	ctx context.Context,
 	scope activityScope,
 	since time.Time,
 ) ([]activityfeed.Entry, error) {
-	auth := auth.Authentication.Require(ctx)
 	customerOrgIDs := scope.customerOrgIDsWith(types.CustomerOrganizationFeatureDeploymentTargets)
-	if len(customerOrgIDs) == 0 && !scope.viewer.IsVendor {
+	if len(customerOrgIDs) == 0 {
 		return nil, nil
-	} else if revisions, err := db.GetDeploymentRevisionEvents(
-		ctx, *auth.CurrentOrgID(), customerOrgIDs, scope.viewer, since, activityfeed.Limit,
+	}
+	return deploymentRevisionActivity(ctx, scope, customerOrgIDs, false, since)
+}
+
+// internalDeploymentRevisionActivity returns the deployment revisions of the deployment targets that belong to no
+// customer organization, which only the vendor sees.
+func internalDeploymentRevisionActivity(
+	ctx context.Context,
+	scope activityScope,
+	since time.Time,
+) ([]activityfeed.Entry, error) {
+	if !scope.viewer.IsVendor {
+		return nil, nil
+	}
+	return deploymentRevisionActivity(ctx, scope, nil, true, since)
+}
+
+func deploymentRevisionActivity(
+	ctx context.Context,
+	scope activityScope,
+	customerOrgIDs []uuid.UUID,
+	shouldIncludeInternal bool,
+	since time.Time,
+) ([]activityfeed.Entry, error) {
+	auth := auth.Authentication.Require(ctx)
+	if revisions, err := db.GetDeploymentRevisionEvents(
+		ctx, *auth.CurrentOrgID(), customerOrgIDs, shouldIncludeInternal, scope.viewer, since, activityfeed.Limit,
 	); err != nil {
 		return nil, fmt.Errorf("failed to get deployment revisions: %w", err)
 	} else {
@@ -157,39 +219,48 @@ func deploymentRevisionActivity(
 	}
 }
 
-// artifactActivity returns the new tags of the artifacts, to a customer organization only those it may pull, and
-// the first pulls of the customer organizations.
-func artifactActivity(ctx context.Context, scope activityScope, since time.Time) ([]activityfeed.Entry, error) {
+// artifactTagActivity returns the new tags of the artifacts, to a customer organization only those it may pull.
+func artifactTagActivity(ctx context.Context, scope activityScope, since time.Time) ([]activityfeed.Entry, error) {
 	auth := auth.Authentication.Require(ctx)
 	if scope.customerOrg != nil && !scope.customerOrg.HasFeature(types.CustomerOrganizationFeatureArtifacts) {
 		return nil, nil
-	}
-	artifacts, err := visibleArtifacts(ctx, scope.customerOrgID())
-	if err != nil {
+	} else if artifacts, err := visibleArtifacts(ctx, scope.customerOrgID()); err != nil {
 		return nil, fmt.Errorf("failed to get artifacts: %w", err)
-	}
-	artifactIDs := make([]uuid.UUID, len(artifacts))
-	for i, artifact := range artifacts {
-		artifactIDs[i] = artifact.ID
-	}
-	tags, err := db.GetArtifactTagEvents(
-		ctx, artifactIDs, scope.customerOrgID(), auth.CurrentOrg().HasFeature(types.FeatureLicensing),
+	} else if tags, err := db.GetArtifactTagEvents(
+		ctx, artifactIDsOf(artifacts), scope.customerOrgID(), auth.CurrentOrg().HasFeature(types.FeatureLicensing),
 		scope.viewer, since, activityfeed.Limit,
-	)
-	if err != nil {
+	); err != nil {
 		return nil, fmt.Errorf("failed to get artifact tags: %w", err)
+	} else {
+		return activityfeed.ArtifactTags(artifacts, tags), nil
 	}
-	entries := activityfeed.ArtifactTags(artifacts, tags)
-	if customerOrgIDs := scope.customerOrgIDsWith(types.CustomerOrganizationFeatureArtifacts); len(customerOrgIDs) > 0 {
-		if pulls, err := db.GetFirstArtifactVersionPullsOfCustomerOrganizations(
-			ctx, *auth.CurrentOrgID(), customerOrgIDs, artifactIDs, since, activityfeed.Limit,
-		); err != nil {
-			return nil, fmt.Errorf("failed to get first artifact pulls: %w", err)
-		} else {
-			entries = append(entries, activityfeed.FirstPulls(pulls)...)
-		}
+}
+
+func firstArtifactPullActivity(
+	ctx context.Context,
+	scope activityScope,
+	since time.Time,
+) ([]activityfeed.Entry, error) {
+	auth := auth.Authentication.Require(ctx)
+	if customerOrgIDs := scope.customerOrgIDsWith(types.CustomerOrganizationFeatureArtifacts); len(customerOrgIDs) == 0 {
+		return nil, nil
+	} else if artifacts, err := visibleArtifacts(ctx, scope.customerOrgID()); err != nil {
+		return nil, fmt.Errorf("failed to get artifacts: %w", err)
+	} else if pulls, err := db.GetFirstArtifactVersionPullsOfCustomerOrganizations(
+		ctx, *auth.CurrentOrgID(), customerOrgIDs, artifactIDsOf(artifacts), since, activityfeed.Limit,
+	); err != nil {
+		return nil, fmt.Errorf("failed to get first artifact pulls: %w", err)
+	} else {
+		return activityfeed.FirstPulls(pulls), nil
 	}
-	return entries, nil
+}
+
+func artifactIDsOf(artifacts []types.ArtifactWithDownloads) []uuid.UUID {
+	ids := make([]uuid.UUID, len(artifacts))
+	for i, artifact := range artifacts {
+		ids[i] = artifact.ID
+	}
+	return ids
 }
 
 func licenseKeyActivity(ctx context.Context, scope activityScope, since time.Time) ([]activityfeed.Entry, error) {
