@@ -265,7 +265,7 @@
       </div>
       @if (homeCustomers(); as customers) {
         @if (customers.length === 0) {
-          <a routerLink="/customers" class="distr-card distr-card-clickable min-h-96 p-4">
+          <a routerLink="/customers" class="distr-card distr-card-clickable h-auto min-h-96 self-start p-4">
             <h2 appCardHeading [icon]="faAddressBook" class="mb-3">Customers</h2>
             <p class="distr-text-muted text-sm">
               @if (canCreateCustomers) {
@@ -278,7 +278,7 @@
             </p>
           </a>
         } @else {
-          <div class="distr-card min-h-96 p-4">
+          <div class="distr-card h-auto min-h-96 self-start p-4">
             <div class="mb-3 flex items-center justify-between gap-2">
               <h2 appCardHeading [icon]="faAddressBook">
                 Customers
