@@ -13,7 +13,7 @@ import (
 // It reports false for a header that has to be answered with the whole blob, as RFC 9110 section 14.2 allows for
 // several ranges and requires for a unit other than bytes. A 416 would claim that no requested range is satisfiable.
 func parseRange(header string, size int64) (int64, int64, bool, error) {
-	spec, ok := strings.CutPrefix(header, "bytes=")
+	spec, ok := strings.CutPrefix(strings.ToLower(header), "bytes=")
 	if !ok || strings.Contains(spec, ",") {
 		return 0, 0, false, nil
 	}

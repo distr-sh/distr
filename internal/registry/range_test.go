@@ -14,6 +14,7 @@ func TestParseRange(t *testing.T) {
 		start, end int64
 	}{
 		{"bytes=0-99", 0, 99},
+		{"Bytes=0-99", 0, 99},
 		{"bytes=10-19", 10, 19},
 		{"bytes=90-", 90, 99},
 		{"bytes=50-1000", 50, 99},
