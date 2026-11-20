@@ -218,9 +218,9 @@ func (b *blobs) handleGet(resp http.ResponseWriter, req *http.Request, repo, tar
 		return regErrInternal(err)
 	}
 
-	start, end := int64(0), int64(0)
+	start, end, isRange := int64(0), int64(0), false
 	if rangeHeader != "" {
-		if start, end, err = parseRange(rangeHeader, size); err != nil {
+		if start, end, isRange, err = parseRange(rangeHeader, size); err != nil {
 			return &regError{
 				Status:  http.StatusRequestedRangeNotSatisfiable,
 				Code:    "BLOB_UNKNOWN",
@@ -231,7 +231,7 @@ func (b *blobs) handleGet(resp http.ResponseWriter, req *http.Request, repo, tar
 
 	var rc io.ReadCloser
 	rangeHandler, isRangeHandler := b.blobHandler.(blob.BlobRangeHandler)
-	isRangeRead := rangeHeader != "" && isRangeHandler && !allowRedirect
+	isRangeRead := isRange && isRangeHandler && !allowRedirect
 	if isRangeRead {
 		rc, err = rangeHandler.GetRange(req.Context(), repo, h, start, end)
 	} else {
@@ -249,7 +249,7 @@ func (b *blobs) handleGet(resp http.ResponseWriter, req *http.Request, repo, tar
 	defer rc.Close()
 	var r io.Reader = rc
 
-	if rangeHeader != "" {
+	if isRange {
 		n := (end + 1) - start
 		if isRangeRead {
 			r = io.LimitReader(r, n)
