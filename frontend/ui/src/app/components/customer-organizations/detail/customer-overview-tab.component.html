@@ -1,7 +1,200 @@
-@if (customerOrganization(); as customer) {
-  <div class="distr-panel">
-    <h2 appCardHeading>Features</h2>
-    <p class="distr-text-muted mt-1 text-sm">Available for this customer.</p>
-    <app-customer-features [customerOrganization]="customer" class="mt-4" />
+<div class="flex flex-col gap-4">
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    @if (deployments(); as health) {
+      @let type = health.type;
+      <app-quick-navigation-card
+        class="min-h-32"
+        [icon]="faBoxesStacked"
+        heading="Deployments"
+        [type]="type"
+        [count]="type === 'neutral' ? undefined : health.error + health.stale"
+        [link]="tabLinks().deployments"
+        [queryParams]="type === 'error' || type === 'warning' ? deploymentAttentionQueryParams : undefined">
+        @switch (type) {
+          @case ('error') {
+            @if (health.stale > 0) {
+              issues
+            } @else {
+              <ng-container [ngPlural]="health.error">
+                <ng-template ngPluralCase="=1">error</ng-template>
+                <ng-template ngPluralCase="other">errors</ng-template>
+              </ng-container>
+            }
+          }
+          @case ('warning') {
+            stale
+          }
+          @case ('success') {
+            issues
+          }
+        }
+        <span subtitle>
+          @if (type === 'error' && health.stale > 0) {
+            <ng-container [ngPlural]="health.error">
+              <ng-template ngPluralCase="=1">1 error</ng-template>
+              <ng-template ngPluralCase="other">{{ health.error }} errors</ng-template>
+            </ng-container>
+            &middot; {{ health.stale }} stale
+          } @else if (type === 'error' || type === 'warning') {
+            <span class="grid auto-cols-[minmax(0,max-content)] grid-flow-col gap-1">
+              @for (name of health.affectedNames; track $index) {
+                @if (!$first) {
+                  <span>&middot;</span>
+                }
+                <span class="truncate" [title]="name">{{ name }}</span>
+              }
+              @if (health.moreAffected > 0) {
+                <span class="whitespace-nowrap">&middot; {{ health.moreAffected }} more</span>
+              }
+            </span>
+          } @else if (type === 'success') {
+            All deployments up and running
+          } @else if (health.isDisabled) {
+            Disabled for this customer
+          } @else {
+            No running deployments yet
+          }
+        </span>
+      </app-quick-navigation-card>
+    } @else {
+      <app-loading-card layout="stat" class="min-h-32" />
+    }
+
+    @if (updates(); as updates) {
+      <app-quick-navigation-card
+        class="min-h-32"
+        [icon]="faCircleArrowUp"
+        heading="Updates"
+        [type]="updates.type"
+        [count]="updates.type === 'neutral' ? undefined : updates.outdated"
+        [link]="updates.source === 'downloads' ? tabLinks().registry : tabLinks().deployments"
+        [queryParams]="
+          updates.type === 'warning' && updates.source === 'deployments' ? outdatedDeploymentsQueryParams : undefined
+        ">
+        outdated
+        <span subtitle>
+          @if (updates.source === 'none') {
+            No deployments or downloads yet
+          } @else if (updates.type === 'warning') {
+            @if (updates.source === 'deployments') {
+              Deployments on an older version
+            } @else {
+              Downloaded artifacts with a newer version
+            }
+          } @else {
+            @if (updates.source === 'deployments') {
+              All deployments on the latest version
+            } @else {
+              All downloads on the latest version
+            }
+          }
+        </span>
+      </app-quick-navigation-card>
+    } @else {
+      <app-loading-card layout="stat" class="min-h-32" />
+    }
+
+    @let license = licenseCard();
+    @if (license === null) {
+      @if (isVendor) {
+        <app-quick-navigation-card
+          class="min-h-32"
+          [icon]="faKey"
+          heading="Licenses"
+          [locked]="{requiresAnyOf: ['licensing']}">
+          <span subtitle>Upgrade to manage customer licenses</span>
+        </app-quick-navigation-card>
+      }
+    } @else if (license) {
+      <app-quick-navigation-card
+        class="min-h-32"
+        [icon]="faKey"
+        heading="Licenses"
+        [type]="license.type"
+        [count]="license.count"
+        [link]="tabLinks().licenses">
+        @switch (license.status) {
+          @case ('expired') {
+            expired
+          }
+          @case ('expiring') {
+            expiring
+          }
+          @case ('valid') {
+            active
+          }
+          @default {
+            licenses
+          }
+        }
+        <span subtitle>
+          @switch (license.status) {
+            @case ('expired') {
+              Renewal overdue
+              @if (license.expiring > 0) {
+                &middot; {{ license.expiring }} expiring
+              }
+            }
+            @case ('expiring') {
+              In the next {{ licenseExpiryWindowDays }} days
+            }
+            @case ('valid') {
+              None expiring in the next {{ licenseExpiryWindowDays }} days
+            }
+            @default {
+              No license key or entitlement yet
+            }
+          }
+        </span>
+      </app-quick-navigation-card>
+    } @else {
+      <app-loading-card layout="stat" class="min-h-32" />
+    }
+
+    @let support = supportCard();
+    @if (support === null) {
+      @if (isVendor) {
+        <app-quick-navigation-card
+          class="min-h-32"
+          [icon]="faLifeRing"
+          heading="Support"
+          [locked]="{requiresAnyOf: ['support']}">
+          <span subtitle>Upgrade to receive support requests from this customer</span>
+        </app-quick-navigation-card>
+      }
+    } @else if (support) {
+      <app-quick-navigation-card
+        class="min-h-32"
+        [icon]="faLifeRing"
+        heading="Support"
+        [type]="support.type"
+        [count]="support.isDisabled && support.open === 0 ? undefined : support.open"
+        [link]="tabLinks().support">
+        open
+        <span subtitle>
+          @if (support.open > 0) {
+            Requests awaiting resolution
+          } @else if (support.isDisabled) {
+            Disabled for this customer
+          } @else if (support.total > 0) {
+            All requests resolved
+          } @else {
+            No support requests yet
+          }
+        </span>
+      </app-quick-navigation-card>
+    } @else {
+      <app-loading-card layout="stat" class="min-h-32" />
+    }
   </div>
-}
+
+  @if (customerOrganization(); as customer) {
+    <div class="distr-card p-4">
+      <h2 appCardHeading>Features</h2>
+      <p class="distr-text-muted mt-1 text-sm">Available for this customer.</p>
+      <app-customer-features [customerOrganization]="customer" class="mt-4" />
+    </div>
+  } @else {
+    <app-loading-card />
+  }
+</div>
