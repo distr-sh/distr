@@ -193,6 +193,16 @@ describe('toVendorHomeLicenses', () => {
       isLicensingInUse: true,
       expiredCustomerIds: ['expired', 'both'],
       expiringCustomerIds: ['key', 'application', 'artifact'],
+      unlicensedCustomerIds: ['unlicensed'],
+    });
+  });
+
+  it('should not count customers without a license while no customer has one', () => {
+    expect(toVendorHomeLicenses([customer('a'), customer('b')], [])).toEqual({
+      isLicensingInUse: false,
+      expiredCustomerIds: [],
+      expiringCustomerIds: [],
+      unlicensedCustomerIds: [],
     });
   });
 });
@@ -230,6 +240,7 @@ describe('toVendorHomeCustomers', () => {
         isLicensingInUse: true,
         expiredCustomerIds: ['licensed'],
         expiringCustomerIds: ['support'],
+        unlicensedCustomerIds: [],
       },
       [bundle('support'), bundle('support'), bundle('other')]
     );

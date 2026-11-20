@@ -32,8 +32,8 @@ export const licenseExpiryWindowDays = 30;
 const openSupportBundleStatuses: readonly SupportBundleStatus[] = ['initialized', 'created'];
 
 /**
- * The customers with an expired license key or entitlement and those without one but with one that expires within
- * the window, so that every customer counts once.
+ * The customers with an expired license key or entitlement, those without one but with one that expires within the
+ * window and, once some customer has a license, those without one, so that every customer counts once.
  */
 export function toVendorHomeLicenses(
   customers: CustomerOrganization[],
@@ -49,12 +49,16 @@ export function toVendorHomeLicenses(
     isLicensingInUse,
     expiredCustomerIds: [],
     expiringCustomerIds: [],
+    unlicensedCustomerIds: [],
   };
   for (const customer of customers) {
-    const dates = grants(licenseByCustomer.get(customer.id))
-      .map((it) => it.expiresAt)
-      .filter((expiresAt) => expiresAt !== undefined);
-    if (dates.some((expiresAt) => !now.isBefore(expiresAt))) {
+    const customerGrants = grants(licenseByCustomer.get(customer.id));
+    const dates = customerGrants.map((it) => it.expiresAt).filter((expiresAt) => expiresAt !== undefined);
+    if (customerGrants.length === 0) {
+      if (isLicensingInUse) {
+        result.unlicensedCustomerIds.push(customer.id);
+      }
+    } else if (dates.some((expiresAt) => !now.isBefore(expiresAt))) {
       result.expiredCustomerIds.push(customer.id);
     } else if (dates.some((expiresAt) => !threshold.isBefore(expiresAt))) {
       result.expiringCustomerIds.push(customer.id);
@@ -189,6 +193,7 @@ export function toVendorHomeCustomers(
   const licenseCustomerIds = new Set([
     ...(licenses?.expiredCustomerIds ?? []),
     ...(licenses?.expiringCustomerIds ?? []),
+    ...(licenses?.unlicensedCustomerIds ?? []),
   ]);
   return customers
     .map((customer) => {

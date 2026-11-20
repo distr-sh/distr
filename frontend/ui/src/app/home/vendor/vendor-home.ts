@@ -17,6 +17,7 @@ export interface VendorHomeLicenses {
   isLicensingInUse: boolean;
   expiredCustomerIds: string[];
   expiringCustomerIds: string[];
+  unlicensedCustomerIds: string[];
 }
 
 export interface VendorHomeAdvisoryCounts {

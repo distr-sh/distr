@@ -130,22 +130,37 @@
           [count]="licenses.type === 'neutral' ? undefined : licenses.customers"
           [link]="licenses.link"
           [queryParams]="licenses.queryParams">
-          @if (licenses.expired > 0 && licenses.expiring === 0) {
+          @if (licenses.statusCount !== 1) {
+            issues
+          } @else if (licenses.expired > 0) {
             expired
-          } @else if (licenses.expiring > 0 && licenses.expired === 0) {
+          } @else if (licenses.expiring > 0) {
             expiring
           } @else {
-            issues
+            unlicensed
           }
           <span subtitle>
             @if (licenses.type === 'neutral') {
               No licenses yet
-            } @else if (licenses.expired > 0 && licenses.expiring > 0) {
-              {{ licenses.expired }} expired &middot; {{ licenses.expiring }} expiring
+            } @else if (licenses.statusCount > 1) {
+              @if (licenses.expired > 0) {
+                {{ licenses.expired }} expired
+              }
+              @if (licenses.expiring > 0) {
+                @if (licenses.expired > 0) {
+                  &middot;
+                }
+                {{ licenses.expiring }} expiring
+              }
+              @if (licenses.unlicensed > 0) {
+                &middot; {{ licenses.unlicensed }} unlicensed
+              }
             } @else if (licenses.expired > 0) {
               Renewal overdue
             } @else if (licenses.expiring > 0) {
               In the next {{ licenseExpiryWindowDays }} days
+            } @else if (licenses.unlicensed > 0) {
+              Without a license
             } @else {
               No licenses expiring in the next {{ licenseExpiryWindowDays }} days
             }
