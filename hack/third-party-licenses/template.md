@@ -11,8 +11,9 @@ passed on are collected in [`NOTICE`](NOTICE).
 The Docker Compose stacks in [`deploy/docker`](deploy/docker) and the Helm chart in
 [`deploy/charts/distr`](deploy/charts/distr) run the following programs next to Distr, and the Distr and Distr
 Controller images are built on the following base images. None of them is modified: the stacks and the chart pull the
-official upstream images and charts as they are published, and only configure them. Loki, PostgreSQL, RustFS and Caddy
-run as separate services that Distr talks to over the network. BusyBox and rclone run as separate one-off containers.
+images and charts as their publishers release them, and only configure them. Loki, PostgreSQL and RustFS run as
+separate services that Distr talks to over the network, and Caddy as a separate reverse proxy in front of Distr.
+BusyBox and rclone run as separate one-off containers.
 The base images provide the operating system of the Distr and Distr Controller images, and the Docker Controller runs
 the Docker CLI as a separate process. Each license applies to its program alone and does not extend to Distr.
 
@@ -20,9 +21,9 @@ This includes the copyleft licenses of Grafana Loki (AGPL-3.0) and BusyBox (GPL-
 `grafana/loki` image and does not include, link or change any Loki code. The source code of both is available at the
 linked repositories.
 
-Distr can also use a Loki instance that is managed separately instead of the bundled one: set `loki.enabled` to `false`
-in the Helm chart, or remove the `loki` service and the `loki` entry under `depends_on` of the `distr` service from the
-Compose stack, and point `LOKI_URL` at your instance.
+PostgreSQL, RustFS and Loki are optional, and Distr can use instances of them that are managed separately instead:
+disable them in the Helm chart values or remove them from the Compose stack, and point Distr's configuration at your
+instances.
 
 Every container image contains further software, such as the packages of its base operating system, under the licenses
 documented for that image.

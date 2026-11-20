@@ -33,8 +33,9 @@ place to look up what a setting does and when it is required.
 ## Third-Party Software
 
 Distr itself is licensed under the Apache License 2.0. Depending on the Compose stack and the Helm values, a deployment
-can also run PostgreSQL, RustFS, Loki and Caddy next to it, each as an unmodified upstream image and as a separate
-service that Distr talks to over the network, so their licenses apply to them alone.
+can also run PostgreSQL, RustFS, Loki and Caddy next to it, each as an unmodified image and as a separate program:
+Distr talks to PostgreSQL, RustFS and Loki over the network, and Caddy is a reverse proxy in front of Distr. Their
+licenses apply to them alone.
 
 [Grafana Loki](https://github.com/grafana/loki) is licensed under the
 [GNU Affero General Public License v3](https://github.com/grafana/loki/blob/main/LICENSE) (AGPL-3.0-only), with the

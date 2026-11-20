@@ -2,5 +2,5 @@ Distr
 Copyright 2024 Glasskube, Inc.
 
 This product includes third-party software, whose notices follow.
-THIRD_PARTY_LICENSES.md lists all of it with its licenses.
+https://github.com/distr-sh/distr/blob/main/THIRD_PARTY_LICENSES.md lists all of it with its licenses.
 {{notices}}
