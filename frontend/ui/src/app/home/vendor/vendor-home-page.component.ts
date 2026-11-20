@@ -38,6 +38,7 @@ import {DeploymentHealth, VendorHomeLicenses, VendorHomeUpdates} from './vendor-
 import {
   filterOpenSupportBundles,
   licenseExpiryWindowDays,
+  toAffectedCustomerNames,
   toDeploymentHealth,
   toVendorHomeAdvisoryCounts,
   toVendorHomeCustomers,
@@ -48,6 +49,14 @@ import {
 } from './vendor-home-mappers';
 
 const vendorHomeMaxCustomers = 10;
+const vendorHomeMaxAffectedNames = 2;
+
+function toAffectedSummary(names: string[]) {
+  return {
+    names: names.slice(0, vendorHomeMaxAffectedNames),
+    more: Math.max(names.length - vendorHomeMaxAffectedNames, 0),
+  };
+}
 
 function deploymentHealthType(health: DeploymentHealth): QuickNavigationCardType {
   if (health.error > 0) {
@@ -74,7 +83,7 @@ function updatesCardType(updates: VendorHomeUpdates): QuickNavigationCardType {
 function licensesCardType(licenses: VendorHomeLicenses): QuickNavigationCardType {
   if (licenses.expiredCustomerIds.length > 0) {
     return 'error';
-  } else if (licenses.expiringCustomerIds.length + licenses.unlicensedCustomerIds.length > 0) {
+  } else if (licenses.expiringCustomerIds.length > 0) {
     return 'warning';
   } else if (licenses.isLicensingInUse) {
     return 'success';
@@ -130,7 +139,7 @@ export class VendorHomePageComponent {
 
   protected readonly isVendor = this.auth.isVendor();
   protected readonly activityViewer = this.isVendor ? 'vendor' : 'partner';
-  protected readonly canConfigureSupport = this.isVendor && this.auth.hasAnyRole('read_write', 'admin');
+  private readonly canConfigureSupport = this.isVendor && this.auth.hasAnyRole('read_write', 'admin');
   protected readonly canCreateCustomers = this.auth.hasAnyRole('read_write', 'admin');
   protected readonly faAddressBook = faAddressBook;
   protected readonly faBoxesStacked = faBoxesStacked;
@@ -148,7 +157,9 @@ export class VendorHomePageComponent {
       return undefined;
     }
     const health = toDeploymentHealth(targets);
-    return {...health, type: deploymentHealthType(health)};
+    const type = deploymentHealthType(health);
+    const affected = toAffectedCustomerNames(targets, type === 'error' ? 'error' : 'stale');
+    return {...health, type, affected: toAffectedSummary(affected)};
   });
   private readonly deploymentCount = computed(() => this.deploymentHealth()?.total);
   protected readonly deploymentAttentionQueryParams = {status: vendorHomeAttentionStatuses};
@@ -186,18 +197,14 @@ export class VendorHomePageComponent {
     }
     const expired = licenses.expiredCustomerIds.length;
     const expiring = licenses.expiringCustomerIds.length;
-    const unlicensed = licenses.unlicensedCustomerIds.length;
     const statuses: CustomerLicenseStatus[] = [
       ...(expired > 0 ? ['expired' as const] : []),
       ...(expiring > 0 ? ['expiring' as const] : []),
-      ...(unlicensed > 0 ? ['no_license' as const] : []),
     ];
     return {
-      customers: expired + expiring + unlicensed,
+      customers: expired + expiring,
       expired,
       expiring,
-      unlicensed,
-      statusCount: statuses.length,
       type: licensesCardType(licenses),
       link: '/customers',
       queryParams: statuses.length > 0 ? {license: statuses} : undefined,
@@ -279,6 +286,7 @@ export class VendorHomePageComponent {
     const shouldConfigure = open === 0 && !isConfigured && this.canConfigureSupport;
     return {
       open,
+      shouldConfigure,
       type: supportCardType(open, isConfigured),
       link: shouldConfigure ? '/support/settings' : '/support',
     };

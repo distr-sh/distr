@@ -11,14 +11,12 @@ export interface VendorHomeUpdates {
   totalCustomers: number;
   hasDeploymentsOrPulls: boolean;
   outdatedCustomers: number;
-  outdatedDeployments: number;
 }
 
 export interface VendorHomeLicenses {
   isLicensingInUse: boolean;
   expiredCustomerIds: string[];
   expiringCustomerIds: string[];
-  unlicensedCustomerIds: string[];
 }
 
 export interface VendorHomeAdvisoryCounts {

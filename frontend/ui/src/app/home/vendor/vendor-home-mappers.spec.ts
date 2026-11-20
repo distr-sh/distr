@@ -14,6 +14,7 @@ import {LatestArtifactPull} from '../../types/artifact-version-pull';
 import {License} from '../../types/license';
 import {SupportBundle} from '../../types/support-bundle';
 import {
+  toAffectedCustomerNames,
   toDeploymentHealth,
   toVendorHomeCustomers,
   toVendorHomeLicenses,
@@ -99,6 +100,21 @@ describe('toDeploymentHealth', () => {
   });
 });
 
+describe('toAffectedCustomerNames', () => {
+  it('should name each customer once and fall back to the name of a target without a customer', () => {
+    const slack = customer('Slack');
+    const targets = [
+      target([deployment(status('error'))], slack),
+      target([deployment(status('healthy')), deployment(status('error'))], slack),
+      target([deployment(status('healthy', old()))], customer('Zoom')),
+      target([deployment(status('healthy'))], customer('Figma')),
+      {...target([deployment(status('error'))]), id: 'own', name: 'Staging'},
+    ];
+    expect(toAffectedCustomerNames(targets, 'error')).toEqual(['Slack', 'Staging']);
+    expect(toAffectedCustomerNames(targets, 'stale')).toEqual(['Zoom']);
+  });
+});
+
 const version = (id: string, createdAt: string): ApplicationVersion => ({id, name: id, createdAt});
 
 const application: Application = {
@@ -137,7 +153,7 @@ describe('toVendorHomeUpdates', () => {
     const pulls = [pull('a', '2.0.0'), pull('c', '2.0.0'), pull('d')];
     expect(
       toVendorHomeUpdates([current, outdated, pulledOutdated, pulledCurrent, idle], targets, [application], [], pulls)
-    ).toEqual({totalCustomers: 5, hasDeploymentsOrPulls: true, outdatedCustomers: 2, outdatedDeployments: 2});
+    ).toEqual({totalCustomers: 5, hasDeploymentsOrPulls: true, outdatedCustomers: 2});
   });
 });
 
@@ -177,16 +193,6 @@ describe('toVendorHomeLicenses', () => {
       isLicensingInUse: true,
       expiredCustomerIds: ['expired', 'both'],
       expiringCustomerIds: ['key', 'application', 'artifact'],
-      unlicensedCustomerIds: ['unlicensed'],
-    });
-  });
-
-  it('should not count customers without a license while no customer has one', () => {
-    expect(toVendorHomeLicenses([customer('a'), customer('b')], [])).toEqual({
-      isLicensingInUse: false,
-      expiredCustomerIds: [],
-      expiringCustomerIds: [],
-      unlicensedCustomerIds: [],
     });
   });
 });
@@ -224,7 +230,6 @@ describe('toVendorHomeCustomers', () => {
         isLicensingInUse: true,
         expiredCustomerIds: ['licensed'],
         expiringCustomerIds: ['support'],
-        unlicensedCustomerIds: [],
       },
       [bundle('support'), bundle('support'), bundle('other')]
     );

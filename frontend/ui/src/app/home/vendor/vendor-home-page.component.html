@@ -51,35 +51,28 @@
             }
           }
           <span subtitle>
-            @switch (type) {
-              @case ('error') {
-                @if (health.stale > 0) {
-                  <ng-container [ngPlural]="health.error">
-                    <ng-template ngPluralCase="=1">1 error</ng-template>
-                    <ng-template ngPluralCase="other">{{ health.error }} errors</ng-template>
-                  </ng-container>
-                  &middot; {{ health.stale }} stale
-                } @else {
-                  Some controllers reporting an error
-                }
-              }
-              @case ('warning') {
-                Some controllers stopped reporting
-              }
-              @case ('success') {
-                @if (health.healthy > 0) {
-                  {{ health.healthy }} healthy
-                  @if (health.running > 0) {
-                    &middot;
+            @if (type === 'error' && health.stale > 0) {
+              <ng-container [ngPlural]="health.error">
+                <ng-template ngPluralCase="=1">1 error</ng-template>
+                <ng-template ngPluralCase="other">{{ health.error }} errors</ng-template>
+              </ng-container>
+              &middot; {{ health.stale }} stale
+            } @else if (type === 'error' || type === 'warning') {
+              <span class="grid auto-cols-[minmax(0,max-content)] grid-flow-col gap-1">
+                @for (name of health.affected.names; track $index) {
+                  @if (!$first) {
+                    <span>&middot;</span>
                   }
+                  <span class="truncate" [title]="name">{{ name }}</span>
                 }
-                @if (health.running > 0) {
-                  {{ health.running }} running
+                @if (health.affected.more > 0) {
+                  <span class="whitespace-nowrap">&middot; {{ health.affected.more }} more</span>
                 }
-              }
-              @default {
-                No deployments yet
-              }
+              </span>
+            } @else if (type === 'success') {
+              All deployments up and running
+            } @else {
+              No deployments yet
             }
           </span>
         </app-quick-navigation-card>
@@ -99,18 +92,10 @@
           <span subtitle>
             @switch (updates.type) {
               @case ('warning') {
-                @if (updates.outdatedDeployments > 0) {
-                  of {{ updates.totalCustomers }} total, affecting
-                  <ng-container [ngPlural]="updates.outdatedDeployments">
-                    <ng-template ngPluralCase="=1">1 deployment</ng-template>
-                    <ng-template ngPluralCase="other">{{ updates.outdatedDeployments }} deployments</ng-template>
-                  </ng-container>
-                } @else {
-                  of {{ updates.totalCustomers }} total
-                }
+                Customers on an older version
               }
               @case ('success') {
-                No customer is behind on updates
+                All customers on the latest version
               }
               @default {
                 @if (updates.totalCustomers > 0) {
@@ -141,32 +126,22 @@
           [count]="licenses.type === 'neutral' ? undefined : licenses.customers"
           [link]="licenses.link"
           [queryParams]="licenses.queryParams">
-          <ng-container [ngPlural]="licenses.customers">
-            <ng-template ngPluralCase="=1">customer</ng-template>
-            <ng-template ngPluralCase="other">customers</ng-template>
-          </ng-container>
+          @if (licenses.expired > 0 && licenses.expiring === 0) {
+            expired
+          } @else if (licenses.expiring > 0 && licenses.expired === 0) {
+            expiring
+          } @else {
+            issues
+          }
           <span subtitle>
             @if (licenses.type === 'neutral') {
               No licenses yet
-            } @else if (licenses.statusCount > 1) {
-              @if (licenses.expired > 0) {
-                {{ licenses.expired }} expired
-              }
-              @if (licenses.expiring > 0) {
-                @if (licenses.expired > 0) {
-                  &middot;
-                }
-                {{ licenses.expiring }} expiring
-              }
-              @if (licenses.unlicensed > 0) {
-                &middot; {{ licenses.unlicensed }} without license
-              }
+            } @else if (licenses.expired > 0 && licenses.expiring > 0) {
+              {{ licenses.expired }} expired &middot; {{ licenses.expiring }} expiring
             } @else if (licenses.expired > 0) {
-              With an expired license
+              Renewal overdue
             } @else if (licenses.expiring > 0) {
-              With a license expiring in the next {{ licenseExpiryWindowDays }} days
-            } @else if (licenses.unlicensed > 0) {
-              Without a license
+              In the next {{ licenseExpiryWindowDays }} days
             } @else {
               No licenses expiring in the next {{ licenseExpiryWindowDays }} days
             }
@@ -188,27 +163,16 @@
           [icon]="faLifeRing"
           heading="Support"
           [type]="support.type"
-          [count]="support.type === 'neutral' ? undefined : support.open"
+          [count]="support.open"
           [link]="support.link">
           open
           <span subtitle>
-            @switch (support.type) {
-              @case ('warning') {
-                <ng-container [ngPlural]="support.open">
-                  <ng-template ngPluralCase="=1">Support request awaiting resolution</ng-template>
-                  <ng-template ngPluralCase="other">Support requests awaiting resolution</ng-template>
-                </ng-container>
-              }
-              @case ('success') {
-                No open support requests
-              }
-              @default {
-                @if (canConfigureSupport) {
-                  No open support requests. Configure what support bundles collect.
-                } @else {
-                  No open support requests
-                }
-              }
+            @if (support.open > 0) {
+              Requests awaiting resolution
+            } @else if (support.shouldConfigure) {
+              Configure what support bundles collect
+            } @else {
+              All requests resolved
             }
           </span>
         </app-quick-navigation-card>
