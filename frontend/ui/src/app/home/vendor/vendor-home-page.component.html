@@ -113,7 +113,11 @@
       @let licenses = licenseCard();
       @if (licenses === null) {
         @if (isVendor) {
-          <app-quick-navigation-card class="min-h-32" [icon]="faKey" heading="Licenses" lockedPlan="pro">
+          <app-quick-navigation-card
+            class="min-h-32"
+            [icon]="faKey"
+            heading="Licenses"
+            [locked]="{requiresAnyOf: ['licensing']}">
             <span subtitle>Upgrade to manage customer licenses</span>
           </app-quick-navigation-card>
         }
@@ -153,7 +157,11 @@
       @let support = supportCard();
       @if (support === null) {
         @if (isVendor) {
-          <app-quick-navigation-card class="min-h-32" [icon]="faLifeRing" heading="Support" lockedPlan="pro">
+          <app-quick-navigation-card
+            class="min-h-32"
+            [icon]="faLifeRing"
+            heading="Support"
+            [locked]="{requiresAnyOf: ['support']}">
             <span subtitle>Upgrade to receive support requests from your customers</span>
           </app-quick-navigation-card>
         }
@@ -182,7 +190,11 @@
       @if (isVendor) {
         @let advisories = advisoryCounts();
         @if (advisories === null) {
-          <app-quick-navigation-card class="min-h-32" [icon]="faShieldHalved" heading="Security" lockedPlan="business">
+          <app-quick-navigation-card
+            class="min-h-32"
+            [icon]="faShieldHalved"
+            heading="Security"
+            [locked]="{requiresAnyOf: ['vulnerabilities']}">
             <span subtitle>Upgrade to inform your customers about vulnerabilities</span>
           </app-quick-navigation-card>
         } @else if (advisories) {

@@ -12,6 +12,11 @@ export function compareBy<T>(predicate: Predicate<T, string>, inverted: boolean 
   return (a, b) => mod * predicate(a).localeCompare(predicate(b));
 }
 
+/** Unlike a plain `input.length > 0`, narrows the type so that the first element is known to exist. */
+export function isNonEmpty<T>(input: readonly T[]): input is readonly [T, ...T[]] {
+  return input.length > 0;
+}
+
 export function arraysEqual<T>(a: T[], b: T[]): boolean {
   return a.length === b.length && a.every((value, index) => value === b[index]);
 }

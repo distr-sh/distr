@@ -2,7 +2,6 @@ import {inject, Injectable} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {distinctUntilChanged, map} from 'rxjs';
 import {Feature} from '../types/organization';
-import {NON_PRO_SUBSCRIPTION_TYPES, SubscriptionType} from '../types/subscription';
 import {OrganizationService} from './organization.service';
 
 @Injectable({
@@ -39,9 +38,11 @@ export class FeatureFlagService {
 
   public readonly isCustomerSettingsEnabled$ = this.hasFeature('customer_settings');
 
-  public readonly isNotificationsEnabled$ = this.forbidSubscriptionType(...NON_PRO_SUBSCRIPTION_TYPES);
+  public readonly isNotificationsEnabled$ = this.hasFeature('notifications');
 
-  public readonly isSupportBundlesEnabled$ = this.forbidSubscriptionType(...NON_PRO_SUBSCRIPTION_TYPES);
+  public readonly isSupportBundlesEnabled$ = this.hasFeature('support');
+
+  public readonly isUserRolesEnabled = toSignal(this.hasFeature('user_roles'), {initialValue: false});
 
   // distinctUntilChanged because the organization is re-emitted on every context reload: without it,
   // every stream that combines a flag with something else re-runs, refetching lists that a reload of
@@ -49,13 +50,6 @@ export class FeatureFlagService {
   private hasFeature(feature: Feature) {
     return this.organizationService.get().pipe(
       map((org) => org.features.includes(feature)),
-      distinctUntilChanged()
-    );
-  }
-
-  private forbidSubscriptionType(...type: SubscriptionType[]) {
-    return this.organizationService.get().pipe(
-      map((org) => !type.includes(org.subscriptionType)),
       distinctUntilChanged()
     );
   }

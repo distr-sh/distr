@@ -1,5 +1,13 @@
 @reference '../../styles/tailwind.css';
 
+.locked {
+  h2,
+  .headline,
+  .subtitle {
+    @apply opacity-60;
+  }
+}
+
 :host(.card-success) {
   --card-hover-bg: --theme(--color-green-100);
 }

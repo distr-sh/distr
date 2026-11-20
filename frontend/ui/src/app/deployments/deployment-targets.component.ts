@@ -168,8 +168,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
             ...[...customers]
               .sort(compareBy((co) => co.name))
               .map<MultiSelectOption>((co) => ({value: co.id, label: co.name})),
-          ]),
-          catchError(() => of([]))
+          ])
         )
       : of([]),
     {initialValue: []}

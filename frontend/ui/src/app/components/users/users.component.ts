@@ -22,12 +22,12 @@ import {UserRoleLabelPipe} from '../../../util/user-role';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {PlaceholderDirective} from '../../directives/placeholder.directive';
 import {AuthService} from '../../services/auth.service';
+import {FeatureFlagService} from '../../services/feature-flag.service';
 import {ImageUploadService} from '../../services/image-upload.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
 import {isInviteMailNotSentError, UsersService} from '../../services/users.service';
-import {isProSubscription} from '../../types/subscription';
 import {AlertComponent} from '../alert/alert.component';
 import {AvatarComponent} from '../avatar.component';
 import {InlineEditComponent} from '../inline-edit.component';
@@ -135,7 +135,7 @@ export class UsersComponent {
     return org.currentBillableUserAccountCount;
   });
 
-  protected readonly isProSubscription = computed(() => isProSubscription(this.organization()?.subscriptionType));
+  protected readonly isUserRolesEnabled = inject(FeatureFlagService).isUserRolesEnabled;
 
   protected readonly editRoleUserId = signal<string | null>(null);
   protected readonly editRoleFormLoading = signal(false);

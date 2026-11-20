@@ -118,6 +118,7 @@ func AllSubscriptionTypes() []SubscriptionType {
 	}
 }
 
+// Feature is mirrored by the Feature type in frontend/ui/src/app/types/organization.ts. Change both together.
 type Feature string
 
 const (
@@ -142,6 +143,8 @@ const (
 )
 
 // ProFeatures is the set of features granted to organizations with a paid (pro) subscription.
+// ProFeatures and BusinessFeatures are mirrored by FEATURE_UPGRADE_PLANS in
+// frontend/ui/src/app/types/subscription.ts, which names the plan a lock offers. Change both together.
 var ProFeatures = []Feature{
 	FeatureLicensing,
 	FeatureSupport,
