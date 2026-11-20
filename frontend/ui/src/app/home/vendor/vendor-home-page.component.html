@@ -27,26 +27,27 @@
         <app-quick-navigation-card
           class="min-h-32"
           [icon]="faBoxesStacked"
-          heading="Deployment health"
+          heading="Deployments"
           [type]="type"
+          [count]="type === 'neutral' ? undefined : health.error + health.stale"
           link="/deployments"
           [queryParams]="type === 'error' || type === 'warning' ? deploymentAttentionQueryParams : undefined">
           @switch (type) {
             @case ('error') {
               @if (health.stale > 0) {
-                {{ health.error + health.stale }} issues
+                issues
               } @else {
                 <ng-container [ngPlural]="health.error">
-                  <ng-template ngPluralCase="=1">1 error</ng-template>
-                  <ng-template ngPluralCase="other">{{ health.error }} errors</ng-template>
+                  <ng-template ngPluralCase="=1">error</ng-template>
+                  <ng-template ngPluralCase="other">errors</ng-template>
                 </ng-container>
               }
             }
             @case ('warning') {
-              {{ health.stale }} stale
+              stale
             }
             @case ('success') {
-              0 issues
+              issues
             }
           }
           <span subtitle>
@@ -91,11 +92,10 @@
           [icon]="faCircleArrowUp"
           heading="Updates"
           [type]="updates.type"
+          [count]="updates.type === 'neutral' ? undefined : updates.outdatedCustomers"
           link="/customers"
           [queryParams]="updates.type === 'warning' ? outdatedCustomersQueryParams : undefined">
-          @if (updates.type !== 'neutral') {
-            {{ updates.outdatedCustomers }} outdated
-          }
+          outdated
           <span subtitle>
             @switch (updates.type) {
               @case ('warning') {
@@ -138,14 +138,13 @@
           [icon]="faKey"
           heading="Licenses"
           [type]="licenses.type"
+          [count]="licenses.type === 'neutral' ? undefined : licenses.customers"
           [link]="licenses.link"
           [queryParams]="licenses.queryParams">
-          @if (licenses.type !== 'neutral') {
-            <ng-container [ngPlural]="licenses.customers">
-              <ng-template ngPluralCase="=1">1 customer</ng-template>
-              <ng-template ngPluralCase="other">{{ licenses.customers }} customers</ng-template>
-            </ng-container>
-          }
+          <ng-container [ngPlural]="licenses.customers">
+            <ng-template ngPluralCase="=1">customer</ng-template>
+            <ng-template ngPluralCase="other">customers</ng-template>
+          </ng-container>
           <span subtitle>
             @if (licenses.type === 'neutral') {
               No licenses yet
@@ -189,10 +188,9 @@
           [icon]="faLifeRing"
           heading="Support"
           [type]="support.type"
+          [count]="support.type === 'neutral' ? undefined : support.open"
           [link]="support.link">
-          @if (support.type !== 'neutral') {
-            {{ support.open }} open
-          }
+          open
           <span subtitle>
             @switch (support.type) {
               @case ('warning') {
@@ -220,24 +218,19 @@
       @if (isVendor) {
         @let advisories = advisoryCounts();
         @if (advisories === null) {
-          <app-quick-navigation-card
-            class="min-h-32"
-            [icon]="faShieldHalved"
-            heading="Security Advisories"
-            lockedPlan="business">
+          <app-quick-navigation-card class="min-h-32" [icon]="faShieldHalved" heading="Security" lockedPlan="business">
             <span subtitle>Upgrade to inform your customers about vulnerabilities</span>
           </app-quick-navigation-card>
         } @else if (advisories) {
           <app-quick-navigation-card
             class="min-h-32"
             [icon]="faShieldHalved"
-            heading="Security Advisories"
+            heading="Security"
             [type]="advisories.total > 0 && advisories.open === 0 ? 'success' : 'neutral'"
+            [count]="advisories.total > 0 ? advisories.open : undefined"
             link="/security"
             [queryParams]="advisories.open > 0 ? openAdvisoryQueryParams : undefined">
-            @if (advisories.total > 0) {
-              {{ advisories.open }} open
-            }
+            open
             <span subtitle>
               @if (advisories.total === 0) {
                 Publish advisories to inform your customers about vulnerabilities
