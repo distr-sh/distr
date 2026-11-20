@@ -26,9 +26,11 @@ export class GoToShortcutsService {
   private armedAt: number | null = null;
 
   public onKeydown(event: KeyboardEvent): void {
+    if (event.repeat) {
+      return;
+    }
     if (
       event.defaultPrevented ||
-      event.repeat ||
       event.ctrlKey ||
       event.metaKey ||
       event.altKey ||

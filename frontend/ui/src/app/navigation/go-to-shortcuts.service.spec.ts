@@ -51,6 +51,13 @@ describe('GoToShortcutsService', () => {
     expect(event.defaultPrevented).toBe(true);
   });
 
+  it('keeps the sequence while "g" is held down', () => {
+    press(service, 'g');
+    press(service, 'g', {repeat: true});
+    press(service, 'h');
+    expect(navigateByUrl).toHaveBeenCalledWith('/home');
+  });
+
   it('ignores the shortcut key once the sequence timed out', () => {
     vi.useFakeTimers();
     press(service, 'g');
