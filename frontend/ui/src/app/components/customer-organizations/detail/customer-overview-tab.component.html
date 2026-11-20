@@ -188,13 +188,21 @@
     }
   </div>
 
-  @if (customerOrganization(); as customer) {
-    <div class="distr-card p-4">
-      <h2 appCardHeading>Features</h2>
-      <p class="distr-text-muted mt-1 text-sm">Available for this customer.</p>
-      <app-customer-features [customerOrganization]="customer" class="mt-4" />
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <div class="relative lg:col-span-2">
+      @if (activity(); as activity) {
+        <app-home-activity [activity]="activity" [viewer]="activityViewer" [hideCustomer]="true" [fillHeight]="true" />
+      } @else {
+        <app-loading-card layout="timeline" />
+      }
     </div>
-  } @else {
-    <app-loading-card />
-  }
+    @if (customerOrganization(); as customer) {
+      <div class="distr-card h-auto self-start px-6 py-4">
+        <h2 appCardHeading [icon]="faSliders">Features</h2>
+        <app-customer-features [customerOrganization]="customer" class="mt-4" />
+      </div>
+    } @else {
+      <app-loading-card />
+    }
+  </div>
 </div>

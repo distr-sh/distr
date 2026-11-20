@@ -24,4 +24,8 @@ export class ActivityFeedService {
   public refresh(): Promise<ActivityFeedEntry[]> {
     return this.cache.refresh();
   }
+
+  public listForCustomer(customerOrganizationId: string): Observable<ActivityFeedEntry[]> {
+    return this.httpClient.get<ActivityFeedEntry[]>('/api/v1/activity-feed', {params: {customerOrganizationId}});
+  }
 }

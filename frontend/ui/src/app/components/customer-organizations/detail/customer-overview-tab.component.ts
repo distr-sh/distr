@@ -2,10 +2,12 @@ import {NgPlural, NgPluralCase} from '@angular/common';
 import {Component, computed, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute} from '@angular/router';
-import {faBoxesStacked, faCircleArrowUp, faKey, faLifeRing} from '@fortawesome/free-solid-svg-icons';
+import {faBoxesStacked, faCircleArrowUp, faKey, faLifeRing, faSliders} from '@fortawesome/free-solid-svg-icons';
 import {EMPTY, firstValueFrom, map, of, switchMap} from 'rxjs';
 import {refreshInBackground} from '../../../../util/refresh';
 import {DeploymentStatusFilter} from '../../../deployments/deployment-target-card/deployment-status-text.component';
+import {toHomeActivity} from '../../../home/home-activity';
+import {HomeActivityComponent} from '../../../home/home-activity.component';
 import {QuickNavigationCardComponent, QuickNavigationCardType} from '../../../home/quick-navigation-card.component';
 import {DeploymentHealth} from '../../../home/vendor/vendor-home';
 import {
@@ -14,6 +16,7 @@ import {
   toDeploymentHealth,
   vendorHomeAttentionStatuses,
 } from '../../../home/vendor/vendor-home-mappers';
+import {ActivityFeedService} from '../../../services/activity-feed.service';
 import {ApplicationEntitlementsService} from '../../../services/application-entitlements.service';
 import {ApplicationsService} from '../../../services/applications.service';
 import {ArtifactPullsService} from '../../../services/artifact-pulls.service';
@@ -91,6 +94,7 @@ function licenseCardCount(license: CustomerOverviewLicense, type: QuickNavigatio
     NgPluralCase,
     CardHeadingComponent,
     CustomerFeaturesComponent,
+    HomeActivityComponent,
     LoadingCardComponent,
     QuickNavigationCardComponent,
   ],
@@ -103,13 +107,16 @@ export class CustomerOverviewTabComponent {
   private readonly artifactPullsService = inject(ArtifactPullsService);
   private readonly licensesService = inject(LicensesService);
   private readonly supportBundlesService = inject(SupportBundlesService);
+  private readonly activityFeedService = inject(ActivityFeedService);
 
   protected readonly isVendor = inject(AuthService).isVendor();
+  protected readonly activityViewer = this.isVendor ? 'vendor' : 'partner';
   protected readonly licenseExpiryWindowDays = licenseExpiryWindowDays;
   protected readonly faBoxesStacked = faBoxesStacked;
   protected readonly faCircleArrowUp = faCircleArrowUp;
   protected readonly faKey = faKey;
   protected readonly faLifeRing = faLifeRing;
+  protected readonly faSliders = faSliders;
   protected readonly deploymentAttentionQueryParams = {status: vendorHomeAttentionStatuses};
   protected readonly outdatedDeploymentsQueryParams = {status: ['outdated'] satisfies DeploymentStatusFilter[]};
 
@@ -220,6 +227,13 @@ export class CustomerOverviewTabComponent {
       open > 0 ? 'warning' : !isDisabled && bundles.length > 0 ? 'success' : 'neutral';
     return {open, total: bundles.length, isDisabled, type};
   });
+
+  protected readonly activity = toSignal(
+    this.customerOrganizationId$.pipe(
+      switchMap((id) => this.activityFeedService.listForCustomer(id)),
+      map(toHomeActivity)
+    )
+  );
 
   constructor() {
     refreshInBackground(
