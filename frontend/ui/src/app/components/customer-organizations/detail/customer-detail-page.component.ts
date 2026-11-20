@@ -140,8 +140,7 @@ export class CustomerDetailPageComponent {
   }
 
   protected async updatePartner(customer: CustomerOrganizationWithUsage, value: string) {
-    const currentPartnerName = this.partnerName();
-    if (currentPartnerName !== undefined) {
+    if (customer.partnerOrganizationId !== undefined) {
       const confirmed = await firstValueFrom(
         this.overlay.confirm({
           message: {
@@ -151,7 +150,7 @@ export class CustomerDetailPageComponent {
                 : 'Are you sure you want to assign this customer to another partner?',
             alert: {
               type: 'warning',
-              message: `The users of ${currentPartnerName} will no longer be able to manage this customer.`,
+              message: `The users of ${this.partnerName() ?? 'the current partner'} will no longer be able to manage this customer.`,
             },
           },
         })
