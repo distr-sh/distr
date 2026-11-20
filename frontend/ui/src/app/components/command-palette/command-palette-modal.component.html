@@ -1,8 +1,4 @@
-<div
-  class="distr-dropdown-panel mt-[15vh] flex max-h-[60vh] w-xl flex-col gap-2"
-  animate.enter="animate-flip-in-top"
-  animate.leave="animate-flip-out-top"
-  (keydown)="onKeydown($event)">
+<div class="distr-dropdown-panel mt-[15vh] flex max-h-[60vh] w-xl flex-col gap-2" (keydown)="onKeydown($event)">
   <app-search-bar
     [control]="search"
     placeholder="Search or jump to"

@@ -23,7 +23,10 @@ import {SideBarComponent} from './side-bar/side-bar.component';
       <router-outlet />
     </div>
     <ng-template #commandPalette>
-      <app-command-palette-modal (closed)="commandPaletteRef?.close()" />
+      <app-command-palette-modal
+        animate.enter="animate-flip-in-top"
+        animate.leave="animate-flip-out-top"
+        (closed)="commandPaletteRef?.close()" />
     </ng-template>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -73,8 +76,15 @@ export class NavShellComponent {
   protected toggleCommandPalette(event: Event) {
     // Ctrl+K and Cmd+K are the browsers' own shortcuts for their search and address bars
     event.preventDefault();
+    if (event instanceof KeyboardEvent && event.repeat) {
+      return;
+    }
     if (this.commandPaletteRef) {
       this.commandPaletteRef.close();
+      return;
+    }
+    // A command that navigates would leave the modal open on the next page.
+    if (document.querySelector('.cdk-overlay-backdrop')) {
       return;
     }
     this.switcher.refreshLenses();

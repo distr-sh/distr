@@ -58,6 +58,8 @@ interface CommandGroup {
 interface IndexedCommand extends Command {
   index: number;
   elementId: string;
+  /** Unique across groups, unlike the id: a customer is listed among the customers and the lenses. */
+  key: string;
 }
 
 type NavigationLink = Extract<NavigationEntry, {kind: 'link'}>;
@@ -65,6 +67,7 @@ type NavigationLink = Extract<NavigationEntry, {kind: 'link'}>;
 @Component({
   selector: 'app-command-palette-modal',
   templateUrl: './command-palette-modal.component.html',
+  host: {class: 'block origin-top'},
   imports: [FaIconComponent, SearchBarComponent],
 })
 export class CommandPaletteModalComponent {
@@ -243,7 +246,12 @@ export class CommandPaletteModalComponent {
         return {
           ...group,
           commands: (group.isSearchOnly ? matches.slice(0, SEARCH_RESULT_LIMIT) : matches).map(
-            (command): IndexedCommand => ({...command, index, elementId: `command-palette-${index++}`})
+            (command): IndexedCommand => ({
+              ...command,
+              index,
+              elementId: `command-palette-${index++}`,
+              key: `${group.id}/${command.id}`,
+            })
           ),
         };
       })
@@ -252,7 +260,20 @@ export class CommandPaletteModalComponent {
 
   private readonly commands = computed(() => this.groups().flatMap((group) => group.commands));
 
-  protected readonly activeIndex = linkedSignal({source: this.commands, computation: () => 0});
+  // The lists refresh in the background while the palette is open, which must not move the selection.
+  protected readonly activeIndex = linkedSignal<{term: string; commands: IndexedCommand[]}, number>({
+    source: () => ({term: this.searchTerm(), commands: this.commands()}),
+    computation: ({term, commands}, previous) => {
+      if (!previous || previous.source.term !== term) {
+        return 0;
+      }
+      const activeKey = previous.source.commands[previous.value]?.key;
+      return Math.max(
+        0,
+        commands.findIndex((command) => command.key === activeKey)
+      );
+    },
+  });
 
   constructor() {
     refreshInBackground(

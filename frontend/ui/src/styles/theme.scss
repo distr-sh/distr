@@ -206,7 +206,7 @@
 
   // a key of a keyboard shortcut, on a `<kbd>`
   .distr-kbd {
-    @apply rounded-sm border border-gray-200 bg-gray-100 px-1.5 font-sans text-xs text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400;
+    @apply rounded-sm border border-gray-200 bg-gray-100 px-1.5 font-sans text-xs text-gray-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400;
   }
 
   // the white surface of a page. `distr-panel` is padded for prose and forms, `distr-table-panel`
