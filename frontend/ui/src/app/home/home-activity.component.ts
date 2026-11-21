@@ -54,6 +54,8 @@ export class HomeActivityComponent {
   /** Shown as the author of what the vendor did, to a customer only. */
   public readonly vendorName = input<string>();
   public readonly vendorLogo = input<string>();
+  /** For a feed of a single customer, which would otherwise name it on every entry. */
+  public readonly hideCustomer = input(false);
   /**
    * Collapsed, the card takes the height of its positioned parent instead of its own, which places it next to the
    * other cards at their height. The parent's grid row then has to be sized by those cards alone.
@@ -68,6 +70,7 @@ export class HomeActivityComponent {
   protected readonly entries = computed<ActivityEntry[]>(() => {
     const viewer = this.viewer();
     const vendorName = this.vendorName();
+    const shouldShowCustomer = viewer !== 'customer' && !this.hideCustomer();
     return this.activity().map((activity) => {
       const byVendor =
         activity.type === 'application_version_created' ||
@@ -87,7 +90,7 @@ export class HomeActivityComponent {
               ? {name: vendorName, imageUrl: this.vendorLogo(), isVendor: true}
               : undefined
             : activity.user && {...activity.user, isVendor: false},
-        customerName: viewer === 'customer' ? undefined : activity.customer?.name,
+        customerName: shouldShowCustomer ? activity.customer?.name : undefined,
       };
     });
   });
