@@ -126,10 +126,12 @@ func newRegistry(ctx context.Context, reg *Registry) (*Registry, error) {
 		reg.jobsScheduler = scheduler
 	}
 
-	if artifactRegistry, err := reg.createArtifactsRegistry(ctx); err != nil {
-		return nil, err
-	} else {
-		reg.artifactsRegistry = artifactRegistry
+	if env.RegistryEnabled() {
+		if artifactRegistry, err := reg.createArtifactsRegistry(ctx); err != nil {
+			return nil, err
+		} else {
+			reg.artifactsRegistry = artifactRegistry
+		}
 	}
 
 	if oidcer, err := reg.createOIDCer(ctx, reg.logger); err != nil {

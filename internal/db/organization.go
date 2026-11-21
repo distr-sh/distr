@@ -40,7 +40,8 @@ var (
 		o.kubernetes_post_connect_script,
 		` + organizationStripeSecret.Value("o") + `,
 		` + organizationStripeSecret.IsSetValue("o") + `,
-		o.controller_image_repository
+		o.controller_image_repository,
+		o.registry_redirect_enabled
 	`
 	organizationWithUserRoleOutputExpr = organizationOutputExpr + `,
 		j.user_role,
