@@ -1,0 +1,46 @@
+<div class="distr-card block p-4">
+  <div class="mb-1 flex items-center gap-4">
+    <h2 appCardHeading [icon]="faListCheck">Getting started</h2>
+    <span class="distr-text-muted flex-1 text-sm">{{ doneCount() }} of {{ items().length }} done</span>
+    <button
+      type="button"
+      (click)="dismissed.emit()"
+      title="Hide getting started"
+      class="-me-2 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
+      <fa-icon [icon]="faXmark" />
+      <span class="sr-only">Hide getting started</span>
+    </button>
+  </div>
+  <p class="distr-text-muted mb-3 text-sm">
+    Distribute your applications to self-managed customers: with a controller that Distr updates and monitors in the
+    customer's environment, or with artifacts they pull from your registry.
+  </p>
+  <ul class="-mx-2 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
+    @for (item of items(); track item.id) {
+      <li>
+        <a
+          [routerLink]="item.link"
+          class="flex h-full items-start gap-3 rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+          @switch (item.status) {
+            @case ('done') {
+              <fa-icon [icon]="faCircleCheck" class="flex h-5 items-center text-green-500" />
+              <span class="sr-only">Completed:</span>
+            }
+            @case ('in_progress') {
+              <fa-icon [icon]="faCircleHalfStroke" class="flex h-5 items-center text-blue-600 dark:text-blue-500" />
+              <span class="sr-only">In progress:</span>
+            }
+            @default {
+              <fa-icon [icon]="faCircle" class="flex h-5 items-center text-gray-400 dark:text-gray-500" />
+              <span class="sr-only">Not completed:</span>
+            }
+          }
+          <div class="min-w-0">
+            <span class="distr-home-row-title">{{ item.name }}</span>
+            <p class="distr-home-row-meta">{{ item.description }}</p>
+          </div>
+        </a>
+      </li>
+    }
+  </ul>
+</div>

@@ -264,7 +264,7 @@ export class ControllersTutorialComponent implements OnInit, AfterViewInit {
   }
 
   protected navigateToOverviewPage() {
-    this.router.navigate(['tutorials']);
+    this.router.navigate(['/home']);
   }
 
   protected readonly faArrowRight = faArrowRight;

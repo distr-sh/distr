@@ -1,5 +1,5 @@
-import {computed, inject, Injectable, signal} from '@angular/core';
-import {toObservable, toSignal} from '@angular/core/rxjs-interop';
+import {computed, inject, Injectable} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {CustomerOrganizationFeature, SidebarLink} from '@distr-sh/distr-sdk';
 import {map, of, switchMap} from 'rxjs';
 import {AuthService} from '../services/auth.service';
@@ -7,7 +7,6 @@ import {ContextService} from '../services/context.service';
 import {FeatureFlagService} from '../services/feature-flag.service';
 import {LicenseKeysService} from '../services/license-keys.service';
 import {OrganizationService} from '../services/organization.service';
-import {TutorialsService} from '../services/tutorials.service';
 import {Feature} from '../types/organization';
 import {customerNavigation} from './customer-navigation';
 import {NavigationContext, NavigationDefinition, NavigationSection, resolveNavigation} from './navigation';
@@ -26,8 +25,6 @@ export class NavigationService {
   private readonly featureFlags = inject(FeatureFlagService);
   private readonly contextService = inject(ContextService);
   private readonly licenseKeysService = inject(LicenseKeysService);
-  private readonly tutorialsService = inject(TutorialsService);
-
   private readonly definition: NavigationDefinition = this.auth.isVendor()
     ? vendorNavigation
     : this.auth.isPartner()
@@ -35,16 +32,6 @@ export class NavigationService {
       : this.auth.isCustomer()
         ? customerNavigation
         : [];
-
-  private readonly isAllTutorialsStarted =
-    this.auth.isVendor() && this.auth.hasAnyRole('admin')
-      ? toSignal(
-          toObservable(this.organizationService.hasSubscription).pipe(
-            switchMap((hasSub) => (hasSub ? of(true) : this.tutorialsService.allStarted$))
-          ),
-          {initialValue: true}
-        )
-      : signal(true);
 
   // The license keys page lists only license keys, so a customer licensed through entitlements alone would land on
   // an empty page.
@@ -80,10 +67,6 @@ export class NavigationService {
       isAdminOrSuperAdmin: this.auth.isSuperAdmin() || this.auth.hasRole('admin'),
       isReadWriteOrAdmin: this.auth.hasAnyRole('read_write', 'admin'),
       isSuperAdmin: this.auth.isSuperAdmin(),
-    },
-    organization: {
-      hasSubscription: this.organizationService.hasSubscription(),
-      hasUnstartedTutorials: !this.isAllTutorialsStarted(),
     },
     features: this.features(),
     customer: {
