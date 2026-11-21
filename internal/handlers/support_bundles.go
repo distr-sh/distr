@@ -301,7 +301,9 @@ func getSupportBundlesHandler(r *http.Request) (respond.Responder, error) {
 	); err != nil {
 		return nil, fmt.Errorf("failed to get support bundles: %w", err)
 	} else {
-		return respond.JSON(mapping.List(bundles, mapping.SupportBundleToAPI)), nil
+		return respond.JSON(mapping.List(
+			bundles, mapping.SupportBundleToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID()),
+		)), nil
 	}
 }
 
@@ -343,7 +345,7 @@ func createSupportBundleHandler(r *http.Request) (respond.Responder, error) {
 				baseURL, bundle.ID.String(), bundleSecret,
 			)
 			return respond.JSON(api.CreateSupportBundleResponse{
-				SupportBundle:  mapping.SupportBundleToAPI(*detailBundle),
+				SupportBundle:  mapping.SupportBundleToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID())(*detailBundle),
 				CollectCommand: collectCommand,
 			}), nil
 		}
@@ -384,9 +386,11 @@ func getSupportBundleDetailHandler(r *http.Request) (respond.Responder, error) {
 		return nil, fmt.Errorf("failed to get support bundle comments: %w", err)
 	} else {
 		detail := api.SupportBundleDetail{
-			SupportBundle: mapping.SupportBundleToAPI(*bundle),
+			SupportBundle: mapping.SupportBundleToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID())(*bundle),
 			Resources:     mapping.List(resources, mapping.SupportBundleResourceSummaryToAPI),
-			Comments:      mapping.List(comments, mapping.SupportBundleCommentToAPI),
+			Comments: mapping.List(
+				comments, mapping.SupportBundleCommentToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID()),
+			),
 		}
 		if bundle.Status == types.SupportBundleStatusInitialized && bundle.BundleSecretExpiresAt != nil {
 			org, err := db.GetOrganizationWithBranding(ctx, bundle.OrganizationID)
@@ -665,6 +669,8 @@ func createSupportBundleCommentHandler(r *http.Request) (respond.Responder, erro
 	); err != nil {
 		return nil, fmt.Errorf("failed to create support bundle comment: %w", err)
 	} else {
-		return respond.JSON(mapping.SupportBundleCommentToAPI(*comment)), nil
+		return respond.JSON(
+			mapping.SupportBundleCommentToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID())(*comment),
+		), nil
 	}
 }

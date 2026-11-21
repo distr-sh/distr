@@ -75,14 +75,18 @@ type CustomerSupportBundleEvent struct {
 
 type SupportBundleWithDetails struct {
 	SupportBundle
-	CreatedByUserName        *string    `db:"created_by_user_name"`
-	CreatedByImageID         *uuid.UUID `db:"created_by_image_id"`
-	CustomerOrganizationName string     `db:"customer_organization_name"`
-	ResourceCount            int64      `db:"resource_count"`
-	CommentCount             int64      `db:"comment_count"`
-	LastCommentAt            *time.Time `db:"last_comment_at"`
-	StatusChangedByUserName  *string    `db:"status_changed_by_user_name"`
-	StatusChangedByImageID   *uuid.UUID `db:"status_changed_by_image_id"`
+	CreatedByUserName                     *string    `db:"created_by_user_name"`
+	CreatedByImageID                      *uuid.UUID `db:"created_by_image_id"`
+	CreatedByCustomerOrganizationID       *uuid.UUID `db:"created_by_customer_organization_id"`
+	CreatedByPartnerOrganizationID        *uuid.UUID `db:"created_by_partner_organization_id"`
+	CustomerOrganizationName              string     `db:"customer_organization_name"`
+	ResourceCount                         int64      `db:"resource_count"`
+	CommentCount                          int64      `db:"comment_count"`
+	LastCommentAt                         *time.Time `db:"last_comment_at"`
+	StatusChangedByUserName               *string    `db:"status_changed_by_user_name"`
+	StatusChangedByImageID                *uuid.UUID `db:"status_changed_by_image_id"`
+	StatusChangedByCustomerOrganizationID *uuid.UUID `db:"status_changed_by_customer_organization_id"`
+	StatusChangedByPartnerOrganizationID  *uuid.UUID `db:"status_changed_by_partner_organization_id"`
 }
 
 type SupportBundleResourceSummary struct {
@@ -113,6 +117,8 @@ type SupportBundleComment struct {
 
 type SupportBundleCommentWithUser struct {
 	SupportBundleComment
-	UserName    *string    `db:"user_name"`
-	UserImageID *uuid.UUID `db:"user_image_id"`
+	UserName                   *string    `db:"user_name"`
+	UserImageID                *uuid.UUID `db:"user_image_id"`
+	UserCustomerOrganizationID *uuid.UUID `db:"user_customer_organization_id"`
+	UserPartnerOrganizationID  *uuid.UUID `db:"user_partner_organization_id"`
 }

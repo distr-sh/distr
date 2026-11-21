@@ -288,12 +288,25 @@ var supportBundleWithDetailsOutputExpr = `
 	sb.status_changed_at,
 	u.name AS created_by_user_name,
 	u.image_id AS created_by_image_id,
+	uj.customer_organization_id AS created_by_customer_organization_id,
+	uj.partner_organization_id AS created_by_partner_organization_id,
 	co.name AS customer_organization_name,
 	(SELECT count(*) FROM SupportBundleResource WHERE support_bundle_id = sb.id) AS resource_count,
 	(SELECT count(*) FROM SupportBundleComment WHERE support_bundle_id = sb.id) AS comment_count,
 	(SELECT max(created_at) FROM SupportBundleComment WHERE support_bundle_id = sb.id) AS last_comment_at,
 	scu.name AS status_changed_by_user_name,
-	scu.image_id AS status_changed_by_image_id
+	scu.image_id AS status_changed_by_image_id,
+	scuj.customer_organization_id AS status_changed_by_customer_organization_id,
+	scuj.partner_organization_id AS status_changed_by_partner_organization_id
+`
+
+const supportBundleWithDetailsJoinExpr = `
+	LEFT JOIN UserAccount u ON sb.created_by_user_account_id = u.id
+	LEFT JOIN Organization_UserAccount uj ON uj.user_account_id = u.id AND uj.organization_id = sb.organization_id
+	INNER JOIN CustomerOrganization co ON sb.customer_organization_id = co.id
+	LEFT JOIN UserAccount scu ON sb.status_changed_by_user_account_id = scu.id
+	LEFT JOIN Organization_UserAccount scuj
+		ON scuj.user_account_id = scu.id AND scuj.organization_id = sb.organization_id
 `
 
 // GetCustomerSupportBundleEvents returns the newest creations and status changes of the support bundles of the
@@ -359,12 +372,10 @@ func GetSupportBundles(
 	query := fmt.Sprintf(`
 		SELECT %v
 		FROM SupportBundle sb
-		LEFT JOIN UserAccount u ON sb.created_by_user_account_id = u.id
-		INNER JOIN CustomerOrganization co ON sb.customer_organization_id = co.id
-		LEFT JOIN UserAccount scu ON sb.status_changed_by_user_account_id = scu.id
+		%v
 		WHERE sb.organization_id = @orgId
 		AND (@isVendor OR sb.customer_organization_id = @customerOrgId OR co.partner_organization_id = @partnerOrgId)`,
-		supportBundleWithDetailsOutputExpr)
+		supportBundleWithDetailsOutputExpr, supportBundleWithDetailsJoinExpr)
 
 	args := pgx.NamedArgs{
 		"orgId":         orgID,
@@ -396,11 +407,9 @@ func GetSupportBundleByID(ctx context.Context, id, orgID uuid.UUID) (*types.Supp
 		fmt.Sprintf(`
 			SELECT %v
 			FROM SupportBundle sb
-			LEFT JOIN UserAccount u ON sb.created_by_user_account_id = u.id
-			INNER JOIN CustomerOrganization co ON sb.customer_organization_id = co.id
-			LEFT JOIN UserAccount scu ON sb.status_changed_by_user_account_id = scu.id
+			%v
 			WHERE sb.id = @id AND sb.organization_id = @orgId`,
-			supportBundleWithDetailsOutputExpr),
+			supportBundleWithDetailsOutputExpr, supportBundleWithDetailsJoinExpr),
 		pgx.NamedArgs{"id": id, "orgId": orgID},
 	)
 	if err != nil {
@@ -648,14 +657,28 @@ func CreateSupportBundleResource(ctx context.Context, resource *types.SupportBun
 
 // Comments
 
+const supportBundleCommentWithUserOutputExpr = `
+	c.id, c.created_at, c.support_bundle_id, c.user_account_id, c.content,
+	u.name AS user_name, u.image_id AS user_image_id,
+	uj.customer_organization_id AS user_customer_organization_id,
+	uj.partner_organization_id AS user_partner_organization_id
+`
+
+// supportBundleCommentWithUserJoinExpr joins the author of the comment c and their membership in the vendor's
+// organization.
+const supportBundleCommentWithUserJoinExpr = `
+	JOIN SupportBundle sb ON c.support_bundle_id = sb.id
+	LEFT JOIN UserAccount u ON c.user_account_id = u.id
+	LEFT JOIN Organization_UserAccount uj ON uj.user_account_id = u.id AND uj.organization_id = sb.organization_id
+`
+
 func GetSupportBundleComments(ctx context.Context, bundleID uuid.UUID) ([]types.SupportBundleCommentWithUser, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`SELECT c.id, c.created_at, c.support_bundle_id, c.user_account_id, c.content,
-			u.name AS user_name, u.image_id AS user_image_id
+		`SELECT `+supportBundleCommentWithUserOutputExpr+`
 		FROM SupportBundleComment c
-		LEFT JOIN UserAccount u ON c.user_account_id = u.id
+		`+supportBundleCommentWithUserJoinExpr+`
 		WHERE c.support_bundle_id = @bundleId
 		ORDER BY c.created_at`,
 		pgx.NamedArgs{"bundleId": bundleID},
@@ -681,10 +704,9 @@ func CreateSupportBundleComment(
 			VALUES (@bundleId, @userId, @content)
 			RETURNING *
 		)
-		SELECT i.id, i.created_at, i.support_bundle_id, i.user_account_id, i.content,
-			u.name AS user_name, u.image_id AS user_image_id
-		FROM inserted i
-		LEFT JOIN UserAccount u ON i.user_account_id = u.id`,
+		SELECT `+supportBundleCommentWithUserOutputExpr+`
+		FROM inserted c
+		`+supportBundleCommentWithUserJoinExpr,
 		pgx.NamedArgs{
 			"bundleId": bundleID,
 			"userId":   userID,

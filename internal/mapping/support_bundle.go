@@ -66,25 +66,42 @@ func SupportBundleConfigurationScriptToInternal(
 	}
 }
 
-func SupportBundleToAPI(bundle types.SupportBundleWithDetails) api.SupportBundle {
-	return api.SupportBundle{
-		ID:                       bundle.ID,
-		CreatedAt:                bundle.CreatedAt,
-		CustomerOrganizationID:   bundle.CustomerOrganizationID,
-		CustomerOrganizationName: bundle.CustomerOrganizationName,
-		CreatedByUserAccountID:   bundle.CreatedByUserAccountID,
-		CreatedByUserName:        bundle.CreatedByUserName,
-		CreatedByImageURL:        CreateImageURL(bundle.CreatedByImageID),
-		DeploymentType:           bundle.DeploymentType,
-		Title:                    bundle.Title,
-		Description:              bundle.Description,
-		Status:                   string(bundle.Status),
-		ResourceCount:            bundle.ResourceCount,
-		CommentCount:             bundle.CommentCount,
-		LastCommentAt:            bundle.LastCommentAt,
-		StatusChangedByUserName:  bundle.StatusChangedByUserName,
-		StatusChangedByImageURL:  CreateImageURL(bundle.StatusChangedByImageID),
-		StatusChangedAt:          bundle.StatusChangedAt,
+// SupportBundleToAPI returns a mapper that converts a SupportBundleWithDetails to its API representation. The
+// identity of the users who created the bundle and changed its status is only included when the viewer is
+// allowed to see it, by the same rule as deploymentRevisionCreatorToAPI.
+func SupportBundleToAPI(
+	viewerCustomerOrgID *uuid.UUID,
+	viewerPartnerOrgID *uuid.UUID,
+) func(types.SupportBundleWithDetails) api.SupportBundle {
+	viewerRank := organizationKindRank(viewerCustomerOrgID, viewerPartnerOrgID)
+	return func(bundle types.SupportBundleWithDetails) api.SupportBundle {
+		result := api.SupportBundle{
+			ID:                       bundle.ID,
+			CreatedAt:                bundle.CreatedAt,
+			CustomerOrganizationID:   bundle.CustomerOrganizationID,
+			CustomerOrganizationName: bundle.CustomerOrganizationName,
+			DeploymentType:           bundle.DeploymentType,
+			Title:                    bundle.Title,
+			Description:              bundle.Description,
+			Status:                   string(bundle.Status),
+			ResourceCount:            bundle.ResourceCount,
+			CommentCount:             bundle.CommentCount,
+			LastCommentAt:            bundle.LastCommentAt,
+			StatusChangedAt:          bundle.StatusChangedAt,
+		}
+		if organizationKindRank(bundle.CreatedByCustomerOrganizationID, bundle.CreatedByPartnerOrganizationID) >=
+			viewerRank {
+			result.CreatedByUserAccountID = bundle.CreatedByUserAccountID
+			result.CreatedByUserName = bundle.CreatedByUserName
+			result.CreatedByImageURL = CreateImageURL(bundle.CreatedByImageID)
+		}
+		if organizationKindRank(
+			bundle.StatusChangedByCustomerOrganizationID, bundle.StatusChangedByPartnerOrganizationID,
+		) >= viewerRank {
+			result.StatusChangedByUserName = bundle.StatusChangedByUserName
+			result.StatusChangedByImageURL = CreateImageURL(bundle.StatusChangedByImageID)
+		}
+		return result
 	}
 }
 
@@ -105,13 +122,25 @@ func SupportBundleResourceSummaryToAPI(resource types.SupportBundleResourceSumma
 	}
 }
 
-func SupportBundleCommentToAPI(comment types.SupportBundleCommentWithUser) api.SupportBundleComment {
-	return api.SupportBundleComment{
-		ID:            comment.ID,
-		CreatedAt:     comment.CreatedAt,
-		UserAccountID: comment.UserAccountID,
-		UserName:      comment.UserName,
-		UserImageURL:  CreateImageURL(comment.UserImageID),
-		Content:       comment.Content,
+// SupportBundleCommentToAPI returns a mapper that converts a SupportBundleCommentWithUser to its API
+// representation, including the identity of the author only when the viewer is allowed to see it, like
+// SupportBundleToAPI.
+func SupportBundleCommentToAPI(
+	viewerCustomerOrgID *uuid.UUID,
+	viewerPartnerOrgID *uuid.UUID,
+) func(types.SupportBundleCommentWithUser) api.SupportBundleComment {
+	viewerRank := organizationKindRank(viewerCustomerOrgID, viewerPartnerOrgID)
+	return func(comment types.SupportBundleCommentWithUser) api.SupportBundleComment {
+		result := api.SupportBundleComment{
+			ID:        comment.ID,
+			CreatedAt: comment.CreatedAt,
+			Content:   comment.Content,
+		}
+		if organizationKindRank(comment.UserCustomerOrganizationID, comment.UserPartnerOrganizationID) >= viewerRank {
+			result.UserAccountID = comment.UserAccountID
+			result.UserName = comment.UserName
+			result.UserImageURL = CreateImageURL(comment.UserImageID)
+		}
+		return result
 	}
 }
