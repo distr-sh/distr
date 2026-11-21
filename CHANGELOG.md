@@ -1,5 +1,145 @@
 # Changelog
 
+## [4.11.0](https://github.com/distr-sh/distr/compare/4.10.0...4.11.0) (2026-11-21)
+
+
+### Features
+
+* **frontend:** add go-to keyboard shortcuts for sidebar navigation ([#3986](https://github.com/distr-sh/distr/issues/3986)) ([056b665](https://github.com/distr-sh/distr/commit/056b66524785136c865f2f569a1e1855fd5d56af))
+* **frontend:** add new customer list page ([#3962](https://github.com/distr-sh/distr/issues/3962)) ([4ce2c6c](https://github.com/distr-sh/distr/commit/4ce2c6cbc81c7df7bea067f24b86b51b1c4899c8))
+* **frontend:** add outdated option to the deployment status filter ([#3976](https://github.com/distr-sh/distr/issues/3976)) ([ec1e462](https://github.com/distr-sh/distr/commit/ec1e46290c63ea179091d0519c3ca0fe1c44988f))
+* **frontend:** add top card and tabs with placeholders to customer detail page ([#3875](https://github.com/distr-sh/distr/issues/3875)) ([15e2376](https://github.com/distr-sh/distr/commit/15e2376d4707f966bfc97d29e281e9fe00235c78))
+* **frontend:** introduce customer list filters ([#3963](https://github.com/distr-sh/distr/issues/3963)) ([02bd3d3](https://github.com/distr-sh/distr/commit/02bd3d376adc4259620d1a7d814a296d170ec934))
+* **frontend:** Move licensing into customer detail page tab ([#3914](https://github.com/distr-sh/distr/issues/3914)) ([945a9da](https://github.com/distr-sh/distr/commit/945a9dae0c8b05dca1938e9966d303ffb2b3973f))
+* **frontend:** no license and no update state improvements ([#3965](https://github.com/distr-sh/distr/issues/3965)) ([14e687a](https://github.com/distr-sh/distr/commit/14e687ad935a4006fb9c8a150100c56c476f12ea))
+* **frontend:** Show artifact downloads on customer detail page ([#3894](https://github.com/distr-sh/distr/issues/3894)) ([88b6df3](https://github.com/distr-sh/distr/commit/88b6df36ca7e8a2d20f2dc05142b0f101851c02f))
+* **frontend:** Show deployment targets in customer detail page tab ([#3882](https://github.com/distr-sh/distr/issues/3882)) ([106ef5d](https://github.com/distr-sh/distr/commit/106ef5d24cbecb062341f2a2c4bf97ec4d519c3f))
+* **frontend:** Show scoped support bundle list in customer detail page ([#3915](https://github.com/distr-sh/distr/issues/3915)) ([8eefb29](https://github.com/distr-sh/distr/commit/8eefb292bf9130c64e5c9b6dd2b487a5c277aad6))
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([#3948](https://github.com/distr-sh/distr/issues/3948)) ([0322984](https://github.com/distr-sh/distr/commit/03229846a051cabb48c485b8b7c2198e162e0889))
+* **deps:** update go-mailx dependencies ([#3865](https://github.com/distr-sh/distr/issues/3865)) ([956f0fb](https://github.com/distr-sh/distr/commit/956f0fbc54072cadcd56b3a46b310ebfe4842c9c))
+* **deps:** update module cloud.google.com/go/kms to v1.37.0 ([#3949](https://github.com/distr-sh/distr/issues/3949)) ([9b9fad2](https://github.com/distr-sh/distr/commit/9b9fad24843af2dbabdd5b23865fdba855e6d686))
+* **deps:** update module github.com/docker/cli to v29.10.0+incompatible ([#3984](https://github.com/distr-sh/distr/issues/3984)) ([dcfdf6d](https://github.com/distr-sh/distr/commit/dcfdf6dc5279aae1b4331bc7d6916df3a99264f1))
+* **deps:** update module github.com/docker/compose/v5 to v5.7.1 ([#3933](https://github.com/distr-sh/distr/issues/3933)) ([5cfc813](https://github.com/distr-sh/distr/commit/5cfc81373c7d421568aef46e7da0a88eb6a8ccc2))
+* **deps:** update module github.com/go-co-op/gocron/v2 to v2.23.1 ([#3866](https://github.com/distr-sh/distr/issues/3866)) ([1c630e9](https://github.com/distr-sh/distr/commit/1c630e97773acf98033dd1813bddfd5e8d2d7bcc))
+* **deps:** update module github.com/go-mailx/mailx-ses to v1.1.4 ([#3934](https://github.com/distr-sh/distr/issues/3934)) ([504f68e](https://github.com/distr-sh/distr/commit/504f68eca627440e1dcc608c280ede0fbba6565b))
+* **deps:** update module github.com/jackc/pgx/v5 to v5.13.0 ([#3950](https://github.com/distr-sh/distr/issues/3950)) ([6d144fe](https://github.com/distr-sh/distr/commit/6d144fed8e7154f3ccc66631fcf5a530a0f25ab4))
+* **deps:** update module github.com/moby/moby/api to v1.57.0 ([#3951](https://github.com/distr-sh/distr/issues/3951)) ([0f465fb](https://github.com/distr-sh/distr/commit/0f465fb4e0961af3c870fa8171fa37e674396d88))
+* **deps:** update module github.com/moby/moby/client to v0.6.3 ([#3935](https://github.com/distr-sh/distr/issues/3935)) ([a961961](https://github.com/distr-sh/distr/commit/a9619615876657601d84108ae9dfc36436d3a3a2))
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.165.1 ([#3936](https://github.com/distr-sh/distr/issues/3936)) ([5f72b77](https://github.com/distr-sh/distr/commit/5f72b77a437629a12a6dd3ca32e47c6b2f24be2b))
+* **deps:** update module go.podman.io/image/v5 to v5.42.1 ([#3939](https://github.com/distr-sh/distr/issues/3939)) ([60c76b8](https://github.com/distr-sh/distr/commit/60c76b866812b7b871ac8ac903a358909c7602db))
+* **deps:** update module golang.org/x/crypto to v0.59.0 [security] ([#3884](https://github.com/distr-sh/distr/issues/3884)) ([123d169](https://github.com/distr-sh/distr/commit/123d169728e3bd966abea0b2168134d72002a2e6))
+* **deps:** update module helm.sh/helm/v4 to v4.3.2 ([#3940](https://github.com/distr-sh/distr/issues/3940)) ([0da8875](https://github.com/distr-sh/distr/commit/0da88755e6422305e4b0edb2301e68b45896eadd))
+* **frontend:** fix "x" button alignment in sidebar ([#4003](https://github.com/distr-sh/distr/issues/4003)) ([36953f2](https://github.com/distr-sh/distr/commit/36953f21f47e39726e53dcd8453701f590db3d09))
+* **frontend:** Fix time related issues and improve error handling on copying licenses ([#3970](https://github.com/distr-sh/distr/issues/3970)) ([0adeeb1](https://github.com/distr-sh/distr/commit/0adeeb1a82b4cb0528d51836744033bc6b39d2d0))
+* **frontend:** improve pull-through sync badge styling ([#4004](https://github.com/distr-sh/distr/issues/4004)) ([5dd6746](https://github.com/distr-sh/distr/commit/5dd67464c936606bb927801e54fe5757d2e604b5))
+* **frontend:** license template settings table now uses full width ([#3953](https://github.com/distr-sh/distr/issues/3953)) ([e729430](https://github.com/distr-sh/distr/commit/e72943071e41b1b2b4cb2846ce84ab6002a5602f))
+* **frontend:** prevent customer card growing with ativity card ([#3998](https://github.com/distr-sh/distr/issues/3998)) ([f8a8867](https://github.com/distr-sh/distr/commit/f8a88676c1d7f254c629427f01af24672c93279e))
+* **frontend:** report a failed customer load on the deployments page ([#3978](https://github.com/distr-sh/distr/issues/3978)) ([d218f21](https://github.com/distr-sh/distr/commit/d218f214b183c7147701eb4395923da97547d9bc))
+
+
+### Other
+
+* **backend:** adapt activity feed endpoint for vendor/partner access ([#3883](https://github.com/distr-sh/distr/issues/3883)) ([eff45d4](https://github.com/distr-sh/distr/commit/eff45d4d370b80b7a57e5ad7673acad659f4996e))
+* **backend:** use features instead of subscription type as gate ([#3975](https://github.com/distr-sh/distr/issues/3975)) ([2eaf8cc](https://github.com/distr-sh/distr/commit/2eaf8cce298a241417154689466ae98b1978e1ae))
+* **deploy:** set rustfs region to local ([#3903](https://github.com/distr-sh/distr/issues/3903)) ([ba9c4ef](https://github.com/distr-sh/distr/commit/ba9c4ef73ea36ccc9281aacdbd1a639e67d8819b))
+* **deps:** ignore not applicable vulnerabilities ([#3967](https://github.com/distr-sh/distr/issues/3967)) ([acec6ab](https://github.com/distr-sh/distr/commit/acec6ab088dea6efc9a4d321a8f8b7884e009fdf))
+* **deps:** update angular monorepo to v22.2.6 ([#3910](https://github.com/distr-sh/distr/issues/3910)) ([0c71e4c](https://github.com/distr-sh/distr/commit/0c71e4cb65e4b78b6b3fd91c0ec1305e2dbfded2))
+* **deps:** update angular-cli monorepo to v22.2.7 ([#3926](https://github.com/distr-sh/distr/issues/3926)) ([a21940a](https://github.com/distr-sh/distr/commit/a21940aef9d1ce74b5a92cd5d30ae6b584d90111))
+* **deps:** update dependency @angular/cdk to v22.2.7 ([#3909](https://github.com/distr-sh/distr/issues/3909)) ([4b41af3](https://github.com/distr-sh/distr/commit/4b41af3dd1d009de56825d1d74680f7a1d13fd14))
+* **deps:** update dependency github:losisin/helm-values-schema-json to v2.6.1 ([#3995](https://github.com/distr-sh/distr/issues/3995)) ([ad2f7ca](https://github.com/distr-sh/distr/commit/ad2f7ca3e978c752398ec44e012ffeaa54bc1aa6))
+* **deps:** update dependency go to v1.27.4 ([#3863](https://github.com/distr-sh/distr/issues/3863)) ([b98dc28](https://github.com/distr-sh/distr/commit/b98dc28e0bb4bf480e57f7bf37879d3b65880ccb))
+* **deps:** update dependency helm to v4.3.2 ([#3929](https://github.com/distr-sh/distr/issues/3929)) ([ab4c8bb](https://github.com/distr-sh/distr/commit/ab4c8bbae63d83cecb91fe8daceec8dc3fffba81))
+* **deps:** update dependency jsdom to v31 ([#3873](https://github.com/distr-sh/distr/issues/3873)) ([74baf83](https://github.com/distr-sh/distr/commit/74baf83bdb0d7999324f2c6c88c782a56c8e0ce3))
+* **deps:** update dependency jsdom to v31.0.1 ([#3931](https://github.com/distr-sh/distr/issues/3931)) ([8bb9f5c](https://github.com/distr-sh/distr/commit/8bb9f5ca68b2d0f24f6b070bc6cd55a2318f42b9))
+* **deps:** update dependency marked to v18.2.0 ([#3867](https://github.com/distr-sh/distr/issues/3867)) ([f79e47a](https://github.com/distr-sh/distr/commit/f79e47a07ec9cd864c78f0ad7a0c249eae875f94))
+* **deps:** update dependency postcss to v8.5.33 ([#3938](https://github.com/distr-sh/distr/issues/3938)) ([bc6939e](https://github.com/distr-sh/distr/commit/bc6939e06af35c77a17b50c185fc1646c1d9ea65))
+* **deps:** update dependency posthog-js to v1.449.1 ([#3941](https://github.com/distr-sh/distr/issues/3941)) ([5ca4bf2](https://github.com/distr-sh/distr/commit/5ca4bf259319877c618fb4b38e69a7a2210b0022))
+* **deps:** update dependency posthog-js to v1.449.2 ([#3945](https://github.com/distr-sh/distr/issues/3945)) ([2826c98](https://github.com/distr-sh/distr/commit/2826c980eca6ed8f15c0bfea15eacc4f987c115a))
+* **deps:** update dependency posthog-js to v1.450.1 ([#3980](https://github.com/distr-sh/distr/issues/3980)) ([0fee1da](https://github.com/distr-sh/distr/commit/0fee1dab7468da5219903ca92cc3eb1b7d5f79d0))
+* **deps:** update dependency prettier to v3.10.1 ([#3942](https://github.com/distr-sh/distr/issues/3942)) ([f4e7c26](https://github.com/distr-sh/distr/commit/f4e7c26ecc42faab59466e3d5ff1e2ef11ccb3df))
+* **deps:** update dependency stripe to v1.55.10 ([#3858](https://github.com/distr-sh/distr/issues/3858)) ([4744a7f](https://github.com/distr-sh/distr/commit/4744a7f93775410027f266b512defd2199335fc7))
+* **deps:** update dependency stripe to v1.55.11 ([#3911](https://github.com/distr-sh/distr/issues/3911)) ([7cd806b](https://github.com/distr-sh/distr/commit/7cd806b524c73e659dd411b0253b4e096e28ae7b))
+* **deps:** update dependency vitest to v5.1.0 ([#3868](https://github.com/distr-sh/distr/issues/3868)) ([a4a2716](https://github.com/distr-sh/distr/commit/a4a2716ade8f63be437bfa882046f459b974406b))
+* **deps:** update dependency vitest to v5.1.1 ([#4009](https://github.com/distr-sh/distr/issues/4009)) ([b56d075](https://github.com/distr-sh/distr/commit/b56d0750ba5bc05a88cf3e39c826e28c97072a5c))
+* **deps:** update docker docker tag to v29.10.0 ([#3981](https://github.com/distr-sh/distr/issues/3981)) ([1483e1c](https://github.com/distr-sh/distr/commit/1483e1c356cc27fa89532655e60ac649ce3acfd2))
+* **deps:** update golang docker tag to v1.27.4 ([#3864](https://github.com/distr-sh/distr/issues/3864)) ([b1aeda4](https://github.com/distr-sh/distr/commit/b1aeda450e0bd0ee4cc97be4d5f9b1f2c40e5b3e))
+* **deps:** update grafana/loki docker tag to v3.7.10 ([#3932](https://github.com/distr-sh/distr/issues/3932)) ([a936626](https://github.com/distr-sh/distr/commit/a936626297d72617bc982a9822ebd476d0a9ed15))
+* **deps:** update hello-distr ([#3927](https://github.com/distr-sh/distr/issues/3927)) ([d110b98](https://github.com/distr-sh/distr/commit/d110b984411df1fa574f3fbd2186b081500ddf64))
+* **deps:** update hello-distr to v0.4.26 ([#3891](https://github.com/distr-sh/distr/issues/3891)) ([c0f7565](https://github.com/distr-sh/distr/commit/c0f75655d4539a975d0395356f9621afca9178b6))
+* **deps:** update hello-distr to v0.4.27 ([#3912](https://github.com/distr-sh/distr/issues/3912)) ([2f14012](https://github.com/distr-sh/distr/commit/2f14012198c40f399bc689e7bbdb282b0aa9af0b))
+* **deps:** update hello-distr to v0.4.32 ([#4010](https://github.com/distr-sh/distr/issues/4010)) ([2d3ad19](https://github.com/distr-sh/distr/commit/2d3ad1989af7ea8b68c25f060249e016af6a2859))
+* **deps:** update helm release rustfs to v1.0.5 ([#3892](https://github.com/distr-sh/distr/issues/3892)) ([ea20f6b](https://github.com/distr-sh/distr/commit/ea20f6b390f56b59149c87b518c5d9616dcec5ac))
+* **deps:** update loki docker tag to v20.4.1 ([#3869](https://github.com/distr-sh/distr/issues/3869)) ([cd58568](https://github.com/distr-sh/distr/commit/cd58568782f654d770bdc39f624b7715b44039dc))
+* **deps:** update loki docker tag to v21 ([#3952](https://github.com/distr-sh/distr/issues/3952)) ([a24b595](https://github.com/distr-sh/distr/commit/a24b595bb38b8cfb14a5fe032cb06053705db9f8))
+* **deps:** update pnpm to v12.21.0 ([#3943](https://github.com/distr-sh/distr/issues/3943)) ([d6e3c8c](https://github.com/distr-sh/distr/commit/d6e3c8c2ce6999ec9390825dc698ec7d224416de))
+* **deps:** update postgres docker tag to v18.7 ([#3946](https://github.com/distr-sh/distr/issues/3946)) ([d4f6247](https://github.com/distr-sh/distr/commit/d4f62478b020d4b5b369e6af44b4954fd7ea7cb7))
+* **deps:** update postgresql docker tag to v18.12.19 ([#3913](https://github.com/distr-sh/distr/issues/3913)) ([89a8ddf](https://github.com/distr-sh/distr/commit/89a8ddf8c49069c53e4db7d35170adebab6b18d7))
+* **deps:** update rclone/rclone docker tag to v1.76.0 ([#3870](https://github.com/distr-sh/distr/issues/3870)) ([0ba710f](https://github.com/distr-sh/distr/commit/0ba710f8480e2e538220a96f03395b661cf3c5bc))
+* **deps:** update rustfs/rustfs docker tag to v1.0.5 ([#3893](https://github.com/distr-sh/distr/issues/3893)) ([ac1036d](https://github.com/distr-sh/distr/commit/ac1036d23f0fc28eb3fc0f73716d3ed72a9af907))
+* **deps:** update sentry-javascript monorepo to v11.12.0 ([#3947](https://github.com/distr-sh/distr/issues/3947)) ([46366b7](https://github.com/distr-sh/distr/commit/46366b7bcb7268c073f7bde5f16ec4abab791fae))
+* **deps:** update sentry-javascript monorepo to v11.14.0 ([#3982](https://github.com/distr-sh/distr/issues/3982)) ([b8e9ff2](https://github.com/distr-sh/distr/commit/b8e9ff2c377fb3775c9675491d8bd5a893d04402))
+* **frontend:** add activity card to vendor home page ([#3899](https://github.com/distr-sh/distr/issues/3899)) ([6183fbe](https://github.com/distr-sh/distr/commit/6183fbea4316ff5572b3f33684bf91906e5e7fbf))
+* **frontend:** add customer detail page route ([#3861](https://github.com/distr-sh/distr/issues/3861)) ([cc9f09d](https://github.com/distr-sh/distr/commit/cc9f09d4acafb21a82b127d7171260291be86885))
+* **frontend:** add customers card to vendor home page ([#3917](https://github.com/distr-sh/distr/issues/3917)) ([bb5baf0](https://github.com/distr-sh/distr/commit/bb5baf02b7869b2c443bfaa9aa81c0835c2674b2))
+* **frontend:** add deployments card to vendor home page ([#3885](https://github.com/distr-sh/distr/issues/3885)) ([75ec84f](https://github.com/distr-sh/distr/commit/75ec84f2af53fa10bda24fff92740d454366fe74))
+* **frontend:** Add feature selection, links and customer settings to customer detail page ([#3960](https://github.com/distr-sh/distr/issues/3960)) ([110b1d1](https://github.com/distr-sh/distr/commit/110b1d1934add86469d263628710d2469fc4208d))
+* **frontend:** add license, support cards to vendor home page ([#3896](https://github.com/distr-sh/distr/issues/3896)) ([8cca65c](https://github.com/distr-sh/distr/commit/8cca65c16bc910a401542a4351da4498238a2e64))
+* **frontend:** add loading state for all cards on vendor home page ([#3923](https://github.com/distr-sh/distr/issues/3923)) ([53601e5](https://github.com/distr-sh/distr/commit/53601e51d6f20d1593cbcde9e4e33d0e842f3187))
+* **frontend:** add oudated card to vendor home page ([#3895](https://github.com/distr-sh/distr/issues/3895)) ([77d9340](https://github.com/distr-sh/distr/commit/77d9340b39e4d00b43851a5b610cb5520405f3d3))
+* **frontend:** add security advisories card to vendor home page ([#3897](https://github.com/distr-sh/distr/issues/3897)) ([3fee18b](https://github.com/distr-sh/distr/commit/3fee18b434c0a53abebe220a1d193231b8418b9f))
+* **frontend:** add vendor home shell and remove dashboard ([#3878](https://github.com/distr-sh/distr/issues/3878)) ([b8b6c8f](https://github.com/distr-sh/distr/commit/b8b6c8fd6ebac08f8171621acb3a5c020cb90062))
+* **frontend:** Apply distr-link to links not using it yet ([#4005](https://github.com/distr-sh/distr/issues/4005)) ([eb37fef](https://github.com/distr-sh/distr/commit/eb37fefc2c9536a855921f70dcbbed402435139f))
+* **frontend:** don't group deployments per customers ([#3959](https://github.com/distr-sh/distr/issues/3959)) ([fbcd5c3](https://github.com/distr-sh/distr/commit/fbcd5c3f3a054036a43128548df0652f1818b60b))
+* **frontend:** Improve select hover styling ([#3969](https://github.com/distr-sh/distr/issues/3969)) ([7cdefe3](https://github.com/distr-sh/distr/commit/7cdefe369379c8d8dc45021ffdffa6013bd6b450))
+* **frontend:** introduce customer portal settings page ([#3887](https://github.com/distr-sh/distr/issues/3887)) ([335c820](https://github.com/distr-sh/distr/commit/335c820ad17550618b30938ac7e5e68069dff2a6))
+* **frontend:** move artifact downloads into the registry page ([#3924](https://github.com/distr-sh/distr/issues/3924)) ([8825e09](https://github.com/distr-sh/distr/commit/8825e09d2ed16d3b2c0bd5ce3017db26337c592d))
+* **frontend:** move billing into organization settings ([#3879](https://github.com/distr-sh/distr/issues/3879)) ([58efbfb](https://github.com/distr-sh/distr/commit/58efbfb447a90052e326be4441f57b4913e4a8a8))
+* **frontend:** Move customer notification pages into customer detail page tab ([#3922](https://github.com/distr-sh/distr/issues/3922)) ([7fa9c9f](https://github.com/distr-sh/distr/commit/7fa9c9ff5769c9bae4f6b7840e20a6adbed93697))
+* **frontend:** Move customer users and secrets into customer detail page tabs ([#3955](https://github.com/distr-sh/distr/issues/3955)) ([4de5956](https://github.com/distr-sh/distr/commit/4de5956ea94340f1054e5e21de3b36e584fd0b41))
+* **frontend:** move internal secerts to settings ([#3920](https://github.com/distr-sh/distr/issues/3920)) ([dc064da](https://github.com/distr-sh/distr/commit/dc064da7c0a867b13b36362dbe82597a56a3131f))
+* **frontend:** move organization settings tabs into folders ([#3880](https://github.com/distr-sh/distr/issues/3880)) ([3437708](https://github.com/distr-sh/distr/commit/3437708ab7cc0d565cfe879bb14a97d467c84f0c))
+* **frontend:** move subscription into organization settings ([#3877](https://github.com/distr-sh/distr/issues/3877)) ([8c5e3f6](https://github.com/distr-sh/distr/commit/8c5e3f6adf80738ba73f386631e88ceada9d5000))
+* **frontend:** move vendor users to team settings ([#3918](https://github.com/distr-sh/distr/issues/3918)) ([b852b81](https://github.com/distr-sh/distr/commit/b852b81add1491a12b03c76f4b38cf4863cf1824))
+* **frontend:** overhaul vendor home card styling  ([#3997](https://github.com/distr-sh/distr/issues/3997)) ([dade268](https://github.com/distr-sh/distr/commit/dade2682d6ba19dce5ffe790d6c849282d7caf41))
+* **frontend:** Polish customer detail tabs ([#3966](https://github.com/distr-sh/distr/issues/3966)) ([77f11de](https://github.com/distr-sh/distr/commit/77f11de8a5659cf003843fa79055e784b707ee17))
+* **frontend:** Re-order customer list columns to match cards on home page ([#3971](https://github.com/distr-sh/distr/issues/3971)) ([36e4158](https://github.com/distr-sh/distr/commit/36e41583b7fec50fac9a73be7fa0edd941e80b6f))
+* **frontend:** reduce customer list to name and deployments linking to detail page ([#3889](https://github.com/distr-sh/distr/issues/3889)) ([63f6f08](https://github.com/distr-sh/distr/commit/63f6f08538b63097624a0d818a5e7abcca394f53))
+* **frontend:** Refactor feature locks and plan hints ([#3985](https://github.com/distr-sh/distr/issues/3985)) ([b189814](https://github.com/distr-sh/distr/commit/b189814c9186c290fcae52a502a4282e2ead2b93))
+* **frontend:** Remove breadcrumbs and other back navigations on detail pages ([#3977](https://github.com/distr-sh/distr/issues/3977)) ([10b1cb0](https://github.com/distr-sh/distr/commit/10b1cb0895a5236b89f71fa9d0c04ab5b21e0a3e))
+* **frontend:** rename "support bundles" page to "support" ([#3852](https://github.com/distr-sh/distr/issues/3852)) ([c248dae](https://github.com/distr-sh/distr/commit/c248daeb5cf3c86bf8939ed73311eba1166ade3f))
+* **frontend:** rename secrutiy sidebar entry ([#3904](https://github.com/distr-sh/distr/issues/3904)) ([34e286b](https://github.com/distr-sh/distr/commit/34e286b1c78cf3a1fd379ea9a7488c7093c9d12a))
+* **frontend:** reorder side bar and streamline slugs with sidebar naming ([#3973](https://github.com/distr-sh/distr/issues/3973)) ([ad80a3b](https://github.com/distr-sh/distr/commit/ad80a3b368a59704e484161a2c5a7a3e8e88e677))
+* **frontend:** simplify vendor home page card states ([#3916](https://github.com/distr-sh/distr/issues/3916)) ([a201c7d](https://github.com/distr-sh/distr/commit/a201c7dd2483c5323bc1c8f31c588721f0a23035))
+* **frontend:** Use frontend caching for secrets ([#3968](https://github.com/distr-sh/distr/issues/3968)) ([147ce88](https://github.com/distr-sh/distr/commit/147ce8882630be0c99ce86fc3854aa08cd53c284))
+* refactor notifications to single notifications page ([#3956](https://github.com/distr-sh/distr/issues/3956)) ([1a5ed43](https://github.com/distr-sh/distr/commit/1a5ed439fdf224c0d37c7d668d81b22e4618fe1f))
+* remove vendor licenses page ([#3972](https://github.com/distr-sh/distr/issues/3972)) ([61ecc2f](https://github.com/distr-sh/distr/commit/61ecc2f3299f178c536c8b7cd03df911c0fde7f3))
+
+
+### Docs
+
+* **website:** add Boring Radiology testimonial ([#3907](https://github.com/distr-sh/distr/issues/3907)) ([672f2d0](https://github.com/distr-sh/distr/commit/672f2d099455b6847af5f0cf709dec136f3fd64d))
+* **website:** refresh link preview image ([#4006](https://github.com/distr-sh/distr/issues/4006)) ([35905bb](https://github.com/distr-sh/distr/commit/35905bb96b04a695bbb63c89bfaf118f2ece82f0))
+* **website:** shorten Snicket Labs testimonial ([#3906](https://github.com/distr-sh/distr/issues/3906)) ([3e58505](https://github.com/distr-sh/distr/commit/3e585052e49ce922819b4d9a74de04a6b0d2e20b))
+
+
+### Performance
+
+* add optimized endpoint for latest customer pulls incl. available version ([#3876](https://github.com/distr-sh/distr/issues/3876)) ([01d3a5d](https://github.com/distr-sh/distr/commit/01d3a5d5977719e0167c0ba3bafbfea94050eb87))
+* **frontend:** cache the latest artifact pulls ([#3961](https://github.com/distr-sh/distr/issues/3961)) ([e6bd023](https://github.com/distr-sh/distr/commit/e6bd0239d74dd44ff221907388612d10fb6142c8))
+
+
+### Refactoring
+
+* **frontend:** introduce shared distr-link class ([#3919](https://github.com/distr-sh/distr/issues/3919)) ([643fce2](https://github.com/distr-sh/distr/commit/643fce2669a98d019db6a989f72b58f49fbd6814))
+* **frontend:** move custom email to domains-and-sign-in ([#3901](https://github.com/distr-sh/distr/issues/3901)) ([b7fc0ee](https://github.com/distr-sh/distr/commit/b7fc0ee732e8a97c694a8227b650300a24d208f4))
+* **frontend:** remove sidebar groups ([#3957](https://github.com/distr-sh/distr/issues/3957)) ([8902771](https://github.com/distr-sh/distr/commit/89027719f40abc571a4087a07d93f305c15442a6))
+* **frontend:** share routed tab definitions and tab bar ([#3886](https://github.com/distr-sh/distr/issues/3886)) ([71da5f7](https://github.com/distr-sh/distr/commit/71da5f793bc38bcfb69ad203c79fe91b0cd6caf0))
+* **frontend:** use routed-tabs component for customer detail page ([#3905](https://github.com/distr-sh/distr/issues/3905)) ([a8b4034](https://github.com/distr-sh/distr/commit/a8b4034ea368ef1fb7b5122730f2da2c7279e039))
+
 ## [4.10.0](https://github.com/distr-sh/distr/compare/4.9.0...4.10.0) (2026-11-11)
 
 
