@@ -181,3 +181,5 @@ If you are interested in contributing to Distr or want to modify it for your own
 ## License
 
 Distr is licensed under the [Apache License 2.0](./LICENSE). For a hosted version and Enterprise plans, see https://distr.sh/pricing/.
+The bundled Grafana Loki is licensed under the AGPL-3.0 and runs as the official, unmodified `grafana/loki` image next to Distr, which does not include or change any Loki code.
+All third-party software Distr is built from and ships with is listed with its licenses in [`THIRD_PARTY_LICENSES.md`](./THIRD_PARTY_LICENSES.md), and the attribution notices those licenses require are collected in [`NOTICE`](./NOTICE).

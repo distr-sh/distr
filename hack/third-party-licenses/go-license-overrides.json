@@ -1,0 +1,14 @@
+{
+  "github.com/in-toto/attestation": {
+    "license": "Apache-2.0",
+    "url": "https://github.com/in-toto/attestation/blob/main/LICENSE"
+  },
+  "github.com/in-toto/in-toto-golang": {
+    "license": "Apache-2.0",
+    "url": "https://github.com/in-toto/in-toto-golang/blob/master/LICENSE"
+  },
+  "gotest.tools/v3": {
+    "license": "Apache-2.0",
+    "url": "https://github.com/gotestyourself/gotest.tools/blob/main/LICENSE"
+  }
+}

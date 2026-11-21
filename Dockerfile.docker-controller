@@ -21,6 +21,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} \
 
 FROM docker:29.10.0-cli-alpine3.24
 WORKDIR /
+COPY LICENSE NOTICE /usr/share/doc/distr/
 COPY --from=builder /workspace/controller .
 
 # Changes daily, so BuildKit reruns the upgrade instead of reusing a cached layer.

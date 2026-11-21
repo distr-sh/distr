@@ -21,6 +21,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} \
 
 FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
 WORKDIR /
+COPY LICENSE NOTICE /usr/share/doc/distr/
 COPY --from=builder /workspace/controller .
 USER 65532:65532
 ENTRYPOINT ["/controller"]

@@ -2,6 +2,8 @@
 **/pnpm-lock.yaml
 **/dist/*
 CHANGELOG.md
+# unpadded tables, so that a dependency update changes only its own row
+THIRD_PARTY_LICENSES.md
 deploy/charts/*/templates/*
 deploy/charts/**/*.gotmpl
 internal/resources/*
