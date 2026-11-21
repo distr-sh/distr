@@ -115,6 +115,18 @@ jobs:
           aws s3 sync dist s3://distr.sh/
           --cache-control "max-age=60, public, must-revalidate"
           --acl=public-read
+      # S3 drops an object's website redirect whenever sync uploads it again,
+      # so it has to be set after every sync.
+      - name: Set redirects
+        if: github.ref == 'refs/heads/main'
+        run: |
+          while read -r key target; do
+            aws s3 cp "dist/$key" "s3://distr.sh/$key" \
+              --website-redirect "$target" \
+              --cache-control "max-age=60, public, must-revalidate" \
+              --acl=public-read \
+              --only-show-errors
+          done < s3-redirects.txt
       - name: Invalidate cache
         if: github.ref == 'refs/heads/main'
         run: >-
