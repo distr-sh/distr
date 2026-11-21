@@ -62,7 +62,7 @@
 
   // an inline text link in running text
   .distr-link {
-    @apply font-medium text-primary-600 hover:underline dark:text-primary-500;
+    @apply font-medium text-primary-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:no-underline dark:text-primary-500;
   }
 
   // a link inside an `app-alert` or `distr-hint-warning`, in the text color of its surroundings
