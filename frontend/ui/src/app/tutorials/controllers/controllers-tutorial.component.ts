@@ -246,18 +246,26 @@ export class ControllersTutorialComponent implements OnInit, AfterViewInit {
     this.releaseFormGroup.markAllAsTouched();
     if (this.releaseFormGroup.valid && this.releaseFormGroup.dirty) {
       this.loading.set(true);
-      this.progress = await lastValueFrom(
-        this.tutorialsService.save(tutorialId, {
-          stepId: releaseStep,
-          taskId: releaseStepTaskRelease,
-          value: this.releaseFormGroup.value.forkedRepo,
-          markCompleted: true,
-        })
-      );
-      this.stepper().selected!.completed = true;
-      this.loading.set(false);
-      this.toast.success('Congrats on finishing the tutorial! Good Job!');
-      this.navigateToOverviewPage();
+      try {
+        this.progress = await lastValueFrom(
+          this.tutorialsService.save(tutorialId, {
+            stepId: releaseStep,
+            taskId: releaseStepTaskRelease,
+            value: this.releaseFormGroup.value.forkedRepo,
+            markCompleted: true,
+          })
+        );
+        this.stepper().selected!.completed = true;
+        this.toast.success('Congrats on finishing the tutorial! Good Job!');
+        this.navigateToOverviewPage();
+      } catch (e) {
+        const msg = getFormDisplayedError(e);
+        if (msg) {
+          this.toast.error(msg);
+        }
+      } finally {
+        this.loading.set(false);
+      }
     } else if (this.progress?.completedAt) {
       this.navigateToOverviewPage();
     }

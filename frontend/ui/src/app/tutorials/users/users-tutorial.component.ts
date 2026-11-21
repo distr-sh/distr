@@ -194,6 +194,16 @@ export class UsersTutorialComponent implements OnInit {
         return;
       }
 
+      if (failedEmails.length > 0) {
+        this.toast.error(`Some invites could not be sent: ${failedEmails.join(', ')}`);
+      }
+      if (mailNotSentEmails.length > 0) {
+        this.toast.error(
+          `Some users have been added, but their invitation email could not be sent: ${mailNotSentEmails.join(', ')}. ` +
+            'You can resend the invitation from the users page.'
+        );
+      }
+
       try {
         this.progress = await lastValueFrom(
           this.tutorialsService.save(tutorialId, {
@@ -208,17 +218,9 @@ export class UsersTutorialComponent implements OnInit {
         if (msg) {
           this.toast.error(msg);
         }
+        return;
       }
 
-      if (failedEmails.length > 0) {
-        this.toast.error(`Some invites could not be sent: ${failedEmails.join(', ')}`);
-      }
-      if (mailNotSentEmails.length > 0) {
-        this.toast.error(
-          `Some users have been added, but their invitation email could not be sent: ${mailNotSentEmails.join(', ')}. ` +
-            'You can resend the invitation from the users page.'
-        );
-      }
       if (failedEmails.length === 0 && mailNotSentEmails.length === 0) {
         this.toast.success('Your teammates have been invited. Good job!');
       }
