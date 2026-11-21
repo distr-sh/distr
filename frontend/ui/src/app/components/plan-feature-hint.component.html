@@ -1,0 +1,25 @@
+<div role="tooltip" class="distr-tooltip max-w-64">
+  <div class="mb-1">
+    This feature is available to organizations with a
+    <app-plan-badge [plan]="plan()" />
+    subscription.
+  </div>
+  @if (edition === 'community') {
+    Our Pro and Business plans are also available for self-hosted customers. See our
+    <a [href]="websiteUrl + '/pricing/'" target="_blank" rel="noopener noreferrer" class="distr-link">pricing page</a>.
+  } @else if (licenseEnforced()) {
+    Upgrade in your vendor organization on
+    <a
+      [href]="distrCloudUrl + '/settings/organization/subscription'"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="distr-link"
+      >app.distr.sh</a
+    >.
+  } @else if (canOpenSubscription()) {
+    Upgrade on the <a routerLink="/settings/organization/subscription" class="distr-link">Subscription</a> page to
+    unlock it.
+  } @else {
+    Ask an administrator of your organization to upgrade on the Subscription page.
+  }
+</div>
