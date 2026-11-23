@@ -15,7 +15,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/kms v1.63.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.116.0
 	github.com/aws/smithy-go v1.28.9
-	github.com/compose-spec/compose-go/v2 v2.16.2
+	github.com/compose-spec/compose-go/v2 v2.17.0
 	github.com/containerd/log v0.2.0
 	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/docker/cli v29.10.0+incompatible
