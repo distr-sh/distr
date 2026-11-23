@@ -92,7 +92,7 @@
       @if (auth.hasAnyRole('admin')) {
         @if (licenseEnforced()) {
           <app-alert type="info">
-            Your plan comes from your Distr license key. Change it in your vendor organization on
+            Your plan is set by your Distr license key. To change it, go to your organization's subscription settings on
             <a
               [href]="distrCloudUrl + '/settings/organization/subscription'"
               target="_blank"
