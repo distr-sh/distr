@@ -31,6 +31,14 @@
 
 ---
 
+### createdByKind?
+
+> `optional` **createdByKind?**: [`OrganizationKind`](../type-aliases/OrganizationKind.md)
+
+Missing when the user is no longer a member of the vendor's organization.
+
+---
+
 ### createdByUserAccountId?
 
 > `optional` **createdByUserAccountId?**: `string`
@@ -100,6 +108,14 @@
 ### statusChangedByImageUrl?
 
 > `optional` **statusChangedByImageUrl?**: `string`
+
+---
+
+### statusChangedByKind?
+
+> `optional` **statusChangedByKind?**: [`OrganizationKind`](../type-aliases/OrganizationKind.md)
+
+Missing when the user is no longer a member of the vendor's organization.
 
 ---
 

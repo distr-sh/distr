@@ -54,6 +54,18 @@
 
 ---
 
+### createdByKind?
+
+> `optional` **createdByKind?**: [`OrganizationKind`](../type-aliases/OrganizationKind.md)
+
+Missing when the user is no longer a member of the vendor's organization.
+
+#### Inherited from
+
+[`SupportBundle`](SupportBundle.md).[`createdByKind`](SupportBundle.md#createdbykind)
+
+---
+
 ### createdByUserAccountId?
 
 > `optional` **createdByUserAccountId?**: `string`
@@ -177,6 +189,18 @@
 #### Inherited from
 
 [`SupportBundle`](SupportBundle.md).[`statusChangedByImageUrl`](SupportBundle.md#statuschangedbyimageurl)
+
+---
+
+### statusChangedByKind?
+
+> `optional` **statusChangedByKind?**: [`OrganizationKind`](../type-aliases/OrganizationKind.md)
+
+Missing when the user is no longer a member of the vendor's organization.
+
+#### Inherited from
+
+[`SupportBundle`](SupportBundle.md).[`statusChangedByKind`](SupportBundle.md#statuschangedbykind)
 
 ---
 

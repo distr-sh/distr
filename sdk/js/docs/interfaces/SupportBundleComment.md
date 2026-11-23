@@ -38,6 +38,14 @@
 
 ---
 
+### userKind?
+
+> `optional` **userKind?**: [`OrganizationKind`](../type-aliases/OrganizationKind.md)
+
+Missing when the user is no longer a member of the vendor's organization.
+
+---
+
 ### userName?
 
 > `optional` **userName?**: `string`

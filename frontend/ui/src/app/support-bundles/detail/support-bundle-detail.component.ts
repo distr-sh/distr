@@ -7,6 +7,7 @@ import {faCheck, faComment, faDownload, faTrash, faXmark} from '@fortawesome/fre
 import {catchError, combineLatest, firstValueFrom, map, of, startWith, Subject, switchMap} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError, isNotFound, toastDisplayedError} from '../../../util/errors';
+import {OrganizationKind} from '../../../util/organization-kind';
 import {
   ActivityTimelineComponent,
   ActivityTimelineEntry,
@@ -26,6 +27,25 @@ import {supportBundleDeleteConfirm} from '../support-bundle-display';
 import {SupportBundleStatusBadgeComponent} from '../support-bundle-status-badge.component';
 import {buildResourceTree} from './resource-tree';
 import {SupportBundleResourceFolderComponent} from './support-bundle-resource-folder.component';
+
+interface Author {
+  name: string;
+  imageUrl?: string;
+}
+
+/**
+ * Who did something, as far as the viewer may know. A vendor or partner member the API withholds stands in as the
+ * vendor, which is all a customer should see of the vendor's side. A user without a kind is no longer a member.
+ */
+function author(
+  user: {name?: string; imageUrl?: string; kind?: OrganizationKind},
+  vendor: Author | undefined
+): Author | undefined {
+  if (user.name) {
+    return {name: user.name, imageUrl: user.imageUrl};
+  }
+  return user.kind === 'vendor' || user.kind === 'partner' ? vendor : undefined;
+}
 
 @Component({
   selector: 'app-support-bundle-detail',
@@ -77,8 +97,8 @@ export class SupportBundleDetailComponent {
 
   protected readonly resourceTree = computed(() => buildResourceTree(this.bundle()?.resources ?? []));
 
-  /** Stands in for a user whose identity the API withholds, which it only does from a customer or partner. */
-  private readonly vendor = toSignal(
+  /** Only a customer or partner can be denied a user's identity. */
+  private readonly vendor = toSignal<Author | undefined>(
     this.auth.isVendor()
       ? of(undefined)
       : combineLatest([
@@ -94,20 +114,29 @@ export class SupportBundleDetailComponent {
         ]).pipe(map(([org, branding]) => ({name: org.name, imageUrl: branding?.logoImageId})))
   );
 
-  protected readonly createdByName = computed(() => this.bundle()?.createdByUserName ?? this.vendor()?.name);
+  protected readonly createdByName = computed(() => {
+    const bundle = this.bundle();
+    return bundle && author({name: bundle.createdByUserName, kind: bundle.createdByKind}, this.vendor())?.name;
+  });
 
-  protected readonly statusChangedByName = computed(
-    () => this.bundle()?.statusChangedByUserName ?? this.vendor()?.name
-  );
+  protected readonly statusChangedByName = computed(() => {
+    const bundle = this.bundle();
+    return (
+      bundle && author({name: bundle.statusChangedByUserName, kind: bundle.statusChangedByKind}, this.vendor())?.name
+    );
+  });
 
   protected readonly timelineEntries = computed<ActivityTimelineEntry[]>(() =>
     (this.bundle()?.comments ?? []).map((comment) => {
-      const author = comment.userName ? {name: comment.userName, imageUrl: comment.userImageUrl} : this.vendor();
+      const commentAuthor = author(
+        {name: comment.userName, imageUrl: comment.userImageUrl, kind: comment.userKind},
+        this.vendor()
+      );
       return {
         id: comment.id,
         createdAt: comment.createdAt,
-        userName: author?.name,
-        userImageUrl: author?.imageUrl,
+        userName: commentAuthor?.name,
+        userImageUrl: commentAuthor?.imageUrl,
         action: 'commented',
         body: comment.content,
       };

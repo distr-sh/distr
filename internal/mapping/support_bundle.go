@@ -68,7 +68,7 @@ func SupportBundleConfigurationScriptToInternal(
 
 // SupportBundleToAPI returns a mapper that converts a SupportBundleWithDetails to its API representation. The
 // identity of the users who created the bundle and changed its status is only included when the viewer is
-// allowed to see it, by the same rule as deploymentRevisionCreatorToAPI.
+// allowed to see it, by the same rule as deploymentRevisionCreatorToAPI, while their kind always is.
 func SupportBundleToAPI(
 	viewerCustomerOrgID *uuid.UUID,
 	viewerPartnerOrgID *uuid.UUID,
@@ -80,6 +80,7 @@ func SupportBundleToAPI(
 			CreatedAt:                bundle.CreatedAt,
 			CustomerOrganizationID:   bundle.CustomerOrganizationID,
 			CustomerOrganizationName: bundle.CustomerOrganizationName,
+			CreatedByKind:            bundle.CreatedByKind,
 			DeploymentType:           bundle.DeploymentType,
 			Title:                    bundle.Title,
 			Description:              bundle.Description,
@@ -87,21 +88,34 @@ func SupportBundleToAPI(
 			ResourceCount:            bundle.ResourceCount,
 			CommentCount:             bundle.CommentCount,
 			LastCommentAt:            bundle.LastCommentAt,
+			StatusChangedByKind:      bundle.StatusChangedByKind,
 			StatusChangedAt:          bundle.StatusChangedAt,
 		}
-		if organizationKindRank(bundle.CreatedByCustomerOrganizationID, bundle.CreatedByPartnerOrganizationID) >=
-			viewerRank {
+		if memberRank(bundle.CreatedByKind) >= viewerRank {
 			result.CreatedByUserAccountID = bundle.CreatedByUserAccountID
 			result.CreatedByUserName = bundle.CreatedByUserName
 			result.CreatedByImageURL = CreateImageURL(bundle.CreatedByImageID)
 		}
-		if organizationKindRank(
-			bundle.StatusChangedByCustomerOrganizationID, bundle.StatusChangedByPartnerOrganizationID,
-		) >= viewerRank {
+		if memberRank(bundle.StatusChangedByKind) >= viewerRank {
 			result.StatusChangedByUserName = bundle.StatusChangedByUserName
 			result.StatusChangedByImageURL = CreateImageURL(bundle.StatusChangedByImageID)
 		}
 		return result
+	}
+}
+
+// memberRank ranks a member of the given kind like organizationKindRank. A user who is no longer a member ranks
+// like a vendor, so that only a vendor learns who they were.
+func memberRank(kind *types.OrganizationKind) int {
+	switch {
+	case kind == nil:
+		return 0
+	case *kind == types.OrganizationKindCustomer:
+		return 2
+	case *kind == types.OrganizationKindPartner:
+		return 1
+	default:
+		return 0
 	}
 }
 
@@ -134,9 +148,10 @@ func SupportBundleCommentToAPI(
 		result := api.SupportBundleComment{
 			ID:        comment.ID,
 			CreatedAt: comment.CreatedAt,
+			UserKind:  comment.UserKind,
 			Content:   comment.Content,
 		}
-		if organizationKindRank(comment.UserCustomerOrganizationID, comment.UserPartnerOrganizationID) >= viewerRank {
+		if memberRank(comment.UserKind) >= viewerRank {
 			result.UserAccountID = comment.UserAccountID
 			result.UserName = comment.UserName
 			result.UserImageURL = CreateImageURL(comment.UserImageID)

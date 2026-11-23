@@ -7,6 +7,8 @@ export interface Named {
   name?: string;
 }
 
+export type OrganizationKind = 'vendor' | 'partner' | 'customer';
+
 export interface TokenResponse {
   token: string;
 }
