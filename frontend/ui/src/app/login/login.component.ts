@@ -176,11 +176,7 @@ export class LoginComponent implements OnInit {
         // Re-apply branding now that the user is authenticated, since this SPA navigation does not
         // reload the app and re-run the bootstrap initializer.
         this.portalBranding.apply();
-        if (this.auth.isCustomer()) {
-          await this.router.navigate(['/home']);
-        } else {
-          await this.router.navigate(['/home'], {queryParams: {from: 'login'}});
-        }
+        await this.router.navigate(['/home']);
       }
     } catch (e) {
       this.errorMessage.set(getFormDisplayedError(e));

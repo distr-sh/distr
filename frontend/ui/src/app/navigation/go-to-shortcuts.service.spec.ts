@@ -12,7 +12,7 @@ const sections: NavigationSection[] = [
     id: 'main',
     label: 'Main',
     entries: [
-      {kind: 'link', id: 'home', label: 'Home', icon: faHome, route: '/home', hasIndicator: false, shortcut: 'h'},
+      {kind: 'link', id: 'home', label: 'Home', icon: faHome, route: '/home', shortcut: 'h'},
       {kind: 'locked', id: 'security', label: 'Security', icon: faHome, plan: 'business'},
     ],
   },

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/license"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/go-chi/chi/v5"
 )
@@ -17,6 +18,7 @@ type frontendEnvironmentResponse struct {
 	PosthogUIHost         *string  `json:"posthogUiHost,omitempty"`
 	RegistryHost          string   `json:"registryHost"`
 	CustomDomainTarget    *string  `json:"customDomainTarget,omitempty"`
+	LicenseEnforced       bool     `json:"licenseEnforced"`
 }
 
 func InternalRouter(r chi.Router) {
@@ -33,5 +35,6 @@ func getFrontendEnvironmentHandler(r *http.Request) (respond.Responder, error) {
 		PosthogUIHost:         env.FrontendPosthogUIHost(),
 		RegistryHost:          env.RegistryHost(),
 		CustomDomainTarget:    env.CustomDomainTarget(),
+		LicenseEnforced:       license.GetLicenseData().EnforceLimitsOnStartup,
 	}), nil
 }
