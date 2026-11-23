@@ -18,6 +18,7 @@ export interface ActivityFeedItem {
   createdAt: string;
   type: ActivityFeedEntryType;
   resourceId: string;
+  resourceName: string;
   subject: string;
   detail?: string;
   user?: ActivityFeedUser;
@@ -30,6 +31,7 @@ export function toActivityFeedItems(entries: ActivityFeedEntry[]): ActivityFeedI
     createdAt: entry.createdAt,
     type: entry.type,
     resourceId: entry.resourceId,
+    resourceName: entry.resourceName,
     subject: entry.subject,
     detail: entry.detail,
     user: entry.userName ? {name: entry.userName, imageUrl: entry.userImageUrl} : undefined,

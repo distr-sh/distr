@@ -11,6 +11,7 @@ func ActivityFeedEntryToAPI(e activityfeed.Entry) api.ActivityFeedEntry {
 		CreatedAt:                e.CreatedAt,
 		Type:                     e.Type,
 		ResourceID:               e.ResourceID,
+		ResourceName:             e.ResourceName,
 		Subject:                  e.Subject,
 		Detail:                   e.Detail,
 		CustomerOrganizationID:   e.CustomerOrganizationID,

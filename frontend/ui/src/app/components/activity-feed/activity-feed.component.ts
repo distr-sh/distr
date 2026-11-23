@@ -124,7 +124,7 @@ function icon({type}: ActivityFeedItem): IconDefinition {
 }
 
 function link(
-  {type, resourceId, subject, customer}: ActivityFeedItem,
+  {type, resourceId, resourceName, customer}: ActivityFeedItem,
   viewer: ActivityFeedViewer
 ): Pick<ActivityEntry, 'link' | 'queryParams'> {
   switch (type) {
@@ -132,7 +132,7 @@ function link(
       // Only the vendor has access to the applications.
       return viewer === 'vendor'
         ? {link: `/applications/${resourceId}`}
-        : {link: '/deployments', queryParams: {search: subject}};
+        : {link: '/deployments', queryParams: {search: resourceName}};
     case 'artifact_version_created':
     case 'artifact_version_first_pulled':
       return {link: viewer === 'customer' ? `/artifacts/${resourceId}` : `/registry/${resourceId}`};
@@ -165,9 +165,9 @@ function customerTabLink(
     case 'artifact_version_created':
       return link(activity, viewer);
     case 'artifact_version_first_pulled':
-      return tab('registry');
+      return {...tab('registry'), queryParams: {artifactId: activity.resourceId}};
     case 'deployment_revision_created':
-      return tab('deployments');
+      return {...tab('deployments'), queryParams: {search: activity.resourceName}};
     case 'license_key_created':
     case 'license_key_updated':
       return tab('licenses');
@@ -175,7 +175,7 @@ function customerTabLink(
     case 'support_bundle_uploaded':
     case 'support_bundle_resolved':
     case 'support_bundle_canceled':
-      return tab('support');
+      return {...tab('support'), queryParams: {search: activity.resourceName}};
     default:
       return never(activity.type);
   }
