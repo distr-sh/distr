@@ -224,7 +224,9 @@
                   <span class="distr-home-row-title block truncate" [title]="user.name || user.email">
                     {{ user.name || user.email }}
                   </span>
-                  <span class="distr-home-row-meta block truncate">{{ user.userRole | userRoleLabel }}</span>
+                  @if (isUserRolesEnabled()) {
+                    <span class="distr-home-row-meta block truncate">{{ user.userRole | userRoleLabel }}</span>
+                  }
                 </div>
                 @if (!user.activated) {
                   <span class="distr-badge distr-badge-warning shrink-0">Invitation pending</span>

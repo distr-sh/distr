@@ -117,6 +117,7 @@ export class CustomerOverviewTabComponent {
   private readonly usersService = inject(UsersService);
 
   protected readonly isVendor = inject(AuthService).isVendor();
+  protected readonly isUserRolesEnabled = this.featureFlags.isUserRolesEnabled;
   protected readonly activityViewer = this.isVendor ? 'vendor' : 'partner';
   protected readonly licenseExpiryWindowDays = licenseExpiryWindowDays;
   protected readonly faBoxesStacked = faBoxesStacked;
