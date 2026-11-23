@@ -168,9 +168,7 @@
     }
 
     @if (auth.hasAnyRole('admin', 'read_write')) {
-      <button
-        (click)="addArtifactGroup()"
-        class="flex items-center pb-2 text-sm font-medium text-primary-600 hover:underline dark:border-gray-600 dark:text-primary-500">
+      <button (click)="addArtifactGroup()" class="distr-link flex items-center pb-2 text-sm">
         <fa-icon [icon]="faPlus" class="me-1" />
         Add Artifact
       </button>

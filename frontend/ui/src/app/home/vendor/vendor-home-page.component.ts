@@ -36,6 +36,7 @@ import {DeploymentHealth, VendorHomeLicenses, VendorHomeUpdates} from './vendor-
 import {
   filterOpenSupportBundles,
   licenseExpiryWindowDays,
+  toAffectedCustomerNames,
   toDeploymentHealth,
   toVendorHomeAdvisoryCounts,
   toVendorHomeCustomers,
@@ -46,6 +47,14 @@ import {
 } from './vendor-home-mappers';
 
 const vendorHomeMaxCustomers = 10;
+const vendorHomeMaxAffectedNames = 2;
+
+function toAffectedSummary(names: string[]) {
+  return {
+    names: names.slice(0, vendorHomeMaxAffectedNames),
+    more: Math.max(names.length - vendorHomeMaxAffectedNames, 0),
+  };
+}
 
 function deploymentHealthType(health: DeploymentHealth): QuickNavigationCardType {
   if (health.error > 0) {
@@ -127,7 +136,7 @@ export class VendorHomePageComponent {
 
   protected readonly isVendor = this.auth.isVendor();
   protected readonly activityViewer = this.isVendor ? 'vendor' : 'partner';
-  protected readonly canConfigureSupport = this.isVendor && this.auth.hasAnyRole('read_write', 'admin');
+  private readonly canConfigureSupport = this.isVendor && this.auth.hasAnyRole('read_write', 'admin');
   protected readonly canCreateCustomers = this.auth.hasAnyRole('read_write', 'admin');
   protected readonly faAddressBook = faAddressBook;
   protected readonly faBoxesStacked = faBoxesStacked;
@@ -145,7 +154,9 @@ export class VendorHomePageComponent {
       return undefined;
     }
     const health = toDeploymentHealth(targets);
-    return {...health, type: deploymentHealthType(health)};
+    const type = deploymentHealthType(health);
+    const affected = toAffectedCustomerNames(targets, type === 'error' ? 'error' : 'stale');
+    return {...health, type, affected: toAffectedSummary(affected)};
   });
   private readonly deploymentCount = computed(() => this.deploymentHealth()?.total);
   protected readonly deploymentAttentionQueryParams = {status: vendorHomeAttentionStatuses};
@@ -276,6 +287,7 @@ export class VendorHomePageComponent {
     const shouldConfigure = open === 0 && !isConfigured && this.canConfigureSupport;
     return {
       open,
+      shouldConfigure,
       type: supportCardType(open, isConfigured),
       link: shouldConfigure ? '/support/settings' : '/support',
     };

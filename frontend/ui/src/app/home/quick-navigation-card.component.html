@@ -11,11 +11,15 @@
   </div>
   <app-plan-hint-overlay [origin]="origin" [plan]="plan" />
 } @else if (link(); as link) {
-  <a [routerLink]="link" [queryParams]="queryParams()" class="distr-card distr-card-clickable p-4">
+  <a
+    [routerLink]="link"
+    [queryParams]="queryParams()"
+    class="distr-card distr-card-clickable p-4"
+    [class]="alertClass()">
     <ng-container [ngTemplateOutlet]="content" />
   </a>
 } @else {
-  <div class="distr-card p-4">
+  <div class="distr-card p-4" [class]="alertClass()">
     <ng-container [ngTemplateOutlet]="content" />
   </div>
 }
@@ -32,9 +36,14 @@
       <app-plan-badge [plan]="plan" class="ms-auto" />
     }
   </div>
-  <span class="headline -mt-2 mb-1 block text-4xl font-bold text-gray-900 empty:hidden dark:text-white">
-    <ng-content />
-  </span>
+  @if (count() !== undefined) {
+    <span class="headline -mt-2 mb-1 flex items-baseline gap-1.5 font-bold text-gray-900 dark:text-white">
+      <span class="text-3xl">{{ count() }}</span>
+      <span class="text-lg">
+        <ng-content />
+      </span>
+    </span>
+  }
   <span class="subtitle distr-text-muted block text-xs">
     <ng-content select="[subtitle]" />
   </span>
