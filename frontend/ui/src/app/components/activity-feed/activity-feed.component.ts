@@ -17,6 +17,7 @@ import {never} from '../../../util/exhaust';
 import {CustomerHomeCollapsibleComponent} from '../../home/customer/customer-home-collapsible.component';
 import {AvatarComponent} from '../avatar.component';
 import {CardHeadingComponent} from '../card-heading.component';
+import {CustomerDetailTabId} from '../customer-organizations/detail/customer-detail-navigation';
 import {ActivityFeedItem, ActivityFeedViewer} from './activity-feed';
 
 interface ActivityEntry {
@@ -54,8 +55,8 @@ export class ActivityFeedComponent {
   /** Shown as the author of what the vendor did, to a customer only. */
   public readonly vendorName = input<string>();
   public readonly vendorLogo = input<string>();
-  /** For a feed of a single customer, which would otherwise name it on every entry. */
-  public readonly hideCustomer = input(false);
+  /** For a feed of a single customer, whose entries then link to its tabs instead of naming it. */
+  public readonly customerOrganizationId = input<string>();
   /**
    * Collapsed, the card takes the height of its positioned parent instead of its own, which places it next to the
    * other cards at their height. The parent's grid row then has to be sized by those cards alone.
@@ -70,7 +71,8 @@ export class ActivityFeedComponent {
   protected readonly entries = computed<ActivityEntry[]>(() => {
     const viewer = this.viewer();
     const vendorName = this.vendorName();
-    const shouldShowCustomer = viewer !== 'customer' && !this.hideCustomer();
+    const customerOrganizationId = this.customerOrganizationId();
+    const shouldShowCustomer = viewer !== 'customer' && customerOrganizationId === undefined;
     return this.activity().map((activity) => {
       const byVendor =
         activity.type === 'application_version_created' ||
@@ -83,7 +85,9 @@ export class ActivityFeedComponent {
         createdAt: activity.createdAt,
         action: action(activity),
         icon: icon(activity),
-        ...link(activity, viewer),
+        ...(customerOrganizationId === undefined
+          ? link(activity, viewer)
+          : customerTabLink(activity, viewer, customerOrganizationId)),
         user:
           viewer === 'customer' && byVendor
             ? vendorName
@@ -147,6 +151,33 @@ function link(
       return {link: `/support/${resourceId}`};
     default:
       return never(type);
+  }
+}
+
+function customerTabLink(
+  activity: ActivityFeedItem,
+  viewer: ActivityFeedViewer,
+  customerOrganizationId: string
+): Pick<ActivityEntry, 'link' | 'queryParams'> {
+  const tab = (tab: CustomerDetailTabId) => ({link: `/customers/${customerOrganizationId}/${tab}`});
+  switch (activity.type) {
+    case 'application_version_created':
+    case 'artifact_version_created':
+      return link(activity, viewer);
+    case 'artifact_version_first_pulled':
+      return tab('registry');
+    case 'deployment_revision_created':
+      return tab('deployments');
+    case 'license_key_created':
+    case 'license_key_updated':
+      return tab('licenses');
+    case 'support_bundle_created':
+    case 'support_bundle_uploaded':
+    case 'support_bundle_resolved':
+    case 'support_bundle_canceled':
+      return tab('support');
+    default:
+      return never(activity.type);
   }
 }
 

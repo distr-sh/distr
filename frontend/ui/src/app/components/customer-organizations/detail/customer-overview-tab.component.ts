@@ -123,7 +123,7 @@ export class CustomerOverviewTabComponent {
   private readonly customerOrganizationId$ = (inject(ActivatedRoute).parent?.params ?? EMPTY).pipe(
     map((params) => params['customerOrganizationId'] as string)
   );
-  private readonly customerOrganizationId = toSignal(this.customerOrganizationId$);
+  protected readonly customerOrganizationId = toSignal(this.customerOrganizationId$);
   private readonly customerOrganizations = toSignal(inject(CustomerOrganizationsService).getCustomerOrganizations());
   protected readonly customerOrganization = computed(() =>
     this.customerOrganizations()?.find((it) => it.id === this.customerOrganizationId())

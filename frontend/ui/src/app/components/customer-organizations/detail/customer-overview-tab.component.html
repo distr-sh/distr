@@ -191,7 +191,11 @@
   <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
     <div class="relative lg:col-span-2">
       @if (activity(); as activity) {
-        <app-activity-feed [activity]="activity" [viewer]="activityViewer" [hideCustomer]="true" [fillHeight]="true" />
+        <app-activity-feed
+          [activity]="activity"
+          [viewer]="activityViewer"
+          [customerOrganizationId]="customerOrganizationId()"
+          [fillHeight]="true" />
       } @else {
         <app-loading-card layout="timeline" />
       }
