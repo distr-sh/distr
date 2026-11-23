@@ -98,6 +98,18 @@ export function toDeploymentHealth(targets: DeploymentTarget[]): DeploymentHealt
   };
 }
 
+/** The customers with a deployment in `status`, each once, named by the target where it belongs to no customer. */
+export function toAffectedCustomerNames(targets: DeploymentTarget[], status: DeploymentDisplayStatus): string[] {
+  const names = new Map<string | undefined, string>();
+  for (const target of targets) {
+    if (target.deployments.some((it) => deploymentDisplayStatus(it) === status)) {
+      const key = target.customerOrganization?.id ?? target.id;
+      names.set(key, target.customerOrganization?.name ?? target.name);
+    }
+  }
+  return [...names.values()];
+}
+
 function customerTargets(customer: CustomerOrganization, targets: DeploymentTarget[]): DeploymentTarget[] {
   return targets.filter((target) => target.customerOrganization?.id === customer.id);
 }
@@ -136,16 +148,14 @@ export function toVendorHomeUpdates(
 ): VendorHomeUpdates {
   let hasDeploymentsOrPulls = false;
   let outdatedCustomers = 0;
-  let outdatedDeployments = 0;
   for (const customer of customers) {
     const updates = toCustomerUpdates(customer, targets, applications, entitlements, pulls);
     hasDeploymentsOrPulls ||= updates.hasDeploymentsOrPulls;
     if (updates.isOutdated) {
       outdatedCustomers++;
     }
-    outdatedDeployments += updates.outdatedDeployments;
   }
-  return {totalCustomers: customers.length, hasDeploymentsOrPulls, outdatedCustomers, outdatedDeployments};
+  return {totalCustomers: customers.length, hasDeploymentsOrPulls, outdatedCustomers};
 }
 
 function toCustomerUsage(

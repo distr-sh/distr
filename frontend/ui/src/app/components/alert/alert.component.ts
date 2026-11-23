@@ -36,5 +36,5 @@ export class AlertComponent {
   protected readonly faTriangleExclamation = faTriangleExclamation;
   protected readonly faXmark = faXmark;
 
-  protected readonly typeClass = computed(() => `alert-${this.type()}`);
+  protected readonly typeClass = computed(() => `distr-alert-${this.type()}`);
 }

@@ -220,6 +220,16 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
 
   private readonly application = toSignal(this.application$);
 
+  protected readonly isChartNameColumnVisible = computed(
+    () => this.application()?.versions?.some((version) => !!version.chartName) ?? false
+  );
+  protected readonly versionColumnCount = computed(() => {
+    if (this.application()?.type !== 'kubernetes') {
+      return 4;
+    }
+    return this.isChartNameColumnVisible() ? 7 : 6;
+  });
+
   protected readonly versioningStrategy = computed(() => this.application()?.versioningStrategy ?? 'legacy');
   protected readonly versioningStrategyLabel = computed(() => versioningStrategyLabel(this.versioningStrategy()));
   protected readonly versioningStrategyOptions = computed(() =>

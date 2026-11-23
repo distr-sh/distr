@@ -32,6 +32,9 @@ type Organization struct {
 	StripeWebhookSecret                 *dbcrypto.String   `db:"stripe_webhook_secret"            json:"-"`
 	StripeWebhookSecretConfigured       bool               `db:"stripe_webhook_secret_configured" json:"stripeWebhookSecretConfigured"` //nolint:lll
 	ControllerImageRepository           *string            `db:"controller_image_repository" json:"-"`
+	// RegistryRedirectEnabled overrides REGISTRY_S3_ALLOW_REDIRECT for the repositories of this organization
+	// when set.
+	RegistryRedirectEnabled *bool `db:"registry_redirect_enabled" json:"-"`
 }
 
 func (org *Organization) ConnectScripts(deploymentType DeploymentType) (pre string, post string) {
