@@ -1,8 +1,12 @@
-import {Application, DeploymentTarget, DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
+import {Application, DeploymentTarget, DeploymentWithLatestRevision, UserAccountWithRole} from '@distr-sh/distr-sdk';
 import dayjs from 'dayjs';
 import {LatestArtifactPull} from '../../../types/artifact-version-pull';
 import {License} from '../../../types/license';
-import {toCustomerOverviewLicense, toCustomerOverviewUpdates} from './customer-overview-mappers';
+import {
+  toCustomerOverviewLicense,
+  toCustomerOverviewUpdates,
+  toCustomerOverviewUsers,
+} from './customer-overview-mappers';
 
 describe('toCustomerOverviewLicense', () => {
   const now = dayjs('2026-06-01T00:00:00Z');
@@ -91,5 +95,35 @@ describe('toCustomerOverviewUpdates', () => {
       source: 'downloads',
       outdated: 2,
     });
+  });
+});
+
+describe('toCustomerOverviewUsers', () => {
+  const user = (email: string, activated = true, name?: string): UserAccountWithRole => ({
+    id: email,
+    email,
+    name,
+    emailVerified: true,
+    mfaEnabled: false,
+    activated,
+    userRole: 'read_only',
+    joinedOrgAt: '2026-01-01T00:00:00Z',
+  });
+
+  it('should list pending invitations first, then the users by name, and keep the total', () => {
+    const users = [
+      user('zoe@example.com'),
+      user('bob@example.com'),
+      user('carl@example.com', false),
+      user('anna@example.com', true, 'Zed'),
+      user('dave@example.com', true, 'Adam'),
+    ];
+    expect(toCustomerOverviewUsers(users, 4).users.map((it) => it.email)).toEqual([
+      'carl@example.com',
+      'dave@example.com',
+      'bob@example.com',
+      'anna@example.com',
+    ]);
+    expect(toCustomerOverviewUsers(users, 4).total).toBe(5);
   });
 });

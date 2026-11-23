@@ -188,12 +188,54 @@
     }
   </div>
 
-  @if (activity(); as activity) {
-    <app-activity-feed
-      [activity]="activity"
-      [viewer]="activityViewer"
-      [customerOrganizationId]="customerOrganizationId()" />
-  } @else {
-    <app-loading-card layout="timeline" />
-  }
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <div class="relative lg:col-span-2">
+      @if (activity(); as activity) {
+        <app-activity-feed
+          [activity]="activity"
+          [viewer]="activityViewer"
+          [customerOrganizationId]="customerOrganizationId()"
+          [fillHeight]="true" />
+      } @else {
+        <app-loading-card layout="timeline" />
+      }
+    </div>
+
+    @if (users(); as users) {
+      @if (users.total === 0) {
+        <a [routerLink]="tabLinks().users" class="distr-card distr-card-clickable h-auto min-h-96 self-start p-4">
+          <h2 appCardHeading [icon]="faUsers" class="mb-3">Users</h2>
+          <p class="distr-text-muted text-sm">No users yet. Invite the first one on the users tab.</p>
+        </a>
+      } @else {
+        <div class="distr-card h-auto min-h-96 self-start p-4">
+          <div class="mb-3 flex items-center justify-between gap-2">
+            <h2 appCardHeading [icon]="faUsers">
+              Users
+              <span class="distr-badge distr-badge-neutral ms-2">{{ users.total }}</span>
+            </h2>
+            <a [routerLink]="tabLinks().users" class="distr-link text-sm">View all</a>
+          </div>
+          <ul class="distr-home-list -mx-2">
+            @for (user of users.users; track user.id) {
+              <li class="flex items-center gap-3 p-2">
+                <app-avatar [image]="user.imageUrl" [name]="user.name || user.email" class="size-8 rounded-full" />
+                <div class="min-w-0 flex-1">
+                  <span class="distr-home-row-title block truncate" [title]="user.name || user.email">
+                    {{ user.name || user.email }}
+                  </span>
+                  <span class="distr-home-row-meta block truncate">{{ user.userRole | userRoleLabel }}</span>
+                </div>
+                @if (!user.activated) {
+                  <span class="distr-badge distr-badge-warning shrink-0">Invitation pending</span>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    } @else {
+      <app-loading-card class="min-h-96" />
+    }
+  </div>
 </div>

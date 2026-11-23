@@ -1,4 +1,4 @@
-import {Application, DeploymentTarget} from '@distr-sh/distr-sdk';
+import {Application, DeploymentTarget, UserAccountWithRole} from '@distr-sh/distr-sdk';
 import dayjs, {Dayjs} from 'dayjs';
 import {isDeploymentOutdated} from '../../../../util/versions';
 import {
@@ -25,6 +25,23 @@ export interface CustomerOverviewLicense extends LicenseGrantCounts {
   status: CustomerLicenseStatus;
   /** Whether any customer has a license, which is what makes a missing one an issue. */
   isLicensingInUse: boolean;
+}
+
+export interface CustomerOverviewUsers {
+  /** At most `limit` of them. */
+  users: UserAccountWithRole[];
+  total: number;
+}
+
+/** Lists the users who have not accepted their invitation first, then the users by name. */
+export function toCustomerOverviewUsers(users: UserAccountWithRole[], limit: number): CustomerOverviewUsers {
+  const label = (user: UserAccountWithRole) => user.name || user.email;
+  return {
+    users: [...users]
+      .sort((a, b) => Number(a.activated) - Number(b.activated) || label(a).localeCompare(label(b)))
+      .slice(0, limit),
+    total: users.length,
+  };
 }
 
 export function toAffectedTargetNames(targets: DeploymentTarget[], status: DeploymentDisplayStatus): string[] {
