@@ -3,6 +3,7 @@ package handlers
 import (
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"slices"
@@ -13,10 +14,12 @@ import (
 	"github.com/distr-sh/distr/internal/activityfeed"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/respond"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
@@ -85,7 +88,7 @@ func getActivityFeed(r *http.Request) (respond.Responder, error) {
 		return resp, nil
 	} else if scope, err := activityFeedScope(ctx, customerOrgID); err != nil {
 		return nil, err
-	} else if entries, err := collectActivity(ctx, scope, activitySources(customerOrgID)); err != nil {
+	} else if entries, err := collectActivity(ctx, scope, activitySources(customerOrgID != nil)); err != nil {
 		return nil, err
 	} else {
 		entries = activityfeed.RestrictToCustomerOrganizations(entries, scope.customerOrgs)
@@ -94,59 +97,88 @@ func getActivityFeed(r *http.Request) (respond.Responder, error) {
 	}
 }
 
-// activityFeedScope narrows the scope of the caller down to the customer organization filter if one is given,
+// activityFeedScope narrows the scope of the caller down to the given customer organization if there is one,
 // which matches nothing when the caller cannot reach it.
-func activityFeedScope(ctx context.Context, filter *uuid.UUID) (activityScope, error) {
-	scope, err := callerActivityScope(ctx)
+func activityFeedScope(ctx context.Context, customerOrgID *uuid.UUID) (activityScope, error) {
+	scope, err := callerActivityScope(ctx, customerOrgID)
 	if err != nil {
 		return scope, err
 	}
-	customerOrgID := scope.customerOrgID()
+	ownCustomerOrgID := scope.customerOrgID()
 	scope.artifacts = sync.OnceValues(func() ([]types.ArtifactWithDownloads, error) {
-		return visibleArtifacts(ctx, customerOrgID)
-	})
-	if filter == nil {
-		return scope, nil
-	}
-	scope.customerOrgs = slices.DeleteFunc(scope.customerOrgs, func(customerOrg types.CustomerOrganization) bool {
-		return customerOrg.ID != *filter
+		return visibleArtifacts(ctx, ownCustomerOrgID)
 	})
 	return scope, nil
 }
 
 // activitySources leaves the activity that belongs to no customer organization out of the feed of one customer.
-func activitySources(filter *uuid.UUID) []activitySource {
-	if filter != nil {
+func activitySources(isSingleCustomer bool) []activitySource {
+	if isSingleCustomer {
 		return customerActivitySources
 	}
 	return slices.Concat(organizationActivitySources, customerActivitySources)
 }
 
-func callerActivityScope(ctx context.Context) (activityScope, error) {
+func callerActivityScope(ctx context.Context, customerOrgID *uuid.UUID) (activityScope, error) {
 	auth := auth.Authentication.Require(ctx)
 	if customerOrg := cmp.Or(auth.LensCustomerOrg(), auth.CurrentCustomerOrg()); customerOrg != nil {
-		return activityScope{customerOrg: customerOrg, customerOrgs: []types.CustomerOrganization{*customerOrg}}, nil
+		scope := activityScope{customerOrg: customerOrg}
+		if customerOrgID == nil || *customerOrgID == customerOrg.ID {
+			scope.customerOrgs = []types.CustomerOrganization{*customerOrg}
+		}
+		return scope, nil
 	}
 
 	partnerOrgID := auth.CurrentPartnerOrgID()
+	scope := activityScope{
+		viewer: types.ActivityViewer{IsVendor: partnerOrgID == nil, PartnerOrganizationID: partnerOrgID},
+	}
+	var err error
+	if customerOrgID != nil {
+		scope.customerOrgs, err = managedCustomerOrg(ctx, *customerOrgID, *auth.CurrentOrgID(), partnerOrgID)
+	} else {
+		scope.customerOrgs, err = managedCustomerOrgs(ctx, *auth.CurrentOrgID(), partnerOrgID)
+	}
+	return scope, err
+}
+
+// managedCustomerOrg returns the customer organization if the vendor or partner manages it, or else none.
+func managedCustomerOrg(
+	ctx context.Context,
+	customerOrgID, orgID uuid.UUID,
+	partnerOrgID *uuid.UUID,
+) ([]types.CustomerOrganization, error) {
+	if customerOrg, err := db.GetCustomerOrganization(ctx, customerOrgID, orgID); errors.Is(err, distrerr.ErrNotFound) {
+		return nil, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to get customer organization: %w", err)
+	} else if partnerOrgID != nil && !util.PtrEq(customerOrg.PartnerOrganizationID, partnerOrgID) {
+		return nil, nil
+	} else {
+		return []types.CustomerOrganization{*customerOrg}, nil
+	}
+}
+
+func managedCustomerOrgs(
+	ctx context.Context,
+	orgID uuid.UUID,
+	partnerOrgID *uuid.UUID,
+) ([]types.CustomerOrganization, error) {
 	var withUsage []types.CustomerOrganizationWithUsage
 	var err error
 	if partnerOrgID != nil {
 		withUsage, err = db.GetCustomerOrganizationsByPartnerOrgID(ctx, *partnerOrgID)
 	} else {
-		withUsage, err = db.GetCustomerOrganizationsByOrganizationID(ctx, *auth.CurrentOrgID())
+		withUsage, err = db.GetCustomerOrganizationsByOrganizationID(ctx, orgID)
 	}
 	if err != nil {
-		return activityScope{}, fmt.Errorf("failed to get customer organizations: %w", err)
+		return nil, fmt.Errorf("failed to get customer organizations: %w", err)
 	}
-	scope := activityScope{
-		customerOrgs: make([]types.CustomerOrganization, len(withUsage)),
-		viewer:       types.ActivityViewer{IsVendor: partnerOrgID == nil, PartnerOrganizationID: partnerOrgID},
-	}
+	customerOrgs := make([]types.CustomerOrganization, len(withUsage))
 	for i, customerOrg := range withUsage {
-		scope.customerOrgs[i] = customerOrg.CustomerOrganization
+		customerOrgs[i] = customerOrg.CustomerOrganization
 	}
-	return scope, nil
+	return customerOrgs, nil
 }
 
 func collectActivity(
