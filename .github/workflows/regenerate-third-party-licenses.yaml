@@ -17,6 +17,7 @@ on:
       - docker-autoheal/Dockerfile
       - THIRD_PARTY_LICENSES.md
       - NOTICE
+      - mise.toml
       - .github/workflows/regenerate-third-party-licenses.yaml
 
 concurrency:

@@ -51,7 +51,7 @@ Every bundled component, Go module and npm package is listed with its license in
 [`THIRD_PARTY_LICENSES.md`](https://github.com/distr-sh/distr/blob/main/THIRD_PARTY_LICENSES.md), and the attribution
 notices those licenses require are collected in [`NOTICE`](https://github.com/distr-sh/distr/blob/main/NOTICE). The
 Distr and Distr Controller images contain `NOTICE` and Distr's `LICENSE` in `/usr/share/doc/distr/`, and the Distr image
-also the full license texts of the Go modules and npm packages in `/usr/share/doc/distr/third-party-licenses.txt`.
+also contains the full license texts of the Go modules and npm packages in `/usr/share/doc/distr/third-party-licenses.txt`.
 
 ## Semantic Versioning
 
