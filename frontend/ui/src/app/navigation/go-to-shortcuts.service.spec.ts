@@ -2,6 +2,7 @@ import {signal} from '@angular/core';
 import {TestBed} from '@angular/core/testing';
 import {provideRouter, Router} from '@angular/router';
 import {faHome} from '@fortawesome/free-solid-svg-icons';
+import {ContextSwitcherService} from './context-switcher.service';
 import {GoToShortcutsService} from './go-to-shortcuts.service';
 import {NavigationSection} from './navigation';
 import {NavigationService} from './navigation.service';
@@ -11,7 +12,7 @@ const sections: NavigationSection[] = [
     id: 'main',
     label: 'Main',
     entries: [
-      {kind: 'link', id: 'home', label: 'Home', icon: faHome, route: '/home', hasIndicator: false, shortcut: 'h'},
+      {kind: 'link', id: 'home', label: 'Home', icon: faHome, route: '/home', shortcut: 'h'},
       {kind: 'locked', id: 'security', label: 'Security', icon: faHome, plan: 'business'},
     ],
   },
@@ -36,6 +37,7 @@ describe('GoToShortcutsService', () => {
         provideRouter([]),
         GoToShortcutsService,
         {provide: NavigationService, useValue: {sections: signal(sections)}},
+        {provide: ContextSwitcherService, useValue: {lensHome: signal(undefined)}},
       ],
     });
     service = TestBed.inject(GoToShortcutsService);

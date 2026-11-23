@@ -8,7 +8,6 @@ import {
   faGear,
   faHome,
   faLifeRing,
-  faLightbulb,
   faPalette,
   faShieldHalved,
 } from '@fortawesome/free-solid-svg-icons';
@@ -19,15 +18,6 @@ export const vendorNavigation: NavigationDefinition = [
     id: 'distribution',
     label: 'Distribution',
     entries: [
-      {
-        id: 'tutorials',
-        label: 'Tutorials',
-        icon: faLightbulb,
-        route: '/tutorials',
-        shortcut: 't',
-        visible: (c) => c.user.isAdmin && !c.organization.hasSubscription,
-        indicator: (c) => c.organization.hasUnstartedTutorials,
-      },
       {id: 'home', label: 'Home', icon: faHome, route: '/home', shortcut: 'h'},
       {id: 'applications', label: 'Applications', icon: faCube, route: '/applications', shortcut: 'a'},
       {

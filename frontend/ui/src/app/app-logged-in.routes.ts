@@ -64,7 +64,6 @@ import {SupportBundleSettingsComponent} from './support-bundles/vendor/support-b
 import {BrandingTutorialComponent} from './tutorials/branding/branding-tutorial.component';
 import {ControllersTutorialComponent} from './tutorials/controllers/controllers-tutorial.component';
 import {RegistryTutorialComponent} from './tutorials/registry/registry-tutorial.component';
-import {TutorialsComponent} from './tutorials/tutorials.component';
 import {UsersTutorialComponent} from './tutorials/users/users-tutorial.component';
 import {isSubscriptionExpired} from './types/organization';
 import {UserGeneralSettingsComponent} from './user-settings/user-general-settings.component';
@@ -535,7 +534,7 @@ const shellRoutes: Routes = [
           {
             path: '',
             pathMatch: 'full',
-            component: TutorialsComponent,
+            redirectTo: '/home',
           },
           {
             path: 'users',
@@ -551,7 +550,7 @@ const shellRoutes: Routes = [
           },
           {
             path: 'registry',
-            canActivate: [registryHostSetOrRedirectGuard('/tutorials')],
+            canActivate: [registryHostSetOrRedirectGuard('/home')],
             component: RegistryTutorialComponent,
           },
         ],

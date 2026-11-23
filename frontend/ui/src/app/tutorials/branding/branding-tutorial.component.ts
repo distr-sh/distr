@@ -293,6 +293,6 @@ export class BrandingTutorialComponent implements OnInit {
   }
 
   protected navigateToOverviewPage() {
-    this.router.navigate(['tutorials']);
+    this.router.navigate(['/home']);
   }
 }

@@ -11,10 +11,6 @@ export interface NavigationContext {
     isReadWriteOrAdmin: boolean;
     isSuperAdmin: boolean;
   };
-  organization: {
-    hasSubscription: boolean;
-    hasUnstartedTutorials: boolean;
-  };
   features: ReadonlySet<Feature>;
   customer: {
     features: ReadonlySet<CustomerOrganizationFeature>;
@@ -36,7 +32,6 @@ interface NavigationEntryDefinitionBase {
 
 export interface NavigationLinkDefinition extends NavigationEntryDefinitionBase {
   route: string;
-  indicator?: NavigationPredicate;
   /** The key that opens the page when pressed after "g". Unique within a portal. */
   shortcut?: string;
 }
@@ -63,7 +58,6 @@ export type NavigationEntry =
       label: string;
       icon: IconDefinition;
       route: string;
-      hasIndicator: boolean;
       shortcut?: string;
     }
   | {kind: 'external'; id: string; label: string; icon: IconDefinition; href: string}
@@ -102,7 +96,6 @@ function resolveEntry(entry: NavigationEntryDefinition, context: NavigationConte
     label,
     icon,
     route: entry.route,
-    hasIndicator: entry.indicator?.(context) ?? false,
     shortcut: entry.shortcut,
   };
 }
