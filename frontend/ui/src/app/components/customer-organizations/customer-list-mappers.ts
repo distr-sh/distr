@@ -2,14 +2,11 @@ import {Application, CustomerOrganizationWithUsage, DeploymentTarget} from '@dis
 import dayjs, {Dayjs} from 'dayjs';
 import {DeploymentHealth} from '../../home/vendor/vendor-home';
 import {
-  compareByOpenItems,
-  countCustomerOpenItems,
   filterOpenSupportBundles,
   licenseExpiryWindowDays,
   toCustomerUpdates,
   toDeploymentHealth,
 } from '../../home/vendor/vendor-home-mappers';
-import {isCustomerLicenseIssue} from '../../licenses/customer-license-status';
 import {ApplicationEntitlement} from '../../types/application-entitlement';
 import {LatestArtifactPull} from '../../types/artifact-version-pull';
 import {License} from '../../types/license';
@@ -119,7 +116,7 @@ export function toCustomerListRows(
   );
   const isLicensingInUse = [...licenseStatuses.values()].some((status) => status !== 'no_license');
   return customers
-    .map((customer) => {
+    .map((customer): CustomerListRow => {
       const health =
         deployments &&
         toDeploymentHealth(deployments.targets.filter((target) => target.customerOrganization?.id === customer.id));
@@ -133,17 +130,13 @@ export function toCustomerListRows(
           deployments.entitlements,
           deployments.pulls
         );
-      const license = licenseStatuses.get(customer.id);
-      const support =
-        supportBundles &&
-        toCustomerSupportBundles(supportBundles.filter((bundle) => bundle.customerOrganizationId === customer.id));
-      const row: CustomerListRow = {
+      return {
         id: customer.id,
         name: customer.name,
         imageUrl: customer.imageUrl,
         management: toCustomerManagement(customer, health, pulls),
         updatesTab: (health?.total ?? 0) > 0 ? 'deployments' : 'registry',
-        license,
+        license: licenseStatuses.get(customer.id),
         isLicensingInUse: licenses && isLicensingInUse,
         deployments: health && {
           ...health,
@@ -151,18 +144,12 @@ export function toCustomerListRows(
         },
         isOutdated: updates?.isOutdated,
         hasDeploymentsOrPulls: updates?.hasDeploymentsOrPulls,
-        supportBundles: support,
+        supportBundles:
+          supportBundles &&
+          toCustomerSupportBundles(supportBundles.filter((bundle) => bundle.customerOrganizationId === customer.id)),
       };
-      const openItems = countCustomerOpenItems(
-        health,
-        updates,
-        isCustomerLicenseIssue(license, isLicensingInUse),
-        support?.open ?? 0
-      );
-      return {row, name: customer.name, openItems};
     })
-    .sort(compareByOpenItems)
-    .map(({row}) => row);
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function toCustomerSupportBundles(bundles: SupportBundle[]): CustomerListSupportBundles {
