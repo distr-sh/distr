@@ -14,8 +14,9 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {NonNullableFormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faCreditCard, faShoppingCart} from '@fortawesome/free-solid-svg-icons';
-import {firstValueFrom} from 'rxjs';
-import {WEBSITE_URL} from '../../../constants';
+import {firstValueFrom, from} from 'rxjs';
+import {DISTR_CLOUD_URL, WEBSITE_URL} from '../../../constants';
+import {getRemoteEnvironment} from '../../../env/remote';
 import {getFormDisplayedError} from '../../../util/errors';
 import {BytesPipe} from '../../../util/units';
 import {AlertComponent} from '../../components/alert/alert.component';
@@ -57,6 +58,7 @@ export class SubscriptionComponent implements OnInit {
 
   protected readonly unlimited = UNLIMITED_QTY;
   protected readonly websiteUrl = WEBSITE_URL;
+  protected readonly distrCloudUrl = DISTR_CLOUD_URL;
 
   // Feature lists mirroring the pricing cards on https://distr.sh/pricing/
   protected readonly proPlanFeatures = [
@@ -125,6 +127,9 @@ export class SubscriptionComponent implements OnInit {
     const info = this.subscriptionInfo();
     return info ? info.limits[info.subscriptionType] : undefined;
   });
+
+  private readonly remoteEnvironment = toSignal(from(getRemoteEnvironment()));
+  protected readonly licenseEnforced = computed(() => this.remoteEnvironment()?.licenseEnforced ?? false);
 
   // a trial does not renew, it runs out
   protected readonly subscriptionEndsAtLabel = computed(() => {
