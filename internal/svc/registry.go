@@ -3,19 +3,16 @@ package svc
 import (
 	"context"
 	"crypto/subtle"
-	"errors"
-	"fmt"
 	"net/http"
 	"strings"
-	"syscall"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/jobs"
+	"github.com/distr-sh/distr/internal/logging"
 	"github.com/distr-sh/distr/internal/logstore"
-	"github.com/distr-sh/distr/internal/migrations"
 	"github.com/distr-sh/distr/internal/oidc"
 	distrprometheus "github.com/distr-sh/distr/internal/prometheus"
 	"github.com/distr-sh/distr/internal/registry"
@@ -36,7 +33,6 @@ type Registry struct {
 	dbReadonlyPool    *pgxpool.Pool
 	logger            *zap.Logger
 	mailer            *mailx.Mailer
-	execDbMigrations  bool
 	artifactsRegistry http.Handler
 	tracers           *tracers.Tracers
 	jobsScheduler     *jobs.Scheduler
@@ -47,21 +43,14 @@ type Registry struct {
 	logStore          logstore.LogStore
 }
 
-func New(ctx context.Context, options ...RegistryOption) (*Registry, error) {
-	var reg Registry
-	for _, opt := range options {
-		opt(&reg)
-	}
-	return newRegistry(ctx, &reg)
-}
-
 func NewDefault(ctx context.Context) (*Registry, error) {
-	var reg Registry
-	return newRegistry(ctx, &reg)
+	return New(ctx, logging.New())
 }
 
-func newRegistry(ctx context.Context, reg *Registry) (*Registry, error) {
-	reg.logger = createLogger()
+// New expects the database schema to be migrated already, since the database pool registers
+// the custom types the migrations create.
+func New(ctx context.Context, logger *zap.Logger) (*Registry, error) {
+	reg := &Registry{logger: logger}
 
 	ctx = internalctx.WithLogger(ctx, reg.logger)
 
@@ -84,12 +73,6 @@ func newRegistry(ctx context.Context, reg *Registry) (*Registry, error) {
 		return nil, err
 	} else {
 		reg.mailer = mailer
-	}
-
-	if reg.execDbMigrations {
-		if err := migrations.Up(reg.logger); err != nil {
-			return nil, err
-		}
 	}
 
 	if db, err := reg.createDBPool(ctx); err != nil {
@@ -158,12 +141,7 @@ func (r *Registry) Shutdown(ctx context.Context) error {
 		r.logger.Warn("tracer shutdown failed", zap.Error(err))
 	}
 
-	// some devices like stdout and stderr can not be synced by the OS
-	if err := r.logger.Sync(); err != nil && !errors.Is(err, syscall.EINVAL) {
-		return fmt.Errorf("logger sync failed: %w", err)
-	}
-
-	return nil
+	return logging.Sync(r.logger)
 }
 
 func (reg *Registry) createArtifactsRegistry(ctx context.Context) (http.Handler, error) {
