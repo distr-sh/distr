@@ -71,6 +71,20 @@ function linkedCommands<T>(
   return link ? items.map((item) => toCommand(item, link)) : [];
 }
 
+function selectionStep(event: KeyboardEvent): number {
+  switch (event.key) {
+    case 'ArrowDown':
+      return 1;
+    case 'ArrowUp':
+      return -1;
+    // The options are not focusable, so Tab would otherwise move the focus to the page behind the palette.
+    case 'Tab':
+      return event.shiftKey ? -1 : 1;
+    default:
+      return 0;
+  }
+}
+
 @Component({
   selector: 'app-command-palette-modal',
   templateUrl: './command-palette-modal.component.html',
@@ -259,11 +273,12 @@ export class CommandPaletteModalComponent {
 
   private readonly commands = computed(() => this.groups().flatMap((group) => group.commands));
 
-  // The lists refresh in the background while the palette is open, which must not move the selection.
+  // The lists load and refresh while the palette is open. A selection the user moved stays on its command, the
+  // first row stays first, so Enter right after opening runs the top command.
   protected readonly activeIndex = linkedSignal<{term: string; commands: IndexedCommand[]}, number>({
     source: () => ({term: this.searchTerm(), commands: this.commands()}),
     computation: ({term, commands}, previous) => {
-      if (!previous || previous.source.term !== term) {
+      if (!previous || previous.value === 0 || previous.source.term !== term) {
         return 0;
       }
       const activeKey = previous.source.commands[previous.value]?.key;
@@ -294,12 +309,14 @@ export class CommandPaletteModalComponent {
 
   protected onKeydown(event: KeyboardEvent) {
     const commands = this.commands();
-    if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && commands.length > 0) {
+    const step = selectionStep(event);
+    if (step !== 0) {
       event.preventDefault();
-      const step = event.key === 'ArrowDown' ? 1 : -1;
-      const index = (this.activeIndex() + step + commands.length) % commands.length;
-      this.activeIndex.set(index);
-      document.getElementById(commands[index].elementId)?.scrollIntoView({block: 'nearest'});
+      if (commands.length > 0) {
+        const index = (this.activeIndex() + step + commands.length) % commands.length;
+        this.activeIndex.set(index);
+        document.getElementById(commands[index].elementId)?.scrollIntoView({block: 'nearest'});
+      }
     } else if (event.key === 'Enter' && commands[this.activeIndex()]) {
       event.preventDefault();
       this.run(commands[this.activeIndex()]);

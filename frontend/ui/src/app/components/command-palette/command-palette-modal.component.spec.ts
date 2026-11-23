@@ -3,7 +3,7 @@ import {TestBed} from '@angular/core/testing';
 import {provideRouter, Router, UrlTree} from '@angular/router';
 import {Application, DeploymentTarget} from '@distr-sh/distr-sdk';
 import {faBox, faBoxesStacked, faCube, faHome} from '@fortawesome/free-solid-svg-icons';
-import {of} from 'rxjs';
+import {BehaviorSubject, Observable, of} from 'rxjs';
 import {ContextSwitcherService, SwitcherOrganization} from '../../navigation/context-switcher.service';
 import {NavigationSection} from '../../navigation/navigation';
 import {NavigationService} from '../../navigation/navigation.service';
@@ -73,7 +73,11 @@ describe('CommandPaletteModalComponent', () => {
   // jsdom does not implement scrolling
   beforeAll(() => (Element.prototype.scrollIntoView = () => undefined));
 
-  function render(lensHome?: OrganizationWithUserRole, navigationSections = signal(sections)) {
+  function render(
+    lensHome?: OrganizationWithUserRole,
+    navigationSections = signal(sections),
+    applications$: Observable<Application[]> = of(applications)
+  ) {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
@@ -89,7 +93,7 @@ describe('CommandPaletteModalComponent', () => {
         },
         {provide: AuthService, useValue: {isCustomer: () => false}},
         {provide: OrganizationService, useValue: {get: () => of(org)}},
-        {provide: ApplicationsService, useValue: {list: () => of(applications), refresh: async () => applications}},
+        {provide: ApplicationsService, useValue: {list: () => applications$, refresh: async () => applications}},
         {provide: ArtifactsService, useValue: {list: () => of(artifacts), refresh: async () => artifacts}},
         {
           provide: DeploymentTargetsService,
@@ -106,11 +110,11 @@ describe('CommandPaletteModalComponent', () => {
     return fixture;
   }
 
-  function press(fixture: ReturnType<typeof render>, key: string) {
-    fixture.nativeElement
-      .querySelector('input')
-      .dispatchEvent(new KeyboardEvent('keydown', {key, bubbles: true, cancelable: true}));
+  function press(fixture: ReturnType<typeof render>, key: string, init: KeyboardEventInit = {}) {
+    const event = new KeyboardEvent('keydown', {key, bubbles: true, cancelable: true, ...init});
+    fixture.nativeElement.querySelector('input').dispatchEvent(event);
     fixture.detectChanges();
+    return event;
   }
 
   function search(fixture: ReturnType<typeof render>, term: string) {
@@ -118,6 +122,10 @@ describe('CommandPaletteModalComponent', () => {
     input.value = term;
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
+  }
+
+  function selected(fixture: ReturnType<typeof render>): string {
+    return fixture.nativeElement.querySelector('[aria-selected="true"] span.grow').textContent.trim();
   }
 
   function labels(fixture: ReturnType<typeof render>): string[] {
@@ -190,6 +198,29 @@ describe('CommandPaletteModalComponent', () => {
     navigationSections.set(sections);
     fixture.detectChanges();
     expect(labels(fixture)).toContain('edge-prod');
+  });
+
+  it('keeps the first row selected while lists load above it, and a moved selection on its command', () => {
+    const applications$ = new BehaviorSubject<Application[]>([]);
+    const fixture = render(undefined, signal(sections), applications$);
+
+    applications$.next(applications);
+    fixture.detectChanges();
+    expect(selected(fixture)).toBe('Shop');
+
+    press(fixture, 'ArrowDown');
+    applications$.next([...applications, {id: 'app-2', name: 'Blog'} as Application]);
+    fixture.detectChanges();
+    expect(selected(fixture)).toBe('Running');
+  });
+
+  it('moves the selection with Tab instead of the focus', () => {
+    const fixture = render();
+
+    expect(press(fixture, 'Tab').defaultPrevented).toBe(true);
+    expect(selected(fixture)).toBe('Running');
+    expect(press(fixture, 'Tab', {shiftKey: true}).defaultPrevented).toBe(true);
+    expect(selected(fixture)).toBe('Shop');
   });
 
   it('finds a page by its go-to keys', () => {
