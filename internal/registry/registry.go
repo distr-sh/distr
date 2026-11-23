@@ -27,9 +27,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
 	"slices"
+	"syscall"
 
 	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/distr-sh/distr/internal/auth"
@@ -104,7 +106,25 @@ func (r *registry) v2(resp http.ResponseWriter, req *http.Request) *regError {
 	return nil
 }
 
+var errRequestBodyInterrupted = errors.New("request body interrupted")
+
+// requestBody marks the errors reading the request body that mean the client disconnected, since the
+// server reports a disconnect during an upload as a read error before it cancels the request context.
+// Both Content-Length and chunked bodies end in io.ErrUnexpectedEOF when the connection closes early.
+type requestBody struct{ io.ReadCloser }
+
+func (b requestBody) Read(p []byte) (int, error) {
+	n, err := b.ReadCloser.Read(p)
+	if errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, syscall.ECONNRESET) {
+		err = fmt.Errorf("%w: %w", errRequestBodyInterrupted, err)
+	}
+	return n, err
+}
+
 func (r *registry) root(resp http.ResponseWriter, req *http.Request) {
+	if req.Body != nil && req.Body != http.NoBody {
+		req.Body = requestBody{req.Body}
+	}
 	if rerr := r.v2(resp, req); rerr != nil {
 		log := internalctx.GetLogger(req.Context()).With(
 			zap.Int("status", rerr.Status),
@@ -115,6 +135,8 @@ func (r *registry) root(resp http.ResponseWriter, req *http.Request) {
 		switch {
 		case errors.Is(rerr.Error, context.Canceled):
 			log.Debug("registry request canceled by client")
+		case errors.Is(rerr.Error, errRequestBodyInterrupted):
+			log.Debug("registry request body interrupted by client")
 		case rerr.Status >= http.StatusInternalServerError:
 			log.Error("registry request failed")
 			if rerr.Status == http.StatusInternalServerError && rerr.Error != nil {
