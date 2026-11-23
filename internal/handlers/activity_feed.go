@@ -192,11 +192,18 @@ func customerDeploymentRevisionActivity(
 	scope activityScope,
 	since time.Time,
 ) ([]activityfeed.Entry, error) {
-	customerOrgIDs := scope.customerOrgIDsWith(types.CustomerOrganizationFeatureDeploymentTargets)
-	if len(customerOrgIDs) == 0 {
+	auth := auth.Authentication.Require(ctx)
+	if customerOrgIDs := scope.customerOrgIDsWith(
+		types.CustomerOrganizationFeatureDeploymentTargets,
+	); len(customerOrgIDs) == 0 {
 		return nil, nil
+	} else if revisions, err := db.GetCustomerDeploymentRevisionEvents(
+		ctx, *auth.CurrentOrgID(), customerOrgIDs, scope.viewer, since, activityfeed.Limit,
+	); err != nil {
+		return nil, fmt.Errorf("failed to get customer deployment revisions: %w", err)
+	} else {
+		return activityfeed.DeploymentRevisions(revisions), nil
 	}
-	return deploymentRevisionActivity(ctx, scope, customerOrgIDs, false, since)
 }
 
 // internalDeploymentRevisionActivity returns the deployment revisions of the deployment targets that belong to no
@@ -206,24 +213,13 @@ func internalDeploymentRevisionActivity(
 	scope activityScope,
 	since time.Time,
 ) ([]activityfeed.Entry, error) {
+	auth := auth.Authentication.Require(ctx)
 	if !scope.viewer.IsVendor {
 		return nil, nil
-	}
-	return deploymentRevisionActivity(ctx, scope, nil, true, since)
-}
-
-func deploymentRevisionActivity(
-	ctx context.Context,
-	scope activityScope,
-	customerOrgIDs []uuid.UUID,
-	shouldIncludeInternal bool,
-	since time.Time,
-) ([]activityfeed.Entry, error) {
-	auth := auth.Authentication.Require(ctx)
-	if revisions, err := db.GetDeploymentRevisionEvents(
-		ctx, *auth.CurrentOrgID(), customerOrgIDs, shouldIncludeInternal, scope.viewer, since, activityfeed.Limit,
+	} else if revisions, err := db.GetInternalDeploymentRevisionEvents(
+		ctx, *auth.CurrentOrgID(), scope.viewer, since, activityfeed.Limit,
 	); err != nil {
-		return nil, fmt.Errorf("failed to get deployment revisions: %w", err)
+		return nil, fmt.Errorf("failed to get internal deployment revisions: %w", err)
 	} else {
 		return activityfeed.DeploymentRevisions(revisions), nil
 	}
