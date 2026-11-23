@@ -1,13 +1,12 @@
 @if (customerOrganization(); as customer) {
   <div class="flex flex-col gap-4 xl:flex-row xl:items-start">
-    <div class="distr-card h-auto px-6 py-4 xl:w-max xl:min-w-72 xl:shrink-0">
+    <div class="distr-panel xl:w-max xl:min-w-72 xl:shrink-0">
       <h2 appCardHeading>Features</h2>
       <app-customer-features [customerOrganization]="customer" class="mt-4" />
     </div>
 
     <div class="flex min-w-0 flex-1 flex-col gap-4">
-      <div class="distr-table-panel">
-        <h2 appCardHeading class="px-4 pt-4">Sidebar Links</h2>
+      <div class="distr-panel">
         <app-sidebar-links [customerOrganizationId]="customer.id" />
       </div>
 

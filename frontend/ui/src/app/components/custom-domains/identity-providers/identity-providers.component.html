@@ -1,5 +1,15 @@
 @if (enabled()) {
-  <h4 class="mt-8 text-base font-semibold text-gray-900 dark:text-white">Identity Providers</h4>
+  <div class="mt-8 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+    <h4 class="text-base font-semibold text-gray-900 dark:text-white">Identity Providers</h4>
+    <button
+      type="button"
+      [disabled]="!domain() || !configurable()"
+      (click)="showDialog()"
+      class="distr-btn-secondary flex shrink-0 items-center px-4 py-2 text-center text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60">
+      <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
+      Add identity provider
+    </button>
+  </div>
   <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
     <table class="distr-table">
       <thead class="distr-table-head border-t-0">
@@ -80,24 +90,13 @@
       </tbody>
     </table>
   </div>
-
-  <div class="space-y-2">
-    <button
-      type="button"
-      [disabled]="!domain() || !configurable()"
-      (click)="showDialog()"
-      class="distr-btn-secondary flex items-center px-4 py-2 text-center text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60">
-      <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
-      Add identity provider
-    </button>
-    @if (!domain()) {
-      <p class="distr-hint-warning">Identity providers only work on custom domains. Configure and verify one first.</p>
-    } @else if (viewerIsVendor() && !configurable()) {
-      <p class="distr-hint-warning">
-        An organization slug is required. Set one on the
-        <a routerLink="/settings/organization/general" class="distr-link-inherit">General tab</a> of the organization
-        settings first.
-      </p>
-    }
-  </div>
+  @if (!domain()) {
+    <p class="distr-hint-warning">Identity providers only work on custom domains. Configure and verify one first.</p>
+  } @else if (viewerIsVendor() && !configurable()) {
+    <p class="distr-hint-warning">
+      An organization slug is required. Set one on the
+      <a routerLink="/settings/organization/general" class="distr-link-inherit">General tab</a> of the organization
+      settings first.
+    </p>
+  }
 }
