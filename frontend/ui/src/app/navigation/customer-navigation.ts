@@ -18,12 +18,13 @@ export const customerNavigation: NavigationDefinition = [
     id: 'software',
     label: 'Software',
     entries: [
-      {id: 'home', label: 'Home', icon: faHome, route: '/home'},
+      {id: 'home', label: 'Home', icon: faHome, route: '/home', shortcut: 'h'},
       {
         id: 'deployments',
         label: 'Deployments',
         icon: faDashboard,
         route: '/deployments',
+        shortcut: 'd',
         visible: (c) => c.customer.features.has('deployment_targets'),
       },
       {
@@ -31,6 +32,7 @@ export const customerNavigation: NavigationDefinition = [
         label: 'Artifacts',
         icon: faBox,
         route: '/artifacts',
+        shortcut: 'a',
         visible: (c) => c.customer.features.has('artifacts'),
       },
       {
@@ -38,6 +40,7 @@ export const customerNavigation: NavigationDefinition = [
         label: 'Licenses',
         icon: faKey,
         route: '/licenses',
+        shortcut: 'l',
         visible: (c) => c.customer.hasLicenseKeys,
       },
       {
@@ -45,6 +48,7 @@ export const customerNavigation: NavigationDefinition = [
         label: 'Notifications',
         icon: faBell,
         route: '/notifications',
+        shortcut: 'n',
         visible: (c) =>
           c.features.has('notifications') &&
           (c.customer.features.has('alerts') || c.customer.features.has('update_notifications')),
@@ -54,13 +58,15 @@ export const customerNavigation: NavigationDefinition = [
         label: 'Support',
         icon: faLifeRing,
         route: '/support',
-        visible: (c) => c.features.has('support_bundles') && c.customer.features.has('support_bundles'),
+        shortcut: 'b',
+        visible: (c) => c.features.has('support') && c.customer.features.has('support_bundles'),
       },
       {
         id: 'security',
         label: 'Security',
         icon: faShieldHalved,
         route: '/security',
+        shortcut: 'v',
         visible: (c) => c.features.has('vulnerabilities') && c.customer.features.has('vulnerabilities'),
       },
     ],
@@ -69,12 +75,20 @@ export const customerNavigation: NavigationDefinition = [
     id: 'organization',
     label: 'Organization',
     entries: [
-      {id: 'team', label: 'Team', icon: faUsers, route: '/team', visible: (c) => c.user.isAdmin},
+      {
+        id: 'team',
+        label: 'Team',
+        icon: faUsers,
+        route: '/team',
+        shortcut: 't',
+        visible: (c) => c.user.isAdmin,
+      },
       {
         id: 'secrets',
         label: 'Secrets',
         icon: faAsterisk,
         route: '/secrets',
+        shortcut: 'e',
         visible: (c) => c.customer.features.has('deployment_targets'),
       },
       {
@@ -82,6 +96,7 @@ export const customerNavigation: NavigationDefinition = [
         label: 'Settings',
         icon: faGear,
         route: '/settings/customer',
+        shortcut: 's',
         visible: (c) => c.user.isAdmin && c.customer.features.has('settings'),
       },
     ],

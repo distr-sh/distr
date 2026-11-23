@@ -8,6 +8,6 @@ export const customerPortalTabs = defineRoutedTabs<CustomerPortalTabId>('Custome
     id: 'domain-and-sign-in',
     label: 'Domain & Sign-in',
     visible: (c) => c.user.isAdminOrSuperAdmin,
-    locked: {requiresAnyOf: ['custom_oidc_providers', 'custom_domains'], upgradePlan: 'business'},
+    locked: {requiresAnyOf: ['custom_oidc_providers', 'custom_domains']},
   },
 ]);

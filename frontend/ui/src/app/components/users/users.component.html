@@ -23,7 +23,7 @@
         <th scope="col" class="p-4"></th>
         <th scope="col" class="p-4">Name</th>
         <th scope="col" class="p-4">E-Mail</th>
-        @if (isProSubscription()) {
+        @if (isUserRolesEnabled()) {
           <th scope="col" class="p-4">Role</th>
         }
         <th scope="col" class="p-4"></th>
@@ -49,7 +49,7 @@
           <td class="distr-table-cell">
             {{ user.email }}
           </td>
-          @if (isProSubscription()) {
+          @if (isUserRolesEnabled()) {
             <td class="distr-table-cell">
               @if (editRoleUserId() === user.id) {
                 <form [formGroup]="editRoleForm" class="flex" (ngSubmit)="submitEditUserRoleForm()">
@@ -96,14 +96,14 @@
         @if (loaded()) {
           <tr class="border-t border-gray-200 dark:border-gray-600">
             <td
-              [attr.colspan]="isProSubscription() ? 5 : 4"
+              [attr.colspan]="isUserRolesEnabled() ? 5 : 4"
               class="px-4 py-3 text-center font-medium whitespace-nowrap text-gray-600 dark:text-gray-400">
               No users found
             </td>
           </tr>
         } @else {
           <tr class="border-t border-gray-200 dark:border-gray-600">
-            <td [attr.colspan]="isProSubscription() ? 5 : 4">
+            <td [attr.colspan]="isUserRolesEnabled() ? 5 : 4">
               <div class="flex items-center justify-center py-12">
                 <app-spinner class="size-8" />
               </div>
@@ -180,7 +180,7 @@
                     </div>
                   }
                 </div>
-                @if (isProSubscription()) {
+                @if (isUserRolesEnabled()) {
                   <div class="space-y-2">
                     <label for="userRole" class="distr-label"> User role <span class="text-red-500">*</span> </label>
                     <app-user-role-select id="userRole" formControlName="userRole" selectClass="distr-input" />

@@ -1,20 +1,25 @@
+import {CdkOverlayOrigin} from '@angular/cdk/overlay';
+import {LowerCasePipe, TitleCasePipe} from '@angular/common';
 import {Component, computed, inject, input, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {CustomerOrganization, CustomerOrganizationFeature} from '@distr-sh/distr-sdk';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../../../util/errors';
-import {isLocked, tabContext} from '../../../navigation/tabs';
+import {tabContext} from '../../../navigation/tabs';
 import {AuthService} from '../../../services/auth.service';
 import {CustomerOrganizationsService} from '../../../services/customer-organizations.service';
 import {ToastService} from '../../../services/toast.service';
 import {
   CustomerFeatureDefinition,
   customerFeatures,
+  customerFeaturesLock,
   switchCustomerFeature,
   unmetCustomerFeatureRequirement,
 } from '../../../types/customer-features';
+import {isLocked, upgradePlan} from '../../../types/feature-lock';
 import {UpgradePlan} from '../../../types/subscription';
 import {PlanBadgeComponent} from '../../plan-badge.component';
+import {PlanHintOverlayComponent} from '../../plan-hint-overlay.component';
 
 interface CustomerFeatureRow extends CustomerFeatureDefinition {
   enabled: boolean;
@@ -25,7 +30,7 @@ interface CustomerFeatureRow extends CustomerFeatureDefinition {
 @Component({
   selector: 'app-customer-features',
   templateUrl: './customer-features.component.html',
-  imports: [PlanBadgeComponent],
+  imports: [CdkOverlayOrigin, PlanBadgeComponent, PlanHintOverlayComponent, LowerCasePipe, TitleCasePipe],
   host: {class: 'block'},
 })
 export class CustomerFeaturesComponent {
@@ -36,7 +41,6 @@ export class CustomerFeaturesComponent {
 
   protected readonly canEdit = inject(AuthService).hasAnyRole('read_write', 'admin');
   protected readonly saving = signal(false);
-
   private readonly context = toSignal(tabContext());
 
   protected readonly rows = computed<CustomerFeatureRow[]>(() => {
@@ -47,8 +51,9 @@ export class CustomerFeaturesComponent {
     const locks = new Map<CustomerOrganizationFeature, UpgradePlan | undefined>();
     return customerFeatures.map((definition) => {
       const enabled = granted.includes(definition.feature);
-      const {locked, requires} = definition;
-      const ownLock = locked && (!context || isLocked(locked, context)) ? locked.upgradePlan : undefined;
+      const {requires} = definition;
+      const locked = customerFeaturesLock(definition.feature);
+      const ownLock = locked && (!context || isLocked(locked, context.features)) ? upgradePlan(locked) : undefined;
       const lockedPlan = enabled ? undefined : (ownLock ?? (requires ? locks.get(requires) : undefined));
       locks.set(definition.feature, lockedPlan);
       const unmetRequirement = enabled

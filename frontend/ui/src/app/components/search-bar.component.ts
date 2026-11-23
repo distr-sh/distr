@@ -2,17 +2,11 @@ import {Component, ElementRef, input, viewChild} from '@angular/core';
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faMagnifyingGlass} from '@fortawesome/free-solid-svg-icons';
+import {isEditable} from '../../util/keyboard';
 import {AutofocusDirective} from '../directives/autofocus.directive';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 
 let nextId = 0;
-
-function isEditable(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
-  );
-}
 
 function isBehindOverlay(element: Element): boolean {
   const backdrops = document.querySelectorAll('.cdk-overlay-backdrop');
@@ -46,6 +40,7 @@ function isBehindOverlay(element: Element): boolean {
         [placeholder]="placeholder()"
         [autofocus]="autofocus()"
         [attr.aria-keyshortcuts]="hotkey() ? '/' : null"
+        (keydown.escape)="$event.preventDefault(); input.blur()"
         autotrim
         type="search"
         class="peer distr-input p-2 pl-10 placeholder-shown:pr-10" />

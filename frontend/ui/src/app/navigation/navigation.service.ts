@@ -8,14 +8,9 @@ import {FeatureFlagService} from '../services/feature-flag.service';
 import {LicenseKeysService} from '../services/license-keys.service';
 import {OrganizationService} from '../services/organization.service';
 import {TutorialsService} from '../services/tutorials.service';
+import {Feature} from '../types/organization';
 import {customerNavigation} from './customer-navigation';
-import {
-  NavigationContext,
-  NavigationDefinition,
-  NavigationFeature,
-  NavigationSection,
-  resolveNavigation,
-} from './navigation';
+import {NavigationContext, NavigationDefinition, NavigationSection, resolveNavigation} from './navigation';
 import {partnerNavigation} from './partner-navigation';
 import {vendorNavigation} from './vendor-navigation';
 
@@ -64,12 +59,8 @@ export class NavigationService {
     {initialValue: false}
   );
 
-  private readonly isLicensingEnabled = toSignal(this.featureFlags.isLicensingEnabled$, {initialValue: false});
-  private readonly isNotificationsEnabled = toSignal(this.featureFlags.isNotificationsEnabled$, {
-    initialValue: false,
-  });
-  private readonly isSupportBundlesEnabled = toSignal(this.featureFlags.isSupportBundlesEnabled$, {
-    initialValue: false,
+  private readonly features = toSignal(this.organizationService.get().pipe(map((org) => new Set(org.features))), {
+    initialValue: new Set<Feature>(),
   });
 
   private readonly customerFeatures = toSignal(
@@ -82,16 +73,6 @@ export class NavigationService {
   private readonly sidebarLinks = toSignal(this.contextService.getSidebarLinks(), {
     initialValue: [] as SidebarLink[],
   });
-
-  private readonly features = computed(() =>
-    enabled<NavigationFeature>({
-      licensing: this.isLicensingEnabled(),
-      notifications: this.isNotificationsEnabled(),
-      support_bundles: this.isSupportBundlesEnabled(),
-      vulnerabilities: this.featureFlags.isVulnerabilitiesEnabled(),
-      partner_management: this.featureFlags.isPartnerManagementEnabled(),
-    })
-  );
 
   private readonly context = computed<NavigationContext>(() => ({
     user: {
@@ -113,8 +94,4 @@ export class NavigationService {
   }));
 
   public readonly sections = computed<NavigationSection[]>(() => resolveNavigation(this.definition, this.context()));
-}
-
-function enabled<T extends string>(flags: Record<T, boolean>): ReadonlySet<T> {
-  return new Set((Object.keys(flags) as T[]).filter((flag) => flags[flag]));
 }

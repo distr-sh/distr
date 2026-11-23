@@ -27,58 +27,52 @@
         <app-quick-navigation-card
           class="min-h-32"
           [icon]="faBoxesStacked"
-          heading="Deployment health"
+          heading="Deployments"
           [type]="type"
+          [count]="type === 'neutral' ? undefined : health.error + health.stale"
           link="/deployments"
           [queryParams]="type === 'error' || type === 'warning' ? deploymentAttentionQueryParams : undefined">
           @switch (type) {
             @case ('error') {
               @if (health.stale > 0) {
-                {{ health.error + health.stale }} issues
+                issues
               } @else {
                 <ng-container [ngPlural]="health.error">
-                  <ng-template ngPluralCase="=1">1 error</ng-template>
-                  <ng-template ngPluralCase="other">{{ health.error }} errors</ng-template>
+                  <ng-template ngPluralCase="=1">error</ng-template>
+                  <ng-template ngPluralCase="other">errors</ng-template>
                 </ng-container>
               }
             }
             @case ('warning') {
-              {{ health.stale }} stale
+              stale
             }
             @case ('success') {
-              0 issues
+              issues
             }
           }
           <span subtitle>
-            @switch (type) {
-              @case ('error') {
-                @if (health.stale > 0) {
-                  <ng-container [ngPlural]="health.error">
-                    <ng-template ngPluralCase="=1">1 error</ng-template>
-                    <ng-template ngPluralCase="other">{{ health.error }} errors</ng-template>
-                  </ng-container>
-                  &middot; {{ health.stale }} stale
-                } @else {
-                  Some controllers reporting an error
-                }
-              }
-              @case ('warning') {
-                Some controllers stopped reporting
-              }
-              @case ('success') {
-                @if (health.healthy > 0) {
-                  {{ health.healthy }} healthy
-                  @if (health.running > 0) {
-                    &middot;
+            @if (type === 'error' && health.stale > 0) {
+              <ng-container [ngPlural]="health.error">
+                <ng-template ngPluralCase="=1">1 error</ng-template>
+                <ng-template ngPluralCase="other">{{ health.error }} errors</ng-template>
+              </ng-container>
+              &middot; {{ health.stale }} stale
+            } @else if (type === 'error' || type === 'warning') {
+              <span class="grid auto-cols-[minmax(0,max-content)] grid-flow-col gap-1">
+                @for (name of health.affected.names; track $index) {
+                  @if (!$first) {
+                    <span>&middot;</span>
                   }
+                  <span class="truncate" [title]="name">{{ name }}</span>
                 }
-                @if (health.running > 0) {
-                  {{ health.running }} running
+                @if (health.affected.more > 0) {
+                  <span class="whitespace-nowrap">&middot; {{ health.affected.more }} more</span>
                 }
-              }
-              @default {
-                No deployments yet
-              }
+              </span>
+            } @else if (type === 'success') {
+              All deployments up and running
+            } @else {
+              No running deployments yet
             }
           </span>
         </app-quick-navigation-card>
@@ -91,26 +85,17 @@
           [icon]="faCircleArrowUp"
           heading="Updates"
           [type]="updates.type"
+          [count]="updates.type === 'neutral' ? undefined : updates.outdatedCustomers"
           link="/customers"
           [queryParams]="updates.type === 'warning' ? outdatedCustomersQueryParams : undefined">
-          @if (updates.type !== 'neutral') {
-            {{ updates.outdatedCustomers }} outdated
-          }
+          outdated
           <span subtitle>
             @switch (updates.type) {
               @case ('warning') {
-                @if (updates.outdatedDeployments > 0) {
-                  of {{ updates.totalCustomers }} total, affecting
-                  <ng-container [ngPlural]="updates.outdatedDeployments">
-                    <ng-template ngPluralCase="=1">1 deployment</ng-template>
-                    <ng-template ngPluralCase="other">{{ updates.outdatedDeployments }} deployments</ng-template>
-                  </ng-container>
-                } @else {
-                  of {{ updates.totalCustomers }} total
-                }
+                Customers on an older version
               }
               @case ('success') {
-                No customer is behind on updates
+                All customers on the latest version
               }
               @default {
                 @if (updates.totalCustomers > 0) {
@@ -128,7 +113,11 @@
       @let licenses = licenseCard();
       @if (licenses === null) {
         @if (isVendor) {
-          <app-quick-navigation-card class="min-h-32" [icon]="faKey" heading="Licenses" lockedPlan="pro">
+          <app-quick-navigation-card
+            class="min-h-32"
+            [icon]="faKey"
+            heading="Licenses"
+            [locked]="{requiresAnyOf: ['licensing']}">
             <span subtitle>Upgrade to manage customer licenses</span>
           </app-quick-navigation-card>
         }
@@ -138,13 +127,17 @@
           [icon]="faKey"
           heading="Licenses"
           [type]="licenses.type"
+          [count]="licenses.type === 'neutral' ? undefined : licenses.customers"
           [link]="licenses.link"
           [queryParams]="licenses.queryParams">
-          @if (licenses.type !== 'neutral') {
-            <ng-container [ngPlural]="licenses.customers">
-              <ng-template ngPluralCase="=1">1 customer</ng-template>
-              <ng-template ngPluralCase="other">{{ licenses.customers }} customers</ng-template>
-            </ng-container>
+          @if (licenses.statusCount !== 1) {
+            issues
+          } @else if (licenses.expired > 0) {
+            expired
+          } @else if (licenses.expiring > 0) {
+            expiring
+          } @else {
+            unlicensed
           }
           <span subtitle>
             @if (licenses.type === 'neutral') {
@@ -160,12 +153,12 @@
                 {{ licenses.expiring }} expiring
               }
               @if (licenses.unlicensed > 0) {
-                &middot; {{ licenses.unlicensed }} without license
+                &middot; {{ licenses.unlicensed }} unlicensed
               }
             } @else if (licenses.expired > 0) {
-              With an expired license
+              Renewal overdue
             } @else if (licenses.expiring > 0) {
-              With a license expiring in the next {{ licenseExpiryWindowDays }} days
+              In the next {{ licenseExpiryWindowDays }} days
             } @else if (licenses.unlicensed > 0) {
               Without a license
             } @else {
@@ -179,7 +172,11 @@
       @let support = supportCard();
       @if (support === null) {
         @if (isVendor) {
-          <app-quick-navigation-card class="min-h-32" [icon]="faLifeRing" heading="Support" lockedPlan="pro">
+          <app-quick-navigation-card
+            class="min-h-32"
+            [icon]="faLifeRing"
+            heading="Support"
+            [locked]="{requiresAnyOf: ['support']}">
             <span subtitle>Upgrade to receive support requests from your customers</span>
           </app-quick-navigation-card>
         }
@@ -189,28 +186,16 @@
           [icon]="faLifeRing"
           heading="Support"
           [type]="support.type"
+          [count]="support.open"
           [link]="support.link">
-          @if (support.type !== 'neutral') {
-            {{ support.open }} open
-          }
+          open
           <span subtitle>
-            @switch (support.type) {
-              @case ('warning') {
-                <ng-container [ngPlural]="support.open">
-                  <ng-template ngPluralCase="=1">Support request awaiting resolution</ng-template>
-                  <ng-template ngPluralCase="other">Support requests awaiting resolution</ng-template>
-                </ng-container>
-              }
-              @case ('success') {
-                No open support requests
-              }
-              @default {
-                @if (canConfigureSupport) {
-                  No open support requests. Configure what support bundles collect.
-                } @else {
-                  No open support requests
-                }
-              }
+            @if (support.open > 0) {
+              Requests awaiting resolution
+            } @else if (support.shouldConfigure) {
+              Configure what support bundles collect
+            } @else {
+              All requests resolved
             }
           </span>
         </app-quick-navigation-card>
@@ -223,21 +208,20 @@
           <app-quick-navigation-card
             class="min-h-32"
             [icon]="faShieldHalved"
-            heading="Security Advisories"
-            lockedPlan="business">
+            heading="Security"
+            [locked]="{requiresAnyOf: ['vulnerabilities']}">
             <span subtitle>Upgrade to inform your customers about vulnerabilities</span>
           </app-quick-navigation-card>
         } @else if (advisories) {
           <app-quick-navigation-card
             class="min-h-32"
             [icon]="faShieldHalved"
-            heading="Security Advisories"
+            heading="Security"
             [type]="advisories.total > 0 && advisories.open === 0 ? 'success' : 'neutral'"
+            [count]="advisories.total > 0 ? advisories.open : undefined"
             link="/security"
             [queryParams]="advisories.open > 0 ? openAdvisoryQueryParams : undefined">
-            @if (advisories.total > 0) {
-              {{ advisories.open }} open
-            }
+            open
             <span subtitle>
               @if (advisories.total === 0) {
                 Publish advisories to inform your customers about vulnerabilities
@@ -281,7 +265,7 @@
       </div>
       @if (homeCustomers(); as customers) {
         @if (customers.length === 0) {
-          <a routerLink="/customers" class="distr-card distr-card-clickable min-h-96 p-4">
+          <a routerLink="/customers" class="distr-card distr-card-clickable h-auto min-h-96 self-start p-4">
             <h2 appCardHeading [icon]="faAddressBook" class="mb-3">Customers</h2>
             <p class="distr-text-muted text-sm">
               @if (canCreateCustomers) {
@@ -294,17 +278,13 @@
             </p>
           </a>
         } @else {
-          <div class="distr-card min-h-96 p-4">
+          <div class="distr-card h-auto min-h-96 self-start p-4">
             <div class="mb-3 flex items-center justify-between gap-2">
               <h2 appCardHeading [icon]="faAddressBook">
                 Customers
                 <span class="distr-badge distr-badge-neutral ms-2">{{ customerCount() }}</span>
               </h2>
-              <a
-                routerLink="/customers"
-                class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">
-                View all
-              </a>
+              <a routerLink="/customers" class="distr-link text-sm">View all</a>
             </div>
             <ul class="distr-home-list -mx-2">
               @for (customer of customers; track customer.id) {

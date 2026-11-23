@@ -509,10 +509,7 @@
                     </div>
                   </div>
                 }
-                <button
-                  type="button"
-                  (click)="addResource()"
-                  class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-500 dark:hover:text-blue-400">
+                <button type="button" (click)="addResource()" class="distr-link inline-flex items-center text-sm">
                   <fa-icon [icon]="faPlus" class="mr-1" />
                   Add Resource
                 </button>
@@ -536,7 +533,7 @@
 
 <ng-template #autoUpdatesHint>
   @if (!isAutoUpdatesEnabled()) {
-    <app-plan-feature-hint plan="business" />
+    <app-plan-feature-hint [plan]="autoUpdatesPlan" />
   } @else {
     <div role="tooltip" class="distr-tooltip max-w-64">
       Please choose semantic or chronological versioning to enable automatic updates.

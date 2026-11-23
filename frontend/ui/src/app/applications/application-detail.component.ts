@@ -65,6 +65,7 @@ import {FeatureFlagService} from '../services/feature-flag.service';
 import {ImageUploadService} from '../services/image-upload.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
+import {upgradePlan} from '../types/feature-lock';
 import {
   AllowAutomaticUpdates,
   allowAutomaticUpdatesSelectOptions,
@@ -215,6 +216,7 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   protected readonly savingVersionId = signal<string | undefined>(undefined);
   protected readonly savingVersioning = signal(false);
   protected readonly isAutoUpdatesEnabled = inject(FeatureFlagService).isAutoUpdatesEnabled;
+  protected readonly autoUpdatesPlan = upgradePlan({requiresAnyOf: ['auto_updates']});
 
   private readonly application = toSignal(this.application$);
 

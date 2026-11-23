@@ -1,14 +1,25 @@
 @reference '../../../styles/tailwind.css';
 
 .item {
-  @apply flex w-full cursor-pointer items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700;
+  @apply flex w-full cursor-pointer items-center rounded-lg p-2 text-gray-900 dark:text-white;
 
   &.active {
     @apply bg-gray-100 dark:bg-gray-700;
   }
 
-  &:hover .icon {
-    @apply text-gray-900 dark:text-white;
+  &:not(.locked) {
+    @apply hover:bg-gray-100 dark:hover:bg-gray-700;
+
+    &:hover .icon {
+      @apply text-gray-900 dark:text-white;
+    }
+  }
+}
+
+.locked {
+  .icon,
+  .label {
+    @apply opacity-60;
   }
 }
 

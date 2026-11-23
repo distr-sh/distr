@@ -2,6 +2,7 @@ import {ChangeDetectionStrategy, Component, computed, inject} from '@angular/cor
 import {toSignal} from '@angular/core/rxjs-interop';
 import {RouterOutlet} from '@angular/router';
 import {map} from 'rxjs';
+import {GoToShortcutsService} from '../navigation/go-to-shortcuts.service';
 import {NavigationService} from '../navigation/navigation.service';
 import {AuthService} from '../services/auth.service';
 import {OrganizationService} from '../services/organization.service';
@@ -20,12 +21,16 @@ import {SideBarComponent} from './side-bar/side-bar.component';
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
+  host: {
+    '(document:keydown)': 'goToShortcuts.onKeydown($event)',
+  },
   imports: [NavBarComponent, SideBarComponent, RouterOutlet],
-  providers: [NavigationService],
+  providers: [NavigationService, GoToShortcutsService],
 })
 export class NavShellComponent {
   private readonly organizationService = inject(OrganizationService);
   private readonly auth = inject(AuthService);
+  protected readonly goToShortcuts = inject(GoToShortcutsService);
 
   protected readonly organization$ = this.organizationService.get();
 
