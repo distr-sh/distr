@@ -2,7 +2,7 @@ import {NgPlural, NgPluralCase} from '@angular/common';
 import {Component, computed, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute} from '@angular/router';
-import {faBoxesStacked, faCircleArrowUp, faKey, faLifeRing, faSliders} from '@fortawesome/free-solid-svg-icons';
+import {faBoxesStacked, faCircleArrowUp, faKey, faLifeRing} from '@fortawesome/free-solid-svg-icons';
 import {EMPTY, firstValueFrom, map, of, switchMap} from 'rxjs';
 import {refreshInBackground} from '../../../../util/refresh';
 import {DeploymentStatusFilter} from '../../../deployments/deployment-target-card/deployment-status-text.component';
@@ -26,10 +26,8 @@ import {LicensesService} from '../../../services/licenses.service';
 import {SupportBundlesService} from '../../../services/support-bundles.service';
 import {toActivityFeedItems} from '../../activity-feed/activity-feed';
 import {ActivityFeedComponent} from '../../activity-feed/activity-feed.component';
-import {CardHeadingComponent} from '../../card-heading.component';
 import {LoadingCardComponent} from '../../loading-card/loading-card.component';
 import {CustomerDetailTabId} from './customer-detail-navigation';
-import {CustomerFeaturesComponent} from './customer-features.component';
 import {
   CustomerOverviewLicense,
   CustomerOverviewUpdates,
@@ -89,15 +87,7 @@ function licenseCardCount(license: CustomerOverviewLicense, type: QuickNavigatio
 
 @Component({
   templateUrl: './customer-overview-tab.component.html',
-  imports: [
-    NgPlural,
-    NgPluralCase,
-    CardHeadingComponent,
-    CustomerFeaturesComponent,
-    ActivityFeedComponent,
-    LoadingCardComponent,
-    QuickNavigationCardComponent,
-  ],
+  imports: [NgPlural, NgPluralCase, ActivityFeedComponent, LoadingCardComponent, QuickNavigationCardComponent],
 })
 export class CustomerOverviewTabComponent {
   private readonly featureFlags = inject(FeatureFlagService);
@@ -116,7 +106,6 @@ export class CustomerOverviewTabComponent {
   protected readonly faCircleArrowUp = faCircleArrowUp;
   protected readonly faKey = faKey;
   protected readonly faLifeRing = faLifeRing;
-  protected readonly faSliders = faSliders;
   protected readonly deploymentAttentionQueryParams = {status: vendorHomeAttentionStatuses};
   protected readonly outdatedDeploymentsQueryParams = {status: ['outdated'] satisfies DeploymentStatusFilter[]};
 

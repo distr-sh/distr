@@ -188,25 +188,12 @@
     }
   </div>
 
-  <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
-    <div class="relative lg:col-span-2">
-      @if (activity(); as activity) {
-        <app-activity-feed
-          [activity]="activity"
-          [viewer]="activityViewer"
-          [customerOrganizationId]="customerOrganizationId()"
-          [fillHeight]="true" />
-      } @else {
-        <app-loading-card layout="timeline" />
-      }
-    </div>
-    @if (customerOrganization(); as customer) {
-      <div class="distr-card h-auto self-start px-6 py-4">
-        <h2 appCardHeading [icon]="faSliders">Features</h2>
-        <app-customer-features [customerOrganization]="customer" class="mt-4" />
-      </div>
-    } @else {
-      <app-loading-card />
-    }
-  </div>
+  @if (activity(); as activity) {
+    <app-activity-feed
+      [activity]="activity"
+      [viewer]="activityViewer"
+      [customerOrganizationId]="customerOrganizationId()" />
+  } @else {
+    <app-loading-card layout="timeline" />
+  }
 </div>
